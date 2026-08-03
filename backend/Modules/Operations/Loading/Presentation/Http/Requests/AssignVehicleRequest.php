@@ -16,14 +16,14 @@ final class AssignVehicleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'vehicle_id'           => ['required', 'uuid'],
+            'vehicle_id' => ['required', 'uuid'],
             'vehicle_registration' => ['required', 'string', 'max:50'],
-            'vehicle_type'         => ['required', 'string', 'max:50'],
-            'capacity_weight_kg'   => ['required', 'numeric', 'min:0'],
-            'capacity_volume_m3'   => ['required', 'numeric', 'min:0'],
-            'refrigerated'         => ['boolean'],
+            'vehicle_type' => ['required', 'string', 'max:50'],
+            'capacity_weight_kg' => ['required', 'numeric', 'min:0'],
+            'capacity_volume_m3' => ['required', 'numeric', 'min:0'],
+            'refrigerated' => ['boolean'],
             'vehicle_plan_slot_id' => ['nullable', 'uuid'],
-            'notes'                => ['nullable', 'string', 'max:1000'],
+            'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }
 }

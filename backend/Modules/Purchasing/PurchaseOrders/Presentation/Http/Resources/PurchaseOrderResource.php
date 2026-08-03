@@ -23,9 +23,9 @@ final class PurchaseOrderResource extends JsonResource
         // Received % — computed from line-level received_qty vs quantity when lines are loaded.
         $receivedPct = null;
         if ($this->relationLoaded('lines') && $this->lines->isNotEmpty()) {
-            $totalQty     = $this->lines->sum(fn ($l) => (float) $l->quantity);
+            $totalQty = $this->lines->sum(fn ($l) => (float) $l->quantity);
             $totalReceived = $this->lines->sum(fn ($l) => (float) $l->received_qty);
-            $receivedPct   = $totalQty > 0 ? round(($totalReceived / $totalQty) * 100, 1) : 0;
+            $receivedPct = $totalQty > 0 ? round(($totalReceived / $totalQty) * 100, 1) : 0;
         }
 
         return [

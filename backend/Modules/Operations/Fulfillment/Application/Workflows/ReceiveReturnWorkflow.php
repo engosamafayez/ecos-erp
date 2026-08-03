@@ -7,6 +7,7 @@ namespace Modules\Operations\Fulfillment\Application\Workflows;
 use Illuminate\Support\Facades\DB;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Orders\Domain\Models\OrderEvent;
+use Modules\CostManagement\Domain\Services\EnterpriseCostEngine;
 use Modules\Inventory\InventoryItems\Application\Actions\AdjustmentInAction;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
 use Modules\Inventory\Products\Domain\Models\Product;
@@ -38,17 +39,17 @@ final class ReceiveReturnWorkflow
     /**
      * Accept a customer return and restore sellable stock.
      *
-     * @param array<string, string> $lineConditions  Override line conditions: ['line_id' => 'sellable'|'damaged'|'destroyed']
+     * @param  array<string, string>  $lineConditions  Override line conditions: ['line_id' => 'sellable'|'damaged'|'destroyed']
      */
     public function execute(
         CustomerReturn $customerReturn,
-        string         $actorId,
-        ?string        $warehouseNotes = null,
-        array          $lineConditions = [],
+        string $actorId,
+        ?string $warehouseNotes = null,
+        array $lineConditions = [],
     ): CustomerReturn {
         if (! $customerReturn->isPendingInspection()) {
             throw new WorkflowPreconditionException(
-                "CustomerReturn [{$customerReturn->id}] is not pending inspection (status: {$customerReturn->status})."
+                "CustomerReturn [{$customerReturn->id}] is not pending inspection (status: {$customerReturn->status}).",
             );
         }
 
@@ -58,12 +59,12 @@ final class ReceiveReturnWorkflow
 
         if (! $order instanceof Order || $order->assigned_warehouse_id === null) {
             throw new WorkflowPreconditionException(
-                "CustomerReturn [{$customerReturn->id}] references an order with no assigned warehouse."
+                "CustomerReturn [{$customerReturn->id}] references an order with no assigned warehouse.",
             );
         }
 
         $warehouseId = $order->assigned_warehouse_id;
-        $companyId   = $order->company_id ?? '';
+        $companyId = $order->company_id ?? '';
         $linesRestored = 0;
 
         DB::transaction(function () use ($customerReturn, $order, $warehouseId, $companyId, $actorId, $lineConditions, $warehouseNotes, &$linesRestored): void {
@@ -73,18 +74,19 @@ final class ReceiveReturnWorkflow
 
                 if ($condition !== 'sellable') {
                     $line->update(['condition' => $condition]);
+
                     continue;
                 }
 
                 // Restore inventory via AdjustmentIn (updates on_hand_qty + stock ledger).
                 $this->adjustmentIn->execute(new StockOperationDTO(
-                    warehouse_id:   $warehouseId,
-                    product_id:     $line->product_id,
-                    company_id:     $companyId,
-                    quantity:       $line->quantity_returned,
+                    warehouse_id: $warehouseId,
+                    product_id: $line->product_id,
+                    company_id: $companyId,
+                    quantity: $line->quantity_returned,
                     reference_type: 'customer_return',
-                    reference_id:   $customerReturn->id,
-                    notes:          "Return accepted for order #{$order->order_number}. Condition: sellable.",
+                    reference_id: $customerReturn->id,
+                    notes: "Return accepted for order #{$order->order_number}. Condition: sellable.",
                 ));
 
                 // CERT-GAP-002: create a new FIFO receipt layer so returned goods
@@ -111,16 +113,16 @@ final class ReceiveReturnWorkflow
                 );
 
                 InventoryReceiptLayer::create([
-                    'supplier_id'           => null,
-                    'product_id'            => $line->product_id,
-                    'goods_receipt_id'      => null,
+                    'supplier_id' => null,
+                    'product_id' => $line->product_id,
+                    'goods_receipt_id' => null,
                     'goods_receipt_line_id' => null,
-                    'warehouse_id'          => $warehouseId,
-                    'received_qty'          => $line->quantity_returned,
-                    'remaining_qty'         => $line->quantity_returned,
-                    'landed_unit_cost'      => $returnedUnitCost,
-                    'sale_price_snapshot'   => $product ? ((float) ($product->sale_price ?? 0)) ?: null : null,
-                    'receipt_date'          => now()->toDateString(),
+                    'warehouse_id' => $warehouseId,
+                    'received_qty' => $line->quantity_returned,
+                    'remaining_qty' => $line->quantity_returned,
+                    'landed_unit_cost' => $returnedUnitCost,
+                    'sale_price_snapshot' => $product ? ((float) ($product->sale_price ?? 0)) ?: null : null,
+                    'receipt_date' => now()->toDateString(),
                 ]);
 
                 $line->update(['condition' => $condition]);
@@ -128,11 +130,11 @@ final class ReceiveReturnWorkflow
             }
 
             $customerReturn->update([
-                'status'                => 'accepted',
-                'accepted_at'           => now(),
-                'inspector_id'          => $actorId,
-                'inspected_at'          => now(),
-                'warehouse_notes'       => $warehouseNotes,
+                'status' => 'accepted',
+                'accepted_at' => now(),
+                'inspector_id' => $actorId,
+                'inspected_at' => now(),
+                'warehouse_notes' => $warehouseNotes,
                 'inventory_restored_at' => $linesRestored > 0 ? now() : null,
             ]);
         });
@@ -140,21 +142,21 @@ final class ReceiveReturnWorkflow
         $customerReturn->refresh();
 
         OrderEvent::log(
-            orderId:     $order->id,
-            type:        'return_received',
+            orderId: $order->id,
+            type: 'return_received',
             description: "CustomerReturn #{$customerReturn->return_number} accepted. {$linesRestored} line(s) restored to inventory.",
-            payload:     ['customer_return_id' => $customerReturn->id, 'lines_restored' => $linesRestored],
-            actorId:     $actorId,
+            payload: ['customer_return_id' => $customerReturn->id, 'lines_restored' => $linesRestored],
+            actorId: $actorId,
         );
 
         event(new InventoryRestoredEvent(
-            orderId:       $order->id,
-            returnId:      $customerReturn->id,
-            companyId:     $companyId,
-            warehouseId:   $warehouseId,
+            orderId: $order->id,
+            returnId: $customerReturn->id,
+            companyId: $companyId,
+            warehouseId: $warehouseId,
             linesRestored: $linesRestored,
-            restoredAt:    now()->toIso8601String(),
-            actorId:       $actorId,
+            restoredAt: now()->toIso8601String(),
+            actorId: $actorId,
         ));
 
         return $customerReturn;
@@ -186,7 +188,7 @@ final class ReceiveReturnWorkflow
             ->get(['quantity', 'unit_cost', 'total_cost']);
 
         if ($consumptions->isNotEmpty()) {
-            $totalQty  = $consumptions->sum(fn ($c) => (float) $c->quantity);
+            $totalQty = $consumptions->sum(fn ($c) => (float) $c->quantity);
             $totalCost = $consumptions->sum(fn ($c) => (float) $c->total_cost);
 
             if ($totalQty > 0) {
@@ -194,12 +196,8 @@ final class ReceiveReturnWorkflow
             }
         }
 
-        // 2-5. Progressive fallback chain.
-        return (float) (
-            $product?->current_fifo_cost
-            ?? $product?->average_cost
-            ?? $product?->last_purchase_cost
-            ?? 0
-        );
+        // 2-5. Canonical FIFO-first fallback — single definition on EnterpriseCostEngine
+        // (identical order to the previous inline chain; value-neutral migration).
+        return $product !== null ? EnterpriseCostEngine::resolveUnitCost($product) : 0.0;
     }
 }

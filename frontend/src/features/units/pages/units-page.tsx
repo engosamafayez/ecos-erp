@@ -115,7 +115,7 @@ export function UnitsPage() {
         subtitle={t('subtitle')}
         breadcrumbs={[
           { label: tCommon('home'), to: ROUTES.dashboard },
-          { label: 'Inventory', to: ROUTES.products },
+          { label: t('breadcrumb.inventory'), to: ROUTES.products },
           { label: t('title') },
         ]}
         actions={
@@ -146,7 +146,7 @@ export function UnitsPage() {
             onSortChange={handleSort}
             rowActions={(unit) => (
               <ActionMenu
-                label={`Actions for ${unit.name}`}
+                label={t('actions.ariaLabel', { name: unit.name })}
                 items={[
                   { key: 'view', label: tCommon('actions.view'), icon: Eye, onSelect: () => openEdit(unit) },
                   { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => openEdit(unit) },

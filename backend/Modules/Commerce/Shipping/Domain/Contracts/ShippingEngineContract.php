@@ -28,9 +28,9 @@ interface ShippingEngineContract
      * @param  bool  $isDeliveryOrder  Walk-in POS → false skips all validation.
      */
     public function evaluate(
-        string  $brandId,
-        int     $governorateId,
-        ?int    $cityId,
-        bool    $isDeliveryOrder,
+        string $brandId,
+        int $governorateId,
+        ?int $cityId,
+        bool $isDeliveryOrder,
     ): ShippingValidationResult;
 }

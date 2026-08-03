@@ -32,13 +32,13 @@ final class CompleteDeliveryWorkflow implements FulfillmentWorkflowInterface
 
         if ($order->status !== OrderStatus::OutForDelivery) {
             throw new WorkflowPreconditionException(
-                "Order [{$order->id}] cannot be delivered from status [{$order->status->value}]. Must be out_for_delivery."
+                "Order [{$order->id}] cannot be delivered from status [{$order->status->value}]. Must be out_for_delivery.",
             );
         }
 
         if ($order->inventory_shipped_at === null) {
             throw new WorkflowPreconditionException(
-                "Order [{$order->id}] cannot be delivered: inventory has not been dispatched."
+                "Order [{$order->id}] cannot be delivered: inventory has not been dispatched.",
             );
         }
     }
@@ -60,11 +60,11 @@ final class CompleteDeliveryWorkflow implements FulfillmentWorkflowInterface
             $order,
             "Order #{$order->order_number} delivered to customer.",
             [
-                'revenue'        => $order->total,
-                'cogs_amount'    => $order->actual_cogs_amount,
-                'margin_amount'  => $order->actual_margin_amount,
+                'revenue' => $order->total,
+                'cogs_amount' => $order->actual_cogs_amount,
+                'margin_amount' => $order->actual_margin_amount,
                 'margin_percent' => $order->actual_margin_percent,
-                'actor_id'       => $ctx->actorId,
+                'actor_id' => $ctx->actorId,
             ],
         );
     }
@@ -73,19 +73,19 @@ final class CompleteDeliveryWorkflow implements FulfillmentWorkflowInterface
     public function events(FulfillmentResult $result): array
     {
         $order = $result->order;
-        $meta  = $result->meta;
+        $meta = $result->meta;
 
         return [
             new OrderDeliveredEvent(
-                orderId:       $order->id,
-                orderNumber:   $order->order_number,
-                companyId:     $order->company_id ?? '',
-                revenue:       (float) ($meta['revenue'] ?? 0),
-                cogsAmount:    (float) ($meta['cogs_amount'] ?? 0),
-                marginAmount:  (float) ($meta['margin_amount'] ?? 0),
+                orderId: $order->id,
+                orderNumber: $order->order_number,
+                companyId: $order->company_id ?? '',
+                revenue: (float) ($meta['revenue'] ?? 0),
+                cogsAmount: (float) ($meta['cogs_amount'] ?? 0),
+                marginAmount: (float) ($meta['margin_amount'] ?? 0),
                 marginPercent: (float) ($meta['margin_percent'] ?? 0),
-                deliveredAt:   now()->toIso8601String(),
-                actorId:       $meta['actor_id'] ?? null,
+                deliveredAt: now()->toIso8601String(),
+                actorId: $meta['actor_id'] ?? null,
             ),
         ];
     }

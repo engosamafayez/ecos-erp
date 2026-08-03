@@ -30,9 +30,9 @@ final class CompanyController extends Controller
     public function index(Request $request, ListCompaniesAction $action): JsonResponse
     {
         $filters = [
-            'search'   => $request->query('search'),
-            'status'   => $request->query('status', 'all'),
-            'sort_by'  => $request->query('sort_by', 'created_at'),
+            'search' => $request->query('search'),
+            'status' => $request->query('status', 'all'),
+            'sort_by' => $request->query('sort_by', 'created_at'),
             'sort_dir' => $request->query('sort_dir', 'desc'),
             'per_page' => $request->query('per_page', 10),
         ];
@@ -41,11 +41,11 @@ final class CompanyController extends Controller
 
         return $this->success([
             'items' => CompanyResource::collection($paginator->items()),
-            'meta'  => [
+            'meta' => [
                 'current_page' => $paginator->currentPage(),
-                'per_page'     => $paginator->perPage(),
-                'total'        => $paginator->total(),
-                'last_page'    => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'last_page' => $paginator->lastPage(),
             ],
         ]);
     }

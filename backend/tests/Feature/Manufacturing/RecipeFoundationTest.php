@@ -60,20 +60,20 @@ class RecipeFoundationTest extends TestCase
 
     public function test_recipe_can_be_created_and_retrieved(): void
     {
-        $product  = Product::factory()->finishedGood()->manufacturable()->create();
+        $product = Product::factory()->finishedGood()->manufacturable()->create();
         $material = Product::factory()->rawMaterial()->create();
 
         $recipe = Recipe::create([
-            'bom_number'         => 'BOM-T0001',
-            'product_id'         => $product->id,
-            'version'            => '1.0',
+            'bom_number' => 'BOM-T0001',
+            'product_id' => $product->id,
+            'version' => '1.0',
             'bom_version_number' => 1,
-            'is_active'          => true,
+            'is_active' => true,
         ]);
 
         $recipe->components()->create([
             'raw_material_id' => $material->id,
-            'quantity'        => 3.0,
+            'quantity' => 3.0,
         ]);
 
         $fresh = Recipe::with('components')->find($recipe->id);
@@ -89,25 +89,25 @@ class RecipeFoundationTest extends TestCase
 
     public function test_recipe_repository_assigns_version_number_sequentially(): void
     {
-        $product  = Product::factory()->finishedGood()->manufacturable()->create();
+        $product = Product::factory()->finishedGood()->manufacturable()->create();
         $material = Product::factory()->rawMaterial()->create();
 
         $repo = app(RecipeRepositoryInterface::class);
 
         $v1 = $repo->create([
-            'bom_number'         => $repo->nextBomNumber(),
-            'product_id'         => $product->id,
-            'version'            => '1.0',
+            'bom_number' => $repo->nextBomNumber(),
+            'product_id' => $product->id,
+            'version' => '1.0',
             'bom_version_number' => $repo->nextVersionNumber($product->id),
-            'is_active'          => true,
+            'is_active' => true,
         ], [['raw_material_id' => $material->id, 'quantity' => 2.0]]);
 
         $v2 = $repo->create([
-            'bom_number'         => $repo->nextBomNumber(),
-            'product_id'         => $product->id,
-            'version'            => '2.0',
+            'bom_number' => $repo->nextBomNumber(),
+            'product_id' => $product->id,
+            'version' => '2.0',
             'bom_version_number' => $repo->nextVersionNumber($product->id),
-            'is_active'          => false,
+            'is_active' => false,
         ], [['raw_material_id' => $material->id, 'quantity' => 3.0]]);
 
         $this->assertSame(1, $v1->bom_version_number);
@@ -123,11 +123,11 @@ class RecipeFoundationTest extends TestCase
         $repo = app(RecipeRepositoryInterface::class);
 
         $repo->create([
-            'bom_number'         => 'BOM-A0001',
-            'product_id'         => $productA->id,
-            'version'            => '1.0',
+            'bom_number' => 'BOM-A0001',
+            'product_id' => $productA->id,
+            'version' => '1.0',
             'bom_version_number' => $repo->nextVersionNumber($productA->id),
-            'is_active'          => true,
+            'is_active' => true,
         ], [['raw_material_id' => $material->id, 'quantity' => 1.0]]);
 
         $nextA = $repo->nextVersionNumber($productA->id);
@@ -141,26 +141,26 @@ class RecipeFoundationTest extends TestCase
 
     public function test_only_one_active_recipe_per_product(): void
     {
-        $product  = Product::factory()->finishedGood()->manufacturable()->create();
+        $product = Product::factory()->finishedGood()->manufacturable()->create();
         $material = Product::factory()->rawMaterial()->create();
 
         $repo = app(RecipeRepositoryInterface::class);
 
         $v1 = $repo->create([
-            'bom_number'         => 'BOM-V1',
-            'product_id'         => $product->id,
-            'version'            => '1.0',
+            'bom_number' => 'BOM-V1',
+            'product_id' => $product->id,
+            'version' => '1.0',
             'bom_version_number' => 1,
-            'is_active'          => true,
+            'is_active' => true,
         ], [['raw_material_id' => $material->id, 'quantity' => 1.0]]);
 
         // Creating a second active recipe should deactivate the first
         $v2 = $repo->create([
-            'bom_number'         => 'BOM-V2',
-            'product_id'         => $product->id,
-            'version'            => '2.0',
+            'bom_number' => 'BOM-V2',
+            'product_id' => $product->id,
+            'version' => '2.0',
             'bom_version_number' => 2,
-            'is_active'          => true,
+            'is_active' => true,
         ], [['raw_material_id' => $material->id, 'quantity' => 2.0]]);
 
         $this->assertFalse($v1->fresh()->is_active);
@@ -169,25 +169,25 @@ class RecipeFoundationTest extends TestCase
 
     public function test_activate_switches_active_version(): void
     {
-        $product  = Product::factory()->finishedGood()->manufacturable()->create();
+        $product = Product::factory()->finishedGood()->manufacturable()->create();
         $material = Product::factory()->rawMaterial()->create();
 
         $repo = app(RecipeRepositoryInterface::class);
 
         $v1 = $repo->create([
-            'bom_number'         => 'BOM-ACT1',
-            'product_id'         => $product->id,
-            'version'            => '1.0',
+            'bom_number' => 'BOM-ACT1',
+            'product_id' => $product->id,
+            'version' => '1.0',
             'bom_version_number' => 1,
-            'is_active'          => true,
+            'is_active' => true,
         ], [['raw_material_id' => $material->id, 'quantity' => 1.0]]);
 
         $v2 = $repo->create([
-            'bom_number'         => 'BOM-ACT2',
-            'product_id'         => $product->id,
-            'version'            => '2.0',
+            'bom_number' => 'BOM-ACT2',
+            'product_id' => $product->id,
+            'version' => '2.0',
             'bom_version_number' => 2,
-            'is_active'          => false,
+            'is_active' => false,
         ], [['raw_material_id' => $material->id, 'quantity' => 2.0]]);
 
         $repo->activate($v2);
@@ -198,17 +198,17 @@ class RecipeFoundationTest extends TestCase
 
     public function test_find_active_by_product_returns_active_recipe(): void
     {
-        $product  = Product::factory()->finishedGood()->manufacturable()->create();
+        $product = Product::factory()->finishedGood()->manufacturable()->create();
         $material = Product::factory()->rawMaterial()->create();
 
         $repo = app(RecipeRepositoryInterface::class);
 
         $active = $repo->create([
-            'bom_number'         => 'BOM-FA',
-            'product_id'         => $product->id,
-            'version'            => '1.0',
+            'bom_number' => 'BOM-FA',
+            'product_id' => $product->id,
+            'version' => '1.0',
             'bom_version_number' => 1,
-            'is_active'          => true,
+            'is_active' => true,
         ], [['raw_material_id' => $material->id, 'quantity' => 1.5]]);
 
         $found = $repo->findActiveByProduct($product->id);
@@ -230,7 +230,7 @@ class RecipeFoundationTest extends TestCase
 
     public function test_product_recipes_returns_all_versions(): void
     {
-        $product  = Product::factory()->finishedGood()->manufacturable()->create();
+        $product = Product::factory()->finishedGood()->manufacturable()->create();
         $material = Product::factory()->rawMaterial()->create();
 
         Recipe::create(['bom_number' => 'R1', 'product_id' => $product->id, 'version' => '1.0', 'bom_version_number' => 1, 'is_active' => false]);
@@ -241,7 +241,7 @@ class RecipeFoundationTest extends TestCase
 
     public function test_product_active_recipe_returns_active_version(): void
     {
-        $product  = Product::factory()->finishedGood()->manufacturable()->create();
+        $product = Product::factory()->finishedGood()->manufacturable()->create();
         $material = Product::factory()->rawMaterial()->create();
 
         Recipe::create(['bom_number' => 'AR1', 'product_id' => $product->id, 'version' => '1.0', 'bom_version_number' => 1, 'is_active' => false]);
@@ -285,9 +285,9 @@ class RecipeFoundationTest extends TestCase
         // Attempt to create a recipe where the component is the output product
         $response = $this->actingAs($this->user)->postJson('/api/boms', [
             'product_id' => $product->id,
-            'version'    => '1.0',
-            'is_active'  => true,
-            'lines'      => [
+            'version' => '1.0',
+            'is_active' => true,
+            'lines' => [
                 ['raw_material_id' => $product->id, 'quantity' => 1.0],
             ],
         ]);
@@ -302,9 +302,9 @@ class RecipeFoundationTest extends TestCase
 
         $response = $this->actingAs($this->user)->postJson('/api/boms', [
             'product_id' => $product->id,
-            'version'    => '1.0',
-            'is_active'  => false,
-            'lines'      => [],
+            'version' => '1.0',
+            'is_active' => false,
+            'lines' => [],
         ]);
 
         $response->assertStatus(422);
@@ -313,14 +313,14 @@ class RecipeFoundationTest extends TestCase
 
     public function test_recipe_rejects_zero_quantity_component(): void
     {
-        $product  = Product::factory()->finishedGood()->manufacturable()->create();
+        $product = Product::factory()->finishedGood()->manufacturable()->create();
         $material = Product::factory()->rawMaterial()->create();
 
         $response = $this->actingAs($this->user)->postJson('/api/boms', [
             'product_id' => $product->id,
-            'version'    => '1.0',
-            'is_active'  => false,
-            'lines'      => [
+            'version' => '1.0',
+            'is_active' => false,
+            'lines' => [
                 ['raw_material_id' => $material->id, 'quantity' => 0],
             ],
         ]);
@@ -331,15 +331,15 @@ class RecipeFoundationTest extends TestCase
 
     public function test_recipe_ignores_waste_percentage_if_submitted(): void
     {
-        $product  = Product::factory()->finishedGood()->manufacturable()->create();
+        $product = Product::factory()->finishedGood()->manufacturable()->create();
         $material = Product::factory()->rawMaterial()->create();
 
         // Submitting waste_percentage should be silently ignored (backward compat)
         $response = $this->actingAs($this->user)->postJson('/api/boms', [
             'product_id' => $product->id,
-            'version'    => '1.0',
-            'is_active'  => true,
-            'lines'      => [
+            'version' => '1.0',
+            'is_active' => true,
+            'lines' => [
                 ['raw_material_id' => $material->id, 'quantity' => 2.5, 'waste_percentage' => 10],
             ],
         ]);
@@ -355,15 +355,15 @@ class RecipeFoundationTest extends TestCase
 
     public function test_bill_of_material_and_recipe_share_the_same_rows(): void
     {
-        $product  = Product::factory()->finishedGood()->manufacturable()->create();
+        $product = Product::factory()->finishedGood()->manufacturable()->create();
         $material = Product::factory()->rawMaterial()->create();
 
         $bom = BillOfMaterial::create([
-            'bom_number'         => 'BOM-COMPAT',
-            'product_id'         => $product->id,
-            'version'            => '1.0',
+            'bom_number' => 'BOM-COMPAT',
+            'product_id' => $product->id,
+            'version' => '1.0',
             'bom_version_number' => 1,
-            'is_active'          => true,
+            'is_active' => true,
         ]);
 
         $bom->lines()->create(['raw_material_id' => $material->id, 'quantity' => 4.0]);
@@ -382,11 +382,11 @@ class RecipeFoundationTest extends TestCase
         $product = Product::factory()->finishedGood()->create();
 
         $bom = BillOfMaterial::create([
-            'bom_number'         => 'BOM-INT',
-            'product_id'         => $product->id,
-            'version'            => '1.0',
+            'bom_number' => 'BOM-INT',
+            'product_id' => $product->id,
+            'version' => '1.0',
             'bom_version_number' => 3,
-            'is_active'          => false,
+            'is_active' => false,
         ]);
 
         $this->assertIsInt($bom->fresh()->bom_version_number);
@@ -395,7 +395,7 @@ class RecipeFoundationTest extends TestCase
 
     public function test_find_all_by_product_returns_newest_first(): void
     {
-        $product  = Product::factory()->finishedGood()->manufacturable()->create();
+        $product = Product::factory()->finishedGood()->manufacturable()->create();
         $material = Product::factory()->rawMaterial()->create();
 
         $repo = app(RecipeRepositoryInterface::class);

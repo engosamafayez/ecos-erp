@@ -15,9 +15,9 @@ export function OrderHeaderFields() {
   const { data: channelOptions = [], isLoading: loadingChannels } = useChannelOptions();
 
   const statusOptions = [
-    { value: 'pending', label: t('status.pending') },
-    { value: 'processing', label: t('status.processing') },
-    { value: 'completed', label: t('status.completed') },
+    { value: 'new', label: t('status.new') },
+    { value: 'in_progress', label: t('status.in_progress') },
+    { value: 'delivered', label: t('status.delivered') },
     { value: 'cancelled', label: t('status.cancelled') },
   ];
 

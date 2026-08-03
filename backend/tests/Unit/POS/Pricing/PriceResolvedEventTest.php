@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\Pricing;
 
+use DateTimeImmutable;
+use DateTimeZone;
 use Modules\POS\Pricing\Domain\Enums\PriceSource;
 use Modules\POS\Pricing\Domain\Events\PriceResolved;
 use Modules\POS\Shared\Domain\Contracts\DomainEvent;
@@ -84,7 +86,7 @@ final class PriceResolvedEventTest extends TestCase
     public function test_to_array_event_name_matches_method(): void
     {
         $event = $this->makeEvent();
-        $data  = $event->toArray();
+        $data = $event->toArray();
         $this->assertSame($event->eventName(), $data['event_name']);
     }
 
@@ -96,16 +98,16 @@ final class PriceResolvedEventTest extends TestCase
     // ── Helper ────────────────────────────────────────────────────────────────
 
     private function makeEvent(
-        string      $productId = 'prod-001',
-        string      $amount    = '50.00',
-        string      $currency  = 'EGP',
-        PriceSource $source    = PriceSource::RegularPrice,
+        string $productId = 'prod-001',
+        string $amount = '50.00',
+        string $currency = 'EGP',
+        PriceSource $source = PriceSource::RegularPrice,
     ): PriceResolved {
         return PriceResolved::now(
-            productId:  $productId,
-            unitPrice:  Money::of($amount, $currency),
-            source:     $source,
-            resolvedAt: (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format(DATE_ATOM),
+            productId: $productId,
+            unitPrice: Money::of($amount, $currency),
+            source: $source,
+            resolvedAt: (new DateTimeImmutable('now', new DateTimeZone('UTC')))->format(DATE_ATOM),
         );
     }
 }

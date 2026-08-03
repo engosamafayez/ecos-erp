@@ -13,10 +13,10 @@ final readonly class FinancialSnapshotDTO
 {
     public function __construct(
         // Identity
-        public string  $aggregateId,
-        public string  $aggregateType,
-        public string  $snapshotUuid,
-        public int     $snapshotVersion,
+        public string $aggregateId,
+        public string $aggregateType,
+        public string $snapshotUuid,
+        public int $snapshotVersion,
 
         // Parties (from provider)
         public ?string $companyId,
@@ -27,46 +27,46 @@ final readonly class FinancialSnapshotDTO
         public ?string $customerName,
 
         // Order financials (from provider)
-        public string  $currency,
+        public string $currency,
         public ?string $paymentMethod,
-        public float   $subtotal,
-        public float   $discountAmount,
+        public float $subtotal,
+        public float $discountAmount,
         public ?string $discountType,
-        public float   $shippingCost,
-        public float   $depositAmount,
-        public float   $remainingBalance,
-        public float   $grandTotal,
+        public float $shippingCost,
+        public float $depositAmount,
+        public float $remainingBalance,
+        public float $grandTotal,
 
         // Shipping snapshot (from provider)
         public ?string $shippingRuleId,
         public ?string $shippingRuleName,
         public ?string $shippingZone,
-        public bool    $shippingOverrideApplied,
+        public bool $shippingOverrideApplied,
         public ?string $shippingOverrideBy,
 
         // Cost aggregates (computed by builder)
-        public ?float  $totalCogs,
-        public ?float  $grossProfit,
-        public ?float  $totalRawMaterialCost,
-        public ?float  $totalPackagingCost,
-        public ?float  $totalManufacturingCost,
-        public ?float  $totalOtherCost,
+        public ?float $totalCogs,
+        public ?float $grossProfit,
+        public ?float $totalRawMaterialCost,
+        public ?float $totalPackagingCost,
+        public ?float $totalManufacturingCost,
+        public ?float $totalOtherCost,
 
         // Margin diagnostics (computed by builder)
-        public ?float  $targetMarginPercent,
-        public ?float  $actualMarginPercent,
-        public ?float  $marginDifference,
+        public ?float $targetMarginPercent,
+        public ?float $actualMarginPercent,
+        public ?float $marginDifference,
         public ?string $marginStatus,
 
         // Engine metadata
-        public string  $pricingEngineVersion,
-        public string  $costEngineVersion,
+        public string $pricingEngineVersion,
+        public string $costEngineVersion,
         public ?string $recipeVersion,
-        public string  $brandPricingPolicyVersion,
-        public string  $shippingPricingVersion,
+        public string $brandPricingPolicyVersion,
+        public string $shippingPricingVersion,
 
         // Integrity (computed by builder)
-        public string  $integrityHash,
+        public string $integrityHash,
 
         // Lines (from provider, passed through)
         /** @var FinancialLineSnapshotDTO[] */

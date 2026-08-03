@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -16,7 +15,7 @@ return new class extends Migration
                 Schema::table('warehouses', function ($table) {
                     $table->dropForeign('warehouses_branch_id_foreign');
                 });
-            } catch (\Exception) {
+            } catch (Exception) {
                 // FK doesn't exist — nothing to drop
             }
             Schema::table('warehouses', function ($table) {

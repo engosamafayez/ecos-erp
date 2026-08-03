@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Domain\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -12,15 +14,16 @@ class ConversationMacro extends Model
     use HasUuids, SoftDeletes;
 
     protected $table = 'cep_macros';
+
     protected $guarded = [];
 
     protected function casts(): array
     {
         return [
-            'category'            => MacroCategory::class,
-            'variables'           => 'array',
+            'category' => MacroCategory::class,
+            'variables' => 'array',
             'applies_to_channels' => 'array',
-            'is_shared'           => 'boolean',
+            'is_shared' => 'boolean',
         ];
     }
 
@@ -28,8 +31,9 @@ class ConversationMacro extends Model
     {
         $content = $this->content;
         foreach ($context as $key => $value) {
-            $content = str_replace('{' . $key . '}', $value, $content);
+            $content = str_replace('{'.$key.'}', $value, $content);
         }
+
         return $content;
     }
 

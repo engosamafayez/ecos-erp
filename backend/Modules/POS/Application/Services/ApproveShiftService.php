@@ -7,13 +7,13 @@ namespace Modules\POS\Application\Services;
 use Modules\POS\Application\Commands\ApproveShiftCommand;
 use Modules\POS\Application\Contracts\DomainEventPublisherInterface;
 use Modules\POS\Application\Exceptions\ShiftNotFoundException;
-use Modules\POS\Shift\Domain\Contracts\ShiftRepositoryInterface;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
+use Modules\POS\Shift\Domain\Contracts\ShiftRepositoryInterface;
 
 final class ApproveShiftService
 {
     public function __construct(
-        private readonly ShiftRepositoryInterface      $shiftRepo,
+        private readonly ShiftRepositoryInterface $shiftRepo,
         private readonly DomainEventPublisherInterface $publisher,
     ) {}
 

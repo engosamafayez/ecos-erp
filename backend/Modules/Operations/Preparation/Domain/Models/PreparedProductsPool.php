@@ -10,26 +10,26 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Operations\Preparation\Domain\Enums\QualityStatus;
 
 /**
- * @property string          $id
- * @property string          $company_id
- * @property string          $warehouse_id
- * @property string          $product_id
- * @property string          $sku_snapshot
- * @property string          $name_snapshot
- * @property string          $preparation_wave_id
- * @property float           $quantity_available
- * @property float           $quantity_reserved
- * @property float           $quantity_loaded
- * @property QualityStatus   $quality_status
- * @property string|null     $quality_checked_by
+ * @property string $id
+ * @property string $company_id
+ * @property string $warehouse_id
+ * @property string $product_id
+ * @property string $sku_snapshot
+ * @property string $name_snapshot
+ * @property string $preparation_wave_id
+ * @property float $quantity_available
+ * @property float $quantity_reserved
+ * @property float $quantity_loaded
+ * @property QualityStatus $quality_status
+ * @property string|null $quality_checked_by
  * @property \Carbon\Carbon|null $quality_checked_at
- * @property \Carbon\Carbon  $prepared_at
- * @property string|null     $reserved_for_wave_id
- * @property string|null     $notes
- * @property string          $created_by
- * @property string          $updated_by
- * @property \Carbon\Carbon  $created_at
- * @property \Carbon\Carbon  $updated_at
+ * @property \Carbon\Carbon $prepared_at
+ * @property string|null $reserved_for_wave_id
+ * @property string|null $notes
+ * @property string $created_by
+ * @property string $updated_by
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class PreparedProductsPool extends Model
 {
@@ -69,14 +69,14 @@ class PreparedProductsPool extends Model
     protected function casts(): array
     {
         return [
-            'quality_status'       => QualityStatus::class,
-            'quantity_available'   => 'float',
-            'quantity_reserved'    => 'float',
-            'quantity_loaded'      => 'float',
-            'quality_checked_at'   => 'datetime',
+            'quality_status' => QualityStatus::class,
+            'quantity_available' => 'float',
+            'quantity_reserved' => 'float',
+            'quantity_loaded' => 'float',
+            'quality_checked_at' => 'datetime',
             'shipping_gate_opened' => 'boolean',
-            'gate_opened_at'       => 'datetime',
-            'prepared_at'          => 'datetime',
+            'gate_opened_at' => 'datetime',
+            'prepared_at' => 'datetime',
         ];
     }
 

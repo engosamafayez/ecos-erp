@@ -49,6 +49,7 @@ final class InitiativeController extends Controller
     public function show(MarketingInitiative $initiative): InitiativeResource
     {
         $initiative->load('template')->loadCount('campaigns');
+
         return new InitiativeResource($initiative);
     }
 
@@ -62,10 +63,10 @@ final class InitiativeController extends Controller
 
         MarketingAuditLog::record(
             entityType: 'initiative',
-            entityId:   $initiative->id,
-            action:     'created',
-            actorId:    $request->user()?->id,
-            after:      ['name' => $initiative->name, 'status' => $initiative->status->value],
+            entityId: $initiative->id,
+            action: 'created',
+            actorId: $request->user()?->id,
+            after: ['name' => $initiative->name, 'status' => $initiative->status->value],
         );
 
         return response()->json(new InitiativeResource($initiative), 201);
@@ -73,7 +74,7 @@ final class InitiativeController extends Controller
 
     public function update(Request $request, MarketingInitiative $initiative): JsonResponse
     {
-        $before    = $initiative->toArray();
+        $before = $initiative->toArray();
         $validated = $this->validateInitiative($request, partial: true);
         $validated['updated_by'] = $request->user()?->id;
 
@@ -81,11 +82,11 @@ final class InitiativeController extends Controller
 
         MarketingAuditLog::record(
             entityType: 'initiative',
-            entityId:   $initiative->id,
-            action:     'updated',
-            actorId:    $request->user()?->id,
-            before:     $before,
-            after:      $initiative->fresh()?->toArray() ?? [],
+            entityId: $initiative->id,
+            action: 'updated',
+            actorId: $request->user()?->id,
+            before: $before,
+            after: $initiative->fresh()?->toArray() ?? [],
         );
 
         return response()->json(new InitiativeResource($initiative->fresh() ?? $initiative));
@@ -97,9 +98,9 @@ final class InitiativeController extends Controller
 
         MarketingAuditLog::record(
             entityType: 'initiative',
-            entityId:   $initiative->id,
-            action:     'archived',
-            actorId:    $request->user()?->id,
+            entityId: $initiative->id,
+            action: 'archived',
+            actorId: $request->user()?->id,
         );
 
         return response()->json(['message' => 'Initiative archived.']);
@@ -109,25 +110,26 @@ final class InitiativeController extends Controller
     private function validateInitiative(Request $request, bool $partial = false): array
     {
         $sometimes = $partial ? 'sometimes|' : '';
+
         return $request->validate([
-            'name'           => ["{$sometimes}required", 'string', 'max:255'],
-            'description'    => ['nullable', 'string', 'max:5000'],
-            'status'         => ['nullable', 'in:draft,active,paused,completed,archived,cancelled'],
-            'company_id'     => ['nullable', 'string'],
-            'brand_id'       => ['nullable', 'string'],
-            'channel_id'     => ['nullable', 'string'],
-            'business_unit'  => ['nullable', 'string', 'max:100'],
-            'season'         => ['nullable', 'string'],
-            'business_goal'  => ['nullable', 'string'],
-            'cost_center'    => ['nullable', 'string', 'max:100'],
-            'budget'         => ['nullable', 'numeric', 'min:0'],
-            'currency'       => ['nullable', 'string', 'max:10'],
-            'start_date'     => ['nullable', 'date_format:Y-m-d'],
-            'end_date'       => ['nullable', 'date_format:Y-m-d', 'after_or_equal:start_date'],
-            'owner_id'       => ['nullable', 'string'],
+            'name' => ["{$sometimes}required", 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:5000'],
+            'status' => ['nullable', 'in:draft,active,paused,completed,archived,cancelled'],
+            'company_id' => ['nullable', 'string'],
+            'brand_id' => ['nullable', 'string'],
+            'channel_id' => ['nullable', 'string'],
+            'business_unit' => ['nullable', 'string', 'max:100'],
+            'season' => ['nullable', 'string'],
+            'business_goal' => ['nullable', 'string'],
+            'cost_center' => ['nullable', 'string', 'max:100'],
+            'budget' => ['nullable', 'numeric', 'min:0'],
+            'currency' => ['nullable', 'string', 'max:10'],
+            'start_date' => ['nullable', 'date_format:Y-m-d'],
+            'end_date' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:start_date'],
+            'owner_id' => ['nullable', 'string'],
             'marketing_team' => ['nullable', 'string', 'max:100'],
             'internal_notes' => ['nullable', 'string', 'max:5000'],
-            'tags'           => ['nullable', 'array'],
+            'tags' => ['nullable', 'array'],
         ]);
     }
 }

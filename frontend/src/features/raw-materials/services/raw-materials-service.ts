@@ -1,6 +1,6 @@
 import { api } from '@/lib/axios';
 import type { ApiResponse } from '@/types';
-import type { RawMaterial, RawMaterialPayload, RawMaterialsQuery, RawMaterialsResult, RawMaterialStats } from '@/features/raw-materials/types';
+import type { RawMaterial, RawMaterialPayload, RawMaterialsQuery, RawMaterialsResult, RawMaterialStats, MaterialPurchaseHistory, WarehouseDistribution } from '@/features/raw-materials/types';
 import type { StockMovement } from '@/features/stock-ledger/types/stock-movement';
 
 type AddStockPayload = {
@@ -82,6 +82,24 @@ export const rawMaterialsService = {
     if (warehouse_id) { params.warehouse_id = warehouse_id; }
 
     const { data } = await api.get<ApiResponse<RawMaterialStats>>('/products/stats', { params });
+    return data.data;
+  },
+
+  /**
+   * Purchase history from the canonical inventory_receipt_layers source
+   * (existing endpoint — no new schema). Used to rebuild the Suppliers tab.
+   */
+  async purchaseHistory(id: string): Promise<MaterialPurchaseHistory> {
+    const { data } = await api.get<ApiResponse<MaterialPurchaseHistory>>(`/products/${id}/cost-history`);
+    return data.data;
+  },
+
+  /**
+   * Per-warehouse stock distribution from the canonical inventory service
+   * (existing endpoint — availability computed by InventoryItem::availableQty()).
+   */
+  async warehouseDistribution(id: string): Promise<WarehouseDistribution> {
+    const { data } = await api.get<ApiResponse<WarehouseDistribution>>(`/products/${id}/warehouse-distribution`);
     return data.data;
   },
 

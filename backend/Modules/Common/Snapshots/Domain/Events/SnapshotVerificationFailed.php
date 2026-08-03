@@ -11,10 +11,10 @@ namespace Modules\Common\Snapshots\Domain\Events;
 final class SnapshotVerificationFailed
 {
     public function __construct(
-        public readonly string  $snapshotUuid,
-        public readonly string  $aggregateType,
-        public readonly string  $aggregateId,
-        public readonly string  $detectedAt,
+        public readonly string $snapshotUuid,
+        public readonly string $aggregateType,
+        public readonly string $aggregateId,
+        public readonly string $detectedAt,
         public readonly ?string $detectedBy,
     ) {}
 }

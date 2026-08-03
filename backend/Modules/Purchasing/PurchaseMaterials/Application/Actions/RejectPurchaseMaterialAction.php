@@ -34,10 +34,10 @@ final class RejectPurchaseMaterialAction
         }
 
         $material->update([
-            'status'           => PurchaseMaterialStatus::Rejected->value,
-            'rejected_by'      => (string) $request->user()?->id,
+            'status' => PurchaseMaterialStatus::Rejected->value,
+            'rejected_by' => (string) $request->user()?->id,
             'rejection_reason' => $reason,
-            'updated_by'       => (string) $request->user()?->id,
+            'updated_by' => (string) $request->user()?->id,
         ]);
 
         return OperationResult::success($material->refresh(), 'Purchase material rejected.');

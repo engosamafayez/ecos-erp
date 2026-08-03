@@ -26,7 +26,7 @@ export function CustomerPanel({ className }: CustomerPanelProps) {
     setExpanded(true);
     // Input auto-focuses when expanded, but the state update needs a tick
     setTimeout(() => inputRef.current?.focus(), 0);
-  }, [customerSearchTick]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [customerSearchTick]);  
 
   // 300ms debounce
   useEffect(() => {

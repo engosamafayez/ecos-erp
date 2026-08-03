@@ -9,7 +9,7 @@ import {
   Trash2,
   Users,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo} from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -148,7 +148,8 @@ export function CustomersPage() {
 
   const deleteCustomer = useDeleteCustomer();
 
-  const items = data?.items ?? [];
+  // Memoised so the empty-state fallback keeps a stable identity between renders.
+  const items = useMemo(() => data?.items ?? [], [data]);
   const meta  = data?.meta;
 
   // Reset selection when page data changes
@@ -268,7 +269,7 @@ export function CustomersPage() {
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   const allSelected = items.length > 0 && items.every((c) => selectedIds.has(c.id));

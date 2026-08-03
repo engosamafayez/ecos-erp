@@ -30,11 +30,11 @@ final class GraphService
         return EntityNode::updateOrCreate(
             ['node_type' => $nodeType->value, 'entity_id' => $entityId],
             [
-                'id'          => Str::uuid()->toString(),
+                'id' => Str::uuid()->toString(),
                 'entity_type' => $entityType,
-                'company_id'  => $companyId,
-                'label'       => $label,
-                'properties'  => $properties ?: null,
+                'company_id' => $companyId,
+                'label' => $label,
+                'properties' => $properties ?: null,
             ],
         );
     }
@@ -50,13 +50,13 @@ final class GraphService
         array $properties = [],
     ): EntityRelationship {
         return EntityRelationship::create([
-            'id'                => Str::uuid()->toString(),
-            'from_node_id'      => $fromNodeId,
-            'to_node_id'        => $toNodeId,
+            'id' => Str::uuid()->toString(),
+            'from_node_id' => $fromNodeId,
+            'to_node_id' => $toNodeId,
             'relationship_type' => $type->value,
-            'weight'            => $weight,
-            'properties'        => $properties ?: null,
-            'created_at'        => now(),
+            'weight' => $weight,
+            'properties' => $properties ?: null,
+            'created_at' => now(),
         ]);
     }
 
@@ -77,7 +77,7 @@ final class GraphService
         ])->findOrFail($nodeId);
 
         return [
-            'node'     => $node,
+            'node' => $node,
             'outgoing' => $node->outgoingRelationships,
             'incoming' => $node->incomingRelationships,
         ];
@@ -101,25 +101,25 @@ final class GraphService
      */
     public function getSubgraph(string $rootNodeId, int $hops = 2): array
     {
-        $visited  = collect();
-        $edges    = collect();
+        $visited = collect();
+        $edges = collect();
         $frontier = collect([$rootNodeId]);
 
         for ($hop = 0; $hop < $hops && $frontier->isNotEmpty(); $hop++) {
             $rels = EntityRelationship::with(['fromNode', 'toNode'])
                 ->where(static function ($q) use ($frontier): void {
                     $q->whereIn('from_node_id', $frontier)
-                      ->orWhereIn('to_node_id', $frontier);
+                        ->orWhereIn('to_node_id', $frontier);
                 })->get();
 
             $nextFrontier = collect();
             foreach ($rels as $rel) {
                 $edges->push($rel);
-                if (!$visited->contains($rel->from_node_id)) {
+                if (! $visited->contains($rel->from_node_id)) {
                     $nextFrontier->push($rel->from_node_id);
                     $visited->push($rel->from_node_id);
                 }
-                if (!$visited->contains($rel->to_node_id)) {
+                if (! $visited->contains($rel->to_node_id)) {
                     $nextFrontier->push($rel->to_node_id);
                     $visited->push($rel->to_node_id);
                 }

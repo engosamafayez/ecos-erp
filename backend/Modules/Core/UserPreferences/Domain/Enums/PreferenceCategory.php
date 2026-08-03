@@ -35,19 +35,19 @@ namespace Modules\Core\UserPreferences\Domain\Enums;
 enum PreferenceCategory: string
 {
     // ── Table categories ───────────────────────────────────────────────────────
-    case Products   = 'products';
-    case Orders     = 'orders';
-    case Customers  = 'customers';
-    case Suppliers  = 'suppliers';
-    case Inventory  = 'inventory';
+    case Products = 'products';
+    case Orders = 'orders';
+    case Customers = 'customers';
+    case Suppliers = 'suppliers';
+    case Inventory = 'inventory';
     case Purchasing = 'purchasing';
     case Manufacturing = 'manufacturing';
-    case Reports    = 'reports';
-    case Dashboard  = 'dashboard';
+    case Reports = 'reports';
+    case Dashboard = 'dashboard';
 
     // ── User-level settings ────────────────────────────────────────────────────
-    case Theme      = 'theme';
-    case Workspace  = 'workspace';
+    case Theme = 'theme';
+    case Workspace = 'workspace';
 
     // ── Default payload shapes ────────────────────────────────────────────────
 
@@ -60,9 +60,9 @@ enum PreferenceCategory: string
     public function defaultPayload(): ?array
     {
         return match ($this) {
-            self::Theme     => self::defaultTheme(),
+            self::Theme => self::defaultTheme(),
             self::Workspace => self::defaultWorkspace(),
-            default         => self::defaultTablePreferences(),
+            default => self::defaultTablePreferences(),
         };
     }
 
@@ -70,13 +70,13 @@ enum PreferenceCategory: string
     private static function defaultTablePreferences(): array
     {
         return [
-            'columns'         => [],
-            'column_order'    => [],
-            'column_widths'   => [],
-            'density'         => 'comfortable',
-            'sort'            => ['field' => null, 'direction' => 'asc'],
-            'page_size'       => 25,
-            'filter_presets'  => [],
+            'columns' => [],
+            'column_order' => [],
+            'column_widths' => [],
+            'density' => 'comfortable',
+            'sort' => ['field' => null, 'direction' => 'asc'],
+            'page_size' => 25,
+            'filter_presets' => [],
         ];
     }
 
@@ -84,7 +84,7 @@ enum PreferenceCategory: string
     private static function defaultTheme(): array
     {
         return [
-            'theme'    => 'system',
+            'theme' => 'system',
             'language' => 'en',
             'timezone' => 'UTC',
         ];
@@ -94,8 +94,8 @@ enum PreferenceCategory: string
     private static function defaultWorkspace(): array
     {
         return [
-            'default_company'   => null,
-            'default_branch'    => null,
+            'default_company' => null,
+            'default_branch' => null,
             'default_warehouse' => null,
         ];
     }

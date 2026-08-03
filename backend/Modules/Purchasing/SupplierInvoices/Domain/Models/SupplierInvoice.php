@@ -58,20 +58,20 @@ class SupplierInvoice extends Model
     ];
 
     protected $casts = [
-        'status'                  => SupplierInvoiceStatus::class,
-        'invoice_date'            => 'date',
-        'due_date'                => 'date',
-        'delivery_date'           => 'date',
-        'exchange_rate'           => 'decimal:6',
-        'subtotal'                => 'decimal:4',
-        'tax_total'               => 'decimal:4',
-        'freight_amount'          => 'decimal:4',
-        'additional_costs'        => 'decimal:4',
-        'discount_amount'         => 'decimal:4',
-        'grand_total'             => 'decimal:4',
-        'posting_log'             => 'array',
-        'processing_started_at'   => 'datetime',
-        'posted_at'               => 'datetime',
+        'status' => SupplierInvoiceStatus::class,
+        'invoice_date' => 'date',
+        'due_date' => 'date',
+        'delivery_date' => 'date',
+        'exchange_rate' => 'decimal:6',
+        'subtotal' => 'decimal:4',
+        'tax_total' => 'decimal:4',
+        'freight_amount' => 'decimal:4',
+        'additional_costs' => 'decimal:4',
+        'discount_amount' => 'decimal:4',
+        'grand_total' => 'decimal:4',
+        'posting_log' => 'array',
+        'processing_started_at' => 'datetime',
+        'posted_at' => 'datetime',
     ];
 
     public function supplier(): BelongsTo
@@ -101,15 +101,15 @@ class SupplierInvoice extends Model
 
     public function generateInvoiceNumber(): string
     {
-        $prefix = 'INV-' . now()->format('Ym') . '-';
-        $last   = static::query()
-            ->where('invoice_number', 'like', $prefix . '%')
+        $prefix = 'INV-'.now()->format('Ym').'-';
+        $last = static::query()
+            ->where('invoice_number', 'like', $prefix.'%')
             ->orderByDesc('invoice_number')
             ->value('invoice_number');
 
         $seq = $last ? ((int) substr($last, -4)) + 1 : 1;
 
-        return $prefix . str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
     }
 
     public function recalculateTotals(): void
@@ -117,8 +117,8 @@ class SupplierInvoice extends Model
         $subtotal = $this->lines->sum('line_total');
         $taxTotal = $this->lines->sum('tax_amount');
 
-        $this->subtotal   = $subtotal;
-        $this->tax_total  = $taxTotal;
+        $this->subtotal = $subtotal;
+        $this->tax_total = $taxTotal;
         $this->grand_total = $subtotal + $taxTotal + $this->freight_amount + $this->additional_costs - $this->discount_amount;
     }
 }

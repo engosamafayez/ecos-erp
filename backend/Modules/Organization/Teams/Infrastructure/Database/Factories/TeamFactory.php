@@ -18,12 +18,12 @@ final class TeamFactory extends Factory
     public function definition(): array
     {
         return [
-            'company_id'  => Company::factory(),
-            'code'        => 'TM-' . str_pad((string) $this->faker->unique()->numberBetween(1, 999999), 6, '0', STR_PAD_LEFT),
-            'name'        => $this->faker->words(3, true) . ' Team',
+            'company_id' => Company::factory(),
+            'code' => 'TM-'.str_pad((string) $this->faker->unique()->numberBetween(1, 999999), 6, '0', STR_PAD_LEFT),
+            'name' => $this->faker->words(3, true).' Team',
             'leader_name' => $this->faker->optional()->name(),
             'description' => $this->faker->optional()->sentence(),
-            'is_active'   => true,
+            'is_active' => true,
         ];
     }
 

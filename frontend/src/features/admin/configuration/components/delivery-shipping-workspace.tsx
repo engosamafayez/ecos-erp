@@ -1,4 +1,6 @@
+import { useFormatter } from '@/hooks/use-formatter';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   ChevronDown,
   ChevronRight,
@@ -69,6 +71,8 @@ const EMPTY_FORM: ZoneFormState = {
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export function DeliveryShippingWorkspace({ brandId }: { brandId: string }) {
+  const { t } = useTranslation('settings');
+  const { money, currency } = useFormatter();
   const { toast } = useToast();
 
   const { data: geos    = [], isLoading: geosLoading } = useDeliveryGeographies(brandId);
@@ -133,16 +137,16 @@ export function DeliveryShippingWorkspace({ brandId }: { brandId: string }) {
     const gov = govIndex >= 0 ? EGYPT_GOVERNORATES[govIndex] : null;
 
     if (!gov) {
-      toast({ title: 'Select a governorate', description: 'Choose from the list.', type: 'error' });
+      toast({ title: t('deliveryShipping.toast.selectGov'), description: t('deliveryShipping.toast.selectGovDesc'), type: 'error' });
       return;
     }
     if (!form.zoneName.trim()) {
-      toast({ title: 'Zone name required', type: 'error' });
+      toast({ title: t('deliveryShipping.toast.zoneNameRequired'), type: 'error' });
       return;
     }
     const cost = parseFloat(form.shippingCost);
     if (isNaN(cost) || cost < 0) {
-      toast({ title: 'Enter a valid shipping cost', type: 'error' });
+      toast({ title: t('deliveryShipping.toast.invalidShippingCost'), type: 'error' });
       return;
     }
 
@@ -164,7 +168,7 @@ export function DeliveryShippingWorkspace({ brandId }: { brandId: string }) {
     };
 
     await createZoneWithRule.mutateAsync(payload);
-    toast({ title: 'Zone created', description: `${gov.name} / ${form.zoneName}`, type: 'success' });
+    toast({ title: t('deliveryShipping.toast.zoneCreated'), description: `${gov.name} / ${form.zoneName}`, type: 'success' });
     closeDrawer();
   }
 
@@ -173,12 +177,12 @@ export function DeliveryShippingWorkspace({ brandId }: { brandId: string }) {
     const { zone, geo } = drawer;
 
     if (!form.zoneName.trim()) {
-      toast({ title: 'Zone name required', type: 'error' });
+      toast({ title: t('deliveryShipping.toast.zoneNameRequired'), type: 'error' });
       return;
     }
     const cost = parseFloat(form.shippingCost);
     if (isNaN(cost) || cost < 0) {
-      toast({ title: 'Enter a valid shipping cost', type: 'error' });
+      toast({ title: t('deliveryShipping.toast.invalidShippingCost'), type: 'error' });
       return;
     }
 
@@ -198,14 +202,14 @@ export function DeliveryShippingWorkspace({ brandId }: { brandId: string }) {
       },
     });
 
-    toast({ title: 'Zone updated', type: 'success' });
+    toast({ title: t('deliveryShipping.toast.zoneUpdated'), type: 'success' });
     closeDrawer();
   }
 
   // ── Bulk import ──
 
   async function handleBulkImport() {
-    if (!confirm(`Import Egypt default zones for this brand?\n\nExisting governorates and zones will be preserved — only new ones are added.`)) return;
+    if (!confirm(t('deliveryShipping.confirm.importEgypt'))) return;
 
     setImportProgress({ total: 0, done: 0, current: 'Starting…', errors: [] });
 
@@ -217,10 +221,10 @@ export function DeliveryShippingWorkspace({ brandId }: { brandId: string }) {
 
     setImportProgress(null);
     toast({
-      title:       'Import complete',
+      title:       t('deliveryShipping.toast.importComplete'),
       description: result.errors.length
-        ? `${result.done} zones processed. ${result.errors.length} errors.`
-        : `${result.done} zones processed successfully.`,
+        ? t('deliveryShipping.toast.importCompleteErrDesc', { done: result.done, errors: result.errors.length })
+        : t('deliveryShipping.toast.importCompleteDesc', { done: result.done }),
       type: result.errors.length ? 'error' : 'success',
     });
   }
@@ -232,13 +236,13 @@ export function DeliveryShippingWorkspace({ brandId }: { brandId: string }) {
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <KpiCard icon={<MapPin className="h-4 w-4" />}  label="Governorates"     value={geos.length} />
-        <KpiCard icon={<Truck  className="h-4 w-4" />}  label="Zones"            value={allZones.length} />
-        <KpiCard icon={<Badge  className="h-4 w-4 text-green-600" />} label="Active Zones" value={activeZones.length} />
+        <KpiCard icon={<MapPin className="h-4 w-4" />}  label={t('deliveryShipping.kpi.governorates')}     value={geos.length} />
+        <KpiCard icon={<Truck  className="h-4 w-4" />}  label={t('deliveryShipping.kpi.zones')}            value={allZones.length} />
+        <KpiCard icon={<Badge  className="h-4 w-4 text-green-600" />} label={t('deliveryShipping.kpi.activeZones')} value={activeZones.length} />
         <KpiCard
-          icon={<span className="text-xs font-bold">EGP</span>}
-          label="Avg Shipping Cost"
-          value={ruledZones.length ? `${avgCost.toFixed(0)} EGP` : '—'}
+          icon={<span className="text-xs font-bold">{currency}</span>}
+          label={t('deliveryShipping.kpi.avgCost')}
+          value={ruledZones.length ? money(avgCost) : '—'}
         />
       </div>
 
@@ -248,7 +252,7 @@ export function DeliveryShippingWorkspace({ brandId }: { brandId: string }) {
           <div className="flex items-center gap-2">
             <Loader2 className="h-3.5 w-3.5 animate-spin text-primary shrink-0" />
             <p className="text-xs font-medium">
-              Importing Egypt default zones… {importProgress.done}/{importProgress.total}
+              {t('deliveryShipping.importing', { done: importProgress.done, total: importProgress.total })}
             </p>
           </div>
           {importProgress.current && (
@@ -272,7 +276,7 @@ export function DeliveryShippingWorkspace({ brandId }: { brandId: string }) {
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            placeholder="Search governorates or zones…"
+            placeholder={t('deliveryShipping.search')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-8 pl-8 text-xs"
@@ -294,11 +298,11 @@ export function DeliveryShippingWorkspace({ brandId }: { brandId: string }) {
           className="gap-1.5 text-xs"
         >
           <Download className="h-3.5 w-3.5" />
-          Import Egypt Defaults
+          {t('deliveryShipping.importDefaults')}
         </Button>
         <Button size="sm" onClick={openCreate} className="gap-1.5 text-xs">
           <Plus className="h-3.5 w-3.5" />
-          Add Zone
+          {t('deliveryShipping.addZone')}
         </Button>
       </div>
 
@@ -307,11 +311,7 @@ export function DeliveryShippingWorkspace({ brandId }: { brandId: string }) {
         <LoadingBlock />
       ) : filteredGeos.length === 0 ? (
         <EmptyBlock
-          message={
-            search
-              ? 'No results match your search.'
-              : 'No governorates yet. Click "Add Zone" to start or use "Import Egypt Defaults".'
-          }
+          message={t('deliveryShipping.emptyState')}
         />
       ) : (
         <div className="space-y-2">
@@ -333,20 +333,20 @@ export function DeliveryShippingWorkspace({ brandId }: { brandId: string }) {
         <SheetContent className="w-full sm:max-w-md">
           <SheetHeader>
             <SheetTitle>
-              {drawer.mode === 'create' ? 'Add New Zone' : 'Edit Zone'}
+              {drawer.mode === 'create' ? t('deliveryShipping.addTitle') : t('deliveryShipping.editTitle')}
             </SheetTitle>
           </SheetHeader>
 
           <div className="mt-6 space-y-4 overflow-y-auto max-h-[calc(100vh-10rem)] pr-1">
             {drawer.mode === 'create' ? (
               <div className="space-y-1">
-                <Label className="text-xs">Governorate *</Label>
+                <Label className="text-xs">{t('deliveryShipping.form.governorate')}</Label>
                 <select
                   value={form.governorateIndex}
                   onChange={(e) => setForm({ ...form, governorateIndex: parseInt(e.target.value) })}
                   className="w-full h-9 text-sm rounded-md border border-input bg-background px-2 focus:outline-none focus:ring-1 focus:ring-ring"
                 >
-                  <option value={-1}>Select governorate…</option>
+                  <option value={-1}>{t('deliveryShipping.selectGovPlaceholder')}</option>
                   {EGYPT_GOVERNORATES.map((g, i) => (
                     <option key={g.code} value={i}>
                       {g.name} ({g.nameAr})
@@ -356,7 +356,7 @@ export function DeliveryShippingWorkspace({ brandId }: { brandId: string }) {
               </div>
             ) : (
               <div className="rounded-md bg-muted/40 px-3 py-2 text-sm">
-                <span className="text-xs text-muted-foreground">Governorate: </span>
+                <span className="text-xs text-muted-foreground">{t('deliveryShipping.governorateLabel')} </span>
                 <span className="font-medium">
                   {drawer.mode === 'edit' ? drawer.geo.name : ''}
                 </span>
@@ -364,17 +364,17 @@ export function DeliveryShippingWorkspace({ brandId }: { brandId: string }) {
             )}
 
             <div className="space-y-1">
-              <Label className="text-xs">Zone Name *</Label>
+              <Label className="text-xs">{t('deliveryShipping.form.zoneName')}</Label>
               <Input
                 value={form.zoneName}
                 onChange={(e) => setForm({ ...form, zoneName: e.target.value })}
-                placeholder="e.g. Nasr City"
+                placeholder={t('deliveryShipping.zoneNamePlaceholder')}
                 className="h-9 text-sm"
               />
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs">Shipping Cost (EGP) *</Label>
+              <Label className="text-xs">{t('deliveryShipping.form.shippingCost')}</Label>
               <Input
                 type="number"
                 min="0"
@@ -387,13 +387,13 @@ export function DeliveryShippingWorkspace({ brandId }: { brandId: string }) {
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs">Delivery Window</Label>
+              <Label className="text-xs">{t('deliveryShipping.form.deliveryWindow')}</Label>
               <select
                 value={form.deliveryWindowId}
                 onChange={(e) => setForm({ ...form, deliveryWindowId: e.target.value })}
                 className="w-full h-9 text-sm rounded-md border border-input bg-background px-2 focus:outline-none focus:ring-1 focus:ring-ring"
               >
-                <option value="">No specific window</option>
+                <option value="">{t('deliveryShipping.noWindowOption')}</option>
                 {windows.map((w) => (
                   <option key={w.id} value={w.id}>
                     {w.label} ({w.starts_at}–{w.ends_at})
@@ -408,16 +408,16 @@ export function DeliveryShippingWorkspace({ brandId }: { brandId: string }) {
                 onCheckedChange={(v) => setForm({ ...form, isActive: v })}
               />
               <Label className="text-xs cursor-pointer" onClick={() => setForm({ ...form, isActive: !form.isActive })}>
-                Active zone
+                {t('deliveryShipping.form.active')}
               </Label>
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs">Notes</Label>
+              <Label className="text-xs">{t('deliveryShipping.form.notes')}</Label>
               <Textarea
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                placeholder="Optional notes…"
+                placeholder={t('deliveryShipping.notesPlaceholder')}
                 className="text-sm min-h-20 resize-none"
               />
             </div>
@@ -432,10 +432,10 @@ export function DeliveryShippingWorkspace({ brandId }: { brandId: string }) {
               {(createZoneWithRule.isPending || editZoneWithRule.isPending)
                 ? <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 : null}
-              {drawer.mode === 'create' ? 'Create Zone' : 'Save Changes'}
+              {drawer.mode === 'create' ? t('deliveryShipping.create') : t('deliveryShipping.saveChanges')}
             </Button>
             <Button variant="outline" onClick={closeDrawer}>
-              Cancel
+              {t('deliveryShipping.cancel')}
             </Button>
           </div>
         </SheetContent>
@@ -458,6 +458,7 @@ function GovernorateBand({
   windows?:   { id: string; label: string }[];
   onEditZone: (zone: DeliveryZone) => void;
 }) {
+  const { t } = useTranslation('settings');
   const [expanded, setExpanded] = useState(!!search);
   const deleteGeo = useDeleteGeography(brandId);
   const { toast } = useToast();
@@ -467,9 +468,9 @@ function GovernorateBand({
     : geo.zones;
 
   async function handleDeleteGeo() {
-    if (!confirm(`Delete "${geo.name}" and all its zones? This cannot be undone.`)) return;
+    if (!confirm(t('deliveryShipping.confirm.deleteGov', { name: geo.name }))) return;
     await deleteGeo.mutateAsync(geo.id);
-    toast({ title: 'Governorate deleted', type: 'success' });
+    toast({ title: t('deliveryShipping.toast.govDeleted'), type: 'success' });
   }
 
   return (
@@ -492,11 +493,11 @@ function GovernorateBand({
             <Badge variant="outline" className="text-[10px] py-0 h-4">{geo.code}</Badge>
           )}
           <Badge className="text-[10px] py-0 h-4 bg-muted text-muted-foreground border-0">
-            {geo.zones.length} zones
+            {t('deliveryShipping.zonesCount', { count: geo.zones.length })}
           </Badge>
           {!geo.is_active && (
             <Badge className="text-[10px] py-0 h-4 bg-amber-50 text-amber-700 border-0">
-              Inactive
+              {t('deliveryShipping.badge.inactive')}
             </Badge>
           )}
         </div>
@@ -505,7 +506,7 @@ function GovernorateBand({
           onClick={handleDeleteGeo}
           disabled={deleteGeo.isPending}
           className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
-          title="Delete governorate"
+          title={t('deliveryShipping.deleteGovTitle')}
         >
           {deleteGeo.isPending
             ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -518,7 +519,7 @@ function GovernorateBand({
       {expanded && (
         <div className="border-t border-border/40 bg-muted/10 divide-y divide-border/30">
           {visibleZones.length === 0 ? (
-            <p className="px-6 py-3 text-xs text-muted-foreground">No zones match your search.</p>
+            <p className="px-6 py-3 text-xs text-muted-foreground">{t('deliveryShipping.noZonesSearch')}</p>
           ) : (
             visibleZones.map((zone) => (
               <ZoneRowItem
@@ -549,13 +550,15 @@ function ZoneRowItem({
   zone:    DeliveryZone;
   onEdit:  () => void;
 }) {
+  const { t } = useTranslation('settings');
+  const { money } = useFormatter();
   const deleteZone = useDeleteZone(brandId, geoId);
   const { toast }  = useToast();
 
   async function handleDelete() {
-    if (!confirm(`Delete zone "${zone.name}"?`)) return;
+    if (!confirm(t('deliveryShipping.confirm.deleteZone', { name: zone.name }))) return;
     await deleteZone.mutateAsync(zone.id);
-    toast({ title: 'Zone deleted', type: 'success' });
+    toast({ title: t('deliveryShipping.toast.zoneDeleted'), type: 'success' });
   }
 
   return (
@@ -564,7 +567,7 @@ function ZoneRowItem({
         <span className="text-sm truncate">{zone.name}</span>
         {!zone.is_active && (
           <Badge className="text-[10px] py-0 h-4 bg-amber-50 text-amber-700 border-0 shrink-0">
-            Inactive
+            {t('deliveryShipping.badge.inactive')}
           </Badge>
         )}
       </div>
@@ -572,11 +575,11 @@ function ZoneRowItem({
       <div className="flex items-center gap-2 shrink-0">
         {zone.shipping_rule ? (
           <Badge className="text-[10px] py-0 h-5 bg-green-50 text-green-700 border-green-200 font-mono">
-            {zone.shipping_rule.shipping_cost.toFixed(0)} EGP
+            {money(zone.shipping_rule.shipping_cost)}
           </Badge>
         ) : (
           <Badge className="text-[10px] py-0 h-5 bg-muted text-muted-foreground border-0">
-            No cost set
+            {t('deliveryShipping.badge.noCost')}
           </Badge>
         )}
 
@@ -589,7 +592,7 @@ function ZoneRowItem({
         <button
           onClick={onEdit}
           className="text-muted-foreground hover:text-foreground transition-colors"
-          title="Edit zone"
+          title={t('deliveryShipping.editZoneTitle')}
         >
           <Pencil className="h-3.5 w-3.5" />
         </button>
@@ -597,7 +600,7 @@ function ZoneRowItem({
           onClick={handleDelete}
           disabled={deleteZone.isPending}
           className="text-muted-foreground hover:text-destructive transition-colors"
-          title="Delete zone"
+          title={t('deliveryShipping.deleteZoneTitle')}
         >
           {deleteZone.isPending
             ? <Loader2 className="h-3 w-3 animate-spin" />
@@ -632,10 +635,11 @@ function KpiCard({
 }
 
 function LoadingBlock() {
+  const { t } = useTranslation('settings');
   return (
     <div className="flex items-center justify-center py-16 gap-2 text-muted-foreground">
       <Loader2 className="h-4 w-4 animate-spin" />
-      <span className="text-sm">Loading…</span>
+      <span className="text-sm">{t('deliveryShipping.loading')}</span>
     </div>
   );
 }

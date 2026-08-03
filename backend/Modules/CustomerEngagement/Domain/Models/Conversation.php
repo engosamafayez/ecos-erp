@@ -1,14 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Domain\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Modules\CustomerEngagement\Domain\Enums\ConversationStatus;
-use Modules\CustomerEngagement\Domain\Enums\ConversationPriority;
 use Modules\CustomerEngagement\Domain\Enums\CommunicationProvider;
+use Modules\CustomerEngagement\Domain\Enums\ConversationPriority;
+use Modules\CustomerEngagement\Domain\Enums\ConversationStatus;
 
 class Conversation extends Model
 {
@@ -21,19 +23,19 @@ class Conversation extends Model
     protected function casts(): array
     {
         return [
-            'status'   => ConversationStatus::class,
+            'status' => ConversationStatus::class,
             'priority' => ConversationPriority::class,
             'provider' => CommunicationProvider::class,
-            'tags'             => 'array',
-            'sentiment'        => 'array',
-            'metadata'         => 'array',
-            'first_response_at'      => 'datetime',
-            'last_message_at'        => 'datetime',
-            'last_agent_message_at'  => 'datetime',
-            'started_at'             => 'datetime',
-            'closed_at'              => 'datetime',
-            'messages_count'       => 'integer',
-            'unread_count'         => 'integer',
+            'tags' => 'array',
+            'sentiment' => 'array',
+            'metadata' => 'array',
+            'first_response_at' => 'datetime',
+            'last_message_at' => 'datetime',
+            'last_agent_message_at' => 'datetime',
+            'started_at' => 'datetime',
+            'closed_at' => 'datetime',
+            'messages_count' => 'integer',
+            'unread_count' => 'integer',
             'internal_notes_count' => 'integer',
         ];
     }
@@ -70,6 +72,6 @@ class Conversation extends Model
 
     public function isOpen(): bool
     {
-        return !$this->status->isTerminal();
+        return ! $this->status->isTerminal();
     }
 }

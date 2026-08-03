@@ -12,6 +12,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Modules\Marketing\MetaConnector\Application\Services\MetaWebhookService;
 use Modules\Marketing\MetaConnector\Domain\Models\MetaWebhook;
+use Throwable;
 
 /**
  * Retries failed Meta webhook registrations.
@@ -26,8 +27,9 @@ final class MetaWebhookRetryJob implements ShouldQueue
 
     private const MAX_RETRIES_PER_RUN = 20;
 
-    public int    $tries   = 1;
-    public int    $timeout = 120;
+    public int $tries = 1;
+
+    public int $timeout = 120;
 
     public function __construct() {}
 
@@ -51,7 +53,7 @@ final class MetaWebhookRetryJob implements ShouldQueue
 
             try {
                 $webhookService->reRegister($webhook, $webhook->connection);
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 Log::warning("MetaWebhookRetryJob: re-registration failed for webhook [{$webhook->id}]", [
                     'error' => $e->getMessage(),
                 ]);

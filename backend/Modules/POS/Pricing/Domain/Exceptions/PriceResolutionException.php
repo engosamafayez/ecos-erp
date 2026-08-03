@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\POS\Pricing\Domain\Exceptions;
 
-final class PriceResolutionException extends \DomainException
+use DomainException;
+
+final class PriceResolutionException extends DomainException
 {
     public static function productNotFound(string $productId): self
     {

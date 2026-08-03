@@ -21,8 +21,10 @@ final class SessionApiTest extends TestCase
 
     private User $user;
 
-    private const CASHIER_ID   = 'b0000000-0000-4000-b000-000000000001';
-    private const COMPANY_ID   = 'c0000000-0000-4000-c000-000000000001';
+    private const CASHIER_ID = 'b0000000-0000-4000-b000-000000000001';
+
+    private const COMPANY_ID = 'c0000000-0000-4000-c000-000000000001';
+
     private const WAREHOUSE_ID = 'd0000000-0000-4000-d000-000000000001';
 
     protected function setUp(): void
@@ -35,10 +37,10 @@ final class SessionApiTest extends TestCase
     {
         $response = $this->actingAs($this->user)
             ->postJson('/api/pos/sessions', [
-                'company_id'         => self::COMPANY_ID,
-                'warehouse_id'       => self::WAREHOUSE_ID,
+                'company_id' => self::COMPANY_ID,
+                'warehouse_id' => self::WAREHOUSE_ID,
                 'device_fingerprint' => 'fp-test-001',
-                'device_type'        => 'browser',
+                'device_type' => 'browser',
             ]);
 
         $response->assertStatus(201)
@@ -58,20 +60,20 @@ final class SessionApiTest extends TestCase
 
     public function test_get_session_returns_session_data(): void
     {
-        $repo    = app(SessionRepositoryInterface::class);
+        $repo = app(SessionRepositoryInterface::class);
         $session = Session::open(
-            cashierId:   self::CASHIER_ID,
-            companyId:   self::COMPANY_ID,
-            channelId:   null,
+            cashierId: self::CASHIER_ID,
+            companyId: self::COMPANY_ID,
+            channelId: null,
             warehouseId: self::WAREHOUSE_ID,
             fingerprint: DeviceFingerprint::of('fp-001'),
-            ipAddress:   '192.168.1.1',
-            deviceType:  DeviceType::Browser,
+            ipAddress: '192.168.1.1',
+            deviceType: DeviceType::Browser,
         );
         $repo->save($session);
 
         $response = $this->actingAs($this->user)
-            ->getJson('/api/pos/sessions/' . $session->id);
+            ->getJson('/api/pos/sessions/'.$session->id);
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true)
@@ -91,20 +93,20 @@ final class SessionApiTest extends TestCase
 
     public function test_close_session_returns_deleted_response(): void
     {
-        $repo    = app(SessionRepositoryInterface::class);
+        $repo = app(SessionRepositoryInterface::class);
         $session = Session::open(
-            cashierId:   self::CASHIER_ID,
-            companyId:   self::COMPANY_ID,
-            channelId:   null,
+            cashierId: self::CASHIER_ID,
+            companyId: self::COMPANY_ID,
+            channelId: null,
             warehouseId: self::WAREHOUSE_ID,
             fingerprint: DeviceFingerprint::of('fp-close'),
-            ipAddress:   '10.0.0.1',
-            deviceType:  DeviceType::Browser,
+            ipAddress: '10.0.0.1',
+            deviceType: DeviceType::Browser,
         );
         $repo->save($session);
 
         $response = $this->actingAs($this->user)
-            ->deleteJson('/api/pos/sessions/' . $session->id);
+            ->deleteJson('/api/pos/sessions/'.$session->id);
 
         $response->assertStatus(200)
             ->assertJsonPath('success', true);

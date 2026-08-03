@@ -21,8 +21,8 @@ final readonly class DisassembleProductResponse
 {
     /**
      * @param  list<array<string, mixed>>  $produced_components
-     * @param  list<string>                $ledger_entry_ids
-     * @param  array<string, mixed>        $metadata
+     * @param  list<string>  $ledger_entry_ids
+     * @param  array<string, mixed>  $metadata
      */
     public function __construct(
         public bool $success,
@@ -41,17 +41,17 @@ final readonly class DisassembleProductResponse
     public static function blocked(DisassemblyWorkflowResult $result): self
     {
         return new self(
-            success:             false,
-            is_blocked:          true,
-            blocking_reason:     $result->blocking_reason,
-            was_idempotent:      false,
-            execution_id:        null,
-            transaction_id:      null,
-            product_id:          null,
-            qty_disassembled:    null,
+            success: false,
+            is_blocked: true,
+            blocking_reason: $result->blocking_reason,
+            was_idempotent: false,
+            execution_id: null,
+            transaction_id: null,
+            product_id: null,
+            qty_disassembled: null,
             produced_components: [],
-            ledger_entry_ids:    [],
-            metadata:            $result->metadata,
+            ledger_entry_ids: [],
+            metadata: $result->metadata,
         );
     }
 
@@ -60,20 +60,20 @@ final readonly class DisassembleProductResponse
         DisassemblyExecutionResult $execResult,
     ): self {
         return new self(
-            success:             $execResult->success,
-            is_blocked:          false,
-            blocking_reason:     null,
-            was_idempotent:      $execResult->was_idempotent,
-            execution_id:        $execResult->execution_id,
-            transaction_id:      $execResult->transaction_id,
-            product_id:          $workflowResult->plan?->product_id,
-            qty_disassembled:    $execResult->qty_disassembled,
+            success: $execResult->success,
+            is_blocked: false,
+            blocking_reason: null,
+            was_idempotent: $execResult->was_idempotent,
+            execution_id: $execResult->execution_id,
+            transaction_id: $execResult->transaction_id,
+            product_id: $workflowResult->plan?->product_id,
+            qty_disassembled: $execResult->qty_disassembled,
             produced_components: array_map(
                 fn ($r) => $r->toArray(),
                 $execResult->produced_components,
             ),
-            ledger_entry_ids:    $execResult->ledger_entry_ids,
-            metadata:            $execResult->metadata,
+            ledger_entry_ids: $execResult->ledger_entry_ids,
+            metadata: $execResult->metadata,
         );
     }
 
@@ -81,17 +81,17 @@ final readonly class DisassembleProductResponse
     public function toArray(): array
     {
         return [
-            'success'             => $this->success,
-            'is_blocked'          => $this->is_blocked,
-            'blocking_reason'     => $this->blocking_reason,
-            'was_idempotent'      => $this->was_idempotent,
-            'execution_id'        => $this->execution_id,
-            'transaction_id'      => $this->transaction_id,
-            'product_id'          => $this->product_id,
-            'qty_disassembled'    => $this->qty_disassembled,
+            'success' => $this->success,
+            'is_blocked' => $this->is_blocked,
+            'blocking_reason' => $this->blocking_reason,
+            'was_idempotent' => $this->was_idempotent,
+            'execution_id' => $this->execution_id,
+            'transaction_id' => $this->transaction_id,
+            'product_id' => $this->product_id,
+            'qty_disassembled' => $this->qty_disassembled,
             'produced_components' => $this->produced_components,
-            'ledger_entry_ids'    => $this->ledger_entry_ids,
-            'metadata'            => $this->metadata,
+            'ledger_entry_ids' => $this->ledger_entry_ids,
+            'metadata' => $this->metadata,
         ];
     }
 }

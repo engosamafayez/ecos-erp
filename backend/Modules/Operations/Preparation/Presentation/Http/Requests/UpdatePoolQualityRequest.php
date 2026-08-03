@@ -18,7 +18,7 @@ final class UpdatePoolQualityRequest extends FormRequest
     {
         return [
             'quality_result' => ['required', 'string', 'in:passed,failed'],
-            'notes'          => ['nullable', 'string', 'max:1000'],
+            'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }
 }

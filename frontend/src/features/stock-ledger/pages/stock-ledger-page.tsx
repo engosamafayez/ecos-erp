@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { PageHeader, Pagination } from '@/components/crud';
 import { Button } from '@/components/ui/button';
@@ -24,16 +25,6 @@ const MOVEMENT_TYPE_VALUES: (MovementType | 'all')[] = [
   'transfer_in',
   'transfer_out',
 ];
-
-const MOVEMENT_TYPE_LABELS: Record<MovementType | 'all', string> = {
-  all: 'All Types',
-  purchase_receipt: 'Purchase Receipt',
-  sales_issue: 'Sales Issue',
-  adjustment_in: 'Adjustment In',
-  adjustment_out: 'Adjustment Out',
-  transfer_in: 'Transfer In',
-  transfer_out: 'Transfer Out',
-};
 
 const IN_TYPES: MovementType[] = ['purchase_receipt', 'adjustment_in', 'transfer_in'];
 const OUT_TYPES: MovementType[] = ['sales_issue', 'adjustment_out', 'transfer_out'];
@@ -63,8 +54,7 @@ function ReferenceCell({ movement }: { movement: StockMovement }) {
   );
 }
 
-function exportCsv(items: StockMovement[]) {
-  const headers = ['Date', 'Type', 'Product', 'SKU', 'Warehouse', 'In', 'Out', 'Balance', 'Reference'];
+function exportCsv(items: StockMovement[], headers: string[]) {
   const rows = items.map((m) => {
     const isIn = IN_TYPES.includes(m.movement_type);
     const isOut = OUT_TYPES.includes(m.movement_type);
@@ -93,6 +83,9 @@ function exportCsv(items: StockMovement[]) {
 type SortState = { field: StockMovementSortField; direction: 'asc' | 'desc' };
 
 export function StockLedgerPage() {
+  const { t } = useTranslation('stock-ledger');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
+
   const [search, setSearch] = useState('');
   const [movementTypeFilter, setMovementTypeFilter] = useState<MovementType | 'all'>('all');
   const [dateFrom, setDateFrom] = useState('');
@@ -138,17 +131,27 @@ export function StockLedgerPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Stock Ledger"
-        subtitle="Complete audit trail of all inventory movements."
-        breadcrumbs={[{ label: 'Home', to: ROUTES.dashboard }, { label: 'Stock Ledger' }]}
+        title={t('title')}
+        subtitle={t('subtitle')}
+        breadcrumbs={[{ label: t('breadcrumb.home'), to: ROUTES.dashboard }, { label: t('breadcrumb.page') }]}
         actions={
           <Button
             variant="outline"
             size="sm"
-            onClick={() => exportCsv(items)}
+            onClick={() => exportCsv(items, [
+              t('csv.date'),
+              t('csv.type'),
+              t('csv.product'),
+              t('csv.sku'),
+              t('csv.warehouse'),
+              t('csv.in'),
+              t('csv.out'),
+              t('csv.balance'),
+              t('csv.reference'),
+            ])}
             disabled={items.length === 0}
           >
-            Export CSV
+            {t('actions.exportCsv')}
           </Button>
         }
       />
@@ -158,9 +161,9 @@ export function StockLedgerPage() {
           {/* Toolbar */}
           <div className="flex flex-wrap items-end gap-3">
             <div className="flex flex-col gap-1 min-w-[180px]">
-              <label className="text-xs text-muted-foreground">Search</label>
+              <label className="text-xs text-muted-foreground">{t('filters.searchLabel')}</label>
               <Input
-                placeholder="Product name or SKU…"
+                placeholder={tAny('filters.searchPlaceholder')}
                 value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 className="h-8 text-sm"
@@ -168,20 +171,20 @@ export function StockLedgerPage() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-muted-foreground">Movement Type</label>
+              <label className="text-xs text-muted-foreground">{t('filters.typeLabel')}</label>
               <select
                 value={movementTypeFilter}
                 onChange={(e) => { setMovementTypeFilter(e.target.value as MovementType | 'all'); setPage(1); }}
                 className="h-8 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"
               >
                 {MOVEMENT_TYPE_VALUES.map((val) => (
-                  <option key={val} value={val}>{MOVEMENT_TYPE_LABELS[val]}</option>
+                  <option key={val} value={val}>{tAny(`movementTypes.${val}`)}</option>
                 ))}
               </select>
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-muted-foreground">From</label>
+              <label className="text-xs text-muted-foreground">{t('filters.fromLabel')}</label>
               <input
                 type="date"
                 value={dateFrom}
@@ -191,7 +194,7 @@ export function StockLedgerPage() {
             </div>
 
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-muted-foreground">To</label>
+              <label className="text-xs text-muted-foreground">{t('filters.toLabel')}</label>
               <input
                 type="date"
                 value={dateTo}
@@ -208,7 +211,7 @@ export function StockLedgerPage() {
                   className="h-8 text-xs"
                   onClick={() => { setMovementTypeFilter('all'); setDateFrom(''); setDateTo(''); setSearch(''); setPage(1); }}
                 >
-                  Clear
+                  {t('actions.clear')}
                 </Button>
               )}
               <Button
@@ -218,7 +221,7 @@ export function StockLedgerPage() {
                 onClick={() => void refetch()}
                 disabled={isFetching}
               >
-                Refresh
+                {t('actions.refresh')}
               </Button>
             </div>
           </div>
@@ -232,39 +235,39 @@ export function StockLedgerPage() {
                     className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none"
                     onClick={() => handleSort('movement_date')}
                   >
-                    Date <SortIcon field="movement_date" />
+                    {t('columns.date')} <SortIcon field="movement_date" />
                   </th>
                   <th
                     className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none"
                     onClick={() => handleSort('movement_type')}
                   >
-                    Type <SortIcon field="movement_type" />
+                    {t('columns.type')} <SortIcon field="movement_type" />
                   </th>
-                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Product / Material</th>
-                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Warehouse</th>
-                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground text-emerald-700">In</th>
-                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground text-red-600">Out</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('columns.productMaterial')}</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('columns.warehouse')}</th>
+                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground text-emerald-700">{t('columns.in')}</th>
+                  <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground text-red-600">{t('columns.out')}</th>
                   <th
                     className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none"
                     onClick={() => handleSort('quantity')}
                   >
-                    Balance <SortIcon field="quantity" />
+                    {t('columns.balance')} <SortIcon field="quantity" />
                   </th>
-                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Reference</th>
+                  <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('columns.reference')}</th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">Loading…</td>
+                    <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">{t('table.loading')}</td>
                   </tr>
                 ) : isError ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-10 text-center text-sm text-destructive">Failed to load. Try refreshing.</td>
+                    <td colSpan={8} className="px-4 py-10 text-center text-sm text-destructive">{t('table.error')}</td>
                   </tr>
                 ) : items.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">No movements found.</td>
+                    <td colSpan={8} className="px-4 py-10 text-center text-sm text-muted-foreground">{t('table.empty')}</td>
                   </tr>
                 ) : (
                   items.map((m) => {

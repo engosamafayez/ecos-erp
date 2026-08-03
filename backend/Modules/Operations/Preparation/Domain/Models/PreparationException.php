@@ -12,27 +12,27 @@ use Modules\Operations\Preparation\Domain\Enums\ExceptionStatus;
 use Modules\Operations\Preparation\Domain\Enums\PreparationIssueType;
 
 /**
- * @property string                    $id
- * @property string                    $company_id
- * @property string                    $preparation_wave_id
- * @property string                    $exception_type
+ * @property string $id
+ * @property string $company_id
+ * @property string $preparation_wave_id
+ * @property string $exception_type
  * @property PreparationIssueType|null $issue_type
- * @property ExceptionSeverity         $severity
- * @property string|null               $entity_type
- * @property string|null               $entity_id
- * @property string                    $description
- * @property ExceptionStatus           $status
- * @property string|null               $raised_by
- * @property \Carbon\Carbon|null       $raised_at
- * @property \Carbon\Carbon|null       $resolved_at
- * @property string|null               $resolved_by
- * @property string|null               $resolution_notes
- * @property \Carbon\Carbon|null       $escalated_at
- * @property string|null               $escalated_to
- * @property string                    $created_by
- * @property string                    $updated_by
- * @property \Carbon\Carbon            $created_at
- * @property \Carbon\Carbon            $updated_at
+ * @property ExceptionSeverity $severity
+ * @property string|null $entity_type
+ * @property string|null $entity_id
+ * @property string $description
+ * @property ExceptionStatus $status
+ * @property string|null $raised_by
+ * @property \Carbon\Carbon|null $raised_at
+ * @property \Carbon\Carbon|null $resolved_at
+ * @property string|null $resolved_by
+ * @property string|null $resolution_notes
+ * @property \Carbon\Carbon|null $escalated_at
+ * @property string|null $escalated_to
+ * @property string $created_by
+ * @property string $updated_by
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class PreparationException extends Model
 {
@@ -70,11 +70,11 @@ class PreparationException extends Model
     protected function casts(): array
     {
         return [
-            'issue_type'   => PreparationIssueType::class,
-            'severity'     => ExceptionSeverity::class,
-            'status'       => ExceptionStatus::class,
-            'raised_at'    => 'datetime',
-            'resolved_at'  => 'datetime',
+            'issue_type' => PreparationIssueType::class,
+            'severity' => ExceptionSeverity::class,
+            'status' => ExceptionStatus::class,
+            'raised_at' => 'datetime',
+            'resolved_at' => 'datetime',
             'escalated_at' => 'datetime',
         ];
     }

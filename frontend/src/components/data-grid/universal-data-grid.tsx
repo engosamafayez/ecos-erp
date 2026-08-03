@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { EmptyState, ErrorState, Pagination } from '@/components/crud';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -170,6 +171,8 @@ export function UniversalDataGrid<T>({
   skeletonRows = 8,
   onRowClick,
 }: UniversalDataGridProps<T>) {
+  const { t } = useTranslation('common');
+
   // ── Visible columns ────────────────────────────────────────────────────────
   const visibleCols = useMemo(
     () =>
@@ -190,7 +193,7 @@ export function UniversalDataGrid<T>({
     [visibleCols, hasSelection],
   );
 
-  const defaultEmpty = emptyState ?? <EmptyState title="No records found" />;
+  const defaultEmpty = emptyState ?? <EmptyState title={t('table.noRecords')} />;
   const defaultError = errorState ?? <ErrorState />;
 
   // ── Scroll interactions ───────────────────────────────────────────────────
@@ -306,7 +309,7 @@ export function UniversalDataGrid<T>({
                   <Th pinned style={{ left: 0 }} className="w-10">
                     <input
                       type="checkbox"
-                      aria-label="Select all rows"
+                      aria-label={t('selection.selectAllRows')}
                       checked={selection.allSelected}
                       ref={(el) => { if (el) el.indeterminate = selection.someSelected; }}
                       onChange={(e) => selection.selectAll(e.target.checked)}
@@ -404,7 +407,7 @@ export function UniversalDataGrid<T>({
                         <Td pinned selected={isSelected} style={{ left: 0 }} className="w-10">
                           <input
                             type="checkbox"
-                            aria-label="Select row"
+                            aria-label={t('selection.selectRow')}
                             checked={isSelected}
                             onClick={(e) => e.stopPropagation()}
                             onChange={(e) => selection.selectRow(id, e.target.checked)}

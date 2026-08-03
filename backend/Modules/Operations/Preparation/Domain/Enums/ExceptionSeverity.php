@@ -6,7 +6,7 @@ namespace Modules\Operations\Preparation\Domain\Enums;
 
 enum ExceptionSeverity: string
 {
-    case Blocking      = 'blocking';
-    case Warning       = 'warning';
+    case Blocking = 'blocking';
+    case Warning = 'warning';
     case Informational = 'informational';
 }

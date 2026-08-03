@@ -12,20 +12,20 @@ use Modules\Inventory\Products\Domain\Models\Product;
 /**
  * Immutable audit record for every pricing decision.
  *
- * @property string          $id
- * @property string          $pricing_review_id
- * @property string          $product_id
- * @property float           $old_product_cost
- * @property float           $new_product_cost
- * @property float           $old_selling_price
- * @property float           $new_selling_price
- * @property string          $action
- * @property float|null      $custom_price
- * @property string|null     $reason
- * @property string|null     $manager_name
- * @property array<string>   $approved_channels
- * @property \Carbon\Carbon  $approved_at
- * @property \Carbon\Carbon  $created_at
+ * @property string $id
+ * @property string $pricing_review_id
+ * @property string $product_id
+ * @property float $old_product_cost
+ * @property float $new_product_cost
+ * @property float $old_selling_price
+ * @property float $new_selling_price
+ * @property string $action
+ * @property float|null $custom_price
+ * @property string|null $reason
+ * @property string|null $manager_name
+ * @property array<string> $approved_channels
+ * @property \Carbon\Carbon $approved_at
+ * @property \Carbon\Carbon $created_at
  */
 class PriceApproval extends Model
 {
@@ -59,18 +59,18 @@ class PriceApproval extends Model
     protected function casts(): array
     {
         return [
-            'old_product_cost'  => 'float',
-            'new_product_cost'  => 'float',
+            'old_product_cost' => 'float',
+            'new_product_cost' => 'float',
             'old_selling_price' => 'float',
             'new_selling_price' => 'float',
-            'custom_price'      => 'float',
+            'custom_price' => 'float',
             'approved_channels' => 'array',
-            'old_sale_price'    => 'float',
-            'new_sale_price'    => 'float',
-            'margin_pct'        => 'float',
-            'discount_pct'      => 'float',
-            'approved_at'       => 'datetime',
-            'created_at'        => 'datetime',
+            'old_sale_price' => 'float',
+            'new_sale_price' => 'float',
+            'margin_pct' => 'float',
+            'discount_pct' => 'float',
+            'approved_at' => 'datetime',
+            'created_at' => 'datetime',
         ];
     }
 

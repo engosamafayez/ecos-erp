@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\Terminal;
 
+use InvalidArgumentException;
 use Modules\POS\Terminal\Domain\ValueObjects\HardwareConfig;
 use PHPUnit\Framework\TestCase;
 
@@ -45,15 +46,15 @@ final class HardwareConfigTest extends TestCase
 
     public function test_rejects_unknown_printer_type(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Unknown printer type "laser"');
 
         new HardwareConfig(
-            printerType:           'laser',
-            cashDrawerEnabled:     false,
+            printerType: 'laser',
+            cashDrawerEnabled: false,
             barcodeScannerEnabled: false,
             customerDisplayEnabled: false,
-            halAgentUrlOverride:   null,
+            halAgentUrlOverride: null,
         );
     }
 
@@ -72,7 +73,7 @@ final class HardwareConfigTest extends TestCase
     public function test_to_array_contains_all_fields(): void
     {
         $config = HardwareConfig::default();
-        $array  = $config->toArray();
+        $array = $config->toArray();
 
         $this->assertArrayHasKey('printer_type', $array);
         $this->assertArrayHasKey('cash_drawer_enabled', $array);
@@ -84,11 +85,11 @@ final class HardwareConfigTest extends TestCase
     public function test_from_array_round_trip(): void
     {
         $original = new HardwareConfig(
-            printerType:           'thermal_58mm',
-            cashDrawerEnabled:     true,
+            printerType: 'thermal_58mm',
+            cashDrawerEnabled: true,
             barcodeScannerEnabled: false,
             customerDisplayEnabled: true,
-            halAgentUrlOverride:   'ws://pos-agent:8765',
+            halAgentUrlOverride: 'ws://pos-agent:8765',
         );
 
         $restored = HardwareConfig::fromArray($original->toArray());
@@ -135,7 +136,7 @@ final class HardwareConfigTest extends TestCase
     public function test_with_printer_type_returns_new_instance(): void
     {
         $original = HardwareConfig::default();
-        $updated  = $original->withPrinterType('thermal_58mm');
+        $updated = $original->withPrinterType('thermal_58mm');
 
         $this->assertSame('thermal_80mm', $original->printerType, 'original unchanged');
         $this->assertSame('thermal_58mm', $updated->printerType);
@@ -144,7 +145,7 @@ final class HardwareConfigTest extends TestCase
 
     public function test_with_printer_type_validates_type(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         HardwareConfig::default()->withPrinterType('inkjet');
     }
@@ -152,7 +153,7 @@ final class HardwareConfigTest extends TestCase
     public function test_with_agent_url_returns_new_instance(): void
     {
         $original = HardwareConfig::default();
-        $updated  = $original->withAgentUrl('ws://other:1234');
+        $updated = $original->withAgentUrl('ws://other:1234');
 
         $this->assertNull($original->halAgentUrlOverride, 'original unchanged');
         $this->assertSame('ws://other:1234', $updated->halAgentUrlOverride);
@@ -160,7 +161,7 @@ final class HardwareConfigTest extends TestCase
 
     public function test_with_agent_url_null_clears_override(): void
     {
-        $config  = HardwareConfig::default()->withAgentUrl('ws://x:1');
+        $config = HardwareConfig::default()->withAgentUrl('ws://x:1');
         $cleared = $config->withAgentUrl(null);
 
         $this->assertNull($cleared->halAgentUrlOverride);

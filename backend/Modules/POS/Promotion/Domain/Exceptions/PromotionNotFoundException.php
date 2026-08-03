@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\POS\Promotion\Domain\Exceptions;
 
-final class PromotionNotFoundException extends \DomainException
+use DomainException;
+
+final class PromotionNotFoundException extends DomainException
 {
     public static function withId(string $id): self
     {

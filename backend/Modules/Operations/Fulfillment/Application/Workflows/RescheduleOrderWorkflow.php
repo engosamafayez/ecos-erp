@@ -28,27 +28,27 @@ final class RescheduleOrderWorkflow implements FulfillmentWorkflowInterface
         $order = $ctx->order;
 
         $blocked = [
-            OrderStatus::Completed,
+            OrderStatus::Delivered,
             OrderStatus::Cancelled,
-            OrderStatus::Rescheduled,
+            OrderStatus::Scheduled,
         ];
 
         if (in_array($order->status, $blocked, true)) {
             throw new WorkflowPreconditionException(
-                "Order [{$order->id}] cannot be rescheduled from status [{$order->status->value}]."
+                "Order [{$order->id}] cannot be rescheduled from status [{$order->status->value}].",
             );
         }
 
         if (empty($ctx->get('next_delivery_date'))) {
             throw new WorkflowPreconditionException(
-                'A next_delivery_date is required to reschedule an order.'
+                'A next_delivery_date is required to reschedule an order.',
             );
         }
     }
 
     public function execute(FulfillmentContext $ctx): FulfillmentResult
     {
-        $order         = $ctx->order;
+        $order = $ctx->order;
         $currentStatus = $order->status;
 
         // Determine the status to resume to after the rescheduled window:
@@ -56,23 +56,23 @@ final class RescheduleOrderWorkflow implements FulfillmentWorkflowInterface
         // Scenario D (OutForDelivery) → resume to out_for_delivery (vehicle inventory unchanged)
         // All others → resume to the current status
         $defaultResume = match ($currentStatus) {
-            OrderStatus::Preparing      => OrderStatus::Confirmed->value,
+            OrderStatus::ReadyForDispatch => OrderStatus::InProgress->value,
             OrderStatus::OutForDelivery => OrderStatus::OutForDelivery->value,
-            default                     => $currentStatus->value,
+            default => $currentStatus->value,
         };
 
-        $resumeFromStatus  = $ctx->get('resume_from_status') ?? $defaultResume;
-        $nextDeliveryDate  = $ctx->get('next_delivery_date');
-        $rescheduleReason  = $ctx->get('reschedule_reason') ?? $ctx->get('reason');
+        $resumeFromStatus = $ctx->get('resume_from_status') ?? $defaultResume;
+        $nextDeliveryDate = $ctx->get('next_delivery_date');
+        $rescheduleReason = $ctx->get('reschedule_reason') ?? $ctx->get('reason');
 
         $fromStatus = $currentStatus->value;
 
         $order->update([
-            'status'             => OrderStatus::Rescheduled,
-            'rescheduled_at'     => now(),
+            'status' => OrderStatus::Scheduled,
+            'rescheduled_at' => now(),
             'next_delivery_date' => $nextDeliveryDate,
             'resume_from_status' => $resumeFromStatus,
-            'reschedule_reason'  => $rescheduleReason,
+            'reschedule_reason' => $rescheduleReason,
         ]);
 
         $order->refresh();
@@ -81,12 +81,12 @@ final class RescheduleOrderWorkflow implements FulfillmentWorkflowInterface
             $order,
             "Order #{$order->order_number} rescheduled for {$nextDeliveryDate}.",
             [
-                'from_status'        => $fromStatus,
+                'from_status' => $fromStatus,
                 'resume_from_status' => $resumeFromStatus,
                 'next_delivery_date' => $nextDeliveryDate,
-                'reason'             => $rescheduleReason,
-                'rescheduled_at'     => $order->rescheduled_at?->toIso8601String(),
-                'actor_id'           => $ctx->actorId,
+                'reason' => $rescheduleReason,
+                'rescheduled_at' => $order->rescheduled_at?->toIso8601String(),
+                'actor_id' => $ctx->actorId,
             ],
         );
     }
@@ -98,15 +98,15 @@ final class RescheduleOrderWorkflow implements FulfillmentWorkflowInterface
 
         return [
             new OrderRescheduledEvent(
-                orderId:           $order->id,
-                orderNumber:       $order->order_number,
-                companyId:         $order->company_id ?? '',
-                fromStatus:        $result->meta['from_status'] ?? '',
-                nextDeliveryDate:  $result->meta['next_delivery_date'] ?? '',
-                rescheduleReason:  $result->meta['reason'] ?? null,
-                resumeFromStatus:  $result->meta['resume_from_status'] ?? null,
-                rescheduledAt:     $result->meta['rescheduled_at'] ?? now()->toIso8601String(),
-                actorId:           $result->meta['actor_id'] ?? null,
+                orderId: $order->id,
+                orderNumber: $order->order_number,
+                companyId: $order->company_id ?? '',
+                fromStatus: $result->meta['from_status'] ?? '',
+                nextDeliveryDate: $result->meta['next_delivery_date'] ?? '',
+                rescheduleReason: $result->meta['reason'] ?? null,
+                resumeFromStatus: $result->meta['resume_from_status'] ?? null,
+                rescheduledAt: $result->meta['rescheduled_at'] ?? now()->toIso8601String(),
+                actorId: $result->meta['actor_id'] ?? null,
             ),
         ];
     }

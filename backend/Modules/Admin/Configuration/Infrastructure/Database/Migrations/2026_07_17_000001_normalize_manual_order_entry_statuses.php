@@ -33,7 +33,7 @@ return new class extends Migration
             ->get(['id', 'settings'])
             ->each(function (object $row): void {
                 $settings = json_decode($row->settings, true) ?? [];
-                $manual   = $settings['source_entry_policies']['manual'] ?? null;
+                $manual = $settings['source_entry_policies']['manual'] ?? null;
 
                 // Already a multi-element array — nothing to do.
                 if (is_array($manual) && count($manual) > 1) {
@@ -46,7 +46,7 @@ return new class extends Migration
                 DB::table('config_brand_policies')
                     ->where('id', $row->id)
                     ->update([
-                        'settings'   => json_encode($settings),
+                        'settings' => json_encode($settings),
                         'updated_at' => now(),
                     ]);
             });
@@ -66,7 +66,7 @@ return new class extends Migration
                 DB::table('config_brand_policies')
                     ->where('id', $row->id)
                     ->update([
-                        'settings'   => json_encode($settings),
+                        'settings' => json_encode($settings),
                         'updated_at' => now(),
                     ]);
             });

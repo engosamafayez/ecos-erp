@@ -26,23 +26,23 @@ return new class extends Migration
             $settings = json_decode($row->settings, true) ?? [];
 
             // Migrate default_status → source_entry_policies.manual
-            $oldStatus                        = $settings['default_status'] ?? 'in_progress';
+            $oldStatus = $settings['default_status'] ?? 'in_progress';
             $settings['source_entry_policies'] = [
-                'manual'      => $oldStatus,
-                'pos'         => 'completed',
+                'manual' => $oldStatus,
+                'pos' => 'completed',
                 'woocommerce' => 'preserve',
-                'public_api'  => 'preserve',
+                'public_api' => 'preserve',
             ];
 
             // Migrate payment_proof_required: bool → per-method payment_proof_policy
-            $proofRequired                   = (bool) ($settings['payment_proof_required'] ?? false);
+            $proofRequired = (bool) ($settings['payment_proof_required'] ?? false);
             $settings['payment_proof_policy'] = [
-                'cash'          => 'none',
-                'cod'           => 'none',
-                'instapay'      => $proofRequired ? 'required' : 'none',
+                'cash' => 'none',
+                'cod' => 'none',
+                'instapay' => $proofRequired ? 'required' : 'none',
                 'bank_transfer' => $proofRequired ? 'required' : 'none',
                 'mobile_wallet' => $proofRequired ? 'required' : 'none',
-                'credit_card'   => 'optional',
+                'credit_card' => 'optional',
             ];
 
             // Add new keys (idempotent — skip if already present)

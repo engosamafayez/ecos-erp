@@ -31,16 +31,16 @@ final readonly class ComponentConsumptionRecord
     public function toArray(): array
     {
         return [
-            'component_id'    => $this->component_id,
-            'sku'             => $this->sku,
-            'name'            => $this->name,
-            'unit_symbol'     => $this->unit_symbol,
-            'qty_consumed'    => $this->qty_consumed,
-            'on_hand_before'  => $this->on_hand_before,
-            'on_hand_after'   => $this->on_hand_after,
-            'went_negative'   => $this->went_negative,
+            'component_id' => $this->component_id,
+            'sku' => $this->sku,
+            'name' => $this->name,
+            'unit_symbol' => $this->unit_symbol,
+            'qty_consumed' => $this->qty_consumed,
+            'on_hand_before' => $this->on_hand_before,
+            'on_hand_after' => $this->on_hand_after,
+            'went_negative' => $this->went_negative,
             'ledger_entry_id' => $this->ledger_entry_id,
-            'fifo_cost'       => $this->fifo_cost,
+            'fifo_cost' => $this->fifo_cost,
         ];
     }
 }

@@ -16,13 +16,13 @@ use Modules\Organization\Teams\Infrastructure\Database\Factories\TeamFactory;
  * Team aggregate root.
  * Represents an operational team within a company.
  *
- * @property string      $id
- * @property string      $company_id
- * @property string      $code
- * @property string      $name
+ * @property string $id
+ * @property string $company_id
+ * @property string $code
+ * @property string $name
  * @property string|null $leader_name
  * @property string|null $description
- * @property bool        $is_active
+ * @property bool $is_active
  */
 class Team extends Model
 {

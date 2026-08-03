@@ -16,20 +16,20 @@ use Modules\Manufacturing\ManufacturingExecution\Domain\Enums\TransactionStatus;
  *   - UNIQUE(trigger_id) WHERE trigger_id IS NOT NULL AND status != 'failed'
  *                              — prevents double-disassembly of the same return line (business guard).
  *
- * @property string             $id
- * @property string             $execution_id
- * @property string             $plan_id
- * @property string|null        $trigger_id
- * @property string             $product_id
- * @property string             $warehouse_id
- * @property string|null        $bom_id
- * @property int|null           $bom_version_number
- * @property string|null        $recipe_snapshot_hash
- * @property numeric-string     $qty_disassembled
- * @property TransactionStatus  $status
- * @property string             $executed_at
- * @property int|null           $duration_ms
- * @property array|null         $metadata
+ * @property string $id
+ * @property string $execution_id
+ * @property string $plan_id
+ * @property string|null $trigger_id
+ * @property string $product_id
+ * @property string $warehouse_id
+ * @property string|null $bom_id
+ * @property int|null $bom_version_number
+ * @property string|null $recipe_snapshot_hash
+ * @property numeric-string $qty_disassembled
+ * @property TransactionStatus $status
+ * @property string $executed_at
+ * @property int|null $duration_ms
+ * @property array|null $metadata
  */
 class DisassemblyTransaction extends Model
 {
@@ -62,9 +62,9 @@ class DisassemblyTransaction extends Model
     protected function casts(): array
     {
         return [
-            'status'           => TransactionStatus::class,
+            'status' => TransactionStatus::class,
             'qty_disassembled' => 'decimal:4',
-            'metadata'         => 'array',
+            'metadata' => 'array',
         ];
     }
 }

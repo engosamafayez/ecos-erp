@@ -27,26 +27,26 @@ final class ShiftController extends Controller
     use HasApiResponse;
 
     public function __construct(
-        private readonly OpenShiftService    $openShiftService,
-        private readonly FindShiftService    $findShiftService,
-        private readonly CloseShiftService   $closeShiftService,
+        private readonly OpenShiftService $openShiftService,
+        private readonly FindShiftService $findShiftService,
+        private readonly CloseShiftService $closeShiftService,
         private readonly ApproveShiftService $approveShiftService,
-        private readonly RejectShiftService  $rejectShiftService,
+        private readonly RejectShiftService $rejectShiftService,
     ) {}
 
     public function store(OpenShiftRequest $request): JsonResponse
     {
-        $data    = $request->validated();
+        $data = $request->validated();
         $command = new OpenShiftCommand(
-            sessionId:           $data['session_id'],
-            terminalId:          $data['terminal_id'],
-            cashierId:           $data['cashier_id'],
-            openingCashAmount:   (string) $data['opening_cash']['amount'],
+            sessionId: $data['session_id'],
+            terminalId: $data['terminal_id'],
+            cashierId: $data['cashier_id'],
+            openingCashAmount: (string) $data['opening_cash']['amount'],
             openingCashCurrency: $data['opening_cash']['currency'],
         );
 
         $result = $this->openShiftService->execute($command);
-        $shift  = $this->findShiftService->execute($result->shiftId);
+        $shift = $this->findShiftService->execute($result->shiftId);
 
         return $this->created(new ShiftResource($shift), 'Shift opened.');
     }
@@ -60,10 +60,10 @@ final class ShiftController extends Controller
 
     public function destroy(string $shift, CloseShiftRequest $request): JsonResponse
     {
-        $data    = $request->validated();
+        $data = $request->validated();
         $command = new CloseShiftCommand(
-            shiftId:              $shift,
-            closingCountAmount:   (string) $data['closing_count']['amount'],
+            shiftId: $shift,
+            closingCountAmount: (string) $data['closing_count']['amount'],
             closingCountCurrency: $data['closing_count']['currency'],
         );
 
@@ -74,10 +74,10 @@ final class ShiftController extends Controller
 
     public function approve(string $shift, ApproveShiftRequest $request): JsonResponse
     {
-        $data    = $request->validated();
+        $data = $request->validated();
         $command = new ApproveShiftCommand(
-            shiftId:                 $shift,
-            expectedClosingAmount:   (string) $data['expected_closing']['amount'],
+            shiftId: $shift,
+            expectedClosingAmount: (string) $data['expected_closing']['amount'],
             expectedClosingCurrency: $data['expected_closing']['currency'],
         );
 
@@ -89,10 +89,10 @@ final class ShiftController extends Controller
 
     public function reject(string $shift, RejectShiftRequest $request): JsonResponse
     {
-        $data    = $request->validated();
+        $data = $request->validated();
         $command = new RejectShiftCommand(
             shiftId: $shift,
-            reason:  $data['reason'],
+            reason: $data['reason'],
         );
 
         $this->rejectShiftService->execute($command);

@@ -18,7 +18,7 @@ use Modules\Marketing\CampaignStudio\Presentation\Http\Resources\PublishingJobRe
 class PublishingJobController extends Controller
 {
     public function __construct(
-        private readonly PublishCampaignAction   $publishAction,
+        private readonly PublishCampaignAction $publishAction,
         private readonly PublishingEngineService $publishingEngine,
     ) {}
 
@@ -40,6 +40,7 @@ class PublishingJobController extends Controller
     public function pause(Request $request, CampaignDraft $draft): JsonResponse
     {
         $job = $this->publishingEngine->queueOperation($draft, PublishingOperation::PAUSE, (string) $request->user()->id);
+
         return response()->json(['data' => new PublishingJobResource($job)], 202);
     }
 
@@ -47,6 +48,7 @@ class PublishingJobController extends Controller
     public function resume(Request $request, CampaignDraft $draft): JsonResponse
     {
         $job = $this->publishingEngine->queueOperation($draft, PublishingOperation::RESUME, (string) $request->user()->id);
+
         return response()->json(['data' => new PublishingJobResource($job)], 202);
     }
 
@@ -54,17 +56,19 @@ class PublishingJobController extends Controller
     public function archive(Request $request, CampaignDraft $draft): JsonResponse
     {
         $job = $this->publishingEngine->queueOperation($draft, PublishingOperation::ARCHIVE, (string) $request->user()->id);
+
         return response()->json(['data' => new PublishingJobResource($job)], 202);
     }
 
     /** POST /mkt/studio/jobs/{job}/retry */
     public function retry(Request $request, PublishingJob $job): JsonResponse
     {
-        if (!$job->canRetry()) {
+        if (! $job->canRetry()) {
             return response()->json(['message' => 'This job cannot be retried.'], 422);
         }
 
         $retried = $this->publishingEngine->retry($job, (string) $request->user()->id);
+
         return response()->json(['data' => new PublishingJobResource($retried)]);
     }
 
@@ -81,9 +85,9 @@ class PublishingJobController extends Controller
             'data' => PublishingJobResource::collection($jobs->items())->resolve(),
             'meta' => [
                 'current_page' => $jobs->currentPage(),
-                'last_page'    => $jobs->lastPage(),
-                'per_page'     => $jobs->perPage(),
-                'total'        => $jobs->total(),
+                'last_page' => $jobs->lastPage(),
+                'per_page' => $jobs->perPage(),
+                'total' => $jobs->total(),
             ],
         ]);
     }

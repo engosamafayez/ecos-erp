@@ -15,12 +15,17 @@ use RuntimeException;
  */
 final class RecipeResolverException extends RuntimeException
 {
-    public const NO_ACTIVE_RECIPE       = 'no_active_recipe';
-    public const NO_COMPONENTS          = 'no_components';
-    public const COMPONENT_NOT_FOUND    = 'component_not_found';
-    public const COMPONENT_INACTIVE     = 'component_inactive';
+    public const NO_ACTIVE_RECIPE = 'no_active_recipe';
+
+    public const NO_COMPONENTS = 'no_components';
+
+    public const COMPONENT_NOT_FOUND = 'component_not_found';
+
+    public const COMPONENT_INACTIVE = 'component_inactive';
+
     public const COMPONENT_MISSING_UNIT = 'component_missing_unit';
-    public const PRODUCT_UNAVAILABLE    = 'product_unavailable';
+
+    public const PRODUCT_UNAVAILABLE = 'product_unavailable';
 
     private function __construct(
         string $message,

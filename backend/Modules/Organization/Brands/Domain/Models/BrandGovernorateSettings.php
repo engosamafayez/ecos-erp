@@ -26,12 +26,12 @@ class BrandGovernorateSettings extends Model
     protected function casts(): array
     {
         return [
-            'is_enabled'             => 'boolean',
-            'shipping_price'         => 'decimal:2',
+            'is_enabled' => 'boolean',
+            'shipping_price' => 'decimal:2',
             'estimated_delivery_days' => 'integer',
-            'same_day_supported'     => 'boolean',
-            'display_order'          => 'integer',
-            'governorate_id'         => 'integer',
+            'same_day_supported' => 'boolean',
+            'display_order' => 'integer',
+            'governorate_id' => 'integer',
         ];
     }
 

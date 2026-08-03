@@ -50,13 +50,13 @@ return new class extends Migration
             // Append-only: no updated_at
             $table->timestamp('created_at')->useCurrent();
 
-            $table->index(['category', 'occurred_at'],             'bae_ev_cat_at_idx');
-            $table->index(['entity_type', 'entity_id'],            'bae_ev_entity_idx');
-            $table->index(['company_id', 'occurred_at'],           'bae_ev_co_at_idx');
-            $table->index('correlation_id',                        'bae_ev_corr_idx');
-            $table->index('business_dna_id',                       'bae_ev_dna_idx');
-            $table->index(['producer_module', 'occurred_at'],      'bae_ev_prod_at_idx');
-            $table->index('occurred_at',                           'bae_ev_at_idx');
+            $table->index(['category', 'occurred_at'], 'bae_ev_cat_at_idx');
+            $table->index(['entity_type', 'entity_id'], 'bae_ev_entity_idx');
+            $table->index(['company_id', 'occurred_at'], 'bae_ev_co_at_idx');
+            $table->index('correlation_id', 'bae_ev_corr_idx');
+            $table->index('business_dna_id', 'bae_ev_dna_idx');
+            $table->index(['producer_module', 'occurred_at'], 'bae_ev_prod_at_idx');
+            $table->index('occurred_at', 'bae_ev_at_idx');
         });
     }
 

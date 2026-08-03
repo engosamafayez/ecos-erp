@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\POS\Receipt\Domain\Exceptions;
 
-final class ReceiptNotFoundException extends \RuntimeException
+use RuntimeException;
+
+final class ReceiptNotFoundException extends RuntimeException
 {
     public static function withId(string $id): self
     {

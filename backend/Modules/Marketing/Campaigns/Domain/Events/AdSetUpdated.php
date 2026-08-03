@@ -10,6 +10,6 @@ final class AdSetUpdated
 {
     public function __construct(
         public readonly CampaignAdSet $adSet,
-        public readonly string        $previousStatus,
+        public readonly string $previousStatus,
     ) {}
 }

@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace Modules\Core\UserPreferences\Domain\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\User;
 use Modules\Core\UserPreferences\Infrastructure\Database\Factories\UserPreferenceFactory;
 
 /**
  * Stores the preference payload for one (user, category) pair.
  *
- * @property string                $id
- * @property int                   $user_id
- * @property string                $category   Preference namespace, e.g. 'products', 'theme'
- * @property array<string, mixed>  $payload    The preference data for this category
+ * @property string $id
+ * @property int $user_id
+ * @property string $category Preference namespace, e.g. 'products', 'theme'
+ * @property array<string, mixed> $payload The preference data for this category
  * @property \Illuminate\Support\Carbon $created_at
  * @property \Illuminate\Support\Carbon $updated_at
  */

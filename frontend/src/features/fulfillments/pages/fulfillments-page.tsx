@@ -96,6 +96,13 @@ export function FulfillmentsPage() {
       ),
     },
     {
+      key: 'channel',
+      header: t('columns.channel', 'Channel'),
+      cell: (f) => (
+        <span className="text-muted-foreground">{f.order?.channel?.name ?? '—'}</span>
+      ),
+    },
+    {
       key: 'warehouse',
       header: t('columns.warehouse'),
       cell: (f) => (

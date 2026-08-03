@@ -20,8 +20,8 @@ final class SessionController extends Controller
     use HasApiResponse;
 
     public function __construct(
-        private readonly OpenSessionService  $openSessionService,
-        private readonly FindSessionService  $findSessionService,
+        private readonly OpenSessionService $openSessionService,
+        private readonly FindSessionService $findSessionService,
         private readonly CloseSessionService $closeSessionService,
     ) {}
 
@@ -37,17 +37,17 @@ final class SessionController extends Controller
         // value for a given ECOS user without requiring a schema change.
         $cashierId = \Ramsey\Uuid\Uuid::uuid5(
             \Ramsey\Uuid\Uuid::NAMESPACE_OID,
-            'ecos:user:' . $user->id,
+            'ecos:user:'.$user->id,
         )->toString();
 
         $command = new OpenSessionCommand(
-            cashierId:         $cashierId,
-            companyId:         $data['company_id'],
-            channelId:         $data['channel_id'] ?? null,
-            warehouseId:       $data['warehouse_id'],
+            cashierId: $cashierId,
+            companyId: $data['company_id'],
+            channelId: $data['channel_id'] ?? null,
+            warehouseId: $data['warehouse_id'],
             deviceFingerprint: $data['device_fingerprint'] ?? substr((string) $request->userAgent(), 0, 64),
-            ipAddress:         $request->ip() ?? '0.0.0.0',
-            deviceType:        $data['device_type'] ?? 'browser',
+            ipAddress: $request->ip() ?? '0.0.0.0',
+            deviceType: $data['device_type'] ?? 'browser',
         );
 
         $result = $this->openSessionService->execute($command);
@@ -66,7 +66,7 @@ final class SessionController extends Controller
 
     public function destroy(string $session): JsonResponse
     {
-        $model   = $this->findSessionService->execute($session);
+        $model = $this->findSessionService->execute($session);
         $command = new CloseSessionCommand(
             sessionId: (string) $model->id,
             cashierId: (string) $model->cashier_id,

@@ -16,8 +16,8 @@ use Modules\Marketing\Automation\Presentation\Http\Resources\WorkflowTemplateRes
 class WorkflowTemplateController extends Controller
 {
     public function __construct(
-        private readonly WorkflowTemplateService            $service,
-        private readonly CreateWorkflowFromTemplateAction   $createAction,
+        private readonly WorkflowTemplateService $service,
+        private readonly CreateWorkflowFromTemplateAction $createAction,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -30,13 +30,13 @@ class WorkflowTemplateController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name'         => 'required|string|max:255',
-            'description'  => 'nullable|string',
-            'category'     => 'required|string',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'category' => 'required|string',
             'trigger_type' => 'required|string',
-            'nodes_graph'  => 'required|array',
-            'company_id'   => 'nullable|uuid',
-            'is_global'    => 'boolean',
+            'nodes_graph' => 'required|array',
+            'company_id' => 'nullable|uuid',
+            'is_global' => 'boolean',
         ]);
 
         $template = $this->service->create($validated, (string) $request->user()->id);
@@ -52,10 +52,10 @@ class WorkflowTemplateController extends Controller
     public function update(Request $request, AutomationWorkflowTemplate $template): JsonResponse
     {
         $validated = $request->validate([
-            'name'        => 'sometimes|string|max:255',
+            'name' => 'sometimes|string|max:255',
             'description' => 'nullable|string',
             'nodes_graph' => 'sometimes|array',
-            'is_active'   => 'boolean',
+            'is_active' => 'boolean',
         ]);
 
         $template = $this->service->update($template, $validated, (string) $request->user()->id);
@@ -73,9 +73,9 @@ class WorkflowTemplateController extends Controller
     public function createWorkflow(Request $request, AutomationWorkflowTemplate $template): JsonResponse
     {
         $validated = $request->validate([
-            'name'       => 'nullable|string|max:255',
+            'name' => 'nullable|string|max:255',
             'company_id' => 'nullable|uuid',
-            'brand_id'   => 'nullable|uuid',
+            'brand_id' => 'nullable|uuid',
         ]);
 
         $workflow = $this->createAction->execute($template, $validated, (string) $request->user()->id);

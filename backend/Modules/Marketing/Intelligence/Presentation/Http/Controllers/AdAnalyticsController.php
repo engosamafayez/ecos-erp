@@ -25,17 +25,17 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 final class AdAnalyticsController extends Controller
 {
     public function __construct(
-        private readonly MarketingKpiEngine   $engine,
+        private readonly MarketingKpiEngine $engine,
         private readonly GenerateReportAction $reportAction,
     ) {}
 
     public function index(Request $request): JsonResponse
     {
-        $filter  = IntelligenceFilterDto::fromRequest($request);
-        $sortBy  = $this->allowedSort($request->query('sort_by', 'total_spend'));
+        $filter = IntelligenceFilterDto::fromRequest($request);
+        $sortBy = $this->allowedSort($request->query('sort_by', 'total_spend'));
         $sortDir = $request->query('sort_direction', 'desc') === 'asc' ? 'asc' : 'desc';
         $perPage = min((int) $request->query('per_page', 20), 200);
-        $page    = max(1, (int) $request->query('page', 1));
+        $page = max(1, (int) $request->query('page', 1));
 
         $result = $this->engine->adBreakdown($filter, $sortBy, $sortDir, $perPage, $page);
 
@@ -44,13 +44,13 @@ final class AdAnalyticsController extends Controller
         return response()->json([
             'data' => $result['data'],
             'meta' => [
-                'total'          => $result['total'],
-                'per_page'       => $perPage,
-                'current_page'   => $page,
-                'last_page'      => (int) ceil($result['total'] / $perPage),
-                'date_from'      => $start,
-                'date_to'        => $end,
-                'sort_by'        => $sortBy,
+                'total' => $result['total'],
+                'per_page' => $perPage,
+                'current_page' => $page,
+                'last_page' => (int) ceil($result['total'] / $perPage),
+                'date_from' => $start,
+                'date_to' => $end,
+                'sort_by' => $sortBy,
                 'sort_direction' => $sortDir,
             ],
         ]);
@@ -58,8 +58,8 @@ final class AdAnalyticsController extends Controller
 
     public function export(Request $request): StreamedResponse|\Illuminate\Http\Response
     {
-        $filter  = IntelligenceFilterDto::fromRequest($request);
-        $format  = in_array($request->query('format', 'csv'), ['csv', 'excel', 'html'], true)
+        $filter = IntelligenceFilterDto::fromRequest($request);
+        $format = in_array($request->query('format', 'csv'), ['csv', 'excel', 'html'], true)
             ? $request->query('format', 'csv')
             : 'csv';
         $actorId = $request->user()?->id;
@@ -70,6 +70,7 @@ final class AdAnalyticsController extends Controller
     private function allowedSort(string $value): string
     {
         $allowed = ['total_spend', 'total_revenue', 'total_purchases', 'total_leads', 'total_clicks', 'total_impressions'];
+
         return in_array($value, $allowed, true) ? $value : 'total_spend';
     }
 }

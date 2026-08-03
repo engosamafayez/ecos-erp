@@ -28,13 +28,13 @@ final class RelationshipGraphService
         $edges = [];
 
         // Central node: the asset itself
-        $assetNodeId  = 'asset:' . $asset->id;
+        $assetNodeId = 'asset:'.$asset->id;
         $nodes[$assetNodeId] = new RelationshipNode(
-            id:            $assetNodeId,
-            type:          'asset',
-            label:         $asset->name,
-            subLabel:      $asset->asset_type->value ?? null,
-            healthStatus:  $asset->health_status ?? null,
+            id: $assetNodeId,
+            type: 'asset',
+            label: $asset->name,
+            subLabel: $asset->asset_type->value ?? null,
+            healthStatus: $asset->health_status ?? null,
             connectorType: $asset->connector_type ?? null,
         );
 
@@ -43,25 +43,25 @@ final class RelationshipGraphService
             ->get();
 
         foreach ($relationships as $rel) {
-            $targetNodeId = $rel->related_type . ':' . $rel->related_id;
+            $targetNodeId = $rel->related_type.':'.$rel->related_id;
 
             if (! isset($nodes[$targetNodeId])) {
                 $nodes[$targetNodeId] = new RelationshipNode(
-                    id:       $targetNodeId,
-                    type:     $rel->related_type,
-                    label:    $this->labelForRelated($rel->related_type, $rel->related_id),
+                    id: $targetNodeId,
+                    type: $rel->related_type,
+                    label: $this->labelForRelated($rel->related_type, $rel->related_id),
                     subLabel: $rel->related_type,
                 );
             }
 
             $edges[] = new RelationshipEdge(
-                id:            $rel->id,
-                sourceId:      $assetNodeId,
-                targetId:      $targetNodeId,
-                label:         'mapped_to',
-                accepted:      $rel->accepted_at !== null,
+                id: $rel->id,
+                sourceId: $assetNodeId,
+                targetId: $targetNodeId,
+                label: 'mapped_to',
+                accepted: $rel->accepted_at !== null,
                 autoSuggested: (bool) $rel->is_auto_suggested,
-                confidence:    $rel->confidence,
+                confidence: $rel->confidence,
             );
         }
 
@@ -85,36 +85,36 @@ final class RelationshipGraphService
         $edges = [];
 
         foreach ($assets as $asset) {
-            $assetNodeId         = 'asset:' . $asset->id;
+            $assetNodeId = 'asset:'.$asset->id;
             $nodes[$assetNodeId] = new RelationshipNode(
-                id:            $assetNodeId,
-                type:          'asset',
-                label:         $asset->name,
-                subLabel:      $asset->asset_type->value ?? null,
-                healthStatus:  $asset->health_status ?? null,
+                id: $assetNodeId,
+                type: 'asset',
+                label: $asset->name,
+                subLabel: $asset->asset_type->value ?? null,
+                healthStatus: $asset->health_status ?? null,
                 connectorType: $asset->connector_type ?? null,
             );
 
             foreach ($asset->relationships ?? [] as $rel) {
-                $targetNodeId = $rel->related_type . ':' . $rel->related_id;
+                $targetNodeId = $rel->related_type.':'.$rel->related_id;
 
                 if (! isset($nodes[$targetNodeId])) {
                     $nodes[$targetNodeId] = new RelationshipNode(
-                        id:       $targetNodeId,
-                        type:     $rel->related_type,
-                        label:    $this->labelForRelated($rel->related_type, $rel->related_id),
+                        id: $targetNodeId,
+                        type: $rel->related_type,
+                        label: $this->labelForRelated($rel->related_type, $rel->related_id),
                         subLabel: $rel->related_type,
                     );
                 }
 
                 $edges[] = new RelationshipEdge(
-                    id:            $rel->id,
-                    sourceId:      $assetNodeId,
-                    targetId:      $targetNodeId,
-                    label:         'mapped_to',
-                    accepted:      $rel->accepted_at !== null,
+                    id: $rel->id,
+                    sourceId: $assetNodeId,
+                    targetId: $targetNodeId,
+                    label: 'mapped_to',
+                    accepted: $rel->accepted_at !== null,
                     autoSuggested: (bool) $rel->is_auto_suggested,
-                    confidence:    $rel->confidence,
+                    confidence: $rel->confidence,
                 );
             }
         }
@@ -127,6 +127,6 @@ final class RelationshipGraphService
 
     private function labelForRelated(string $type, string $id): string
     {
-        return ucfirst(str_replace('_', ' ', $type)) . ' #' . substr($id, 0, 8);
+        return ucfirst(str_replace('_', ' ', $type)).' #'.substr($id, 0, 8);
     }
 }

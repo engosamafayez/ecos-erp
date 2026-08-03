@@ -8,6 +8,7 @@ import {
   Factory,
   LayoutDashboard,
   Package,
+  PackageCheck,
   Settings,
   ShoppingBag,
   Sparkles,
@@ -94,8 +95,17 @@ export function createDefaultCommands(
       description: 'Manage sales orders',
       group: 'navigation',
       icon: ShoppingBag,
-      keywords: ['sales', 'commerce', 'fulfillment'],
-      action: go('/sales/orders'),
+      keywords: ['sales', 'commerce'],
+      action: go('/orders'),
+    },
+    {
+      id: 'nav.fulfillments',
+      title: 'Fulfillments',
+      description: 'Track order fulfillment and shipping',
+      group: 'navigation',
+      icon: PackageCheck,
+      keywords: ['shipping', 'dispatch', 'fulfillment', 'delivery'],
+      action: go('/fulfillments'),
     },
     {
       id: 'nav.customers',
@@ -103,8 +113,8 @@ export function createDefaultCommands(
       description: 'Manage customer records',
       group: 'navigation',
       icon: Users,
-      keywords: ['crm', 'clients', 'contacts'],
-      action: go('/sales/customers'),
+      keywords: ['crm', 'clients', 'contacts', 'commerce'],
+      action: go('/customers'),
     },
     {
       id: 'nav.products',
@@ -112,8 +122,8 @@ export function createDefaultCommands(
       description: 'Manage the product catalog',
       group: 'navigation',
       icon: Package,
-      keywords: ['catalog', 'sku', 'items', 'goods'],
-      action: go('/inventory/products'),
+      keywords: ['catalog', 'sku', 'items', 'goods', 'commerce'],
+      action: go('/products'),
     },
     {
       id: 'nav.inventory',
@@ -131,7 +141,7 @@ export function createDefaultCommands(
       group: 'navigation',
       icon: Warehouse,
       keywords: ['locations', 'storage', 'facilities'],
-      action: go('/organization/warehouses'),
+      action: go('/warehouses'),
     },
     {
       id: 'nav.suppliers',
@@ -140,7 +150,7 @@ export function createDefaultCommands(
       group: 'navigation',
       icon: Truck,
       keywords: ['vendors', 'purchasing', 'procurement'],
-      action: go('/purchasing/suppliers'),
+      action: go('/suppliers'),
     },
     {
       id: 'nav.purchase-orders',
@@ -149,7 +159,7 @@ export function createDefaultCommands(
       group: 'navigation',
       icon: ClipboardList,
       keywords: ['po', 'procurement', 'purchasing'],
-      action: go('/purchasing/purchase-orders'),
+      action: go('/purchase-orders'),
     },
     {
       id: 'nav.companies',
@@ -158,7 +168,7 @@ export function createDefaultCommands(
       group: 'navigation',
       icon: Building2,
       keywords: ['org', 'entity', 'organization', 'branch'],
-      action: go('/organization/companies'),
+      action: go('/companies'),
     },
     {
       id: 'nav.manufacturing',
@@ -273,7 +283,7 @@ export function createDefaultCommands(
       group: 'recent',
       icon: ShoppingBag,
       keywords: ['1042'],
-      action: go('/sales/orders'),
+      action: go('/orders'),
     },
     {
       id: 'recent.customer-ahmed',
@@ -282,7 +292,7 @@ export function createDefaultCommands(
       group: 'recent',
       icon: Users,
       keywords: ['ahmed', 'rashidi'],
-      action: go('/sales/customers'),
+      action: go('/customers'),
     },
     {
       id: 'recent.product-chair',
@@ -291,7 +301,7 @@ export function createDefaultCommands(
       group: 'recent',
       icon: Package,
       keywords: ['chair', 'chr-001'],
-      action: go('/inventory/products'),
+      action: go('/products'),
     },
 
     // ── Favorites (mock) ──────────────────────────────────────────────────────
@@ -301,7 +311,7 @@ export function createDefaultCommands(
       description: 'Sales orders workspace',
       group: 'favorites',
       icon: ShoppingBag,
-      action: go('/sales/orders'),
+      action: go('/orders'),
     },
     {
       id: 'fav.inventory',
@@ -317,7 +327,7 @@ export function createDefaultCommands(
       description: 'Dubai, UAE — 92% capacity',
       group: 'favorites',
       icon: Warehouse,
-      action: go('/organization/warehouses'),
+      action: go('/warehouses'),
     },
 
     // ── AI — reserved ─────────────────────────────────────────────────────────

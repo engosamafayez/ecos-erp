@@ -5,41 +5,42 @@ declare(strict_types=1);
 namespace Modules\POS\Customer\Domain\ValueObjects;
 
 use DateTimeImmutable;
+use InvalidArgumentException;
 
 final readonly class CustomerSnapshot
 {
     public function __construct(
-        public string            $customerId,
-        public string            $customerCode,
-        public string            $name,
-        public ?string           $email,
-        public ?string           $phone,
+        public string $customerId,
+        public string $customerCode,
+        public string $name,
+        public ?string $email,
+        public ?string $phone,
         public DateTimeImmutable $capturedAt,
     ) {}
 
     public static function capture(
-        string            $customerId,
-        string            $customerCode,
-        string            $name,
-        ?string           $email,
-        ?string           $phone,
+        string $customerId,
+        string $customerCode,
+        string $name,
+        ?string $email,
+        ?string $phone,
         DateTimeImmutable $capturedAt,
     ): self {
         if (trim($customerId) === '') {
-            throw new \InvalidArgumentException('Customer ID cannot be empty.');
+            throw new InvalidArgumentException('Customer ID cannot be empty.');
         }
 
         if (trim($name) === '') {
-            throw new \InvalidArgumentException('Customer name cannot be empty.');
+            throw new InvalidArgumentException('Customer name cannot be empty.');
         }
 
         return new self(
-            customerId:   $customerId,
+            customerId: $customerId,
             customerCode: $customerCode,
-            name:         $name,
-            email:        ($email !== null && trim($email) !== '') ? $email : null,
-            phone:        ($phone !== null && trim($phone) !== '') ? $phone : null,
-            capturedAt:   $capturedAt,
+            name: $name,
+            email: ($email !== null && trim($email) !== '') ? $email : null,
+            phone: ($phone !== null && trim($phone) !== '') ? $phone : null,
+            capturedAt: $capturedAt,
         );
     }
 
@@ -63,24 +64,24 @@ final readonly class CustomerSnapshot
     public function toArray(): array
     {
         return [
-            'customer_id'   => $this->customerId,
+            'customer_id' => $this->customerId,
             'customer_code' => $this->customerCode,
-            'name'          => $this->name,
-            'email'         => $this->email,
-            'phone'         => $this->phone,
-            'captured_at'   => $this->capturedAt->format('Y-m-d\TH:i:s\Z'),
+            'name' => $this->name,
+            'email' => $this->email,
+            'phone' => $this->phone,
+            'captured_at' => $this->capturedAt->format('Y-m-d\TH:i:s\Z'),
         ];
     }
 
     public static function fromArray(array $data): self
     {
         return new self(
-            customerId:   $data['customer_id'],
+            customerId: $data['customer_id'],
             customerCode: $data['customer_code'],
-            name:         $data['name'],
-            email:        $data['email'] ?? null,
-            phone:        $data['phone'] ?? null,
-            capturedAt:   new DateTimeImmutable($data['captured_at']),
+            name: $data['name'],
+            email: $data['email'] ?? null,
+            phone: $data['phone'] ?? null,
+            capturedAt: new DateTimeImmutable($data['captured_at']),
         );
     }
 }

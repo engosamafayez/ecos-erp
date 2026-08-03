@@ -39,7 +39,7 @@ final class CancelPurchaseMaterialAction
         }
 
         $material->update([
-            'status'     => PurchaseMaterialStatus::Cancelled->value,
+            'status' => PurchaseMaterialStatus::Cancelled->value,
             'updated_by' => (string) $request->user()?->id,
         ]);
 

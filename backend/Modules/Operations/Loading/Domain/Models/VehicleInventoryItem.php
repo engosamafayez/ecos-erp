@@ -11,29 +11,29 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Operations\Loading\Domain\Enums\VehicleInventoryItemStatus;
 
 /**
- * @property string                      $id
- * @property string                      $company_id
- * @property string                      $vehicle_assignment_id
- * @property string                      $vehicle_id
- * @property string                      $product_id
- * @property string                      $sku_snapshot
- * @property string                      $name_snapshot
- * @property \Carbon\Carbon              $operational_date
- * @property string                      $pool_entry_id
- * @property string                      $loading_task_id
- * @property float                       $quantity_loaded
- * @property float                       $quantity_allocated
- * @property float                       $quantity_delivered
- * @property float                       $quantity_returned
- * @property float                       $quantity_on_hand
- * @property float                       $quantity_unallocated
- * @property bool                        $requires_refrigeration
- * @property VehicleInventoryItemStatus  $status
- * @property \Carbon\Carbon              $last_movement_at
- * @property string                      $created_by
- * @property string                      $updated_by
- * @property \Carbon\Carbon              $created_at
- * @property \Carbon\Carbon              $updated_at
+ * @property string $id
+ * @property string $company_id
+ * @property string $vehicle_assignment_id
+ * @property string $vehicle_id
+ * @property string $product_id
+ * @property string $sku_snapshot
+ * @property string $name_snapshot
+ * @property \Carbon\Carbon $operational_date
+ * @property string $pool_entry_id
+ * @property string $loading_task_id
+ * @property float $quantity_loaded
+ * @property float $quantity_allocated
+ * @property float $quantity_delivered
+ * @property float $quantity_returned
+ * @property float $quantity_on_hand
+ * @property float $quantity_unallocated
+ * @property bool $requires_refrigeration
+ * @property VehicleInventoryItemStatus $status
+ * @property \Carbon\Carbon $last_movement_at
+ * @property string $created_by
+ * @property string $updated_by
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class VehicleInventoryItem extends Model
 {
@@ -73,16 +73,16 @@ class VehicleInventoryItem extends Model
     protected function casts(): array
     {
         return [
-            'status'                 => VehicleInventoryItemStatus::class,
-            'operational_date'       => 'date:Y-m-d',
-            'quantity_loaded'        => 'float',
-            'quantity_allocated'     => 'float',
-            'quantity_delivered'     => 'float',
-            'quantity_returned'      => 'float',
-            'quantity_on_hand'       => 'float',
-            'quantity_unallocated'   => 'float',
+            'status' => VehicleInventoryItemStatus::class,
+            'operational_date' => 'date:Y-m-d',
+            'quantity_loaded' => 'float',
+            'quantity_allocated' => 'float',
+            'quantity_delivered' => 'float',
+            'quantity_returned' => 'float',
+            'quantity_on_hand' => 'float',
+            'quantity_unallocated' => 'float',
             'requires_refrigeration' => 'boolean',
-            'last_movement_at'       => 'datetime',
+            'last_movement_at' => 'datetime',
         ];
     }
 

@@ -6,6 +6,8 @@ namespace Modules\Manufacturing\ManufacturingService\Application\Services;
 
 use Illuminate\Support\Str;
 use Modules\Manufacturing\DecisionKernel\Domain\ValueObjects\DecisionTrigger;
+use Modules\Manufacturing\Disassembly\Application\Services\DisassemblyExecutor;
+use Modules\Manufacturing\Disassembly\Domain\Services\DisassemblyWorkflow;
 use Modules\Manufacturing\ManufacturingExecution\Application\Services\ManufacturingExecutor;
 use Modules\Manufacturing\ManufacturingExecution\Domain\Services\ExecutionPipeline;
 use Modules\Manufacturing\ManufacturingService\Application\DTOs\Requests\DisassembleProductRequest;
@@ -16,8 +18,6 @@ use Modules\Manufacturing\ManufacturingService\Application\DTOs\Responses\Disass
 use Modules\Manufacturing\ManufacturingService\Application\DTOs\Responses\ManufactureProductResponse;
 use Modules\Manufacturing\ManufacturingService\Application\DTOs\Responses\SimulateManufacturingResponse;
 use Modules\Manufacturing\ManufacturingService\Application\DTOs\Responses\ValidateManufacturingResponse;
-use Modules\Manufacturing\Disassembly\Application\Services\DisassemblyExecutor;
-use Modules\Manufacturing\Disassembly\Domain\Services\DisassemblyWorkflow;
 use Modules\Manufacturing\ManufacturingWorkflow\Domain\Services\ManufacturingWorkflow;
 use Modules\Manufacturing\ManufacturingWorkflow\Domain\ValueObjects\ManufacturingWorkflowRequest;
 
@@ -45,10 +45,10 @@ final class ManufacturingApplicationService
 {
     public function __construct(
         private readonly ManufacturingWorkflow $workflow,
-        private readonly ExecutionPipeline     $pipeline,
+        private readonly ExecutionPipeline $pipeline,
         private readonly ManufacturingExecutor $executor,
-        private readonly DisassemblyWorkflow   $disassemblyWorkflow,
-        private readonly DisassemblyExecutor   $disassemblyExecutor,
+        private readonly DisassemblyWorkflow $disassemblyWorkflow,
+        private readonly DisassemblyExecutor $disassemblyExecutor,
     ) {}
 
     /**
@@ -61,23 +61,23 @@ final class ManufacturingApplicationService
     public function manufactureProduct(ManufactureProductRequest $request): ManufactureProductResponse
     {
         $workflowRequest = $this->buildWorkflowRequest(
-            productId:    $request->product_id,
-            warehouseId:  $request->warehouse_id,
-            companyId:    $request->company_id,
-            requiredQty:  $request->required_qty,
-            actorId:      $request->actor_id,
-            triggerType:  $request->trigger_type,
-            triggerId:    $request->trigger_id ?? $this->generateUuid(),
-            metadata:     $request->metadata,
+            productId: $request->product_id,
+            warehouseId: $request->warehouse_id,
+            companyId: $request->company_id,
+            requiredQty: $request->required_qty,
+            actorId: $request->actor_id,
+            triggerType: $request->trigger_type,
+            triggerId: $request->trigger_id ?? $this->generateUuid(),
+            metadata: $request->metadata,
         );
 
         $workflowResult = $this->workflow->run($workflowRequest);
 
-        if (!$workflowResult->isPlanReady()) {
+        if (! $workflowResult->isPlanReady()) {
             return ManufactureProductResponse::blocked($workflowResult);
         }
 
-        $context         = $this->pipeline->prepare($workflowResult->plan);
+        $context = $this->pipeline->prepare($workflowResult->plan);
         $executionResult = $this->executor->execute($context, $request->company_id);
 
         return ManufactureProductResponse::fromExecution($workflowResult, $executionResult);
@@ -93,14 +93,14 @@ final class ManufacturingApplicationService
     public function simulateManufacturing(SimulateManufacturingRequest $request): SimulateManufacturingResponse
     {
         $workflowRequest = $this->buildWorkflowRequest(
-            productId:    $request->product_id,
-            warehouseId:  $request->warehouse_id,
-            companyId:    $request->company_id,
-            requiredQty:  $request->required_qty,
-            actorId:      $request->actor_id,
-            triggerType:  $request->trigger_type,
-            triggerId:    $request->trigger_id ?? $this->generateUuid(),
-            metadata:     $request->metadata,
+            productId: $request->product_id,
+            warehouseId: $request->warehouse_id,
+            companyId: $request->company_id,
+            requiredQty: $request->required_qty,
+            actorId: $request->actor_id,
+            triggerType: $request->trigger_type,
+            triggerId: $request->trigger_id ?? $this->generateUuid(),
+            metadata: $request->metadata,
         );
 
         $workflowResult = $this->workflow->run($workflowRequest);
@@ -121,19 +121,19 @@ final class ManufacturingApplicationService
     public function validateManufacturing(ValidateManufacturingRequest $request): ValidateManufacturingResponse
     {
         $workflowRequest = $this->buildWorkflowRequest(
-            productId:    $request->product_id,
-            warehouseId:  $request->warehouse_id,
-            companyId:    $request->company_id,
-            requiredQty:  $request->required_qty,
-            actorId:      $request->actor_id,
-            triggerType:  $request->trigger_type,
-            triggerId:    $request->trigger_id ?? $this->generateUuid(),
-            metadata:     $request->metadata,
+            productId: $request->product_id,
+            warehouseId: $request->warehouse_id,
+            companyId: $request->company_id,
+            requiredQty: $request->required_qty,
+            actorId: $request->actor_id,
+            triggerType: $request->trigger_type,
+            triggerId: $request->trigger_id ?? $this->generateUuid(),
+            metadata: $request->metadata,
         );
 
         $workflowResult = $this->workflow->run($workflowRequest);
 
-        if (!$workflowResult->isPlanReady()) {
+        if (! $workflowResult->isPlanReady()) {
             return ValidateManufacturingResponse::blocked($workflowResult);
         }
 
@@ -158,7 +158,7 @@ final class ManufacturingApplicationService
         }
 
         $executionResult = $this->disassemblyExecutor->execute(
-            plan:      $workflowResult->plan,
+            plan: $workflowResult->plan,
             companyId: $request->company_id,
         );
 
@@ -168,28 +168,28 @@ final class ManufacturingApplicationService
     // ── Private helpers ───────────────────────────────────────────────────────
 
     private function buildWorkflowRequest(
-        string  $productId,
-        string  $warehouseId,
-        string  $companyId,
-        float   $requiredQty,
-        string  $actorId,
-        string  $triggerType,
-        string  $triggerId,
-        array   $metadata,
+        string $productId,
+        string $warehouseId,
+        string $companyId,
+        float $requiredQty,
+        string $actorId,
+        string $triggerType,
+        string $triggerId,
+        array $metadata,
     ): ManufacturingWorkflowRequest {
         return new ManufacturingWorkflowRequest(
-            product_id:   $productId,
+            product_id: $productId,
             warehouse_id: $warehouseId,
-            company_id:   $companyId,
+            company_id: $companyId,
             required_qty: $requiredQty,
-            trigger:      DecisionTrigger::now(
-                type:     $triggerType,
-                id:       $triggerId,
-                version:  1,
-                actor:    $actorId,
+            trigger: DecisionTrigger::now(
+                type: $triggerType,
+                id: $triggerId,
+                version: 1,
+                actor: $actorId,
                 metadata: $metadata,
             ),
-            metadata:     $metadata,
+            metadata: $metadata,
         );
     }
 

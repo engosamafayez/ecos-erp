@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature\POS\Promotion;
 
 use DateTimeImmutable;
+use DateTimeZone;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\POS\Promotion\Domain\Enums\PromotionStatus;
 use Modules\POS\Promotion\Domain\Models\Promotion;
 use Modules\POS\Promotion\Domain\ValueObjects\PromotionCondition;
@@ -13,7 +15,6 @@ use Modules\POS\Promotion\Infrastructure\Repositories\EloquentPromotionRepositor
 use Modules\POS\Shared\Domain\ValueObjects\Money;
 use Modules\POS\Shared\Domain\ValueObjects\Percentage;
 use Tests\TestCase;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 
 final class PromotionPersistenceTest extends TestCase
 {
@@ -24,22 +25,23 @@ final class PromotionPersistenceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->repo = new EloquentPromotionRepository();
+        $this->repo = new EloquentPromotionRepository;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private function makePromotion(
-        array              $conditions = [],
+        array $conditions = [],
         ?DateTimeImmutable $validUntil = null,
-        ?int               $maxUses    = null,
-        int                $priority   = 0,
+        ?int $maxUses = null,
+        int $priority = 0,
     ): Promotion {
         if (empty($conditions)) {
             $conditions = [PromotionCondition::anyPurchase()];
         }
-        $reward    = PromotionReward::percentageDiscount(Percentage::of('10'));
-        $validFrom = new DateTimeImmutable('2026-07-01 00:00:00', new \DateTimeZone('UTC'));
+        $reward = PromotionReward::percentageDiscount(Percentage::of('10'));
+        $validFrom = new DateTimeImmutable('2026-07-01 00:00:00', new DateTimeZone('UTC'));
+
         return Promotion::create('Test Promo', $conditions, $reward, $validFrom, $validUntil, $maxUses, $priority);
     }
 
@@ -124,7 +126,7 @@ final class PromotionPersistenceTest extends TestCase
         $promo = $this->makePromotion(conditions: [PromotionCondition::anyPurchase()]);
         $this->repo->save($promo);
 
-        $found      = $this->repo->findById((string) $promo->id);
+        $found = $this->repo->findById((string) $promo->id);
         $conditions = $found->getConditions();
         $this->assertCount(1, $conditions);
         $this->assertInstanceOf(PromotionCondition::class, $conditions[0]);
@@ -132,12 +134,12 @@ final class PromotionPersistenceTest extends TestCase
 
     public function test_minimum_cart_total_condition_roundtrips(): void
     {
-        $cond  = PromotionCondition::minimumCartTotal(Money::of('150.00', 'EGP'));
+        $cond = PromotionCondition::minimumCartTotal(Money::of('150.00', 'EGP'));
         $promo = $this->makePromotion(conditions: [$cond]);
         $this->repo->save($promo);
 
-        $found     = $this->repo->findById((string) $promo->id);
-        $restored  = $found->getConditions()[0];
+        $found = $this->repo->findById((string) $promo->id);
+        $restored = $found->getConditions()[0];
         $this->assertTrue(Money::of('150.00', 'EGP')->equals($restored->getMinAmount()));
     }
 
@@ -162,7 +164,7 @@ final class PromotionPersistenceTest extends TestCase
         $promo = $this->makePromotion();
         $this->repo->save($promo);
 
-        $found  = $this->repo->findById((string) $promo->id);
+        $found = $this->repo->findById((string) $promo->id);
         $reward = $found->getReward();
         $this->assertInstanceOf(PromotionReward::class, $reward);
         $this->assertTrue(Percentage::of('10')->equals($reward->getPercentage()));
@@ -170,12 +172,12 @@ final class PromotionPersistenceTest extends TestCase
 
     public function test_free_item_reward_roundtrips(): void
     {
-        $reward    = PromotionReward::freeItem('prod-001', 2);
-        $validFrom = new DateTimeImmutable('2026-07-01', new \DateTimeZone('UTC'));
-        $promo     = Promotion::create('Free Item Promo', [PromotionCondition::anyPurchase()], $reward, $validFrom);
+        $reward = PromotionReward::freeItem('prod-001', 2);
+        $validFrom = new DateTimeImmutable('2026-07-01', new DateTimeZone('UTC'));
+        $promo = Promotion::create('Free Item Promo', [PromotionCondition::anyPurchase()], $reward, $validFrom);
         $this->repo->save($promo);
 
-        $found     = $this->repo->findById((string) $promo->id);
+        $found = $this->repo->findById((string) $promo->id);
         $persisted = $found->getReward();
         $this->assertSame('prod-001', $persisted->getFreeItemProductId());
         $this->assertSame(2, $persisted->getFreeItemQuantity());
@@ -208,11 +210,11 @@ final class PromotionPersistenceTest extends TestCase
 
     public function test_valid_until_persists_correctly(): void
     {
-        $until = new DateTimeImmutable('2026-12-31 23:59:59', new \DateTimeZone('UTC'));
+        $until = new DateTimeImmutable('2026-12-31 23:59:59', new DateTimeZone('UTC'));
         $promo = $this->makePromotion(validUntil: $until);
         $this->repo->save($promo);
 
-        $found   = $this->repo->findById((string) $promo->id);
+        $found = $this->repo->findById((string) $promo->id);
         $roundtrip = $found->getValidUntil();
         $this->assertNotNull($roundtrip);
         $this->assertSame('2026-12-31', $roundtrip->format('Y-m-d'));

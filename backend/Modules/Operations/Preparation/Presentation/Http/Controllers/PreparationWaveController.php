@@ -22,21 +22,19 @@ use Modules\Operations\Preparation\Application\Actions\CreateWaveAction;
 use Modules\Operations\Preparation\Application\Actions\GenerateDemandAction;
 use Modules\Operations\Preparation\Application\Actions\RecalculateWaveAction;
 use Modules\Operations\Preparation\Application\Actions\ReleaseWorkerAction;
+use Modules\Operations\Preparation\Application\Actions\ReportIssueAction;
 use Modules\Operations\Preparation\Application\Actions\ResolveShortageAction;
 use Modules\Operations\Preparation\Application\Actions\StartPreparationAction;
 use Modules\Operations\Preparation\Application\DTOs\CreateWaveDTO;
 use Modules\Operations\Preparation\Application\DTOs\RecalculateWaveDTO;
+use Modules\Operations\Preparation\Application\DTOs\ReportIssueDTO;
 use Modules\Operations\Preparation\Application\DTOs\StartPreparationDTO;
-use Modules\Operations\Preparation\Domain\Exceptions\InvalidWaveStatusTransitionException;
-use Modules\Operations\Preparation\Domain\Exceptions\ShortageNotResolvedException;
+use Modules\Operations\Preparation\Application\Services\WaveEngine\WavePreparationService;
+use Modules\Operations\Preparation\Domain\Enums\PreparationIssueType;
 use Modules\Operations\Preparation\Domain\Exceptions\WaveItemNotFoundException;
 use Modules\Operations\Preparation\Domain\Exceptions\WaveNotFoundException;
 use Modules\Operations\Preparation\Domain\Models\PreparationWave;
 use Modules\Operations\Preparation\Domain\Models\PreparationWaveItem;
-use Modules\Operations\Preparation\Application\Actions\ReportIssueAction;
-use Modules\Operations\Preparation\Application\Services\WaveEngine\WavePreparationService;
-use Modules\Operations\Preparation\Application\DTOs\ReportIssueDTO;
-use Modules\Operations\Preparation\Domain\Enums\PreparationIssueType;
 use Modules\Operations\Preparation\Presentation\Http\Requests\ApproveWaveRequest;
 use Modules\Operations\Preparation\Presentation\Http\Requests\AssignWorkerRequest;
 use Modules\Operations\Preparation\Presentation\Http\Requests\CancelWaveRequest;
@@ -61,23 +59,23 @@ final class PreparationWaveController extends Controller
         $this->authorize('viewAny', PreparationWave::class);
 
         $request->validate([
-            'status'        => ['nullable', 'string'],
-            'warehouse_id'  => ['nullable', 'uuid'],
+            'status' => ['nullable', 'string'],
+            'warehouse_id' => ['nullable', 'uuid'],
             'planning_date' => ['nullable', 'date_format:Y-m-d'],
-            'search'        => ['nullable', 'string', 'max:100'],
-            'page'          => ['nullable', 'integer', 'min:1'],
-            'per_page'      => ['nullable', 'integer', 'min:1', 'max:100'],
-            'sort'          => ['nullable', 'string'],
+            'search' => ['nullable', 'string', 'max:100'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+            'sort' => ['nullable', 'string'],
         ]);
 
         $companyId = $request->user()->company_id;
-        $perPage   = (int) ($request->query('per_page', 25));
+        $perPage = (int) ($request->query('per_page', 25));
 
         $sortable = ['wave_number', 'planning_date', 'status', 'orders_count', 'created_at'];
-        $sortRaw  = $request->query('sort', '-created_at');
-        $desc     = str_starts_with((string) $sortRaw, '-');
-        $sortCol  = ltrim((string) $sortRaw, '-');
-        $sortCol  = in_array($sortCol, $sortable, true) ? $sortCol : 'created_at';
+        $sortRaw = $request->query('sort', '-created_at');
+        $desc = str_starts_with((string) $sortRaw, '-');
+        $sortCol = ltrim((string) $sortRaw, '-');
+        $sortCol = in_array($sortCol, $sortable, true) ? $sortCol : 'created_at';
 
         $query = PreparationWave::with(['workers' => fn ($q) => $q->whereNull('released_at')])
             ->where('company_id', $companyId)
@@ -92,9 +90,9 @@ final class PreparationWaveController extends Controller
         return $this->success([
             'data' => PreparationWaveResource::collection($paginator->items()),
             'meta' => [
-                'page'      => $paginator->currentPage(),
-                'per_page'  => $paginator->perPage(),
-                'total'     => $paginator->total(),
+                'page' => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
                 'last_page' => $paginator->lastPage(),
             ],
         ]);
@@ -105,26 +103,26 @@ final class PreparationWaveController extends Controller
         $this->guardModuleEnabled($request->user()?->company_id);
         $this->authorize('create', PreparationWave::class);
 
-        $validated  = $request->validated();
-        $companyId  = $request->user()->company_id;
-        $actorId    = (string) $request->user()->id;
-        $orderIds   = $validated['order_ids'];
+        $validated = $request->validated();
+        $companyId = $request->user()->company_id;
+        $actorId = (string) $request->user()->id;
+        $orderIds = $validated['order_ids'];
 
         $this->guardOrdersReservable($companyId, $orderIds);
 
         $orderLines = DB::table('orders')
             ->whereIn('id', $orderIds)
             ->get(['id', 'order_number', 'confirmed_at', 'customer_name', 'delivery_zone',
-                   'governorate', 'shipping_cost', 'payment_status'])
+                'governorate', 'shipping_cost', 'payment_status'])
             ->map(fn ($o) => [
-                'order_id'      => $o->id,
-                'order_number'  => $o->order_number ?? $o->id,
-                'confirmed_at'  => $o->confirmed_at ?? now()->toIso8601String(),
+                'order_id' => $o->id,
+                'order_number' => $o->order_number ?? $o->id,
+                'confirmed_at' => $o->confirmed_at ?? now()->toIso8601String(),
                 'customer_name' => $o->customer_name ?? null,
                 'delivery_zone' => $o->delivery_zone ?? null,
-                'governorate'   => $o->governorate ?? null,
+                'governorate' => $o->governorate ?? null,
                 'shipping_cost' => $o->shipping_cost ?? null,
-                'is_paid'       => in_array($o->payment_status ?? '', ['paid', 'partially_paid'], true),
+                'is_paid' => in_array($o->payment_status ?? '', ['paid', 'partially_paid'], true),
             ])
             ->toArray();
 
@@ -134,15 +132,15 @@ final class PreparationWaveController extends Controller
             ->value('id');
 
         $dto = new CreateWaveDTO(
-            companyId:       $companyId,
-            warehouseId:     $validated['warehouse_id'],
-            planningDate:    $validated['planning_date'],
-            orderLines:      $orderLines,
-            actorId:         $actorId,
-            brandId:         $validated['brand_id'] ?? null,
-            channelId:       $validated['channel_id'] ?? null,
+            companyId: $companyId,
+            warehouseId: $validated['warehouse_id'],
+            planningDate: $validated['planning_date'],
+            orderLines: $orderLines,
+            actorId: $actorId,
+            brandId: $validated['brand_id'] ?? null,
+            channelId: $validated['channel_id'] ?? null,
             configVersionId: $configVersionId,
-            notes:           $validated['notes'] ?? null,
+            notes: $validated['notes'] ?? null,
         );
 
         $wave = $action->execute($dto);
@@ -205,17 +203,17 @@ final class PreparationWaveController extends Controller
 
         $workers = array_map(
             fn ($id) => ['user_id' => $id, 'role' => 'operator'],
-            $workerIds
+            $workerIds,
         );
 
         if (! empty($validated['supervisor_id'])) {
             $workers[] = ['user_id' => $validated['supervisor_id'], 'role' => 'supervisor'];
         }
 
-        $dto    = new StartPreparationDTO(
-            actorId:          (string) $request->user()->id,
-            workers:          $workers,
-            stationIds:       $validated['station_ids'] ?? [],
+        $dto = new StartPreparationDTO(
+            actorId: (string) $request->user()->id,
+            workers: $workers,
+            stationIds: $validated['station_ids'] ?? [],
             overrideShortage: (bool) ($validated['override_shortage'] ?? false),
         );
         $result = $action->execute($wave, $dto);
@@ -253,7 +251,7 @@ final class PreparationWaveController extends Controller
         }
 
         $validated = $request->validated();
-        $result    = $action->execute(
+        $result = $action->execute(
             $wave,
             $item,
             (float) $validated['quantity_prepared'],
@@ -262,15 +260,15 @@ final class PreparationWaveController extends Controller
         );
 
         return $this->success([
-            'id'                => $result->id,
-            'product_id'        => $result->product_id,
-            'sku'               => $result->sku_snapshot,
+            'id' => $result->id,
+            'product_id' => $result->product_id,
+            'sku' => $result->sku_snapshot,
             'quantity_required' => $result->quantity_required,
             'quantity_prepared' => $result->quantity_prepared,
-            'quantity_short'    => $result->quantity_short,
-            'status'            => $result->status?->value,
-            'prepared_at'       => $result->prepared_at?->toIso8601String(),
-            'prepared_by'       => $result->prepared_by,
+            'quantity_short' => $result->quantity_short,
+            'status' => $result->status?->value,
+            'prepared_at' => $result->prepared_at?->toIso8601String(),
+            'prepared_by' => $result->prepared_by,
         ]);
     }
 
@@ -294,9 +292,9 @@ final class PreparationWaveController extends Controller
         $result = $action->execute($wave, (string) $request->user()->id, $request->validated('reason'));
 
         return $this->success([
-            'id'                  => $result->id,
-            'status'              => $result->status?->value,
-            'cancelled_at'        => $result->cancelled_at?->toIso8601String(),
+            'id' => $result->id,
+            'status' => $result->status?->value,
+            'cancelled_at' => $result->cancelled_at?->toIso8601String(),
             'cancellation_reason' => $result->cancellation_reason,
         ]);
     }
@@ -308,7 +306,7 @@ final class PreparationWaveController extends Controller
         $this->authorize('recalculate', $wave);
 
         $validated = $request->validated();
-        $actorId   = (string) $request->user()->id;
+        $actorId = (string) $request->user()->id;
 
         $addOrderLines = [];
         if (! empty($validated['add_order_ids'])) {
@@ -316,19 +314,19 @@ final class PreparationWaveController extends Controller
                 ->whereIn('id', $validated['add_order_ids'])
                 ->get(['id', 'order_number', 'confirmed_at', 'customer_name', 'delivery_zone'])
                 ->map(fn ($o) => [
-                    'order_id'      => $o->id,
-                    'order_number'  => $o->order_number ?? $o->id,
-                    'confirmed_at'  => $o->confirmed_at ?? now()->toIso8601String(),
+                    'order_id' => $o->id,
+                    'order_number' => $o->order_number ?? $o->id,
+                    'confirmed_at' => $o->confirmed_at ?? now()->toIso8601String(),
                     'customer_name' => $o->customer_name ?? null,
                     'delivery_zone' => $o->delivery_zone ?? null,
                 ])
                 ->toArray();
         }
 
-        $dto    = new RecalculateWaveDTO(
-            actorId:        $actorId,
+        $dto = new RecalculateWaveDTO(
+            actorId: $actorId,
             removeOrderIds: $validated['remove_order_ids'] ?? [],
-            addOrderLines:  $addOrderLines,
+            addOrderLines: $addOrderLines,
         );
         $result = $action->execute($wave, $dto);
 
@@ -343,7 +341,7 @@ final class PreparationWaveController extends Controller
 
         $request->validate([
             'status' => ['nullable', 'string'],
-            'sort'   => ['nullable', 'string'],
+            'sort' => ['nullable', 'string'],
         ]);
 
         $statusFilter = $request->query('status');
@@ -353,11 +351,11 @@ final class PreparationWaveController extends Controller
             ->join('units as u', 'u.id', '=', 'p.unit_id')
             ->leftJoin(
                 DB::raw('(SELECT bom.product_id, COUNT(*) as material_count FROM bills_of_materials bom JOIN bill_of_material_lines boml ON boml.bom_id = bom.id WHERE bom.is_active = 1 GROUP BY bom.product_id) as bom_summary'),
-                'bom_summary.product_id', '=', 'pwi.product_id'
+                'bom_summary.product_id', '=', 'pwi.product_id',
             )
             ->leftJoin(
-                DB::raw('(SELECT ol.product_id, COUNT(DISTINCT ol.order_id) as orders_count FROM order_lines ol JOIN preparation_wave_orders pwo ON pwo.order_id = ol.order_id WHERE pwo.preparation_wave_id = ' . DB::getPdo()->quote($wave->id) . ' GROUP BY ol.product_id) as order_summary'),
-                'order_summary.product_id', '=', 'pwi.product_id'
+                DB::raw('(SELECT ol.product_id, COUNT(DISTINCT ol.order_id) as orders_count FROM order_lines ol JOIN preparation_wave_orders pwo ON pwo.order_id = ol.order_id WHERE pwo.preparation_wave_id = '.DB::getPdo()->quote($wave->id).' GROUP BY ol.product_id) as order_summary'),
+                'order_summary.product_id', '=', 'pwi.product_id',
             )
             ->where('pwi.preparation_wave_id', $wave->id)
             ->when($statusFilter, fn ($q) => $q->where('pwi.status', $statusFilter))
@@ -382,25 +380,25 @@ final class PreparationWaveController extends Controller
             ->get();
 
         return $this->success($items->map(fn ($i) => [
-            'id'                => $i->id,
-            'product_id'        => $i->product_id,
-            'sku'               => $i->sku,
-            'name'              => $i->name,
-            'thumbnail_url'     => $i->thumbnail_url,
-            'stock_status'      => $i->stock_status,
-            'unit_symbol'       => $i->unit_symbol,
+            'id' => $i->id,
+            'product_id' => $i->product_id,
+            'sku' => $i->sku,
+            'name' => $i->name,
+            'thumbnail_url' => $i->thumbnail_url,
+            'stock_status' => $i->stock_status,
+            'unit_symbol' => $i->unit_symbol,
             'quantity_required' => (float) $i->quantity_required,
             'quantity_prepared' => (float) $i->quantity_prepared,
-            'quantity_short'    => (float) $i->quantity_short,
-            'completion_pct'    => $i->quantity_required > 0
+            'quantity_short' => (float) $i->quantity_short,
+            'completion_pct' => $i->quantity_required > 0
                 ? round(($i->quantity_prepared / $i->quantity_required) * 100, 1)
                 : 0.0,
-            'status'            => $i->status,
-            'has_recipe'        => (bool) $i->has_recipe,
-            'material_count'    => (int) $i->material_count,
-            'orders_count'      => (int) $i->orders_count,
-            'prepared_at'       => $i->prepared_at,
-            'prepared_by'       => $i->prepared_by,
+            'status' => $i->status,
+            'has_recipe' => (bool) $i->has_recipe,
+            'material_count' => (int) $i->material_count,
+            'orders_count' => (int) $i->orders_count,
+            'prepared_at' => $i->prepared_at,
+            'prepared_by' => $i->prepared_by,
         ])->values()->all());
     }
 
@@ -447,25 +445,26 @@ final class PreparationWaveController extends Controller
                 ->get();
 
             $recipe = [
-                'bom_id'         => $bom->id,
-                'recipe_cost'    => $bom->recipe_cost ?? null,
+                'bom_id' => $bom->id,
+                'recipe_cost' => $bom->recipe_cost ?? null,
                 'material_lines' => $lines->map(fn ($l) => [
-                    'id'               => $l->id,
-                    'raw_material_id'  => $l->raw_material_id,
-                    'material_name'    => $l->material_name,
-                    'material_sku'     => $l->material_sku,
-                    'quantity'         => (float) $l->quantity,
+                    'id' => $l->id,
+                    'raw_material_id' => $l->raw_material_id,
+                    'material_name' => $l->material_name,
+                    'material_sku' => $l->material_sku,
+                    'quantity' => (float) $l->quantity,
                     'waste_percentage' => (float) $l->waste_percentage,
-                    'unit_symbol'      => $l->unit_symbol,
+                    'unit_symbol' => $l->unit_symbol,
                 ])->values()->all(),
             ];
         }
 
         $materialRequirements = DB::table('preparation_material_requirements')
             ->where('preparation_wave_id', $wave->id)
-            ->whereExists(function ($q) use ($item, $bom) {
+            ->whereExists(function ($q) use ($bom) {
                 if (! $bom) {
                     $q->selectRaw('0')->whereRaw('1 = 0');
+
                     return;
                 }
                 $q->select(DB::raw(1))
@@ -484,36 +483,36 @@ final class PreparationWaveController extends Controller
             ->get();
 
         return $this->success([
-            'item'     => [
-                'id'                => $item->id,
-                'product_id'        => $item->product_id,
-                'sku'               => $item->sku_snapshot,
-                'name'              => $item->name_snapshot,
+            'item' => [
+                'id' => $item->id,
+                'product_id' => $item->product_id,
+                'sku' => $item->sku_snapshot,
+                'name' => $item->name_snapshot,
                 'quantity_required' => $item->quantity_required,
                 'quantity_prepared' => $item->quantity_prepared,
-                'quantity_short'    => $item->quantity_short,
-                'status'            => $item->status?->value,
-                'prepared_at'       => $item->prepared_at?->toIso8601String(),
-                'prepared_by'       => $item->prepared_by,
+                'quantity_short' => $item->quantity_short,
+                'status' => $item->status?->value,
+                'prepared_at' => $item->prepared_at?->toIso8601String(),
+                'prepared_by' => $item->prepared_by,
             ],
-            'product'  => $product,
-            'recipe'   => $recipe,
+            'product' => $product,
+            'recipe' => $recipe,
             'materials' => $materialRequirements->map(fn ($mr) => [
-                'id'               => $mr->id,
-                'raw_material_id'  => $mr->raw_material_id,
-                'quantity_needed'  => (float) $mr->quantity_needed,
+                'id' => $mr->id,
+                'raw_material_id' => $mr->raw_material_id,
+                'quantity_needed' => (float) $mr->quantity_needed,
                 'quantity_on_hand' => (float) ($mr->quantity_on_hand ?? 0),
-                'shortage_qty'     => (float) ($mr->shortage_qty ?? 0),
-                'shortage_flag'    => (bool) ($mr->shortage_flag ?? false),
-                'status'           => $mr->status ?? null,
+                'shortage_qty' => (float) ($mr->shortage_qty ?? 0),
+                'shortage_flag' => (bool) ($mr->shortage_flag ?? false),
+                'status' => $mr->status ?? null,
             ])->values()->all(),
-            'orders'   => $orders->map(fn ($o) => [
-                'order_id'      => $o->order_id,
-                'order_number'  => $o->order_number,
-                'quantity'      => (float) $o->quantity,
+            'orders' => $orders->map(fn ($o) => [
+                'order_id' => $o->order_id,
+                'order_number' => $o->order_number,
+                'quantity' => (float) $o->quantity,
                 'customer_name' => $o->customer_name,
                 'delivery_zone' => $o->delivery_zone,
-                'order_status'  => $o->order_status,
+                'order_status' => $o->order_status,
             ])->values()->all(),
         ]);
     }
@@ -527,39 +526,39 @@ final class PreparationWaveController extends Controller
         $validated = $request->validated();
 
         $dto = new ReportIssueDTO(
-            waveId:      $wave->id,
-            companyId:   $request->user()->company_id,
-            actorId:     (string) $request->user()->id,
-            issueType:   PreparationIssueType::from($validated['issue_type']),
+            waveId: $wave->id,
+            companyId: $request->user()->company_id,
+            actorId: (string) $request->user()->id,
+            issueType: PreparationIssueType::from($validated['issue_type']),
             description: $validated['description'],
-            entityType:  $validated['entity_type'] ?? null,
-            entityId:    $validated['entity_id'] ?? null,
+            entityType: $validated['entity_type'] ?? null,
+            entityId: $validated['entity_id'] ?? null,
         );
 
         $exception = $action->execute($dto);
 
         return $this->created([
-            'id'          => $exception->id,
-            'issue_type'  => $exception->issue_type?->value,
-            'severity'    => $exception->severity?->value,
+            'id' => $exception->id,
+            'issue_type' => $exception->issue_type?->value,
+            'severity' => $exception->severity?->value,
             'description' => $exception->description,
-            'status'      => $exception->status?->value,
-            'raised_at'   => $exception->raised_at?->toIso8601String(),
-            'raised_by'   => $exception->raised_by,
+            'status' => $exception->status?->value,
+            'raised_at' => $exception->raised_at?->toIso8601String(),
+            'raised_by' => $exception->raised_by,
         ]);
     }
 
     public function assignWorker(
         AssignWorkerRequest $request,
-        string              $waveId,
-        AssignWorkerAction  $action,
+        string $waveId,
+        AssignWorkerAction $action,
     ): JsonResponse {
         $this->guardModuleEnabled($request->user()?->company_id);
         $wave = $this->findWave($waveId, $request->user()->company_id);
         $this->authorize('assignWorker', $wave);
 
         $validated = $request->validated();
-        $worker    = $action->execute(
+        $worker = $action->execute(
             $wave,
             (string) $validated['user_id'],
             $validated['role'],
@@ -567,18 +566,18 @@ final class PreparationWaveController extends Controller
         );
 
         return $this->created([
-            'id'          => $worker->id,
-            'user_id'     => $worker->user_id,
-            'role'        => $worker->role,
+            'id' => $worker->id,
+            'user_id' => $worker->user_id,
+            'role' => $worker->role,
             'assigned_at' => $worker->assigned_at?->toIso8601String(),
         ]);
     }
 
     public function releaseWorker(
         ReleaseWorkerRequest $request,
-        string               $waveId,
-        string               $userId,
-        ReleaseWorkerAction  $action,
+        string $waveId,
+        string $userId,
+        ReleaseWorkerAction $action,
     ): JsonResponse {
         $this->guardModuleEnabled($request->user()?->company_id);
         $wave = $this->findWave($waveId, $request->user()->company_id);
@@ -591,15 +590,15 @@ final class PreparationWaveController extends Controller
 
     public function resolveShortage(
         ResolveShortageRequest $request,
-        string                 $waveId,
-        ResolveShortageAction  $action,
+        string $waveId,
+        ResolveShortageAction $action,
     ): JsonResponse {
         $this->guardModuleEnabled($request->user()?->company_id);
         $wave = $this->findWave($waveId, $request->user()->company_id);
         $this->authorize('resolveShortage', $wave);
 
         $validated = $request->validated();
-        $result    = $action->execute(
+        $result = $action->execute(
             $wave,
             (string) (string) $request->user()->id,
             $validated['requirement_ids'] ?? [],
@@ -618,15 +617,15 @@ final class PreparationWaveController extends Controller
         $entries = $timeline->getFor('PreparationWave', $waveId);
 
         return $this->success($entries->map(fn ($e) => [
-            'id'            => $e->id,
-            'event_type'    => $e->event_type,
-            'title'         => $e->title,
-            'description'   => $e->description,
-            'actor_id'      => $e->actor_id,
-            'actor_name'    => $e->actor_name,
+            'id' => $e->id,
+            'event_type' => $e->event_type,
+            'title' => $e->title,
+            'description' => $e->description,
+            'actor_id' => $e->actor_id,
+            'actor_name' => $e->actor_name,
             'source_module' => $e->source_module,
-            'occurred_at'   => $e->occurred_at?->toIso8601String(),
-            'metadata'      => $e->metadata,
+            'occurred_at' => $e->occurred_at?->toIso8601String(),
+            'metadata' => $e->metadata,
         ])->values()->all());
     }
 
@@ -639,15 +638,15 @@ final class PreparationWaveController extends Controller
         $docs = $documents->getFor('PreparationWave', $waveId);
 
         return $this->success($docs->map(fn ($d) => [
-            'id'            => $d->id,
+            'id' => $d->id,
             'document_type' => $d->document_type,
-            'name'          => $d->name,
-            'mime_type'     => $d->mime_type,
-            'file_size'     => $d->file_size,
-            'version'       => $d->version,
-            'notes'         => $d->notes,
-            'uploaded_by'   => $d->uploaded_by,
-            'created_at'    => $d->created_at?->toIso8601String(),
+            'name' => $d->name,
+            'mime_type' => $d->mime_type,
+            'file_size' => $d->file_size,
+            'version' => $d->version,
+            'notes' => $d->notes,
+            'uploaded_by' => $d->uploaded_by,
+            'created_at' => $d->created_at?->toIso8601String(),
         ])->values()->all());
     }
 

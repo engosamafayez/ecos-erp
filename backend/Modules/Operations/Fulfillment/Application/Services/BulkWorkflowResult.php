@@ -15,8 +15,8 @@ use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentResult;
 final class BulkWorkflowResult
 {
     /**
-     * @param array<string, FulfillmentResult> $succeeded
-     * @param array<string, string>            $failed
+     * @param  array<string, FulfillmentResult>  $succeeded
+     * @param  array<string, string>  $failed
      */
     public function __construct(
         public readonly array $succeeded,
@@ -47,10 +47,10 @@ final class BulkWorkflowResult
     public function toArray(): array
     {
         return [
-            'total'     => $this->totalProcessed(),
+            'total' => $this->totalProcessed(),
             'succeeded' => $this->successCount(),
-            'failed'    => $this->failureCount(),
-            'errors'    => $this->failed,
+            'failed' => $this->failureCount(),
+            'errors' => $this->failed,
         ];
     }
 }

@@ -21,7 +21,7 @@ final readonly class DiscountLimit
 {
     public function __construct(
         public ?Percentage $maxPercentage,
-        public ?Money      $maxFixedAmount,
+        public ?Money $maxFixedAmount,
     ) {}
 
     public static function unlimited(): self
@@ -51,7 +51,7 @@ final readonly class DiscountLimit
     public function validate(DiscountValue $value): void
     {
         match ($value->type) {
-            DiscountType::Percentage  => $this->validatePercentage($value->asPercentage()),
+            DiscountType::Percentage => $this->validatePercentage($value->asPercentage()),
             DiscountType::FixedAmount => $this->validateFixed($value->asFixedAmount()),
         };
     }
@@ -60,6 +60,7 @@ final readonly class DiscountLimit
     {
         try {
             $this->validate($value);
+
             return true;
         } catch (InvalidDiscountException) {
             return false;
@@ -69,7 +70,7 @@ final readonly class DiscountLimit
     public function toArray(): array
     {
         return [
-            'max_percentage'  => $this->maxPercentage?->value,
+            'max_percentage' => $this->maxPercentage?->value,
             'max_fixed_amount' => $this->maxFixedAmount?->toArray(),
         ];
     }
@@ -77,7 +78,7 @@ final readonly class DiscountLimit
     public static function fromArray(array $data): self
     {
         return new self(
-            maxPercentage:  isset($data['max_percentage'])
+            maxPercentage: isset($data['max_percentage'])
                 ? Percentage::of($data['max_percentage'])
                 : null,
             maxFixedAmount: isset($data['max_fixed_amount'])

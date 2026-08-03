@@ -19,13 +19,13 @@ final class SnapshotTimelineBuilder
     public function businessContextCaptured(string $aggregateId, ?string $brandName, ?string $channelName, ?string $priceSource): array
     {
         return [
-            'type'        => 'business_context_captured',
+            'type' => 'business_context_captured',
             'description' => 'Business context snapshot locked at transaction confirmation.',
-            'metadata'    => [
-                'aggregate_id'  => $aggregateId,
-                'brand_name'    => $brandName,
-                'channel_name'  => $channelName,
-                'price_source'  => $priceSource,
+            'metadata' => [
+                'aggregate_id' => $aggregateId,
+                'brand_name' => $brandName,
+                'channel_name' => $channelName,
+                'price_source' => $priceSource,
             ],
         ];
     }
@@ -36,13 +36,13 @@ final class SnapshotTimelineBuilder
     public function financialSnapshotCreated(string $aggregateId, string $snapshotId, string $snapshotUuid, float $grandTotal, string $integrityHash): array
     {
         return [
-            'type'        => 'financial_snapshot_created',
+            'type' => 'financial_snapshot_created',
             'description' => 'Financial snapshot locked at transaction confirmation.',
-            'metadata'    => [
-                'aggregate_id'   => $aggregateId,
-                'snapshot_id'    => $snapshotId,
-                'snapshot_uuid'  => $snapshotUuid,
-                'grand_total'    => $grandTotal,
+            'metadata' => [
+                'aggregate_id' => $aggregateId,
+                'snapshot_id' => $snapshotId,
+                'snapshot_uuid' => $snapshotUuid,
+                'grand_total' => $grandTotal,
                 'integrity_hash' => $integrityHash,
             ],
         ];
@@ -54,10 +54,10 @@ final class SnapshotTimelineBuilder
     public function integrityVerified(string $aggregateId, string $snapshotUuid): array
     {
         return [
-            'type'        => 'snapshot_integrity_verified',
+            'type' => 'snapshot_integrity_verified',
             'description' => 'SHA-256 integrity hash re-verified — snapshot is intact.',
-            'metadata'    => [
-                'aggregate_id'  => $aggregateId,
+            'metadata' => [
+                'aggregate_id' => $aggregateId,
                 'snapshot_uuid' => $snapshotUuid,
             ],
         ];
@@ -69,10 +69,10 @@ final class SnapshotTimelineBuilder
     public function integrityFailed(string $aggregateId, string $snapshotUuid): array
     {
         return [
-            'type'        => 'snapshot_integrity_failed',
+            'type' => 'snapshot_integrity_failed',
             'description' => 'SHA-256 integrity check FAILED — possible tampering detected.',
-            'metadata'    => [
-                'aggregate_id'  => $aggregateId,
+            'metadata' => [
+                'aggregate_id' => $aggregateId,
                 'snapshot_uuid' => $snapshotUuid,
             ],
         ];

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useFormatter } from '@/hooks/use-formatter';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -44,6 +45,7 @@ type ReturnPanelProps = {
 };
 
 export function ReturnPanel({ onClose, onSuccess }: ReturnPanelProps) {
+  const { money } = useFormatter();
   const { cashierId, cashierName, currency, returnSaleId } = usePosStore();
   const [saleSearch, setSaleSearch] = useState(returnSaleId ?? '');
   const [activeSaleId, setActiveSaleId] = useState<string | null>(returnSaleId ?? null);
@@ -142,7 +144,7 @@ export function ReturnPanel({ onClose, onSuccess }: ReturnPanelProps) {
             <div className="rounded-lg bg-muted p-3 text-xs space-y-1">
               <div className="flex justify-between font-medium">
                 <span>Receipt #{sale.receipt_number}</span>
-                <span>{currency} {sale.total.amount}</span>
+                <span>{money(Number(sale.total.amount), currency)}</span>
               </div>
               <div className="text-muted-foreground">
                 {new Date(sale.created_at).toLocaleDateString()} · {sale.lines.length} items

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Manufacturing;
 
+use BackedEnum;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInterface;
 use Modules\Inventory\InventoryItems\Domain\Models\InventoryItem;
 use Modules\Inventory\InventoryItems\Domain\Models\StockLedgerEntry;
 use Modules\Inventory\Products\Domain\Models\Product;
@@ -25,14 +25,15 @@ use Modules\Manufacturing\ManufacturingExecution\Domain\Enums\TransactionStatus;
 use Modules\Manufacturing\ManufacturingExecution\Domain\Exceptions\ExecutionException;
 use Modules\Manufacturing\ManufacturingExecution\Domain\Models\ManufacturingTransaction;
 use Modules\Manufacturing\ManufacturingExecution\Domain\Services\ExecutionPipeline;
-use Modules\Manufacturing\ManufacturingExecution\Domain\ValueObjects\ComponentConsumptionRecord;
 use Modules\Manufacturing\ManufacturingExecution\Domain\ValueObjects\ManufacturingExecutionContext;
 use Modules\Manufacturing\ManufacturingExecution\Domain\ValueObjects\ManufacturingExecutionResult;
 use Modules\Manufacturing\ManufacturingPlanner\Domain\ValueObjects\ComponentConsumptionPlan;
 use Modules\Manufacturing\ManufacturingPlanner\Domain\ValueObjects\ManufacturingPlan;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Organization\Companies\Domain\Models\Company;
+use RuntimeException;
 use Tests\TestCase;
+use Throwable;
 
 /**
  * PKG-05B: ManufacturingExecutor — feature tests (real DB).
@@ -53,16 +54,19 @@ class ManufacturingExecutorTest extends TestCase
     use DatabaseTransactions;
 
     private ManufacturingExecutor $executor;
+
     private ExecutionPipeline $pipeline;
+
     private Company $company;
+
     private Warehouse $warehouse;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->executor  = app(ManufacturingExecutor::class);
-        $this->pipeline  = app(ExecutionPipeline::class);
-        $this->company   = Company::factory()->create();
+        $this->executor = app(ManufacturingExecutor::class);
+        $this->pipeline = app(ExecutionPipeline::class);
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
     }
 
@@ -85,27 +89,27 @@ class ManufacturingExecutorTest extends TestCase
         $components = [];
         foreach ($componentProducts as $i => $product) {
             $components[] = new RecipeComponent(
-                component_id:         $product->id,
-                sku:                  $product->sku,
-                name:                 $product->name,
-                unit_id:              'unit-001',
-                unit_name:            'Kilogram',
-                unit_symbol:          'kg',
-                quantity:             $quantities[$i] ?? 1.0,
+                component_id: $product->id,
+                sku: $product->sku,
+                name: $product->name,
+                unit_id: 'unit-001',
+                unit_name: 'Kilogram',
+                unit_symbol: 'kg',
+                quantity: $quantities[$i] ?? 1.0,
                 allow_negative_stock: (bool) $product->allow_negative_stock,
             );
         }
 
         return new RecipeSnapshot(
-            recipe_id:          'recipe-' . uniqid(),
-            bom_number:         'BOM-' . uniqid(),
-            version:            '1.0',
+            recipe_id: 'recipe-'.uniqid(),
+            bom_number: 'BOM-'.uniqid(),
+            version: '1.0',
             bom_version_number: 1,
-            product_id:         $output->id,
-            product_sku:        $output->sku,
-            product_name:       $output->name,
-            components:         $components,
-            resolved_at:        (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
+            product_id: $output->id,
+            product_sku: $output->sku,
+            product_name: $output->name,
+            components: $components,
+            resolved_at: (new DateTimeImmutable)->format(DateTimeInterface::ATOM),
         );
     }
 
@@ -118,16 +122,16 @@ class ManufacturingExecutorTest extends TestCase
         $missing = max(0.0, $qtyToConsume - $availableQty);
 
         return new ComponentConsumptionPlan(
-            component_id:         $component->id,
-            sku:                  $component->sku,
-            name:                 $component->name,
-            unit_symbol:          'kg',
-            qty_to_consume:       $qtyToConsume,
-            available_qty:        $availableQty,
-            missing_qty:          $missing,
+            component_id: $component->id,
+            sku: $component->sku,
+            name: $component->name,
+            unit_symbol: 'kg',
+            qty_to_consume: $qtyToConsume,
+            available_qty: $availableQty,
+            missing_qty: $missing,
             allow_negative_stock: $allowNegative,
-            will_go_negative:     $missing > 0.0 && $allowNegative,
-            is_blocked:           $missing > 0.0 && !$allowNegative,
+            will_go_negative: $missing > 0.0 && $allowNegative,
+            is_blocked: $missing > 0.0 && ! $allowNegative,
         );
     }
 
@@ -142,27 +146,27 @@ class ManufacturingExecutorTest extends TestCase
         $hash = $overrideHash ?? hash('sha256', json_encode($snapshot->toArray(), JSON_THROW_ON_ERROR));
 
         return new ManufacturingPlan(
-            plan_id:                   $this->generateUuid(),
-            product_id:                $output->id,
-            warehouse_id:              $this->warehouse->id,
-            product_sku:               $output->sku,
-            product_name:              $output->name,
-            qty_to_manufacture:        $qtyToManufacture,
+            plan_id: $this->generateUuid(),
+            product_id: $output->id,
+            warehouse_id: $this->warehouse->id,
+            product_sku: $output->sku,
+            product_name: $output->name,
+            qty_to_manufacture: $qtyToManufacture,
             finished_goods_to_produce: $qtyToManufacture,
-            available_finished_goods:  0.0,
-            recipe_id:                 $snapshot->recipe_id,
-            bom_version_number:        $snapshot->bom_version_number,
-            recipe_snapshot:           $snapshot,
-            recipe_snapshot_hash:      $hash,
-            components:                $components,
-            negative_stock_decisions:  [],
-            eligibility:               ManufacturingEligibility::CanManufacture,
-            can_proceed:               $shouldManufacture,
-            should_manufacture:        $shouldManufacture,
-            decision_type:             DecisionType::Approve,
-            decision_reason:           new DecisionReason(code: 'mfg_approved', message: 'Approved'),
-            planned_at:                (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
-            metadata:                  ['correlation_id' => $this->generateUuid()],
+            available_finished_goods: 0.0,
+            recipe_id: $snapshot->recipe_id,
+            bom_version_number: $snapshot->bom_version_number,
+            recipe_snapshot: $snapshot,
+            recipe_snapshot_hash: $hash,
+            components: $components,
+            negative_stock_decisions: [],
+            eligibility: ManufacturingEligibility::CanManufacture,
+            can_proceed: $shouldManufacture,
+            should_manufacture: $shouldManufacture,
+            decision_type: DecisionType::Approve,
+            decision_reason: new DecisionReason(code: 'mfg_approved', message: 'Approved'),
+            planned_at: (new DateTimeImmutable)->format(DateTimeInterface::ATOM),
+            metadata: ['correlation_id' => $this->generateUuid()],
         );
     }
 
@@ -176,9 +180,9 @@ class ManufacturingExecutorTest extends TestCase
     {
         return InventoryItem::query()->create([
             'warehouse_id' => $this->warehouse->id,
-            'product_id'   => $product->id,
-            'company_id'   => $this->company->id,
-            'on_hand_qty'  => $onHand,
+            'product_id' => $product->id,
+            'company_id' => $this->company->id,
+            'on_hand_qty' => $onHand,
             'reserved_qty' => $reserved,
         ]);
     }
@@ -190,21 +194,21 @@ class ManufacturingExecutorTest extends TestCase
     private function seedReceiptLayer(Product $product, float $qty, float $unitCost = 10.0): \Modules\Inventory\ReceiptLayers\Domain\Models\InventoryReceiptLayer
     {
         return \Modules\Inventory\ReceiptLayers\Domain\Models\InventoryReceiptLayer::query()->create([
-            'product_id'       => $product->id,
-            'warehouse_id'     => $this->warehouse->id,
-            'company_id'       => $this->company->id,
-            'received_qty'     => $qty,
-            'remaining_qty'    => $qty,
+            'product_id' => $product->id,
+            'warehouse_id' => $this->warehouse->id,
+            'company_id' => $this->company->id,
+            'received_qty' => $qty,
+            'remaining_qty' => $qty,
             'landed_unit_cost' => $unitCost,
-            'receipt_date'     => now(),
+            'receipt_date' => now(),
         ]);
     }
 
     private function generateUuid(): string
     {
-        $data    = random_bytes(16);
-        $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
-        $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
+        $data = random_bytes(16);
+        $data[6] = chr(ord($data[6]) & 0x0F | 0x40);
+        $data[8] = chr(ord($data[8]) & 0x3F | 0x80);
 
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
     }
@@ -213,13 +217,13 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_successful_execution_decrements_raw_material_stock(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [2.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [2.0]);
 
         $this->seedInventory($component, onHand: 20.0);
         $componentPlan = $this->makeComponentPlan($component, qtyToConsume: 10.0, availableQty: 20.0);
-        $plan    = $this->buildPlan($output, $snapshot, [$componentPlan], qtyToManufacture: 5.0);
+        $plan = $this->buildPlan($output, $snapshot, [$componentPlan], qtyToManufacture: 5.0);
         $context = $this->buildContext($plan);
 
         $this->assertTrue($context->isValid());
@@ -235,14 +239,14 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_successful_execution_increments_finished_goods_stock(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         $this->seedInventory($component, onHand: 10.0);
         $this->seedInventory($output, onHand: 3.0);
         $componentPlan = $this->makeComponentPlan($component, qtyToConsume: 5.0, availableQty: 10.0);
-        $plan    = $this->buildPlan($output, $snapshot, [$componentPlan], qtyToManufacture: 5.0);
+        $plan = $this->buildPlan($output, $snapshot, [$componentPlan], qtyToManufacture: 5.0);
         $context = $this->buildContext($plan);
 
         $this->executor->execute($context, $this->company->id);
@@ -257,13 +261,13 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_successful_execution_creates_ledger_entries(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [2.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [2.0]);
 
         $this->seedInventory($component, onHand: 20.0);
         $componentPlan = $this->makeComponentPlan($component, qtyToConsume: 10.0, availableQty: 20.0);
-        $plan    = $this->buildPlan($output, $snapshot, [$componentPlan], qtyToManufacture: 5.0);
+        $plan = $this->buildPlan($output, $snapshot, [$componentPlan], qtyToManufacture: 5.0);
         $context = $this->buildContext($plan);
 
         $result = $this->executor->execute($context, $this->company->id);
@@ -276,20 +280,20 @@ class ManufacturingExecutorTest extends TestCase
             ->get();
 
         $this->assertCount(2, $entries);
-        $types = $entries->pluck('movement_type')->map(fn ($t) => $t instanceof \BackedEnum ? $t->value : $t)->toArray();
+        $types = $entries->pluck('movement_type')->map(fn ($t) => $t instanceof BackedEnum ? $t->value : $t)->toArray();
         $this->assertContains('production_consumption', $types);
         $this->assertContains('production_output', $types);
     }
 
     public function test_successful_execution_creates_manufacturing_transaction(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         $this->seedInventory($component, onHand: 10.0);
         $componentPlan = $this->makeComponentPlan($component, qtyToConsume: 5.0, availableQty: 10.0);
-        $plan    = $this->buildPlan($output, $snapshot, [$componentPlan], qtyToManufacture: 5.0);
+        $plan = $this->buildPlan($output, $snapshot, [$componentPlan], qtyToManufacture: 5.0);
         $context = $this->buildContext($plan);
 
         $result = $this->executor->execute($context, $this->company->id);
@@ -305,13 +309,13 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_successful_execution_result_structure(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         $this->seedInventory($component, onHand: 10.0);
         $componentPlan = $this->makeComponentPlan($component, qtyToConsume: 5.0, availableQty: 10.0);
-        $plan    = $this->buildPlan($output, $snapshot, [$componentPlan], qtyToManufacture: 5.0);
+        $plan = $this->buildPlan($output, $snapshot, [$componentPlan], qtyToManufacture: 5.0);
         $context = $this->buildContext($plan);
 
         $result = $this->executor->execute($context, $this->company->id);
@@ -328,14 +332,14 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_execution_creates_fg_inventory_item_when_none_exists(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         $this->seedInventory($component, onHand: 10.0);
         // No FG row — executor creates it via findOrCreate
         $componentPlan = $this->makeComponentPlan($component, qtyToConsume: 5.0, availableQty: 10.0);
-        $plan    = $this->buildPlan($output, $snapshot, [$componentPlan], qtyToManufacture: 5.0);
+        $plan = $this->buildPlan($output, $snapshot, [$componentPlan], qtyToManufacture: 5.0);
         $context = $this->buildContext($plan);
 
         $this->executor->execute($context, $this->company->id);
@@ -352,8 +356,8 @@ class ManufacturingExecutorTest extends TestCase
     public function test_multiple_components_all_consumed(): void
     {
         $output = $this->makeOutput();
-        $mat1   = $this->makeComponent();
-        $mat2   = $this->makeComponent();
+        $mat1 = $this->makeComponent();
+        $mat2 = $this->makeComponent();
         $snapshot = $this->makeRecipeSnapshot($output, [$mat1, $mat2], [2.0, 3.0]);
 
         $this->seedInventory($mat1, onHand: 20.0);
@@ -380,12 +384,12 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_context_execution_uuid_used_as_execution_id_in_result(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         $this->seedInventory($component, onHand: 10.0);
-        $plan    = $this->buildPlan($output, $snapshot,
+        $plan = $this->buildPlan($output, $snapshot,
             [$this->makeComponentPlan($component, 5.0, 10.0)], 5.0);
         $context = $this->buildContext($plan);
 
@@ -396,12 +400,12 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_decision_key_stored_in_manufacturing_transaction(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         $this->seedInventory($component, onHand: 10.0);
-        $plan    = $this->buildPlan($output, $snapshot,
+        $plan = $this->buildPlan($output, $snapshot,
             [$this->makeComponentPlan($component, 5.0, 10.0)], 5.0);
         $context = $this->buildContext($plan);
 
@@ -414,12 +418,12 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_correlation_id_stored_in_manufacturing_transaction(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         $this->seedInventory($component, onHand: 10.0);
-        $plan    = $this->buildPlan($output, $snapshot,
+        $plan = $this->buildPlan($output, $snapshot,
             [$this->makeComponentPlan($component, 5.0, 10.0)], 5.0);
         $context = $this->buildContext($plan);
 
@@ -432,12 +436,12 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_transaction_has_correct_bom_version_for_rc10(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         $this->seedInventory($component, onHand: 20.0);
-        $plan    = $this->buildPlan($output, $snapshot,
+        $plan = $this->buildPlan($output, $snapshot,
             [$this->makeComponentPlan($component, 5.0, 20.0)], 5.0);
         $context = $this->buildContext($plan);
 
@@ -452,14 +456,14 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_fifo_layer_consumption_records_created_during_execution(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         $this->seedInventory($component, onHand: 10.0);
         $this->seedReceiptLayer($component, qty: 10.0, unitCost: 15.0);
 
-        $plan    = $this->buildPlan($output, $snapshot,
+        $plan = $this->buildPlan($output, $snapshot,
             [$this->makeComponentPlan($component, 6.0, 10.0)], 6.0);
         $context = $this->buildContext($plan);
 
@@ -477,14 +481,14 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_fifo_layer_remaining_qty_decremented_after_execution(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         $this->seedInventory($component, onHand: 10.0);
         $layer = $this->seedReceiptLayer($component, qty: 10.0, unitCost: 10.0);
 
-        $plan    = $this->buildPlan($output, $snapshot,
+        $plan = $this->buildPlan($output, $snapshot,
             [$this->makeComponentPlan($component, 4.0, 10.0)], 4.0);
         $context = $this->buildContext($plan);
 
@@ -496,16 +500,16 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_multiple_fifo_layers_consumed_in_chronological_order(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         $this->seedInventory($component, onHand: 20.0);
         $layer1 = $this->seedReceiptLayer($component, qty: 5.0, unitCost: 10.0);
         $layer2 = $this->seedReceiptLayer($component, qty: 15.0, unitCost: 12.0);
 
         // Consume 8: should exhaust layer1 (5) then take 3 from layer2
-        $plan    = $this->buildPlan($output, $snapshot,
+        $plan = $this->buildPlan($output, $snapshot,
             [$this->makeComponentPlan($component, 8.0, 20.0)], 8.0);
         $context = $this->buildContext($plan);
 
@@ -521,12 +525,12 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_execution_with_negative_stock_component_goes_below_zero(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent(allowNegative: true);
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         $this->seedInventory($component, onHand: 3.0);
-        $plan    = $this->buildPlan($output, $snapshot,
+        $plan = $this->buildPlan($output, $snapshot,
             [$this->makeComponentPlan($component, 10.0, 3.0, allowNegative: true)], 10.0);
         $context = $this->buildContext($plan);
 
@@ -545,15 +549,15 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_negative_stock_partial_fifo_consume_exhausts_available_layers(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent(allowNegative: true);
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         $this->seedInventory($component, onHand: 3.0);
         $layer = $this->seedReceiptLayer($component, qty: 3.0, unitCost: 10.0);
 
         // Consume 10, only 3 in FIFO layers — should partially consume 3
-        $plan    = $this->buildPlan($output, $snapshot,
+        $plan = $this->buildPlan($output, $snapshot,
             [$this->makeComponentPlan($component, 10.0, 3.0, allowNegative: true)], 10.0);
         $context = $this->buildContext($plan);
 
@@ -572,13 +576,13 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_negative_stock_with_no_fifo_layers_skips_layer_tracking(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent(allowNegative: true);
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         // No receipt layers seeded — nothing to consume via FIFO
         $this->seedInventory($component, onHand: 3.0);
-        $plan    = $this->buildPlan($output, $snapshot,
+        $plan = $this->buildPlan($output, $snapshot,
             [$this->makeComponentPlan($component, 10.0, 3.0, allowNegative: true)], 10.0);
         $context = $this->buildContext($plan);
 
@@ -593,12 +597,12 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_duplicate_execution_returns_idempotent_result(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         $this->seedInventory($component, onHand: 20.0);
-        $plan    = $this->buildPlan($output, $snapshot,
+        $plan = $this->buildPlan($output, $snapshot,
             [$this->makeComponentPlan($component, 5.0, 20.0)], 5.0);
         $context = $this->buildContext($plan);
 
@@ -611,12 +615,12 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_idempotent_execution_does_not_double_consume_inventory(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         $this->seedInventory($component, onHand: 20.0);
-        $plan    = $this->buildPlan($output, $snapshot,
+        $plan = $this->buildPlan($output, $snapshot,
             [$this->makeComponentPlan($component, 5.0, 20.0)], 5.0);
         $context = $this->buildContext($plan);
 
@@ -633,12 +637,12 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_idempotent_replay_uses_context_execution_uuid_not_transaction(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         $this->seedInventory($component, onHand: 10.0);
-        $plan    = $this->buildPlan($output, $snapshot,
+        $plan = $this->buildPlan($output, $snapshot,
             [$this->makeComponentPlan($component, 5.0, 10.0)], 5.0);
         $context = $this->buildContext($plan);
 
@@ -646,7 +650,7 @@ class ManufacturingExecutorTest extends TestCase
 
         // Second call gets a fresh context (different execution_uuid)
         $context2 = $this->buildContext($plan, alreadyExecuted: false);
-        $result2  = $this->executor->execute($context2, $this->company->id);
+        $result2 = $this->executor->execute($context2, $this->company->id);
 
         $this->assertTrue($result2->was_idempotent);
         // execution_id in idempotent result is the context's UUID, not the original
@@ -657,28 +661,28 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_rollback_restores_inventory_on_transaction_failure(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         $rawItem = $this->seedInventory($component, onHand: 20.0);
-        $plan    = $this->buildPlan($output, $snapshot,
+        $plan = $this->buildPlan($output, $snapshot,
             [$this->makeComponentPlan($component, 5.0, 20.0)], 5.0);
         $context = $this->buildContext($plan);
 
         $mockRepo = $this->createMock(ManufacturingTransactionRepositoryInterface::class);
         $mockRepo->method('findByPlanId')->willReturn(null);
-        $mockRepo->method('save')->willThrowException(new \RuntimeException('Simulated DB failure'));
+        $mockRepo->method('save')->willThrowException(new RuntimeException('Simulated DB failure'));
 
         $executor = new ManufacturingExecutor(
-            inventory:    app(InventoryMutationInterface::class),
+            inventory: app(InventoryMutationInterface::class),
             transactions: $mockRepo,
         );
 
         try {
             $executor->execute($context, $this->company->id);
             $this->fail('Expected exception was not thrown');
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // Expected
         }
 
@@ -697,28 +701,29 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_rollback_restores_fifo_layers_on_transaction_failure(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         $this->seedInventory($component, onHand: 10.0);
-        $layer   = $this->seedReceiptLayer($component, qty: 10.0, unitCost: 10.0);
-        $plan    = $this->buildPlan($output, $snapshot,
+        $layer = $this->seedReceiptLayer($component, qty: 10.0, unitCost: 10.0);
+        $plan = $this->buildPlan($output, $snapshot,
             [$this->makeComponentPlan($component, 5.0, 10.0)], 5.0);
         $context = $this->buildContext($plan);
 
         $mockRepo = $this->createMock(ManufacturingTransactionRepositoryInterface::class);
         $mockRepo->method('findByPlanId')->willReturn(null);
-        $mockRepo->method('save')->willThrowException(new \RuntimeException('Simulated DB failure'));
+        $mockRepo->method('save')->willThrowException(new RuntimeException('Simulated DB failure'));
 
         $executor = new ManufacturingExecutor(
-            inventory:    app(InventoryMutationInterface::class),
+            inventory: app(InventoryMutationInterface::class),
             transactions: $mockRepo,
         );
 
         try {
             $executor->execute($context, $this->company->id);
-        } catch (\Throwable) {}
+        } catch (Throwable) {
+        }
 
         // FIFO layers must be rolled back too
         $layer->refresh();
@@ -730,12 +735,12 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_invalid_context_throws_execution_exception(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         // Override hash → SnapshotHashMismatch validation failure → context.isValid() = false
-        $plan    = $this->buildPlan($output, $snapshot,
+        $plan = $this->buildPlan($output, $snapshot,
             [$this->makeComponentPlan($component, 5.0, 10.0)], 5.0,
             overrideHash: str_repeat('0', 64));
         $context = $this->buildContext($plan);
@@ -748,11 +753,11 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_invalid_context_does_not_write_to_db(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
-        $plan    = $this->buildPlan($output, $snapshot,
+        $plan = $this->buildPlan($output, $snapshot,
             [$this->makeComponentPlan($component, 5.0, 10.0)], 5.0,
             overrideHash: str_repeat('0', 64));
         $context = $this->buildContext($plan);
@@ -771,18 +776,19 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_lifecycle_hooks_called_in_correct_order_on_success(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         $this->seedInventory($component, onHand: 10.0);
-        $plan    = $this->buildPlan($output, $snapshot,
+        $plan = $this->buildPlan($output, $snapshot,
             [$this->makeComponentPlan($component, 5.0, 10.0)], 5.0);
         $context = $this->buildContext($plan);
 
         $called = [];
 
-        $hooks = new class ($called) implements ManufacturingExecutorHooksInterface {
+        $hooks = new class($called) implements ManufacturingExecutorHooksInterface
+        {
             public function __construct(private array &$called) {}
 
             public function onBeforeExecution(ManufacturingExecutionContext $c): void
@@ -805,16 +811,16 @@ class ManufacturingExecutorTest extends TestCase
                 $this->called[] = 'after_commit';
             }
 
-            public function onAfterRollback(ManufacturingExecutionContext $c, \Throwable $e): void
+            public function onAfterRollback(ManufacturingExecutionContext $c, Throwable $e): void
             {
                 $this->called[] = 'after_rollback';
             }
         };
 
         $executor = new ManufacturingExecutor(
-            inventory:    app(InventoryMutationInterface::class),
+            inventory: app(InventoryMutationInterface::class),
             transactions: app(ManufacturingTransactionRepositoryInterface::class),
-            hooks:        $hooks,
+            hooks: $hooks,
         );
 
         $executor->execute($context, $this->company->id);
@@ -827,24 +833,30 @@ class ManufacturingExecutorTest extends TestCase
 
     public function test_rollback_hook_called_and_exception_still_propagates(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         $this->seedInventory($component, onHand: 10.0);
-        $plan    = $this->buildPlan($output, $snapshot,
+        $plan = $this->buildPlan($output, $snapshot,
             [$this->makeComponentPlan($component, 5.0, 10.0)], 5.0);
         $context = $this->buildContext($plan);
 
         $rollbackCalled = false;
 
-        $hooks = new class ($rollbackCalled) implements ManufacturingExecutorHooksInterface {
+        $hooks = new class($rollbackCalled) implements ManufacturingExecutorHooksInterface
+        {
             public function __construct(private bool &$called) {}
+
             public function onBeforeExecution(ManufacturingExecutionContext $c): void {}
+
             public function onAfterInventoryConsumption(ManufacturingExecutionContext $c, array $r, array $l): void {}
+
             public function onAfterFinishedGoodsCreated(ManufacturingExecutionContext $c, string $id): void {}
+
             public function onAfterCommit(ManufacturingExecutionResult $r): void {}
-            public function onAfterRollback(ManufacturingExecutionContext $c, \Throwable $e): void
+
+            public function onAfterRollback(ManufacturingExecutionContext $c, Throwable $e): void
             {
                 $this->called = true;
             }
@@ -852,30 +864,31 @@ class ManufacturingExecutorTest extends TestCase
 
         $mockRepo = $this->createMock(ManufacturingTransactionRepositoryInterface::class);
         $mockRepo->method('findByPlanId')->willReturn(null);
-        $mockRepo->method('save')->willThrowException(new \RuntimeException('fail'));
+        $mockRepo->method('save')->willThrowException(new RuntimeException('fail'));
 
         $executor = new ManufacturingExecutor(
-            inventory:    app(InventoryMutationInterface::class),
+            inventory: app(InventoryMutationInterface::class),
             transactions: $mockRepo,
-            hooks:        $hooks,
+            hooks: $hooks,
         );
 
         try {
             $executor->execute($context, $this->company->id);
             $this->fail('Exception expected');
-        } catch (\RuntimeException) {}
+        } catch (RuntimeException) {
+        }
 
         $this->assertTrue($rollbackCalled);
     }
 
     public function test_hooks_are_optional_null_does_not_throw(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $snapshot  = $this->makeRecipeSnapshot($output, [$component], [1.0]);
+        $snapshot = $this->makeRecipeSnapshot($output, [$component], [1.0]);
 
         $this->seedInventory($component, onHand: 10.0);
-        $plan    = $this->buildPlan($output, $snapshot,
+        $plan = $this->buildPlan($output, $snapshot,
             [$this->makeComponentPlan($component, 5.0, 10.0)], 5.0);
         $context = $this->buildContext($plan);
 

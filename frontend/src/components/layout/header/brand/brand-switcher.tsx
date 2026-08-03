@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronsUpDown, Layers, Plus, Search } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -39,6 +40,7 @@ function brandInitials(name: string): string {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function BrandSwitcher({ className }: { className?: string }) {
+  const { t } = useTranslation('common');
   const { activeCompanyId, activeBrandId, setActiveBrandId } = useOrganizationContext();
   const [open, setOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
@@ -120,17 +122,21 @@ export function BrandSwitcher({ className }: { className?: string }) {
         <Button
           variant="outline"
           size="sm"
-          aria-label={activeBrand ? `Current brand: ${activeBrand.name}. Click to switch.` : 'Filter by brand'}
+          aria-label={
+            activeBrand
+              ? t('switcher.currentBrand', { name: activeBrand.name })
+              : t('switcher.filterByBrand')
+          }
           aria-expanded={open}
           className={cn('h-9 gap-2 px-2 sm:px-3', className)}
         >
           <Layers className="size-4 shrink-0 text-muted-foreground" aria-hidden />
           <span className="hidden flex-col items-start sm:flex">
             <span className="max-w-[6rem] truncate text-xs font-semibold leading-tight lg:max-w-[8rem]">
-              {activeBrand?.name ?? 'All Brands'}
+              {activeBrand?.name ?? t('switcher.allBrands')}
             </span>
             <span className="max-w-[6rem] truncate text-[10px] leading-tight text-muted-foreground lg:max-w-[8rem]">
-              {activeBrand?.code ?? 'No filter'}
+              {activeBrand?.code ?? t('switcher.noFilter')}
             </span>
           </span>
           <ChevronsUpDown className="size-3.5 shrink-0 opacity-40" aria-hidden />
@@ -147,9 +153,9 @@ export function BrandSwitcher({ className }: { className?: string }) {
             value={search}
             onChange={(e) => { setSearch(e.target.value); setFocusIdx(0); }}
             onKeyDown={handleInputKeyDown}
-            placeholder="Search brands..."
+            placeholder={t('switcher.searchBrands')}
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-            aria-label="Search brands"
+            aria-label={t('switcher.searchBrands')}
             autoComplete="off"
           />
         </div>
@@ -157,16 +163,16 @@ export function BrandSwitcher({ className }: { className?: string }) {
         {/* ── Section label ── */}
         <div className="px-3 pb-1 pt-2.5">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Brands
+            {t('switcher.brands')}
           </p>
         </div>
 
         {/* ── List ── */}
-        <div className="px-1 pb-1" role="listbox" aria-label="Available brands">
+        <div className="px-1 pb-1" role="listbox" aria-label={t('switcher.availableBrands')}>
           {filtered.length <= 1 && search.trim() ? (
             <div className="flex flex-col items-center gap-1 py-8 text-center">
-              <p className="text-sm font-medium text-muted-foreground">No brands found</p>
-              <p className="text-xs text-muted-foreground/60">Try a different name</p>
+              <p className="text-sm font-medium text-muted-foreground">{t('switcher.noBrandsFound')}</p>
+              <p className="text-xs text-muted-foreground/60">{t('switcher.tryDifferentName')}</p>
             </div>
           ) : (
             filtered.map((brand, idx) => {
@@ -210,10 +216,10 @@ export function BrandSwitcher({ className }: { className?: string }) {
                   {/* Info */}
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold">
-                      {isAllBrands ? 'All Brands' : brand.name}
+                      {isAllBrands ? t('switcher.allBrands') : brand.name}
                     </span>
                     <span className="block truncate text-xs text-muted-foreground">
-                      {isAllBrands ? 'No filter applied' : brand.code}
+                      {isAllBrands ? t('switcher.noFilterApplied') : brand.code}
                     </span>
                   </span>
 
@@ -237,7 +243,7 @@ export function BrandSwitcher({ className }: { className?: string }) {
             <span className="flex size-6 shrink-0 items-center justify-center rounded-md border border-primary/40 bg-primary/5 text-primary">
               <Plus className="size-3.5" aria-hidden />
             </span>
-            <span className="text-xs font-medium">New Brand</span>
+            <span className="text-xs font-medium">{t('switcher.newBrand')}</span>
           </button>
         </div>
       </DropdownMenuContent>

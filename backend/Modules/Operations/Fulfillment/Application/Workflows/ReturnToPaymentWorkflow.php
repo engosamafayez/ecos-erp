@@ -27,24 +27,24 @@ final class ReturnToPaymentWorkflow implements FulfillmentWorkflowInterface
     public function guard(FulfillmentContext $ctx): void
     {
         $blocked = [
-            OrderStatus::AwaitingPayment,   // already in this state
-            OrderStatus::Preparing,         // locked in execution chain
-            OrderStatus::OutForDelivery,    // locked in execution chain
-            OrderStatus::Delivered,         // locked in execution chain
-            OrderStatus::Returned,          // handled by Returns workflow
-            OrderStatus::Completed,         // terminal
+            OrderStatus::AwaitingPayment,    // already in this state
+            OrderStatus::ReadyForDispatch,   // locked in execution chain
+            OrderStatus::OutForDelivery,     // locked in execution chain
+            OrderStatus::Delivered,          // locked in execution chain
+            OrderStatus::Returned,           // handled by Returns workflow
+            OrderStatus::Cancelled,          // terminal
         ];
 
         if (in_array($ctx->order->status, $blocked, true)) {
             throw new WorkflowPreconditionException(
-                "Order [{$ctx->order->id}] cannot return to Payment from status [{$ctx->order->status->value}]."
+                "Order [{$ctx->order->id}] cannot return to Payment from status [{$ctx->order->status->value}].",
             );
         }
     }
 
     public function execute(FulfillmentContext $ctx): FulfillmentResult
     {
-        $order    = $ctx->order;
+        $order = $ctx->order;
         $released = false;
 
         // Release inventory when returning to a product-editable state from a reserved state
@@ -57,7 +57,7 @@ final class ReturnToPaymentWorkflow implements FulfillmentWorkflowInterface
         }
 
         $order->update([
-            'status'                => OrderStatus::AwaitingPayment,
+            'status' => OrderStatus::AwaitingPayment,
             'inventory_reserved_at' => $released ? null : $order->inventory_reserved_at,
             'inventory_released_at' => null,
         ]);
@@ -65,10 +65,10 @@ final class ReturnToPaymentWorkflow implements FulfillmentWorkflowInterface
 
         return FulfillmentResult::success(
             $order,
-            "Order #{$order->order_number} returned to Payment." . ($released ? ' Inventory reservation released.' : ''),
+            "Order #{$order->order_number} returned to Payment.".($released ? ' Inventory reservation released.' : ''),
             [
                 'inventory_released' => $released,
-                'actor_id'           => $ctx->actorId,
+                'actor_id' => $ctx->actorId,
             ],
         );
     }

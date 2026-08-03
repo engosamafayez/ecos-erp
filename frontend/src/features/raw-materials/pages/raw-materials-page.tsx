@@ -285,11 +285,11 @@ export function RawMaterialsPage() {
   async function handleExport() {
     if (selectedIds.size > 0) {
       const selected = materials.filter((m) => selectedIds.has(m.id));
-      triggerCsvDownload(selected, visibleColumns, materialType, t);
+      triggerCsvDownload(selected, visibleColumns, materialType, t as unknown as (k: string) => string);
       return;
     }
     const result = await rawMaterialsService.list({ ...queryParams, per_page: 10_000, page: 1 });
-    triggerCsvDownload(result.items, visibleColumns, materialType, t);
+    triggerCsvDownload(result.items, visibleColumns, materialType, t as unknown as (k: string) => string);
   }
 
   // ── Delete ────────────────────────────────────────────────────────────────

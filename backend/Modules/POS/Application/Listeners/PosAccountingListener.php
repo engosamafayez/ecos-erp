@@ -7,6 +7,7 @@ namespace Modules\POS\Application\Listeners;
 use Illuminate\Support\Facades\Log;
 use Modules\POS\Application\Contracts\AccountingPortInterface;
 use Modules\POS\Application\Events\SaleFinalized;
+use Throwable;
 
 /**
  * Subscriber 3 — Accounting
@@ -36,12 +37,12 @@ final class PosAccountingListener
     {
         try {
             $this->accounting->recordSale($event);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::channel('daily')->error('[POS][Accounting] Failed to record sale in accounting system', [
-                'sale_id'        => $event->saleId,
+                'sale_id' => $event->saleId,
                 'receipt_number' => $event->receiptNumber,
-                'error'          => $e->getMessage(),
-                'trace'          => $e->getTraceAsString(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }

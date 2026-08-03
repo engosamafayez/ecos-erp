@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace Modules\Operations\Loading\Domain\Exceptions;
 
-final class VehicleCapacityExceededException extends \RuntimeException
+use RuntimeException;
+
+final class VehicleCapacityExceededException extends RuntimeException
 {
     public static function forWeight(float $planned, float $max): static
     {
-        return new static(
+        return new self(
             sprintf(
                 'Vehicle weight capacity exceeded: planned %.4f kg exceeds maximum %.4f kg.',
                 $planned,
-                $max
-            )
+                $max,
+            ),
         );
     }
 
@@ -23,8 +25,8 @@ final class VehicleCapacityExceededException extends \RuntimeException
             sprintf(
                 'Vehicle volume capacity exceeded: planned %.4f m³ exceeds maximum %.4f m³.',
                 $planned,
-                $max
-            )
+                $max,
+            ),
         );
     }
 
@@ -34,8 +36,8 @@ final class VehicleCapacityExceededException extends \RuntimeException
             sprintf(
                 'Vehicle order capacity exceeded: %d orders exceeds maximum of %d orders.',
                 $count,
-                $max
-            )
+                $max,
+            ),
         );
     }
 }

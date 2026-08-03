@@ -9,7 +9,6 @@ use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Sales\Customers\Domain\Models\Customer;
-use Modules\Sales\Customers\Domain\Models\CustomerAddress;
 
 final class CustomerAddressController extends Controller
 {
@@ -28,17 +27,17 @@ final class CustomerAddressController extends Controller
         $model = Customer::findOrFail($customer);
 
         $validated = $request->validate([
-            'label'           => 'sometimes|string|max:100',
-            'governorate'     => 'required|string|max:100',
-            'city'            => 'nullable|string|max:100',
-            'area'            => 'nullable|string|max:100',
-            'address_line'    => 'nullable|string|max:500',
+            'label' => 'sometimes|string|max:100',
+            'governorate' => 'required|string|max:100',
+            'city' => 'nullable|string|max:100',
+            'area' => 'nullable|string|max:100',
+            'address_line' => 'nullable|string|max:500',
             'google_maps_lat' => 'nullable|numeric|between:-90,90',
             'google_maps_lng' => 'nullable|numeric|between:-180,180',
-            'is_default'      => 'sometimes|boolean',
+            'is_default' => 'sometimes|boolean',
         ]);
 
-        if (!empty($validated['is_default'])) {
+        if (! empty($validated['is_default'])) {
             $model->addresses()->update(['is_default' => false]);
         }
 
@@ -53,17 +52,17 @@ final class CustomerAddressController extends Controller
         $addressModel = $model->addresses()->findOrFail($address);
 
         $validated = $request->validate([
-            'label'           => 'sometimes|string|max:100',
-            'governorate'     => 'sometimes|required|string|max:100',
-            'city'            => 'nullable|string|max:100',
-            'area'            => 'nullable|string|max:100',
-            'address_line'    => 'nullable|string|max:500',
+            'label' => 'sometimes|string|max:100',
+            'governorate' => 'sometimes|required|string|max:100',
+            'city' => 'nullable|string|max:100',
+            'area' => 'nullable|string|max:100',
+            'address_line' => 'nullable|string|max:500',
             'google_maps_lat' => 'nullable|numeric|between:-90,90',
             'google_maps_lng' => 'nullable|numeric|between:-180,180',
-            'is_default'      => 'sometimes|boolean',
+            'is_default' => 'sometimes|boolean',
         ]);
 
-        if (!empty($validated['is_default'])) {
+        if (! empty($validated['is_default'])) {
             $model->addresses()->where('id', '!=', $address)->update(['is_default' => false]);
         }
 

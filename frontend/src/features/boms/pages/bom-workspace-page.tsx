@@ -21,10 +21,10 @@ import { ROUTES } from '@/router/routes';
 
 const FORM_ID = 'bom-form';
 
-function extractMessage(error: unknown): string {
+function extractMessage(error: unknown, fallback = 'Something went wrong. Please try again.'): string {
   return axios.isAxiosError(error) && typeof error.response?.data?.message === 'string'
     ? error.response.data.message
-    : 'Something went wrong. Please try again.';
+    : fallback;
 }
 
 function LabelValue({ label, value }: { label: string; value: React.ReactNode }) {
@@ -104,7 +104,7 @@ function ViewWorkspace({ bom }: { bom: Bom }) {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b">
-                      <th className="pb-2 text-start font-medium">Material</th>
+                      <th className="pb-2 text-start font-medium">{t('workspace.material')}</th>
                       <th className="pb-2 text-end font-medium">{t('workspace.quantity')}</th>
                       <th className="pb-2 text-end font-medium">{t('workspace.wastePercentage')}</th>
                       <th className="pb-2 text-end font-medium">{t('workspace.unit')}</th>
@@ -231,12 +231,12 @@ function FormWorkspace({ bom, mode }: { bom: Bom | null; mode: 'create' | 'edit'
     if (mode === 'create') {
       createBom.mutate(payload, {
         onSuccess: (created) => navigate(`${ROUTES.boms}/${created.id}`),
-        onError: (error) => setServerError(extractMessage(error)),
+        onError: (error) => setServerError(extractMessage(error, t('workspace.unknownError'))),
       });
     } else {
       updateBom.mutate(payload, {
         onSuccess: () => navigate(`${ROUTES.boms}/${bom!.id}`),
-        onError: (error) => setServerError(extractMessage(error)),
+        onError: (error) => setServerError(extractMessage(error, t('workspace.unknownError'))),
       });
     }
   };
@@ -356,7 +356,7 @@ function FormWorkspace({ bom, mode }: { bom: Bom | null; mode: 'create' | 'edit'
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="text-muted-foreground border-b text-start">
-                          <th className="pb-2 pe-3 font-medium">Material</th>
+                          <th className="pb-2 pe-3 font-medium">{t('workspace.material')}</th>
                           <th className="w-28 pb-2 pe-3 font-medium">{t('workspace.quantity')}</th>
                           <th className="w-24 pb-2 pe-3 font-medium">{t('workspace.wastePercentage')}</th>
                           <th className="w-10 pb-2" />

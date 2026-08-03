@@ -15,13 +15,13 @@ class CommerceIntegrationService
         return CampaignProduct::updateOrCreate(
             [
                 'campaign_draft_id' => $draft->id,
-                'product_type'      => $data['product_type'],
-                'product_id'        => $data['product_id'],
+                'product_type' => $data['product_type'],
+                'product_id' => $data['product_id'],
             ],
             array_merge($data, [
                 'campaign_draft_id' => $draft->id,
-                'last_checked_at'   => now(),
-            ])
+                'last_checked_at' => now(),
+            ]),
         );
     }
 
@@ -40,36 +40,36 @@ class CommerceIntegrationService
 
             $product->update([
                 'availability_status' => $availability['status'],
-                'quantity_available'  => $availability['quantity'],
-                'last_checked_at'     => now(),
+                'quantity_available' => $availability['quantity'],
+                'last_checked_at' => now(),
             ]);
 
             if ($product->warn_if_unavailable && $availability['status'] !== 'available') {
                 $warnings[] = [
-                    'product_id'   => $product->product_id,
+                    'product_id' => $product->product_id,
                     'product_name' => $product->product_name,
-                    'status'       => $availability['status'],
-                    'quantity'     => $availability['quantity'],
+                    'status' => $availability['status'],
+                    'quantity' => $availability['quantity'],
                 ];
             }
         }
 
         return [
             'products_checked' => $products->count(),
-            'warnings'         => $warnings,
-            'has_issues'       => count($warnings) > 0,
+            'warnings' => $warnings,
+            'has_issues' => count($warnings) > 0,
         ];
     }
 
     private function checkAvailability(string $productType, string $productId): array
     {
         // Query the appropriate inventory table based on product_type
-        $status   = 'available';
+        $status = 'available';
         $quantity = null;
 
         if ($productType === 'finished_good') {
             $product = DB::table('products')->where('id', $productId)->first();
-            if (!$product) {
+            if (! $product) {
                 return ['status' => 'discontinued', 'quantity' => 0];
             }
 

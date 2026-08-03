@@ -34,7 +34,7 @@ final class SelectLineSupplierAction
 
         if (! in_array($material->status->value, ['waiting_supplier_selection', 'approved'], true)) {
             throw new InvalidPurchaseMaterialStatusException(
-                "Cannot select supplier when status is '{$material->status->value}'."
+                "Cannot select supplier when status is '{$material->status->value}'.",
             );
         }
 
@@ -47,10 +47,10 @@ final class SelectLineSupplierAction
         }
 
         $line->update([
-            'supplier_id'          => $supplierId,
-            'agreed_price'         => $agreedPrice,
-            'agreed_qty'           => $agreedQty,
-            'lead_time_days'       => $leadTimeDays,
+            'supplier_id' => $supplierId,
+            'agreed_price' => $agreedPrice,
+            'agreed_qty' => $agreedQty,
+            'lead_time_days' => $leadTimeDays,
             'supplier_selected_at' => now(),
             'supplier_selected_by' => $request->user()?->id,
         ]);

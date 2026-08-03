@@ -12,37 +12,37 @@ use Modules\Operations\Loading\Domain\Enums\AllocationMode;
 use Modules\Operations\Loading\Domain\Enums\AllocationRecordStatus;
 
 /**
- * @property string                $id
- * @property string                $company_id
- * @property string                $vehicle_assignment_id
- * @property string                $loading_session_id
- * @property string                $vehicle_id
- * @property string                $order_id
- * @property string                $order_line_id
- * @property string                $order_number_snapshot
- * @property string|null           $order_type_snapshot
- * @property string                $product_id
- * @property string                $sku_snapshot
- * @property string                $vehicle_inventory_item_id
- * @property AllocationMode        $allocation_mode
- * @property int                   $priority_rank
- * @property float                 $quantity_requested
- * @property float                 $quantity_allocated
- * @property float                 $quantity_loaded
- * @property float                 $quantity_delivered
- * @property float                 $quantity_remaining
- * @property bool                  $is_partial
- * @property string|null           $partial_reason
+ * @property string $id
+ * @property string $company_id
+ * @property string $vehicle_assignment_id
+ * @property string $loading_session_id
+ * @property string $vehicle_id
+ * @property string $order_id
+ * @property string $order_line_id
+ * @property string $order_number_snapshot
+ * @property string|null $order_type_snapshot
+ * @property string $product_id
+ * @property string $sku_snapshot
+ * @property string $vehicle_inventory_item_id
+ * @property AllocationMode $allocation_mode
+ * @property int $priority_rank
+ * @property float $quantity_requested
+ * @property float $quantity_allocated
+ * @property float $quantity_loaded
+ * @property float $quantity_delivered
+ * @property float $quantity_remaining
+ * @property bool $is_partial
+ * @property string|null $partial_reason
  * @property AllocationRecordStatus $status
- * @property \Carbon\Carbon        $allocated_at
- * @property string                $allocated_by
- * @property string|null           $allocated_by_user_id
- * @property string|null           $last_decision_id
- * @property string|null           $policy_evaluation_id
- * @property string                $created_by
- * @property string                $updated_by
- * @property \Carbon\Carbon        $created_at
- * @property \Carbon\Carbon        $updated_at
+ * @property \Carbon\Carbon $allocated_at
+ * @property string $allocated_by
+ * @property string|null $allocated_by_user_id
+ * @property string|null $last_decision_id
+ * @property string|null $policy_evaluation_id
+ * @property string $created_by
+ * @property string $updated_by
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class AllocationRecord extends Model
 {
@@ -90,16 +90,16 @@ class AllocationRecord extends Model
     protected function casts(): array
     {
         return [
-            'status'             => AllocationRecordStatus::class,
-            'allocation_mode'    => AllocationMode::class,
-            'priority_rank'      => 'integer',
+            'status' => AllocationRecordStatus::class,
+            'allocation_mode' => AllocationMode::class,
+            'priority_rank' => 'integer',
             'quantity_requested' => 'float',
             'quantity_allocated' => 'float',
-            'quantity_loaded'    => 'float',
+            'quantity_loaded' => 'float',
             'quantity_delivered' => 'float',
             'quantity_remaining' => 'float',
-            'is_partial'         => 'boolean',
-            'allocated_at'       => 'datetime',
+            'is_partial' => 'boolean',
+            'allocated_at' => 'datetime',
         ];
     }
 

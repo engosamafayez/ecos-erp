@@ -52,5 +52,5 @@ export function useBarcodeScanner({ onScan, enabled = true }: BarcodeScannerOpti
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);  
 }

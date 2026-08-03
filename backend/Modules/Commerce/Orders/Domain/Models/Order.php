@@ -27,9 +27,9 @@ use Modules\Sales\Customers\Domain\Models\Customer;
  * @property string|null $channel_id
  * @property string|null $assigned_warehouse_id
  * @property string $customer_id
- * @property string|null $customer_name           Order snapshot — name at time of creation/edit
+ * @property string|null $customer_name Order snapshot — name at time of creation/edit
  * @property string|null $customer_secondary_phone Order snapshot — secondary phone at time of creation/edit
- * @property string|null $customer_notes          Order snapshot — notes at time of creation/edit
+ * @property string|null $customer_notes Order snapshot — notes at time of creation/edit
  * @property string|null $external_order_id
  * @property string $order_number
  * @property string $order_date
@@ -130,8 +130,8 @@ class Order extends Model
         static::updating(static function (Order $order): void {
             if ($order->isDirty('status') && ! OrderStatusGuard::isActive()) {
                 throw new UnauthorizedOrderStatusWriteException(
-                    "Unauthorized direct write to Order[{$order->id}].status detected. " .
-                    'All status transitions must go through FulfillmentEngine::run($workflow, $order).'
+                    "Unauthorized direct write to Order[{$order->id}].status detected. ".
+                    'All status transitions must go through FulfillmentEngine::run($workflow, $order).',
                 );
             }
         });
@@ -245,6 +245,9 @@ class Order extends Model
         // Reservation lifecycle (TASK-INV-RESERVATION-LIFECYCLE-001)
         'reservation_status',
         'reservation_failure_reason',
+        // Branch assignment (TASK-BRANCH-ASSIGNMENT-ENGINE-001)
+        'assigned_branch_id',
+        'warehouse_assignment_failure_reason',
     ];
 
     /**
@@ -261,27 +264,27 @@ class Order extends Model
             'tax_total' => 'float',
             'order_date' => 'date:Y-m-d',
             'date_paid' => 'datetime',
-            'inventory_reserved_at'  => 'datetime',
-            'inventory_shipped_at'   => 'datetime',
-            'inventory_released_at'  => 'datetime',
-            'actual_cogs_amount'     => 'float',
-            'actual_margin_amount'   => 'float',
-            'actual_margin_percent'  => 'float',
+            'inventory_reserved_at' => 'datetime',
+            'inventory_shipped_at' => 'datetime',
+            'inventory_released_at' => 'datetime',
+            'actual_cogs_amount' => 'float',
+            'actual_margin_amount' => 'float',
+            'actual_margin_percent' => 'float',
             'requested_delivery_date' => 'date:Y-m-d',
-            'shipping_cost'          => 'float',
-            'discount_amount'        => 'float',
-            'deposit_amount'         => 'float',
-            'remaining_balance'      => 'float',
-            'google_maps_lat'        => 'float',
-            'google_maps_lng'        => 'float',
-            'warehouse_assigned_at'       => 'datetime',
-            'preparation_completed_at'    => 'datetime',
-            'rescheduled_at'              => 'datetime',
-            'next_delivery_date'          => 'date:Y-m-d',
-            'customer_confirmed_at'       => 'datetime',
-            'shipping_attempts'           => 'integer',
-            'status_entered_at'           => 'datetime',
-            'reservation_status'          => ReservationStatus::class,
+            'shipping_cost' => 'float',
+            'discount_amount' => 'float',
+            'deposit_amount' => 'float',
+            'remaining_balance' => 'float',
+            'google_maps_lat' => 'float',
+            'google_maps_lng' => 'float',
+            'warehouse_assigned_at' => 'datetime',
+            'preparation_completed_at' => 'datetime',
+            'rescheduled_at' => 'datetime',
+            'next_delivery_date' => 'date:Y-m-d',
+            'customer_confirmed_at' => 'datetime',
+            'shipping_attempts' => 'integer',
+            'status_entered_at' => 'datetime',
+            'reservation_status' => ReservationStatus::class,
         ];
     }
 

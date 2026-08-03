@@ -64,18 +64,18 @@ final readonly class RecipeSnapshot
     public function toArray(): array
     {
         return [
-            'recipe_id'          => $this->recipe_id,
-            'bom_number'         => $this->bom_number,
-            'version'            => $this->version,
+            'recipe_id' => $this->recipe_id,
+            'bom_number' => $this->bom_number,
+            'version' => $this->version,
             'bom_version_number' => $this->bom_version_number,
-            'product_id'         => $this->product_id,
-            'product_sku'        => $this->product_sku,
-            'product_name'       => $this->product_name,
-            'components'         => array_map(
+            'product_id' => $this->product_id,
+            'product_sku' => $this->product_sku,
+            'product_name' => $this->product_name,
+            'components' => array_map(
                 fn (RecipeComponent $c): array => $c->toArray(),
                 $this->components,
             ),
-            'resolved_at'        => $this->resolved_at,
+            'resolved_at' => $this->resolved_at,
         ];
     }
 }

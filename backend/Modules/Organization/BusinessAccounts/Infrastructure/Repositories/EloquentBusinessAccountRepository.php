@@ -51,7 +51,7 @@ final class EloquentBusinessAccountRepository implements BusinessAccountReposito
         }
 
         $sortDir = strtolower((string) ($filters['sort_dir'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
-        $perPage  = max(1, min((int) ($filters['per_page'] ?? 10), 100));
+        $perPage = max(1, min((int) ($filters['per_page'] ?? 10), 100));
 
         return $query->orderBy($sortBy, $sortDir)->paginate($perPage);
     }

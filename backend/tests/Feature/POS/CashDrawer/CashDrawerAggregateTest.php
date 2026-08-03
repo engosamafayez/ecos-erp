@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\POS\CashDrawer;
 
+use InvalidArgumentException;
 use Modules\POS\CashDrawer\Domain\Exceptions\InvalidDrawerOperationException;
 use Modules\POS\CashDrawer\Domain\Models\CashDrawer;
 use Modules\POS\Shared\Domain\Enums\CashDrawerStatus;
@@ -24,7 +25,7 @@ final class CashDrawerAggregateTest extends TestCase
 
     public function test_open_stores_opening_float(): void
     {
-        $float  = Money::of('500.00', 'EGP');
+        $float = Money::of('500.00', 'EGP');
         $drawer = $this->openDrawer(openingFloat: $float);
         $this->assertTrue($float->equals($drawer->getOpeningFloat()));
     }
@@ -50,37 +51,37 @@ final class CashDrawerAggregateTest extends TestCase
 
     public function test_open_throws_on_empty_terminal_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->openDrawer(terminalId: '');
     }
 
     public function test_open_throws_on_empty_session_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->openDrawer(sessionId: '');
     }
 
     public function test_open_throws_on_empty_shift_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->openDrawer(shiftId: '');
     }
 
     public function test_open_throws_on_empty_cashier_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->openDrawer(cashierId: '');
     }
 
     public function test_open_throws_on_empty_currency(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->openDrawer(currency: '');
     }
 
     public function test_open_throws_on_negative_opening_float(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->openDrawer(openingFloat: Money::of('-1.00', 'EGP'));
     }
 
@@ -89,7 +90,7 @@ final class CashDrawerAggregateTest extends TestCase
     public function test_record_cash_in_returns_movement_id(): void
     {
         $drawer = $this->openDrawer();
-        $id     = $drawer->recordCashIn(Money::of('100.00', 'EGP'));
+        $id = $drawer->recordCashIn(Money::of('100.00', 'EGP'));
         $this->assertNotEmpty($id);
     }
 
@@ -118,7 +119,7 @@ final class CashDrawerAggregateTest extends TestCase
     public function test_record_cash_in_throws_on_currency_mismatch(): void
     {
         $drawer = $this->openDrawer(currency: 'EGP');
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $drawer->recordCashIn(Money::of('50.00', 'USD'));
     }
 
@@ -127,7 +128,7 @@ final class CashDrawerAggregateTest extends TestCase
     public function test_record_cash_out_returns_movement_id(): void
     {
         $drawer = $this->openDrawer();
-        $id     = $drawer->recordCashOut(Money::of('30.00', 'EGP'));
+        $id = $drawer->recordCashOut(Money::of('30.00', 'EGP'));
         $this->assertNotEmpty($id);
     }
 
@@ -204,7 +205,7 @@ final class CashDrawerAggregateTest extends TestCase
     public function test_record_closing_count_throws_on_negative_amount(): void
     {
         $drawer = $this->openDrawer();
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $drawer->recordClosingCount(Money::of('-10.00', 'EGP'));
     }
 
@@ -331,7 +332,7 @@ final class CashDrawerAggregateTest extends TestCase
     public function test_pull_domain_events_clears_queue(): void
     {
         $drawer = $this->openDrawer();
-        $first  = $drawer->pullDomainEvents();
+        $first = $drawer->pullDomainEvents();
         $second = $drawer->pullDomainEvents();
         $this->assertNotEmpty($first);
         $this->assertEmpty($second);
@@ -361,19 +362,19 @@ final class CashDrawerAggregateTest extends TestCase
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private function openDrawer(
-        string $terminalId   = 'terminal-uuid-001',
-        string $sessionId    = 'session-uuid-001',
-        string $shiftId      = 'shift-uuid-001',
-        string $cashierId    = 'cashier-uuid-001',
-        string $currency     = 'EGP',
+        string $terminalId = 'terminal-uuid-001',
+        string $sessionId = 'session-uuid-001',
+        string $shiftId = 'shift-uuid-001',
+        string $cashierId = 'cashier-uuid-001',
+        string $currency = 'EGP',
         ?Money $openingFloat = null,
     ): CashDrawer {
         return CashDrawer::open(
-            terminalId:   $terminalId,
-            sessionId:    $sessionId,
-            shiftId:      $shiftId,
-            cashierId:    $cashierId,
-            currency:     $currency,
+            terminalId: $terminalId,
+            sessionId: $sessionId,
+            shiftId: $shiftId,
+            cashierId: $cashierId,
+            currency: $currency,
             openingFloat: $openingFloat ?? Money::of('500.00', 'EGP'),
         );
     }
@@ -383,6 +384,7 @@ final class CashDrawerAggregateTest extends TestCase
         $drawer = $this->openDrawer();
         $drawer->recordClosingCount(Money::of('500.00', 'EGP'));
         $drawer->close();
+
         return $drawer;
     }
 }

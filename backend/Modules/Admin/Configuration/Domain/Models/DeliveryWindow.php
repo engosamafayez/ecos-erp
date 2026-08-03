@@ -14,10 +14,10 @@ use Modules\Organization\Brands\Domain\Models\Brand;
  * @property string $brand_id
  * @property string $company_id
  * @property string $label
- * @property string $starts_at  e.g. "12:00:00"
- * @property string $ends_at    e.g. "15:00:00"
- * @property int    $sort_order
- * @property bool   $is_enabled
+ * @property string $starts_at e.g. "12:00:00"
+ * @property string $ends_at e.g. "15:00:00"
+ * @property int $sort_order
+ * @property bool $is_enabled
  */
 class DeliveryWindow extends Model
 {

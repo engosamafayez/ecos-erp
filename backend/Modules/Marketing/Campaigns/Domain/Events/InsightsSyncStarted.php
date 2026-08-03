@@ -10,10 +10,10 @@ final class InsightsSyncStarted
 {
     public function __construct(
         public readonly MarketingConnection $connection,
-        public readonly string             $syncType,
-        public readonly string             $datePreset,
-        public readonly ?string            $dateStart,
-        public readonly ?string            $dateStop,
-        public readonly ?string            $actorId,
+        public readonly string $syncType,
+        public readonly string $datePreset,
+        public readonly ?string $dateStart,
+        public readonly ?string $dateStop,
+        public readonly ?string $actorId,
     ) {}
 }

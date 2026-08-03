@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('channels', function (Blueprint $table): void {
-            $table->dropForeignIdFor(\Modules\MasterData\Warehouses\Domain\Models\Warehouse::class, 'default_warehouse_id');
+            $table->dropForeignIdFor(Modules\MasterData\Warehouses\Domain\Models\Warehouse::class, 'default_warehouse_id');
             $table->dropColumn('default_warehouse_id');
         });
     }

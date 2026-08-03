@@ -18,24 +18,26 @@ class ProductDemandCalculatorTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Company   $company;
+    private Company $company;
+
     private Warehouse $warehouse;
+
     private ProductDemandCalculator $calculator;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->company    = Company::factory()->create();
-        $this->warehouse  = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $this->calculator = new ProductDemandCalculator();
+        $this->company = Company::factory()->create();
+        $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
+        $this->calculator = new ProductDemandCalculator;
     }
 
     // ── Product aggregation ───────────────────────────────────────────────────
 
     public function test_aggregates_order_lines_by_product(): void
     {
-        $wave     = $this->makeWave();
+        $wave = $this->makeWave();
         $productA = $this->makeProduct('Product A');
         $productB = $this->makeProduct('Product B');
 
@@ -55,41 +57,41 @@ class ProductDemandCalculatorTest extends TestCase
         $this->assertArrayHasKey($productB, $byProduct);
 
         $this->assertEquals(8.0, $byProduct[$productA]['required_qty']);
-        $this->assertEquals(2,   $byProduct[$productA]['orders_count']);
+        $this->assertEquals(2, $byProduct[$productA]['orders_count']);
         $this->assertEquals(2.0, $byProduct[$productB]['required_qty']);
-        $this->assertEquals(1,   $byProduct[$productB]['orders_count']);
+        $this->assertEquals(1, $byProduct[$productB]['orders_count']);
     }
 
     public function test_calculates_completion_percentage(): void
     {
-        $wave    = $this->makeWave();
+        $wave = $this->makeWave();
         $product = $this->makeProduct('Finished Good');
-        $order   = $this->makeOrder();
+        $order = $this->makeOrder();
         $this->attachOrderToWave($wave, $order);
 
         $this->makeOrderLine($order, $product, 10.0, preparedQty: 4.0);
 
         $rows = $this->calculator->calculate($wave);
-        $row  = collect($rows)->firstWhere('product_id', $product);
+        $row = collect($rows)->firstWhere('product_id', $product);
 
         $this->assertEquals(10.0, $row['required_qty']);
-        $this->assertEquals(4.0,  $row['prepared_qty']);
-        $this->assertEquals(6.0,  $row['remaining_qty']);
+        $this->assertEquals(4.0, $row['prepared_qty']);
+        $this->assertEquals(6.0, $row['remaining_qty']);
         $this->assertEquals(40.0, $row['completion_pct']);
     }
 
     public function test_remaining_qty_is_never_negative(): void
     {
-        $wave    = $this->makeWave();
+        $wave = $this->makeWave();
         $product = $this->makeProduct('Over-Prepared Product');
-        $order   = $this->makeOrder();
+        $order = $this->makeOrder();
         $this->attachOrderToWave($wave, $order);
 
         // Prepared > required (edge case from manual override)
         $this->makeOrderLine($order, $product, 5.0, preparedQty: 8.0);
 
         $rows = $this->calculator->calculate($wave);
-        $row  = collect($rows)->firstWhere('product_id', $product);
+        $row = collect($rows)->firstWhere('product_id', $product);
 
         $this->assertEquals(0.0, $row['remaining_qty']);
     }
@@ -107,11 +109,11 @@ class ProductDemandCalculatorTest extends TestCase
 
     public function test_incremental_only_recalculates_affected_products(): void
     {
-        $wave     = $this->makeWave();
+        $wave = $this->makeWave();
         $productA = $this->makeProduct('A');
         $productB = $this->makeProduct('B');
-        $order1   = $this->makeOrder();
-        $order2   = $this->makeOrder();
+        $order1 = $this->makeOrder();
+        $order2 = $this->makeOrder();
         $this->attachOrderToWave($wave, $order1);
         $this->attachOrderToWave($wave, $order2);
 
@@ -135,8 +137,8 @@ class ProductDemandCalculatorTest extends TestCase
         $wave2 = $this->makeWave(warehouseId: $warehouse2->id);
 
         $product = $this->makeProduct('Shared Product');
-        $order1  = $this->makeOrder();
-        $order2  = $this->makeOrder();
+        $order1 = $this->makeOrder();
+        $order2 = $this->makeOrder();
         $this->attachOrderToWave($wave1, $order1);
         $this->attachOrderToWave($wave2, $order2);
 
@@ -146,7 +148,7 @@ class ProductDemandCalculatorTest extends TestCase
         $rows1 = $this->calculator->calculate($wave1);
         $rows2 = $this->calculator->calculate($wave2);
 
-        $this->assertEquals(5.0,  $rows1[0]['required_qty']);
+        $this->assertEquals(5.0, $rows1[0]['required_qty']);
         $this->assertEquals(20.0, $rows2[0]['required_qty']);
     }
 
@@ -154,7 +156,7 @@ class ProductDemandCalculatorTest extends TestCase
 
     public function test_product_ids_for_orders_returns_unique_product_ids(): void
     {
-        $order   = $this->makeOrder();
+        $order = $this->makeOrder();
         $product = $this->makeProduct('P');
         $this->makeOrderLine($order, $product, 1.0);
         $this->makeOrderLine($order, $product, 2.0); // duplicate product in same order
@@ -170,20 +172,20 @@ class ProductDemandCalculatorTest extends TestCase
     private function makeWave(?string $warehouseId = null): PreparationWave
     {
         return PreparationWave::create([
-            'company_id'           => $this->company->id,
-            'warehouse_id'         => $warehouseId ?? $this->warehouse->id,
-            'wave_number'          => 'PREP-TEST-' . random_int(1, 99999),
-            'planning_date'        => today()->toDateString(),
-            'status'               => WaveStatus::Collecting->value,
-            'orders_count'         => 0,
-            'products_count'       => 0,
-            'lines_count'          => 0,
+            'company_id' => $this->company->id,
+            'warehouse_id' => $warehouseId ?? $this->warehouse->id,
+            'wave_number' => 'PREP-TEST-'.random_int(1, 99999),
+            'planning_date' => today()->toDateString(),
+            'status' => WaveStatus::Collecting->value,
+            'orders_count' => 0,
+            'products_count' => 0,
+            'lines_count' => 0,
             'total_units_required' => 0,
             'total_units_prepared' => 0,
-            'shortage_detected'    => false,
-            'wave_type'            => 'engine',
-            'created_by'           => 'test',
-            'updated_by'           => 'test',
+            'shortage_detected' => false,
+            'wave_type' => 'engine',
+            'created_by' => 'test',
+            'updated_by' => 'test',
         ]);
     }
 
@@ -191,14 +193,15 @@ class ProductDemandCalculatorTest extends TestCase
     {
         $id = (string) \Illuminate\Support\Str::uuid();
         DB::table('products')->insert([
-            'id'           => $id,
-            'name'         => $name,
-            'sku'          => 'SKU-' . random_int(1000, 9999),
+            'id' => $id,
+            'name' => $name,
+            'sku' => 'SKU-'.random_int(1000, 9999),
             'product_type' => 'finished_good',
-            'is_active'    => true,
-            'created_at'   => now(),
-            'updated_at'   => now(),
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
+
         return $id;
     }
 
@@ -206,46 +209,47 @@ class ProductDemandCalculatorTest extends TestCase
     {
         $id = (string) \Illuminate\Support\Str::uuid();
         DB::table('orders')->insert([
-            'id'                   => $id,
-            'company_id'           => $this->company->id,
-            'assigned_warehouse_id'=> $this->warehouse->id,
-            'customer_id'          => (string) \Illuminate\Support\Str::uuid(),
-            'order_number'         => 'ORD-' . random_int(10000, 99999),
-            'status'               => 'confirmed',
-            'order_date'           => today()->toDateString(),
-            'created_at'           => now(),
-            'updated_at'           => now(),
+            'id' => $id,
+            'company_id' => $this->company->id,
+            'assigned_warehouse_id' => $this->warehouse->id,
+            'customer_id' => (string) \Illuminate\Support\Str::uuid(),
+            'order_number' => 'ORD-'.random_int(10000, 99999),
+            'status' => 'confirmed',
+            'order_date' => today()->toDateString(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
+
         return $id;
     }
 
     private function attachOrderToWave(PreparationWave $wave, string $orderId): void
     {
         PreparationWaveOrder::create([
-            'company_id'          => $wave->company_id,
+            'company_id' => $wave->company_id,
             'preparation_wave_id' => $wave->id,
-            'order_id'            => $orderId,
-            'order_number'        => 'ORD-' . random_int(10000, 99999),
-            'order_confirmed_at'  => now(),
-            'is_paid'             => false,
-            'preparation_priority'=> 5,
-            'added_at'            => now(),
-            'added_by'            => 'test',
+            'order_id' => $orderId,
+            'order_number' => 'ORD-'.random_int(10000, 99999),
+            'order_confirmed_at' => now(),
+            'is_paid' => false,
+            'preparation_priority' => 5,
+            'added_at' => now(),
+            'added_by' => 'test',
         ]);
     }
 
     private function makeOrderLine(string $orderId, string $productId, float $qty, float $preparedQty = 0.0): void
     {
         DB::table('order_lines')->insert([
-            'id'          => (string) \Illuminate\Support\Str::uuid(),
-            'order_id'    => $orderId,
-            'product_id'  => $productId,
-            'quantity'    => $qty,
-            'prepared_qty'=> $preparedQty,
-            'unit_price'  => 10.0,
-            'line_total'  => $qty * 10.0,
-            'created_at'  => now(),
-            'updated_at'  => now(),
+            'id' => (string) \Illuminate\Support\Str::uuid(),
+            'order_id' => $orderId,
+            'product_id' => $productId,
+            'quantity' => $qty,
+            'prepared_qty' => $preparedQty,
+            'unit_price' => 10.0,
+            'line_total' => $qty * 10.0,
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 }

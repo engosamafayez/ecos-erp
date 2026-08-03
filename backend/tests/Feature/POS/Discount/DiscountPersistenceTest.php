@@ -27,7 +27,7 @@ final class DiscountPersistenceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->repo = new EloquentDiscountRepository();
+        $this->repo = new EloquentDiscountRepository;
     }
 
     // ── save / findById ───────────────────────────────────────────────────────
@@ -92,7 +92,7 @@ final class DiscountPersistenceTest extends TestCase
     public function test_approved_status_persists_after_supervisor_approval(): void
     {
         $discount = $this->makePendingPercentage('20');
-        $discount->approve('mgr-001', new SupervisorApprovalPolicy());
+        $discount->approve('mgr-001', new SupervisorApprovalPolicy);
         $this->repo->save($discount);
 
         $found = $this->repo->findById($discount->id);
@@ -104,7 +104,7 @@ final class DiscountPersistenceTest extends TestCase
     public function test_rejected_status_persists(): void
     {
         $discount = $this->makePendingPercentage('20');
-        $discount->reject('mgr-001', 'Too generous', new SupervisorApprovalPolicy());
+        $discount->reject('mgr-001', 'Too generous', new SupervisorApprovalPolicy);
         $this->repo->save($discount);
 
         $found = $this->repo->findById($discount->id);
@@ -140,7 +140,7 @@ final class DiscountPersistenceTest extends TestCase
         $discount = $this->makeAutoApprovedPercentage('10');
         $this->repo->save($discount);
 
-        $found  = $this->repo->findById($discount->id);
+        $found = $this->repo->findById($discount->id);
         $result = $found->computeAmount(Money::of('300.00', 'EGP'));
 
         $this->assertSame('30.00', $result->amount);
@@ -152,9 +152,9 @@ final class DiscountPersistenceTest extends TestCase
     {
         $discount = Discount::request(
             cashierId: 'cashier-001',
-            scope:     DiscountScope::CartTotal,
-            value:     DiscountValue::percentage(Percentage::of('5')),
-            policy:    ManualDiscountPolicy::withLimits(
+            scope: DiscountScope::CartTotal,
+            value: DiscountValue::percentage(Percentage::of('5')),
+            policy: ManualDiscountPolicy::withLimits(
                 DiscountLimit::percentageOnly(Percentage::of('10')),
                 DiscountLimit::percentageOnly(Percentage::of('30')),
             ),
@@ -173,9 +173,9 @@ final class DiscountPersistenceTest extends TestCase
     {
         return Discount::request(
             cashierId: 'cashier-001',
-            scope:     DiscountScope::LineItem,
-            value:     DiscountValue::percentage(Percentage::of($pct)),
-            policy:    ManualDiscountPolicy::withLimits(
+            scope: DiscountScope::LineItem,
+            value: DiscountValue::percentage(Percentage::of($pct)),
+            policy: ManualDiscountPolicy::withLimits(
                 DiscountLimit::percentageOnly(Percentage::of('20')),
                 DiscountLimit::percentageOnly(Percentage::of('30')),
             ),
@@ -186,9 +186,9 @@ final class DiscountPersistenceTest extends TestCase
     {
         return Discount::request(
             cashierId: 'cashier-001',
-            scope:     DiscountScope::LineItem,
-            value:     DiscountValue::fixed(Money::of($amount, 'EGP')),
-            policy:    ManualDiscountPolicy::withLimits(
+            scope: DiscountScope::LineItem,
+            value: DiscountValue::fixed(Money::of($amount, 'EGP')),
+            policy: ManualDiscountPolicy::withLimits(
                 DiscountLimit::fixedOnly(Money::of('100.00', 'EGP')),
                 DiscountLimit::fixedOnly(Money::of('200.00', 'EGP')),
             ),
@@ -199,9 +199,9 @@ final class DiscountPersistenceTest extends TestCase
     {
         return Discount::request(
             cashierId: 'cashier-001',
-            scope:     DiscountScope::LineItem,
-            value:     DiscountValue::percentage(Percentage::of($pct)),
-            policy:    ManualDiscountPolicy::withLimits(
+            scope: DiscountScope::LineItem,
+            value: DiscountValue::percentage(Percentage::of($pct)),
+            policy: ManualDiscountPolicy::withLimits(
                 DiscountLimit::percentageOnly(Percentage::of('10')),
                 DiscountLimit::percentageOnly(Percentage::of('30')),
             ),

@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useFormatter } from '@/hooks/use-formatter';
 import { MapPin, AlertTriangle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -157,6 +158,7 @@ interface CoverageMapProps {
 }
 
 export function CoverageMap({ tripId, tripNumber }: CoverageMapProps) {
+  const { money } = useFormatter();
   const [open, setOpen] = useState(false);
   const { data, isLoading } = useCoverageMap(open ? tripId : null);
 
@@ -237,7 +239,7 @@ export function CoverageMap({ tripId, tripNumber }: CoverageMapProps) {
                             {o.distance?.toFixed(1)} km from center
                           </span>
                           <span className="font-semibold tabular-nums">
-                            EGP {Number(o.grand_total).toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                            {money(Number(o.grand_total))}
                           </span>
                         </div>
                       </div>

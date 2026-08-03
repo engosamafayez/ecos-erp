@@ -1,4 +1,5 @@
 import { PauseCircle, Trash2, User, X, RotateCcw } from 'lucide-react';
+import { useFormatter } from '@/hooks/use-formatter';
 
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -24,6 +25,7 @@ type HeldCartCardProps = {
 };
 
 function HeldCartCard({ snapshot, onResumed }: HeldCartCardProps) {
+  const { money } = useFormatter();
   const resumeCart = useResumeCart();
   const deleteCart = useDeleteHeldCart();
 
@@ -57,7 +59,7 @@ function HeldCartCard({ snapshot, onResumed }: HeldCartCardProps) {
           {snapshot.lineCount} item{snapshot.lineCount !== 1 ? 's' : ''}
         </span>
         <span className="font-semibold text-foreground tabular-nums">
-          {snapshot.currency} {snapshot.total}
+          {money(Number(snapshot.total), snapshot.currency)}
         </span>
       </div>
 

@@ -21,7 +21,7 @@ final class CashDrawerPersistenceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->repo = new EloquentCashDrawerRepository();
+        $this->repo = new EloquentCashDrawerRepository;
     }
 
     // ── save / findById ───────────────────────────────────────────────────────
@@ -81,7 +81,7 @@ final class CashDrawerPersistenceTest extends TestCase
 
     public function test_opening_float_persists_as_jsonb(): void
     {
-        $float  = Money::of('750.00', 'EGP');
+        $float = Money::of('750.00', 'EGP');
         $drawer = $this->openDrawer(openingFloat: $float);
         $this->repo->save($drawer);
 
@@ -148,19 +148,19 @@ final class CashDrawerPersistenceTest extends TestCase
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private function openDrawer(
-        string $terminalId   = 'terminal-uuid-001',
-        string $sessionId    = 'session-uuid-001',
-        string $shiftId      = 'shift-uuid-001',
-        string $cashierId    = 'cashier-uuid-001',
-        string $currency     = 'EGP',
+        string $terminalId = 'terminal-uuid-001',
+        string $sessionId = 'session-uuid-001',
+        string $shiftId = 'shift-uuid-001',
+        string $cashierId = 'cashier-uuid-001',
+        string $currency = 'EGP',
         ?Money $openingFloat = null,
     ): CashDrawer {
         return CashDrawer::open(
-            terminalId:   $terminalId,
-            sessionId:    $sessionId,
-            shiftId:      $shiftId,
-            cashierId:    $cashierId,
-            currency:     $currency,
+            terminalId: $terminalId,
+            sessionId: $sessionId,
+            shiftId: $shiftId,
+            cashierId: $cashierId,
+            currency: $currency,
             openingFloat: $openingFloat ?? Money::of('500.00', 'EGP'),
         );
     }

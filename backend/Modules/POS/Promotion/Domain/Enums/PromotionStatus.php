@@ -6,17 +6,17 @@ namespace Modules\POS\Promotion\Domain\Enums;
 
 enum PromotionStatus: string
 {
-    case Draft     = 'draft';
-    case Active    = 'active';
-    case Paused    = 'paused';
-    case Expired   = 'expired';
+    case Draft = 'draft';
+    case Active = 'active';
+    case Paused = 'paused';
+    case Expired = 'expired';
     case Cancelled = 'cancelled';
 
     public function isTerminal(): bool
     {
         return match ($this) {
             self::Expired, self::Cancelled => true,
-            default                        => false,
+            default => false,
         };
     }
 
@@ -24,11 +24,22 @@ enum PromotionStatus: string
     {
         return match ($this) {
             self::Draft, self::Paused => true,
-            default                   => false,
+            default => false,
         };
     }
 
-    public function canPause(): bool   { return $this === self::Active; }
-    public function canExpire(): bool  { return $this === self::Active || $this === self::Paused; }
-    public function canCancel(): bool  { return !$this->isTerminal(); }
+    public function canPause(): bool
+    {
+        return $this === self::Active;
+    }
+
+    public function canExpire(): bool
+    {
+        return $this === self::Active || $this === self::Paused;
+    }
+
+    public function canCancel(): bool
+    {
+        return ! $this->isTerminal();
+    }
 }

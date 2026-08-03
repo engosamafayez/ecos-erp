@@ -21,9 +21,9 @@ return new class extends Migration
             "SELECT IS_NULLABLE FROM information_schema.COLUMNS
              WHERE TABLE_SCHEMA = DATABASE()
              AND TABLE_NAME = 'inventory_receipt_layers'
-             AND COLUMN_NAME = 'supplier_id'"
+             AND COLUMN_NAME = 'supplier_id'",
         );
-        if (!empty($rows) && $rows[0]->IS_NULLABLE === 'YES') {
+        if (! empty($rows) && $rows[0]->IS_NULLABLE === 'YES') {
             return;
         }
 
@@ -52,9 +52,9 @@ return new class extends Migration
             "SELECT IS_NULLABLE FROM information_schema.COLUMNS
              WHERE TABLE_SCHEMA = DATABASE()
              AND TABLE_NAME = 'inventory_receipt_layers'
-             AND COLUMN_NAME = 'supplier_id'"
+             AND COLUMN_NAME = 'supplier_id'",
         );
-        if (!empty($rows) && $rows[0]->IS_NULLABLE === 'NO') {
+        if (! empty($rows) && $rows[0]->IS_NULLABLE === 'NO') {
             return; // already NOT NULL — already reversed
         }
 

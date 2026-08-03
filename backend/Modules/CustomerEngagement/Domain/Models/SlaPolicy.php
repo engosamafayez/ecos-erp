@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Domain\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -18,10 +20,10 @@ class SlaPolicy extends Model
     {
         return [
             'first_response_minutes' => 'integer',
-            'resolution_minutes'     => 'integer',
-            'business_hours_only'    => 'boolean',
-            'is_default'             => 'boolean',
-            'config'                 => 'array',
+            'resolution_minutes' => 'integer',
+            'business_hours_only' => 'boolean',
+            'is_default' => 'boolean',
+            'config' => 'array',
         ];
     }
 

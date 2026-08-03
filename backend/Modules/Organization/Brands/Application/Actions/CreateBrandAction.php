@@ -36,31 +36,31 @@ final class CreateBrandAction extends BaseAction
         $baseSlug = $slug;
         $counter = 1;
         while ($this->brands->existsBySlug($dto->company_id, $slug)) {
-            $slug = $baseSlug . '-' . $counter++;
+            $slug = $baseSlug.'-'.$counter++;
         }
 
         $brand = $this->brands->create([
-            'company_id'            => $dto->company_id,
-            'code'                  => $code,
-            'name'                  => $dto->name,
-            'slug'                  => $slug,
-            'logo'                  => $dto->logo,
-            'description'           => $dto->description,
-            'is_active'             => $dto->is_active,
+            'company_id' => $dto->company_id,
+            'code' => $code,
+            'name' => $dto->name,
+            'slug' => $slug,
+            'logo' => $dto->logo,
+            'description' => $dto->description,
+            'is_active' => $dto->is_active,
             'default_target_margin' => $dto->default_target_margin,
-            'default_markup'        => $dto->default_markup,
-            'default_discount_pct'  => $dto->default_discount_pct,
+            'default_markup' => $dto->default_markup,
+            'default_discount_pct' => $dto->default_discount_pct,
         ]);
 
         // Seed the Config OS pricing policy so it is immediately in sync with the brand.
         if ($dto->default_target_margin !== null) {
             $this->config->updateBrandPolicy(
-                brandId:   $brand->id,
+                brandId: $brand->id,
                 companyId: (string) $dto->company_id,
-                group:     'pricing',
-                settings:  ['minimum_margin_pct' => $dto->default_target_margin],
-                actorId:   (string) (Auth::id() ?? ''),
-                reason:    'Seeded from brand creation',
+                group: 'pricing',
+                settings: ['minimum_margin_pct' => $dto->default_target_margin],
+                actorId: (string) (Auth::id() ?? ''),
+                reason: 'Seeded from brand creation',
             );
         }
 

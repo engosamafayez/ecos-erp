@@ -12,6 +12,7 @@ use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\POS\Application\Contracts\OrderCreationPortInterface;
 use Modules\POS\Application\Events\SaleFinalized;
 use Modules\POS\Application\Events\SaleItemPayload;
+use Throwable;
 
 /**
  * CRIT-004 — Creates a standard ERP Sales Order when a POS sale completes.
@@ -52,7 +53,7 @@ final class PosSaleOrderListener
             Log::channel('daily')->warning(
                 '[POS][Order] No customer on sale and POS_GUEST_CUSTOMER_ID is not configured — order not created',
                 [
-                    'sale_id'        => $event->saleId,
+                    'sale_id' => $event->saleId,
                     'receipt_number' => $event->receiptNumber,
                 ],
             );
@@ -61,9 +62,9 @@ final class PosSaleOrderListener
         }
 
         $lines = array_map(
-            static fn(SaleItemPayload $item): array => [
+            static fn (SaleItemPayload $item): array => [
                 'product_id' => $item->productId,
-                'quantity'   => (float) $item->quantity,
+                'quantity' => (float) $item->quantity,
                 'unit_price' => (float) $item->unitPrice,
             ],
             $event->items,
@@ -72,13 +73,13 @@ final class PosSaleOrderListener
         $status = $this->resolveEntryStatus($event->channelId);
 
         $dto = new OrderDTO(
-            customer_id:       (string) $customerId,
-            order_date:        now()->toDateString(),
-            status:            $status,
-            lines:             $lines,
-            channel_id:        $event->channelId,
+            customer_id: (string) $customerId,
+            order_date: now()->toDateString(),
+            status: $status,
+            lines: $lines,
+            channel_id: $event->channelId,
             external_order_id: $event->saleId,
-            notes:             "POS Sale #{$event->receiptNumber}",
+            notes: "POS Sale #{$event->receiptNumber}",
         );
 
         try {
@@ -88,16 +89,16 @@ final class PosSaleOrderListener
             $order = $result->data();
 
             Log::channel('daily')->info('[POS][Order] ERP order created from POS sale', [
-                'sale_id'        => $event->saleId,
+                'sale_id' => $event->saleId,
                 'receipt_number' => $event->receiptNumber,
-                'order_id'       => $order?->id,
+                'order_id' => $order?->id,
             ]);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::channel('daily')->error('[POS][Order] Failed to create ERP order from POS sale', [
-                'sale_id'        => $event->saleId,
+                'sale_id' => $event->saleId,
                 'receipt_number' => $event->receiptNumber,
-                'error'          => $e->getMessage(),
-                'trace'          => $e->getTraceAsString(),
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
         }
     }
@@ -109,21 +110,21 @@ final class PosSaleOrderListener
     private function resolveEntryStatus(?string $channelId): OrderStatus
     {
         if ($channelId === null) {
-            return OrderStatus::Completed;
+            return OrderStatus::Delivered;
         }
 
         try {
             $channel = Channel::find($channelId);
             if ($channel === null) {
-                return OrderStatus::Completed;
+                return OrderStatus::Delivered;
             }
 
-            $policy      = $this->config->getBrandPolicy((string) $channel->brand_id, 'order');
-            $statusValue = $policy['source_entry_policies']['pos'] ?? 'completed';
+            $policy = $this->config->getBrandPolicy((string) $channel->brand_id, 'order');
+            $statusValue = $policy['source_entry_policies']['pos'] ?? 'delivered';
 
             return OrderStatus::from($statusValue);
-        } catch (\Throwable) {
-            return OrderStatus::Completed;
+        } catch (Throwable) {
+            return OrderStatus::Delivered;
         }
     }
 }

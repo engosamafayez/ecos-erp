@@ -15,6 +15,6 @@ final class ManufacturingJobCompletedEvent
     public function __construct(
         public readonly string $jobId,
         public readonly string $productId,
-        public readonly float  $quantityProduced,
+        public readonly float $quantityProduced,
     ) {}
 }

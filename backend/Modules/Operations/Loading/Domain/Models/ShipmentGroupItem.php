@@ -9,15 +9,15 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * @property string          $id
- * @property string          $company_id
- * @property string          $shipment_group_id
- * @property string          $vehicle_assignment_id
- * @property string          $loading_session_id
- * @property string          $created_by
- * @property string          $updated_by
- * @property \Carbon\Carbon  $created_at
- * @property \Carbon\Carbon  $updated_at
+ * @property string $id
+ * @property string $company_id
+ * @property string $shipment_group_id
+ * @property string $vehicle_assignment_id
+ * @property string $loading_session_id
+ * @property string $created_by
+ * @property string $updated_by
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class ShipmentGroupItem extends Model
 {

@@ -10,6 +10,7 @@ use Modules\Admin\Configuration\Domain\Models\ConfigAuditEntry;
 use Modules\Organization\Brands\Domain\Contracts\BrandRepositoryInterface;
 use Modules\Organization\Brands\Domain\Models\Brand;
 use RuntimeException;
+use Throwable;
 
 /**
  * Enterprise Brand Transfer Service
@@ -58,15 +59,14 @@ final class BrandTransferService
      *   cascade: array<string, int>,
      * }
      *
-     * @throws RuntimeException  when already in target company, or code conflicts.
+     * @throws RuntimeException when already in target company, or code conflicts.
      */
     public function execute(
-        Brand  $brand,
+        Brand $brand,
         string $targetCompanyId,
         string $actorId,
         ?BrandTransferImpactReport $impactReport = null,
-    ): array
-    {
+    ): array {
         if ($brand->company_id === $targetCompanyId) {
             throw new RuntimeException('Brand already belongs to this company.');
         }
@@ -80,13 +80,13 @@ final class BrandTransferService
         // ── Atomic transfer ──────────────────────────────────────────────────
 
         $result = DB::transaction(function () use ($brand, $targetCompanyId, $slug, $actorId): array {
-            $brandId        = (string) $brand->id;
-            $oldCompanyId   = (string) $brand->company_id;
+            $brandId = (string) $brand->id;
+            $oldCompanyId = (string) $brand->company_id;
 
             // 1 — Brands table itself
             $brand->update([
                 'company_id' => $targetCompanyId,
-                'slug'       => $slug,
+                'slug' => $slug,
             ]);
 
             // 2 — Config OS: brand policies (has denormalized company_id + audit fields)
@@ -198,27 +198,27 @@ final class BrandTransferService
                 ->update(['company_id' => $targetCompanyId]);
 
             return [
-                'slug'         => $slug,
+                'slug' => $slug,
                 'slug_changed' => $slug !== $brand->getOriginal('slug'),
                 'from_company' => $oldCompanyId,
-                'to_company'   => $targetCompanyId,
-                'cascade'      => [
-                    'config_brand_policies'                => $policiesUpdated,
-                    'config_brand_shipping_rules'          => $shippingRulesUpdated,
-                    'channels'                             => $channelsUpdated,
-                    'orders'                               => $ordersUpdated,
-                    'order_business_context_snapshots'     => $contextSnapshotsUpdated,
-                    'order_financial_snapshots'            => $snapshotsUpdated,
-                    'business_accounts'                    => $businessAccountsUpdated,
+                'to_company' => $targetCompanyId,
+                'cascade' => [
+                    'config_brand_policies' => $policiesUpdated,
+                    'config_brand_shipping_rules' => $shippingRulesUpdated,
+                    'channels' => $channelsUpdated,
+                    'orders' => $ordersUpdated,
+                    'order_business_context_snapshots' => $contextSnapshotsUpdated,
+                    'order_financial_snapshots' => $snapshotsUpdated,
+                    'business_accounts' => $businessAccountsUpdated,
                     'marketing_campaign_business_contexts' => $campaignContextsUpdated,
-                    'marketing_campaign_drafts'            => $campaignDraftsUpdated,
-                    'marketing_initiatives'                => $initiativesUpdated,
-                    'automation_workflows'                 => $workflowsUpdated,
-                    'bae_business_dna'                     => $businessDnaUpdated,
-                    'bae_business_events'                  => $businessEventsUpdated,
-                    'cep_conversations'                    => $conversationsUpdated,
-                    'cep_leads'                            => $leadsUpdated,
-                    'cep_channel_providers'                => $channelProvidersUpdated,
+                    'marketing_campaign_drafts' => $campaignDraftsUpdated,
+                    'marketing_initiatives' => $initiativesUpdated,
+                    'automation_workflows' => $workflowsUpdated,
+                    'bae_business_dna' => $businessDnaUpdated,
+                    'bae_business_events' => $businessEventsUpdated,
+                    'cep_conversations' => $conversationsUpdated,
+                    'cep_leads' => $leadsUpdated,
+                    'cep_channel_providers' => $channelProvidersUpdated,
                 ],
             ];
         });
@@ -228,26 +228,26 @@ final class BrandTransferService
         try {
             $actorName = optional(Auth::user())->name ?? $actorId;
             ConfigAuditEntry::create([
-                'company_id'  => $result['from_company'],
-                'brand_id'    => (string) $brand->id,
-                'module'      => 'organization',
-                'category'    => 'brand_transfer',
-                'config_key'  => null,
-                'old_value'   => ['company_id' => $result['from_company']],
-                'new_value'   => [
-                    'company_id'    => $result['to_company'],
-                    'slug'          => $result['slug'],
-                    'slug_changed'  => $result['slug_changed'],
-                    'cascade'       => $result['cascade'],
+                'company_id' => $result['from_company'],
+                'brand_id' => (string) $brand->id,
+                'module' => 'organization',
+                'category' => 'brand_transfer',
+                'config_key' => null,
+                'old_value' => ['company_id' => $result['from_company']],
+                'new_value' => [
+                    'company_id' => $result['to_company'],
+                    'slug' => $result['slug'],
+                    'slug_changed' => $result['slug_changed'],
+                    'cascade' => $result['cascade'],
                     'impact_report' => $impactReport?->toArray(),
                 ],
-                'action'      => 'transfer',
-                'actor_id'    => $actorId ?: null,
-                'actor_name'  => $actorName,
-                'reason'      => null,
+                'action' => 'transfer',
+                'actor_id' => $actorId ?: null,
+                'actor_name' => $actorName,
+                'reason' => null,
                 'occurred_at' => now(),
             ]);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // Audit failure must never surface to the caller — the transfer has already
             // committed and the record cannot be rolled back.
         }
@@ -269,9 +269,9 @@ final class BrandTransferService
 
         if ($conflict) {
             throw new RuntimeException(
-                "Transfer blocked: brand code \"{$brand->code}\" already exists in the target company. " .
-                'Codes are permanent business identifiers and cannot be auto-renamed. ' .
-                "Rename this brand's code before retrying the transfer."
+                "Transfer blocked: brand code \"{$brand->code}\" already exists in the target company. ".
+                'Codes are permanent business identifiers and cannot be auto-renamed. '.
+                "Rename this brand's code before retrying the transfer.",
             );
         }
     }
@@ -282,12 +282,12 @@ final class BrandTransferService
      */
     private function resolveSlug(Brand $brand, string $targetCompanyId): string
     {
-        $slug     = $brand->slug;
+        $slug = $brand->slug;
         $baseSlug = $slug;
-        $counter  = 2;
+        $counter = 2;
 
         while ($this->brands->existsBySlug($targetCompanyId, $slug)) {
-            $slug = $baseSlug . '-' . $counter++;
+            $slug = $baseSlug.'-'.$counter++;
         }
 
         return $slug;

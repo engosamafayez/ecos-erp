@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 
 interface DataPoint {
@@ -24,6 +25,7 @@ export function LineChart({
   showGrid = true,
   className,
 }: LineChartProps) {
+  const { t } = useTranslation('marketing');
   const points = data.filter((d) => d.value != null) as Array<{ label: string; value: number }>;
 
   const { path, areaPath, coords } = useMemo(() => {
@@ -56,7 +58,7 @@ export function LineChart({
     return (
       <div className={cn('flex items-center justify-center text-sm text-muted-foreground', className)}
         style={{ height }}>
-        No data
+        {t('common.noData')}
       </div>
     );
   }
@@ -71,7 +73,7 @@ export function LineChart({
         width="100%"
         height={height}
         role="img"
-        aria-label="Line chart"
+        aria-label={t('intelligence.chart.lineChartAria')}
       >
         {/* Grid lines */}
         {showGrid && [0.25, 0.5, 0.75].map((t) => (

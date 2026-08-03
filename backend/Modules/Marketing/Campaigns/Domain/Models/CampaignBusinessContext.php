@@ -29,19 +29,20 @@ use Modules\Marketing\Campaigns\Domain\Enums\Season;
  * @property string|null $internal_status
  * @property string|null $internal_priority
  * @property string|null $internal_notes
- * @property array|null  $internal_tags
+ * @property array|null $internal_tags
  */
 class CampaignBusinessContext extends Model
 {
     use HasUuids;
 
-    protected $table   = 'marketing_campaign_business_contexts';
+    protected $table = 'marketing_campaign_business_contexts';
+
     protected $guarded = [];
 
     protected function casts(): array
     {
         return [
-            'season'        => Season::class,
+            'season' => Season::class,
             'business_goal' => BusinessGoal::class,
             'internal_tags' => 'array',
         ];

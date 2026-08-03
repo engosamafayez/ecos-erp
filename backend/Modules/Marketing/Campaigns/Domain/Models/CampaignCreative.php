@@ -15,29 +15,30 @@ use Modules\Marketing\Campaigns\Domain\Enums\CreativeType;
  * The `provider_payload` column is IMMUTABLE.
  * Prepared for future AI creative analysis (headline scoring, visual analysis, A/B comparison).
  *
- * @property string           $external_creative_id
- * @property CreativeType     $creative_type
- * @property string|null      $headline
- * @property string|null      $primary_text
- * @property string|null      $call_to_action
- * @property string|null      $image_url
- * @property string|null      $video_url
- * @property string|null      $thumbnail_url
- * @property array|null       $asset_feed
- * @property array|null       $provider_payload
+ * @property string $external_creative_id
+ * @property CreativeType $creative_type
+ * @property string|null $headline
+ * @property string|null $primary_text
+ * @property string|null $call_to_action
+ * @property string|null $image_url
+ * @property string|null $video_url
+ * @property string|null $thumbnail_url
+ * @property array|null $asset_feed
+ * @property array|null $provider_payload
  */
 class CampaignCreative extends Model
 {
     use HasUuids;
 
-    protected $table   = 'marketing_campaign_creatives';
+    protected $table = 'marketing_campaign_creatives';
+
     protected $guarded = [];
 
     protected function casts(): array
     {
         return [
-            'creative_type'  => CreativeType::class,
-            'asset_feed'     => 'array',
+            'creative_type' => CreativeType::class,
+            'asset_feed' => 'array',
             'provider_payload' => 'array',
             'last_synced_at' => 'datetime',
         ];

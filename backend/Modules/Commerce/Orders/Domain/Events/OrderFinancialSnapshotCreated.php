@@ -14,34 +14,46 @@ use Modules\Commerce\Orders\Domain\Models\OrderFinancialSnapshot;
  */
 final class OrderFinancialSnapshotCreated
 {
-    public readonly string  $snapshotUuid;
-    public readonly int     $snapshotVersion;
-    public readonly string  $orderId;
+    public readonly string $snapshotUuid;
+
+    public readonly int $snapshotVersion;
+
+    public readonly string $orderId;
+
     public readonly ?string $companyId;
+
     public readonly ?string $brandId;
+
     public readonly ?string $channelId;
+
     public readonly ?string $channelName;
-    public readonly float   $grandTotal;
-    public readonly ?float  $grossProfit;
-    public readonly ?float  $actualMarginPercent;
+
+    public readonly float $grandTotal;
+
+    public readonly ?float $grossProfit;
+
+    public readonly ?float $actualMarginPercent;
+
     public readonly ?string $marginStatus;
+
     public readonly ?string $integrityHash;
-    public readonly string  $createdAt;
+
+    public readonly string $createdAt;
 
     public function __construct(public readonly OrderFinancialSnapshot $snapshot)
     {
-        $this->snapshotUuid        = $snapshot->snapshot_uuid;
-        $this->snapshotVersion     = $snapshot->snapshot_version;
-        $this->orderId             = $snapshot->order_id;
-        $this->companyId           = $snapshot->company_id;
-        $this->brandId             = $snapshot->brand_id;
-        $this->channelId           = $snapshot->channel_id;
-        $this->channelName         = $snapshot->channel_name;
-        $this->grandTotal          = $snapshot->grand_total;
-        $this->grossProfit         = $snapshot->gross_profit;
+        $this->snapshotUuid = $snapshot->snapshot_uuid;
+        $this->snapshotVersion = $snapshot->snapshot_version;
+        $this->orderId = $snapshot->order_id;
+        $this->companyId = $snapshot->company_id;
+        $this->brandId = $snapshot->brand_id;
+        $this->channelId = $snapshot->channel_id;
+        $this->channelName = $snapshot->channel_name;
+        $this->grandTotal = $snapshot->grand_total;
+        $this->grossProfit = $snapshot->gross_profit;
         $this->actualMarginPercent = $snapshot->actual_margin_percent;
-        $this->marginStatus        = $snapshot->margin_status;
-        $this->integrityHash       = $snapshot->integrity_hash;
-        $this->createdAt           = $snapshot->created_at?->toIso8601String() ?? now()->toIso8601String();
+        $this->marginStatus = $snapshot->margin_status;
+        $this->integrityHash = $snapshot->integrity_hash;
+        $this->createdAt = $snapshot->created_at?->toIso8601String() ?? now()->toIso8601String();
     }
 }

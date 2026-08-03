@@ -14,7 +14,8 @@ class WorkflowExecution extends Model
 {
     use HasUuids;
 
-    protected $table    = 'automation_workflow_executions';
+    protected $table = 'automation_workflow_executions';
+
     protected $fillable = [
         'workflow_id', 'workflow_version_id', 'entity_type', 'entity_id',
         'status', 'trigger_type', 'trigger_payload', 'current_node_id',
@@ -22,11 +23,11 @@ class WorkflowExecution extends Model
     ];
 
     protected $casts = [
-        'status'          => WorkflowExecutionStatus::class,
+        'status' => WorkflowExecutionStatus::class,
         'trigger_payload' => 'array',
-        'started_at'      => 'datetime',
-        'completed_at'    => 'datetime',
-        'failed_at'       => 'datetime',
+        'started_at' => 'datetime',
+        'completed_at' => 'datetime',
+        'failed_at' => 'datetime',
     ];
 
     public function workflow(): BelongsTo

@@ -65,22 +65,22 @@ final class ManufacturingLifecycleHandler implements LifecycleHandlerInterface
         // ── Step 1: Manufacturing Policy evaluation ───────────────────────────
         $policyResult = $this->policy->evaluate(
             new ManufacturingPolicyRequest(
-                product_id:   $request->product_id,
+                product_id: $request->product_id,
                 required_qty: $request->required_qty,
-                actor_id:     $request->actor_id,
-                metadata:     $request->metadata,
+                actor_id: $request->actor_id,
+                metadata: $request->metadata,
             ),
             new OrderContext(
-                order_id:             $request->order_id,
-                order_line_id:        $request->order_line_id,
-                order_status:         $request->order_status,
-                is_cancelled:         $request->is_order_cancelled,
+                order_id: $request->order_id,
+                order_line_id: $request->order_line_id,
+                order_status: $request->order_status,
+                is_cancelled: $request->is_order_cancelled,
                 already_manufactured: $request->already_manufactured,
             ),
             new ProductContext(
-                product_id:           $request->product_id,
-                can_manufacture:      $request->product_can_manufacture,
-                has_active_recipe:    $request->product_has_active_recipe,
+                product_id: $request->product_id,
+                can_manufacture: $request->product_can_manufacture,
+                has_active_recipe: $request->product_has_active_recipe,
                 is_inventory_managed: $request->product_is_inventory_managed,
             ),
         );
@@ -90,15 +90,15 @@ final class ManufacturingLifecycleHandler implements LifecycleHandlerInterface
             // Manufacturing was done previously — callers should treat this line as Executed.
             if ($policyResult->policy_code === PolicyCode::AlreadyManufactured) {
                 return OrderLifecycleResult::manufacturingAlreadyExecuted(
-                    orderId:      $request->order_id,
-                    orderLineId:  $request->order_line_id,
+                    orderId: $request->order_id,
+                    orderLineId: $request->order_line_id,
                     policyResult: $policyResult,
                 );
             }
 
             return OrderLifecycleResult::policyRejected(
-                orderId:      $request->order_id,
-                orderLineId:  $request->order_line_id,
+                orderId: $request->order_id,
+                orderLineId: $request->order_line_id,
                 policyResult: $policyResult,
             );
         }
@@ -106,17 +106,17 @@ final class ManufacturingLifecycleHandler implements LifecycleHandlerInterface
         // ── Step 2: Invoke Manufacturing Application Service ──────────────────
         $mfgResponse = $this->manufacturing->manufactureProduct(
             new ManufactureProductRequest(
-                product_id:   $request->product_id,
+                product_id: $request->product_id,
                 warehouse_id: $request->warehouse_id,
-                company_id:   $request->company_id,
+                company_id: $request->company_id,
                 required_qty: $request->required_qty,
-                actor_id:     $request->actor_id,
+                actor_id: $request->actor_id,
                 trigger_type: 'order_lifecycle',
-                trigger_id:   $request->order_line_id,
-                metadata:     array_merge($request->metadata, [
-                    'order_id'      => $request->order_id,
+                trigger_id: $request->order_line_id,
+                metadata: array_merge($request->metadata, [
+                    'order_id' => $request->order_id,
                     'order_line_id' => $request->order_line_id,
-                    'order_status'  => $request->order_status,
+                    'order_status' => $request->order_status,
                 ]),
             ),
         );
@@ -126,26 +126,26 @@ final class ManufacturingLifecycleHandler implements LifecycleHandlerInterface
             // This is a healthy outcome — callers should treat this line as NotRequired, not Failed.
             if ($mfgResponse->blocking_reason === 'manufacturing_not_needed') {
                 return OrderLifecycleResult::manufacturingNotRequired(
-                    orderId:      $request->order_id,
-                    orderLineId:  $request->order_line_id,
+                    orderId: $request->order_id,
+                    orderLineId: $request->order_line_id,
                     policyResult: $policyResult,
-                    mfgResult:    $mfgResponse,
+                    mfgResult: $mfgResponse,
                 );
             }
 
             return OrderLifecycleResult::manufacturingBlocked(
-                orderId:      $request->order_id,
-                orderLineId:  $request->order_line_id,
+                orderId: $request->order_id,
+                orderLineId: $request->order_line_id,
                 policyResult: $policyResult,
-                mfgResult:    $mfgResponse,
+                mfgResult: $mfgResponse,
             );
         }
 
         return OrderLifecycleResult::manufacturingTriggered(
-            orderId:      $request->order_id,
-            orderLineId:  $request->order_line_id,
+            orderId: $request->order_id,
+            orderLineId: $request->order_line_id,
             policyResult: $policyResult,
-            mfgResult:    $mfgResponse,
+            mfgResult: $mfgResponse,
         );
     }
 }

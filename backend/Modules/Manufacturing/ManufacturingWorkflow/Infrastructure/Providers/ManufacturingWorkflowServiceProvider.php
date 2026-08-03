@@ -16,9 +16,9 @@ final class ManufacturingWorkflowServiceProvider extends ServiceProvider
     {
         $this->app->singleton(ManufacturingWorkflow::class, function ($app): ManufacturingWorkflow {
             return new ManufacturingWorkflow(
-                orchestrator:       $app->make(DecisionOrchestrator::class),
+                orchestrator: $app->make(DecisionOrchestrator::class),
                 availabilityEngine: $app->make(InventoryAvailabilityEngine::class),
-                planner:            $app->make(ManufacturingPlanner::class),
+                planner: $app->make(ManufacturingPlanner::class),
             );
         });
     }

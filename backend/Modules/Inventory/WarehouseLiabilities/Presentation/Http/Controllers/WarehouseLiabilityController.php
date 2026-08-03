@@ -23,11 +23,11 @@ class WarehouseLiabilityController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $perPage     = (int) $request->query('per_page', 20);
-        $status      = $request->query('status');
+        $perPage = (int) $request->query('per_page', 20);
+        $status = $request->query('status');
         $warehouseId = $request->query('warehouse_id');
-        $month       = $request->query('month');
-        $type        = $request->query('liability_type');
+        $month = $request->query('month');
+        $type = $request->query('liability_type');
 
         $query = WarehouseLiability::query()
             ->with(['product:id,name,sku,image_url', 'warehouse:id,name', 'countSession:id,count_number'])
@@ -37,29 +37,37 @@ class WarehouseLiabilityController extends Controller
             $query->where('company_id', $companyId);
         }
 
-        if ($status)      { $query->where('status', $status); }
-        if ($warehouseId) { $query->where('warehouse_id', $warehouseId); }
-        if ($month)       { $query->where('month', $month); }
-        if ($type)        { $query->where('liability_type', $type); }
+        if ($status) {
+            $query->where('status', $status);
+        }
+        if ($warehouseId) {
+            $query->where('warehouse_id', $warehouseId);
+        }
+        if ($month) {
+            $query->where('month', $month);
+        }
+        if ($type) {
+            $query->where('liability_type', $type);
+        }
 
         $results = $query->paginate($perPage);
 
         $companyScope = fn ($q) => $companyId ? $q->where('company_id', $companyId) : $q;
         $summary = [
-            'pending'              => WarehouseLiability::query()->tap($companyScope)->where('status', 'pending')->count(),
-            'approved'             => WarehouseLiability::query()->tap($companyScope)->where('status', 'approved')->count(),
-            'rejected'             => WarehouseLiability::query()->tap($companyScope)->where('status', 'rejected')->count(),
-            'total_pending_value'  => WarehouseLiability::query()->tap($companyScope)->where('status', 'pending')->sum('total_cost'),
+            'pending' => WarehouseLiability::query()->tap($companyScope)->where('status', 'pending')->count(),
+            'approved' => WarehouseLiability::query()->tap($companyScope)->where('status', 'approved')->count(),
+            'rejected' => WarehouseLiability::query()->tap($companyScope)->where('status', 'rejected')->count(),
+            'total_pending_value' => WarehouseLiability::query()->tap($companyScope)->where('status', 'pending')->sum('total_cost'),
             'total_approved_value' => WarehouseLiability::query()->tap($companyScope)->where('status', 'approved')->sum('cost_snapshot_total_value'),
         ];
 
         return response()->json([
-            'data'       => $results->items(),
+            'data' => $results->items(),
             'pagination' => [
-                'total'        => $results->total(),
-                'per_page'     => $results->perPage(),
+                'total' => $results->total(),
+                'per_page' => $results->perPage(),
                 'current_page' => $results->currentPage(),
-                'last_page'    => $results->lastPage(),
+                'last_page' => $results->lastPage(),
             ],
             'summary' => $summary,
         ]);
@@ -80,20 +88,20 @@ class WarehouseLiabilityController extends Controller
     {
         $request->validate([
             'approved_by' => ['required', 'string', 'max:255'],
-            'notes'       => ['nullable', 'string', 'max:2000'],
+            'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $liability = WarehouseLiability::query()->findOrFail($id);
 
         $approved = $this->approveAction->execute(
-            liability:  $liability,
+            liability: $liability,
             approvedBy: $request->validated('approved_by'),
-            notes:      $request->validated('notes'),
+            notes: $request->validated('notes'),
         );
 
         return response()->json([
             'message' => 'Warehouse liability approved. Inventory adjusted.',
-            'data'    => $approved->load(['product', 'warehouse']),
+            'data' => $approved->load(['product', 'warehouse']),
         ]);
     }
 
@@ -101,20 +109,20 @@ class WarehouseLiabilityController extends Controller
     {
         $request->validate([
             'rejected_by' => ['required', 'string', 'max:255'],
-            'reason'      => ['nullable', 'string', 'max:2000'],
+            'reason' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $liability = WarehouseLiability::query()->findOrFail($id);
 
         $rejected = $this->approveAction->reject(
-            liability:  $liability,
+            liability: $liability,
             rejectedBy: $request->validated('rejected_by'),
-            reason:     $request->validated('reason'),
+            reason: $request->validated('reason'),
         );
 
         return response()->json([
             'message' => 'Warehouse liability rejected.',
-            'data'    => $rejected,
+            'data' => $rejected,
         ]);
     }
 
@@ -122,7 +130,7 @@ class WarehouseLiabilityController extends Controller
 
     public function report(Request $request): JsonResponse
     {
-        $month       = $request->query('month', now()->format('Y-m'));
+        $month = $request->query('month', now()->format('Y-m'));
         $warehouseId = $request->query('warehouse_id');
 
         $base = WarehouseLiability::query()->where('month', $month);
@@ -130,7 +138,7 @@ class WarehouseLiabilityController extends Controller
             $base->where('warehouse_id', $warehouseId);
         }
 
-        $pending  = (clone $base)->where('status', 'pending');
+        $pending = (clone $base)->where('status', 'pending');
         $approved = (clone $base)->where('status', 'approved');
         $rejected = (clone $base)->where('status', 'rejected');
 
@@ -155,24 +163,24 @@ class WarehouseLiabilityController extends Controller
         $monthlyTrend = DB::table('warehouse_liabilities')
             ->whereRaw("month >= TO_CHAR(NOW() - INTERVAL '6 months', 'YYYY-MM')")
             ->where('status', 'approved')
-            ->selectRaw("month, count(*) as count, sum(cost_snapshot_total_value) as total_value")
+            ->selectRaw('month, count(*) as count, sum(cost_snapshot_total_value) as total_value')
             ->groupBy('month')
             ->orderBy('month')
             ->get();
 
         return response()->json([
-            'month'                  => $month,
-            'total_shortages'        => (clone $base)->where('liability_type', 'inventory_shortage')->count(),
-            'total_waste_transferred'=> (clone $base)->where('liability_type', 'waste_transferred')->count(),
-            'pending_count'          => (clone $pending)->count(),
-            'approved_count'         => (clone $approved)->count(),
-            'rejected_count'         => (clone $rejected)->count(),
-            'total_pending_value'    => (clone $pending)->sum('total_cost'),
-            'total_approved_value'   => (clone $approved)->sum('cost_snapshot_total_value'),
-            'total_rejected_value'   => (clone $rejected)->sum('total_cost'),
-            'by_warehouse'           => $byWarehouse,
-            'by_manager'             => $byManager,
-            'monthly_trend'          => $monthlyTrend,
+            'month' => $month,
+            'total_shortages' => (clone $base)->where('liability_type', 'inventory_shortage')->count(),
+            'total_waste_transferred' => (clone $base)->where('liability_type', 'waste_transferred')->count(),
+            'pending_count' => (clone $pending)->count(),
+            'approved_count' => (clone $approved)->count(),
+            'rejected_count' => (clone $rejected)->count(),
+            'total_pending_value' => (clone $pending)->sum('total_cost'),
+            'total_approved_value' => (clone $approved)->sum('cost_snapshot_total_value'),
+            'total_rejected_value' => (clone $rejected)->sum('total_cost'),
+            'by_warehouse' => $byWarehouse,
+            'by_manager' => $byManager,
+            'monthly_trend' => $monthlyTrend,
         ]);
     }
 }

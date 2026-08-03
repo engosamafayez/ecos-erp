@@ -1,4 +1,5 @@
 import { DollarSign, Package, PackageMinus, PackagePlus, Warehouse } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { QuickStatCard } from '@/components/ds/quick-stat-card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,18 +14,19 @@ function fmtQty(n: number): string {
   return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 3 });
 }
 
-function materialsLabel(materialType: MaterialType | undefined): string {
-  if (materialType === 'raw_material')       return 'Raw Materials';
-  if (materialType === 'packaging_material') return 'Packaging Materials';
-  return 'All Materials';
-}
-
 type StatsQuery = Pick<RawMaterialsQuery, 'material_type' | 'category_id' | 'supplier_id' | 'warehouse_id'>;
 
 export function RawMaterialStats({ query = {} }: { query?: StatsQuery }) {
+  const { t } = useTranslation('raw-materials');
   const { data, isLoading } = useRawMaterialStats(query);
   const { currency, locale } = useCompany();
-  const label = materialsLabel(query.material_type || undefined);
+
+  const materialType = query.material_type as MaterialType | undefined;
+  const label = materialType === 'raw_material'
+    ? t('stats.labelRaw')
+    : materialType === 'packaging_material'
+      ? t('stats.labelPackaging')
+      : t('stats.labelAll');
 
   if (isLoading) {
     return (
@@ -46,25 +48,25 @@ export function RawMaterialStats({ query = {} }: { query?: StatsQuery }) {
       />
       <QuickStatCard
         icon={Warehouse}
-        title="Total On Hand"
+        title={t('stats.totalOnHand')}
         value={fmtQty(data?.total_on_hand ?? 0)}
         colorClassName="text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30"
       />
       <QuickStatCard
         icon={PackageMinus}
-        title="Total Reserved"
+        title={t('stats.totalReserved')}
         value={fmtQty(data?.total_reserved ?? 0)}
         colorClassName="text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-900/30"
       />
       <QuickStatCard
         icon={PackagePlus}
-        title="Total Available"
+        title={t('stats.totalAvailable')}
         value={fmtQty(data?.total_available ?? 0)}
         colorClassName="text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-900/30"
       />
       <QuickStatCard
         icon={DollarSign}
-        title="Total Inventory Value"
+        title={t('stats.totalInventoryValue')}
         value={formatMoneyCompact(data?.total_inventory_value ?? 0, currency, locale)}
         colorClassName="text-rose-600 bg-rose-100 dark:text-rose-400 dark:bg-rose-900/30"
       />

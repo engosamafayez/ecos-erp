@@ -26,21 +26,21 @@ namespace Modules\Commerce\Orders\Domain\Enums;
 enum OrderLineManufacturingState: string
 {
     case NotRequired = 'not_required';
-    case Pending     = 'pending';
-    case Planned     = 'planned';
-    case Executed    = 'executed';
-    case Skipped     = 'skipped';
-    case Failed      = 'failed';
+    case Pending = 'pending';
+    case Planned = 'planned';
+    case Executed = 'executed';
+    case Skipped = 'skipped';
+    case Failed = 'failed';
 
     public function label(): string
     {
         return match ($this) {
             self::NotRequired => 'Not Required',
-            self::Pending     => 'Pending',
-            self::Planned     => 'Planned',
-            self::Executed    => 'Executed',
-            self::Skipped     => 'Skipped',
-            self::Failed      => 'Failed',
+            self::Pending => 'Pending',
+            self::Planned => 'Planned',
+            self::Executed => 'Executed',
+            self::Skipped => 'Skipped',
+            self::Failed => 'Failed',
         };
     }
 
@@ -49,7 +49,7 @@ enum OrderLineManufacturingState: string
     {
         return match ($this) {
             self::Executed, self::Skipped, self::NotRequired => true,
-            default                                          => false,
+            default => false,
         };
     }
 

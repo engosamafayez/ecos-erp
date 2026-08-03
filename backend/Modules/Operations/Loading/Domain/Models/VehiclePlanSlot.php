@@ -11,29 +11,29 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Operations\Loading\Domain\Enums\VehiclePlanSlotStatus;
 
 /**
- * @property string                  $id
- * @property string                  $company_id
- * @property string                  $vehicle_plan_id
- * @property int                     $slot_number
- * @property string|null             $vehicle_id
- * @property string|null             $vehicle_registration_snapshot
- * @property string|null             $vehicle_type_snapshot
- * @property float|null              $capacity_weight_kg
- * @property float|null              $capacity_volume_m3
- * @property int                     $order_count
- * @property float                   $total_weight_kg
- * @property float                   $total_volume_m3
- * @property float                   $utilization_pct
- * @property bool                    $is_overloaded
- * @property bool                    $requires_refrigeration
- * @property \Carbon\Carbon|null     $vehicle_assigned_at
- * @property string|null             $vehicle_assigned_by
- * @property VehiclePlanSlotStatus   $status
- * @property string|null             $notes
- * @property string                  $created_by
- * @property string                  $updated_by
- * @property \Carbon\Carbon          $created_at
- * @property \Carbon\Carbon          $updated_at
+ * @property string $id
+ * @property string $company_id
+ * @property string $vehicle_plan_id
+ * @property int $slot_number
+ * @property string|null $vehicle_id
+ * @property string|null $vehicle_registration_snapshot
+ * @property string|null $vehicle_type_snapshot
+ * @property float|null $capacity_weight_kg
+ * @property float|null $capacity_volume_m3
+ * @property int $order_count
+ * @property float $total_weight_kg
+ * @property float $total_volume_m3
+ * @property float $utilization_pct
+ * @property bool $is_overloaded
+ * @property bool $requires_refrigeration
+ * @property \Carbon\Carbon|null $vehicle_assigned_at
+ * @property string|null $vehicle_assigned_by
+ * @property VehiclePlanSlotStatus $status
+ * @property string|null $notes
+ * @property string $created_by
+ * @property string $updated_by
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class VehiclePlanSlot extends Model
 {
@@ -73,17 +73,17 @@ class VehiclePlanSlot extends Model
     protected function casts(): array
     {
         return [
-            'status'               => VehiclePlanSlotStatus::class,
-            'slot_number'          => 'integer',
-            'order_count'          => 'integer',
-            'capacity_weight_kg'   => 'float',
-            'capacity_volume_m3'   => 'float',
-            'total_weight_kg'      => 'float',
-            'total_volume_m3'      => 'float',
-            'utilization_pct'      => 'float',
-            'is_overloaded'        => 'boolean',
+            'status' => VehiclePlanSlotStatus::class,
+            'slot_number' => 'integer',
+            'order_count' => 'integer',
+            'capacity_weight_kg' => 'float',
+            'capacity_volume_m3' => 'float',
+            'total_weight_kg' => 'float',
+            'total_volume_m3' => 'float',
+            'utilization_pct' => 'float',
+            'is_overloaded' => 'boolean',
             'requires_refrigeration' => 'boolean',
-            'vehicle_assigned_at'  => 'datetime',
+            'vehicle_assigned_at' => 'datetime',
         ];
     }
 

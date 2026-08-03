@@ -9,6 +9,6 @@ final readonly class ReprintReceiptResult
     public function __construct(
         public string $receiptId,
         public string $receiptNumber,
-        public int    $reprintCount,
+        public int $reprintCount,
     ) {}
 }

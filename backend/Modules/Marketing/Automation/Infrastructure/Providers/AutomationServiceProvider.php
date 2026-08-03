@@ -39,14 +39,14 @@ class AutomationServiceProvider extends ServiceProvider
 
         // Execution engine (depends on other services — resolved lazily)
         $this->app->singleton(WorkflowExecutionEngine::class, fn ($app) => new WorkflowExecutionEngine(
-            conditionEvaluator:  $app->make(ConditionEvaluatorService::class),
-            actionDispatcher:    $app->make(ActionDispatcherService::class),
-            governanceService:   $app->make(AutomationGovernanceService::class),
+            conditionEvaluator: $app->make(ConditionEvaluatorService::class),
+            actionDispatcher: $app->make(ActionDispatcherService::class),
+            governanceService: $app->make(AutomationGovernanceService::class),
         ));
 
         $this->app->singleton(WorkflowSimulatorService::class, fn ($app) => new WorkflowSimulatorService(
             conditionEvaluator: $app->make(ConditionEvaluatorService::class),
-            segmentService:     $app->make(AudienceSegmentService::class),
+            segmentService: $app->make(AudienceSegmentService::class),
         ));
 
         // Actions
@@ -61,6 +61,6 @@ class AutomationServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $this->loadMigrationsFrom(__DIR__ . '/../Database/Migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
     }
 }

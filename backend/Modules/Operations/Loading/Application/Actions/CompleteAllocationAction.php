@@ -27,13 +27,13 @@ final class CompleteAllocationAction
 
         return DB::transaction(function () use ($session, $actorId): LoadingSession {
             $session->update([
-                'status'                  => LoadingSessionStatus::Allocated->value,
+                'status' => LoadingSessionStatus::Allocated->value,
                 'allocation_completed_at' => now(),
-                'updated_by'              => $actorId,
+                'updated_by' => $actorId,
             ]);
 
-            $vehicleCount       = $session->vehicleAssignments()->count();
-            $ordersAllocated    = $session->vehicleAssignments()
+            $vehicleCount = $session->vehicleAssignments()->count();
+            $ordersAllocated = $session->vehicleAssignments()
                 ->withSum('allocationRecords', 'quantity_allocated')
                 ->get()
                 ->count();
@@ -43,13 +43,13 @@ final class CompleteAllocationAction
                 ->count();
 
             event(new AllocationCompleted(
-                companyId:          $session->company_id,
-                sessionId:          $session->id,
-                vehicleCount:       $vehicleCount,
-                ordersAllocated:    $ordersAllocated,
+                companyId: $session->company_id,
+                sessionId: $session->id,
+                vehicleCount: $vehicleCount,
+                ordersAllocated: $ordersAllocated,
                 partialAllocations: $partialAllocations,
-                actorId:            $actorId,
-                occurredAt:         now()->toIso8601String(),
+                actorId: $actorId,
+                occurredAt: now()->toIso8601String(),
             ));
 
             return $session->fresh() ?? $session;

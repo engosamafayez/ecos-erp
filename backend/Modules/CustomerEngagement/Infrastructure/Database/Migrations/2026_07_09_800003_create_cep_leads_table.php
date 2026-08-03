@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -52,9 +54,9 @@ return new class extends Migration
             $table->timestamps();
 
             // Indexes (prefix: cep_ld_)
-            $table->index(['status', 'company_id'],   'cep_ld_status_co_idx');
-            $table->index(['assigned_to', 'status'],  'cep_ld_asgn_status_idx');
-            $table->index(['business_dna_id'],         'cep_ld_dna_idx');
+            $table->index(['status', 'company_id'], 'cep_ld_status_co_idx');
+            $table->index(['assigned_to', 'status'], 'cep_ld_asgn_status_idx');
+            $table->index(['business_dna_id'], 'cep_ld_dna_idx');
         });
     }
 

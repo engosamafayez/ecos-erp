@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Orders;
 
+use DB;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
 use Modules\Commerce\Orders\Application\Actions\PrepareOrderAction;
@@ -49,8 +50,11 @@ class OrderManufacturingIntegrationTest extends TestCase
     use DatabaseTransactions;
 
     private PrepareOrderAction $action;
+
     private Company $company;
+
     private Warehouse $warehouse;
+
     private Customer $customer;
 
     protected function setUp(): void
@@ -60,9 +64,9 @@ class OrderManufacturingIntegrationTest extends TestCase
         $this->resetSingletons();
         $this->registerRule(DecisionType::Approve);
 
-        $this->company   = Company::factory()->create();
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $this->customer  = Customer::factory()->create();
+        $this->customer = Customer::factory()->create();
 
         $this->action = app(PrepareOrderAction::class);
     }
@@ -84,12 +88,12 @@ class OrderManufacturingIntegrationTest extends TestCase
             'manufacturing',
             new InMemoryRuleProvider(
                 new DecisionRule(
-                    rule_id:       $id,
-                    name:          "Test rule: {$type->label()}",
-                    priority:      1,
+                    rule_id: $id,
+                    name: "Test rule: {$type->label()}",
+                    priority: 1,
                     decision_type: $type,
-                    reason:        new DecisionReason(code: "test_{$type->value}", message: $type->label()),
-                    condition:     fn ($ctx) => true,
+                    reason: new DecisionReason(code: "test_{$type->value}", message: $type->label()),
+                    condition: fn ($ctx) => true,
                 ),
             ),
         );
@@ -125,11 +129,11 @@ class OrderManufacturingIntegrationTest extends TestCase
     private function makeRecipe(Product $output): Recipe
     {
         return Recipe::create([
-            'bom_number'         => 'BOM-' . uniqid(),
-            'product_id'         => $output->id,
-            'version'            => '1.0',
+            'bom_number' => 'BOM-'.uniqid(),
+            'product_id' => $output->id,
+            'version' => '1.0',
             'bom_version_number' => 1,
-            'is_active'          => true,
+            'is_active' => true,
         ]);
     }
 
@@ -137,7 +141,7 @@ class OrderManufacturingIntegrationTest extends TestCase
     {
         $recipe->components()->create([
             'raw_material_id' => $component->id,
-            'quantity'        => $qty,
+            'quantity' => $qty,
         ]);
     }
 
@@ -145,9 +149,9 @@ class OrderManufacturingIntegrationTest extends TestCase
     {
         InventoryItem::query()->create([
             'warehouse_id' => $this->warehouse->id,
-            'product_id'   => $product->id,
-            'company_id'   => $this->company->id,
-            'on_hand_qty'  => $onHand,
+            'product_id' => $product->id,
+            'company_id' => $this->company->id,
+            'on_hand_qty' => $onHand,
             'reserved_qty' => 0.0,
         ]);
     }
@@ -155,19 +159,19 @@ class OrderManufacturingIntegrationTest extends TestCase
     private function makeOrder(array $lineData): Order
     {
         $order = Order::create([
-            'customer_id'           => $this->customer->id,
+            'customer_id' => $this->customer->id,
             'assigned_warehouse_id' => $this->warehouse->id,
-            'order_number'          => 'TEST-' . Str::random(6),
-            'order_date'            => now()->toDateString(),
-            'status'                => OrderStatus::Processing->value,
-            'subtotal'              => 0,
-            'total'                 => 0,
+            'order_number' => 'TEST-'.Str::random(6),
+            'order_date' => now()->toDateString(),
+            'status' => OrderStatus::Processing->value,
+            'subtotal' => 0,
+            'total' => 0,
         ]);
 
         foreach ($lineData as $line) {
             $order->lines()->create([
                 'product_id' => $line['product_id'],
-                'quantity'   => $line['quantity'],
+                'quantity' => $line['quantity'],
                 'unit_price' => $line['unit_price'] ?? 10.0,
                 'line_total' => ($line['quantity']) * ($line['unit_price'] ?? 10.0),
             ]);
@@ -185,9 +189,9 @@ class OrderManufacturingIntegrationTest extends TestCase
 
     public function test_preparing_triggers_manufacturing_for_eligible_line(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 2.0);
         $this->seedInventory($component, 10.0);
 
@@ -205,7 +209,7 @@ class OrderManufacturingIntegrationTest extends TestCase
         $this->assertNotNull($line->manufacturing_result);
 
         $this->assertDatabaseHas('manufacturing_transactions', [
-            'product_id'   => $output->id,
+            'product_id' => $output->id,
             'warehouse_id' => $this->warehouse->id,
             'order_line_id' => $line->id,
         ]);
@@ -213,9 +217,9 @@ class OrderManufacturingIntegrationTest extends TestCase
 
     public function test_preparing_sets_order_status_to_preparing(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
@@ -224,7 +228,7 @@ class OrderManufacturingIntegrationTest extends TestCase
         $this->action->execute($order->id);
 
         $this->assertDatabaseHas('orders', [
-            'id'     => $order->id,
+            'id' => $order->id,
             'status' => 'preparing',
         ]);
     }
@@ -233,9 +237,9 @@ class OrderManufacturingIntegrationTest extends TestCase
 
     public function test_preparing_twice_does_not_duplicate_manufacturing(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
@@ -244,12 +248,12 @@ class OrderManufacturingIntegrationTest extends TestCase
         // First prepare
         $this->action->execute($order->id);
 
-        $transactionCountAfterFirst = \DB::table('manufacturing_transactions')->count();
+        $transactionCountAfterFirst = DB::table('manufacturing_transactions')->count();
 
         // Second prepare — should skip the Executed line
         $this->action->execute($order->id);
 
-        $transactionCountAfterSecond = \DB::table('manufacturing_transactions')->count();
+        $transactionCountAfterSecond = DB::table('manufacturing_transactions')->count();
 
         $this->assertEquals($transactionCountAfterFirst, $transactionCountAfterSecond,
             'Second prepare created extra manufacturing transactions.');
@@ -260,9 +264,9 @@ class OrderManufacturingIntegrationTest extends TestCase
 
     public function test_preparing_twice_preserves_executed_state_on_line(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
@@ -280,8 +284,8 @@ class OrderManufacturingIntegrationTest extends TestCase
     public function test_mixed_order_only_manufactures_eligible_lines(): void
     {
         $manufactured = $this->makeOutput();
-        $component    = $this->makeComponent();
-        $recipe       = $this->makeRecipe($manufactured);
+        $component = $this->makeComponent();
+        $recipe = $this->makeRecipe($manufactured);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
@@ -298,7 +302,7 @@ class OrderManufacturingIntegrationTest extends TestCase
         $lines = $order->lines->keyBy(fn ($l) => $l->product_id);
 
         $manufacturedLine = $this->freshLine($lines[$manufactured->id]);
-        $purchasedLine    = $this->freshLine($lines[$purchased->id]);
+        $purchasedLine = $this->freshLine($lines[$purchased->id]);
 
         $this->assertEquals(OrderLineManufacturingState::Executed, $manufacturedLine->manufacturing_state);
         $this->assertEquals(OrderLineManufacturingState::Skipped, $purchasedLine->manufacturing_state);
@@ -327,9 +331,9 @@ class OrderManufacturingIntegrationTest extends TestCase
 
     public function test_product_with_sufficient_fg_stock_is_marked_not_required(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
@@ -354,18 +358,18 @@ class OrderManufacturingIntegrationTest extends TestCase
         $output = $this->makeOutput();
 
         $order = Order::create([
-            'customer_id'           => $this->customer->id,
+            'customer_id' => $this->customer->id,
             'assigned_warehouse_id' => $this->warehouse->id,
-            'order_number'          => 'TEST-CANCEL-' . Str::random(4),
-            'order_date'            => now()->toDateString(),
-            'status'                => OrderStatus::Cancelled->value,
-            'subtotal'              => 0,
-            'total'                 => 0,
+            'order_number' => 'TEST-CANCEL-'.Str::random(4),
+            'order_date' => now()->toDateString(),
+            'status' => OrderStatus::Cancelled->value,
+            'subtotal' => 0,
+            'total' => 0,
         ]);
 
         $line = $order->lines()->create([
             'product_id' => $output->id,
-            'quantity'   => 1.0,
+            'quantity' => 1.0,
             'unit_price' => 10.0,
             'line_total' => 10.0,
         ]);
@@ -386,9 +390,9 @@ class OrderManufacturingIntegrationTest extends TestCase
     {
         $this->rebuildWithRule(DecisionType::Reject);
 
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
@@ -409,9 +413,9 @@ class OrderManufacturingIntegrationTest extends TestCase
     {
         $this->rebuildWithRule(DecisionType::Reject);
 
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
@@ -432,9 +436,9 @@ class OrderManufacturingIntegrationTest extends TestCase
         // First attempt with Reject rule → line Failed
         $this->rebuildWithRule(DecisionType::Reject);
 
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
@@ -460,8 +464,8 @@ class OrderManufacturingIntegrationTest extends TestCase
         // Line 2: failed on first run
         // Second run: line 1 must be skipped, line 2 must be retried
 
-        $output1   = $this->makeOutput();
-        $output2   = $this->makeOutput();
+        $output1 = $this->makeOutput();
+        $output2 = $this->makeOutput();
         $component = $this->makeComponent();
 
         $r1 = $this->makeRecipe($output1);
@@ -487,21 +491,21 @@ class OrderManufacturingIntegrationTest extends TestCase
         $this->assertEquals(OrderLineManufacturingState::Executed, $line1->manufacturing_state);
         $this->assertEquals(OrderLineManufacturingState::Executed, $line2->manufacturing_state);
 
-        $txCountAfterFirst = \DB::table('manufacturing_transactions')->count();
+        $txCountAfterFirst = DB::table('manufacturing_transactions')->count();
 
         // Second run: should produce no new transactions
         $this->action->execute($order->id);
 
-        $this->assertEquals($txCountAfterFirst, \DB::table('manufacturing_transactions')->count());
+        $this->assertEquals($txCountAfterFirst, DB::table('manufacturing_transactions')->count());
     }
 
     // ── State and structure invariants ────────────────────────────────────────
 
     public function test_manufacturing_result_is_stored_on_line(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
@@ -517,9 +521,9 @@ class OrderManufacturingIntegrationTest extends TestCase
 
     public function test_manufacturing_started_at_and_completed_at_are_set(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
@@ -533,9 +537,9 @@ class OrderManufacturingIntegrationTest extends TestCase
 
     public function test_rc10_order_line_id_is_populated_on_manufacturing_transaction(): void
     {
-        $output    = $this->makeOutput();
+        $output = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($output);
+        $recipe = $this->makeRecipe($output);
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
@@ -552,7 +556,7 @@ class OrderManufacturingIntegrationTest extends TestCase
     public function test_manufacturing_state_null_before_prepare(): void
     {
         $output = $this->makeOutput();
-        $order  = $this->makeOrder([['product_id' => $output->id, 'quantity' => 1.0]]);
+        $order = $this->makeOrder([['product_id' => $output->id, 'quantity' => 1.0]]);
 
         $line = $this->freshLine($order->lines->first());
         $this->assertNull($line->manufacturing_state);

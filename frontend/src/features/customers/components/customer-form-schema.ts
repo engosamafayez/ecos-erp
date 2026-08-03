@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { Customer, CustomerPayload } from '@/features/customers/types/customer';
 
 export const customerSchema = z.object({
+  brand_id: z.string().min(1, 'Brand is required.'),
   code: z.string().min(1, 'Code is required.').max(50),
   name: z.string().min(1, 'Name is required.').max(255),
   contact_person: z.string().max(255).optional(),
@@ -19,7 +20,9 @@ export const customerSchema = z.object({
 export type CustomerFormValues = z.infer<typeof customerSchema>;
 
 export function toFormValues(customer?: Customer | null): CustomerFormValues {
+  const primaryBrand = customer?.brands?.find((b) => b.is_primary) ?? customer?.brands?.[0];
   return {
+    brand_id: primaryBrand?.brand_id ?? '',
     code: customer?.code ?? '',
     name: customer?.name ?? '',
     contact_person: customer?.contact_person ?? '',

@@ -13,19 +13,19 @@ use Modules\Core\BusinessAttribution\Domain\Enums\JourneyStage;
 /**
  * Single step in a business journey — append-only, never updated.
  *
- * @property string           $id
- * @property string           $business_dna_id
- * @property JourneyStage     $journey_stage
- * @property string|null      $event_id
- * @property string|null      $actor_id
- * @property string|null      $actor_type
- * @property Carbon           $occurred_at
- * @property int|null         $duration_seconds
- * @property string|null      $previous_step_id
- * @property string|null      $related_entity_id
- * @property string|null      $related_entity_type
- * @property array|null       $payload
- * @property Carbon           $created_at
+ * @property string $id
+ * @property string $business_dna_id
+ * @property JourneyStage $journey_stage
+ * @property string|null $event_id
+ * @property string|null $actor_id
+ * @property string|null $actor_type
+ * @property Carbon $occurred_at
+ * @property int|null $duration_seconds
+ * @property string|null $previous_step_id
+ * @property string|null $related_entity_id
+ * @property string|null $related_entity_type
+ * @property array|null $payload
+ * @property Carbon $created_at
  */
 class JourneyStep extends Model
 {
@@ -35,15 +35,16 @@ class JourneyStep extends Model
 
     // Append-only
     public $timestamps = false;
+
     protected $guarded = [];
 
     protected function casts(): array
     {
         return [
-            'journey_stage'   => JourneyStage::class,
-            'payload'         => 'array',
-            'occurred_at'     => 'datetime',
-            'created_at'      => 'datetime',
+            'journey_stage' => JourneyStage::class,
+            'payload' => 'array',
+            'occurred_at' => 'datetime',
+            'created_at' => 'datetime',
             'duration_seconds' => 'integer',
         ];
     }

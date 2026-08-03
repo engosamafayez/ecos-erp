@@ -44,11 +44,11 @@ enum ManufacturingEligibility: string
     public function label(): string
     {
         return match ($this) {
-            self::Sufficient       => 'Sufficient Stock',
-            self::CanManufacture   => 'Can Manufacture',
-            self::Partial          => 'Partial (Negative Stock Risk)',
-            self::CannotManufacture=> 'Cannot Manufacture',
-            self::NoRecipe         => 'No Active Recipe',
+            self::Sufficient => 'Sufficient Stock',
+            self::CanManufacture => 'Can Manufacture',
+            self::Partial => 'Partial (Negative Stock Risk)',
+            self::CannotManufacture => 'Cannot Manufacture',
+            self::NoRecipe => 'No Active Recipe',
         };
     }
 

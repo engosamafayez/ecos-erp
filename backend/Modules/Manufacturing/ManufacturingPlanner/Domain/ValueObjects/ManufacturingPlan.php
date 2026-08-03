@@ -25,14 +25,14 @@ use Modules\Manufacturing\DecisionKernel\Domain\ValueObjects\DecisionReason;
  *   recipe_snapshot_hash — SHA-256 of RecipeSnapshot.toArray() at planning time.
  *   The Manufacturing Engine verifies this hash before consuming any stock.
  *
- * @property list<ComponentConsumptionPlan>  $components
- * @property list<NegativeStockDecision>     $negative_stock_decisions
+ * @property list<ComponentConsumptionPlan> $components
+ * @property list<NegativeStockDecision> $negative_stock_decisions
  */
 final readonly class ManufacturingPlan
 {
     /**
      * @param  list<ComponentConsumptionPlan>  $components
-     * @param  list<NegativeStockDecision>     $negative_stock_decisions
+     * @param  list<NegativeStockDecision>  $negative_stock_decisions
      */
     public function __construct(
         /** UUID v4 generated at planning time. */
@@ -121,7 +121,7 @@ final readonly class ManufacturingPlan
         return array_values(
             array_filter(
                 $this->components,
-                fn(ComponentConsumptionPlan $c): bool => $c->is_blocked,
+                fn (ComponentConsumptionPlan $c): bool => $c->is_blocked,
             ),
         );
     }
@@ -130,33 +130,33 @@ final readonly class ManufacturingPlan
     public function toArray(): array
     {
         return [
-            'plan_id'                   => $this->plan_id,
-            'product_id'                => $this->product_id,
-            'warehouse_id'              => $this->warehouse_id,
-            'product_sku'               => $this->product_sku,
-            'product_name'              => $this->product_name,
-            'qty_to_manufacture'        => $this->qty_to_manufacture,
+            'plan_id' => $this->plan_id,
+            'product_id' => $this->product_id,
+            'warehouse_id' => $this->warehouse_id,
+            'product_sku' => $this->product_sku,
+            'product_name' => $this->product_name,
+            'qty_to_manufacture' => $this->qty_to_manufacture,
             'finished_goods_to_produce' => $this->finished_goods_to_produce,
-            'available_finished_goods'  => $this->available_finished_goods,
-            'recipe_id'                 => $this->recipe_id,
-            'bom_version_number'        => $this->bom_version_number,
-            'recipe_snapshot'           => $this->recipe_snapshot?->toArray(),
-            'recipe_snapshot_hash'      => $this->recipe_snapshot_hash,
-            'components'                => array_map(
-                fn(ComponentConsumptionPlan $c): array => $c->toArray(),
+            'available_finished_goods' => $this->available_finished_goods,
+            'recipe_id' => $this->recipe_id,
+            'bom_version_number' => $this->bom_version_number,
+            'recipe_snapshot' => $this->recipe_snapshot?->toArray(),
+            'recipe_snapshot_hash' => $this->recipe_snapshot_hash,
+            'components' => array_map(
+                fn (ComponentConsumptionPlan $c): array => $c->toArray(),
                 $this->components,
             ),
-            'negative_stock_decisions'  => array_map(
-                fn(NegativeStockDecision $d): array => $d->toArray(),
+            'negative_stock_decisions' => array_map(
+                fn (NegativeStockDecision $d): array => $d->toArray(),
                 $this->negative_stock_decisions,
             ),
-            'eligibility'               => $this->eligibility->value,
-            'can_proceed'               => $this->can_proceed,
-            'should_manufacture'        => $this->should_manufacture,
-            'decision_type'             => $this->decision_type->value,
-            'decision_reason'           => $this->decision_reason->toArray(),
-            'planned_at'                => $this->planned_at,
-            'metadata'                  => $this->metadata,
+            'eligibility' => $this->eligibility->value,
+            'can_proceed' => $this->can_proceed,
+            'should_manufacture' => $this->should_manufacture,
+            'decision_type' => $this->decision_type->value,
+            'decision_reason' => $this->decision_reason->toArray(),
+            'planned_at' => $this->planned_at,
+            'metadata' => $this->metadata,
         ];
     }
 }

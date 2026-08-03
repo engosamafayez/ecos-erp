@@ -14,14 +14,14 @@ use Illuminate\Support\Str;
  * encryption (keyed to APP_KEY). The app_secret and extra_config
  * columns are never returned in API responses.
  *
- * @property string      $id
- * @property string      $company_id
- * @property string      $provider          meta | google_ads | tiktok | snapchat | linkedin | x_twitter
+ * @property string $id
+ * @property string $company_id
+ * @property string $provider meta | google_ads | tiktok | snapchat | linkedin | x_twitter
  * @property string|null $app_id
- * @property string|null $app_secret        encrypted
+ * @property string|null $app_secret encrypted
  * @property string|null $redirect_uri
- * @property array|null  $extra_config      encrypted JSON
- * @property string      $status            not_configured | invalid | ready
+ * @property array|null $extra_config encrypted JSON
+ * @property string $status not_configured | invalid | ready
  * @property \Carbon\Carbon|null $validated_at
  * @property string|null $validated_by
  * @property string|null $created_by
@@ -53,7 +53,7 @@ final class MarketingProviderCredential extends Model
     ];
 
     protected $casts = [
-        'app_secret'   => 'encrypted',
+        'app_secret' => 'encrypted',
         'extra_config' => 'encrypted:array',
         'validated_at' => 'datetime',
     ];
@@ -61,7 +61,7 @@ final class MarketingProviderCredential extends Model
     protected static function boot(): void
     {
         parent::boot();
-        static::creating(static function (self $model): void {
+        self::creating(static function (self $model): void {
             if (empty($model->id)) {
                 $model->id = Str::uuid()->toString();
             }

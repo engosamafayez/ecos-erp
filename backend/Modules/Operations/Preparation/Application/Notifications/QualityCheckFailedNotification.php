@@ -25,13 +25,13 @@ final class QualityCheckFailedNotification extends Notification
     public function toDatabase(mixed $notifiable): array
     {
         return [
-            'type'         => 'quality_check_failed',
-            'wave_id'      => $this->waveId,
-            'wave_number'  => $this->waveNumber,
-            'message'      => "Quality check FAILED for {$this->productSku} in wave {$this->waveNumber}",
-            'product_sku'  => $this->productSku,
+            'type' => 'quality_check_failed',
+            'wave_id' => $this->waveId,
+            'wave_number' => $this->waveNumber,
+            'message' => "Quality check FAILED for {$this->productSku} in wave {$this->waveNumber}",
+            'product_sku' => $this->productSku,
             'product_name' => $this->productName,
-            'severity'     => 'blocking',
+            'severity' => 'blocking',
         ];
     }
 }

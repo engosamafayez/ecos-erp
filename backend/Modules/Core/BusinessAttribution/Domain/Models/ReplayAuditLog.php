@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\Core\BusinessAttribution\Domain\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -33,11 +35,11 @@ class ReplayAuditLog extends Model
     ];
 
     protected $casts = [
-        'metadata'    => 'array',
+        'metadata' => 'array',
         'replay_from' => 'datetime',
-        'replay_to'   => 'datetime',
+        'replay_to' => 'datetime',
         'replay_as_of' => 'datetime',
-        'executed_at'  => 'datetime',
-        'created_at'   => 'datetime',
+        'executed_at' => 'datetime',
+        'created_at' => 'datetime',
     ];
 }

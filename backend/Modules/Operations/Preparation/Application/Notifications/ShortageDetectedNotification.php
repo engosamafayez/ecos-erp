@@ -13,7 +13,7 @@ final class ShortageDetectedNotification extends Notification
     public function __construct(
         private readonly string $waveNumber,
         private readonly string $waveId,
-        private readonly array  $shortages,
+        private readonly array $shortages,
     ) {}
 
     /** @return list<string> */
@@ -26,12 +26,12 @@ final class ShortageDetectedNotification extends Notification
     public function toDatabase(mixed $notifiable): array
     {
         return [
-            'type'        => 'shortage_detected',
-            'wave_id'     => $this->waveId,
+            'type' => 'shortage_detected',
+            'wave_id' => $this->waveId,
             'wave_number' => $this->waveNumber,
-            'message'     => "Wave {$this->waveNumber} blocked — material shortage detected",
-            'shortages'   => $this->shortages,
-            'severity'    => 'blocking',
+            'message' => "Wave {$this->waveNumber} blocked — material shortage detected",
+            'shortages' => $this->shortages,
+            'severity' => 'blocking',
         ];
     }
 
@@ -40,7 +40,7 @@ final class ShortageDetectedNotification extends Notification
         return (new MailMessage)
             ->subject("Wave {$this->waveNumber} — Shortage Detected")
             ->line("Wave {$this->waveNumber} is blocked due to a material shortage.")
-            ->line(count($this->shortages) . ' material(s) are below required levels.')
+            ->line(count($this->shortages).' material(s) are below required levels.')
             ->action('View Wave', url("/operations/preparation/waves?search={$this->waveNumber}"));
     }
 }

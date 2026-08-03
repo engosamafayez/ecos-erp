@@ -16,7 +16,7 @@ final class LoadingProductLoadedEvent
         public readonly string $poolEntryId,
         public readonly string $productId,
         public readonly string $warehouseId,
-        public readonly float  $quantityLoaded,
+        public readonly float $quantityLoaded,
         public readonly string $vehicleId,
     ) {}
 }

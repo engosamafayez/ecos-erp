@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\CostManagement\Domain\Services;
 
-use Illuminate\Support\Collection;
 use Modules\Admin\Configuration\Domain\Services\ConfigurationManager;
 use Modules\Commerce\ProductMappings\Domain\Enums\SyncStatus;
 use Modules\Commerce\ProductMappings\Domain\Models\ProductMapping;
@@ -61,18 +60,18 @@ final class PricingReviewService
         }
 
         $product->loadMissing('brand');
-        $sellingPrice   = (float) ($product->regular_price ?? 0.0);
-        $targetMargin   = $product->effectiveTargetMargin();
+        $sellingPrice = (float) ($product->regular_price ?? 0.0);
+        $targetMargin = $product->effectiveTargetMargin();
         $suggestedPrice = $targetMargin < 100
             ? round($newProductCost / (1 - $targetMargin / 100), 4)
             : $newProductCost;
-        $discountPct       = $product->effectiveDiscountPct();
+        $discountPct = $product->effectiveDiscountPct();
         $suggestedSalePrice = round($suggestedPrice * (1 - $discountPct / 100), 4);
-        $currentMargin  = $sellingPrice > 0
+        $currentMargin = $sellingPrice > 0
             ? round((($sellingPrice - $newProductCost) / $sellingPrice) * 100, 4)
             : 0.0;
 
-        $diff    = $newProductCost - $previousProductCost;
+        $diff = $newProductCost - $previousProductCost;
         $impacts = $diff > 0 ? ['cost_increased'] : ['cost_decreased'];
         if ($currentMargin < $targetMargin) {
             $impacts[] = 'margin_below_target';
@@ -95,18 +94,18 @@ final class PricingReviewService
             // Keep the original previous_cost so the delta shows total drift.
             // cost_snapshot is refreshed each update (latest state wins); explanation is appended.
             $updateData = [
-                'product_cost'                 => round($newProductCost, 4),
-                'cost_difference'              => round($newProductCost - (float) ($existing->previous_product_cost ?? $previousProductCost), 4),
-                'selling_price'                => $sellingPrice,
-                'suggested_selling_price'      => $suggestedPrice,
-                'suggested_sale_price'         => $suggestedSalePrice,
-                'current_margin'               => $currentMargin,
-                'impacts'                      => $impacts,
-                'status'                       => PricingReviewStatus::Pending->value,
-                'snooze_until'                 => null,
+                'product_cost' => round($newProductCost, 4),
+                'cost_difference' => round($newProductCost - (float) ($existing->previous_product_cost ?? $previousProductCost), 4),
+                'selling_price' => $sellingPrice,
+                'suggested_selling_price' => $suggestedPrice,
+                'suggested_sale_price' => $suggestedSalePrice,
+                'current_margin' => $currentMargin,
+                'impacts' => $impacts,
+                'status' => PricingReviewStatus::Pending->value,
+                'snooze_until' => null,
                 'triggered_by_cost_history_id' => $historyId,
-                'trigger_reason'               => $triggerReason,
-                'trigger_source'               => $triggerSource,
+                'trigger_reason' => $triggerReason,
+                'trigger_source' => $triggerSource,
             ];
             if ($costSnapshot !== null) {
                 $updateData['cost_snapshot'] = $costSnapshot;
@@ -120,24 +119,24 @@ final class PricingReviewService
         }
 
         $review = PricingReview::query()->create([
-            'product_id'                   => $product->id,
-            'company_id'                   => $companyId,
-            'channel_id'                   => null,
-            'product_cost'                 => round($newProductCost, 4),
-            'previous_product_cost'        => round($previousProductCost, 4),
-            'cost_difference'              => round($diff, 4),
-            'selling_price'                => $sellingPrice,
-            'suggested_selling_price'      => $suggestedPrice,
-            'suggested_sale_price'         => $suggestedSalePrice,
-            'target_margin'                => $targetMargin,
-            'current_margin'               => $currentMargin,
-            'impacts'                      => $impacts,
-            'status'                       => PricingReviewStatus::Pending->value,
+            'product_id' => $product->id,
+            'company_id' => $companyId,
+            'channel_id' => null,
+            'product_cost' => round($newProductCost, 4),
+            'previous_product_cost' => round($previousProductCost, 4),
+            'cost_difference' => round($diff, 4),
+            'selling_price' => $sellingPrice,
+            'suggested_selling_price' => $suggestedPrice,
+            'suggested_sale_price' => $suggestedSalePrice,
+            'target_margin' => $targetMargin,
+            'current_margin' => $currentMargin,
+            'impacts' => $impacts,
+            'status' => PricingReviewStatus::Pending->value,
             'triggered_by_cost_history_id' => $historyId,
-            'trigger_reason'               => $triggerReason,
-            'trigger_source'               => $triggerSource,
-            'cost_snapshot'                => $costSnapshot,
-            'explanation'                  => $explanation,
+            'trigger_reason' => $triggerReason,
+            'trigger_source' => $triggerSource,
+            'cost_snapshot' => $costSnapshot,
+            'explanation' => $explanation,
         ]);
 
         PriceReviewCreated::dispatch(
@@ -166,15 +165,15 @@ final class PricingReviewService
         ?string $triggeredByCostHistoryId,
     ): PricingReview {
         $product->loadMissing('brand');
-        $sellingPrice  = (float) ($product->regular_price ?? 0.0);
-        $targetMargin  = $product->effectiveTargetMargin();
+        $sellingPrice = (float) ($product->regular_price ?? 0.0);
+        $targetMargin = $product->effectiveTargetMargin();
 
         // Suggested Selling Price = cost / (1 - margin%)
         $suggestedPrice = $targetMargin < 100
             ? round($newProductCost / (1 - $targetMargin / 100), 4)
             : $newProductCost;
 
-        $discountPct        = $product->effectiveDiscountPct();
+        $discountPct = $product->effectiveDiscountPct();
         $suggestedSalePrice = round($suggestedPrice * (1 - $discountPct / 100), 4);
 
         $currentMargin = $sellingPrice > 0
@@ -191,19 +190,19 @@ final class PricingReviewService
         }
 
         return PricingReview::query()->create([
-            'product_id'                   => $product->id,
-            'company_id'                   => $companyId,
-            'channel_id'                   => $channelId,
-            'product_cost'                 => round($newProductCost, 4),
-            'previous_product_cost'        => round($previousProductCost, 4),
-            'cost_difference'              => round($newProductCost - $previousProductCost, 4),
-            'selling_price'                => $sellingPrice,
-            'suggested_selling_price'      => $suggestedPrice,
-            'suggested_sale_price'         => $suggestedSalePrice,
-            'target_margin'                => $targetMargin,
-            'current_margin'               => $currentMargin,
-            'impacts'                      => array_values(array_unique($impacts)),
-            'status'                       => PricingReviewStatus::Pending->value,
+            'product_id' => $product->id,
+            'company_id' => $companyId,
+            'channel_id' => $channelId,
+            'product_cost' => round($newProductCost, 4),
+            'previous_product_cost' => round($previousProductCost, 4),
+            'cost_difference' => round($newProductCost - $previousProductCost, 4),
+            'selling_price' => $sellingPrice,
+            'suggested_selling_price' => $suggestedPrice,
+            'suggested_sale_price' => $suggestedSalePrice,
+            'target_margin' => $targetMargin,
+            'current_margin' => $currentMargin,
+            'impacts' => array_values(array_unique($impacts)),
+            'status' => PricingReviewStatus::Pending->value,
             'triggered_by_cost_history_id' => $triggeredByCostHistoryId,
         ]);
     }
@@ -211,7 +210,7 @@ final class PricingReviewService
     /**
      * Approve/resolve a pricing review and publish selling price.
      *
-     * @param array<string> $channels  e.g. ['pos','website','wholesale']
+     * @param  array<string>  $channels  e.g. ['pos','website','wholesale']
      */
     public function resolve(
         PricingReview $review,
@@ -222,22 +221,22 @@ final class PricingReviewService
         array $channels,
         ?string $approverId = null,
     ): PriceApproval {
-        $product       = $review->product;
+        $product = $review->product;
         $product->loadMissing('brand');
 
-        $oldPrice    = $review->selling_price;
+        $oldPrice = $review->selling_price;
         $oldSalePrice = (float) ($product->sale_price ?? 0.0);
 
         $newPrice = match ($action) {
             'approve_suggested' => $review->suggested_selling_price,
-            'keep_current'      => $review->selling_price,
-            'custom_price'      => $customPrice ?? $review->selling_price,
-            'reject'            => $review->selling_price,
-            default             => $review->selling_price,
+            'keep_current' => $review->selling_price,
+            'custom_price' => $customPrice ?? $review->selling_price,
+            'reject' => $review->selling_price,
+            default => $review->selling_price,
         };
 
         $newSalePrice = null;
-        $discountPct  = $product->effectiveDiscountPct();
+        $discountPct = $product->effectiveDiscountPct();
 
         // Reject never updates prices; other actions check publishing strategy.
         if ($action !== 'reject') {
@@ -249,22 +248,22 @@ final class PricingReviewService
 
             // Read brand publishing strategy to decide immediate vs. staged publish.
             $product->loadMissing('brand');
-            $brandId  = (string) ($product->brand_id ?? '');
-            $policy   = $brandId !== '' ? $this->config->getBrandPolicy($brandId, 'pricing') : [];
+            $brandId = (string) ($product->brand_id ?? '');
+            $policy = $brandId !== '' ? $this->config->getBrandPolicy($brandId, 'pricing') : [];
             $strategy = $policy['publishing_strategy'] ?? 'automatic';
 
             if ($strategy === 'approval_only') {
                 // Stage: store approved prices in the review row; do NOT update the product yet.
                 $review->update([
-                    'approved_price'      => $newPrice,
+                    'approved_price' => $newPrice,
                     'approved_sale_price' => $newSalePrice > 0.0 ? $newSalePrice : null,
-                    'publish_status'      => 'pending_publish',
+                    'publish_status' => 'pending_publish',
                 ]);
             } else {
                 // Automatic: write prices immediately, mark channel mappings for sync.
                 $product->update([
                     'regular_price' => $newPrice,
-                    'sale_price'    => $newSalePrice > 0.0 ? $newSalePrice : null,
+                    'sale_price' => $newSalePrice > 0.0 ? $newSalePrice : null,
                 ]);
 
                 ProductMapping::query()
@@ -282,32 +281,32 @@ final class PricingReviewService
         // Create audit record
         $approval = PriceApproval::query()->create([
             'pricing_review_id' => $review->id,
-            'product_id'        => $review->product_id,
-            'old_product_cost'  => $review->previous_product_cost ?? $review->product_cost,
-            'new_product_cost'  => $review->product_cost,
+            'product_id' => $review->product_id,
+            'old_product_cost' => $review->previous_product_cost ?? $review->product_cost,
+            'new_product_cost' => $review->product_cost,
             'old_selling_price' => $oldPrice,
             'new_selling_price' => $newPrice,
-            'old_sale_price'    => $oldSalePrice > 0.0 ? $oldSalePrice : null,
-            'new_sale_price'    => $newSalePrice,
-            'margin_pct'        => $marginPct,
-            'discount_pct'      => $discountPct,
-            'action'            => $action,
-            'custom_price'      => $action === 'custom_price' ? $customPrice : null,
-            'reason'            => $reason,
-            'manager_name'      => $managerName,
-            'approved_by'       => $approverId,
+            'old_sale_price' => $oldSalePrice > 0.0 ? $oldSalePrice : null,
+            'new_sale_price' => $newSalePrice,
+            'margin_pct' => $marginPct,
+            'discount_pct' => $discountPct,
+            'action' => $action,
+            'custom_price' => $action === 'custom_price' ? $customPrice : null,
+            'reason' => $reason,
+            'manager_name' => $managerName,
+            'approved_by' => $approverId,
             'approved_channels' => $channels,
-            'approved_at'       => now(),
-            'created_at'        => now(),
+            'approved_at' => now(),
+            'created_at' => now(),
         ]);
 
         // Mark review as resolved
         $status = match ($action) {
             'approve_suggested' => PricingReviewStatus::Approved,
-            'keep_current'      => PricingReviewStatus::Kept,
-            'custom_price'      => PricingReviewStatus::CustomPrice,
-            'reject'            => PricingReviewStatus::Rejected,
-            default             => PricingReviewStatus::Approved,
+            'keep_current' => PricingReviewStatus::Kept,
+            'custom_price' => PricingReviewStatus::CustomPrice,
+            'reject' => PricingReviewStatus::Rejected,
+            default => PricingReviewStatus::Approved,
         };
         $review->resolve($status);
 
@@ -342,8 +341,8 @@ final class PricingReviewService
     public function snooze(PricingReview $review, string $until): void
     {
         $review->update([
-            'status'      => PricingReviewStatus::Snoozed->value,
-            'snooze_until'=> $until,
+            'status' => PricingReviewStatus::Snoozed->value,
+            'snooze_until' => $until,
         ]);
     }
 

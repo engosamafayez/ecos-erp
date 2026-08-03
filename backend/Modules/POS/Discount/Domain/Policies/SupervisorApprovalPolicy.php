@@ -22,7 +22,7 @@ final class SupervisorApprovalPolicy
 
     public function validateApprover(string $supervisorId): void
     {
-        if (!$this->canApprove($supervisorId)) {
+        if (! $this->canApprove($supervisorId)) {
             throw InvalidDiscountException::invalidSupervisor();
         }
     }

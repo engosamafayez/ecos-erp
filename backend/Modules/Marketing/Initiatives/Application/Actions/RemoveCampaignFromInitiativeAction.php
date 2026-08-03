@@ -18,8 +18,8 @@ final class RemoveCampaignFromInitiativeAction
 {
     public function execute(
         MarketingInitiative $initiative,
-        Campaign            $campaign,
-        ?string             $actorId = null,
+        Campaign $campaign,
+        ?string $actorId = null,
     ): void {
         if ((string) $campaign->marketing_initiative_id !== (string) $initiative->id) {
             return; // Campaign doesn't belong to this initiative; no-op
@@ -29,10 +29,10 @@ final class RemoveCampaignFromInitiativeAction
 
         MarketingAuditLog::record(
             entityType: 'campaign',
-            entityId:   $campaign->id,
-            action:     'removed_from_initiative',
-            actorId:    $actorId,
-            before:     ['initiative_id' => $initiative->id, 'initiative_name' => $initiative->name],
+            entityId: $campaign->id,
+            action: 'removed_from_initiative',
+            actorId: $actorId,
+            before: ['initiative_id' => $initiative->id, 'initiative_name' => $initiative->name],
         );
     }
 }

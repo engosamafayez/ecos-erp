@@ -60,11 +60,11 @@ final class FulfillmentServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadMigrationsFrom(
-            __DIR__ . '/../Database/Migrations'
+            __DIR__.'/../Database/Migrations',
         );
 
-        Event::listen(OrderConfirmedEvent::class,  HandleOrderConfirmed::class);
+        Event::listen(OrderConfirmedEvent::class, HandleOrderConfirmed::class);
         Event::listen(OrderDispatchedEvent::class, HandleOrderDispatched::class);
-        Event::listen(OrderDeliveredEvent::class,  HandleOrderDelivered::class);
+        Event::listen(OrderDeliveredEvent::class, HandleOrderDelivered::class);
     }
 }

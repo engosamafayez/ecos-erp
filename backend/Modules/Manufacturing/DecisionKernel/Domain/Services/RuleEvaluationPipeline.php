@@ -24,7 +24,7 @@ final class RuleEvaluationPipeline
 {
     /**
      * @param  list<DecisionRuleInterface>  $rules
-     * @return list<DecisionEvaluation>     Matching evaluations, priority desc.
+     * @return list<DecisionEvaluation> Matching evaluations, priority desc.
      */
     public function run(array $rules, DecisionContext $context): array
     {
@@ -33,13 +33,13 @@ final class RuleEvaluationPipeline
         foreach ($rules as $rule) {
             if ($rule->matches($context)) {
                 $matched[] = new DecisionEvaluation(
-                    rule_id:       $rule->ruleId(),
-                    rule_name:     $rule->name(),
-                    priority:      $rule->priority(),
-                    matched:       true,
+                    rule_id: $rule->ruleId(),
+                    rule_name: $rule->name(),
+                    priority: $rule->priority(),
+                    matched: true,
                     decision_type: $rule->decisionType(),
-                    reason:        $rule->reason(),
-                    metadata:      $rule->metadata(),
+                    reason: $rule->reason(),
+                    metadata: $rule->metadata(),
                 );
             }
         }
@@ -47,7 +47,7 @@ final class RuleEvaluationPipeline
         // Stable descending sort: highest priority first, registration order on tie.
         usort(
             $matched,
-            static fn(DecisionEvaluation $a, DecisionEvaluation $b): int => $b->priority <=> $a->priority,
+            static fn (DecisionEvaluation $a, DecisionEvaluation $b): int => $b->priority <=> $a->priority,
         );
 
         return $matched;

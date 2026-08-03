@@ -17,9 +17,9 @@ final class ResolveShortageRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'requirement_ids'   => ['nullable', 'array'],
+            'requirement_ids' => ['nullable', 'array'],
             'requirement_ids.*' => ['uuid'],
-            'resolution_notes'  => ['nullable', 'string', 'max:1000'],
+            'resolution_notes' => ['nullable', 'string', 'max:1000'],
         ];
     }
 }

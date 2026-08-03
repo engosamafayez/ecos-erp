@@ -11,13 +11,13 @@ use Modules\Inventory\InventoryControl\Domain\Enums\AbcClass;
 use Modules\Inventory\Products\Domain\Models\Product;
 
 /**
- * @property string   $id
- * @property string   $product_id
+ * @property string $id
+ * @property string $product_id
  * @property AbcClass $abc_class
- * @property int      $frequency_days
+ * @property int $frequency_days
  * @property \Illuminate\Support\Carbon|null $last_counted_at
  * @property \Illuminate\Support\Carbon|null $next_due_at
- * @property bool     $is_overdue
+ * @property bool $is_overdue
  */
 class CycleCountPlan extends Model
 {
@@ -37,11 +37,11 @@ class CycleCountPlan extends Model
     protected function casts(): array
     {
         return [
-            'abc_class'       => AbcClass::class,
-            'frequency_days'  => 'integer',
+            'abc_class' => AbcClass::class,
+            'frequency_days' => 'integer',
             'last_counted_at' => 'date:Y-m-d',
-            'next_due_at'     => 'date:Y-m-d',
-            'is_overdue'      => 'boolean',
+            'next_due_at' => 'date:Y-m-d',
+            'is_overdue' => 'boolean',
         ];
     }
 

@@ -33,6 +33,19 @@ export function useZoneOrders(zoneId: number | null) {
   });
 }
 
+/**
+ * Canonical finalize-readiness validation — served by the backend (POST /board/validate),
+ * the single source of truth. Replaces the client-side computeValidation() reimplementation.
+ */
+export function useValidateBoard(enabled = true) {
+  return useQuery({
+    queryKey: ['distribution-board-validation'],
+    queryFn: svc.validateBoard,
+    enabled,
+    staleTime: 15_000,
+  });
+}
+
 export function useTripOrders(tripId: string | null) {
   return useQuery({
     queryKey: ['distribution-trip-orders', tripId],

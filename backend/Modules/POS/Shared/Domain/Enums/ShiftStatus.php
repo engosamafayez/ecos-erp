@@ -12,9 +12,9 @@ namespace Modules\POS\Shared\Domain\Enums;
  */
 enum ShiftStatus: string
 {
-    case Open    = 'open';
+    case Open = 'open';
     case Closing = 'closing';
-    case Closed  = 'closed';
+    case Closed = 'closed';
 
     /** New sales can only be processed on an Open shift. */
     public function canProcessSales(): bool

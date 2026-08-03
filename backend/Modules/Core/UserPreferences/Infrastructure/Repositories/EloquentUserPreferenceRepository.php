@@ -32,7 +32,7 @@ final class EloquentUserPreferenceRepository implements UserPreferenceRepository
     public function upsert(int $userId, string $category, array $payload): UserPreference
     {
         $preference = UserPreference::query()->firstOrNew([
-            'user_id'  => $userId,
+            'user_id' => $userId,
             'category' => $category,
         ]);
 

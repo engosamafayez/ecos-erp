@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom';
+import { useFormatter } from '@/hooks/use-formatter';
 
 import { ErrorState, LoadingState, PageHeader, StatusBadge } from '@/components/crud';
 import type { StatusVariant } from '@/components/crud/types';
@@ -14,8 +15,6 @@ const STATUS_TONE: Record<ApprovalStatus, StatusVariant> = {
   cancelled: 'archived',
 };
 
-const money = (value: number, currency = 'EGP') =>
-  `${currency} ${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 /**
  * Employee Compensation 360 — the whole picture of one person's pay.
@@ -24,6 +23,7 @@ const money = (value: number, currency = 'EGP') =>
  * owe and what has been deducted, plus the payslip history.
  */
 export function Compensation360Page() {
+  const { money } = useFormatter();
   const { employeeId = '' } = useParams();
   const { data, isLoading, isError, refetch } = useCompensation360Query(employeeId);
 

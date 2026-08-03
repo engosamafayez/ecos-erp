@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { History, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { materialCostService } from '@/features/cost-management/services/pricing-review-service';
@@ -6,11 +7,6 @@ import type {
   MaterialCostHistoryEntry,
   MaterialCostHistoryQuery,
 } from '@/features/cost-management/types/pricing-review';
-
-const SOURCE_LABELS: Record<string, string> = {
-  manual:           'Manual Adjustment',
-  purchase_invoice: 'Purchase Invoice',
-};
 
 function formatCost(n: number | null | undefined) {
   if (n == null) return '—';
@@ -37,6 +33,14 @@ function DiffCell({ diff }: { diff: number }) {
 }
 
 export function CostHistoryPage() {
+  const { t } = useTranslation('cost-management');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
+
+  const SOURCE_LABELS: Record<string, string> = {
+    manual:           t('history.filters.manualAdjustment'),
+    purchase_invoice: t('history.filters.purchaseInvoice'),
+  };
+
   const [rows, setRows]       = useState<MaterialCostHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal]     = useState(0);
@@ -74,9 +78,9 @@ export function CostHistoryPage() {
       <div className="flex items-center gap-3">
         <History className="size-5 text-primary" />
         <div>
-          <h1 className="text-lg font-semibold">Material Cost History</h1>
+          <h1 className="text-lg font-semibold">{t('history.title')}</h1>
           <p className="text-sm text-muted-foreground">
-            Every material cost change, in reverse chronological order
+            {t('history.subtitle')}
           </p>
         </div>
       </div>
@@ -87,7 +91,7 @@ export function CostHistoryPage() {
           <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search by material name or SKU…"
+            placeholder={t('history.search')}
             value={search}
             onChange={handleSearch}
             className="pl-8 w-64"
@@ -98,9 +102,9 @@ export function CostHistoryPage() {
           onChange={handleSourceFilter}
           defaultValue=""
         >
-          <option value="">All Sources</option>
-          <option value="manual">Manual Adjustment</option>
-          <option value="purchase_invoice">Purchase Invoice</option>
+          <option value="">{t('history.filters.allSources')}</option>
+          <option value="manual">{t('history.filters.manualAdjustment')}</option>
+          <option value="purchase_invoice">{t('history.filters.purchaseInvoice')}</option>
         </select>
       </div>
 
@@ -109,14 +113,14 @@ export function CostHistoryPage() {
         <table className="w-full text-sm">
           <thead className="border-b bg-muted/30">
             <tr>
-              <th className="px-4 py-2.5 text-start font-medium text-muted-foreground">Material</th>
-              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">Previous Cost</th>
-              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">New Cost</th>
-              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">Difference</th>
-              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">Change %</th>
-              <th className="px-4 py-2.5 text-center font-medium text-muted-foreground">Source</th>
-              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">Affected</th>
-              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">Date</th>
+              <th className="px-4 py-2.5 text-start font-medium text-muted-foreground">{t('history.columns.material')}</th>
+              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">{t('history.columns.previousCost')}</th>
+              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">{t('history.columns.newCost')}</th>
+              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">{t('history.columns.difference')}</th>
+              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">{t('history.columns.changePct')}</th>
+              <th className="px-4 py-2.5 text-center font-medium text-muted-foreground">{t('history.columns.source')}</th>
+              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">{t('history.columns.affected')}</th>
+              <th className="px-4 py-2.5 text-end font-medium text-muted-foreground">{t('history.columns.date')}</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -133,7 +137,7 @@ export function CostHistoryPage() {
             ) : rows.length === 0 ? (
               <tr>
                 <td colSpan={8} className="px-4 py-10 text-center text-muted-foreground">
-                  No cost history
+                  {t('history.empty')}
                 </td>
               </tr>
             ) : (
@@ -165,8 +169,8 @@ export function CostHistoryPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-end text-xs text-muted-foreground">
-                    {row.affected_product_count} products<br />
-                    {row.affected_recipe_count} recipes
+                    {tAny('history.affected.products', { count: row.affected_product_count })}<br />
+                    {tAny('history.affected.recipes', { count: row.affected_recipe_count })}
                   </td>
                   <td className="px-4 py-3 text-end text-xs text-muted-foreground whitespace-nowrap">
                     {formatDate(row.occurred_at)}
@@ -181,7 +185,7 @@ export function CostHistoryPage() {
       {/* Pagination */}
       {total > (query.per_page ?? 30) && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>{total} total entries</span>
+          <span>{tAny('history.pagination.total', { total })}</span>
           <div className="flex items-center gap-2">
             <button
               type="button"

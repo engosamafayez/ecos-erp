@@ -21,11 +21,11 @@ class CampaignBulkJob extends Model
     ];
 
     protected $casts = [
-        'operation_type'    => BulkOperationType::class,
+        'operation_type' => BulkOperationType::class,
         'campaign_draft_ids' => 'array',
         'operation_payload' => 'array',
-        'results'           => 'array',
-        'started_at'        => 'datetime',
-        'completed_at'      => 'datetime',
+        'results' => 'array',
+        'started_at' => 'datetime',
+        'completed_at' => 'datetime',
     ];
 }

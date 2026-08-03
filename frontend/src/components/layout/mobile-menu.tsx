@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router-dom';
 
 import { cn } from '@/lib/utils';
@@ -14,19 +15,21 @@ type MobileMenuProps = {
 };
 
 export function MobileMenu({ open, onClose }: MobileMenuProps) {
+  const { t } = useTranslation('common');
+
   if (!open) return null;
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Navigation menu"
+      aria-label={t('nav.menu')}
       className="fixed inset-0 z-50 flex flex-col bg-background md:hidden"
     >
       {/* Header */}
       <div className="flex h-14 shrink-0 items-center justify-between border-b px-4">
         <BrandLogo />
-        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close menu">
+        <Button variant="ghost" size="icon" onClick={onClose} aria-label={t('nav.closeMenu')}>
           <X className="size-5" aria-hidden />
         </Button>
       </div>
@@ -40,7 +43,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
       {/* Module grid */}
       <div className="flex-1 overflow-y-auto p-4">
         <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Workspaces
+          {t('nav.workspaces')}
         </p>
         <div className="flex flex-col gap-1">
           {APP_MODULES.map((mod) => {
@@ -63,10 +66,14 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
                     <Icon className="size-5 text-primary" aria-hidden />
                   </span>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold">{mod.label}</p>
+                    <p className="text-sm font-semibold">
+                      {t(`nav.groups.${mod.id}`, { defaultValue: mod.label })}
+                    </p>
                     {mod.items.length > 0 && (
                       <p className="truncate text-xs text-muted-foreground">
-                        {mod.items.map((i) => i.label).join(' · ')}
+                        {mod.items
+                          .map((i) => t(`nav.items.${i.key}`, { defaultValue: i.label }))
+                          .join(' · ')}
                       </p>
                     )}
                   </div>

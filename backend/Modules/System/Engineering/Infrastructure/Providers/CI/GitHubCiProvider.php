@@ -23,8 +23,12 @@ final class GitHubCiProvider implements PipelineProviderInterface
 
     public function checkWorkflowStatus(string $branch): CIResult
     {
+        if (! preg_match('/^[a-zA-Z0-9._\\/\-]+$/', $branch)) {
+            return CIResult::unavailable("Invalid branch name: '{$branch}'.");
+        }
+
         $result = $this->runGhCli(
-            "gh run list --branch {$branch} --limit 1 --json status,conclusion,url,databaseId --jq '.[0]' 2>&1"
+            "gh run list --branch " . escapeshellarg($branch) . " --limit 1 --json status,conclusion,url,databaseId --jq '.[0]' 2>&1"
         );
 
         if (! $result['success'] || blank($result['output'])) {
@@ -77,8 +81,12 @@ final class GitHubCiProvider implements PipelineProviderInterface
 
     public function getWorkflowUrl(string $branch): ?string
     {
+        if (! preg_match('/^[a-zA-Z0-9._\\/\-]+$/', $branch)) {
+            return null;
+        }
+
         $result = $this->runGhCli(
-            "gh run list --branch {$branch} --limit 1 --json url --jq '.[0].url' 2>&1"
+            "gh run list --branch " . escapeshellarg($branch) . " --limit 1 --json url --jq '.[0].url' 2>&1"
         );
 
         $url = trim($result['output'] ?? '');

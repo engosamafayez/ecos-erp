@@ -1,4 +1,5 @@
 import { TrendingUp } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -43,9 +44,7 @@ function Sparkline({
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const FLAT = [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05];
 
-const TOP_PRODUCTS = [
-  { name: 'Connect orders to see data', sku: '—', orders: 0, revenue: '—' },
-];
+const TOP_PRODUCTS: { name: string; sku: string; orders: number; revenue: string }[] = [];
 
 const CHANNELS = [
   { name: 'WooCommerce', pct: 0, barCls: 'bg-indigo-500' },
@@ -54,19 +53,20 @@ const CHANNELS = [
 ];
 
 export function AnalyticsRow() {
+  const { t } = useTranslation('dashboard');
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       {/* Orders sparkline */}
       <Card>
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold">Orders This Week</CardTitle>
+            <CardTitle className="text-sm font-semibold">{t('analyticsRow.ordersThisWeek')}</CardTitle>
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </div>
         </CardHeader>
         <CardContent>
           <p className="text-3xl font-bold mb-0.5">0</p>
-          <p className="text-xs text-muted-foreground mb-4">No data yet</p>
+          <p className="text-xs text-muted-foreground mb-4">{t('analyticsRow.noDataYet')}</p>
           <Sparkline data={FLAT} gradId="spark-orders" stroke="#6366F1" />
           <div className="mt-1 flex justify-between">
             {DAYS.map((d, i) => (
@@ -81,7 +81,7 @@ export function AnalyticsRow() {
       {/* Top products */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold">Top Products</CardTitle>
+          <CardTitle className="text-sm font-semibold">{t('analyticsRow.topProducts')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -101,7 +101,7 @@ export function AnalyticsRow() {
               </div>
             ))}
             <p className="pt-3 text-center text-xs text-muted-foreground">
-              Connect the orders module to see top products
+              {t('analyticsRow.connectOrdersHint')}
             </p>
           </div>
         </CardContent>
@@ -110,7 +110,7 @@ export function AnalyticsRow() {
       {/* Channel breakdown */}
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-semibold">Sales Channels</CardTitle>
+          <CardTitle className="text-sm font-semibold">{t('analyticsRow.salesChannels')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -129,7 +129,7 @@ export function AnalyticsRow() {
               </div>
             ))}
             <p className="pt-2 text-center text-xs text-muted-foreground">
-              No channel data yet
+              {t('analyticsRow.noChannelData')}
             </p>
           </div>
         </CardContent>

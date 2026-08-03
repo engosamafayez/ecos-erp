@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Application\Services;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
@@ -20,10 +22,11 @@ class UnifiedInboxService
     public function getUnreadCount(?string $companyId = null): int
     {
         $q = Conversation::where('unread_count', '>', 0)
-                         ->whereNotIn('status', ['resolved', 'closed']);
+            ->whereNotIn('status', ['resolved', 'closed']);
         if ($companyId) {
             $q->where('company_id', $companyId);
         }
+
         return $q->count();
     }
 
@@ -33,6 +36,7 @@ class UnifiedInboxService
         if ($companyId) {
             $q->where('company_id', $companyId);
         }
+
         return $q->count();
     }
 
@@ -43,14 +47,14 @@ class UnifiedInboxService
             $base->where('company_id', $companyId);
         }
 
-        $total        = (clone $base)->count();
-        $open         = (clone $base)->where('status', 'open')->count();
-        $pending      = (clone $base)->where('status', 'pending')->count();
-        $resolved     = (clone $base)->where('status', 'resolved')->count();
-        $unread       = (clone $base)->where('unread_count', '>', 0)->count();
+        $total = (clone $base)->count();
+        $open = (clone $base)->where('status', 'open')->count();
+        $pending = (clone $base)->where('status', 'pending')->count();
+        $resolved = (clone $base)->where('status', 'resolved')->count();
+        $unread = (clone $base)->where('unread_count', '>', 0)->count();
         $resolvedToday = (clone $base)->where('status', 'resolved')
-                                      ->whereDate('closed_at', today())
-                                      ->count();
+            ->whereDate('closed_at', today())
+            ->count();
 
         $avgFirstResponse = (clone $base)->whereNotNull('first_response_at')
             ->selectRaw('AVG(EXTRACT(EPOCH FROM (first_response_at - started_at))) as avg_s')

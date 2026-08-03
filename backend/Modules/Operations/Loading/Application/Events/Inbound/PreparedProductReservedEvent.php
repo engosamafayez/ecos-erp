@@ -10,7 +10,7 @@ final class PreparedProductReservedEvent
         public readonly string $companyId,
         public readonly string $poolEntryId,
         public readonly string $loadingSessionId,
-        public readonly float  $quantityReserved,
+        public readonly float $quantityReserved,
         public readonly string $actorId,
         public readonly string $occurredAt,
     ) {}

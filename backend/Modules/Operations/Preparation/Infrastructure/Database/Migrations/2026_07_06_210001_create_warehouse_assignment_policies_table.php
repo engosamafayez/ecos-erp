@@ -24,7 +24,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-                if (Schema::hasTable('warehouse_assignment_policies')) {
+        if (Schema::hasTable('warehouse_assignment_policies')) {
             return;
         }
 

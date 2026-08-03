@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\POS\Shift;
 
+use InvalidArgumentException;
 use Modules\POS\Shared\Domain\Enums\ShiftStatus;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
 use Modules\POS\Shared\Domain\ValueObjects\Percentage;
@@ -32,22 +33,24 @@ final class ShiftAggregateTest extends TestCase
 {
     // No RefreshDatabase — all tests are purely in-memory.
 
-    private const SESSION_ID  = 'session-uuid-1';
+    private const SESSION_ID = 'session-uuid-1';
+
     private const TERMINAL_ID = 'terminal-uuid-1';
-    private const CASHIER_ID  = 'cashier-uuid-1';
+
+    private const CASHIER_ID = 'cashier-uuid-1';
 
     private function makeShift(
-        string $sessionId  = self::SESSION_ID,
+        string $sessionId = self::SESSION_ID,
         string $terminalId = self::TERMINAL_ID,
-        string $cashierId  = self::CASHIER_ID,
-        string $amount     = '1000.00',
-        string $currency   = 'EGP',
-        int    $number     = 1,
+        string $cashierId = self::CASHIER_ID,
+        string $amount = '1000.00',
+        string $currency = 'EGP',
+        int $number = 1,
     ): Shift {
         return Shift::open(
-            sessionId:   $sessionId,
-            terminalId:  $terminalId,
-            cashierId:   $cashierId,
+            sessionId: $sessionId,
+            terminalId: $terminalId,
+            cashierId: $cashierId,
             openingCash: Money::of($amount, $currency),
             shiftNumber: ShiftNumber::of($number),
         );
@@ -78,7 +81,7 @@ final class ShiftAggregateTest extends TestCase
     public function test_open_stores_opening_cash(): void
     {
         $shift = $this->makeShift(amount: '500.00', currency: 'USD');
-        $cash  = $shift->getOpeningCash();
+        $cash = $shift->getOpeningCash();
 
         $this->assertSame('500.00', $cash->amount);
         $this->assertSame('USD', $cash->currency);
@@ -101,7 +104,7 @@ final class ShiftAggregateTest extends TestCase
 
     public function test_open_throws_for_empty_session_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Session ID cannot be empty');
 
         Shift::open('', self::TERMINAL_ID, self::CASHIER_ID, Money::of(100, 'EGP'), ShiftNumber::of(1));
@@ -109,7 +112,7 @@ final class ShiftAggregateTest extends TestCase
 
     public function test_open_throws_for_empty_terminal_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Terminal ID cannot be empty');
 
         Shift::open(self::SESSION_ID, '', self::CASHIER_ID, Money::of(100, 'EGP'), ShiftNumber::of(1));
@@ -117,7 +120,7 @@ final class ShiftAggregateTest extends TestCase
 
     public function test_open_throws_for_empty_cashier_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Cashier ID cannot be empty');
 
         Shift::open(self::SESSION_ID, self::TERMINAL_ID, '', Money::of(100, 'EGP'), ShiftNumber::of(1));

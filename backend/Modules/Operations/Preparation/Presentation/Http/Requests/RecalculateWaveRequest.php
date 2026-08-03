@@ -17,8 +17,8 @@ final class RecalculateWaveRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'add_order_ids'    => ['nullable', 'array'],
-            'add_order_ids.*'  => ['uuid'],
+            'add_order_ids' => ['nullable', 'array'],
+            'add_order_ids.*' => ['uuid'],
             'remove_order_ids' => ['nullable', 'array'],
             'remove_order_ids.*' => ['uuid'],
         ];

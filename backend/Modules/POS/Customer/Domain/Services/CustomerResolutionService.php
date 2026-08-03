@@ -22,10 +22,10 @@ final class CustomerResolutionService
     private array $domainEvents = [];
 
     public function __construct(
-        private readonly CustomerGatewayInterface    $customerGateway,
-        private readonly LoyaltyGatewayInterface     $loyaltyGateway,
+        private readonly CustomerGatewayInterface $customerGateway,
+        private readonly LoyaltyGatewayInterface $loyaltyGateway,
         private readonly StoreCreditGatewayInterface $storeCreditGateway,
-        private readonly CustomerValidator           $validator,
+        private readonly CustomerValidator $validator,
     ) {}
 
     public function identify(string $lookup, CustomerLookupType $type): CustomerSnapshot
@@ -33,19 +33,19 @@ final class CustomerResolutionService
         $this->validator->validateLookupValue($lookup, $type);
 
         $snapshot = match ($type) {
-            CustomerLookupType::ById    => $this->customerGateway->findById($lookup),
+            CustomerLookupType::ById => $this->customerGateway->findById($lookup),
             CustomerLookupType::ByPhone => $this->customerGateway->findByPhone($lookup),
             CustomerLookupType::ByEmail => $this->customerGateway->findByEmail($lookup),
-            CustomerLookupType::ByCode  => $this->customerGateway->findByCode($lookup),
+            CustomerLookupType::ByCode => $this->customerGateway->findByCode($lookup),
         };
 
         $this->domainEvents[] = CustomerIdentified::now(
-            customerId:   $snapshot->customerId,
+            customerId: $snapshot->customerId,
             customerCode: $snapshot->customerCode,
-            name:         $snapshot->name,
-            hasEmail:     $snapshot->hasEmail(),
-            hasPhone:     $snapshot->hasPhone(),
-            lookupType:   $type,
+            name: $snapshot->name,
+            hasEmail: $snapshot->hasEmail(),
+            hasPhone: $snapshot->hasPhone(),
+            lookupType: $type,
         );
 
         return $snapshot;
@@ -73,9 +73,9 @@ final class CustomerResolutionService
 
         if ($pointsEarned > 0) {
             $this->domainEvents[] = LoyaltyPointsEarned::now(
-                customerId:     $customerId,
-                pointsEarned:   $pointsEarned,
-                saleTotal:      $saleTotal,
+                customerId: $customerId,
+                pointsEarned: $pointsEarned,
+                saleTotal: $saleTotal,
                 transactionRef: $transactionRef,
             );
         }
@@ -85,7 +85,7 @@ final class CustomerResolutionService
 
     public function redeemLoyaltyPoints(
         string $customerId,
-        int    $points,
+        int $points,
         string $currency,
         string $transactionRef,
     ): Money {
@@ -94,9 +94,9 @@ final class CustomerResolutionService
         $monetaryValue = $this->loyaltyGateway->redeemPoints($customerId, $points, $currency, $transactionRef);
 
         $this->domainEvents[] = LoyaltyPointsRedeemed::now(
-            customerId:     $customerId,
+            customerId: $customerId,
             pointsRedeemed: $points,
-            monetaryValue:  $monetaryValue,
+            monetaryValue: $monetaryValue,
             transactionRef: $transactionRef,
         );
 
@@ -110,15 +110,15 @@ final class CustomerResolutionService
         $this->storeCreditGateway->applyCredit($customerId, $amount, $transactionRef);
 
         $this->domainEvents[] = StoreCreditApplied::now(
-            customerId:     $customerId,
-            amountApplied:  $amount,
+            customerId: $customerId,
+            amountApplied: $amount,
             transactionRef: $transactionRef,
         );
     }
 
     public function pullDomainEvents(): array
     {
-        $events             = $this->domainEvents;
+        $events = $this->domainEvents;
         $this->domainEvents = [];
 
         return $events;

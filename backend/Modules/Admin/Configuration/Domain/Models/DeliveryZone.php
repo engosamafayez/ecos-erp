@@ -10,13 +10,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
- * @property string      $id
- * @property string      $delivery_geography_id
- * @property string      $brand_id
- * @property string      $name
+ * @property string $id
+ * @property string $delivery_geography_id
+ * @property string $brand_id
+ * @property string $name
  * @property string|null $name_ar
- * @property int         $sort_order
- * @property bool        $is_active
+ * @property int $sort_order
+ * @property bool $is_active
  */
 class DeliveryZone extends Model
 {
@@ -46,8 +46,8 @@ class DeliveryZone extends Model
     protected function casts(): array
     {
         return [
-            'is_active'            => 'boolean',
-            'sort_order'           => 'integer',
+            'is_active' => 'boolean',
+            'sort_order' => 'integer',
             'custom_shipping_cost' => 'float',
         ];
     }

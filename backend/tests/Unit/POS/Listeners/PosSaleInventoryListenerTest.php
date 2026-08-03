@@ -16,6 +16,7 @@ use Modules\POS\Application\Events\SaleFinalized;
 use Modules\POS\Application\Events\SaleItemPayload;
 use Modules\POS\Application\Events\SalePaymentPayload;
 use Modules\POS\Application\Listeners\PosSaleInventoryListener;
+use RuntimeException;
 use Tests\TestCase;
 
 /**
@@ -28,15 +29,22 @@ final class PosSaleInventoryListenerTest extends TestCase
 {
     use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 
-    private const SALE_ID        = 'sale-uuid-001';
+    private const SALE_ID = 'sale-uuid-001';
+
     private const RECEIPT_NUMBER = 'RCP-2026-000001';
-    private const TERMINAL_ID    = 'terminal-uuid-001';
-    private const WAREHOUSE_ID   = 'warehouse-uuid-001';
-    private const COMPANY_ID     = 'company-uuid-001';
-    private const PRODUCT_A      = 'product-uuid-aaa';
-    private const PRODUCT_B      = 'product-uuid-bbb';
+
+    private const TERMINAL_ID = 'terminal-uuid-001';
+
+    private const WAREHOUSE_ID = 'warehouse-uuid-001';
+
+    private const COMPANY_ID = 'company-uuid-001';
+
+    private const PRODUCT_A = 'product-uuid-aaa';
+
+    private const PRODUCT_B = 'product-uuid-bbb';
 
     private MockInterface $stockIssue;
+
     private PosSaleInventoryListener $listener;
 
     protected function setUp(): void
@@ -44,7 +52,7 @@ final class PosSaleInventoryListenerTest extends TestCase
         parent::setUp();
 
         $this->stockIssue = Mockery::mock(StockIssuePortInterface::class);
-        $this->listener   = new PosSaleInventoryListener($this->stockIssue);
+        $this->listener = new PosSaleInventoryListener($this->stockIssue);
     }
 
     // ── Happy path ────────────────────────────────────────────────────────────
@@ -59,12 +67,12 @@ final class PosSaleInventoryListenerTest extends TestCase
             ->shouldReceive('issue')
             ->once()
             ->withArgs(function (StockOperationDTO $dto) {
-                return $dto->product_id     === self::PRODUCT_A
-                    && $dto->warehouse_id   === self::WAREHOUSE_ID
-                    && $dto->company_id     === self::COMPANY_ID
-                    && $dto->quantity       === 2.0
+                return $dto->product_id === self::PRODUCT_A
+                    && $dto->warehouse_id === self::WAREHOUSE_ID
+                    && $dto->company_id === self::COMPANY_ID
+                    && $dto->quantity === 2.0
                     && $dto->reference_type === 'pos_sale'
-                    && $dto->reference_id   === self::SALE_ID;
+                    && $dto->reference_id === self::SALE_ID;
             });
 
         $this->listener->handle($event);
@@ -95,6 +103,7 @@ final class PosSaleInventoryListenerTest extends TestCase
             ->twice()
             ->withArgs(function (StockOperationDTO $dto) use (&$issuedProducts) {
                 $issuedProducts[] = [$dto->product_id, $dto->quantity];
+
                 return true;
             });
 
@@ -146,7 +155,7 @@ final class PosSaleInventoryListenerTest extends TestCase
 
         $this->stockIssue
             ->shouldReceive('issue')
-            ->andThrow(new \RuntimeException('Database connection lost'));
+            ->andThrow(new RuntimeException('Database connection lost'));
 
         Log::shouldReceive('channel')->with('daily')->andReturnSelf();
         Log::shouldReceive('error')->once()->withArgs(fn ($msg) => str_contains($msg, 'Unexpected error'));
@@ -187,40 +196,40 @@ final class PosSaleInventoryListenerTest extends TestCase
         }
 
         return new SaleFinalized(
-            eventId:       'event-uuid-001',
-            occurredAt:    new DateTimeImmutable('now'),
-            saleId:        self::SALE_ID,
+            eventId: 'event-uuid-001',
+            occurredAt: new DateTimeImmutable('now'),
+            saleId: self::SALE_ID,
             receiptNumber: self::RECEIPT_NUMBER,
-            companyId:     self::COMPANY_ID,
-            channelId:     null,
-            warehouseId:   self::WAREHOUSE_ID,
-            sessionId:     'session-uuid-001',
-            shiftId:       'shift-uuid-001',
-            terminalId:    self::TERMINAL_ID,
-            cashierId:     'cashier-uuid-001',
-            customerId:    'customer-uuid-001',
-            items:         $items,
-            payments:      [new SalePaymentPayload('cash', '100.00', 'EGP', null)],
-            subtotal:      '100.00',
+            companyId: self::COMPANY_ID,
+            channelId: null,
+            warehouseId: self::WAREHOUSE_ID,
+            sessionId: 'session-uuid-001',
+            shiftId: 'shift-uuid-001',
+            terminalId: self::TERMINAL_ID,
+            cashierId: 'cashier-uuid-001',
+            customerId: 'customer-uuid-001',
+            items: $items,
+            payments: [new SalePaymentPayload('cash', '100.00', 'EGP', null)],
+            subtotal: '100.00',
             discountTotal: '0.00',
-            grandTotal:    '100.00',
-            amountPaid:    '100.00',
-            changeGiven:   '0.00',
-            currency:      'EGP',
+            grandTotal: '100.00',
+            amountPaid: '100.00',
+            changeGiven: '0.00',
+            currency: 'EGP',
         );
     }
 
     private function item(string $productId, float $qty): SaleItemPayload
     {
         return new SaleItemPayload(
-            lineId:      'line-' . $productId,
-            productId:   $productId,
-            productName: 'Product ' . $productId,
-            sku:         'SKU-' . $productId,
-            quantity:    $qty,
-            unitPrice:   '50.00',
-            lineTotal:   (string) ($qty * 50),
-            currency:    'EGP',
+            lineId: 'line-'.$productId,
+            productId: $productId,
+            productName: 'Product '.$productId,
+            sku: 'SKU-'.$productId,
+            quantity: $qty,
+            unitPrice: '50.00',
+            lineTotal: (string) ($qty * 50),
+            currency: 'EGP',
         );
     }
 }

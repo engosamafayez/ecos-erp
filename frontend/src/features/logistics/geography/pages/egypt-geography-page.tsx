@@ -1,4 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
+import { useFormatter } from '@/hooks/use-formatter';
+import { useTranslation } from 'react-i18next';
 import {
   CheckCircle,
   ChevronRight,
@@ -44,6 +46,8 @@ function GovernoratesTable({
   isLoading: boolean;
   onRowClick: (row: Governorate) => void;
 }) {
+  const { money } = useFormatter();
+  const { t } = useTranslation('settings');
   const [order,     setOrder]     = useState<number[]>([]);
   const [dragState, setDragState] = useState<DragState>({ draggingId: null, overId: null });
   const [dirty,     setDirty]     = useState(false);
@@ -121,11 +125,11 @@ function GovernoratesTable({
             <tr className="border-b bg-muted/60">
               <th className="h-10 w-8 px-3" />
               <th className="h-10 w-10 px-3 text-xs font-medium text-muted-foreground text-center">#</th>
-              <th className="h-10 px-3 text-xs font-medium text-muted-foreground text-start">Arabic Name</th>
-              <th className="h-10 px-3 text-xs font-medium text-muted-foreground text-start">English Name</th>
-              <th className="h-10 px-3 text-xs font-medium text-muted-foreground text-end">Default Shipping</th>
-              <th className="h-10 px-3 text-xs font-medium text-muted-foreground text-center">Cities</th>
-              <th className="h-10 px-3 text-xs font-medium text-muted-foreground text-center">Status</th>
+              <th className="h-10 px-3 text-xs font-medium text-muted-foreground text-start">{t('geo.table.arabicName')}</th>
+              <th className="h-10 px-3 text-xs font-medium text-muted-foreground text-start">{t('geo.table.englishName')}</th>
+              <th className="h-10 px-3 text-xs font-medium text-muted-foreground text-end">{t('geo.table.defaultShipping')}</th>
+              <th className="h-10 px-3 text-xs font-medium text-muted-foreground text-center">{t('geo.table.cities')}</th>
+              <th className="h-10 px-3 text-xs font-medium text-muted-foreground text-center">{t('geo.table.status')}</th>
               <th className="h-10 w-10 px-3" />
             </tr>
           </thead>
@@ -151,7 +155,7 @@ function GovernoratesTable({
   if (orderedRows.length === 0) {
     return (
       <div className="overflow-hidden rounded-lg border bg-card">
-        <EmptyState icon={Map} title="No governorates found" description="Try a different search term." />
+        <EmptyState icon={Map} title={t('geo.empty.title')} description={t('geo.empty.desc')} />
       </div>
     );
   }
@@ -160,14 +164,14 @@ function GovernoratesTable({
     <div className="space-y-2">
       {dirty && (
         <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
-          <span className="flex-1">Unsaved order changes. Save to persist.</span>
+          <span className="flex-1">{t('geo.unsavedBanner.message')}</span>
           <Button
             size="sm"
             onClick={handleSaveOrder}
             disabled={reorder.isPending}
             className="h-7 text-xs"
           >
-            {reorder.isPending ? 'Saving…' : 'Save Order'}
+            {reorder.isPending ? t('geo.saving') : t('geo.unsavedBanner.save')}
           </Button>
           <Button
             size="sm"
@@ -175,7 +179,7 @@ function GovernoratesTable({
             onClick={handleDiscardOrder}
             className="h-7 text-xs"
           >
-            Discard
+            {t('geo.unsavedBanner.discard')}
           </Button>
         </div>
       )}
@@ -185,14 +189,14 @@ function GovernoratesTable({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/60">
-                <th className="h-10 w-8 px-3" aria-label="Drag handle" />
+                <th className="h-10 w-8 px-3" aria-label={t('geo.ariaLabels.dragHandle')} />
                 <th className="h-10 w-10 px-3 text-xs font-medium text-muted-foreground text-center">#</th>
-                <th className="h-10 px-3 text-xs font-medium text-muted-foreground text-start">Arabic Name</th>
-                <th className="h-10 px-3 text-xs font-medium text-muted-foreground text-start">English Name</th>
-                <th className="h-10 px-3 text-xs font-medium text-muted-foreground text-end">Default Shipping</th>
-                <th className="h-10 w-16 px-3 text-xs font-medium text-muted-foreground text-center">Cities</th>
-                <th className="h-10 w-24 px-3 text-xs font-medium text-muted-foreground text-center">Status</th>
-                <th className="h-10 w-10 px-3" aria-label="Open" />
+                <th className="h-10 px-3 text-xs font-medium text-muted-foreground text-start">{t('geo.table.arabicName')}</th>
+                <th className="h-10 px-3 text-xs font-medium text-muted-foreground text-start">{t('geo.table.englishName')}</th>
+                <th className="h-10 px-3 text-xs font-medium text-muted-foreground text-end">{t('geo.table.defaultShipping')}</th>
+                <th className="h-10 w-16 px-3 text-xs font-medium text-muted-foreground text-center">{t('geo.table.cities')}</th>
+                <th className="h-10 w-24 px-3 text-xs font-medium text-muted-foreground text-center">{t('geo.table.status')}</th>
+                <th className="h-10 w-10 px-3" aria-label={t('geo.ariaLabels.open')} />
               </tr>
             </thead>
             <tbody className="divide-y">
@@ -233,13 +237,13 @@ function GovernoratesTable({
                     <td className="px-3 py-2.5">
                       <span>{row.name_en}</span>
                       {row.is_system && (
-                        <span className="ml-2 text-xs text-muted-foreground">(system)</span>
+                        <span className="ms-2 text-xs text-muted-foreground">{t('geo.systemBadge')}</span>
                       )}
                     </td>
 
                     {/* Default shipping price */}
                     <td className="px-3 py-2.5 text-end tabular-nums">
-                      {row.default_shipping_price.toFixed(2)} EGP
+                      {money(row.default_shipping_price)}
                     </td>
 
                     {/* Cities count */}
@@ -250,7 +254,7 @@ function GovernoratesTable({
                     {/* Status */}
                     <td className="w-24 px-3 py-2.5 text-center">
                       <Badge variant={row.is_active ? 'default' : 'secondary'} className="text-xs">
-                        {row.is_active ? 'Active' : 'Inactive'}
+                        {row.is_active ? t('geo.status.active') : t('geo.status.inactive')}
                       </Badge>
                     </td>
 
@@ -279,6 +283,8 @@ function GovernoratesTable({
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export function EgyptGeographyPage() {
+  const { money } = useFormatter();
+  const { t } = useTranslation('settings');
   const [search,       setSearch]       = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [page,         setPage]         = useState(1);
@@ -301,14 +307,14 @@ export function EgyptGeographyPage() {
     {
       id:        'total',
       icon:      Map,
-      label:     'Governorates',
+      label:     t('geo.metrics.total'),
       value:     stats?.total_governorates ?? 0,
       isLoading: !stats,
     },
     {
       id:        'active',
       icon:      CheckCircle,
-      label:     'Active',
+      label:     t('geo.metrics.active'),
       value:     stats?.active_governorates ?? 0,
       colorClass: 'text-emerald-600',
       isLoading:  !stats,
@@ -316,14 +322,14 @@ export function EgyptGeographyPage() {
     {
       id:        'cities',
       icon:      MapPin,
-      label:     'Total Cities',
+      label:     t('geo.metrics.totalCities'),
       value:     stats?.total_cities ?? 0,
       isLoading: !stats,
     },
     {
       id:        'active_cities',
       icon:      Globe,
-      label:     'Active Cities',
+      label:     t('geo.metrics.activeCities'),
       value:     stats?.active_cities ?? 0,
       colorClass: 'text-blue-600',
       isLoading:  !stats,
@@ -331,14 +337,14 @@ export function EgyptGeographyPage() {
     {
       id:        'avg_price',
       icon:      Package,
-      label:     'Avg. Shipping',
-      value:     stats ? `${(stats.avg_shipping_price ?? 0).toFixed(0)} EGP` : '—',
+      label:     t('geo.metrics.avgShipping'),
+      value:     stats ? money(stats.avg_shipping_price ?? 0) : '—',
       isLoading: !stats,
     },
     {
       id:        'providers',
       icon:      Truck,
-      label:     'Providers',
+      label:     t('geo.metrics.providers'),
       value:     stats?.shipping_providers ?? 0,
       isLoading: !stats,
     },
@@ -347,9 +353,9 @@ export function EgyptGeographyPage() {
   return (
     <>
       <WorkspaceHeader
-        breadcrumbs={[{ label: 'Logistics OS' }, { label: 'Egypt Geography' }]}
-        title="Egypt Geography"
-        description="Governorates, cities, and shipping pricing for Egypt"
+        breadcrumbs={[{ label: t('geo.breadcrumb.module') }, { label: t('geo.breadcrumb.page') }]}
+        title={t('geo.pageTitle')}
+        description={t('geo.pageDesc')}
         metrics={metrics}
       />
 
@@ -362,7 +368,7 @@ export function EgyptGeographyPage() {
         quickFilters={
           <div className="px-4 sm:px-6 py-2 flex flex-wrap items-center gap-2">
             <Input
-              placeholder="Search governorates…"
+              placeholder={t('geo.searchPlaceholder')}
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="h-8 text-sm max-w-xs"
@@ -376,11 +382,11 @@ export function EgyptGeographyPage() {
                 onClick={() => { setStatusFilter(s); setPage(1); }}
               >
                 {s === 'all' ? (
-                  'All'
+                  t('geo.filter.all')
                 ) : s === 'active' ? (
-                  <><CheckCircle className="h-3 w-3 mr-1" />Active</>
+                  <><CheckCircle className="h-3 w-3 me-1" />{t('geo.filter.active')}</>
                 ) : (
-                  <><XCircle className="h-3 w-3 mr-1" />Inactive</>
+                  <><XCircle className="h-3 w-3 me-1" />{t('geo.filter.inactive')}</>
                 )}
               </Button>
             ))}

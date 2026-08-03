@@ -6,6 +6,7 @@ namespace Modules\Operations\DemandAnalysis\Presentation\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
+use DateTimeInterface;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Operations\DemandAnalysis\Application\DTO\DemandLine;
@@ -36,30 +37,30 @@ final class DemandAnalysisController extends Controller
 
         return $this->success([
             'operational_day' => $result->operationalDay,
-            'generated_at'    => $result->generatedAt->format(\DateTimeInterface::RFC3339),
-            'summary'         => [
-                'total_orders'       => $result->totalOrders,
-                'total_products'     => $result->totalProducts,
-                'total_skus'         => $result->totalSkus,
-                'ready_count'        => $result->readyCount(),
-                'shortage_count'     => $result->shortageCount(),
+            'generated_at' => $result->generatedAt->format(DateTimeInterface::RFC3339),
+            'summary' => [
+                'total_orders' => $result->totalOrders,
+                'total_products' => $result->totalProducts,
+                'total_skus' => $result->totalSkus,
+                'ready_count' => $result->readyCount(),
+                'shortage_count' => $result->shortageCount(),
                 'out_of_stock_count' => $result->outOfStockCount(),
-                'unknown_count'      => $result->unknownCount(),
+                'unknown_count' => $result->unknownCount(),
             ],
             'demand_lines' => array_map(
                 fn (DemandLine $line) => [
-                    'product_id'             => $line->productId,
-                    'sku'                    => $line->sku,
-                    'product_name'           => $line->productName,
-                    'ordered_qty'            => $line->orderedQty,
-                    'reserved_qty'           => $line->reservedQty,
-                    'available_qty'          => $line->availableQty,
-                    'required_qty'           => $line->requiredQty,
-                    'shortage_qty'           => $line->shortageQty(),
-                    'affected_orders_count'  => $line->affectedOrdersCount,
+                    'product_id' => $line->productId,
+                    'sku' => $line->sku,
+                    'product_name' => $line->productName,
+                    'ordered_qty' => $line->orderedQty,
+                    'reserved_qty' => $line->reservedQty,
+                    'available_qty' => $line->availableQty,
+                    'required_qty' => $line->requiredQty,
+                    'shortage_qty' => $line->shortageQty(),
+                    'affected_orders_count' => $line->affectedOrdersCount,
                     'affected_channels_count' => $line->affectedChannelsCount,
-                    'warehouse_count'        => $line->warehouseCount,
-                    'inventory_status'       => $line->inventoryStatus->value,
+                    'warehouse_count' => $line->warehouseCount,
+                    'inventory_status' => $line->inventoryStatus->value,
                 ],
                 $result->demandLines,
             ),

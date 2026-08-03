@@ -7,8 +7,8 @@ namespace Modules\Manufacturing\BillsOfMaterials\Application\Actions;
 use App\Core\Actions\BaseAction;
 use App\Core\Responses\OperationResult;
 use InvalidArgumentException;
-use Modules\Manufacturing\BillsOfMaterials\Domain\Models\BillOfMaterial;
 use Modules\Manufacturing\BillsOfMaterials\Domain\Contracts\BomRepositoryInterface;
+use Modules\Manufacturing\BillsOfMaterials\Domain\Models\BillOfMaterial;
 
 final class DeleteBomAction extends BaseAction
 {

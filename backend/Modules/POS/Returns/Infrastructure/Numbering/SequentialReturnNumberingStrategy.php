@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\POS\Returns\Infrastructure\Numbering;
 
+use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
 use Modules\POS\Returns\Domain\Contracts\ReturnNumberingStrategyInterface;
 
@@ -18,10 +19,10 @@ use Modules\POS\Returns\Domain\Contracts\ReturnNumberingStrategyInterface;
  */
 final class SequentialReturnNumberingStrategy implements ReturnNumberingStrategyInterface
 {
-    public function next(string $terminalId, \DateTimeImmutable $issuedAt): string
+    public function next(string $terminalId, DateTimeImmutable $issuedAt): string
     {
-        $date          = $issuedAt->format('Y-m-d');
-        $displayDate   = $issuedAt->format('Ymd');
+        $date = $issuedAt->format('Y-m-d');
+        $displayDate = $issuedAt->format('Ymd');
         $terminalShort = $this->abbreviateTerminalId($terminalId);
 
         $sequence = DB::transaction(function () use ($terminalId, $date): int {
@@ -33,9 +34,9 @@ final class SequentialReturnNumberingStrategy implements ReturnNumberingStrategy
 
             DB::table('pos_return_counters')->upsert(
                 [
-                    'terminal_id'  => $terminalId,
+                    'terminal_id' => $terminalId,
                     'counter_date' => $date,
-                    'sequence'     => 1,
+                    'sequence' => 1,
                 ],
                 ['terminal_id', 'counter_date'],
                 ['sequence' => DB::raw('pos_return_counters.sequence + 1')],

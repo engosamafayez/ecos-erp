@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\Core\BusinessAttribution\Presentation\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -14,12 +16,12 @@ class EntityStateResource extends JsonResource
     {
         return [
             'data' => [
-                'entity_type'    => $this->entityState->entityType,
-                'entity_id'      => $this->entityState->entityId,
-                'as_of'          => $this->entityState->asOf->toIso8601String(),
+                'entity_type' => $this->entityState->entityType,
+                'entity_id' => $this->entityState->entityId,
+                'as_of' => $this->entityState->asOf->toIso8601String(),
                 'events_applied' => $this->entityState->eventsApplied,
-                'last_event_at'  => $this->entityState->lastEventAt?->toIso8601String(),
-                'state'          => $this->entityState->state,
+                'last_event_at' => $this->entityState->lastEventAt?->toIso8601String(),
+                'state' => $this->entityState->state,
             ],
         ];
     }

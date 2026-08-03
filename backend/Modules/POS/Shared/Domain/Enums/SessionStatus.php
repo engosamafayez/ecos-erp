@@ -6,10 +6,10 @@ namespace Modules\POS\Shared\Domain\Enums;
 
 enum SessionStatus: string
 {
-    case Open            = 'open';
-    case Suspended       = 'suspended';
+    case Open = 'open';
+    case Suspended = 'suspended';
     case RecoveryPending = 'recovery_pending';
-    case Closed          = 'closed';
+    case Closed = 'closed';
 
     /** The session is in an active or recoverable state. */
     public function isActive(): bool

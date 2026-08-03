@@ -10,6 +10,6 @@ final class TokenExpired
 {
     public function __construct(
         public readonly MarketingConnection $connection,
-        public readonly ?string             $expiredAt = null,
+        public readonly ?string $expiredAt = null,
     ) {}
 }

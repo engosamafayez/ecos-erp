@@ -26,18 +26,18 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 final class CampaignAnalyticsController extends Controller
 {
     public function __construct(
-        private readonly MarketingKpiEngine    $engine,
-        private readonly GenerateReportAction  $reportAction,
+        private readonly MarketingKpiEngine $engine,
+        private readonly GenerateReportAction $reportAction,
     ) {}
 
     public function index(Request $request): JsonResponse
     {
-        $filter   = IntelligenceFilterDto::fromRequest($request);
-        $sortBy   = $this->allowedSort($request->query('sort_by', 'total_spend'));
-        $sortDir  = $request->query('sort_direction', 'desc') === 'asc' ? 'asc' : 'desc';
-        $groupBy  = $request->query('group_by');
-        $perPage  = min((int) $request->query('per_page', 20), 200);
-        $page     = max(1, (int) $request->query('page', 1));
+        $filter = IntelligenceFilterDto::fromRequest($request);
+        $sortBy = $this->allowedSort($request->query('sort_by', 'total_spend'));
+        $sortDir = $request->query('sort_direction', 'desc') === 'asc' ? 'asc' : 'desc';
+        $groupBy = $request->query('group_by');
+        $perPage = min((int) $request->query('per_page', 20), 200);
+        $page = max(1, (int) $request->query('page', 1));
 
         $result = $this->engine->campaignBreakdown($filter, $sortBy, $sortDir, $groupBy, $perPage, $page);
 
@@ -46,13 +46,13 @@ final class CampaignAnalyticsController extends Controller
         return response()->json([
             'data' => $result['data'],
             'meta' => [
-                'total'        => $result['total'],
-                'per_page'     => $perPage,
+                'total' => $result['total'],
+                'per_page' => $perPage,
                 'current_page' => $page,
-                'last_page'    => (int) ceil($result['total'] / $perPage),
-                'date_from'    => $start,
-                'date_to'      => $end,
-                'sort_by'      => $sortBy,
+                'last_page' => (int) ceil($result['total'] / $perPage),
+                'date_from' => $start,
+                'date_to' => $end,
+                'sort_by' => $sortBy,
                 'sort_direction' => $sortDir,
             ],
         ]);
@@ -60,9 +60,9 @@ final class CampaignAnalyticsController extends Controller
 
     public function export(Request $request): StreamedResponse|\Illuminate\Http\Response
     {
-        $filter  = IntelligenceFilterDto::fromRequest($request);
-        $format  = $this->allowedFormat($request->query('format', 'csv'));
-        $sortBy  = $this->allowedSort($request->query('sort_by', 'total_spend'));
+        $filter = IntelligenceFilterDto::fromRequest($request);
+        $format = $this->allowedFormat($request->query('format', 'csv'));
+        $sortBy = $this->allowedSort($request->query('sort_by', 'total_spend'));
         $actorId = $request->user()?->id;
 
         return $this->reportAction->campaignReport($filter, $format, $sortBy, $actorId);
@@ -84,6 +84,7 @@ final class CampaignAnalyticsController extends Controller
     private function allowedSort(string $value): string
     {
         $allowed = ['total_spend', 'total_revenue', 'total_purchases', 'total_leads', 'total_clicks', 'total_impressions', 'total_reach'];
+
         return in_array($value, $allowed, true) ? $value : 'total_spend';
     }
 

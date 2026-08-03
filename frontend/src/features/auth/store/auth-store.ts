@@ -25,6 +25,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (credentials) => {
     const { token, user } = await authService.login(credentials);
     tokenStorage.set(token);
+    if (user.company_id) {
+      localStorage.setItem('ecos:activeCompanyId', user.company_id);
+    }
     set({ user, status: 'authenticated' });
   },
 
@@ -48,6 +51,9 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     try {
       const user = await authService.me();
+      if (user.company_id && !localStorage.getItem('ecos:activeCompanyId')) {
+        localStorage.setItem('ecos:activeCompanyId', user.company_id);
+      }
       set({ user, status: 'authenticated' });
     } catch {
       tokenStorage.clear();

@@ -17,9 +17,9 @@ use Modules\POS\Application\Listeners\PosAnalyticsListener;
 use Modules\POS\Application\Listeners\PosCustomerListener;
 use Modules\POS\Application\Listeners\PosLoyaltyListener;
 use Modules\POS\Application\Listeners\PosNotificationListener;
-use Modules\POS\Application\Listeners\PosWebhookListener;
 use Modules\POS\Application\Listeners\PosSaleInventoryListener;
 use Modules\POS\Application\Listeners\PosSaleOrderListener;
+use Modules\POS\Application\Listeners\PosWebhookListener;
 
 /**
  * Registers all POS domain-event listeners.

@@ -39,8 +39,8 @@ final class DisassemblyPolicy
         // ── Rule 1: Product can disassemble ───────────────────────────────────
         if (! $request->can_disassemble) {
             return DisassemblyPolicyResult::ineligible(
-                code:     DisassemblyPolicyCode::ProductCannotDisassemble,
-                reason:   'Product is not flagged as disassemblable (can_disassemble = false).',
+                code: DisassemblyPolicyCode::ProductCannotDisassemble,
+                reason: 'Product is not flagged as disassemblable (can_disassemble = false).',
                 metadata: $ctx,
             );
         }
@@ -48,8 +48,8 @@ final class DisassemblyPolicy
         // ── Rule 2: Recipe exists ──────────────────────────────────────────────
         if (! $request->has_active_recipe) {
             return DisassemblyPolicyResult::ineligible(
-                code:     DisassemblyPolicyCode::RecipeNotFound,
-                reason:   'No active recipe (Bill of Materials) exists for this product.',
+                code: DisassemblyPolicyCode::RecipeNotFound,
+                reason: 'No active recipe (Bill of Materials) exists for this product.',
                 metadata: $ctx,
             );
         }
@@ -57,8 +57,8 @@ final class DisassemblyPolicy
         // ── Rule 3: Product is inventory-managed ───────────────────────────────
         if (! $request->is_inventory_managed) {
             return DisassemblyPolicyResult::ineligible(
-                code:     DisassemblyPolicyCode::ProductNotInventoryManaged,
-                reason:   'Product is not tracked by the inventory system.',
+                code: DisassemblyPolicyCode::ProductNotInventoryManaged,
+                reason: 'Product is not tracked by the inventory system.',
                 metadata: $ctx,
             );
         }
@@ -66,8 +66,8 @@ final class DisassemblyPolicy
         // ── Rule 4: Quantity > 0 ───────────────────────────────────────────────
         if ($request->quantity <= 0.0) {
             return DisassemblyPolicyResult::ineligible(
-                code:     DisassemblyPolicyCode::DisassemblyNotRequired,
-                reason:   'Quantity is zero or negative. No disassembly needed.',
+                code: DisassemblyPolicyCode::DisassemblyNotRequired,
+                reason: 'Quantity is zero or negative. No disassembly needed.',
                 metadata: array_merge($ctx, ['quantity' => $request->quantity]),
             );
         }
@@ -75,8 +75,8 @@ final class DisassemblyPolicy
         // ── Rule 5: Not already disassembled ──────────────────────────────────
         if ($request->already_disassembled) {
             return DisassemblyPolicyResult::ineligible(
-                code:     DisassemblyPolicyCode::AlreadyDisassembled,
-                reason:   'A disassembly transaction already exists for this trigger.',
+                code: DisassemblyPolicyCode::AlreadyDisassembled,
+                reason: 'A disassembly transaction already exists for this trigger.',
                 metadata: $ctx,
             );
         }

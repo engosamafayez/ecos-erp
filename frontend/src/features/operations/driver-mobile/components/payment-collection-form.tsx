@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useFormatter } from '@/hooks/use-formatter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,6 +27,7 @@ export function PaymentCollectionForm({
   isLoading,
   defaultAmount,
 }: PaymentCollectionFormProps) {
+  const { currency } = useFormatter();
   const [paymentType, setPaymentType] = useState('cash');
   const [amount, setAmount]           = useState(defaultAmount?.toString() ?? '');
   const [reference, setReference]     = useState('');
@@ -58,7 +60,7 @@ export function PaymentCollectionForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label>Amount (EGP) *</Label>
+        <Label>Amount ({currency}) *</Label>
         <Input
           type="number"
           min="0"

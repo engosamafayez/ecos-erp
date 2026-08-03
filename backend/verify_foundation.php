@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * TASK-INV-CRITICAL-FOUNDATION-001 — Direct Verification Script (no-faker edition)
  *
@@ -7,7 +9,6 @@
  * Run inside Docker: php verify_foundation.php
  * No PHPUnit, no faker required.
  */
-
 define('LARAVEL_START', microtime(true));
 require_once __DIR__.'/vendor/autoload.php';
 
@@ -42,7 +43,10 @@ function runTest(string $name, Closure $fn, &$passed, &$failed, array &$results)
         $results[] = ['name' => $name, 'status' => 'PASS'];
         echo "  ✓ $name\n";
     } catch (Throwable $e) {
-        try { DB::rollBack(); } catch (Throwable $_) {}
+        try {
+            DB::rollBack();
+        } catch (Throwable $_) {
+        }
         $failed++;
         $results[] = ['name' => $name, 'status' => 'FAIL', 'error' => $e->getMessage()];
         echo "  ✗ $name\n    → {$e->getMessage()}\n";
@@ -51,7 +55,7 @@ function runTest(string $name, Closure $fn, &$passed, &$failed, array &$results)
 
 function assertEquals($expected, $actual, string $msg = ''): void
 {
-    if ((string)$expected !== (string)$actual) {
+    if ((string) $expected !== (string) $actual) {
         throw new RuntimeException("Expected: $expected, Got: $actual. $msg");
     }
 }
@@ -65,7 +69,7 @@ function assertNotNull($value, string $msg = ''): void
 
 function assertGreaterThan($min, $actual, string $msg = ''): void
 {
-    if (!((float)$actual > (float)$min)) {
+    if (! ((float) $actual > (float) $min)) {
         throw new RuntimeException("Expected > $min, Got: $actual. $msg");
     }
 }
@@ -73,22 +77,25 @@ function assertGreaterThan($min, $actual, string $msg = ''): void
 // ── Schema prerequisite ───────────────────────────────────────────────────────
 echo "\n=== SCHEMA CHECK ===\n";
 $hasCol = Schema::hasColumn('inventory_receipt_layers', 'company_id');
-echo ($hasCol ? '✓' : '✗') . " company_id in inventory_receipt_layers: " . ($hasCol ? 'EXISTS' : 'MISSING') . "\n";
-if (!$hasCol) { echo "\nRun: php artisan migrate --force\n\n"; exit(1); }
+echo ($hasCol ? '✓' : '✗').' company_id in inventory_receipt_layers: '.($hasCol ? 'EXISTS' : 'MISSING')."\n";
+if (! $hasCol) {
+    echo "\nRun: php artisan migrate --force\n\n";
+    exit(1);
+}
 
 // ── Seed: pick existing records ───────────────────────────────────────────────
-$companyRow   = DB::table('companies')->whereNull('deleted_at')->first();
+$companyRow = DB::table('companies')->whereNull('deleted_at')->first();
 $warehouseRow = DB::table('warehouses')->where('company_id', $companyRow->id)->first();
-$productRow   = DB::table('products')->first();
+$productRow = DB::table('products')->first();
 
-if (!$companyRow || !$warehouseRow || !$productRow) {
+if (! $companyRow || ! $warehouseRow || ! $productRow) {
     echo "\nFATAL: No base records found (need at least 1 company + warehouse + product).\n\n";
     exit(1);
 }
 
-$company   = Company::find($companyRow->id);
+$company = Company::find($companyRow->id);
 $warehouse = Warehouse::find($warehouseRow->id);
-$product   = Product::find($productRow->id);
+$product = Product::find($productRow->id);
 
 echo "Using: company={$company->id}, warehouse={$warehouse->id}, product={$product->id}\n";
 
@@ -103,9 +110,9 @@ function seedItem(Company $company, Warehouse $warehouse, Product $product, floa
 
     return InventoryItem::query()->create([
         'warehouse_id' => $warehouse->id,
-        'product_id'   => $product->id,
-        'company_id'   => $company->id,
-        'on_hand_qty'  => $onHand,
+        'product_id' => $product->id,
+        'company_id' => $company->id,
+        'on_hand_qty' => $onHand,
         'reserved_qty' => $reserved,
     ]);
 }
@@ -114,55 +121,55 @@ function seedItem(Company $company, Warehouse $warehouse, Product $product, floa
 function seedLayer(Company $company, Warehouse $warehouse, Product $product, float $qty, float $cost): InventoryReceiptLayer
 {
     return InventoryReceiptLayer::query()->create([
-        'company_id'            => $company->id,
-        'supplier_id'           => null,
-        'product_id'            => $product->id,
-        'goods_receipt_id'      => null,
+        'company_id' => $company->id,
+        'supplier_id' => null,
+        'product_id' => $product->id,
+        'goods_receipt_id' => null,
         'goods_receipt_line_id' => null,
-        'warehouse_id'          => $warehouse->id,
-        'received_qty'          => $qty,
-        'remaining_qty'         => $qty,
-        'landed_unit_cost'      => $cost,
-        'sale_price_snapshot'   => null,
-        'receipt_date'          => now()->toDateString(),
+        'warehouse_id' => $warehouse->id,
+        'received_qty' => $qty,
+        'remaining_qty' => $qty,
+        'landed_unit_cost' => $cost,
+        'sale_price_snapshot' => null,
+        'receipt_date' => now()->toDateString(),
     ]);
 }
 
 // ═════════════════════════════════════════════════════════════════════════════
 echo "\n=== F-INV-C1: FIFO SCHEMA FIX ===\n";
 
-runTest('C1-01: layer stores company_id', function() use ($company, $warehouse, $product) {
+runTest('C1-01: layer stores company_id', function () use ($company, $warehouse, $product) {
     seedItem($company, $warehouse, $product, 10.0);
     $layer = seedLayer($company, $warehouse, $product, 10.0, 100.0);
     assertNotNull($layer->company_id, 'company_id must not be null');
     assertEquals($company->id, $layer->company_id, 'company_id must match warehouse company');
 }, $passed, $failed, $results);
 
-runTest('C1-02: consume() succeeds — no SQL column error', function() use ($company, $warehouse, $product) {
+runTest('C1-02: consume() succeeds — no SQL column error', function () use ($company, $warehouse, $product) {
     $item = seedItem($company, $warehouse, $product, 10.0);
     seedLayer($company, $warehouse, $product, 10.0, 100.0);
 
     $result = app(InventoryLayerConsumptionService::class)->consume(
         inventoryItemId: $item->id,
-        productId:       $product->id,
-        warehouseId:     $warehouse->id,
-        companyId:       $company->id,
-        quantity:        10.0,
+        productId: $product->id,
+        warehouseId: $warehouse->id,
+        companyId: $company->id,
+        quantity: 10.0,
     );
 
     assertEquals(10.0, $result->totalQuantity, 'totalQuantity must be 10');
     assertEquals(1000.0, $result->totalCost, 'totalCost must be 1000');
 }, $passed, $failed, $results);
 
-runTest('C1-03: tenant isolation — Company B cannot consume Company A layers', function() use ($company, $warehouse, $product) {
+runTest('C1-03: tenant isolation — Company B cannot consume Company A layers', function () use ($company, $warehouse, $product) {
     // Seed Company A item + layer
     $item = seedItem($company, $warehouse, $product, 10.0);
     seedLayer($company, $warehouse, $product, 10.0, 100.0);
 
     // Create Company B + Warehouse B
-    $companyBId   = Str::uuid()->toString();
+    $companyBId = Str::uuid()->toString();
     $warehouseBId = Str::uuid()->toString();
-    $itemBId      = Str::uuid()->toString();
+    $itemBId = Str::uuid()->toString();
 
     DB::table('companies')->insert([
         'id' => $companyBId, 'code' => 'TST-B', 'name' => 'Test Company B', 'is_active' => 1,
@@ -179,31 +186,31 @@ runTest('C1-03: tenant isolation — Company B cannot consume Company A layers',
     try {
         app(InventoryLayerConsumptionService::class)->consume(
             inventoryItemId: $itemBId,
-            productId:       $product->id,
-            warehouseId:     $warehouseBId,
-            companyId:       $companyBId,
-            quantity:        5.0,
+            productId: $product->id,
+            warehouseId: $warehouseBId,
+            companyId: $companyBId,
+            quantity: 5.0,
         );
-    } catch (\Modules\Inventory\InventoryItems\Domain\Exceptions\InsufficientStockException $e) {
+    } catch (Modules\Inventory\InventoryItems\Domain\Exceptions\InsufficientStockException $e) {
         $threw = true;
     }
 
-    if (!$threw) {
+    if (! $threw) {
         throw new RuntimeException('Expected InsufficientStockException — Company B consumed Company A layers!');
     }
 }, $passed, $failed, $results);
 
-runTest('C1-04: FIFO cost calculation from layer cost', function() use ($company, $warehouse, $product) {
+runTest('C1-04: FIFO cost calculation from layer cost', function () use ($company, $warehouse, $product) {
     $item = seedItem($company, $warehouse, $product, 20.0);
     seedLayer($company, $warehouse, $product, 10.0, 80.0);
     seedLayer($company, $warehouse, $product, 10.0, 120.0);
 
     $result = app(InventoryLayerConsumptionService::class)->consume(
         inventoryItemId: $item->id,
-        productId:       $product->id,
-        warehouseId:     $warehouse->id,
-        companyId:       $company->id,
-        quantity:        10.0,
+        productId: $product->id,
+        warehouseId: $warehouse->id,
+        companyId: $company->id,
+        quantity: 10.0,
     );
 
     // Should consume the first layer (FIFO) @ 80
@@ -214,7 +221,7 @@ runTest('C1-04: FIFO cost calculation from layer cost', function() use ($company
 // ═════════════════════════════════════════════════════════════════════════════
 echo "\n=== F-INV-C2: MANUAL STOCK WRITE PATH ===\n";
 
-runTest('C2-01: manual add updates InventoryItem.on_hand_qty', function() use ($company, $warehouse, $product) {
+runTest('C2-01: manual add updates InventoryItem.on_hand_qty', function () use ($warehouse, $product) {
     // Clear existing item so AdjustmentInAction starts fresh
     DB::table('inventory_items')
         ->where('warehouse_id', $warehouse->id)->where('product_id', $product->id)->delete();
@@ -228,7 +235,7 @@ runTest('C2-01: manual add updates InventoryItem.on_hand_qty', function() use ($
     assertGreaterThan(0, $item->on_hand_qty, 'on_hand_qty must be > 0');
 }, $passed, $failed, $results);
 
-runTest('C2-02: manual add creates StockLedgerEntry (adjustment_in)', function() use ($company, $warehouse, $product) {
+runTest('C2-02: manual add creates StockLedgerEntry (adjustment_in)', function () use ($company, $warehouse, $product) {
     DB::table('inventory_items')
         ->where('warehouse_id', $warehouse->id)->where('product_id', $product->id)->delete();
     DB::table('stock_ledger_entries')
@@ -236,7 +243,7 @@ runTest('C2-02: manual add creates StockLedgerEntry (adjustment_in)', function()
 
     app(AddManualStockAction::class)->execute($product, $warehouse, 7.0, [
         'unit_cost' => 50.0,
-        'notes'     => 'VFY test',
+        'notes' => 'VFY test',
     ]);
 
     $entry = StockLedgerEntry::query()
@@ -246,7 +253,7 @@ runTest('C2-02: manual add creates StockLedgerEntry (adjustment_in)', function()
         ->latest()->first();
 
     assertNotNull($entry, 'StockLedgerEntry must exist');
-    $movementValue = $entry->movement_type instanceof \BackedEnum
+    $movementValue = $entry->movement_type instanceof BackedEnum
         ? $entry->movement_type->value
         : (string) $entry->movement_type;
     assertEquals('adjustment_in', $movementValue, 'movement_type must be adjustment_in');
@@ -254,7 +261,7 @@ runTest('C2-02: manual add creates StockLedgerEntry (adjustment_in)', function()
     assertEquals($company->id, $entry->company_id, 'StockLedgerEntry must be company-scoped');
 }, $passed, $failed, $results);
 
-runTest('C2-03: manual add creates FIFO layer with company_id', function() use ($company, $warehouse, $product) {
+runTest('C2-03: manual add creates FIFO layer with company_id', function () use ($company, $warehouse, $product) {
     DB::table('inventory_items')
         ->where('warehouse_id', $warehouse->id)->where('product_id', $product->id)->delete();
 
@@ -271,7 +278,7 @@ runTest('C2-03: manual add creates FIFO layer with company_id', function() use (
     assertEquals(80.0, (float) $layer->landed_unit_cost, 'Layer cost must match supplied unit_cost');
 }, $passed, $failed, $results);
 
-runTest('C2-04: manually added stock is FIFO-consumable', function() use ($company, $warehouse, $product) {
+runTest('C2-04: manually added stock is FIFO-consumable', function () use ($company, $warehouse, $product) {
     DB::table('inventory_items')
         ->where('warehouse_id', $warehouse->id)->where('product_id', $product->id)->delete();
 
@@ -284,17 +291,17 @@ runTest('C2-04: manually added stock is FIFO-consumable', function() use ($compa
 
     $result = app(InventoryLayerConsumptionService::class)->consume(
         inventoryItemId: $item->id,
-        productId:       $product->id,
-        warehouseId:     $warehouse->id,
-        companyId:       $company->id,
-        quantity:        10.0,
+        productId: $product->id,
+        warehouseId: $warehouse->id,
+        companyId: $company->id,
+        quantity: 10.0,
     );
 
     assertEquals(10.0, $result->totalQuantity);
     assertEquals(600.0, $result->totalCost, 'COGS = 10 × 60 = 600');
 }, $passed, $failed, $results);
 
-runTest('C2-05: legacy stock_movements NOT written by AddManualStockAction', function() use ($company, $warehouse, $product) {
+runTest('C2-05: legacy stock_movements NOT written by AddManualStockAction', function () use ($warehouse, $product) {
     DB::table('inventory_items')
         ->where('warehouse_id', $warehouse->id)->where('product_id', $product->id)->delete();
 
@@ -309,13 +316,13 @@ runTest('C2-05: legacy stock_movements NOT written by AddManualStockAction', fun
 // ═════════════════════════════════════════════════════════════════════════════
 echo "\n=== F-INV-H6: ATOMICITY — CODE VERIFICATION ===\n";
 
-runTest('H6-01: OrderReservationAudit::record() is inside DB::transaction()', function() {
+runTest('H6-01: OrderReservationAudit::record() is inside DB::transaction()', function () {
     $src = file_get_contents(__DIR__.'/Modules/Commerce/Orders/Application/Actions/ShipOrderInventoryAction.php');
 
     // Verify audit call appears after the $order->update() call and inside the transaction closure
     $transactionPos = strpos($src, 'DB::transaction(function ()');
-    $auditPos       = strpos($src, 'OrderReservationAudit::record(');
-    $closingBrace   = strrpos($src, '});'); // last closing brace = end of transaction
+    $auditPos = strpos($src, 'OrderReservationAudit::record(');
+    $closingBrace = strrpos($src, '});'); // last closing brace = end of transaction
 
     if ($transactionPos === false) {
         throw new RuntimeException('DB::transaction not found in ShipOrderInventoryAction');
@@ -338,10 +345,10 @@ runTest('H6-01: OrderReservationAudit::record() is inside DB::transaction()', fu
     // Passed: audit is inside transaction
 }, $passed, $failed, $results);
 
-runTest('H6-02: previousReservationStatus captured before transaction starts', function() {
+runTest('H6-02: previousReservationStatus captured before transaction starts', function () {
     $src = file_get_contents(__DIR__.'/Modules/Commerce/Orders/Application/Actions/ShipOrderInventoryAction.php');
 
-    $capturePos     = strpos($src, '$previousReservationStatus = $order->reservation_status');
+    $capturePos = strpos($src, '$previousReservationStatus = $order->reservation_status');
     $transactionPos = strpos($src, 'DB::transaction(function ()');
 
     if ($capturePos === false) {
@@ -364,11 +371,11 @@ runTest('H6-02: previousReservationStatus captured before transaction starts', f
     }
 }, $passed, $failed, $results);
 
-runTest('H6-03: order_reservation_audit table has correct schema', function() {
+runTest('H6-03: order_reservation_audit table has correct schema', function () {
     $cols = Schema::getColumnListing('order_reservation_audits');
     $required = ['id', 'order_id', 'from_status', 'to_status', 'reason', 'warehouse_id', 'actor_id', 'actor_type'];
     foreach ($required as $col) {
-        if (!in_array($col, $cols)) {
+        if (! in_array($col, $cols)) {
             throw new RuntimeException("order_reservation_audits missing column: $col");
         }
     }
@@ -377,11 +384,11 @@ runTest('H6-03: order_reservation_audit table has correct schema', function() {
 // ═════════════════════════════════════════════════════════════════════════════
 echo "\n=== F-INV-C1: CreateReceiptLayersAction code verification ===\n";
 
-runTest('CRL-01: CreateReceiptLayersAction passes company_id to layer', function() {
+runTest('CRL-01: CreateReceiptLayersAction passes company_id to layer', function () {
     $src = file_get_contents(__DIR__.'/Modules/Inventory/ReceiptLayers/Application/Actions/CreateReceiptLayersAction.php');
 
     if (strpos($src, "'company_id'") === false && strpos($src, '"company_id"') === false) {
-        throw new RuntimeException("company_id not passed to InventoryReceiptLayer::create() in CreateReceiptLayersAction");
+        throw new RuntimeException('company_id not passed to InventoryReceiptLayer::create() in CreateReceiptLayersAction');
     }
     // Verify $companyId is assigned before the create() call
     if (strpos($src, '$companyId') === false) {
@@ -389,7 +396,7 @@ runTest('CRL-01: CreateReceiptLayersAction passes company_id to layer', function
     }
 }, $passed, $failed, $results);
 
-runTest('CRL-02: InventoryReceiptLayer model has company_id in fillable', function() {
+runTest('CRL-02: InventoryReceiptLayer model has company_id in fillable', function () {
     $src = file_get_contents(__DIR__.'/Modules/Inventory/ReceiptLayers/Domain/Models/InventoryReceiptLayer.php');
 
     if (strpos($src, "'company_id'") === false) {
@@ -407,7 +414,9 @@ echo "Tests: $total  Passed: \033[32m$passed\033[0m  Failed: \033[31m$failed\033
 foreach ($results as $r) {
     $icon = $r['status'] === 'PASS' ? "\033[32m✓\033[0m" : "\033[31m✗\033[0m";
     echo "  $icon {$r['name']}";
-    if (isset($r['error'])) echo "\n    → \033[33m{$r['error']}\033[0m";
+    if (isset($r['error'])) {
+        echo "\n    → \033[33m{$r['error']}\033[0m";
+    }
     echo "\n";
 }
 

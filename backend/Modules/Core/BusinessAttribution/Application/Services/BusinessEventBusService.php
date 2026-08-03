@@ -20,34 +20,34 @@ final class BusinessEventBusService
     /**
      * Publish a standardized Business Event.
      *
-     * @param  array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function publish(array $data): BusinessEvent
     {
         return BusinessEvent::create([
-            'id'               => Str::uuid()->toString(),
-            'event_uuid'       => Str::uuid()->toString(),
-            'event_name'       => $data['event_name'],
-            'category'         => $data['category'],
-            'producer_module'  => $data['producer_module'],
-            'producer_entity'  => $data['producer_entity'],
-            'entity_id'        => $data['entity_id'] ?? null,
-            'entity_type'      => $data['entity_type'] ?? null,
-            'company_id'       => $data['company_id'] ?? null,
-            'brand_id'         => $data['brand_id'] ?? null,
-            'channel_id'       => $data['channel_id'] ?? null,
-            'warehouse_id'     => $data['warehouse_id'] ?? null,
-            'business_unit'    => $data['business_unit'] ?? null,
-            'cost_center'      => $data['cost_center'] ?? null,
-            'actor_id'         => $data['actor_id'] ?? null,
-            'actor_type'       => $data['actor_type'] ?? null,
-            'occurred_at'      => $data['occurred_at'] ?? Carbon::now(),
-            'correlation_id'   => $data['correlation_id'] ?? null,
-            'business_dna_id'  => $data['business_dna_id'] ?? null,
-            'payload'          => $data['payload'] ?? [],
-            'metadata'         => $data['metadata'] ?? null,
-            'version'          => $data['version'] ?? '1.0',
-            'created_at'       => Carbon::now(),
+            'id' => Str::uuid()->toString(),
+            'event_uuid' => Str::uuid()->toString(),
+            'event_name' => $data['event_name'],
+            'category' => $data['category'],
+            'producer_module' => $data['producer_module'],
+            'producer_entity' => $data['producer_entity'],
+            'entity_id' => $data['entity_id'] ?? null,
+            'entity_type' => $data['entity_type'] ?? null,
+            'company_id' => $data['company_id'] ?? null,
+            'brand_id' => $data['brand_id'] ?? null,
+            'channel_id' => $data['channel_id'] ?? null,
+            'warehouse_id' => $data['warehouse_id'] ?? null,
+            'business_unit' => $data['business_unit'] ?? null,
+            'cost_center' => $data['cost_center'] ?? null,
+            'actor_id' => $data['actor_id'] ?? null,
+            'actor_type' => $data['actor_type'] ?? null,
+            'occurred_at' => $data['occurred_at'] ?? Carbon::now(),
+            'correlation_id' => $data['correlation_id'] ?? null,
+            'business_dna_id' => $data['business_dna_id'] ?? null,
+            'payload' => $data['payload'] ?? [],
+            'metadata' => $data['metadata'] ?? null,
+            'version' => $data['version'] ?? '1.0',
+            'created_at' => Carbon::now(),
         ]);
     }
 
@@ -92,25 +92,25 @@ final class BusinessEventBusService
     {
         $query = BusinessEvent::query()->orderByDesc('occurred_at');
 
-        if (!empty($filters['company_id'])) {
+        if (! empty($filters['company_id'])) {
             $query->where('company_id', $filters['company_id']);
         }
-        if (!empty($filters['category'])) {
+        if (! empty($filters['category'])) {
             $query->where('category', $filters['category']);
         }
-        if (!empty($filters['producer_module'])) {
+        if (! empty($filters['producer_module'])) {
             $query->where('producer_module', $filters['producer_module']);
         }
-        if (!empty($filters['date_from'])) {
+        if (! empty($filters['date_from'])) {
             $query->where('occurred_at', '>=', $filters['date_from']);
         }
-        if (!empty($filters['date_to'])) {
+        if (! empty($filters['date_to'])) {
             $query->where('occurred_at', '<=', $filters['date_to']);
         }
-        if (!empty($filters['search'])) {
+        if (! empty($filters['search'])) {
             $query->where(static function (Builder $q) use ($filters): void {
                 $q->where('event_name', 'like', "%{$filters['search']}%")
-                  ->orWhere('producer_module', 'like', "%{$filters['search']}%");
+                    ->orWhere('producer_module', 'like', "%{$filters['search']}%");
             });
         }
 

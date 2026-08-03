@@ -6,11 +6,11 @@ namespace Modules\Operations\Preparation\Domain\Enums;
 
 enum WaveItemStatus: string
 {
-    case Pending    = 'pending';
+    case Pending = 'pending';
     case InProgress = 'in_progress';
-    case Prepared   = 'prepared';
-    case Short      = 'short';
-    case Blocked    = 'blocked';
+    case Prepared = 'prepared';
+    case Short = 'short';
+    case Blocked = 'blocked';
 
     public function isComplete(): bool
     {

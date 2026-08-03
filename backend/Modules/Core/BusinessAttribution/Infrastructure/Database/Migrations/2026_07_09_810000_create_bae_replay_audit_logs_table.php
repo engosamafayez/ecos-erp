@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         if (Schema::hasTable('bae_replay_audit_logs')) {
@@ -32,9 +35,9 @@ return new class extends Migration {
             $table->timestamp('created_at')->useCurrent();
 
             $table->index(['target_entity_type', 'target_entity_id'], 'bae_ral_entity_idx');
-            $table->index(['user_id', 'executed_at'],                  'bae_ral_user_idx');
-            $table->index('replay_type',                               'bae_ral_type_idx');
-            $table->index('executed_at',                               'bae_ral_executed_idx');
+            $table->index(['user_id', 'executed_at'], 'bae_ral_user_idx');
+            $table->index('replay_type', 'bae_ral_type_idx');
+            $table->index('executed_at', 'bae_ral_executed_idx');
         });
     }
 

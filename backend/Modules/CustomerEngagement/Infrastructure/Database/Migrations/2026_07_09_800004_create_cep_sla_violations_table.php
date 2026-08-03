@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -26,9 +28,9 @@ return new class extends Migration
             $table->timestamps();
 
             // Indexes (prefix: cep_slav_)
-            $table->index(['conversation_id'],           'cep_slav_conv_idx');
-            $table->index(['status', 'due_at'],          'cep_slav_status_due_idx');
-            $table->index(['violation_type', 'status'],  'cep_slav_type_status_idx');
+            $table->index(['conversation_id'], 'cep_slav_conv_idx');
+            $table->index(['status', 'due_at'], 'cep_slav_status_due_idx');
+            $table->index(['violation_type', 'status'], 'cep_slav_type_status_idx');
         });
     }
 

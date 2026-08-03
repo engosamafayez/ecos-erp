@@ -84,8 +84,8 @@ final class DiscountDomainEventsTest extends TestCase
     {
         $data = $this->discountRequested()->toArray();
         foreach (['event_id', 'event_name', 'occurred_at', 'event_version', 'correlation_id',
-                  'discount_id', 'cashier_id', 'scope', 'discount_type',
-                  'raw_value', 'currency', 'requires_approval'] as $key) {
+            'discount_id', 'cashier_id', 'scope', 'discount_type',
+            'raw_value', 'currency', 'requires_approval'] as $key) {
             $this->assertArrayHasKey($key, $data, "Missing key: $key");
         }
     }
@@ -94,7 +94,7 @@ final class DiscountDomainEventsTest extends TestCase
     {
         $data = $this->discountApproved()->toArray();
         foreach (['event_id', 'event_name', 'occurred_at', 'discount_id',
-                  'cashier_id', 'supervisor_id', 'auto_approved'] as $key) {
+            'cashier_id', 'supervisor_id', 'auto_approved'] as $key) {
             $this->assertArrayHasKey($key, $data, "Missing key: $key");
         }
     }
@@ -103,7 +103,7 @@ final class DiscountDomainEventsTest extends TestCase
     {
         $data = $this->discountRejected()->toArray();
         foreach (['event_id', 'event_name', 'occurred_at', 'discount_id',
-                  'cashier_id', 'supervisor_id', 'reason'] as $key) {
+            'cashier_id', 'supervisor_id', 'reason'] as $key) {
             $this->assertArrayHasKey($key, $data, "Missing key: $key");
         }
     }

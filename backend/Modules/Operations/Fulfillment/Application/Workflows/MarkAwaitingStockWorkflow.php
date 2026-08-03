@@ -13,10 +13,10 @@ use Modules\Operations\Fulfillment\Domain\Contracts\FulfillmentWorkflowInterface
 use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionException;
 
 /**
- * Marks an order as waiting for inventory (processing/confirmed → awaiting_stock).
+ * Marks an order as waiting for inventory.
  *
- * Used when a reservation attempt fails due to insufficient stock.
- * The order automatically returns to Processing once inventory becomes available
+ * V3 (TASK-ORDERS-LIFECYCLE-ARCH-002): Updated allowed statuses for new lifecycle.
+ * The order automatically returns to In Progress once inventory becomes available
  * (handled by the inventory replenishment event listener).
  */
 final class MarkAwaitingStockWorkflow implements FulfillmentWorkflowInterface
@@ -29,28 +29,25 @@ final class MarkAwaitingStockWorkflow implements FulfillmentWorkflowInterface
     {
         $order = $ctx->order;
 
-        // V2: all pre-execution states may transition to Awaiting Stock.
-        // Inventory reservation (if it exists) is preserved — not released.
         $allowed = [
-            OrderStatus::Pending,
+            OrderStatus::NewOrder,
             OrderStatus::AwaitingPayment,
-            OrderStatus::Processing,
-            OrderStatus::Confirmed,
-            OrderStatus::Rescheduled,
-            OrderStatus::Review,
+            OrderStatus::InProgress,
+            OrderStatus::OnHold,
+            OrderStatus::Scheduled,
             OrderStatus::Cancelled,
         ];
 
         if (! in_array($order->status, $allowed, true)) {
             throw new WorkflowPreconditionException(
-                "Order [{$order->id}] cannot be moved to awaiting_stock from [{$order->status->value}]."
+                "Order [{$order->id}] cannot be moved to awaiting_stock from [{$order->status->value}].",
             );
         }
     }
 
     public function execute(FulfillmentContext $ctx): FulfillmentResult
     {
-        $order  = $ctx->order;
+        $order = $ctx->order;
         $reason = $ctx->get('reason') ?? 'Insufficient stock.';
 
         $order->update(['status' => OrderStatus::AwaitingStock]);

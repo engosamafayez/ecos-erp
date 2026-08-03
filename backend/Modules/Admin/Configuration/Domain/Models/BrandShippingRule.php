@@ -9,13 +9,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * @property string      $id
- * @property string      $brand_id
- * @property string      $company_id
+ * @property string $id
+ * @property string $brand_id
+ * @property string $company_id
  * @property string|null $delivery_zone_id
  * @property string|null $delivery_geography_id
- * @property float       $shipping_cost
- * @property bool        $is_enabled
+ * @property float $shipping_cost
+ * @property bool $is_enabled
  * @property string|null $effective_date
  * @property string|null $notes
  */
@@ -49,7 +49,7 @@ class BrandShippingRule extends Model
     {
         return [
             'shipping_cost' => 'float',
-            'is_enabled'    => 'boolean',
+            'is_enabled' => 'boolean',
         ];
     }
 

@@ -36,19 +36,19 @@ final class InitiativeCampaignController extends Controller
     public function assign(Request $request, MarketingInitiative $initiative): JsonResponse
     {
         $validated = $request->validate([
-            'campaign_ids'   => ['required', 'array', 'min:1'],
+            'campaign_ids' => ['required', 'array', 'min:1'],
             'campaign_ids.*' => ['required', 'string'],
         ]);
 
         $result = $this->assignAction->execute(
-            initiative:  $initiative,
+            initiative: $initiative,
             campaignIds: $validated['campaign_ids'],
-            actorId:     $request->user()?->id,
+            actorId: $request->user()?->id,
         );
 
         return response()->json([
             'message' => "{$result['assigned']} campaign(s) assigned to initiative.",
-            'result'  => $result,
+            'result' => $result,
         ]);
     }
 
@@ -57,8 +57,8 @@ final class InitiativeCampaignController extends Controller
     {
         $this->removeAction->execute(
             initiative: $initiative,
-            campaign:   $campaign,
-            actorId:    $request->user()?->id,
+            campaign: $campaign,
+            actorId: $request->user()?->id,
         );
 
         return response()->json(['message' => 'Campaign removed from initiative.']);

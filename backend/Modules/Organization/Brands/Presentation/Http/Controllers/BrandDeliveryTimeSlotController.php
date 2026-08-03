@@ -44,23 +44,23 @@ final class BrandDeliveryTimeSlotController extends Controller
         Brand::findOrFail($brandId);
 
         $data = $request->validate([
-            'name'          => 'required|string|max:100',
-            'start_time'    => 'required|date_format:H:i',
-            'end_time'      => 'required|date_format:H:i',
+            'name' => 'required|string|max:100',
+            'start_time' => 'required|date_format:H:i',
+            'end_time' => 'required|date_format:H:i',
             'display_order' => 'nullable|integer|min:0',
-            'is_active'     => 'nullable|boolean',
+            'is_active' => 'nullable|boolean',
         ]);
 
         $data['start_time'] .= ':00';
-        $data['end_time']   .= ':00';
+        $data['end_time'] .= ':00';
 
         $nextOrder = BrandDeliveryTimeSlot::where('brand_id', $brandId)->max('display_order') ?? 0;
 
         $slot = BrandDeliveryTimeSlot::create([
             ...$data,
-            'brand_id'      => $brandId,
+            'brand_id' => $brandId,
             'display_order' => $data['display_order'] ?? ($nextOrder + 1),
-            'is_active'     => $data['is_active'] ?? true,
+            'is_active' => $data['is_active'] ?? true,
         ]);
 
         return $this->created(new BrandDeliveryTimeSlotResource($slot), 'Delivery time slot created.');
@@ -71,15 +71,19 @@ final class BrandDeliveryTimeSlotController extends Controller
         $slot = BrandDeliveryTimeSlot::where('brand_id', $brandId)->findOrFail($slotId);
 
         $data = $request->validate([
-            'name'          => 'sometimes|required|string|max:100',
-            'start_time'    => 'sometimes|required|date_format:H:i',
-            'end_time'      => 'sometimes|required|date_format:H:i',
+            'name' => 'sometimes|required|string|max:100',
+            'start_time' => 'sometimes|required|date_format:H:i',
+            'end_time' => 'sometimes|required|date_format:H:i',
             'display_order' => 'nullable|integer|min:0',
-            'is_active'     => 'nullable|boolean',
+            'is_active' => 'nullable|boolean',
         ]);
 
-        if (isset($data['start_time'])) $data['start_time'] .= ':00';
-        if (isset($data['end_time']))   $data['end_time']   .= ':00';
+        if (isset($data['start_time'])) {
+            $data['start_time'] .= ':00';
+        }
+        if (isset($data['end_time'])) {
+            $data['end_time'] .= ':00';
+        }
 
         $slot->update($data);
 
@@ -105,9 +109,9 @@ final class BrandDeliveryTimeSlotController extends Controller
         $created = collect(BrandDeliveryTimeSlot::defaults())->map(
             fn (array $defaults) => BrandDeliveryTimeSlot::create([
                 ...$defaults,
-                'brand_id'  => $brandId,
+                'brand_id' => $brandId,
                 'is_active' => true,
-            ])
+            ]),
         );
 
         return $this->created(BrandDeliveryTimeSlotResource::collection($created), 'Default time slots seeded.');
@@ -119,7 +123,7 @@ final class BrandDeliveryTimeSlotController extends Controller
         Brand::findOrFail($brandId);
 
         $data = $request->validate([
-            'ordered_ids'   => 'required|array',
+            'ordered_ids' => 'required|array',
             'ordered_ids.*' => 'uuid',
         ]);
 
@@ -132,7 +136,7 @@ final class BrandDeliveryTimeSlotController extends Controller
         return BrandDeliveryTimeSlotResource::collection(
             BrandDeliveryTimeSlot::where('brand_id', $brandId)
                 ->orderBy('display_order')
-                ->get()
+                ->get(),
         );
     }
 }

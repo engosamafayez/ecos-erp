@@ -2,8 +2,6 @@ import type { LucideIcon } from 'lucide-react';
 import {
   BarChart3,
   Brain,
-  Clock,
-  Factory,
   Megaphone,
   Sparkles,
   TrendingUp,
@@ -130,18 +128,6 @@ export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
     defaultCollapsed: true,
     roles:            ['executive', 'operations', 'warehouse', 'finance', 'manufacturing', 'crm'],
   },
-  'operations-center': {
-    id:               'operations-center',
-    title:            'Operations Center',
-    category:         'operations',
-    description:      'Active preparation waves, distribution trips, and AI operational alerts',
-    icon:             Factory,
-    iconColor:        'text-orange-500',
-    defaultSize:      'full',
-    refreshMs:        15_000,
-    defaultVisible:   true,
-    defaultCollapsed: false,
-  },
 
   // ── Marketing ────────────────────────────────────────────────────────────
   'marketing-perf': {
@@ -186,20 +172,6 @@ export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
     defaultCollapsed: true,
   },
 
-  // ── Activity ─────────────────────────────────────────────────────────────
-  'activity-feed': {
-    id:               'activity-feed',
-    title:            'Activity Feed',
-    category:         'activity',
-    description:      'Chronological log of recent system events and user actions',
-    icon:             Clock,
-    iconColor:        'text-muted-foreground',
-    defaultSize:      'full',
-    refreshMs:        10_000,
-    defaultVisible:   true,
-    defaultCollapsed: false,
-  },
-
   // ── Future placeholders ───────────────────────────────────────────────────
   // Register future widgets here. The workspace will render them automatically
   // once a component is mapped in dashboard-page.tsx.
@@ -220,8 +192,6 @@ export const DEFAULT_WIDGET_ORDER: string[] = [
   'sales-revenue',
   'marketing-perf',
   'shipping-logistics',
-  'operations-center',
   'analytics-workspace',
   'ai-intelligence',
-  'activity-feed',
 ];

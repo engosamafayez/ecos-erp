@@ -32,14 +32,14 @@ class ExecutionPipelineTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->pipeline = new ExecutionPipeline();
+        $this->pipeline = new ExecutionPipeline;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private function freshTimestamp(): string
     {
-        return (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+        return (new DateTimeImmutable)->format(DateTimeInterface::ATOM);
     }
 
     private function staleTimestamp(): string
@@ -50,13 +50,13 @@ class ExecutionPipelineTest extends TestCase
     private function makeComponent(string $id = 'comp-001'): RecipeComponent
     {
         return new RecipeComponent(
-            component_id:         $id,
-            sku:                  'SKU-' . $id,
-            name:                 'Component ' . $id,
-            unit_id:              'unit-001',
-            unit_name:            'Kilogram',
-            unit_symbol:          'kg',
-            quantity:             2.0,
+            component_id: $id,
+            sku: 'SKU-'.$id,
+            name: 'Component '.$id,
+            unit_id: 'unit-001',
+            unit_name: 'Kilogram',
+            unit_symbol: 'kg',
+            quantity: 2.0,
             allow_negative_stock: false,
         );
     }
@@ -64,15 +64,15 @@ class ExecutionPipelineTest extends TestCase
     private function makeSnapshot(int $bomVersionNumber = 1, array $components = []): RecipeSnapshot
     {
         return new RecipeSnapshot(
-            recipe_id:          'recipe-abc-001',
-            bom_number:         'BOM-001',
-            version:            '1.0',
+            recipe_id: 'recipe-abc-001',
+            bom_number: 'BOM-001',
+            version: '1.0',
             bom_version_number: $bomVersionNumber,
-            product_id:         'prod-fg-001',
-            product_sku:        'FG-001',
-            product_name:       'Finished Good Alpha',
-            components:         $components ?: [$this->makeComponent()],
-            resolved_at:        $this->freshTimestamp(),
+            product_id: 'prod-fg-001',
+            product_sku: 'FG-001',
+            product_name: 'Finished Good Alpha',
+            components: $components ?: [$this->makeComponent()],
+            resolved_at: $this->freshTimestamp(),
         );
     }
 
@@ -84,16 +84,16 @@ class ExecutionPipelineTest extends TestCase
     private function makeComponentPlan(string $componentId = 'comp-001', float $qty = 10.0): ComponentConsumptionPlan
     {
         return new ComponentConsumptionPlan(
-            component_id:         $componentId,
-            sku:                  'SKU-' . $componentId,
-            name:                 'Component ' . $componentId,
-            unit_symbol:          'kg',
-            qty_to_consume:       $qty,
-            available_qty:        20.0,
-            missing_qty:          0.0,
+            component_id: $componentId,
+            sku: 'SKU-'.$componentId,
+            name: 'Component '.$componentId,
+            unit_symbol: 'kg',
+            qty_to_consume: $qty,
+            available_qty: 20.0,
+            missing_qty: 0.0,
             allow_negative_stock: false,
-            will_go_negative:     false,
-            is_blocked:           false,
+            will_go_negative: false,
+            is_blocked: false,
         );
     }
 
@@ -129,27 +129,27 @@ class ExecutionPipelineTest extends TestCase
         }
 
         return new ManufacturingPlan(
-            plan_id:                   $planId,
-            product_id:                $productId,
-            warehouse_id:              $warehouseId,
-            product_sku:               'FG-001',
-            product_name:              'Finished Good Alpha',
-            qty_to_manufacture:        5.0,
+            plan_id: $planId,
+            product_id: $productId,
+            warehouse_id: $warehouseId,
+            product_sku: 'FG-001',
+            product_name: 'Finished Good Alpha',
+            qty_to_manufacture: 5.0,
             finished_goods_to_produce: 5.0,
-            available_finished_goods:  0.0,
-            recipe_id:                 $recipeId,
-            bom_version_number:        $bomVersionNumber,
-            recipe_snapshot:           $snapshot,
-            recipe_snapshot_hash:      $snapshotHash,
-            components:                $components,
-            negative_stock_decisions:  [],
-            eligibility:               ManufacturingEligibility::CanManufacture,
-            can_proceed:               $shouldManufacture,
-            should_manufacture:        $shouldManufacture,
-            decision_type:             DecisionType::Approve,
-            decision_reason:           new DecisionReason(code: 'mfg_approved', message: 'Approved'),
-            planned_at:                $plannedAt,
-            metadata:                  $metadata,
+            available_finished_goods: 0.0,
+            recipe_id: $recipeId,
+            bom_version_number: $bomVersionNumber,
+            recipe_snapshot: $snapshot,
+            recipe_snapshot_hash: $snapshotHash,
+            components: $components,
+            negative_stock_decisions: [],
+            eligibility: ManufacturingEligibility::CanManufacture,
+            can_proceed: $shouldManufacture,
+            should_manufacture: $shouldManufacture,
+            decision_type: DecisionType::Approve,
+            decision_reason: new DecisionReason(code: 'mfg_approved', message: 'Approved'),
+            planned_at: $plannedAt,
+            metadata: $metadata,
         );
     }
 
@@ -157,7 +157,7 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_valid_plan_returns_valid_context(): void
     {
-        $plan    = $this->makePlan();
+        $plan = $this->makePlan();
         $context = $this->pipeline->prepare($plan);
 
         $this->assertInstanceOf(ManufacturingExecutionContext::class, $context);
@@ -167,7 +167,7 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_valid_plan_context_carries_plan_reference(): void
     {
-        $plan    = $this->makePlan();
+        $plan = $this->makePlan();
         $context = $this->pipeline->prepare($plan);
 
         $this->assertSame($plan, $context->plan);
@@ -177,7 +177,7 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_valid_plan_generates_execution_uuid(): void
     {
-        $plan    = $this->makePlan();
+        $plan = $this->makePlan();
         $context = $this->pipeline->prepare($plan);
 
         $this->assertNotEmpty($context->execution_uuid);
@@ -190,7 +190,7 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_each_prepare_call_generates_unique_execution_uuid(): void
     {
-        $plan     = $this->makePlan();
+        $plan = $this->makePlan();
         $context1 = $this->pipeline->prepare($plan);
         $context2 = $this->pipeline->prepare($plan);
 
@@ -199,7 +199,7 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_valid_plan_generates_decision_key(): void
     {
-        $plan    = $this->makePlan();
+        $plan = $this->makePlan();
         $context = $this->pipeline->prepare($plan);
 
         $this->assertNotEmpty($context->decision_key);
@@ -208,7 +208,7 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_decision_key_is_deterministic_across_calls(): void
     {
-        $plan     = $this->makePlan();
+        $plan = $this->makePlan();
         $context1 = $this->pipeline->prepare($plan);
         $context2 = $this->pipeline->prepare($plan);
 
@@ -217,7 +217,7 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_valid_plan_sets_execution_timestamp(): void
     {
-        $plan    = $this->makePlan();
+        $plan = $this->makePlan();
         $context = $this->pipeline->prepare($plan);
 
         $this->assertNotEmpty($context->execution_timestamp);
@@ -227,7 +227,7 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_transaction_metadata_is_populated(): void
     {
-        $plan    = $this->makePlan();
+        $plan = $this->makePlan();
         $context = $this->pipeline->prepare($plan);
 
         $meta = $context->transaction_metadata;
@@ -241,11 +241,11 @@ class ExecutionPipelineTest extends TestCase
         $this->assertSame($plan->decision_type->value, $meta['decision_type']);
     }
 
-    public function test_toArray_returns_expected_keys(): void
+    public function test_to_array_returns_expected_keys(): void
     {
-        $plan    = $this->makePlan();
+        $plan = $this->makePlan();
         $context = $this->pipeline->prepare($plan);
-        $array   = $context->toArray();
+        $array = $context->toArray();
 
         $this->assertArrayHasKey('plan_id', $array);
         $this->assertArrayHasKey('decision_key', $array);
@@ -263,27 +263,27 @@ class ExecutionPipelineTest extends TestCase
     public function test_invalid_snapshot_returns_snapshot_missing_failure(): void
     {
         $plan = new ManufacturingPlan(
-            plan_id:                   'plan-uuid-0002',
-            product_id:                'prod-fg-001',
-            warehouse_id:              'wh-001',
-            product_sku:               'FG-001',
-            product_name:              'Finished Good',
-            qty_to_manufacture:        5.0,
+            plan_id: 'plan-uuid-0002',
+            product_id: 'prod-fg-001',
+            warehouse_id: 'wh-001',
+            product_sku: 'FG-001',
+            product_name: 'Finished Good',
+            qty_to_manufacture: 5.0,
             finished_goods_to_produce: 5.0,
-            available_finished_goods:  0.0,
-            recipe_id:                 'recipe-abc-001',
-            bom_version_number:        1,
-            recipe_snapshot:           null, // ← missing
-            recipe_snapshot_hash:      null,
-            components:                [],
-            negative_stock_decisions:  [],
-            eligibility:               ManufacturingEligibility::CanManufacture,
-            can_proceed:               true,
-            should_manufacture:        true,
-            decision_type:             DecisionType::Approve,
-            decision_reason:           new DecisionReason(code: 'test', message: 'test'),
-            planned_at:                $this->freshTimestamp(),
-            metadata:                  [],
+            available_finished_goods: 0.0,
+            recipe_id: 'recipe-abc-001',
+            bom_version_number: 1,
+            recipe_snapshot: null, // ← missing
+            recipe_snapshot_hash: null,
+            components: [],
+            negative_stock_decisions: [],
+            eligibility: ManufacturingEligibility::CanManufacture,
+            can_proceed: true,
+            should_manufacture: true,
+            decision_type: DecisionType::Approve,
+            decision_reason: new DecisionReason(code: 'test', message: 'test'),
+            planned_at: $this->freshTimestamp(),
+            metadata: [],
         );
 
         $context = $this->pipeline->prepare($plan);
@@ -309,9 +309,9 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_snapshot_hash_mismatch_returns_failure(): void
     {
-        $snapshot  = $this->makeSnapshot();
+        $snapshot = $this->makeSnapshot();
         $wrongHash = str_repeat('a', 64); // 64 hex chars but wrong value
-        $plan      = $this->makePlan(snapshot: $snapshot, snapshotHash: $wrongHash);
+        $plan = $this->makePlan(snapshot: $snapshot, snapshotHash: $wrongHash);
 
         $context = $this->pipeline->prepare($plan);
 
@@ -323,11 +323,11 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_snapshot_hash_mismatch_failure_carries_stored_and_computed(): void
     {
-        $snapshot  = $this->makeSnapshot();
+        $snapshot = $this->makeSnapshot();
         $wrongHash = str_repeat('b', 64);
-        $plan      = $this->makePlan(snapshot: $snapshot, snapshotHash: $wrongHash);
+        $plan = $this->makePlan(snapshot: $snapshot, snapshotHash: $wrongHash);
 
-        $context  = $this->pipeline->prepare($plan);
+        $context = $this->pipeline->prepare($plan);
         $failures = $context->validation_result->failures;
 
         $mismatchFailure = null;
@@ -347,7 +347,7 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_already_executed_returns_already_executed_failure(): void
     {
-        $plan    = $this->makePlan();
+        $plan = $this->makePlan();
         $context = $this->pipeline->prepare($plan, alreadyExecuted: true);
 
         $this->assertFalse($context->isValid());
@@ -358,7 +358,7 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_already_executed_failure_carries_plan_id(): void
     {
-        $plan    = $this->makePlan(planId: 'plan-dupe-123');
+        $plan = $this->makePlan(planId: 'plan-dupe-123');
         $context = $this->pipeline->prepare($plan, alreadyExecuted: true);
 
         $failure = null;
@@ -375,7 +375,7 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_not_already_executed_does_not_trigger_failure(): void
     {
-        $plan    = $this->makePlan();
+        $plan = $this->makePlan();
         $context = $this->pipeline->prepare($plan, alreadyExecuted: false);
 
         $this->assertFalse(
@@ -389,7 +389,7 @@ class ExecutionPipelineTest extends TestCase
     {
         // Snapshot has bom_version_number = 1, plan says 2
         $snapshot = $this->makeSnapshot(bomVersionNumber: 1);
-        $plan     = $this->makePlan(snapshot: $snapshot, bomVersionNumber: 2);
+        $plan = $this->makePlan(snapshot: $snapshot, bomVersionNumber: 2);
 
         $context = $this->pipeline->prepare($plan);
 
@@ -402,7 +402,7 @@ class ExecutionPipelineTest extends TestCase
     public function test_recipe_version_mismatch_failure_carries_both_versions(): void
     {
         $snapshot = $this->makeSnapshot(bomVersionNumber: 1);
-        $plan     = $this->makePlan(snapshot: $snapshot, bomVersionNumber: 2);
+        $plan = $this->makePlan(snapshot: $snapshot, bomVersionNumber: 2);
 
         $context = $this->pipeline->prepare($plan);
         $failure = null;
@@ -423,7 +423,7 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_plan_not_executable_returns_failure(): void
     {
-        $plan    = $this->makePlan(shouldManufacture: false);
+        $plan = $this->makePlan(shouldManufacture: false);
         $context = $this->pipeline->prepare($plan);
 
         $this->assertFalse($context->isValid());
@@ -434,7 +434,7 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_plan_not_executable_failure_carries_eligibility(): void
     {
-        $plan    = $this->makePlan(shouldManufacture: false);
+        $plan = $this->makePlan(shouldManufacture: false);
         $context = $this->pipeline->prepare($plan);
 
         $failure = null;
@@ -453,7 +453,7 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_empty_plan_id_returns_missing_required_metadata_failure(): void
     {
-        $plan    = $this->makePlan(planId: ''); // empty plan_id
+        $plan = $this->makePlan(planId: ''); // empty plan_id
         $context = $this->pipeline->prepare($plan);
 
         $this->assertFalse($context->isValid());
@@ -464,7 +464,7 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_empty_product_id_returns_missing_required_metadata_failure(): void
     {
-        $plan    = $this->makePlan(productId: '');
+        $plan = $this->makePlan(productId: '');
         $context = $this->pipeline->prepare($plan);
 
         $this->assertTrue(
@@ -474,7 +474,7 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_empty_warehouse_id_returns_missing_required_metadata_failure(): void
     {
-        $plan    = $this->makePlan(warehouseId: '');
+        $plan = $this->makePlan(warehouseId: '');
         $context = $this->pipeline->prepare($plan);
 
         $this->assertTrue(
@@ -484,7 +484,7 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_missing_metadata_failure_lists_empty_fields(): void
     {
-        $plan    = $this->makePlan(planId: '', productId: '');
+        $plan = $this->makePlan(planId: '', productId: '');
         $context = $this->pipeline->prepare($plan);
 
         $failure = null;
@@ -505,15 +505,15 @@ class ExecutionPipelineTest extends TestCase
     public function test_correlation_id_propagated_from_plan_metadata(): void
     {
         $correlationId = 'corr-12345-abcde';
-        $plan          = $this->makePlan(metadata: ['correlation_id' => $correlationId]);
-        $context       = $this->pipeline->prepare($plan);
+        $plan = $this->makePlan(metadata: ['correlation_id' => $correlationId]);
+        $context = $this->pipeline->prepare($plan);
 
         $this->assertSame($correlationId, $context->correlation_id);
     }
 
     public function test_correlation_id_generated_when_not_in_metadata(): void
     {
-        $plan    = $this->makePlan(metadata: []); // no correlation_id
+        $plan = $this->makePlan(metadata: []); // no correlation_id
         $context = $this->pipeline->prepare($plan);
 
         $this->assertNotEmpty($context->correlation_id);
@@ -525,7 +525,7 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_generated_correlation_id_differs_from_execution_uuid(): void
     {
-        $plan    = $this->makePlan(metadata: []);
+        $plan = $this->makePlan(metadata: []);
         $context = $this->pipeline->prepare($plan);
 
         // Both are UUIDs but must be independently generated
@@ -538,27 +538,27 @@ class ExecutionPipelineTest extends TestCase
     {
         // Build a plan that violates multiple rules simultaneously
         $plan = new ManufacturingPlan(
-            plan_id:                   '', // missing
-            product_id:                'prod-fg-001',
-            warehouse_id:              'wh-001',
-            product_sku:               null,
-            product_name:              null,
-            qty_to_manufacture:        5.0,
+            plan_id: '', // missing
+            product_id: 'prod-fg-001',
+            warehouse_id: 'wh-001',
+            product_sku: null,
+            product_name: null,
+            qty_to_manufacture: 5.0,
             finished_goods_to_produce: 5.0,
-            available_finished_goods:  0.0,
-            recipe_id:                 null,
-            bom_version_number:        null, // missing
-            recipe_snapshot:           null, // missing
-            recipe_snapshot_hash:      null, // missing
-            components:                [],
-            negative_stock_decisions:  [],
-            eligibility:               ManufacturingEligibility::CanManufacture,
-            can_proceed:               true,
-            should_manufacture:        true, // executable but nothing else is valid
-            decision_type:             DecisionType::Approve,
-            decision_reason:           new DecisionReason(code: 'test', message: 'test'),
-            planned_at:                $this->freshTimestamp(),
-            metadata:                  [],
+            available_finished_goods: 0.0,
+            recipe_id: null,
+            bom_version_number: null, // missing
+            recipe_snapshot: null, // missing
+            recipe_snapshot_hash: null, // missing
+            components: [],
+            negative_stock_decisions: [],
+            eligibility: ManufacturingEligibility::CanManufacture,
+            can_proceed: true,
+            should_manufacture: true, // executable but nothing else is valid
+            decision_type: DecisionType::Approve,
+            decision_reason: new DecisionReason(code: 'test', message: 'test'),
+            planned_at: $this->freshTimestamp(),
+            metadata: [],
         );
 
         $context = $this->pipeline->prepare($plan);
@@ -571,7 +571,7 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_expired_plan_returns_plan_expired_failure(): void
     {
-        $plan    = $this->makePlan(plannedAt: $this->staleTimestamp());
+        $plan = $this->makePlan(plannedAt: $this->staleTimestamp());
         $context = $this->pipeline->prepare($plan, expirySeconds: 3600);
 
         $this->assertFalse($context->isValid());
@@ -582,7 +582,7 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_fresh_plan_does_not_expire(): void
     {
-        $plan    = $this->makePlan(plannedAt: $this->freshTimestamp());
+        $plan = $this->makePlan(plannedAt: $this->freshTimestamp());
         $context = $this->pipeline->prepare($plan, expirySeconds: 86_400);
 
         $this->assertFalse(
@@ -595,9 +595,9 @@ class ExecutionPipelineTest extends TestCase
     public function test_component_not_in_snapshot_returns_inconsistency_failure(): void
     {
         $snapshot = $this->makeSnapshot(components: [$this->makeComponent('comp-001')]);
-        $plan     = $this->makePlan(
-            snapshot:    $snapshot,
-            components:  [$this->makeComponentPlan('comp-UNKNOWN')], // not in snapshot
+        $plan = $this->makePlan(
+            snapshot: $snapshot,
+            components: [$this->makeComponentPlan('comp-UNKNOWN')], // not in snapshot
         );
 
         $context = $this->pipeline->prepare($plan);
@@ -610,9 +610,9 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_zero_qty_component_returns_inconsistency_failure(): void
     {
-        $snapshot  = $this->makeSnapshot(components: [$this->makeComponent('comp-001')]);
-        $badPlan   = $this->makeComponentPlan('comp-001', qty: 0.0); // zero qty
-        $plan      = $this->makePlan(snapshot: $snapshot, components: [$badPlan]);
+        $snapshot = $this->makeSnapshot(components: [$this->makeComponent('comp-001')]);
+        $badPlan = $this->makeComponentPlan('comp-001', qty: 0.0); // zero qty
+        $plan = $this->makePlan(snapshot: $snapshot, components: [$badPlan]);
 
         $context = $this->pipeline->prepare($plan);
 
@@ -626,27 +626,27 @@ class ExecutionPipelineTest extends TestCase
     public function test_unparseable_planned_at_throws_pipeline_exception(): void
     {
         $plan = new ManufacturingPlan(
-            plan_id:                   'plan-uuid-0099',
-            product_id:                'prod-fg-001',
-            warehouse_id:              'wh-001',
-            product_sku:               'FG-001',
-            product_name:              'Finished Good',
-            qty_to_manufacture:        5.0,
+            plan_id: 'plan-uuid-0099',
+            product_id: 'prod-fg-001',
+            warehouse_id: 'wh-001',
+            product_sku: 'FG-001',
+            product_name: 'Finished Good',
+            qty_to_manufacture: 5.0,
             finished_goods_to_produce: 5.0,
-            available_finished_goods:  0.0,
-            recipe_id:                 'recipe-abc-001',
-            bom_version_number:        1,
-            recipe_snapshot:           $this->makeSnapshot(),
-            recipe_snapshot_hash:      $this->hashSnapshot($this->makeSnapshot()),
-            components:                [$this->makeComponentPlan()],
-            negative_stock_decisions:  [],
-            eligibility:               ManufacturingEligibility::CanManufacture,
-            can_proceed:               true,
-            should_manufacture:        true,
-            decision_type:             DecisionType::Approve,
-            decision_reason:           new DecisionReason(code: 'test', message: 'test'),
-            planned_at:                'not-a-valid-timestamp-$$$$', // unparseable
-            metadata:                  [],
+            available_finished_goods: 0.0,
+            recipe_id: 'recipe-abc-001',
+            bom_version_number: 1,
+            recipe_snapshot: $this->makeSnapshot(),
+            recipe_snapshot_hash: $this->hashSnapshot($this->makeSnapshot()),
+            components: [$this->makeComponentPlan()],
+            negative_stock_decisions: [],
+            eligibility: ManufacturingEligibility::CanManufacture,
+            can_proceed: true,
+            should_manufacture: true,
+            decision_type: DecisionType::Approve,
+            decision_reason: new DecisionReason(code: 'test', message: 'test'),
+            planned_at: 'not-a-valid-timestamp-$$$$', // unparseable
+            metadata: [],
         );
 
         $this->expectException(PipelineException::class);
@@ -656,28 +656,28 @@ class ExecutionPipelineTest extends TestCase
     public function test_pipeline_exception_has_correct_reason(): void
     {
         $snapshot = $this->makeSnapshot();
-        $plan     = new ManufacturingPlan(
-            plan_id:                   'plan-uuid-0099',
-            product_id:                'prod-fg-001',
-            warehouse_id:              'wh-001',
-            product_sku:               'FG-001',
-            product_name:              'Finished Good',
-            qty_to_manufacture:        5.0,
+        $plan = new ManufacturingPlan(
+            plan_id: 'plan-uuid-0099',
+            product_id: 'prod-fg-001',
+            warehouse_id: 'wh-001',
+            product_sku: 'FG-001',
+            product_name: 'Finished Good',
+            qty_to_manufacture: 5.0,
             finished_goods_to_produce: 5.0,
-            available_finished_goods:  0.0,
-            recipe_id:                 'recipe-abc-001',
-            bom_version_number:        1,
-            recipe_snapshot:           $snapshot,
-            recipe_snapshot_hash:      $this->hashSnapshot($snapshot),
-            components:                [$this->makeComponentPlan()],
-            negative_stock_decisions:  [],
-            eligibility:               ManufacturingEligibility::CanManufacture,
-            can_proceed:               true,
-            should_manufacture:        true,
-            decision_type:             DecisionType::Approve,
-            decision_reason:           new DecisionReason(code: 'test', message: 'test'),
-            planned_at:                '###invalid###',
-            metadata:                  [],
+            available_finished_goods: 0.0,
+            recipe_id: 'recipe-abc-001',
+            bom_version_number: 1,
+            recipe_snapshot: $snapshot,
+            recipe_snapshot_hash: $this->hashSnapshot($snapshot),
+            components: [$this->makeComponentPlan()],
+            negative_stock_decisions: [],
+            eligibility: ManufacturingEligibility::CanManufacture,
+            can_proceed: true,
+            should_manufacture: true,
+            decision_type: DecisionType::Approve,
+            decision_reason: new DecisionReason(code: 'test', message: 'test'),
+            planned_at: '###invalid###',
+            metadata: [],
         );
 
         try {
@@ -692,18 +692,18 @@ class ExecutionPipelineTest extends TestCase
 
     public function test_pipeline_validation_result_valid_factory(): void
     {
-        $plan    = $this->makePlan();
+        $plan = $this->makePlan();
         $context = $this->pipeline->prepare($plan);
 
         $this->assertTrue($context->validation_result->is_valid);
         $this->assertSame([], $context->validation_result->failures);
     }
 
-    public function test_pipeline_validation_result_toArray(): void
+    public function test_pipeline_validation_result_to_array(): void
     {
-        $plan    = $this->makePlan(shouldManufacture: false);
+        $plan = $this->makePlan(shouldManufacture: false);
         $context = $this->pipeline->prepare($plan);
-        $array   = $context->validation_result->toArray();
+        $array = $context->validation_result->toArray();
 
         $this->assertFalse($array['is_valid']);
         $this->assertIsArray($array['failures']);

@@ -18,7 +18,7 @@ export function CategoryFormFields({ currentId }: CategoryFormFieldsProps) {
   return (
     <div className="flex flex-col gap-4">
       {/* Category Type (scope) */}
-      <FormField name="category_scope" label="Category Type">
+      <FormField name="category_scope" label={t('form.categoryType')}>
         <Controller
           control={control}
           name="category_scope"
@@ -32,7 +32,7 @@ export function CategoryFormFields({ currentId }: CategoryFormFieldsProps) {
                   checked={field.value === 'product'}
                   onChange={() => field.onChange('product')}
                 />
-                <span className="text-sm">Product Category</span>
+                <span className="text-sm">{t('form.scopeProduct')}</span>
               </label>
               <label className="flex items-center gap-2.5 cursor-pointer">
                 <input
@@ -42,7 +42,7 @@ export function CategoryFormFields({ currentId }: CategoryFormFieldsProps) {
                   checked={field.value === 'material'}
                   onChange={() => field.onChange('material')}
                 />
-                <span className="text-sm">Material Category</span>
+                <span className="text-sm">{t('form.scopeMaterial')}</span>
               </label>
             </div>
           )}

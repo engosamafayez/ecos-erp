@@ -30,9 +30,9 @@ final class StartAllocationAction
 
         return DB::transaction(function () use ($session, $actorId): LoadingSession {
             $session->update([
-                'status'                  => LoadingSessionStatus::Allocating->value,
-                'allocation_started_at'   => now(),
-                'updated_by'              => $actorId,
+                'status' => LoadingSessionStatus::Allocating->value,
+                'allocation_started_at' => now(),
+                'updated_by' => $actorId,
             ]);
 
             $fresh = $session->fresh() ?? $session;

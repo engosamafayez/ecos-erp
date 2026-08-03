@@ -14,7 +14,7 @@ final class CancelCountSessionAction
     {
         if (! $session->status->canTransitionTo(CountSessionStatus::Cancelled)) {
             throw new UnprocessableEntityHttpException(
-                "Count session [{$session->count_number}] cannot be cancelled from status [{$session->status->value}]."
+                "Count session [{$session->count_number}] cannot be cancelled from status [{$session->status->value}].",
             );
         }
 

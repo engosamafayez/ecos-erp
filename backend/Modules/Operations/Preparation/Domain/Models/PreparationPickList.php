@@ -11,19 +11,19 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Operations\Preparation\Domain\Enums\PickListStatus;
 
 /**
- * @property string             $id
- * @property string             $company_id
- * @property string             $preparation_wave_id
- * @property PickListStatus     $status
- * @property \Carbon\Carbon     $generated_at
- * @property string             $generated_by
+ * @property string $id
+ * @property string $company_id
+ * @property string $preparation_wave_id
+ * @property PickListStatus $status
+ * @property \Carbon\Carbon $generated_at
+ * @property string $generated_by
  * @property \Carbon\Carbon|null $started_at
  * @property \Carbon\Carbon|null $completed_at
- * @property string|null        $picker_id
- * @property string             $created_by
- * @property string             $updated_by
- * @property \Carbon\Carbon     $created_at
- * @property \Carbon\Carbon     $updated_at
+ * @property string|null $picker_id
+ * @property string $created_by
+ * @property string $updated_by
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class PreparationPickList extends Model
 {
@@ -53,9 +53,9 @@ class PreparationPickList extends Model
     protected function casts(): array
     {
         return [
-            'status'       => PickListStatus::class,
+            'status' => PickListStatus::class,
             'generated_at' => 'datetime',
-            'started_at'   => 'datetime',
+            'started_at' => 'datetime',
             'completed_at' => 'datetime',
         ];
     }

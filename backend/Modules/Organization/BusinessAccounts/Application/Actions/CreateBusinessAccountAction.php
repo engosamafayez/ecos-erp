@@ -31,18 +31,18 @@ final class CreateBusinessAccountAction extends BaseAction
             $code = $dto->code ?? $this->codeGenerator->next($dto->company_id);
 
             return $this->accounts->create([
-                'company_id'        => $dto->company_id,
-                'brand_id'          => $dto->brand_id,
-                'code'              => $code,
-                'name'              => $dto->name,
-                'provider'          => $dto->provider,
-                'status'            => $dto->status,
-                'description'       => $dto->description,
-                'logo'              => $dto->logo,
-                'oauth_config'      => $dto->oauth_config,
-                'api_keys'          => $dto->api_keys,
-                'webhook_config'    => $dto->webhook_config,
-                'sync_settings'     => $dto->sync_settings,
+                'company_id' => $dto->company_id,
+                'brand_id' => $dto->brand_id,
+                'code' => $code,
+                'name' => $dto->name,
+                'provider' => $dto->provider,
+                'status' => $dto->status,
+                'description' => $dto->description,
+                'logo' => $dto->logo,
+                'oauth_config' => $dto->oauth_config,
+                'api_keys' => $dto->api_keys,
+                'webhook_config' => $dto->webhook_config,
+                'sync_settings' => $dto->sync_settings,
                 'external_metadata' => $dto->external_metadata,
             ]);
         });

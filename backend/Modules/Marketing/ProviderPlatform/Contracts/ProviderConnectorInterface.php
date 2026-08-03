@@ -42,7 +42,7 @@ interface ProviderConnectorInterface
     /**
      * List of ProviderCapability constants this provider supports.
      *
-     * @return list<string>  ProviderCapability::* values
+     * @return list<string> ProviderCapability::* values
      */
     public function getCapabilities(): array;
 
@@ -54,8 +54,8 @@ interface ProviderConnectorInterface
     /**
      * Current credential/connection status for a company.
      *
-     * @return string  One of: not_configured, invalid, ready, connected,
-     *                 token_expired, permission_error, service_unavailable, etc.
+     * @return string One of: not_configured, invalid, ready, connected,
+     *                token_expired, permission_error, service_unavailable, etc.
      */
     public function status(string $companyId): string;
 

@@ -43,11 +43,11 @@ final class InventoryMutationAdapter implements InventoryMutationInterface
         string $executionUuid,
     ): ComponentConsumptionRecord {
         // 1. Find (or lazy-create) the inventory record, then lock it
-        $item       = $this->inventoryItems->findOrCreate($warehouseId, $component->component_id, $companyId);
+        $item = $this->inventoryItems->findOrCreate($warehouseId, $component->component_id, $companyId);
         $lockedItem = $this->inventoryItems->lockForUpdate($item->id);
 
         $onHandBefore = (float) $lockedItem->on_hand_qty;
-        $onHandAfter  = $onHandBefore - $component->qty_to_consume;
+        $onHandAfter = $onHandBefore - $component->qty_to_consume;
 
         // 2. Decrement on_hand_qty (may go negative when allow_negative_stock = true)
         $lockedItem->on_hand_qty = $onHandAfter;
@@ -56,40 +56,40 @@ final class InventoryMutationAdapter implements InventoryMutationInterface
         // 3. Immutable production-consumption ledger entry
         $entry = $this->inventoryItems->recordEntry([
             'inventory_item_id' => $lockedItem->id,
-            'warehouse_id'      => $warehouseId,
-            'product_id'        => $component->component_id,
-            'company_id'        => $companyId,
-            'movement_type'     => LedgerMovementType::ProductionConsumption->value,
-            'quantity'          => $component->qty_to_consume,
-            'on_hand_before'    => $onHandBefore,
-            'on_hand_after'     => $onHandAfter,
-            'reserved_before'   => (float) $lockedItem->reserved_qty,
-            'reserved_after'    => (float) $lockedItem->reserved_qty,
-            'reference_type'    => 'manufacturing_plan',
-            'reference_id'      => $planId,
-            'notes'             => "Consumed for manufacturing execution {$executionUuid}",
+            'warehouse_id' => $warehouseId,
+            'product_id' => $component->component_id,
+            'company_id' => $companyId,
+            'movement_type' => LedgerMovementType::ProductionConsumption->value,
+            'quantity' => $component->qty_to_consume,
+            'on_hand_before' => $onHandBefore,
+            'on_hand_after' => $onHandAfter,
+            'reserved_before' => (float) $lockedItem->reserved_qty,
+            'reserved_after' => (float) $lockedItem->reserved_qty,
+            'reference_type' => 'manufacturing_plan',
+            'reference_id' => $planId,
+            'notes' => "Consumed for manufacturing execution {$executionUuid}",
         ]);
 
         // 4. FIFO layer tracking — consume up to available, never throw for negative-stock.
         //    Returns the total FIFO cost consumed from layers for this component.
         $fifoCost = $this->consumeFifoLayers(
-            component:       $component,
-            warehouseId:     $warehouseId,
+            component: $component,
+            warehouseId: $warehouseId,
             inventoryItemId: $lockedItem->id,
-            companyId:       $companyId,
+            companyId: $companyId,
         );
 
         return new ComponentConsumptionRecord(
-            component_id:    $component->component_id,
-            sku:             $component->sku,
-            name:            $component->name,
-            unit_symbol:     $component->unit_symbol,
-            qty_consumed:    $component->qty_to_consume,
-            on_hand_before:  $onHandBefore,
-            on_hand_after:   $onHandAfter,
-            went_negative:   $onHandAfter < 0.0,
+            component_id: $component->component_id,
+            sku: $component->sku,
+            name: $component->name,
+            unit_symbol: $component->unit_symbol,
+            qty_consumed: $component->qty_to_consume,
+            on_hand_before: $onHandBefore,
+            on_hand_after: $onHandAfter,
+            went_negative: $onHandAfter < 0.0,
             ledger_entry_id: $entry->id,
-            fifo_cost:       $fifoCost,
+            fifo_cost: $fifoCost,
         );
     }
 
@@ -103,11 +103,11 @@ final class InventoryMutationAdapter implements InventoryMutationInterface
         float $unitCost,
     ): string {
         // 1. Find (or lazy-create) the finished goods inventory record, then lock it
-        $item       = $this->inventoryItems->findOrCreate($warehouseId, $productId, $companyId);
+        $item = $this->inventoryItems->findOrCreate($warehouseId, $productId, $companyId);
         $lockedItem = $this->inventoryItems->lockForUpdate($item->id);
 
         $onHandBefore = (float) $lockedItem->on_hand_qty;
-        $onHandAfter  = $onHandBefore + $qty;
+        $onHandAfter = $onHandBefore + $qty;
 
         // 2. Increment on_hand_qty
         $lockedItem->on_hand_qty = $onHandAfter;
@@ -116,18 +116,18 @@ final class InventoryMutationAdapter implements InventoryMutationInterface
         // 3. Immutable production-output ledger entry
         $entry = $this->inventoryItems->recordEntry([
             'inventory_item_id' => $lockedItem->id,
-            'warehouse_id'      => $warehouseId,
-            'product_id'        => $productId,
-            'company_id'        => $companyId,
-            'movement_type'     => LedgerMovementType::ProductionOutput->value,
-            'quantity'          => $qty,
-            'on_hand_before'    => $onHandBefore,
-            'on_hand_after'     => $onHandAfter,
-            'reserved_before'   => (float) $lockedItem->reserved_qty,
-            'reserved_after'    => (float) $lockedItem->reserved_qty,
-            'reference_type'    => 'manufacturing_plan',
-            'reference_id'      => $planId,
-            'notes'             => "Finished goods produced by execution {$executionUuid}",
+            'warehouse_id' => $warehouseId,
+            'product_id' => $productId,
+            'company_id' => $companyId,
+            'movement_type' => LedgerMovementType::ProductionOutput->value,
+            'quantity' => $qty,
+            'on_hand_before' => $onHandBefore,
+            'on_hand_after' => $onHandAfter,
+            'reserved_before' => (float) $lockedItem->reserved_qty,
+            'reserved_after' => (float) $lockedItem->reserved_qty,
+            'reference_type' => 'manufacturing_plan',
+            'reference_id' => $planId,
+            'notes' => "Finished goods produced by execution {$executionUuid}",
         ]);
 
         // 4. Create FIFO receipt layer for the manufactured FG.
@@ -135,17 +135,17 @@ final class InventoryMutationAdapter implements InventoryMutationInterface
         //    $unitCost is the weighted-average component cost passed by the Executor.
         //    When all raw materials went negative (zero FIFO layers consumed), $unitCost = 0.0.
         InventoryReceiptLayer::query()->create([
-            'company_id'            => $companyId,
-            'supplier_id'           => null,
-            'product_id'            => $productId,
-            'goods_receipt_id'      => null,
+            'company_id' => $companyId,
+            'supplier_id' => null,
+            'product_id' => $productId,
+            'goods_receipt_id' => null,
             'goods_receipt_line_id' => null,
-            'warehouse_id'          => $warehouseId,
-            'received_qty'          => $qty,
-            'remaining_qty'         => $qty,
-            'landed_unit_cost'      => $unitCost,
-            'sale_price_snapshot'   => null,
-            'receipt_date'          => now(),
+            'warehouse_id' => $warehouseId,
+            'received_qty' => $qty,
+            'remaining_qty' => $qty,
+            'landed_unit_cost' => $unitCost,
+            'sale_price_snapshot' => null,
+            'receipt_date' => now(),
         ]);
 
         return $entry->id;
@@ -184,10 +184,10 @@ final class InventoryMutationAdapter implements InventoryMutationInterface
 
         $result = $this->layerService->consume(
             inventoryItemId: $inventoryItemId,
-            productId:       $component->component_id,
-            warehouseId:     $warehouseId,
-            companyId:       $companyId,
-            quantity:        $layerQtyToConsume,
+            productId: $component->component_id,
+            warehouseId: $warehouseId,
+            companyId: $companyId,
+            quantity: $layerQtyToConsume,
         );
 
         return $result->totalCost;

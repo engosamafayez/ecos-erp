@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Marketing;
 
 use App\Models\User;
+use Exception;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Modules\Marketing\Connections\Domain\Models\MarketingConnection;
@@ -36,13 +37,14 @@ class MetaOAuthCallbackTest extends TestCase
 
         try {
             \Illuminate\Support\Facades\DB::connection()->getPdo();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->markTestSkipped(
-                'MetaOAuthCallbackTest requires a database connection. ' .
-                'Run with Docker PostgreSQL (sail test). Skipped: ' . $e->getMessage()
+                'MetaOAuthCallbackTest requires a database connection. '.
+                'Run with Docker PostgreSQL (sail test). Skipped: '.$e->getMessage(),
             );
         }
     }
+
     public function test_callback_returns_422_when_code_missing(): void
     {
         $user = User::factory()->make(['company_id' => (string) Str::uuid()]);
@@ -65,17 +67,16 @@ class MetaOAuthCallbackTest extends TestCase
     {
         Queue::fake();
 
-        $companyId  = (string) Str::uuid();
-        $user       = User::factory()->make(['company_id' => $companyId]);
+        $companyId = (string) Str::uuid();
+        $user = User::factory()->make(['company_id' => $companyId]);
         $connection = $this->makeStubConnection($companyId);
 
         $this->mock(MetaOAuthService::class, static function ($mock) use ($connection, $user): void {
             $mock->shouldReceive('handleCallback')
                 ->once()
-                ->withArgs(static fn ($code, $state, $actorId) =>
-                    $code    === 'test-code'   &&
-                    $state   === 'test-state'  &&
-                    $actorId === (string) $user->id
+                ->withArgs(static fn ($code, $state, $actorId) => $code === 'test-code' &&
+                    $state === 'test-state' &&
+                    $actorId === (string) $user->id,
                 )
                 ->andReturn($connection);
         });
@@ -90,8 +91,8 @@ class MetaOAuthCallbackTest extends TestCase
     {
         Queue::fake();
 
-        $companyId  = (string) Str::uuid();
-        $user       = User::factory()->make(['company_id' => $companyId]);
+        $companyId = (string) Str::uuid();
+        $user = User::factory()->make(['company_id' => $companyId]);
         $connection = $this->makeStubConnection($companyId);
 
         $this->mock(MetaOAuthService::class, static function ($mock) use ($connection): void {
@@ -108,8 +109,8 @@ class MetaOAuthCallbackTest extends TestCase
     {
         Queue::fake();
 
-        $companyId  = (string) Str::uuid();
-        $user       = User::factory()->make(['company_id' => $companyId]);
+        $companyId = (string) Str::uuid();
+        $user = User::factory()->make(['company_id' => $companyId]);
         $connection = $this->makeStubConnection($companyId);
 
         $this->mock(MetaOAuthService::class, static function ($mock) use ($connection): void {
@@ -128,7 +129,7 @@ class MetaOAuthCallbackTest extends TestCase
             $typeProp = $refl->getProperty('syncType');
             $typeProp->setAccessible(true);
 
-            return $idProp->getValue($job)   === $connection->id
+            return $idProp->getValue($job) === $connection->id
                 && $typeProp->getValue($job) === SyncType::Full;
         });
     }
@@ -142,13 +143,13 @@ class MetaOAuthCallbackTest extends TestCase
      */
     private function makeStubConnection(string $companyId): MarketingConnection
     {
-        $connection = new MarketingConnection();
+        $connection = new MarketingConnection;
         $connection->setRawAttributes([
-            'id'             => (string) Str::uuid(),
-            'company_id'     => $companyId,
+            'id' => (string) Str::uuid(),
+            'company_id' => $companyId,
             'connector_type' => 'meta',
-            'status'         => 'connected',
-            'label'          => 'Test Meta Connection',
+            'status' => 'connected',
+            'label' => 'Test Meta Connection',
         ]);
 
         return $connection;

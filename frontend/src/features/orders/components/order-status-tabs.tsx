@@ -13,7 +13,7 @@ type StatusTab = OrderStatus | 'all';
 
 // ── Status accent colours (background tint for active card) ──────────────────
 
-const STATUS_ACCENT: Partial<Record<StatusTab, string>> = {
+const STATUS_ACCENT: Partial<Record<string, string>> = {
   all:              'border-primary/60 bg-primary/5',
   scheduled:        'border-indigo-400/60 bg-indigo-50 dark:border-indigo-600/40 dark:bg-indigo-950/20',
   pending:          'border-yellow-400/60 bg-yellow-50 dark:border-yellow-600/40 dark:bg-yellow-950/20',
@@ -31,7 +31,7 @@ const STATUS_ACCENT: Partial<Record<StatusTab, string>> = {
   review:           'border-red-400/60 bg-red-50 dark:border-red-600/40 dark:bg-red-950/20',
 };
 
-const STATUS_DOT: Partial<Record<StatusTab, string>> = {
+const STATUS_DOT: Partial<Record<string, string>> = {
   all:              'bg-primary',
   scheduled:        'bg-indigo-400 dark:bg-indigo-500',
   pending:          'bg-yellow-400 dark:bg-yellow-500',
@@ -49,7 +49,7 @@ const STATUS_DOT: Partial<Record<StatusTab, string>> = {
   review:           'bg-red-400 dark:bg-red-500',
 };
 
-const STATUS_COUNT_COLOR: Partial<Record<StatusTab, string>> = {
+const STATUS_COUNT_COLOR: Partial<Record<string, string>> = {
   all:              'text-primary',
   scheduled:        'text-indigo-700 dark:text-indigo-400',
   pending:          'text-yellow-700 dark:text-yellow-400',

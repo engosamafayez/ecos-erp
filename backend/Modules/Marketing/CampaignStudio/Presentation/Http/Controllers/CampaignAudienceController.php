@@ -15,7 +15,7 @@ use Modules\Marketing\CampaignStudio\Domain\Models\CampaignDraft;
 class CampaignAudienceController extends Controller
 {
     public function __construct(
-        private readonly CampaignDraftService     $draftService,
+        private readonly CampaignDraftService $draftService,
         private readonly CampaignVersioningService $versioningService,
     ) {}
 
@@ -29,20 +29,20 @@ class CampaignAudienceController extends Controller
     public function update(Request $request, CampaignDraft $draft): JsonResponse
     {
         $validated = $request->validate([
-            'countries'           => ['nullable', 'array'],
-            'governorates'        => ['nullable', 'array'],
-            'cities'              => ['nullable', 'array'],
-            'radius_km'           => ['nullable', 'integer', 'min:1', 'max:1000'],
-            'age_min'             => ['nullable', 'integer', 'min:13', 'max:65'],
-            'age_max'             => ['nullable', 'integer', 'min:13', 'max:65'],
-            'genders'             => ['nullable', 'array'],
-            'languages'           => ['nullable', 'array'],
-            'interests'           => ['nullable', 'array'],
-            'behaviors'           => ['nullable', 'array'],
+            'countries' => ['nullable', 'array'],
+            'governorates' => ['nullable', 'array'],
+            'cities' => ['nullable', 'array'],
+            'radius_km' => ['nullable', 'integer', 'min:1', 'max:1000'],
+            'age_min' => ['nullable', 'integer', 'min:13', 'max:65'],
+            'age_max' => ['nullable', 'integer', 'min:13', 'max:65'],
+            'genders' => ['nullable', 'array'],
+            'languages' => ['nullable', 'array'],
+            'interests' => ['nullable', 'array'],
+            'behaviors' => ['nullable', 'array'],
             'lookalike_audiences' => ['nullable', 'array'],
-            'custom_audiences'    => ['nullable', 'array'],
-            'saved_audiences'     => ['nullable', 'array'],
-            'exclusions'          => ['nullable', 'array'],
+            'custom_audiences' => ['nullable', 'array'],
+            'saved_audiences' => ['nullable', 'array'],
+            'exclusions' => ['nullable', 'array'],
         ]);
 
         $audience = $this->draftService->updateAudience($draft, $validated);

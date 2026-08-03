@@ -42,15 +42,15 @@ final class CampaignInsightSyncService
      */
     public function syncForConnection(
         MarketingConnection $connection,
-        string              $datePreset     = 'last_30d',
-        ?string             $dateStart      = null,
-        ?string             $dateStop       = null,
-        bool                $forceRefresh   = false,
-        bool                $includeAdLevel = false,
-        ?string             $actorId        = null,
+        string $datePreset = 'last_30d',
+        ?string $dateStart = null,
+        ?string $dateStop = null,
+        bool $forceRefresh = false,
+        bool $includeAdLevel = false,
+        ?string $actorId = null,
     ): array {
         $startedAt = hrtime(true);
-        $metrics   = ['rows_imported' => 0, 'rows_skipped' => 0, 'errors' => 0, 'api_calls' => 0];
+        $metrics = ['rows_imported' => 0, 'rows_skipped' => 0, 'errors' => 0, 'api_calls' => 0];
 
         event(new InsightsSyncStarted($connection, 'connection', $datePreset, $dateStart, $dateStop, $actorId));
 
@@ -60,20 +60,20 @@ final class CampaignInsightSyncService
             foreach ($campaigns as $campaign) {
                 try {
                     $result = $this->syncForCampaign(
-                        campaign:          $campaign,
-                        connection:        $connection,
-                        datePreset:        $datePreset,
-                        dateStart:         $dateStart,
-                        dateStop:          $dateStop,
+                        campaign: $campaign,
+                        connection: $connection,
+                        datePreset: $datePreset,
+                        dateStart: $dateStart,
+                        dateStop: $dateStop,
                         includeAdSetLevel: true,
-                        includeAdLevel:    $includeAdLevel,
-                        forceRefresh:      $forceRefresh,
+                        includeAdLevel: $includeAdLevel,
+                        forceRefresh: $forceRefresh,
                     );
 
                     $metrics['rows_imported'] += $result['campaign'] + $result['adset'] + $result['ad'];
-                    $metrics['rows_skipped']  += $result['skipped'];
-                    $metrics['errors']        += $result['errors'];
-                    $metrics['api_calls']     += $result['api_calls'];
+                    $metrics['rows_skipped'] += $result['skipped'];
+                    $metrics['errors'] += $result['errors'];
+                    $metrics['api_calls'] += $result['api_calls'];
                 } catch (Throwable) {
                     $metrics['errors']++;
                 }
@@ -82,17 +82,17 @@ final class CampaignInsightSyncService
             $metrics['duration_ms'] = (int) ((hrtime(true) - $startedAt) / 1_000_000);
 
             MarketingAuditLog::record(
-                entityType:    'connection',
-                entityId:      $connection->id,
-                action:        'insights_synced',
-                actorId:       $actorId,
-                after:         [
+                entityType: 'connection',
+                entityId: $connection->id,
+                action: 'insights_synced',
+                actorId: $actorId,
+                after: [
                     ...$metrics,
                     'date_preset' => $datePreset,
-                    'date_start'  => $dateStart,
-                    'date_stop'   => $dateStop,
+                    'date_start' => $dateStart,
+                    'date_stop' => $dateStop,
                 ],
-                connectionId:  $connection->id,
+                connectionId: $connection->id,
                 connectorType: $connection->connector_type->value,
             );
 
@@ -121,14 +121,14 @@ final class CampaignInsightSyncService
      * @return array{campaign: int, adset: int, ad: int, skipped: int, errors: int, api_calls: int}
      */
     public function syncForCampaign(
-        Campaign            $campaign,
+        Campaign $campaign,
         MarketingConnection $connection,
-        string              $datePreset        = 'last_30d',
-        ?string             $dateStart         = null,
-        ?string             $dateStop          = null,
-        bool                $includeAdSetLevel = true,
-        bool                $includeAdLevel    = false,
-        bool                $forceRefresh      = false,
+        string $datePreset = 'last_30d',
+        ?string $dateStart = null,
+        ?string $dateStop = null,
+        bool $includeAdSetLevel = true,
+        bool $includeAdLevel = false,
+        bool $forceRefresh = false,
     ): array {
         $connector = $this->resolveConnector($connection);
         if ($connector === null) {
@@ -154,6 +154,7 @@ final class CampaignInsightSyncService
             foreach ($rows as $row) {
                 if (! $forceRefresh && $this->isImmutable($row['date_start'] ?? $resolvedStart)) {
                     $counts['skipped']++;
+
                     continue;
                 }
                 $this->createInsightSnapshot($row, $campaign->id, null, null, $connection, 'campaign', $datePreset);
@@ -187,6 +188,7 @@ final class CampaignInsightSyncService
                 foreach ($rows as $row) {
                     if (! $forceRefresh && $this->isImmutable($row['date_start'] ?? $resolvedStart)) {
                         $counts['skipped']++;
+
                         continue;
                     }
                     $this->createInsightSnapshot($row, $campaign->id, $adSet->id, null, $connection, 'adset', $datePreset);
@@ -212,6 +214,7 @@ final class CampaignInsightSyncService
                         foreach ($adRows as $row) {
                             if (! $forceRefresh && $this->isImmutable($row['date_start'] ?? $resolvedStart)) {
                                 $counts['skipped']++;
+
                                 continue;
                             }
                             $this->createInsightSnapshot($row, $campaign->id, $adSet->id, $ad->id, $connection, 'ad', $datePreset);
@@ -237,25 +240,25 @@ final class CampaignInsightSyncService
      * @return array{campaign: int, adset: int, total_errors: int}
      */
     public function backfill(
-        Campaign            $campaign,
+        Campaign $campaign,
         MarketingConnection $connection,
-        string              $dateStart,
-        string              $dateStop,
+        string $dateStart,
+        string $dateStop,
     ): array {
         $totals = ['campaign' => 0, 'adset' => 0, 'total_errors' => 0];
 
         foreach ($this->splitIntoMonthlyChunks($dateStart, $dateStop) as [$chunkStart, $chunkStop]) {
             $result = $this->syncForCampaign(
-                campaign:          $campaign,
-                connection:        $connection,
-                dateStart:         $chunkStart,
-                dateStop:          $chunkStop,
+                campaign: $campaign,
+                connection: $connection,
+                dateStart: $chunkStart,
+                dateStop: $chunkStop,
                 includeAdSetLevel: true,
-                forceRefresh:      true,
+                forceRefresh: true,
             );
 
-            $totals['campaign']     += $result['campaign'];
-            $totals['adset']        += $result['adset'];
+            $totals['campaign'] += $result['campaign'];
+            $totals['adset'] += $result['adset'];
             $totals['total_errors'] += $result['errors'];
         }
 
@@ -266,73 +269,73 @@ final class CampaignInsightSyncService
 
     /** @param array<string, mixed> $row */
     private function createInsightSnapshot(
-        array               $row,
-        string              $campaignId,
-        ?string             $adSetId,
-        ?string             $adId,
+        array $row,
+        string $campaignId,
+        ?string $adSetId,
+        ?string $adId,
         MarketingConnection $connection,
-        string              $level,
-        string              $datePreset,
+        string $level,
+        string $datePreset,
     ): CampaignInsight {
-        $actionMap      = $this->buildActionMap($row['actions'] ?? []);
+        $actionMap = $this->buildActionMap($row['actions'] ?? []);
         $actionValueMap = $this->buildActionMap($row['action_values'] ?? [], floats: true);
-        $cpaMap         = $this->buildActionMap($row['cost_per_action_type'] ?? [], floats: true);
+        $cpaMap = $this->buildActionMap($row['cost_per_action_type'] ?? [], floats: true);
 
         // ROAS: website_purchase_roas takes precedence over purchase_roas
         $roasWebsite = $this->extractFirstValue($row['website_purchase_roas'] ?? []);
-        $roas        = $roasWebsite ?? $this->extractFirstValue($row['purchase_roas'] ?? []);
+        $roas = $roasWebsite ?? $this->extractFirstValue($row['purchase_roas'] ?? []);
 
         return CampaignInsight::create([
-            'marketing_campaign_id'        => $campaignId,
+            'marketing_campaign_id' => $campaignId,
             'marketing_campaign_ad_set_id' => $adSetId,
-            'marketing_campaign_ad_id'     => $adId,
-            'marketing_connection_id'      => $connection->id,
-            'connector_type'               => $connection->connector_type->value,
-            'level'                        => $level,
-            'date_start'                   => $row['date_start'] ?? now()->toDateString(),
-            'date_stop'                    => $row['date_stop'] ?? now()->toDateString(),
-            'date_preset'                  => $datePreset,
+            'marketing_campaign_ad_id' => $adId,
+            'marketing_connection_id' => $connection->id,
+            'connector_type' => $connection->connector_type->value,
+            'level' => $level,
+            'date_start' => $row['date_start'] ?? now()->toDateString(),
+            'date_stop' => $row['date_stop'] ?? now()->toDateString(),
+            'date_preset' => $datePreset,
 
             // Delivery
-            'spend'              => isset($row['spend']) ? (float) $row['spend'] : null,
-            'reach'              => isset($row['reach']) ? (int) $row['reach'] : null,
-            'impressions'        => isset($row['impressions']) ? (int) $row['impressions'] : null,
-            'frequency'          => isset($row['frequency']) ? (float) $row['frequency'] : null,
+            'spend' => isset($row['spend']) ? (float) $row['spend'] : null,
+            'reach' => isset($row['reach']) ? (int) $row['reach'] : null,
+            'impressions' => isset($row['impressions']) ? (int) $row['impressions'] : null,
+            'frequency' => isset($row['frequency']) ? (float) $row['frequency'] : null,
 
             // Efficiency — Meta returns CTR as a percentage string (e.g. "1.5" means 1.5%)
-            'cpm'                => isset($row['cpm']) ? (float) $row['cpm'] : null,
-            'cpc'                => isset($row['cpc']) ? (float) $row['cpc'] : null,
-            'ctr'                => isset($row['ctr']) ? round((float) $row['ctr'] / 100, 8) : null,
-            'unique_ctr'         => isset($row['unique_ctr']) ? round((float) $row['unique_ctr'] / 100, 8) : null,
+            'cpm' => isset($row['cpm']) ? (float) $row['cpm'] : null,
+            'cpc' => isset($row['cpc']) ? (float) $row['cpc'] : null,
+            'ctr' => isset($row['ctr']) ? round((float) $row['ctr'] / 100, 8) : null,
+            'unique_ctr' => isset($row['unique_ctr']) ? round((float) $row['unique_ctr'] / 100, 8) : null,
 
             // Traffic
-            'clicks'             => isset($row['clicks']) ? (int) $row['clicks'] : null,
-            'unique_clicks'      => isset($row['unique_clicks']) ? (int) $row['unique_clicks'] : null,
-            'outbound_clicks'    => isset($row['outbound_clicks'][0]['value']) ? (int) $row['outbound_clicks'][0]['value'] : null,
+            'clicks' => isset($row['clicks']) ? (int) $row['clicks'] : null,
+            'unique_clicks' => isset($row['unique_clicks']) ? (int) $row['unique_clicks'] : null,
+            'outbound_clicks' => isset($row['outbound_clicks'][0]['value']) ? (int) $row['outbound_clicks'][0]['value'] : null,
             'landing_page_views' => $actionMap['landing_page_view'] ?? null,
-            'video_views'        => $actionMap['video_view'] ?? null,
+            'video_views' => $actionMap['video_view'] ?? null,
 
             // Conversions
-            'messages'           => $actionMap['onsite_conversion.messaging_conversation_started_7d'] ?? null,
-            'leads'              => $actionMap['lead'] ?? null,
-            'purchases'          => $actionMap['purchase'] ?? ($actionMap['omni_purchase'] ?? null),
-            'purchase_value'     => $actionValueMap['purchase'] ?? ($actionValueMap['omni_purchase'] ?? null),
-            'add_to_cart'        => $actionMap['add_to_cart'] ?? null,
-            'initiate_checkout'  => $actionMap['initiate_checkout'] ?? null,
-            'conversions'        => $actionMap['offsite_conversion.fb_pixel_purchase'] ?? ($actionMap['purchase'] ?? null),
-            'engagement'         => $actionMap['post_engagement'] ?? null,
+            'messages' => $actionMap['onsite_conversion.messaging_conversation_started_7d'] ?? null,
+            'leads' => $actionMap['lead'] ?? null,
+            'purchases' => $actionMap['purchase'] ?? ($actionMap['omni_purchase'] ?? null),
+            'purchase_value' => $actionValueMap['purchase'] ?? ($actionValueMap['omni_purchase'] ?? null),
+            'add_to_cart' => $actionMap['add_to_cart'] ?? null,
+            'initiate_checkout' => $actionMap['initiate_checkout'] ?? null,
+            'conversions' => $actionMap['offsite_conversion.fb_pixel_purchase'] ?? ($actionMap['purchase'] ?? null),
+            'engagement' => $actionMap['post_engagement'] ?? null,
 
             // Cost & Return
-            'cost_per_result'    => isset($row['cost_per_result'][0]['value']) ? (float) $row['cost_per_result'][0]['value'] : null,
-            'cpa'                => $cpaMap['purchase'] ?? ($cpaMap['omni_purchase'] ?? null),
-            'roas'               => $roas,
-            'roas_website'       => $roasWebsite,
+            'cost_per_result' => isset($row['cost_per_result'][0]['value']) ? (float) $row['cost_per_result'][0]['value'] : null,
+            'cpa' => $cpaMap['purchase'] ?? ($cpaMap['omni_purchase'] ?? null),
+            'roas' => $roas,
+            'roas_website' => $roasWebsite,
 
             // Raw provider data
-            'actions'            => $row['actions'] ?? null,
-            'breakdowns'         => null,
+            'actions' => $row['actions'] ?? null,
+            'breakdowns' => null,
 
-            'synced_at'  => now(),
+            'synced_at' => now(),
             'created_at' => now(),
         ]);
     }
@@ -350,7 +353,7 @@ final class CampaignInsightSyncService
     /**
      * Build a keyed map from a Meta actions / action_values / cost_per_action_type array.
      *
-     * @param  list<array<string, mixed>> $items
+     * @param  list<array<string, mixed>>  $items
      * @return array<string, int|float>
      */
     private function buildActionMap(array $items, bool $floats = false): array
@@ -363,6 +366,7 @@ final class CampaignInsightSyncService
             }
             $map[$key] = $floats ? (float) ($item['value'] ?? 0) : (int) ($item['value'] ?? 0);
         }
+
         return $map;
     }
 
@@ -376,6 +380,7 @@ final class CampaignInsightSyncService
         if ($first === false || ! isset($first['value'])) {
             return null;
         }
+
         return (float) $first['value'];
     }
 
@@ -393,12 +398,12 @@ final class CampaignInsightSyncService
         $today = now()->toDateString();
 
         return match ($datePreset) {
-            'last_7d'    => [now()->subDays(7)->toDateString(), $today],
-            'last_30d'   => [now()->subDays(30)->toDateString(), $today],
-            'last_90d'   => [now()->subDays(90)->toDateString(), $today],
-            'last_180d'  => [now()->subDays(180)->toDateString(), $today],
+            'last_7d' => [now()->subDays(7)->toDateString(), $today],
+            'last_30d' => [now()->subDays(30)->toDateString(), $today],
+            'last_90d' => [now()->subDays(90)->toDateString(), $today],
+            'last_180d' => [now()->subDays(180)->toDateString(), $today],
             'this_month' => [now()->startOfMonth()->toDateString(), $today],
-            default      => [now()->subDays(30)->toDateString(), $today],
+            default => [now()->subDays(30)->toDateString(), $today],
         };
     }
 
@@ -410,14 +415,14 @@ final class CampaignInsightSyncService
      */
     private function splitIntoMonthlyChunks(string $dateStart, string $dateStop): array
     {
-        $chunks  = [];
+        $chunks = [];
         $current = Carbon::parse($dateStart)->startOfDay();
-        $end     = Carbon::parse($dateStop)->startOfDay();
+        $end = Carbon::parse($dateStop)->startOfDay();
 
         while ($current->lte($end)) {
             $chunkEnd = $current->copy()->endOfMonth()->min($end);
             $chunks[] = [$current->toDateString(), $chunkEnd->toDateString()];
-            $current  = $chunkEnd->copy()->addDay();
+            $current = $chunkEnd->copy()->addDay();
         }
 
         return $chunks;

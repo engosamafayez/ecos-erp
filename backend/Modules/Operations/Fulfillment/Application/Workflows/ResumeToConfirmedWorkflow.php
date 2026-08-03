@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\Operations\Fulfillment\Application\Workflows;
 
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
-use Modules\Commerce\Orders\Domain\Enums\ReservationStatus;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentContext;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentResult;
 use Modules\Operations\Fulfillment\Domain\Contracts\FulfillmentWorkflowInterface;
@@ -25,7 +24,7 @@ final class ResumeToConfirmedWorkflow implements FulfillmentWorkflowInterface
 
         if ($order->status !== OrderStatus::Delivered) {
             throw new WorkflowPreconditionException(
-                "Order [{$order->id}] must be in Delivered status to resume-to-confirmed. Current: [{$order->status->value}]."
+                "Order [{$order->id}] must be in Delivered status to resume-to-confirmed. Current: [{$order->status->value}].",
             );
         }
 
@@ -36,8 +35,8 @@ final class ResumeToConfirmedWorkflow implements FulfillmentWorkflowInterface
         // then re-confirm through the normal Confirmed workflow.
         if ($order->inventory_shipped_at !== null) {
             throw new WorkflowPreconditionException(
-                "Order [{$order->id}] has inventory already shipped (inventory_shipped_at is set). " .
-                'Use ReturnOrderWorkflow first to restore inventory before re-confirming.'
+                "Order [{$order->id}] has inventory already shipped (inventory_shipped_at is set). ".
+                'Use ReturnOrderWorkflow first to restore inventory before re-confirming.',
             );
         }
     }
@@ -49,13 +48,13 @@ final class ResumeToConfirmedWorkflow implements FulfillmentWorkflowInterface
         // Reset lifecycle fields so the order can re-enter the reservation cycle.
         // Guard above ensures inventory_shipped_at is null (stock was not yet consumed).
         $order->update([
-            'status'                          => OrderStatus::Confirmed,
-            'inventory_reserved_at'           => null,
-            'inventory_released_at'           => null,
-            'inventory_shipped_at'            => null,
-            'inventory_completed_at'          => null,
-            'reservation_status'              => null,
-            'reservation_failure_reason'      => null,
+            'status' => OrderStatus::InProgress,
+            'inventory_reserved_at' => null,
+            'inventory_released_at' => null,
+            'inventory_shipped_at' => null,
+            'inventory_completed_at' => null,
+            'reservation_status' => null,
+            'reservation_failure_reason' => null,
             'partial_reservation_approved_at' => null,  // H-4: stale approval must be re-granted
         ]);
 
@@ -63,7 +62,7 @@ final class ResumeToConfirmedWorkflow implements FulfillmentWorkflowInterface
 
         return FulfillmentResult::success(
             $order,
-            "Order #{$order->order_number} resumed to Confirmed.",
+            "Order #{$order->order_number} resumed to In Progress.",
             ['actor_id' => $ctx->actorId],
         );
     }

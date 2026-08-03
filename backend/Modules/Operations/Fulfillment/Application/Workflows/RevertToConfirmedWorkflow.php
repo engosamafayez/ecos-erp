@@ -22,14 +22,14 @@ final class RevertToConfirmedWorkflow implements FulfillmentWorkflowInterface
     public function guard(FulfillmentContext $ctx): void
     {
         $allowed = [
-            OrderStatus::Processing,
+            OrderStatus::InProgress,
             OrderStatus::AwaitingStock,
-            OrderStatus::Review,
+            OrderStatus::OnHold,
         ];
 
         if (! in_array($ctx->order->status, $allowed, true)) {
             throw new WorkflowPreconditionException(
-                "Order [{$ctx->order->id}] must be in Processing, AwaitingStock, or Review to revert to Confirmed. Current: [{$ctx->order->status->value}]."
+                "Order [{$ctx->order->id}] must be in InProgress, AwaitingStock, or OnHold to revert. Current: [{$ctx->order->status->value}].",
             );
         }
     }
@@ -38,12 +38,12 @@ final class RevertToConfirmedWorkflow implements FulfillmentWorkflowInterface
     {
         $order = $ctx->order;
 
-        $order->update(['status' => OrderStatus::Confirmed]);
+        $order->update(['status' => OrderStatus::InProgress]);
         $order->refresh();
 
         return FulfillmentResult::success(
             $order,
-            "Order #{$order->order_number} reverted to Confirmed.",
+            "Order #{$order->order_number} reverted to In Progress.",
             ['actor_id' => $ctx->actorId],
         );
     }

@@ -65,7 +65,7 @@ final class GetSupplierTimelineQuery
                         po_number,
                         approved_by,
                         approved_at
-                    ")
+                    "),
             );
 
         // ── Events from goods_receipts (via purchase_orders) ─────────────────
@@ -96,12 +96,12 @@ final class GetSupplierTimelineQuery
             ->get();
 
         return $rows->map(fn (object $r): array => [
-            'id'          => $r->id,
-            'type'        => $r->event_type,
-            'title'       => $r->title,
+            'id' => $r->id,
+            'type' => $r->event_type,
+            'title' => $r->title,
             'description' => $r->description,
-            'reference'   => $r->reference,
-            'actor'       => $r->actor,
+            'reference' => $r->reference,
+            'actor' => $r->actor,
             'occurred_at' => $r->occurred_at,
         ]);
     }

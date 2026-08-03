@@ -70,9 +70,9 @@ class Company extends Model
     protected function casts(): array
     {
         return [
-            'is_active'          => 'boolean',
-            'fiscal_year_start'  => 'date',
-            'fiscal_year_end'    => 'date',
+            'is_active' => 'boolean',
+            'fiscal_year_start' => 'date',
+            'fiscal_year_end' => 'date',
         ];
     }
 

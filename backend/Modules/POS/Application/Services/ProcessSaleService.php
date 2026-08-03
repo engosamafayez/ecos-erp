@@ -36,13 +36,13 @@ use Modules\POS\Shared\Domain\ValueObjects\Money;
 final class ProcessSaleService
 {
     public function __construct(
-        private readonly CartRepositoryInterface           $cartRepo,
-        private readonly PaymentRepositoryInterface        $paymentRepo,
-        private readonly SaleRepositoryInterface           $saleRepo,
-        private readonly ReceiptRepositoryInterface        $receiptRepo,
+        private readonly CartRepositoryInterface $cartRepo,
+        private readonly PaymentRepositoryInterface $paymentRepo,
+        private readonly SaleRepositoryInterface $saleRepo,
+        private readonly ReceiptRepositoryInterface $receiptRepo,
         private readonly ReceiptNumberingStrategyInterface $receiptNumbering,
-        private readonly DomainEventPublisherInterface     $publisher,
-        private readonly SessionRepositoryInterface        $sessionRepo,
+        private readonly DomainEventPublisherInterface $publisher,
+        private readonly SessionRepositoryInterface $sessionRepo,
     ) {}
 
     public function execute(ProcessSaleCommand $command): ProcessSaleResult
@@ -53,13 +53,13 @@ final class ProcessSaleService
             throw CartNotFoundException::withId($command->cartId);
         }
 
-        if (!$cart->isActive() && !$cart->isPaying()) {
+        if (! $cart->isActive() && ! $cart->isPaying()) {
             throw CartNotReadyException::notActive($command->cartId, $cart->status->value);
         }
 
-        $sale          = null;
-        $receipt       = null;
-        $payment       = null;
+        $sale = null;
+        $receipt = null;
+        $payment = null;
         $receiptNumber = null;
 
         DB::transaction(function () use ($command, $cart, &$sale, &$receipt, &$payment, &$receiptNumber) {
@@ -73,9 +73,9 @@ final class ProcessSaleService
             }
 
             $payment = Payment::initiate(
-                cartId:    (string) $cart->id,
+                cartId: (string) $cart->id,
                 sessionId: $command->sessionId,
-                shiftId:   $command->shiftId,
+                shiftId: $command->shiftId,
                 terminalId: $command->terminalId,
                 cashierId: $command->cashierId,
                 cartTotal: $cart->getTotal(),
@@ -83,8 +83,8 @@ final class ProcessSaleService
 
             foreach ($command->payments as $tender) {
                 $payment->addTender(
-                    type:      PaymentMethodType::from($tender['type']),
-                    amount:    Money::of($tender['amount'], $tender['currency']),
+                    type: PaymentMethodType::from($tender['type']),
+                    amount: Money::of($tender['amount'], $tender['currency']),
                     reference: $tender['reference'] ?? null,
                 );
             }
@@ -95,31 +95,31 @@ final class ProcessSaleService
             $cartLines = $cart->getLines();
 
             $saleLines = array_map(
-                fn($line) => SaleLine::fromCartLine($line->toArray()),
+                fn ($line) => SaleLine::fromCartLine($line->toArray()),
                 $cartLines,
             );
 
             $paymentSummaries = array_map(
-                fn($tender) => PaymentSummaryLine::fromTender($tender->toArray()),
+                fn ($tender) => PaymentSummaryLine::fromTender($tender->toArray()),
                 $payment->getTenders(),
             );
 
             $sale = Sale::record(
-                cartId:           (string) $cart->id,
-                paymentId:        (string) $payment->id,
-                sessionId:        $command->sessionId,
-                shiftId:          $command->shiftId,
-                terminalId:       $command->terminalId,
-                cashierId:        $command->cashierId,
-                customerId:       $command->customerId,
-                currency:         $command->currency,
-                receiptNumber:    $receiptNumber,
-                lines:            $saleLines,
-                subtotal:         $cart->getSubtotal(),
-                discountTotal:    $cart->getDiscountTotal(),
-                total:            $cart->getTotal(),
-                amountPaid:       $payment->getAmountTendered(),
-                changeGiven:      $payment->getChangeDue(),
+                cartId: (string) $cart->id,
+                paymentId: (string) $payment->id,
+                sessionId: $command->sessionId,
+                shiftId: $command->shiftId,
+                terminalId: $command->terminalId,
+                cashierId: $command->cashierId,
+                customerId: $command->customerId,
+                currency: $command->currency,
+                receiptNumber: $receiptNumber,
+                lines: $saleLines,
+                subtotal: $cart->getSubtotal(),
+                discountTotal: $cart->getDiscountTotal(),
+                total: $cart->getTotal(),
+                amountPaid: $payment->getAmountTendered(),
+                changeGiven: $payment->getChangeDue(),
                 paymentSummaries: $paymentSummaries,
             );
 
@@ -130,20 +130,20 @@ final class ProcessSaleService
             $this->cartRepo->save($cart);
 
             $receiptLineItems = array_map(
-                fn(SaleLine $sl) => ReceiptLineItem::of(
-                    productId:       $sl->productId,
-                    productName:     $sl->productName,
-                    sku:             $sl->sku,
-                    quantityValue:   $sl->quantity->value,
+                fn (SaleLine $sl) => ReceiptLineItem::of(
+                    productId: $sl->productId,
+                    productName: $sl->productName,
+                    sku: $sl->sku,
+                    quantityValue: $sl->quantity->value,
                     unitPriceAmount: $sl->unitPrice->amount,
                     lineTotalAmount: $sl->lineTotal->amount,
-                    currency:        $sl->lineTotal->currency,
+                    currency: $sl->lineTotal->currency,
                 ),
                 $saleLines,
             );
 
             $receiptPayments = array_map(
-                fn($tender) => ReceiptPayment::of(
+                fn ($tender) => ReceiptPayment::of(
                     $tender->type->value,
                     $tender->amount->amount,
                     $tender->amount->currency,
@@ -152,32 +152,32 @@ final class ProcessSaleService
             );
 
             $receiptTotals = ReceiptTotals::of(
-                subtotalAmount:  $cart->getSubtotal()->amount,
-                discountAmount:  $cart->getDiscountTotal()->amount,
-                taxAmount:       '0.00',
-                totalAmount:     $cart->getTotal()->amount,
-                tenderedAmount:  $payment->getAmountTendered()->amount,
-                changeAmount:    $payment->getChangeDue()->amount,
-                currency:        $command->currency,
+                subtotalAmount: $cart->getSubtotal()->amount,
+                discountAmount: $cart->getDiscountTotal()->amount,
+                taxAmount: '0.00',
+                totalAmount: $cart->getTotal()->amount,
+                tenderedAmount: $payment->getAmountTendered()->amount,
+                changeAmount: $payment->getChangeDue()->amount,
+                currency: $command->currency,
             );
 
             $receipt = Receipt::issue(
-                receiptNumber:             $receiptNumber,
-                type:                      ReceiptType::Sale,
-                originalTransactionId:     (string) $sale->id,
+                receiptNumber: $receiptNumber,
+                type: ReceiptType::Sale,
+                originalTransactionId: (string) $sale->id,
                 originalTransactionNumber: $sale->receipt_number,
-                terminalId:                $command->terminalId,
-                sessionId:                 $command->sessionId,
-                shiftId:                   $command->shiftId,
-                cashierId:                 $command->cashierId,
-                cashierName:               $command->cashierName,
-                customerId:                $command->customerId,
-                customerName:              $command->customerName,
-                currency:                  $command->currency,
-                lineItems:                 $receiptLineItems,
-                totals:                    $receiptTotals,
-                payments:                  $receiptPayments,
-                issuedAt:                  new DateTimeImmutable('now', new DateTimeZone('UTC')),
+                terminalId: $command->terminalId,
+                sessionId: $command->sessionId,
+                shiftId: $command->shiftId,
+                cashierId: $command->cashierId,
+                cashierName: $command->cashierName,
+                customerId: $command->customerId,
+                customerName: $command->customerName,
+                currency: $command->currency,
+                lineItems: $receiptLineItems,
+                totals: $receiptTotals,
+                payments: $receiptPayments,
+                issuedAt: new DateTimeImmutable('now', new DateTimeZone('UTC')),
             );
 
             $this->receiptRepo->save($receipt);
@@ -195,54 +195,54 @@ final class ProcessSaleService
 
         if ($session === null || $session->warehouse_id === null || $session->company_id === null) {
             Log::channel('daily')->warning('[POS] Session context incomplete — SaleFinalized will NOT be published', [
-                'sale_id'    => (string) $sale->id,
+                'sale_id' => (string) $sale->id,
                 'session_id' => $command->sessionId,
             ]);
 
             $this->publisher->publishAll($domainEvents);
 
             return new ProcessSaleResult(
-                saleId:        (string) $sale->id,
-                receiptId:     (string) $receipt->id,
+                saleId: (string) $sale->id,
+                receiptId: (string) $receipt->id,
                 receiptNumber: $receiptNumber,
-                totalAmount:   $sale->getTotal()->amount,
-                amountPaid:    $sale->getAmountPaid()->amount,
-                changeGiven:   $sale->getChangeGiven()->amount,
-                currency:      $sale->currency,
+                totalAmount: $sale->getTotal()->amount,
+                amountPaid: $sale->getAmountPaid()->amount,
+                changeGiven: $sale->getChangeGiven()->amount,
+                currency: $sale->currency,
             );
         }
 
         $saleFinalized = SaleFinalized::fromSaleContext(
-            saleId:           (string) $sale->id,
-            receiptNumber:    $receiptNumber,
-            companyId:        (string) $session->company_id,
-            channelId:        $session->channel_id ? (string) $session->channel_id : null,
-            warehouseId:      (string) $session->warehouse_id,
-            sessionId:        $command->sessionId,
-            shiftId:          $command->shiftId,
-            terminalId:       $command->terminalId,
-            cashierId:        $command->cashierId,
-            customerId:       $command->customerId,
-            saleLines:        $sale->getLines(),
+            saleId: (string) $sale->id,
+            receiptNumber: $receiptNumber,
+            companyId: (string) $session->company_id,
+            channelId: $session->channel_id ? (string) $session->channel_id : null,
+            warehouseId: (string) $session->warehouse_id,
+            sessionId: $command->sessionId,
+            shiftId: $command->shiftId,
+            terminalId: $command->terminalId,
+            cashierId: $command->cashierId,
+            customerId: $command->customerId,
+            saleLines: $sale->getLines(),
             paymentSummaries: $sale->getPaymentSummaries(),
-            subtotal:         $sale->getSubtotal()->amount,
-            discountTotal:    $sale->getDiscountTotal()->amount,
-            grandTotal:       $sale->getTotal()->amount,
-            amountPaid:       $sale->getAmountPaid()->amount,
-            changeGiven:      $sale->getChangeGiven()->amount,
-            currency:         $sale->currency,
+            subtotal: $sale->getSubtotal()->amount,
+            discountTotal: $sale->getDiscountTotal()->amount,
+            grandTotal: $sale->getTotal()->amount,
+            amountPaid: $sale->getAmountPaid()->amount,
+            changeGiven: $sale->getChangeGiven()->amount,
+            currency: $sale->currency,
         );
 
         $this->publisher->publishAll(array_merge($domainEvents, [$saleFinalized]));
 
         return new ProcessSaleResult(
-            saleId:        (string) $sale->id,
-            receiptId:     (string) $receipt->id,
+            saleId: (string) $sale->id,
+            receiptId: (string) $receipt->id,
             receiptNumber: $receiptNumber,
-            totalAmount:   $sale->getTotal()->amount,
-            amountPaid:    $sale->getAmountPaid()->amount,
-            changeGiven:   $sale->getChangeGiven()->amount,
-            currency:      $sale->currency,
+            totalAmount: $sale->getTotal()->amount,
+            amountPaid: $sale->getAmountPaid()->amount,
+            changeGiven: $sale->getChangeGiven()->amount,
+            currency: $sale->currency,
         );
     }
 }

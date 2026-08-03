@@ -7,6 +7,43 @@ export type BranchCompany = {
   name: string;
 };
 
+export type BranchWarehouse = {
+  id: string;
+  code: string;
+  name: string;
+};
+
+export type CoverageGovernorate = {
+  id: string;
+  name: string;
+  name_ar: string;
+};
+
+export type CoverageZone = {
+  id: string;
+  name: string;
+};
+
+export type CoverageArea = {
+  id: string;
+  branch_id: string;
+  master_governorate_id: string;
+  master_zone_id: string | null;
+  priority: number;
+  is_active: boolean;
+  governorate: CoverageGovernorate | null;
+  zone: CoverageZone | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type CoverageAreaPayload = {
+  master_governorate_id: string;
+  master_zone_id?: string | null;
+  priority?: number;
+  is_active?: boolean;
+};
+
 export type Branch = {
   id: string;
   company_id: string;
@@ -21,6 +58,11 @@ export type Branch = {
   country: string | null;
   is_head_office: boolean;
   is_active: boolean;
+  default_warehouse_id: string | null;
+  default_warehouse: BranchWarehouse | null;
+  latitude: number | null;
+  longitude: number | null;
+  coverage_areas?: CoverageArea[];
   created_at: string | null;
   updated_at: string | null;
 };
@@ -37,6 +79,9 @@ export type BranchPayload = {
   country?: string;
   is_head_office: boolean;
   is_active: boolean;
+  default_warehouse_id?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 export type BranchSortField =

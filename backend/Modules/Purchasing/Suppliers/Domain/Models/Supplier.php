@@ -41,8 +41,13 @@ class Supplier extends Model
         'phone',
         'mobile',
         'country',
+        'state',
         'city',
+        'district',
         'address',
+        'google_maps_url',
+        'opening_balance_amount',
+        'opening_balance_type',
         'notes',
         'is_active',
     ];
@@ -68,6 +73,7 @@ class Supplier extends Model
     {
         return [
             'is_active' => 'boolean',
+            'opening_balance_amount' => 'decimal:2',
         ];
     }
 

@@ -11,8 +11,8 @@ use Modules\Inventory\InventoryControl\Domain\Enums\AbcClass;
 use Modules\Inventory\Products\Domain\Models\Product;
 
 /**
- * @property string   $id
- * @property string   $product_id
+ * @property string $id
+ * @property string $product_id
  * @property AbcClass $classification
  * @property numeric-string $annual_consumption_value
  * @property numeric-string $cumulative_percentage
@@ -35,10 +35,10 @@ class InventoryAbcClassification extends Model
     protected function casts(): array
     {
         return [
-            'classification'           => AbcClass::class,
+            'classification' => AbcClass::class,
             'annual_consumption_value' => 'decimal:2',
-            'cumulative_percentage'    => 'decimal:4',
-            'calculated_at'            => 'datetime',
+            'cumulative_percentage' => 'decimal:4',
+            'calculated_at' => 'datetime',
         ];
     }
 

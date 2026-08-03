@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\POS\Returns\Domain\Exceptions;
 
-final class SaleReturnNotFoundException extends \DomainException
+use DomainException;
+
+final class SaleReturnNotFoundException extends DomainException
 {
     public static function withId(string $id): self
     {

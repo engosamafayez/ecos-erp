@@ -13,8 +13,6 @@ use Modules\Commerce\Orders\Application\Actions\ReserveOrderInventoryAction;
 use Modules\Commerce\Orders\Domain\Contracts\OrderRepositoryInterface;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Commerce\Orders\Domain\Models\Order;
-use Modules\Commerce\Orders\Domain\Models\OrderFee;
-use Modules\Commerce\Orders\Domain\Models\OrderCoupon;
 use Modules\Commerce\Shipping\Domain\Services\ShippingValidationService;
 use Modules\Commerce\Synchronization\Application\Services\WooCommerceOrderStatusTranslator;
 use Modules\Inventory\Products\Domain\Models\Product;
@@ -33,10 +31,10 @@ final class WooCommerceOrderImporter
     private const RESERVE_ON_IMPORT = ['processing', 'on-hold'];
 
     public function __construct(
-        private readonly OrderRepositoryInterface        $orders,
-        private readonly ReserveOrderInventoryAction     $reserveInventory,
-        private readonly ConfigurationManager            $config,
-        private readonly ShippingValidationService       $shippingEngine,
+        private readonly OrderRepositoryInterface $orders,
+        private readonly ReserveOrderInventoryAction $reserveInventory,
+        private readonly ConfigurationManager $config,
+        private readonly ShippingValidationService $shippingEngine,
         private readonly WooCommerceOrderStatusTranslator $statusTranslator,
     ) {}
 
@@ -53,7 +51,7 @@ final class WooCommerceOrderImporter
             return false;
         }
 
-        $policy     = $this->resolveBrandPolicy($channel);
+        $policy = $this->resolveBrandPolicy($channel);
         [$customer] = $this->resolveCustomer($wooOrder, $policy);
         [$order, $lines, $fees, $coupons] = $this->buildOrder($wooOrder, $channel, $customer);
 
@@ -105,9 +103,9 @@ final class WooCommerceOrderImporter
         $failedLines = 0;
         $errors = [];
 
-        $policy  = $this->resolveBrandPolicy($channel);
-        $page    = 1;
-        $baseUrl = rtrim($channel->store_url, '/') . '/wp-json/wc/v3/orders';
+        $policy = $this->resolveBrandPolicy($channel);
+        $page = 1;
+        $baseUrl = rtrim($channel->store_url, '/').'/wp-json/wc/v3/orders';
 
         while (true) {
             try {
@@ -134,6 +132,7 @@ final class WooCommerceOrderImporter
                     if ($externalId !== '' && $this->orderExists($externalId, (string) $channel->id)) {
                         $skippedOrders++;
                         $importedOrders--;
+
                         continue;
                     }
 
@@ -246,7 +245,7 @@ final class WooCommerceOrderImporter
         }
 
         if (str_starts_with($digits, '0') && strlen($digits) >= 10) {
-            $digits = '2' . $digits;
+            $digits = '2'.$digits;
         }
 
         return $digits;
@@ -260,7 +259,7 @@ final class WooCommerceOrderImporter
      *   all other values  — attempt phone then email match first (existing behaviour).
      *
      * @param  array<string, mixed>  $wooOrder
-     * @param  array<string, mixed>  $policy    Brand order policy settings
+     * @param  array<string, mixed>  $policy  Brand order policy settings
      * @return array{Customer, bool}
      */
     private function resolveCustomer(array $wooOrder, array $policy = []): array
@@ -268,8 +267,8 @@ final class WooCommerceOrderImporter
         /** @var array<string, string> $billing */
         $billing = is_array($wooOrder['billing'] ?? null) ? $wooOrder['billing'] : [];
 
-        $rawPhone        = trim((string) ($billing['phone'] ?? ''));
-        $email           = trim((string) ($billing['email'] ?? ''));
+        $rawPhone = trim((string) ($billing['phone'] ?? ''));
+        $email = trim((string) ($billing['email'] ?? ''));
         $normalizedPhone = $rawPhone !== '' ? $this->normalizePhone($rawPhone) : '';
 
         $matchingPolicy = (string) ($policy['customer_matching_policy'] ?? 'reuse_existing');
@@ -356,8 +355,8 @@ final class WooCommerceOrderImporter
         $taxTotal = is_numeric($wooOrder['total_tax'] ?? '') ? (float) $wooOrder['total_tax'] : 0;
 
         $billingFirstName = trim((string) ($billing['first_name'] ?? ''));
-        $billingLastName  = trim((string) ($billing['last_name']  ?? ''));
-        $billingFullName  = trim("{$billingFirstName} {$billingLastName}");
+        $billingLastName = trim((string) ($billing['last_name'] ?? ''));
+        $billingFullName = trim("{$billingFirstName} {$billingLastName}");
 
         $orderAttributes = [
             'channel_id' => (string) $channel->id,
@@ -416,6 +415,7 @@ final class WooCommerceOrderImporter
             if ($sku === '') {
                 $failedLines++;
                 $lineErrors[] = "Order #{$externalId} line skipped: no SKU (product_id={$item['product_id']}).";
+
                 continue;
             }
 
@@ -424,6 +424,7 @@ final class WooCommerceOrderImporter
             if ($product === null) {
                 $failedLines++;
                 $lineErrors[] = "Order #{$externalId} line skipped: SKU [{$sku}] not found in ECOS.";
+
                 continue;
             }
 
@@ -468,7 +469,7 @@ final class WooCommerceOrderImporter
             $statusOverride = $this->evaluateWooShipping(
                 (string) $channel->brand_id,
                 $shipping['state'] ?? $billing['state'] ?? '',
-                $shipping['city']  ?? $billing['city']  ?? '',
+                $shipping['city'] ?? $billing['city'] ?? '',
                 $externalId,
             );
             if ($statusOverride !== null) {
@@ -517,16 +518,15 @@ final class WooCommerceOrderImporter
 
             if ($city === null) {
                 // Try aliases
-                $city = City::whereHas('aliases', fn ($q) =>
-                    $q->where('alias', 'LIKE', "%{$cityRaw}%")
+                $city = City::whereHas('aliases', fn ($q) => $q->where('alias', 'LIKE', "%{$cityRaw}%"),
                 )->where('governorate_id', $governorate->id)->first();
             }
         }
 
         $result = $this->shippingEngine->evaluate(
-            brandId:         $brandId,
-            governorateId:   $governorate->id,
-            cityId:          $city?->id,
+            brandId: $brandId,
+            governorateId: $governorate->id,
+            cityId: $city?->id,
             isDeliveryOrder: true,
         );
 
@@ -536,12 +536,12 @@ final class WooCommerceOrderImporter
 
         // pending_review or reject → downgrade to pending for human triage
         Log::channel('daily')->info('[WooImport] Shipping validation issue', [
-            'external_id'   => $externalId,
-            'brand_id'      => $brandId,
-            'governorate'   => $stateRaw,
-            'city'          => $cityRaw,
-            'decision'      => $result->decision,
-            'reason'        => $result->reason,
+            'external_id' => $externalId,
+            'brand_id' => $brandId,
+            'governorate' => $stateRaw,
+            'city' => $cityRaw,
+            'decision' => $result->decision,
+            'reason' => $result->reason,
         ]);
 
         return OrderStatus::NeedsShippingReview->value;

@@ -13,12 +13,12 @@ namespace Modules\Marketing\Assets\Domain\ValueObjects;
 final readonly class RelationshipNode
 {
     public function __construct(
-        public string  $id,
-        public string  $type,         // 'asset' | 'brand' | 'channel' | 'product' | ...
-        public string  $label,
-        public ?string $subLabel      = null,  // asset_type, category, etc.
-        public array   $metadata      = [],
-        public ?string $healthStatus  = null,  // only for asset nodes
+        public string $id,
+        public string $type,         // 'asset' | 'brand' | 'channel' | 'product' | ...
+        public string $label,
+        public ?string $subLabel = null,  // asset_type, category, etc.
+        public array $metadata = [],
+        public ?string $healthStatus = null,  // only for asset nodes
         public ?string $connectorType = null,  // only for asset nodes
     ) {}
 
@@ -26,12 +26,12 @@ final readonly class RelationshipNode
     public function toArray(): array
     {
         return [
-            'id'             => $this->id,
-            'type'           => $this->type,
-            'label'          => $this->label,
-            'sub_label'      => $this->subLabel,
-            'metadata'       => $this->metadata,
-            'health_status'  => $this->healthStatus,
+            'id' => $this->id,
+            'type' => $this->type,
+            'label' => $this->label,
+            'sub_label' => $this->subLabel,
+            'metadata' => $this->metadata,
+            'health_status' => $this->healthStatus,
             'connector_type' => $this->connectorType,
         ];
     }

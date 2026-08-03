@@ -24,11 +24,11 @@ use Modules\Operations\Preparation\Domain\Models\PreparationWave;
 final class DemandProjectionBuilder
 {
     public function __construct(
-        private readonly ProductDemandCalculator  $productCalc,
+        private readonly ProductDemandCalculator $productCalc,
         private readonly MaterialDemandCalculator $materialCalc,
         private readonly MissingMaterialCalculator $missingCalc,
-        private readonly WaveKpiCalculator        $kpiCalc,
-        private readonly DemandReadRepository     $repository,
+        private readonly WaveKpiCalculator $kpiCalc,
+        private readonly DemandReadRepository $repository,
     ) {}
 
     // ── Full recalculation ────────────────────────────────────────────────────
@@ -57,7 +57,7 @@ final class DemandProjectionBuilder
         $this->repository->upsertMissingMaterials($missingRows);
 
         $missingMaterialIds = array_column($missingRows, 'material_id');
-        $hasCritical        = count(array_filter($missingRows, fn ($r) => $r['priority'] === 'critical')) > 0;
+        $hasCritical = count(array_filter($missingRows, fn ($r) => $r['priority'] === 'critical')) > 0;
 
         event(new MaterialDemandUpdated(
             $wave->id,
@@ -101,7 +101,7 @@ final class DemandProjectionBuilder
      * Recalculate only the products that belong to the given orders.
      * Unaffected products/materials remain unchanged.
      *
-     * @param list<string> $affectedOrderIds
+     * @param  list<string>  $affectedOrderIds
      */
     public function buildIncremental(PreparationWave $wave, array $affectedOrderIds, string $trigger = 'incremental'): void
     {
@@ -114,6 +114,7 @@ final class DemandProjectionBuilder
 
         if (empty($affectedProductIds)) {
             $this->refreshKpis($wave, $trigger);
+
             return;
         }
 
@@ -123,7 +124,7 @@ final class DemandProjectionBuilder
     /**
      * Recalculate only the given product rows (and their derived materials).
      *
-     * @param list<string> $productIds
+     * @param  list<string>  $productIds
      */
     public function buildForProducts(PreparationWave $wave, array $productIds, string $trigger = 'product_refresh'): void
     {
@@ -198,10 +199,10 @@ final class DemandProjectionBuilder
         DB::table('preparation_waves')
             ->where('id', $waveId)
             ->update([
-                'products_count'       => $kpiData['products_count'],
+                'products_count' => $kpiData['products_count'],
                 'total_units_required' => $kpiData['_total_units_required'] ?? 0,
                 'total_units_prepared' => $kpiData['_total_units_prepared'] ?? 0,
-                'updated_at'           => now(),
+                'updated_at' => now(),
             ]);
     }
 }

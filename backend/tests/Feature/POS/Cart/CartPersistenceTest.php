@@ -27,11 +27,15 @@ final class CartPersistenceTest extends TestCase
 
     private CartRepositoryInterface $repository;
 
-    private const SESSION_ID  = 'a1000000-0000-4000-a000-000000000001';
-    private const SHIFT_ID    = 'b1000000-0000-4000-b000-000000000001';
+    private const SESSION_ID = 'a1000000-0000-4000-a000-000000000001';
+
+    private const SHIFT_ID = 'b1000000-0000-4000-b000-000000000001';
+
     private const TERMINAL_ID = 'c1000000-0000-4000-c000-000000000001';
-    private const CASHIER_ID  = 'd1000000-0000-4000-d000-000000000001';
-    private const CURRENCY    = 'EGP';
+
+    private const CASHIER_ID = 'd1000000-0000-4000-d000-000000000001';
+
+    private const CURRENCY = 'EGP';
 
     protected function setUp(): void
     {
@@ -43,11 +47,11 @@ final class CartPersistenceTest extends TestCase
     private function makeCart(?string $customerId = null): Cart
     {
         return Cart::open(
-            sessionId:  self::SESSION_ID,
-            shiftId:    self::SHIFT_ID,
+            sessionId: self::SESSION_ID,
+            shiftId: self::SHIFT_ID,
             terminalId: self::TERMINAL_ID,
-            cashierId:  self::CASHIER_ID,
-            currency:   self::CURRENCY,
+            cashierId: self::CASHIER_ID,
+            currency: self::CURRENCY,
             customerId: $customerId,
         );
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -35,7 +37,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['company_id', 'channel'], 'cep_cp_co_ch_idx');
-            $table->index(['status'],                'cep_cp_status_idx');
+            $table->index(['status'], 'cep_cp_status_idx');
         });
     }
 

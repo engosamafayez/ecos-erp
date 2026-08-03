@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AlertCircle, Loader2, Package, Plus, Search, Trash2, X } from 'lucide-react';
 
 import { PageHeader } from '@/components/crud';
@@ -64,12 +65,14 @@ function InlineStockHint({
   productId: string;
   warehouseId?: string;
 }) {
+  const { t } = useTranslation('purchase-materials');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
   const { data, isLoading } = useProductProcurementPanel(productId || null, {
     warehouse_id: warehouseId,
   });
 
   if (!productId) return null;
-  if (isLoading) return <span className="text-xs text-muted-foreground">Loading...</span>;
+  if (isLoading) return <span className="text-xs text-muted-foreground">{t('materialRequestsPage.createPanel.loadingHint')}</span>;
   if (!data) return null;
 
   const available = data.inventory.available_qty;
@@ -85,11 +88,11 @@ function InlineStockHint({
 
   return (
     <span className="flex items-center gap-2 text-xs">
-      <span className="text-muted-foreground">{available} available</span>
+      <span className="text-muted-foreground">{tAny('materialRequestsPage.createPanel.available', { count: available })}</span>
       {days !== null && (
         <span className={riskClass}>
           {risk === 'critical' || risk === 'high' ? '⚠ ' : ''}
-          {days}d coverage
+          {tAny('materialRequestsPage.createPanel.coverage', { days })}
         </span>
       )}
     </span>
@@ -109,6 +112,7 @@ function ProductSearchInput({
   onSelect: (product: { id: string; name: string; sku: string }) => void;
   inputRef?: React.Ref<HTMLInputElement>;
 }) {
+  const { t } = useTranslation('purchase-materials');
   const [open, setOpen] = useState(false);
   const { data, isFetching } = useProductsQuery({
     search: value,
@@ -121,7 +125,7 @@ function ProductSearchInput({
     <div className="relative">
       <Input
         ref={inputRef}
-        placeholder="Search product..."
+        placeholder={t('materialRequestsPage.createPanel.table.searchProduct')}
         value={value}
         onChange={(e) => {
           onChange(e.target.value);
@@ -136,11 +140,11 @@ function ProductSearchInput({
           {isFetching && (
             <div className="flex items-center gap-2 px-3 py-2 text-xs text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" />
-              Searching...
+              {t('materialRequestsPage.createPanel.searching')}
             </div>
           )}
           {!isFetching && products.length === 0 && (
-            <div className="px-3 py-2 text-xs text-muted-foreground">No products found</div>
+            <div className="px-3 py-2 text-xs text-muted-foreground">{t('materialRequestsPage.createPanel.noProducts')}</div>
           )}
           {products.map((p) => (
             <button
@@ -178,6 +182,8 @@ function CreateMaterialRequestPanel({
   onClose: () => void;
   onCreated: () => void;
 }) {
+  const { t } = useTranslation('purchase-materials');
+
   const [companyId, setCompanyId] = useState('');
   const [warehouseId, setWarehouseId] = useState('');
   const [priority, setPriority] = useState<PurchaseMaterialPriority>('normal');
@@ -215,12 +221,12 @@ function CreateMaterialRequestPanel({
 
   async function handleSave(andSubmit: boolean) {
     if (!warehouseId) {
-      toast.error('Warehouse is required');
+      toast.error(t('materialRequestsPage.createPanel.toast.warehouseRequired'));
       return;
     }
     const validLines = lines.filter((l) => l.product_id && parseFloat(l.requested_qty) > 0);
     if (validLines.length === 0) {
-      toast.error('Add at least one product with a quantity');
+      toast.error(t('materialRequestsPage.createPanel.toast.addAtLeastOne'));
       return;
     }
 
@@ -242,13 +248,13 @@ function CreateMaterialRequestPanel({
 
       if (andSubmit) {
         await submitMutation.mutateAsync(created.id);
-        toast.success('Request created and submitted');
+        toast.success(t('materialRequestsPage.createPanel.toast.createdAndSubmitted'));
       } else {
-        toast.success('Request saved as draft');
+        toast.success(t('materialRequestsPage.createPanel.toast.savedAsDraft'));
       }
       onCreated();
     } catch {
-      toast.error('Failed to save request');
+      toast.error(t('materialRequestsPage.createPanel.toast.failed'));
     }
   }
 
@@ -258,7 +264,7 @@ function CreateMaterialRequestPanel({
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex items-center justify-between border-b px-4 py-3">
-        <h2 className="text-base font-semibold">New Material Request</h2>
+        <h2 className="text-base font-semibold">{t('materialRequestsPage.createPanel.title')}</h2>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-4 w-4" />
         </Button>
@@ -269,16 +275,16 @@ function CreateMaterialRequestPanel({
         {/* Header fields */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <Label className="text-xs">Company</Label>
+            <Label className="text-xs">{t('materialRequestsPage.createPanel.company')}</Label>
             <CompanySelect value={companyId} onChange={setCompanyId} />
           </div>
           <div className="space-y-1">
             <Label className="text-xs">
-              Warehouse <span className="text-destructive">*</span>
+              {t('materialRequestsPage.createPanel.warehouseRequired')}
             </Label>
             <Select value={warehouseId} onValueChange={setWarehouseId}>
               <SelectTrigger className="h-9 text-sm">
-                <SelectValue placeholder="Select Warehouse" />
+                <SelectValue placeholder={t('materialRequestsPage.createPanel.selectWarehouse')} />
               </SelectTrigger>
               <SelectContent>
                 {(warehouseOptions ?? []).map((w) => (
@@ -290,7 +296,7 @@ function CreateMaterialRequestPanel({
             </Select>
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Priority</Label>
+            <Label className="text-xs">{t('materialRequestsPage.createPanel.priority')}</Label>
             <Select
               value={priority}
               onValueChange={(v) => setPriority(v as PurchaseMaterialPriority)}
@@ -299,15 +305,15 @@ function CreateMaterialRequestPanel({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="low">Low</SelectItem>
-                <SelectItem value="normal">Normal</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="urgent">Urgent</SelectItem>
+                <SelectItem value="low">{t('materialRequestsPage.createPanel.priorityOptions.low')}</SelectItem>
+                <SelectItem value="normal">{t('materialRequestsPage.createPanel.priorityOptions.normal')}</SelectItem>
+                <SelectItem value="high">{t('materialRequestsPage.createPanel.priorityOptions.high')}</SelectItem>
+                <SelectItem value="urgent">{t('materialRequestsPage.createPanel.priorityOptions.urgent')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1">
-            <Label className="text-xs">Required Date</Label>
+            <Label className="text-xs">{t('materialRequestsPage.createPanel.requiredDate')}</Label>
             <Input
               type="date"
               className="h-9 text-sm"
@@ -317,9 +323,9 @@ function CreateMaterialRequestPanel({
           </div>
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">Notes</Label>
+          <Label className="text-xs">{t('materialRequestsPage.createPanel.notes')}</Label>
           <Textarea
-            placeholder="Additional context for the procurement team..."
+            placeholder={t('materialRequestsPage.createPanel.notesPlaceholder')}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             className="min-h-[60px] resize-none text-sm"
@@ -329,19 +335,19 @@ function CreateMaterialRequestPanel({
         {/* Product lines */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label className="text-xs font-medium">Products</Label>
+            <Label className="text-xs font-medium">{t('materialRequestsPage.createPanel.products')}</Label>
             <span className="text-xs text-muted-foreground">
-              Press Enter in the quantity field to add a new line
+              {t('materialRequestsPage.createPanel.enterKey')}
             </span>
           </div>
 
           <div className="rounded-md border">
             {/* Column headers */}
             <div className="grid grid-cols-[1fr_80px_70px_1fr_28px] gap-2 border-b bg-muted/30 px-3 py-1.5 text-xs font-medium text-muted-foreground">
-              <span>Product</span>
-              <span>Qty</span>
-              <span>Unit</span>
-              <span>Notes</span>
+              <span>{t('materialRequestsPage.createPanel.table.product')}</span>
+              <span>{t('materialRequestsPage.createPanel.table.qty')}</span>
+              <span>{t('materialRequestsPage.createPanel.table.unit')}</span>
+              <span>{t('materialRequestsPage.createPanel.table.notes')}</span>
               <span />
             </div>
 
@@ -364,20 +370,20 @@ function CreateMaterialRequestPanel({
                     type="number"
                     min="0.0001"
                     step="any"
-                    placeholder="Qty"
+                    placeholder={t('materialRequestsPage.createPanel.table.qtyPlaceholder')}
                     value={line.requested_qty}
                     onChange={(e) => updateLine(line.localId, { requested_qty: e.target.value })}
                     onKeyDown={(e) => handleQtyKeyDown(e, idx)}
                     className="h-8 text-sm"
                   />
                   <Input
-                    placeholder="Unit"
+                    placeholder={t('materialRequestsPage.createPanel.table.unitPlaceholder')}
                     value={line.unit_label}
                     onChange={(e) => updateLine(line.localId, { unit_label: e.target.value })}
                     className="h-8 text-sm"
                   />
                   <Input
-                    placeholder="Notes (optional)"
+                    placeholder={t('materialRequestsPage.createPanel.table.notesPlaceholder')}
                     value={line.notes}
                     onChange={(e) => updateLine(line.localId, { notes: e.target.value })}
                     className="h-8 text-sm"
@@ -405,7 +411,7 @@ function CreateMaterialRequestPanel({
 
           <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs" onClick={addLine}>
             <Plus className="h-3.5 w-3.5" />
-            Add Product
+            {t('materialRequestsPage.createPanel.addProduct')}
           </Button>
         </div>
       </div>
@@ -413,7 +419,7 @@ function CreateMaterialRequestPanel({
       {/* Footer */}
       <div className="flex items-center justify-between border-t px-4 py-3">
         <Button variant="ghost" onClick={onClose} disabled={isBusy}>
-          Cancel
+          {t('materialRequestsPage.createPanel.cancel')}
         </Button>
         <div className="flex gap-2">
           <Button
@@ -424,7 +430,7 @@ function CreateMaterialRequestPanel({
             {createMutation.isPending && !submitAfterSave ? (
               <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
             ) : null}
-            Save as Draft
+            {t('materialRequestsPage.createPanel.saveAsDraft')}
           </Button>
           <Button
             onClick={() => {
@@ -436,7 +442,7 @@ function CreateMaterialRequestPanel({
             {submitMutation.isPending ? (
               <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
             ) : null}
-            Submit to Procurement
+            {t('materialRequestsPage.createPanel.submitToProcurement')}
           </Button>
         </div>
       </div>
@@ -444,24 +450,25 @@ function CreateMaterialRequestPanel({
   );
 }
 
-// ── Status chip filters ───────────────────────────────────────────────────────
-
-const STATUS_CHIPS: { value: PurchaseMaterialStatus | 'all'; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'draft', label: 'Draft' },
-  { value: 'under_review', label: 'Under Review' },
-  { value: 'on_hold', label: 'On Hold' },
-  { value: 'cancelled', label: 'Cancelled' },
-];
-
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function MaterialRequestsPage() {
+  const { t } = useTranslation('purchase-materials');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
+
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<PurchaseMaterialStatus | 'all'>('all');
   const [page, setPage] = useState(1);
   const [showCreatePanel, setShowCreatePanel] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const STATUS_CHIPS: Array<{ value: PurchaseMaterialStatus | 'all'; label: string }> = [
+    { value: 'all', label: t('materialRequestsPage.statusChips.all') },
+    { value: 'draft', label: t('materialRequestsPage.statusChips.draft') },
+    { value: 'under_review', label: t('materialRequestsPage.statusChips.under_review') },
+    { value: 'on_hold', label: t('materialRequestsPage.statusChips.on_hold') },
+    { value: 'cancelled', label: t('materialRequestsPage.statusChips.cancelled') },
+  ];
 
   const { data, isLoading } = usePurchaseMaterialsQuery({
     record_type: 'material_request',
@@ -483,12 +490,12 @@ export function MaterialRequestsPage() {
       {/* Main content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <PageHeader
-          title="Material Requests"
-          subtitle="Submit procurement needs from warehouse and operations teams"
+          title={t('materialRequestsPage.title')}
+          subtitle={t('materialRequestsPage.subtitle')}
           actions={
             <Button onClick={() => setShowCreatePanel(true)} className="gap-1.5">
               <Plus className="h-4 w-4" />
-              New Request
+              {t('materialRequestsPage.newRequest')}
             </Button>
           }
         />
@@ -499,7 +506,7 @@ export function MaterialRequestsPage() {
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search requests..."
+                placeholder={t('materialRequestsPage.searchPlaceholder')}
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
@@ -538,28 +545,28 @@ export function MaterialRequestsPage() {
                 <thead>
                   <tr className="border-b bg-muted/30">
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      Request No.
+                      {t('materialRequestsPage.columns.requestNo')}
                     </th>
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      Warehouse
+                      {t('materialRequestsPage.columns.warehouse')}
                     </th>
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      Products
+                      {t('materialRequestsPage.columns.products')}
                     </th>
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      Priority
+                      {t('materialRequestsPage.columns.priority')}
                     </th>
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      Required Date
+                      {t('materialRequestsPage.columns.requiredDate')}
                     </th>
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      Status
+                      {t('materialRequestsPage.columns.status')}
                     </th>
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      Requested By
+                      {t('materialRequestsPage.columns.requestedBy')}
                     </th>
                     <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                      Created At
+                      {t('materialRequestsPage.columns.createdAt')}
                     </th>
                   </tr>
                 </thead>
@@ -579,9 +586,9 @@ export function MaterialRequestsPage() {
                     <tr>
                       <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
                         <AlertCircle className="mx-auto mb-2 h-6 w-6 opacity-40" />
-                        <p className="text-sm">No material requests</p>
+                        <p className="text-sm">{t('materialRequestsPage.empty.title')}</p>
                         <p className="text-xs mt-1">
-                          Create a new request to get started
+                          {t('materialRequestsPage.empty.description')}
                         </p>
                       </td>
                     </tr>
@@ -601,7 +608,7 @@ export function MaterialRequestsPage() {
                           {item.warehouse?.name ?? <span className="text-muted-foreground">—</span>}
                         </td>
                         <td className="px-4 py-3 text-sm">
-                          {item.items_count} items
+                          {tAny('materialRequestsPage.items', { count: item.items_count })}
                         </td>
                         <td className="px-4 py-3">
                           <PurchaseMaterialPriorityBadge priority={item.priority} />
@@ -631,7 +638,7 @@ export function MaterialRequestsPage() {
               {meta && meta.last_page > 1 && (
                 <div className="flex items-center justify-between border-t px-4 py-3">
                   <span className="text-xs text-muted-foreground">
-                    {meta.total} total requests
+                    {tAny('materialRequestsPage.pagination.total', { count: meta.total })}
                   </span>
                   <div className="flex gap-1.5">
                     <Button
@@ -640,7 +647,7 @@ export function MaterialRequestsPage() {
                       disabled={page === 1}
                       onClick={() => setPage((p) => p - 1)}
                     >
-                      Previous
+                      {t('materialRequestsPage.pagination.previous')}
                     </Button>
                     <Button
                       variant="outline"
@@ -648,7 +655,7 @@ export function MaterialRequestsPage() {
                       disabled={page === meta.last_page}
                       onClick={() => setPage((p) => p + 1)}
                     >
-                      Next
+                      {t('materialRequestsPage.pagination.next')}
                     </Button>
                   </div>
                 </div>

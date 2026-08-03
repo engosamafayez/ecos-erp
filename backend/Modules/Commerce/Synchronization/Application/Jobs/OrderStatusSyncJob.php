@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Commerce\Synchronization\Application\Jobs;
 
+use BackedEnum;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -33,10 +34,10 @@ final class OrderStatusSyncJob implements ShouldQueue
     public int $backoff = 60;
 
     private const STATUS_MAP = [
-        'pending'    => 'pending',
+        'pending' => 'pending',
         'processing' => 'processing',
-        'completed'  => 'completed',
-        'cancelled'  => 'cancelled',
+        'completed' => 'completed',
+        'cancelled' => 'cancelled',
     ];
 
     public function __construct(
@@ -54,9 +55,9 @@ final class OrderStatusSyncJob implements ShouldQueue
             $this->order->id,
             SyncStatus::Processing,
             [
-                'order_id'          => $this->order->id,
+                'order_id' => $this->order->id,
                 'external_order_id' => $this->order->external_order_id,
-                'status'            => $this->order->status instanceof \BackedEnum
+                'status' => $this->order->status instanceof BackedEnum
                     ? $this->order->status->value
                     : (string) $this->order->status,
             ],
@@ -66,6 +67,7 @@ final class OrderStatusSyncJob implements ShouldQueue
 
         if ($credential === null) {
             $logService->markFailed($log, 'No credentials configured for this channel.', null, $this->channel);
+
             return;
         }
 
@@ -73,10 +75,11 @@ final class OrderStatusSyncJob implements ShouldQueue
 
         if ($externalId === null || $externalId === '') {
             $logService->markFailed($log, 'Order has no external_order_id.', null, $this->channel);
+
             return;
         }
 
-        $statusValue = $this->order->status instanceof \BackedEnum
+        $statusValue = $this->order->status instanceof BackedEnum
             ? $this->order->status->value
             : (string) $this->order->status;
 
@@ -84,6 +87,7 @@ final class OrderStatusSyncJob implements ShouldQueue
 
         if ($wooStatus === null) {
             $logService->markFailed($log, "No WooCommerce mapping for status [{$statusValue}].", null, $this->channel);
+
             return;
         }
 
@@ -91,7 +95,7 @@ final class OrderStatusSyncJob implements ShouldQueue
             $response = Http::withBasicAuth($credential->consumer_key, $credential->consumer_secret)
                 ->timeout(15)
                 ->put(
-                    rtrim($this->channel->store_url, '/') . '/wp-json/wc/v3/orders/' . $externalId,
+                    rtrim($this->channel->store_url, '/').'/wp-json/wc/v3/orders/'.$externalId,
                     ['status' => $wooStatus],
                 );
 
@@ -100,7 +104,7 @@ final class OrderStatusSyncJob implements ShouldQueue
             } else {
                 $logService->markFailed(
                     $log,
-                    "HTTP {$response->status()}: " . mb_substr($response->body(), 0, 500),
+                    "HTTP {$response->status()}: ".mb_substr($response->body(), 0, 500),
                     null,
                     $this->channel,
                 );

@@ -39,10 +39,10 @@ final class ShippingValidationService implements ShippingEngineContract
      * @param  bool  $isDeliveryOrder  Pass false for walk-in POS (skips all checks).
      */
     public function evaluate(
-        string  $brandId,
-        int     $governorateId,
-        ?int    $cityId,
-        bool    $isDeliveryOrder = true,
+        string $brandId,
+        int $governorateId,
+        ?int $cityId,
+        bool $isDeliveryOrder = true,
     ): ShippingValidationResult {
         // Walk-in POS — bypass everything
         if (! $isDeliveryOrder) {
@@ -52,7 +52,7 @@ final class ShippingValidationService implements ShippingEngineContract
         // Fetch policy settings once (lazy-create defaults via firstOrNew for read-only)
         $settings = BrandShippingSettings::where('brand_id', $brandId)->first();
 
-        $govAction  = $settings?->unsupported_governorate_action ?? 'allow';
+        $govAction = $settings?->unsupported_governorate_action ?? 'allow';
         $cityAction = $settings?->unsupported_city_action ?? 'allow';
 
         // ── Build the quote upfront (reused for all non-reject paths) ─────────
@@ -125,13 +125,13 @@ final class ShippingValidationService implements ShippingEngineContract
         // ── All checks passed ─────────────────────────────────────────────────
 
         return ShippingValidationResult::allow(
-            shippingPrice:         $q['price'],
-            deliveryDays:          $q['delivery_days'],
-            sameDay:               $q['same_day'],
-            codAllowed:            $q['cod_allowed'],
-            preferredProvider:     $q['preferred_provider'],
+            shippingPrice: $q['price'],
+            deliveryDays: $q['delivery_days'],
+            sameDay: $q['same_day'],
+            codAllowed: $q['cod_allowed'],
+            preferredProvider: $q['preferred_provider'],
             resolvedGovernorateId: $governorateId,
-            resolvedCityId:        $cityId,
+            resolvedCityId: $cityId,
         );
     }
 
@@ -141,34 +141,34 @@ final class ShippingValidationService implements ShippingEngineContract
      * @param  array<string, mixed>  $q  Pre-computed quote
      */
     private function applyAreaAction(
-        string  $action,
-        string  $reason,
-        array   $q,
-        int     $governorateId,
-        ?int    $cityId,
+        string $action,
+        string $reason,
+        array $q,
+        int $governorateId,
+        ?int $cityId,
     ): ShippingValidationResult {
         return match ($action) {
             'reject' => ShippingValidationResult::reject($reason, $governorateId, $cityId),
 
             'pending_review' => ShippingValidationResult::pendingReview(
-                reason:                $reason,
-                shippingPrice:         $q['price'],
-                deliveryDays:          $q['delivery_days'],
-                sameDay:               $q['same_day'],
-                codAllowed:            $q['cod_allowed'],
-                preferredProvider:     $q['preferred_provider'],
+                reason: $reason,
+                shippingPrice: $q['price'],
+                deliveryDays: $q['delivery_days'],
+                sameDay: $q['same_day'],
+                codAllowed: $q['cod_allowed'],
+                preferredProvider: $q['preferred_provider'],
                 resolvedGovernorateId: $governorateId,
-                resolvedCityId:        $cityId,
+                resolvedCityId: $cityId,
             ),
 
             default => ShippingValidationResult::allow(
-                shippingPrice:         $q['price'],
-                deliveryDays:          $q['delivery_days'],
-                sameDay:               $q['same_day'],
-                codAllowed:            $q['cod_allowed'],
-                preferredProvider:     $q['preferred_provider'],
+                shippingPrice: $q['price'],
+                deliveryDays: $q['delivery_days'],
+                sameDay: $q['same_day'],
+                codAllowed: $q['cod_allowed'],
+                preferredProvider: $q['preferred_provider'],
                 resolvedGovernorateId: $governorateId,
-                resolvedCityId:        $cityId,
+                resolvedCityId: $cityId,
             ),
         };
     }

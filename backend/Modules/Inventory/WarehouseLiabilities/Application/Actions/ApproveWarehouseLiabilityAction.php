@@ -26,7 +26,7 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 final class ApproveWarehouseLiabilityAction
 {
     public function __construct(
-        private readonly AdjustmentOutAction              $adjustmentOut,
+        private readonly AdjustmentOutAction $adjustmentOut,
         private readonly InventoryLayerConsumptionService $layerConsumption,
         private readonly InventoryItemRepositoryInterface $inventory,
     ) {}
@@ -38,24 +38,24 @@ final class ApproveWarehouseLiabilityAction
     ): WarehouseLiability {
         if ($liability->status->isTerminal()) {
             throw new UnprocessableEntityHttpException(
-                "Warehouse liability [{$liability->id}] has already been {$liability->status->value}."
+                "Warehouse liability [{$liability->id}] has already been {$liability->status->value}.",
             );
         }
 
         return DB::transaction(function () use ($liability, $approvedBy, $notes): WarehouseLiability {
-            $companyId   = $liability->company_id;
+            $companyId = $liability->company_id;
             $warehouseId = $liability->warehouse_id;
-            $productId   = $liability->product_id;
-            $quantity    = (float) $liability->quantity;
+            $productId = $liability->product_id;
+            $quantity = (float) $liability->quantity;
 
             $dto = new StockOperationDTO(
-                warehouse_id:       $warehouseId,
-                product_id:         $productId,
-                company_id:         $companyId,
-                quantity:           $quantity,
-                reference_type:     'warehouse_liability',
-                reference_id:       $liability->id,
-                notes:              "Inventory shortage deduction — liability {$liability->id}",
+                warehouse_id: $warehouseId,
+                product_id: $productId,
+                company_id: $companyId,
+                quantity: $quantity,
+                reference_type: 'warehouse_liability',
+                reference_id: $liability->id,
+                notes: "Inventory shortage deduction — liability {$liability->id}",
                 // M-03: confirmed shortages must be written off regardless of active
                 // reservations — physical stock does not exist; the guard must not block.
                 bypassReserveGuard: true,
@@ -64,33 +64,33 @@ final class ApproveWarehouseLiabilityAction
             $this->adjustmentOut->execute($dto);
 
             // FIFO consumption — returns weighted unit cost for snapshot
-            $snapshotUnitCost  = (float) $liability->unit_cost;
+            $snapshotUnitCost = (float) $liability->unit_cost;
             $snapshotTotalValue = (float) $liability->total_cost;
 
             $inventoryItem = $this->inventory->findByWarehouseAndProduct($warehouseId, $productId);
             if ($inventoryItem !== null) {
                 $result = $this->layerConsumption->consume(
                     inventoryItemId: $inventoryItem->id,
-                    productId:       $productId,
-                    warehouseId:     $warehouseId,
-                    companyId:       $companyId,
-                    quantity:        $quantity,
+                    productId: $productId,
+                    warehouseId: $warehouseId,
+                    companyId: $companyId,
+                    quantity: $quantity,
                 );
                 // Overwrite with actual FIFO weighted cost from consumption
-                $snapshotUnitCost  = $result->weightedCost;
+                $snapshotUnitCost = $result->weightedCost;
                 $snapshotTotalValue = round($result->weightedCost * $quantity, 2);
             }
 
             $liability->update([
-                'status'                     => WarehouseLiabilityStatus::Approved,
-                'approved_by'                => $approvedBy,
-                'approved_at'                => now(),
-                'notes'                      => $notes ?? $liability->notes,
+                'status' => WarehouseLiabilityStatus::Approved,
+                'approved_by' => $approvedBy,
+                'approved_at' => now(),
+                'notes' => $notes ?? $liability->notes,
                 // Immutable cost snapshot
-                'cost_snapshot_unit_cost'    => $snapshotUnitCost,
-                'cost_snapshot_total_value'  => $snapshotTotalValue,
-                'cost_method'                => 'FIFO',
-                'currency'                   => 'EGP',
+                'cost_snapshot_unit_cost' => $snapshotUnitCost,
+                'cost_snapshot_total_value' => $snapshotTotalValue,
+                'cost_method' => 'FIFO',
+                'currency' => 'EGP',
             ]);
 
             return $liability->refresh();
@@ -101,15 +101,15 @@ final class ApproveWarehouseLiabilityAction
     {
         if ($liability->status->isTerminal()) {
             throw new UnprocessableEntityHttpException(
-                "Warehouse liability [{$liability->id}] has already been {$liability->status->value}."
+                "Warehouse liability [{$liability->id}] has already been {$liability->status->value}.",
             );
         }
 
         $liability->update([
-            'status'      => WarehouseLiabilityStatus::Rejected,
+            'status' => WarehouseLiabilityStatus::Rejected,
             'approved_by' => $rejectedBy,
             'approved_at' => now(),
-            'notes'       => $reason ?? $liability->notes,
+            'notes' => $reason ?? $liability->notes,
         ]);
 
         return $liability->refresh();

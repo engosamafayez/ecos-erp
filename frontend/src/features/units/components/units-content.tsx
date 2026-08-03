@@ -111,7 +111,7 @@ export function UnitsContent() {
         onSortChange={handleSort}
         rowActions={(unit) => (
           <ActionMenu
-            label={`Actions for ${unit.name}`}
+            label={t('actions.ariaLabel', { name: unit.name })}
             items={[
               { key: 'view', label: tCommon('actions.view'), icon: Eye, onSelect: () => { setDrawerUnit(unit); setDrawerOpen(true); } },
               { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => { setDrawerUnit(unit); setDrawerOpen(true); } },

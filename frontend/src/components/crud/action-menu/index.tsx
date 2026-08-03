@@ -1,4 +1,5 @@
 import { MoreHorizontal } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -17,7 +18,9 @@ type ActionMenuProps = {
 /**
  * Reusable row/entity action menu (View, Edit, Delete and custom actions).
  */
-export function ActionMenu({ items, label = 'Open actions' }: ActionMenuProps) {
+export function ActionMenu({ items, label }: ActionMenuProps) {
+  const { t } = useTranslation('common');
+
   if (items.length === 0) {
     return null;
   }
@@ -25,7 +28,7 @@ export function ActionMenu({ items, label = 'Open actions' }: ActionMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label={label}>
+        <Button variant="ghost" size="icon" aria-label={label ?? t('actions.openActions')}>
           <MoreHorizontal className="size-4" />
         </Button>
       </DropdownMenuTrigger>

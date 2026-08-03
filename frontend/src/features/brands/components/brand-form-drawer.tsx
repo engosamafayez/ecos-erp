@@ -182,32 +182,42 @@ export function BrandFormDrawer({ open, onOpenChange, brand }: BrandFormDrawerPr
 
   const isPending = createBrand.isPending || updateBrand.isPending || transferBrand.isPending;
 
+  // `reset` and `mutate` are stable references (react-hook-form / TanStack Query),
+  // so the effects below depend on those rather than on the whole form and
+  // mutation objects, whose identity changes on every render.
+  const { reset: resetCreate } = createForm;
+  const { reset: resetUpdate } = updateForm;
+  const { mutate: analyzeTransferMutate } = analyzeTransfer;
+  const brandId = brand?.id;
+
   useEffect(() => {
     if (open) {
       setImageFile(null);
       setServerError(null);
       setTransferResult(null);
       if (isEdit && brand) {
-        updateForm.reset(toUpdateFormValues(brand));
+        resetUpdate(toUpdateFormValues(brand));
       } else {
-        createForm.reset(toCreateFormValues());
+        resetCreate(toCreateFormValues());
       }
     }
-  }, [open, brand, isEdit]);
+  }, [open, brand, isEdit, resetCreate, resetUpdate]);
 
   // Auto-trigger analysis when the transfer dialog opens
   useEffect(() => {
-    if (!transferDialog || !brand) return;
+    if (!transferDialog || !brandId) return;
     setImpactReport(null);
     setAnalyzeError(null);
-    analyzeTransfer.mutate(
-      { id: brand.id, payload: { target_company_id: transferDialog.targetCompanyId } },
+    analyzeTransferMutate(
+      { id: brandId, payload: { target_company_id: transferDialog.targetCompanyId } },
       {
         onSuccess: (report) => setImpactReport(report),
         onError: (error) => setAnalyzeError(extractMessage(error)),
       },
     );
-  }, [transferDialog]);
+    // `analyzeTransfer` is a mutation object whose identity changes each render,
+    // so the effect keys off the brand id and the dialog that opened it.
+  }, [transferDialog, brandId, analyzeTransferMutate]);
 
   const handleOpenChange = (next: boolean) => {
     if (!next) {

@@ -7,7 +7,6 @@ namespace Modules\Marketing\Initiatives\Presentation\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\DB;
 use Modules\Marketing\Initiatives\Application\Services\InitiativeKpiService;
 use Modules\Marketing\Initiatives\Domain\Models\MarketingInitiative;
 
@@ -27,7 +26,7 @@ final class InitiativeDashboardController extends Controller
     public function index(Request $request): JsonResponse
     {
         $datePreset = $request->query('date_preset', 'last_30d');
-        $companyId  = $request->query('company_id');
+        $companyId = $request->query('company_id');
 
         $aggregate = $this->kpiService->aggregateAll($datePreset, $companyId);
 
@@ -68,18 +67,18 @@ final class InitiativeDashboardController extends Controller
             ->limit(5)
             ->get()
             ->map(fn ($i) => [
-                'id'              => $i->id,
-                'name'            => $i->name,
-                'status'          => $i->status->value,
-                'end_date'        => $i->end_date->toDateString(),
-                'days_remaining'  => $i->daysRemaining(),
+                'id' => $i->id,
+                'name' => $i->name,
+                'status' => $i->status->value,
+                'end_date' => $i->end_date->toDateString(),
+                'days_remaining' => $i->daysRemaining(),
                 'campaigns_count' => $i->campaigns_count,
             ]);
 
         return response()->json([
-            'aggregate'          => $aggregate,
+            'aggregate' => $aggregate,
             'status_distribution' => $statusDist,
-            'goal_distribution'  => $goalDist,
+            'goal_distribution' => $goalDist,
             'owner_distribution' => $ownerDist,
             'upcoming_deadlines' => $upcoming,
         ]);

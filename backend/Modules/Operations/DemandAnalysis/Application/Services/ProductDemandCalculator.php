@@ -20,7 +20,7 @@ use Modules\Operations\Preparation\Domain\Models\PreparationWave;
 final class ProductDemandCalculator
 {
     /**
-     * @param  list<string>|null $affectedProductIds  Null = full wave recalculation.
+     * @param  list<string>|null  $affectedProductIds  Null = full wave recalculation.
      * @return list<array<string, mixed>>
      */
     public function calculate(PreparationWave $wave, ?array $affectedProductIds = null): array
@@ -46,30 +46,30 @@ final class ProductDemandCalculator
         $now = now()->toDateTimeString();
 
         return $query->get()->map(function (object $row) use ($wave, $now): array {
-            $required      = round((float) $row->required_qty, 4);
-            $prepared      = round((float) $row->prepared_qty, 4);
-            $remaining     = max(0.0, round($required - $prepared, 4));
+            $required = round((float) $row->required_qty, 4);
+            $prepared = round((float) $row->prepared_qty, 4);
+            $remaining = max(0.0, round($required - $prepared, 4));
             $completionPct = $required > 0.0
                 ? round(($prepared / $required) * 100.0, 2)
                 : 0.0;
 
             return [
-                'id'                  => Str::uuid()->toString(),
-                'company_id'          => $wave->company_id,
-                'warehouse_id'        => $wave->warehouse_id,
+                'id' => Str::uuid()->toString(),
+                'company_id' => $wave->company_id,
+                'warehouse_id' => $wave->warehouse_id,
                 'preparation_wave_id' => $wave->id,
-                'product_id'          => $row->product_id,
-                'product_name'        => $row->product_name,
-                'product_sku'         => $row->product_sku,
-                'required_qty'        => $required,
-                'prepared_qty'        => $prepared,
-                'remaining_qty'       => $remaining,
-                'orders_count'        => (int) $row->orders_count,
-                'completion_pct'      => $completionPct,
-                'data_hash'           => md5($wave->id . $row->product_id . $required . $prepared),
-                'last_calculated_at'  => $now,
-                'created_at'          => $now,
-                'updated_at'          => $now,
+                'product_id' => $row->product_id,
+                'product_name' => $row->product_name,
+                'product_sku' => $row->product_sku,
+                'required_qty' => $required,
+                'prepared_qty' => $prepared,
+                'remaining_qty' => $remaining,
+                'orders_count' => (int) $row->orders_count,
+                'completion_pct' => $completionPct,
+                'data_hash' => md5($wave->id.$row->product_id.$required.$prepared),
+                'last_calculated_at' => $now,
+                'created_at' => $now,
+                'updated_at' => $now,
             ];
         })->all();
     }
@@ -91,7 +91,7 @@ final class ProductDemandCalculator
     /**
      * Derive the union of product IDs across multiple orders.
      *
-     * @param  list<string> $orderIds
+     * @param  list<string>  $orderIds
      * @return list<string>
      */
     public function productIdsForOrders(array $orderIds): array

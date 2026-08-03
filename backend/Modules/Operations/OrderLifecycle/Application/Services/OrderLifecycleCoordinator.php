@@ -57,10 +57,10 @@ final class OrderLifecycleCoordinator
         }
 
         return OrderLifecycleResult::statusIgnored(
-            orderId:     $request->order_id,
+            orderId: $request->order_id,
             orderLineId: $request->order_line_id,
-            reason:      "No lifecycle handler supports order status '{$request->order_status}'.",
-            metadata:    $request->metadata,
+            reason: "No lifecycle handler supports order status '{$request->order_status}'.",
+            metadata: $request->metadata,
         );
     }
 }

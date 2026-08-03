@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('asset_type', 50)->index();               // business_manager | ad_account | page | instagram | ...
             $table->string('external_id', 200);                      // platform asset ID
             $table->string('name', 500);
-            $table->string('status', 30)->default('active')->index();// active | inactive | archived
+            $table->string('status', 30)->default('active')->index(); // active | inactive | archived
             $table->string('health_status', 30)->default('healthy'); // healthy | warning | disconnected | expired_token | ...
             $table->timestamp('health_checked_at')->nullable();
             $table->json('health_metadata')->nullable();

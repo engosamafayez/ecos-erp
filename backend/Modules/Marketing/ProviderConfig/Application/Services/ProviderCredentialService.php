@@ -27,22 +27,33 @@ final class ProviderCredentialService
     private const CACHE_TTL = 300; // 5 minutes
 
     // ── Audit action constants ────────────────────────────────────────────────
-    public const AUDIT_CREATED              = 'created';
-    public const AUDIT_UPDATED              = 'updated';
-    public const AUDIT_DELETED              = 'deleted';
-    public const AUDIT_SECRET_ROTATED       = 'secret_rotated';
-    public const AUDIT_VALIDATION_SUCCESS   = 'validation_success';
-    public const AUDIT_VALIDATION_FAILED    = 'validation_failed';
-    public const AUDIT_OAUTH_CONNECTED      = 'oauth_connected';
-    public const AUDIT_OAUTH_DISCONNECTED   = 'oauth_disconnected';
-    public const AUDIT_WEBHOOK_REGISTERED   = 'webhook_registered';
-    public const AUDIT_WEBHOOK_REMOVED      = 'webhook_removed';
-    public const AUDIT_PERMISSION_CHANGED   = 'permission_changed';
+    public const AUDIT_CREATED = 'created';
+
+    public const AUDIT_UPDATED = 'updated';
+
+    public const AUDIT_DELETED = 'deleted';
+
+    public const AUDIT_SECRET_ROTATED = 'secret_rotated';
+
+    public const AUDIT_VALIDATION_SUCCESS = 'validation_success';
+
+    public const AUDIT_VALIDATION_FAILED = 'validation_failed';
+
+    public const AUDIT_OAUTH_CONNECTED = 'oauth_connected';
+
+    public const AUDIT_OAUTH_DISCONNECTED = 'oauth_disconnected';
+
+    public const AUDIT_WEBHOOK_REGISTERED = 'webhook_registered';
+
+    public const AUDIT_WEBHOOK_REMOVED = 'webhook_removed';
+
+    public const AUDIT_PERMISSION_CHANGED = 'permission_changed';
+
     public const AUDIT_HEALTH_STATUS_CHANGED = 'health_status_changed';
 
     public function __construct(
-        private readonly ValidatorRegistry     $validators,
-        private readonly ConfigAuditService    $audit,
+        private readonly ValidatorRegistry $validators,
+        private readonly ConfigAuditService $audit,
         private readonly ProviderEventPublisher $events,
     ) {}
 
@@ -62,6 +73,7 @@ final class ProviderCredentialService
             self::CACHE_TTL,
             function () use ($companyId, $provider): bool {
                 $cred = $this->find($companyId, $provider);
+
                 return $cred !== null && $cred->status === 'ready';
             },
         );
@@ -85,14 +97,14 @@ final class ProviderCredentialService
         $cred = $this->find($companyId, $provider);
 
         return [
-            'provider'             => $provider,
-            'app_id'               => $cred?->app_id,
-            'has_app_secret'       => ! empty($cred?->app_secret),
-            'redirect_uri'         => $cred?->redirect_uri,
+            'provider' => $provider,
+            'app_id' => $cred?->app_id,
+            'has_app_secret' => ! empty($cred?->app_secret),
+            'redirect_uri' => $cred?->redirect_uri,
             'default_redirect_uri' => $this->defaultRedirectUri($provider),
-            'status'               => $cred?->status ?? 'not_configured',
-            'validated_at'         => $cred?->validated_at?->toISOString(),
-            'last_updated_at'      => $cred?->updated_at?->toISOString(),
+            'status' => $cred?->status ?? 'not_configured',
+            'validated_at' => $cred?->validated_at?->toISOString(),
+            'last_updated_at' => $cred?->updated_at?->toISOString(),
         ];
     }
 
@@ -105,9 +117,9 @@ final class ProviderCredentialService
      * @return array{valid: bool, errors: list<string>}
      */
     public function validate(
-        string  $provider,
-        string  $appId,
-        string  $appSecret,
+        string $provider,
+        string $appId,
+        string $appSecret,
         ?string $companyId = null,
     ): array {
         $validator = $this->validators->get($provider);
@@ -119,21 +131,21 @@ final class ProviderCredentialService
         // SECURITY: never pass $appSecret to audit — use boolean flag only
         $result = $validator->validate($appId, $appSecret);
 
-        if (!empty($companyId)) {
+        if (! empty($companyId)) {
             $this->audit->record(
                 companyId: $companyId,
-                module:    'marketing',
-                category:  'provider_credentials',
-                action:    $result['valid'] ? self::AUDIT_VALIDATION_SUCCESS : self::AUDIT_VALIDATION_FAILED,
-                oldValue:  null,
-                newValue:  [
-                    'provider'       => $provider,
-                    'app_id'         => $appId,
+                module: 'marketing',
+                category: 'provider_credentials',
+                action: $result['valid'] ? self::AUDIT_VALIDATION_SUCCESS : self::AUDIT_VALIDATION_FAILED,
+                oldValue: null,
+                newValue: [
+                    'provider' => $provider,
+                    'app_id' => $appId,
                     'has_app_secret' => ! empty($appSecret),
-                    'errors'         => $result['errors'],
+                    'errors' => $result['errors'],
                 ],
                 configKey: "provider.{$provider}.validation",
-                reason:    'Credential validation check',
+                reason: 'Credential validation check',
             );
 
             if ($result['valid']) {
@@ -154,12 +166,12 @@ final class ProviderCredentialService
      * @return array{saved: bool, valid: bool, errors: list<string>, status: string}
      */
     public function validateAndSave(
-        string  $companyId,
-        string  $provider,
-        string  $appId,
+        string $companyId,
+        string $provider,
+        string $appId,
         ?string $appSecret,
-        string  $redirectUri,
-        string  $actorId,
+        string $redirectUri,
+        string $actorId,
     ): array {
         $old = $this->find($companyId, $provider);
 
@@ -168,8 +180,8 @@ final class ProviderCredentialService
         if ($appSecret === null) {
             if ($old === null) {
                 return [
-                    'saved'  => false,
-                    'valid'  => false,
+                    'saved' => false,
+                    'valid' => false,
                     'errors' => ['App Secret is required for first-time configuration.'],
                     'status' => 'not_configured',
                 ];
@@ -188,13 +200,13 @@ final class ProviderCredentialService
         $effectiveUri = $this->resolveRedirectUri($provider, $redirectUri);
 
         $credData = [
-            'app_id'       => $appId,
+            'app_id' => $appId,
             'redirect_uri' => $effectiveUri,
-            'status'       => 'ready',
+            'status' => 'ready',
             'validated_at' => now(),
             'validated_by' => $actorId,
-            'updated_by'   => $actorId,
-            'created_by'   => $old === null ? $actorId : $old->created_by,
+            'updated_by' => $actorId,
+            'created_by' => $old === null ? $actorId : $old->created_by,
         ];
 
         // Only overwrite the stored secret when the user explicitly provided a new one
@@ -211,20 +223,20 @@ final class ProviderCredentialService
 
         $this->audit->record(
             companyId: $companyId,
-            module:    'marketing',
-            category:  'provider_credentials',
-            action:    $old === null ? self::AUDIT_CREATED : self::AUDIT_UPDATED,
-            oldValue:  $old ? ['provider' => $provider, 'app_id' => $old->app_id, 'status' => $old->status] : null,
-            newValue:  [
-                'provider'       => $provider,
-                'app_id'         => $appId,
+            module: 'marketing',
+            category: 'provider_credentials',
+            action: $old === null ? self::AUDIT_CREATED : self::AUDIT_UPDATED,
+            oldValue: $old ? ['provider' => $provider, 'app_id' => $old->app_id, 'status' => $old->status] : null,
+            newValue: [
+                'provider' => $provider,
+                'app_id' => $appId,
                 'has_app_secret' => true,
                 'secret_changed' => $appSecret !== null,
-                'redirect_uri'   => $effectiveUri,
-                'status'         => 'ready',
+                'redirect_uri' => $effectiveUri,
+                'status' => 'ready',
             ],
             configKey: "provider.{$provider}.credentials",
-            reason:    'Configuration wizard save',
+            reason: 'Configuration wizard save',
         );
 
         if ($old === null) {
@@ -261,13 +273,13 @@ final class ProviderCredentialService
         $updated = MarketingProviderCredential::where('company_id', $companyId)
             ->where('provider', $provider)
             ->update([
-                'app_id'       => $appId,
-                'app_secret'   => $newAppSecret, // encrypted by model cast
-                'status'       => 'ready',
+                'app_id' => $appId,
+                'app_secret' => $newAppSecret, // encrypted by model cast
+                'status' => 'ready',
                 'validated_at' => now(),
                 'validated_by' => $actorId,
-                'updated_by'   => $actorId,
-                'updated_at'   => now(),
+                'updated_by' => $actorId,
+                'updated_at' => now(),
             ]);
 
         if ($updated === 0) {
@@ -278,13 +290,13 @@ final class ProviderCredentialService
 
         $this->audit->record(
             companyId: $companyId,
-            module:    'marketing',
-            category:  'provider_credentials',
-            action:    self::AUDIT_SECRET_ROTATED,
-            oldValue:  ['provider' => $provider, 'has_app_secret' => true],
-            newValue:  ['provider' => $provider, 'app_id' => $appId, 'has_app_secret' => true, 'status' => 'ready'],
+            module: 'marketing',
+            category: 'provider_credentials',
+            action: self::AUDIT_SECRET_ROTATED,
+            oldValue: ['provider' => $provider, 'has_app_secret' => true],
+            newValue: ['provider' => $provider, 'app_id' => $appId, 'has_app_secret' => true, 'status' => 'ready'],
             configKey: "provider.{$provider}.app_secret",
-            reason:    'Secret rotation',
+            reason: 'Secret rotation',
         );
 
         $this->events->providerCredentialRotated($companyId, $provider, $actorId);
@@ -305,13 +317,13 @@ final class ProviderCredentialService
 
         $this->audit->record(
             companyId: $companyId,
-            module:    'marketing',
-            category:  'provider_credentials',
-            action:    self::AUDIT_DELETED,
-            oldValue:  ['provider' => $provider, 'app_id' => $cred->app_id, 'status' => $cred->status],
-            newValue:  null,
+            module: 'marketing',
+            category: 'provider_credentials',
+            action: self::AUDIT_DELETED,
+            oldValue: ['provider' => $provider, 'app_id' => $cred->app_id, 'status' => $cred->status],
+            newValue: null,
             configKey: "provider.{$provider}.credentials",
-            reason:    'Configuration removed by user',
+            reason: 'Configuration removed by user',
         );
 
         $cred->delete();
@@ -326,13 +338,13 @@ final class ProviderCredentialService
     {
         $this->audit->record(
             companyId: $companyId,
-            module:    'marketing',
-            category:  'provider_oauth',
-            action:    self::AUDIT_OAUTH_CONNECTED,
-            oldValue:  null,
-            newValue:  ['provider' => $provider, 'connected_by' => $actorId],
+            module: 'marketing',
+            category: 'provider_oauth',
+            action: self::AUDIT_OAUTH_CONNECTED,
+            oldValue: null,
+            newValue: ['provider' => $provider, 'connected_by' => $actorId],
             configKey: "provider.{$provider}.oauth",
-            reason:    'OAuth authorization completed',
+            reason: 'OAuth authorization completed',
         );
 
         MarketingProviderCredential::where('company_id', $companyId)
@@ -347,13 +359,13 @@ final class ProviderCredentialService
     {
         $this->audit->record(
             companyId: $companyId,
-            module:    'marketing',
-            category:  'provider_oauth',
-            action:    self::AUDIT_OAUTH_DISCONNECTED,
-            oldValue:  null,
-            newValue:  ['provider' => $provider, 'disconnected_by' => $actorId],
+            module: 'marketing',
+            category: 'provider_oauth',
+            action: self::AUDIT_OAUTH_DISCONNECTED,
+            oldValue: null,
+            newValue: ['provider' => $provider, 'disconnected_by' => $actorId],
             configKey: "provider.{$provider}.oauth",
-            reason:    'OAuth disconnected by user',
+            reason: 'OAuth disconnected by user',
         );
 
         MarketingProviderCredential::where('company_id', $companyId)
@@ -373,6 +385,7 @@ final class ProviderCredentialService
     public function defaultRedirectUri(string $provider): string
     {
         $base = rtrim((string) config('app.url'), '/');
+
         return "{$base}/api/marketing/{$provider}/auth/callback";
     }
 

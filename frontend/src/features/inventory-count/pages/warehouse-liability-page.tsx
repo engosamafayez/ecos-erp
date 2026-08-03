@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CheckCircle, Clock, Loader2, Shield, XCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,26 +23,12 @@ import {
 } from '../hooks/use-inventory-count';
 import type { WarehouseLiability } from '../types/inventory-count';
 
-function statusBadge(status: string) {
-  if (status === 'approved') {
-    return <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 text-xs"><CheckCircle className="size-3 mr-1" />Approved</Badge>;
-  }
-  if (status === 'rejected') {
-    return <Badge variant="outline" className="text-muted-foreground text-xs"><XCircle className="size-3 mr-1" />Rejected</Badge>;
-  }
-  return <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950/20 text-xs"><Clock className="size-3 mr-1" />Pending</Badge>;
-}
-
-function liabilityTypeBadge(type: string) {
-  if (type === 'waste_transferred') {
-    return <span className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-300 rounded px-1.5 py-0.5">Waste Transfer</span>;
-  }
-  return <span className="text-xs bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-300 rounded px-1.5 py-0.5">Shortage</span>;
-}
-
 type ActionState = { liability: WarehouseLiability; action: 'approve' | 'reject'; actorName: string; notes: string };
 
 export function WarehouseLiabilityPage() {
+  const { t } = useTranslation('inventory-count');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
+
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [actionState, setActionState] = useState<ActionState | null>(null);
@@ -58,6 +45,23 @@ export function WarehouseLiabilityPage() {
   const summary = query.data?.summary;
   const isSaving = approveMutation.isPending || rejectMutation.isPending;
 
+  function statusBadge(status: string) {
+    if (status === 'approved') {
+      return <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 text-xs"><CheckCircle className="size-3 mr-1" />{t('liability.status.approved')}</Badge>;
+    }
+    if (status === 'rejected') {
+      return <Badge variant="outline" className="text-muted-foreground text-xs"><XCircle className="size-3 mr-1" />{t('liability.status.rejected')}</Badge>;
+    }
+    return <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950/20 text-xs"><Clock className="size-3 mr-1" />{t('liability.status.pending')}</Badge>;
+  }
+
+  function liabilityTypeBadge(type: string) {
+    if (type === 'waste_transferred') {
+      return <span className="text-xs bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-300 rounded px-1.5 py-0.5">{t('liability.types.waste_transferred')}</span>;
+    }
+    return <span className="text-xs bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-300 rounded px-1.5 py-0.5">{t('liability.types.shortage')}</span>;
+  }
+
   async function handleConfirm() {
     if (!actionState || !actionState.actorName.trim()) return;
     try {
@@ -67,44 +71,44 @@ export function WarehouseLiabilityPage() {
           approved_by: actionState.actorName.trim(),
           notes: actionState.notes || null,
         });
-        toast.success('Liability approved and inventory adjusted.');
+        toast.success(t('liability.toast.approved'));
       } else {
         await rejectMutation.mutateAsync({
           id: actionState.liability.id,
           rejected_by: actionState.actorName.trim(),
           reason: actionState.notes || null,
         });
-        toast.success('Liability rejected.');
+        toast.success(t('liability.toast.rejected'));
       }
       setActionState(null);
     } catch {
-      toast.error('Action failed. Please try again.');
+      toast.error(t('liability.toast.failed'));
     }
   }
 
   return (
     <div className="flex flex-col gap-6 p-6">
       <PageHeader
-        title="Warehouse Liability Register"
-        subtitle="Track and approve inventory shortages and waste transfers attributed to warehouses"
+        title={t('liability.pageTitle')}
+        subtitle={t('liability.subtitle')}
       />
 
       {/* KPI strip */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-6">
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Pending</p>
+          <p className="text-xs text-muted-foreground">{t('liability.kpis.pending')}</p>
           <p className="text-2xl font-semibold mt-1 text-amber-600">{summary?.pending ?? '—'}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Approved</p>
+          <p className="text-xs text-muted-foreground">{t('liability.kpis.approved')}</p>
           <p className="text-2xl font-semibold mt-1 text-emerald-600">{summary?.approved ?? '—'}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Rejected</p>
+          <p className="text-xs text-muted-foreground">{t('liability.kpis.rejected')}</p>
           <p className="text-2xl font-semibold mt-1 text-muted-foreground">{summary?.rejected ?? '—'}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Pending Value</p>
+          <p className="text-xs text-muted-foreground">{t('liability.kpis.pendingValue')}</p>
           <p className="text-base font-semibold mt-1 tabular-nums">
             {summary?.total_pending_value != null
               ? Number(summary.total_pending_value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -112,7 +116,7 @@ export function WarehouseLiabilityPage() {
           </p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Approved (FIFO)</p>
+          <p className="text-xs text-muted-foreground">{t('liability.kpis.approvedFifo')}</p>
           <p className="text-base font-semibold mt-1 tabular-nums text-emerald-600">
             {summary?.total_approved_value != null
               ? Number(summary.total_approved_value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -120,7 +124,7 @@ export function WarehouseLiabilityPage() {
           </p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Month</p>
+          <p className="text-xs text-muted-foreground">{t('liability.kpis.month')}</p>
           <input
             type="month"
             value={month}
@@ -142,7 +146,7 @@ export function WarehouseLiabilityPage() {
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
           >
-            {s === 'all' ? 'All' : s === 'pending' ? 'Pending' : s === 'approved' ? 'Approved' : 'Rejected'}
+            {t(`liability.filters.${s}`)}
           </button>
         ))}
       </div>
@@ -156,20 +160,20 @@ export function WarehouseLiabilityPage() {
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-16 text-center">
             <Shield className="size-8 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">No warehouse liabilities</p>
+            <p className="text-sm text-muted-foreground">{t('liability.empty')}</p>
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/40">
-                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Product</th>
-                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Type</th>
-                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">Quantity</th>
-                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">Total Cost</th>
-                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Warehouse</th>
-                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Manager</th>
-                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Status</th>
-                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">Actions</th>
+                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('liability.table.product')}</th>
+                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('liability.table.type')}</th>
+                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">{t('liability.table.quantity')}</th>
+                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">{t('liability.table.totalCost')}</th>
+                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('liability.table.warehouse')}</th>
+                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('liability.table.manager')}</th>
+                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('liability.table.status')}</th>
+                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">{t('liability.table.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -189,7 +193,7 @@ export function WarehouseLiabilityPage() {
                       })}
                     </div>
                     {lib.cost_snapshot_total_value != null && (
-                      <div className="text-[10px] text-emerald-600">FIFO Snapshot</div>
+                      <div className="text-[10px] text-emerald-600">{t('liability.fifoSnapshot')}</div>
                     )}
                   </td>
                   <td className="px-4 py-2.5 text-xs text-muted-foreground">{(lib.warehouse as { id: string; name: string } | null)?.name ?? '—'}</td>
@@ -204,7 +208,7 @@ export function WarehouseLiabilityPage() {
                           className="h-7 text-xs"
                           onClick={() => setActionState({ liability: lib, action: 'approve', actorName: '', notes: '' })}
                         >
-                          Approve
+                          {t('liability.actions.approve')}
                         </Button>
                         <Button
                           size="sm"
@@ -212,7 +216,7 @@ export function WarehouseLiabilityPage() {
                           className="h-7 text-xs text-destructive hover:text-destructive"
                           onClick={() => setActionState({ liability: lib, action: 'reject', actorName: '', notes: '' })}
                         >
-                          Reject
+                          {t('liability.actions.reject')}
                         </Button>
                       </div>
                     )}
@@ -229,7 +233,7 @@ export function WarehouseLiabilityPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {actionState?.action === 'approve' ? 'Approve Liability' : 'Reject Liability'}
+              {actionState?.action === 'approve' ? t('liability.dialog.approveTitle') : t('liability.dialog.rejectTitle')}
             </DialogTitle>
           </DialogHeader>
           {actionState && (
@@ -237,37 +241,37 @@ export function WarehouseLiabilityPage() {
               <div className="rounded-md border bg-muted/40 px-4 py-3 text-sm">
                 <p className="font-medium">{actionState.liability.product?.name}</p>
                 <p className="text-muted-foreground text-xs mt-0.5">
-                  Quantity: {Number(actionState.liability.quantity).toFixed(2)} ·
-                  Cost: {Number(actionState.liability.total_cost).toLocaleString()} ·
+                  {t('liability.dialog.quantity')} {Number(actionState.liability.quantity).toFixed(2)} ·
+                  {' '}{t('liability.dialog.cost')} {Number(actionState.liability.total_cost).toLocaleString()} ·
                   {liabilityTypeBadge(actionState.liability.liability_type)}
                 </p>
                 {actionState.action === 'approve' && (
                   <p className="text-xs text-amber-600 mt-2 font-medium">
-                    Approving will deduct {Number(actionState.liability.quantity).toFixed(2)} units from inventory.
+                    {tAny('liability.dialog.approveWarning', { qty: Number(actionState.liability.quantity).toFixed(2) })}
                   </p>
                 )}
               </div>
 
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">
-                  {actionState.action === 'approve' ? 'Approved By' : 'Rejected By'}
+                  {actionState.action === 'approve' ? t('liability.dialog.approvedBy') : t('liability.dialog.rejectedBy')}
                 </Label>
                 <input
                   value={actionState.actorName}
                   onChange={(e) => setActionState((s) => s ? { ...s, actorName: e.target.value } : s)}
-                  placeholder="Your name"
+                  placeholder={tAny('liability.dialog.yourName')}
                   className="h-9 w-full rounded border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
 
               <div className="space-y-1.5">
                 <Label className="text-xs font-medium">
-                  {actionState.action === 'approve' ? 'Notes (optional)' : 'Rejection reason (optional)'}
+                  {actionState.action === 'approve' ? t('liability.dialog.notesOptional') : t('liability.dialog.rejectionReason')}
                 </Label>
                 <Textarea
                   value={actionState.notes}
                   onChange={(e) => setActionState((s) => s ? { ...s, notes: e.target.value } : s)}
-                  placeholder={actionState.action === 'approve' ? 'Add approval notes…' : 'Why is this being rejected?'}
+                  placeholder={tAny(actionState.action === 'approve' ? 'liability.dialog.approveNotes' : 'liability.dialog.rejectNotes')}
                   rows={3}
                   className="text-sm"
                 />
@@ -275,14 +279,14 @@ export function WarehouseLiabilityPage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setActionState(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setActionState(null)}>{t('liability.dialog.cancel')}</Button>
             <Button
               variant={actionState?.action === 'approve' ? 'default' : 'destructive'}
               onClick={handleConfirm}
               disabled={!actionState?.actorName.trim() || isSaving}
             >
               {isSaving && <Loader2 className="size-3.5 mr-1.5 animate-spin" />}
-              {actionState?.action === 'approve' ? 'Approve & Adjust Inventory' : 'Reject'}
+              {actionState?.action === 'approve' ? t('liability.dialog.approveConfirm') : t('liability.dialog.rejectConfirm')}
             </Button>
           </DialogFooter>
         </DialogContent>

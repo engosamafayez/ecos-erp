@@ -25,10 +25,10 @@ final readonly class DisassemblyPolicyResult
     public static function eligible(array $metadata = []): self
     {
         return new self(
-            eligible:    true,
-            reason:      DisassemblyPolicyCode::Eligible->label(),
+            eligible: true,
+            reason: DisassemblyPolicyCode::Eligible->label(),
             policy_code: DisassemblyPolicyCode::Eligible,
-            metadata:    $metadata,
+            metadata: $metadata,
         );
     }
 
@@ -39,10 +39,10 @@ final readonly class DisassemblyPolicyResult
         array $metadata = [],
     ): self {
         return new self(
-            eligible:    false,
-            reason:      $reason,
+            eligible: false,
+            reason: $reason,
             policy_code: $code,
-            metadata:    $metadata,
+            metadata: $metadata,
         );
     }
 
@@ -50,10 +50,10 @@ final readonly class DisassemblyPolicyResult
     public function toArray(): array
     {
         return [
-            'eligible'    => $this->eligible,
-            'reason'      => $this->reason,
+            'eligible' => $this->eligible,
+            'reason' => $this->reason,
             'policy_code' => $this->policy_code->value,
-            'metadata'    => $this->metadata,
+            'metadata' => $this->metadata,
         ];
     }
 }

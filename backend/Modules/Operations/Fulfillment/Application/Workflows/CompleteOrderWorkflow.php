@@ -25,7 +25,7 @@ final class CompleteOrderWorkflow implements FulfillmentWorkflowInterface
 
         if ($order->status !== OrderStatus::Delivered) {
             throw new WorkflowPreconditionException(
-                "Order [{$order->id}] must be in delivered status before completion. Current: [{$order->status->value}]."
+                "Order [{$order->id}] must be in delivered status before completion. Current: [{$order->status->value}].",
             );
         }
     }
@@ -34,19 +34,19 @@ final class CompleteOrderWorkflow implements FulfillmentWorkflowInterface
     {
         $order = $ctx->order;
 
-        $order->update(['status' => OrderStatus::Completed]);
+        $order->update(['status' => OrderStatus::Delivered]);
         $order->refresh();
 
         return FulfillmentResult::success(
             $order,
             "Order #{$order->order_number} completed and permanently closed.",
             [
-                'revenue'        => (float) ($order->total ?? 0),
-                'cogs_amount'    => (float) ($order->actual_cogs_amount ?? 0),
-                'margin_amount'  => (float) ($order->actual_margin_amount ?? 0),
+                'revenue' => (float) ($order->total ?? 0),
+                'cogs_amount' => (float) ($order->actual_cogs_amount ?? 0),
+                'margin_amount' => (float) ($order->actual_margin_amount ?? 0),
                 'margin_percent' => $order->actual_margin_percent !== null ? (float) $order->actual_margin_percent : null,
-                'completed_at'   => now()->toIso8601String(),
-                'actor_id'       => $ctx->actorId,
+                'completed_at' => now()->toIso8601String(),
+                'actor_id' => $ctx->actorId,
             ],
         );
     }
@@ -58,15 +58,15 @@ final class CompleteOrderWorkflow implements FulfillmentWorkflowInterface
 
         return [
             new OrderCompletedEvent(
-                orderId:       $order->id,
-                orderNumber:   $order->order_number,
-                companyId:     $order->company_id ?? '',
-                revenue:       (float) ($result->meta['revenue'] ?? 0),
-                cogsAmount:    (float) ($result->meta['cogs_amount'] ?? 0),
-                marginAmount:  (float) ($result->meta['margin_amount'] ?? 0),
+                orderId: $order->id,
+                orderNumber: $order->order_number,
+                companyId: $order->company_id ?? '',
+                revenue: (float) ($result->meta['revenue'] ?? 0),
+                cogsAmount: (float) ($result->meta['cogs_amount'] ?? 0),
+                marginAmount: (float) ($result->meta['margin_amount'] ?? 0),
                 marginPercent: $result->meta['margin_percent'] !== null ? (float) $result->meta['margin_percent'] : null,
-                completedAt:   $result->meta['completed_at'] ?? now()->toIso8601String(),
-                actorId:       $result->meta['actor_id'] ?? null,
+                completedAt: $result->meta['completed_at'] ?? now()->toIso8601String(),
+                actorId: $result->meta['actor_id'] ?? null,
             ),
         ];
     }

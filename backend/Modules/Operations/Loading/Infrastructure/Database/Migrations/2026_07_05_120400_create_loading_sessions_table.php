@@ -11,7 +11,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-                if (Schema::hasTable('loading_sessions')) {
+        if (Schema::hasTable('loading_sessions')) {
             return;
         }
 

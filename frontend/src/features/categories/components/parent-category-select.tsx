@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 
 import { Combobox } from '@/components/crud';
 import { categoriesService } from '@/features/categories/services/categories-service';
@@ -16,8 +17,6 @@ type ParentCategorySelectProps = {
   className?: string;
 };
 
-const NONE_OPTION = { value: '', label: '— None (top level) —' };
-
 /**
  * Searchable parent-category select backed by the Categories API. Reuses the
  * generic Combobox from the CRUD kit. Includes a "None" option for top-level
@@ -28,18 +27,22 @@ export function ParentCategorySelect({
   onChange,
   excludeId,
   scope,
-  placeholder = 'Select parent…',
+  placeholder,
   disabled,
   className,
 }: ParentCategorySelectProps) {
+  const { t } = useTranslation('categories');
+
   const { data, isLoading } = useQuery({
     queryKey: ['category-options', scope ?? 'all'],
     queryFn: () => categoriesService.list({ per_page: 100, sort_by: 'name', sort_dir: 'asc', scope }),
     staleTime: 60 * 1000,
   });
 
+  const noneOption = { value: '', label: t('form.noParent') };
+
   const options = [
-    NONE_OPTION,
+    noneOption,
     ...(data?.items ?? [])
       .filter((category) => category.id !== excludeId && category.level < 3)
       .map((category) => ({
@@ -54,9 +57,9 @@ export function ParentCategorySelect({
       value={value ?? ''}
       onChange={onChange}
       loading={isLoading}
-      placeholder={placeholder}
-      searchPlaceholder="Search categories…"
-      emptyText="No categories found"
+      placeholder={placeholder ?? t('form.selectParent')}
+      searchPlaceholder={t('form.searchCategories')}
+      emptyText={t('form.noResults')}
       disabled={disabled}
       className={className}
     />

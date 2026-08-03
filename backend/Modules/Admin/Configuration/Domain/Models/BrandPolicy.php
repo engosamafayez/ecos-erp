@@ -18,10 +18,10 @@ use Modules\Organization\Brands\Domain\Models\Brand;
  * @property string $id
  * @property string $brand_id
  * @property string $company_id
- * @property string $policy_group  e.g. 'preparation', 'pricing', 'inventory'
- * @property array  $settings
- * @property int    $version
- * @property bool   $is_active
+ * @property string $policy_group e.g. 'preparation', 'pricing', 'inventory'
+ * @property array $settings
+ * @property int $version
+ * @property bool $is_active
  */
 class BrandPolicy extends Model
 {
@@ -56,9 +56,9 @@ class BrandPolicy extends Model
     protected function casts(): array
     {
         return [
-            'settings'  => 'array',
+            'settings' => 'array',
             'is_active' => 'boolean',
-            'version'   => 'integer',
+            'version' => 'integer',
         ];
     }
 
@@ -75,74 +75,74 @@ class BrandPolicy extends Model
     public static function defaultSettings(string $group): array
     {
         return match ($group) {
-            'preparation'  => self::defaultPreparationSettings(),
-            'pricing'      => self::defaultPricingSettings(),
-            'inventory'    => self::defaultInventorySettings(),
-            'manufacturing'=> self::defaultManufacturingSettings(),
-            'order'        => self::defaultOrderSettings(),
-            'logistics'    => self::defaultLogisticsSettings(),
-            'crm'          => self::defaultCrmSettings(),
-            'marketing'    => self::defaultMarketingSettings(),
-            'ai'           => self::defaultAiSettings(),
-            'workflow'     => self::defaultWorkflowSettings(),
+            'preparation' => self::defaultPreparationSettings(),
+            'pricing' => self::defaultPricingSettings(),
+            'inventory' => self::defaultInventorySettings(),
+            'manufacturing' => self::defaultManufacturingSettings(),
+            'order' => self::defaultOrderSettings(),
+            'logistics' => self::defaultLogisticsSettings(),
+            'crm' => self::defaultCrmSettings(),
+            'marketing' => self::defaultMarketingSettings(),
+            'ai' => self::defaultAiSettings(),
+            'workflow' => self::defaultWorkflowSettings(),
             'notification' => self::defaultNotificationSettings(),
-            'integration'  => self::defaultIntegrationSettings(),
-            'security'     => self::defaultSecuritySettings(),
-            'numbering'    => self::defaultNumberingSettings(),
-            'approval'     => self::defaultApprovalSettings(),
-            default        => [],
+            'integration' => self::defaultIntegrationSettings(),
+            'security' => self::defaultSecuritySettings(),
+            'numbering' => self::defaultNumberingSettings(),
+            'approval' => self::defaultApprovalSettings(),
+            default => [],
         };
     }
 
     private static function defaultPreparationSettings(): array
     {
         return [
-            'wave_generation'         => 'auto',
-            'wave_priority'           => 'fifo',
-            'batch_size'              => 50,
-            'merge_orders'            => true,
-            'split_orders'            => false,
-            'partial_preparation'     => false,
+            'wave_generation' => 'auto',
+            'wave_priority' => 'fifo',
+            'batch_size' => 50,
+            'merge_orders' => true,
+            'split_orders' => false,
+            'partial_preparation' => false,
             'negative_stock_handling' => 'block',
-            'packing_strategy'        => 'standard',
-            'exception_handling'      => 'notify',
+            'packing_strategy' => 'standard',
+            'exception_handling' => 'notify',
         ];
     }
 
     private static function defaultPricingSettings(): array
     {
         return [
-            'auto_price_review'         => true,
-            'minimum_margin_pct'        => 20,
-            'discount_type'             => 'percentage',
-            'discount_value'            => 15.0,
-            'required_approval_above'   => null,
-            'publishing_strategy'       => 'automatic',
-            'pending_review_threshold'  => 5,
-            'price_expiration_days'     => null,
+            'auto_price_review' => true,
+            'minimum_margin_pct' => 20,
+            'discount_type' => 'percentage',
+            'discount_value' => 15.0,
+            'required_approval_above' => null,
+            'publishing_strategy' => 'automatic',
+            'pending_review_threshold' => 5,
+            'price_expiration_days' => null,
         ];
     }
 
     private static function defaultInventorySettings(): array
     {
         return [
-            'allow_negative_stock'       => false,
-            'reservation_method'         => 'fifo',
-            'costing_method'             => 'fifo',
+            'allow_negative_stock' => false,
+            'reservation_method' => 'fifo',
+            'costing_method' => 'fifo',
             'cycle_count_frequency_days' => 30,
-            'stock_alert_threshold_pct'  => 20,
-            'auto_reorder'               => false,
+            'stock_alert_threshold_pct' => 20,
+            'auto_reorder' => false,
         ];
     }
 
     private static function defaultManufacturingSettings(): array
     {
         return [
-            'recipe_version_policy'      => 'latest',
-            'recipe_approval_required'   => false,
-            'auto_manufacturing'         => false,
-            'bom_validation'             => true,
-            'waste_rules_enabled'        => true,
+            'recipe_version_policy' => 'latest',
+            'recipe_approval_required' => false,
+            'auto_manufacturing' => false,
+            'bom_validation' => true,
+            'waste_rules_enabled' => true,
             'cost_refresh_on_production' => true,
         ];
     }
@@ -151,72 +151,72 @@ class BrandPolicy extends Model
     {
         return [
             'source_entry_policies' => [
-                'manual'      => ['pending', 'awaiting_payment', 'processing', 'confirmed'],
-                'pos'         => 'processing',
+                'manual' => ['pending', 'awaiting_payment', 'processing', 'confirmed'],
+                'pos' => 'processing',
                 'woocommerce' => 'preserve',
-                'public_api'  => 'preserve',
+                'public_api' => 'preserve',
             ],
             'payment_proof_policy' => [
-                'cod'           => 'none',
-                'instapay'      => 'required',
+                'cod' => 'none',
+                'instapay' => 'required',
                 'bank_transfer' => 'required',
                 'mobile_wallet' => 'required',
-                'credit_card'   => 'optional',
+                'credit_card' => 'optional',
             ],
-            'auto_reserve_inventory'   => false,
+            'auto_reserve_inventory' => false,
             'customer_matching_policy' => 'reuse_existing',
-            'require_phone'            => true,
-            'require_address'          => true,
-            'customer_lookup_enabled'  => true,
-            'deposit_policy'           => 'none',
-            'discount_policy'          => 'manager_approval',
+            'require_phone' => true,
+            'require_address' => true,
+            'customer_lookup_enabled' => true,
+            'deposit_policy' => 'none',
+            'discount_policy' => 'manager_approval',
         ];
     }
 
     private static function defaultLogisticsSettings(): array
     {
         return [
-            'vehicle_assignment'  => 'manual',
-            'driver_assignment'   => 'manual',
+            'vehicle_assignment' => 'manual',
+            'driver_assignment' => 'manual',
             'max_stops_per_route' => 20,
-            'partial_delivery'    => true,
-            'failed_delivery'     => 'return_to_warehouse',
+            'partial_delivery' => true,
+            'failed_delivery' => 'return_to_warehouse',
         ];
     }
 
     private static function defaultCrmSettings(): array
     {
         return [
-            'vip_order_threshold'        => 10,
+            'vip_order_threshold' => 10,
             'delivery_success_threshold' => 90,
-            'follow_up_after_days'       => 7,
-            'loyalty_enabled'            => false,
+            'follow_up_after_days' => 7,
+            'loyalty_enabled' => false,
         ];
     }
 
     private static function defaultMarketingSettings(): array
     {
         return [
-            'default_utm_source'    => null,
-            'campaign_attribution'  => 'last_click',
-            'conversion_window_days'=> 30,
+            'default_utm_source' => null,
+            'campaign_attribution' => 'last_click',
+            'conversion_window_days' => 30,
         ];
     }
 
     private static function defaultAiSettings(): array
     {
         return [
-            'confidence_threshold'  => 0.85,
+            'confidence_threshold' => 0.85,
             'auto_decision_enabled' => false,
-            'prediction_rules'      => [],
-            'alert_threshold'       => 0.7,
+            'prediction_rules' => [],
+            'alert_threshold' => 0.7,
         ];
     }
 
     private static function defaultWorkflowSettings(): array
     {
         return [
-            'order_workflow'       => 'standard',
+            'order_workflow' => 'standard',
             'preparation_workflow' => 'standard',
             'procurement_workflow' => 'standard',
         ];
@@ -225,10 +225,10 @@ class BrandPolicy extends Model
     private static function defaultNotificationSettings(): array
     {
         return [
-            'email_enabled'    => true,
-            'sms_enabled'      => false,
+            'email_enabled' => true,
+            'sms_enabled' => false,
             'whatsapp_enabled' => false,
-            'push_enabled'     => false,
+            'push_enabled' => false,
             'escalation_after_minutes' => 60,
         ];
     }
@@ -237,8 +237,8 @@ class BrandPolicy extends Model
     {
         return [
             'woocommerce_enabled' => false,
-            'meta_enabled'        => false,
-            'google_enabled'      => false,
+            'meta_enabled' => false,
+            'google_enabled' => false,
         ];
     }
 
@@ -246,34 +246,34 @@ class BrandPolicy extends Model
     {
         return [
             'session_timeout_minutes' => 480,
-            'max_login_attempts'      => 5,
-            'mfa_enabled'             => false,
-            'password_expiry_days'    => null,
+            'max_login_attempts' => 5,
+            'mfa_enabled' => false,
+            'password_expiry_days' => null,
         ];
     }
 
     private static function defaultNumberingSettings(): array
     {
         return [
-            'order_prefix'       => 'ORD',
-            'invoice_prefix'     => 'INV',
-            'purchase_prefix'    => 'PO',
-            'session_prefix'     => 'PREP',
-            'count_prefix'       => 'CNT',
-            'transfer_prefix'    => 'TRF',
-            'return_prefix'      => 'RET',
-            'sequence_padding'   => 6,
+            'order_prefix' => 'ORD',
+            'invoice_prefix' => 'INV',
+            'purchase_prefix' => 'PO',
+            'session_prefix' => 'PREP',
+            'count_prefix' => 'CNT',
+            'transfer_prefix' => 'TRF',
+            'return_prefix' => 'RET',
+            'sequence_padding' => 6,
         ];
     }
 
     private static function defaultApprovalSettings(): array
     {
         return [
-            'price_approval_required'     => false,
-            'recipe_approval_required'    => false,
+            'price_approval_required' => false,
+            'recipe_approval_required' => false,
             'purchase_approval_threshold' => null,
-            'discount_approval_required'  => true,
-            'refund_approval_required'    => true,
+            'discount_approval_required' => true,
+            'refund_approval_required' => true,
         ];
     }
 }

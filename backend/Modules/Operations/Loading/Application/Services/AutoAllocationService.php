@@ -45,9 +45,9 @@ use Modules\Operations\Preparation\Domain\Models\PreparationWaveOrder;
 final class AutoAllocationService
 {
     public function __construct(
-        private readonly AllocationPolicyService        $policy,
+        private readonly AllocationPolicyService $policy,
         private readonly AllocationDecisionChainService $decisions,
-        private readonly VehicleInventoryService        $vehicleInventory,
+        private readonly VehicleInventoryService $vehicleInventory,
     ) {}
 
     /**
@@ -102,11 +102,11 @@ final class AutoAllocationService
             return ['records_created' => 0, 'partial_count' => 0, 'skipped_count' => 0, 'orders_allocated' => 0];
         }
 
-        $ordersData    = $this->resolveOrdersForAssignment($assignment, $waveIds, $companyId);
-        $usePriority   = $this->policy->priorityAllocationEnabled($companyId);
-        $allowPartial  = $this->policy->allowsPartialAllocation($companyId);
+        $ordersData = $this->resolveOrdersForAssignment($assignment, $waveIds, $companyId);
+        $usePriority = $this->policy->priorityAllocationEnabled($companyId);
+        $allowPartial = $this->policy->allowsPartialAllocation($companyId);
         $maxPartialPct = $this->policy->maxPartialTolerancePct($companyId);
-        $defaultMode   = $this->policy->defaultMode($companyId);
+        $defaultMode = $this->policy->defaultMode($companyId);
 
         if ($usePriority) {
             $ordersData = $ordersData->sortBy('priority')->values();
@@ -116,15 +116,15 @@ final class AutoAllocationService
             $assignment, $companyId, $actorId, $productIds,
             $ordersData, $allowPartial, $maxPartialPct, $defaultMode,
         ): array {
-            $recordsCreated  = 0;
-            $partialCount    = 0;
-            $skippedCount    = 0;
+            $recordsCreated = 0;
+            $partialCount = 0;
+            $skippedCount = 0;
             $allocatedOrders = [];
 
             foreach ($ordersData as $orderData) {
-                $orderId     = $orderData['order_id'];
+                $orderId = $orderData['order_id'];
                 $orderNumber = $orderData['order_number'];
-                $priority    = $orderData['priority'];
+                $priority = $orderData['priority'];
 
                 // Order lines that match products on this vehicle.
                 $lines = OrderLine::where('order_id', $orderId)
@@ -148,59 +148,62 @@ final class AutoAllocationService
 
                     if ($item === null || $item->quantity_unallocated <= 0) {
                         $skippedCount++;
+
                         continue;
                     }
 
-                    $qtyRequested  = (float) $line->quantity;
-                    $qtyAvailable  = (float) $item->quantity_unallocated;
-                    $qtyAllocated  = min($qtyRequested, $qtyAvailable);
-                    $isPartial     = $qtyAllocated < $qtyRequested;
-                    $shortagePct   = $qtyRequested > 0
+                    $qtyRequested = (float) $line->quantity;
+                    $qtyAvailable = (float) $item->quantity_unallocated;
+                    $qtyAllocated = min($qtyRequested, $qtyAvailable);
+                    $isPartial = $qtyAllocated < $qtyRequested;
+                    $shortagePct = $qtyRequested > 0
                         ? ($qtyRequested - $qtyAllocated) / $qtyRequested
                         : 0.0;
 
                     if ($isPartial && ! $allowPartial) {
                         $skippedCount++;
+
                         continue;
                     }
 
                     if ($isPartial && $shortagePct > $maxPartialPct) {
                         $skippedCount++;
+
                         continue;
                     }
 
                     $mode = $isPartial ? AllocationMode::PartialAuto : $defaultMode;
 
                     $record = AllocationRecord::create([
-                        'company_id'               => $companyId,
-                        'vehicle_assignment_id'    => $assignment->id,
-                        'loading_session_id'       => $assignment->loading_session_id,
-                        'vehicle_id'               => $assignment->vehicle_id,
-                        'order_id'                 => $orderId,
-                        'order_line_id'            => $line->id,
-                        'order_number_snapshot'    => $orderNumber,
-                        'order_type_snapshot'      => null,
-                        'product_id'               => $line->product_id,
-                        'sku_snapshot'             => $item->sku_snapshot,
-                        'vehicle_inventory_item_id'=> $item->id,
-                        'allocation_mode'          => $mode->value,
-                        'priority_rank'            => max(1, $priority),
-                        'quantity_requested'       => $qtyRequested,
-                        'quantity_allocated'       => $qtyAllocated,
-                        'quantity_loaded'          => 0.0,
-                        'quantity_delivered'       => 0.0,
-                        'quantity_remaining'       => $qtyAllocated,
-                        'is_partial'               => $isPartial,
-                        'partial_reason'           => $isPartial
+                        'company_id' => $companyId,
+                        'vehicle_assignment_id' => $assignment->id,
+                        'loading_session_id' => $assignment->loading_session_id,
+                        'vehicle_id' => $assignment->vehicle_id,
+                        'order_id' => $orderId,
+                        'order_line_id' => $line->id,
+                        'order_number_snapshot' => $orderNumber,
+                        'order_type_snapshot' => null,
+                        'product_id' => $line->product_id,
+                        'sku_snapshot' => $item->sku_snapshot,
+                        'vehicle_inventory_item_id' => $item->id,
+                        'allocation_mode' => $mode->value,
+                        'priority_rank' => max(1, $priority),
+                        'quantity_requested' => $qtyRequested,
+                        'quantity_allocated' => $qtyAllocated,
+                        'quantity_loaded' => 0.0,
+                        'quantity_delivered' => 0.0,
+                        'quantity_remaining' => $qtyAllocated,
+                        'is_partial' => $isPartial,
+                        'partial_reason' => $isPartial
                             ? "Vehicle {$assignment->assignment_number}: {$qtyAllocated} of {$qtyRequested} units available"
                             : null,
-                        'status'                   => AllocationRecordStatus::Allocated->value,
-                        'allocated_at'             => now(),
-                        'allocated_by'             => 'system',
-                        'allocated_by_user_id'     => null,
-                        'policy_evaluation_id'     => null,
-                        'created_by'               => $actorId,
-                        'updated_by'               => $actorId,
+                        'status' => AllocationRecordStatus::Allocated->value,
+                        'allocated_at' => now(),
+                        'allocated_by' => 'system',
+                        'allocated_by_user_id' => null,
+                        'policy_evaluation_id' => null,
+                        'created_by' => $actorId,
+                        'updated_by' => $actorId,
                     ]);
 
                     // Record the initial system allocation decision.
@@ -218,9 +221,9 @@ final class AutoAllocationService
             }
 
             return [
-                'records_created'  => $recordsCreated,
-                'partial_count'    => $partialCount,
-                'skipped_count'    => $skippedCount,
+                'records_created' => $recordsCreated,
+                'partial_count' => $partialCount,
+                'skipped_count' => $skippedCount,
                 'orders_allocated' => count($allocatedOrders),
             ];
         });
@@ -236,7 +239,7 @@ final class AutoAllocationService
      *   Loads all PreparationWaveOrders from every wave that supplied this vehicle,
      *   using preparation_priority as the sort key.
      *
-     * @param  Collection<int, string>                                                 $waveIds
+     * @param  Collection<int, string>  $waveIds
      * @return Collection<int, array{order_id:string,order_number:string,priority:int}>
      */
     private function resolveOrdersForAssignment(
@@ -250,9 +253,9 @@ final class AutoAllocationService
             return VehiclePlanSlotOrder::where('vehicle_plan_slot_id', $assignment->vehicle_plan_slot_id)
                 ->get()
                 ->map(fn ($row) => [
-                    'order_id'     => $row->order_id,
+                    'order_id' => $row->order_id,
                     'order_number' => $row->order_number_snapshot,
-                    'priority'     => $row->stop_sequence ?? 99,
+                    'priority' => $row->stop_sequence ?? 99,
                 ]);
         }
 
@@ -260,9 +263,9 @@ final class AutoAllocationService
             ->where('company_id', $companyId)
             ->get()
             ->map(fn ($row) => [
-                'order_id'     => $row->order_id,
+                'order_id' => $row->order_id,
                 'order_number' => $row->order_number,
-                'priority'     => (int) $row->preparation_priority,
+                'priority' => (int) $row->preparation_priority,
             ]);
     }
 }

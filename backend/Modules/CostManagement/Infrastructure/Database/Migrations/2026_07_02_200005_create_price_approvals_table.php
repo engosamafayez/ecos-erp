@@ -30,8 +30,8 @@ return new class extends Migration
             $table->foreign('product_id')->references('id')->on('products')->cascadeOnDelete();
 
             // Snapshot at decision time
-            $table->decimal('old_product_cost',  15, 4);
-            $table->decimal('new_product_cost',  15, 4);
+            $table->decimal('old_product_cost', 15, 4);
+            $table->decimal('new_product_cost', 15, 4);
             $table->decimal('old_selling_price', 15, 4);
             $table->decimal('new_selling_price', 15, 4);
 

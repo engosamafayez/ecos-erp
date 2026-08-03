@@ -12,7 +12,7 @@ use Modules\POS\Receipt\Domain\Contracts\ReceiptRepositoryInterface;
 final class VoidReceiptService
 {
     public function __construct(
-        private readonly ReceiptRepositoryInterface    $receiptRepo,
+        private readonly ReceiptRepositoryInterface $receiptRepo,
         private readonly DomainEventPublisherInterface $publisher,
     ) {}
 
@@ -27,7 +27,7 @@ final class VoidReceiptService
         $this->publisher->publishAll($receipt->pullDomainEvents());
 
         return new VoidReceiptResult(
-            receiptId:     (string) $receipt->id,
+            receiptId: (string) $receipt->id,
             receiptNumber: $receipt->receipt_number,
         );
     }

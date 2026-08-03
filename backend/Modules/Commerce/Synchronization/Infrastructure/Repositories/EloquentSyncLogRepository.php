@@ -16,27 +16,27 @@ final class EloquentSyncLogRepository implements SyncLogRepositoryInterface
     {
         $query = SyncLog::query()->with(self::WITH);
 
-        if (!empty($filters['channel_id'])) {
+        if (! empty($filters['channel_id'])) {
             $query->where('channel_id', $filters['channel_id']);
         }
 
-        if (!empty($filters['entity_type'])) {
+        if (! empty($filters['entity_type'])) {
             $query->where('entity_type', $filters['entity_type']);
         }
 
-        if (!empty($filters['direction'])) {
+        if (! empty($filters['direction'])) {
             $query->where('direction', $filters['direction']);
         }
 
-        if (!empty($filters['status']) && $filters['status'] !== 'all') {
+        if (! empty($filters['status']) && $filters['status'] !== 'all') {
             $query->where('status', $filters['status']);
         }
 
-        if (!empty($filters['date_from'])) {
+        if (! empty($filters['date_from'])) {
             $query->whereDate('synced_at', '>=', $filters['date_from']);
         }
 
-        if (!empty($filters['date_to'])) {
+        if (! empty($filters['date_to'])) {
             $query->whereDate('synced_at', '<=', $filters['date_to']);
         }
 

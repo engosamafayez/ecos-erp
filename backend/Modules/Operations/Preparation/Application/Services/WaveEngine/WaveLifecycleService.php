@@ -16,7 +16,7 @@ use Modules\Operations\Preparation\Domain\Models\PreparationWave;
 final class WaveLifecycleService
 {
     public function __construct(
-        private readonly WaveManager          $waveManager,
+        private readonly WaveManager $waveManager,
         private readonly DemandRefreshDispatcher $demandDispatcher,
     ) {}
 
@@ -44,25 +44,25 @@ final class WaveLifecycleService
             $waveNumber = $this->generateWaveNumber($companyId, $planningDate);
 
             $wave = PreparationWave::create([
-                'company_id'    => $companyId,
-                'warehouse_id'  => $warehouseId,
-                'wave_number'   => $waveNumber,
+                'company_id' => $companyId,
+                'warehouse_id' => $warehouseId,
+                'wave_number' => $waveNumber,
                 'planning_date' => $planningDate,
-                'status'        => WaveStatus::Collecting->value,
-                'wave_type'     => 'engine',
-                'created_by'    => $actorId,
-                'updated_by'    => $actorId,
+                'status' => WaveStatus::Collecting->value,
+                'wave_type' => 'engine',
+                'created_by' => $actorId,
+                'updated_by' => $actorId,
             ]);
 
             event(new WaveCreated(
-                waveId:          $wave->id,
-                waveNumber:      $waveNumber,
-                companyId:       $companyId,
-                warehouseId:     $warehouseId,
-                planningDate:    $planningDate,
-                ordersCount:     0,
-                orderIds:        [],
-                createdBy:       $actorId,
+                waveId: $wave->id,
+                waveNumber: $waveNumber,
+                companyId: $companyId,
+                warehouseId: $warehouseId,
+                planningDate: $planningDate,
+                ordersCount: 0,
+                orderIds: [],
+                createdBy: $actorId,
                 configVersionId: '',
             ));
 
@@ -96,21 +96,21 @@ final class WaveLifecycleService
             $now = now();
 
             $fresh->update([
-                'status'       => WaveStatus::Closed->value,
+                'status' => WaveStatus::Closed->value,
                 'completed_at' => $now,
                 'completed_by' => $actorId,
-                'updated_by'   => $actorId,
+                'updated_by' => $actorId,
             ]);
 
             event(new WaveClosed(
-                waveId:       $fresh->id,
-                waveNumber:   $fresh->wave_number,
-                companyId:    $fresh->company_id,
-                warehouseId:  $fresh->warehouse_id,
+                waveId: $fresh->id,
+                waveNumber: $fresh->wave_number,
+                companyId: $fresh->company_id,
+                warehouseId: $fresh->warehouse_id,
                 planningDate: $fresh->planning_date->toDateString(),
-                closedBy:     $actorId,
-                closedAt:     $now->toIso8601String(),
-                reason:       $reason,
+                closedBy: $actorId,
+                closedAt: $now->toIso8601String(),
+                reason: $reason,
             ));
 
             return $fresh->refresh();
@@ -127,16 +127,16 @@ final class WaveLifecycleService
         $this->closeWave($wave, $actorId, 'rotation');
 
         $nextDate = Carbon::parse($wave->planning_date)->addDay()->toDateString();
-        $newWave  = $this->createCollectingWave($wave->company_id, $wave->warehouse_id, $nextDate, $actorId);
+        $newWave = $this->createCollectingWave($wave->company_id, $wave->warehouse_id, $nextDate, $actorId);
 
         event(new WaveRotated(
-            closedWaveId:  $wave->id,
-            newWaveId:     $newWave->id,
+            closedWaveId: $wave->id,
+            newWaveId: $newWave->id,
             newWaveNumber: $newWave->wave_number,
-            companyId:     $wave->company_id,
-            warehouseId:   $wave->warehouse_id,
-            rotatedBy:     $actorId,
-            rotatedAt:     now()->toIso8601String(),
+            companyId: $wave->company_id,
+            warehouseId: $wave->warehouse_id,
+            rotatedBy: $actorId,
+            rotatedAt: now()->toIso8601String(),
         ));
 
         return $newWave;

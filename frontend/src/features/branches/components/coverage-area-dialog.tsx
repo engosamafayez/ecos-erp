@@ -17,12 +17,12 @@ type MasterGovernorate = { id: string; name: string; name_ar: string };
 type MasterZone = { id: string; name: string };
 
 async function fetchGovernorates(): Promise<MasterGovernorate[]> {
-  const { data } = await api.get<{ data: MasterGovernorate[] }>('/master-geography');
+  const { data } = await api.get<{ data: MasterGovernorate[] }>('/configuration/master-geography');
   return data.data;
 }
 
 async function fetchZones(govId: string): Promise<MasterZone[]> {
-  const { data } = await api.get<{ data: MasterZone[] }>(`/master-geography/${govId}/zones`);
+  const { data } = await api.get<{ data: MasterZone[] }>(`/configuration/master-geography/${govId}/zones`);
   return data.data;
 }
 

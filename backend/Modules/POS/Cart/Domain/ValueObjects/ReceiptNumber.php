@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\POS\Cart\Domain\ValueObjects;
 
+use InvalidArgumentException;
+
 /**
  * Human-readable identifier printed on the customer's receipt.
  *
@@ -15,11 +17,11 @@ final readonly class ReceiptNumber
     public function __construct(public string $value)
     {
         if (trim($value) === '') {
-            throw new \InvalidArgumentException('Receipt number cannot be empty.');
+            throw new InvalidArgumentException('Receipt number cannot be empty.');
         }
         if (strlen($value) > 100) {
-            throw new \InvalidArgumentException(
-                'Receipt number cannot exceed 100 characters, got: ' . strlen($value) . '.'
+            throw new InvalidArgumentException(
+                'Receipt number cannot exceed 100 characters, got: '.strlen($value).'.',
             );
         }
     }

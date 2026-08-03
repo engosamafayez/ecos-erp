@@ -40,7 +40,7 @@ final class PostGoodsReceiptAction extends BaseAction
 
     public function execute(mixed ...$arguments): OperationResult
     {
-        $id      = (string) ($arguments[0] ?? '');
+        $id = (string) ($arguments[0] ?? '');
         $receipt = $this->receipts->findById($id);
 
         if ($receipt === null) {
@@ -77,7 +77,7 @@ final class PostGoodsReceiptAction extends BaseAction
 
         // ── Guard 3: receipt must have at least one non-zero net-quantity line ─
         $activeLines = $receipt->lines->filter(
-            fn (GoodsReceiptLine $l): bool => $l->effectiveReceivedQty() > 0
+            fn (GoodsReceiptLine $l): bool => $l->effectiveReceivedQty() > 0,
         );
 
         if ($activeLines->isEmpty()) {
@@ -89,11 +89,11 @@ final class PostGoodsReceiptAction extends BaseAction
 
         // ── Pre-compute landed cost distribution ──────────────────────────────
         $totalExtraCosts = $receipt->totalLandedCosts();
-        $totalNetQty     = $activeLines->sum(fn (GoodsReceiptLine $l): float => $l->effectiveReceivedQty());
-        $extraPerUnit    = $totalNetQty > 0 ? $totalExtraCosts / $totalNetQty : 0.0;
+        $totalNetQty = $activeLines->sum(fn (GoodsReceiptLine $l): float => $l->effectiveReceivedQty());
+        $extraPerUnit = $totalNetQty > 0 ? $totalExtraCosts / $totalNetQty : 0.0;
 
         // ── Snapshot on-hand qtys BEFORE inventory is updated ────────────────
-        $productIds     = $activeLines->pluck('product_id')->unique()->values()->all();
+        $productIds = $activeLines->pluck('product_id')->unique()->values()->all();
         $preReceiptQtys = InventoryItem::query()
             ->whereIn('product_id', $productIds)
             ->where('warehouse_id', $receipt->warehouse_id)
@@ -110,7 +110,7 @@ final class PostGoodsReceiptAction extends BaseAction
                     ->lockForUpdate()
                     ->findOrFail($line->purchase_order_line_id);
 
-                $netQty   = $line->effectiveReceivedQty();
+                $netQty = $line->effectiveReceivedQty();
                 $newTotal = (float) $poLine->received_qty + $netQty;
 
                 if ($newTotal > (float) $poLine->quantity) {
@@ -126,18 +126,18 @@ final class PostGoodsReceiptAction extends BaseAction
             // ── Step 1: inventory update + landed cost stamp per line ─────────
             foreach ($activeLines as $line) {
                 /** @var GoodsReceiptLine $line */
-                $netQty          = $line->effectiveReceivedQty();
-                $landedUnitCost  = round((float) $line->unit_price + $extraPerUnit, 4);
+                $netQty = $line->effectiveReceivedQty();
+                $landedUnitCost = round((float) $line->unit_price + $extraPerUnit, 4);
 
                 $this->receiveStock->execute(
                     StockOperationDTO::fromArray([
-                        'warehouse_id'   => $receipt->warehouse_id,
-                        'product_id'     => $line->product_id,
-                        'company_id'     => $companyId,
-                        'quantity'       => $netQty,
+                        'warehouse_id' => $receipt->warehouse_id,
+                        'product_id' => $line->product_id,
+                        'company_id' => $companyId,
+                        'quantity' => $netQty,
                         'reference_type' => 'goods_receipt',
-                        'reference_id'   => $receipt->id,
-                        'notes'          => "GR {$receipt->receipt_number}",
+                        'reference_id' => $receipt->id,
+                        'notes' => "GR {$receipt->receipt_number}",
                     ]),
                 );
 
@@ -157,7 +157,7 @@ final class PostGoodsReceiptAction extends BaseAction
                 ->get();
 
             $allFullyReceived = $poLines->every(
-                fn (PurchaseOrderLine $l): bool => (float) $l->received_qty >= (float) $l->quantity
+                fn (PurchaseOrderLine $l): bool => (float) $l->received_qty >= (float) $l->quantity,
             );
 
             $po->update([
@@ -168,7 +168,7 @@ final class PostGoodsReceiptAction extends BaseAction
 
             // ── Step 4: stamp the receipt as Posted ───────────────────────────
             $receipt->update([
-                'status'    => GoodsReceiptStatus::Posted->value,
+                'status' => GoodsReceiptStatus::Posted->value,
                 'posted_at' => now(),
             ]);
 

@@ -1,27 +1,31 @@
 import { Package } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { PageHeader } from '@/components/crud';
 import { Card, CardContent } from '@/components/ui/card';
 import { ROUTES } from '@/router/routes';
 
 export function PackagingMaterialsPage() {
+  const { t } = useTranslation('inventory');
+  const { t: tCommon } = useTranslation('common');
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Packaging Materials"
-        subtitle="Manage packaging materials used in production"
+        title={t('packagingMaterials.title')}
+        subtitle={t('packagingMaterials.subtitle')}
         breadcrumbs={[
-          { label: 'Home', to: ROUTES.dashboard },
-          { label: 'Inventory', to: ROUTES.inventoryProducts },
-          { label: 'Packaging Materials' },
+          { label: tCommon('home'), to: ROUTES.dashboard },
+          { label: t('title'), to: ROUTES.inventoryProducts },
+          { label: t('packagingMaterials.title') },
         ]}
       />
       <Card>
         <CardContent className="flex flex-col items-center justify-center gap-3 py-16 text-center">
           <Package className="size-10 text-muted-foreground" />
-          <p className="font-medium">Packaging Materials</p>
+          <p className="font-medium">{t('packagingMaterials.title')}</p>
           <p className="text-muted-foreground text-sm max-w-sm">
-            Packaging materials management is coming soon. This section will allow you to track boxes, bags, labels, and other packaging materials used in production.
+            {t('packagingMaterials.comingSoon')}
           </p>
         </CardContent>
       </Card>

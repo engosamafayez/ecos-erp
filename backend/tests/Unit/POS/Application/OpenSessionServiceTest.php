@@ -17,7 +17,9 @@ use Tests\TestCase;
 final class OpenSessionServiceTest extends TestCase
 {
     private SessionRepositoryInterface $sessionRepo;
+
     private DomainEventPublisherInterface $publisher;
+
     private OpenSessionService $service;
 
     protected function setUp(): void
@@ -25,8 +27,8 @@ final class OpenSessionServiceTest extends TestCase
         parent::setUp();
 
         $this->sessionRepo = $this->createMock(SessionRepositoryInterface::class);
-        $this->publisher   = $this->createMock(DomainEventPublisherInterface::class);
-        $this->service     = new OpenSessionService($this->sessionRepo, $this->publisher);
+        $this->publisher = $this->createMock(DomainEventPublisherInterface::class);
+        $this->service = new OpenSessionService($this->sessionRepo, $this->publisher);
     }
 
     public function test_throws_when_cashier_already_has_open_session(): void
@@ -90,13 +92,13 @@ final class OpenSessionServiceTest extends TestCase
     private function makeCommand(): OpenSessionCommand
     {
         return new OpenSessionCommand(
-            cashierId:         'cashier-uuid-1',
-            companyId:         'company-uuid-1',
-            channelId:         null,
-            warehouseId:       'warehouse-uuid-1',
+            cashierId: 'cashier-uuid-1',
+            companyId: 'company-uuid-1',
+            channelId: null,
+            warehouseId: 'warehouse-uuid-1',
             deviceFingerprint: 'fp-abc123',
-            ipAddress:         '192.168.1.1',
-            deviceType:        'browser',
+            ipAddress: '192.168.1.1',
+            deviceType: 'browser',
         );
     }
 }

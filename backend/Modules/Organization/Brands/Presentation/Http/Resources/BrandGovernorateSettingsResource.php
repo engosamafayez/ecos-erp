@@ -14,26 +14,26 @@ class BrandGovernorateSettingsResource extends JsonResource
         $gov = $this->whenLoaded('governorate');
 
         return [
-            'id'                      => $this->id,
-            'brand_id'                => $this->brand_id,
-            'governorate_id'          => $this->governorate_id,
-            'is_enabled'              => $this->is_enabled,
-            'shipping_price'          => $this->shipping_price !== null
+            'id' => $this->id,
+            'brand_id' => $this->brand_id,
+            'governorate_id' => $this->governorate_id,
+            'is_enabled' => $this->is_enabled,
+            'shipping_price' => $this->shipping_price !== null
                 ? (float) $this->shipping_price
                 : null,
             'estimated_delivery_days' => $this->estimated_delivery_days,
-            'same_day_supported'      => $this->same_day_supported,
-            'display_order'           => $this->display_order,
-            'preferred_provider'      => $this->preferred_provider,
-            'governorate'             => $gov ? [
-                'id'                     => $gov->id,
-                'name_ar'                => $gov->name_ar,
-                'name_en'                => $gov->name_en,
+            'same_day_supported' => $this->same_day_supported,
+            'display_order' => $this->display_order,
+            'preferred_provider' => $this->preferred_provider,
+            'governorate' => $gov ? [
+                'id' => $gov->id,
+                'name_ar' => $gov->name_ar,
+                'name_en' => $gov->name_en,
                 'default_shipping_price' => (float) $gov->default_shipping_price,
-                'is_active'              => $gov->is_active,
-                'cities_count'           => $gov->cities()->count(),
+                'is_active' => $gov->is_active,
+                'cities_count' => $gov->cities()->count(),
             ] : null,
-            'updated_at'              => $this->updated_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

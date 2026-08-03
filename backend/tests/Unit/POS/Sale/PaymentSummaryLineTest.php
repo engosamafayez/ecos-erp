@@ -15,17 +15,17 @@ use PHPUnit\Framework\TestCase;
 final class PaymentSummaryLineTest extends TestCase
 {
     private function makeTenderData(
-        string  $type      = 'cash',
-        string  $amount    = '100.00',
-        string  $currency  = 'EGP',
+        string $type = 'cash',
+        string $amount = '100.00',
+        string $currency = 'EGP',
         ?string $reference = null,
     ): array {
         return [
-            'id'        => 'tender-uuid-1',
-            'type'      => $type,
-            'amount'    => ['amount' => $amount, 'currency' => $currency],
+            'id' => 'tender-uuid-1',
+            'type' => $type,
+            'amount' => ['amount' => $amount, 'currency' => $currency],
             'reference' => $reference,
-            'metadata'  => [],
+            'metadata' => [],
         ];
     }
 
@@ -85,8 +85,8 @@ final class PaymentSummaryLineTest extends TestCase
     public function test_roundtrip_to_array_from_array(): void
     {
         $original = PaymentSummaryLine::fromTender($this->makeTenderData(
-            type:      'card',
-            amount:    '150.00',
+            type: 'card',
+            amount: '150.00',
             reference: 'AUTH-5555',
         ));
 
@@ -100,8 +100,8 @@ final class PaymentSummaryLineTest extends TestCase
     public function test_from_array_handles_null_reference(): void
     {
         $summary = PaymentSummaryLine::fromArray([
-            'type'      => 'cash',
-            'amount'    => ['amount' => '50.00', 'currency' => 'EGP'],
+            'type' => 'cash',
+            'amount' => ['amount' => '50.00', 'currency' => 'EGP'],
             'reference' => null,
         ]);
 

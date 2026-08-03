@@ -19,17 +19,19 @@ class MissingMaterialCalculatorTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Company   $company;
+    private Company $company;
+
     private Warehouse $warehouse;
+
     private MissingMaterialCalculator $calculator;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->company    = Company::factory()->create();
-        $this->warehouse  = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $this->calculator = new MissingMaterialCalculator();
+        $this->company = Company::factory()->create();
+        $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
+        $this->calculator = new MissingMaterialCalculator;
     }
 
     // ── Missing qty calculation ───────────────────────────────────────────────
@@ -38,7 +40,7 @@ class MissingMaterialCalculatorTest extends TestCase
     {
         $wave = $this->makeWave();
         $this->seedMaterialDemand($wave, 'mat-A', 10.0, 10.0); // covered
-        $this->seedMaterialDemand($wave, 'mat-B', 10.0,  3.0); // short
+        $this->seedMaterialDemand($wave, 'mat-B', 10.0, 3.0); // short
 
         $rows = $this->calculator->calculate($wave);
 
@@ -87,13 +89,13 @@ class MissingMaterialCalculatorTest extends TestCase
     {
         $wave = $this->makeWave();
         $this->seedMaterialDemand($wave, 'mat-critical', 10.0, 0.5); // 95% missing
-        $this->seedMaterialDemand($wave, 'mat-low',       10.0, 9.0); // 10% missing
+        $this->seedMaterialDemand($wave, 'mat-low', 10.0, 9.0); // 10% missing
 
         $rows = $this->calculator->calculate($wave);
 
         $byId = collect($rows)->keyBy('material_id');
         $this->assertEquals('critical', $byId['mat-critical']['priority']);
-        $this->assertEquals('low',      $byId['mat-low']['priority']);
+        $this->assertEquals('low', $byId['mat-low']['priority']);
     }
 
     // ── Incremental scoping ───────────────────────────────────────────────────
@@ -116,20 +118,20 @@ class MissingMaterialCalculatorTest extends TestCase
     private function makeWave(): PreparationWave
     {
         return PreparationWave::create([
-            'company_id'           => $this->company->id,
-            'warehouse_id'         => $this->warehouse->id,
-            'wave_number'          => 'PREP-MISS-' . random_int(1, 99999),
-            'planning_date'        => today()->toDateString(),
-            'status'               => WaveStatus::Collecting->value,
-            'orders_count'         => 0,
-            'products_count'       => 0,
-            'lines_count'          => 0,
+            'company_id' => $this->company->id,
+            'warehouse_id' => $this->warehouse->id,
+            'wave_number' => 'PREP-MISS-'.random_int(1, 99999),
+            'planning_date' => today()->toDateString(),
+            'status' => WaveStatus::Collecting->value,
+            'orders_count' => 0,
+            'products_count' => 0,
+            'lines_count' => 0,
             'total_units_required' => 0,
             'total_units_prepared' => 0,
-            'shortage_detected'    => false,
-            'wave_type'            => 'engine',
-            'created_by'           => 'test',
-            'updated_by'           => 'test',
+            'shortage_detected' => false,
+            'wave_type' => 'engine',
+            'created_by' => 'test',
+            'updated_by' => 'test',
         ]);
     }
 
@@ -143,22 +145,22 @@ class MissingMaterialCalculatorTest extends TestCase
         $coverage = $required > 0 ? min(100.0, ($available / $required) * 100.0) : 100.0;
 
         DB::table('wave_material_demand')->insert([
-            'id'                  => (string) Str::uuid(),
-            'company_id'          => $wave->company_id,
-            'warehouse_id'        => $wave->warehouse_id,
+            'id' => (string) Str::uuid(),
+            'company_id' => $wave->company_id,
+            'warehouse_id' => $wave->warehouse_id,
             'preparation_wave_id' => $wave->id,
-            'material_id'         => $materialId,
-            'material_name'       => 'Material ' . $materialId,
-            'required_qty'        => $required,
-            'available_qty'       => $available,
-            'reserved_qty'        => 0,
-            'expected_today'      => 0,
-            'in_transit_qty'      => 0,
-            'missing_qty'         => $missing,
-            'coverage_pct'        => $coverage,
-            'last_calculated_at'  => now(),
-            'created_at'          => now(),
-            'updated_at'          => now(),
+            'material_id' => $materialId,
+            'material_name' => 'Material '.$materialId,
+            'required_qty' => $required,
+            'available_qty' => $available,
+            'reserved_qty' => 0,
+            'expected_today' => 0,
+            'in_transit_qty' => 0,
+            'missing_qty' => $missing,
+            'coverage_pct' => $coverage,
+            'last_calculated_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 }

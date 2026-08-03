@@ -20,11 +20,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  *   crm.customers.update
  *   iam.roles.assign
  *
- * @property string      $id
- * @property string      $name       Full permission name (domain.resource.action)
- * @property string      $module     Top-level domain  (e.g. "inventory", "sales", "crm")
- * @property string      $resource   Resource within domain (e.g. "products", "orders")
- * @property string      $action     Action  (e.g. "view", "create", "fulfill")
+ * @property string $id
+ * @property string $name Full permission name (domain.resource.action)
+ * @property string $module Top-level domain  (e.g. "inventory", "sales", "crm")
+ * @property string $resource Resource within domain (e.g. "products", "orders")
+ * @property string $action Action  (e.g. "view", "create", "fulfill")
  * @property string|null $description
  */
 class Permission extends Model

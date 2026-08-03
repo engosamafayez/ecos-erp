@@ -13,17 +13,17 @@ use Modules\Operations\Preparation\Domain\Models\PreparationWave;
  * Read model: single KPI summary row per wave.
  * Aggregated from all demand read models after each recalculation.
  *
- * @property string  $id
- * @property string  $company_id
- * @property string  $warehouse_id
- * @property string  $preparation_wave_id
- * @property int     $orders_count
- * @property int     $products_count
- * @property int     $materials_count
- * @property int     $missing_materials_count
- * @property int     $prepared_count
- * @property int     $remaining_count
- * @property float   $completion_pct
+ * @property string $id
+ * @property string $company_id
+ * @property string $warehouse_id
+ * @property string $preparation_wave_id
+ * @property int $orders_count
+ * @property int $products_count
+ * @property int $materials_count
+ * @property int $missing_materials_count
+ * @property int $prepared_count
+ * @property int $remaining_count
+ * @property float $completion_pct
  * @property \Carbon\Carbon $last_calculated_at
  */
 final class WaveKpi extends Model
@@ -48,14 +48,14 @@ final class WaveKpi extends Model
     ];
 
     protected $casts = [
-        'orders_count'           => 'integer',
-        'products_count'         => 'integer',
-        'materials_count'        => 'integer',
-        'missing_materials_count'=> 'integer',
-        'prepared_count'         => 'integer',
-        'remaining_count'        => 'integer',
-        'completion_pct'         => 'float',
-        'last_calculated_at'     => 'datetime',
+        'orders_count' => 'integer',
+        'products_count' => 'integer',
+        'materials_count' => 'integer',
+        'missing_materials_count' => 'integer',
+        'prepared_count' => 'integer',
+        'remaining_count' => 'integer',
+        'completion_pct' => 'float',
+        'last_calculated_at' => 'datetime',
     ];
 
     /** @return BelongsTo<PreparationWave, self> */

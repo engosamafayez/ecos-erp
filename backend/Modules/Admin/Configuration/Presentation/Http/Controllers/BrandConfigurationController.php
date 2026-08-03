@@ -14,6 +14,7 @@ use Modules\Admin\Configuration\Domain\Models\ConfigAuditEntry;
 use Modules\Admin\Configuration\Domain\Services\ConfigurationManager;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Organization\Brands\Domain\Models\Brand;
+use ValueError;
 
 /**
  * Manages all brand-level policy groups.
@@ -38,15 +39,16 @@ final class BrandConfigurationController extends Controller
         // Build summary with defaults for groups not yet configured
         $configured = $policies->keyBy('policy_group');
 
-        $summary = collect(BrandPolicy::POLICY_GROUPS)->map(function (string $group) use ($configured, $brandId): array {
+        $summary = collect(BrandPolicy::POLICY_GROUPS)->map(function (string $group) use ($configured): array {
             $row = $configured->get($group);
+
             return [
-                'group'       => $group,
-                'label'       => ucwords(str_replace('_', ' ', $group)),
-                'is_active'   => (bool) ($row?->is_active ?? true),
-                'version'     => $row?->version ?? 0,
-                'configured'  => $row !== null,
-                'updated_at'  => $row?->updated_at?->toIso8601String(),
+                'group' => $group,
+                'label' => ucwords(str_replace('_', ' ', $group)),
+                'is_active' => (bool) ($row?->is_active ?? true),
+                'version' => $row?->version ?? 0,
+                'configured' => $row !== null,
+                'updated_at' => $row?->updated_at?->toIso8601String(),
             ];
         });
 
@@ -69,10 +71,10 @@ final class BrandConfigurationController extends Controller
             ->first(['id', 'version', 'is_active', 'updated_at', 'updated_by']);
 
         return $this->success([
-            'group'      => $group,
-            'settings'   => $settings,
-            'version'    => $meta?->version ?? 0,
-            'is_active'  => $meta?->is_active ?? true,
+            'group' => $group,
+            'settings' => $settings,
+            'version' => $meta?->version ?? 0,
+            'is_active' => $meta?->is_active ?? true,
             'updated_at' => $meta?->updated_at?->toIso8601String(),
             'updated_by' => $meta?->updated_by,
         ]);
@@ -84,10 +86,10 @@ final class BrandConfigurationController extends Controller
 
         $validated = $request->validate([
             'settings' => 'required|array',
-            'reason'   => 'nullable|string|max:500',
+            'reason' => 'nullable|string|max:500',
         ]);
 
-        $actorId   = (string) (Auth::id() ?? '');
+        $actorId = (string) (Auth::id() ?? '');
         $companyId = (string) (Auth::user()?->company_id ?? '');
 
         // System/super-admin users have no company_id on their account row.
@@ -97,18 +99,18 @@ final class BrandConfigurationController extends Controller
         }
 
         $policy = $this->manager->updateBrandPolicy(
-            brandId:   $brandId,
+            brandId: $brandId,
             companyId: $companyId,
-            group:     $group,
-            settings:  $validated['settings'],
-            actorId:   $actorId,
-            reason:    $validated['reason'] ?? null,
+            group: $group,
+            settings: $validated['settings'],
+            actorId: $actorId,
+            reason: $validated['reason'] ?? null,
         );
 
         return $this->updated([
-            'group'      => $group,
-            'settings'   => $policy->settings,
-            'version'    => $policy->version,
+            'group' => $group,
+            'settings' => $policy->settings,
+            'version' => $policy->version,
             'updated_at' => $policy->updated_at?->toIso8601String(),
         ], 'Policy updated.');
     }
@@ -130,7 +132,7 @@ final class BrandConfigurationController extends Controller
         foreach ($items as $item) {
             try {
                 $valid[] = OrderStatus::from((string) $item)->value;
-            } catch (\ValueError) {
+            } catch (ValueError) {
                 // Skip values that do not correspond to a real OrderStatus.
             }
         }

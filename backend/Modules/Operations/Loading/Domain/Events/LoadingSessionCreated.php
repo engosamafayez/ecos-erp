@@ -7,7 +7,8 @@ namespace Modules\Operations\Loading\Domain\Events;
 final class LoadingSessionCreated
 {
     public string $eventType = 'loading.session.created';
-    public string $version   = '1.0';
+
+    public string $version = '1.0';
 
     public function __construct(
         public readonly string $companyId,

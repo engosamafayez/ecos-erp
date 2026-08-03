@@ -41,23 +41,23 @@ final class DeliveryWindowController extends Controller
     public function store(Request $request, string $brandId): JsonResponse
     {
         $validated = $request->validate([
-            'label'      => 'required|string|max:100',
-            'starts_at'  => 'required|date_format:H:i',
-            'ends_at'    => 'required|date_format:H:i',
+            'label' => 'required|string|max:100',
+            'starts_at' => 'required|date_format:H:i',
+            'ends_at' => 'required|date_format:H:i',
             'sort_order' => 'nullable|integer|min:0',
             'is_enabled' => 'nullable|boolean',
         ]);
 
         $companyId = Auth::user()?->company_id ?? '';
-        $actorId   = Auth::id() ?? '';
+        $actorId = Auth::id() ?? '';
 
         // Normalize to H:i:s
         $validated['starts_at'] .= ':00';
-        $validated['ends_at']   .= ':00';
+        $validated['ends_at'] .= ':00';
 
         $window = DeliveryWindow::create([
             ...$validated,
-            'brand_id'   => $brandId,
+            'brand_id' => $brandId,
             'company_id' => $companyId,
             'created_by' => $actorId,
             'updated_by' => $actorId,
@@ -65,12 +65,12 @@ final class DeliveryWindowController extends Controller
 
         $this->audit->record(
             companyId: $companyId,
-            module:    'delivery_window',
-            category:  'delivery_window',
-            action:    'create',
-            oldValue:  null,
-            newValue:  $window->toArray(),
-            brandId:   $brandId,
+            module: 'delivery_window',
+            category: 'delivery_window',
+            action: 'create',
+            oldValue: null,
+            newValue: $window->toArray(),
+            brandId: $brandId,
         );
 
         return $this->created($window, 'Delivery window created.');
@@ -81,27 +81,31 @@ final class DeliveryWindowController extends Controller
         $window = DeliveryWindow::where('brand_id', $brandId)->findOrFail($id);
 
         $validated = $request->validate([
-            'label'      => 'sometimes|required|string|max:100',
-            'starts_at'  => 'sometimes|required|date_format:H:i',
-            'ends_at'    => 'sometimes|required|date_format:H:i',
+            'label' => 'sometimes|required|string|max:100',
+            'starts_at' => 'sometimes|required|date_format:H:i',
+            'ends_at' => 'sometimes|required|date_format:H:i',
             'sort_order' => 'nullable|integer|min:0',
             'is_enabled' => 'nullable|boolean',
         ]);
 
-        if (isset($validated['starts_at'])) $validated['starts_at'] .= ':00';
-        if (isset($validated['ends_at']))   $validated['ends_at']   .= ':00';
+        if (isset($validated['starts_at'])) {
+            $validated['starts_at'] .= ':00';
+        }
+        if (isset($validated['ends_at'])) {
+            $validated['ends_at'] .= ':00';
+        }
 
         $old = $window->toArray();
         $window->update([...$validated, 'updated_by' => Auth::id()]);
 
         $this->audit->record(
             companyId: Auth::user()?->company_id ?? '',
-            module:    'delivery_window',
-            category:  'delivery_window',
-            action:    'update',
-            oldValue:  $old,
-            newValue:  $window->fresh()?->toArray() ?? [],
-            brandId:   $brandId,
+            module: 'delivery_window',
+            category: 'delivery_window',
+            action: 'update',
+            oldValue: $old,
+            newValue: $window->fresh()?->toArray() ?? [],
+            brandId: $brandId,
         );
 
         return $this->updated($window, 'Delivery window updated.');
@@ -113,12 +117,12 @@ final class DeliveryWindowController extends Controller
 
         $this->audit->record(
             companyId: Auth::user()?->company_id ?? '',
-            module:    'delivery_window',
-            category:  'delivery_window',
-            action:    'delete',
-            oldValue:  $window->toArray(),
-            newValue:  null,
-            brandId:   $brandId,
+            module: 'delivery_window',
+            category: 'delivery_window',
+            action: 'delete',
+            oldValue: $window->toArray(),
+            newValue: null,
+            brandId: $brandId,
         );
 
         $window->delete();
@@ -130,7 +134,7 @@ final class DeliveryWindowController extends Controller
     public function seedDefaults(string $brandId): JsonResponse
     {
         $companyId = Auth::user()?->company_id ?? '';
-        $actorId   = Auth::id() ?? '';
+        $actorId = Auth::id() ?? '';
 
         $existing = DeliveryWindow::where('brand_id', $brandId)->count();
         abort_if($existing > 0, 422, 'Brand already has delivery windows configured.');
@@ -138,7 +142,7 @@ final class DeliveryWindowController extends Controller
         $created = collect(DeliveryWindow::defaults())->map(function (array $defaults) use ($brandId, $companyId, $actorId): DeliveryWindow {
             return DeliveryWindow::create([
                 ...$defaults,
-                'brand_id'   => $brandId,
+                'brand_id' => $brandId,
                 'company_id' => $companyId,
                 'is_enabled' => true,
                 'created_by' => $actorId,
@@ -153,7 +157,7 @@ final class DeliveryWindowController extends Controller
     public function reorder(Request $request, string $brandId): JsonResponse
     {
         $validated = $request->validate([
-            'ordered_ids'   => 'required|array',
+            'ordered_ids' => 'required|array',
             'ordered_ids.*' => 'uuid',
         ]);
 
@@ -165,7 +169,7 @@ final class DeliveryWindowController extends Controller
 
         return $this->success(
             DeliveryWindow::where('brand_id', $brandId)->orderBy('sort_order')->get(),
-            'Windows reordered.'
+            'Windows reordered.',
         );
     }
 }

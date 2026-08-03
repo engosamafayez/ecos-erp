@@ -61,7 +61,7 @@ final class ProviderCapabilityEngine
     /**
      * Capabilities shared by ALL of the given providers.
      *
-     * @param list<string> $providerKeys
+     * @param  list<string>  $providerKeys
      * @return list<string>
      */
     public function commonCapabilities(array $providerKeys): array

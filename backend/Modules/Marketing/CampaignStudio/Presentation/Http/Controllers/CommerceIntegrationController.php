@@ -24,14 +24,15 @@ class CommerceIntegrationController extends Controller
     public function store(Request $request, CampaignDraft $draft): JsonResponse
     {
         $validated = $request->validate([
-            'product_type'       => ['required', 'in:finished_good,raw_material,category,brand,collection'],
-            'product_id'         => ['required', 'string', 'max:36'],
-            'product_name'       => ['nullable', 'string', 'max:500'],
-            'product_sku'        => ['nullable', 'string', 'max:255'],
+            'product_type' => ['required', 'in:finished_good,raw_material,category,brand,collection'],
+            'product_id' => ['required', 'string', 'max:36'],
+            'product_name' => ['nullable', 'string', 'max:500'],
+            'product_sku' => ['nullable', 'string', 'max:255'],
             'warn_if_unavailable' => ['sometimes', 'boolean'],
         ]);
 
         $product = $this->commerceService->linkProduct($draft, $validated);
+
         return response()->json(['data' => $product], 201);
     }
 
@@ -39,6 +40,7 @@ class CommerceIntegrationController extends Controller
     public function destroy(CampaignDraft $draft, string $product): JsonResponse
     {
         $this->commerceService->unlinkProduct($draft, $product);
+
         return response()->json(null, 204);
     }
 
@@ -46,6 +48,7 @@ class CommerceIntegrationController extends Controller
     public function refresh(CampaignDraft $draft): JsonResponse
     {
         $result = $this->commerceService->refreshAvailability($draft);
+
         return response()->json(['data' => $result]);
     }
 }

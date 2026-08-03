@@ -20,6 +20,7 @@ class CalculateAbcCommand extends Command
 
         if ($this->option('dry-run')) {
             $this->warn('[dry-run] No changes will be written.');
+
             return self::SUCCESS;
         }
 
@@ -32,7 +33,7 @@ class CalculateAbcCommand extends Command
                 ['B (Medium Value — Quarterly)',  $summary['B']],
                 ['C (Low Value — Semi-Annual)',   $summary['C']],
                 ['Total',                         $summary['total']],
-            ]
+            ],
         );
 
         $this->info('ABC classification complete. Cycle count plans updated.');

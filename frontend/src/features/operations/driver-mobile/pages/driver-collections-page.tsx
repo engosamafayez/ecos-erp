@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import { useFormatter } from '@/hooks/use-formatter';
 import { ArrowLeft, DollarSign, CreditCard, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +16,7 @@ function PaymentTypeIcon({ type }: { type: string }) {
 }
 
 export function DriverCollectionsPage() {
+  const { money } = useFormatter();
   const { tripId = '' } = useParams<{ tripId: string }>();
   const navigate = useNavigate();
 
@@ -74,7 +76,7 @@ export function DriverCollectionsPage() {
                       {PAYMENT_TYPE_LABELS[col.payment_type] ?? col.payment_type}
                     </span>
                     <span className="font-semibold text-sm">
-                      EGP {Number(col.amount).toLocaleString('ar-EG', { minimumFractionDigits: 2 })}
+                      {money(Number(col.amount))}
                     </span>
                   </div>
                   {col.reference_number && (

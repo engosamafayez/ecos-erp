@@ -25,6 +25,7 @@ final class WooCommerceWebhookController extends Controller
     {
         if (! $this->verifySignature($request, $channel)) {
             $this->logRejection($channel, $logService, SyncEntityType::Order);
+
             return $this->error('Invalid or missing webhook signature.', 401);
         }
 
@@ -33,7 +34,7 @@ final class WooCommerceWebhookController extends Controller
         /** @var array<string, mixed> $payload */
         $payload = $request->json()->all();
 
-        $topic           = is_string($request->header('X-WC-Webhook-Topic')) ? $request->header('X-WC-Webhook-Topic') : 'order.webhook';
+        $topic = is_string($request->header('X-WC-Webhook-Topic')) ? $request->header('X-WC-Webhook-Topic') : 'order.webhook';
         $externalOrderId = (string) ($payload['id'] ?? '');
 
         if ($externalOrderId !== '' && $this->isDuplicate($channel->id, $externalOrderId, $topic)) {
@@ -58,14 +59,15 @@ final class WooCommerceWebhookController extends Controller
     {
         if (! $this->verifySignature($request, $channel)) {
             $this->logRejection($channel, $logService, SyncEntityType::Product);
+
             return $this->error('Invalid or missing webhook signature.', 401);
         }
 
         $channel->update(['last_webhook_received_at' => now()]);
 
         /** @var array<string, mixed> $payload */
-        $payload    = $request->json()->all();
-        $topic      = is_string($request->header('X-WC-Webhook-Topic')) ? $request->header('X-WC-Webhook-Topic') : 'product.webhook';
+        $payload = $request->json()->all();
+        $topic = is_string($request->header('X-WC-Webhook-Topic')) ? $request->header('X-WC-Webhook-Topic') : 'product.webhook';
         $externalId = (string) ($payload['id'] ?? '');
 
         if ($externalId !== '' && $this->isDuplicate($channel->id, $externalId, $topic)) {
@@ -90,14 +92,15 @@ final class WooCommerceWebhookController extends Controller
     {
         if (! $this->verifySignature($request, $channel)) {
             $this->logRejection($channel, $logService, SyncEntityType::Customer);
+
             return $this->error('Invalid or missing webhook signature.', 401);
         }
 
         $channel->update(['last_webhook_received_at' => now()]);
 
         /** @var array<string, mixed> $payload */
-        $payload    = $request->json()->all();
-        $topic      = is_string($request->header('X-WC-Webhook-Topic')) ? $request->header('X-WC-Webhook-Topic') : 'customer.webhook';
+        $payload = $request->json()->all();
+        $topic = is_string($request->header('X-WC-Webhook-Topic')) ? $request->header('X-WC-Webhook-Topic') : 'customer.webhook';
         $externalId = (string) ($payload['id'] ?? '');
 
         if ($externalId !== '' && $this->isDuplicate($channel->id, $externalId, $topic)) {
@@ -132,7 +135,7 @@ final class WooCommerceWebhookController extends Controller
             return false;
         }
 
-        $rawBody  = $request->getContent();
+        $rawBody = $request->getContent();
         $expected = base64_encode(hash_hmac('sha256', $rawBody, $credential->consumer_secret, true));
 
         return hash_equals($expected, $signature);

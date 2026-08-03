@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Eye, Pencil, Plus, SlidersHorizontal, Trash2 } from 'lucide-react';
 
 import {
@@ -33,13 +34,7 @@ import { ROUTES } from '@/router/routes';
 
 const PER_PAGE = 15;
 
-const OPTIONAL_COLS = [
-  { key: 'code',       label: 'Code' },
-  { key: 'company',    label: 'Company' },
-  { key: 'brand',      label: 'Brand' },
-  { key: 'provider',   label: 'Provider' },
-  { key: 'updated_at', label: 'Updated At' },
-] as const;
+
 
 const STATUS_BADGE_VARIANT: Record<
   string,
@@ -51,6 +46,8 @@ const STATUS_BADGE_VARIANT: Record<
 };
 
 export function BusinessAccountsPage() {
+  const { t } = useTranslation('business-accounts');
+  const { t: tCommon } = useTranslation('common');
   const [search, setSearch] = useState('');
   const [companyFilter, setCompanyFilter] = useState<string | null>(null);
   const [providerFilter, setProviderFilter] = useState<string>('');
@@ -117,41 +114,41 @@ export function BusinessAccountsPage() {
   const columns: ColumnDef<BusinessAccount>[] = [
     {
       key: 'code',
-      header: 'Code',
+      header: t('columns.code'),
       cell: (a) => <span className="font-mono text-xs font-medium">{a.code}</span>,
     },
     {
       key: 'name',
-      header: 'Name',
+      header: t('columns.name'),
       cell: (a) => <span className="font-medium">{a.name}</span>,
     },
     {
       key: 'company',
-      header: 'Company',
+      header: t('columns.company'),
       cell: (a) => <span className="text-muted-foreground">{a.company?.name ?? '—'}</span>,
     },
     {
       key: 'brand',
-      header: 'Brand',
+      header: t('columns.brand'),
       cell: (a) => <span className="text-muted-foreground">{a.brand?.name ?? '—'}</span>,
     },
     {
       key: 'provider',
-      header: 'Provider',
+      header: t('columns.provider'),
       cell: (a) => <Badge variant="secondary">{a.provider}</Badge>,
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t('columns.status'),
       cell: (a) => (
         <Badge variant={STATUS_BADGE_VARIANT[a.status] ?? 'secondary'}>
-          {a.status.charAt(0).toUpperCase() + a.status.slice(1)}
+          {t(`status.${a.status}`, { defaultValue: a.status })}
         </Badge>
       ),
     },
     {
       key: 'updated_at',
-      header: 'Updated At',
+      header: t('columns.updatedAt'),
       cell: (a) => (
         <span className="text-muted-foreground text-xs">
           {a.updated_at ? new Date(a.updated_at).toLocaleDateString() : '—'}
@@ -168,17 +165,17 @@ export function BusinessAccountsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Business Accounts"
-        subtitle="Manage platform and marketplace accounts connected to your organization."
+        title={t('title')}
+        subtitle={t('subtitle')}
         breadcrumbs={[
-          { label: 'Home', to: ROUTES.dashboard },
-          { label: 'Organization', to: ROUTES.organization },
-          { label: 'Business Accounts' },
+          { label: tCommon('home'), to: ROUTES.dashboard },
+          { label: t('breadcrumbs.organization'), to: ROUTES.organization },
+          { label: t('title') },
         ]}
         actions={
           <Button onClick={openCreate}>
             <Plus className="size-4" />
-            New Business Account
+            {t('actions.new')}
           </Button>
         }
       />
@@ -187,13 +184,13 @@ export function BusinessAccountsPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Total Accounts</div>
+            <div className="text-muted-foreground text-sm">{t('kpi.totalAccounts')}</div>
             <div className="text-2xl font-bold">{isLoading ? '—' : totalCount}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Active</div>
+            <div className="text-muted-foreground text-sm">{t('kpi.active')}</div>
             <div className="text-2xl font-bold text-emerald-600">
               {isLoading ? '—' : activeCount}
             </div>
@@ -201,7 +198,7 @@ export function BusinessAccountsPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Inactive</div>
+            <div className="text-muted-foreground text-sm">{t('kpi.inactive')}</div>
             <div className="text-2xl font-bold text-slate-400">
               {isLoading ? '—' : inactiveCount}
             </div>
@@ -209,7 +206,7 @@ export function BusinessAccountsPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Suspended</div>
+            <div className="text-muted-foreground text-sm">{t('kpi.suspended')}</div>
             <div className="text-2xl font-bold text-red-500">
               {isLoading ? '—' : suspendedCount}
             </div>
@@ -217,9 +214,9 @@ export function BusinessAccountsPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Connected</div>
+            <div className="text-muted-foreground text-sm">{t('kpi.connected')}</div>
             <div className="text-2xl font-bold text-slate-400">0</div>
-            <div className="text-muted-foreground/60 text-xs">Integration metrics coming soon</div>
+            <div className="text-muted-foreground/60 text-xs">{t('kpi.integrationSoon')}</div>
           </CardContent>
         </Card>
       </div>
@@ -227,7 +224,7 @@ export function BusinessAccountsPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <EntityToolbar
-            searchPlaceholder="Search business accounts…"
+            searchPlaceholder={t('search')}
             onSearchChange={handleSearch}
             onRefresh={() => void refetch()}
             isRefreshing={isFetching}

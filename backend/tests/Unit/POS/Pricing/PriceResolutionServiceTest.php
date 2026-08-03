@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\Pricing;
 
+use InvalidArgumentException;
 use Modules\POS\Pricing\Domain\Contracts\PricingGatewayInterface;
 use Modules\POS\Pricing\Domain\Enums\PriceSource;
 use Modules\POS\Pricing\Domain\Events\PriceResolved;
@@ -18,14 +19,15 @@ use PHPUnit\Framework\TestCase;
 
 final class PriceResolutionServiceTest extends TestCase
 {
-    private PriceResolutionService  $service;
-    private StubPricingGateway      $gateway;
+    private PriceResolutionService $service;
+
+    private StubPricingGateway $gateway;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->gateway = new StubPricingGateway();
-        $this->service = new PriceResolutionService($this->gateway, new PriceValidator());
+        $this->gateway = new StubPricingGateway;
+        $this->service = new PriceResolutionService($this->gateway, new PriceValidator);
     }
 
     // ── resolve() ─────────────────────────────────────────────────────────────
@@ -43,13 +45,13 @@ final class PriceResolutionServiceTest extends TestCase
 
     public function test_resolve_throws_on_empty_product_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->service->resolve('', 'EGP');
     }
 
     public function test_resolve_throws_on_whitespace_only_product_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->service->resolve('  ', 'EGP');
     }
 
@@ -75,7 +77,7 @@ final class PriceResolutionServiceTest extends TestCase
     {
         $this->gateway->addPrice('prod-zero', Money::zero('EGP'), PriceSource::RegularPrice);
 
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->service->resolve('prod-zero', 'EGP');
     }
 
@@ -199,9 +201,10 @@ final class StubPricingGateway implements PricingGatewayInterface
 
     public function resolvePrice(string $productId, string $currency): ResolvedPrice
     {
-        if (!isset($this->prices[$productId])) {
+        if (! isset($this->prices[$productId])) {
             throw PriceResolutionException::productNotFound($productId);
         }
+
         return ResolvedPrice::of(
             $productId,
             $this->prices[$productId]['price'],
@@ -215,6 +218,7 @@ final class StubPricingGateway implements PricingGatewayInterface
         foreach ($productIds as $id) {
             $resolved[$id] = $this->resolvePrice($id, $currency);
         }
+
         return $resolved;
     }
 }

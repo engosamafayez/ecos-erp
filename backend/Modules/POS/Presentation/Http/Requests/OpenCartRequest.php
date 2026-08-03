@@ -17,11 +17,11 @@ final class OpenCartRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'session_id'  => ['required', 'string', 'uuid'],
-            'shift_id'    => ['required', 'string', 'uuid'],
+            'session_id' => ['required', 'string', 'uuid'],
+            'shift_id' => ['required', 'string', 'uuid'],
             'terminal_id' => ['required', 'string', 'uuid'],
-            'cashier_id'  => ['required', 'string', 'uuid'],
-            'currency'    => ['required', 'string', 'size:3'],
+            'cashier_id' => ['required', 'string', 'uuid'],
+            'currency' => ['required', 'string', 'size:3'],
             'customer_id' => ['nullable', 'string', 'uuid'],
         ];
     }

@@ -1,5 +1,6 @@
 ﻿import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,18 +24,19 @@ interface FormValues {
   is_dynamic: boolean;
 }
 
-const SEGMENT_TYPES: { value: SegmentType; label: string }[] = [
-  { value: 'demographic',   label: 'Demographic' },
-  { value: 'geographic',    label: 'Geographic' },
-  { value: 'behavioral',    label: 'Behavioral' },
-  { value: 'transactional', label: 'Transactional' },
-  { value: 'marketing',     label: 'Marketing' },
-  { value: 'business',      label: 'Business' },
-  { value: 'operational',   label: 'Operational' },
-  { value: 'custom',        label: 'Custom' },
+const SEGMENT_TYPES: SegmentType[] = [
+  'demographic',
+  'geographic',
+  'behavioral',
+  'transactional',
+  'marketing',
+  'business',
+  'operational',
+  'custom',
 ];
 
 export function SegmentDrawer({ open, onClose, segment }: Props) {
+  const { t }     = useTranslation('marketing');
   const isEditing = !!segment;
   const create    = useCreateSegment();
   const update    = useUpdateSegment(segment?.id ?? '');
@@ -85,24 +87,24 @@ export function SegmentDrawer({ open, onClose, segment }: Props) {
     <Sheet open={open} onOpenChange={v => !v && onClose()}>
       <SheetContent className="w-[420px]">
         <SheetHeader>
-          <SheetTitle>{isEditing ? 'Edit Segment' : 'New Audience Segment'}</SheetTitle>
+          <SheetTitle>{isEditing ? t('audiences.drawer.editTitle') : t('audiences.drawer.newTitle')}</SheetTitle>
         </SheetHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-6">
           <div className="space-y-1.5">
-            <Label>Segment Name *</Label>
-            <Input {...register('name', { required: true })} placeholder="e.g. VIP Customers" />
+            <Label>{t('audiences.drawer.nameLabel')}</Label>
+            <Input {...register('name', { required: true })} placeholder={t('audiences.drawer.namePlaceholder')} />
           </div>
 
           <div className="space-y-1.5">
-            <Label>Description</Label>
-            <Textarea {...register('description')} placeholder="What defines this segment?" rows={2} />
+            <Label>{t('common.description')}</Label>
+            <Textarea {...register('description')} placeholder={t('audiences.drawer.descriptionPlaceholder')} rows={2} />
           </div>
 
           {!isEditing && (
             <>
               <div className="space-y-1.5">
-                <Label>Segment Type *</Label>
+                <Label>{t('audiences.drawer.segmentTypeLabel')}</Label>
                 <Select
                   value={segmentType}
                   onValueChange={v => setValue('segment_type', v as SegmentType)}
@@ -111,15 +113,15 @@ export function SegmentDrawer({ open, onClose, segment }: Props) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {SEGMENT_TYPES.map(t => (
-                      <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                    {SEGMENT_TYPES.map(st => (
+                      <SelectItem key={st} value={st}>{t(`audiences.segmentType.${st}`)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-1.5">
-                <Label>Entity Type</Label>
+                <Label>{t('audiences.drawer.entityTypeLabel')}</Label>
                 <Select
                   value={watch('entity_type')}
                   onValueChange={v => setValue('entity_type', v)}
@@ -128,9 +130,9 @@ export function SegmentDrawer({ open, onClose, segment }: Props) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="customer">Customer</SelectItem>
-                    <SelectItem value="lead">Lead</SelectItem>
-                    <SelectItem value="order">Order</SelectItem>
+                    <SelectItem value="customer">{t('audiences.entityType.customer')}</SelectItem>
+                    <SelectItem value="lead">{t('audiences.entityType.lead')}</SelectItem>
+                    <SelectItem value="order">{t('audiences.entityType.order')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -142,17 +144,17 @@ export function SegmentDrawer({ open, onClose, segment }: Props) {
                   {...register('is_dynamic')}
                   className="h-4 w-4"
                 />
-                <Label htmlFor="is_dynamic">Dynamic (auto-recalculates)</Label>
+                <Label htmlFor="is_dynamic">{t('audiences.drawer.isDynamicLabel')}</Label>
               </div>
             </>
           )}
 
           <div className="flex gap-2 pt-2">
             <Button type="submit" className="flex-1" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : isEditing ? 'Save Changes' : 'Create Segment'}
+              {isSubmitting ? t('common.saving') : isEditing ? t('common.saveChanges') : t('audiences.drawer.create')}
             </Button>
             <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
+              {t('common.cancel')}
             </Button>
           </div>
         </form>

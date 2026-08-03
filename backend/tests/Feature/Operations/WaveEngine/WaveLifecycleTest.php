@@ -23,20 +23,22 @@ class WaveLifecycleTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Company   $company;
+    private Company $company;
+
     private Warehouse $warehouse;
+
     private WaveLifecycleService $lifecycle;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->company   = Company::factory()->create();
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
 
         $this->lifecycle = new WaveLifecycleService(
-            new WaveManager(),
-            new DemandRefreshDispatcher(),
+            new WaveManager,
+            new DemandRefreshDispatcher,
         );
     }
 
@@ -47,7 +49,7 @@ class WaveLifecycleTest extends TestCase
         Event::fake();
 
         $today = today()->toDateString();
-        $wave  = $this->lifecycle->createCollectingWave(
+        $wave = $this->lifecycle->createCollectingWave(
             $this->company->id,
             $this->warehouse->id,
             $today,
@@ -206,20 +208,20 @@ class WaveLifecycleTest extends TestCase
     private function makeCollectingWave(?string $date = null): PreparationWave
     {
         return PreparationWave::create([
-            'company_id'           => $this->company->id,
-            'warehouse_id'         => $this->warehouse->id,
-            'wave_number'          => 'PREP-' . now()->format('Ym') . '-' . str_pad((string) random_int(1, 9999), 6, '0', STR_PAD_LEFT),
-            'planning_date'        => $date ?? today()->toDateString(),
-            'status'               => WaveStatus::Collecting->value,
-            'orders_count'         => 0,
-            'products_count'       => 0,
-            'lines_count'          => 0,
+            'company_id' => $this->company->id,
+            'warehouse_id' => $this->warehouse->id,
+            'wave_number' => 'PREP-'.now()->format('Ym').'-'.str_pad((string) random_int(1, 9999), 6, '0', STR_PAD_LEFT),
+            'planning_date' => $date ?? today()->toDateString(),
+            'status' => WaveStatus::Collecting->value,
+            'orders_count' => 0,
+            'products_count' => 0,
+            'lines_count' => 0,
             'total_units_required' => 0,
             'total_units_prepared' => 0,
-            'shortage_detected'    => false,
-            'wave_type'            => 'engine',
-            'created_by'           => 'system',
-            'updated_by'           => 'system',
+            'shortage_detected' => false,
+            'wave_type' => 'engine',
+            'created_by' => 'system',
+            'updated_by' => 'system',
         ]);
     }
 }

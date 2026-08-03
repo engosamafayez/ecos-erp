@@ -15,20 +15,20 @@ class ConditionEvaluatorService
      */
     public function evaluate(WorkflowExecution $execution, array $node): array
     {
-        $config        = $node['config'] ?? [];
+        $config = $node['config'] ?? [];
         $conditionType = $config['condition_type'] ?? '';
-        $operator      = $config['operator']       ?? 'equals';
-        $value         = $config['value']          ?? null;
+        $operator = $config['operator'] ?? 'equals';
+        $value = $config['value'] ?? null;
 
         $matched = match ($conditionType) {
-            'customer_segment'    => $this->evaluateSegment($execution, $config),
-            'order_count'         => $this->evaluateNumeric($this->getOrderCount($execution), $operator, (int) $value),
-            'purchase_value'      => $this->evaluateNumeric($this->getPurchaseValue($execution), $operator, (float) $value),
-            'ltv'                 => $this->evaluateNumeric($this->getLtv($execution), $operator, (float) $value),
-            'last_activity'       => $this->evaluateNumeric($this->getDaysSinceLastActivity($execution), $operator, (int) $value),
-            'lead_score'          => $this->evaluateNumeric($this->getLeadScore($execution), $operator, (float) $value),
-            'custom_rule'         => $this->evaluateCustomRule($execution, $config),
-            default               => false,
+            'customer_segment' => $this->evaluateSegment($execution, $config),
+            'order_count' => $this->evaluateNumeric($this->getOrderCount($execution), $operator, (int) $value),
+            'purchase_value' => $this->evaluateNumeric($this->getPurchaseValue($execution), $operator, (float) $value),
+            'ltv' => $this->evaluateNumeric($this->getLtv($execution), $operator, (float) $value),
+            'last_activity' => $this->evaluateNumeric($this->getDaysSinceLastActivity($execution), $operator, (int) $value),
+            'lead_score' => $this->evaluateNumeric($this->getLeadScore($execution), $operator, (float) $value),
+            'custom_rule' => $this->evaluateCustomRule($execution, $config),
+            default => false,
         };
 
         return ['matched' => $matched, 'condition_type' => $conditionType, 'operator' => $operator, 'value' => $value];
@@ -39,7 +39,7 @@ class ConditionEvaluatorService
     private function evaluateSegment(WorkflowExecution $execution, array $config): bool
     {
         $segmentId = $config['segment_id'] ?? null;
-        if (!$segmentId) {
+        if (! $segmentId) {
             return false;
         }
 
@@ -54,13 +54,13 @@ class ConditionEvaluatorService
     private function evaluateNumeric(float|int $actual, string $operator, float|int $expected): bool
     {
         return match ($operator) {
-            'equals'           => $actual == $expected,
-            'not_equals'       => $actual != $expected,
-            'greater_than'     => $actual >  $expected,
+            'equals' => $actual === $expected,
+            'not_equals' => $actual !== $expected,
+            'greater_than' => $actual > $expected,
             'greater_or_equal' => $actual >= $expected,
-            'less_than'        => $actual <  $expected,
-            'less_or_equal'    => $actual <= $expected,
-            default            => false,
+            'less_than' => $actual < $expected,
+            'less_or_equal' => $actual <= $expected,
+            default => false,
         };
     }
 
@@ -105,7 +105,7 @@ class ConditionEvaluatorService
             ->where('customer_id', $execution->entity_id)
             ->max('created_at');
 
-        if (!$lastOrder) {
+        if (! $lastOrder) {
             return 9999;
         }
 

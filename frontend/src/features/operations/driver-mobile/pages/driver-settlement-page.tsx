@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useFormatter } from '@/hooks/use-formatter';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { useTripSettlement, useSubmitSettlement, useCloseTrip } from '../hooks/u
 import { SettlementSummary } from '../components/settlement-summary';
 
 export function DriverSettlementPage() {
+  const { currency } = useFormatter();
   const { tripId = '' } = useParams<{ tripId: string }>();
   const navigate = useNavigate();
 
@@ -53,7 +55,7 @@ export function DriverSettlementPage() {
             <p className="font-semibold text-sm">Submit Settlement</p>
 
             <div className="space-y-1.5">
-              <Label>Cash Submitted (EGP)</Label>
+              <Label>Cash Submitted ({currency})</Label>
               <Input
                 type="number"
                 min="0"

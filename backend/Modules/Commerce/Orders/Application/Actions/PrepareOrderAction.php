@@ -36,10 +36,10 @@ use Modules\Operations\Fulfillment\Application\Workflows\MoveToPreparationWorkfl
 final class PrepareOrderAction extends BaseAction
 {
     public function __construct(
-        private readonly OrderRepositoryInterface    $orders,
+        private readonly OrderRepositoryInterface $orders,
         private readonly PrepareOrderManufacturingAction $manufacturing,
-        private readonly FulfillmentEngine           $fulfillmentEngine,
-        private readonly MoveToPreparationWorkflow   $moveToPreparation,
+        private readonly FulfillmentEngine $fulfillmentEngine,
+        private readonly MoveToPreparationWorkflow $moveToPreparation,
     ) {}
 
     public function execute(mixed ...$arguments): OperationResult
@@ -56,10 +56,11 @@ final class PrepareOrderAction extends BaseAction
 
         // Idempotency: if the order is already Preparing, skip the workflow transition
         // and proceed directly to (re-)running manufacturing for non-executed lines.
-        if ($order->status === OrderStatus::Preparing) {
+        if ($order->status === OrderStatus::ReadyForDispatch) {
             $this->manufacturing->execute($order);
             $updated = $this->orders->findById($id) ?? $order->refresh();
-            return OperationResult::success($updated, 'Order already preparing. Manufacturing re-run for eligible lines.');
+
+            return OperationResult::success($updated, 'Order already ready for dispatch. Manufacturing re-run for eligible lines.');
         }
 
         // Transition to Preparing via the canonical pipeline.
@@ -77,8 +78,9 @@ final class PrepareOrderAction extends BaseAction
         // MoveToPreparationWorkflow can reroute to AwaitingStock (insufficient stock path)
         // and return FulfillmentResult::success — manufacturing must NOT run in that case
         // since no Preparing status was set and the order has no active inventory position.
-        if ($order->status !== OrderStatus::Preparing) {
+        if ($order->status !== OrderStatus::ReadyForDispatch) {
             $updated = $this->orders->findById($id) ?? $order->refresh();
+
             return OperationResult::success($updated, 'Order moved to awaiting stock — insufficient inventory. Manufacturing not triggered.');
         }
 

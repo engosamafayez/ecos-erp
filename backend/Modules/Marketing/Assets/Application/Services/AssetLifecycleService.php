@@ -12,6 +12,7 @@ use Modules\Marketing\Assets\Domain\Enums\AssetType;
 use Modules\Marketing\Assets\Domain\Models\MarketingAsset;
 use Modules\Marketing\Connections\Domain\Models\MarketingConnection;
 use Modules\Marketing\ProviderPlatform\Application\Services\ProviderEventPublisher;
+use Throwable;
 
 /**
  * Manages lifecycle transitions for all marketing assets.
@@ -38,10 +39,10 @@ final class AssetLifecycleService
      * Writes audit entry and emits provider event on every real transition.
      */
     public function transition(
-        MarketingAsset       $asset,
+        MarketingAsset $asset,
         AssetLifecycleStatus $newStatus,
-        string               $reason,
-        ?string              $actorId = null,
+        string $reason,
+        ?string $actorId = null,
     ): void {
         $previousStatus = $asset->status instanceof AssetLifecycleStatus
             ? $asset->status->value
@@ -66,8 +67,8 @@ final class AssetLifecycleService
      * Terminal assets (already removed/revoked/archived) are untouched.
      * Cascades DISCONNECTED to child assets when a BusinessAccount is ghosted.
      *
-     * @param  list<string> $seenExternalIds  All external IDs returned by this sync
-     * @return int  Number of assets newly marked as removed
+     * @param  list<string>  $seenExternalIds  All external IDs returned by this sync
+     * @return int Number of assets newly marked as removed
      */
     public function markGhosts(string $connectionId, array $seenExternalIds): int
     {
@@ -124,12 +125,12 @@ final class AssetLifecycleService
      * Cascade a lifecycle status to all ACTIVE assets under a given business.
      * Matches via asset_metadata->business_id (PostgreSQL JSONB).
      *
-     * @return int  Number of child assets transitioned
+     * @return int Number of child assets transitioned
      */
     public function cascadeFromBusiness(
-        string               $businessExternalId,
+        string $businessExternalId,
         AssetLifecycleStatus $status,
-        string               $reason,
+        string $reason,
     ): int {
         $children = MarketingAsset::where('status', AssetLifecycleStatus::Active->value)
             ->whereRaw("asset_metadata->>'business_id' = ?", [$businessExternalId])
@@ -146,31 +147,31 @@ final class AssetLifecycleService
 
     private function writeAuditEntry(
         MarketingAsset $asset,
-        string         $previousStatus,
-        string         $newStatus,
-        string         $reason,
-        ?string        $actorId,
+        string $previousStatus,
+        string $newStatus,
+        string $reason,
+        ?string $actorId,
     ): void {
         try {
             DB::table('marketing_audit_logs')->insert([
-                'id'             => (string) Str::uuid(),
-                'entity_type'    => 'asset',
-                'entity_id'      => $asset->id,
-                'connection_id'  => $asset->marketing_connection_id,
-                'asset_id'       => $asset->id,
-                'action'         => 'lifecycle_transition',
-                'actor_id'       => $actorId,
-                'actor_name'     => $actorId ? null : 'system',
-                'before'         => json_encode(['status' => $previousStatus]),
-                'after'          => json_encode(['status' => $newStatus]),
-                'reason'         => $reason,
+                'id' => (string) Str::uuid(),
+                'entity_type' => 'asset',
+                'entity_id' => $asset->id,
+                'connection_id' => $asset->marketing_connection_id,
+                'asset_id' => $asset->id,
+                'action' => 'lifecycle_transition',
+                'actor_id' => $actorId,
+                'actor_name' => $actorId ? null : 'system',
+                'before' => json_encode(['status' => $previousStatus]),
+                'after' => json_encode(['status' => $newStatus]),
+                'reason' => $reason,
                 'connector_type' => $asset->connector_type?->value,
-                'created_at'     => now(),
+                'created_at' => now(),
             ]);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::error('AssetLifecycleService: failed to write audit entry', [
                 'asset_id' => $asset->id,
-                'error'    => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
         }
     }
@@ -178,23 +179,23 @@ final class AssetLifecycleService
     // ── Provider event dispatch ───────────────────────────────────────────────
 
     private function emitEvent(
-        MarketingAsset       $asset,
-        string               $previousStatus,
+        MarketingAsset $asset,
+        string $previousStatus,
         AssetLifecycleStatus $newStatus,
-        string               $reason,
+        string $reason,
     ): void {
         $connection = MarketingConnection::find($asset->marketing_connection_id);
         if ($connection === null) {
             return;
         }
 
-        $companyId    = (string) $asset->company_id;
-        $provider     = $connection->connector_type->value;
+        $companyId = (string) $asset->company_id;
+        $provider = $connection->connector_type->value;
         $connectionId = $asset->marketing_connection_id;
-        $assetMeta    = [
-            'asset_type'  => $asset->asset_type?->value,
+        $assetMeta = [
+            'asset_type' => $asset->asset_type?->value,
             'external_id' => $asset->external_id,
-            'asset_name'  => $asset->name,
+            'asset_name' => $asset->name,
         ];
 
         match ($newStatus) {

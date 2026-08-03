@@ -41,7 +41,7 @@ final class SupplierAnalyticsController extends Controller
         $products = $query->execute($supplier);
 
         return $this->success(
-            $products->map(fn (array $p) => new SupplierInventoryProductResource($p))->values()
+            $products->map(fn (array $p) => new SupplierInventoryProductResource($p))->values(),
         );
     }
 

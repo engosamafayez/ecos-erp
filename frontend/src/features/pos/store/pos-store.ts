@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { DEFAULT_CURRENCY } from '@/lib/format';
 import { persist } from 'zustand/middleware';
 import type { PaymentTender, PosMode } from '@/features/pos/types';
 
@@ -86,7 +87,7 @@ export const usePosStore = create<PosState>()(
       companyId:          null,
       channelId:          null,
       warehouseId:        null,
-      currency:           'EGP',
+      currency:           DEFAULT_CURRENCY,
       heldCartSnapshots:  [],
       activeCustomerId:   null,
       activeCustomerName: null,

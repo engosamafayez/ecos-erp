@@ -18,17 +18,19 @@ class WaveKpiCalculatorTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Company   $company;
+    private Company $company;
+
     private Warehouse $warehouse;
+
     private WaveKpiCalculator $calculator;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->company    = Company::factory()->create();
-        $this->warehouse  = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $this->calculator = new WaveKpiCalculator();
+        $this->company = Company::factory()->create();
+        $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
+        $this->calculator = new WaveKpiCalculator;
     }
 
     public function test_kpis_are_zero_for_empty_wave(): void
@@ -37,11 +39,11 @@ class WaveKpiCalculatorTest extends TestCase
 
         $kpi = $this->calculator->calculate($wave);
 
-        $this->assertEquals(0,   $kpi['products_count']);
-        $this->assertEquals(0,   $kpi['materials_count']);
-        $this->assertEquals(0,   $kpi['missing_materials_count']);
-        $this->assertEquals(0,   $kpi['prepared_count']);
-        $this->assertEquals(0,   $kpi['remaining_count']);
+        $this->assertEquals(0, $kpi['products_count']);
+        $this->assertEquals(0, $kpi['materials_count']);
+        $this->assertEquals(0, $kpi['missing_materials_count']);
+        $this->assertEquals(0, $kpi['prepared_count']);
+        $this->assertEquals(0, $kpi['remaining_count']);
         $this->assertEquals(0.0, $kpi['completion_pct']);
     }
 
@@ -53,10 +55,10 @@ class WaveKpiCalculatorTest extends TestCase
 
         $kpi = $this->calculator->calculate($wave);
 
-        $this->assertEquals(2,    $kpi['products_count']);
+        $this->assertEquals(2, $kpi['products_count']);
         $this->assertEquals(50.0, $kpi['completion_pct']); // 10/20 = 50%
-        $this->assertEquals(0,    $kpi['prepared_count']);  // neither fully done
-        $this->assertEquals(2,    $kpi['remaining_count']);
+        $this->assertEquals(0, $kpi['prepared_count']);  // neither fully done
+        $this->assertEquals(2, $kpi['remaining_count']);
     }
 
     public function test_prepared_count_counts_fully_prepared_products(): void
@@ -98,20 +100,20 @@ class WaveKpiCalculatorTest extends TestCase
     private function makeWave(int $ordersCount = 0): PreparationWave
     {
         return PreparationWave::create([
-            'company_id'           => $this->company->id,
-            'warehouse_id'         => $this->warehouse->id,
-            'wave_number'          => 'PREP-KPI-' . random_int(1, 99999),
-            'planning_date'        => today()->toDateString(),
-            'status'               => WaveStatus::Collecting->value,
-            'orders_count'         => $ordersCount,
-            'products_count'       => 0,
-            'lines_count'          => 0,
+            'company_id' => $this->company->id,
+            'warehouse_id' => $this->warehouse->id,
+            'wave_number' => 'PREP-KPI-'.random_int(1, 99999),
+            'planning_date' => today()->toDateString(),
+            'status' => WaveStatus::Collecting->value,
+            'orders_count' => $ordersCount,
+            'products_count' => 0,
+            'lines_count' => 0,
             'total_units_required' => 0,
             'total_units_prepared' => 0,
-            'shortage_detected'    => false,
-            'wave_type'            => 'engine',
-            'created_by'           => 'test',
-            'updated_by'           => 'test',
+            'shortage_detected' => false,
+            'wave_type' => 'engine',
+            'created_by' => 'test',
+            'updated_by' => 'test',
         ]);
     }
 
@@ -119,42 +121,42 @@ class WaveKpiCalculatorTest extends TestCase
     {
         $remaining = max(0.0, $required - $prepared);
         DB::table('wave_product_demand')->insert([
-            'id'                  => (string) Str::uuid(),
-            'company_id'          => $wave->company_id,
-            'warehouse_id'        => $wave->warehouse_id,
+            'id' => (string) Str::uuid(),
+            'company_id' => $wave->company_id,
+            'warehouse_id' => $wave->warehouse_id,
             'preparation_wave_id' => $wave->id,
-            'product_id'          => $productId,
-            'product_name'        => 'Product ' . $productId,
-            'required_qty'        => $required,
-            'prepared_qty'        => $prepared,
-            'remaining_qty'       => $remaining,
-            'orders_count'        => 1,
-            'completion_pct'      => $required > 0 ? ($prepared / $required) * 100 : 0,
-            'last_calculated_at'  => now(),
-            'created_at'          => now(),
-            'updated_at'          => now(),
+            'product_id' => $productId,
+            'product_name' => 'Product '.$productId,
+            'required_qty' => $required,
+            'prepared_qty' => $prepared,
+            'remaining_qty' => $remaining,
+            'orders_count' => 1,
+            'completion_pct' => $required > 0 ? ($prepared / $required) * 100 : 0,
+            'last_calculated_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 
     private function seedMaterialDemand(PreparationWave $wave, string $materialId, float $missingQty): void
     {
         DB::table('wave_material_demand')->insert([
-            'id'                  => (string) Str::uuid(),
-            'company_id'          => $wave->company_id,
-            'warehouse_id'        => $wave->warehouse_id,
+            'id' => (string) Str::uuid(),
+            'company_id' => $wave->company_id,
+            'warehouse_id' => $wave->warehouse_id,
             'preparation_wave_id' => $wave->id,
-            'material_id'         => $materialId,
-            'material_name'       => 'Material ' . $materialId,
-            'required_qty'        => 10.0,
-            'available_qty'       => max(0.0, 10.0 - $missingQty),
-            'reserved_qty'        => 0,
-            'expected_today'      => 0,
-            'in_transit_qty'      => 0,
-            'missing_qty'         => $missingQty,
-            'coverage_pct'        => $missingQty > 0 ? ((10.0 - $missingQty) / 10.0) * 100 : 100,
-            'last_calculated_at'  => now(),
-            'created_at'          => now(),
-            'updated_at'          => now(),
+            'material_id' => $materialId,
+            'material_name' => 'Material '.$materialId,
+            'required_qty' => 10.0,
+            'available_qty' => max(0.0, 10.0 - $missingQty),
+            'reserved_qty' => 0,
+            'expected_today' => 0,
+            'in_transit_qty' => 0,
+            'missing_qty' => $missingQty,
+            'coverage_pct' => $missingQty > 0 ? ((10.0 - $missingQty) / 10.0) * 100 : 100,
+            'last_calculated_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
     }
 }

@@ -22,7 +22,7 @@ use Modules\Inventory\Products\Domain\Models\Product;
  * @property string $id
  * @property string $bom_id
  * @property string $raw_material_id
- * @property float  $quantity
+ * @property float $quantity
  */
 class RecipeLine extends Model
 {
@@ -40,7 +40,7 @@ class RecipeLine extends Model
     protected function casts(): array
     {
         return [
-            'quantity'        => 'decimal:4',
+            'quantity' => 'decimal:4',
             'waste_percentage' => 'float',
         ];
     }

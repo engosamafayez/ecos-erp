@@ -13,13 +13,13 @@ use Modules\Core\BusinessAttribution\Domain\Enums\RelationshipType;
 /**
  * An edge in the Business Graph Layer — immutable, append-only.
  *
- * @property string           $id
- * @property string           $from_node_id
- * @property string           $to_node_id
+ * @property string $id
+ * @property string $from_node_id
+ * @property string $to_node_id
  * @property RelationshipType $relationship_type
- * @property float|null       $weight
- * @property array|null       $properties
- * @property Carbon           $created_at
+ * @property float|null $weight
+ * @property array|null $properties
+ * @property Carbon $created_at
  */
 class EntityRelationship extends Model
 {
@@ -29,15 +29,16 @@ class EntityRelationship extends Model
 
     // Append-only — no updated_at
     public $timestamps = false;
+
     protected $guarded = [];
 
     protected function casts(): array
     {
         return [
             'relationship_type' => RelationshipType::class,
-            'properties'        => 'array',
-            'weight'            => 'float',
-            'created_at'        => 'datetime',
+            'properties' => 'array',
+            'weight' => 'float',
+            'created_at' => 'datetime',
         ];
     }
 

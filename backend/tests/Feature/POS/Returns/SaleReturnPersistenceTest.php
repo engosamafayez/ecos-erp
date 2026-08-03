@@ -28,14 +28,21 @@ final class SaleReturnPersistenceTest extends TestCase
 
     private SaleReturnRepositoryInterface $repository;
 
-    private const SALE_ID        = 'a1000000-0000-4000-a000-000000000001';
-    private const SESSION_ID     = 'c1000000-0000-4000-c000-000000000001';
-    private const SHIFT_ID       = 'd1000000-0000-4000-d000-000000000001';
-    private const TERMINAL_ID    = 'e1000000-0000-4000-e000-000000000001';
-    private const CASHIER_ID     = 'f1000000-0000-4000-f000-000000000001';
+    private const SALE_ID = 'a1000000-0000-4000-a000-000000000001';
+
+    private const SESSION_ID = 'c1000000-0000-4000-c000-000000000001';
+
+    private const SHIFT_ID = 'd1000000-0000-4000-d000-000000000001';
+
+    private const TERMINAL_ID = 'e1000000-0000-4000-e000-000000000001';
+
+    private const CASHIER_ID = 'f1000000-0000-4000-f000-000000000001';
+
     private const RECEIPT_NUMBER = 'RCP-2026-PER-001';
-    private const RETURN_NUMBER  = 'RTN-2026-PER-001';
-    private const CURRENCY       = 'EGP';
+
+    private const RETURN_NUMBER = 'RTN-2026-PER-001';
+
+    private const CURRENCY = 'EGP';
 
     protected function setUp(): void
     {
@@ -47,16 +54,16 @@ final class SaleReturnPersistenceTest extends TestCase
     {
         return ReturnLine::fromSaleLine(
             [
-                'line_id'        => $lineId,
-                'product_id'     => 'prod-1',
-                'product_name'   => 'Widget',
-                'sku'            => 'WGT-001',
-                'quantity'       => '2.0000',
-                'unit_price'     => ['amount' => '50.00', 'currency' => self::CURRENCY],
-                'discount_type'  => null,
+                'line_id' => $lineId,
+                'product_id' => 'prod-1',
+                'product_name' => 'Widget',
+                'sku' => 'WGT-001',
+                'quantity' => '2.0000',
+                'unit_price' => ['amount' => '50.00', 'currency' => self::CURRENCY],
+                'discount_type' => null,
                 'discount_value' => null,
-                'line_total'     => ['amount' => '100.00', 'currency' => self::CURRENCY],
-                'sort_order'     => 0,
+                'line_total' => ['amount' => '100.00', 'currency' => self::CURRENCY],
+                'sort_order' => 0,
             ],
             Quantity::of('1'),
             ReturnReason::WrongItem,
@@ -64,23 +71,23 @@ final class SaleReturnPersistenceTest extends TestCase
     }
 
     private function makeSaleReturn(
-        string $saleId      = self::SALE_ID,
+        string $saleId = self::SALE_ID,
         string $returnNumber = self::RETURN_NUMBER,
         string $refundTotal = '50.00',
     ): SaleReturn {
         return SaleReturn::initiate(
-            saleId:                $saleId,
+            saleId: $saleId,
             originalReceiptNumber: self::RECEIPT_NUMBER,
-            sessionId:             self::SESSION_ID,
-            shiftId:               self::SHIFT_ID,
-            terminalId:            self::TERMINAL_ID,
-            cashierId:             self::CASHIER_ID,
-            customerId:            null,
-            currency:              self::CURRENCY,
-            returnNumber:          $returnNumber,
-            lines:                 [$this->makeReturnLine()],
-            refundTotal:           Money::of($refundTotal, self::CURRENCY),
-            refundMethod:          PaymentMethodType::Cash,
+            sessionId: self::SESSION_ID,
+            shiftId: self::SHIFT_ID,
+            terminalId: self::TERMINAL_ID,
+            cashierId: self::CASHIER_ID,
+            customerId: null,
+            currency: self::CURRENCY,
+            returnNumber: $returnNumber,
+            lines: [$this->makeReturnLine()],
+            refundTotal: Money::of($refundTotal, self::CURRENCY),
+            refundMethod: PaymentMethodType::Cash,
         );
     }
 
@@ -173,7 +180,7 @@ final class SaleReturnPersistenceTest extends TestCase
 
         $this->expectException(\Illuminate\Database\QueryException::class);
         $this->repository->save($this->makeSaleReturn(
-            saleId:      'a2000000-0000-4000-a000-000000000002',
+            saleId: 'a2000000-0000-4000-a000-000000000002',
             returnNumber: self::RETURN_NUMBER,
         ));
     }

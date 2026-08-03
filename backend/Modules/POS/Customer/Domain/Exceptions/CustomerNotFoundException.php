@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\POS\Customer\Domain\Exceptions;
 
-final class CustomerNotFoundException extends \DomainException
+use DomainException;
+
+final class CustomerNotFoundException extends DomainException
 {
     public static function withId(string $id): self
     {

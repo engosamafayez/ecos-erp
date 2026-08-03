@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Lock, Unlock } from 'lucide-react';
 
 import { useToast } from '@/components/ds/use-toast';
@@ -25,6 +26,7 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
 }
 
 function HeldLocks() {
+  const { t } = useTranslation('logistics');
   const { toast } = useToast();
   const { data: locks } = useHeldLocks();
   const [breaking, setBreaking] = useState<string | null>(null);
@@ -32,7 +34,9 @@ function HeldLocks() {
   const breakLock = useBreakLock();
 
   if (!locks || locks.length === 0) {
-    return <p className="py-8 text-center text-sm text-muted-foreground">Nothing is held.</p>;
+    return (
+      <p className="py-8 text-center text-sm text-muted-foreground">{t('dispatch.locks.empty')}</p>
+    );
   }
 
   return (
@@ -43,10 +47,12 @@ function HeldLocks() {
             <div className="flex items-center gap-2 text-xs">
               <Lock className="size-3.5 text-muted-foreground" />
               <span className="font-medium">{lock.resource}</span>
-              <span className="text-muted-foreground">held by {lock.held_by ?? 'unknown'}</span>
+              <span className="text-muted-foreground">
+                {t('dispatch.locks.heldBy', { name: lock.held_by ?? t('common.unknown') })}
+              </span>
               {!lock.is_effective && (
                 <Badge variant="outline" className="text-[10px]">
-                  Lapsed
+                  {t('dispatch.locks.lapsed')}
                 </Badge>
               )}
             </div>
@@ -54,7 +60,9 @@ function HeldLocks() {
               {/* Every lock expires on its own; the countdown is the safety net
                   that keeps a crashed session from freezing a vehicle. */}
               <span className="tabular-nums text-xs text-muted-foreground">
-                {Math.max(0, Math.round(lock.remaining_seconds / 60))} min left
+                {t('dispatch.locks.minutesLeft', {
+                  value: Math.max(0, Math.round(lock.remaining_seconds / 60)),
+                })}
               </span>
               <Button
                 size="sm"
@@ -62,8 +70,8 @@ function HeldLocks() {
                 className="h-7 text-xs"
                 onClick={() => setBreaking(breaking === lock.id ? null : lock.id)}
               >
-                <Unlock className="mr-1 size-3.5" />
-                Break
+                <Unlock className="me-1 size-3.5" />
+                {t('dispatch.locks.break')}
               </Button>
             </div>
           </div>
@@ -73,7 +81,7 @@ function HeldLocks() {
               <Input
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
-                placeholder="Why this is being taken"
+                placeholder={t('dispatch.locks.reasonPlaceholder')}
                 className="h-8 max-w-xs text-xs"
               />
               <Button
@@ -87,17 +95,20 @@ function HeldLocks() {
                     { id: lock.id, reason: reason.trim() },
                     {
                       onSuccess: () => {
-                        toast({ title: 'Lock broken and recorded.' });
+                        toast({ title: t('dispatch.toast.lockBroken') });
                         setBreaking(null);
                         setReason('');
                       },
                       onError: () =>
-                        toast({ title: 'The lock could not be broken.', variant: 'destructive' }),
+                        toast({
+                          title: t('dispatch.toast.lockBreakFailed'),
+                          variant: 'destructive',
+                        }),
                     },
                   )
                 }
               >
-                Confirm
+                {t('common.confirm')}
               </Button>
             </div>
           )}
@@ -108,6 +119,7 @@ function HeldLocks() {
 }
 
 export function DispatchSessionsPanel({ activeSessionId }: { activeSessionId: string | null }) {
+  const { t } = useTranslation('logistics');
   const { toast } = useToast();
   const { data, isLoading } = useSessions();
   const close = useCloseSession();
@@ -118,21 +130,27 @@ export function DispatchSessionsPanel({ activeSessionId }: { activeSessionId: st
 
   return (
     <div className="space-y-4">
-      <Panel title="Sessions">
+      <Panel title={t('dispatch.sessions.title')}>
         {sessions.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">No sessions yet.</p>
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            {t('dispatch.sessions.empty')}
+          </p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b text-left text-muted-foreground">
-                  <th className="py-1.5 font-normal">Operator</th>
-                  <th className="py-1.5 font-normal">Status</th>
-                  <th className="py-1.5 font-normal">Mode</th>
-                  <th className="py-1.5 text-right font-normal">Assigned</th>
-                  <th className="py-1.5 text-right font-normal">Released</th>
-                  <th className="py-1.5 text-right font-normal">Conflicts</th>
-                  <th className="py-1.5 text-right font-normal">Duration</th>
+                <tr className="border-b text-start text-muted-foreground">
+                  <th className="py-1.5 font-normal">{t('dispatch.sessions.colOperator')}</th>
+                  <th className="py-1.5 font-normal">{t('common.status')}</th>
+                  <th className="py-1.5 font-normal">{t('dispatch.sessions.colMode')}</th>
+                  <th className="py-1.5 text-end font-normal">{t('common.assigned')}</th>
+                  <th className="py-1.5 text-end font-normal">{t('dispatch.sessions.colReleased')}</th>
+                  <th className="py-1.5 text-end font-normal">
+                    {t('dispatch.sessions.colConflicts')}
+                  </th>
+                  <th className="py-1.5 text-end font-normal">
+                    {t('dispatch.sessions.colDuration')}
+                  </th>
                   <th className="py-1.5" />
                 </tr>
               </thead>
@@ -143,22 +161,26 @@ export function DispatchSessionsPanel({ activeSessionId }: { activeSessionId: st
                       {session.operator_name ?? '—'}
                       {/* An idle open session is holding locks nobody is using. */}
                       {session.is_idle && (
-                        <Badge variant="outline" className="ml-1.5 border-amber-500 text-[10px]">
-                          Idle
+                        <Badge variant="outline" className="ms-1.5 border-amber-500 text-[10px]">
+                          {t('dispatch.sessions.idle')}
                         </Badge>
                       )}
                     </td>
                     <td className="py-2">
                       <SessionStatusBadge status={session.status} />
                     </td>
-                    <td className="py-2 capitalize text-muted-foreground">{session.mode}</td>
-                    <td className="py-2 text-right tabular-nums">{session.assigned_count}</td>
-                    <td className="py-2 text-right tabular-nums">{session.released_count}</td>
-                    <td className="py-2 text-right tabular-nums">{session.conflict_count}</td>
-                    <td className="py-2 text-right tabular-nums text-muted-foreground">
-                      {session.duration_minutes !== null ? `${session.duration_minutes}m` : '—'}
+                    <td className="py-2 text-muted-foreground">
+                      {t(`dispatch.sessions.mode.${session.mode}`)}
                     </td>
-                    <td className="py-2 text-right">
+                    <td className="py-2 text-end tabular-nums">{session.assigned_count}</td>
+                    <td className="py-2 text-end tabular-nums">{session.released_count}</td>
+                    <td className="py-2 text-end tabular-nums">{session.conflict_count}</td>
+                    <td className="py-2 text-end tabular-nums text-muted-foreground">
+                      {session.duration_minutes !== null
+                        ? t('dispatch.units.minutesShort', { value: session.duration_minutes })
+                        : '—'}
+                    </td>
+                    <td className="py-2 text-end">
                       {session.is_active && (
                         <Button
                           size="sm"
@@ -170,17 +192,17 @@ export function DispatchSessionsPanel({ activeSessionId }: { activeSessionId: st
                               { id: session.id },
                               {
                                 onSuccess: () =>
-                                  toast({ title: 'Session closed and locks released.' }),
+                                  toast({ title: t('dispatch.toast.sessionClosedLocksReleased') }),
                                 onError: () =>
                                   toast({
-                                    title: 'The session could not be closed.',
+                                    title: t('dispatch.toast.sessionCloseFailed'),
                                     variant: 'destructive',
                                   }),
                               },
                             )
                           }
                         >
-                          Close
+                          {t('common.close')}
                         </Button>
                       )}
                     </td>
@@ -192,7 +214,7 @@ export function DispatchSessionsPanel({ activeSessionId }: { activeSessionId: st
         )}
       </Panel>
 
-      <Panel title="Held resources">
+      <Panel title={t('dispatch.locks.title')}>
         <HeldLocks />
       </Panel>
     </div>

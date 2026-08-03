@@ -25,65 +25,65 @@ enum ConnectionStatus: string
     // ── Lifecycle states ──────────────────────────────────────────────────────
 
     /** Connection record created, OAuth not yet started. */
-    case Pending        = 'pending';
+    case Pending = 'pending';
 
     /** User redirected to OAuth; awaiting callback. */
     case Authenticating = 'authenticating';
 
     /** Token received; not yet validated. */
-    case Connected      = 'connected';
+    case Connected = 'connected';
 
     /** Validating scopes + permissions. */
-    case Validating     = 'validating';
+    case Validating = 'validating';
 
     /** A sync job is currently running. */
-    case Synchronizing  = 'synchronizing';
+    case Synchronizing = 'synchronizing';
 
     /** Fully operational — all permissions valid, API reachable. */
-    case Healthy        = 'healthy';
+    case Healthy = 'healthy';
 
     /** Operational with degraded permissions or near rate-limit. */
-    case Warning        = 'warning';
+    case Warning = 'warning';
 
     /** Serious issue — API errors, missing critical permissions. */
-    case Degraded       = 'degraded';
+    case Degraded = 'degraded';
 
     /** Token revoked or user disconnected. */
-    case Disconnected   = 'disconnected';
+    case Disconnected = 'disconnected';
 
     /** Permanently retired — no further action expected. */
-    case Archived       = 'archived';
+    case Archived = 'archived';
 
     // ── Legacy values — backward-compat ──────────────────────────────────────
     // @deprecated  New connections use the lifecycle states above.
 
     /** @deprecated Use Healthy */
-    case Active  = 'active';
+    case Active = 'active';
 
     /** @deprecated Use Degraded (token) or Disconnected */
     case Expired = 'expired';
 
     /** @deprecated Use Degraded */
-    case Error   = 'error';
+    case Error = 'error';
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     public function label(): string
     {
         return match ($this) {
-            self::Pending        => 'Pending',
+            self::Pending => 'Pending',
             self::Authenticating => 'Authenticating',
-            self::Connected      => 'Connected',
-            self::Validating     => 'Validating',
-            self::Synchronizing  => 'Synchronizing',
-            self::Healthy        => 'Healthy',
-            self::Warning        => 'Warning',
-            self::Degraded       => 'Degraded',
-            self::Disconnected   => 'Disconnected',
-            self::Archived       => 'Archived',
-            self::Active         => 'Active',
-            self::Expired        => 'Expired',
-            self::Error          => 'Error',
+            self::Connected => 'Connected',
+            self::Validating => 'Validating',
+            self::Synchronizing => 'Synchronizing',
+            self::Healthy => 'Healthy',
+            self::Warning => 'Warning',
+            self::Degraded => 'Degraded',
+            self::Disconnected => 'Disconnected',
+            self::Archived => 'Archived',
+            self::Active => 'Active',
+            self::Expired => 'Expired',
+            self::Error => 'Error',
         };
     }
 
@@ -118,20 +118,20 @@ enum ConnectionStatus: string
     public function allowedTransitions(): array
     {
         return match ($this) {
-            self::Pending        => [self::Authenticating, self::Disconnected],
+            self::Pending => [self::Authenticating, self::Disconnected],
             self::Authenticating => [self::Connected, self::Disconnected, self::Error],
-            self::Connected      => [self::Validating, self::Healthy, self::Disconnected],
-            self::Validating     => [self::Healthy, self::Warning, self::Degraded, self::Disconnected],
-            self::Healthy        => [self::Synchronizing, self::Warning, self::Degraded, self::Disconnected, self::Archived],
-            self::Warning        => [self::Synchronizing, self::Healthy, self::Degraded, self::Disconnected, self::Archived],
-            self::Degraded       => [self::Synchronizing, self::Healthy, self::Warning, self::Disconnected, self::Archived],
-            self::Synchronizing  => [self::Healthy, self::Warning, self::Degraded, self::Disconnected],
-            self::Disconnected   => [self::Pending, self::Archived],
-            self::Archived       => [],
+            self::Connected => [self::Validating, self::Healthy, self::Disconnected],
+            self::Validating => [self::Healthy, self::Warning, self::Degraded, self::Disconnected],
+            self::Healthy => [self::Synchronizing, self::Warning, self::Degraded, self::Disconnected, self::Archived],
+            self::Warning => [self::Synchronizing, self::Healthy, self::Degraded, self::Disconnected, self::Archived],
+            self::Degraded => [self::Synchronizing, self::Healthy, self::Warning, self::Disconnected, self::Archived],
+            self::Synchronizing => [self::Healthy, self::Warning, self::Degraded, self::Disconnected],
+            self::Disconnected => [self::Pending, self::Archived],
+            self::Archived => [],
             // Legacy — can transition to any lifecycle state
-            self::Active         => [self::Healthy, self::Warning, self::Degraded, self::Disconnected, self::Synchronizing],
-            self::Expired        => [self::Pending, self::Disconnected, self::Degraded, self::Archived],
-            self::Error          => [self::Pending, self::Disconnected, self::Degraded, self::Archived],
+            self::Active => [self::Healthy, self::Warning, self::Degraded, self::Disconnected, self::Synchronizing],
+            self::Expired => [self::Pending, self::Disconnected, self::Degraded, self::Archived],
+            self::Error => [self::Pending, self::Disconnected, self::Degraded, self::Archived],
         };
     }
 

@@ -24,11 +24,11 @@ class BrandCitySetting extends Model
     protected function casts(): array
     {
         return [
-            'is_enabled'        => 'boolean',
-            'shipping_price'    => 'decimal:2',
-            'supports_cod'      => 'boolean',
+            'is_enabled' => 'boolean',
+            'shipping_price' => 'decimal:2',
+            'supports_cod' => 'boolean',
             'is_remote_override' => 'boolean',
-            'city_id'           => 'integer',
+            'city_id' => 'integer',
         ];
     }
 

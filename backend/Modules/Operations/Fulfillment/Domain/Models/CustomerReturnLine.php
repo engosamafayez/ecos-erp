@@ -9,16 +9,16 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * @property string         $id
- * @property string         $customer_return_id
- * @property string         $order_line_id
- * @property string         $product_id
- * @property string         $sku_snapshot
- * @property string         $name_snapshot
- * @property float          $quantity_returned
- * @property float|null     $unit_cost_snapshot
- * @property string         $condition            sellable | damaged | destroyed
- * @property string|null    $inspection_notes
+ * @property string $id
+ * @property string $customer_return_id
+ * @property string $order_line_id
+ * @property string $product_id
+ * @property string $sku_snapshot
+ * @property string $name_snapshot
+ * @property float $quantity_returned
+ * @property float|null $unit_cost_snapshot
+ * @property string $condition sellable | damaged | destroyed
+ * @property string|null $inspection_notes
  */
 class CustomerReturnLine extends Model
 {
@@ -47,7 +47,7 @@ class CustomerReturnLine extends Model
     protected function casts(): array
     {
         return [
-            'quantity_returned'  => 'float',
+            'quantity_returned' => 'float',
             'unit_cost_snapshot' => 'float',
         ];
     }

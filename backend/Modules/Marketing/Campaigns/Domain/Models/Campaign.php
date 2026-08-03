@@ -21,54 +21,55 @@ use Modules\Marketing\Initiatives\Domain\Models\MarketingInitiative;
  * Provider Identity: external_campaign_id, status, objective, budgets, schedule (READ-ONLY)
  * Business Identity: see CampaignBusinessContext (ECOS-managed, never overwritten by sync)
  *
- * @property string                    $id
- * @property string|null               $marketing_connection_id
- * @property string|null               $marketing_initiative_id
- * @property string|null               $company_id
- * @property ConnectorType             $connector_type
- * @property string                    $external_campaign_id
- * @property string|null               $external_account_id
- * @property string                    $name
- * @property CampaignStatus            $status
- * @property CampaignObjective|null    $objective
- * @property string|null               $buying_type
- * @property string|null               $bid_strategy
- * @property float|null                $daily_budget
- * @property float|null                $lifetime_budget
- * @property float|null                $budget_remaining
- * @property \Carbon\Carbon|null       $start_time
- * @property \Carbon\Carbon|null       $stop_time
- * @property \Carbon\Carbon|null       $provider_created_at
- * @property \Carbon\Carbon|null       $provider_updated_at
- * @property \Carbon\Carbon|null       $last_synced_at
- * @property \Carbon\Carbon|null       $next_sync_at
- * @property string|null               $health_status
- * @property array|null                $provider_payload
+ * @property string $id
+ * @property string|null $marketing_connection_id
+ * @property string|null $marketing_initiative_id
+ * @property string|null $company_id
+ * @property ConnectorType $connector_type
+ * @property string $external_campaign_id
+ * @property string|null $external_account_id
+ * @property string $name
+ * @property CampaignStatus $status
+ * @property CampaignObjective|null $objective
+ * @property string|null $buying_type
+ * @property string|null $bid_strategy
+ * @property float|null $daily_budget
+ * @property float|null $lifetime_budget
+ * @property float|null $budget_remaining
+ * @property \Carbon\Carbon|null $start_time
+ * @property \Carbon\Carbon|null $stop_time
+ * @property \Carbon\Carbon|null $provider_created_at
+ * @property \Carbon\Carbon|null $provider_updated_at
+ * @property \Carbon\Carbon|null $last_synced_at
+ * @property \Carbon\Carbon|null $next_sync_at
+ * @property string|null $health_status
+ * @property array|null $provider_payload
  */
 class Campaign extends Model
 {
     use HasUuids;
 
-    protected $table    = 'marketing_campaigns';
-    protected $guarded  = [];
+    protected $table = 'marketing_campaigns';
+
+    protected $guarded = [];
 
     protected function casts(): array
     {
         return [
-            'connector_type'        => ConnectorType::class,
-            'status'                => CampaignStatus::class,
-            'objective'             => CampaignObjective::class,
-            'daily_budget'          => 'decimal:2',
-            'lifetime_budget'       => 'decimal:2',
-            'budget_remaining'      => 'decimal:2',
+            'connector_type' => ConnectorType::class,
+            'status' => CampaignStatus::class,
+            'objective' => CampaignObjective::class,
+            'daily_budget' => 'decimal:2',
+            'lifetime_budget' => 'decimal:2',
+            'budget_remaining' => 'decimal:2',
             'special_ad_categories' => 'array',
-            'start_time'            => 'datetime',
-            'stop_time'             => 'datetime',
-            'provider_created_at'   => 'datetime',
-            'provider_updated_at'   => 'datetime',
-            'last_synced_at'        => 'datetime',
-            'next_sync_at'          => 'datetime',
-            'provider_payload'      => 'array',
+            'start_time' => 'datetime',
+            'stop_time' => 'datetime',
+            'provider_created_at' => 'datetime',
+            'provider_updated_at' => 'datetime',
+            'last_synced_at' => 'datetime',
+            'next_sync_at' => 'datetime',
+            'provider_payload' => 'array',
         ];
     }
 
@@ -87,11 +88,12 @@ class Campaign extends Model
     public function budgetDisplay(): string
     {
         if ($this->daily_budget !== null) {
-            return 'Daily: ' . number_format((float) $this->daily_budget, 2);
+            return 'Daily: '.number_format((float) $this->daily_budget, 2);
         }
         if ($this->lifetime_budget !== null) {
-            return 'Lifetime: ' . number_format((float) $this->lifetime_budget, 2);
+            return 'Lifetime: '.number_format((float) $this->lifetime_budget, 2);
         }
+
         return '—';
     }
 

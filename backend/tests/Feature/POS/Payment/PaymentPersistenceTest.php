@@ -25,12 +25,17 @@ final class PaymentPersistenceTest extends TestCase
 
     private PaymentRepositoryInterface $repository;
 
-    private const CART_ID     = 'a1000000-0000-4000-a000-000000000001';
-    private const SESSION_ID  = 'b1000000-0000-4000-b000-000000000001';
-    private const SHIFT_ID    = 'c1000000-0000-4000-c000-000000000001';
+    private const CART_ID = 'a1000000-0000-4000-a000-000000000001';
+
+    private const SESSION_ID = 'b1000000-0000-4000-b000-000000000001';
+
+    private const SHIFT_ID = 'c1000000-0000-4000-c000-000000000001';
+
     private const TERMINAL_ID = 'd1000000-0000-4000-d000-000000000001';
-    private const CASHIER_ID  = 'e1000000-0000-4000-e000-000000000001';
-    private const CURRENCY    = 'EGP';
+
+    private const CASHIER_ID = 'e1000000-0000-4000-e000-000000000001';
+
+    private const CURRENCY = 'EGP';
 
     protected function setUp(): void
     {
@@ -41,12 +46,12 @@ final class PaymentPersistenceTest extends TestCase
     private function makePayment(string $cartId = self::CART_ID, string $amount = '150.00'): Payment
     {
         return Payment::initiate(
-            cartId:     $cartId,
-            sessionId:  self::SESSION_ID,
-            shiftId:    self::SHIFT_ID,
+            cartId: $cartId,
+            sessionId: self::SESSION_ID,
+            shiftId: self::SHIFT_ID,
             terminalId: self::TERMINAL_ID,
-            cashierId:  self::CASHIER_ID,
-            cartTotal:  Money::of($amount, self::CURRENCY),
+            cashierId: self::CASHIER_ID,
+            cartTotal: Money::of($amount, self::CURRENCY),
         );
     }
 

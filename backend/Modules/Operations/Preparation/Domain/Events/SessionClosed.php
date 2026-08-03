@@ -10,6 +10,6 @@ final class SessionClosed
 {
     public function __construct(
         public readonly PreparationSession $session,
-        public readonly string             $actorId,
+        public readonly string $actorId,
     ) {}
 }

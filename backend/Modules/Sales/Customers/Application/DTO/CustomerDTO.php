@@ -9,8 +9,12 @@ use App\Core\DTO\BaseDTO;
 final class CustomerDTO extends BaseDTO
 {
     public function __construct(
-        public readonly string $code,
-        public readonly string $name,
+        public readonly string  $code,
+        public readonly string  $name,
+        // brand_id carries the initial brand on creation; null on update (brand management is separate).
+        public readonly ?string $brand_id = null,
+        // company_id is injected server-side on create; never updated.
+        public readonly ?string $company_id = null,
         public readonly ?string $contact_person = null,
         public readonly ?string $email = null,
         public readonly ?string $phone = null,
@@ -19,7 +23,7 @@ final class CustomerDTO extends BaseDTO
         public readonly ?string $city = null,
         public readonly ?string $address = null,
         public readonly ?string $notes = null,
-        public readonly bool $is_active = true,
+        public readonly bool    $is_active = true,
     ) {}
 
     /**
@@ -28,8 +32,10 @@ final class CustomerDTO extends BaseDTO
     public static function fromArray(array $data): self
     {
         return new self(
-            code: (string) $data['code'],
-            name: (string) $data['name'],
+            code:       (string) $data['code'],
+            name:       (string) $data['name'],
+            brand_id:   self::nullableString($data, 'brand_id'),
+            company_id: self::nullableString($data, 'company_id'),
             contact_person: self::nullableString($data, 'contact_person'),
             email: self::nullableString($data, 'email'),
             phone: self::nullableString($data, 'phone'),

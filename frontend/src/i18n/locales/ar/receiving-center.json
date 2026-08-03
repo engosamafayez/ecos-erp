@@ -63,5 +63,66 @@
     "receiveTitle": "تأكيد الاستلام",
     "saving": "جارٍ الحفظ…",
     "errorTitle": "تعذر الحفظ"
+  },
+  "page": {
+    "title": "مركز الاستلام",
+    "subtitle": "فحص ومعالجة البضائع الواردة من الموردين.",
+    "kpis": {
+      "totalReceipts": "إجمالي الإيصالات",
+      "draft": "مسودة",
+      "posted": "مرحَّل"
+    },
+    "columns": {
+      "receiptNo": "رقم الإيصال",
+      "date": "التاريخ",
+      "supplier": "المورد",
+      "warehouse": "المستودع",
+      "status": "الحالة",
+      "payment": "الدفع",
+      "invoiceTotal": "إجمالي الفاتورة"
+    },
+    "filters": {
+      "search": "بحث في الإيصالات…",
+      "allStatuses": "جميع الحالات"
+    },
+    "empty": "لم يُعثر على إيصالات.",
+    "actions": {
+      "view": "عرض التفاصيل",
+      "post": "ترحيل للمخزون",
+      "cancel": "إلغاء",
+      "delete": "حذف",
+      "edit": "تعديل",
+      "newReceipt": "إيصال جديد",
+      "receiveGoods": "استلام بضائع"
+    },
+    "confirmPost": {
+      "title": "ترحيل الإيصال",
+      "description": "ترحيل إيصال الاستلام للمخزون؟",
+      "confirm": "ترحيل"
+    },
+    "confirmCancel": {
+      "title": "إلغاء الإيصال",
+      "description": "هل أنت متأكد من إلغاء هذا الإيصال؟",
+      "confirm": "إلغاء الإيصال"
+    },
+    "confirmDelete": {
+      "title": "حذف الإيصال",
+      "description": "هل أنت متأكد من حذف هذا الإيصال؟",
+      "confirm": "حذف"
+    },
+    "toast": {
+      "posted": "تم ترحيل الإيصال للمخزون.",
+      "postFailed": "فشل ترحيل الإيصال.",
+      "cancelled": "تم إلغاء الإيصال.",
+      "cancelFailed": "فشل إلغاء الإيصال.",
+      "deleted": "تم حذف الإيصال.",
+      "deleteFailed": "فشل حذف الإيصال."
+    },
+    "pagination": {
+      "total": "{{count}} إيصالات",
+      "previous": "السابق",
+      "next": "التالي",
+      "page": "صفحة {{current}} من {{last}}"
+    }
   }
 }

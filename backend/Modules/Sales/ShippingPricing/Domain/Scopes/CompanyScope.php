@@ -33,7 +33,7 @@ final class CompanyScope implements Scope
 
         $builder->where(function (Builder $q) use ($companyId): void {
             $q->where('company_id', $companyId)
-              ->orWhereNull('company_id');
+                ->orWhereNull('company_id');
         });
     }
 }

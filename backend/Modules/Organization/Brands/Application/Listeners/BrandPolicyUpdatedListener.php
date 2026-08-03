@@ -7,6 +7,7 @@ namespace Modules\Organization\Brands\Application\Listeners;
 use Illuminate\Support\Facades\Log;
 use Modules\Admin\Configuration\Domain\Events\BrandPolicyUpdated;
 use Modules\Organization\Brands\Domain\Models\Brand;
+use Throwable;
 
 /**
  * Keeps brands.default_target_margin in sync whenever the pricing policy
@@ -28,11 +29,11 @@ final class BrandPolicyUpdatedListener
         try {
             Brand::where('id', $event->brandId)
                 ->update(['default_target_margin' => (float) $event->settings['minimum_margin_pct']]);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::channel('daily')->warning('[Config] Failed to sync minimum_margin_pct to brands table', [
                 'brand_id' => $event->brandId,
-                'value'    => $event->settings['minimum_margin_pct'],
-                'error'    => $e->getMessage(),
+                'value' => $event->settings['minimum_margin_pct'],
+                'error' => $e->getMessage(),
             ]);
         }
     }

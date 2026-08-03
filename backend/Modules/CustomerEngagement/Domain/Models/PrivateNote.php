@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Domain\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -18,7 +20,7 @@ class PrivateNote extends Model
     {
         return [
             'mentioned_user_ids' => 'array',
-            'metadata'           => 'array',
+            'metadata' => 'array',
         ];
     }
 

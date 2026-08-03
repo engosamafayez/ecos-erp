@@ -22,7 +22,7 @@ class ApprovalWorkflowStep extends Model
 
     protected $casts = [
         'requires_all' => 'boolean',
-        'is_optional'  => 'boolean',
+        'is_optional' => 'boolean',
     ];
 
     public function template(): BelongsTo

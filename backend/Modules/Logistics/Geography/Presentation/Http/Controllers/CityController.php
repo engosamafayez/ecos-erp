@@ -27,7 +27,7 @@ class CityController extends Controller
         if ($search = $request->input('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('name_en', 'like', "%{$search}%")
-                  ->orWhere('name_ar', 'like', "%{$search}%");
+                    ->orWhere('name_ar', 'like', "%{$search}%");
             });
         }
 
@@ -46,7 +46,7 @@ class CityController extends Controller
 
     public function show(int $govId, int $id): CityResource
     {
-        $gov  = Governorate::findOrFail($govId);
+        $gov = Governorate::findOrFail($govId);
         $city = City::with('aliases')
             ->withCount('aliases')
             ->where('governorate_id', $govId)
@@ -62,16 +62,16 @@ class CityController extends Controller
         Governorate::findOrFail($govId);
 
         $validated = $request->validate([
-            'name_ar'        => 'required|string|max:100',
-            'name_en'        => 'required|string|max:100',
+            'name_ar' => 'required|string|max:100',
+            'name_en' => 'required|string|max:100',
             'shipping_price' => 'nullable|numeric|min:0',
-            'display_order'  => 'sometimes|integer|min:0',
-            'is_active'      => 'sometimes|boolean',
+            'display_order' => 'sometimes|integer|min:0',
+            'is_active' => 'sometimes|boolean',
         ]);
 
         $city = City::create(array_merge($validated, [
             'governorate_id' => $govId,
-            'is_system'      => false,
+            'is_system' => false,
         ]));
 
         $city->load('governorate');
@@ -81,17 +81,17 @@ class CityController extends Controller
 
     public function update(Request $request, int $govId, int $id): CityResource
     {
-        $gov  = Governorate::findOrFail($govId);
+        $gov = Governorate::findOrFail($govId);
         $city = City::where('governorate_id', $govId)->findOrFail($id);
 
         $rules = [
             'shipping_price' => 'nullable|numeric|min:0',
-            'display_order'  => 'sometimes|integer|min:0',
-            'is_active'      => 'sometimes|boolean',
+            'display_order' => 'sometimes|integer|min:0',
+            'is_active' => 'sometimes|boolean',
         ];
 
         // Non-system cities can also have name edits
-        if (!$city->is_system) {
+        if (! $city->is_system) {
             $rules['name_ar'] = 'sometimes|string|max:100';
             $rules['name_en'] = 'sometimes|string|max:100';
         }
@@ -118,10 +118,10 @@ class CityController extends Controller
 
     public function toggleStatus(int $govId, int $id): CityResource
     {
-        $gov  = Governorate::findOrFail($govId);
+        $gov = Governorate::findOrFail($govId);
         $city = City::where('governorate_id', $govId)->findOrFail($id);
 
-        $city->update(['is_active' => !$city->is_active]);
+        $city->update(['is_active' => ! $city->is_active]);
         $city->setRelation('governorate', $gov);
 
         return new CityResource($city->loadCount('aliases'));

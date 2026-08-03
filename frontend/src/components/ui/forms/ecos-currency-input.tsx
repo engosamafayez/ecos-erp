@@ -1,4 +1,5 @@
 import { forwardRef, useState } from 'react';
+import { DEFAULT_CURRENCY } from '@/lib/format';
 
 import { EcosInput, type EcosInputProps } from './ecos-input';
 
@@ -33,7 +34,7 @@ export const EcosCurrencyInput = forwardRef<HTMLInputElement, EcosCurrencyInputP
     {
       value,
       onChange,
-      currency = 'EGP',
+      currency = DEFAULT_CURRENCY,
       decimals = 2,
       allowNegative = false,
       onFocus,

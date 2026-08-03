@@ -38,10 +38,10 @@ final class MetaOAuthService implements MarketingOAuthContract
     ];
 
     public function __construct(
-        private readonly MetaApiClient              $apiClient,
-        private readonly string                     $redirectUri,
-        private readonly ProviderEventPublisher     $events,
-        private readonly ProviderCredentialService  $providerCredentials,
+        private readonly MetaApiClient $apiClient,
+        private readonly string $redirectUri,
+        private readonly ProviderEventPublisher $events,
+        private readonly ProviderCredentialService $providerCredentials,
         private readonly DisconnectConnectionAction $disconnectAction,
     ) {}
 
@@ -67,7 +67,7 @@ final class MetaOAuthService implements MarketingOAuthContract
             throw new RuntimeException('Invalid or expired OAuth state. Please retry the connection.');
         }
 
-        $tokenData  = $this->apiClient->exchangeCode($code, $this->redirectUri);
+        $tokenData = $this->apiClient->exchangeCode($code, $this->redirectUri);
         $shortToken = $tokenData['access_token'] ?? null;
 
         if ($shortToken === null) {
@@ -75,36 +75,36 @@ final class MetaOAuthService implements MarketingOAuthContract
         }
 
         $longTokenData = $this->apiClient->extendToken($shortToken);
-        $longToken     = $longTokenData['access_token'];
-        $expiresIn     = $longTokenData['expires_in'] ?? (60 * 24 * 60 * 60);
+        $longToken = $longTokenData['access_token'];
+        $expiresIn = $longTokenData['expires_in'] ?? (60 * 24 * 60 * 60);
 
-        $me            = $this->apiClient->getMe($longToken);
-        $debugData     = $this->apiClient->debugToken($longToken);
+        $me = $this->apiClient->getMe($longToken);
+        $debugData = $this->apiClient->debugToken($longToken);
         $grantedScopes = $debugData['scopes'] ?? [];
 
         $connection = MarketingConnection::create([
-            'company_id'               => $companyId ?: null,
-            'connector_type'           => ConnectorType::Meta->value,
-            'label'                    => "Meta — {$me['name']}",
-            'status'                   => ConnectionStatus::Connected->value,
-            'external_account_id'      => $me['id'] ?? null,
-            'access_token'             => $longToken,
-            'refresh_token'            => null,
-            'token_expires_at'         => now()->addSeconds($expiresIn),
-            'scopes'                   => $grantedScopes,
-            'required_scopes'          => self::REQUIRED_SCOPES,
+            'company_id' => $companyId ?: null,
+            'connector_type' => ConnectorType::Meta->value,
+            'label' => "Meta — {$me['name']}",
+            'status' => ConnectionStatus::Connected->value,
+            'external_account_id' => $me['id'] ?? null,
+            'access_token' => $longToken,
+            'refresh_token' => null,
+            'token_expires_at' => now()->addSeconds($expiresIn),
+            'scopes' => $grantedScopes,
+            'required_scopes' => self::REQUIRED_SCOPES,
             'permissions_validated_at' => now(),
-            'last_validated_at'        => now(),
-            'connected_by'             => $actorId,
-            'connected_at'             => now(),
+            'last_validated_at' => now(),
+            'connected_by' => $actorId,
+            'connected_at' => now(),
         ]);
 
         event(new ConnectionCreated(
-            connectionId:  $connection->id,
+            connectionId: $connection->id,
             connectorType: $connection->connector_type,
-            companyId:     $companyId,
-            actorId:       $actorId,
-            metadata:      ['external_account_id' => $me['id'] ?? null],
+            companyId: $companyId,
+            actorId: $actorId,
+            metadata: ['external_account_id' => $me['id'] ?? null],
         ));
 
         // Publish ProviderPlatform event so ProviderHealthMonitor and metrics are updated
@@ -136,39 +136,39 @@ final class MetaOAuthService implements MarketingOAuthContract
      */
     public function validatePermissions(MarketingConnection $connection): array
     {
-        $token     = $connection->access_token;
+        $token = $connection->access_token;
         $debugData = $this->apiClient->debugToken($token);
 
         $granted = $debugData['scopes'] ?? [];
         $missing = array_values(array_diff(self::REQUIRED_SCOPES, $granted));
-        $valid   = empty($missing) && ($debugData['is_valid'] ?? false);
+        $valid = empty($missing) && ($debugData['is_valid'] ?? false);
 
         $previousScopes = $connection->scopes ?? [];
-        $added          = array_values(array_diff($granted, $previousScopes));
-        $removed        = array_values(array_diff($previousScopes, $granted));
+        $added = array_values(array_diff($granted, $previousScopes));
+        $removed = array_values(array_diff($previousScopes, $granted));
 
         $connection->update([
-            'scopes'                   => $granted,
+            'scopes' => $granted,
             'permissions_validated_at' => now(),
-            'last_validated_at'        => now(),
-            'status'                   => $valid
+            'last_validated_at' => now(),
+            'status' => $valid
                 ? ConnectionStatus::Healthy->value
                 : ConnectionStatus::Warning->value,
         ]);
 
         if (! empty($added) || ! empty($removed)) {
             event(new PermissionChanged(
-                connectionId:  $connection->id,
+                connectionId: $connection->id,
                 connectorType: $connection->connector_type,
-                addedScopes:   $added,
+                addedScopes: $added,
                 removedScopes: $removed,
-                allGranted:    $granted,
-                actorId:       null,
+                allGranted: $granted,
+                actorId: null,
             ));
         }
 
         return [
-            'valid'   => $valid,
+            'valid' => $valid,
             'granted' => $granted,
             'missing' => $missing,
         ];

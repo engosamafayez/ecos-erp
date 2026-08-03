@@ -10,7 +10,7 @@ final class AssetDiscovered
 {
     public function __construct(
         public readonly MarketingAsset $asset,
-        public readonly string         $connectionId,
-        public readonly bool           $isNew,         // false = updated existing
+        public readonly string $connectionId,
+        public readonly bool $isNew,         // false = updated existing
     ) {}
 }

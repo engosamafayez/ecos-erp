@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import type { AssetHealth } from '../types/marketing';
 
@@ -12,23 +13,14 @@ const HEALTH_CLASS: Record<AssetHealth, string> = {
   unknown:            'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-500',
 };
 
-const HEALTH_LABEL: Record<AssetHealth, string> = {
-  healthy:            'Healthy',
-  warning:            'Warning',
-  disconnected:       'Disconnected',
-  expired_token:      'Token Expired',
-  permission_missing: 'Missing Permission',
-  sync_failed:        'Sync Failed',
-  inactive:           'Inactive',
-  unknown:            'Unknown',
-};
-
 interface Props {
   health: AssetHealth;
   className?: string;
 }
 
 export function AssetHealthBadge({ health, className }: Props) {
+  const { t } = useTranslation('marketing');
+
   return (
     <span
       className={cn(
@@ -37,7 +29,7 @@ export function AssetHealthBadge({ health, className }: Props) {
         className,
       )}
     >
-      {HEALTH_LABEL[health]}
+      {t(`assets.health.${health}`)}
     </span>
   );
 }

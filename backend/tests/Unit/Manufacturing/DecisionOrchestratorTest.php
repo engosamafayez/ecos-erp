@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Manufacturing;
 
+use Error;
 use Modules\Manufacturing\BillsOfMaterials\Domain\Contracts\RecipeResolverInterface;
 use Modules\Manufacturing\BillsOfMaterials\Domain\Exceptions\RecipeResolverException;
 use Modules\Manufacturing\BillsOfMaterials\Domain\ValueObjects\RecipeComponent;
@@ -19,7 +20,6 @@ use Modules\Manufacturing\DecisionKernel\Domain\ValueObjects\DecisionRule;
 use Modules\Manufacturing\DecisionKernel\Domain\ValueObjects\DecisionTrigger;
 use Modules\Manufacturing\DecisionOrchestrator\Domain\Builders\GoodsReceiptContextBuilder;
 use Modules\Manufacturing\DecisionOrchestrator\Domain\Builders\ManufacturingContextBuilder;
-use Modules\Manufacturing\DecisionOrchestrator\Domain\Contracts\ContextBuilderInterface;
 use Modules\Manufacturing\DecisionOrchestrator\Domain\Exceptions\NoProviderForContextException;
 use Modules\Manufacturing\DecisionOrchestrator\Domain\Exceptions\OrchestratorException;
 use Modules\Manufacturing\DecisionOrchestrator\Domain\Services\DecisionOrchestrator;
@@ -38,20 +38,24 @@ use PHPUnit\Framework\TestCase;
 class DecisionOrchestratorTest extends TestCase
 {
     private RecipeResolverInterface&MockObject $resolver;
+
     private DecisionKernel $kernel;
+
     private InMemoryRuleProviderRegistry $registry;
+
     private DecisionOrchestrator $orchestrator;
+
     private RecipeSnapshot $snapshot;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->resolver     = $this->createMock(RecipeResolverInterface::class);
-        $this->kernel       = new DecisionKernel(new RuleEvaluationPipeline());
-        $this->registry     = new InMemoryRuleProviderRegistry();
+        $this->resolver = $this->createMock(RecipeResolverInterface::class);
+        $this->kernel = new DecisionKernel(new RuleEvaluationPipeline);
+        $this->registry = new InMemoryRuleProviderRegistry;
         $this->orchestrator = new DecisionOrchestrator($this->resolver, $this->kernel, $this->registry);
-        $this->snapshot     = $this->buildSnapshot();
+        $this->snapshot = $this->buildSnapshot();
     }
 
     // ── Fixtures ──────────────────────────────────────────────────────────────
@@ -62,22 +66,22 @@ class DecisionOrchestratorTest extends TestCase
         string $productId = 'prod-001',
     ): RecipeSnapshot {
         return new RecipeSnapshot(
-            recipe_id:          $recipeId,
-            bom_number:         'BOM-001',
-            version:            '1.0',
+            recipe_id: $recipeId,
+            bom_number: 'BOM-001',
+            version: '1.0',
             bom_version_number: $version,
-            product_id:         $productId,
-            product_sku:        'SKU-001',
-            product_name:       'Finished Good',
-            components:         [
+            product_id: $productId,
+            product_sku: 'SKU-001',
+            product_name: 'Finished Good',
+            components: [
                 new RecipeComponent(
-                    component_id:         'comp-001',
-                    sku:                  'COMP-001',
-                    name:                 'Component One',
-                    unit_id:              'unit-001',
-                    unit_name:            'Kilogram',
-                    unit_symbol:          'kg',
-                    quantity:             2.0,
+                    component_id: 'comp-001',
+                    sku: 'COMP-001',
+                    name: 'Component One',
+                    unit_id: 'unit-001',
+                    unit_name: 'Kilogram',
+                    unit_symbol: 'kg',
+                    quantity: 2.0,
                     allow_negative_stock: false,
                 ),
             ],
@@ -93,33 +97,33 @@ class DecisionOrchestratorTest extends TestCase
     private function approveAllRule(string $ruleId = 'approve-all'): DecisionRule
     {
         return new DecisionRule(
-            rule_id:       $ruleId,
-            name:          'Approve All',
-            priority:      100,
+            rule_id: $ruleId,
+            name: 'Approve All',
+            priority: 100,
             decision_type: DecisionType::Approve,
-            reason:        new DecisionReason('APPROVED', 'Approved by test rule.'),
-            condition:     fn(DecisionContext $ctx): bool => true,
+            reason: new DecisionReason('APPROVED', 'Approved by test rule.'),
+            condition: fn (DecisionContext $ctx): bool => true,
         );
     }
 
     private function rejectAllRule(string $ruleId = 'reject-all'): DecisionRule
     {
         return new DecisionRule(
-            rule_id:       $ruleId,
-            name:          'Reject All',
-            priority:      100,
+            rule_id: $ruleId,
+            name: 'Reject All',
+            priority: 100,
             decision_type: DecisionType::Reject,
-            reason:        new DecisionReason('REJECTED', 'Rejected by test rule.'),
-            condition:     fn(DecisionContext $ctx): bool => true,
+            reason: new DecisionReason('REJECTED', 'Rejected by test rule.'),
+            condition: fn (DecisionContext $ctx): bool => true,
         );
     }
 
     private function mfgParams(string $productId = 'prod-001'): array
     {
         return [
-            'product_id'   => $productId,
-            'ordered_qty'  => 10.0,
-            'available_qty'=> 3.0,
+            'product_id' => $productId,
+            'ordered_qty' => 10.0,
+            'available_qty' => 3.0,
             'shortage_qty' => 7.0,
         ];
     }
@@ -127,11 +131,11 @@ class DecisionOrchestratorTest extends TestCase
     private function grParams(): array
     {
         return [
-            'gr_id'              => 'gr-001',
-            'purchase_order_id'  => 'po-001',
-            'received_qty'       => 95.0,
-            'ordered_qty'        => 100.0,
-            'supplier_id'        => 'sup-001',
+            'gr_id' => 'gr-001',
+            'purchase_order_id' => 'po-001',
+            'received_qty' => 95.0,
+            'ordered_qty' => 100.0,
+            'supplier_id' => 'sup-001',
         ];
     }
 
@@ -143,7 +147,7 @@ class DecisionOrchestratorTest extends TestCase
 
         $result = $this->orchestrator->orchestrate(
             $this->trigger(),
-            new GoodsReceiptContextBuilder(),
+            new GoodsReceiptContextBuilder,
             $this->grParams(),
         );
 
@@ -160,7 +164,7 @@ class DecisionOrchestratorTest extends TestCase
         $this->resolver->expects($this->never())->method('resolve');
         $this->registry->register('goods_receipt', new InMemoryRuleProvider($this->approveAllRule()));
 
-        $this->orchestrator->orchestrate($this->trigger(), new GoodsReceiptContextBuilder(), $this->grParams());
+        $this->orchestrator->orchestrate($this->trigger(), new GoodsReceiptContextBuilder, $this->grParams());
     }
 
     // ── 3. Resolver IS called for manufacturing context ───────────────────────
@@ -175,7 +179,7 @@ class DecisionOrchestratorTest extends TestCase
 
         $this->registry->register('manufacturing', new InMemoryRuleProvider($this->approveAllRule()));
 
-        $this->orchestrator->orchestrate($this->trigger(), new ManufacturingContextBuilder(), $this->mfgParams());
+        $this->orchestrator->orchestrate($this->trigger(), new ManufacturingContextBuilder, $this->mfgParams());
     }
 
     // ── 4. Recipe snapshot present in result when resolved ───────────────────
@@ -187,7 +191,7 @@ class DecisionOrchestratorTest extends TestCase
 
         $result = $this->orchestrator->orchestrate(
             $this->trigger(),
-            new ManufacturingContextBuilder(),
+            new ManufacturingContextBuilder,
             $this->mfgParams(),
         );
 
@@ -203,12 +207,12 @@ class DecisionOrchestratorTest extends TestCase
 
         // Rule that checks recipe_id is present in context
         $recipeCheckRule = new DecisionRule(
-            rule_id:       'recipe-check',
-            name:          'Recipe Check',
-            priority:      100,
+            rule_id: 'recipe-check',
+            name: 'Recipe Check',
+            priority: 100,
             decision_type: DecisionType::Approve,
-            reason:        new DecisionReason('RECIPE_OK', 'Recipe data present.'),
-            condition:     fn(DecisionContext $ctx): bool => $ctx->has('recipe_id')
+            reason: new DecisionReason('RECIPE_OK', 'Recipe data present.'),
+            condition: fn (DecisionContext $ctx): bool => $ctx->has('recipe_id')
                 && $ctx->has('bom_version_number')
                 && $ctx->has('component_count')
                 && $ctx->get('recipe_resolved') === true,
@@ -218,7 +222,7 @@ class DecisionOrchestratorTest extends TestCase
 
         $result = $this->orchestrator->orchestrate(
             $this->trigger(),
-            new ManufacturingContextBuilder(),
+            new ManufacturingContextBuilder,
             $this->mfgParams(),
         );
 
@@ -234,7 +238,7 @@ class DecisionOrchestratorTest extends TestCase
     public function test_orchestrator_selects_rule_provider_by_context_type(): void
     {
         $mfgRule = $this->approveAllRule('mfg-rule');
-        $grRule  = $this->rejectAllRule('gr-rule');
+        $grRule = $this->rejectAllRule('gr-rule');
 
         $this->registry
             ->register('manufacturing', new InMemoryRuleProvider($mfgRule))
@@ -244,18 +248,18 @@ class DecisionOrchestratorTest extends TestCase
 
         $mfgResult = $this->orchestrator->orchestrate(
             $this->trigger(),
-            new ManufacturingContextBuilder(),
+            new ManufacturingContextBuilder,
             $this->mfgParams(),
         );
 
         $grResult = $this->orchestrator->orchestrate(
             $this->trigger(),
-            new GoodsReceiptContextBuilder(),
+            new GoodsReceiptContextBuilder,
             $this->grParams(),
         );
 
         $this->assertSame(DecisionType::Approve, $mfgResult->decision->decision);
-        $this->assertSame(DecisionType::Reject,  $grResult->decision->decision);
+        $this->assertSame(DecisionType::Reject, $grResult->decision->decision);
     }
 
     // ── 7. OrchestratorResult contains DecisionResult ────────────────────────
@@ -266,7 +270,7 @@ class DecisionOrchestratorTest extends TestCase
 
         $result = $this->orchestrator->orchestrate(
             $this->trigger(),
-            new GoodsReceiptContextBuilder(),
+            new GoodsReceiptContextBuilder,
             $this->grParams(),
         );
 
@@ -283,7 +287,7 @@ class DecisionOrchestratorTest extends TestCase
 
         $result = $this->orchestrator->orchestrate(
             $this->trigger(),
-            new GoodsReceiptContextBuilder(),
+            new GoodsReceiptContextBuilder,
             $this->grParams(),
             ['source' => 'api', 'request_id' => 'req-xyz'],
         );
@@ -300,7 +304,7 @@ class DecisionOrchestratorTest extends TestCase
 
         $result = $this->orchestrator->orchestrate(
             $this->trigger(),
-            new GoodsReceiptContextBuilder(),
+            new GoodsReceiptContextBuilder,
             $this->grParams(),
         );
 
@@ -316,7 +320,7 @@ class DecisionOrchestratorTest extends TestCase
 
         $result = $this->orchestrator->orchestrate(
             $this->trigger(),
-            new ManufacturingContextBuilder(),
+            new ManufacturingContextBuilder,
             $this->mfgParams(),
         );
 
@@ -338,7 +342,7 @@ class DecisionOrchestratorTest extends TestCase
 
         $this->orchestrator->orchestrate(
             $this->trigger(),
-            new ManufacturingContextBuilder(),
+            new ManufacturingContextBuilder,
             $this->mfgParams(),
         );
     }
@@ -348,12 +352,12 @@ class DecisionOrchestratorTest extends TestCase
     public function test_propagates_no_matching_rule_exception(): void
     {
         $neverMatches = new DecisionRule(
-            rule_id:       'never',
-            name:          'Never Matches',
-            priority:      1,
+            rule_id: 'never',
+            name: 'Never Matches',
+            priority: 1,
             decision_type: DecisionType::Approve,
-            reason:        new DecisionReason('NEVER', 'Never fires.'),
-            condition:     fn($ctx): bool => false,
+            reason: new DecisionReason('NEVER', 'Never fires.'),
+            condition: fn ($ctx): bool => false,
         );
 
         $this->registry->register('goods_receipt', new InMemoryRuleProvider($neverMatches));
@@ -362,7 +366,7 @@ class DecisionOrchestratorTest extends TestCase
 
         $this->orchestrator->orchestrate(
             $this->trigger(),
-            new GoodsReceiptContextBuilder(),
+            new GoodsReceiptContextBuilder,
             $this->grParams(),
         );
     }
@@ -377,7 +381,7 @@ class DecisionOrchestratorTest extends TestCase
         try {
             $this->orchestrator->orchestrate(
                 $this->trigger(),
-                new GoodsReceiptContextBuilder(),
+                new GoodsReceiptContextBuilder,
                 $this->grParams(),
             );
         } catch (NoProviderForContextException $e) {
@@ -398,7 +402,7 @@ class DecisionOrchestratorTest extends TestCase
         $this->expectException(OrchestratorException::class);
 
         try {
-            $this->orchestrator->orchestrate($this->trigger(), new ManufacturingContextBuilder(), $params);
+            $this->orchestrator->orchestrate($this->trigger(), new ManufacturingContextBuilder, $params);
         } catch (OrchestratorException $e) {
             $this->assertSame(OrchestratorException::MISSING_PRODUCT_ID, $e->reason());
             throw $e;
@@ -413,11 +417,11 @@ class DecisionOrchestratorTest extends TestCase
 
         $result = $this->orchestrator->orchestrate(
             $this->trigger(),
-            new GoodsReceiptContextBuilder(),
+            new GoodsReceiptContextBuilder,
             $this->grParams(),
         );
 
-        $this->expectException(\Error::class);
+        $this->expectException(Error::class);
 
         // @phpstan-ignore-next-line
         $result->decision = null;
@@ -431,7 +435,7 @@ class DecisionOrchestratorTest extends TestCase
 
         $arr = $this->orchestrator->orchestrate(
             $this->trigger(),
-            new GoodsReceiptContextBuilder(),
+            new GoodsReceiptContextBuilder,
             $this->grParams(),
         )->toArray();
 
@@ -445,8 +449,8 @@ class DecisionOrchestratorTest extends TestCase
 
     public function test_manufacturing_context_builder_produces_correct_context_type(): void
     {
-        $builder = new ManufacturingContextBuilder();
-        $ctx     = $builder->build($this->mfgParams());
+        $builder = new ManufacturingContextBuilder;
+        $ctx = $builder->build($this->mfgParams());
 
         $this->assertSame('manufacturing', $ctx->context_type);
         $this->assertSame('manufacturing', $builder->contextType());
@@ -456,17 +460,17 @@ class DecisionOrchestratorTest extends TestCase
 
     public function test_manufacturing_context_builder_sets_shortage_qty(): void
     {
-        $builder = new ManufacturingContextBuilder();
-        $ctx     = $builder->build([
-            'product_id'    => 'prod-001',
-            'ordered_qty'   => 10.0,
+        $builder = new ManufacturingContextBuilder;
+        $ctx = $builder->build([
+            'product_id' => 'prod-001',
+            'ordered_qty' => 10.0,
             'available_qty' => 3.0,
-            'shortage_qty'  => 7.0,
+            'shortage_qty' => 7.0,
         ]);
 
         $this->assertSame(10.0, $ctx->get('ordered_qty'));
-        $this->assertSame(3.0,  $ctx->get('available_qty'));
-        $this->assertSame(7.0,  $ctx->get('shortage_qty'));
+        $this->assertSame(3.0, $ctx->get('available_qty'));
+        $this->assertSame(7.0, $ctx->get('shortage_qty'));
         $this->assertSame('prod-001', $ctx->get('product_id'));
     }
 
@@ -474,15 +478,15 @@ class DecisionOrchestratorTest extends TestCase
 
     public function test_manufacturing_context_builder_requires_recipe(): void
     {
-        $this->assertTrue((new ManufacturingContextBuilder())->requiresRecipe());
+        $this->assertTrue((new ManufacturingContextBuilder)->requiresRecipe());
     }
 
     // ── 20. GoodsReceiptContextBuilder — context type ────────────────────────
 
     public function test_goods_receipt_context_builder_produces_correct_context_type(): void
     {
-        $builder = new GoodsReceiptContextBuilder();
-        $ctx     = $builder->build($this->grParams());
+        $builder = new GoodsReceiptContextBuilder;
+        $ctx = $builder->build($this->grParams());
 
         $this->assertSame('goods_receipt', $ctx->context_type);
         $this->assertSame('goods_receipt', $builder->contextType());
@@ -492,19 +496,19 @@ class DecisionOrchestratorTest extends TestCase
 
     public function test_goods_receipt_context_builder_does_not_require_recipe(): void
     {
-        $this->assertFalse((new GoodsReceiptContextBuilder())->requiresRecipe());
+        $this->assertFalse((new GoodsReceiptContextBuilder)->requiresRecipe());
     }
 
     // ── 22. GoodsReceiptContextBuilder — computes variance_pct ───────────────
 
     public function test_goods_receipt_context_builder_computes_variance_pct(): void
     {
-        $ctx = (new GoodsReceiptContextBuilder())->build([
-            'gr_id'             => 'gr-001',
+        $ctx = (new GoodsReceiptContextBuilder)->build([
+            'gr_id' => 'gr-001',
             'purchase_order_id' => 'po-001',
-            'received_qty'      => 90.0,
-            'ordered_qty'       => 100.0,
-            'supplier_id'       => 'sup-001',
+            'received_qty' => 90.0,
+            'ordered_qty' => 100.0,
+            'supplier_id' => 'sup-001',
         ]);
 
         $this->assertSame(10.0, $ctx->get('variance_pct'));

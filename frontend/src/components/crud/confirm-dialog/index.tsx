@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -30,12 +31,14 @@ export function ConfirmDialog({
   onOpenChange,
   title,
   description,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel,
+  cancelLabel,
   onConfirm,
   loading = false,
   variant = 'default',
 }: ConfirmDialogProps) {
+  const { t } = useTranslation('common');
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -50,10 +53,10 @@ export function ConfirmDialog({
             onClick={() => onOpenChange(false)}
             disabled={loading}
           >
-            {cancelLabel}
+            {cancelLabel ?? t('common.cancel')}
           </Button>
           <Button type="button" variant={variant} onClick={onConfirm} disabled={loading}>
-            {loading ? 'Working…' : confirmLabel}
+            {loading ? t('actions.working') : (confirmLabel ?? t('common.confirm'))}
           </Button>
         </DialogFooter>
       </DialogContent>

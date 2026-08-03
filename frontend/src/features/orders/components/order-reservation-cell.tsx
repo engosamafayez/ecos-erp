@@ -56,7 +56,7 @@ function getState(order: Order): ReservationState {
     };
   }
 
-  if (order.status === 'cancelled' || order.status === 'completed') {
+  if (order.status === 'cancelled' || order.status === 'delivered' || order.status === 'returned') {
     return { code: 'dash', cls: '' };
   }
 
@@ -73,6 +73,8 @@ function getState(order: Order): ReservationState {
 export function OrderReservationCell({ order }: { order: Order }) {
   const { t } = useTranslation('orders');
   const state = getState(order);
+  // Show the human-readable warehouse name from line data, not the raw UUID (W2 FIX-1).
+  const warehouseName = (order.lines ?? []).map((l) => l.warehouse_name).find(Boolean) ?? null;
 
   if (state.code === 'dash') return <span className="text-muted-foreground">—</span>;
 
@@ -111,8 +113,8 @@ export function OrderReservationCell({ order }: { order: Order }) {
           <p className="font-medium">{t('reservationCell.inventoryReserved')}</p>
           {qtyStr ? <p className="text-muted-foreground">{qtyStr}</p> : null}
           <p className="text-muted-foreground">{state.detail}</p>
-          {order.assigned_warehouse_id ? (
-            <p className="font-mono text-[10px] text-muted-foreground">{order.assigned_warehouse_id}</p>
+          {warehouseName ? (
+            <p className="text-[10px] text-muted-foreground">{warehouseName}</p>
           ) : null}
         </TooltipContent>
       </Tooltip>

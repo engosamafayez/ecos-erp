@@ -16,7 +16,7 @@ final class StartCountSessionAction
     {
         if (! $session->status->canTransitionTo(CountSessionStatus::InProgress)) {
             throw new UnprocessableEntityHttpException(
-                "Count session [{$session->count_number}] cannot be started from status [{$session->status->value}]."
+                "Count session [{$session->count_number}] cannot be started from status [{$session->status->value}].",
             );
         }
 
@@ -42,7 +42,7 @@ final class StartCountSessionAction
             }
 
             $session->update([
-                'status'     => CountSessionStatus::InProgress,
+                'status' => CountSessionStatus::InProgress,
                 'started_at' => now(),
             ]);
         });

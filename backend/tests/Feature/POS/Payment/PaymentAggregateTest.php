@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\POS\Payment;
 
+use InvalidArgumentException;
 use Modules\POS\Payment\Domain\Enums\PaymentStatus;
 use Modules\POS\Payment\Domain\Exceptions\InsufficientPaymentException;
 use Modules\POS\Payment\Domain\Exceptions\InvalidPaymentStateException;
@@ -18,12 +19,17 @@ use Tests\TestCase;
  */
 final class PaymentAggregateTest extends TestCase
 {
-    private const CART_ID     = 'cart-uuid-1';
-    private const SESSION_ID  = 'session-uuid-1';
-    private const SHIFT_ID    = 'shift-uuid-1';
+    private const CART_ID = 'cart-uuid-1';
+
+    private const SESSION_ID = 'session-uuid-1';
+
+    private const SHIFT_ID = 'shift-uuid-1';
+
     private const TERMINAL_ID = 'terminal-uuid-1';
-    private const CASHIER_ID  = 'cashier-uuid-1';
-    private const CURRENCY    = 'EGP';
+
+    private const CASHIER_ID = 'cashier-uuid-1';
+
+    private const CURRENCY = 'EGP';
 
     private function makeTotal(string $amount = '150.00'): Money
     {
@@ -33,12 +39,12 @@ final class PaymentAggregateTest extends TestCase
     private function makePayment(?Money $total = null): Payment
     {
         return Payment::initiate(
-            cartId:     self::CART_ID,
-            sessionId:  self::SESSION_ID,
-            shiftId:    self::SHIFT_ID,
+            cartId: self::CART_ID,
+            sessionId: self::SESSION_ID,
+            shiftId: self::SHIFT_ID,
             terminalId: self::TERMINAL_ID,
-            cashierId:  self::CASHIER_ID,
-            cartTotal:  $total ?? $this->makeTotal(),
+            cashierId: self::CASHIER_ID,
+            cartTotal: $total ?? $this->makeTotal(),
         );
     }
 
@@ -103,31 +109,31 @@ final class PaymentAggregateTest extends TestCase
 
     public function test_initiate_throws_for_empty_cart_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         Payment::initiate('', self::SESSION_ID, self::SHIFT_ID, self::TERMINAL_ID, self::CASHIER_ID, $this->makeTotal());
     }
 
     public function test_initiate_throws_for_empty_session_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         Payment::initiate(self::CART_ID, '', self::SHIFT_ID, self::TERMINAL_ID, self::CASHIER_ID, $this->makeTotal());
     }
 
     public function test_initiate_throws_for_empty_shift_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         Payment::initiate(self::CART_ID, self::SESSION_ID, '', self::TERMINAL_ID, self::CASHIER_ID, $this->makeTotal());
     }
 
     public function test_initiate_throws_for_empty_terminal_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         Payment::initiate(self::CART_ID, self::SESSION_ID, self::SHIFT_ID, '', self::CASHIER_ID, $this->makeTotal());
     }
 
     public function test_initiate_throws_for_empty_cashier_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         Payment::initiate(self::CART_ID, self::SESSION_ID, self::SHIFT_ID, self::TERMINAL_ID, '', $this->makeTotal());
     }
 
@@ -135,7 +141,7 @@ final class PaymentAggregateTest extends TestCase
 
     public function test_add_tender_returns_tender_id(): void
     {
-        $payment  = $this->makePayment();
+        $payment = $this->makePayment();
         $tenderId = $payment->addTender(PaymentMethodType::Cash, $this->makeTotal('100.00'));
         $this->assertNotEmpty($tenderId);
     }
@@ -209,7 +215,7 @@ final class PaymentAggregateTest extends TestCase
     public function test_add_tender_throws_on_currency_mismatch(): void
     {
         $payment = $this->makePayment();
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $payment->addTender(PaymentMethodType::Cash, Money::of('100.00', 'USD'));
     }
 
@@ -217,7 +223,7 @@ final class PaymentAggregateTest extends TestCase
 
     public function test_remove_tender_decrements_count(): void
     {
-        $payment  = $this->makePayment();
+        $payment = $this->makePayment();
         $tenderId = $payment->addTender(PaymentMethodType::Cash, $this->makeTotal('150.00'));
         $payment->removeTender($tenderId);
         $this->assertSame(0, $payment->getTenderCount());
@@ -225,7 +231,7 @@ final class PaymentAggregateTest extends TestCase
 
     public function test_remove_tender_recalculates_amounts(): void
     {
-        $payment   = $this->makePayment($this->makeTotal('150.00'));
+        $payment = $this->makePayment($this->makeTotal('150.00'));
         $tenderId1 = $payment->addTender(PaymentMethodType::Cash, $this->makeTotal('100.00'));
         $payment->addTender(PaymentMethodType::Card, $this->makeTotal('50.00'));
         $payment->removeTender($tenderId1);
@@ -243,7 +249,7 @@ final class PaymentAggregateTest extends TestCase
 
     public function test_remove_tender_throws_when_captured(): void
     {
-        $payment  = $this->makePayment($this->makeTotal('100.00'));
+        $payment = $this->makePayment($this->makeTotal('100.00'));
         $tenderId = $payment->addTender(PaymentMethodType::Cash, $this->makeTotal('100.00'));
         $payment->capture();
 
@@ -409,7 +415,7 @@ final class PaymentAggregateTest extends TestCase
     public function test_tender_removal_and_re_add(): void
     {
         $payment = $this->makePayment($this->makeTotal('100.00'));
-        $id1     = $payment->addTender(PaymentMethodType::Cash, $this->makeTotal('50.00'));
+        $id1 = $payment->addTender(PaymentMethodType::Cash, $this->makeTotal('50.00'));
 
         $payment->removeTender($id1);
         $this->assertSame(0, $payment->getTenderCount());

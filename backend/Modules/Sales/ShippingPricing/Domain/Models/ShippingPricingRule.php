@@ -26,7 +26,7 @@ class ShippingPricingRule extends Model
 
     protected static function booted(): void
     {
-        static::addGlobalScope(new CompanyScope());
+        static::addGlobalScope(new CompanyScope);
     }
 
     protected $keyType = 'string';
@@ -47,8 +47,8 @@ class ShippingPricingRule extends Model
     {
         return [
             'standard_cost' => 'float',
-            'express_cost'  => 'float',
-            'is_active'     => 'boolean',
+            'express_cost' => 'float',
+            'is_active' => 'boolean',
         ];
     }
 }

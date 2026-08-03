@@ -23,7 +23,7 @@ final class WarehousePerformanceController extends Controller
         $months = $request->integer('months', 12);
 
         return $this->success(
-            $this->service->allWarehouses($months)
+            $this->service->allWarehouses($months),
         );
     }
 }

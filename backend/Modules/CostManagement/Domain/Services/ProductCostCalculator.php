@@ -32,21 +32,21 @@ final class ProductCostCalculator
             return null;
         }
 
-        $recipeCost    = (float) ($recipe->recipe_cost ?? 0.0);
-        $mfgCost       = (float) ($recipe->manufacturing_cost ?? 0.0);
-        $otherCosts    = (float) ($recipe->other_costs ?? 0.0);
-        $yieldQty      = max((float) $recipe->yield_quantity, 0.0001); // guard division by zero
-        $productCost   = round($recipeCost + $mfgCost + $otherCosts, 4);
-        $unitCost      = round($productCost / $yieldQty, 4);
+        $recipeCost = (float) ($recipe->recipe_cost ?? 0.0);
+        $mfgCost = (float) ($recipe->manufacturing_cost ?? 0.0);
+        $otherCosts = (float) ($recipe->other_costs ?? 0.0);
+        $yieldQty = max((float) $recipe->yield_quantity, 0.0001); // guard division by zero
+        $productCost = round($recipeCost + $mfgCost + $otherCosts, 4);
+        $unitCost = round($productCost / $yieldQty, 4);
 
         $product->update([
             'product_cost' => $productCost,
-            'unit_cost'    => $unitCost,
+            'unit_cost' => $unitCost,
         ]);
 
         return [
             'product_cost' => $productCost,
-            'unit_cost'    => $unitCost,
+            'unit_cost' => $unitCost,
         ];
     }
 }

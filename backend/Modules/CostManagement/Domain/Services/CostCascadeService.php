@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\CostManagement\Domain\Services;
 
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Modules\CostManagement\Application\Services\CostCalculationEngine;
 use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\Manufacturing\BillsOfMaterials\Domain\Models\BillOfMaterial;
 use Modules\Manufacturing\BillsOfMaterials\Domain\Models\BillOfMaterialLine;
+use Throwable;
 
 /**
  * Orchestrates the full cost cascade chain:
@@ -36,9 +37,9 @@ final class CostCascadeService
      */
     public function cascadeFromMaterial(Product $material): array
     {
-        $affectedRecipeIds  = [];
+        $affectedRecipeIds = [];
         $affectedProductIds = [];
-        $affectedProducts   = [];
+        $affectedProducts = [];
 
         DB::transaction(function () use ($material, &$affectedRecipeIds, &$affectedProductIds, &$affectedProducts): void {
             $bomIds = BillOfMaterialLine::query()
@@ -65,7 +66,7 @@ final class CostCascadeService
                 try {
                     $this->costEngine->calculateAndPersist(
                         $bom,
-                        triggerType:   'material_cost_update',
+                        triggerType: 'material_cost_update',
                         triggerSource: $material->sku ?? $material->id,
                     );
                     $affectedRecipeIds[] = $bom->id;
@@ -74,34 +75,34 @@ final class CostCascadeService
                     if ($product !== null && ! in_array($product->id, $processedProductIds, true)) {
                         $previousCost = (float) ($product->product_cost ?? 0.0);
 
-                        $result  = $this->productCostCalculator->recalculate($product);
+                        $result = $this->productCostCalculator->recalculate($product);
                         $newCost = $result !== null ? $result['product_cost'] : $previousCost;
 
-                        $affectedProductIds[]  = $product->id;
+                        $affectedProductIds[] = $product->id;
                         $processedProductIds[] = $product->id;
-                        $affectedProducts[]    = [
-                            'product'       => $product,
+                        $affectedProducts[] = [
+                            'product' => $product,
                             'previous_cost' => $previousCost,
-                            'new_cost'      => $newCost,
+                            'new_cost' => $newCost,
                         ];
                     }
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     Log::channel('daily')->error(
                         'CostCascadeService: failed to cascade bom',
                         [
-                            'bom_id'      => $bom->id,
+                            'bom_id' => $bom->id,
                             'material_id' => $material->id,
-                            'error'       => $e->getMessage(),
-                        ]
+                            'error' => $e->getMessage(),
+                        ],
                     );
                 }
             }
         });
 
         return [
-            'affected_recipe_ids'  => array_values(array_unique($affectedRecipeIds)),
+            'affected_recipe_ids' => array_values(array_unique($affectedRecipeIds)),
             'affected_product_ids' => array_values(array_unique($affectedProductIds)),
-            'affected_products'    => $affectedProducts,
+            'affected_products' => $affectedProducts,
         ];
     }
 }

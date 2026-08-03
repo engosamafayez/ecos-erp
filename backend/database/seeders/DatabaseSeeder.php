@@ -5,25 +5,26 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Modules\Commerce\Channels\Infrastructure\Database\Seeders\ChannelSeeder;
+use Modules\Commerce\Fulfillments\Infrastructure\Database\Seeders\FulfillmentSeeder;
+use Modules\Commerce\Orders\Infrastructure\Database\Seeders\OrderSeeder;
+use Modules\Commerce\ProductMappings\Infrastructure\Database\Seeders\ProductMappingSeeder;
 use Modules\IAM\Infrastructure\Database\Seeders\RbacSeeder;
 use Modules\Inventory\Products\Infrastructure\Database\Seeders\ProductSeeder;
+use Modules\Inventory\StockLedger\Infrastructure\Database\Seeders\StockLedgerSeeder;
 use Modules\MasterData\Categories\Infrastructure\Database\Seeders\CategorySeeder;
 use Modules\MasterData\Units\Infrastructure\Database\Seeders\UnitSeeder;
 use Modules\MasterData\Warehouses\Infrastructure\Database\Seeders\WarehouseSeeder;
+use Database\Seeders\EgyptMasterGeographySeeder;
 use Modules\Organization\Branches\Infrastructure\Database\Seeders\BranchSeeder;
 use Modules\Organization\Brands\Infrastructure\Database\Seeders\BrandSeeder;
 use Modules\Organization\BusinessAccounts\Infrastructure\Database\Seeders\BusinessAccountSeeder;
 use Modules\Organization\Companies\Infrastructure\Database\Seeders\CompanySeeder;
 use Modules\Organization\Teams\Infrastructure\Database\Seeders\TeamSeeder;
-use Modules\Inventory\StockLedger\Infrastructure\Database\Seeders\StockLedgerSeeder;
-use Modules\Commerce\Channels\Infrastructure\Database\Seeders\ChannelSeeder;
-use Modules\Commerce\ProductMappings\Infrastructure\Database\Seeders\ProductMappingSeeder;
-use Modules\Commerce\Fulfillments\Infrastructure\Database\Seeders\FulfillmentSeeder;
-use Modules\Commerce\Orders\Infrastructure\Database\Seeders\OrderSeeder;
-use Modules\Sales\Customers\Infrastructure\Database\Seeders\CustomerSeeder;
 use Modules\Purchasing\GoodsReceipts\Infrastructure\Database\Seeders\GoodsReceiptSeeder;
 use Modules\Purchasing\PurchaseOrders\Infrastructure\Database\Seeders\PurchaseOrderSeeder;
 use Modules\Purchasing\Suppliers\Infrastructure\Database\Seeders\SupplierSeeder;
+use Modules\Sales\Customers\Infrastructure\Database\Seeders\CustomerSeeder;
 
 class DatabaseSeeder extends Seeder
 {
@@ -37,6 +38,9 @@ class DatabaseSeeder extends Seeder
 
         // Default administrator account (IAM-001).
         $this->call(AdminUserSeeder::class);
+
+        // Master geography (Egypt 27 governorates + zones — must precede BranchSeeder).
+        $this->call(EgyptMasterGeographySeeder::class);
 
         // Organization module (ORG-001 companies, ORG-002 branches, ORG-003 brands, ORG-004 teams).
         $this->call(CompanySeeder::class);

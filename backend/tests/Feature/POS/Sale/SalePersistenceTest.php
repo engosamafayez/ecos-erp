@@ -26,14 +26,21 @@ final class SalePersistenceTest extends TestCase
 
     private SaleRepositoryInterface $repository;
 
-    private const CART_ID        = 'a1000000-0000-4000-a000-000000000001';
-    private const PAYMENT_ID     = 'b1000000-0000-4000-b000-000000000001';
-    private const SESSION_ID     = 'c1000000-0000-4000-c000-000000000001';
-    private const SHIFT_ID       = 'd1000000-0000-4000-d000-000000000001';
-    private const TERMINAL_ID    = 'e1000000-0000-4000-e000-000000000001';
-    private const CASHIER_ID     = 'f1000000-0000-4000-f000-000000000001';
+    private const CART_ID = 'a1000000-0000-4000-a000-000000000001';
+
+    private const PAYMENT_ID = 'b1000000-0000-4000-b000-000000000001';
+
+    private const SESSION_ID = 'c1000000-0000-4000-c000-000000000001';
+
+    private const SHIFT_ID = 'd1000000-0000-4000-d000-000000000001';
+
+    private const TERMINAL_ID = 'e1000000-0000-4000-e000-000000000001';
+
+    private const CASHIER_ID = 'f1000000-0000-4000-f000-000000000001';
+
     private const RECEIPT_NUMBER = 'RCP-2026-PER-001';
-    private const CURRENCY       = 'EGP';
+
+    private const CURRENCY = 'EGP';
 
     protected function setUp(): void
     {
@@ -44,52 +51,52 @@ final class SalePersistenceTest extends TestCase
     private function makeSaleLine(string $lineId = 'line-persist-1'): SaleLine
     {
         return SaleLine::fromCartLine([
-            'id'             => $lineId,
-            'product_id'     => 'prod-1',
-            'product_name'   => 'Widget',
-            'sku'            => 'WGT-001',
-            'quantity'       => '2.0000',
-            'unit_price'     => ['amount' => '50.00', 'currency' => self::CURRENCY],
-            'discount_type'  => null,
+            'id' => $lineId,
+            'product_id' => 'prod-1',
+            'product_name' => 'Widget',
+            'sku' => 'WGT-001',
+            'quantity' => '2.0000',
+            'unit_price' => ['amount' => '50.00', 'currency' => self::CURRENCY],
+            'discount_type' => null,
             'discount_value' => null,
-            'line_total'     => ['amount' => '100.00', 'currency' => self::CURRENCY],
-            'sort_order'     => 0,
+            'line_total' => ['amount' => '100.00', 'currency' => self::CURRENCY],
+            'sort_order' => 0,
         ]);
     }
 
     private function makePaymentSummary(): PaymentSummaryLine
     {
         return PaymentSummaryLine::fromTender([
-            'id'        => 'tender-1',
-            'type'      => 'cash',
-            'amount'    => ['amount' => '100.00', 'currency' => self::CURRENCY],
+            'id' => 'tender-1',
+            'type' => 'cash',
+            'amount' => ['amount' => '100.00', 'currency' => self::CURRENCY],
             'reference' => null,
-            'metadata'  => [],
+            'metadata' => [],
         ]);
     }
 
     private function makeSale(
-        string $cartId     = self::CART_ID,
-        string $paymentId  = self::PAYMENT_ID,
+        string $cartId = self::CART_ID,
+        string $paymentId = self::PAYMENT_ID,
         string $receiptNum = self::RECEIPT_NUMBER,
-        string $total      = '100.00',
+        string $total = '100.00',
     ): Sale {
         return Sale::record(
-            cartId:           $cartId,
-            paymentId:        $paymentId,
-            sessionId:        self::SESSION_ID,
-            shiftId:          self::SHIFT_ID,
-            terminalId:       self::TERMINAL_ID,
-            cashierId:        self::CASHIER_ID,
-            customerId:       null,
-            currency:         self::CURRENCY,
-            receiptNumber:    $receiptNum,
-            lines:            [$this->makeSaleLine()],
-            subtotal:         Money::of($total, self::CURRENCY),
-            discountTotal:    Money::zero(self::CURRENCY),
-            total:            Money::of($total, self::CURRENCY),
-            amountPaid:       Money::of($total, self::CURRENCY),
-            changeGiven:      Money::zero(self::CURRENCY),
+            cartId: $cartId,
+            paymentId: $paymentId,
+            sessionId: self::SESSION_ID,
+            shiftId: self::SHIFT_ID,
+            terminalId: self::TERMINAL_ID,
+            cashierId: self::CASHIER_ID,
+            customerId: null,
+            currency: self::CURRENCY,
+            receiptNumber: $receiptNum,
+            lines: [$this->makeSaleLine()],
+            subtotal: Money::of($total, self::CURRENCY),
+            discountTotal: Money::zero(self::CURRENCY),
+            total: Money::of($total, self::CURRENCY),
+            amountPaid: Money::of($total, self::CURRENCY),
+            changeGiven: Money::zero(self::CURRENCY),
             paymentSummaries: [$this->makePaymentSummary()],
         );
     }
@@ -196,7 +203,7 @@ final class SalePersistenceTest extends TestCase
 
         $this->expectException(\Illuminate\Database\QueryException::class);
         $this->repository->save($this->makeSale(
-            cartId:    self::CART_ID,
+            cartId: self::CART_ID,
             paymentId: 'b2000000-0000-4000-b000-000000000002',
             receiptNum: 'RCP-DIFF-002',
         ));
@@ -208,7 +215,7 @@ final class SalePersistenceTest extends TestCase
 
         $this->expectException(\Illuminate\Database\QueryException::class);
         $this->repository->save($this->makeSale(
-            cartId:    'a2000000-0000-4000-a000-000000000002',
+            cartId: 'a2000000-0000-4000-a000-000000000002',
             paymentId: self::PAYMENT_ID,
             receiptNum: 'RCP-DIFF-003',
         ));
@@ -220,7 +227,7 @@ final class SalePersistenceTest extends TestCase
 
         $this->expectException(\Illuminate\Database\QueryException::class);
         $this->repository->save($this->makeSale(
-            cartId:    'a3000000-0000-4000-a000-000000000003',
+            cartId: 'a3000000-0000-4000-a000-000000000003',
             paymentId: 'b3000000-0000-4000-b000-000000000003',
             receiptNum: self::RECEIPT_NUMBER,
         ));

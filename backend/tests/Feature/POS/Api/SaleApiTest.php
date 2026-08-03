@@ -17,11 +17,15 @@ final class SaleApiTest extends TestCase
 
     private User $user;
 
-    private const SESSION_ID  = 'a0000000-0000-4000-a000-000000000020';
-    private const SHIFT_ID    = 'b0000000-0000-4000-b000-000000000020';
+    private const SESSION_ID = 'a0000000-0000-4000-a000-000000000020';
+
+    private const SHIFT_ID = 'b0000000-0000-4000-b000-000000000020';
+
     private const TERMINAL_ID = 'c0000000-0000-4000-c000-000000000020';
-    private const CASHIER_ID  = 'd0000000-0000-4000-d000-000000000020';
-    private const PRODUCT_ID  = 'e0000000-0000-4000-e000-000000000020';
+
+    private const CASHIER_ID = 'd0000000-0000-4000-d000-000000000020';
+
+    private const PRODUCT_ID = 'e0000000-0000-4000-e000-000000000020';
 
     protected function setUp(): void
     {
@@ -33,23 +37,23 @@ final class SaleApiTest extends TestCase
     {
         $cartResponse = $this->actingAs($this->user)
             ->postJson('/api/pos/carts', [
-                'session_id'  => self::SESSION_ID,
-                'shift_id'    => self::SHIFT_ID,
+                'session_id' => self::SESSION_ID,
+                'shift_id' => self::SHIFT_ID,
                 'terminal_id' => self::TERMINAL_ID,
-                'cashier_id'  => self::CASHIER_ID,
-                'currency'    => 'EGP',
+                'cashier_id' => self::CASHIER_ID,
+                'currency' => 'EGP',
             ]);
 
         $cartId = $cartResponse->json('data.id');
 
         $this->actingAs($this->user)
-            ->postJson('/api/pos/carts/' . $cartId . '/lines', [
-                'product_id'   => self::PRODUCT_ID,
+            ->postJson('/api/pos/carts/'.$cartId.'/lines', [
+                'product_id' => self::PRODUCT_ID,
                 'product_name' => 'Product A',
-                'sku'          => 'PRD-A',
-                'quantity'     => '1',
-                'unit_price'   => '100.00',
-                'currency'     => 'EGP',
+                'sku' => 'PRD-A',
+                'quantity' => '1',
+                'unit_price' => '100.00',
+                'currency' => 'EGP',
             ]);
 
         return $cartId;
@@ -57,10 +61,10 @@ final class SaleApiTest extends TestCase
 
     public function test_process_sale_returns_201_with_sale_data(): void
     {
-        $cartId   = $this->openCartWithLine();
+        $cartId = $this->openCartWithLine();
         $response = $this->actingAs($this->user)
             ->postJson('/api/pos/sales', [
-                'cart_id'  => $cartId,
+                'cart_id' => $cartId,
                 'payments' => [
                     ['method' => 'cash', 'amount' => '120.00'],
                 ],
@@ -83,17 +87,17 @@ final class SaleApiTest extends TestCase
 
     public function test_get_sale_returns_sale_data(): void
     {
-        $cartId      = $this->openCartWithLine();
+        $cartId = $this->openCartWithLine();
         $saleResponse = $this->actingAs($this->user)
             ->postJson('/api/pos/sales', [
-                'cart_id'  => $cartId,
+                'cart_id' => $cartId,
                 'payments' => [['method' => 'cash', 'amount' => '100.00']],
             ]);
 
         $saleId = $saleResponse->json('data.sale_id');
 
         $response = $this->actingAs($this->user)
-            ->getJson('/api/pos/sales/' . $saleId);
+            ->getJson('/api/pos/sales/'.$saleId);
 
         $response->assertStatus(200)
             ->assertJsonPath('data.id', $saleId);
@@ -110,18 +114,18 @@ final class SaleApiTest extends TestCase
     {
         $cartResponse = $this->actingAs($this->user)
             ->postJson('/api/pos/carts', [
-                'session_id'  => self::SESSION_ID,
-                'shift_id'    => self::SHIFT_ID,
+                'session_id' => self::SESSION_ID,
+                'shift_id' => self::SHIFT_ID,
                 'terminal_id' => self::TERMINAL_ID,
-                'cashier_id'  => self::CASHIER_ID,
-                'currency'    => 'EGP',
+                'cashier_id' => self::CASHIER_ID,
+                'currency' => 'EGP',
             ]);
 
         $cartId = $cartResponse->json('data.id');
 
         $this->actingAs($this->user)
             ->postJson('/api/pos/sales', [
-                'cart_id'  => $cartId,
+                'cart_id' => $cartId,
                 'payments' => [['method' => 'cash', 'amount' => '0.00']],
             ])
             ->assertStatus(422);

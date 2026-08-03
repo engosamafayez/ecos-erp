@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\POS\Payment\Domain\Exceptions;
 
+use DomainException;
 use Modules\POS\Payment\Domain\Enums\PaymentStatus;
 
-final class InvalidPaymentStateException extends \DomainException
+final class InvalidPaymentStateException extends DomainException
 {
     public static function alreadyCaptured(string $paymentId): self
     {
@@ -16,7 +17,7 @@ final class InvalidPaymentStateException extends \DomainException
     public static function cannotModifyTenders(string $paymentId, PaymentStatus $status): self
     {
         return new self(
-            "Payment [{$paymentId}] is in \"{$status->value}\" state — tenders cannot be modified."
+            "Payment [{$paymentId}] is in \"{$status->value}\" state — tenders cannot be modified.",
         );
     }
 

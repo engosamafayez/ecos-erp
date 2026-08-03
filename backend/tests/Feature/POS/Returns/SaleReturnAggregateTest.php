@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\POS\Returns;
 
+use InvalidArgumentException;
 use Modules\POS\Returns\Domain\Exceptions\InvalidReturnTransitionException;
 use Modules\POS\Returns\Domain\Models\SaleReturn;
 use Modules\POS\Returns\Domain\ValueObjects\ReturnLine;
@@ -20,14 +21,21 @@ use Tests\TestCase;
  */
 final class SaleReturnAggregateTest extends TestCase
 {
-    private const SALE_ID         = 'sale-uuid-1';
-    private const RECEIPT_NUMBER  = 'RCP-2026-000001';
-    private const SESSION_ID      = 'session-uuid-1';
-    private const SHIFT_ID        = 'shift-uuid-1';
-    private const TERMINAL_ID     = 'terminal-uuid-1';
-    private const CASHIER_ID      = 'cashier-uuid-1';
-    private const RETURN_NUMBER   = 'RTN-2026-000001';
-    private const CURRENCY        = 'EGP';
+    private const SALE_ID = 'sale-uuid-1';
+
+    private const RECEIPT_NUMBER = 'RCP-2026-000001';
+
+    private const SESSION_ID = 'session-uuid-1';
+
+    private const SHIFT_ID = 'shift-uuid-1';
+
+    private const TERMINAL_ID = 'terminal-uuid-1';
+
+    private const CASHIER_ID = 'cashier-uuid-1';
+
+    private const RETURN_NUMBER = 'RTN-2026-000001';
+
+    private const CURRENCY = 'EGP';
 
     private function makeMoney(string $amount): Money
     {
@@ -38,16 +46,16 @@ final class SaleReturnAggregateTest extends TestCase
     {
         return ReturnLine::fromSaleLine(
             [
-                'line_id'        => $lineId,
-                'product_id'     => 'prod-1',
-                'product_name'   => 'Widget',
-                'sku'            => 'WGT-001',
-                'quantity'       => '2.0000',
-                'unit_price'     => ['amount' => $price, 'currency' => self::CURRENCY],
-                'discount_type'  => null,
+                'line_id' => $lineId,
+                'product_id' => 'prod-1',
+                'product_name' => 'Widget',
+                'sku' => 'WGT-001',
+                'quantity' => '2.0000',
+                'unit_price' => ['amount' => $price, 'currency' => self::CURRENCY],
+                'discount_type' => null,
                 'discount_value' => null,
-                'line_total'     => ['amount' => bcmul($price, '2', 2), 'currency' => self::CURRENCY],
-                'sort_order'     => 0,
+                'line_total' => ['amount' => bcmul($price, '2', 2), 'currency' => self::CURRENCY],
+                'sort_order' => 0,
             ],
             Quantity::of('1'),
             ReturnReason::WrongItem,
@@ -55,27 +63,27 @@ final class SaleReturnAggregateTest extends TestCase
     }
 
     private function makeSaleReturn(
-        string  $saleId       = self::SALE_ID,
-        string  $returnNumber = self::RETURN_NUMBER,
-        ?string $customerId   = null,
-        ?array  $lines        = null,
-        string  $refundTotal  = '50.00',
-        ?string $notes        = null,
+        string $saleId = self::SALE_ID,
+        string $returnNumber = self::RETURN_NUMBER,
+        ?string $customerId = null,
+        ?array $lines = null,
+        string $refundTotal = '50.00',
+        ?string $notes = null,
     ): SaleReturn {
         return SaleReturn::initiate(
-            saleId:                $saleId,
+            saleId: $saleId,
             originalReceiptNumber: self::RECEIPT_NUMBER,
-            sessionId:             self::SESSION_ID,
-            shiftId:               self::SHIFT_ID,
-            terminalId:            self::TERMINAL_ID,
-            cashierId:             self::CASHIER_ID,
-            customerId:            $customerId,
-            currency:              self::CURRENCY,
-            returnNumber:          $returnNumber,
-            lines:                 $lines ?? [$this->makeReturnLine()],
-            refundTotal:           $this->makeMoney($refundTotal),
-            refundMethod:          PaymentMethodType::Cash,
-            notes:                 $notes,
+            sessionId: self::SESSION_ID,
+            shiftId: self::SHIFT_ID,
+            terminalId: self::TERMINAL_ID,
+            cashierId: self::CASHIER_ID,
+            customerId: $customerId,
+            currency: self::CURRENCY,
+            returnNumber: $returnNumber,
+            lines: $lines ?? [$this->makeReturnLine()],
+            refundTotal: $this->makeMoney($refundTotal),
+            refundMethod: PaymentMethodType::Cash,
+            notes: $notes,
         );
     }
 
@@ -136,7 +144,7 @@ final class SaleReturnAggregateTest extends TestCase
     public function test_initiate_stores_lines_snapshot(): void
     {
         $lines = [$this->makeReturnLine('l1'), $this->makeReturnLine('l2')];
-        $r     = $this->makeSaleReturn(lines: $lines);
+        $r = $this->makeSaleReturn(lines: $lines);
         $this->assertSame(2, $r->getLineCount());
     }
 
@@ -169,7 +177,7 @@ final class SaleReturnAggregateTest extends TestCase
 
     public function test_initiate_throws_for_empty_sale_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         SaleReturn::initiate(
             '', self::RECEIPT_NUMBER, self::SESSION_ID, self::SHIFT_ID,
             self::TERMINAL_ID, self::CASHIER_ID, null, self::CURRENCY, self::RETURN_NUMBER,
@@ -179,7 +187,7 @@ final class SaleReturnAggregateTest extends TestCase
 
     public function test_initiate_throws_for_empty_original_receipt_number(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         SaleReturn::initiate(
             self::SALE_ID, '', self::SESSION_ID, self::SHIFT_ID,
             self::TERMINAL_ID, self::CASHIER_ID, null, self::CURRENCY, self::RETURN_NUMBER,
@@ -189,7 +197,7 @@ final class SaleReturnAggregateTest extends TestCase
 
     public function test_initiate_throws_for_empty_session_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         SaleReturn::initiate(
             self::SALE_ID, self::RECEIPT_NUMBER, '', self::SHIFT_ID,
             self::TERMINAL_ID, self::CASHIER_ID, null, self::CURRENCY, self::RETURN_NUMBER,
@@ -199,7 +207,7 @@ final class SaleReturnAggregateTest extends TestCase
 
     public function test_initiate_throws_for_empty_shift_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         SaleReturn::initiate(
             self::SALE_ID, self::RECEIPT_NUMBER, self::SESSION_ID, '',
             self::TERMINAL_ID, self::CASHIER_ID, null, self::CURRENCY, self::RETURN_NUMBER,
@@ -209,7 +217,7 @@ final class SaleReturnAggregateTest extends TestCase
 
     public function test_initiate_throws_for_empty_terminal_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         SaleReturn::initiate(
             self::SALE_ID, self::RECEIPT_NUMBER, self::SESSION_ID, self::SHIFT_ID,
             '', self::CASHIER_ID, null, self::CURRENCY, self::RETURN_NUMBER,
@@ -219,7 +227,7 @@ final class SaleReturnAggregateTest extends TestCase
 
     public function test_initiate_throws_for_empty_cashier_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         SaleReturn::initiate(
             self::SALE_ID, self::RECEIPT_NUMBER, self::SESSION_ID, self::SHIFT_ID,
             self::TERMINAL_ID, '', null, self::CURRENCY, self::RETURN_NUMBER,
@@ -229,7 +237,7 @@ final class SaleReturnAggregateTest extends TestCase
 
     public function test_initiate_throws_for_empty_return_number(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         SaleReturn::initiate(
             self::SALE_ID, self::RECEIPT_NUMBER, self::SESSION_ID, self::SHIFT_ID,
             self::TERMINAL_ID, self::CASHIER_ID, null, self::CURRENCY, '',
@@ -239,7 +247,7 @@ final class SaleReturnAggregateTest extends TestCase
 
     public function test_initiate_throws_for_empty_lines(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         SaleReturn::initiate(
             self::SALE_ID, self::RECEIPT_NUMBER, self::SESSION_ID, self::SHIFT_ID,
             self::TERMINAL_ID, self::CASHIER_ID, null, self::CURRENCY, self::RETURN_NUMBER,
@@ -249,7 +257,7 @@ final class SaleReturnAggregateTest extends TestCase
 
     public function test_initiate_throws_for_zero_refund_total(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         SaleReturn::initiate(
             self::SALE_ID, self::RECEIPT_NUMBER, self::SESSION_ID, self::SHIFT_ID,
             self::TERMINAL_ID, self::CASHIER_ID, null, self::CURRENCY, self::RETURN_NUMBER,
@@ -259,7 +267,7 @@ final class SaleReturnAggregateTest extends TestCase
 
     public function test_initiate_throws_for_negative_refund_total(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         SaleReturn::initiate(
             self::SALE_ID, self::RECEIPT_NUMBER, self::SESSION_ID, self::SHIFT_ID,
             self::TERMINAL_ID, self::CASHIER_ID, null, self::CURRENCY, self::RETURN_NUMBER,
@@ -365,7 +373,7 @@ final class SaleReturnAggregateTest extends TestCase
 
     public function test_get_lines_returns_return_line_instances(): void
     {
-        $r     = $this->makeSaleReturn(lines: [$this->makeReturnLine('l1'), $this->makeReturnLine('l2')]);
+        $r = $this->makeSaleReturn(lines: [$this->makeReturnLine('l1'), $this->makeReturnLine('l2')]);
         $lines = $r->getLines();
         $this->assertCount(2, $lines);
         $this->assertContainsOnlyInstancesOf(ReturnLine::class, $lines);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\Customer;
 
+use InvalidArgumentException;
 use Modules\POS\Customer\Domain\ValueObjects\LoyaltyBalance;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
 use PHPUnit\Framework\TestCase;
@@ -11,11 +12,12 @@ use PHPUnit\Framework\TestCase;
 final class LoyaltyBalanceTest extends TestCase
 {
     private Money $tenEgp;
+
     private Money $zeroEgp;
 
     protected function setUp(): void
     {
-        $this->tenEgp  = Money::of('10.00', 'EGP');
+        $this->tenEgp = Money::of('10.00', 'EGP');
         $this->zeroEgp = Money::zero('EGP');
     }
 
@@ -23,7 +25,7 @@ final class LoyaltyBalanceTest extends TestCase
 
     public function test_rejects_empty_customer_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Customer ID cannot be empty');
 
         LoyaltyBalance::of('', 100, $this->tenEgp);
@@ -31,7 +33,7 @@ final class LoyaltyBalanceTest extends TestCase
 
     public function test_rejects_negative_points(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Loyalty points cannot be negative');
 
         LoyaltyBalance::of('cust-1', -1, $this->tenEgp);
@@ -68,7 +70,7 @@ final class LoyaltyBalanceTest extends TestCase
 
     public function test_zero_rejects_empty_customer_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         LoyaltyBalance::zero('', 'EGP');
     }
@@ -116,10 +118,10 @@ final class LoyaltyBalanceTest extends TestCase
     public function test_to_array_has_expected_keys(): void
     {
         $balance = LoyaltyBalance::of('cust-1', 200, $this->tenEgp);
-        $array   = $balance->toArray();
+        $array = $balance->toArray();
 
-        $this->assertArrayHasKey('customer_id',    $array);
-        $this->assertArrayHasKey('points',         $array);
+        $this->assertArrayHasKey('customer_id', $array);
+        $this->assertArrayHasKey('points', $array);
         $this->assertArrayHasKey('monetary_value', $array);
     }
 
@@ -128,9 +130,9 @@ final class LoyaltyBalanceTest extends TestCase
         $original = LoyaltyBalance::of('cust-xyz', 999, Money::of('9.99', 'EGP'));
         $restored = LoyaltyBalance::fromArray($original->toArray());
 
-        $this->assertSame($original->customerId,                $restored->customerId);
-        $this->assertSame($original->points,                    $restored->points);
-        $this->assertSame($original->monetaryValue->amount,     $restored->monetaryValue->amount);
-        $this->assertSame($original->monetaryValue->currency,   $restored->monetaryValue->currency);
+        $this->assertSame($original->customerId, $restored->customerId);
+        $this->assertSame($original->points, $restored->points);
+        $this->assertSame($original->monetaryValue->amount, $restored->monetaryValue->amount);
+        $this->assertSame($original->monetaryValue->currency, $restored->monetaryValue->currency);
     }
 }

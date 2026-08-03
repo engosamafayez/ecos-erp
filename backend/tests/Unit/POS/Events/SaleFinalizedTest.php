@@ -23,11 +23,15 @@ use Tests\TestCase;
  */
 final class SaleFinalizedTest extends TestCase
 {
-    private const SALE_ID        = 'sale-uuid-001';
+    private const SALE_ID = 'sale-uuid-001';
+
     private const RECEIPT_NUMBER = 'RCP-2026-000001';
-    private const COMPANY_ID     = 'company-uuid-001';
-    private const WAREHOUSE_ID   = 'warehouse-uuid-001';
-    private const CUSTOMER_ID    = 'customer-uuid-001';
+
+    private const COMPANY_ID = 'company-uuid-001';
+
+    private const WAREHOUSE_ID = 'warehouse-uuid-001';
+
+    private const CUSTOMER_ID = 'customer-uuid-001';
 
     // ── DomainEvent interface ─────────────────────────────────────────────────
 
@@ -69,9 +73,9 @@ final class SaleFinalizedTest extends TestCase
 
     public function test_to_array_contains_required_top_level_keys(): void
     {
-        $event  = $this->makeEvent();
-        $arr    = $event->toArray();
-        $keys   = [
+        $event = $this->makeEvent();
+        $arr = $event->toArray();
+        $keys = [
             'event_id', 'event_name', 'event_version', 'occurred_at', 'correlation_id',
             'sale_id', 'receipt_number', 'company_id', 'channel_id', 'warehouse_id',
             'session_id', 'shift_id', 'terminal_id', 'cashier_id', 'customer_id',
@@ -86,9 +90,9 @@ final class SaleFinalizedTest extends TestCase
 
     public function test_to_array_items_contain_correct_product_data(): void
     {
-        $item  = new SaleItemPayload('line-1', 'product-aaa', 'Widget', 'WGT-001', 3.0, '25.00', '75.00', 'EGP');
+        $item = new SaleItemPayload('line-1', 'product-aaa', 'Widget', 'WGT-001', 3.0, '25.00', '75.00', 'EGP');
         $event = $this->makeEvent(items: [$item]);
-        $arr   = $event->toArray();
+        $arr = $event->toArray();
 
         $this->assertCount(1, $arr['items']);
         $this->assertSame('product-aaa', $arr['items'][0]['product_id']);
@@ -143,51 +147,51 @@ final class SaleFinalizedTest extends TestCase
     private function makeViaFactory(): SaleFinalized
     {
         $line = new SaleLine(
-            lineId:        'line-1',
-            productId:     'product-aaa',
-            productName:   'Widget',
-            sku:           'WGT-001',
-            quantity:      Quantity::of(2.0),
-            unitPrice:     Money::of('50.00', 'EGP'),
-            discountType:  null,
+            lineId: 'line-1',
+            productId: 'product-aaa',
+            productName: 'Widget',
+            sku: 'WGT-001',
+            quantity: Quantity::of(2.0),
+            unitPrice: Money::of('50.00', 'EGP'),
+            discountType: null,
             discountValue: null,
-            lineTotal:     Money::of('100.00', 'EGP'),
-            sortOrder:     0,
+            lineTotal: Money::of('100.00', 'EGP'),
+            sortOrder: 0,
         );
 
         $payment = new PaymentSummaryLine(
-            type:      PaymentMethodType::Cash,
-            amount:    Money::of('100.00', 'EGP'),
+            type: PaymentMethodType::Cash,
+            amount: Money::of('100.00', 'EGP'),
             reference: null,
         );
 
         return SaleFinalized::fromSaleContext(
-            saleId:           self::SALE_ID,
-            receiptNumber:    self::RECEIPT_NUMBER,
-            companyId:        self::COMPANY_ID,
-            channelId:        null,
-            warehouseId:      self::WAREHOUSE_ID,
-            sessionId:        'session-uuid-001',
-            shiftId:          'shift-uuid-001',
-            terminalId:       'terminal-uuid-001',
-            cashierId:        'cashier-uuid-001',
-            customerId:       self::CUSTOMER_ID,
-            saleLines:        [$line],
+            saleId: self::SALE_ID,
+            receiptNumber: self::RECEIPT_NUMBER,
+            companyId: self::COMPANY_ID,
+            channelId: null,
+            warehouseId: self::WAREHOUSE_ID,
+            sessionId: 'session-uuid-001',
+            shiftId: 'shift-uuid-001',
+            terminalId: 'terminal-uuid-001',
+            cashierId: 'cashier-uuid-001',
+            customerId: self::CUSTOMER_ID,
+            saleLines: [$line],
             paymentSummaries: [$payment],
-            subtotal:         '100.00',
-            discountTotal:    '0.00',
-            grandTotal:       '100.00',
-            amountPaid:       '100.00',
-            changeGiven:      '0.00',
-            currency:         'EGP',
+            subtotal: '100.00',
+            discountTotal: '0.00',
+            grandTotal: '100.00',
+            amountPaid: '100.00',
+            changeGiven: '0.00',
+            currency: 'EGP',
         );
     }
 
     /** @param SaleItemPayload[] $items */
     private function makeEvent(
         ?string $customerId = self::CUSTOMER_ID,
-        ?string $channelId  = null,
-        array   $items      = [],
+        ?string $channelId = null,
+        array $items = [],
     ): SaleFinalized {
         if (empty($items)) {
             $items = [
@@ -196,26 +200,26 @@ final class SaleFinalizedTest extends TestCase
         }
 
         return new SaleFinalized(
-            eventId:       'event-uuid-' . random_int(1000, 9999),
-            occurredAt:    new DateTimeImmutable('now'),
-            saleId:        self::SALE_ID,
+            eventId: 'event-uuid-'.random_int(1000, 9999),
+            occurredAt: new DateTimeImmutable('now'),
+            saleId: self::SALE_ID,
             receiptNumber: self::RECEIPT_NUMBER,
-            companyId:     self::COMPANY_ID,
-            channelId:     $channelId,
-            warehouseId:   self::WAREHOUSE_ID,
-            sessionId:     'session-uuid-001',
-            shiftId:       'shift-uuid-001',
-            terminalId:    'terminal-uuid-001',
-            cashierId:     'cashier-uuid-001',
-            customerId:    $customerId,
-            items:         $items,
-            payments:      [new SalePaymentPayload('cash', '100.00', 'EGP', null)],
-            subtotal:      '100.00',
+            companyId: self::COMPANY_ID,
+            channelId: $channelId,
+            warehouseId: self::WAREHOUSE_ID,
+            sessionId: 'session-uuid-001',
+            shiftId: 'shift-uuid-001',
+            terminalId: 'terminal-uuid-001',
+            cashierId: 'cashier-uuid-001',
+            customerId: $customerId,
+            items: $items,
+            payments: [new SalePaymentPayload('cash', '100.00', 'EGP', null)],
+            subtotal: '100.00',
             discountTotal: '0.00',
-            grandTotal:    '100.00',
-            amountPaid:    '100.00',
-            changeGiven:   '0.00',
-            currency:      'EGP',
+            grandTotal: '100.00',
+            amountPaid: '100.00',
+            changeGiven: '0.00',
+            currency: 'EGP',
         );
     }
 }

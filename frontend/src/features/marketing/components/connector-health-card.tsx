@@ -1,4 +1,5 @@
 ﻿import { AlertCircle, CheckCircle2, RefreshCw, WifiOff } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { useConnectorHealth } from '../hooks/use-marketing-connections';
 
@@ -17,6 +18,7 @@ function StatusIndicator({ status }: { status: 'healthy' | 'warning' | 'error' }
 }
 
 function HealthBadge({ status }: { status: 'healthy' | 'warning' | 'error' }) {
+  const { t } = useTranslation('marketing');
   const variants = {
     healthy: 'bg-green-50 text-green-700 border-green-200',
     warning: 'bg-amber-50 text-amber-700 border-amber-200',
@@ -25,12 +27,13 @@ function HealthBadge({ status }: { status: 'healthy' | 'warning' | 'error' }) {
   return (
     <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${variants[status]}`}>
       <StatusIndicator status={status} />
-      {status.charAt(0).toUpperCase() + status.slice(1)}
+      {t(`connections.health.${status}`)}
     </span>
   );
 }
 
 export function ConnectorHealthCard({ connectionId }: Props) {
+  const { t } = useTranslation('marketing');
   const { data, isLoading, refetch, isFetching } = useConnectorHealth(connectionId);
 
   if (isLoading) {
@@ -45,21 +48,21 @@ export function ConnectorHealthCard({ connectionId }: Props) {
   if (!data) return null;
 
   const rows: Array<{ label: string; value: string | number | null }> = [
-    { label: 'Auth Status',      value: data.auth_status },
-    { label: 'API Available',    value: data.api_available ? 'Yes' : 'No' },
-    { label: 'Token Expires',    value: data.token_expires_at ? new Date(data.token_expires_at).toLocaleDateString() : '—' },
-    { label: 'Last Success',     value: data.last_successful_sync_at ? new Date(data.last_successful_sync_at).toLocaleString() : '—' },
-    { label: 'Last Failure',     value: data.last_failed_sync_at ? new Date(data.last_failed_sync_at).toLocaleString() : '—' },
-    { label: 'Errors (7d)',      value: data.error_count },
-    { label: 'Avg Sync',         value: data.avg_sync_duration_seconds ? `${data.avg_sync_duration_seconds}s` : '—' },
-    { label: 'Rate Limit Left',  value: data.rate_limit_remaining ?? '—' },
+    { label: t('connections.healthCard.authStatus'),     value: data.auth_status },
+    { label: t('connections.healthCard.apiAvailable'),   value: data.api_available ? t('common.yes') : t('common.no') },
+    { label: t('connections.healthCard.tokenExpires'),   value: data.token_expires_at ? new Date(data.token_expires_at).toLocaleDateString() : '—' },
+    { label: t('connections.healthCard.lastSuccess'),    value: data.last_successful_sync_at ? new Date(data.last_successful_sync_at).toLocaleString() : '—' },
+    { label: t('connections.healthCard.lastFailure'),    value: data.last_failed_sync_at ? new Date(data.last_failed_sync_at).toLocaleString() : '—' },
+    { label: t('connections.healthCard.errors7d'),       value: data.error_count },
+    { label: t('connections.healthCard.avgSync'),        value: data.avg_sync_duration_seconds ? `${data.avg_sync_duration_seconds}s` : '—' },
+    { label: t('connections.healthCard.rateLimitLeft'),  value: data.rate_limit_remaining ?? '—' },
   ];
 
   return (
     <div className="rounded-lg border bg-card p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">Connector Health</span>
+          <span className="text-sm font-medium">{t('connections.healthCard.title')}</span>
           <HealthBadge status={data.overall_status} />
         </div>
         <Button

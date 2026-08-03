@@ -17,8 +17,8 @@ final class CloseShiftRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'closing_count'          => ['required', 'array'],
-            'closing_count.amount'   => ['required', 'numeric', 'min:0'],
+            'closing_count' => ['required', 'array'],
+            'closing_count.amount' => ['required', 'numeric', 'min:0'],
             'closing_count.currency' => ['required', 'string', 'size:3'],
         ];
     }

@@ -8,6 +8,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Modules\Marketing\Automation\Domain\Models\AutomationGovernancePolicy;
 use Modules\Marketing\Automation\Domain\Models\AutomationWorkflow;
+use RuntimeException;
 
 class AutomationGovernanceService
 {
@@ -35,6 +36,7 @@ class AutomationGovernanceService
     public function update(AutomationGovernancePolicy $policy, array $data, string $userId): AutomationGovernancePolicy
     {
         $policy->update(array_merge($data, ['updated_by' => $userId]));
+
         return $policy->fresh();
     }
 
@@ -59,13 +61,13 @@ class AutomationGovernanceService
     public function assertCanExecute(AutomationWorkflow $workflow, string $entityType, string $entityId): void
     {
         $policy = $this->getForWorkflow($workflow);
-        if (!$policy) {
+        if (! $policy) {
             return; // no policy = no limits
         }
 
         // Quiet hours check
         if ($policy->isInQuietHours()) {
-            throw new \RuntimeException('Execution blocked: quiet hours policy active.');
+            throw new RuntimeException('Execution blocked: quiet hours policy active.');
         }
 
         // Per-customer-per-day limit
@@ -77,7 +79,7 @@ class AutomationGovernanceService
                 ->count();
 
             if ($count >= $limit) {
-                throw new \RuntimeException("Execution blocked: customer daily limit ({$limit}) reached.");
+                throw new RuntimeException("Execution blocked: customer daily limit ({$limit}) reached.");
             }
         }
 
@@ -90,7 +92,7 @@ class AutomationGovernanceService
                 ->count();
 
             if ($count >= $limit) {
-                throw new \RuntimeException("Execution blocked: customer-workflow limit ({$limit}) reached.");
+                throw new RuntimeException("Execution blocked: customer-workflow limit ({$limit}) reached.");
             }
         }
 
@@ -102,7 +104,7 @@ class AutomationGovernanceService
                 ->count();
 
             if ($count >= $limit) {
-                throw new \RuntimeException("Execution blocked: daily total limit ({$limit}) reached.");
+                throw new RuntimeException("Execution blocked: daily total limit ({$limit}) reached.");
             }
         }
     }

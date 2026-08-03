@@ -27,7 +27,7 @@ final class ConnectorRegistry
     {
         if (! isset($this->connectors[$type])) {
             throw new RuntimeException(
-                "No connector registered for type '{$type}'. Available: " . implode(', ', array_keys($this->connectors))
+                "No connector registered for type '{$type}'. Available: ".implode(', ', array_keys($this->connectors)),
             );
         }
 
@@ -58,12 +58,12 @@ final class ConnectorRegistry
     {
         return array_values(array_map(
             fn (MarketingConnectorInterface $c) => [
-                'type'         => $c->getType(),
+                'type' => $c->getType(),
                 'display_name' => $c->getDisplayName(),
-                'metadata'     => $c->getProviderMetadata(),
+                'metadata' => $c->getProviderMetadata(),
                 'capabilities' => $c->getCapabilities(),
             ],
-            $this->connectors
+            $this->connectors,
         ));
     }
 }

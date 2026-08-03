@@ -51,8 +51,8 @@ class InventoryCountSession extends Model
     protected function casts(): array
     {
         return [
-            'status'       => CountSessionStatus::class,
-            'started_at'   => 'datetime',
+            'status' => CountSessionStatus::class,
+            'started_at' => 'datetime',
             'completed_at' => 'datetime',
         ];
     }

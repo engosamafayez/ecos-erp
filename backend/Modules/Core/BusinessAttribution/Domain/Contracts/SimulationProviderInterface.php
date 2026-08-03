@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\Core\BusinessAttribution\Domain\Contracts;
 
 /**
@@ -15,8 +17,8 @@ interface SimulationProviderInterface
      * Apply an ordered list of hypothetical event arrays to $initialState
      * and return the final projected state.
      *
-     * @param array   $initialState  Starting reconstructed state
-     * @param array[] $events        Hypothetical event payloads (not persisted)
+     * @param  array  $initialState  Starting reconstructed state
+     * @param  array[]  $events  Hypothetical event payloads (not persisted)
      */
     public function runScenario(array $initialState, array $events): array;
 

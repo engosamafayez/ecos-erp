@@ -45,8 +45,8 @@ final class MetaPermissionsService
     ];
 
     public function __construct(
-        private readonly MetaApiClient          $apiClient,
-        private readonly ProviderHealthMonitor  $healthMonitor,
+        private readonly MetaApiClient $apiClient,
+        private readonly ProviderHealthMonitor $healthMonitor,
         private readonly ProviderEventPublisher $events,
     ) {}
 
@@ -65,62 +65,62 @@ final class MetaPermissionsService
      */
     public function verify(MarketingConnection $connection): array
     {
-        $token     = $connection->access_token;
+        $token = $connection->access_token;
         $debugData = $this->apiClient->debugToken($token);
 
-        $granted      = $debugData['scopes'] ?? [];
+        $granted = $debugData['scopes'] ?? [];
         $isTokenValid = (bool) ($debugData['is_valid'] ?? false);
-        $expiresAt    = $debugData['expires_at'] ?? null;
+        $expiresAt = $debugData['expires_at'] ?? null;
 
-        $missing         = array_values(array_diff(self::REQUIRED_SCOPES, $granted));
+        $missing = array_values(array_diff(self::REQUIRED_SCOPES, $granted));
         $optionalGranted = array_values(array_intersect(self::OPTIONAL_SCOPES, $granted));
-        $needsReview     = [];
-        $valid           = $isTokenValid && empty($missing);
+        $needsReview = [];
+        $valid = $isTokenValid && empty($missing);
 
         $previousScopes = $connection->scopes ?? [];
-        $added          = array_values(array_diff($granted, $previousScopes));
-        $removed        = array_values(array_diff($previousScopes, $granted));
+        $added = array_values(array_diff($granted, $previousScopes));
+        $removed = array_values(array_diff($previousScopes, $granted));
 
         $newStatus = match (true) {
-            ! $isTokenValid           => ConnectionStatus::Expired->value,
-            ! empty($missing)         => ConnectionStatus::Warning->value,
-            default                   => ConnectionStatus::Healthy->value,
+            ! $isTokenValid => ConnectionStatus::Expired->value,
+            ! empty($missing) => ConnectionStatus::Warning->value,
+            default => ConnectionStatus::Healthy->value,
         };
 
         $connection->update([
-            'scopes'                   => $granted,
+            'scopes' => $granted,
             'permissions_validated_at' => now(),
-            'last_validated_at'        => now(),
-            'status'                   => $newStatus,
+            'last_validated_at' => now(),
+            'status' => $newStatus,
         ]);
 
         if (! empty($added) || ! empty($removed)) {
             event(new PermissionChanged(
-                connectionId:  $connection->id,
+                connectionId: $connection->id,
                 connectorType: $connection->connector_type,
-                addedScopes:   $added,
+                addedScopes: $added,
                 removedScopes: $removed,
-                allGranted:    $granted,
-                actorId:       null,
+                allGranted: $granted,
+                actorId: null,
             ));
 
             $this->events->publish(
                 new \Modules\Marketing\ProviderPlatform\Domain\Events\ProviderPermissionChanged(
-                    companyId:      (string) $connection->company_id,
-                    provider:       'meta',
-                    providerType:   'social_platform',
-                    triggeredBy:    null,
-                    currentStatus:  $newStatus,
+                    companyId: (string) $connection->company_id,
+                    provider: 'meta',
+                    providerType: 'social_platform',
+                    triggeredBy: null,
+                    currentStatus: $newStatus,
                     previousStatus: $connection->getOriginal('status'),
-                    correlationId:  null,
-                    requestId:      null,
-                    environment:    (string) config('app.env'),
-                    metadata:       [
-                        'added_scopes'   => $added,
+                    correlationId: null,
+                    requestId: null,
+                    environment: (string) config('app.env'),
+                    metadata: [
+                        'added_scopes' => $added,
                         'removed_scopes' => $removed,
-                        'total_granted'  => count($granted),
+                        'total_granted' => count($granted),
                     ],
-                )
+                ),
             );
         }
 
@@ -130,13 +130,13 @@ final class MetaPermissionsService
         }
 
         return [
-            'valid'            => $valid,
-            'granted'          => $granted,
-            'missing'          => $missing,
+            'valid' => $valid,
+            'granted' => $granted,
+            'missing' => $missing,
             'optional_granted' => $optionalGranted,
-            'needs_review'     => $needsReview,
-            'token_valid'      => $isTokenValid,
-            'expires_at'       => $expiresAt,
+            'needs_review' => $needsReview,
+            'token_valid' => $isTokenValid,
+            'expires_at' => $expiresAt,
         ];
     }
 

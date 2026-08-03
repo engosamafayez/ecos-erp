@@ -25,7 +25,7 @@ final class GoodsReceiptCompletedListener
     ) {}
 
     /**
-     * @param  object{materialId: string, warehouseId: string} $event
+     * @param  object{materialId: string, warehouseId: string}  $event
      */
     public function handle(object $event): void
     {

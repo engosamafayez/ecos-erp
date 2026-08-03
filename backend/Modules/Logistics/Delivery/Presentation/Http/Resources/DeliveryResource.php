@@ -24,6 +24,8 @@ class DeliveryResource extends JsonResource
             'uuid' => $this->uuid,
             'company_id' => $this->company_id,
             'order_id' => $this->order_id,
+            'order_number' => $this->whenLoaded('order', fn () => $this->order?->order_number),
+            'order_customer_name' => $this->whenLoaded('order', fn () => $this->order?->customer_name),
 
             // Read-only pointer into Distribution — Delivery never writes here.
             'current_stop_id' => $this->current_stop_id,

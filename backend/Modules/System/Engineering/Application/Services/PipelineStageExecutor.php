@@ -58,6 +58,10 @@ class PipelineStageExecutor
 
     private function runDevelopmentGuardian(EngineeringPipeline $pipeline, EngineeringPipelineLog $log): bool
     {
+        if (config('engineering.guardian.enforce_in_pipeline', false)) {
+            return $this->runGuardianV2Gate($pipeline, $log);
+        }
+
         $result = $this->shell(
             "bash -c 'set -o pipefail; cd {$this->backendRoot} && ./vendor/bin/pint --test 2>&1 | tail -5'",
             $log,
@@ -165,8 +169,14 @@ class PipelineStageExecutor
     private function runPush(EngineeringPipeline $pipeline, EngineeringPipelineLog $log): bool
     {
         $branch = $pipeline->branch;
+
+        if (! preg_match('/^[a-zA-Z0-9._\\/\-]+$/', $branch)) {
+            $this->appendMessage($log, "Push aborted: invalid branch name '{$branch}'.");
+            return false;
+        }
+
         $result = $this->shell(
-            "cd {$this->projectRoot} && git push origin {$branch} 2>&1",
+            "cd {$this->projectRoot} && git push origin " . escapeshellarg($branch) . " 2>&1",
             $log,
             timeoutSeconds: 120,
         );
@@ -279,6 +289,66 @@ class PipelineStageExecutor
     }
 
     /** @return array{success: bool, output: string, exitCode: int} */
+    /**
+     * Guardian V2 gate (TASK-ENG-V2-003). Delegates the DevelopmentGuardian
+     * stage to the GuardianEngine when engineering.guardian.enforce_in_pipeline
+     * is enabled. Fails CLOSED: any error blocks the stage — a blocked gate
+     * stops the pipeline before its Commit stage.
+     */
+    private function runGuardianV2Gate(EngineeringPipeline $pipeline, EngineeringPipelineLog $log): bool
+    {
+        try {
+            $filesResult = $this->shell(
+                "bash -c 'cd {$this->backendRoot}/.. && git diff --name-only HEAD'",
+                $log,
+                timeoutSeconds: 60,
+            );
+
+            $files = array_values(array_filter(array_map('trim', explode("\n", $filesResult['output'] ?? ''))));
+
+            if ($files === []) {
+                $this->appendMessage($log, 'Guardian V2: no changes detected, gate passes.');
+
+                return true;
+            }
+
+            $diffResult = $this->shell(
+                "bash -c 'cd {$this->backendRoot}/.. && git diff HEAD'",
+                $log,
+                timeoutSeconds: 60,
+            );
+
+            $branchResult = $this->shell(
+                "bash -c 'cd {$this->backendRoot}/.. && git rev-parse --abbrev-ref HEAD'",
+                $log,
+                timeoutSeconds: 30,
+            );
+
+            $engine = app(\Modules\System\Engineering\Application\Services\GuardianEngine::class);
+
+            $run = $engine->evaluate($pipeline->company_id, [
+                'trigger_source'  => 'pipeline',
+                'branch'          => trim($branchResult['output'] ?? '') ?: null,
+                'changed_files'   => $files,
+                'diff_content'    => $diffResult['output'] ?? '',
+                'pipeline_run_id' => $pipeline->id,
+            ], null);
+
+            $allowed = $run->decision !== null && $run->decision->value === 'allow';
+
+            $this->appendMessage($log, $allowed
+                ? "Guardian V2: gate PASSED (run {$run->id})."
+                : 'Guardian V2: gate BLOCKED — ' . ($run->decision_reason ?? 'see guardian report') . " (run {$run->id}).");
+
+            return $allowed;
+        } catch (\Throwable $e) {
+            Log::error('Guardian V2 gate error', ['pipeline' => $pipeline->id, 'error' => $e->getMessage()]);
+            $this->appendMessage($log, 'Guardian V2: gate ERROR — failing closed. ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
     private function shell(string $command, EngineeringPipelineLog $log, int $timeoutSeconds = 120): array
     {
         try {

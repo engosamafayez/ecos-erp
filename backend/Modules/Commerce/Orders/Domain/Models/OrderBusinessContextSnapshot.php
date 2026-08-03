@@ -7,6 +7,7 @@ namespace Modules\Commerce\Orders\Domain\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use RuntimeException;
 
 /**
  * Immutable business context snapshot.
@@ -14,8 +15,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Captures WHY a commercial decision was made at the moment of order confirmation.
  * Created once alongside the financial snapshot; never updated or deleted (ADR-020).
  *
- * @property string      $id
- * @property string      $order_id
+ * @property string $id
+ * @property string $order_id
  * @property string|null $brand_policy_version
  * @property string|null $pricing_policy_version
  * @property string|null $discount_policy_version
@@ -29,7 +30,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $price_review_id
  * @property string|null $discount_source
  * @property string|null $campaign_id
- * @property bool        $discount_manual_override
+ * @property bool $discount_manual_override
  * @property string|null $shipping_rule_id
  * @property string|null $shipping_zone
  * @property string|null $cost_source
@@ -42,7 +43,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $customer_tier
  * @property string|null $customer_segment
  * @property string|null $loyalty_level
- * @property float|null  $delivery_success_rate
+ * @property float|null $delivery_success_rate
  * @property string|null $brand_name
  * @property string|null $brand_version
  * @property string|null $brand_commercial_strategy_version
@@ -59,7 +60,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $allocation_policy
  * @property string|null $shipping_priority
  * @property string|null $sla_policy_version
- * @property bool        $locked
+ * @property bool $locked
  * @property \Illuminate\Support\Carbon|null $locked_at
  * @property string|null $created_by
  */
@@ -121,20 +122,20 @@ final class OrderBusinessContextSnapshot extends Model
 
     protected $casts = [
         'discount_manual_override' => 'boolean',
-        'locked'                   => 'boolean',
-        'locked_at'                => 'datetime',
-        'confirmation_time'        => 'datetime',
-        'delivery_success_rate'    => 'float',
+        'locked' => 'boolean',
+        'locked_at' => 'datetime',
+        'confirmation_time' => 'datetime',
+        'delivery_success_rate' => 'float',
     ];
 
     protected static function booted(): void
     {
         // Immutable: updates are silently rejected
-        static::updating(static fn () => false);
+        self::updating(static fn () => false);
 
         // Immutable: deletes throw
-        static::deleting(static function (): never {
-            throw new \RuntimeException('Business context snapshots are immutable and cannot be deleted.');
+        self::deleting(static function (): never {
+            throw new RuntimeException('Business context snapshots are immutable and cannot be deleted.');
         });
     }
 

@@ -11,12 +11,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 /**
  * RBAC Role entity.
  *
- * @property string      $id
- * @property string      $name
- * @property string      $slug
+ * @property string $id
+ * @property string $name
+ * @property string $slug
  * @property string|null $description
- * @property bool        $is_system   When true, the role bypasses all permission checks.
- *                                    Never hardcode role slugs for the bypass — check is_system.
+ * @property bool $is_system When true, the role bypasses all permission checks.
+ *                           Never hardcode role slugs for the bypass — check is_system.
  */
 class Role extends Model
 {

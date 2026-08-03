@@ -11,7 +11,7 @@ class WorkflowSimulatorService
 {
     public function __construct(
         private readonly ConditionEvaluatorService $conditionEvaluator,
-        private readonly AudienceSegmentService    $segmentService,
+        private readonly AudienceSegmentService $segmentService,
     ) {}
 
     /**
@@ -20,17 +20,17 @@ class WorkflowSimulatorService
      */
     public function simulate(AutomationWorkflow $workflow, array $sampleContext = []): array
     {
-        $graph    = $workflow->nodes_graph;
-        $nodes    = collect($graph['nodes'] ?? []);
-        $edges    = collect($graph['edges'] ?? []);
+        $graph = $workflow->nodes_graph;
+        $nodes = collect($graph['nodes'] ?? []);
+        $edges = collect($graph['edges'] ?? []);
 
-        $warnings       = [];
+        $warnings = [];
         $expectedActions = [];
         $estimatedVolume = 0;
 
         // Validate graph structure
         $triggerNode = $nodes->firstWhere('type', 'trigger');
-        if (!$triggerNode) {
+        if (! $triggerNode) {
             $warnings[] = 'No trigger node defined.';
         }
 
@@ -38,12 +38,12 @@ class WorkflowSimulatorService
         $actionNodes = $nodes->where('type', 'action');
         foreach ($actionNodes as $node) {
             $actionType = $node['action_type'] ?? null;
-            $config     = $node['config'] ?? [];
+            $config = $node['config'] ?? [];
 
             $expectedActions[] = [
                 'action_type' => $actionType,
-                'node_id'     => $node['id'],
-                'label'       => $node['label'] ?? $actionType,
+                'node_id' => $node['id'],
+                'label' => $node['label'] ?? $actionType,
                 'config_preview' => array_intersect_key($config, array_flip(['template_id', 'channel', 'message_preview'])),
             ];
 
@@ -60,7 +60,7 @@ class WorkflowSimulatorService
         $estimatedVolume = $this->estimateVolume($workflow, $triggerNode ?? null);
 
         // Check governance
-        if (!$workflow->governance_policy_id) {
+        if (! $workflow->governance_policy_id) {
             $warnings[] = 'No governance policy assigned — execution rate limits will not be enforced.';
         }
 
@@ -69,30 +69,30 @@ class WorkflowSimulatorService
             $hasIncoming = $edges->where('to', $node['id'])->isNotEmpty();
             $hasOutgoing = $edges->where('from', $node['id'])->isNotEmpty();
 
-            if ($node['type'] !== 'trigger' && !$hasIncoming) {
+            if ($node['type'] !== 'trigger' && ! $hasIncoming) {
                 $warnings[] = "Node '{$node['label']}' is unreachable (no incoming edge).";
             }
-            if ($node['type'] !== 'action' && !$hasOutgoing) {
+            if ($node['type'] !== 'action' && ! $hasOutgoing) {
                 $warnings[] = "Node '{$node['label']}' has no outgoing edge — execution may terminate early.";
             }
         }
 
         return [
-            'workflow_id'      => $workflow->id,
-            'workflow_name'    => $workflow->name,
-            'total_nodes'      => $nodes->count(),
-            'action_nodes'     => $actionNodes->count(),
+            'workflow_id' => $workflow->id,
+            'workflow_name' => $workflow->name,
+            'total_nodes' => $nodes->count(),
+            'action_nodes' => $actionNodes->count(),
             'expected_actions' => $expectedActions,
             'estimated_volume' => $estimatedVolume,
-            'estimated_cost'   => null, // Placeholder for future cost estimation
-            'warnings'         => $warnings,
-            'can_activate'     => empty(array_filter($warnings, fn ($w) => str_starts_with($w, 'No trigger'))),
+            'estimated_cost' => null, // Placeholder for future cost estimation
+            'warnings' => $warnings,
+            'can_activate' => empty(array_filter($warnings, fn ($w) => str_starts_with($w, 'No trigger'))),
         ];
     }
 
     private function estimateVolume(AutomationWorkflow $workflow, ?array $triggerNode): int
     {
-        if (!$triggerNode) {
+        if (! $triggerNode) {
             return 0;
         }
 
@@ -101,7 +101,7 @@ class WorkflowSimulatorService
         // For business_event triggers, check how many entities fired that event in the last 30 days
         if ($workflow->trigger_type->value === 'business_event') {
             $eventType = $config['event_type'] ?? null;
-            if (!$eventType) {
+            if (! $eventType) {
                 return 0;
             }
 

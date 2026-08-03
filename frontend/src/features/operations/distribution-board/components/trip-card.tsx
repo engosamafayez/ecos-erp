@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useFormatter } from '@/hooks/use-formatter';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowRightLeft,
@@ -46,6 +47,7 @@ interface TripCardProps {
 
 
 export function TripCard({ trip, onEdit, allTrips }: TripCardProps) {
+  const { money } = useFormatter();
   const navigate = useNavigate();
   const [expanded, setExpanded]     = useState(true);
   const [showOrders, setShowOrders] = useState(false);
@@ -204,7 +206,7 @@ export function TripCard({ trip, onEdit, allTrips }: TripCardProps) {
         <div className="px-3 pb-2 flex items-center gap-3 text-xs text-muted-foreground">
           <span>Collection:</span>
           <span className="font-semibold tabular-nums text-foreground">
-            EGP {trip.collection_amount.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+            {money(trip.collection_amount)}
           </span>
           {isReadyForDispatch && (
             <span className="ms-auto flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
@@ -259,7 +261,7 @@ export function TripCard({ trip, onEdit, allTrips }: TripCardProps) {
                                 </div>
                                 <div className="flex items-center gap-1 shrink-0">
                                   <span className="text-xs tabular-nums">
-                                    EGP {Number(order.grand_total).toLocaleString('en-US', { minimumFractionDigits: 0 })}
+                                    {money(Number(order.grand_total))}
                                   </span>
                                   {isPlanning && (
                                     <>

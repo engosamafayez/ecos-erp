@@ -31,7 +31,7 @@ final class AttributionService
         // Resolve model: explicit → company default → last_touch
         if ($model === null) {
             $config = $this->getDefaultConfig($dna->company_id);
-            $model  = $config?->model ?? AttributionModel::LastTouch;
+            $model = $config?->model ?? AttributionModel::LastTouch;
         }
 
         $events = BusinessEvent::where('business_dna_id', $dna->id)
@@ -43,17 +43,17 @@ final class AttributionService
         }
 
         $touchpoints = $events->map(static fn ($e) => [
-            'event_id'   => $e->id,
+            'event_id' => $e->id,
             'event_name' => $e->event_name,
             'occurred_at' => $e->occurred_at->toIso8601String(),
         ])->values()->all();
 
         $weights = match ($model) {
-            AttributionModel::FirstTouch    => $this->firstTouch($touchpoints),
-            AttributionModel::LastTouch     => $this->lastTouch($touchpoints),
-            AttributionModel::Linear        => $this->linear($touchpoints),
+            AttributionModel::FirstTouch => $this->firstTouch($touchpoints),
+            AttributionModel::LastTouch => $this->lastTouch($touchpoints),
+            AttributionModel::Linear => $this->linear($touchpoints),
             AttributionModel::PositionBased => $this->positionBased($touchpoints),
-            AttributionModel::TimeDecay     => $this->timeDecay($touchpoints),
+            AttributionModel::TimeDecay => $this->timeDecay($touchpoints),
         };
 
         $result = array_map(static function (array $tp) use ($weights): array {
@@ -61,15 +61,17 @@ final class AttributionService
         }, $touchpoints);
 
         return [
-            'model'            => $model->value,
-            'touchpoints'      => $result,
+            'model' => $model->value,
+            'touchpoints' => $result,
             'total_touchpoints' => count($result),
         ];
     }
 
     public function getDefaultConfig(?string $companyId): ?AttributionConfig
     {
-        if ($companyId === null) return null;
+        if ($companyId === null) {
+            return null;
+        }
 
         return AttributionConfig::where('company_id', $companyId)
             ->where('is_default', true)
@@ -85,6 +87,7 @@ final class AttributionService
         foreach ($touchpoints as $i => $tp) {
             $weights[$tp['event_id']] = $i === 0 ? 1.0 : 0.0;
         }
+
         return $weights;
     }
 
@@ -92,18 +95,20 @@ final class AttributionService
     private function lastTouch(array $touchpoints): array
     {
         $weights = [];
-        $last    = count($touchpoints) - 1;
+        $last = count($touchpoints) - 1;
         foreach ($touchpoints as $i => $tp) {
             $weights[$tp['event_id']] = $i === $last ? 1.0 : 0.0;
         }
+
         return $weights;
     }
 
     /** @param  array<int, array{event_id: string}> $touchpoints */
     private function linear(array $touchpoints): array
     {
-        $count  = count($touchpoints);
+        $count = count($touchpoints);
         $weight = $count > 0 ? round(1.0 / $count, 6) : 0.0;
+
         return array_combine(
             array_column($touchpoints, 'event_id'),
             array_fill(0, $count, $weight),
@@ -114,21 +119,27 @@ final class AttributionService
     private function positionBased(array $touchpoints): array
     {
         $count = count($touchpoints);
-        if ($count === 0) return [];
-        if ($count === 1) return [$touchpoints[0]['event_id'] => 1.0];
-        if ($count === 2) return [
-            $touchpoints[0]['event_id'] => 0.5,
-            $touchpoints[1]['event_id'] => 0.5,
-        ];
+        if ($count === 0) {
+            return [];
+        }
+        if ($count === 1) {
+            return [$touchpoints[0]['event_id'] => 1.0];
+        }
+        if ($count === 2) {
+            return [
+                $touchpoints[0]['event_id'] => 0.5,
+                $touchpoints[1]['event_id'] => 0.5,
+            ];
+        }
 
-        $weights  = [];
+        $weights = [];
         $midWeight = 0.2 / max(1, $count - 2);
 
         foreach ($touchpoints as $i => $tp) {
             $weights[$tp['event_id']] = match (true) {
-                $i === 0             => 0.4,
-                $i === $count - 1    => 0.4,
-                default              => $midWeight,
+                $i === 0 => 0.4,
+                $i === $count - 1 => 0.4,
+                default => $midWeight,
             };
         }
 
@@ -139,7 +150,9 @@ final class AttributionService
     private function timeDecay(array $touchpoints): array
     {
         $count = count($touchpoints);
-        if ($count === 0) return [];
+        if ($count === 0) {
+            return [];
+        }
 
         $conversionAt = Carbon::parse($touchpoints[$count - 1]['occurred_at']);
 
@@ -150,7 +163,9 @@ final class AttributionService
         }
 
         $sum = array_sum($rawWeights);
-        if ($sum === 0.0) return $this->linear($touchpoints);
+        if ($sum === 0.0) {
+            return $this->linear($touchpoints);
+        }
 
         return array_map(static fn ($w) => round($w / $sum, 6), $rawWeights);
     }

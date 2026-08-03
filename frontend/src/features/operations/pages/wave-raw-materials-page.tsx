@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AlertTriangle, FlaskConical, Loader2, Waves } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -14,23 +15,32 @@ import type { WaveMaterialDemandItem } from '../types/preparation';
 
 type ShortageFilter = 'all' | 'shortage' | 'ok';
 
-const SHORTAGE_TABS: Array<{ value: ShortageFilter; label: string }> = [
-  { value: 'all',      label: 'All'        },
-  { value: 'shortage', label: 'Shortage'   },
-  { value: 'ok',       label: 'Sufficient' },
-];
-
 function fmt(n: number) {
   return n.toLocaleString(undefined, { maximumFractionDigits: 3 });
 }
 
-// ── Columns ────────────────────────────────────────────────────────────────────
+// ── Page ──────────────────────────────────────────────────────────────────────
 
-function buildColumns(): DataGridColumnDef<WaveMaterialDemandItem>[] {
-  return [
+export function WaveRawMaterialsPage() {
+  const { t } = useTranslation('operations');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
+
+  const waveId = useSelectedWaveId();
+  const { data: materials, isLoading, isFetching, refetch } = useWaveMaterialDemand(waveId);
+
+  const [search, setSearch]                 = useState('');
+  const [shortageFilter, setShortageFilter] = useState<ShortageFilter>('all');
+
+  const SHORTAGE_TABS: Array<{ value: ShortageFilter; label: string }> = [
+    { value: 'all',      label: t('wave.rawMaterials.filters.all') },
+    { value: 'shortage', label: t('wave.rawMaterials.filters.shortage') },
+    { value: 'ok',       label: t('wave.rawMaterials.filters.ok') },
+  ];
+
+  const columns: DataGridColumnDef<WaveMaterialDemandItem>[] = useMemo(() => [
     {
       key: 'material',
-      label: 'Material',
+      label: t('wave.rawMaterials.columns.material'),
       alwaysVisible: true,
       cell: (m) => (
         <div>
@@ -43,30 +53,30 @@ function buildColumns(): DataGridColumnDef<WaveMaterialDemandItem>[] {
     },
     {
       key: 'status',
-      label: 'Status',
+      label: t('wave.rawMaterials.columns.status'),
       alwaysVisible: true,
       cell: (m) => {
         if (m.missing_qty > 0) {
           return (
             <Badge className="text-xs bg-red-100 text-red-700 flex items-center gap-1 w-fit">
               <AlertTriangle className="h-3 w-3" />
-              Shortage
+              {t('wave.rawMaterials.statusShortage')}
             </Badge>
           );
         }
-        return <Badge className="text-xs bg-green-100 text-green-700">Sufficient</Badge>;
+        return <Badge className="text-xs bg-green-100 text-green-700">{t('wave.rawMaterials.statusSufficient')}</Badge>;
       },
     },
     {
       key: 'required_qty',
-      label: 'Required',
+      label: t('wave.rawMaterials.columns.required'),
       defaultVisible: true,
       align: 'end',
       cell: (m) => <span className="text-sm tabular-nums">{fmt(m.required_qty)}</span>,
     },
     {
       key: 'available_qty',
-      label: 'Available',
+      label: t('wave.rawMaterials.columns.available'),
       defaultVisible: true,
       align: 'end',
       cell: (m) => (
@@ -77,7 +87,7 @@ function buildColumns(): DataGridColumnDef<WaveMaterialDemandItem>[] {
     },
     {
       key: 'missing_qty',
-      label: 'Missing',
+      label: t('wave.rawMaterials.columns.missing'),
       defaultVisible: true,
       align: 'end',
       cell: (m) => (
@@ -90,7 +100,7 @@ function buildColumns(): DataGridColumnDef<WaveMaterialDemandItem>[] {
     },
     {
       key: 'expected_today',
-      label: 'Expected Today',
+      label: t('wave.rawMaterials.columns.expectedToday'),
       defaultVisible: true,
       align: 'end',
       cell: (m) => (
@@ -103,7 +113,7 @@ function buildColumns(): DataGridColumnDef<WaveMaterialDemandItem>[] {
     },
     {
       key: 'in_transit_qty',
-      label: 'In Transit',
+      label: t('wave.rawMaterials.columns.inTransit'),
       defaultVisible: true,
       align: 'end',
       cell: (m) => (
@@ -116,7 +126,7 @@ function buildColumns(): DataGridColumnDef<WaveMaterialDemandItem>[] {
     },
     {
       key: 'coverage_pct',
-      label: 'Coverage',
+      label: t('wave.rawMaterials.columns.coverage'),
       defaultVisible: false,
       align: 'end',
       cell: (m) => (
@@ -127,7 +137,7 @@ function buildColumns(): DataGridColumnDef<WaveMaterialDemandItem>[] {
     },
     {
       key: 'reserved_qty',
-      label: 'Reserved',
+      label: t('wave.rawMaterials.columns.reserved'),
       defaultVisible: false,
       align: 'end',
       cell: (m) => (
@@ -138,28 +148,17 @@ function buildColumns(): DataGridColumnDef<WaveMaterialDemandItem>[] {
         )
       ),
     },
-  ];
-}
+   
+  ], [t]);
 
-const COL_METAS = buildColumns().map((c) => ({
-  key: c.key,
-  label: c.label,
-  alwaysVisible: c.alwaysVisible,
-  defaultVisible: c.defaultVisible,
-}));
+  const colMetas = useMemo(() => columns.map((c) => ({
+    key: c.key,
+    label: c.label,
+    alwaysVisible: c.alwaysVisible,
+    defaultVisible: c.defaultVisible,
+  })), [columns]);
 
-const COLUMNS = buildColumns();
-
-// ── Page ──────────────────────────────────────────────────────────────────────
-
-export function WaveRawMaterialsPage() {
-  const waveId = useSelectedWaveId();
-  const { data: materials, isLoading, isFetching, refetch } = useWaveMaterialDemand(waveId);
-
-  const [search, setSearch]                 = useState('');
-  const [shortageFilter, setShortageFilter] = useState<ShortageFilter>('all');
-
-  const colVis = useColumnVisibility('wave-raw-materials-cols', COL_METAS);
+  const colVis = useColumnVisibility('wave-raw-materials-cols', colMetas);
 
   const allMaterials = materials ?? [];
 
@@ -187,7 +186,7 @@ export function WaveRawMaterialsPage() {
         isFetching={isFetching}
         viewControls={
           <ColumnVisibilityMenu
-            columns={COL_METAS}
+            columns={colMetas}
             visibility={colVis.visibility}
             onToggle={colVis.toggle}
             onReset={colVis.reset}
@@ -225,7 +224,7 @@ export function WaveRawMaterialsPage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search material…"
+            placeholder={tAny('wave.rawMaterials.searchPlaceholder')}
             className="h-7 text-xs w-44"
           />
         </div>
@@ -235,16 +234,16 @@ export function WaveRawMaterialsPage() {
         {!waveId ? (
           <div className="flex flex-col items-center justify-center h-64 gap-2 text-muted-foreground">
             <Waves className="h-8 w-8 opacity-30" />
-            <p className="text-sm">Select a wave to view raw material demand.</p>
+            <p className="text-sm">{t('wave.rawMaterials.noWave')}</p>
           </div>
         ) : isLoading ? (
           <div className="flex items-center justify-center h-64 gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="text-sm">Loading…</span>
+            <span className="text-sm">{t('wave.loading')}</span>
           </div>
         ) : (
           <UniversalDataGrid<WaveMaterialDemandItem>
-            columns={COLUMNS}
+            columns={columns}
             data={filtered}
             rowId={(m) => m.id}
             loading={false}
@@ -254,8 +253,8 @@ export function WaveRawMaterialsPage() {
                 <FlaskConical className="w-8 h-8" />
                 <p className="text-sm">
                   {allMaterials.length === 0
-                    ? 'No material demand data yet. Generate demand first.'
-                    : 'No materials match the current filter.'}
+                    ? t('wave.rawMaterials.emptyNoDemand')
+                    : t('wave.rawMaterials.emptyNoMatch')}
                 </p>
               </div>
             }

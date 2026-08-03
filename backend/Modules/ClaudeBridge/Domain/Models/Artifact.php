@@ -10,14 +10,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\ClaudeBridge\Domain\Enums\ArtifactType;
 
 /**
- * @property string       $id
- * @property string       $task_id
- * @property string       $execution_id
+ * @property string $id
+ * @property string $task_id
+ * @property string $execution_id
  * @property ArtifactType $type
- * @property string       $filename
- * @property string       $storage_path
- * @property int          $size_bytes
- * @property string       $checksum_sha256
+ * @property string $filename
+ * @property string $storage_path
+ * @property int $size_bytes
+ * @property string $checksum_sha256
  * @property \Carbon\Carbon $created_at
  */
 final class Artifact extends Model
@@ -42,7 +42,7 @@ final class Artifact extends Model
     ];
 
     protected $casts = [
-        'type'       => ArtifactType::class,
+        'type' => ArtifactType::class,
         'created_at' => 'datetime',
     ];
 

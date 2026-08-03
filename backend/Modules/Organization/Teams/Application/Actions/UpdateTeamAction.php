@@ -17,7 +17,7 @@ final class UpdateTeamAction extends BaseAction
 
     public function execute(mixed ...$arguments): OperationResult
     {
-        $id  = $arguments[0] ?? null;
+        $id = $arguments[0] ?? null;
         $dto = $arguments[1] ?? null;
 
         if (! is_string($id) || ! $dto instanceof TeamDTO) {
@@ -30,10 +30,10 @@ final class UpdateTeamAction extends BaseAction
         }
 
         $team = $this->teams->update($team, [
-            'name'        => $dto->name,
+            'name' => $dto->name,
             'leader_name' => $dto->leader_name,
             'description' => $dto->description,
-            'is_active'   => $dto->is_active,
+            'is_active' => $dto->is_active,
         ]);
 
         return OperationResult::success($team, 'Team updated successfully.');

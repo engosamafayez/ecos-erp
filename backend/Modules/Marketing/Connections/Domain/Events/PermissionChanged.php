@@ -9,13 +9,13 @@ use Modules\Marketing\Connections\Domain\Models\MarketingConnection;
 final class PermissionChanged
 {
     /**
-     * @param list<string> $granted
-     * @param list<string> $missing
+     * @param  list<string>  $granted
+     * @param  list<string>  $missing
      */
     public function __construct(
         public readonly MarketingConnection $connection,
-        public readonly array               $granted,
-        public readonly array               $missing,
-        public readonly bool                $isValid,
+        public readonly array $granted,
+        public readonly array $missing,
+        public readonly bool $isValid,
     ) {}
 }

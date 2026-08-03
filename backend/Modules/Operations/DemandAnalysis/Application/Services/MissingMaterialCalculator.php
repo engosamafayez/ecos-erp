@@ -18,7 +18,7 @@ use Modules\Operations\Preparation\Domain\Models\PreparationWave;
 final class MissingMaterialCalculator
 {
     /**
-     * @param  list<string>|null $affectedMaterialIds  Null = all materials for wave.
+     * @param  list<string>|null  $affectedMaterialIds  Null = all materials for wave.
      * @return list<array<string, mixed>>
      */
     public function calculate(PreparationWave $wave, ?array $affectedMaterialIds = null): array
@@ -45,29 +45,29 @@ final class MissingMaterialCalculator
         // product whose BOM uses this material.
         $affectedCounts = $this->countAffectedOrders($wave->id, $materialIds);
 
-        $now  = now()->toDateTimeString();
+        $now = now()->toDateTimeString();
         $rows = [];
 
         foreach ($shortages as $row) {
-            $missingQty   = (float) $row->missing_qty;
-            $requiredQty  = (float) $row->required_qty;
-            $priority     = MaterialPriority::fromShortageRatio($missingQty, $requiredQty);
+            $missingQty = (float) $row->missing_qty;
+            $requiredQty = (float) $row->required_qty;
+            $priority = MaterialPriority::fromShortageRatio($missingQty, $requiredQty);
             $affectedCount = $affectedCounts[$row->material_id] ?? 0;
 
             $rows[] = [
-                'id'                   => Str::uuid()->toString(),
-                'company_id'           => $wave->company_id,
-                'warehouse_id'         => $wave->warehouse_id,
-                'preparation_wave_id'  => $wave->id,
-                'material_id'          => $row->material_id,
-                'material_name'        => $row->material_name,
-                'missing_qty'          => round($missingQty, 4),
-                'affected_orders_count'=> $affectedCount,
-                'priority'             => $priority->value,
-                'procurement_status'   => null,
-                'last_calculated_at'   => $now,
-                'created_at'           => $now,
-                'updated_at'           => $now,
+                'id' => Str::uuid()->toString(),
+                'company_id' => $wave->company_id,
+                'warehouse_id' => $wave->warehouse_id,
+                'preparation_wave_id' => $wave->id,
+                'material_id' => $row->material_id,
+                'material_name' => $row->material_name,
+                'missing_qty' => round($missingQty, 4),
+                'affected_orders_count' => $affectedCount,
+                'priority' => $priority->value,
+                'procurement_status' => null,
+                'last_calculated_at' => $now,
+                'created_at' => $now,
+                'updated_at' => $now,
             ];
         }
 
@@ -77,7 +77,7 @@ final class MissingMaterialCalculator
     /**
      * Return a map of material_id → affected_order_count for the given wave.
      *
-     * @param  list<string> $materialIds
+     * @param  list<string>  $materialIds
      * @return array<string, int>
      */
     private function countAffectedOrders(string $waveId, array $materialIds): array
@@ -88,7 +88,7 @@ final class MissingMaterialCalculator
             ->join('order_lines as ol', 'ol.product_id', '=', 'bom.product_id')
             ->join('preparation_wave_orders as pwo', function ($join) use ($waveId) {
                 $join->on('pwo.order_id', '=', 'ol.order_id')
-                     ->where('pwo.preparation_wave_id', $waveId);
+                    ->where('pwo.preparation_wave_id', $waveId);
             })
             ->where('bom.is_active', true)
             ->whereIn('boml.raw_material_id', $materialIds)

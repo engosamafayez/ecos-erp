@@ -37,15 +37,17 @@ class InventoryCountSessionTest extends TestCase
     use RefreshDatabase;
 
     private Company $company;
+
     private Warehouse $warehouse;
+
     private Supplier $supplier;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->company   = Company::factory()->create();
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $this->supplier  = Supplier::factory()->create();
+        $this->supplier = Supplier::factory()->create();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -54,8 +56,8 @@ class InventoryCountSessionTest extends TestCase
     {
         return Product::factory()->create([
             'regular_price' => $price,
-            'sale_price'    => $price,
-            'average_cost'  => $avgCost,
+            'sale_price' => $price,
+            'average_cost' => $avgCost,
         ]);
     }
 
@@ -63,9 +65,9 @@ class InventoryCountSessionTest extends TestCase
     {
         return InventoryItem::query()->create([
             'warehouse_id' => $this->warehouse->id,
-            'product_id'   => $product->id,
-            'company_id'   => $this->company->id,
-            'on_hand_qty'  => $onHand,
+            'product_id' => $product->id,
+            'company_id' => $this->company->id,
+            'on_hand_qty' => $onHand,
             'reserved_qty' => 0,
         ]);
     }
@@ -75,28 +77,28 @@ class InventoryCountSessionTest extends TestCase
         $gr = GoodsReceipt::factory()->create(['warehouse_id' => $this->warehouse->id]);
         $grLine = GoodsReceiptLine::factory()->create([
             'goods_receipt_id' => $gr->id,
-            'product_id'       => $item->product_id,
+            'product_id' => $item->product_id,
         ]);
 
         return InventoryReceiptLayer::query()->create([
-            'supplier_id'           => $this->supplier->id,
-            'product_id'            => $item->product_id,
-            'goods_receipt_id'      => $gr->id,
+            'supplier_id' => $this->supplier->id,
+            'product_id' => $item->product_id,
+            'goods_receipt_id' => $gr->id,
             'goods_receipt_line_id' => $grLine->id,
-            'warehouse_id'          => $this->warehouse->id,
-            'received_qty'          => $qty,
-            'remaining_qty'         => $qty,
-            'landed_unit_cost'      => $cost,
-            'receipt_date'          => now()->toDateString(),
+            'warehouse_id' => $this->warehouse->id,
+            'received_qty' => $qty,
+            'remaining_qty' => $qty,
+            'landed_unit_cost' => $cost,
+            'receipt_date' => now()->toDateString(),
         ]);
     }
 
     private function createSession(): InventoryCountSession
     {
         return app(CreateCountSessionAction::class)->execute([
-            'company_id'   => $this->company->id,
+            'company_id' => $this->company->id,
             'warehouse_id' => $this->warehouse->id,
-            'notes'        => 'Test count ' . uniqid(),
+            'notes' => 'Test count '.uniqid(),
         ]);
     }
 
@@ -169,7 +171,7 @@ class InventoryCountSessionTest extends TestCase
     public function test_approve_posts_adjustment_in_for_positive_variance(): void
     {
         $product = $this->makeProduct(avgCost: 80.0);
-        $item    = $this->seedItem($product, 10.0);
+        $item = $this->seedItem($product, 10.0);
 
         $session = $this->createSession();
         app(StartCountSessionAction::class)->execute($session);
@@ -197,7 +199,7 @@ class InventoryCountSessionTest extends TestCase
     public function test_approve_posts_adjustment_out_for_negative_variance(): void
     {
         $product = $this->makeProduct(avgCost: 80.0);
-        $item    = $this->seedItem($product, 10.0);
+        $item = $this->seedItem($product, 10.0);
         $this->addLayer($item, qty: 10.0, cost: 80.0);
 
         $session = $this->createSession();
@@ -218,8 +220,8 @@ class InventoryCountSessionTest extends TestCase
     public function test_fifo_consumption_record_created_for_adjustment_out(): void
     {
         $product = $this->makeProduct(avgCost: 80.0);
-        $item    = $this->seedItem($product, 10.0);
-        $layer   = $this->addLayer($item, qty: 10.0, cost: 80.0);
+        $item = $this->seedItem($product, 10.0);
+        $layer = $this->addLayer($item, qty: 10.0, cost: 80.0);
 
         $session = $this->createSession();
         app(StartCountSessionAction::class)->execute($session);
@@ -281,14 +283,15 @@ class InventoryCountSessionTest extends TestCase
         $hideSysQty = true;
         $lines = $session->lines->map(function (InventoryCountLine $line) use ($hideSysQty): array {
             $row = [
-                'id'          => $line->id,
-                'product_id'  => $line->product_id,
+                'id' => $line->id,
+                'product_id' => $line->product_id,
                 'counted_qty' => null,
                 'variance_qty' => null,
             ];
             if (! $hideSysQty) {
                 $row['system_qty'] = (float) $line->system_qty;
             }
+
             return $row;
         })->values()->toArray();
 
@@ -303,6 +306,7 @@ class InventoryCountSessionTest extends TestCase
             if (! $hideSysQty) {
                 $row['system_qty'] = (float) $line->system_qty;
             }
+
             return $row;
         })->values()->toArray();
 
@@ -328,7 +332,7 @@ class InventoryCountSessionTest extends TestCase
     public function test_adjustment_creates_ledger_entry(): void
     {
         $product = $this->makeProduct(avgCost: 80.0);
-        $item    = $this->seedItem($product, 10.0);
+        $item = $this->seedItem($product, 10.0);
         $this->addLayer($item, qty: 10.0, cost: 80.0);
 
         $session = $this->createSession();
@@ -371,7 +375,7 @@ class InventoryCountSessionTest extends TestCase
 
         // Replicate controller's calcAccuracy logic
         $counted = $completed->lines->filter(fn ($l) => $l->counted_qty !== null);
-        $total   = $counted->count();
+        $total = $counted->count();
         $correct = $counted->filter(fn ($l) => (float) $l->variance_qty === 0.0)->count();
         $accuracy = $total > 0 ? round($correct / $total * 100, 2) : null;
 
@@ -399,10 +403,10 @@ class InventoryCountSessionTest extends TestCase
     {
         // Product with no cost fields set
         $product = Product::factory()->create([
-            'regular_price'     => 50.0,
-            'sale_price'        => 50.0,
-            'average_cost'      => null,
-            'last_purchase_cost'=> null,
+            'regular_price' => 50.0,
+            'sale_price' => 50.0,
+            'average_cost' => null,
+            'last_purchase_cost' => null,
             'current_fifo_cost' => null,
         ]);
         $this->seedItem($product, 10.0);
@@ -466,7 +470,7 @@ class InventoryCountSessionTest extends TestCase
 
     public function test_photo_path_is_not_in_count_line_fillable(): void
     {
-        $line = new InventoryCountLine();
+        $line = new InventoryCountLine;
 
         $this->assertNotContains('photo_path', $line->getFillable());
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\POS\Shared\Domain\ValueObjects;
 
+use InvalidArgumentException;
 use Modules\POS\Shared\Domain\Exceptions\InvalidMoneyOperationException;
 
 /**
@@ -19,20 +20,20 @@ final readonly class Money
         public string $amount,
         public string $currency,
     ) {
-        if (!is_numeric($this->amount)) {
-            throw new \InvalidArgumentException(
-                "Money amount must be numeric, got: \"{$this->amount}\"."
+        if (! is_numeric($this->amount)) {
+            throw new InvalidArgumentException(
+                "Money amount must be numeric, got: \"{$this->amount}\".",
             );
         }
         if (trim($this->currency) === '') {
-            throw new \InvalidArgumentException('Currency code cannot be empty.');
+            throw new InvalidArgumentException('Currency code cannot be empty.');
         }
     }
 
     public static function of(string|int|float $amount, string $currency): self
     {
         return new self(
-            amount:   bcadd((string) $amount, '0', 2),
+            amount: bcadd((string) $amount, '0', 2),
             currency: strtoupper(trim($currency)),
         );
     }
@@ -51,12 +52,14 @@ final readonly class Money
     public function add(Money $other): self
     {
         $this->guardSameCurrency($other);
+
         return new self(bcadd($this->amount, $other->amount, 2), $this->currency);
     }
 
     public function subtract(Money $other): self
     {
         $this->guardSameCurrency($other);
+
         return new self(bcsub($this->amount, $other->amount, 2), $this->currency);
     }
 
@@ -72,6 +75,7 @@ final readonly class Money
         if (bccomp((string) $divisor, '0', 10) === 0) {
             throw InvalidMoneyOperationException::divisionByZero();
         }
+
         return new self(bcdiv($this->amount, (string) $divisor, $scale), $this->currency);
     }
 
@@ -92,6 +96,7 @@ final readonly class Money
         if (bccomp($remainder, '0', 2) !== 0) {
             $allocated[0] = new self(bcadd($each, $remainder, 2), $this->currency);
         }
+
         return $allocated;
     }
 
@@ -131,24 +136,28 @@ final readonly class Money
     public function isGreaterThan(Money $other): bool
     {
         $this->guardSameCurrency($other);
+
         return bccomp($this->amount, $other->amount, 2) > 0;
     }
 
     public function isLessThan(Money $other): bool
     {
         $this->guardSameCurrency($other);
+
         return bccomp($this->amount, $other->amount, 2) < 0;
     }
 
     public function isGreaterThanOrEqual(Money $other): bool
     {
         $this->guardSameCurrency($other);
+
         return bccomp($this->amount, $other->amount, 2) >= 0;
     }
 
     public function isLessThanOrEqual(Money $other): bool
     {
         $this->guardSameCurrency($other);
+
         return bccomp($this->amount, $other->amount, 2) <= 0;
     }
 

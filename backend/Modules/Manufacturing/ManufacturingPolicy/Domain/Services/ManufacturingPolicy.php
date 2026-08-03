@@ -69,8 +69,8 @@ final class ManufacturingPolicy
         ProductContext $product,
     ): ManufacturingPolicyResult {
         $context = array_merge($request->metadata, [
-            'product_id'    => $request->product_id,
-            'order_id'      => $order->order_id,
+            'product_id' => $request->product_id,
+            'order_id' => $order->order_id,
             'order_line_id' => $order->order_line_id,
         ]);
 
@@ -78,8 +78,8 @@ final class ManufacturingPolicy
         // Checked first — a cancelled order supersedes all other rules.
         if ($order->is_cancelled) {
             return ManufacturingPolicyResult::ineligible(
-                code:     PolicyCode::OrderCancelled,
-                reason:   'The order is cancelled. Manufacturing cannot proceed.',
+                code: PolicyCode::OrderCancelled,
+                reason: 'The order is cancelled. Manufacturing cannot proceed.',
                 metadata: $context,
             );
         }
@@ -87,9 +87,9 @@ final class ManufacturingPolicy
         // ── Rule 2: Order status allows manufacturing ─────────────────────────
         if (! in_array($order->order_status, self::MANUFACTURING_ALLOWED_STATUSES, strict: true)) {
             return ManufacturingPolicyResult::ineligible(
-                code:     PolicyCode::OrderStatusNotAllowed,
-                reason:   "Order status '{$order->order_status}' does not allow manufacturing. "
-                    . 'Allowed: ' . implode(', ', self::MANUFACTURING_ALLOWED_STATUSES) . '.',
+                code: PolicyCode::OrderStatusNotAllowed,
+                reason: "Order status '{$order->order_status}' does not allow manufacturing. "
+                    .'Allowed: '.implode(', ', self::MANUFACTURING_ALLOWED_STATUSES).'.',
                 metadata: array_merge($context, ['order_status' => $order->order_status]),
             );
         }
@@ -97,8 +97,8 @@ final class ManufacturingPolicy
         // ── Rule 3: Product can manufacture ──────────────────────────────────
         if (! $product->can_manufacture) {
             return ManufacturingPolicyResult::ineligible(
-                code:     PolicyCode::ProductCannotManufacture,
-                reason:   'Product is not flagged as manufacturable (can_manufacture = false).',
+                code: PolicyCode::ProductCannotManufacture,
+                reason: 'Product is not flagged as manufacturable (can_manufacture = false).',
                 metadata: $context,
             );
         }
@@ -106,8 +106,8 @@ final class ManufacturingPolicy
         // ── Rule 4: Recipe exists ─────────────────────────────────────────────
         if (! $product->has_active_recipe) {
             return ManufacturingPolicyResult::ineligible(
-                code:     PolicyCode::RecipeNotFound,
-                reason:   'No active recipe (Bill of Materials) exists for this product.',
+                code: PolicyCode::RecipeNotFound,
+                reason: 'No active recipe (Bill of Materials) exists for this product.',
                 metadata: $context,
             );
         }
@@ -115,9 +115,9 @@ final class ManufacturingPolicy
         // ── Rule 5: Product is managed by inventory ───────────────────────────
         if (! $product->is_inventory_managed) {
             return ManufacturingPolicyResult::ineligible(
-                code:     PolicyCode::ProductNotInventoryManaged,
-                reason:   'Product is not tracked by the inventory system. '
-                    . 'Manufacturing only applies to physical inventory-managed goods.',
+                code: PolicyCode::ProductNotInventoryManaged,
+                reason: 'Product is not tracked by the inventory system. '
+                    .'Manufacturing only applies to physical inventory-managed goods.',
                 metadata: $context,
             );
         }
@@ -125,8 +125,8 @@ final class ManufacturingPolicy
         // ── Rule 6: Manufacturing required ────────────────────────────────────
         if ($request->required_qty <= 0.0) {
             return ManufacturingPolicyResult::ineligible(
-                code:     PolicyCode::ManufacturingNotRequired,
-                reason:   'Required quantity is zero or negative. No manufacturing needed.',
+                code: PolicyCode::ManufacturingNotRequired,
+                reason: 'Required quantity is zero or negative. No manufacturing needed.',
                 metadata: array_merge($context, ['required_qty' => $request->required_qty]),
             );
         }
@@ -134,8 +134,8 @@ final class ManufacturingPolicy
         // ── Rule 7: Product not already manufactured ──────────────────────────
         if ($order->already_manufactured) {
             return ManufacturingPolicyResult::ineligible(
-                code:     PolicyCode::AlreadyManufactured,
-                reason:   'A manufacturing transaction already exists for this order line.',
+                code: PolicyCode::AlreadyManufactured,
+                reason: 'A manufacturing transaction already exists for this order line.',
                 metadata: $context,
             );
         }

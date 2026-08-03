@@ -40,6 +40,7 @@ class GovernancePolicyService
         }
 
         $policy->update(array_merge($data, ['updated_by' => $userId]));
+
         return $policy->fresh();
     }
 

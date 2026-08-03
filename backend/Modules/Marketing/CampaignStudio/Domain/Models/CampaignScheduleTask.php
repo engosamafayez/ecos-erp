@@ -21,7 +21,7 @@ class CampaignScheduleTask extends Model
 
     protected $casts = [
         'scheduled_for' => 'datetime',
-        'executed_at'   => 'datetime',
+        'executed_at' => 'datetime',
     ];
 
     public function draft(): BelongsTo

@@ -37,7 +37,7 @@ final class ProductPricingGateway implements PricingGatewayInterface
         if ($product === null) {
             throw PriceResolutionException::productNotFound($productId);
         }
-        if (!$product->is_active) {
+        if (! $product->is_active) {
             throw PriceResolutionException::productInactive($productId);
         }
 
@@ -61,7 +61,7 @@ final class ProductPricingGateway implements PricingGatewayInterface
             if ($product === null) {
                 throw PriceResolutionException::productNotFound($productId);
             }
-            if (!$product->is_active) {
+            if (! $product->is_active) {
                 throw PriceResolutionException::productInactive($productId);
             }
 
@@ -73,14 +73,14 @@ final class ProductPricingGateway implements PricingGatewayInterface
 
     private function toResolvedPrice(Product $product, string $currency): ResolvedPrice
     {
-        $salePrice    = $product->sale_price;
+        $salePrice = $product->sale_price;
         $regularPrice = $product->regular_price;
 
         if ($salePrice !== null && $salePrice > 0) {
             return ResolvedPrice::of(
                 productId: (string) $product->id,
                 unitPrice: Money::of(number_format($salePrice, 2, '.', ''), $currency),
-                source:    PriceSource::SalePrice,
+                source: PriceSource::SalePrice,
             );
         }
 
@@ -88,7 +88,7 @@ final class ProductPricingGateway implements PricingGatewayInterface
             return ResolvedPrice::of(
                 productId: (string) $product->id,
                 unitPrice: Money::of(number_format($regularPrice, 2, '.', ''), $currency),
-                source:    PriceSource::RegularPrice,
+                source: PriceSource::RegularPrice,
             );
         }
 

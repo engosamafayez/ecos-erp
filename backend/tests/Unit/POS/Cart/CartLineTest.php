@@ -17,19 +17,19 @@ use PHPUnit\Framework\TestCase;
 final class CartLineTest extends TestCase
 {
     private function makeLine(
-        string       $qty          = '2.0000',
-        string       $price        = '10.00',
-        string       $currency     = 'EGP',
+        string $qty = '2.0000',
+        string $price = '10.00',
+        string $currency = 'EGP',
         ?DiscountType $discountType = null,
-        ?string      $discountVal  = null,
+        ?string $discountVal = null,
     ): CartLine {
         return CartLine::create(
-            productId:     'prod-uuid-1',
-            productName:   'Widget',
-            sku:           'WGT-001',
-            quantity:      Quantity::of($qty),
-            unitPrice:     Money::of($price, $currency),
-            discountType:  $discountType,
+            productId: 'prod-uuid-1',
+            productName: 'Widget',
+            sku: 'WGT-001',
+            quantity: Quantity::of($qty),
+            unitPrice: Money::of($price, $currency),
+            discountType: $discountType,
             discountValue: $discountVal,
         );
     }
@@ -73,10 +73,10 @@ final class CartLineTest extends TestCase
     {
         // 3 × 10.00 = 30.00; 10% off → discount = 3.00; total = 27.00
         $line = $this->makeLine(
-            qty:         '3.0000',
-            price:       '10.00',
+            qty: '3.0000',
+            price: '10.00',
             discountType: DiscountType::Percentage,
-            discountVal:  '10',
+            discountVal: '10',
         );
 
         $this->assertSame('27.00', $line->lineTotal->amount);
@@ -86,10 +86,10 @@ final class CartLineTest extends TestCase
     {
         // 2 × 15.00 = 30.00; fixed 5.00 off → 25.00
         $line = $this->makeLine(
-            qty:         '2.0000',
-            price:       '15.00',
+            qty: '2.0000',
+            price: '15.00',
             discountType: DiscountType::FixedAmount,
-            discountVal:  '5.00',
+            discountVal: '5.00',
         );
 
         $this->assertSame('25.00', $line->lineTotal->amount);
@@ -115,7 +115,7 @@ final class CartLineTest extends TestCase
     public function test_with_quantity_recalculates_line_total(): void
     {
         $original = $this->makeLine(qty: '2.0000', price: '10.00'); // 20.00
-        $updated  = $original->withQuantity(Quantity::of('5.0000')); // 50.00
+        $updated = $original->withQuantity(Quantity::of('5.0000')); // 50.00
 
         $this->assertSame('50.00', $updated->lineTotal->amount);
     }
@@ -123,10 +123,10 @@ final class CartLineTest extends TestCase
     public function test_with_quantity_preserves_discount(): void
     {
         $original = $this->makeLine(
-            qty:         '2.0000',
-            price:       '10.00',
+            qty: '2.0000',
+            price: '10.00',
             discountType: DiscountType::Percentage,
-            discountVal:  '10',
+            discountVal: '10',
         ); // (20.00 - 10%) = 18.00
 
         // Update to qty 4 → (40.00 - 10%) = 36.00
@@ -148,7 +148,7 @@ final class CartLineTest extends TestCase
     public function test_with_quantity_preserves_id(): void
     {
         $original = $this->makeLine();
-        $updated  = $original->withQuantity(Quantity::of(3));
+        $updated = $original->withQuantity(Quantity::of(3));
 
         $this->assertSame($original->id, $updated->id);
     }
@@ -160,8 +160,8 @@ final class CartLineTest extends TestCase
         $array = $this->makeLine()->toArray();
 
         foreach (['id', 'product_id', 'product_name', 'sku', 'quantity',
-                  'unit_price', 'discount_type', 'discount_value',
-                  'line_total', 'sort_order'] as $key) {
+            'unit_price', 'discount_type', 'discount_value',
+            'line_total', 'sort_order'] as $key) {
             $this->assertArrayHasKey($key, $array, "Missing key: {$key}");
         }
     }
@@ -178,10 +178,10 @@ final class CartLineTest extends TestCase
     public function test_roundtrip_to_array_from_array(): void
     {
         $original = $this->makeLine(
-            qty:         '3.0000',
-            price:       '12.50',
+            qty: '3.0000',
+            price: '12.50',
             discountType: DiscountType::Percentage,
-            discountVal:  '5',
+            discountVal: '5',
         );
 
         $restored = CartLine::fromArray($original->toArray());
@@ -196,16 +196,16 @@ final class CartLineTest extends TestCase
     public function test_from_array_handles_null_discount(): void
     {
         $line = CartLine::fromArray([
-            'id'             => 'uuid-x',
-            'product_id'     => 'p',
-            'product_name'   => 'P',
-            'sku'            => 'SKU',
-            'quantity'       => '1.0000',
-            'unit_price'     => ['amount' => '5.00', 'currency' => 'EGP'],
-            'discount_type'  => null,
+            'id' => 'uuid-x',
+            'product_id' => 'p',
+            'product_name' => 'P',
+            'sku' => 'SKU',
+            'quantity' => '1.0000',
+            'unit_price' => ['amount' => '5.00', 'currency' => 'EGP'],
+            'discount_type' => null,
             'discount_value' => null,
-            'line_total'     => ['amount' => '5.00', 'currency' => 'EGP'],
-            'sort_order'     => 0,
+            'line_total' => ['amount' => '5.00', 'currency' => 'EGP'],
+            'sort_order' => 0,
         ]);
 
         $this->assertNull($line->discountType);

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\DomainEvents\Contracts;
 
+use DateTimeImmutable;
+
 /**
  * Marker interface for all Inventory Domain Events.
  *
@@ -23,7 +25,7 @@ interface DomainEvent
     public function eventName(): string;
 
     /** Wall-clock time when the business fact occurred (UTC). */
-    public function occurredAt(): \DateTimeImmutable;
+    public function occurredAt(): DateTimeImmutable;
 
     /**
      * Schema version for this event payload.

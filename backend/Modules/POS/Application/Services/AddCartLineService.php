@@ -31,12 +31,12 @@ final class AddCartLineService
             : null;
 
         $lineId = $cart->addLine(
-            productId:     $command->productId,
-            productName:   $command->productName,
-            sku:           $command->sku,
-            quantity:      Quantity::of($command->quantity),
-            unitPrice:     Money::of($command->unitPrice, $command->currency),
-            discountType:  $discountType,
+            productId: $command->productId,
+            productName: $command->productName,
+            sku: $command->sku,
+            quantity: Quantity::of($command->quantity),
+            unitPrice: Money::of($command->unitPrice, $command->currency),
+            discountType: $discountType,
             discountValue: $command->discountValue,
         );
 

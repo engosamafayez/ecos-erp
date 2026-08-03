@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\Core\BusinessAttribution\Application\Services;
 
 use Carbon\Carbon;
+use Generator;
 use Illuminate\Support\Collection;
 use Modules\Core\BusinessAttribution\Domain\Contracts\ReplayHookInterface;
 use Modules\Core\BusinessAttribution\Domain\Models\BusinessEvent;
@@ -44,16 +47,16 @@ class EnhancedReplayService
         }
 
         $result = new ReplayResult(
-            entityType:  $context->entityType,
-            entityId:    $context->entityId,
-            events:      $events,
+            entityType: $context->entityType,
+            entityId: $context->entityId,
+            events: $events,
             totalEvents: $events->count(),
-            replayedAt:  Carbon::now(),
-            durationMs:  (int) ((microtime(true) - $start) * 1000),
-            from:        $context->from,
-            to:          $context->to,
-            replayType:  $context->replayType,
-            metadata:    ['purpose' => $context->purpose],
+            replayedAt: Carbon::now(),
+            durationMs: (int) ((microtime(true) - $start) * 1000),
+            from: $context->from,
+            to: $context->to,
+            replayType: $context->replayType,
+            metadata: ['purpose' => $context->purpose],
         );
 
         foreach ($this->hooks as $hook) {
@@ -88,31 +91,31 @@ class EnhancedReplayService
             ->get();
 
         return new ReplayResult(
-            entityType:  'module',
-            entityId:    $moduleName,
-            events:      $events,
+            entityType: 'module',
+            entityId: $moduleName,
+            events: $events,
             totalEvents: $events->count(),
-            replayedAt:  Carbon::now(),
-            durationMs:  (int) ((microtime(true) - $start) * 1000),
-            from:        $from,
-            to:          $to,
-            replayType:  'module',
+            replayedAt: Carbon::now(),
+            durationMs: (int) ((microtime(true) - $start) * 1000),
+            from: $from,
+            to: $to,
+            replayType: 'module',
         );
     }
 
     /**
      * Replay multiple entities in one call.
      *
-     * @param  array<array{entity_type: string, entity_id: string}> $entities
-     * @return array<string, ReplayResult>  Keyed by entity_id
+     * @param  array<array{entity_type: string, entity_id: string}>  $entities
+     * @return array<string, ReplayResult> Keyed by entity_id
      */
     public function batchReplay(array $entities): array
     {
         $results = [];
 
         foreach ($entities as $entity) {
-            $context                           = ReplayContext::entity($entity['entity_type'], $entity['entity_id']);
-            $results[$entity['entity_id']]     = $this->replayWithContext($context);
+            $context = ReplayContext::entity($entity['entity_type'], $entity['entity_id']);
+            $results[$entity['entity_id']] = $this->replayWithContext($context);
         }
 
         return $results;
@@ -121,9 +124,9 @@ class EnhancedReplayService
     /**
      * Stream events lazily using a PHP generator — safe for millions of events.
      *
-     * @return \Generator<int, BusinessEvent>
+     * @return Generator<int, BusinessEvent>
      */
-    public function streamEvents(ReplayContext $context): \Generator
+    public function streamEvents(ReplayContext $context): Generator
     {
         $query = BusinessEvent::query()
             ->where('entity_type', $context->entityType)

@@ -10,5 +10,8 @@ namespace Modules\Marketing\ProviderPlatform\Domain\Events;
  */
 final class ProviderAssetRemoved extends AbstractProviderEvent
 {
-    public function eventName(): string { return 'provider.asset_removed'; }
+    public function eventName(): string
+    {
+        return 'provider.asset_removed';
+    }
 }

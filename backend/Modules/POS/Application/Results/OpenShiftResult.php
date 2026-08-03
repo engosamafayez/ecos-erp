@@ -8,6 +8,6 @@ final readonly class OpenShiftResult
 {
     public function __construct(
         public string $shiftId,
-        public int    $shiftNumber,
+        public int $shiftNumber,
     ) {}
 }

@@ -11,7 +11,7 @@ final class PreparedProductAvailableEvent
         public readonly string $poolEntryId,
         public readonly string $productId,
         public readonly string $warehouseId,
-        public readonly float  $quantityAvailable,
+        public readonly float $quantityAvailable,
         public readonly string $occurredAt,
     ) {}
 }

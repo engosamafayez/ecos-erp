@@ -9,9 +9,12 @@ use Illuminate\Database\Eloquent\Model;
 final class AuditLog extends Model
 {
     public $incrementing = false;
-    public $timestamps   = false;
-    protected $keyType   = 'string';
-    protected $table     = 'audit_logs';
+
+    public $timestamps = false;
+
+    protected $keyType = 'string';
+
+    protected $table = 'audit_logs';
 
     protected $fillable = [
         'id',
@@ -33,9 +36,9 @@ final class AuditLog extends Model
     protected function casts(): array
     {
         return [
-            'old_values'  => 'array',
-            'new_values'  => 'array',
-            'metadata'    => 'array',
+            'old_values' => 'array',
+            'new_values' => 'array',
+            'metadata' => 'array',
             'occurred_at' => 'datetime',
         ];
     }

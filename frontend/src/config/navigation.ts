@@ -64,15 +64,17 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Inventory',
+    label: 'Commerce',
     items: [
-      { key: 'products', label: 'Products', path: ROUTES.inventoryProducts, icon: Package },
-      { key: 'stock-ledger', label: 'Stock Ledger', path: ROUTES.stockLedger, icon: BookOpen },
-      { key: 'inventory-dashboard', label: 'Inv. Dashboard', path: ROUTES.inventoryDashboard, icon: Activity },
-      { key: 'abc-classifications', label: 'ABC Classification', path: ROUTES.inventoryAbcClassifications, icon: Tag },
-      { key: 'cycle-count-planner', label: 'Cycle Planner', path: ROUTES.inventoryCycleCountPlanner, icon: CalendarClock },
-      { key: 'variance-analytics', label: 'Variance Analytics', path: ROUTES.inventoryVarianceAnalytics, icon: LineChart },
-      { key: 'warehouse-performance', label: 'WH Performance', path: ROUTES.inventoryWarehousePerformance, icon: Warehouse },
+      { key: 'orders',    label: 'Orders',    path: ROUTES.orders,    icon: ShoppingBag  },
+      { key: 'products',  label: 'Products',  path: ROUTES.products,  icon: Package      },
+      { key: 'customers', label: 'Customers', path: ROUTES.customers, icon: ShoppingCart },
+    ],
+  },
+  {
+    label: 'Shipping',
+    items: [
+      { key: 'fulfillments', label: 'Fulfillments', path: ROUTES.fulfillments, icon: PackageCheck },
     ],
   },
   {
@@ -84,15 +86,18 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Sales',
+    label: 'Inventory',
     items: [
-      { key: 'orders', label: 'Orders', path: ROUTES.orders, icon: ShoppingBag },
-      { key: 'fulfillments', label: 'Fulfillments', path: ROUTES.fulfillments, icon: PackageCheck },
-      { key: 'customers', label: 'Customers', path: ROUTES.customers, icon: ShoppingCart },
+      { key: 'stock-ledger', label: 'Stock Ledger', path: ROUTES.stockLedger, icon: BookOpen },
+      { key: 'inventory-dashboard', label: 'Inv. Dashboard', path: ROUTES.inventoryDashboard, icon: Activity },
+      { key: 'abc-classifications', label: 'ABC Classification', path: ROUTES.inventoryAbcClassifications, icon: Tag },
+      { key: 'cycle-count-planner', label: 'Cycle Planner', path: ROUTES.inventoryCycleCountPlanner, icon: CalendarClock },
+      { key: 'variance-analytics', label: 'Variance Analytics', path: ROUTES.inventoryVarianceAnalytics, icon: LineChart },
+      { key: 'warehouse-performance', label: 'WH Performance', path: ROUTES.inventoryWarehousePerformance, icon: Warehouse },
     ],
   },
   {
-    label: 'Commerce',
+    label: 'External Integrations',
     items: [
       { key: 'product-mappings', label: 'Product Mapping', path: ROUTES.productMappings, icon: Link2 },
       { key: 'sync-logs', label: 'Sync Logs', path: ROUTES.syncLogs, icon: ArrowLeftRight },
@@ -129,7 +134,7 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
-    label: 'Logistics OS',
+    label: 'Shipping — Geography & Distribution',
     items: [
       { key: 'logistics-geography',               label: 'Egypt Geography',       path: ROUTES.logisticsGeography,            icon: Map          },
       { key: 'logistics-distribution-zones',      label: 'Distribution Zones',    path: ROUTES.logisticsDistributionZones,    icon: Network      },

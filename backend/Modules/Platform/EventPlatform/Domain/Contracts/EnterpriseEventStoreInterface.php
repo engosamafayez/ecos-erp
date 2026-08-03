@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Platform\EventPlatform\Domain\Contracts;
 
+use DateTimeImmutable;
 use Illuminate\Support\Collection;
 use Modules\Inventory\DomainEvents\Contracts\DomainEvent;
 use Modules\Platform\EventPlatform\Domain\Models\StoredEvent;
@@ -28,7 +29,7 @@ interface EnterpriseEventStoreInterface
     public function queryByEventName(string $eventName, ?string $companyId = null): Collection;
 
     /** @return Collection<int, StoredEvent> */
-    public function queryByTimeRange(\DateTimeImmutable $from, \DateTimeImmutable $to, array $filters = []): Collection;
+    public function queryByTimeRange(DateTimeImmutable $from, DateTimeImmutable $to, array $filters = []): Collection;
 
     public function markPublished(string $eventId): void;
 

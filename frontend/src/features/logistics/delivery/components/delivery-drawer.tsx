@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle,
   Ban,
@@ -67,6 +68,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 // ── Overview ─────────────────────────────────────────────────────────────────
 
 function Overview({ deliveryId }: { deliveryId: string }) {
+  const { t } = useTranslation('logistics');
   const { data: delivery } = useDelivery(deliveryId);
   const retry = useRetryDelivery();
   const addressCorrected = useMarkAddressCorrected();
@@ -85,37 +87,45 @@ function Overview({ deliveryId }: { deliveryId: string }) {
     } catch (error) {
       const message =
         (error as { response?: { data?: { message?: string } } }).response?.data?.message ??
-        'The action could not be completed.';
-      toast({ title: 'Action refused', description: message, variant: 'destructive' });
+        t('delivery.errors.actionFailed');
+      toast({
+        title: t('delivery.errors.actionRefused'),
+        description: message,
+        variant: 'destructive',
+      });
     }
   }
 
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Status">
+        <Field label={t('common.status')}>
           <DeliveryStatusBadge status={delivery.status} />
         </Field>
-        <Field label="Order">
+        <Field label={t('delivery.field.order')}>
           <span className="font-mono text-xs">{delivery.order_id}</span>
         </Field>
-        <Field label="Attempts">
-          {delivery.attempt_count} of {delivery.max_attempts}
-          <span className="ml-1 text-xs text-muted-foreground">
-            ({delivery.remaining_attempts} left)
+        <Field label={t('delivery.field.attempts')}>
+          {t('delivery.overview.attemptsOf', {
+            used: delivery.attempt_count,
+            max: delivery.max_attempts,
+          })}
+          <span className="ms-1 text-xs text-muted-foreground">
+            {t('delivery.overview.attemptsLeft', { remaining: delivery.remaining_attempts })}
           </span>
         </Field>
-        <Field label="Promised">{formatDateTime(delivery.promised_at)}</Field>
-        <Field label="Delivered">{formatDateTime(delivery.delivered_at)}</Field>
-        <Field label="Escalation level">{delivery.escalation_level}</Field>
+        <Field label={t('delivery.field.promised')}>{formatDateTime(delivery.promised_at)}</Field>
+        <Field label={t('delivery.status.delivered')}>{formatDateTime(delivery.delivered_at)}</Field>
+        <Field label={t('delivery.field.escalationLevel')}>{delivery.escalation_level}</Field>
       </div>
 
       {delivery.sla_breached && (
         <Alert variant="destructive">
           <Clock className="size-4" />
           <AlertDescription>
-            SLA breached
-            {delivery.minutes_late !== null && ` by ${delivery.minutes_late} minutes`}.
+            {delivery.minutes_late !== null
+              ? t('delivery.alert.slaBreachedBy', { minutes: delivery.minutes_late })
+              : t('delivery.alert.slaBreached')}
           </AlertDescription>
         </Alert>
       )}
@@ -123,9 +133,7 @@ function Overview({ deliveryId }: { deliveryId: string }) {
       {delivery.requires_manual_review && (
         <Alert>
           <AlertTriangle className="size-4" />
-          <AlertDescription>
-            Three or more failures recorded — this delivery needs a supervisor decision.
-          </AlertDescription>
+          <AlertDescription>{t('delivery.alert.manualReview')}</AlertDescription>
         </Alert>
       )}
 
@@ -134,19 +142,19 @@ function Overview({ deliveryId }: { deliveryId: string }) {
         <div className="rounded-lg border p-3">
           <div className="mb-2 flex items-center gap-2">
             <Wallet className="size-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Cash on delivery</span>
+            <span className="text-sm font-medium">{t('delivery.cod.title')}</span>
             <Badge variant="outline" className="text-xs">
               {cod.status_label}
             </Badge>
           </div>
           <div className="grid grid-cols-3 gap-3">
-            <Field label="Due">
+            <Field label={t('delivery.cod.due')}>
               {cod.amount_due.toLocaleString()} {cod.currency}
             </Field>
-            <Field label="Collected">
+            <Field label={t('delivery.cod.collected')}>
               {cod.amount_collected.toLocaleString()} {cod.currency}
             </Field>
-            <Field label="Shortfall">
+            <Field label={t('delivery.cod.shortfall')}>
               {cod.shortfall > 0 ? (
                 <span className="text-destructive">
                   {cod.shortfall.toLocaleString()} {cod.currency}
@@ -156,20 +164,16 @@ function Overview({ deliveryId }: { deliveryId: string }) {
               )}
             </Field>
           </div>
-          <p className="mt-2 text-[11px] text-muted-foreground">
-            Reconciliation and trip cash balances are handled in Distribution.
-          </p>
+          <p className="mt-2 text-[11px] text-muted-foreground">{t('delivery.cod.note')}</p>
         </div>
       )}
 
       <Separator />
 
       <div className="space-y-2">
-        <p className="text-sm font-medium">Retry</p>
+        <p className="text-sm font-medium">{t('delivery.retry.title')}</p>
         {delivery.can_retry ? (
-          <p className="text-xs text-muted-foreground">
-            This delivery is eligible for another attempt.
-          </p>
+          <p className="text-xs text-muted-foreground">{t('delivery.retry.eligible')}</p>
         ) : (
           <ul className="space-y-1">
             {delivery.retry_blockers.map((blocker) => (
@@ -186,10 +190,12 @@ function Overview({ deliveryId }: { deliveryId: string }) {
             size="sm"
             className="gap-1.5"
             disabled={!delivery.can_retry || retry.isPending}
-            onClick={() => run(() => retry.mutateAsync(delivery.id), 'Retry scheduled.')}
+            onClick={() =>
+              run(() => retry.mutateAsync(delivery.id), t('delivery.toast.retryScheduled'))
+            }
           >
             {retry.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <RotateCcw className="size-3.5" />}
-            Schedule retry
+            {t('delivery.retry.schedule')}
           </Button>
 
           {delivery.requires_address_correction && !delivery.address_corrected_at && (
@@ -199,11 +205,14 @@ function Overview({ deliveryId }: { deliveryId: string }) {
               className="gap-1.5"
               disabled={addressCorrected.isPending}
               onClick={() =>
-                run(() => addressCorrected.mutateAsync(delivery.id), 'Address marked as corrected.')
+                run(
+                  () => addressCorrected.mutateAsync(delivery.id),
+                  t('delivery.toast.addressCorrected'),
+                )
               }
             >
               <MapPin className="size-3.5" />
-              Mark address corrected
+              {t('delivery.action.markAddressCorrected')}
             </Button>
           )}
         </div>
@@ -214,12 +223,12 @@ function Overview({ deliveryId }: { deliveryId: string }) {
           <Separator />
           <div className="space-y-2">
             <Label htmlFor="cancel-reason" className="text-sm font-medium">
-              Cancel delivery
+              {t('delivery.cancel.title')}
             </Label>
             <Textarea
               id="cancel-reason"
               rows={2}
-              placeholder="Why is this delivery being cancelled?"
+              placeholder={t('delivery.cancel.reasonPlaceholder')}
               value={cancelReason}
               onChange={(e) => setCancelReason(e.target.value)}
             />
@@ -231,12 +240,12 @@ function Overview({ deliveryId }: { deliveryId: string }) {
               onClick={() =>
                 run(
                   () => cancel.mutateAsync({ id: delivery.id, reason: cancelReason || undefined }),
-                  'Delivery cancelled.',
+                  t('delivery.toast.cancelled'),
                 )
               }
             >
               <Ban className="size-3.5" />
-              Cancel delivery
+              {t('delivery.cancel.title')}
             </Button>
           </div>
         </>
@@ -256,6 +265,7 @@ function PodSummary({
   attempt: DeliveryAttempt;
   pod: ProofOfDelivery;
 }) {
+  const { t } = useTranslation('logistics');
   const validate = useValidatePod();
   const { toast } = useToast();
   const missing = pod.missing_artifacts ?? [];
@@ -264,7 +274,7 @@ function PodSummary({
     <div className="mt-2 rounded-md border bg-muted/30 p-2">
       <div className="flex items-center gap-2">
         <FileCheck2 className="size-3.5 text-muted-foreground" />
-        <span className="text-xs font-medium">Proof of delivery</span>
+        <span className="text-xs font-medium">{t('delivery.pod.title')}</span>
         <Badge variant="outline" className="text-[10px]">
           {pod.status_label}
         </Badge>
@@ -280,7 +290,7 @@ function PodSummary({
 
       {missing.length > 0 && (
         <p className="mt-1.5 text-[11px] text-destructive">
-          Missing: {missing.join(', ')}
+          {t('delivery.pod.missing', { list: missing.join(', ') })}
         </p>
       )}
 
@@ -293,17 +303,21 @@ function PodSummary({
           onClick={async () => {
             try {
               await validate.mutateAsync({ id: deliveryId, attemptId: attempt.id });
-              toast({ title: 'Proof validated.' });
+              toast({ title: t('delivery.toast.podValidated') });
             } catch (error) {
               const message =
                 (error as { response?: { data?: { message?: string } } }).response?.data?.message ??
-                'The proof could not be validated.';
-              toast({ title: 'Validation refused', description: message, variant: 'destructive' });
+                t('delivery.errors.podValidationFailed');
+              toast({
+                title: t('delivery.errors.validationRefused'),
+                description: message,
+                variant: 'destructive',
+              });
             }
           }}
         >
           <ShieldCheck className="size-3.5" />
-          Validate proof
+          {t('delivery.pod.validate')}
         </Button>
       )}
     </div>
@@ -311,6 +325,7 @@ function PodSummary({
 }
 
 function Attempts({ deliveryId }: { deliveryId: string }) {
+  const { t } = useTranslation('logistics');
   const { data: delivery } = useDelivery(deliveryId);
   const { data: options } = useDeliveryOptions();
   const fail = useFailAttempt();
@@ -326,7 +341,7 @@ function Attempts({ deliveryId }: { deliveryId: string }) {
     <div className="space-y-4">
       {attempts.length === 0 && (
         <p className="py-8 text-center text-sm text-muted-foreground">
-          No attempts yet. An attempt opens when the driver reaches the stop.
+          {t('delivery.attempts.empty')}
         </p>
       )}
 
@@ -334,7 +349,9 @@ function Attempts({ deliveryId }: { deliveryId: string }) {
         <div key={attempt.id} className="rounded-lg border p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Attempt {attempt.attempt_no}</span>
+              <span className="text-sm font-medium">
+                {t('delivery.attempts.attemptNo', { no: attempt.attempt_no })}
+              </span>
               <Badge variant={attempt.is_open ? 'default' : 'secondary'} className="text-[10px]">
                 {attempt.status_label}
               </Badge>
@@ -345,11 +362,13 @@ function Attempts({ deliveryId }: { deliveryId: string }) {
           </div>
 
           <div className="mt-2 grid grid-cols-3 gap-3">
-            <Field label="Arrived">{formatDateTime(attempt.arrived_at)}</Field>
-            <Field label="Dwell">
-              {attempt.dwell_minutes !== null ? `${attempt.dwell_minutes} min` : '—'}
+            <Field label={t('delivery.field.arrived')}>{formatDateTime(attempt.arrived_at)}</Field>
+            <Field label={t('delivery.field.dwell')}>
+              {attempt.dwell_minutes !== null
+                ? t('delivery.attempts.dwellMinutes', { minutes: attempt.dwell_minutes })
+                : '—'}
             </Field>
-            <Field label="Stop">{attempt.stop_id ?? '—'}</Field>
+            <Field label={t('delivery.field.stop')}>{attempt.stop_id ?? '—'}</Field>
           </div>
 
           {attempt.failure && (
@@ -359,7 +378,10 @@ function Attempts({ deliveryId }: { deliveryId: string }) {
                 <span className="font-medium">{attempt.failure.reason_label}</span>
                 {' · '}
                 {attempt.failure.category_label}
-                {attempt.failure.is_retryable ? ' · retryable' : ' · not retryable'}
+                {' · '}
+                {attempt.failure.is_retryable
+                  ? t('delivery.failure.retryable')
+                  : t('delivery.failure.notRetryable')}
                 {attempt.failure.description && <span className="block">{attempt.failure.description}</span>}
               </AlertDescription>
             </Alert>
@@ -373,18 +395,19 @@ function Attempts({ deliveryId }: { deliveryId: string }) {
         <>
           <Separator />
           <div className="space-y-2">
-            <Label className="text-sm font-medium">Record a failure</Label>
-            <p className="text-xs text-muted-foreground">
-              Retryability follows the reason you pick — it is decided by the taxonomy, not entered by hand.
-            </p>
+            <Label className="text-sm font-medium">{t('delivery.failure.recordTitle')}</Label>
+            <p className="text-xs text-muted-foreground">{t('delivery.failure.recordHint')}</p>
             <Select value={reasonCode} onValueChange={setReasonCode}>
               <SelectTrigger className="h-8 text-sm">
-                <SelectValue placeholder="Select a failure reason" />
+                <SelectValue placeholder={t('delivery.failure.selectReason')} />
               </SelectTrigger>
               <SelectContent>
                 {(options?.failure_reasons ?? []).map((reason) => (
                   <SelectItem key={reason.value} value={reason.value}>
-                    {reason.label} · {reason.is_retryable ? 'retryable' : 'final'}
+                    {reason.label} ·{' '}
+                    {reason.is_retryable
+                      ? t('delivery.failure.retryable')
+                      : t('delivery.failure.final')}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -402,17 +425,21 @@ function Attempts({ deliveryId }: { deliveryId: string }) {
                     payload: { reason_code: reasonCode },
                   });
                   setReasonCode('');
-                  toast({ title: 'Failure recorded.' });
+                  toast({ title: t('delivery.toast.failureRecorded') });
                 } catch (error) {
                   const message =
                     (error as { response?: { data?: { message?: string } } }).response?.data?.message ??
-                    'The failure could not be recorded.';
-                  toast({ title: 'Action refused', description: message, variant: 'destructive' });
+                    t('delivery.errors.failureRecordFailed');
+                  toast({
+                    title: t('delivery.errors.actionRefused'),
+                    description: message,
+                    variant: 'destructive',
+                  });
                 }
               }}
             >
               <XCircle className="size-3.5" />
-              Record failure
+              {t('delivery.failure.recordButton')}
             </Button>
           </div>
         </>
@@ -424,6 +451,8 @@ function Attempts({ deliveryId }: { deliveryId: string }) {
 // ── Returns ──────────────────────────────────────────────────────────────────
 
 function ReturnCard({ deliveryReturn }: { deliveryReturn: DeliveryReturn }) {
+  const { t } = useTranslation('logistics');
+
   return (
     <div className="rounded-lg border p-3">
       <div className="flex items-center justify-between">
@@ -432,7 +461,7 @@ function ReturnCard({ deliveryReturn }: { deliveryReturn: DeliveryReturn }) {
           <span className="text-sm font-medium">{deliveryReturn.status_label}</span>
           {deliveryReturn.has_discrepancy && (
             <Badge variant="destructive" className="text-[10px]">
-              Discrepancy
+              {t('delivery.returns.discrepancy')}
             </Badge>
           )}
         </div>
@@ -448,22 +477,22 @@ function ReturnCard({ deliveryReturn }: { deliveryReturn: DeliveryReturn }) {
       <table className="mt-2 w-full text-xs">
         <thead>
           <tr className="border-b text-muted-foreground">
-            <th className="py-1 text-left font-normal">Product</th>
-            <th className="py-1 text-right font-normal">Returned</th>
-            <th className="py-1 text-right font-normal">Counted</th>
-            <th className="py-1 text-right font-normal">Difference</th>
+            <th className="py-1 text-start font-normal">{t('delivery.returns.colProduct')}</th>
+            <th className="py-1 text-end font-normal">{t('delivery.returns.colReturned')}</th>
+            <th className="py-1 text-end font-normal">{t('delivery.returns.colCounted')}</th>
+            <th className="py-1 text-end font-normal">{t('delivery.returns.colDifference')}</th>
           </tr>
         </thead>
         <tbody className="divide-y">
           {(deliveryReturn.lines ?? []).map((line) => (
             <tr key={line.id}>
               <td className="py-1">{line.product_name ?? '—'}</td>
-              <td className="py-1 text-right tabular-nums">{line.returned_qty}</td>
-              <td className="py-1 text-right tabular-nums">
+              <td className="py-1 text-end tabular-nums">{line.returned_qty}</td>
+              <td className="py-1 text-end tabular-nums">
                 {line.warehouse_confirmed_qty ?? '—'}
               </td>
               <td
-                className={`py-1 text-right tabular-nums ${
+                className={`py-1 text-end tabular-nums ${
                   line.has_discrepancy ? 'text-destructive' : ''
                 }`}
               >
@@ -478,6 +507,7 @@ function ReturnCard({ deliveryReturn }: { deliveryReturn: DeliveryReturn }) {
 }
 
 function Returns({ deliveryId }: { deliveryId: string }) {
+  const { t } = useTranslation('logistics');
   const { data: delivery } = useDelivery(deliveryId);
 
   if (!delivery) return <Skeleton className="h-48 w-full" />;
@@ -487,7 +517,7 @@ function Returns({ deliveryId }: { deliveryId: string }) {
   if (returns.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-muted-foreground">
-        Nothing has been returned for this delivery.
+        {t('delivery.returns.empty')}
       </p>
     );
   }
@@ -504,11 +534,16 @@ function Returns({ deliveryId }: { deliveryId: string }) {
 // ── Timeline ─────────────────────────────────────────────────────────────────
 
 function Timeline({ deliveryId }: { deliveryId: string }) {
+  const { t } = useTranslation('logistics');
   const { data: events, isLoading } = useDeliveryTimeline(deliveryId);
 
   if (isLoading) return <Skeleton className="h-48 w-full" />;
   if (!events || events.length === 0) {
-    return <p className="py-8 text-center text-sm text-muted-foreground">No events recorded yet.</p>;
+    return (
+      <p className="py-8 text-center text-sm text-muted-foreground">
+        {t('delivery.timeline.empty')}
+      </p>
+    );
   }
 
   return (
@@ -524,7 +559,7 @@ function Timeline({ deliveryId }: { deliveryId: string }) {
               <span className="text-sm font-medium">{event.title}</span>
               {event.customer_visible && (
                 <Badge variant="outline" className="text-[10px]">
-                  Customer visible
+                  {t('delivery.timeline.customerVisible')}
                 </Badge>
               )}
             </div>
@@ -553,6 +588,7 @@ export function DeliveryDrawer({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation('logistics');
   const { data: delivery } = useDelivery(open ? deliveryId : null);
 
   return (
@@ -560,26 +596,33 @@ export function DeliveryDrawer({
       open={open}
       onOpenChange={onOpenChange}
       size="2xl"
-      title={delivery ? `Delivery · ${delivery.order_id}` : 'Delivery'}
+      title={
+        delivery
+          ? t('delivery.drawer.titleWithOrder', { order: delivery.order_id })
+          : t('delivery.entity')
+      }
       description={
         delivery
-          ? `${delivery.attempt_count} of ${delivery.max_attempts} attempts used`
+          ? t('delivery.drawer.attemptsUsed', {
+              used: delivery.attempt_count,
+              max: delivery.max_attempts,
+            })
           : undefined
       }
     >
       {!deliveryId ? null : (
         <Tabs defaultValue="overview" className="w-full">
           <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="overview">{t('common.overview')}</TabsTrigger>
             <TabsTrigger value="attempts">
-              Attempts
+              {t('delivery.field.attempts')}
               {delivery?.attempts_count ? ` (${delivery.attempts_count})` : ''}
             </TabsTrigger>
             <TabsTrigger value="returns">
-              Returns
+              {t('delivery.returns.title')}
               {delivery?.returns_count ? ` (${delivery.returns_count})` : ''}
             </TabsTrigger>
-            <TabsTrigger value="timeline">Timeline</TabsTrigger>
+            <TabsTrigger value="timeline">{t('common.timeline')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="pt-4">

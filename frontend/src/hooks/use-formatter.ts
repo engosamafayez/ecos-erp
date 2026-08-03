@@ -43,7 +43,11 @@ export type Formatters = {
    * Format money using the company's currency.
    * Pass currencyOverride to format in a different currency (e.g. USD invoice).
    */
-  money: (amount: number | null | undefined, currencyOverride?: string) => string;
+  money: (
+    amount: number | null | undefined,
+    currencyOverride?: string,
+    fractionDigits?: number,
+  ) => string;
 
   /** Compact format for large amounts (K / M abbreviations). */
   moneyCompact: (amount: number | null | undefined) => string;
@@ -78,9 +82,9 @@ export function useFormatter(): Formatters {
       locale,
       currency,
 
-      money(amount, currencyOverride) {
+      money(amount, currencyOverride, fractionDigits) {
         if (amount === null || amount === undefined) return '—';
-        return formatMoney(amount, currencyOverride ?? currency, locale);
+        return formatMoney(amount, currencyOverride ?? currency, locale, fractionDigits);
       },
 
       moneyCompact(amount) {

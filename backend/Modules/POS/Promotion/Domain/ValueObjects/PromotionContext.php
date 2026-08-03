@@ -13,24 +13,24 @@ use Modules\POS\Shared\Domain\ValueObjects\Money;
  * The Application Layer builds this from Cart and Customer aggregates and passes it
  * to PromotionEligibilityPolicy — the Promotion Domain never imports Cart or Customer classes.
  *
- * @param array<int, array{product_id: string, quantity: int}> $items
- * @param string[]                                             $customerGroups
+ * @param  array<int, array{product_id: string, quantity: int}>  $items
+ * @param  string[]  $customerGroups
  */
 final readonly class PromotionContext
 {
     public function __construct(
-        public Money             $cartTotal,
-        public array             $items,
-        public ?string           $customerId,
-        public array             $customerGroups,
+        public Money $cartTotal,
+        public array $items,
+        public ?string $customerId,
+        public array $customerGroups,
         public DateTimeImmutable $evaluatedAt,
     ) {}
 
     public static function of(
-        Money             $cartTotal,
-        array             $items,
-        ?string           $customerId,
-        array             $customerGroups,
+        Money $cartTotal,
+        array $items,
+        ?string $customerId,
+        array $customerGroups,
         DateTimeImmutable $evaluatedAt,
     ): self {
         return new self($cartTotal, $items, $customerId, $customerGroups, $evaluatedAt);
@@ -48,6 +48,7 @@ final readonly class PromotionContext
                 return $item['quantity'];
             }
         }
+
         return 0;
     }
 

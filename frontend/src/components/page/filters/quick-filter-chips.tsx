@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import { cn } from '@/lib/utils';
 import type { QuickFilterChip } from '../types';
 
@@ -18,10 +20,12 @@ type QuickFilterChipsProps = {
  *   />
  */
 export function QuickFilterChips({ chips, className }: QuickFilterChipsProps) {
+  const { t } = useTranslation('common');
+
   return (
     <div
       role="group"
-      aria-label="Quick filters"
+      aria-label={t('toolbar.quickFilters')}
       className={cn('flex gap-1.5 overflow-x-auto py-2 scrollbar-none', className)}
     >
       {chips.map((chip) => (

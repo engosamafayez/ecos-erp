@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\POS\Customer\Infrastructure\Gateways;
 
 use DateTimeImmutable;
+use DateTimeZone;
 use Modules\POS\Customer\Domain\Contracts\CustomerGatewayInterface;
 use Modules\POS\Customer\Domain\Exceptions\CustomerNotFoundException;
 use Modules\POS\Customer\Domain\ValueObjects\CustomerSnapshot;
@@ -16,7 +17,7 @@ final class SalesCustomerGateway implements CustomerGatewayInterface
     {
         $customer = Customer::find($customerId);
 
-        if ($customer === null || !$customer->is_active) {
+        if ($customer === null || ! $customer->is_active) {
             throw CustomerNotFoundException::withId($customerId);
         }
 
@@ -66,12 +67,12 @@ final class SalesCustomerGateway implements CustomerGatewayInterface
     private function toSnapshot(Customer $customer): CustomerSnapshot
     {
         return CustomerSnapshot::capture(
-            customerId:   (string) $customer->id,
+            customerId: (string) $customer->id,
             customerCode: (string) ($customer->code ?? ''),
-            name:         (string) $customer->name,
-            email:        $customer->email ?: null,
-            phone:        $customer->phone ?: ($customer->mobile ?: null),
-            capturedAt:   new DateTimeImmutable('now', new \DateTimeZone('UTC')),
+            name: (string) $customer->name,
+            email: $customer->email ?: null,
+            phone: $customer->phone ?: ($customer->mobile ?: null),
+            capturedAt: new DateTimeImmutable('now', new DateTimeZone('UTC')),
         );
     }
 }

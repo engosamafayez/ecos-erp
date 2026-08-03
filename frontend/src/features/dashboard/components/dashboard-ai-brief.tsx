@@ -1,6 +1,11 @@
 import { Sparkles, TrendingDown, TrendingUp, Minus } from 'lucide-react';
+import { useFormatter } from '@/hooks/use-formatter';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { cn } from '@/lib/utils';
 import type { ExecutiveDashboardData } from '../services/executive-dashboard.service';
+
+type DashboardT = TFunction<'dashboard'>;
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -13,42 +18,44 @@ interface Insight {
 
 // ── Insight derivation ─────────────────────────────────────────────────────
 
-function deriveInsights(data: ExecutiveDashboardData): Insight[] {
+function deriveInsights(data: ExecutiveDashboardData, t: DashboardT, money: (n: number | null | undefined) => string): Insight[] {
   const out: Insight[] = [];
   const { sales: s, shipping: sh, marketing: mk } = data;
 
   if (s.revenue_trend_pct !== null && s.revenue_trend_pct > 20)
-    out.push({ level: 'positive', message: `Revenue is up ${s.revenue_trend_pct.toFixed(1)}% compared to yesterday — strong performance across all channels.` });
+    out.push({ level: 'positive', message: t('brief.revenueUp', { pct: s.revenue_trend_pct.toFixed(1) }) });
   else if (s.revenue_trend_pct !== null && s.revenue_trend_pct < -20)
-    out.push({ level: 'alert',    message: `Revenue is down ${Math.abs(s.revenue_trend_pct).toFixed(1)}% vs yesterday. Review the order pipeline and active campaigns.` });
+    out.push({ level: 'alert',    message: t('brief.revenueDown', { pct: Math.abs(s.revenue_trend_pct).toFixed(1) }) });
 
   if (s.cancelled_today > 0 && s.orders_today > 0) {
     const rate = ((s.cancelled_today / s.orders_today) * 100).toFixed(0);
     out.push({ level: s.cancelled_today / s.orders_today > 0.1 ? 'alert' : 'info',
-      message: `${s.cancelled_today} orders cancelled today (${rate}% cancellation rate).` });
+      message: t('brief.cancelledOrders', { count: s.cancelled_today, rate }) });
   }
 
   if (mk.roas !== null && mk.roas > 4)
-    out.push({ level: 'positive', message: `ROAS reached ${mk.roas}× this month — campaigns are outperforming target. Consider increasing budget.` });
+    out.push({ level: 'positive', message: t('brief.roasHigh', { roas: mk.roas }) });
   else if (mk.roas !== null && mk.roas < 1 && mk.spend_this_month > 0)
-    out.push({ level: 'alert',    message: `Marketing ROAS is below 1× — ad spend is exceeding campaign revenue. Pause underperforming campaigns.` });
+    out.push({ level: 'alert',    message: t('brief.roasLow') });
 
   if (sh.failed_today > 0) {
     const rate = sh.shipments_today > 0 ? ((sh.failed_today / sh.shipments_today) * 100).toFixed(0) : '100';
     out.push({ level: sh.failed_today >= 3 ? 'alert' : 'tip',
-      message: `${sh.failed_today} failed ${sh.failed_today === 1 ? 'delivery' : 'deliveries'} today (${rate}% failure rate). Review driver assignments in the Logistics workspace.` });
+      message: sh.failed_today === 1
+        ? t('brief.failedDelivery', { count: sh.failed_today, rate })
+        : t('brief.failedDeliveries', { count: sh.failed_today, rate }) });
   }
 
   if (sh.cod_pending > 10_000)
-    out.push({ level: 'tip', message: `EGP ${sh.cod_pending.toLocaleString('en-US', { maximumFractionDigits: 0 })} in pending COD collections. Schedule driver settlement runs.` });
+    out.push({ level: 'tip', message: t('brief.codPending', { amount: money(sh.cod_pending) }) });
 
   if (s.pending_count > 50)
-    out.push({ level: 'tip', message: `${s.pending_count} orders are waiting in the Pending queue. Assign them to preparation waves to clear the backlog.` });
+    out.push({ level: 'tip', message: t('brief.pendingQueue', { count: s.pending_count }) });
 
   if (out.length === 0) {
     out.push(s.orders_today === 0
-      ? { level: 'info', message: 'No orders recorded yet today. Dashboard will update as orders come in.' }
-      : { level: 'info', message: `${s.orders_today} orders processed today with EGP ${s.revenue_today.toLocaleString('en-US', { maximumFractionDigits: 0 })} in revenue. All operations on track.` });
+      ? { level: 'info', message: t('brief.noOrdersYet') }
+      : { level: 'info', message: t('brief.allOnTrack', { count: s.orders_today, revenue: money(s.revenue_today) }) });
   }
 
   return out.slice(0, 5);
@@ -75,7 +82,9 @@ interface Props {
 }
 
 export function DashboardAiBrief({ data, loading }: Props) {
-  const insights = data ? deriveInsights(data) : null;
+  const { t } = useTranslation('dashboard');
+  const { money } = useFormatter();
+  const insights = data ? deriveInsights(data, t, money) : null;
   const alertCount = insights?.filter(i => i.level === 'alert').length ?? 0;
 
   return (
@@ -88,14 +97,14 @@ export function DashboardAiBrief({ data, loading }: Props) {
         <div className="mb-3 flex items-center gap-2.5">
           <Sparkles className="h-3.5 w-3.5 shrink-0 text-violet-500" />
           <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-violet-600 dark:text-violet-400">
-            AI Executive Brief
+            {t('brief.header')}
           </span>
           {alertCount > 0 && (
             <span className="rounded-full bg-rose-500 px-1.5 py-0.5 text-[9px] font-bold leading-none text-white">
-              {alertCount} {alertCount === 1 ? 'alert' : 'alerts'}
+              {alertCount} {alertCount === 1 ? t('brief.alert') : t('brief.alerts')}
             </span>
           )}
-          <span className="ml-auto text-[10px] text-muted-foreground/50">Rule-based · updates every 5 min</span>
+          <span className="ml-auto text-[10px] text-muted-foreground/50">{t('brief.caption')}</span>
         </div>
 
         {/* Insights */}

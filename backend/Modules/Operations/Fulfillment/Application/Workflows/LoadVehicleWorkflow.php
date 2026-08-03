@@ -71,8 +71,8 @@ final class LoadVehicleWorkflow
         // (multiple orders with per-line allocation quantities), not a single order.
         // It is an explicitly authorized status writer: vehicle dispatch is a documented
         // exception to the single-order engine pattern.
-        OrderStatusGuard::withAuthorization(function () use ($orderIds, $assignment, $allocationsByOrder, &$shipped): void {
-            DB::transaction(function () use ($orderIds, $assignment, $allocationsByOrder, &$shipped): void {
+        OrderStatusGuard::withAuthorization(function () use ($orderIds, $allocationsByOrder, &$shipped): void {
+            DB::transaction(function () use ($orderIds, $allocationsByOrder, &$shipped): void {
                 foreach ($orderIds as $orderId) {
                     $order = Order::find($orderId);
 
@@ -102,26 +102,26 @@ final class LoadVehicleWorkflow
         // Audit trail + events after the savepoint releases
         foreach ($shipped as $order) {
             OrderEvent::log(
-                orderId:     $order->id,
-                type:        'load_vehicle',
+                orderId: $order->id,
+                type: 'load_vehicle',
                 description: "Order #{$order->order_number} inventory shipped. Vehicle {$assignment->assignment_number} dispatched.",
-                payload:     [
+                payload: [
                     'vehicle_assignment_id' => $assignment->id,
-                    'driver_id'             => $driverId,
+                    'driver_id' => $driverId,
                 ],
-                actorId:     $actorId,
+                actorId: $actorId,
             );
 
             event(new OrderDispatchedEvent(
-                orderId:             $order->id,
-                orderNumber:         $order->order_number,
-                companyId:           $order->company_id ?? '',
+                orderId: $order->id,
+                orderNumber: $order->order_number,
+                companyId: $order->company_id ?? '',
                 vehicleAssignmentId: $assignment->id,
-                vehicleId:           $assignment->vehicle_id,
-                driverId:            $driverId,
-                cogsAmount:          (float) ($order->actual_cogs_amount ?? 0),
-                dispatchedAt:        now()->toIso8601String(),
-                actorId:             $actorId,
+                vehicleId: $assignment->vehicle_id,
+                driverId: $driverId,
+                cogsAmount: (float) ($order->actual_cogs_amount ?? 0),
+                dispatchedAt: now()->toIso8601String(),
+                actorId: $actorId,
             ));
         }
 

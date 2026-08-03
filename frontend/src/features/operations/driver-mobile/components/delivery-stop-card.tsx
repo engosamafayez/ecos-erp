@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useFormatter } from '@/hooks/use-formatter';
 import { Phone } from 'lucide-react';
 import { ROUTES } from '@/router/routes';
 import type { DeliveryStop } from '../types/driver-mobile';
@@ -20,6 +21,7 @@ const STATUS_BORDER: Record<string, string> = {
 };
 
 export function DeliveryStopCard({ stop, tripId }: DeliveryStopCardProps) {
+  const { money } = useFormatter();
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -69,10 +71,7 @@ export function DeliveryStopCard({ stop, tripId }: DeliveryStopCardProps) {
       {/* Footer */}
       <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
         <span>
-          EGP{' '}
-          {Number(stop.collected_amount || 0).toLocaleString('en-EG', {
-            minimumFractionDigits: 2,
-          })}
+          {money(Number(stop.collected_amount || 0))}
         </span>
         {phone && (
           <a

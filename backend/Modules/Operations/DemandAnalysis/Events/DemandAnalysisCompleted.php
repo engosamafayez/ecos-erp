@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Operations\DemandAnalysis\Events;
 
+use DateTimeImmutable;
 use Illuminate\Foundation\Events\Dispatchable;
 
 final class DemandAnalysisCompleted
@@ -15,6 +16,6 @@ final class DemandAnalysisCompleted
         public readonly string $correlationId,
         public readonly int $productCount,
         public readonly int $totalOrders,
-        public readonly \DateTimeImmutable $completedAt,
+        public readonly DateTimeImmutable $completedAt,
     ) {}
 }

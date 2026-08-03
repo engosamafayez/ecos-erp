@@ -50,7 +50,7 @@ export function AppSidebar({
           size="icon"
           className="size-7"
           onClick={onCollapse}
-          aria-label="Expand sidebar"
+          aria-label={t('nav.expandSidebar')}
         >
           <ExpandIcon className="size-4" />
         </Button>
@@ -71,7 +71,7 @@ export function AppSidebar({
             size="icon"
             className="size-7 shrink-0"
             onClick={onCollapse}
-            aria-label="Collapse sidebar"
+            aria-label={t('nav.collapseSidebar')}
           >
             <CollapseIcon className="size-4" />
           </Button>
@@ -80,7 +80,9 @@ export function AppSidebar({
 
       {/* Nav items */}
       <nav
-        aria-label={`${t(`nav.groups.${activeModule.id}`, { defaultValue: activeModule.label })} navigation`}
+        aria-label={t('nav.moduleNav', {
+          module: t(`nav.groups.${activeModule.id}`, { defaultValue: activeModule.label }),
+        })}
         className="flex flex-col gap-0.5 overflow-y-auto p-2"
       >
         {activeModule.items.map((item) => {

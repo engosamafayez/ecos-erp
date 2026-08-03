@@ -10,14 +10,14 @@ use Modules\ClaudeBridge\Domain\Enums\ActorType;
 /**
  * Append-only. No UPDATE or DELETE is ever issued on this model.
  *
- * @property int          $id
- * @property string       $company_id
- * @property ActorType    $actor_type
- * @property string       $actor_id
- * @property string       $actor_name
- * @property string       $action
- * @property string|null  $task_id
- * @property string       $description
+ * @property int $id
+ * @property string $company_id
+ * @property ActorType $actor_type
+ * @property string $actor_id
+ * @property string $actor_name
+ * @property string $action
+ * @property string|null $task_id
+ * @property string $description
  * @property \Carbon\Carbon $occurred_at
  */
 final class AuditLog extends Model
@@ -42,7 +42,7 @@ final class AuditLog extends Model
     ];
 
     protected $casts = [
-        'actor_type'  => ActorType::class,
+        'actor_type' => ActorType::class,
         'occurred_at' => 'datetime',
     ];
 
@@ -55,13 +55,13 @@ final class AuditLog extends Model
         string $description,
         ?string $taskId = null,
     ): void {
-        static::create([
-            'company_id'  => $companyId,
-            'actor_type'  => $actorType,
-            'actor_id'    => $actorId,
-            'actor_name'  => $actorName,
-            'action'      => $action,
-            'task_id'     => $taskId,
+        self::create([
+            'company_id' => $companyId,
+            'actor_type' => $actorType,
+            'actor_id' => $actorId,
+            'actor_name' => $actorName,
+            'action' => $action,
+            'task_id' => $taskId,
             'description' => $description,
             'occurred_at' => now(),
         ]);

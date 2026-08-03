@@ -26,7 +26,7 @@ final class AvailabilityEngineServiceProvider extends ServiceProvider
             InventoryAvailabilityEngine::class,
             fn ($app) => new InventoryAvailabilityEngine(
                 inventory: $app->make(InventoryReadInterface::class),
-                resolver:  $app->make(RecipeResolverInterface::class),
+                resolver: $app->make(RecipeResolverInterface::class),
             ),
         );
     }

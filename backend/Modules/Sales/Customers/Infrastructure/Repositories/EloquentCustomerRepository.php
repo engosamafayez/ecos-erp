@@ -22,6 +22,13 @@ final class EloquentCustomerRepository implements CustomerRepositoryInterface
             $query->where('company_id', $companyId);
         }
 
+        $brandId = trim((string) ($filters['brand_id'] ?? ''));
+        if ($brandId !== '') {
+            $query->whereHas('customerBrands', function (Builder $builder) use ($brandId): void {
+                $builder->where('brand_id', $brandId);
+            });
+        }
+
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
             $query->where(function (Builder $builder) use ($search): void {
@@ -59,12 +66,12 @@ final class EloquentCustomerRepository implements CustomerRepositoryInterface
         $sortDir = strtolower((string) ($filters['sort_dir'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
         $perPage = max(1, min((int) ($filters['per_page'] ?? 10), 100));
 
-        return $query->orderBy($sortBy, $sortDir)->paginate($perPage);
+        return $query->with('customerBrands.brand')->orderBy($sortBy, $sortDir)->paginate($perPage);
     }
 
     public function findById(string $id): ?Customer
     {
-        return Customer::query()->find($id);
+        return Customer::query()->with('customerBrands.brand')->find($id);
     }
 
     public function create(array $attributes): Customer

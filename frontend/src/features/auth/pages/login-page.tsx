@@ -114,20 +114,9 @@ function CommerceCanvas() {
 
 // ── Data ───────────────────────────────────────────────────────────────────
 
-const FEATURES = [
-  'AI-Powered Operations',
-  'Real-Time Inventory',
-  'Manufacturing OS',
-  'Logistics & Distribution',
-  'CRM & Commerce',
-] as const;
-
-const STATS = [
-  { value: '125K+', label: 'Orders' },
-  { value: '99.8%', label: 'Accuracy' },
-  { value: '24', label: 'Warehouses' },
-  { value: '12', label: 'Channels' },
-];
+const STAT_VALUES = ['125K+', '99.8%', '24', '12'] as const;
+const STAT_KEYS = ['branding.statsOrders', 'branding.statsAccuracy', 'branding.statsWarehouses', 'branding.statsChannels'] as const;
+const FEATURE_KEYS = ['branding.featureAI', 'branding.featureInventory', 'branding.featureManufacturing', 'branding.featureLogistics', 'branding.featureCRM'] as const;
 
 const ENV_BADGE: Record<string, { label: string; bg: string; color: string } | undefined> = {
   development: { label: 'DEV', bg: 'rgba(34,211,238,0.15)', color: '#22D3EE' },
@@ -137,6 +126,7 @@ const ENV_BADGE: Record<string, { label: string; bg: string; color: string } | u
 // ── Branding panel ────────────────────────────────────────────────────────
 
 function BrandingPanel() {
+  const { t } = useTranslation('auth');
   return (
     <div
       className="hidden lg:flex"
@@ -221,7 +211,7 @@ function BrandingPanel() {
                 color: '#22D3EE',
               }}
             >
-              AI‑First ERP Platform
+              {t('branding.eyebrow')}
             </span>
           </div>
 
@@ -229,14 +219,14 @@ function BrandingPanel() {
             style={{
               margin: 0,
               marginBottom: '12px',
-              fontSize: 'clamp(23px, 2.5vw, 38px)',
+              fontSize: 'clamp(20px, 2.2vw, 33px)',
               fontWeight: 800,
-              lineHeight: 1.18,
+              lineHeight: 1.12,
               letterSpacing: '-0.03em',
               color: '#F1F5F9',
             }}
           >
-            Enterprise Commerce{' '}
+            {t('branding.headline')}{' '}
             <span
               style={{
                 background: 'linear-gradient(92deg, #818CF8 0%, #22D3EE 100%)',
@@ -245,7 +235,7 @@ function BrandingPanel() {
                 backgroundClip: 'text',
               }}
             >
-              Operating System
+              {t('branding.headlineGradient')}
             </span>
           </h1>
 
@@ -259,7 +249,7 @@ function BrandingPanel() {
               maxWidth: '400px',
             }}
           >
-            Unify orders, inventory, fulfillment, and distribution across every channel — powered by real-time intelligence.
+            {t('branding.description')}
           </p>
 
           {/* Stats row — compressed ~20% */}
@@ -275,11 +265,11 @@ function BrandingPanel() {
               border: '1px solid rgba(255,255,255,0.07)',
             }}
           >
-            {STATS.map((s) => (
+            {STAT_KEYS.map((key, i) => (
               <div
-                key={s.label}
+                key={key}
                 style={{
-                  padding: '10px 8px',
+                  padding: '8px 6px',
                   textAlign: 'center',
                   background: 'rgba(255,255,255,0.03)',
                 }}
@@ -294,10 +284,10 @@ function BrandingPanel() {
                     marginBottom: '3px',
                   }}
                 >
-                  {s.value}
+                  {STAT_VALUES[i]}
                 </div>
                 <div style={{ fontSize: '9px', color: '#475569', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                  {s.label}
+                  {t(key)}
                 </div>
               </div>
             ))}
@@ -311,9 +301,9 @@ function BrandingPanel() {
               gap: '6px 16px',
             }}
           >
-            {FEATURES.map((f) => (
+            {FEATURE_KEYS.map((key) => (
               <div
-                key={f}
+                key={key}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -345,7 +335,7 @@ function BrandingPanel() {
                     lineHeight: 1.3,
                   }}
                 >
-                  {f}
+                  {t(key)}
                 </span>
               </div>
             ))}
@@ -355,7 +345,7 @@ function BrandingPanel() {
         {/* Footer */}
         <div>
           <div style={{ color: '#1E293B', fontSize: '12px', marginBottom: '4px' }}>
-            © 2026 ECOS ERP · Enterprise Commerce Operating System
+            {t('branding.copyright')}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ color: '#1E293B', fontSize: '11px' }}>

@@ -11,22 +11,22 @@ use Modules\Operations\Preparation\Domain\Enums\StationStatus;
 use Modules\Operations\Preparation\Domain\Enums\StationType;
 
 /**
- * @property string          $id
- * @property string          $company_id
- * @property string          $warehouse_id
- * @property string          $name
- * @property string|null     $name_ar
- * @property StationType     $station_type
- * @property string|null     $zone
- * @property int|null        $capacity
- * @property StationStatus   $status
- * @property string|null     $notes
- * @property string          $created_by
- * @property string          $updated_by
- * @property \Carbon\Carbon  $created_at
- * @property \Carbon\Carbon  $updated_at
+ * @property string $id
+ * @property string $company_id
+ * @property string $warehouse_id
+ * @property string $name
+ * @property string|null $name_ar
+ * @property StationType $station_type
+ * @property string|null $zone
+ * @property int|null $capacity
+ * @property StationStatus $status
+ * @property string|null $notes
+ * @property string $created_by
+ * @property string $updated_by
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  * @property \Carbon\Carbon|null $deleted_at
- * @property string|null     $deleted_by
+ * @property string|null $deleted_by
  */
 class PreparationStation extends Model
 {
@@ -59,8 +59,8 @@ class PreparationStation extends Model
     {
         return [
             'station_type' => StationType::class,
-            'status'       => StationStatus::class,
-            'capacity'     => 'integer',
+            'status' => StationStatus::class,
+            'capacity' => 'integer',
         ];
     }
 }

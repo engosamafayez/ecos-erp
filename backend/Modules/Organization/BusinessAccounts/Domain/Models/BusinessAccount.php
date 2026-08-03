@@ -11,28 +11,28 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Commerce\Channels\Domain\Models\Channel;
-use Modules\Organization\BusinessAccounts\Infrastructure\Database\Factories\BusinessAccountFactory;
 use Modules\Organization\Brands\Domain\Models\Brand;
+use Modules\Organization\BusinessAccounts\Infrastructure\Database\Factories\BusinessAccountFactory;
 use Modules\Organization\Companies\Domain\Models\Company;
 
 /**
  * BusinessAccount aggregate root.
  * Represents an external platform account (Meta, WooCommerce, etc.) linked to a company/brand.
  *
- * @property string      $id
- * @property string      $company_id
+ * @property string $id
+ * @property string $company_id
  * @property string|null $brand_id
- * @property string      $code
- * @property string      $name
- * @property string      $provider
- * @property string      $status
+ * @property string $code
+ * @property string $name
+ * @property string $provider
+ * @property string $status
  * @property string|null $description
  * @property string|null $logo
- * @property array|null  $oauth_config
- * @property array|null  $api_keys
- * @property array|null  $webhook_config
- * @property array|null  $sync_settings
- * @property array|null  $external_metadata
+ * @property array|null $oauth_config
+ * @property array|null $api_keys
+ * @property array|null $webhook_config
+ * @property array|null $sync_settings
+ * @property array|null $external_metadata
  */
 class BusinessAccount extends Model
 {
@@ -64,10 +64,10 @@ class BusinessAccount extends Model
     protected function casts(): array
     {
         return [
-            'oauth_config'      => 'array',
-            'api_keys'          => 'array',
-            'webhook_config'    => 'array',
-            'sync_settings'     => 'array',
+            'oauth_config' => 'array',
+            'api_keys' => 'array',
+            'webhook_config' => 'array',
+            'sync_settings' => 'array',
             'external_metadata' => 'array',
         ];
     }

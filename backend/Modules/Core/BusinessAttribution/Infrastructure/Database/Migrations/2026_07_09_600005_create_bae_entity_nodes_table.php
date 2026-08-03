@@ -26,8 +26,8 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->unique(['node_type', 'entity_id'],  'bae_en_type_entity_uq');
-            $table->index(['company_id', 'node_type'],   'bae_en_co_type_idx');
+            $table->unique(['node_type', 'entity_id'], 'bae_en_type_entity_uq');
+            $table->index(['company_id', 'node_type'], 'bae_en_co_type_idx');
         });
     }
 

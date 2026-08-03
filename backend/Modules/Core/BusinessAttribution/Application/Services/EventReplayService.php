@@ -32,11 +32,11 @@ final class EventReplayService
             ->get();
 
         return [
-            'entity_type'  => $entityType,
-            'entity_id'    => $entityId,
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
             'total_events' => $events->count(),
-            'events'       => $events,
-            'replayed_at'  => now()->toIso8601String(),
+            'events' => $events,
+            'replayed_at' => now()->toIso8601String(),
         ];
     }
 
@@ -57,10 +57,10 @@ final class EventReplayService
             ->get();
 
         return [
-            'dna_id'       => $dnaId,
+            'dna_id' => $dnaId,
             'total_events' => $events->count(),
-            'events'       => $events,
-            'replayed_at'  => now()->toIso8601String(),
+            'events' => $events,
+            'replayed_at' => now()->toIso8601String(),
         ];
     }
 
@@ -82,9 +82,9 @@ final class EventReplayService
 
         return [
             'correlation_id' => $correlationId,
-            'total_events'   => $events->count(),
-            'events'         => $events,
-            'replayed_at'    => now()->toIso8601String(),
+            'total_events' => $events->count(),
+            'events' => $events,
+            'replayed_at' => now()->toIso8601String(),
         ];
     }
 
@@ -108,10 +108,10 @@ final class EventReplayService
             ->get();
 
         return [
-            'campaign_id'  => $campaignId,
+            'campaign_id' => $campaignId,
             'total_events' => $events->count(),
-            'events'       => $events,
-            'replayed_at'  => now()->toIso8601String(),
+            'events' => $events,
+            'replayed_at' => now()->toIso8601String(),
         ];
     }
 }

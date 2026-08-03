@@ -12,6 +12,7 @@ use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Orders\Domain\Models\OrderEvent;
+use ValueError;
 
 /**
  * Verifies payment proof for an order in Awaiting Payment status.
@@ -31,7 +32,7 @@ final class VerifyPaymentAction extends BaseAction
     public function execute(mixed ...$arguments): OperationResult
     {
         /** @var Order $order */
-        $order     = $arguments[0];
+        $order = $arguments[0];
         $proofPath = isset($arguments[1]) && $arguments[1] !== '' ? (string) $arguments[1] : null;
 
         if ($order->status !== OrderStatus::AwaitingPayment->value) {
@@ -50,11 +51,11 @@ final class VerifyPaymentAction extends BaseAction
         $actorId = Auth::id() !== null ? (string) Auth::id() : null;
 
         OrderEvent::log($order->id, 'payment_verified', 'Payment proof verified. Order advanced.', [
-            'to_status'  => $targetStatus,
+            'to_status' => $targetStatus,
             'proof_path' => $proofPath,
         ], $actorId);
 
-        return OperationResult::success($order->fresh(), 'Payment verified. Order is now ' . $targetStatus . '.');
+        return OperationResult::success($order->fresh(), 'Payment verified. Order is now '.$targetStatus.'.');
     }
 
     private function resolveTargetStatus(Order $order): string
@@ -62,7 +63,7 @@ final class VerifyPaymentAction extends BaseAction
         if ($order->channel_id !== null) {
             $channel = Channel::find($order->channel_id);
             if ($channel !== null) {
-                $policy      = $this->config->getBrandPolicy((string) $channel->brand_id, 'order');
+                $policy = $this->config->getBrandPolicy((string) $channel->brand_id, 'order');
                 $entryStatus = $policy['source_entry_policies']['manual'] ?? null;
 
                 if ($entryStatus !== null && $entryStatus !== 'preserve') {
@@ -72,11 +73,12 @@ final class VerifyPaymentAction extends BaseAction
                         if ($resolved !== OrderStatus::AwaitingPayment) {
                             return $resolved->value;
                         }
-                    } catch (\ValueError) { /* fall through */ }
+                    } catch (ValueError) { /* fall through */
+                    }
                 }
             }
         }
 
-        return OrderStatus::Processing->value;
+        return OrderStatus::InProgress->value;
     }
 }

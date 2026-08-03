@@ -44,8 +44,8 @@ class ChannelSynchronizationService
     {
         $payload = $event->toArray();
 
-        $productId   = $payload['product_id']   ?? null;
-        $warehouseId = $payload['warehouse_id']  ?? null;
+        $productId = $payload['product_id'] ?? null;
+        $warehouseId = $payload['warehouse_id'] ?? null;
 
         if (! is_string($productId) || $productId === '') {
             // Session-level events (InventoryCountApproved) have no product_id.
@@ -53,9 +53,10 @@ class ChannelSynchronizationService
             // which DOES carry a product_id. Nothing to dispatch here.
             Log::channel('daily')->info('[ChannelSync] Skipping session-level event — no product_id', [
                 'correlation_id' => $event->correlationId(),
-                'event_name'     => $event->eventName(),
-                'event_version'  => $event->eventVersion(),
+                'event_name' => $event->eventName(),
+                'event_version' => $event->eventVersion(),
             ]);
+
             return;
         }
 
@@ -64,9 +65,10 @@ class ChannelSynchronizationService
         if ($product === null) {
             Log::channel('daily')->warning('[ChannelSync] Product not found — skipping sync', [
                 'correlation_id' => $event->correlationId(),
-                'event_name'     => $event->eventName(),
-                'product_id'     => $productId,
+                'event_name' => $event->eventName(),
+                'product_id' => $productId,
             ]);
+
             return;
         }
 
@@ -80,12 +82,12 @@ class ChannelSynchronizationService
 
         Log::channel('daily')->info('[ChannelSync] Event processed', [
             'correlation_id' => $event->correlationId(),
-            'event_name'     => $event->eventName(),
-            'event_version'  => $event->eventVersion(),
-            'product_id'     => $productId,
-            'warehouse_id'   => $warehouseId,
-            'total_on_hand'  => $totalOnHand,
-            'jobs_dispatched'=> $dispatchCount,
+            'event_name' => $event->eventName(),
+            'event_version' => $event->eventVersion(),
+            'product_id' => $productId,
+            'warehouse_id' => $warehouseId,
+            'total_on_hand' => $totalOnHand,
+            'jobs_dispatched' => $dispatchCount,
         ]);
     }
 

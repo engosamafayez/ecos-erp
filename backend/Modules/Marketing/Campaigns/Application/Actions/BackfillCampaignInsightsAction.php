@@ -24,22 +24,22 @@ final class BackfillCampaignInsightsAction
      * @return array{total_campaign: int, total_adset: int, total_errors: int}
      */
     public function execute(
-        Campaign            $campaign,
+        Campaign $campaign,
         MarketingConnection $connection,
-        string              $dateStart,
-        string              $dateStop,
+        string $dateStart,
+        string $dateStop,
     ): array {
         $result = $this->insightService->backfill(
-            campaign:   $campaign,
+            campaign: $campaign,
             connection: $connection,
-            dateStart:  $dateStart,
-            dateStop:   $dateStop,
+            dateStart: $dateStart,
+            dateStop: $dateStop,
         );
 
         return [
             'total_campaign' => $result['campaign'],
-            'total_adset'    => $result['adset'],
-            'total_errors'   => $result['total_errors'],
+            'total_adset' => $result['adset'],
+            'total_errors' => $result['total_errors'],
         ];
     }
 }

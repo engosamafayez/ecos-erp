@@ -21,7 +21,7 @@ final class OrderRemovedFromWaveListener
 {
     public function __construct(
         private readonly DemandCalculationService $service,
-        private readonly ProductDemandCalculator  $productCalc,
+        private readonly ProductDemandCalculator $productCalc,
     ) {}
 
     public function handle(OrderRemovedFromWave $event): void

@@ -134,7 +134,8 @@ export function ChannelsPage() {
   const importProducts = useImportProducts();
   const importOrders = useImportOrders();
 
-  const items = data?.items ?? [];
+  // Memoised so the empty-state fallback keeps a stable identity between renders.
+  const items = useMemo(() => data?.items ?? [], [data]);
   const meta = data?.meta;
 
   // Reset row focus when the list changes (page/filter/search)
@@ -197,7 +198,7 @@ export function ChannelsPage() {
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   function toggleCol(key: string) {

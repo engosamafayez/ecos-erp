@@ -12,35 +12,35 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Modules\Operations\Loading\Domain\Enums\VehicleAssignmentStatus;
 
 /**
- * @property string                   $id
- * @property string                   $company_id
- * @property string                   $loading_session_id
- * @property string|null              $vehicle_plan_slot_id
- * @property string                   $vehicle_id
- * @property string                   $vehicle_registration_snapshot
- * @property string                   $vehicle_type_snapshot
- * @property float                    $capacity_weight_kg_snapshot
- * @property float                    $capacity_volume_m3_snapshot
- * @property bool                     $refrigerated_snapshot
- * @property string                   $assignment_number
- * @property VehicleAssignmentStatus  $status
- * @property int                      $orders_count
- * @property float                    $loading_weight_kg
- * @property float                    $loading_volume_m3
- * @property \Carbon\Carbon|null      $loading_started_at
- * @property \Carbon\Carbon|null      $loading_completed_at
- * @property \Carbon\Carbon|null      $dispatched_at
- * @property string|null              $dispatched_by
- * @property \Carbon\Carbon|null      $returned_at
- * @property \Carbon\Carbon|null      $reconciled_at
- * @property \Carbon\Carbon|null      $cancelled_at
- * @property string|null              $cancelled_by
- * @property string|null              $cancellation_reason
- * @property string|null              $notes
- * @property string                   $created_by
- * @property string                   $updated_by
- * @property \Carbon\Carbon           $created_at
- * @property \Carbon\Carbon           $updated_at
+ * @property string $id
+ * @property string $company_id
+ * @property string $loading_session_id
+ * @property string|null $vehicle_plan_slot_id
+ * @property string $vehicle_id
+ * @property string $vehicle_registration_snapshot
+ * @property string $vehicle_type_snapshot
+ * @property float $capacity_weight_kg_snapshot
+ * @property float $capacity_volume_m3_snapshot
+ * @property bool $refrigerated_snapshot
+ * @property string $assignment_number
+ * @property VehicleAssignmentStatus $status
+ * @property int $orders_count
+ * @property float $loading_weight_kg
+ * @property float $loading_volume_m3
+ * @property \Carbon\Carbon|null $loading_started_at
+ * @property \Carbon\Carbon|null $loading_completed_at
+ * @property \Carbon\Carbon|null $dispatched_at
+ * @property string|null $dispatched_by
+ * @property \Carbon\Carbon|null $returned_at
+ * @property \Carbon\Carbon|null $reconciled_at
+ * @property \Carbon\Carbon|null $cancelled_at
+ * @property string|null $cancelled_by
+ * @property string|null $cancellation_reason
+ * @property string|null $notes
+ * @property string $created_by
+ * @property string $updated_by
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class VehicleAssignment extends Model
 {
@@ -86,19 +86,19 @@ class VehicleAssignment extends Model
     protected function casts(): array
     {
         return [
-            'status'                     => VehicleAssignmentStatus::class,
-            'orders_count'               => 'integer',
+            'status' => VehicleAssignmentStatus::class,
+            'orders_count' => 'integer',
             'capacity_weight_kg_snapshot' => 'float',
             'capacity_volume_m3_snapshot' => 'float',
-            'refrigerated_snapshot'       => 'boolean',
-            'loading_weight_kg'           => 'float',
-            'loading_volume_m3'           => 'float',
-            'loading_started_at'          => 'datetime',
-            'loading_completed_at'        => 'datetime',
-            'dispatched_at'               => 'datetime',
-            'returned_at'                 => 'datetime',
-            'reconciled_at'               => 'datetime',
-            'cancelled_at'                => 'datetime',
+            'refrigerated_snapshot' => 'boolean',
+            'loading_weight_kg' => 'float',
+            'loading_volume_m3' => 'float',
+            'loading_started_at' => 'datetime',
+            'loading_completed_at' => 'datetime',
+            'dispatched_at' => 'datetime',
+            'returned_at' => 'datetime',
+            'reconciled_at' => 'datetime',
+            'cancelled_at' => 'datetime',
         ];
     }
 

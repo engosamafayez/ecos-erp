@@ -26,13 +26,13 @@ final class ExceptionRaisedNotification extends Notification
     public function toDatabase(mixed $notifiable): array
     {
         return [
-            'type'           => 'exception_raised',
-            'wave_id'        => $this->waveId,
-            'wave_number'    => $this->waveNumber,
-            'message'        => "{$this->exceptionType} exception on wave {$this->waveNumber}",
+            'type' => 'exception_raised',
+            'wave_id' => $this->waveId,
+            'wave_number' => $this->waveNumber,
+            'message' => "{$this->exceptionType} exception on wave {$this->waveNumber}",
             'exception_type' => $this->exceptionType,
-            'description'    => $this->description,
-            'severity'       => $this->severity,
+            'description' => $this->description,
+            'severity' => $this->severity,
         ];
     }
 }

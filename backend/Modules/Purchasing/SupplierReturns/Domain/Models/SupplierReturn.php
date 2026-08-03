@@ -55,17 +55,17 @@ class SupplierReturn extends Model
     ];
 
     protected $casts = [
-        'status'                 => SupplierReturnStatus::class,
-        'return_date'            => 'date',
-        'expected_credit_date'   => 'date',
-        'credit_received_date'   => 'date',
-        'total_return_value'     => 'decimal:4',
-        'credit_amount'          => 'decimal:4',
-        'inventory_restocked'    => 'boolean',
+        'status' => SupplierReturnStatus::class,
+        'return_date' => 'date',
+        'expected_credit_date' => 'date',
+        'credit_received_date' => 'date',
+        'total_return_value' => 'decimal:4',
+        'credit_amount' => 'decimal:4',
+        'inventory_restocked' => 'boolean',
         'inventory_restocked_at' => 'datetime',
-        'submitted_at'           => 'datetime',
-        'approved_at'            => 'datetime',
-        'completed_at'           => 'datetime',
+        'submitted_at' => 'datetime',
+        'approved_at' => 'datetime',
+        'completed_at' => 'datetime',
     ];
 
     public function supplier(): BelongsTo
@@ -95,14 +95,14 @@ class SupplierReturn extends Model
 
     public function generateReturnNumber(): string
     {
-        $prefix = 'SR-' . now()->format('Ym') . '-';
-        $last   = static::query()
-            ->where('return_number', 'like', $prefix . '%')
+        $prefix = 'SR-'.now()->format('Ym').'-';
+        $last = static::query()
+            ->where('return_number', 'like', $prefix.'%')
             ->orderByDesc('return_number')
             ->value('return_number');
 
         $seq = $last ? ((int) substr($last, -4)) + 1 : 1;
 
-        return $prefix . str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) $seq, 4, '0', STR_PAD_LEFT);
     }
 }

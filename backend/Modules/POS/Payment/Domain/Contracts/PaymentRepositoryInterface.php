@@ -9,6 +9,8 @@ use Modules\POS\Payment\Domain\Models\Payment;
 interface PaymentRepositoryInterface
 {
     public function findById(string $id): ?Payment;
+
     public function findByCartId(string $cartId): ?Payment;
+
     public function save(Payment $payment): void;
 }

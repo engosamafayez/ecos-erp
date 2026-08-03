@@ -22,25 +22,25 @@ namespace Modules\Marketing\Assets\Domain\Enums;
 enum AssetLifecycleStatus: string
 {
     /** Asset is reachable and healthy. Default state after discovery. */
-    case Active              = 'active';
+    case Active = 'active';
 
     /** Parent entity (e.g. Business) was disconnected; child is unreachable. */
-    case Disconnected        = 'disconnected';
+    case Disconnected = 'disconnected';
 
     /** Our permission tokens no longer grant access to this asset. */
-    case AccessRevoked       = 'access_revoked';
+    case AccessRevoked = 'access_revoked';
 
     /** Asset was deleted or removed on the provider side. */
     case RemovedFromProvider = 'removed_from_provider';
 
     /** Asset exists but is disabled at the platform level (e.g. ad account suspended). */
-    case Disabled            = 'disabled';
+    case Disabled = 'disabled';
 
     /** Manually archived in ECOS; excluded from sync but data preserved. */
-    case Archived            = 'archived';
+    case Archived = 'archived';
 
     /** Connector returned unexpected or unrecognised state. */
-    case Unknown             = 'unknown';
+    case Unknown = 'unknown';
 
     // ── Legacy compat — existing DB rows ────────────────────────────────────
     /** @deprecated Use Disabled */
@@ -89,28 +89,28 @@ enum AssetLifecycleStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Active              => 'Active',
-            self::Disconnected        => 'Disconnected',
-            self::AccessRevoked       => 'Access Revoked',
+            self::Active => 'Active',
+            self::Disconnected => 'Disconnected',
+            self::AccessRevoked => 'Access Revoked',
             self::RemovedFromProvider => 'Removed from Provider',
-            self::Disabled            => 'Disabled',
-            self::Archived            => 'Archived',
-            self::Unknown             => 'Unknown',
-            self::Inactive            => 'Inactive (legacy)',
+            self::Disabled => 'Disabled',
+            self::Archived => 'Archived',
+            self::Unknown => 'Unknown',
+            self::Inactive => 'Inactive (legacy)',
         };
     }
 
     public function color(): string
     {
         return match ($this) {
-            self::Active              => 'green',
-            self::Disconnected        => 'amber',
-            self::AccessRevoked       => 'red',
+            self::Active => 'green',
+            self::Disconnected => 'amber',
+            self::AccessRevoked => 'red',
             self::RemovedFromProvider => 'red',
-            self::Disabled            => 'slate',
-            self::Archived            => 'slate',
-            self::Unknown             => 'amber',
-            self::Inactive            => 'slate',
+            self::Disabled => 'slate',
+            self::Archived => 'slate',
+            self::Unknown => 'amber',
+            self::Inactive => 'slate',
         };
     }
 }

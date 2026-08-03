@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\POS\Receipt\Domain\Exceptions;
 
-final class ReceiptAlreadyVoidedException extends \RuntimeException
+use RuntimeException;
+
+final class ReceiptAlreadyVoidedException extends RuntimeException
 {
     public static function forReceipt(string $receiptNumber): self
     {

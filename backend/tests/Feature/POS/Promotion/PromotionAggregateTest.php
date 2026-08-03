@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Feature\POS\Promotion;
 
 use DateTimeImmutable;
+use DateTimeZone;
+use InvalidArgumentException;
 use Modules\POS\Promotion\Domain\Enums\PromotionStatus;
 use Modules\POS\Promotion\Domain\Events\PromotionActivated;
 use Modules\POS\Promotion\Domain\Events\PromotionCancelled;
@@ -15,7 +17,6 @@ use Modules\POS\Promotion\Domain\Exceptions\InvalidPromotionTransitionException;
 use Modules\POS\Promotion\Domain\Models\Promotion;
 use Modules\POS\Promotion\Domain\ValueObjects\PromotionCondition;
 use Modules\POS\Promotion\Domain\ValueObjects\PromotionReward;
-use Modules\POS\Shared\Domain\ValueObjects\Money;
 use Modules\POS\Shared\Domain\ValueObjects\Percentage;
 use Tests\TestCase;
 
@@ -24,16 +25,17 @@ final class PromotionAggregateTest extends TestCase
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private function makePromotion(
-        array              $conditions = [],
+        array $conditions = [],
         ?DateTimeImmutable $validUntil = null,
-        ?int               $maxUses    = null,
-        int                $priority   = 0,
+        ?int $maxUses = null,
+        int $priority = 0,
     ): Promotion {
         if (empty($conditions)) {
             $conditions = [PromotionCondition::anyPurchase()];
         }
-        $reward    = PromotionReward::percentageDiscount(Percentage::of('10'));
-        $validFrom = new DateTimeImmutable('2026-07-01 00:00:00', new \DateTimeZone('UTC'));
+        $reward = PromotionReward::percentageDiscount(Percentage::of('10'));
+        $validFrom = new DateTimeImmutable('2026-07-01 00:00:00', new DateTimeZone('UTC'));
+
         return Promotion::create('Summer Sale', $conditions, $reward, $validFrom, $validUntil, $maxUses, $priority);
     }
 
@@ -41,7 +43,7 @@ final class PromotionAggregateTest extends TestCase
 
     public function test_create_throws_on_empty_name(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $reward = PromotionReward::percentageDiscount(Percentage::of('10'));
         Promotion::create('', [PromotionCondition::anyPurchase()], $reward,
             new DateTimeImmutable('2026-07-01'));
@@ -49,30 +51,30 @@ final class PromotionAggregateTest extends TestCase
 
     public function test_create_throws_with_no_conditions(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $reward = PromotionReward::percentageDiscount(Percentage::of('10'));
         Promotion::create('Test', [], $reward, new DateTimeImmutable('2026-07-01'));
     }
 
     public function test_create_throws_when_condition_not_instance(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $reward = PromotionReward::percentageDiscount(Percentage::of('10'));
         Promotion::create('Test', ['not-a-condition'], $reward, new DateTimeImmutable('2026-07-01'));
     }
 
     public function test_create_throws_when_valid_until_not_after_valid_from(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $validFrom  = new DateTimeImmutable('2026-07-01');
+        $this->expectException(InvalidArgumentException::class);
+        $validFrom = new DateTimeImmutable('2026-07-01');
         $validUntil = new DateTimeImmutable('2026-07-01'); // same — not strictly after
-        $reward     = PromotionReward::percentageDiscount(Percentage::of('10'));
+        $reward = PromotionReward::percentageDiscount(Percentage::of('10'));
         Promotion::create('Test', [PromotionCondition::anyPurchase()], $reward, $validFrom, $validUntil);
     }
 
     public function test_create_throws_on_zero_max_uses(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $reward = PromotionReward::percentageDiscount(Percentage::of('10'));
         Promotion::create('Test', [PromotionCondition::anyPurchase()], $reward,
             new DateTimeImmutable('2026-07-01'), null, 0);
@@ -80,7 +82,7 @@ final class PromotionAggregateTest extends TestCase
 
     public function test_create_throws_on_negative_priority(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $reward = PromotionReward::percentageDiscount(Percentage::of('10'));
         Promotion::create('Test', [PromotionCondition::anyPurchase()], $reward,
             new DateTimeImmutable('2026-07-01'), null, null, -1);
@@ -97,7 +99,7 @@ final class PromotionAggregateTest extends TestCase
 
     public function test_created_promotion_fires_promotion_created_event(): void
     {
-        $promo  = $this->makePromotion();
+        $promo = $this->makePromotion();
         $events = $promo->pullDomainEvents();
 
         $this->assertCount(1, $events);
@@ -334,19 +336,19 @@ final class PromotionAggregateTest extends TestCase
     public function test_is_expired_by_date_when_past_valid_until(): void
     {
         // validFrom = 2026-07-01 00:00:00; validUntil must be strictly after validFrom
-        $validUntil = new DateTimeImmutable('2026-07-01 06:00:00', new \DateTimeZone('UTC'));
-        $promo      = $this->makePromotion(validUntil: $validUntil);
+        $validUntil = new DateTimeImmutable('2026-07-01 06:00:00', new DateTimeZone('UTC'));
+        $promo = $this->makePromotion(validUntil: $validUntil);
         // pass a "now" that is past validUntil
-        $now = new DateTimeImmutable('2026-07-01 12:00:00', new \DateTimeZone('UTC'));
+        $now = new DateTimeImmutable('2026-07-01 12:00:00', new DateTimeZone('UTC'));
 
         $this->assertTrue($promo->isExpiredByDate($now));
     }
 
     public function test_not_expired_by_date_before_valid_until(): void
     {
-        $validUntil = new DateTimeImmutable('2026-07-31 23:59:59', new \DateTimeZone('UTC'));
-        $promo      = $this->makePromotion(validUntil: $validUntil);
-        $now        = new DateTimeImmutable('2026-07-01 12:00:00', new \DateTimeZone('UTC'));
+        $validUntil = new DateTimeImmutable('2026-07-31 23:59:59', new DateTimeZone('UTC'));
+        $promo = $this->makePromotion(validUntil: $validUntil);
+        $now = new DateTimeImmutable('2026-07-01 12:00:00', new DateTimeZone('UTC'));
 
         $this->assertFalse($promo->isExpiredByDate($now));
     }
@@ -354,7 +356,7 @@ final class PromotionAggregateTest extends TestCase
     public function test_no_valid_until_never_expired_by_date(): void
     {
         $promo = $this->makePromotion(); // no validUntil
-        $far   = new DateTimeImmutable('2099-12-31', new \DateTimeZone('UTC'));
+        $far = new DateTimeImmutable('2099-12-31', new DateTimeZone('UTC'));
 
         $this->assertFalse($promo->isExpiredByDate($far));
     }

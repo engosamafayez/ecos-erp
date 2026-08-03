@@ -25,12 +25,12 @@ final class WarehouseFactory extends Factory
     {
         return [
             'company_id' => Company::factory(),
-            'code'       => strtoupper($this->faker->unique()->bothify('WH-####')),
-            'name'       => $this->faker->city().' Warehouse',
-            'address'    => $this->faker->streetAddress(),
-            'city'       => $this->faker->city(),
-            'country'    => $this->faker->country(),
-            'is_active'  => $this->faker->boolean(85),
+            'code' => strtoupper($this->faker->unique()->bothify('WH-####')),
+            'name' => $this->faker->city().' Warehouse',
+            'address' => $this->faker->streetAddress(),
+            'city' => $this->faker->city(),
+            'country' => $this->faker->country(),
+            'is_active' => $this->faker->boolean(85),
         ];
     }
 }

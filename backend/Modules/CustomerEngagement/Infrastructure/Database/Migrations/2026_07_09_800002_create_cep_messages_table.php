@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -40,10 +42,10 @@ return new class extends Migration
             $table->timestamp('created_at')->useCurrent();
 
             // Indexes (prefix: cep_msg_)
-            $table->index(['conversation_id', 'sent_at'],   'cep_msg_conv_at_idx');
-            $table->index(['conversation_id', 'is_read'],   'cep_msg_conv_read_idx');
-            $table->index(['direction', 'sent_at'],         'cep_msg_dir_at_idx');
-            $table->index(['external_message_id'],          'cep_msg_ext_idx');
+            $table->index(['conversation_id', 'sent_at'], 'cep_msg_conv_at_idx');
+            $table->index(['conversation_id', 'is_read'], 'cep_msg_conv_read_idx');
+            $table->index(['direction', 'sent_at'], 'cep_msg_dir_at_idx');
+            $table->index(['external_message_id'], 'cep_msg_ext_idx');
         });
     }
 

@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\POS\Shift\Domain\Exceptions;
 
+use DomainException;
 use Modules\POS\Shared\Domain\Enums\ShiftStatus;
 
-final class InvalidShiftTransitionException extends \DomainException
+final class InvalidShiftTransitionException extends DomainException
 {
     public static function cannotTransition(
-        string      $shiftId,
+        string $shiftId,
         ShiftStatus $from,
         ShiftStatus $to,
     ): self {

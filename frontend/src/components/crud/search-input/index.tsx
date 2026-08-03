@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useRef, useState } from 'react';
 import { Search, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,11 +22,13 @@ type SearchInputProps = {
  */
 export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
   function SearchInput(
-    { onChange, placeholder = 'Search…', initialValue = '', debounceMs = 300, className },
+    { onChange, placeholder, initialValue = '', debounceMs = 300, className },
     ref,
   ) {
+    const { t } = useTranslation('common');
     const [value, setValue] = useState(initialValue);
     const onChangeRef = useRef(onChange);
+    const resolvedPlaceholder = placeholder ?? t('search.placeholder');
 
     useEffect(() => {
       onChangeRef.current = onChange;
@@ -38,24 +41,24 @@ export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(
 
     return (
       <div className={cn('relative w-full max-w-sm', className)}>
-        <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2" />
+        <Search className="text-muted-foreground pointer-events-none absolute top-1/2 start-2.5 size-4 -translate-y-1/2" />
         <Input
           ref={ref}
           type="text"
           value={value}
-          placeholder={placeholder}
-          aria-label={placeholder}
+          placeholder={resolvedPlaceholder}
+          aria-label={resolvedPlaceholder}
           onChange={(event) => setValue(event.target.value)}
-          className="pr-8 pl-8"
+          className="pe-8 ps-8"
         />
         {value ? (
           <Button
             type="button"
             variant="ghost"
             size="icon"
-            aria-label="Clear search"
+            aria-label={t('search.clear')}
             onClick={() => setValue('')}
-            className="absolute top-1/2 right-1 size-7 -translate-y-1/2"
+            className="absolute top-1/2 end-1 size-7 -translate-y-1/2"
           >
             <X className="size-3.5" />
           </Button>

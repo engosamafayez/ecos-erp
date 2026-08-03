@@ -29,23 +29,27 @@ class WaveIdempotencyTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Company   $company;
+    private Company $company;
+
     private Warehouse $warehouse;
-    private WaveLifecycleService   $lifecycle;
+
+    private WaveLifecycleService $lifecycle;
+
     private WavePreparationService $preparationSvc;
-    private WaveMembershipService  $membership;
+
+    private WaveMembershipService $membership;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->company   = Company::factory()->create();
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
 
-        $dispatcher           = new DemandRefreshDispatcher();
-        $this->lifecycle      = new WaveLifecycleService(new WaveManager(), $dispatcher);
+        $dispatcher = new DemandRefreshDispatcher;
+        $this->lifecycle = new WaveLifecycleService(new WaveManager, $dispatcher);
         $this->preparationSvc = new WavePreparationService($dispatcher);
-        $this->membership     = new WaveMembershipService($dispatcher);
+        $this->membership = new WaveMembershipService($dispatcher);
     }
 
     public function test_duplicate_wave_creation_returns_same_wave(): void
@@ -92,7 +96,7 @@ class WaveIdempotencyTest extends TestCase
 
     public function test_duplicate_order_attachment_is_ignored_via_unique_constraint(): void
     {
-        $wave    = $this->makeWave(WaveStatus::Collecting);
+        $wave = $this->makeWave(WaveStatus::Collecting);
         $orderId = 'order-idempotency-test';
 
         $this->attachOrderRecord($wave, $orderId, 'ORD-IDEM');
@@ -106,20 +110,20 @@ class WaveIdempotencyTest extends TestCase
     private function makeWave(WaveStatus $status): PreparationWave
     {
         return PreparationWave::create([
-            'company_id'           => $this->company->id,
-            'warehouse_id'         => $this->warehouse->id,
-            'wave_number'          => 'PREP-' . now()->format('Ym') . '-' . str_pad((string) random_int(1, 9999), 6, '0', STR_PAD_LEFT),
-            'planning_date'        => today()->toDateString(),
-            'status'               => $status->value,
-            'orders_count'         => 0,
-            'products_count'       => 0,
-            'lines_count'          => 0,
+            'company_id' => $this->company->id,
+            'warehouse_id' => $this->warehouse->id,
+            'wave_number' => 'PREP-'.now()->format('Ym').'-'.str_pad((string) random_int(1, 9999), 6, '0', STR_PAD_LEFT),
+            'planning_date' => today()->toDateString(),
+            'status' => $status->value,
+            'orders_count' => 0,
+            'products_count' => 0,
+            'lines_count' => 0,
             'total_units_required' => 0,
             'total_units_prepared' => 0,
-            'shortage_detected'    => false,
-            'wave_type'            => 'engine',
-            'created_by'           => 'system',
-            'updated_by'           => 'system',
+            'shortage_detected' => false,
+            'wave_type' => 'engine',
+            'created_by' => 'system',
+            'updated_by' => 'system',
         ]);
     }
 
@@ -128,15 +132,15 @@ class WaveIdempotencyTest extends TestCase
         // Use DB insert to catch duplicate silently (mirrors what MembershipService does via try/catch)
         try {
             PreparationWaveOrder::create([
-                'company_id'          => $wave->company_id,
+                'company_id' => $wave->company_id,
                 'preparation_wave_id' => $wave->id,
-                'order_id'            => $orderId,
-                'order_number'        => $orderNumber,
-                'order_confirmed_at'  => now(),
-                'is_paid'             => false,
-                'preparation_priority'=> 5,
-                'added_at'            => now(),
-                'added_by'            => 'system',
+                'order_id' => $orderId,
+                'order_number' => $orderNumber,
+                'order_confirmed_at' => now(),
+                'is_paid' => false,
+                'preparation_priority' => 5,
+                'added_at' => now(),
+                'added_by' => 'system',
             ]);
         } catch (\Illuminate\Database\UniqueConstraintViolationException) {
             // Expected on duplicate — test asserts only 1 row exists

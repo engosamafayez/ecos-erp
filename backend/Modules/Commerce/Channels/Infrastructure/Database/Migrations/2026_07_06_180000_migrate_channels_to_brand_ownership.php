@@ -16,19 +16,19 @@ return new class extends Migration
             'UPDATE channels SET brand_id = ('
             .' SELECT id FROM brands WHERE company_id = channels.company_id'
             .' ORDER BY created_at ASC LIMIT 1'
-            .') WHERE brand_id IS NULL'
+            .') WHERE brand_id IS NULL',
         );
 
         // 2. Drop the old unique constraint [company_id, code]
         try {
             if (Schema::hasColumn('channels', 'brand_id')) {
-            return;
-        }
+                return;
+            }
 
-        Schema::table('channels', function (Blueprint $table): void {
+            Schema::table('channels', function (Blueprint $table): void {
                 $table->dropUnique(['company_id', 'code']);
             });
-        } catch (\Exception) {
+        } catch (Exception) {
             // Constraint may already be gone (partial migration re-run)
         }
 
@@ -52,13 +52,13 @@ return new class extends Migration
         // 4. Add unique constraint [brand_id, code]
         try {
             if (Schema::hasColumn('channels', 'brand_id')) {
-            return;
-        }
+                return;
+            }
 
-        Schema::table('channels', function (Blueprint $table): void {
+            Schema::table('channels', function (Blueprint $table): void {
                 $table->unique(['brand_id', 'code'], 'channels_brand_id_code_unique');
             });
-        } catch (\Exception) {
+        } catch (Exception) {
             // Constraint already exists
         }
 

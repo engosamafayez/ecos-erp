@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\POS\Receipt\Infrastructure\Numbering;
 
+use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
 use Modules\POS\Receipt\Domain\Contracts\ReceiptNumberingStrategyInterface;
 
@@ -20,10 +21,10 @@ use Modules\POS\Receipt\Domain\Contracts\ReceiptNumberingStrategyInterface;
  */
 final class SequentialReceiptNumberingStrategy implements ReceiptNumberingStrategyInterface
 {
-    public function next(string $terminalId, \DateTimeImmutable $issuedAt): string
+    public function next(string $terminalId, DateTimeImmutable $issuedAt): string
     {
-        $date          = $issuedAt->format('Y-m-d');
-        $displayDate   = $issuedAt->format('Ymd');
+        $date = $issuedAt->format('Y-m-d');
+        $displayDate = $issuedAt->format('Ymd');
         $terminalShort = $this->abbreviateTerminalId($terminalId);
 
         $sequence = DB::transaction(function () use ($terminalId, $date): int {
@@ -35,9 +36,9 @@ final class SequentialReceiptNumberingStrategy implements ReceiptNumberingStrate
 
             DB::table('pos_receipt_counters')->upsert(
                 [
-                    'terminal_id'  => $terminalId,
+                    'terminal_id' => $terminalId,
                     'counter_date' => $date,
-                    'sequence'     => 1,
+                    'sequence' => 1,
                 ],
                 ['terminal_id', 'counter_date'],
                 ['sequence' => DB::raw('pos_receipt_counters.sequence + 1')],

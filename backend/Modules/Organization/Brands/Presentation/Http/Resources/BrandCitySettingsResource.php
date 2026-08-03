@@ -14,25 +14,25 @@ class BrandCitySettingsResource extends JsonResource
         $city = $this->whenLoaded('city');
 
         return [
-            'id'                => $this->id,
-            'brand_id'          => $this->brand_id,
-            'city_id'           => $this->city_id,
-            'is_enabled'        => $this->is_enabled,
-            'shipping_price'    => $this->shipping_price !== null
+            'id' => $this->id,
+            'brand_id' => $this->brand_id,
+            'city_id' => $this->city_id,
+            'is_enabled' => $this->is_enabled,
+            'shipping_price' => $this->shipping_price !== null
                 ? (float) $this->shipping_price
                 : null,
-            'supports_cod'      => $this->supports_cod,
+            'supports_cod' => $this->supports_cod,
             'is_remote_override' => $this->is_remote_override,
-            'city'              => $city ? [
-                'id'                       => $city->id,
-                'name_ar'                  => $city->name_ar,
-                'name_en'                  => $city->name_en,
-                'is_active'                => $city->is_active,
+            'city' => $city ? [
+                'id' => $city->id,
+                'name_ar' => $city->name_ar,
+                'name_en' => $city->name_en,
+                'is_active' => $city->is_active,
                 'effective_shipping_price' => (float) $city->effective_shipping_price,
-                'is_remote_area'           => $city->is_remote_area,
-                'governorate_id'           => $city->governorate_id,
+                'is_remote_area' => $city->is_remote_area,
+                'governorate_id' => $city->governorate_id,
             ] : null,
-            'updated_at'        => $this->updated_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

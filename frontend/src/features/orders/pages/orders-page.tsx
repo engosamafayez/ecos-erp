@@ -254,7 +254,9 @@ export function OrdersPage() {
   const bulkReturnToConfirmed   = useBulkReturnToConfirmed();
   const bulkResumeToConfirmed   = useBulkResumeToConfirmed();
 
-  const orders = data?.items ?? [];
+  // useMemo, not a bare `?? []`: the fallback minted a new array on every render
+  // while the page was loading, re-running every dependent effect and memo.
+  const orders = useMemo(() => data?.items ?? [], [data]);
 
   // ── Row selection ─────────────────────────────────────────────────────────────
   const selectionHook = useRowSelection({ items: orders, getId: (o) => o.id });
@@ -484,7 +486,7 @@ export function OrdersPage() {
       case 'resume':
       case 'retry_reservation':        bulkResume.mutate(ids); break;
       case 'resume_confirmed':         bulkResumeToConfirmed.mutate(ids); break;
-      case 'review':
+      case 'review':                   // on_hold action
       case 'delivery_failed':          bulkReview.mutate({ ids }); break;
       case 'return':                   bulkReturn.mutate({ ids }); break;
       case 'return_to_confirmed':

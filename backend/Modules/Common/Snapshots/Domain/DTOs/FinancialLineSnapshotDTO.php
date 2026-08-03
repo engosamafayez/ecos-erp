@@ -13,7 +13,7 @@ final readonly class FinancialLineSnapshotDTO
 {
     public function __construct(
         /** ID of the parent aggregate (e.g. order_id for Orders, sale_id for POS). */
-        public string  $aggregateId,
+        public string $aggregateId,
 
         /** ID of the source line entity (nullable for safety). */
         public ?string $sourceLineId,
@@ -22,27 +22,27 @@ final readonly class FinancialLineSnapshotDTO
         public ?string $productSku,
         public ?string $productName,
 
-        public float   $quantity,
-        public float   $unitPriceAtSale,
-        public ?float  $regularPriceAtSale,
-        public ?float  $salePriceAtSale,
-        public float   $lineTotal,
+        public float $quantity,
+        public float $unitPriceAtSale,
+        public ?float $regularPriceAtSale,
+        public ?float $salePriceAtSale,
+        public float $lineTotal,
 
         // Cost breakdown per unit
-        public ?float  $rawMaterialCost,
-        public ?float  $packagingCost,
-        public ?float  $manufacturingCost,
-        public ?float  $otherCost,
-        public ?float  $recipeCost,
-        public ?float  $unitCost,
-        public ?float  $lineCost,
+        public ?float $rawMaterialCost,
+        public ?float $packagingCost,
+        public ?float $manufacturingCost,
+        public ?float $otherCost,
+        public ?float $recipeCost,
+        public ?float $unitCost,
+        public ?float $lineCost,
 
         // Margin (pre-computed by the calling module)
-        public float   $targetMarginPercent,
+        public float $targetMarginPercent,
 
         // Recipe provenance
         public ?string $bomId,
-        public ?int    $bomVersionNumber,
+        public ?int $bomVersionNumber,
         public ?string $sourceRecipeVersion,
 
         // Price review provenance
@@ -51,6 +51,6 @@ final readonly class FinancialLineSnapshotDTO
         public ?string $priceReviewApprovedBy,
 
         // Full cost audit JSON
-        public ?array  $costSnapshot,
+        public ?array $costSnapshot,
     ) {}
 }

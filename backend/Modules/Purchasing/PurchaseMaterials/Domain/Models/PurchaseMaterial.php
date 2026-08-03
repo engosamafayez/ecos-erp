@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Modules\Purchasing\PurchaseMaterials\Domain\Enums\PurchaseMaterialPriority;
@@ -21,27 +22,27 @@ use Modules\Purchasing\PurchaseMaterials\Domain\Enums\PurchaseMaterialStatus;
  * Represents a warehouse-initiated procurement request.
  * Supplier selection occurs ONLY during Procurement Review — never here.
  *
- * @property string                    $id
- * @property string                    $request_number
- * @property string|null               $company_id
- * @property string|null               $channel_id
- * @property string                    $warehouse_id
- * @property PurchaseMaterialStatus    $status
- * @property PurchaseMaterialPriority  $priority
- * @property string|null               $requested_by
- * @property string|null               $assigned_buyer
+ * @property string $id
+ * @property string $request_number
+ * @property string|null $company_id
+ * @property string|null $channel_id
+ * @property string $warehouse_id
+ * @property PurchaseMaterialStatus $status
+ * @property PurchaseMaterialPriority $priority
+ * @property string|null $requested_by
+ * @property string|null $assigned_buyer
  * @property \Illuminate\Support\Carbon|null $required_date
  * @property \Illuminate\Support\Carbon|null $submitted_at
  * @property \Illuminate\Support\Carbon|null $approved_at
- * @property numeric-string            $estimated_value
- * @property numeric-string            $approved_value
- * @property numeric-string            $purchased_value
- * @property string|null               $approved_by
- * @property string|null               $rejected_by
- * @property string|null               $rejection_reason
- * @property string|null               $created_by
- * @property string|null               $updated_by
- * @property string|null               $notes
+ * @property numeric-string $estimated_value
+ * @property numeric-string $approved_value
+ * @property numeric-string $purchased_value
+ * @property string|null $approved_by
+ * @property string|null $rejected_by
+ * @property string|null $rejection_reason
+ * @property string|null $created_by
+ * @property string|null $updated_by
+ * @property string|null $notes
  */
 class PurchaseMaterial extends Model
 {
@@ -87,15 +88,15 @@ class PurchaseMaterial extends Model
     protected function casts(): array
     {
         return [
-            'status'          => PurchaseMaterialStatus::class,
-            'priority'        => PurchaseMaterialPriority::class,
-            'required_date'   => 'date',
-            'submitted_at'    => 'datetime',
-            'approved_at'     => 'datetime',
-            'estimated_value'              => 'decimal:2',
-            'approved_value'               => 'decimal:2',
-            'purchased_value'              => 'decimal:2',
-            'clarification_requested_at'   => 'datetime',
+            'status' => PurchaseMaterialStatus::class,
+            'priority' => PurchaseMaterialPriority::class,
+            'required_date' => 'date',
+            'submitted_at' => 'datetime',
+            'approved_at' => 'datetime',
+            'estimated_value' => 'decimal:2',
+            'approved_value' => 'decimal:2',
+            'purchased_value' => 'decimal:2',
+            'clarification_requested_at' => 'datetime',
         ];
     }
 
@@ -109,6 +110,12 @@ class PurchaseMaterial extends Model
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class);
+    }
+
+    /** @return BelongsTo<Channel, $this> */
+    public function channel(): BelongsTo
+    {
+        return $this->belongsTo(Channel::class);
     }
 
     /** @return HasMany<PurchaseMaterialLine, $this> */

@@ -25,15 +25,15 @@ final class PreparedPoolController extends Controller
         $this->authorize('viewAny', PreparedProductsPool::class);
 
         $request->validate([
-            'warehouse_id'   => ['required', 'uuid'],
+            'warehouse_id' => ['required', 'uuid'],
             'quality_status' => ['nullable', 'string', 'in:pending_review,passed,failed'],
             'available_only' => ['nullable', 'boolean'],
-            'page'           => ['nullable', 'integer', 'min:1'],
-            'per_page'       => ['nullable', 'integer', 'min:1', 'max:100'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
         $companyId = $request->user()->company_id;
-        $perPage   = (int) ($request->query('per_page', 25));
+        $perPage = (int) ($request->query('per_page', 25));
 
         $query = PreparedProductsPool::where('company_id', $companyId)
             ->where('warehouse_id', $request->query('warehouse_id'))
@@ -50,22 +50,22 @@ final class PreparedPoolController extends Controller
 
         return $this->success([
             'data' => $paginator->getCollection()->map(fn ($pool) => [
-                'id'                       => $pool->id,
-                'product_id'               => $pool->product_id,
-                'sku'                      => $pool->sku_snapshot,
-                'name'                     => $pool->name_snapshot,
-                'preparation_wave_number'  => $waveNumberMap[$pool->preparation_wave_id] ?? null,
-                'quantity_available'       => $pool->quantity_available,
-                'quantity_reserved'        => $pool->quantity_reserved,
-                'quantity_loaded'          => $pool->quantity_loaded,
-                'quality_status'           => $pool->quality_status?->value,
-                'quality_checked_at'       => $pool->quality_checked_at?->toIso8601String(),
-                'prepared_at'              => $pool->prepared_at?->toIso8601String(),
+                'id' => $pool->id,
+                'product_id' => $pool->product_id,
+                'sku' => $pool->sku_snapshot,
+                'name' => $pool->name_snapshot,
+                'preparation_wave_number' => $waveNumberMap[$pool->preparation_wave_id] ?? null,
+                'quantity_available' => $pool->quantity_available,
+                'quantity_reserved' => $pool->quantity_reserved,
+                'quantity_loaded' => $pool->quantity_loaded,
+                'quality_status' => $pool->quality_status?->value,
+                'quality_checked_at' => $pool->quality_checked_at?->toIso8601String(),
+                'prepared_at' => $pool->prepared_at?->toIso8601String(),
             ])->values()->all(),
             'meta' => [
-                'page'      => $paginator->currentPage(),
-                'per_page'  => $paginator->perPage(),
-                'total'     => $paginator->total(),
+                'page' => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
                 'last_page' => $paginator->lastPage(),
             ],
         ]);
@@ -73,8 +73,8 @@ final class PreparedPoolController extends Controller
 
     public function updateQuality(
         UpdatePoolQualityRequest $request,
-        string                   $poolId,
-        UpdatePoolQualityAction  $action,
+        string $poolId,
+        UpdatePoolQualityAction $action,
     ): JsonResponse {
         $this->guardModuleEnabled($request->user()?->company_id);
 
@@ -89,7 +89,7 @@ final class PreparedPoolController extends Controller
         $this->authorize('updateQuality', $pool);
 
         $validated = $request->validated();
-        $result    = $action->execute(
+        $result = $action->execute(
             $pool,
             $validated['quality_result'],
             (string) (string) $request->user()->id,
@@ -97,8 +97,8 @@ final class PreparedPoolController extends Controller
         );
 
         return $this->success([
-            'id'               => $result->id,
-            'quality_status'   => $result->quality_status?->value,
+            'id' => $result->id,
+            'quality_status' => $result->quality_status?->value,
             'quality_checked_at' => $result->quality_checked_at?->toIso8601String(),
         ]);
     }

@@ -1,3 +1,4 @@
+import { useFormatter } from '@/hooks/use-formatter';
 import { useMemo, useState } from 'react';
 import {
   AlertCircle,
@@ -19,6 +20,7 @@ import {
   Users,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 import { WorkspaceHeader } from '@/components/workspace/header/workspace-header';
 import { SmartToolbar }   from '@/components/data-grid/smart-toolbar';
@@ -125,7 +127,15 @@ function getViewMode(): ViewMode {
 
 // ── Missing reason badge ──────────────────────────────────────────────────────
 
+/** Raw API reason value → translation key. Falls back to the raw value. */
+const MISSING_REASON_KEYS: Record<string, string> = {
+  'Missing city':                 'planning.missingReason.missingCity',
+  'Unknown city':                 'planning.missingReason.unknownCity',
+  'City not assigned to a zone':  'planning.missingReason.cityNotAssigned',
+};
+
 function MissingReasonBadge({ reason }: { reason: string }) {
+  const { t } = useTranslation('logistics');
   const color =
     reason === 'Missing city'
       ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
@@ -133,7 +143,11 @@ function MissingReasonBadge({ reason }: { reason: string }) {
         ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300'
         : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300';
 
-  return <Badge className={`text-[10px] font-normal ${color}`}>{reason}</Badge>;
+  const key = MISSING_REASON_KEYS[reason];
+
+  return (
+    <Badge className={`text-[10px] font-normal ${color}`}>{key ? t(key) : reason}</Badge>
+  );
 }
 
 // ── Unassigned panel ──────────────────────────────────────────────────────────
@@ -145,33 +159,38 @@ function UnassignedPanel({
   orders: UnassignedOrder[];
   isLoading: boolean;
 }) {
+  const { t } = useTranslation('logistics');
+  const { money } = useFormatter();
+
   return (
     <div className="rounded-lg border border-amber-200 bg-amber-50/50 dark:border-amber-700/40 dark:bg-amber-950/20">
       <div className="flex items-center gap-2 px-4 py-3 border-b border-amber-200 dark:border-amber-700/40">
         <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
         <h3 className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-          Unassigned Orders
+          {t('planning.unassigned.title')}
         </h3>
-        <p className="text-xs text-amber-600 dark:text-amber-400 ml-1">
-          Assign city → zone in Distribution Zones to resolve these.
+        <p className="text-xs text-amber-600 dark:text-amber-400 ms-1">
+          {t('planning.unassigned.hint')}
         </p>
       </div>
 
       {isLoading ? (
-        <p className="text-xs text-muted-foreground px-4 py-3">Loading…</p>
+        <p className="text-xs text-muted-foreground px-4 py-3">{t('common.loading')}</p>
       ) : !orders.length ? (
-        <p className="text-xs text-muted-foreground px-4 py-3">No unassigned orders.</p>
+        <p className="text-xs text-muted-foreground px-4 py-3">
+          {t('planning.unassigned.empty')}
+        </p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-amber-200 dark:border-amber-700/40 text-muted-foreground">
-                <th className="text-start py-2 px-4 font-medium">Order #</th>
-                <th className="text-start py-2 px-3 font-medium">Customer</th>
-                <th className="text-start py-2 px-3 font-medium">Phone</th>
-                <th className="text-start py-2 px-3 font-medium">City</th>
-                <th className="text-start py-2 px-3 font-medium">Why unassigned</th>
-                <th className="text-end py-2 px-3 font-medium">Total</th>
+                <th className="text-start py-2 px-4 font-medium">{t('planning.unassigned.colOrderNumber')}</th>
+                <th className="text-start py-2 px-3 font-medium">{t('planning.unassigned.colCustomer')}</th>
+                <th className="text-start py-2 px-3 font-medium">{t('common.phone')}</th>
+                <th className="text-start py-2 px-3 font-medium">{t('common.city')}</th>
+                <th className="text-start py-2 px-3 font-medium">{t('planning.unassigned.colReason')}</th>
+                <th className="text-end py-2 px-3 font-medium">{t('common.total')}</th>
                 <th className="py-2 px-3" />
               </tr>
             </thead>
@@ -196,7 +215,7 @@ function UnassignedPanel({
                     <MissingReasonBadge reason={o.missing_reason} />
                   </td>
                   <td className="py-2 px-3 text-end tabular-nums font-medium">
-                    EGP {fmt(o.total)}
+                    {money(o.total)}
                   </td>
                   <td className="py-2 px-3">
                     <Link
@@ -204,7 +223,7 @@ function UnassignedPanel({
                       target="_blank"
                       className="text-primary hover:underline flex items-center gap-0.5 whitespace-nowrap"
                     >
-                      Open
+                      {t('planning.unassigned.open')}
                       <ExternalLink className="h-2.5 w-2.5" />
                     </Link>
                   </td>
@@ -226,26 +245,26 @@ function SortTh({
   sortBy,
   sortDir,
   onSort,
-  align = 'left',
+  align = 'start',
 }: {
   label: string;
   col: SortKey | null;
   sortBy: SortKey;
   sortDir: 'asc' | 'desc';
   onSort: (col: SortKey) => void;
-  align?: 'left' | 'right';
+  align?: 'start' | 'end';
 }) {
   const active = col !== null && sortBy === col;
   const Icon = active ? (sortDir === 'asc' ? ArrowUp : ArrowDown) : ArrowUpDown;
 
   return (
     <th
-      className={`py-2 px-3 font-medium whitespace-nowrap text-${align} ${
-        col ? 'cursor-pointer select-none hover:text-foreground' : ''
-      }`}
+      className={`py-2 px-3 font-medium whitespace-nowrap ${
+        align === 'end' ? 'text-end' : 'text-start'
+      } ${col ? 'cursor-pointer select-none hover:text-foreground' : ''}`}
       onClick={col ? () => onSort(col) : undefined}
     >
-      <span className={`inline-flex items-center gap-1 ${align === 'right' ? 'justify-end' : ''}`}>
+      <span className={`inline-flex items-center gap-1 ${align === 'end' ? 'justify-end' : ''}`}>
         {label}
         {col && (
           <Icon className={`h-3 w-3 ${active ? 'opacity-100' : 'opacity-30'}`} />
@@ -270,15 +289,20 @@ function StartPlanningDialog({
   onConfirm: () => void;
   isPending: boolean;
 }) {
+  const { t } = useTranslation('logistics');
+  const { money } = useFormatter();
+
   if (!zone) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Start Planning — {zone.name_ar}</DialogTitle>
+          <DialogTitle>
+            {t('planning.dialog.startTitle', { name: zone.name_ar })}
+          </DialogTitle>
           <DialogDescription>
-            Review the zone workload before beginning planning.
+            {t('planning.dialog.startDescription')}
           </DialogDescription>
         </DialogHeader>
 
@@ -297,34 +321,36 @@ function StartPlanningDialog({
 
           <div className="grid grid-cols-2 gap-3 rounded-lg border bg-muted/30 p-4">
             <div>
-              <p className="text-xs text-muted-foreground">Orders</p>
+              <p className="text-xs text-muted-foreground">{t('planning.metrics.orders')}</p>
               <p className="text-xl font-bold tabular-nums">{zone.orders_count}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Customers</p>
+              <p className="text-xs text-muted-foreground">{t('planning.metrics.customers')}</p>
               <p className="text-xl font-bold tabular-nums">{zone.customers_count}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Products</p>
+              <p className="text-xs text-muted-foreground">{t('planning.metrics.products')}</p>
               <p className="text-xl font-bold tabular-nums">{zone.distinct_products}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Estimated Stops</p>
+              <p className="text-xs text-muted-foreground">{t('planning.metrics.estimatedStops')}</p>
               <p className="text-xl font-bold tabular-nums">{zone.estimated_stops}</p>
             </div>
             <div className="col-span-2 border-t pt-2">
-              <p className="text-xs text-muted-foreground">Expected Collection</p>
-              <p className="text-lg font-bold tabular-nums">EGP {fmt(zone.total_collection)}</p>
+              <p className="text-xs text-muted-foreground">
+                {t('planning.metrics.expectedCollection')}
+              </p>
+              <p className="text-lg font-bold tabular-nums">{money(zone.total_collection)}</p>
             </div>
           </div>
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button onClick={onConfirm} disabled={isPending}>
-            {isPending ? 'Starting…' : 'Start Planning'}
+            {isPending ? t('planning.dialog.starting') : t('planning.actions.startPlanning')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -336,6 +362,8 @@ function StartPlanningDialog({
 
 export function DistributionPlanningPage() {
   const { toast } = useToast();
+  const { t } = useTranslation('logistics');
+  const { money } = useFormatter();
 
   // ── View state ──────────────────────────────────────────────────────────────
   const [view, setView] = useState<ViewMode>(getViewMode);
@@ -450,11 +478,11 @@ export function DistributionPlanningPage() {
     if (!confirmZone) return;
     try {
       await startMutation.mutateAsync({ zoneId: confirmZone.zone_id, date: date || undefined });
-      toast({ title: `Planning started for ${confirmZone.name_ar}.` });
+      toast({ title: t('planning.toast.started', { name: confirmZone.name_ar }) });
       setWorkspaceZone({ ...confirmZone, planning_status: 'in_planning' });
       setConfirmZone(null);
     } catch {
-      toast({ title: 'Failed to start planning.', variant: 'destructive' });
+      toast({ title: t('planning.toast.startFailed'), variant: 'destructive' });
     }
   }
 
@@ -462,10 +490,10 @@ export function DistributionPlanningPage() {
     if (!workspaceZone) return;
     try {
       await markMutation.mutateAsync({ zoneId: workspaceZone.zone_id, date: date || undefined });
-      toast({ title: `${workspaceZone.name_ar} marked as planned.` });
+      toast({ title: t('planning.toast.markedPlanned', { name: workspaceZone.name_ar }) });
       setWorkspaceZone(null);
     } catch {
-      toast({ title: 'Failed to mark zone as planned.', variant: 'destructive' });
+      toast({ title: t('planning.toast.markFailed'), variant: 'destructive' });
     }
   }
 
@@ -474,7 +502,7 @@ export function DistributionPlanningPage() {
     {
       id:         'ready',
       icon:       Circle,
-      label:      'Ready Zones',
+      label:      t('planning.kpi.readyZones'),
       value:      planningKpis.ready,
       colorClass: 'bg-blue-50 text-blue-600 dark:bg-blue-950/40 dark:text-blue-400',
       onClick:    () => setStatus((s) => (s === 'ready' ? 'all' : 'ready')),
@@ -484,7 +512,7 @@ export function DistributionPlanningPage() {
     {
       id:         'in_planning',
       icon:       Clock,
-      label:      'In Planning',
+      label:      t('planning.status.inPlanning'),
       value:      planningKpis.in_planning,
       colorClass: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400',
       onClick:    () => setStatus((s) => (s === 'in_planning' ? 'all' : 'in_planning')),
@@ -494,7 +522,7 @@ export function DistributionPlanningPage() {
     {
       id:         'planned',
       icon:       CheckCircle2,
-      label:      'Planned Zones',
+      label:      t('planning.kpi.plannedZones'),
       value:      planningKpis.planned,
       colorClass: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400',
       onClick:    () => setStatus((s) => (s === 'planned' ? 'all' : 'planned')),
@@ -504,13 +532,13 @@ export function DistributionPlanningPage() {
     {
       id:         'ready_orders',
       icon:       ListOrdered,
-      label:      'Ready Orders',
+      label:      t('planning.kpi.readyOrders'),
       value:      planningKpis.ready_orders,
       colorClass: 'bg-primary/10 text-primary',
       isLoading:  statsLoading,
     },
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  ], [planningKpis, statusFilter, zonesLoading, statsLoading]);
+   
+  ], [planningKpis, statusFilter, zonesLoading, statsLoading, t]);
 
   // ── Empty state logic ────────────────────────────────────────────────────────
   const hasActiveFilter   = !!(search || statusFilter !== 'all');
@@ -527,7 +555,7 @@ export function DistributionPlanningPage() {
         size="sm"
         variant={view === 'card' ? 'secondary' : 'ghost'}
         className="h-7 w-7 p-0"
-        title="Card view"
+        title={t('planning.toolbar.cardView')}
         onClick={() => toggleView('card')}
       >
         <LayoutGrid className="h-3.5 w-3.5" />
@@ -536,7 +564,7 @@ export function DistributionPlanningPage() {
         size="sm"
         variant={view === 'table' ? 'secondary' : 'ghost'}
         className="h-7 w-7 p-0"
-        title="Table view"
+        title={t('planning.toolbar.tableView')}
         onClick={() => toggleView('table')}
       >
         <List className="h-3.5 w-3.5" />
@@ -545,11 +573,11 @@ export function DistributionPlanningPage() {
         <Button
           size="sm"
           variant="outline"
-          className="ml-1 gap-1.5 text-amber-700 border-amber-300 bg-amber-50 hover:bg-amber-100 dark:text-amber-400 dark:border-amber-700 dark:bg-amber-950/30"
+          className="ms-1 gap-1.5 text-amber-700 border-amber-300 bg-amber-50 hover:bg-amber-100 dark:text-amber-400 dark:border-amber-700 dark:bg-amber-950/30"
           onClick={() => setUnassignedOpen((v) => !v)}
         >
           <AlertCircle className="h-3.5 w-3.5" />
-          {stats!.unassigned_orders} Unassigned
+          {t('planning.toolbar.unassignedCount', { count: stats!.unassigned_orders })}
         </Button>
       )}
     </div>
@@ -560,14 +588,17 @@ export function DistributionPlanningPage() {
   return (
     <div className="flex flex-col min-h-full">
       <WorkspaceHeader
-        title="Distribution Planning"
-        description="Prepare today's zone workload before creating Loading Sessions"
-        breadcrumbs={[{ label: 'Logistics OS' }, { label: 'Distribution Planning' }]}
+        title={t('planning.title')}
+        description={t('planning.description')}
+        breadcrumbs={[
+          { label: t('planning.breadcrumbRoot') },
+          { label: t('planning.title') },
+        ]}
         metrics={metrics}
         secondaryActions={[
           {
             key:     'export',
-            label:   'Export',
+            label:   t('common.export'),
             onClick: () => undefined,
             variant: 'outline',
             soon:    true,
@@ -582,7 +613,9 @@ export function DistributionPlanningPage() {
         secondaryActions={[
           {
             key:          'show-empty',
-            label:        showEmpty ? 'Hide Empty Zones' : 'Show Empty Zones',
+            label:        showEmpty
+              ? t('planning.toolbar.hideEmptyZones')
+              : t('planning.toolbar.showEmptyZones'),
             onClick:      () => setShowEmpty((v) => !v),
             hideOnMobile: true,
           },
@@ -595,7 +628,7 @@ export function DistributionPlanningPage() {
         <div className="flex flex-col gap-1">
           <Label className="text-xs text-muted-foreground flex items-center gap-1">
             <CalendarDays className="h-3 w-3" />
-            Delivery Date
+            {t('planning.filters.deliveryDate')}
           </Label>
           <Input
             type="date"
@@ -606,27 +639,31 @@ export function DistributionPlanningPage() {
         </div>
 
         <div className="flex flex-col gap-1">
-          <Label className="text-xs text-muted-foreground">Planning Status</Label>
+          <Label className="text-xs text-muted-foreground">
+            {t('planning.filters.planningStatus')}
+          </Label>
           <Select
             value={statusFilter}
             onValueChange={(v) => setStatus(v as ZonePlanningStatus | 'all')}
           >
             <SelectTrigger className="h-8 text-sm w-40">
-              <SelectValue placeholder="All statuses" />
+              <SelectValue placeholder={t('planning.filters.allStatuses')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="ready">Ready</SelectItem>
-              <SelectItem value="in_planning">In Planning</SelectItem>
-              <SelectItem value="planned">Planned</SelectItem>
+              <SelectItem value="all">{t('planning.filters.allStatuses')}</SelectItem>
+              <SelectItem value="ready">{t('planning.status.ready')}</SelectItem>
+              <SelectItem value="in_planning">{t('planning.status.inPlanning')}</SelectItem>
+              <SelectItem value="planned">{t('planning.status.planned')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="flex flex-col gap-1 flex-1 min-w-[180px] max-w-xs">
-          <Label className="text-xs text-muted-foreground">Search Zone</Label>
+          <Label className="text-xs text-muted-foreground">
+            {t('planning.filters.searchZone')}
+          </Label>
           <Input
-            placeholder="Zone name or code…"
+            placeholder={t('planning.filters.searchZonePlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="h-8 text-sm"
@@ -636,16 +673,18 @@ export function DistributionPlanningPage() {
         {/* Live status summary */}
         <div className="ms-auto flex items-end gap-1.5 pb-0.5">
           {planningKpis.ready > 0 && (
-            <Badge variant="outline" className="text-xs">{planningKpis.ready} Ready</Badge>
+            <Badge variant="outline" className="text-xs">
+              {t('planning.summary.readyCount', { count: planningKpis.ready })}
+            </Badge>
           )}
           {planningKpis.in_planning > 0 && (
             <Badge className="text-xs bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border-0">
-              {planningKpis.in_planning} In Planning
+              {t('planning.summary.inPlanningCount', { count: planningKpis.in_planning })}
             </Badge>
           )}
           {planningKpis.planned > 0 && (
             <Badge className="text-xs bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 border-0">
-              {planningKpis.planned} Planned
+              {t('planning.summary.plannedCount', { count: planningKpis.planned })}
             </Badge>
           )}
         </div>
@@ -663,13 +702,13 @@ export function DistributionPlanningPage() {
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <CheckCircle2 className="h-16 w-16 text-emerald-500 mb-4" />
             <h3 className="text-xl font-semibold text-foreground">
-              Today's planning has been completed.
+              {t('planning.empty.allPlannedTitle')}
             </h3>
             <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-              All zones with orders have been planned successfully. Loading Sessions can now be created.
+              {t('planning.empty.allPlannedHint')}
             </p>
             <Button variant="outline" size="sm" className="mt-5 gap-1.5" onClick={handleRefresh}>
-              Refresh
+              {t('common.refresh')}
             </Button>
           </div>
         )}
@@ -685,8 +724,18 @@ export function DistributionPlanningPage() {
               <table className="w-full text-sm">
                 <thead className="bg-muted/50">
                   <tr className="border-b text-muted-foreground">
-                    {['Zone', 'Orders', 'Customers', 'Products', 'Stops', 'Collection', 'Weight', 'Status', ''].map((h) => (
-                      <th key={h} className="py-2 px-3 font-medium text-start">{h}</th>
+                    {[
+                      t('common.zone'),
+                      t('planning.metrics.orders'),
+                      t('planning.metrics.customers'),
+                      t('planning.metrics.products'),
+                      t('planning.metrics.stops'),
+                      t('planning.metrics.collection'),
+                      t('planning.metrics.weight'),
+                      t('common.status'),
+                      '',
+                    ].map((h, i) => (
+                      <th key={i} className="py-2 px-3 font-medium text-start">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -712,21 +761,21 @@ export function DistributionPlanningPage() {
             <Map className="h-12 w-12 text-muted-foreground/30 mb-4" />
             <h3 className="text-lg font-semibold text-muted-foreground">
               {hasActiveFilter
-                ? 'No zones match your filters'
-                : 'No orders are currently ready for distribution'}
+                ? t('planning.empty.noMatchTitle')
+                : t('planning.empty.noOrdersTitle')}
             </h3>
             <p className="text-sm text-muted-foreground/70 mt-1 max-w-sm">
               {hasActiveFilter
-                ? 'Try clearing your search or status filter.'
+                ? t('planning.empty.noMatchHint')
                 : date
-                  ? `No confirmed orders with delivery date ${date} are assigned to a zone.`
-                  : 'No confirmed orders are currently assigned to a distribution zone.'}
+                  ? t('planning.empty.noOrdersForDate', { date })
+                  : t('planning.empty.noOrdersAssigned')}
             </p>
             {(stats?.unassigned_orders ?? 0) > 0 && !hasActiveFilter && (
               <div className="mt-4">
                 <Badge variant="outline" className="text-amber-700 border-amber-300 gap-1">
                   <AlertCircle className="h-3 w-3" />
-                  {stats!.unassigned_orders} orders need zone assignment
+                  {t('planning.empty.needZoneAssignment', { count: stats!.unassigned_orders })}
                 </Badge>
               </div>
             )}
@@ -736,7 +785,7 @@ export function DistributionPlanningPage() {
               className="mt-5 gap-1.5"
               onClick={handleRefresh}
             >
-              Refresh
+              {t('common.refresh')}
             </Button>
           </div>
         )}
@@ -766,15 +815,15 @@ export function DistributionPlanningPage() {
               <table className="w-full text-sm">
                 <thead className="bg-muted/50 sticky top-0 z-10">
                   <tr className="border-b text-muted-foreground">
-                    <SortTh label="Zone"           col="name_ar"          sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
-                    <SortTh label="Orders"         col="orders_count"     sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="right" />
-                    <SortTh label="Customers"      col="customers_count"  sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="right" />
-                    <SortTh label="Products"       col="distinct_products" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="right" />
-                    <SortTh label="Stops"          col="estimated_stops"  sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="right" />
-                    <SortTh label="Collection"     col="total_collection" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="right" />
-                    <SortTh label="Weight"         col={null}             sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="right" />
-                    <SortTh label="Status"         col="planning_status"  sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
-                    <th className="py-2 px-3 font-medium text-end">Action</th>
+                    <SortTh label={t('common.zone')}                        col="name_ar"           sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
+                    <SortTh label={t('planning.metrics.orders')}            col="orders_count"      sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="end" />
+                    <SortTh label={t('planning.metrics.customers')}         col="customers_count"   sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="end" />
+                    <SortTh label={t('planning.metrics.products')}          col="distinct_products" sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="end" />
+                    <SortTh label={t('planning.metrics.stops')}             col="estimated_stops"   sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="end" />
+                    <SortTh label={t('planning.metrics.collection')}        col="total_collection"  sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="end" />
+                    <SortTh label={t('planning.metrics.weight')}            col={null}              sortBy={sortBy} sortDir={sortDir} onSort={handleSort} align="end" />
+                    <SortTh label={t('common.status')}                      col="planning_status"   sortBy={sortBy} sortDir={sortDir} onSort={handleSort} />
+                    <th className="py-2 px-3 font-medium text-end">{t('planning.table.colAction')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -818,7 +867,7 @@ export function DistributionPlanningPage() {
                       </td>
                       {/* Collection */}
                       <td className="py-2.5 px-3 text-end tabular-nums font-medium whitespace-nowrap">
-                        {zone.orders_count > 0 ? `EGP ${fmt(zone.total_collection)}` : '—'}
+                        {zone.orders_count > 0 ? money(zone.total_collection) : '—'}
                       </td>
                       {/* Weight */}
                       <td className="py-2.5 px-3 text-end text-muted-foreground">—</td>
@@ -826,22 +875,26 @@ export function DistributionPlanningPage() {
                       <td className="py-2.5 px-3">
                         {zone.planning_status === 'planned' ? (
                           <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                            Planned
+                            <CheckCircle2 className="h-3 w-3 me-1" />
+                            {t('planning.status.planned')}
                           </Badge>
                         ) : zone.planning_status === 'in_planning' ? (
                           <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-                            <Clock className="h-3 w-3 mr-1" />
-                            In Planning
+                            <Clock className="h-3 w-3 me-1" />
+                            {t('planning.status.inPlanning')}
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-muted-foreground">Ready</Badge>
+                          <Badge variant="outline" className="text-muted-foreground">
+                            {t('planning.status.ready')}
+                          </Badge>
                         )}
                       </td>
                       {/* Action */}
                       <td className="py-2.5 px-3 text-end whitespace-nowrap">
                         {zone.orders_count === 0 ? (
-                          <span className="text-xs text-muted-foreground">Empty</span>
+                          <span className="text-xs text-muted-foreground">
+                            {t('planning.table.empty')}
+                          </span>
                         ) : zone.planning_status === 'planned' ? (
                           <Button
                             size="sm"
@@ -849,7 +902,7 @@ export function DistributionPlanningPage() {
                             className="h-7 text-xs"
                             onClick={() => setWorkspaceZone(zone)}
                           >
-                            View Plan
+                            {t('planning.actions.viewPlan')}
                           </Button>
                         ) : zone.planning_status === 'in_planning' ? (
                           <Button
@@ -859,7 +912,7 @@ export function DistributionPlanningPage() {
                             onClick={() => setWorkspaceZone(zone)}
                           >
                             <ShoppingBag className="h-3 w-3" />
-                            Continue
+                            {t('planning.actions.continue')}
                           </Button>
                         ) : (
                           <Button
@@ -867,7 +920,7 @@ export function DistributionPlanningPage() {
                             className="h-7 text-xs"
                             onClick={() => setConfirmZone(zone)}
                           >
-                            Start Planning
+                            {t('planning.actions.startPlanning')}
                           </Button>
                         )}
                       </td>
@@ -878,20 +931,26 @@ export function DistributionPlanningPage() {
             </div>
             {/* Table footer */}
             <div className="flex items-center justify-between border-t bg-muted/20 px-4 py-2 text-xs text-muted-foreground">
-              <span>{zones.length} zone{zones.length !== 1 ? 's' : ''}</span>
+              <span>{t('planning.table.zoneCount', { count: zones.length })}</span>
               <div className="flex items-center gap-3">
                 {activeWithOrders.length > 0 && (
                   <>
                     <span className="flex items-center gap-1">
                       <Users className="h-3 w-3" />
-                      {rawZones.reduce((s, z) => s + z.customers_count, 0).toLocaleString()} customers
+                      {t('planning.table.customerCount', {
+                        count: rawZones.reduce((s, z) => s + z.customers_count, 0),
+                      })}
                     </span>
                     <span className="flex items-center gap-1">
                       <Package className="h-3 w-3" />
-                      {rawZones.reduce((s, z) => s + z.distinct_products, 0).toLocaleString()} products
+                      {t('planning.table.productCount', {
+                        count: rawZones.reduce((s, z) => s + z.distinct_products, 0),
+                      })}
                     </span>
                     <span className="font-medium text-foreground">
-                      EGP {fmt(rawZones.reduce((s, z) => s + z.total_collection, 0))} total
+                      {t('planning.table.totalCollection', {
+                        amount: fmt(rawZones.reduce((s, z) => s + z.total_collection, 0)),
+                      })}
                     </span>
                   </>
                 )}

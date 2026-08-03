@@ -75,14 +75,14 @@ final readonly class ManufacturingExecutionContext
     public function toArray(): array
     {
         return [
-            'plan_id'              => $this->plan->plan_id,
-            'decision_key'         => $this->decision_key,
-            'execution_uuid'       => $this->execution_uuid,
-            'correlation_id'       => $this->correlation_id,
-            'execution_timestamp'  => $this->execution_timestamp,
-            'snapshot_hash'        => $this->snapshot_hash,
-            'is_valid'             => $this->validation_result->is_valid,
-            'validation_failures'  => array_map(
+            'plan_id' => $this->plan->plan_id,
+            'decision_key' => $this->decision_key,
+            'execution_uuid' => $this->execution_uuid,
+            'correlation_id' => $this->correlation_id,
+            'execution_timestamp' => $this->execution_timestamp,
+            'snapshot_hash' => $this->snapshot_hash,
+            'is_valid' => $this->validation_result->is_valid,
+            'validation_failures' => array_map(
                 fn (ValidationFailure $f): array => $f->toArray(),
                 $this->validation_result->failures,
             ),

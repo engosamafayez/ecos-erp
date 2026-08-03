@@ -6,8 +6,8 @@ namespace Modules\Manufacturing\ManufacturingExecution\Domain\Enums;
 
 enum TransactionStatus: string
 {
-    case Completed  = 'completed';
-    case Failed     = 'failed';
+    case Completed = 'completed';
+    case Failed = 'failed';
     case RolledBack = 'rolled_back';
 
     public function isTerminal(): bool

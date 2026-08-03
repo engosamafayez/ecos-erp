@@ -39,16 +39,16 @@ final class MetaWebhookController extends Controller
 
         return response()->json([
             'webhooks' => $webhooks->map(fn (MetaWebhook $w) => [
-                'id'                => $w->id,
-                'object_type'       => $w->object_type,
-                'object_id'         => $w->object_id,
-                'status'            => $w->status,
+                'id' => $w->id,
+                'object_type' => $w->object_type,
+                'object_id' => $w->object_id,
+                'status' => $w->status,
                 'subscribed_fields' => $w->subscribed_fields,
-                'verified_at'       => $w->verified_at?->toISOString(),
-                'last_delivery_at'  => $w->last_delivery_at?->toISOString(),
-                'last_error'        => $w->last_error,
-                'retry_count'       => $w->retry_count,
-                'created_at'        => $w->created_at?->toISOString(),
+                'verified_at' => $w->verified_at?->toISOString(),
+                'last_delivery_at' => $w->last_delivery_at?->toISOString(),
+                'last_error' => $w->last_error,
+                'retry_count' => $w->retry_count,
+                'created_at' => $w->created_at?->toISOString(),
             ])->values(),
         ]);
     }
@@ -79,9 +79,9 @@ final class MetaWebhookController extends Controller
     {
         $request->validate([
             'object_type' => ['required', 'string'],
-            'object_id'   => ['nullable', 'string'],
-            'fields'      => ['required', 'array'],
-            'fields.*'    => ['string'],
+            'object_id' => ['nullable', 'string'],
+            'fields' => ['required', 'array'],
+            'fields.*' => ['string'],
         ]);
 
         $connection = $this->resolveConnection($request, $connectionId);
@@ -90,16 +90,16 @@ final class MetaWebhookController extends Controller
         }
 
         $webhook = $this->webhookService->register(
-            connection:  $connection,
-            objectType:  $request->string('object_type')->toString(),
-            objectId:    $request->string('object_id')->toString() ?: null,
-            fields:      $request->input('fields'),
+            connection: $connection,
+            objectType: $request->string('object_type')->toString(),
+            objectId: $request->string('object_id')->toString() ?: null,
+            fields: $request->input('fields'),
         );
 
         return response()->json([
             'message' => 'Webhook registered.',
-            'id'      => $webhook->id,
-            'status'  => $webhook->status,
+            'id' => $webhook->id,
+            'status' => $webhook->status,
         ], 201);
     }
 
@@ -144,8 +144,8 @@ final class MetaWebhookController extends Controller
 
         return response()->json([
             'message' => 'Webhook re-registered.',
-            'id'      => $newWebhook->id,
-            'status'  => $newWebhook->status,
+            'id' => $newWebhook->id,
+            'status' => $newWebhook->status,
         ]);
     }
 
@@ -161,8 +161,8 @@ final class MetaWebhookController extends Controller
      */
     public function verify(Request $request): Response|JsonResponse
     {
-        $mode        = $request->query('hub_mode') ?? $request->query('hub.mode');
-        $challenge   = $request->query('hub_challenge') ?? $request->query('hub.challenge');
+        $mode = $request->query('hub_mode') ?? $request->query('hub.mode');
+        $challenge = $request->query('hub_challenge') ?? $request->query('hub.challenge');
         $verifyToken = $request->query('hub_verify_token') ?? $request->query('hub.verify_token');
 
         if ($mode !== 'subscribe' || empty($challenge) || empty($verifyToken)) {
@@ -172,14 +172,15 @@ final class MetaWebhookController extends Controller
         // objectType is not present in the challenge — scan all pending_verification webhooks
         // and return the challenge if ANY match the verify_token
         $matched = $this->webhookService->verifyChallenge(
-            objectType:  'any',
-            mode:        (string) $mode,
-            challenge:   (string) $challenge,
+            objectType: 'any',
+            mode: (string) $mode,
+            challenge: (string) $challenge,
             verifyToken: (string) $verifyToken,
         );
 
         if ($matched === null) {
             Log::warning('MetaWebhookController: no webhook matched verify_token');
+
             return response()->json(['message' => 'Verification failed.'], 403);
         }
 
@@ -197,11 +198,12 @@ final class MetaWebhookController extends Controller
     {
         // Verify Meta's HMAC-SHA256 signature before touching the payload.
         // Meta sends X-Hub-Signature-256: sha256=<hmac> on every delivery.
-        $rawBody   = $request->getContent();
+        $rawBody = $request->getContent();
         $signature = $request->header('X-Hub-Signature-256', '');
 
         if (! $this->webhookService->verifyWebhookSignature($rawBody, $signature)) {
             Log::warning('MetaWebhook: signature verification failed', ['ip' => $request->ip()]);
+
             return response()->json(['message' => 'Signature verification failed.'], 403);
         }
 
@@ -211,12 +213,12 @@ final class MetaWebhookController extends Controller
             return response()->json(['message' => 'Empty payload.'], 400);
         }
 
-        $object     = $payload['object'] ?? 'unknown';
-        $entries    = $payload['entry'] ?? [];
+        $object = $payload['object'] ?? 'unknown';
+        $entries = $payload['entry'] ?? [];
         $entryCount = count($entries);
 
         Log::info('Meta webhook received', [
-            'object'      => $object,
+            'object' => $object,
             'entry_count' => $entryCount,
         ]);
 

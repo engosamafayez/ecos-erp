@@ -23,9 +23,9 @@ interface PermissionServiceInterface
      * Future behavior: checks user_roles.company_id / branch_id / warehouse_id
      * against the provided scope before resolving permissions.
      *
-     * @param string|null $companyId   UUID of the target company (nullable = global)
-     * @param string|null $branchId    UUID of the target branch  (nullable = any branch)
-     * @param string|null $warehouseId UUID of the target warehouse (nullable = any)
+     * @param  string|null  $companyId  UUID of the target company (nullable = global)
+     * @param  string|null  $branchId  UUID of the target branch  (nullable = any branch)
+     * @param  string|null  $warehouseId  UUID of the target warehouse (nullable = any)
      */
     public function userHasPermissionInScope(
         User $user,

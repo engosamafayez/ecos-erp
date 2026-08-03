@@ -15,13 +15,13 @@ use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 final class WooCommerceOrderStatusTranslator
 {
     private const MAP = [
-        'pending'    => 'pending',
-        'on-hold'    => 'awaiting_payment',
+        'pending' => 'pending',
+        'on-hold' => 'awaiting_payment',
         'processing' => 'processing',
-        'completed'  => 'delivered',
-        'cancelled'  => 'cancelled',
-        'refunded'   => 'returned',
-        'failed'     => 'cancelled',
+        'completed' => 'delivered',
+        'cancelled' => 'cancelled',
+        'refunded' => 'returned',
+        'failed' => 'cancelled',
     ];
 
     /**

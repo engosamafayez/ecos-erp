@@ -17,22 +17,18 @@ use Modules\Operations\Fulfillment\Domain\Events\OrderConfirmedEvent;
 use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionException;
 
 /**
- * Confirms an order: reserves warehouse inventory and creates the financial snapshot.
+ * Legacy confirm workflow — retained for direct invocation compatibility.
  *
- * Inventory Reservation Contract (TASK-ORDER-RESERVATION-WORKFLOW-INTEGRITY-001):
- * - Reservation is ALWAYS attempted when confirming.
- * - If reservation cannot be performed (no warehouse or insufficient stock),
- *   the order is automatically routed to AwaitingStock instead of Confirmed.
- * - The state "Confirmed + Not Reserved" is architecturally invalid.
- *
- * Idempotent: orders arriving from AwaitingStock/Review/Rescheduled with an
- * active reservation skip the reservation step and proceed directly to Confirmed.
+ * V3 (TASK-ORDERS-LIFECYCLE-ARCH-002): Confirmed status removed. This workflow
+ * now writes InProgress. The canonical auto-initiation path uses ProcessOrderWorkflow
+ * (name: 'initiate_order'). This workflow is preserved for callers that explicitly
+ * name 'confirm_order' and for the financial snapshot creation path.
  */
 final class ConfirmOrderWorkflow implements FulfillmentWorkflowInterface
 {
     public function __construct(
-        private readonly ReserveOrderInventoryAction   $reserveInventory,
-        private readonly CreateOrderSnapshotService    $snapshot,
+        private readonly ReserveOrderInventoryAction $reserveInventory,
+        private readonly CreateOrderSnapshotService $snapshot,
         private readonly UpdateReservationStatusAction $updateReservationStatus,
     ) {}
 
@@ -41,19 +37,18 @@ final class ConfirmOrderWorkflow implements FulfillmentWorkflowInterface
         $order = $ctx->order;
 
         $allowed = [
-            OrderStatus::Pending,
+            OrderStatus::NewOrder,
             OrderStatus::AwaitingPayment,
-            OrderStatus::Processing,
             OrderStatus::AwaitingStock,
-            OrderStatus::Review,
-            OrderStatus::Rescheduled,
+            OrderStatus::OnHold,
             OrderStatus::Returned,
             OrderStatus::Cancelled,
+            OrderStatus::InProgress,
         ];
 
         if (! in_array($order->status, $allowed, true)) {
             throw new WorkflowPreconditionException(
-                "Order [{$order->id}] cannot be confirmed from status [{$order->status->value}]."
+                "Order [{$order->id}] cannot be initiated from status [{$order->status->value}].",
             );
         }
     }
@@ -62,24 +57,20 @@ final class ConfirmOrderWorkflow implements FulfillmentWorkflowInterface
     {
         $order = $ctx->order;
 
-        // For returned orders, inventory was released during return — reset all reservation
-        // lifecycle fields before re-reserving. Critically: reservation_status must be cleared
-        // here (not just inventory timestamps) because ReserveOrderInventoryAction has an
-        // early-return idempotency guard that skips execution when reservation_status = Released.
-        // Without this clear, the order would be confirmed with zero inventory held.
+        // Returned orders had inventory released — reset lifecycle fields before re-reserving.
         if ($order->status === OrderStatus::Returned) {
             $order->update([
-                'inventory_reserved_at'      => null,
-                'inventory_released_at'      => null,
-                'inventory_shipped_at'       => null,
-                'reservation_status'         => null,
+                'inventory_reserved_at'    => null,
+                'inventory_released_at'    => null,
+                'inventory_shipped_at'     => null,
+                'reservation_status'       => null,
                 'reservation_failure_reason' => null,
             ]);
             $order->refresh();
         }
 
-        // Clear reschedule / cancel metadata on re-activation
-        if (in_array($order->status, [OrderStatus::Rescheduled, OrderStatus::Cancelled], true)) {
+        // Clear on_hold / cancel metadata on re-activation
+        if (in_array($order->status, [OrderStatus::OnHold, OrderStatus::Cancelled], true)) {
             $order->update([
                 'rescheduled_at'     => null,
                 'next_delivery_date' => null,
@@ -89,14 +80,12 @@ final class ConfirmOrderWorkflow implements FulfillmentWorkflowInterface
             $order->refresh();
         }
 
-        // Idempotent: inventory already held (Reserved OR PartialReserved) — go straight to Confirmed
         $activeStates    = [ReservationStatus::Reserved, ReservationStatus::PartialReserved];
         $alreadyReserved = in_array($order->reservation_status, $activeStates, true);
 
         $snapshotCreated = false;
 
         if (! $alreadyReserved) {
-            // No warehouse assigned → cannot reserve; route to AwaitingStock
             if ($order->assigned_warehouse_id === null) {
                 $order->update(['status' => OrderStatus::AwaitingStock]);
                 $order->refresh();
@@ -108,11 +97,11 @@ final class ConfirmOrderWorkflow implements FulfillmentWorkflowInterface
                 );
 
                 OrderEvent::log(
-                    orderId:     $order->id,
-                    type:        'reservation_awaiting_stock',
+                    orderId: $order->id,
+                    type: 'reservation_awaiting_stock',
                     description: "Reservation pending for order #{$order->order_number}: no warehouse assigned.",
-                    payload:     ['reason' => 'no_warehouse_assigned'],
-                    module:      'fulfillment',
+                    payload: ['reason' => 'no_warehouse_assigned'],
+                    module: 'fulfillment',
                 );
 
                 return FulfillmentResult::success(
@@ -122,7 +111,6 @@ final class ConfirmOrderWorkflow implements FulfillmentWorkflowInterface
                 );
             }
 
-            // Attempt reservation — returns status directly; does NOT throw for insufficient stock
             $reservationStatus = $this->reserveInventory->execute($order);
             $order->refresh();
 
@@ -137,17 +125,16 @@ final class ConfirmOrderWorkflow implements FulfillmentWorkflowInterface
                 );
             }
 
-            // Reserved OR PartialReserved — proceed to Confirmed
-            $snapshot        = $this->snapshot->createIfAbsent($order);
+            $snapshot = $this->snapshot->createIfAbsent($order);
             $snapshotCreated = $snapshot !== null;
         }
 
-        $order->update(['status' => OrderStatus::Confirmed]);
+        $order->update(['status' => OrderStatus::InProgress]);
         $order->refresh();
 
         $message = $alreadyReserved
-            ? "Order #{$order->order_number} confirmed."
-            : "Order #{$order->order_number} confirmed. Inventory reserved. Ready for preparation.";
+            ? "Order #{$order->order_number} moved to In Progress."
+            : "Order #{$order->order_number} moved to In Progress. Inventory reserved.";
 
         return FulfillmentResult::success(
             $order,
@@ -159,20 +146,19 @@ final class ConfirmOrderWorkflow implements FulfillmentWorkflowInterface
     /** @return list<object> */
     public function events(FulfillmentResult $result): array
     {
-        // No OrderConfirmedEvent when reservation failed and order routed to AwaitingStock
         if ($result->meta['reservation_failed'] ?? false) {
             return [];
         }
 
         return [
             new OrderConfirmedEvent(
-                orderId:         $result->order->id,
-                orderNumber:     $result->order->order_number,
-                companyId:       $result->order->company_id ?? '',
-                warehouseId:     $result->order->assigned_warehouse_id ?? '',
-                reservedAt:      $result->order->inventory_reserved_at?->toIso8601String() ?? now()->toIso8601String(),
+                orderId: $result->order->id,
+                orderNumber: $result->order->order_number,
+                companyId: $result->order->company_id ?? '',
+                warehouseId: $result->order->assigned_warehouse_id ?? '',
+                reservedAt: $result->order->inventory_reserved_at?->toIso8601String() ?? now()->toIso8601String(),
                 snapshotCreated: (bool) ($result->meta['snapshot_created'] ?? false),
-                actorId:         $result->meta['actor_id'] ?? null,
+                actorId: $result->meta['actor_id'] ?? null,
             ),
         ];
     }

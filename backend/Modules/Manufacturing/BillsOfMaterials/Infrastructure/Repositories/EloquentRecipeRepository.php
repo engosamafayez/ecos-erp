@@ -38,8 +38,8 @@ final class EloquentRecipeRepository implements RecipeRepositoryInterface
     }
 
     /**
-     * @param  array<string, mixed>       $attributes
-     * @param  list<array<string, mixed>> $lines
+     * @param  array<string, mixed>  $attributes
+     * @param  list<array<string, mixed>>  $lines
      */
     public function create(array $attributes, array $lines): Recipe
     {

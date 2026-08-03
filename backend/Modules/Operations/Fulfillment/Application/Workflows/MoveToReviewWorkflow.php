@@ -11,15 +11,13 @@ use Modules\Operations\Fulfillment\Domain\Contracts\FulfillmentWorkflowInterface
 use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionException;
 
 /**
- * Moves an order into the Review state for manual intervention.
+ * Places an order On Hold for manual intervention.
  *
- * Review is a generic hold state — not terminal. Valid exits:
- *   → Processing (via ResumeOrderWorkflow)
- *   → Confirmed  (via ConfirmOrderWorkflow)
+ * V3 (TASK-ORDERS-LIFECYCLE-ARCH-002): Renamed from "Review" to "On Hold".
+ * On Hold is a non-terminal hold state. Valid exits:
+ *   → In Progress (via ProcessOrderWorkflow)
+ *   → New        (via ReturnToPendingWorkflow)
  *   → Cancelled  (via CancelOrderWorkflow)
- *   → Rescheduled (via RescheduleOrderWorkflow)
- *
- * ADR Part 3 — Review is a manual intervention state, not terminal.
  */
 final class MoveToReviewWorkflow implements FulfillmentWorkflowInterface
 {
@@ -27,35 +25,32 @@ final class MoveToReviewWorkflow implements FulfillmentWorkflowInterface
     {
         $order = $ctx->order;
 
-        // V2: Cancelled is no longer blocked — cancelled orders may be placed into Review.
-        // Execution states (Preparing onward) and terminal/handled states are blocked.
         $blocked = [
-            OrderStatus::Review,          // already in review
-            OrderStatus::Preparing,       // locked in execution chain
-            OrderStatus::OutForDelivery,  // locked in execution chain
-            OrderStatus::Delivered,       // locked in execution chain
-            OrderStatus::Returned,        // handled by Returns workflow
-            OrderStatus::Completed,       // terminal
+            OrderStatus::OnHold,           // already on hold
+            OrderStatus::ReadyForDispatch, // locked in execution chain
+            OrderStatus::OutForDelivery,   // locked in execution chain
+            OrderStatus::Delivered,        // terminal
+            OrderStatus::Returned,         // handled by Returns workflow
         ];
 
         if (in_array($order->status, $blocked, true)) {
             throw new WorkflowPreconditionException(
-                "Order [{$order->id}] cannot be moved to Review from status [{$order->status->value}]."
+                "Order [{$order->id}] cannot be placed On Hold from status [{$order->status->value}].",
             );
         }
     }
 
     public function execute(FulfillmentContext $ctx): FulfillmentResult
     {
-        $order  = $ctx->order;
+        $order = $ctx->order;
         $reason = $ctx->get('reason');
 
-        $order->update(['status' => OrderStatus::Review]);
+        $order->update(['status' => OrderStatus::OnHold]);
         $order->refresh();
 
         return FulfillmentResult::success(
             $order,
-            "Order #{$order->order_number} placed under review.",
+            "Order #{$order->order_number} placed on hold.",
             ['reason' => $reason, 'actor_id' => $ctx->actorId],
         );
     }
@@ -68,6 +63,6 @@ final class MoveToReviewWorkflow implements FulfillmentWorkflowInterface
 
     public function name(): string
     {
-        return 'move_to_review';
+        return 'put_on_hold';
     }
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\POS\Session\Domain\ValueObjects;
 
+use InvalidArgumentException;
+
 final readonly class DeviceFingerprint
 {
     private const MAX_LENGTH = 255;
@@ -11,11 +13,11 @@ final readonly class DeviceFingerprint
     public function __construct(public string $value)
     {
         if (trim($this->value) === '') {
-            throw new \InvalidArgumentException('Device fingerprint cannot be empty.');
+            throw new InvalidArgumentException('Device fingerprint cannot be empty.');
         }
 
         if (strlen($this->value) > self::MAX_LENGTH) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 sprintf('Device fingerprint exceeds maximum length of %d characters.', self::MAX_LENGTH),
             );
         }

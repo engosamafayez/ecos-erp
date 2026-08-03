@@ -17,14 +17,18 @@ final class AuthenticatedUserDTO extends BaseDTO
         public readonly int $id,
         public readonly string $name,
         public readonly string $email,
+        public readonly ?string $company_id,
     ) {}
 
     public static function fromModel(User $user): self
     {
+        $companyId = $user->company_id ?? null;
+
         return new self(
             id: (int) $user->id,
             name: (string) $user->name,
             email: (string) $user->email,
+            company_id: is_string($companyId) && $companyId !== '' ? $companyId : null,
         );
     }
 }

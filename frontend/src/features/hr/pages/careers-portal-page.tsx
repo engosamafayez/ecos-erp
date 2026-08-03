@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { Briefcase, MapPin, Search } from 'lucide-react';
 
@@ -19,6 +20,7 @@ const money = (value: number, currency: string) =>
  * publish, because that is all the API will return.
  */
 export function CareersPortalPage() {
+  const { t } = useTranslation('hr');
   const [search, setSearch] = useState('');
   const [submitted, setSubmitted] = useState('');
 
@@ -30,11 +32,11 @@ export function CareersPortalPage() {
     <div className="bg-background min-h-screen">
       <header className="border-b">
         <div className="mx-auto flex max-w-5xl flex-col gap-4 px-6 py-12">
-          <span className="text-muted-foreground text-sm font-medium uppercase tracking-wide">Careers</span>
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Open roles</h1>
-          <p className="text-muted-foreground max-w-2xl">
-            Every role we are currently hiring for. Apply directly — you will get a reference number straight away.
-          </p>
+          <span className="text-muted-foreground text-sm font-medium uppercase tracking-wide">
+            {t('careers.portal.eyebrow')}
+          </span>
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{t('careers.portal.heading')}</h1>
+          <p className="text-muted-foreground max-w-2xl">{t('careers.portal.intro')}</p>
 
           <form
             className="flex max-w-md gap-2"
@@ -46,12 +48,12 @@ export function CareersPortalPage() {
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search roles or locations…"
-              aria-label="Search roles"
+              placeholder={t('careers.portal.searchPlaceholder')}
+              aria-label={t('careers.portal.searchLabel')}
             />
             <Button type="submit" variant="outline">
               <Search className="size-4" />
-              Search
+              {t('common.search')}
             </Button>
           </form>
         </div>
@@ -59,18 +61,16 @@ export function CareersPortalPage() {
 
       <main className="mx-auto max-w-5xl px-6 py-10">
         {isLoading ? (
-          <p className="text-muted-foreground py-16 text-center text-sm">Loading roles…</p>
+          <p className="text-muted-foreground py-16 text-center text-sm">{t('careers.portal.loading')}</p>
         ) : isError ? (
-          <p className="text-muted-foreground py-16 text-center text-sm">
-            We could not load the roles just now. Please try again shortly.
-          </p>
+          <p className="text-muted-foreground py-16 text-center text-sm">{t('careers.portal.loadError')}</p>
         ) : openings.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center gap-2 py-16 text-center">
               <Briefcase className="text-muted-foreground size-8" />
-              <p className="font-medium">No open roles right now</p>
+              <p className="font-medium">{t('careers.portal.emptyTitle')}</p>
               <p className="text-muted-foreground text-sm">
-                {submitted ? 'Nothing matched that search.' : 'Please check back soon.'}
+                {submitted ? t('careers.portal.emptySearch') : t('careers.portal.emptyHint')}
               </p>
             </CardContent>
           </Card>
@@ -92,7 +92,7 @@ export function CareersPortalPage() {
                           </span>
                         ) : null}
                         <span className="capitalize">{job.work_mode}</span>
-                        {job.openings > 1 ? <span>{job.openings} positions</span> : null}
+                        {job.openings > 1 ? <span>{t('careers.portal.openings', { count: job.openings })}</span> : null}
                       </div>
                       {/* Only shown when the company published the band. */}
                       {job.salary ? (
@@ -104,7 +104,7 @@ export function CareersPortalPage() {
                     </div>
 
                     <Button asChild>
-                      <Link to={`/careers/${job.slug}`}>View &amp; Apply</Link>
+                      <Link to={`/careers/${job.slug}`}>{t('careers.portal.viewAndApply')}</Link>
                     </Button>
                   </CardContent>
                 </Card>

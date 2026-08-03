@@ -16,16 +16,16 @@ final class LoadProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'pool_entry_id'          => ['required', 'uuid'],
-            'product_id'             => ['required', 'uuid'],
-            'sku_snapshot'           => ['required', 'string', 'max:100'],
-            'name_snapshot'          => ['required', 'string', 'max:255'],
-            'preparation_wave_id'    => ['required', 'uuid'],
-            'quantity_planned'       => ['required', 'numeric', 'min:0.001'],
-            'quantity_loaded'        => ['required', 'numeric', 'min:0'],
+            'pool_entry_id' => ['required', 'uuid'],
+            'product_id' => ['required', 'uuid'],
+            'sku_snapshot' => ['required', 'string', 'max:100'],
+            'name_snapshot' => ['required', 'string', 'max:255'],
+            'preparation_wave_id' => ['required', 'uuid'],
+            'quantity_planned' => ['required', 'numeric', 'min:0.001'],
+            'quantity_loaded' => ['required', 'numeric', 'min:0'],
             'requires_refrigeration' => ['boolean'],
-            'short_reason'           => ['nullable', 'string', 'max:500'],
-            'notes'                  => ['nullable', 'string', 'max:1000'],
+            'short_reason' => ['nullable', 'string', 'max:500'],
+            'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }
 }

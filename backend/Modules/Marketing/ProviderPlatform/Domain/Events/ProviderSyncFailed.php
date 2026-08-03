@@ -10,5 +10,8 @@ namespace Modules\Marketing\ProviderPlatform\Domain\Events;
  */
 final class ProviderSyncFailed extends AbstractProviderEvent
 {
-    public function eventName(): string { return 'provider.sync_failed'; }
+    public function eventName(): string
+    {
+        return 'provider.sync_failed';
+    }
 }

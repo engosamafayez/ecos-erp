@@ -11,32 +11,32 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Operations\Loading\Domain\Enums\RoutePlanStatus;
 
 /**
- * @property string              $id
- * @property string              $company_id
- * @property string              $vehicle_assignment_id
- * @property string              $loading_session_id
- * @property string              $vehicle_id
- * @property string              $driver_assignment_id
- * @property string              $route_number
- * @property RoutePlanStatus     $status
- * @property int                 $version
- * @property string|null         $superseded_by_id
- * @property int                 $stops_count
- * @property float|null          $total_distance_km
- * @property int|null            $estimated_duration_min
- * @property float|null          $optimization_score
- * @property string|null         $optimization_algorithm
+ * @property string $id
+ * @property string $company_id
+ * @property string $vehicle_assignment_id
+ * @property string $loading_session_id
+ * @property string $vehicle_id
+ * @property string $driver_assignment_id
+ * @property string $route_number
+ * @property RoutePlanStatus $status
+ * @property int $version
+ * @property string|null $superseded_by_id
+ * @property int $stops_count
+ * @property float|null $total_distance_km
+ * @property int|null $estimated_duration_min
+ * @property float|null $optimization_score
+ * @property string|null $optimization_algorithm
  * @property \Carbon\Carbon|null $planned_departure_at
  * @property \Carbon\Carbon|null $actual_departure_at
  * @property \Carbon\Carbon|null $actual_return_at
  * @property \Carbon\Carbon|null $completed_at
  * @property \Carbon\Carbon|null $cancelled_at
- * @property string|null         $cancelled_by
- * @property string|null         $notes
- * @property string              $created_by
- * @property string              $updated_by
- * @property \Carbon\Carbon      $created_at
- * @property \Carbon\Carbon      $updated_at
+ * @property string|null $cancelled_by
+ * @property string|null $notes
+ * @property string $created_by
+ * @property string $updated_by
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class RoutePlan extends Model
 {
@@ -79,17 +79,17 @@ class RoutePlan extends Model
     protected function casts(): array
     {
         return [
-            'status'                 => RoutePlanStatus::class,
-            'version'                => 'integer',
-            'stops_count'            => 'integer',
+            'status' => RoutePlanStatus::class,
+            'version' => 'integer',
+            'stops_count' => 'integer',
             'estimated_duration_min' => 'integer',
-            'total_distance_km'      => 'float',
-            'optimization_score'     => 'float',
-            'planned_departure_at'   => 'datetime',
-            'actual_departure_at'    => 'datetime',
-            'actual_return_at'       => 'datetime',
-            'completed_at'           => 'datetime',
-            'cancelled_at'           => 'datetime',
+            'total_distance_km' => 'float',
+            'optimization_score' => 'float',
+            'planned_departure_at' => 'datetime',
+            'actual_departure_at' => 'datetime',
+            'actual_return_at' => 'datetime',
+            'completed_at' => 'datetime',
+            'cancelled_at' => 'datetime',
         ];
     }
 

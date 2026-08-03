@@ -22,7 +22,7 @@ final class InventoryReturnedListener
     ) {}
 
     /**
-     * @param  object{productId: string, warehouseId: string} $event
+     * @param  object{productId: string, warehouseId: string}  $event
      */
     public function handle(object $event): void
     {

@@ -20,20 +20,22 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { OrderStatusBadge } from '@/features/orders/components/order-status-badge';
 import { useOrdersQuery } from '@/features/orders/hooks/use-orders';
-import type { OrderStatus } from '@/features/orders/types/order';
+
 import type { Customer } from '@/features/customers/types/customer';
 import { cn } from '@/lib/utils';
 
-// Statuses that mean an order is in-flight (not terminal)
-const ACTIVE_ORDER_STATUSES = new Set<OrderStatus>([
-  'processing',
+// Statuses that mean an order is in-flight (not terminal). Aligned to the
+// canonical V3 OrderStatus union — the legacy values (processing/review/
+// confirmed/preparing/rescheduled) are no longer emitted by the backend.
+const ACTIVE_ORDER_STATUSES = new Set<string>([
+  'new',
+  'in_progress',
   'awaiting_payment',
-  'review',
-  'confirmed',
-  'preparing',
-  'out_for_delivery',
   'awaiting_stock',
-  'rescheduled',
+  'scheduled',
+  'ready_for_dispatch',
+  'out_for_delivery',
+  'on_hold',
 ]);
 
 type Props = {

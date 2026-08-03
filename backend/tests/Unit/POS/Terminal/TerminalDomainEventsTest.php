@@ -16,11 +16,15 @@ use PHPUnit\Framework\TestCase;
  */
 final class TerminalDomainEventsTest extends TestCase
 {
-    private const TERMINAL_ID   = 'terminal-uuid-1';
+    private const TERMINAL_ID = 'terminal-uuid-1';
+
     private const TERMINAL_CODE = 'POS-01';
-    private const BRANCH_ID     = 'branch-uuid-1';
-    private const WAREHOUSE_ID  = 'warehouse-uuid-1';
-    private const ACTOR_ID      = 'user-uuid-1';
+
+    private const BRANCH_ID = 'branch-uuid-1';
+
+    private const WAREHOUSE_ID = 'warehouse-uuid-1';
+
+    private const ACTOR_ID = 'user-uuid-1';
 
     // -------------------------------------------------------------------------
     // TerminalRegistered

@@ -23,13 +23,13 @@ final class ReceiptRendererTest extends TestCase
     {
         parent::setUp();
 
-        $this->renderer = new ReceiptRenderer();
+        $this->renderer = new ReceiptRenderer;
     }
 
     public function test_render_returns_rendering_model(): void
     {
         $receipt = $this->makeReceipt();
-        $model   = $this->renderer->render($receipt);
+        $model = $this->renderer->render($receipt);
 
         $this->assertInstanceOf(ReceiptRenderingModel::class, $model);
     }
@@ -104,23 +104,23 @@ final class ReceiptRendererTest extends TestCase
     {
         $array = $this->renderer->render($this->makeReceipt())->toArray();
 
-        $this->assertArrayHasKey('header_text',        $array);
-        $this->assertArrayHasKey('footer_text',        $array);
-        $this->assertArrayHasKey('receipt_number',     $array);
-        $this->assertArrayHasKey('receipt_type',       $array);
-        $this->assertArrayHasKey('issued_at',          $array);
-        $this->assertArrayHasKey('is_reprint',         $array);
-        $this->assertArrayHasKey('reprint_count',      $array);
+        $this->assertArrayHasKey('header_text', $array);
+        $this->assertArrayHasKey('footer_text', $array);
+        $this->assertArrayHasKey('receipt_number', $array);
+        $this->assertArrayHasKey('receipt_type', $array);
+        $this->assertArrayHasKey('issued_at', $array);
+        $this->assertArrayHasKey('is_reprint', $array);
+        $this->assertArrayHasKey('reprint_count', $array);
         $this->assertArrayHasKey('transaction_number', $array);
-        $this->assertArrayHasKey('terminal_id',        $array);
-        $this->assertArrayHasKey('cashier_name',       $array);
-        $this->assertArrayHasKey('customer_name',      $array);
-        $this->assertArrayHasKey('lines',              $array);
-        $this->assertArrayHasKey('totals',             $array);
-        $this->assertArrayHasKey('payments',           $array);
-        $this->assertArrayHasKey('currency',           $array);
-        $this->assertArrayHasKey('show_sku',           $array);
-        $this->assertArrayHasKey('show_cashier_name',  $array);
+        $this->assertArrayHasKey('terminal_id', $array);
+        $this->assertArrayHasKey('cashier_name', $array);
+        $this->assertArrayHasKey('customer_name', $array);
+        $this->assertArrayHasKey('lines', $array);
+        $this->assertArrayHasKey('totals', $array);
+        $this->assertArrayHasKey('payments', $array);
+        $this->assertArrayHasKey('currency', $array);
+        $this->assertArrayHasKey('show_sku', $array);
+        $this->assertArrayHasKey('show_cashier_name', $array);
         $this->assertArrayHasKey('show_customer_name', $array);
         $this->assertArrayHasKey('show_tax_breakdown', $array);
     }
@@ -130,24 +130,24 @@ final class ReceiptRendererTest extends TestCase
     private function makeReceipt(): Receipt
     {
         return Receipt::issue(
-            receiptNumber:             'RCP-20260701-T01-00001',
-            type:                      ReceiptType::Sale,
-            originalTransactionId:     'sale-1',
+            receiptNumber: 'RCP-20260701-T01-00001',
+            type: ReceiptType::Sale,
+            originalTransactionId: 'sale-1',
             originalTransactionNumber: 'SALE-0001',
-            terminalId:                'term-1',
-            sessionId:                 'sess-1',
-            shiftId:                   'shift-1',
-            cashierId:                 'cashier-1',
-            cashierName:               'Ali Hassan',
-            customerId:                null,
-            customerName:              null,
-            currency:                  'EGP',
-            lineItems:                 [
+            terminalId: 'term-1',
+            sessionId: 'sess-1',
+            shiftId: 'shift-1',
+            cashierId: 'cashier-1',
+            cashierName: 'Ali Hassan',
+            customerId: null,
+            customerName: null,
+            currency: 'EGP',
+            lineItems: [
                 ReceiptLineItem::of('prod-1', 'Blue Shirt', 'SKU-001', '1', '100.00', '100.00', 'EGP'),
             ],
-            totals:                    ReceiptTotals::of('100.00', '0.00', '14.00', '114.00', '120.00', '6.00', 'EGP'),
-            payments:                  [ReceiptPayment::of('cash', '120.00', 'EGP')],
-            issuedAt:                  new DateTimeImmutable('2026-07-01 10:00:00', new DateTimeZone('UTC')),
+            totals: ReceiptTotals::of('100.00', '0.00', '14.00', '114.00', '120.00', '6.00', 'EGP'),
+            payments: [ReceiptPayment::of('cash', '120.00', 'EGP')],
+            issuedAt: new DateTimeImmutable('2026-07-01 10:00:00', new DateTimeZone('UTC')),
         );
     }
 }

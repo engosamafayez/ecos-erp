@@ -31,24 +31,29 @@ class DemandAnalysisTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private Company $company;
+
     private Brand $brand;
+
     private Warehouse $warehouse;
+
     private Channel $channel;
+
     private Customer $customer;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->company   = Company::factory()->create();
-        $this->brand     = Brand::factory()->create(['company_id' => $this->company->id]);
+        $this->company = Company::factory()->create();
+        $this->brand = Brand::factory()->create(['company_id' => $this->company->id]);
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $this->channel   = Channel::factory()->create([
+        $this->channel = Channel::factory()->create([
             'brand_id' => $this->brand->id,
         ]);
         $this->customer = Customer::factory()->create();
-        $this->user     = User::factory()->create();
+        $this->user = User::factory()->create();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -56,7 +61,7 @@ class DemandAnalysisTest extends TestCase
     private function makeProduct(?string $sku = null): Product
     {
         return Product::factory()->create([
-            'sku' => $sku ?? 'SKU-' . uniqid(),
+            'sku' => $sku ?? 'SKU-'.uniqid(),
         ]);
     }
 
@@ -64,9 +69,9 @@ class DemandAnalysisTest extends TestCase
     {
         return InventoryItem::query()->create([
             'warehouse_id' => $this->warehouse->id,
-            'product_id'   => $product->id,
-            'company_id'   => $this->company->id,
-            'on_hand_qty'  => $onHand,
+            'product_id' => $product->id,
+            'company_id' => $this->company->id,
+            'on_hand_qty' => $onHand,
             'reserved_qty' => $reserved,
         ]);
     }
@@ -76,25 +81,25 @@ class DemandAnalysisTest extends TestCase
         ?Channel $channel = null,
     ): Order {
         return Order::query()->create([
-            'channel_id'   => ($channel ?? $this->channel)->id,
-            'customer_id'  => $this->customer->id,
-            'order_number' => 'ORD-' . uniqid(),
-            'order_date'   => now()->toDateString(),
-            'status'       => $status->value,
-            'subtotal'     => 0,
-            'total'        => 0,
+            'channel_id' => ($channel ?? $this->channel)->id,
+            'customer_id' => $this->customer->id,
+            'order_number' => 'ORD-'.uniqid(),
+            'order_date' => now()->toDateString(),
+            'status' => $status->value,
+            'subtotal' => 0,
+            'total' => 0,
             'shipping_total' => 0,
             'discount_total' => 0,
-            'tax_total'    => 0,
+            'tax_total' => 0,
         ]);
     }
 
     private function addLine(Order $order, Product $product, float $qty): OrderLine
     {
         return OrderLine::query()->create([
-            'order_id'   => $order->id,
+            'order_id' => $order->id,
             'product_id' => $product->id,
-            'quantity'   => $qty,
+            'quantity' => $qty,
             'unit_price' => 10.00,
             'line_total' => $qty * 10.00,
         ]);
@@ -241,7 +246,7 @@ class DemandAnalysisTest extends TestCase
 
     public function test_cancelled_and_completed_orders_are_excluded(): void
     {
-        $product   = $this->makeProduct('OIL-1L');
+        $product = $this->makeProduct('OIL-1L');
         $cancelled = $this->makeOrder(OrderStatus::Cancelled);
         $completed = $this->makeOrder(OrderStatus::Completed);
         $this->addLine($cancelled, $product, 5.0);
@@ -257,9 +262,9 @@ class DemandAnalysisTest extends TestCase
 
     public function test_both_pending_and_processing_orders_are_included(): void
     {
-        $product    = $this->makeProduct('SPICE-MIX');
+        $product = $this->makeProduct('SPICE-MIX');
         $this->seedStock($product, 100.0);
-        $pending    = $this->makeOrder(OrderStatus::Pending);
+        $pending = $this->makeOrder(OrderStatus::Pending);
         $processing = $this->makeOrder(OrderStatus::Processing);
         $this->addLine($pending, $product, 30.0);
         $this->addLine($processing, $product, 20.0);
@@ -385,21 +390,21 @@ class DemandAnalysisTest extends TestCase
 
     public function test_stock_from_multiple_warehouses_is_summed(): void
     {
-        $wh2     = Warehouse::factory()->create(['company_id' => $this->company->id]);
+        $wh2 = Warehouse::factory()->create(['company_id' => $this->company->id]);
         $product = $this->makeProduct('MULTI-WH');
 
         InventoryItem::query()->create([
             'warehouse_id' => $this->warehouse->id,
-            'product_id'   => $product->id,
-            'company_id'   => $this->company->id,
-            'on_hand_qty'  => 150.0,
+            'product_id' => $product->id,
+            'company_id' => $this->company->id,
+            'on_hand_qty' => 150.0,
             'reserved_qty' => 0,
         ]);
         InventoryItem::query()->create([
             'warehouse_id' => $wh2->id,
-            'product_id'   => $product->id,
-            'company_id'   => $this->company->id,
-            'on_hand_qty'  => 100.0,
+            'product_id' => $product->id,
+            'company_id' => $this->company->id,
+            'on_hand_qty' => 100.0,
             'reserved_qty' => 0,
         ]);
 

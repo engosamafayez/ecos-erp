@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Check, Plus, X } from 'lucide-react';
 
 import { ConfirmDialog, EntityDrawer, PageHeader, StatusBadge } from '@/components/crud';
@@ -28,6 +29,7 @@ const today = () => new Date().toISOString().slice(0, 10);
  * works out what that costs.
  */
 export function LeaveRequestsPage() {
+  const { t } = useTranslation('hr');
   const [statusFilter, setStatusFilter] = useState('pending');
   const [formOpen, setFormOpen] = useState(false);
   const [deciding, setDeciding] = useState<{ request: LeaveRequest; decision: 'approve' | 'reject' } | null>(null);
@@ -54,7 +56,7 @@ export function LeaveRequestsPage() {
     setError(null);
 
     if (!form.employee_id) {
-      setError('Choose an employee.');
+      setError(t('leave.errors.employeeRequired'));
       return;
     }
 
@@ -63,7 +65,7 @@ export function LeaveRequestsPage() {
       setForm({ ...form, reason: '', employee_id: '' });
       setFormOpen(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'The request could not be submitted.');
+      setError(e instanceof Error ? e.message : t('leave.errors.submitFailed'));
     }
   };
 
@@ -76,12 +78,12 @@ export function LeaveRequestsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Leave Requests"
-        subtitle="Approving writes the days onto attendance. The payroll flag tells Payroll whether they are deducted."
+        title={t('leave.title')}
+        subtitle={t('leave.subtitle')}
         actions={
           <Button size="sm" onClick={() => setFormOpen(true)}>
             <Plus className="size-4" />
-            New Request
+            {t('leave.newRequest')}
           </Button>
         }
       />
@@ -89,19 +91,19 @@ export function LeaveRequestsPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Showing</div>
+            <div className="text-muted-foreground text-sm">{t('leave.stats.showing')}</div>
             <div className="text-2xl font-bold">{isLoading ? '—' : rows.length}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Awaiting Approval</div>
+            <div className="text-muted-foreground text-sm">{t('leave.stats.awaitingApproval')}</div>
             <div className="text-2xl font-bold text-amber-600">{isLoading ? '—' : pendingCount}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Days Requested</div>
+            <div className="text-muted-foreground text-sm">{t('leave.stats.daysRequested')}</div>
             <div className="text-2xl font-bold">
               {isLoading ? '—' : rows.reduce((sum, r) => sum + r.days_count, 0)}
             </div>
@@ -112,54 +114,54 @@ export function LeaveRequestsPage() {
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">Status</span>
+            <span className="text-sm font-medium">{t('common.status')}</span>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
             >
-              <option value="">All</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="">{t('leave.status.all')}</option>
+              <option value="pending">{t('leave.status.pending')}</option>
+              <option value="approved">{t('leave.status.approved')}</option>
+              <option value="rejected">{t('leave.status.rejected')}</option>
+              <option value="cancelled">{t('leave.status.cancelled')}</option>
             </select>
           </div>
 
           {rows.length === 0 ? (
-            <p className="text-muted-foreground py-8 text-center text-sm">No leave requests to show.</p>
+            <p className="text-muted-foreground py-8 text-center text-sm">{t('leave.empty')}</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="text-muted-foreground border-b text-left text-xs uppercase">
+                <thead className="text-muted-foreground border-b text-start text-xs uppercase">
                   <tr>
-                    <th className="py-2 pr-4 font-medium">Number</th>
-                    <th className="py-2 pr-4 font-medium">Employee</th>
-                    <th className="py-2 pr-4 font-medium">Dates</th>
-                    <th className="py-2 pr-4 text-right font-medium">Days</th>
-                    <th className="py-2 pr-4 font-medium">Payroll</th>
-                    <th className="py-2 pr-4 font-medium">Status</th>
-                    <th className="py-2 pr-4 font-medium">Decision</th>
+                    <th className="py-2 pe-4 font-medium">{t('leave.table.number')}</th>
+                    <th className="py-2 pe-4 font-medium">{t('leave.table.employee')}</th>
+                    <th className="py-2 pe-4 font-medium">{t('leave.table.dates')}</th>
+                    <th className="py-2 pe-4 text-end font-medium">{t('leave.table.days')}</th>
+                    <th className="py-2 pe-4 font-medium">{t('leave.table.payroll')}</th>
+                    <th className="py-2 pe-4 font-medium">{t('leave.table.status')}</th>
+                    <th className="py-2 pe-4 font-medium">{t('leave.table.decision')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((request) => (
                     <tr key={request.id} className="border-b last:border-0">
-                      <td className="py-2 pr-4 font-mono text-xs">{request.request_number}</td>
-                      <td className="py-2 pr-4 font-medium">{request.employee?.name ?? '—'}</td>
-                      <td className="text-muted-foreground py-2 pr-4 tabular-nums">
+                      <td className="py-2 pe-4 font-mono text-xs">{request.request_number}</td>
+                      <td className="py-2 pe-4 font-medium">{request.employee?.name ?? '—'}</td>
+                      <td className="text-muted-foreground py-2 pe-4 tabular-nums">
                         {request.start_date} → {request.end_date}
                       </td>
-                      <td className="py-2 pr-4 text-right tabular-nums">{request.days_count}</td>
-                      <td className="py-2 pr-4">
+                      <td className="py-2 pe-4 text-end tabular-nums">{request.days_count}</td>
+                      <td className="py-2 pe-4">
                         <span className={request.deducts_salary ? 'text-red-600' : 'text-emerald-600'}>
                           {request.payroll_flag_label}
                         </span>
                       </td>
-                      <td className="py-2 pr-4">
+                      <td className="py-2 pe-4">
                         <StatusBadge status={STATUS_TONE[request.status]} label={request.status_label} />
                       </td>
-                      <td className="py-2 pr-4">
+                      <td className="py-2 pe-4">
                         {request.status === 'pending' ? (
                           <div className="flex gap-1">
                             <Button
@@ -168,7 +170,7 @@ export function LeaveRequestsPage() {
                               onClick={() => setDeciding({ request, decision: 'approve' })}
                             >
                               <Check className="size-3.5" />
-                              Approve
+                              {t('leave.approve')}
                             </Button>
                             <Button
                               size="sm"
@@ -176,7 +178,7 @@ export function LeaveRequestsPage() {
                               onClick={() => setDeciding({ request, decision: 'reject' })}
                             >
                               <X className="size-3.5" />
-                              Reject
+                              {t('leave.reject')}
                             </Button>
                           </div>
                         ) : (
@@ -197,15 +199,15 @@ export function LeaveRequestsPage() {
       <EntityDrawer
         open={formOpen}
         onOpenChange={setFormOpen}
-        title="New Leave Request"
-        description="Days off for one employee, with the instruction Payroll needs."
+        title={t('leave.form.title')}
+        description={t('leave.form.description')}
         footer={
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setFormOpen(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={() => void submitRequest()} disabled={submit.isPending}>
-              {submit.isPending ? 'Submitting…' : 'Submit Request'}
+              {submit.isPending ? t('leave.form.submitting') : t('leave.form.submit')}
             </Button>
           </div>
         }
@@ -214,14 +216,14 @@ export function LeaveRequestsPage() {
           {error ? <p className="text-destructive text-sm">{error}</p> : null}
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="employee_id">Employee</Label>
+            <Label htmlFor="employee_id">{t('common.employee')}</Label>
             <select
               id="employee_id"
               value={form.employee_id}
               onChange={(e) => setForm({ ...form, employee_id: e.target.value })}
               className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
             >
-              <option value="">Choose an employee…</option>
+              <option value="">{t('leave.form.chooseEmployee')}</option>
               {(employees?.items ?? []).map((employee) => (
                 <option key={employee.id} value={employee.id}>
                   {employee.name} ({employee.employee_number})
@@ -232,7 +234,7 @@ export function LeaveRequestsPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="start_date">From</Label>
+              <Label htmlFor="start_date">{t('leave.form.from')}</Label>
               <Input
                 id="start_date"
                 type="date"
@@ -241,7 +243,7 @@ export function LeaveRequestsPage() {
               />
             </div>
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="end_date">To</Label>
+              <Label htmlFor="end_date">{t('leave.form.to')}</Label>
               <Input
                 id="end_date"
                 type="date"
@@ -252,28 +254,26 @@ export function LeaveRequestsPage() {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="payroll_flag">Payroll Treatment</Label>
+            <Label htmlFor="payroll_flag">{t('leave.form.payrollTreatment')}</Label>
             <select
               id="payroll_flag"
               value={form.payroll_flag}
               onChange={(e) => setForm({ ...form, payroll_flag: e.target.value as LeavePayrollFlag })}
               className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
             >
-              <option value="deduct_salary">Deduct Salary</option>
-              <option value="do_not_deduct_salary">Do Not Deduct Salary</option>
+              <option value="deduct_salary">{t('leave.form.deductSalary')}</option>
+              <option value="do_not_deduct_salary">{t('leave.form.doNotDeductSalary')}</option>
             </select>
-            <span className="text-muted-foreground text-xs">
-              HR states the intent; Payroll calculates the amount.
-            </span>
+            <span className="text-muted-foreground text-xs">{t('leave.form.payrollHint')}</span>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="reason">Reason</Label>
+            <Label htmlFor="reason">{t('leave.form.reason')}</Label>
             <Input
               id="reason"
               value={form.reason}
               onChange={(e) => setForm({ ...form, reason: e.target.value })}
-              placeholder="Optional"
+              placeholder={t('leave.form.optional')}
             />
           </div>
         </div>
@@ -284,13 +284,18 @@ export function LeaveRequestsPage() {
         onOpenChange={(open) => {
           if (!open) setDeciding(null);
         }}
-        title={deciding?.decision === 'approve' ? 'Approve Leave' : 'Reject Leave'}
+        title={deciding?.decision === 'approve' ? t('leave.decide.approveTitle') : t('leave.decide.rejectTitle')}
         description={
           deciding?.decision === 'approve'
-            ? `Approve ${deciding.request.days_count} day(s) for ${deciding.request.employee?.name ?? 'this employee'}? The days will be written onto the attendance record.`
-            : `Reject this request for ${deciding?.request.employee?.name ?? 'this employee'}? Rejection is final.`
+            ? t('leave.decide.approveDescription', {
+                count: deciding.request.days_count,
+                name: deciding.request.employee?.name ?? t('leave.decide.thisEmployee'),
+              })
+            : t('leave.decide.rejectDescription', {
+                name: deciding?.request.employee?.name ?? t('leave.decide.thisEmployee'),
+              })
         }
-        confirmLabel={deciding?.decision === 'approve' ? 'Approve' : 'Reject'}
+        confirmLabel={deciding?.decision === 'approve' ? t('leave.approve') : t('leave.reject')}
         variant={deciding?.decision === 'reject' ? 'destructive' : 'default'}
         loading={decide.isPending}
         onConfirm={confirmDecision}

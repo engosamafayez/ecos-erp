@@ -10,6 +10,6 @@ final class CampaignUpdated
 {
     public function __construct(
         public readonly Campaign $campaign,
-        public readonly string   $previousStatus,
+        public readonly string $previousStatus,
     ) {}
 }

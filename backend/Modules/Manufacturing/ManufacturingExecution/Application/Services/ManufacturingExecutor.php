@@ -15,6 +15,7 @@ use Modules\Manufacturing\ManufacturingExecution\Domain\Exceptions\ExecutionExce
 use Modules\Manufacturing\ManufacturingExecution\Domain\Models\ManufacturingTransaction;
 use Modules\Manufacturing\ManufacturingExecution\Domain\ValueObjects\ManufacturingExecutionContext;
 use Modules\Manufacturing\ManufacturingExecution\Domain\ValueObjects\ManufacturingExecutionResult;
+use Throwable;
 
 /**
  * PKG-05B — The only component that executes a validated ManufacturingExecutionContext.
@@ -33,8 +34,8 @@ use Modules\Manufacturing\ManufacturingExecution\Domain\ValueObjects\Manufacturi
  * Architecture:
  *   ManufacturingExecutionContext → ManufacturingExecutor → ManufacturingExecutionResult
  *
- * @param string $companyId  Company context for InventoryItem lazy-creation.
- *                           Must match the company owning the warehouse in the context.
+ * @param  string  $companyId  Company context for InventoryItem lazy-creation.
+ *                             Must match the company owning the warehouse in the context.
  */
 final class ManufacturingExecutor
 {
@@ -47,8 +48,8 @@ final class ManufacturingExecutor
     /**
      * Execute a validated ManufacturingExecutionContext.
      *
-     * @throws ExecutionException  When context is invalid (no DB writes occur).
-     * @throws \Throwable          On in-transaction failures (all DB changes rolled back).
+     * @throws ExecutionException When context is invalid (no DB writes occur).
+     * @throws Throwable On in-transaction failures (all DB changes rolled back).
      */
     public function execute(ManufacturingExecutionContext $context, string $companyId): ManufacturingExecutionResult
     {
@@ -81,14 +82,14 @@ final class ManufacturingExecutor
                 $consumptionRecords = [];
                 foreach ($context->plan->components as $component) {
                     $record = $this->inventory->consumeComponent(
-                        component:     $component,
-                        warehouseId:   $context->plan->warehouse_id,
-                        planId:        $context->plan->plan_id,
-                        companyId:     $companyId,
+                        component: $component,
+                        warehouseId: $context->plan->warehouse_id,
+                        planId: $context->plan->plan_id,
+                        companyId: $companyId,
                         executionUuid: $context->execution_uuid,
                     );
                     $consumptionRecords[] = $record;
-                    $ledgerIds[]          = $record->ledger_entry_id;
+                    $ledgerIds[] = $record->ledger_entry_id;
                 }
 
                 // Lifecycle hook: after all components consumed (still inside transaction)
@@ -109,13 +110,13 @@ final class ManufacturingExecutor
 
                 // Step 3 — Produce finished goods (creates on_hand_qty increment + FIFO receipt layer)
                 $fgLedgerEntryId = $this->inventory->produceFinishedGoods(
-                    productId:    $context->plan->product_id,
-                    qty:          $context->plan->qty_to_manufacture,
-                    warehouseId:  $context->plan->warehouse_id,
-                    planId:       $context->plan->plan_id,
-                    companyId:    $companyId,
+                    productId: $context->plan->product_id,
+                    qty: $context->plan->qty_to_manufacture,
+                    warehouseId: $context->plan->warehouse_id,
+                    planId: $context->plan->plan_id,
+                    companyId: $companyId,
                     executionUuid: $context->execution_uuid,
-                    unitCost:     $unitCost,
+                    unitCost: $unitCost,
                 );
                 $ledgerIds[] = $fgLedgerEntryId;
 
@@ -123,27 +124,27 @@ final class ManufacturingExecutor
                 $this->hooks?->onAfterFinishedGoodsCreated($context, $fgLedgerEntryId);
 
                 // Step 4 — Record the manufacturing transaction (source of truth)
-                $executedAt = (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+                $executedAt = (new DateTimeImmutable)->format(DateTimeInterface::ATOM);
                 $durationMs = (int) (microtime(true) * 1000) - $startMs;
 
-                $transaction = new ManufacturingTransaction();
+                $transaction = new ManufacturingTransaction;
                 $transaction->fill([
-                    'execution_id'         => $context->execution_uuid,
-                    'decision_key'         => $context->decision_key,
-                    'correlation_id'       => $context->correlation_id,
-                    'plan_id'              => $context->plan->plan_id,
-                    'product_id'           => $context->plan->product_id,
-                    'warehouse_id'         => $context->plan->warehouse_id,
-                    'bom_id'               => $context->plan->recipe_id,
-                    'bom_version_number'   => $context->plan->bom_version_number,
+                    'execution_id' => $context->execution_uuid,
+                    'decision_key' => $context->decision_key,
+                    'correlation_id' => $context->correlation_id,
+                    'plan_id' => $context->plan->plan_id,
+                    'product_id' => $context->plan->product_id,
+                    'warehouse_id' => $context->plan->warehouse_id,
+                    'bom_id' => $context->plan->recipe_id,
+                    'bom_version_number' => $context->plan->bom_version_number,
                     'recipe_snapshot_hash' => $context->snapshot_hash,
-                    'qty_produced'         => $context->plan->qty_to_manufacture,
-                    'status'               => TransactionStatus::Completed->value,
-                    'executed_at'          => $executedAt,
-                    'duration_ms'          => $durationMs,
-                    'order_line_id'        => $context->plan->metadata['order_line_id'] ?? null, // RC-10
-                    'metadata'             => array_merge($context->transaction_metadata, [
-                        'plan_id'        => $context->plan->plan_id,
+                    'qty_produced' => $context->plan->qty_to_manufacture,
+                    'status' => TransactionStatus::Completed->value,
+                    'executed_at' => $executedAt,
+                    'duration_ms' => $durationMs,
+                    'order_line_id' => $context->plan->metadata['order_line_id'] ?? null, // RC-10
+                    'metadata' => array_merge($context->transaction_metadata, [
+                        'plan_id' => $context->plan->plan_id,
                         'correlation_id' => $context->correlation_id,
                     ]),
                 ]);
@@ -151,16 +152,16 @@ final class ManufacturingExecutor
                 $this->transactions->save($transaction);
 
                 return new ManufacturingExecutionResult(
-                    execution_id:        $context->execution_uuid,
-                    transaction_id:      $transaction->id,
-                    success:             true,
-                    was_idempotent:      false,
-                    qty_produced:        $context->plan->qty_to_manufacture,
+                    execution_id: $context->execution_uuid,
+                    transaction_id: $transaction->id,
+                    success: true,
+                    was_idempotent: false,
+                    qty_produced: $context->plan->qty_to_manufacture,
                     consumed_components: $consumptionRecords,
-                    ledger_entry_ids:    $ledgerIds,
-                    duration_ms:         $durationMs,
-                    executed_at:         $executedAt,
-                    metadata:            $context->transaction_metadata,
+                    ledger_entry_ids: $ledgerIds,
+                    duration_ms: $durationMs,
+                    executed_at: $executedAt,
+                    metadata: $context->transaction_metadata,
                 );
             });
 
@@ -169,7 +170,7 @@ final class ManufacturingExecutor
 
             return $result;
 
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // Lifecycle hook: after rollback — DO NOT re-throw here
             $this->hooks?->onAfterRollback($context, $e);
             throw $e;
@@ -191,16 +192,16 @@ final class ManufacturingExecutor
         string $replayExecutionUuid,
     ): ManufacturingExecutionResult {
         return new ManufacturingExecutionResult(
-            execution_id:        $replayExecutionUuid,
-            transaction_id:      $transaction->id,
-            success:             $transaction->status === TransactionStatus::Completed,
-            was_idempotent:      true,
-            qty_produced:        (float) $transaction->qty_produced,
+            execution_id: $replayExecutionUuid,
+            transaction_id: $transaction->id,
+            success: $transaction->status === TransactionStatus::Completed,
+            was_idempotent: true,
+            qty_produced: (float) $transaction->qty_produced,
             consumed_components: [],
-            ledger_entry_ids:    [],
-            duration_ms:         0,
-            executed_at:         (string) $transaction->executed_at,
-            metadata:            $transaction->metadata ?? [],
+            ledger_entry_ids: [],
+            duration_ms: 0,
+            executed_at: (string) $transaction->executed_at,
+            metadata: $transaction->metadata ?? [],
         );
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\POS\Sale;
 
+use InvalidArgumentException;
 use Modules\POS\Sale\Domain\Exceptions\InvalidSaleTransitionException;
 use Modules\POS\Sale\Domain\Models\Sale;
 use Modules\POS\Sale\Domain\ValueObjects\PaymentSummaryLine;
@@ -18,14 +19,21 @@ use Tests\TestCase;
  */
 final class SaleAggregateTest extends TestCase
 {
-    private const CART_ID        = 'cart-uuid-1';
-    private const PAYMENT_ID     = 'pay-uuid-1';
-    private const SESSION_ID     = 'session-uuid-1';
-    private const SHIFT_ID       = 'shift-uuid-1';
-    private const TERMINAL_ID    = 'terminal-uuid-1';
-    private const CASHIER_ID     = 'cashier-uuid-1';
+    private const CART_ID = 'cart-uuid-1';
+
+    private const PAYMENT_ID = 'pay-uuid-1';
+
+    private const SESSION_ID = 'session-uuid-1';
+
+    private const SHIFT_ID = 'shift-uuid-1';
+
+    private const TERMINAL_ID = 'terminal-uuid-1';
+
+    private const CASHIER_ID = 'cashier-uuid-1';
+
     private const RECEIPT_NUMBER = 'RCP-2026-000001';
-    private const CURRENCY       = 'EGP';
+
+    private const CURRENCY = 'EGP';
 
     private function makeMoney(string $amount): Money
     {
@@ -35,54 +43,54 @@ final class SaleAggregateTest extends TestCase
     private function makeSaleLine(string $lineId = 'line-1'): SaleLine
     {
         return SaleLine::fromCartLine([
-            'id'             => $lineId,
-            'product_id'     => 'prod-1',
-            'product_name'   => 'Widget',
-            'sku'            => 'WGT-001',
-            'quantity'       => '2.0000',
-            'unit_price'     => ['amount' => '50.00', 'currency' => self::CURRENCY],
-            'discount_type'  => null,
+            'id' => $lineId,
+            'product_id' => 'prod-1',
+            'product_name' => 'Widget',
+            'sku' => 'WGT-001',
+            'quantity' => '2.0000',
+            'unit_price' => ['amount' => '50.00', 'currency' => self::CURRENCY],
+            'discount_type' => null,
             'discount_value' => null,
-            'line_total'     => ['amount' => '100.00', 'currency' => self::CURRENCY],
-            'sort_order'     => 0,
+            'line_total' => ['amount' => '100.00', 'currency' => self::CURRENCY],
+            'sort_order' => 0,
         ]);
     }
 
     private function makePaymentSummary(string $type = 'cash', string $amount = '100.00'): PaymentSummaryLine
     {
         return PaymentSummaryLine::fromTender([
-            'id'        => 'tender-1',
-            'type'      => $type,
-            'amount'    => ['amount' => $amount, 'currency' => self::CURRENCY],
+            'id' => 'tender-1',
+            'type' => $type,
+            'amount' => ['amount' => $amount, 'currency' => self::CURRENCY],
             'reference' => null,
-            'metadata'  => [],
+            'metadata' => [],
         ]);
     }
 
     private function makeSale(
-        string  $total          = '100.00',
-        string  $amountPaid     = '100.00',
-        string  $changeGiven    = '0.00',
-        ?string $customerId     = null,
-        ?array  $lines          = null,
-        ?array  $summaries      = null,
+        string $total = '100.00',
+        string $amountPaid = '100.00',
+        string $changeGiven = '0.00',
+        ?string $customerId = null,
+        ?array $lines = null,
+        ?array $summaries = null,
     ): Sale {
         return Sale::record(
-            cartId:           self::CART_ID,
-            paymentId:        self::PAYMENT_ID,
-            sessionId:        self::SESSION_ID,
-            shiftId:          self::SHIFT_ID,
-            terminalId:       self::TERMINAL_ID,
-            cashierId:        self::CASHIER_ID,
-            customerId:       $customerId,
-            currency:         self::CURRENCY,
-            receiptNumber:    self::RECEIPT_NUMBER,
-            lines:            $lines ?? [$this->makeSaleLine()],
-            subtotal:         $this->makeMoney($total),
-            discountTotal:    Money::zero(self::CURRENCY),
-            total:            $this->makeMoney($total),
-            amountPaid:       $this->makeMoney($amountPaid),
-            changeGiven:      $this->makeMoney($changeGiven),
+            cartId: self::CART_ID,
+            paymentId: self::PAYMENT_ID,
+            sessionId: self::SESSION_ID,
+            shiftId: self::SHIFT_ID,
+            terminalId: self::TERMINAL_ID,
+            cashierId: self::CASHIER_ID,
+            customerId: $customerId,
+            currency: self::CURRENCY,
+            receiptNumber: self::RECEIPT_NUMBER,
+            lines: $lines ?? [$this->makeSaleLine()],
+            subtotal: $this->makeMoney($total),
+            discountTotal: Money::zero(self::CURRENCY),
+            total: $this->makeMoney($total),
+            amountPaid: $this->makeMoney($amountPaid),
+            changeGiven: $this->makeMoney($changeGiven),
             paymentSummaries: $summaries ?? [$this->makePaymentSummary()],
         );
     }
@@ -173,7 +181,7 @@ final class SaleAggregateTest extends TestCase
     public function test_record_stores_payment_summaries(): void
     {
         $summaries = [$this->makePaymentSummary('cash', '60.00'), $this->makePaymentSummary('card', '40.00')];
-        $sale      = $this->makeSale(summaries: $summaries);
+        $sale = $this->makeSale(summaries: $summaries);
         $this->assertCount(2, $sale->getPaymentSummaries());
     }
 
@@ -186,7 +194,7 @@ final class SaleAggregateTest extends TestCase
 
     public function test_record_throws_for_empty_cart_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         Sale::record('', self::PAYMENT_ID, self::SESSION_ID, self::SHIFT_ID, self::TERMINAL_ID,
             self::CASHIER_ID, null, self::CURRENCY, self::RECEIPT_NUMBER,
             [$this->makeSaleLine()], $this->makeMoney('10.00'), Money::zero(self::CURRENCY),
@@ -197,7 +205,7 @@ final class SaleAggregateTest extends TestCase
 
     public function test_record_throws_for_empty_payment_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         Sale::record(self::CART_ID, '', self::SESSION_ID, self::SHIFT_ID, self::TERMINAL_ID,
             self::CASHIER_ID, null, self::CURRENCY, self::RECEIPT_NUMBER,
             [$this->makeSaleLine()], $this->makeMoney('10.00'), Money::zero(self::CURRENCY),
@@ -208,7 +216,7 @@ final class SaleAggregateTest extends TestCase
 
     public function test_record_throws_for_empty_session_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         Sale::record(self::CART_ID, self::PAYMENT_ID, '', self::SHIFT_ID, self::TERMINAL_ID,
             self::CASHIER_ID, null, self::CURRENCY, self::RECEIPT_NUMBER,
             [$this->makeSaleLine()], $this->makeMoney('10.00'), Money::zero(self::CURRENCY),
@@ -219,7 +227,7 @@ final class SaleAggregateTest extends TestCase
 
     public function test_record_throws_for_empty_shift_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         Sale::record(self::CART_ID, self::PAYMENT_ID, self::SESSION_ID, '', self::TERMINAL_ID,
             self::CASHIER_ID, null, self::CURRENCY, self::RECEIPT_NUMBER,
             [$this->makeSaleLine()], $this->makeMoney('10.00'), Money::zero(self::CURRENCY),
@@ -230,7 +238,7 @@ final class SaleAggregateTest extends TestCase
 
     public function test_record_throws_for_empty_terminal_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         Sale::record(self::CART_ID, self::PAYMENT_ID, self::SESSION_ID, self::SHIFT_ID, '',
             self::CASHIER_ID, null, self::CURRENCY, self::RECEIPT_NUMBER,
             [$this->makeSaleLine()], $this->makeMoney('10.00'), Money::zero(self::CURRENCY),
@@ -241,7 +249,7 @@ final class SaleAggregateTest extends TestCase
 
     public function test_record_throws_for_empty_cashier_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         Sale::record(self::CART_ID, self::PAYMENT_ID, self::SESSION_ID, self::SHIFT_ID,
             self::TERMINAL_ID, '', null, self::CURRENCY, self::RECEIPT_NUMBER,
             [$this->makeSaleLine()], $this->makeMoney('10.00'), Money::zero(self::CURRENCY),
@@ -252,7 +260,7 @@ final class SaleAggregateTest extends TestCase
 
     public function test_record_throws_for_empty_receipt_number(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         Sale::record(self::CART_ID, self::PAYMENT_ID, self::SESSION_ID, self::SHIFT_ID,
             self::TERMINAL_ID, self::CASHIER_ID, null, self::CURRENCY, '',
             [$this->makeSaleLine()], $this->makeMoney('10.00'), Money::zero(self::CURRENCY),
@@ -263,7 +271,7 @@ final class SaleAggregateTest extends TestCase
 
     public function test_record_throws_for_empty_lines(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         Sale::record(self::CART_ID, self::PAYMENT_ID, self::SESSION_ID, self::SHIFT_ID,
             self::TERMINAL_ID, self::CASHIER_ID, null, self::CURRENCY, self::RECEIPT_NUMBER,
             [], $this->makeMoney('10.00'), Money::zero(self::CURRENCY),
@@ -274,7 +282,7 @@ final class SaleAggregateTest extends TestCase
 
     public function test_record_throws_for_empty_payment_summaries(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         Sale::record(self::CART_ID, self::PAYMENT_ID, self::SESSION_ID, self::SHIFT_ID,
             self::TERMINAL_ID, self::CASHIER_ID, null, self::CURRENCY, self::RECEIPT_NUMBER,
             [$this->makeSaleLine()], $this->makeMoney('10.00'), Money::zero(self::CURRENCY),
@@ -285,7 +293,7 @@ final class SaleAggregateTest extends TestCase
 
     public function test_record_throws_for_negative_change_given(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         Sale::record(self::CART_ID, self::PAYMENT_ID, self::SESSION_ID, self::SHIFT_ID,
             self::TERMINAL_ID, self::CASHIER_ID, null, self::CURRENCY, self::RECEIPT_NUMBER,
             [$this->makeSaleLine()], $this->makeMoney('100.00'), Money::zero(self::CURRENCY),
@@ -476,7 +484,7 @@ final class SaleAggregateTest extends TestCase
 
     public function test_get_lines_returns_sale_line_instances(): void
     {
-        $sale  = $this->makeSale(lines: [$this->makeSaleLine('l1'), $this->makeSaleLine('l2')]);
+        $sale = $this->makeSale(lines: [$this->makeSaleLine('l1'), $this->makeSaleLine('l2')]);
         $lines = $sale->getLines();
         $this->assertCount(2, $lines);
         $this->assertContainsOnlyInstancesOf(SaleLine::class, $lines);
@@ -484,7 +492,7 @@ final class SaleAggregateTest extends TestCase
 
     public function test_get_payment_summaries_returns_summary_instances(): void
     {
-        $sale      = $this->makeSale(summaries: [$this->makePaymentSummary()]);
+        $sale = $this->makeSale(summaries: [$this->makePaymentSummary()]);
         $summaries = $sale->getPaymentSummaries();
         $this->assertCount(1, $summaries);
         $this->assertContainsOnlyInstancesOf(PaymentSummaryLine::class, $summaries);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\ValueObjects;
 
+use InvalidArgumentException;
 use Modules\POS\Shared\Domain\Exceptions\InvalidMoneyOperationException;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
 use PHPUnit\Framework\TestCase;
@@ -44,14 +45,14 @@ final class MoneyTest extends TestCase
 
     public function test_constructor_rejects_non_numeric_amount(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         new Money('abc', 'EGP');
     }
 
     public function test_constructor_rejects_empty_currency(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         Money::of(100, '');
     }

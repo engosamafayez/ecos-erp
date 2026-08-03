@@ -16,7 +16,7 @@ use Modules\POS\Session\Domain\ValueObjects\DeviceFingerprint;
 final class OpenSessionService
 {
     public function __construct(
-        private readonly SessionRepositoryInterface    $sessionRepo,
+        private readonly SessionRepositoryInterface $sessionRepo,
         private readonly DomainEventPublisherInterface $publisher,
     ) {}
 
@@ -27,13 +27,13 @@ final class OpenSessionService
         }
 
         $session = Session::open(
-            cashierId:   $command->cashierId,
-            companyId:   $command->companyId,
-            channelId:   $command->channelId,
+            cashierId: $command->cashierId,
+            companyId: $command->companyId,
+            channelId: $command->channelId,
             warehouseId: $command->warehouseId,
             fingerprint: DeviceFingerprint::of($command->deviceFingerprint),
-            ipAddress:   $command->ipAddress,
-            deviceType:  DeviceType::from($command->deviceType),
+            ipAddress: $command->ipAddress,
+            deviceType: DeviceType::from($command->deviceType),
         );
 
         $this->sessionRepo->save($session);

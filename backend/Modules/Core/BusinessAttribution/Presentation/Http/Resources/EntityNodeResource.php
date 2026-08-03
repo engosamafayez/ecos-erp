@@ -19,15 +19,15 @@ class EntityNodeResource extends JsonResource
             : NodeType::from($this->node_type);
 
         return [
-            'id'          => $this->id,
-            'node_type'   => $nodeType->value,
-            'node_label'  => $nodeType->label(),
-            'entity_id'   => $this->entity_id,
+            'id' => $this->id,
+            'node_type' => $nodeType->value,
+            'node_label' => $nodeType->label(),
+            'entity_id' => $this->entity_id,
             'entity_type' => $this->entity_type,
-            'company_id'  => $this->company_id,
-            'label'       => $this->label,
-            'properties'  => $this->properties,
-            'created_at'  => $this->created_at?->toIso8601String(),
+            'company_id' => $this->company_id,
+            'label' => $this->label,
+            'properties' => $this->properties,
+            'created_at' => $this->created_at?->toIso8601String(),
         ];
     }
 }

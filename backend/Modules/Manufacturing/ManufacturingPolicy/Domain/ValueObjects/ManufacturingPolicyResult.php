@@ -44,10 +44,10 @@ final readonly class ManufacturingPolicyResult
     public static function eligible(array $metadata = []): self
     {
         return new self(
-            eligible:    true,
-            reason:      PolicyCode::Eligible->label(),
+            eligible: true,
+            reason: PolicyCode::Eligible->label(),
             policy_code: PolicyCode::Eligible,
-            metadata:    $metadata,
+            metadata: $metadata,
         );
     }
 
@@ -60,10 +60,10 @@ final readonly class ManufacturingPolicyResult
         array $metadata = [],
     ): self {
         return new self(
-            eligible:    false,
-            reason:      $reason,
+            eligible: false,
+            reason: $reason,
             policy_code: $code,
-            metadata:    $metadata,
+            metadata: $metadata,
         );
     }
 
@@ -71,10 +71,10 @@ final readonly class ManufacturingPolicyResult
     public function toArray(): array
     {
         return [
-            'eligible'    => $this->eligible,
-            'reason'      => $this->reason,
+            'eligible' => $this->eligible,
+            'reason' => $this->reason,
             'policy_code' => $this->policy_code->value,
-            'metadata'    => $this->metadata,
+            'metadata' => $this->metadata,
         ];
     }
 }

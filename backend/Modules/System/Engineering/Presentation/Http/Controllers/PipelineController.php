@@ -46,7 +46,7 @@ final class PipelineController extends Controller
     {
         $validated = $request->validate([
             'task_name' => 'nullable|string|max:255',
-            'branch'    => 'nullable|string|max:100',
+            'branch'    => ['nullable', 'string', 'max:100', 'regex:/^[a-zA-Z0-9._\/\-]+$/'],
             'template'  => 'nullable|string|max:100',
         ]);
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Manufacturing;
 
+use BackedEnum;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Inventory\InventoryItems\Domain\Models\InventoryItem;
 use Modules\Inventory\InventoryItems\Domain\Models\StockLedgerEntry;
@@ -22,7 +23,9 @@ use Modules\Manufacturing\ManufacturingService\Application\DTOs\Responses\Disass
 use Modules\Manufacturing\ManufacturingService\Application\Services\ManufacturingApplicationService;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Organization\Companies\Domain\Models\Company;
+use RuntimeException;
 use Tests\TestCase;
+use Throwable;
 
 /**
  * PKG-08: Automatic Disassembly — feature tests.
@@ -47,21 +50,26 @@ class DisassemblyTest extends TestCase
     use RefreshDatabase;
 
     private ManufacturingApplicationService $service;
+
     private DisassemblyPolicy $policy;
+
     private DisassemblyWorkflow $workflow;
+
     private DisassemblyExecutor $executor;
+
     private Company $company;
+
     private Warehouse $warehouse;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->company   = Company::factory()->create();
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
 
-        $this->service  = app(ManufacturingApplicationService::class);
-        $this->policy   = app(DisassemblyPolicy::class);
+        $this->service = app(ManufacturingApplicationService::class);
+        $this->policy = app(DisassemblyPolicy::class);
         $this->workflow = app(DisassemblyWorkflow::class);
         $this->executor = app(DisassemblyExecutor::class);
     }
@@ -84,11 +92,11 @@ class DisassemblyTest extends TestCase
     private function makeRecipe(Product $finishedGood, int $version = 1): Recipe
     {
         return Recipe::create([
-            'bom_number'         => 'BOM-DSA-' . uniqid(),
-            'product_id'         => $finishedGood->id,
-            'version'            => "{$version}.0",
+            'bom_number' => 'BOM-DSA-'.uniqid(),
+            'product_id' => $finishedGood->id,
+            'version' => "{$version}.0",
             'bom_version_number' => $version,
-            'is_active'          => true,
+            'is_active' => true,
         ]);
     }
 
@@ -96,7 +104,7 @@ class DisassemblyTest extends TestCase
     {
         $recipe->components()->create([
             'raw_material_id' => $component->id,
-            'quantity'        => $qty,
+            'quantity' => $qty,
         ]);
     }
 
@@ -104,9 +112,9 @@ class DisassemblyTest extends TestCase
     {
         return InventoryItem::query()->create([
             'warehouse_id' => $this->warehouse->id,
-            'product_id'   => $product->id,
-            'company_id'   => $this->company->id,
-            'on_hand_qty'  => $onHand,
+            'product_id' => $product->id,
+            'company_id' => $this->company->id,
+            'on_hand_qty' => $onHand,
             'reserved_qty' => $reserved,
         ]);
     }
@@ -117,12 +125,12 @@ class DisassemblyTest extends TestCase
         ?string $triggerId = null,
     ): DisassembleProductRequest {
         return new DisassembleProductRequest(
-            product_id:   $product->id,
+            product_id: $product->id,
             warehouse_id: $this->warehouse->id,
-            company_id:   $this->company->id,
-            quantity:     $quantity,
-            actor_id:     'test-actor',
-            trigger_id:   $triggerId,
+            company_id: $this->company->id,
+            quantity: $quantity,
+            actor_id: 'test-actor',
+            trigger_id: $triggerId,
         );
     }
 
@@ -130,9 +138,9 @@ class DisassemblyTest extends TestCase
 
     public function test_successful_disassembly_decrements_finished_goods(): void
     {
-        $fg        = $this->makeFinishedGood();
+        $fg = $this->makeFinishedGood();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($fg);
+        $recipe = $this->makeRecipe($fg);
         $this->addLine($recipe, $component, qty: 2.0);
 
         $this->seedInventory($fg, onHand: 5.0);
@@ -152,9 +160,9 @@ class DisassemblyTest extends TestCase
 
     public function test_successful_disassembly_increments_component_inventory(): void
     {
-        $fg        = $this->makeFinishedGood();
+        $fg = $this->makeFinishedGood();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($fg);
+        $recipe = $this->makeRecipe($fg);
         $this->addLine($recipe, $component, qty: 3.0);
 
         $this->seedInventory($fg, onHand: 4.0);
@@ -171,13 +179,13 @@ class DisassemblyTest extends TestCase
 
     public function test_successful_disassembly_creates_transaction_record(): void
     {
-        $fg        = $this->makeFinishedGood();
+        $fg = $this->makeFinishedGood();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($fg);
+        $recipe = $this->makeRecipe($fg);
         $this->addLine($recipe, $component, qty: 1.0);
 
         $this->seedInventory($fg, onHand: 3.0);
-        $triggerId = 'return-line-' . uniqid();
+        $triggerId = 'return-line-'.uniqid();
 
         $response = $this->service->disassembleProduct($this->makeRequest($fg, quantity: 1.0, triggerId: $triggerId));
 
@@ -194,9 +202,9 @@ class DisassemblyTest extends TestCase
 
     public function test_successful_disassembly_result_structure(): void
     {
-        $fg        = $this->makeFinishedGood();
+        $fg = $this->makeFinishedGood();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($fg);
+        $recipe = $this->makeRecipe($fg);
         $this->addLine($recipe, $component, qty: 2.0);
 
         $this->seedInventory($fg, onHand: 5.0);
@@ -216,7 +224,7 @@ class DisassemblyTest extends TestCase
 
     public function test_multiple_components_all_produced(): void
     {
-        $fg   = $this->makeFinishedGood();
+        $fg = $this->makeFinishedGood();
         $mat1 = $this->makeComponent();
         $mat2 = $this->makeComponent();
         $recipe = $this->makeRecipe($fg);
@@ -245,11 +253,11 @@ class DisassemblyTest extends TestCase
         $product = Product::factory()->finishedGood()->create(['can_manufacture' => true]);
 
         $policyRequest = new DisassemblyPolicyRequest(
-            product_id:           $product->id,
-            quantity:             1.0,
-            actor_id:             'test-actor',
-            can_disassemble:      false,
-            has_active_recipe:    true,
+            product_id: $product->id,
+            quantity: 1.0,
+            actor_id: 'test-actor',
+            can_disassemble: false,
+            has_active_recipe: true,
             is_inventory_managed: true,
             already_disassembled: false,
         );
@@ -265,11 +273,11 @@ class DisassemblyTest extends TestCase
         $product = Product::factory()->finishedGood()->create(['can_disassemble' => true]);
 
         $policyRequest = new DisassemblyPolicyRequest(
-            product_id:           $product->id,
-            quantity:             1.0,
-            actor_id:             'test-actor',
-            can_disassemble:      true,
-            has_active_recipe:    false,
+            product_id: $product->id,
+            quantity: 1.0,
+            actor_id: 'test-actor',
+            can_disassemble: true,
+            has_active_recipe: false,
             is_inventory_managed: true,
             already_disassembled: false,
         );
@@ -285,14 +293,14 @@ class DisassemblyTest extends TestCase
         $product = Product::factory()->finishedGood()->create(['can_disassemble' => true]);
 
         $policyRequest = new DisassemblyPolicyRequest(
-            product_id:           $product->id,
-            quantity:             1.0,
-            actor_id:             'test-actor',
-            can_disassemble:      true,
-            has_active_recipe:    true,
+            product_id: $product->id,
+            quantity: 1.0,
+            actor_id: 'test-actor',
+            can_disassemble: true,
+            has_active_recipe: true,
             is_inventory_managed: true,
             already_disassembled: true,
-            trigger_id:           'return-line-abc',
+            trigger_id: 'return-line-abc',
         );
 
         $result = $this->policy->evaluate($policyRequest);
@@ -306,11 +314,11 @@ class DisassemblyTest extends TestCase
         $product = Product::factory()->finishedGood()->create(['can_disassemble' => true]);
 
         $policyRequest = new DisassemblyPolicyRequest(
-            product_id:           $product->id,
-            quantity:             5.0,
-            actor_id:             'test-actor',
-            can_disassemble:      true,
-            has_active_recipe:    true,
+            product_id: $product->id,
+            quantity: 5.0,
+            actor_id: 'test-actor',
+            can_disassemble: true,
+            has_active_recipe: true,
             is_inventory_managed: true,
             already_disassembled: false,
         );
@@ -328,7 +336,7 @@ class DisassemblyTest extends TestCase
         $fg = $this->makeFinishedGood();
         // No recipe created
 
-        $request  = $this->makeRequest($fg, quantity: 1.0);
+        $request = $this->makeRequest($fg, quantity: 1.0);
         $response = $this->service->disassembleProduct($request);
 
         $this->assertTrue($response->is_blocked);
@@ -339,14 +347,14 @@ class DisassemblyTest extends TestCase
 
     public function test_workflow_blocks_when_insufficient_finished_goods(): void
     {
-        $fg        = $this->makeFinishedGood();
+        $fg = $this->makeFinishedGood();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($fg);
+        $recipe = $this->makeRecipe($fg);
         $this->addLine($recipe, $component, qty: 1.0);
 
         $this->seedInventory($fg, onHand: 2.0); // Only 2 available, requesting 5
 
-        $request  = $this->makeRequest($fg, quantity: 5.0);
+        $request = $this->makeRequest($fg, quantity: 5.0);
         $response = $this->service->disassembleProduct($request);
 
         $this->assertTrue($response->is_blocked);
@@ -358,15 +366,15 @@ class DisassemblyTest extends TestCase
 
     public function test_duplicate_trigger_returns_idempotent_result(): void
     {
-        $fg        = $this->makeFinishedGood();
+        $fg = $this->makeFinishedGood();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($fg);
+        $recipe = $this->makeRecipe($fg);
         $this->addLine($recipe, $component, qty: 1.0);
 
         $this->seedInventory($fg, onHand: 5.0);
-        $triggerId = 'return-line-idem-' . uniqid();
+        $triggerId = 'return-line-idem-'.uniqid();
 
-        $request  = $this->makeRequest($fg, quantity: 1.0, triggerId: $triggerId);
+        $request = $this->makeRequest($fg, quantity: 1.0, triggerId: $triggerId);
         $response1 = $this->service->disassembleProduct($request);
         $response2 = $this->service->disassembleProduct($request); // same trigger_id
 
@@ -376,13 +384,13 @@ class DisassemblyTest extends TestCase
 
     public function test_duplicate_execution_does_not_double_decrement_finished_goods(): void
     {
-        $fg        = $this->makeFinishedGood();
+        $fg = $this->makeFinishedGood();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($fg);
+        $recipe = $this->makeRecipe($fg);
         $this->addLine($recipe, $component, qty: 1.0);
 
         $this->seedInventory($fg, onHand: 5.0);
-        $triggerId = 'return-line-dbl-' . uniqid();
+        $triggerId = 'return-line-dbl-'.uniqid();
 
         $request = $this->makeRequest($fg, quantity: 1.0, triggerId: $triggerId);
         $this->service->disassembleProduct($request);
@@ -398,13 +406,13 @@ class DisassemblyTest extends TestCase
 
     public function test_duplicate_execution_creates_only_one_transaction(): void
     {
-        $fg        = $this->makeFinishedGood();
+        $fg = $this->makeFinishedGood();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($fg);
+        $recipe = $this->makeRecipe($fg);
         $this->addLine($recipe, $component, qty: 1.0);
 
         $this->seedInventory($fg, onHand: 5.0);
-        $triggerId = 'return-line-once-' . uniqid();
+        $triggerId = 'return-line-once-'.uniqid();
 
         $request = $this->makeRequest($fg, quantity: 1.0, triggerId: $triggerId);
         $this->service->disassembleProduct($request);
@@ -417,9 +425,9 @@ class DisassemblyTest extends TestCase
 
     public function test_rollback_restores_finished_goods_on_transaction_failure(): void
     {
-        $fg        = $this->makeFinishedGood();
+        $fg = $this->makeFinishedGood();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($fg);
+        $recipe = $this->makeRecipe($fg);
         $this->addLine($recipe, $component, qty: 1.0);
 
         $fgItem = $this->seedInventory($fg, onHand: 5.0);
@@ -429,10 +437,10 @@ class DisassemblyTest extends TestCase
         $mockRepo = $this->createMock(DisassemblyTransactionRepositoryInterface::class);
         $mockRepo->method('findByPlanId')->willReturn(null);
         $mockRepo->method('findByTriggerId')->willReturn(null);
-        $mockRepo->method('save')->willThrowException(new \RuntimeException('Simulated DB failure'));
+        $mockRepo->method('save')->willThrowException(new RuntimeException('Simulated DB failure'));
 
         $executor = new DisassemblyExecutor(
-            inventory:    app(DisassemblyInventoryAdapter::class),
+            inventory: app(DisassemblyInventoryAdapter::class),
             transactions: $mockRepo,
         );
 
@@ -442,7 +450,7 @@ class DisassemblyTest extends TestCase
         try {
             $executor->execute($plan, $this->company->id);
             $this->fail('Expected exception was not thrown');
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // Expected
         }
 
@@ -452,9 +460,9 @@ class DisassemblyTest extends TestCase
 
     public function test_rollback_creates_no_ledger_entries_on_failure(): void
     {
-        $fg        = $this->makeFinishedGood();
+        $fg = $this->makeFinishedGood();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($fg);
+        $recipe = $this->makeRecipe($fg);
         $this->addLine($recipe, $component, qty: 1.0);
 
         $this->seedInventory($fg, onHand: 5.0);
@@ -462,10 +470,10 @@ class DisassemblyTest extends TestCase
         $mockRepo = $this->createMock(DisassemblyTransactionRepositoryInterface::class);
         $mockRepo->method('findByPlanId')->willReturn(null);
         $mockRepo->method('findByTriggerId')->willReturn(null);
-        $mockRepo->method('save')->willThrowException(new \RuntimeException('Simulated DB failure'));
+        $mockRepo->method('save')->willThrowException(new RuntimeException('Simulated DB failure'));
 
         $executor = new DisassemblyExecutor(
-            inventory:    app(DisassemblyInventoryAdapter::class),
+            inventory: app(DisassemblyInventoryAdapter::class),
             transactions: $mockRepo,
         );
 
@@ -473,7 +481,8 @@ class DisassemblyTest extends TestCase
 
         try {
             $executor->execute($plan, $this->company->id);
-        } catch (\Throwable) {}
+        } catch (Throwable) {
+        }
 
         $this->assertDatabaseCount('stock_ledger_entries', 0);
         $this->assertDatabaseCount('disassembly_transactions', 0);
@@ -483,9 +492,9 @@ class DisassemblyTest extends TestCase
 
     public function test_ledger_entries_have_correct_movement_types(): void
     {
-        $fg        = $this->makeFinishedGood();
+        $fg = $this->makeFinishedGood();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($fg);
+        $recipe = $this->makeRecipe($fg);
         $this->addLine($recipe, $component, qty: 2.0);
 
         $this->seedInventory($fg, onHand: 5.0);
@@ -498,16 +507,16 @@ class DisassemblyTest extends TestCase
 
         $this->assertCount(2, $entries);
 
-        $types = $entries->pluck('movement_type')->map(fn ($t) => $t instanceof \BackedEnum ? $t->value : $t)->toArray();
+        $types = $entries->pluck('movement_type')->map(fn ($t) => $t instanceof BackedEnum ? $t->value : $t)->toArray();
         $this->assertContains('disassembly_consumption', $types);
         $this->assertContains('disassembly_output', $types);
     }
 
     public function test_ledger_entries_are_immutable_and_reference_plan(): void
     {
-        $fg        = $this->makeFinishedGood();
+        $fg = $this->makeFinishedGood();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($fg);
+        $recipe = $this->makeRecipe($fg);
         $this->addLine($recipe, $component, qty: 1.0);
 
         $this->seedInventory($fg, onHand: 3.0);
@@ -534,9 +543,9 @@ class DisassemblyTest extends TestCase
 
     public function test_fg_ledger_entry_shows_correct_before_after_qty(): void
     {
-        $fg        = $this->makeFinishedGood();
+        $fg = $this->makeFinishedGood();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($fg);
+        $recipe = $this->makeRecipe($fg);
         $this->addLine($recipe, $component, qty: 1.0);
 
         $this->seedInventory($fg, onHand: 5.0);
@@ -557,9 +566,9 @@ class DisassemblyTest extends TestCase
 
     public function test_partial_disassembly_leaves_remaining_fg_in_stock(): void
     {
-        $fg        = $this->makeFinishedGood();
+        $fg = $this->makeFinishedGood();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($fg);
+        $recipe = $this->makeRecipe($fg);
         $this->addLine($recipe, $component, qty: 1.0);
 
         $this->seedInventory($fg, onHand: 10.0);
@@ -576,9 +585,9 @@ class DisassemblyTest extends TestCase
 
     public function test_partial_disassembly_produces_proportional_components(): void
     {
-        $fg        = $this->makeFinishedGood();
+        $fg = $this->makeFinishedGood();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($fg);
+        $recipe = $this->makeRecipe($fg);
         $this->addLine($recipe, $component, qty: 2.5); // 2.5 per unit
 
         $this->seedInventory($fg, onHand: 10.0);
@@ -598,9 +607,9 @@ class DisassemblyTest extends TestCase
 
     public function test_transaction_records_recipe_snapshot_hash(): void
     {
-        $fg        = $this->makeFinishedGood();
+        $fg = $this->makeFinishedGood();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($fg, version: 1);
+        $recipe = $this->makeRecipe($fg, version: 1);
         $this->addLine($recipe, $component, qty: 1.0);
 
         $this->seedInventory($fg, onHand: 5.0);
@@ -617,9 +626,9 @@ class DisassemblyTest extends TestCase
 
     public function test_transaction_records_bom_version_for_audit_trail(): void
     {
-        $fg        = $this->makeFinishedGood();
+        $fg = $this->makeFinishedGood();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($fg, version: 2); // version 2
+        $recipe = $this->makeRecipe($fg, version: 2); // version 2
         $this->addLine($recipe, $component, qty: 1.0);
 
         $this->seedInventory($fg, onHand: 5.0);
@@ -636,15 +645,15 @@ class DisassemblyTest extends TestCase
 
     public function test_second_disassembly_with_same_recipe_records_same_hash(): void
     {
-        $fg        = $this->makeFinishedGood();
+        $fg = $this->makeFinishedGood();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($fg, version: 1);
+        $recipe = $this->makeRecipe($fg, version: 1);
         $this->addLine($recipe, $component, qty: 1.0);
 
         $this->seedInventory($fg, onHand: 10.0);
 
-        $trigger1 = 'return-1-' . uniqid();
-        $trigger2 = 'return-2-' . uniqid();
+        $trigger1 = 'return-1-'.uniqid();
+        $trigger2 = 'return-2-'.uniqid();
 
         $this->service->disassembleProduct($this->makeRequest($fg, quantity: 1.0, triggerId: $trigger1));
         $this->service->disassembleProduct($this->makeRequest($fg, quantity: 1.0, triggerId: $trigger2));

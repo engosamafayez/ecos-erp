@@ -9,9 +9,12 @@ use Illuminate\Database\Eloquent\Model;
 final class TimelineEvent extends Model
 {
     public $incrementing = false;
-    public $timestamps   = false;
-    protected $keyType   = 'string';
-    protected $table     = 'timeline_events';
+
+    public $timestamps = false;
+
+    protected $keyType = 'string';
+
+    protected $table = 'timeline_events';
 
     protected $fillable = [
         'id',
@@ -33,7 +36,7 @@ final class TimelineEvent extends Model
     protected function casts(): array
     {
         return [
-            'metadata'    => 'array',
+            'metadata' => 'array',
             'occurred_at' => 'datetime',
         ];
     }

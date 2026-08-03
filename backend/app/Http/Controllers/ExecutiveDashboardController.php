@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 /**
  * Single-endpoint executive dashboard aggregator.
@@ -19,15 +20,15 @@ final class ExecutiveDashboardController extends Controller
     public function __invoke(Request $request): JsonResponse
     {
         /** @var \App\Models\User $user */
-        $user      = $request->user();
+        $user = $request->user();
         $companyId = $user->company_id;
 
         return response()->json([
-            'sales'     => $this->salesKpis($companyId),
+            'sales' => $this->salesKpis($companyId),
             'marketing' => $this->marketingKpis($companyId),
-            'shipping'  => $this->shippingKpis($companyId),
-            'monthly'   => $this->monthlyPerformance($companyId),
-            'operations'=> $this->operationsSnapshot($companyId),
+            'shipping' => $this->shippingKpis($companyId),
+            'monthly' => $this->monthlyPerformance($companyId),
+            'operations' => $this->operationsSnapshot($companyId),
         ]);
     }
 
@@ -36,10 +37,10 @@ final class ExecutiveDashboardController extends Controller
     private function salesKpis(?string $companyId): array
     {
         $bindings = [];
-        $where    = 'deleted_at IS NULL';
+        $where = 'deleted_at IS NULL';
 
         if ($companyId !== null) {
-            $where    .= ' AND company_id = ?';
+            $where .= ' AND company_id = ?';
             $bindings[] = $companyId;
         }
 
@@ -74,34 +75,34 @@ final class ExecutiveDashboardController extends Controller
             WHERE {$where}
         ", $bindings);
 
-        $ordersToday     = (int)  ($row?->orders_today     ?? 0);
-        $ordersYesterday = (int)  ($row?->orders_yesterday ?? 0);
-        $revenueToday    = (float)($row?->revenue_today    ?? 0);
-        $revenueYday     = (float)($row?->revenue_yesterday ?? 0);
-        $ordersMonth     = (int)  ($row?->orders_this_month ?? 0);
-        $aov             = $ordersToday > 0 ? round($revenueToday / $ordersToday, 2) : 0;
+        $ordersToday = (int) ($row?->orders_today ?? 0);
+        $ordersYesterday = (int) ($row?->orders_yesterday ?? 0);
+        $revenueToday = (float) ($row?->revenue_today ?? 0);
+        $revenueYday = (float) ($row?->revenue_yesterday ?? 0);
+        $ordersMonth = (int) ($row?->orders_this_month ?? 0);
+        $aov = $ordersToday > 0 ? round($revenueToday / $ordersToday, 2) : 0;
 
         return [
-            'revenue_today'        => round($revenueToday, 2),
-            'revenue_yesterday'    => round($revenueYday, 2),
-            'revenue_this_month'   => round((float)($row?->revenue_this_month ?? 0), 2),
-            'revenue_trend_pct'    => $this->trendPct($revenueToday, $revenueYday),
-            'orders_today'         => $ordersToday,
-            'orders_yesterday'     => $ordersYesterday,
-            'orders_this_month'    => $ordersMonth,
-            'orders_trend_pct'     => $this->trendPct($ordersToday, $ordersYesterday),
-            'orders_shipped_today' => (int)($row?->orders_shipped_today ?? 0),
-            'value_shipped_today'  => round((float)($row?->value_shipped_today ?? 0), 2),
-            'aov'                  => $aov,
-            'gross_profit_today'   => round((float)($row?->gross_profit_today ?? 0), 2),
-            'gross_profit_month'   => round((float)($row?->gross_profit_month ?? 0), 2),
+            'revenue_today' => round($revenueToday, 2),
+            'revenue_yesterday' => round($revenueYday, 2),
+            'revenue_this_month' => round((float) ($row?->revenue_this_month ?? 0), 2),
+            'revenue_trend_pct' => $this->trendPct($revenueToday, $revenueYday),
+            'orders_today' => $ordersToday,
+            'orders_yesterday' => $ordersYesterday,
+            'orders_this_month' => $ordersMonth,
+            'orders_trend_pct' => $this->trendPct($ordersToday, $ordersYesterday),
+            'orders_shipped_today' => (int) ($row?->orders_shipped_today ?? 0),
+            'value_shipped_today' => round((float) ($row?->value_shipped_today ?? 0), 2),
+            'aov' => $aov,
+            'gross_profit_today' => round((float) ($row?->gross_profit_today ?? 0), 2),
+            'gross_profit_month' => round((float) ($row?->gross_profit_month ?? 0), 2),
             // Pipeline
-            'pending_count'        => (int)($row?->pending_count        ?? 0),
-            'confirmed_count'      => (int)($row?->confirmed_count      ?? 0),
-            'preparing_count'      => (int)($row?->preparing_count      ?? 0),
-            'out_for_delivery'     => (int)($row?->out_for_delivery_count ?? 0),
-            'delivered_count'      => (int)($row?->delivered_count      ?? 0),
-            'cancelled_today'      => (int)($row?->cancelled_today      ?? 0),
+            'pending_count' => (int) ($row?->pending_count ?? 0),
+            'confirmed_count' => (int) ($row?->confirmed_count ?? 0),
+            'preparing_count' => (int) ($row?->preparing_count ?? 0),
+            'out_for_delivery' => (int) ($row?->out_for_delivery_count ?? 0),
+            'delivered_count' => (int) ($row?->delivered_count ?? 0),
+            'cancelled_today' => (int) ($row?->cancelled_today ?? 0),
         ];
     }
 
@@ -111,10 +112,10 @@ final class ExecutiveDashboardController extends Controller
     {
         try {
             $bindings = [];
-            $cWhere   = '1=1';
+            $cWhere = '1=1';
 
             if ($companyId !== null) {
-                $cWhere    .= ' AND c.company_id = ?';
+                $cWhere .= ' AND c.company_id = ?';
                 $bindings[] = $companyId;
             }
 
@@ -134,17 +135,17 @@ final class ExecutiveDashboardController extends Controller
                 WHERE ins.level = 'campaign' AND {$cWhere}
             ", $bindings);
 
-            $spendToday   = (float)($row?->spend_today    ?? 0);
-            $spendYday    = (float)($row?->spend_yesterday ?? 0);
-            $revenueMonth = (float)($row?->revenue_this_month ?? 0);
-            $spendMonth   = (float)($row?->spend_this_month ?? 0);
-            $purchases    = (int)  ($row?->purchases_month ?? 0);
-            $clicks       = (int)  ($row?->clicks_month   ?? 0);
-            $impressions  = (int)  ($row?->impressions_month ?? 0);
+            $spendToday = (float) ($row?->spend_today ?? 0);
+            $spendYday = (float) ($row?->spend_yesterday ?? 0);
+            $revenueMonth = (float) ($row?->revenue_this_month ?? 0);
+            $spendMonth = (float) ($row?->spend_this_month ?? 0);
+            $purchases = (int) ($row?->purchases_month ?? 0);
+            $clicks = (int) ($row?->clicks_month ?? 0);
+            $impressions = (int) ($row?->impressions_month ?? 0);
 
-            $roas           = $spendMonth > 0 ? round($revenueMonth / $spendMonth, 2) : null;
-            $cac            = $purchases  > 0 ? round($spendMonth   / $purchases,  2) : null;
-            $conversionRate = $clicks     > 0 ? round(($purchases   / $clicks) * 100, 2) : null;
+            $roas = $spendMonth > 0 ? round($revenueMonth / $spendMonth, 2) : null;
+            $cac = $purchases > 0 ? round($spendMonth / $purchases, 2) : null;
+            $conversionRate = $clicks > 0 ? round(($purchases / $clicks) * 100, 2) : null;
 
             // New vs returning customers from orders linked to marketing month
             $customerRow = null;
@@ -171,28 +172,28 @@ final class ExecutiveDashboardController extends Controller
             }
 
             return [
-                'spend_today'       => round($spendToday, 2),
-                'spend_yesterday'   => round($spendYday, 2),
-                'spend_this_month'  => round($spendMonth, 2),
-                'spend_trend_pct'   => $this->trendPct($spendToday, $spendYday),
-                'campaign_revenue'  => round($revenueMonth, 2),
-                'roas'              => $roas,
-                'cac'               => $cac,
-                'conversion_rate'   => $conversionRate,
-                'purchases_month'   => $purchases,
+                'spend_today' => round($spendToday, 2),
+                'spend_yesterday' => round($spendYday, 2),
+                'spend_this_month' => round($spendMonth, 2),
+                'spend_trend_pct' => $this->trendPct($spendToday, $spendYday),
+                'campaign_revenue' => round($revenueMonth, 2),
+                'roas' => $roas,
+                'cac' => $cac,
+                'conversion_rate' => $conversionRate,
+                'purchases_month' => $purchases,
                 'impressions_month' => $impressions,
-                'new_customers'     => (int)($customerRow?->new_customers     ?? 0),
-                'returning_customers' => (int)($customerRow?->returning_customers ?? 0),
+                'new_customers' => (int) ($customerRow?->new_customers ?? 0),
+                'returning_customers' => (int) ($customerRow?->returning_customers ?? 0),
             ];
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // Marketing tables may not exist on all environments
             return [
-                'spend_today'       => 0, 'spend_yesterday'  => 0,
-                'spend_this_month'  => 0, 'spend_trend_pct'  => null,
-                'campaign_revenue'  => 0, 'roas'             => null,
-                'cac'               => null, 'conversion_rate' => null,
-                'purchases_month'   => 0, 'impressions_month' => 0,
-                'new_customers'     => 0, 'returning_customers' => 0,
+                'spend_today' => 0, 'spend_yesterday' => 0,
+                'spend_this_month' => 0, 'spend_trend_pct' => null,
+                'campaign_revenue' => 0, 'roas' => null,
+                'cac' => null, 'conversion_rate' => null,
+                'purchases_month' => 0, 'impressions_month' => 0,
+                'new_customers' => 0, 'returning_customers' => 0,
             ];
         }
     }
@@ -203,10 +204,10 @@ final class ExecutiveDashboardController extends Controller
     {
         try {
             $bindings = [];
-            $dtWhere  = '1=1';
+            $dtWhere = '1=1';
 
             if ($companyId !== null) {
-                $dtWhere   .= ' AND dt.company_id = ?';
+                $dtWhere .= ' AND dt.company_id = ?';
                 $bindings[] = $companyId;
             }
 
@@ -231,22 +232,22 @@ final class ExecutiveDashboardController extends Controller
             ", $bindings);
 
             return [
-                'shipments_today'          => (int)  ($row?->shipments_today          ?? 0),
-                'delivered_today'          => (int)  ($row?->delivered_today          ?? 0),
-                'failed_today'             => (int)  ($row?->failed_today             ?? 0),
-                'returns_today'            => (int)  ($row?->returns_today            ?? 0),
-                'shipping_revenue_today'   => round((float)($row?->shipping_revenue_today   ?? 0), 2),
-                'shipping_revenue_yesterday' => round((float)($row?->shipping_revenue_yesterday ?? 0), 2),
-                'cod_collected_today'      => round((float)($row?->cod_collected_today ?? 0), 2),
-                'cod_pending'              => round((float)($row?->cod_pending         ?? 0), 2),
-                'avg_delivery_minutes'     => $row?->avg_delivery_minutes !== null
-                    ? round((float)$row->avg_delivery_minutes, 0)
+                'shipments_today' => (int) ($row?->shipments_today ?? 0),
+                'delivered_today' => (int) ($row?->delivered_today ?? 0),
+                'failed_today' => (int) ($row?->failed_today ?? 0),
+                'returns_today' => (int) ($row?->returns_today ?? 0),
+                'shipping_revenue_today' => round((float) ($row?->shipping_revenue_today ?? 0), 2),
+                'shipping_revenue_yesterday' => round((float) ($row?->shipping_revenue_yesterday ?? 0), 2),
+                'cod_collected_today' => round((float) ($row?->cod_collected_today ?? 0), 2),
+                'cod_pending' => round((float) ($row?->cod_pending ?? 0), 2),
+                'avg_delivery_minutes' => $row?->avg_delivery_minutes !== null
+                    ? round((float) $row->avg_delivery_minutes, 0)
                     : null,
             ];
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return [
                 'shipments_today' => 0, 'delivered_today' => 0, 'failed_today' => 0,
-                'returns_today'   => 0, 'shipping_revenue_today' => 0,
+                'returns_today' => 0, 'shipping_revenue_today' => 0,
                 'shipping_revenue_yesterday' => 0, 'cod_collected_today' => 0,
                 'cod_pending' => 0, 'avg_delivery_minutes' => null,
             ];
@@ -258,10 +259,10 @@ final class ExecutiveDashboardController extends Controller
     private function monthlyPerformance(?string $companyId): array
     {
         $bindings = [];
-        $where    = "deleted_at IS NULL AND DATE_TRUNC('month', created_at) = DATE_TRUNC('month', CURRENT_DATE)";
+        $where = "deleted_at IS NULL AND DATE_TRUNC('month', created_at) = DATE_TRUNC('month', CURRENT_DATE)";
 
         if ($companyId !== null) {
-            $where    .= ' AND company_id = ?';
+            $where .= ' AND company_id = ?';
             $bindings[] = $companyId;
         }
 
@@ -276,11 +277,11 @@ final class ExecutiveDashboardController extends Controller
 
         // Revenue target: no target table exists yet — return null so the UI shows a "--" state
         return [
-            'monthly_revenue'     => round((float)($row?->monthly_revenue     ?? 0), 2),
-            'monthly_revenue_net' => round((float)($row?->monthly_revenue_net ?? 0), 2),
-            'monthly_orders'      => (int)($row?->monthly_orders ?? 0),
-            'revenue_target'      => null, // no target table yet
-            'progress_pct'        => null,
+            'monthly_revenue' => round((float) ($row?->monthly_revenue ?? 0), 2),
+            'monthly_revenue_net' => round((float) ($row?->monthly_revenue_net ?? 0), 2),
+            'monthly_orders' => (int) ($row?->monthly_orders ?? 0),
+            'revenue_target' => null, // no target table yet
+            'progress_pct' => null,
         ];
     }
 
@@ -290,31 +291,31 @@ final class ExecutiveDashboardController extends Controller
     {
         try {
             $bindings = [];
-            $wWhere   = 'deleted_at IS NULL AND status NOT IN (\'completed\', \'cancelled\')';
-            $tWhere   = "status IN ('out_for_delivery', 'dispatched')";
+            $wWhere = 'deleted_at IS NULL AND status NOT IN (\'completed\', \'cancelled\')';
+            $tWhere = "status IN ('out_for_delivery', 'dispatched')";
 
             if ($companyId !== null) {
-                $wWhere   .= ' AND company_id = ?';
+                $wWhere .= ' AND company_id = ?';
                 $bindings[] = $companyId;
-                $tWhere   .= ' AND company_id = ?';
+                $tWhere .= ' AND company_id = ?';
                 $bindings[] = $companyId;
             }
 
             $wavesRow = DB::selectOne(
                 "SELECT COUNT(*) AS active_waves FROM preparation_waves WHERE {$wWhere}",
-                array_slice($bindings, 0, $companyId !== null ? 1 : 0)
+                array_slice($bindings, 0, $companyId !== null ? 1 : 0),
             );
 
             $tripsRow = DB::selectOne(
                 "SELECT COUNT(*) AS active_trips FROM distribution_trips WHERE {$tWhere}",
-                $companyId !== null ? array_slice($bindings, 1) : []
+                $companyId !== null ? array_slice($bindings, 1) : [],
             );
 
             return [
-                'active_waves'   => (int)($wavesRow?->active_waves ?? 0),
-                'active_trips'   => (int)($tripsRow?->active_trips ?? 0),
+                'active_waves' => (int) ($wavesRow?->active_waves ?? 0),
+                'active_trips' => (int) ($tripsRow?->active_trips ?? 0),
             ];
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return ['active_waves' => 0, 'active_trips' => 0];
         }
     }
@@ -323,7 +324,7 @@ final class ExecutiveDashboardController extends Controller
 
     private function trendPct(float $current, float $previous): ?float
     {
-        if ($previous == 0) {
+        if ($previous === 0) {
             return $current > 0 ? 100.0 : null;
         }
 

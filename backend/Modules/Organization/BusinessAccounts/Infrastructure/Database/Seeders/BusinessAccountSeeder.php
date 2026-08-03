@@ -24,11 +24,11 @@ final class BusinessAccountSeeder extends Seeder
 
             BusinessAccount::query()->create([
                 'company_id' => $brand->company_id,
-                'brand_id'   => $brand->id,
-                'code'       => 'BA-' . str_pad((string) $seq, 6, '0', STR_PAD_LEFT),
-                'name'       => $brand->name . ' — WooCommerce',
-                'provider'   => 'WooCommerce',
-                'status'     => 'active',
+                'brand_id' => $brand->id,
+                'code' => 'BA-'.str_pad((string) $seq, 6, '0', STR_PAD_LEFT),
+                'name' => $brand->name.' — WooCommerce',
+                'provider' => 'WooCommerce',
+                'status' => 'active',
             ]);
         });
     }

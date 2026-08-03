@@ -11,5 +11,8 @@ namespace Modules\Marketing\ProviderPlatform\Domain\Events;
  */
 final class ProviderErrorOccurred extends AbstractProviderEvent
 {
-    public function eventName(): string { return 'provider.error_occurred'; }
+    public function eventName(): string
+    {
+        return 'provider.error_occurred';
+    }
 }

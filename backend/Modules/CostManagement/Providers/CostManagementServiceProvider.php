@@ -43,7 +43,7 @@ class CostManagementServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        $this->loadMigrationsFrom(__DIR__ . '/../Infrastructure/Database/Migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../Infrastructure/Database/Migrations');
 
         // CostImpactEngine listens to FinishedProductCostChanged and drives
         // all pricing review upserts (TASK-COST-ARCH-002 Part 9).

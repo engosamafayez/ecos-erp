@@ -29,9 +29,9 @@ final class DispatchOrderWorkflow implements FulfillmentWorkflowInterface
 
     public function guard(FulfillmentContext $ctx): void
     {
-        if ($ctx->order->status !== OrderStatus::Preparing) {
+        if ($ctx->order->status !== OrderStatus::ReadyForDispatch) {
             throw new WorkflowPreconditionException(
-                "Order [{$ctx->order->id}] can only be dispatched from Preparing. Current: [{$ctx->order->status->value}]."
+                "Order [{$ctx->order->id}] can only be dispatched from Ready for Dispatch. Current: [{$ctx->order->status->value}].",
             );
         }
     }
@@ -56,7 +56,7 @@ final class DispatchOrderWorkflow implements FulfillmentWorkflowInterface
             $order,
             "Order #{$order->order_number} dispatched for delivery.",
             [
-                'actor_id'     => $ctx->actorId,
+                'actor_id' => $ctx->actorId,
                 'dispatched_at' => now()->toIso8601String(),
             ],
         );
@@ -69,15 +69,15 @@ final class DispatchOrderWorkflow implements FulfillmentWorkflowInterface
 
         return [
             new OrderDispatchedEvent(
-                orderId:             $order->id,
-                orderNumber:         $order->order_number,
-                companyId:           $order->company_id ?? '',
+                orderId: $order->id,
+                orderNumber: $order->order_number,
+                companyId: $order->company_id ?? '',
                 vehicleAssignmentId: null,
-                vehicleId:           null,
-                driverId:            null,
-                cogsAmount:          (float) ($order->actual_cogs_amount ?? 0),
-                dispatchedAt:        $result->meta['dispatched_at'] ?? now()->toIso8601String(),
-                actorId:             $result->meta['actor_id'] ?? null,
+                vehicleId: null,
+                driverId: null,
+                cogsAmount: (float) ($order->actual_cogs_amount ?? 0),
+                dispatchedAt: $result->meta['dispatched_at'] ?? now()->toIso8601String(),
+                actorId: $result->meta['actor_id'] ?? null,
             ),
         ];
     }

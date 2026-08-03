@@ -39,7 +39,7 @@ final class PreparationReleaseEngine
             ?? PreparationSessionPolicy::defaultEligibleStatuses();
 
         if (! in_array($order->status->value, $eligibleStatuses, true)) {
-            return 'status_ineligible:' . $order->status->value;
+            return 'status_ineligible:'.$order->status->value;
         }
 
         if ($order->assigned_warehouse_id === null) {
@@ -60,7 +60,7 @@ final class PreparationReleaseEngine
             ->where('is_active', true)
             ->where(function ($q) use ($warehouseId): void {
                 $q->where('warehouse_id', $warehouseId)
-                  ->orWhereNull('warehouse_id');
+                    ->orWhereNull('warehouse_id');
             })
             ->orderByRaw('CASE WHEN warehouse_id IS NULL THEN 1 ELSE 0 END ASC')
             ->first();

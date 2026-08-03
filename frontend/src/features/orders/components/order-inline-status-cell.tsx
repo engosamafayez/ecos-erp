@@ -6,13 +6,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import { usePatchOrder } from '@/features/orders/hooks/use-orders';
-import type { OrderStatus } from '@/features/orders/types/order';
+import { useOrderWorkflowTransition } from '@/features/orders/hooks/use-orders';
+import type { Order, OrderStatus } from '@/features/orders/types/order';
 
-const STATUS_CLASS: Record<OrderStatus, string> = {
+const STATUS_CLASS: Record<string, string> = {
   scheduled:        'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
   pending:          'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
   awaiting_payment: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
@@ -29,41 +31,20 @@ const STATUS_CLASS: Record<OrderStatus, string> = {
   returned:         'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
 };
 
-/** Valid next statuses per current status — only show reachable transitions. */
-const WORKFLOW_TRANSITIONS: Partial<Record<OrderStatus, OrderStatus[]>> = {
-  pending:          ['processing', 'confirmed', 'awaiting_payment', 'cancelled'],
-  awaiting_payment: ['processing', 'confirmed', 'cancelled'],
-  processing:       ['preparing', 'awaiting_stock', 'review', 'cancelled'],
-  awaiting_stock:   ['processing', 'cancelled'],
-  confirmed:        ['preparing', 'rescheduled', 'cancelled'],
-  preparing:        ['out_for_delivery', 'review', 'rescheduled', 'cancelled'],
-  out_for_delivery: ['delivered', 'returned', 'review', 'rescheduled'],
-  delivered:        ['completed', 'review', 'processing', 'confirmed', 'rescheduled', 'cancelled'],
-  returned:         ['confirmed', 'review', 'rescheduled', 'cancelled'],
-  review:           ['processing', 'rescheduled', 'cancelled'],
-  rescheduled:      ['processing', 'rescheduled', 'cancelled'],
-  completed:        [],
-  cancelled:        [],
-};
-
 type SaveState = 'idle' | 'saving' | 'saved' | 'failed';
 
-type OrderInlineStatusCellProps = {
-  orderId: string;
-  status: OrderStatus;
+type Props = {
+  order: Order;
+  onSuccess?: () => void;
 };
 
-/**
- * Inline admin status override for the orders grid.
- * Direct patch — not a workflow trigger. For operations use the workflow drawer.
- */
-export function OrderInlineStatusCell({ orderId, status }: OrderInlineStatusCellProps) {
+export function OrderInlineStatusCell({ order, onSuccess }: Props) {
   const { t } = useTranslation('orders');
   const [open, setOpen] = useState(false);
   const [saveState, setSaveState] = useState<SaveState>('idle');
-  const patch = usePatchOrder();
+  const transition = useOrderWorkflowTransition();
 
-  const statusLabel: Record<OrderStatus, string> = {
+  const statusLabel: Record<string, string> = {
     scheduled:        t('status.scheduled'),
     pending:          t('status.pending'),
     awaiting_payment: t('status.awaiting_payment'),
@@ -80,19 +61,20 @@ export function OrderInlineStatusCell({ orderId, status }: OrderInlineStatusCell
     returned:         t('status.returned'),
   };
 
-  const cls = STATUS_CLASS[status] ?? STATUS_CLASS.pending;
-  const label = statusLabel[status];
+  const transitions = order.allowed_status_transitions ?? [];
+  const cls   = STATUS_CLASS[order.status] ?? STATUS_CLASS.pending;
+  const label = statusLabel[order.status] ?? order.status_label ?? order.status;
 
-  const handleSelect = (next: OrderStatus) => {
+  function handleSelect(targetStatus: string) {
     setOpen(false);
-    if (next === status) return;
     setSaveState('saving');
-    patch.mutate(
-      { id: orderId, data: { status: next } },
+    transition.mutate(
+      { id: order.id, targetStatus },
       {
         onSuccess: () => {
           setSaveState('saved');
           setTimeout(() => setSaveState('idle'), 2000);
+          onSuccess?.();
         },
         onError: () => {
           setSaveState('failed');
@@ -100,17 +82,18 @@ export function OrderInlineStatusCell({ orderId, status }: OrderInlineStatusCell
         },
       },
     );
-  };
+  }
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          disabled={saveState === 'saving'}
+          disabled={saveState === 'saving' || transitions.length === 0}
           className={cn(
             'inline-flex cursor-pointer items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium',
             'ring-1 ring-inset ring-current/20 transition-opacity hover:opacity-80',
+            'disabled:cursor-default disabled:opacity-100',
             cls,
           )}
           aria-label={`Status: ${label}. Click to change`}
@@ -119,24 +102,29 @@ export function OrderInlineStatusCell({ orderId, status }: OrderInlineStatusCell
           {saveState === 'saved'  && <Check   className="size-2.5 text-emerald-600" />}
           {saveState === 'failed' && <X       className="size-2.5 text-red-600" />}
           {label}
-          <ChevronDown className="size-2.5 opacity-60" />
+          {transitions.length > 0 && <ChevronDown className="size-2.5 opacity-60" />}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-48 max-h-72 overflow-y-auto">
-        {(WORKFLOW_TRANSITIONS[status] ?? []).map((s) => (
-          <DropdownMenuItem key={s} onClick={() => handleSelect(s)}>
-            <span
-              className={cn(
-                'mr-2 inline-flex size-2 shrink-0 rounded-full',
-                STATUS_CLASS[s].split(' ')[0],
-              )}
-            />
-            {statusLabel[s]}
-          </DropdownMenuItem>
-        ))}
-        {(WORKFLOW_TRANSITIONS[status] ?? []).length === 0 ? (
+        <DropdownMenuLabel className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          {t('statusSelector.moveTo')}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {transitions.length === 0 ? (
           <DropdownMenuItem disabled>{t('statusSelector.noTransitions')}</DropdownMenuItem>
-        ) : null}
+        ) : (
+          transitions.map((tr) => (
+            <DropdownMenuItem key={tr.target_status} onClick={() => handleSelect(tr.target_status)}>
+              <span
+                className={cn(
+                  'mr-2 inline-flex size-2 shrink-0 rounded-full',
+                  (STATUS_CLASS[tr.target_status as OrderStatus] ?? '').split(' ')[0],
+                )}
+              />
+              {statusLabel[tr.target_status as OrderStatus] ?? tr.label}
+            </DropdownMenuItem>
+          ))
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

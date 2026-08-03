@@ -6,7 +6,7 @@ namespace Modules\POS\Shared\Domain\Enums;
 
 enum ReturnStatus: string
 {
-    case Pending   = 'pending';
+    case Pending = 'pending';
     case Processed = 'processed';
     case Cancelled = 'cancelled';
 

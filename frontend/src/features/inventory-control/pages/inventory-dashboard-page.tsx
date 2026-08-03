@@ -1,5 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { useFormatter } from '@/hooks/use-formatter';
 import {
   Archive,
   BarChart3,
@@ -77,7 +79,16 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function VarianceTable({ rows, title }: { rows: VarianceProductRow[]; title: string }) {
+type VarianceTableProps = {
+  rows: VarianceProductRow[];
+  title: string;
+  productLabel: string;
+  qtyLabel: string;
+  valueLabel: string;
+  noDataLabel: string;
+};
+
+function VarianceTable({ rows, title, productLabel, qtyLabel, valueLabel, noDataLabel }: VarianceTableProps) {
   return (
     <Card className="flex-1 min-w-0">
       <CardHeader className="pb-2">
@@ -87,14 +98,14 @@ function VarianceTable({ rows, title }: { rows: VarianceProductRow[]; title: str
         <table className="w-full text-sm">
           <thead>
             <tr className="text-muted-foreground border-b text-xs">
-              <th className="px-4 py-2 text-start font-medium">Product</th>
-              <th className="px-4 py-2 text-end font-medium">Variance (Qty)</th>
-              <th className="px-4 py-2 text-end font-medium">Variance (Value)</th>
+              <th className="px-4 py-2 text-start font-medium">{productLabel}</th>
+              <th className="px-4 py-2 text-end font-medium">{qtyLabel}</th>
+              <th className="px-4 py-2 text-end font-medium">{valueLabel}</th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 ? (
-              <tr><td colSpan={3} className="text-muted-foreground px-4 py-6 text-center text-xs">No data available</td></tr>
+              <tr><td colSpan={3} className="text-muted-foreground px-4 py-6 text-center text-xs">{noDataLabel}</td></tr>
             ) : rows.map((r) => (
               <tr key={r.product_id} className="hover:bg-muted/50 border-b last:border-0 transition-colors">
                 <td className="px-4 py-2">
@@ -117,9 +128,11 @@ function VarianceTable({ rows, title }: { rows: VarianceProductRow[]; title: str
 }
 
 export function InventoryDashboardPage() {
+  const { money } = useFormatter();
   const navigate = useNavigate();
+  const { t } = useTranslation('inventory-control');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
 
-  // Inventory value stats — three separate calls by product type
   const allStats = useQuery({
     queryKey: ['product-stats', 'all'],
     queryFn: () => productsService.stats({ product_types: 'raw_material,finished_good,packaging_material' }),
@@ -137,7 +150,6 @@ export function InventoryDashboardPage() {
     queryFn: () => productsService.stats({ product_type: 'packaging_material' }),
   });
 
-  // Count analytics dashboard
   const { data: countData, isLoading: countLoading, isError: countError } = useInventoryDashboard();
 
   const statsLoading = allStats.isLoading || rmStats.isLoading || fgStats.isLoading || pkgStats.isLoading;
@@ -145,53 +157,53 @@ export function InventoryDashboardPage() {
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
-        title="Inventory Dashboard"
-        subtitle="Real-time inventory health and count analytics."
-        breadcrumbs={[{ label: 'Home', to: ROUTES.dashboard }, { label: 'Dashboard' }]}
+        title={t('dashboard.title')}
+        subtitle={t('dashboard.subtitle')}
+        breadcrumbs={[{ label: t('dashboard.breadcrumb.home'), to: ROUTES.dashboard }, { label: t('dashboard.breadcrumb.page') }]}
       />
 
       {/* ── Section 1: Inventory Value ─────────────────────────────────────── */}
       <div className="flex flex-col gap-3">
-        <SectionLabel>Inventory Value</SectionLabel>
+        <SectionLabel>{t('dashboard.sections.inventoryValue')}</SectionLabel>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
           <ValueKpiCard
-            title="Total Inventory Value"
-            value={allStats.data ? `${fmtCurrency(allStats.data.total_inventory_value)} EGP` : '—'}
-            sub={allStats.data ? `${fmtQty(allStats.data.total_on_hand)} units on hand` : undefined}
+            title={t('dashboard.kpis.totalValue')}
+            value={allStats.data ? money(allStats.data.total_inventory_value) : '—'}
+            sub={allStats.data ? `${fmtQty(allStats.data.total_on_hand)} ${t('dashboard.kpis.unitsOnHand')}` : undefined}
             icon={BarChart3}
             iconColor="text-primary"
             loading={statsLoading}
           />
           <ValueKpiCard
-            title="Raw Materials Value"
-            value={rmStats.data ? `${fmtCurrency(rmStats.data.total_inventory_value)} EGP` : '—'}
-            sub={rmStats.data ? `${rmStats.data.total_count} SKU` : undefined}
+            title={t('dashboard.kpis.rawMaterials')}
+            value={rmStats.data ? money(rmStats.data.total_inventory_value) : '—'}
+            sub={rmStats.data ? `${rmStats.data.total_count} ${t('dashboard.kpis.sku')}` : undefined}
             icon={FlaskConical}
             iconColor="text-blue-500"
             loading={statsLoading}
             onClick={() => navigate(ROUTES.rawMaterials)}
           />
           <ValueKpiCard
-            title="Finished Goods Value"
-            value={fgStats.data ? `${fmtCurrency(fgStats.data.total_inventory_value)} EGP` : '—'}
-            sub={fgStats.data ? `${fgStats.data.total_count} SKU` : undefined}
+            title={t('dashboard.kpis.finishedGoods')}
+            value={fgStats.data ? money(fgStats.data.total_inventory_value) : '—'}
+            sub={fgStats.data ? `${fgStats.data.total_count} ${t('dashboard.kpis.sku')}` : undefined}
             icon={Package}
             iconColor="text-emerald-500"
             loading={statsLoading}
             onClick={() => navigate(ROUTES.products)}
           />
           <ValueKpiCard
-            title="Packaging Materials Value"
-            value={pkgStats.data ? `${fmtCurrency(pkgStats.data.total_inventory_value)} EGP` : '—'}
-            sub={pkgStats.data ? `${pkgStats.data.total_count} SKU` : undefined}
+            title={t('dashboard.kpis.packagingMaterials')}
+            value={pkgStats.data ? money(pkgStats.data.total_inventory_value) : '—'}
+            sub={pkgStats.data ? `${pkgStats.data.total_count} ${t('dashboard.kpis.sku')}` : undefined}
             icon={Archive}
             iconColor="text-amber-500"
             loading={statsLoading}
           />
           <ValueKpiCard
-            title="Available Units"
+            title={t('dashboard.kpis.availableUnits')}
             value={allStats.data ? fmtQty(allStats.data.total_available) : '—'}
-            sub={allStats.data ? `${fmtQty(allStats.data.total_reserved)} reserved` : undefined}
+            sub={allStats.data ? `${fmtQty(allStats.data.total_reserved)} ${t('dashboard.kpis.reserved')}` : undefined}
             icon={ShoppingBag}
             iconColor="text-purple-500"
             loading={statsLoading}
@@ -208,40 +220,40 @@ export function InventoryDashboardPage() {
         <>
           <div className="flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <SectionLabel>Count Session Health</SectionLabel>
+              <SectionLabel>{t('dashboard.sections.countHealth')}</SectionLabel>
               <Badge variant={healthVariant(countData.kpis.health)} className="text-xs">
-                {countData.kpis.health === 'excellent' ? 'Excellent' : countData.kpis.health === 'good' ? 'Good' : countData.kpis.health === 'warning' ? 'Warning' : 'Critical'}
+                {tAny(`dashboard.health.${countData.kpis.health}`)}
               </Badge>
             </div>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
               <ValueKpiCard
-                title="Inventory Accuracy"
+                title={t('dashboard.kpis.accuracy')}
                 value={fmtPct(countData.kpis.accuracy_pct)}
-                sub={`${countData.kpis.matched_products}/${countData.kpis.total_counted_products} matched`}
+                sub={`${countData.kpis.matched_products}/${countData.kpis.total_counted_products} ${t('dashboard.kpis.matched')}`}
                 icon={BarChart3}
                 iconColor="text-emerald-500"
               />
               <ValueKpiCard
-                title="Open Sessions"
+                title={t('dashboard.kpis.openSessions')}
                 value={String(countData.kpis.open_sessions)}
                 icon={ClipboardList}
                 iconColor="text-blue-500"
                 onClick={() => navigate(ROUTES.inventoryCount)}
               />
               <ValueKpiCard
-                title="Products with Variance"
+                title={t('dashboard.kpis.productsWithVariance')}
                 value={String(countData.kpis.products_with_variance)}
                 icon={TrendingDown}
                 iconColor="text-amber-500"
               />
               <ValueKpiCard
-                title="Month Adjustments"
-                value={`${fmtCurrency(countData.kpis.adjustment_value_month)} EGP`}
+                title={t('dashboard.kpis.adjustmentValue')}
+                value={money(countData.kpis.adjustment_value_month)}
                 icon={Package}
               />
               <ValueKpiCard
-                title="Shrinkage (Month)"
-                value={`${fmtCurrency(countData.kpis.shrinkage_value_month)} EGP`}
+                title={t('dashboard.kpis.shrinkage')}
+                value={money(countData.kpis.shrinkage_value_month)}
                 icon={PackageX}
                 iconColor="text-destructive"
               />
@@ -250,37 +262,51 @@ export function InventoryDashboardPage() {
 
           {/* Variance tables */}
           <div className="flex flex-col gap-3">
-            <SectionLabel>Top Variances</SectionLabel>
+            <SectionLabel>{t('dashboard.sections.variances')}</SectionLabel>
             <div className="flex flex-col gap-4 md:flex-row">
-              <VarianceTable rows={countData.top_negative} title="Top Negative Variances (Shortage)" />
-              <VarianceTable rows={countData.top_positive} title="Top Positive Variances (Surplus)" />
+              <VarianceTable
+                rows={countData.top_negative}
+                title={t('dashboard.topVariances.negativeTitle')}
+                productLabel={t('dashboard.topVariances.product')}
+                qtyLabel={t('dashboard.topVariances.varianceQty')}
+                valueLabel={t('dashboard.topVariances.varianceValue')}
+                noDataLabel={t('dashboard.noData')}
+              />
+              <VarianceTable
+                rows={countData.top_positive}
+                title={t('dashboard.topVariances.positiveTitle')}
+                productLabel={t('dashboard.topVariances.product')}
+                qtyLabel={t('dashboard.topVariances.varianceQty')}
+                valueLabel={t('dashboard.topVariances.varianceValue')}
+                noDataLabel={t('dashboard.noData')}
+              />
             </div>
           </div>
 
           {/* Recent sessions */}
           <div className="flex flex-col gap-3">
-            <SectionLabel>Recent Count Sessions</SectionLabel>
+            <SectionLabel>{t('dashboard.recentSessions.title')}</SectionLabel>
             <Card>
               <CardContent className="p-0">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-muted-foreground border-b text-xs">
-                      <th className="px-4 py-2 text-start font-medium">Session</th>
-                      <th className="px-4 py-2 text-start font-medium">Warehouse</th>
-                      <th className="px-4 py-2 text-start font-medium">Completion Date</th>
-                      <th className="px-4 py-2 text-end font-medium">Accuracy</th>
+                      <th className="px-4 py-2 text-start font-medium">{t('dashboard.recentSessions.session')}</th>
+                      <th className="px-4 py-2 text-start font-medium">{t('dashboard.recentSessions.warehouse')}</th>
+                      <th className="px-4 py-2 text-start font-medium">{t('dashboard.recentSessions.completionDate')}</th>
+                      <th className="px-4 py-2 text-end font-medium">{t('dashboard.recentSessions.accuracy')}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {countData.recent_sessions.length === 0 ? (
                       <tr>
                         <td colSpan={4} className="text-muted-foreground px-4 py-6 text-center text-xs">
-                          No sessions yet.{' '}
+                          {t('dashboard.recentSessions.noSessions')}{' '}
                           <button
                             onClick={() => navigate(ROUTES.inventoryCount)}
                             className="text-primary underline underline-offset-2"
                           >
-                            Create a session
+                            {t('dashboard.recentSessions.createSession')}
                           </button>
                         </td>
                       </tr>

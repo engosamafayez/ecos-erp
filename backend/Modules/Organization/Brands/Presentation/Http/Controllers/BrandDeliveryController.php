@@ -45,18 +45,19 @@ final class BrandDeliveryController extends Controller
 
         $governorates = $geographies->map(function (DeliveryGeography $geo) use ($zoneRules) {
             return [
-                'id'                    => $geo->id,
-                'name'                  => $geo->name,
+                'id' => $geo->id,
+                'name' => $geo->name,
                 'default_shipping_cost' => $geo->default_shipping_cost,
                 'zones' => $geo->zones->map(function (DeliveryZone $zone) use ($zoneRules, $geo) {
                     $override = $zoneRules->get($zone->id);
                     // PART 5: effective = zone override ?? governorate default
                     $effective = $override?->shipping_cost ?? $geo->default_shipping_cost;
+
                     return [
-                        'id'                      => $zone->id,
-                        'name'                    => $zone->name,
-                        'shipping_cost_override'  => $override?->shipping_cost,
-                        'shipping_cost'           => $effective, // legacy field — keeps order form working
+                        'id' => $zone->id,
+                        'name' => $zone->name,
+                        'shipping_cost_override' => $override?->shipping_cost,
+                        'shipping_cost' => $effective, // legacy field — keeps order form working
                     ];
                 })->values(),
             ];
@@ -73,20 +74,20 @@ final class BrandDeliveryController extends Controller
     {
         Brand::findOrFail($brandId);
 
-        $channelsOk  = Channel::where('brand_id', $brandId)->where('is_active', true)->exists();
-        $geoOk       = DeliveryGeography::where('brand_id', $brandId)->where('is_active', true)->exists();
-        $zonesOk     = DeliveryZone::where('brand_id', $brandId)->where('is_active', true)->exists();
-        $windowsOk   = BrandDeliveryTimeSlot::where('brand_id', $brandId)->where('is_active', true)->exists();
-        $shippingOk  = BrandShippingRule::where('brand_id', $brandId)->where('is_enabled', true)->exists();
+        $channelsOk = Channel::where('brand_id', $brandId)->where('is_active', true)->exists();
+        $geoOk = DeliveryGeography::where('brand_id', $brandId)->where('is_active', true)->exists();
+        $zonesOk = DeliveryZone::where('brand_id', $brandId)->where('is_active', true)->exists();
+        $windowsOk = BrandDeliveryTimeSlot::where('brand_id', $brandId)->where('is_active', true)->exists();
+        $shippingOk = BrandShippingRule::where('brand_id', $brandId)->where('is_enabled', true)->exists();
 
         return $this->success([
             'is_ready' => $channelsOk && $geoOk && $zonesOk && $windowsOk && $shippingOk,
-            'checks'   => [
-                'channels'           => $channelsOk,
+            'checks' => [
+                'channels' => $channelsOk,
                 'delivery_geography' => $geoOk,
-                'delivery_zones'     => $zonesOk,
-                'delivery_windows'   => $windowsOk,
-                'shipping_rules'     => $shippingOk,
+                'delivery_zones' => $zonesOk,
+                'delivery_windows' => $windowsOk,
+                'shipping_rules' => $shippingOk,
             ],
         ]);
     }
@@ -103,10 +104,10 @@ final class BrandDeliveryController extends Controller
             ->orderBy('start_time')
             ->get()
             ->map(fn (BrandDeliveryTimeSlot $w) => [
-                'id'        => $w->id,
-                'label'     => $w->name,
+                'id' => $w->id,
+                'label' => $w->name,
                 'starts_at' => $w->start_time,
-                'ends_at'   => $w->end_time,
+                'ends_at' => $w->end_time,
             ])
             ->values();
 

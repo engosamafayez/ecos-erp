@@ -1,4 +1,5 @@
 import { CheckCircle2, Loader2, Truck } from 'lucide-react';
+import { useFormatter } from '@/hooks/use-formatter';
 
 function formatDate(dateStr: string): string {
   return new Intl.DateTimeFormat('en-EG', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(dateStr));
@@ -28,6 +29,7 @@ function KpiPill({ label, value, highlight }: { label: string; value: string | n
 }
 
 export function WaveHeader({ wave, onFinalize, finalizing, canFinalize }: WaveHeaderProps) {
+  const { money } = useFormatter();
   const { summary } = wave;
 
   return (
@@ -61,7 +63,7 @@ export function WaveHeader({ wave, onFinalize, finalizing, canFinalize }: WaveHe
         <KpiPill label="Trips" value={summary.trip_count} />
         <KpiPill
           label="Collection"
-          value={`EGP ${summary.total_value.toLocaleString('en-EG', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
+          value={money(summary.total_value)}
         />
       </div>
 

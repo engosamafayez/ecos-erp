@@ -10,7 +10,7 @@ final class ConnectionDisconnected
 {
     public function __construct(
         public readonly MarketingConnection $connection,
-        public readonly string              $actorId,
-        public readonly ?string             $reason = null,
+        public readonly string $actorId,
+        public readonly ?string $reason = null,
     ) {}
 }

@@ -17,17 +17,17 @@ class UpdatePurchaseMaterialRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'warehouse_id'         => ['required', 'uuid', 'exists:warehouses,id'],
-            'company_id'           => ['nullable', 'uuid', 'exists:companies,id'],
-            'channel_id'           => ['nullable', 'string', 'max:100'],
-            'priority'             => ['sometimes', 'string', 'in:low,normal,high,urgent'],
-            'required_date'        => ['nullable', 'date'],
-            'notes'                => ['nullable', 'string', 'max:2000'],
-            'lines'                => ['required', 'array', 'min:1'],
-            'lines.*.product_id'   => ['required', 'uuid', 'exists:products,id'],
-            'lines.*.requested_qty'=> ['required', 'numeric', 'min:0.0001'],
-            'lines.*.unit_label'   => ['nullable', 'string', 'max:50'],
-            'lines.*.notes'        => ['nullable', 'string', 'max:500'],
+            'warehouse_id' => ['required', 'uuid', 'exists:warehouses,id'],
+            'company_id' => ['nullable', 'uuid', 'exists:companies,id'],
+            'channel_id' => ['nullable', 'string', 'max:100'],
+            'priority' => ['sometimes', 'string', 'in:low,normal,high,urgent'],
+            'required_date' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+            'lines' => ['required', 'array', 'min:1'],
+            'lines.*.product_id' => ['required', 'uuid', 'exists:products,id'],
+            'lines.*.requested_qty' => ['required', 'numeric', 'min:0.0001'],
+            'lines.*.unit_label' => ['nullable', 'string', 'max:50'],
+            'lines.*.notes' => ['nullable', 'string', 'max:500'],
         ];
     }
 }

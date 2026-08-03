@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { AlertCircle, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAssetRelationshipGraph } from '../hooks/use-marketing-assets';
 import type { GraphEdge, GraphNode } from '../types/marketing';
 
@@ -111,6 +112,7 @@ function EdgeEl({
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function RelationshipGraph({ assetId }: Props) {
+  const { t } = useTranslation('marketing');
   const { data, isLoading, isError } = useAssetRelationshipGraph(assetId);
 
   const positions = useMemo<Map<string, { x: number; y: number }>>(() => {
@@ -139,7 +141,7 @@ export function RelationshipGraph({ assetId }: Props) {
     return (
       <div className="flex items-center justify-center h-48 text-muted-foreground gap-2">
         <Loader2 className="w-4 h-4 animate-spin" />
-        <span className="text-sm">Loading graph…</span>
+        <span className="text-sm">{t('assets.graph.loading')}</span>
       </div>
     );
   }
@@ -148,7 +150,7 @@ export function RelationshipGraph({ assetId }: Props) {
     return (
       <div className="flex items-center justify-center h-48 text-muted-foreground gap-2">
         <AlertCircle className="w-4 h-4" />
-        <span className="text-sm">Could not load relationship graph.</span>
+        <span className="text-sm">{t('assets.graph.loadError')}</span>
       </div>
     );
   }
@@ -156,7 +158,7 @@ export function RelationshipGraph({ assetId }: Props) {
   if (data.nodes.length === 0) {
     return (
       <p className="text-sm text-muted-foreground text-center py-8">
-        No relationships yet. Map this asset to a brand, channel, or product.
+        {t('assets.graph.empty')}
       </p>
     );
   }
@@ -171,7 +173,7 @@ export function RelationshipGraph({ assetId }: Props) {
         height={svgH}
         viewBox={`0 0 520 ${svgH}`}
         xmlns="http://www.w3.org/2000/svg"
-        aria-label="Asset relationship graph"
+        aria-label={t('assets.graph.aria')}
       >
         <defs>
           <marker
@@ -204,11 +206,11 @@ export function RelationshipGraph({ assetId }: Props) {
       <div className="flex items-center gap-4 mt-2 px-1 text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
           <span className="inline-block w-6 border-t-2 border-green-500" />
-          Accepted
+          {t('assets.graph.legendAccepted')}
         </span>
         <span className="flex items-center gap-1">
           <span className="inline-block w-6 border-t-2 border-dashed border-orange-400" />
-          Suggested
+          {t('assets.graph.legendSuggested')}
         </span>
       </div>
     </div>

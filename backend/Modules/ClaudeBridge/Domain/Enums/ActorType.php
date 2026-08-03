@@ -6,7 +6,7 @@ namespace Modules\ClaudeBridge\Domain\Enums;
 
 enum ActorType: string
 {
-    case User   = 'user';
+    case User = 'user';
     case Worker = 'worker';
     case System = 'system';
 }

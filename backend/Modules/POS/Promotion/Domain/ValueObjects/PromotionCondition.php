@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\POS\Promotion\Domain\ValueObjects;
 
+use InvalidArgumentException;
 use Modules\POS\Promotion\Domain\Enums\PromotionConditionType;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
 
@@ -17,7 +18,7 @@ final readonly class PromotionCondition
 {
     private function __construct(
         public PromotionConditionType $type,
-        public array                  $parameters,
+        public array $parameters,
     ) {}
 
     // ── Factories ─────────────────────────────────────────────────────────────
@@ -29,9 +30,10 @@ final readonly class PromotionCondition
 
     public static function minimumCartTotal(Money $minAmount): self
     {
-        if (!$minAmount->isPositive()) {
-            throw new \InvalidArgumentException('Minimum cart total must be positive.');
+        if (! $minAmount->isPositive()) {
+            throw new InvalidArgumentException('Minimum cart total must be positive.');
         }
+
         return new self(PromotionConditionType::MinimumCartTotal, [
             'min_amount' => $minAmount->toArray(),
         ]);
@@ -40,19 +42,21 @@ final readonly class PromotionCondition
     public static function minimumQuantity(int $minQty, ?string $productId = null): self
     {
         if ($minQty <= 0) {
-            throw new \InvalidArgumentException('Minimum quantity must be positive.');
+            throw new InvalidArgumentException('Minimum quantity must be positive.');
         }
+
         return new self(PromotionConditionType::MinimumQuantity, [
             'min_quantity' => $minQty,
-            'product_id'   => $productId,
+            'product_id' => $productId,
         ]);
     }
 
     public static function specificProduct(string $productId): self
     {
         if (trim($productId) === '') {
-            throw new \InvalidArgumentException('Product ID cannot be empty.');
+            throw new InvalidArgumentException('Product ID cannot be empty.');
         }
+
         return new self(PromotionConditionType::SpecificProduct, [
             'product_id' => $productId,
         ]);
@@ -61,8 +65,9 @@ final readonly class PromotionCondition
     public static function customerGroup(string $groupId): self
     {
         if (trim($groupId) === '') {
-            throw new \InvalidArgumentException('Customer group ID cannot be empty.');
+            throw new InvalidArgumentException('Customer group ID cannot be empty.');
         }
+
         return new self(PromotionConditionType::CustomerGroup, [
             'group_id' => $groupId,
         ]);
@@ -75,6 +80,7 @@ final readonly class PromotionCondition
         if ($this->type !== PromotionConditionType::MinimumCartTotal) {
             return null;
         }
+
         return Money::fromArray($this->parameters['min_amount']);
     }
 
@@ -98,7 +104,7 @@ final readonly class PromotionCondition
     public function toArray(): array
     {
         return [
-            'type'       => $this->type->value,
+            'type' => $this->type->value,
             'parameters' => $this->parameters,
         ];
     }
@@ -106,7 +112,7 @@ final readonly class PromotionCondition
     public static function fromArray(array $data): self
     {
         return new self(
-            type:       PromotionConditionType::from($data['type']),
+            type: PromotionConditionType::from($data['type']),
             parameters: $data['parameters'] ?? [],
         );
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Core\BusinessAttribution\Application\Actions;
 
+use InvalidArgumentException;
 use Modules\Core\BusinessAttribution\Application\Services\EventReplayService;
 
 /**
@@ -22,11 +23,11 @@ final class ReplayEventsAction
     public function execute(string $replayType, array $params): array
     {
         return match ($replayType) {
-            'entity'      => $this->replayService->replayForEntity($params['entity_type'], $params['entity_id']),
-            'dna'         => $this->replayService->replayForDna($params['dna_id']),
+            'entity' => $this->replayService->replayForEntity($params['entity_type'], $params['entity_id']),
+            'dna' => $this->replayService->replayForDna($params['dna_id']),
             'correlation' => $this->replayService->replayForCorrelation($params['correlation_id']),
-            'campaign'    => $this->replayService->replayCampaignJourney($params['campaign_id']),
-            default       => throw new \InvalidArgumentException("Unknown replay type: {$replayType}"),
+            'campaign' => $this->replayService->replayCampaignJourney($params['campaign_id']),
+            default => throw new InvalidArgumentException("Unknown replay type: {$replayType}"),
         };
     }
 }

@@ -10,7 +10,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Commerce\Synchronization\Application\Actions\ListSyncLogsAction;
 use Modules\Commerce\Synchronization\Application\Actions\RetrySyncLogAction;
-use Modules\Commerce\Synchronization\Domain\Contracts\SyncLogRepositoryInterface;
 use Modules\Commerce\Synchronization\Domain\Models\SyncLog;
 use Modules\Commerce\Synchronization\Presentation\Http\Resources\SyncLogResource;
 

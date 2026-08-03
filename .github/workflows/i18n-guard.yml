@@ -1,0 +1,62 @@
+name: i18n Guard
+
+# TASK-I18N-GUARD-001 — fails the build when a hardcoded user-facing string is
+# introduced, or when translation keys drift between locales.
+#
+# Exceptions (brand names, product names, technical identifiers, API names) are
+# encoded in frontend/eslint-rules/no-hardcoded-ui-strings.js.
+
+on:
+  push:
+    branches: [main, staging]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/i18n-guard.yml'
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/i18n-guard.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: i18n-guard-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  guard:
+    name: Localization guard
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: ESLint — no hardcoded UI strings, no inline Arabic
+        run: npx eslint src --max-warnings=0
+
+      - name: TypeScript
+        run: npx tsc --noEmit
+
+      - name: Localization audit (coverage, missing/orphan keys, RTL)
+        run: node scripts/i18n-audit.mjs
+
+      - name: Upload audit report
+        if: always()
+        run: node scripts/i18n-audit.mjs --json > i18n-audit.json || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: i18n-audit-report
+          path: frontend/i18n-audit.json
+          if-no-files-found: ignore

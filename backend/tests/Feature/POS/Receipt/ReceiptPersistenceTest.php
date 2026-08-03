@@ -28,7 +28,7 @@ final class ReceiptPersistenceTest extends TestCase
     {
         parent::setUp();
 
-        $this->repo = new EloquentReceiptRepository();
+        $this->repo = new EloquentReceiptRepository;
     }
 
     // ── save / findById ───────────────────────────────────────────────────────
@@ -40,8 +40,8 @@ final class ReceiptPersistenceTest extends TestCase
 
         $found = $this->repo->findById((string) $receipt->id);
 
-        $this->assertSame((string) $receipt->id,  (string) $found->id);
-        $this->assertSame('RCP-PERSIST-001',        $found->receipt_number);
+        $this->assertSame((string) $receipt->id, (string) $found->id);
+        $this->assertSame('RCP-PERSIST-001', $found->receipt_number);
     }
 
     public function test_find_by_id_throws_for_unknown(): void
@@ -99,10 +99,10 @@ final class ReceiptPersistenceTest extends TestCase
         $lines = $found->getLineItems();
 
         $this->assertCount(1, $lines);
-        $this->assertSame('prod-1',     $lines[0]['product_id']);
+        $this->assertSame('prod-1', $lines[0]['product_id']);
         $this->assertSame('Blue Shirt', $lines[0]['product_name']);
-        $this->assertSame('100.00',     $lines[0]['unit_price_amount']);
-        $this->assertSame('EGP',        $lines[0]['currency']);
+        $this->assertSame('100.00', $lines[0]['unit_price_amount']);
+        $this->assertSame('EGP', $lines[0]['currency']);
     }
 
     public function test_totals_persist_and_reload_correctly(): void
@@ -110,13 +110,13 @@ final class ReceiptPersistenceTest extends TestCase
         $receipt = $this->makeReceipt('RCP-TOT-001');
         $this->repo->save($receipt);
 
-        $found  = $this->repo->findById((string) $receipt->id);
+        $found = $this->repo->findById((string) $receipt->id);
         $totals = $found->getTotals();
 
         $this->assertSame('114.00', $totals->totalAmount);
         $this->assertSame('120.00', $totals->tenderedAmount);
-        $this->assertSame('6.00',   $totals->changeAmount);
-        $this->assertSame('EGP',    $totals->currency);
+        $this->assertSame('6.00', $totals->changeAmount);
+        $this->assertSame('EGP', $totals->currency);
     }
 
     public function test_payments_persist_and_reload_correctly(): void
@@ -124,11 +124,11 @@ final class ReceiptPersistenceTest extends TestCase
         $receipt = $this->makeReceipt('RCP-PAY-001');
         $this->repo->save($receipt);
 
-        $found    = $this->repo->findById((string) $receipt->id);
+        $found = $this->repo->findById((string) $receipt->id);
         $payments = $found->getPayments();
 
         $this->assertCount(1, $payments);
-        $this->assertSame('cash',   $payments[0]['payment_method']);
+        $this->assertSame('cash', $payments[0]['payment_method']);
         $this->assertSame('120.00', $payments[0]['amount']);
     }
 
@@ -155,9 +155,9 @@ final class ReceiptPersistenceTest extends TestCase
 
         $found = $this->repo->findById((string) $receipt->id);
 
-        $this->assertSame(ReceiptStatus::Voided,    $found->getStatus());
-        $this->assertSame('cashier-1',               $found->voided_by);
-        $this->assertSame('Printed in error',        $found->void_reason);
+        $this->assertSame(ReceiptStatus::Voided, $found->getStatus());
+        $this->assertSame('cashier-1', $found->voided_by);
+        $this->assertSame('Printed in error', $found->void_reason);
         $this->assertNotNull($found->voided_at);
     }
 
@@ -176,7 +176,7 @@ final class ReceiptPersistenceTest extends TestCase
     public function test_issued_at_persists(): void
     {
         $issuedAt = new DateTimeImmutable('2026-07-01 10:00:00', new DateTimeZone('UTC'));
-        $receipt  = $this->makeReceipt('RCP-TIME-001', issuedAt: $issuedAt);
+        $receipt = $this->makeReceipt('RCP-TIME-001', issuedAt: $issuedAt);
         $this->repo->save($receipt);
 
         $found = $this->repo->findById((string) $receipt->id);
@@ -187,30 +187,30 @@ final class ReceiptPersistenceTest extends TestCase
     // ── Helper ────────────────────────────────────────────────────────────────
 
     private function makeReceipt(
-        string            $receiptNumber = 'RCP-001',
-        string            $saleId        = 'sale-001',
-        ReceiptType       $type          = ReceiptType::Sale,
-        ?DateTimeImmutable $issuedAt     = null,
+        string $receiptNumber = 'RCP-001',
+        string $saleId = 'sale-001',
+        ReceiptType $type = ReceiptType::Sale,
+        ?DateTimeImmutable $issuedAt = null,
     ): Receipt {
         return Receipt::issue(
-            receiptNumber:             $receiptNumber,
-            type:                      $type,
-            originalTransactionId:     $saleId,
+            receiptNumber: $receiptNumber,
+            type: $type,
+            originalTransactionId: $saleId,
             originalTransactionNumber: 'SALE-0001',
-            terminalId:                'term-1',
-            sessionId:                 'sess-1',
-            shiftId:                   'shift-1',
-            cashierId:                 'cashier-1',
-            cashierName:               'Test Cashier',
-            customerId:                null,
-            customerName:              null,
-            currency:                  'EGP',
-            lineItems:                 [
+            terminalId: 'term-1',
+            sessionId: 'sess-1',
+            shiftId: 'shift-1',
+            cashierId: 'cashier-1',
+            cashierName: 'Test Cashier',
+            customerId: null,
+            customerName: null,
+            currency: 'EGP',
+            lineItems: [
                 ReceiptLineItem::of('prod-1', 'Blue Shirt', 'SKU-001', '1', '100.00', '100.00', 'EGP'),
             ],
-            totals:                    ReceiptTotals::of('100.00', '0.00', '14.00', '114.00', '120.00', '6.00', 'EGP'),
-            payments:                  [ReceiptPayment::of('cash', '120.00', 'EGP')],
-            issuedAt:                  $issuedAt ?? new DateTimeImmutable('2026-07-01 10:00:00', new DateTimeZone('UTC')),
+            totals: ReceiptTotals::of('100.00', '0.00', '14.00', '114.00', '120.00', '6.00', 'EGP'),
+            payments: [ReceiptPayment::of('cash', '120.00', 'EGP')],
+            issuedAt: $issuedAt ?? new DateTimeImmutable('2026-07-01 10:00:00', new DateTimeZone('UTC')),
         );
     }
 }

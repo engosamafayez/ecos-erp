@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\Core\BusinessAttribution\Application\StateAppliers;
 
 use Modules\Core\BusinessAttribution\Domain\Contracts\EntityStateApplierInterface;
@@ -15,19 +17,19 @@ class CampaignStateApplier implements EntityStateApplierInterface
     public function initialState(string $entityId): array
     {
         return [
-            'id'               => $entityId,
-            'entity_type'      => 'campaign',
-            'status'           => 'draft',
-            'impressions'      => 0,
-            'clicks'           => 0,
-            'conversions'      => 0,
-            'spend'            => 0.0,
-            'leads_generated'  => 0,
+            'id' => $entityId,
+            'entity_type' => 'campaign',
+            'status' => 'draft',
+            'impressions' => 0,
+            'clicks' => 0,
+            'conversions' => 0,
+            'spend' => 0.0,
+            'leads_generated' => 0,
             'orders_generated' => 0,
-            'launched_at'      => null,
-            'paused_at'        => null,
-            'completed_at'     => null,
-            'last_event_at'    => null,
+            'launched_at' => null,
+            'paused_at' => null,
+            'completed_at' => null,
+            'last_event_at' => null,
         ];
     }
 
@@ -38,16 +40,16 @@ class CampaignStateApplier implements EntityStateApplierInterface
         switch ($event->event_name) {
             case 'CampaignLaunched':
             case 'CampaignActivated':
-                $currentState['status']      = 'active';
+                $currentState['status'] = 'active';
                 $currentState['launched_at'] = $event->occurred_at->toIso8601String();
                 break;
             case 'CampaignPaused':
-                $currentState['status']    = 'paused';
+                $currentState['status'] = 'paused';
                 $currentState['paused_at'] = $event->occurred_at->toIso8601String();
                 break;
             case 'CampaignCompleted':
             case 'CampaignEnded':
-                $currentState['status']       = 'completed';
+                $currentState['status'] = 'completed';
                 $currentState['completed_at'] = $event->occurred_at->toIso8601String();
                 break;
             case 'AdImpression':

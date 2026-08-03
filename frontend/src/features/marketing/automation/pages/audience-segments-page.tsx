@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react';
 import { Plus, RefreshCw, Users, MoreHorizontal } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -19,6 +20,7 @@ const SEGMENT_TYPE_COLORS: Record<string, string> = {
 };
 
 export function AudienceSegmentsPage() {
+  const { t } = useTranslation('marketing');
   const [search, setSearch]             = useState('');
   const [drawerOpen, setDrawerOpen]     = useState(false);
   const [selected, setSelected]         = useState<AudienceSegment | undefined>();
@@ -34,18 +36,18 @@ export function AudienceSegmentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b">
         <div>
-          <h1 className="text-lg font-semibold">Audience Segments</h1>
-          <p className="text-xs text-muted-foreground">Dynamic customer groups for workflow targeting</p>
+          <h1 className="text-lg font-semibold">{t('audiences.title')}</h1>
+          <p className="text-xs text-muted-foreground">{t('audiences.pageSubtitle')}</p>
         </div>
         <Button size="sm" onClick={() => { setSelected(undefined); setDrawerOpen(true); }}>
-          <Plus className="h-3.5 w-3.5 mr-1" /> New Segment
+          <Plus className="h-3.5 w-3.5 me-1" /> {t('audiences.actions.new')}
         </Button>
       </div>
 
       {/* Toolbar */}
       <div className="px-6 py-3 border-b">
         <Input
-          placeholder="Search segments..."
+          placeholder={t('audiences.search')}
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="h-8 w-64"
@@ -55,11 +57,11 @@ export function AudienceSegmentsPage() {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-6">
         {isLoading ? (
-          <div className="text-sm text-muted-foreground">Loading segments...</div>
+          <div className="text-sm text-muted-foreground">{t('audiences.loading')}</div>
         ) : segments.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-48 gap-3">
             <Users className="h-8 w-8 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">No segments yet. Create one to target workflows.</p>
+            <p className="text-sm text-muted-foreground">{t('audiences.empty')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-3 gap-3">
@@ -79,36 +81,36 @@ export function AudienceSegmentsPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => { setSelected(seg); setDrawerOpen(true); }}>Edit</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => { setSelected(seg); setDrawerOpen(true); }}>{t('common.edit')}</DropdownMenuItem>
                       <DropdownMenuItem onClick={() => recalculate.mutate(seg.id)} disabled={recalculate.isPending}>
-                        <RefreshCw className="h-3.5 w-3.5 mr-2" /> Recalculate
+                        <RefreshCw className="h-3.5 w-3.5 me-2" /> {t('audiences.actions.recalculate')}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="text-destructive"
                         onClick={() => deleteSegment.mutate(seg.id)}
                       >
-                        Delete
+                        {t('common.delete')}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
 
                 <div className="flex items-center gap-2 mt-3">
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${SEGMENT_TYPE_COLORS[seg.segment_type] ?? 'bg-gray-100 text-gray-700'}`}>
-                    {seg.segment_type}
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${SEGMENT_TYPE_COLORS[seg.segment_type] ?? 'bg-gray-100 text-gray-700'}`}>
+                    {t(`audiences.segmentType.${seg.segment_type}`, { defaultValue: seg.segment_type })}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {seg.is_dynamic ? 'Dynamic' : 'Static'}
+                    {seg.is_dynamic ? t('audiences.dynamic') : t('audiences.static')}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
                     <Users className="h-3 w-3" />
-                    {seg.member_count.toLocaleString()} members
+                    {t('audiences.members', { count: seg.member_count })}
                   </span>
                   {seg.last_calculated_at && (
-                    <span>Updated {new Date(seg.last_calculated_at).toLocaleDateString()}</span>
+                    <span>{t('audiences.updatedOn', { date: new Date(seg.last_calculated_at).toLocaleDateString() })}</span>
                   )}
                 </div>
               </div>

@@ -25,7 +25,7 @@ class TriggerResolverService
             ->get();
 
         return $subscriptions
-            ->filter(fn ($sub) => !$sub->entity_type || $sub->entity_type === $entityType)
+            ->filter(fn ($sub) => ! $sub->entity_type || $sub->entity_type === $entityType)
             ->filter(fn ($sub) => $this->matchesFilterConditions($sub->filter_conditions ?? [], $entityId, $entityType))
             ->map(fn ($sub) => $sub->workflow)
             ->filter();
@@ -37,11 +37,11 @@ class TriggerResolverService
         $nodes = collect($workflow->nodes_graph['nodes'] ?? []);
         $triggerNode = $nodes->firstWhere('type', 'trigger');
 
-        if (!$triggerNode) {
+        if (! $triggerNode) {
             return [];
         }
 
-        $config     = $triggerNode['config'] ?? [];
+        $config = $triggerNode['config'] ?? [];
         $entityType = $config['entity_type'] ?? 'customer';
 
         // For date-based triggers (birthday/anniversary), find entities whose date matches today
@@ -69,24 +69,24 @@ class TriggerResolverService
 
         // Simplified: each condition is {field, operator, value} — match against entity
         foreach ($conditions as $condition) {
-            $field    = $condition['field']    ?? null;
+            $field = $condition['field'] ?? null;
             $operator = $condition['operator'] ?? 'equals';
-            $value    = $condition['value']    ?? null;
+            $value = $condition['value'] ?? null;
 
-            if (!$field) {
+            if (! $field) {
                 continue;
             }
 
-            $entityValue = DB::table($entityType . 's')->where('id', $entityId)->value($field);
+            $entityValue = DB::table($entityType.'s')->where('id', $entityId)->value($field);
 
             $passes = match ($operator) {
-                'equals'     => $entityValue == $value,
-                'not_equals' => $entityValue != $value,
-                'not_null'   => $entityValue !== null,
-                default      => true,
+                'equals' => $entityValue === $value,
+                'not_equals' => $entityValue !== $value,
+                'not_null' => $entityValue !== null,
+                default => true,
             };
 
-            if (!$passes) {
+            if (! $passes) {
                 return false;
             }
         }
@@ -98,7 +98,7 @@ class TriggerResolverService
     {
         $today = now()->format('m-d');
 
-        return DB::table($entityType . 's')
+        return DB::table($entityType.'s')
             ->whereRaw("TO_CHAR({$dateField}, 'MM-DD') = ?", [$today])
             ->pluck('id')
             ->toArray();

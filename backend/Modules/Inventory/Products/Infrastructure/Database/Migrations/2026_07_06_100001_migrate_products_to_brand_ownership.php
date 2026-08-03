@@ -36,7 +36,7 @@ return new class extends Migration
         });
 
         // Backfill path 1: channel mapping → channel.brand_id
-        DB::statement("
+        DB::statement('
             UPDATE products p
             SET brand_id = (
                 SELECT ch.brand_id
@@ -49,10 +49,10 @@ return new class extends Migration
                 ORDER BY pcm.created_at ASC LIMIT 1
             )
             WHERE p.deleted_at IS NULL AND p.brand_id IS NULL
-        ");
+        ');
 
         // Backfill path 2: products.company_id → oldest brand in that company
-        DB::statement("
+        DB::statement('
             UPDATE products p
             SET brand_id = (
                 SELECT b.id FROM brands b
@@ -63,7 +63,7 @@ return new class extends Migration
             WHERE p.deleted_at IS NULL
               AND p.brand_id IS NULL
               AND p.company_id IS NOT NULL
-        ");
+        ');
 
         // Drop company_id (FK was made RESTRICT in migration 000003)
         if (Schema::hasColumn('products', 'brand_id')) {
@@ -91,7 +91,7 @@ return new class extends Migration
                 ->nullOnDelete();
         });
 
-        DB::statement("
+        DB::statement('
             UPDATE products p
             SET company_id = (
                 SELECT b.company_id FROM brands b
@@ -100,7 +100,7 @@ return new class extends Migration
                 LIMIT 1
             )
             WHERE p.deleted_at IS NULL AND p.company_id IS NULL
-        ");
+        ');
 
         // Drop brand_id
         if (Schema::hasColumn('products', 'brand_id')) {

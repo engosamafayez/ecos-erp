@@ -17,11 +17,11 @@ final class RaiseExceptionRequest extends FormRequest
     {
         return [
             'vehicle_assignment_id' => ['nullable', 'uuid'],
-            'exception_type'        => ['required', 'string', 'max:100'],
-            'severity'              => ['required', 'in:low,medium,critical'],
-            'description'           => ['required', 'string', 'min:10', 'max:2000'],
-            'entity_type'           => ['nullable', 'string', 'max:50'],
-            'entity_id'             => ['nullable', 'uuid'],
+            'exception_type' => ['required', 'string', 'max:100'],
+            'severity' => ['required', 'in:low,medium,critical'],
+            'description' => ['required', 'string', 'min:10', 'max:2000'],
+            'entity_type' => ['nullable', 'string', 'max:50'],
+            'entity_id' => ['nullable', 'uuid'],
         ];
     }
 }

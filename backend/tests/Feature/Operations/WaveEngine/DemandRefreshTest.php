@@ -21,17 +21,19 @@ class DemandRefreshTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Company   $company;
+    private Company $company;
+
     private Warehouse $warehouse;
+
     private DemandRefreshDispatcher $dispatcher;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->company    = Company::factory()->create();
-        $this->warehouse  = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $this->dispatcher = new DemandRefreshDispatcher();
+        $this->company = Company::factory()->create();
+        $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
+        $this->dispatcher = new DemandRefreshDispatcher;
     }
 
     public function test_dispatcher_fires_demand_refresh_requested(): void
@@ -42,10 +44,10 @@ class DemandRefreshTest extends TestCase
         $this->dispatcher->dispatch($wave, 'order_added', 'system');
 
         Event::assertDispatched(DemandRefreshRequested::class, function ($e) use ($wave) {
-            return $e->waveId      === $wave->id
-                && $e->companyId   === $wave->company_id
+            return $e->waveId === $wave->id
+                && $e->companyId === $wave->company_id
                 && $e->warehouseId === $wave->warehouse_id
-                && $e->trigger     === 'order_added'
+                && $e->trigger === 'order_added'
                 && $e->requestedBy === 'system';
         });
     }
@@ -55,7 +57,7 @@ class DemandRefreshTest extends TestCase
         Event::fake();
 
         $wave = $this->makeWave(WaveStatus::Collecting);
-        $svc  = new WavePreparationService($this->dispatcher);
+        $svc = new WavePreparationService($this->dispatcher);
 
         $svc->startPreparation($wave);
 
@@ -66,7 +68,7 @@ class DemandRefreshTest extends TestCase
     {
         Event::fake();
 
-        $lifecycle = new WaveLifecycleService(new WaveManager(), $this->dispatcher);
+        $lifecycle = new WaveLifecycleService(new WaveManager, $this->dispatcher);
         $lifecycle->createCollectingWave($this->company->id, $this->warehouse->id, today()->toDateString());
 
         // Wave creation fires WaveCreated but no demand refresh (demand is zero at creation)
@@ -88,20 +90,20 @@ class DemandRefreshTest extends TestCase
     private function makeWave(WaveStatus $status = WaveStatus::Collecting): PreparationWave
     {
         return PreparationWave::create([
-            'company_id'           => $this->company->id,
-            'warehouse_id'         => $this->warehouse->id,
-            'wave_number'          => 'PREP-' . now()->format('Ym') . '-' . str_pad((string) random_int(1, 9999), 6, '0', STR_PAD_LEFT),
-            'planning_date'        => today()->toDateString(),
-            'status'               => $status->value,
-            'orders_count'         => 0,
-            'products_count'       => 0,
-            'lines_count'          => 0,
+            'company_id' => $this->company->id,
+            'warehouse_id' => $this->warehouse->id,
+            'wave_number' => 'PREP-'.now()->format('Ym').'-'.str_pad((string) random_int(1, 9999), 6, '0', STR_PAD_LEFT),
+            'planning_date' => today()->toDateString(),
+            'status' => $status->value,
+            'orders_count' => 0,
+            'products_count' => 0,
+            'lines_count' => 0,
             'total_units_required' => 0,
             'total_units_prepared' => 0,
-            'shortage_detected'    => false,
-            'wave_type'            => 'engine',
-            'created_by'           => 'system',
-            'updated_by'           => 'system',
+            'shortage_detected' => false,
+            'wave_type' => 'engine',
+            'created_by' => 'system',
+            'updated_by' => 'system',
         ]);
     }
 }

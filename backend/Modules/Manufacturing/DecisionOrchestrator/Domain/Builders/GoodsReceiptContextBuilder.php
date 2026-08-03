@@ -46,21 +46,21 @@ final class GoodsReceiptContextBuilder implements ContextBuilderInterface
     public function build(array $parameters): DecisionContext
     {
         $receivedQty = (float) ($parameters['received_qty'] ?? 0.0);
-        $orderedQty  = (float) ($parameters['ordered_qty']  ?? 0.0);
+        $orderedQty = (float) ($parameters['ordered_qty'] ?? 0.0);
 
         $variancePct = $orderedQty > 0.0
             ? round(abs($receivedQty - $orderedQty) / $orderedQty * 100.0, 4)
             : 0.0;
 
         $context = (new DecisionContext($this->contextType()))
-            ->with('gr_id',             (string) ($parameters['gr_id']             ?? ''))
+            ->with('gr_id', (string) ($parameters['gr_id'] ?? ''))
             ->with('purchase_order_id', (string) ($parameters['purchase_order_id'] ?? ''))
-            ->with('received_qty',      $receivedQty)
-            ->with('ordered_qty',       $orderedQty)
-            ->with('supplier_id',       (string) ($parameters['supplier_id']       ?? ''))
-            ->with('variance_pct',      $parameters['variance_pct'] ?? $variancePct)
-            ->with('is_partial',        $receivedQty < $orderedQty)
-            ->with('over_received',     $receivedQty > $orderedQty);
+            ->with('received_qty', $receivedQty)
+            ->with('ordered_qty', $orderedQty)
+            ->with('supplier_id', (string) ($parameters['supplier_id'] ?? ''))
+            ->with('variance_pct', $parameters['variance_pct'] ?? $variancePct)
+            ->with('is_partial', $receivedQty < $orderedQty)
+            ->with('over_received', $receivedQty > $orderedQty);
 
         return $context;
     }

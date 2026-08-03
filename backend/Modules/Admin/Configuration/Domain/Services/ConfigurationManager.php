@@ -10,6 +10,7 @@ use Modules\Admin\Configuration\Domain\Events\BrandPolicyUpdated;
 use Modules\Admin\Configuration\Domain\Events\ConfigurationChanged;
 use Modules\Admin\Configuration\Domain\Models\BrandPolicy;
 use Modules\Admin\Configuration\Domain\Models\ConfigCompanySetting;
+use Throwable;
 
 /**
  * Central authority for reading and writing all ERP configuration.
@@ -38,16 +39,16 @@ final class ConfigurationManager
                     ->first();
 
                 return $policy?->settings ?? BrandPolicy::defaultSettings($group);
-            }
+            },
         );
     }
 
     public function updateBrandPolicy(
-        string  $brandId,
-        string  $companyId,
-        string  $group,
-        array   $settings,
-        string  $actorId,
+        string $brandId,
+        string $companyId,
+        string $group,
+        array $settings,
+        string $actorId,
         ?string $reason = null,
     ): BrandPolicy {
         $existing = BrandPolicy::where('brand_id', $brandId)
@@ -58,20 +59,20 @@ final class ConfigurationManager
 
         if ($existing) {
             $existing->update([
-                'settings'   => array_merge($existing->settings, $settings),
-                'version'    => $existing->version + 1,
+                'settings' => array_merge($existing->settings, $settings),
+                'version' => $existing->version + 1,
                 'updated_by' => $actorId,
             ]);
             $policy = $existing->refresh();
         } else {
             $policy = BrandPolicy::create([
-                'brand_id'     => $brandId,
-                'company_id'   => $companyId,
+                'brand_id' => $brandId,
+                'company_id' => $companyId,
                 'policy_group' => $group,
-                'settings'     => array_merge(BrandPolicy::defaultSettings($group), $settings),
-                'version'      => 1,
-                'created_by'   => $actorId,
-                'updated_by'   => $actorId,
+                'settings' => array_merge(BrandPolicy::defaultSettings($group), $settings),
+                'version' => 1,
+                'created_by' => $actorId,
+                'updated_by' => $actorId,
             ]);
         }
 
@@ -80,20 +81,20 @@ final class ConfigurationManager
         try {
             $this->audit->record(
                 companyId: $companyId,
-                module:    'brand_policy',
-                category:  $group,
-                action:    $existing ? 'update' : 'create',
-                oldValue:  $oldSettings,
-                newValue:  $policy->settings,
-                brandId:   $brandId,
-                reason:    $reason,
+                module: 'brand_policy',
+                category: $group,
+                action: $existing ? 'update' : 'create',
+                oldValue: $oldSettings,
+                newValue: $policy->settings,
+                brandId: $brandId,
+                reason: $reason,
             );
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             // Audit is non-fatal — policy is already persisted. Log and continue.
             Log::channel('daily')->warning('[Config] Audit record failed after policy save', [
                 'brand_id' => $brandId,
-                'group'    => $group,
-                'error'    => $e->getMessage(),
+                'group' => $group,
+                'error' => $e->getMessage(),
             ]);
         }
 
@@ -120,10 +121,10 @@ final class ConfigurationManager
     }
 
     public function setCompanySetting(
-        string  $companyId,
-        string  $group,
-        string  $key,
-        mixed   $value,
+        string $companyId,
+        string $group,
+        string $key,
+        mixed $value,
         ?string $reason = null,
     ): void {
         $existing = ConfigCompanySetting::where('company_id', $companyId)
@@ -135,13 +136,13 @@ final class ConfigurationManager
         if ($existing) {
             $existing->update([
                 'setting_value' => $value,
-                'version'       => $existing->version + 1,
+                'version' => $existing->version + 1,
             ]);
         } else {
             ConfigCompanySetting::create([
-                'company_id'    => $companyId,
+                'company_id' => $companyId,
                 'setting_group' => $group,
-                'setting_key'   => $key,
+                'setting_key' => $key,
                 'setting_value' => $value,
             ]);
         }
@@ -150,13 +151,13 @@ final class ConfigurationManager
 
         $this->audit->record(
             companyId: $companyId,
-            module:    'company_setting',
-            category:  $group,
-            action:    $existing ? 'update' : 'create',
-            oldValue:  $oldValue,
-            newValue:  $value,
+            module: 'company_setting',
+            category: $group,
+            action: $existing ? 'update' : 'create',
+            oldValue: $oldValue,
+            newValue: $value,
             configKey: $key,
-            reason:    $reason,
+            reason: $reason,
         );
 
         ConfigurationChanged::dispatch($companyId, 'company_setting', $group, $key);

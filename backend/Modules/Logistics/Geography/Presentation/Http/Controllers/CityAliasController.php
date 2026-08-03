@@ -32,7 +32,7 @@ class CityAliasController extends Controller
 
         $validated = $request->validate([
             'provider' => 'nullable|string|max:50',
-            'alias'    => [
+            'alias' => [
                 'required', 'string', 'max:200',
                 \Illuminate\Validation\Rule::unique('logistics_city_aliases')
                     ->where('city_id', $cityId)
@@ -40,7 +40,7 @@ class CityAliasController extends Controller
                         ? $q->where('provider', $request->input('provider'))
                         : $q->whereNull('provider')),
             ],
-            'code'     => 'nullable|string|max:50',
+            'code' => 'nullable|string|max:50',
         ]);
 
         $alias = CityAlias::create(array_merge($validated, ['city_id' => $cityId]));
@@ -54,8 +54,8 @@ class CityAliasController extends Controller
 
         $validated = $request->validate([
             'provider' => 'nullable|string|max:50',
-            'alias'    => 'sometimes|string|max:200',
-            'code'     => 'nullable|string|max:50',
+            'alias' => 'sometimes|string|max:200',
+            'code' => 'nullable|string|max:50',
         ]);
 
         $alias->update($validated);

@@ -16,7 +16,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-                if (Schema::hasTable('config_brand_shipping_rules')) {
+        if (Schema::hasTable('config_brand_shipping_rules')) {
             return;
         }
 

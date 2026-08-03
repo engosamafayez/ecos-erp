@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\Core\BusinessAttribution\Domain\ValueObjects;
 
 final readonly class CauseEffectChain
@@ -7,17 +9,17 @@ final readonly class CauseEffectChain
     public function __construct(
         public string $rootEventId,
         /** Each node: {event_id, event_name, entity_type, entity_id, occurred_at, causation_id, depth, relation} */
-        public array  $nodes,
-        public int    $maxDepth,
-        public int    $totalNodes,
-        public array  $criticalPath = [],
+        public array $nodes,
+        public int $maxDepth,
+        public int $totalNodes,
+        public array $criticalPath = [],
     ) {}
 
     public function getCauses(): array
     {
         return array_values(array_filter(
             $this->nodes,
-            static fn(array $n): bool => $n['relation'] === 'cause',
+            static fn (array $n): bool => $n['relation'] === 'cause',
         ));
     }
 
@@ -25,7 +27,7 @@ final readonly class CauseEffectChain
     {
         return array_values(array_filter(
             $this->nodes,
-            static fn(array $n): bool => $n['relation'] === 'effect',
+            static fn (array $n): bool => $n['relation'] === 'effect',
         ));
     }
 
@@ -44,12 +46,12 @@ final readonly class CauseEffectChain
     {
         return [
             'root_event_id' => $this->rootEventId,
-            'total_nodes'   => $this->totalNodes,
-            'max_depth'     => $this->maxDepth,
-            'nodes'         => $this->nodes,
+            'total_nodes' => $this->totalNodes,
+            'max_depth' => $this->maxDepth,
+            'nodes' => $this->nodes,
             'critical_path' => $this->criticalPath,
-            'causes'        => $this->getCauses(),
-            'effects'       => $this->getEffects(),
+            'causes' => $this->getCauses(),
+            'effects' => $this->getEffects(),
         ];
     }
 }

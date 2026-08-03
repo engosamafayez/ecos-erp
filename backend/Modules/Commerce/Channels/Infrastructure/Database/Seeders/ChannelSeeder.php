@@ -57,16 +57,16 @@ final class ChannelSeeder extends Seeder
             $channel = Channel::updateOrCreate(
                 [
                     'brand_id' => $brand->id,
-                    'name'     => $data['name'],
+                    'name' => $data['name'],
                 ],
                 [
                     'business_account_id' => $businessAccount?->id,
-                    'platform'            => $data['platform'],
-                    'store_url'           => $data['store_url'],
-                    'is_active'           => true,
-                    'sync_products'       => $data['sync_products'],
-                    'sync_prices'         => $data['sync_prices'],
-                    'sync_stock'          => $data['sync_stock'],
+                    'platform' => $data['platform'],
+                    'store_url' => $data['store_url'],
+                    'is_active' => true,
+                    'sync_products' => $data['sync_products'],
+                    'sync_prices' => $data['sync_prices'],
+                    'sync_stock' => $data['sync_stock'],
                 ],
             );
 

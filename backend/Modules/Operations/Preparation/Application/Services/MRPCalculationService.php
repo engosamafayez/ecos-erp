@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 final class MRPCalculationService
 {
     /**
-     * @param  list<object{id:string,product_id:string,quantity_required:float}> $waveItems
+     * @param  list<object{id:string,product_id:string,quantity_required:float}>  $waveItems
      * @return list<array{raw_material_id:string,material_name:string,unit:string,quantity_required:float,quantity_available:float,shortage:bool,shortage_amount:float,quantity_to_purchase:float}>
      */
     public function calculate(string $companyId, string $warehouseId, array $waveItems): array
@@ -55,13 +55,13 @@ final class MRPCalculationService
                         ->sum('on_hand_qty');
 
                     $aggregated[$materialId] = [
-                        'raw_material_id'    => $materialId,
-                        'material_name'      => $line->material_name,
-                        'unit'               => $line->material_unit,
-                        'quantity_required'  => 0.0,
+                        'raw_material_id' => $materialId,
+                        'material_name' => $line->material_name,
+                        'unit' => $line->material_unit,
+                        'quantity_required' => 0.0,
                         'quantity_available' => $available,
-                        'shortage'           => false,
-                        'shortage_amount'    => 0.0,
+                        'shortage' => false,
+                        'shortage_amount' => 0.0,
                         'quantity_to_purchase' => 0.0,
                     ];
                 }
@@ -69,11 +69,11 @@ final class MRPCalculationService
                 $aggregated[$materialId]['quantity_required'] += $required;
 
                 $totalRequired = $aggregated[$materialId]['quantity_required'];
-                $available     = $aggregated[$materialId]['quantity_available'];
-                $shortage      = $available < $totalRequired;
+                $available = $aggregated[$materialId]['quantity_available'];
+                $shortage = $available < $totalRequired;
 
-                $aggregated[$materialId]['shortage']            = $shortage;
-                $aggregated[$materialId]['shortage_amount']     = $shortage ? max(0, $totalRequired - $available) : 0.0;
+                $aggregated[$materialId]['shortage'] = $shortage;
+                $aggregated[$materialId]['shortage_amount'] = $shortage ? max(0, $totalRequired - $available) : 0.0;
                 $aggregated[$materialId]['quantity_to_purchase'] = $aggregated[$materialId]['shortage_amount'];
             }
         }

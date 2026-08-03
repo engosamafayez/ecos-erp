@@ -17,10 +17,10 @@ final class InsufficientStockException extends BusinessException
         parent::__construct(
             message: "Insufficient stock: requested {$requested}, available {$available}.",
             errors: [
-                'product_id'   => $productId,
+                'product_id' => $productId,
                 'warehouse_id' => $warehouseId,
-                'requested'    => $requested,
-                'available'    => $available,
+                'requested' => $requested,
+                'available' => $available,
             ],
             statusCode: 422,
         );

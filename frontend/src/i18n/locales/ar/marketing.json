@@ -42,7 +42,34 @@
       "paused": "متوقفة مؤقتاً",
       "completed": "منتهية",
       "draft": "مسودة",
-      "archived": "مؤرشفة"
+      "archived": "مؤرشفة",
+      "pending_review": "قيد المراجعة",
+      "approved": "معتمد",
+      "scheduled": "مجدول",
+      "publishing": "جارٍ النشر…",
+      "published": "نشط",
+      "failed": "فشل",
+      "rejected": "مرفوض",
+      "all": "الكل"
+    },
+    "externalStatus": {
+      "ACTIVE": "نشط",
+      "PAUSED": "متوقف مؤقتاً",
+      "DELETED": "محذوف",
+      "ARCHIVED": "مؤرشف",
+      "IN_PROCESS": "قيد المعالجة",
+      "WITH_ISSUES": "به مشكلات"
+    },
+    "statusTab": {
+      "all": "الكل",
+      "draft": "المسودات",
+      "pending_review": "في انتظار الاعتماد",
+      "approved": "معتمد",
+      "scheduled": "مجدول",
+      "published": "نشط",
+      "paused": "متوقف مؤقتاً",
+      "archived": "مؤرشف",
+      "failed": "فشل"
     }
   },
   "audiences": {

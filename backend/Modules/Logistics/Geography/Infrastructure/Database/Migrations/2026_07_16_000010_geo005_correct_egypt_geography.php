@@ -40,30 +40,30 @@ return new class extends Migration
 
         foreach ($entries as $entry) {
             $before = $entry->before ? json_decode($entry->before, true) : [];
-            $after  = $entry->after  ? json_decode($entry->after,  true) : [];
+            $after = $entry->after ? json_decode($entry->after, true) : [];
 
             match ($entry->action) {
                 'iso_code_set' => DB::table('logistics_governorates')
-                                     ->where('id', $entry->record_id)
-                                     ->update(['iso_code' => null]),
+                    ->where('id', $entry->record_id)
+                    ->update(['iso_code' => null]),
 
-                'city_moved'   => DB::table('logistics_cities')
-                                     ->where('id', $entry->record_id)
-                                     ->update(['governorate_id' => $before['governorate_id']]),
+                'city_moved' => DB::table('logistics_cities')
+                    ->where('id', $entry->record_id)
+                    ->update(['governorate_id' => $before['governorate_id']]),
 
                 'city_renamed' => DB::table('logistics_cities')
-                                     ->where('id', $entry->record_id)
-                                     ->update(['name_en' => $before['name_en'], 'name_ar' => $before['name_ar']]),
+                    ->where('id', $entry->record_id)
+                    ->update(['name_en' => $before['name_en'], 'name_ar' => $before['name_ar']]),
 
                 'city_deleted' => DB::table('logistics_cities')->insert($before),
 
-                'fk_orders'    => DB::table('orders')
-                                     ->whereIn('id', $after['affected_ids'])
-                                     ->update(['logistics_city_id' => $after['from']]),
+                'fk_orders' => DB::table('orders')
+                    ->whereIn('id', $after['affected_ids'])
+                    ->update(['logistics_city_id' => $after['from']]),
 
-                'city_added'   => DB::table('logistics_cities')->where('id', $entry->record_id)->delete(),
+                'city_added' => DB::table('logistics_cities')->where('id', $entry->record_id)->delete(),
 
-                default        => null,
+                default => null,
             };
         }
 
@@ -83,38 +83,40 @@ return new class extends Migration
         });
 
         $map = [
-            'Cairo'          => 'EG-C',
-            'Alexandria'     => 'EG-ALX',
-            'Giza'           => 'EG-GZ',
-            'Qalyubia'       => 'EG-KB',
-            'Sharqia'        => 'EG-SHR',
-            'Dakahlia'       => 'EG-DK',
+            'Cairo' => 'EG-C',
+            'Alexandria' => 'EG-ALX',
+            'Giza' => 'EG-GZ',
+            'Qalyubia' => 'EG-KB',
+            'Sharqia' => 'EG-SHR',
+            'Dakahlia' => 'EG-DK',
             'Kafr El Sheikh' => 'EG-KFS',
-            'Gharbia'        => 'EG-GH',
-            'Monufia'        => 'EG-MNF',
-            'Beheira'        => 'EG-BH',
-            'Ismailia'       => 'EG-IS',
-            'Suez'           => 'EG-SUZ',
-            'Port Said'      => 'EG-PTS',
-            'Damietta'       => 'EG-DT',
-            'Faiyum'         => 'EG-FYM',
-            'Beni Suef'      => 'EG-BNS',
-            'Minya'          => 'EG-MN',
-            'Asyut'          => 'EG-AST',
-            'Sohag'          => 'EG-SHG',
-            'Qena'           => 'EG-KN',
-            'Luxor'          => 'EG-LX',
-            'Aswan'          => 'EG-ASN',
-            'Red Sea'        => 'EG-BA',
-            'New Valley'     => 'EG-WAD',
-            'Matrouh'        => 'EG-MT',
-            'North Sinai'    => 'EG-SIN',
-            'South Sinai'    => 'EG-JS',
+            'Gharbia' => 'EG-GH',
+            'Monufia' => 'EG-MNF',
+            'Beheira' => 'EG-BH',
+            'Ismailia' => 'EG-IS',
+            'Suez' => 'EG-SUZ',
+            'Port Said' => 'EG-PTS',
+            'Damietta' => 'EG-DT',
+            'Faiyum' => 'EG-FYM',
+            'Beni Suef' => 'EG-BNS',
+            'Minya' => 'EG-MN',
+            'Asyut' => 'EG-AST',
+            'Sohag' => 'EG-SHG',
+            'Qena' => 'EG-KN',
+            'Luxor' => 'EG-LX',
+            'Aswan' => 'EG-ASN',
+            'Red Sea' => 'EG-BA',
+            'New Valley' => 'EG-WAD',
+            'Matrouh' => 'EG-MT',
+            'North Sinai' => 'EG-SIN',
+            'South Sinai' => 'EG-JS',
         ];
 
         foreach ($map as $nameEn => $code) {
             $id = DB::table('logistics_governorates')->where('name_en', $nameEn)->value('id');
-            if (!$id) continue;
+            if (! $id) {
+                continue;
+            }
 
             DB::table('logistics_governorates')->where('id', $id)->update(['iso_code' => $code]);
             $this->audit('iso_code_set', 'logistics_governorates', $id, ['iso_code' => null], ['iso_code' => $code]);
@@ -126,16 +128,16 @@ return new class extends Migration
     private function phaseB_fixGovernorateAssignments(): void
     {
         $cairoId = $this->govId('Cairo');
-        $gizaId  = $this->govId('Giza');
-        $alexId  = $this->govId('Alexandria');
-        $behId   = $this->govId('Beheira');
+        $gizaId = $this->govId('Giza');
+        $alexId = $this->govId('Alexandria');
+        $behId = $this->govId('Beheira');
 
         $moves = [
             ['Dokki',            $cairoId, $gizaId],
             ['Agouza',           $cairoId, $gizaId],
             ['Imbaba',           $cairoId, $gizaId],
             ['El Haram',         $cairoId, $gizaId],
-            ['Rashid (Rosetta)', $alexId,  $behId ],
+            ['Rashid (Rosetta)', $alexId,  $behId],
         ];
 
         foreach ($moves as [$nameEn, $fromGov, $toGov]) {
@@ -144,7 +146,9 @@ return new class extends Migration
                 ->where('governorate_id', $fromGov)
                 ->first();
 
-            if (!$city) continue;
+            if (! $city) {
+                continue;
+            }
 
             DB::table('logistics_cities')->where('id', $city->id)->update(['governorate_id' => $toGov]);
             $this->audit('city_moved', 'logistics_cities', $city->id,
@@ -158,7 +162,7 @@ return new class extends Migration
     private function phaseC_removeDuplicates(): void
     {
         $gizaId = $this->govId('Giza');
-        $behId  = $this->govId('Beheira');
+        $behId = $this->govId('Beheira');
 
         // "Dokki (Giza)" duplicates "Dokki" which was just moved to Giza from Cairo
         $this->mergeCity($this->cityId('Dokki', $gizaId), $this->cityId('Dokki (Giza)', $gizaId));
@@ -176,10 +180,14 @@ return new class extends Migration
      */
     private function mergeCity(?int $canonicalId, ?int $duplicateId): void
     {
-        if (!$canonicalId || !$duplicateId) return;
+        if (! $canonicalId || ! $duplicateId) {
+            return;
+        }
 
         $duplicate = DB::table('logistics_cities')->where('id', $duplicateId)->first();
-        if (!$duplicate) return;
+        if (! $duplicate) {
+            return;
+        }
 
         // orders — SET NULL semantics means we must explicitly update
         $affectedOrderIds = DB::table('orders')
@@ -263,14 +271,18 @@ return new class extends Migration
 
         foreach ($renames as [$govName, $oldNameEn, $newNameEn, $newNameAr]) {
             $govId = $this->govId($govName);
-            if (!$govId) continue;
+            if (! $govId) {
+                continue;
+            }
 
             $city = DB::table('logistics_cities')
                 ->where('governorate_id', $govId)
                 ->where('name_en', $oldNameEn)
                 ->first();
 
-            if (!$city) continue;
+            if (! $city) {
+                continue;
+            }
 
             DB::table('logistics_cities')
                 ->where('id', $city->id)
@@ -298,24 +310,26 @@ return new class extends Migration
 
         foreach ($additions as [$govName, $nameEn, $nameAr, $order]) {
             $govId = $this->govId($govName);
-            if (!$govId) continue;
+            if (! $govId) {
+                continue;
+            }
 
             if (DB::table('logistics_cities')
-                    ->where('governorate_id', $govId)
-                    ->where('name_en', $nameEn)
-                    ->exists()) {
+                ->where('governorate_id', $govId)
+                ->where('name_en', $nameEn)
+                ->exists()) {
                 continue;
             }
 
             $id = DB::table('logistics_cities')->insertGetId([
                 'governorate_id' => $govId,
-                'name_en'        => $nameEn,
-                'name_ar'        => $nameAr,
-                'display_order'  => $order,
-                'is_active'      => true,
-                'is_system'      => true,
-                'created_at'     => now(),
-                'updated_at'     => now(),
+                'name_en' => $nameEn,
+                'name_ar' => $nameAr,
+                'display_order' => $order,
+                'is_active' => true,
+                'is_system' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
 
             $this->audit('city_added', 'logistics_cities', $id,
@@ -345,11 +359,11 @@ return new class extends Migration
     private function audit(string $action, string $table, int $recordId, ?array $before, ?array $after): void
     {
         DB::table('geo005_audit_log')->insert([
-            'action'     => $action,
+            'action' => $action,
             'table_name' => $table,
-            'record_id'  => $recordId,
-            'before'     => $before !== null ? json_encode($before) : null,
-            'after'      => $after  !== null ? json_encode($after)  : null,
+            'record_id' => $recordId,
+            'before' => $before !== null ? json_encode($before) : null,
+            'after' => $after !== null ? json_encode($after) : null,
         ]);
     }
 
@@ -362,7 +376,9 @@ return new class extends Migration
 
     private function cityId(string $nameEn, ?int $govId): ?int
     {
-        if (!$govId) return null;
+        if (! $govId) {
+            return null;
+        }
 
         return DB::table('logistics_cities')
             ->where('name_en', $nameEn)

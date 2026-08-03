@@ -26,6 +26,8 @@ import type {
   GoodsReceiptStatus,
 } from '@/features/goods-receipts/types/goods-receipt';
 import { ROUTES } from '@/router/routes';
+import { useTranslation } from 'react-i18next';
+import { useFormatter } from '@/hooks/use-formatter';
 
 const PER_PAGE = 15;
 
@@ -49,6 +51,9 @@ function KpiChip({ label, value, color = 'gray' }: KpiProps) {
 
 export function ReceivingCenterPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation('receiving-center');
+  const fmt = useFormatter();
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
   const [search, setSearch]               = useState('');
   const [statusFilter, setStatusFilter]   = useState<GoodsReceiptStatus | 'all'>('all');
   const [page, setPage]                   = useState(1);
@@ -94,24 +99,24 @@ export function ReceivingCenterPage() {
   const columns: ColumnDef<GoodsReceipt>[] = [
     {
       key: 'receipt_number',
-      header: 'Receipt #',
+      header: t('page.columns.receiptNo'),
       sortable: true,
       cell: (gr) => <span className="font-mono text-sm font-medium">{gr.receipt_number}</span>,
     },
     {
       key: 'receipt_date',
-      header: 'Date',
+      header: t('page.columns.date'),
       sortable: true,
       cell: (gr) => <span className="text-sm text-gray-600">{gr.receipt_date}</span>,
     },
     {
       key: 'supplier',
-      header: 'Supplier',
+      header: t('page.columns.supplier'),
       cell: (gr) => <span className="text-sm">{gr.purchase_order?.supplier?.name ?? '—'}</span>,
     },
     {
       key: 'warehouse',
-      header: 'Warehouse',
+      header: t('page.columns.warehouse'),
       cell: (gr) => (
         <span className="text-sm text-gray-600">
           {gr.warehouse ? `${gr.warehouse.code} — ${gr.warehouse.name}` : '—'}
@@ -120,21 +125,21 @@ export function ReceivingCenterPage() {
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t('page.columns.status'),
       sortable: true,
       cell: (gr) => <GrStatusBadge status={gr.status} />,
     },
     {
       key: 'payment_status',
-      header: 'Payment',
+      header: t('page.columns.payment'),
       cell: (gr) => <GrPaymentStatusBadge status={gr.payment_status} />,
     },
     {
       key: 'invoice_total_amount',
-      header: 'Invoice Total',
+      header: t('page.columns.invoiceTotal'),
       cell: (gr) => (
         <span className="text-sm font-medium">
-          {gr.invoice_total_amount > 0 ? `SAR ${gr.invoice_total_amount.toLocaleString()}` : '—'}
+          {gr.invoice_total_amount > 0 ? fmt.money(gr.invoice_total_amount) : '—'}
         </span>
       ),
     },
@@ -145,25 +150,25 @@ export function ReceivingCenterPage() {
       <div className="px-6 py-4 border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between mb-4">
           <PageHeader
-            title="Receiving Center"
-            subtitle="Record and manage incoming goods from all procurement workflows"
+            title={t('page.title')}
+            subtitle={t('page.subtitle')}
           />
           <Button onClick={() => navigate(ROUTES.goodsReceiptsNew)} size="sm" className="gap-1.5">
             <Plus className="w-3.5 h-3.5" />
-            New Receipt
+            {t('page.actions.newReceipt')}
           </Button>
         </div>
 
         <div className="flex gap-3 flex-wrap">
-          <KpiChip label="Total Receipts" value={meta?.total ?? '—'} color="gray" />
-          <KpiChip label="Draft" value={draftCount} color="yellow" />
-          <KpiChip label="Posted" value={postedCount} color="green" />
+          <KpiChip label={t('page.kpis.totalReceipts')} value={meta?.total ?? '—'} color="gray" />
+          <KpiChip label={t('page.kpis.draft')} value={draftCount} color="yellow" />
+          <KpiChip label={t('page.kpis.posted')} value={postedCount} color="green" />
           <button
             className="flex flex-col items-center px-5 py-3 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
             onClick={() => navigate(ROUTES.goodsReceiptsNew)}
           >
             <PackageOpen className="w-4 h-4 mb-0.5" />
-            <span className="text-xs">Receive Goods</span>
+            <span className="text-xs">{t('page.actions.receiveGoods')}</span>
           </button>
         </div>
       </div>
@@ -172,7 +177,7 @@ export function ReceivingCenterPage() {
         <Card className="shadow-none border-gray-200">
           <CardContent className="flex flex-col gap-4 pt-6">
             <EntityToolbar
-              searchPlaceholder="Search receipts…"
+              searchPlaceholder={t('page.filters.search')}
               onSearchChange={(v) => { setSearch(v); setPage(1); }}
               onRefresh={() => void refetch()}
               isRefreshing={isFetching}
@@ -180,15 +185,15 @@ export function ReceivingCenterPage() {
               filterPanel={
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-col gap-1.5">
-                    <span className="text-sm font-medium">Status</span>
+                    <span className="text-sm font-medium">{t('page.columns.status')}</span>
                     <select
                       value={statusFilter}
                       onChange={(e) => { setStatusFilter(e.target.value as GoodsReceiptStatus | 'all'); setPage(1); }}
                       className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
                     >
-                      <option value="all">All Statuses</option>
-                      <option value="draft">Draft</option>
-                      <option value="posted">Posted</option>
+                      <option value="all">{tAny('page.filters.allStatuses')}</option>
+                      <option value="draft">{tAny('page.kpis.draft')}</option>
+                      <option value="posted">{tAny('page.kpis.posted')}</option>
                     </select>
                   </div>
                 </div>
@@ -209,26 +214,26 @@ export function ReceivingCenterPage() {
                   items={[
                     {
                       key: 'view',
-                      label: 'View',
+                      label: t('page.actions.view'),
                       icon: Eye,
                       onSelect: () => navigate(`${ROUTES.goodsReceipts}/${gr.id}`),
                     },
                     ...(gr.status === 'draft' ? [
                       {
                         key: 'edit',
-                        label: 'Edit',
+                        label: t('page.actions.edit'),
                         icon: Pencil,
                         onSelect: () => navigate(`${ROUTES.goodsReceipts}/${gr.id}/edit`),
                       },
                       {
                         key: 'post',
-                        label: 'Post Receipt',
+                        label: t('page.actions.post'),
                         icon: Send,
                         onSelect: () => setPosting(gr),
                       },
                       {
                         key: 'delete',
-                        label: 'Delete',
+                        label: t('page.actions.delete'),
                         icon: Trash2,
                         variant: 'destructive' as const,
                         onSelect: () => setDeleting(gr),
@@ -252,9 +257,9 @@ export function ReceivingCenterPage() {
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title="Delete Receipt"
-        description={`Delete receipt ${deleting?.receipt_number}? This cannot be undone.`}
-        confirmLabel="Delete"
+        title={t('page.confirmDelete.title')}
+        description={t('page.confirmDelete.description')}
+        confirmLabel={t('page.confirmDelete.confirm')}
         variant="destructive"
         loading={deleteGR.isPending}
         onConfirm={() => {
@@ -265,9 +270,9 @@ export function ReceivingCenterPage() {
       <ConfirmDialog
         open={posting !== null}
         onOpenChange={(open) => { if (!open) setPosting(null); }}
-        title="Post Receipt"
-        description={`Post receipt ${posting?.receipt_number}? This will update inventory and cannot be undone.`}
-        confirmLabel="Post"
+        title={t('page.confirmPost.title')}
+        description={t('page.confirmPost.description')}
+        confirmLabel={t('page.confirmPost.confirm')}
         loading={postGR.isPending}
         onConfirm={() => {
           if (posting) postGR.mutate(posting.id, { onSuccess: () => setPosting(null) });

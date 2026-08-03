@@ -26,15 +26,15 @@ class PublishingJob extends Model
     ];
 
     protected $casts = [
-        'operation'       => PublishingOperation::class,
-        'status'          => PublishingJobStatus::class,
-        'payload'         => 'array',
-        'result'          => 'array',
-        'error_context'   => 'array',
-        'next_retry_at'   => 'datetime',
-        'scheduled_at'    => 'datetime',
-        'started_at'      => 'datetime',
-        'completed_at'    => 'datetime',
+        'operation' => PublishingOperation::class,
+        'status' => PublishingJobStatus::class,
+        'payload' => 'array',
+        'result' => 'array',
+        'error_context' => 'array',
+        'next_retry_at' => 'datetime',
+        'scheduled_at' => 'datetime',
+        'started_at' => 'datetime',
+        'completed_at' => 'datetime',
     ];
 
     public function draft(): BelongsTo

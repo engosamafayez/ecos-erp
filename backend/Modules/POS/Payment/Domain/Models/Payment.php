@@ -6,6 +6,7 @@ namespace Modules\POS\Payment\Domain\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 use Modules\POS\Payment\Domain\Enums\PaymentStatus;
 use Modules\POS\Payment\Domain\Events\PaymentCaptured;
 use Modules\POS\Payment\Domain\Events\PaymentInitiated;
@@ -31,13 +32,13 @@ final class Payment extends Model
     protected function casts(): array
     {
         return [
-            'status'          => PaymentStatus::class,
-            'cart_total'      => 'array',
-            'tenders'         => 'array',
+            'status' => PaymentStatus::class,
+            'cart_total' => 'array',
+            'tenders' => 'array',
             'amount_tendered' => 'array',
-            'change_due'      => 'array',
-            'metadata'        => 'array',
-            'captured_at'     => 'datetime',
+            'change_due' => 'array',
+            'metadata' => 'array',
+            'captured_at' => 'datetime',
         ];
     }
 
@@ -50,16 +51,18 @@ final class Payment extends Model
 
     public function pullDomainEvents(): array
     {
-        $events             = $this->domainEvents;
+        $events = $this->domainEvents;
         $this->domainEvents = [];
+
         return $events;
     }
 
     private static function generateUuid(): string
     {
-        $bytes    = random_bytes(16);
-        $bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
-        $bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
+        $bytes = random_bytes(16);
+        $bytes[6] = chr((ord($bytes[6]) & 0x0F) | 0x40);
+        $bytes[8] = chr((ord($bytes[8]) & 0x3F) | 0x80);
+
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
     }
 
@@ -71,49 +74,49 @@ final class Payment extends Model
         string $shiftId,
         string $terminalId,
         string $cashierId,
-        Money  $cartTotal,
+        Money $cartTotal,
     ): self {
         if (trim($cartId) === '') {
-            throw new \InvalidArgumentException('Cart ID cannot be empty.');
+            throw new InvalidArgumentException('Cart ID cannot be empty.');
         }
         if (trim($sessionId) === '') {
-            throw new \InvalidArgumentException('Session ID cannot be empty.');
+            throw new InvalidArgumentException('Session ID cannot be empty.');
         }
         if (trim($shiftId) === '') {
-            throw new \InvalidArgumentException('Shift ID cannot be empty.');
+            throw new InvalidArgumentException('Shift ID cannot be empty.');
         }
         if (trim($terminalId) === '') {
-            throw new \InvalidArgumentException('Terminal ID cannot be empty.');
+            throw new InvalidArgumentException('Terminal ID cannot be empty.');
         }
         if (trim($cashierId) === '') {
-            throw new \InvalidArgumentException('Cashier ID cannot be empty.');
+            throw new InvalidArgumentException('Cashier ID cannot be empty.');
         }
 
         $currency = $cartTotal->currency;
 
-        $payment                  = new self();
-        $payment->id              = self::generateUuid();
-        $payment->cart_id         = $cartId;
-        $payment->session_id      = $sessionId;
-        $payment->shift_id        = $shiftId;
-        $payment->terminal_id     = $terminalId;
-        $payment->cashier_id      = $cashierId;
-        $payment->status          = PaymentStatus::Pending;
-        $payment->currency        = $currency;
-        $payment->cart_total      = $cartTotal->toArray();
-        $payment->tenders         = [];
+        $payment = new self;
+        $payment->id = self::generateUuid();
+        $payment->cart_id = $cartId;
+        $payment->session_id = $sessionId;
+        $payment->shift_id = $shiftId;
+        $payment->terminal_id = $terminalId;
+        $payment->cashier_id = $cashierId;
+        $payment->status = PaymentStatus::Pending;
+        $payment->currency = $currency;
+        $payment->cart_total = $cartTotal->toArray();
+        $payment->tenders = [];
         $payment->amount_tendered = Money::zero($currency)->toArray();
-        $payment->change_due      = Money::zero($currency)->subtract($cartTotal)->toArray();
+        $payment->change_due = Money::zero($currency)->subtract($cartTotal)->toArray();
 
         $payment->addEvent(PaymentInitiated::now(
-            paymentId:       $payment->id,
-            cartId:          $cartId,
-            sessionId:       $sessionId,
-            shiftId:         $shiftId,
-            terminalId:      $terminalId,
-            cashierId:       $cashierId,
+            paymentId: $payment->id,
+            cartId: $cartId,
+            sessionId: $sessionId,
+            shiftId: $shiftId,
+            terminalId: $terminalId,
+            cashierId: $cashierId,
             cartTotalAmount: $cartTotal->amount,
-            currency:        $currency,
+            currency: $currency,
         ));
 
         return $payment;
@@ -123,27 +126,27 @@ final class Payment extends Model
 
     public function addTender(
         PaymentMethodType $type,
-        Money             $amount,
-        ?string           $reference = null,
-        array             $metadata  = [],
+        Money $amount,
+        ?string $reference = null,
+        array $metadata = [],
     ): string {
         $this->guardPending();
         $this->guardSameCurrency($amount);
 
-        $tender    = PaymentTender::create($type, $amount, $reference, $metadata);
-        $tenders   = $this->getTenders();
+        $tender = PaymentTender::create($type, $amount, $reference, $metadata);
+        $tenders = $this->getTenders();
         $tenders[] = $tender;
         $this->setTenders($tenders);
         $this->recalculateAmounts();
 
         $this->addEvent(TenderAdded::now(
-            paymentId:           (string) $this->id,
-            cartId:              (string) $this->cart_id,
-            tenderId:            $tender->id,
-            type:                $type->value,
-            tenderAmount:        $amount->amount,
-            currency:            $amount->currency,
-            reference:           $reference,
+            paymentId: (string) $this->id,
+            cartId: (string) $this->cart_id,
+            tenderId: $tender->id,
+            type: $type->value,
+            tenderAmount: $amount->amount,
+            currency: $amount->currency,
+            reference: $reference,
             amountTenderedTotal: $this->getAmountTendered()->amount,
         ));
 
@@ -154,9 +157,9 @@ final class Payment extends Model
     {
         $this->guardPending();
 
-        $tenders  = $this->getTenders();
+        $tenders = $this->getTenders();
         $filtered = array_values(
-            array_filter($tenders, fn(PaymentTender $t) => $t->id !== $tenderId)
+            array_filter($tenders, fn (PaymentTender $t) => $t->id !== $tenderId),
         );
 
         if (count($filtered) === count($tenders)) {
@@ -175,10 +178,10 @@ final class Payment extends Model
         $this->recalculateAmounts();
 
         $this->addEvent(TenderRemoved::now(
-            paymentId:           (string) $this->id,
-            cartId:              (string) $this->cart_id,
-            tenderId:            $tenderId,
-            type:                $removed->type->value,
+            paymentId: (string) $this->id,
+            cartId: (string) $this->cart_id,
+            tenderId: $tenderId,
+            type: $removed->type->value,
             amountTenderedTotal: $this->getAmountTendered()->amount,
         ));
     }
@@ -191,7 +194,7 @@ final class Payment extends Model
             throw InvalidPaymentStateException::alreadyCaptured($this->id ?? '');
         }
 
-        if (!$this->isFullyPaid()) {
+        if (! $this->isFullyPaid()) {
             throw InsufficientPaymentException::forCapture(
                 $this->id ?? '',
                 $this->getCartTotal(),
@@ -199,20 +202,20 @@ final class Payment extends Model
             );
         }
 
-        $this->status      = PaymentStatus::Captured;
+        $this->status = PaymentStatus::Captured;
         $this->captured_at = now();
 
         $this->addEvent(PaymentCaptured::now(
-            paymentId:            (string) $this->id,
-            cartId:               (string) $this->cart_id,
-            sessionId:            (string) $this->session_id,
-            terminalId:           (string) $this->terminal_id,
-            cashierId:            (string) $this->cashier_id,
-            cartTotalAmount:      $this->getCartTotal()->amount,
+            paymentId: (string) $this->id,
+            cartId: (string) $this->cart_id,
+            sessionId: (string) $this->session_id,
+            terminalId: (string) $this->terminal_id,
+            cashierId: (string) $this->cashier_id,
+            cartTotalAmount: $this->getCartTotal()->amount,
             amountTenderedAmount: $this->getAmountTendered()->amount,
-            changeDueAmount:      $this->getChangeDue()->amount,
-            currency:             (string) $this->currency,
-            tenderCount:          $this->getTenderCount(),
+            changeDueAmount: $this->getChangeDue()->amount,
+            currency: (string) $this->currency,
+            tenderCount: $this->getTenderCount(),
         ));
     }
 
@@ -222,7 +225,7 @@ final class Payment extends Model
     public function getTenders(): array
     {
         return array_map(
-            fn(array $d) => PaymentTender::fromArray($d),
+            fn (array $d) => PaymentTender::fromArray($d),
             $this->tenders ?? [],
         );
     }
@@ -277,13 +280,13 @@ final class Payment extends Model
     private function setTenders(array $paymentTenders): void
     {
         $this->tenders = array_values(
-            array_map(fn(PaymentTender $t) => $t->toArray(), $paymentTenders),
+            array_map(fn (PaymentTender $t) => $t->toArray(), $paymentTenders),
         );
     }
 
     private function recalculateAmounts(): void
     {
-        $tendered  = Money::zero($this->currency);
+        $tendered = Money::zero($this->currency);
         $cartTotal = $this->getCartTotal();
 
         foreach ($this->getTenders() as $tender) {
@@ -291,7 +294,7 @@ final class Payment extends Model
         }
 
         $this->amount_tendered = $tendered->toArray();
-        $this->change_due      = $tendered->subtract($cartTotal)->toArray();
+        $this->change_due = $tendered->subtract($cartTotal)->toArray();
     }
 
     private function guardPending(): void
@@ -304,8 +307,8 @@ final class Payment extends Model
     private function guardSameCurrency(Money $money): void
     {
         if ($money->currency !== $this->currency) {
-            throw new \InvalidArgumentException(
-                "Currency mismatch: payment uses \"{$this->currency}\" but received \"{$money->currency}\"."
+            throw new InvalidArgumentException(
+                "Currency mismatch: payment uses \"{$this->currency}\" but received \"{$money->currency}\".",
             );
         }
     }

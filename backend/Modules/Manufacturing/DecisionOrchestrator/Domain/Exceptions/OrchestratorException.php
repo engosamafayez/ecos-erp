@@ -32,7 +32,7 @@ final class OrchestratorException extends RuntimeException
     {
         return new self(
             "Context type [{$contextType}] requires recipe resolution, "
-            . "but 'product_id' was not supplied in parameters.",
+            ."but 'product_id' was not supplied in parameters.",
             self::MISSING_PRODUCT_ID,
         );
     }

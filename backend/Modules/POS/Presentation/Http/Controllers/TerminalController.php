@@ -26,7 +26,7 @@ final class TerminalController extends Controller
             ->orderBy('terminal_code')
             ->get()
             ->map(static fn (Terminal $t) => [
-                'id'   => (string) $t->id,
+                'id' => (string) $t->id,
                 'code' => $t->terminal_code,
                 'name' => $t->name,
             ]);

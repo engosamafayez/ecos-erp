@@ -11,11 +11,11 @@ class CityAliasResource extends JsonResource
     public function toArray($request): array
     {
         return [
-            'id'         => $this->id,
-            'city_id'    => $this->city_id,
-            'provider'   => $this->provider,
-            'alias'      => $this->alias,
-            'code'       => $this->code,
+            'id' => $this->id,
+            'city_id' => $this->city_id,
+            'provider' => $this->provider,
+            'alias' => $this->alias,
+            'code' => $this->code,
             'created_at' => $this->created_at?->toISOString(),
         ];
     }

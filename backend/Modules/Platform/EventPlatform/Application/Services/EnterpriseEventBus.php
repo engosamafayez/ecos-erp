@@ -16,7 +16,7 @@ use Modules\Platform\EventPlatform\Domain\ValueObjects\RetryPolicy;
  * All modules publish and subscribe through this class.
  * No module should call Event::dispatch() or Event::listen() directly for cross-module communication.
  */
-final class EnterpriseEventBus implements EnterpriseEventBusInterface, DomainEventBus
+final class EnterpriseEventBus implements DomainEventBus, EnterpriseEventBusInterface
 {
     public function __construct(
         private readonly EnterpriseEventPublisher $publisher,
@@ -64,7 +64,7 @@ final class EnterpriseEventBus implements EnterpriseEventBusInterface, DomainEve
     /**
      * Publish multiple events in a single batch — e.g. from a domain aggregate root.
      *
-     * @param DomainEvent[] $events
+     * @param  DomainEvent[]  $events
      */
     public function publishMany(array $events): void
     {

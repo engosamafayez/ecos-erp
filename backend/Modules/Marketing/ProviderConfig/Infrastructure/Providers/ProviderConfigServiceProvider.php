@@ -26,8 +26,9 @@ final class ProviderConfigServiceProvider extends ServiceProvider
 
         // Validator registry — all provider validators registered here at boot.
         $this->app->singleton(ValidatorRegistry::class, function ($app): ValidatorRegistry {
-            $registry = new ValidatorRegistry();
+            $registry = new ValidatorRegistry;
             $registry->register('meta', $app->make(MetaConfigValidator::class));
+
             return $registry;
         });
 
@@ -35,8 +36,8 @@ final class ProviderConfigServiceProvider extends ServiceProvider
         $this->app->singleton(ProviderCredentialService::class, function ($app): ProviderCredentialService {
             return new ProviderCredentialService(
                 validators: $app->make(ValidatorRegistry::class),
-                audit:      $app->make(ConfigAuditService::class),
-                events:     $app->make(ProviderEventPublisher::class),
+                audit: $app->make(ConfigAuditService::class),
+                events: $app->make(ProviderEventPublisher::class),
             );
         });
 
@@ -44,8 +45,8 @@ final class ProviderConfigServiceProvider extends ServiceProvider
         $this->app->singleton(ProviderHealthMonitor::class, function ($app): ProviderHealthMonitor {
             return new ProviderHealthMonitor(
                 credentials: $app->make(ProviderCredentialService::class),
-                audit:       $app->make(ConfigAuditService::class),
-                events:      $app->make(ProviderEventPublisher::class),
+                audit: $app->make(ConfigAuditService::class),
+                events: $app->make(ProviderEventPublisher::class),
             );
         });
     }
@@ -53,7 +54,7 @@ final class ProviderConfigServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadMigrationsFrom(
-            __DIR__ . '/../Database/Migrations'
+            __DIR__.'/../Database/Migrations',
         );
 
         if ($this->app->runningInConsole()) {

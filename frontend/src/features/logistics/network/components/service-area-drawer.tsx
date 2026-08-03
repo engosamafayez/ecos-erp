@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, MapPin, MinusCircle } from 'lucide-react';
 
 import { PageDrawer } from '@/components/page/drawer/page-drawer';
@@ -21,6 +22,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function Overview({ areaId }: { areaId: string }) {
+  const { t } = useTranslation('logistics');
   const { data: area } = useServiceArea(areaId);
 
   if (!area) return <Skeleton className="h-64 w-full" />;
@@ -31,14 +33,18 @@ function Overview({ areaId }: { areaId: string }) {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Status">
+        <Field label={t('common.status')}>
           <AreaStatusBadge status={area.status} />
         </Field>
-        <Field label="Code">{area.code}</Field>
-        <Field label="Dispatch region">{area.dispatch_region?.name ?? '—'}</Field>
-        <Field label="Lead time">{area.default_lead_time_hours} hours</Field>
-        <Field label="Priority">{area.priority}</Field>
-        <Field label="Accepts commitments">{area.accepts_commitments ? 'Yes' : 'No'}</Field>
+        <Field label={t('common.code')}>{area.code}</Field>
+        <Field label={t('network.area.dispatchRegion')}>{area.dispatch_region?.name ?? '—'}</Field>
+        <Field label={t('network.area.leadTime')}>
+          {t('network.area.hoursValue', { count: area.default_lead_time_hours })}
+        </Field>
+        <Field label={t('common.priority')}>{area.priority}</Field>
+        <Field label={t('network.area.acceptsCommitments')}>
+          {area.accepts_commitments ? t('common.yes') : t('common.no')}
+        </Field>
       </div>
 
       {area.status_reason && (
@@ -51,8 +57,7 @@ function Overview({ areaId }: { areaId: string }) {
         <Alert>
           <AlertTriangle className="size-4" />
           <AlertDescription className="text-xs">
-            This area has no members, so it covers nothing and will never match an address.
-            Attach a zone or city before activating it.
+            {t('network.area.noMembersWarning')}
           </AlertDescription>
         </Alert>
       )}
@@ -60,11 +65,8 @@ function Overview({ areaId }: { areaId: string }) {
       <Separator />
 
       <div className="space-y-2">
-        <p className="text-sm font-medium">Coverage</p>
-        <p className="text-[11px] text-muted-foreground">
-          Composed from zones and cities that already exist. Names are read live from the
-          geography master — nothing is copied here.
-        </p>
+        <p className="text-sm font-medium">{t('network.area.coverage')}</p>
+        <p className="text-[11px] text-muted-foreground">{t('network.area.coverageHint')}</p>
 
         <div className="space-y-1.5 pt-1">
           {included.map((member: ServiceAreaMember) => (
@@ -80,7 +82,7 @@ function Overview({ areaId }: { areaId: string }) {
           {excluded.length > 0 && (
             <>
               <p className="pt-2 text-[11px] uppercase tracking-wide text-muted-foreground">
-                Carved out
+                {t('network.area.carvedOut')}
               </p>
               {excluded.map((member: ServiceAreaMember) => (
                 <div key={member.id} className="flex items-center gap-2 text-xs">
@@ -102,14 +104,14 @@ function Overview({ areaId }: { areaId: string }) {
         <>
           <Separator />
           <div className="space-y-2">
-            <p className="text-sm font-medium">Service levels</p>
+            <p className="text-sm font-medium">{t('network.serviceLevels.title')}</p>
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b text-muted-foreground">
-                  <th className="py-1 text-left font-normal">Level</th>
-                  <th className="py-1 text-left font-normal">Cutoff</th>
-                  <th className="py-1 text-right font-normal">Lead time</th>
-                  <th className="py-1 text-right font-normal">Surcharge</th>
+                  <th className="py-1 text-start font-normal">{t('network.serviceLevels.colLevel')}</th>
+                  <th className="py-1 text-start font-normal">{t('network.serviceLevels.colCutoff')}</th>
+                  <th className="py-1 text-end font-normal">{t('network.area.leadTime')}</th>
+                  <th className="py-1 text-end font-normal">{t('network.serviceLevels.colSurcharge')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -117,8 +119,10 @@ function Overview({ areaId }: { areaId: string }) {
                   <tr key={rule.id}>
                     <td className="py-1">{rule.service_level ?? '—'}</td>
                     <td className="py-1 text-muted-foreground">{rule.cutoff_time ?? '—'}</td>
-                    <td className="py-1 text-right tabular-nums">{rule.lead_time_hours}h</td>
-                    <td className="py-1 text-right tabular-nums">
+                    <td className="py-1 text-end tabular-nums">
+                      {t('network.hoursShort', { hours: rule.lead_time_hours })}
+                    </td>
+                    <td className="py-1 text-end tabular-nums">
                       {rule.surcharge !== null ? `${rule.surcharge} ${rule.currency ?? ''}` : '—'}
                     </td>
                   </tr>
@@ -132,21 +136,22 @@ function Overview({ areaId }: { areaId: string }) {
   );
 }
 
-const UNIT_LABELS: Record<CapacityUnit, string> = {
-  orders: 'orders',
-  stops: 'stops',
-  weight_kg: 'kg',
-  volume_m3: 'm³',
+const UNIT_LABEL_KEYS: Record<CapacityUnit, string> = {
+  orders: 'network.capacityUnits.orders',
+  stops: 'network.capacityUnits.stops',
+  weight_kg: 'network.capacityUnits.kg',
+  volume_m3: 'network.capacityUnits.m3',
 };
 
 function Capacity({ areaId }: { areaId: string }) {
+  const { t } = useTranslation('logistics');
   const { data: plans, isLoading } = useCapacityPlans(areaId);
 
   if (isLoading) return <Skeleton className="h-48 w-full" />;
   if (!plans || plans.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-muted-foreground">
-        No capacity plans published for this area.
+        {t('network.capacity.empty')}
       </p>
     );
   }
@@ -158,7 +163,7 @@ function Capacity({ areaId }: { areaId: string }) {
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium">{plan.plan_date}</span>
             <Badge variant={plan.is_published ? 'default' : 'outline'} className="text-[10px]">
-              {plan.is_published ? 'Published' : 'Draft'}
+              {plan.is_published ? t('network.capacity.published') : t('network.areaStatus.draft')}
             </Badge>
           </div>
 
@@ -169,15 +174,15 @@ function Capacity({ areaId }: { areaId: string }) {
                   <span className="text-muted-foreground">
                     {slot.window_start && slot.window_end
                       ? `${slot.window_start}–${slot.window_end}`
-                      : 'All day'}
+                      : t('network.capacity.allDay')}
                   </span>
                   {slot.is_exhausted ? (
                     <Badge variant="destructive" className="text-[10px]">
-                      Exhausted
+                      {t('network.capacity.exhausted')}
                     </Badge>
                   ) : slot.at_warn_threshold ? (
                     <Badge className="bg-amber-500 text-[10px] hover:bg-amber-500">
-                      Near capacity
+                      {t('network.capacity.nearCapacity')}
                     </Badge>
                   ) : null}
                 </div>
@@ -202,9 +207,12 @@ function Capacity({ areaId }: { areaId: string }) {
                     .filter(([, value]) => value !== 0)
                     .map(([unit, value]) => (
                       <span key={unit} className="tabular-nums">
-                        {value} {UNIT_LABELS[unit]} left
+                        {t('network.capacity.remainingUnit', {
+                          value,
+                          unit: t(UNIT_LABEL_KEYS[unit]),
+                        })}
                         {/* The tightest dimension is what actually stops us. */}
-                        {slot.binding_unit === unit && ' · binding'}
+                        {slot.binding_unit === unit && ` · ${t('network.capacity.binding')}`}
                       </span>
                     ))}
                 </div>
@@ -226,6 +234,7 @@ export function ServiceAreaDrawer({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation('logistics');
   const { data: area } = useServiceArea(open ? areaId : null);
 
   return (
@@ -233,14 +242,18 @@ export function ServiceAreaDrawer({
       open={open}
       onOpenChange={onOpenChange}
       size="2xl"
-      title={area ? `Service Area · ${area.name}` : 'Service Area'}
+      title={
+        area
+          ? t('network.drawer.titleWithName', { name: area.name })
+          : t('network.drawer.title')
+      }
       description={area?.code}
     >
       {!areaId ? null : (
         <Tabs defaultValue="overview" className="w-full">
           <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="capacity">Capacity</TabsTrigger>
+            <TabsTrigger value="overview">{t('common.overview')}</TabsTrigger>
+            <TabsTrigger value="capacity">{t('network.drawer.tabCapacity')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="pt-4">

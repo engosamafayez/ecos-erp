@@ -20,12 +20,12 @@ final class BrandShippingService
         return BrandShippingSettings::firstOrCreate(
             ['brand_id' => $brandId],
             [
-                'unsupported_governorate_action'  => 'allow',
-                'unsupported_city_action'         => 'allow',
-                'default_cod_enabled'             => true,
+                'unsupported_governorate_action' => 'allow',
+                'unsupported_city_action' => 'allow',
+                'default_cod_enabled' => true,
                 'default_free_shipping_threshold' => null,
-                'default_shipping_provider'       => null,
-            ]
+                'default_shipping_provider' => null,
+            ],
         );
     }
 
@@ -57,6 +57,7 @@ final class BrandShippingService
 
         // Reference data fallback
         $gov = Governorate::find($governorateId);
+
         return $gov ? (float) $gov->default_shipping_price : 0.0;
     }
 
@@ -79,10 +80,11 @@ final class BrandShippingService
 
         if ($govSetting !== null && ! $govSetting->is_enabled) {
             $action = $settings->unsupported_governorate_action;
+
             return [
                 'allowed' => $action === 'allow',
-                'action'  => $action,
-                'reason'  => 'Governorate is disabled for this brand.',
+                'action' => $action,
+                'reason' => 'Governorate is disabled for this brand.',
             ];
         }
 
@@ -90,10 +92,11 @@ final class BrandShippingService
         $gov = Governorate::find($governorateId);
         if ($gov && ! $gov->is_active) {
             $action = $settings->unsupported_governorate_action;
+
             return [
                 'allowed' => $action === 'allow',
-                'action'  => $action,
-                'reason'  => 'Governorate is inactive in the system.',
+                'action' => $action,
+                'reason' => 'Governorate is inactive in the system.',
             ];
         }
 
@@ -105,20 +108,22 @@ final class BrandShippingService
 
             if ($citySetting !== null && $citySetting->is_enabled === false) {
                 $action = $settings->unsupported_city_action;
+
                 return [
                     'allowed' => $action === 'allow',
-                    'action'  => $action,
-                    'reason'  => 'City is disabled for this brand.',
+                    'action' => $action,
+                    'reason' => 'City is disabled for this brand.',
                 ];
             }
 
             $city = City::find($cityId);
             if ($city && ! $city->is_active) {
                 $action = $settings->unsupported_city_action;
+
                 return [
                     'allowed' => $action === 'allow',
-                    'action'  => $action,
-                    'reason'  => 'City is inactive in the system.',
+                    'action' => $action,
+                    'reason' => 'City is inactive in the system.',
                 ];
             }
         }
@@ -134,12 +139,12 @@ final class BrandShippingService
         return BrandGovernorateSettings::firstOrCreate(
             ['brand_id' => $brandId, 'governorate_id' => $governorateId],
             [
-                'is_enabled'             => true,
-                'shipping_price'         => null,
+                'is_enabled' => true,
+                'shipping_price' => null,
                 'estimated_delivery_days' => null,
-                'same_day_supported'     => false,
-                'display_order'          => 0,
-            ]
+                'same_day_supported' => false,
+                'display_order' => 0,
+            ],
         );
     }
 }

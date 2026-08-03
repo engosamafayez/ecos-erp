@@ -19,10 +19,10 @@ final class PreparationStationController extends Controller
     {
         $request->validate([
             'warehouse_id' => ['required', 'uuid'],
-            'status'       => ['nullable', 'string', 'in:active,inactive,maintenance'],
+            'status' => ['nullable', 'string', 'in:active,inactive,maintenance'],
         ]);
 
-        $companyId   = $request->user()->company_id;
+        $companyId = $request->user()->company_id;
         $warehouseId = $request->query('warehouse_id');
 
         $stations = PreparationStation::where('company_id', $companyId)
@@ -39,13 +39,13 @@ final class PreparationStationController extends Controller
             ->value('worker_count') ?? 0;
 
         return $this->success($stations->map(fn ($s) => [
-            'id'              => $s->id,
-            'name'            => $s->name,
-            'name_ar'         => $s->name_ar,
-            'station_type'    => $s->station_type?->value,
-            'zone'            => $s->zone,
-            'capacity'        => $s->capacity,
-            'status'          => $s->status?->value,
+            'id' => $s->id,
+            'name' => $s->name,
+            'name_ar' => $s->name_ar,
+            'station_type' => $s->station_type?->value,
+            'zone' => $s->zone,
+            'capacity' => $s->capacity,
+            'status' => $s->status?->value,
             'current_workers' => 0,
         ])->values()->all());
     }

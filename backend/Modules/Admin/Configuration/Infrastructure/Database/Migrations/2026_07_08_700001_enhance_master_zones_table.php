@@ -10,11 +10,11 @@ return new class extends Migration
     public function up(): void
     {
         // Add code + lifecycle flags
-        DB::statement("ALTER TABLE master_zones
+        DB::statement('ALTER TABLE master_zones
             ADD COLUMN code        VARCHAR(20)  NULL UNIQUE AFTER name,
             ADD COLUMN is_active   TINYINT(1)   NOT NULL DEFAULT 1 AFTER sort_order,
             ADD COLUMN is_archived TINYINT(1)   NOT NULL DEFAULT 0 AFTER is_active
-        ");
+        ');
 
         // Add zone metadata columns
         DB::statement("ALTER TABLE master_zones
@@ -32,7 +32,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE master_zones
+        DB::statement('ALTER TABLE master_zones
             DROP COLUMN notes,
             DROP COLUMN polygon_id,
             DROP COLUMN longitude,
@@ -45,6 +45,6 @@ return new class extends Migration
             DROP COLUMN is_archived,
             DROP COLUMN is_active,
             DROP COLUMN code
-        ");
+        ');
     }
 };

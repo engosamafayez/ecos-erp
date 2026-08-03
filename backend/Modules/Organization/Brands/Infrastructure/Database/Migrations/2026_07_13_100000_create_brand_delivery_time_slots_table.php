@@ -53,7 +53,7 @@ return new class extends Migration
 
         // Migrate existing data from config_delivery_windows (preserve IDs)
         if (Schema::hasTable('config_delivery_windows')) {
-            DB::statement("
+            DB::statement('
                 INSERT INTO brand_delivery_time_slots
                     (id, brand_id, name, start_time, end_time, display_order, is_active, created_at, updated_at)
                 SELECT
@@ -67,7 +67,7 @@ return new class extends Migration
                     created_at,
                     updated_at
                 FROM config_delivery_windows
-            ");
+            ');
         }
     }
 

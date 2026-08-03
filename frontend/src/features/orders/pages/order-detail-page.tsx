@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useFormatter } from '@/hooks/use-formatter';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Activity,
   ArrowLeft,
   ArrowRightCircle,
+  Banknote,
   Bot,
   Box,
   Building2,
@@ -54,19 +56,8 @@ import {
   useCustomerOrderStats,
   useOrderActivities,
   useOrderQuery,
-  useOrderWorkflowCancel,
-  useOrderWorkflowComplete,
-  useOrderWorkflowCompleteDelivery,
-  useOrderWorkflowConfirm,
-  useOrderWorkflowDispatch,
-  useOrderWorkflowMarkAwaitingStock,
-  useOrderWorkflowMoveToPreparation,
-  useOrderWorkflowMoveToReview,
   useOrderWorkflowReschedule,
-  useOrderWorkflowResume,
-  useOrderWorkflowResumeToConfirmed,
-  useOrderWorkflowReturn,
-  useOrderWorkflowReturnToConfirmed,
+  useOrderWorkflowTransition,
 } from '@/features/orders/hooks/use-orders';
 import type { Order, OrderActivity, OrderActivityActionType } from '@/features/orders/types/order';
 import { getMediaUrl } from '@/lib/media';
@@ -74,10 +65,6 @@ import { cn } from '@/lib/utils';
 import { ROUTES } from '@/router/routes';
 
 // ── Shared formatting helpers ─────────────────────────────────────────────────
-
-function fmtMoney(n: number) {
-  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
 
 function fmtDate(d: string | null | undefined): string {
   if (!d) return '—';
@@ -207,6 +194,7 @@ function KpiCard({ label, value, sub, highlight }: {
 }
 
 function KpiRow({ order }: { order: Order }) {
+  const { money } = useFormatter();
   const { t } = useTranslation('orders');
   const totalQty = order.lines.reduce((s, l) => s + l.quantity, 0);
   const remaining = order.remaining_balance;
@@ -217,11 +205,11 @@ function KpiRow({ order }: { order: Order }) {
       <KpiCard label={t('orderDetail.kpiProducts')} value={order.lines.length} sub={`${totalQty} units`} />
       <KpiCard label={t('orderDetail.kpiQuantity')} value={totalQty.toLocaleString()} />
       <KpiCard label={t('orderDetail.kpiReserved')} value={reservedCount} highlight={reservedCount === order.lines.length ? 'success' : reservedCount > 0 ? 'warning' : undefined} />
-      <KpiCard label={t('orderDetail.kpiShipping')} value={`${fmtMoney(order.shipping_amount)} EGP`} />
-      <KpiCard label={t('orderDetail.kpiGrandTotal')} value={`${fmtMoney(order.grand_total)} EGP`} highlight="success" />
+      <KpiCard label={t('orderDetail.kpiShipping')} value={money(order.shipping_amount)} />
+      <KpiCard label={t('orderDetail.kpiGrandTotal')} value={money(order.grand_total)} highlight="success" />
       <KpiCard
         label={t('orderDetail.kpiRemaining')}
-        value={`${fmtMoney(remaining)} EGP`}
+        value={money(remaining)}
         highlight={remaining > 0 ? 'warning' : 'success'}
       />
       <KpiCard
@@ -248,6 +236,9 @@ function OrderHeader({
 }) {
   const navigate = useNavigate();
   const { t } = useTranslation('orders');
+  // Resolve the assigned warehouse name from line data the backend already supplies,
+  // instead of rendering the raw assigned_warehouse_id UUID (W2 FIX-1).
+  const warehouseName = (order.lines ?? []).map((l) => l.warehouse_name).find(Boolean) ?? null;
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border bg-card px-5 py-4">
@@ -301,10 +292,10 @@ function OrderHeader({
             {order.customer.code ? ` · ${order.customer.code}` : ''}
           </span>
         ) : null}
-        {order.assigned_warehouse_id ? (
+        {warehouseName ? (
           <span className="flex items-center gap-1">
             <Warehouse className="size-3" />
-            {order.assigned_warehouse_id}
+            {warehouseName}
           </span>
         ) : null}
         {order.inventory_reserved_at ? (
@@ -342,6 +333,7 @@ function OrderHeader({
 // ── Part 2 — Financial Summary ────────────────────────────────────────────────
 
 function FinancialSummaryCard({ order }: { order: Order }) {
+  const { money } = useFormatter();
   const { t } = useTranslation('orders');
   const remaining = order.remaining_balance;
 
@@ -363,7 +355,7 @@ function FinancialSummaryCard({ order }: { order: Order }) {
             <div key={label} className="flex items-center justify-between gap-4">
               <span className="text-muted-foreground">{label}</span>
               <span className={cn('tabular-nums', isNeg && 'text-emerald-600 dark:text-emerald-400')}>
-                {isNeg ? `−${fmtMoney(-value)}` : fmtMoney(value)} EGP
+                {money(value)}
               </span>
             </div>
           );
@@ -371,13 +363,13 @@ function FinancialSummaryCard({ order }: { order: Order }) {
         <Separator className="my-1" />
         <div className="flex items-center justify-between gap-4 font-semibold">
           <span>{t('orderDetail.grandTotal')}</span>
-          <span className="tabular-nums">{fmtMoney(order.grand_total)} EGP</span>
+          <span className="tabular-nums">{money(order.grand_total)}</span>
         </div>
         {remaining > 0 && (
           <div className="flex items-center justify-between gap-4 rounded-md bg-amber-50 px-2 py-1.5 dark:bg-amber-950/30">
             <span className="text-amber-700 dark:text-amber-400 text-xs font-medium">{t('orderDetail.remainingBalance')}</span>
             <span className="tabular-nums font-semibold text-amber-700 dark:text-amber-400">
-              {fmtMoney(remaining)} EGP
+              {money(remaining)}
             </span>
           </div>
         )}
@@ -395,6 +387,7 @@ function FinancialSummaryCard({ order }: { order: Order }) {
 // ── Part 3 — Customer 360 Card ────────────────────────────────────────────────
 
 function CustomerCard({ order }: { order: Order }) {
+  const { money } = useFormatter();
   const { t } = useTranslation('orders');
   const customer = order.customer;
   const { data: stats, isLoading } = useCustomerOrderStats(customer?.id ?? null);
@@ -509,10 +502,10 @@ function CustomerCard({ order }: { order: Order }) {
             </div>
             <FieldGrid cols={2}>
               <Field label={t('orderDetail.lifetimeValue')}>
-                <span className="font-semibold tabular-nums">{fmtMoney(stats.totalSpend)} EGP</span>
+                <span className="font-semibold tabular-nums">{money(stats.totalSpend)}</span>
               </Field>
               <Field label={t('orderDetail.avgOrderValue')}>
-                {stats.aov !== null ? <span className="tabular-nums">{fmtMoney(stats.aov)} EGP</span> : null}
+                {stats.aov !== null ? <span className="tabular-nums">{money(stats.aov)}</span> : null}
               </Field>
               <Field label={t('orderDetail.firstOrder')}>{fmtDate(stats.firstOrderDate)}</Field>
               <Field label={t('orderDetail.lastOrder')}>{fmtDate(stats.lastOrderDate)}</Field>
@@ -617,6 +610,7 @@ function AddressCard({ order }: { order: Order }) {
 // ── Part 4 — Shipping Card ────────────────────────────────────────────────────
 
 function ShippingCard({ order }: { order: Order }) {
+  const { money } = useFormatter();
   const { t } = useTranslation('orders');
   const hasMeaningfulShipping = order.shipping_company_name || order.shipping_method ||
     order.tracking_number || order.requested_delivery_date || order.delivery_window;
@@ -653,7 +647,7 @@ function ShippingCard({ order }: { order: Order }) {
         </Field>
         <Field label={t('orderDetail.deliveryZone')}>{order.delivery_zone}</Field>
         <Field label={t('orderDetail.shippingCost')}>
-          {order.shipping_cost != null ? `${fmtMoney(order.shipping_cost)} EGP` : null}
+          {order.shipping_cost != null ? money(order.shipping_cost) : null}
         </Field>
         <Field label={t('orderDetail.costSource')}>
           {order.shipping_cost_source ? (
@@ -674,6 +668,8 @@ function InventoryCard({ order }: { order: Order }) {
   const { t } = useTranslation('orders');
   const isReserved = Boolean(order.inventory_reserved_at);
   const isShipped = Boolean(order.inventory_shipped_at);
+  // Reuse the warehouse name the backend already ships on order lines (W2 FIX-1).
+  const warehouseName = (order.lines ?? []).map((l) => l.warehouse_name).find(Boolean) ?? null;
 
   return (
     <InfoCard title={t('orderDetail.inventoryTitle')} icon={Warehouse}>
@@ -690,7 +686,7 @@ function InventoryCard({ order }: { order: Order }) {
             )}
           </Field>
           <Field label={t('orderDetail.reservedAt')}>{fmtDateTime(order.inventory_reserved_at)}</Field>
-          <Field label={t('orderDetail.warehouse')}>{order.assigned_warehouse_id ?? '—'}</Field>
+          <Field label={t('orderDetail.warehouse')}>{warehouseName ?? '—'}</Field>
           <Field label={t('orderDetail.dispatchedAt')}>{isShipped ? fmtDateTime(order.inventory_shipped_at) : null}</Field>
         </FieldGrid>
         <Separator />
@@ -719,6 +715,7 @@ function InventoryCard({ order }: { order: Order }) {
 // ── Part 7 — Products Grid ────────────────────────────────────────────────────
 
 function ProductsGrid({ order }: { order: Order }) {
+  const { money } = useFormatter();
   const { t } = useTranslation('orders');
 
   if (order.lines.length === 0) {
@@ -773,25 +770,25 @@ function ProductsGrid({ order }: { order: Order }) {
               </div>
             </div>
             <p className="text-center text-sm tabular-nums font-medium">{line.quantity}</p>
-            <p className="text-end text-sm tabular-nums">{fmtMoney(line.unit_price)}</p>
-            <p className="text-end text-sm tabular-nums font-semibold">{fmtMoney(line.line_total)}</p>
+            <p className="text-end text-sm tabular-nums">{money(line.unit_price)}</p>
+            <p className="text-end text-sm tabular-nums font-semibold">{money(line.line_total)}</p>
           </div>
         ))}
         {/* Totals row */}
         <div className="flex items-center justify-between gap-4 border-t px-4 pt-3 text-sm">
           <span className="text-muted-foreground">{t('orderDetail.subtotalRow')}</span>
-          <span className="font-semibold tabular-nums">{fmtMoney(order.products_total)} EGP</span>
+          <span className="font-semibold tabular-nums">{money(order.products_total)}</span>
         </div>
         {order.fees.length > 0 ? order.fees.map((f) => (
           <div key={f.id} className="flex items-center justify-between gap-4 px-4 py-1 text-sm">
             <span className="text-muted-foreground">{f.name}</span>
-            <span className="tabular-nums">{fmtMoney(f.total)} EGP</span>
+            <span className="tabular-nums">{money(f.total)}</span>
           </div>
         )) : null}
         {order.coupons.length > 0 ? order.coupons.map((c) => (
           <div key={c.id} className="flex items-center justify-between gap-4 px-4 py-1 text-sm">
             <span className="font-mono text-xs text-muted-foreground">{c.code}</span>
-            <span className="tabular-nums text-emerald-600 dark:text-emerald-400">-{fmtMoney(c.discount)} EGP</span>
+            <span className="tabular-nums text-emerald-600 dark:text-emerald-400">-{money(c.discount)}</span>
           </div>
         )) : null}
       </div>
@@ -802,6 +799,7 @@ function ProductsGrid({ order }: { order: Order }) {
 // ── Part 8 — Payment Card ─────────────────────────────────────────────────────
 
 function PaymentCard({ order }: { order: Order }) {
+  const { money } = useFormatter();
   const { t } = useTranslation('orders');
   const method = order.payment_method_manual ?? order.payment_method;
   const remaining = order.remaining_balance;
@@ -845,13 +843,13 @@ function PaymentCard({ order }: { order: Order }) {
         {order.deposit_amount ? (
           <Field label={t('orderDetail.depositPaidField')}>
             <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-              {fmtMoney(order.deposit_amount)} EGP
+              {money(order.deposit_amount)}
             </span>
           </Field>
         ) : null}
         <Field label={t('orderDetail.remainingBalanceField')}>
           <span className={cn('font-semibold tabular-nums', remaining > 0 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')}>
-            {fmtMoney(remaining)} EGP
+            {money(remaining)}
           </span>
         </Field>
       </FieldGrid>
@@ -1265,10 +1263,12 @@ function WorkflowHistoryCard({ order }: { order: Order }) {
 
 function RelatedRecordsCard({ order }: { order: Order }) {
   const { t } = useTranslation('orders');
+  // Reuse the warehouse name from line data instead of the raw UUID (W2 FIX-1).
+  const warehouseName = (order.lines ?? []).map((l) => l.warehouse_name).find(Boolean) ?? null;
   const records: Array<{ label: string; value: string | null | undefined; href?: string; icon: React.ComponentType<{ className?: string }> }> = [
     { label: t('orderDetail.relatedCustomer'), value: order.customer?.name, href: order.customer ? `/app/customers/${order.customer.id}` : undefined, icon: UserCheck },
     { label: t('orderDetail.relatedChannel'), value: order.channel?.name, icon: Store },
-    { label: t('orderDetail.relatedWarehouse'), value: order.assigned_warehouse_id, icon: Warehouse },
+    { label: t('orderDetail.relatedWarehouse'), value: warehouseName, icon: Warehouse },
   ];
 
   const filled = records.filter((r) => r.value);
@@ -1298,90 +1298,20 @@ function RelatedRecordsCard({ order }: { order: Order }) {
 
 // ── Part 12 — Quick Actions + Workflow ───────────────────────────────────────
 
-type WorkflowLabelKey =
-  | 'orderDetail.wfConfirmOrder'
-  | 'orderDetail.wfCancelOrder'
-  | 'orderDetail.wfMoveToPrep'
-  | 'orderDetail.wfMarkAwaitingStock'
-  | 'orderDetail.wfSendToReview'
-  | 'orderDetail.wfResume'
-  | 'orderDetail.wfReschedule'
-  | 'orderDetail.wfDispatch'
-  | 'orderDetail.wfMarkDelivered'
-  | 'orderDetail.wfProcessReturn'
-  | 'orderDetail.wfCompleteReview'
-  | 'orderDetail.wfResumeToConfirmed'
-  | 'orderDetail.wfReturnToConfirmed'
-  | 'orderDetail.wfMoveToReview';
-
-type WorkflowAction = {
-  key: string;
-  labelKey: WorkflowLabelKey;
-  icon: React.ComponentType<{ className?: string }>;
-  variant: 'default' | 'outline' | 'destructive';
-};
-
-const WORKFLOW_ACTIONS: Record<string, WorkflowAction[]> = {
-  pending: [
-    { key: 'confirm',          labelKey: 'orderDetail.wfConfirmOrder',      icon: CheckCircle2,     variant: 'default'     },
-    { key: 'cancel',           labelKey: 'orderDetail.wfCancelOrder',       icon: XCircle,          variant: 'destructive' },
-  ],
-  awaiting_payment: [
-    { key: 'confirm',          labelKey: 'orderDetail.wfConfirmOrder',      icon: CheckCircle2,     variant: 'default'     },
-    { key: 'cancel',           labelKey: 'orderDetail.wfCancelOrder',       icon: XCircle,          variant: 'destructive' },
-  ],
-  processing: [
-    { key: 'prepare',          labelKey: 'orderDetail.wfMoveToPrep',        icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'awaiting_stock',   labelKey: 'orderDetail.wfMarkAwaitingStock', icon: Box,              variant: 'outline'     },
-    { key: 'review',           labelKey: 'orderDetail.wfSendToReview',      icon: Activity,         variant: 'outline'     },
-    { key: 'cancel',           labelKey: 'orderDetail.wfCancelOrder',       icon: XCircle,          variant: 'destructive' },
-  ],
-  awaiting_stock: [
-    { key: 'resume',           labelKey: 'orderDetail.wfResume',            icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'cancel',           labelKey: 'orderDetail.wfCancelOrder',       icon: XCircle,          variant: 'destructive' },
-  ],
-  confirmed: [
-    { key: 'prepare',          labelKey: 'orderDetail.wfMoveToPrep',        icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'reschedule',       labelKey: 'orderDetail.wfReschedule',        icon: Clock,            variant: 'outline'     },
-    { key: 'cancel',           labelKey: 'orderDetail.wfCancelOrder',       icon: XCircle,          variant: 'destructive' },
-  ],
-  preparing: [
-    { key: 'dispatch',         labelKey: 'orderDetail.wfDispatch',          icon: Truck,            variant: 'default'     },
-    { key: 'review',           labelKey: 'orderDetail.wfSendToReview',      icon: Activity,         variant: 'outline'     },
-    { key: 'reschedule',       labelKey: 'orderDetail.wfReschedule',        icon: Clock,            variant: 'outline'     },
-    { key: 'cancel',           labelKey: 'orderDetail.wfCancelOrder',       icon: XCircle,          variant: 'destructive' },
-  ],
-  out_for_delivery: [
-    { key: 'complete_delivery', labelKey: 'orderDetail.wfMarkDelivered',    icon: CheckCircle2,     variant: 'default'     },
-    { key: 'return',            labelKey: 'orderDetail.wfProcessReturn',    icon: RotateCcw,        variant: 'outline'     },
-    { key: 'review',            labelKey: 'orderDetail.wfSendToReview',     icon: Activity,         variant: 'outline'     },
-    { key: 'reschedule',        labelKey: 'orderDetail.wfReschedule',       icon: Clock,            variant: 'outline'     },
-  ],
-  delivered: [
-    { key: 'complete',          labelKey: 'orderDetail.wfCompleteReview',   icon: CheckCircle2,     variant: 'default'     },
-    { key: 'review',            labelKey: 'orderDetail.wfSendToReview',     icon: Activity,         variant: 'outline'     },
-    { key: 'resume',            labelKey: 'orderDetail.wfResume',           icon: ArrowRightCircle, variant: 'outline'     },
-    { key: 'resume_confirmed',  labelKey: 'orderDetail.wfResumeToConfirmed',icon: ArrowRightCircle, variant: 'outline'     },
-    { key: 'reschedule',        labelKey: 'orderDetail.wfReschedule',       icon: Clock,            variant: 'outline'     },
-    { key: 'cancel',            labelKey: 'orderDetail.wfCancelOrder',      icon: XCircle,          variant: 'destructive' },
-  ],
-  returned: [
-    { key: 'return_to_confirmed', labelKey: 'orderDetail.wfReturnToConfirmed', icon: RotateCcw,     variant: 'default'     },
-    { key: 'review',              labelKey: 'orderDetail.wfMoveToReview',      icon: Activity,      variant: 'outline'     },
-    { key: 'cancel',              labelKey: 'orderDetail.wfCancelOrder',        icon: XCircle,      variant: 'destructive' },
-  ],
-  review: [
-    { key: 'resume',    labelKey: 'orderDetail.wfResume',     icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'reschedule', labelKey: 'orderDetail.wfReschedule', icon: Clock,           variant: 'outline'     },
-    { key: 'cancel',    labelKey: 'orderDetail.wfCancelOrder', icon: XCircle,         variant: 'destructive' },
-  ],
-  rescheduled: [
-    { key: 'resume',    labelKey: 'orderDetail.wfResume',     icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'reschedule', labelKey: 'orderDetail.wfReschedule', icon: Clock,           variant: 'outline'     },
-    { key: 'cancel',    labelKey: 'orderDetail.wfCancelOrder', icon: XCircle,         variant: 'destructive' },
-  ],
-  completed: [],
-  cancelled: [],
+const QUICK_TARGET_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
+  pending:          RotateCcw,
+  processing:       ArrowRightCircle,
+  confirmed:        CheckCircle2,
+  awaiting_payment: Banknote,
+  preparing:        ArrowRightCircle,
+  out_for_delivery: Truck,
+  delivered:        CheckCircle2,
+  completed:        CheckCircle2,
+  cancelled:        XCircle,
+  awaiting_stock:   Box,
+  rescheduled:      Clock,
+  review:           Activity,
+  returned:         RotateCcw,
 };
 
 function QuickActionsPanel({
@@ -1396,48 +1326,22 @@ function QuickActionsPanel({
   onPrint: () => void;
 }) {
   const { t } = useTranslation('orders');
-  const confirm          = useOrderWorkflowConfirm();
-  const moveToPrep       = useOrderWorkflowMoveToPreparation();
-  const completeDeliv    = useOrderWorkflowCompleteDelivery();
-  const completeOrder    = useOrderWorkflowComplete();
-  const processReturn    = useOrderWorkflowReturn();
-  const cancelOrder      = useOrderWorkflowCancel();
-  const moveToReview     = useOrderWorkflowMoveToReview();
-  const resume           = useOrderWorkflowResume();
-  const dispatch         = useOrderWorkflowDispatch();
-  const reschedule       = useOrderWorkflowReschedule();
-  const markAwaitingStock = useOrderWorkflowMarkAwaitingStock();
-  const resumeConfirmed  = useOrderWorkflowResumeToConfirmed();
-  const returnConfirmed  = useOrderWorkflowReturnToConfirmed();
+  const transition = useOrderWorkflowTransition();
+  const reschedule = useOrderWorkflowReschedule();
 
   const today = new Date().toISOString().slice(0, 10);
   const [showReschedule, setShowReschedule] = useState(false);
   const [rescheduleDate, setRescheduleDate] = useState(today);
 
-  const isPending = [
-    confirm, moveToPrep, completeDeliv, completeOrder, processReturn,
-    cancelOrder, moveToReview, resume, dispatch, reschedule,
-    markAwaitingStock, resumeConfirmed, returnConfirmed,
-  ].some((m) => m.isPending);
+  const transitions = order.allowed_status_transitions ?? [];
+  const isPending   = transition.isPending || reschedule.isPending;
 
-  const actions = WORKFLOW_ACTIONS[order.status as keyof typeof WORKFLOW_ACTIONS] ?? [];
-
-  function handleAction(key: string) {
-    switch (key) {
-      case 'confirm':             confirm.mutate(order.id); break;
-      case 'prepare':             moveToPrep.mutate(order.id); break;
-      case 'complete_delivery':   completeDeliv.mutate(order.id); break;
-      case 'complete':            completeOrder.mutate(order.id); break;
-      case 'return':              processReturn.mutate({ id: order.id }); break;
-      case 'cancel':              cancelOrder.mutate({ id: order.id }); break;
-      case 'review':              moveToReview.mutate({ id: order.id }); break;
-      case 'resume':              resume.mutate(order.id); break;
-      case 'dispatch':            dispatch.mutate(order.id); break;
-      case 'awaiting_stock':      markAwaitingStock.mutate({ id: order.id }); break;
-      case 'resume_confirmed':    resumeConfirmed.mutate(order.id); break;
-      case 'return_to_confirmed': returnConfirmed.mutate(order.id); break;
-      case 'reschedule':          setShowReschedule(true); break;
+  function handleAction(targetStatus: string) {
+    if (targetStatus === 'scheduled') {
+      setShowReschedule(true);
+      return;
     }
+    transition.mutate({ id: order.id, targetStatus });
   }
 
   function handleRescheduleConfirm() {
@@ -1479,53 +1383,56 @@ function QuickActionsPanel({
         ) : null}
 
         {/* Workflow actions */}
-        {actions.length > 0 ? (
+        {transitions.length > 0 ? (
           <>
             <Separator className="my-1" />
             <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">{t('orderDetail.workflowSection')}</p>
-            {actions.map((action) => {
-              if (action.key === 'reschedule' && showReschedule) {
+            {showReschedule ? (
+              <div className="flex flex-col gap-2 rounded-md border p-3">
+                <label className="text-xs font-medium text-muted-foreground">{t('orderDetail.newDeliveryDate')}</label>
+                <input
+                  type="date"
+                  value={rescheduleDate}
+                  min={today}
+                  onChange={(e) => setRescheduleDate(e.target.value)}
+                  className="h-8 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleRescheduleConfirm}
+                    disabled={reschedule.isPending || !rescheduleDate}
+                    className="gap-1.5"
+                  >
+                    {reschedule.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Clock className="size-3.5" />}
+                    {t('orderDetail.confirmBtn')}
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setShowReschedule(false)}>
+                    {t('orderDetail.cancelBtn')}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              transitions.map((tr, idx) => {
+                const Icon    = QUICK_TARGET_ICON[tr.target_status] ?? ArrowRightCircle;
+                const variant = tr.target_status === 'cancelled' ? 'destructive'
+                              : idx === 0                        ? 'default'
+                              : 'outline';
                 return (
-                  <div key="reschedule-form" className="flex flex-col gap-2 rounded-md border p-3">
-                    <label className="text-xs font-medium text-muted-foreground">{t('orderDetail.newDeliveryDate')}</label>
-                    <input
-                      type="date"
-                      value={rescheduleDate}
-                      min={today}
-                      onChange={(e) => setRescheduleDate(e.target.value)}
-                      className="h-8 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={handleRescheduleConfirm}
-                        disabled={reschedule.isPending || !rescheduleDate}
-                        className="gap-1.5"
-                      >
-                        {reschedule.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Clock className="size-3.5" />}
-                        {t('orderDetail.confirmBtn')}
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setShowReschedule(false)}>
-                        {t('orderDetail.cancelBtn')}
-                      </Button>
-                    </div>
-                  </div>
+                  <Button
+                    key={tr.target_status}
+                    variant={variant as 'default' | 'outline' | 'destructive'}
+                    size="sm"
+                    onClick={() => handleAction(tr.target_status)}
+                    disabled={isPending}
+                    className="justify-start gap-2"
+                  >
+                    {isPending ? <Loader2 className="size-4 animate-spin" /> : <Icon className="size-4" />}
+                    {tr.label}
+                  </Button>
                 );
-              }
-              return (
-                <Button
-                  key={action.key}
-                  variant={action.variant}
-                  size="sm"
-                  onClick={() => handleAction(action.key)}
-                  disabled={isPending}
-                  className="justify-start gap-2"
-                >
-                  {isPending ? <Loader2 className="size-4 animate-spin" /> : <action.icon className="size-4" />}
-                  {t(action.labelKey)}
-                </Button>
-              );
-            })}
+              })
+            )}
           </>
         ) : null}
       </CardContent>

@@ -24,6 +24,7 @@ use Tests\TestCase;
 final class PosWebhookListenerTest extends TestCase
 {
     private const ENDPOINT_A = 'https://erp.example.com/webhooks/pos';
+
     private const ENDPOINT_B = 'https://bi.example.com/api/events';
 
     private PosWebhookListener $listener;
@@ -32,7 +33,7 @@ final class PosWebhookListenerTest extends TestCase
     {
         parent::setUp();
         Queue::fake();
-        $this->listener = new PosWebhookListener();
+        $this->listener = new PosWebhookListener;
     }
 
     // ── No endpoints ─────────────────────────────────────────────────────────
@@ -98,26 +99,26 @@ final class PosWebhookListenerTest extends TestCase
     private function makeEvent(): SaleFinalized
     {
         return new SaleFinalized(
-            eventId:       'event-uuid-001',
-            occurredAt:    new DateTimeImmutable('now'),
-            saleId:        'sale-uuid-001',
+            eventId: 'event-uuid-001',
+            occurredAt: new DateTimeImmutable('now'),
+            saleId: 'sale-uuid-001',
             receiptNumber: 'RCP-2026-000001',
-            companyId:     'company-uuid-001',
-            channelId:     null,
-            warehouseId:   'warehouse-uuid-001',
-            sessionId:     'session-uuid-001',
-            shiftId:       'shift-uuid-001',
-            terminalId:    'terminal-uuid-001',
-            cashierId:     'cashier-uuid-001',
-            customerId:    'customer-uuid-001',
-            items:         [new SaleItemPayload('l1', 'p1', 'Widget', 'WGT', 1.0, '100.00', '100.00', 'EGP')],
-            payments:      [new SalePaymentPayload('cash', '100.00', 'EGP', null)],
-            subtotal:      '100.00',
+            companyId: 'company-uuid-001',
+            channelId: null,
+            warehouseId: 'warehouse-uuid-001',
+            sessionId: 'session-uuid-001',
+            shiftId: 'shift-uuid-001',
+            terminalId: 'terminal-uuid-001',
+            cashierId: 'cashier-uuid-001',
+            customerId: 'customer-uuid-001',
+            items: [new SaleItemPayload('l1', 'p1', 'Widget', 'WGT', 1.0, '100.00', '100.00', 'EGP')],
+            payments: [new SalePaymentPayload('cash', '100.00', 'EGP', null)],
+            subtotal: '100.00',
             discountTotal: '0.00',
-            grandTotal:    '100.00',
-            amountPaid:    '100.00',
-            changeGiven:   '0.00',
-            currency:      'EGP',
+            grandTotal: '100.00',
+            amountPaid: '100.00',
+            changeGiven: '0.00',
+            currency: 'EGP',
         );
     }
 }

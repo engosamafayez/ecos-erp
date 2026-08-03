@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Archive,
   CheckCircle,
@@ -60,12 +61,14 @@ function TableSkeleton() {
 // ── Empty State ────────────────────────────────────────────────────────────────
 
 function EmptyDrivers({ hasFilter, onCreateFirst }: { hasFilter: boolean; onCreateFirst: () => void }) {
+  const { t } = useTranslation('logistics');
+
   if (hasFilter) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border bg-card py-16 text-center">
         <UserRound className="mb-3 size-10 text-muted-foreground/30" />
-        <p className="text-sm font-medium">No drivers match your filters</p>
-        <p className="mt-1 text-xs text-muted-foreground">Try a different keyword or clear your filters.</p>
+        <p className="text-sm font-medium">{t('drivers.empty.filtered.title')}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{t('drivers.empty.filtered.hint')}</p>
       </div>
     );
   }
@@ -73,13 +76,13 @@ function EmptyDrivers({ hasFilter, onCreateFirst }: { hasFilter: boolean; onCrea
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border bg-card py-16 text-center">
       <UserRound className="mb-3 size-12 text-muted-foreground/20" />
-      <p className="text-sm font-medium">No drivers yet</p>
+      <p className="text-sm font-medium">{t('drivers.empty.none.title')}</p>
       <p className="mt-1 text-xs text-muted-foreground">
-        Register your delivery drivers, their licences and assigned vehicles.
+        {t('drivers.empty.none.hint')}
       </p>
       <Button size="sm" className="mt-4 gap-1.5" onClick={onCreateFirst}>
         <Plus className="size-3.5" />
-        Add First Driver
+        {t('drivers.empty.none.action')}
       </Button>
     </div>
   );
@@ -88,16 +91,18 @@ function EmptyDrivers({ hasFilter, onCreateFirst }: { hasFilter: boolean; onCrea
 // ── Status badge ───────────────────────────────────────────────────────────────
 
 function StatusBadge({ status }: { status: DriverStatus }) {
+  const { t } = useTranslation('logistics');
+
   if (status === 'active') {
-    return <Badge className="bg-emerald-600 text-xs hover:bg-emerald-600">Active</Badge>;
+    return <Badge className="bg-emerald-600 text-xs hover:bg-emerald-600">{t('common.active')}</Badge>;
   }
   if (status === 'inactive') {
-    return <Badge variant="secondary" className="text-xs">Inactive</Badge>;
+    return <Badge variant="secondary" className="text-xs">{t('common.inactive')}</Badge>;
   }
   return (
     <Badge variant="outline" className="gap-1 text-xs text-muted-foreground">
       <Archive className="size-3" />
-      Archived
+      {t('drivers.status.archived')}
     </Badge>
   );
 }
@@ -117,6 +122,8 @@ function DriversTable({
   onRowClick: (driver: Driver) => void;
   onCreateFirst: () => void;
 }) {
+  const { t } = useTranslation('logistics');
+
   if (isLoading) return <TableSkeleton />;
   if (rows.length === 0) return <EmptyDrivers hasFilter={hasFilter} onCreateFirst={onCreateFirst} />;
 
@@ -126,13 +133,13 @@ function DriversTable({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/60">
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">Code</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">Driver</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">Mobile</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">Licence</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">Vehicle</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">Shipping Company</th>
-              <th className="h-10 w-24 px-3 text-center text-xs font-medium text-muted-foreground">Status</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t('common.code')}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t('common.driver')}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t('drivers.table.mobile')}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t('drivers.table.license')}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t('common.vehicle')}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t('drivers.table.shippingCompany')}</th>
+              <th className="h-10 w-24 px-3 text-center text-xs font-medium text-muted-foreground">{t('common.status')}</th>
               <th className="h-10 w-10 px-3" />
             </tr>
           </thead>
@@ -173,12 +180,12 @@ function DriversTable({
                       <span className="font-mono text-xs">{driver.current_vehicle.plate_number}</span>
                     </div>
                   ) : (
-                    <span className="text-xs text-amber-600">Unassigned</span>
+                    <span className="text-xs text-amber-600">{t('common.unassigned')}</span>
                   )}
                 </td>
 
                 <td className="px-3 py-2.5 text-xs text-muted-foreground">
-                  {driver.shipping_company_name ?? '—'}
+                  {driver.shipping_company_name ?? t('common.na')}
                 </td>
 
                 <td className="w-24 px-3 py-2.5 text-center">
@@ -202,32 +209,33 @@ function DriversTable({
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 const STATUS_FILTERS = [
-  { key: 'all', label: 'All' },
-  { key: 'active', label: 'Active' },
-  { key: 'inactive', label: 'Inactive' },
-  { key: 'archived', label: 'Archived' },
+  { key: 'all', labelKey: 'common.all' },
+  { key: 'active', labelKey: 'common.active' },
+  { key: 'inactive', labelKey: 'common.inactive' },
+  { key: 'archived', labelKey: 'drivers.status.archived' },
 ] as const;
 
 type StatusFilterKey = (typeof STATUS_FILTERS)[number]['key'];
 
 const LICENSE_FILTERS = [
-  { key: 'all', label: 'Any licence' },
-  { key: 'expired', label: 'Expired' },
-  { key: 'expiring_soon', label: 'Expiring soon' },
-  { key: 'missing', label: 'Missing' },
+  { key: 'all', labelKey: 'drivers.filters.license.any' },
+  { key: 'expired', labelKey: 'drivers.license.status.expired' },
+  { key: 'expiring_soon', labelKey: 'drivers.license.status.expiringSoon' },
+  { key: 'missing', labelKey: 'drivers.filters.license.missing' },
 ] as const;
 
 type LicenseFilterKey = (typeof LICENSE_FILTERS)[number]['key'];
 
 const VEHICLE_FILTERS = [
-  { key: 'all', label: 'Any vehicle' },
-  { key: 'assigned', label: 'Assigned' },
-  { key: 'unassigned', label: 'Unassigned' },
+  { key: 'all', labelKey: 'drivers.filters.vehicle.any' },
+  { key: 'assigned', labelKey: 'common.assigned' },
+  { key: 'unassigned', labelKey: 'common.unassigned' },
 ] as const;
 
 type VehicleFilterKey = (typeof VEHICLE_FILTERS)[number]['key'];
 
 export function DriversPage() {
+  const { t } = useTranslation('logistics');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilterKey>('all');
   const [licenseFilter, setLicenseFilter] = useState<LicenseFilterKey>('all');
@@ -268,19 +276,19 @@ export function DriversPage() {
   }
 
   const metrics = [
-    { id: 'total',     icon: Users,       label: 'Total Drivers',     value: stats?.total_drivers            ?? 0, isLoading: !stats },
-    { id: 'active',    icon: CheckCircle, label: 'Active Drivers',    value: stats?.active_drivers           ?? 0, isLoading: !stats, colorClass: 'text-emerald-600' },
-    { id: 'inactive',  icon: XCircle,     label: 'Inactive Drivers',  value: stats?.inactive_drivers         ?? 0, isLoading: !stats },
-    { id: 'expired',   icon: ShieldAlert, label: 'Expired Licence',   value: stats?.expired_license_drivers  ?? 0, isLoading: !stats, colorClass: 'text-destructive' },
-    { id: 'novehicle', icon: Truck,       label: 'Without Vehicle',   value: stats?.drivers_without_vehicle  ?? 0, isLoading: !stats, colorClass: 'text-amber-600' },
+    { id: 'total',     icon: Users,       label: t('drivers.metrics.total'),           value: stats?.total_drivers            ?? 0, isLoading: !stats },
+    { id: 'active',    icon: CheckCircle, label: t('drivers.metrics.active'),          value: stats?.active_drivers           ?? 0, isLoading: !stats, colorClass: 'text-emerald-600' },
+    { id: 'inactive',  icon: XCircle,     label: t('drivers.metrics.inactive'),        value: stats?.inactive_drivers         ?? 0, isLoading: !stats },
+    { id: 'expired',   icon: ShieldAlert, label: t('drivers.metrics.expiredLicense'),  value: stats?.expired_license_drivers  ?? 0, isLoading: !stats, colorClass: 'text-destructive' },
+    { id: 'novehicle', icon: Truck,       label: t('drivers.metrics.withoutVehicle'),  value: stats?.drivers_without_vehicle  ?? 0, isLoading: !stats, colorClass: 'text-amber-600' },
   ];
 
   return (
     <>
       <WorkspaceHeader
-        breadcrumbs={[{ label: 'Logistics OS' }, { label: 'Drivers' }]}
-        title="Drivers"
-        description="Manage delivery drivers, licences, documents and vehicle assignments"
+        breadcrumbs={[{ label: t('drivers.page.breadcrumbModule') }, { label: t('drivers.page.title') }]}
+        title={t('drivers.page.title')}
+        description={t('drivers.page.description')}
         metrics={metrics}
       />
 
@@ -288,7 +296,7 @@ export function DriversPage() {
         toolbar={
           <div className="px-4 sm:px-6">
             <SmartToolbar
-              primaryAction={{ label: 'New Driver', icon: Plus, onClick: openCreate }}
+              primaryAction={{ label: t('drivers.page.newDriver'), icon: Plus, onClick: openCreate }}
               onRefresh={() => refetch()}
               isFetching={isFetching}
             />
@@ -297,7 +305,7 @@ export function DriversPage() {
         quickFilters={
           <div className="flex flex-wrap items-center gap-2 px-4 py-2 sm:px-6">
             <Input
-              placeholder="Search by name, code, mobile, national ID or licence…"
+              placeholder={t('drivers.page.searchPlaceholder')}
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="h-8 max-w-sm text-sm"
@@ -310,10 +318,10 @@ export function DriversPage() {
                 className="h-8 text-xs"
                 onClick={() => resetPage(setStatusFilter)(s.key)}
               >
-                {s.key === 'active' && <CheckCircle className="mr-1 h-3 w-3" />}
-                {s.key === 'inactive' && <XCircle className="mr-1 h-3 w-3" />}
-                {s.key === 'archived' && <Archive className="mr-1 h-3 w-3" />}
-                {s.label}
+                {s.key === 'active' && <CheckCircle className="me-1 h-3 w-3" />}
+                {s.key === 'inactive' && <XCircle className="me-1 h-3 w-3" />}
+                {s.key === 'archived' && <Archive className="me-1 h-3 w-3" />}
+                {t(s.labelKey)}
               </Button>
             ))}
             <span className="mx-1 h-4 w-px bg-border" />
@@ -325,8 +333,8 @@ export function DriversPage() {
                 className="h-8 text-xs"
                 onClick={() => resetPage(setLicenseFilter)(l.key)}
               >
-                {l.key === 'expired' && <ShieldAlert className="mr-1 h-3 w-3" />}
-                {l.label}
+                {l.key === 'expired' && <ShieldAlert className="me-1 h-3 w-3" />}
+                {t(l.labelKey)}
               </Button>
             ))}
             <span className="mx-1 h-4 w-px bg-border" />
@@ -338,8 +346,8 @@ export function DriversPage() {
                 className="h-8 text-xs"
                 onClick={() => resetPage(setVehicleFilter)(v.key)}
               >
-                {v.key === 'assigned' && <Truck className="mr-1 h-3 w-3" />}
-                {v.label}
+                {v.key === 'assigned' && <Truck className="me-1 h-3 w-3" />}
+                {t(v.labelKey)}
               </Button>
             ))}
           </div>

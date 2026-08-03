@@ -1,4 +1,5 @@
 import { User, Truck, Package } from 'lucide-react';
+import { useFormatter } from '@/hooks/use-formatter';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +13,7 @@ interface ResourceAssignmentPanelProps {
 const NULL_VALUE = '__null__';
 
 export function ResourceAssignmentPanel({ trip }: ResourceAssignmentPanelProps) {
+  const { money } = useFormatter();
   const { drivers, vehicles, carriers } = useFleetResources();
   const assignDriver  = useAssignDriver();
   const assignVehicle = useAssignVehicle();
@@ -137,7 +139,7 @@ export function ResourceAssignmentPanel({ trip }: ResourceAssignmentPanelProps) 
                 <SelectItem key={c.id} value={c.id.toString()} className="text-xs">
                   {c.name}
                   {c.rate_per_order && (
-                    <span className="ml-1 text-muted-foreground">({c.rate_per_order} EGP/order)</span>
+                    <span className="ml-1 text-muted-foreground">({money(c.rate_per_order)}/order)</span>
                   )}
                 </SelectItem>
               ))}

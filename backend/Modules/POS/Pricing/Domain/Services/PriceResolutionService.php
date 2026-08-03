@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\POS\Pricing\Domain\Services;
 
+use InvalidArgumentException;
 use Modules\POS\Pricing\Domain\Contracts\PricingGatewayInterface;
 use Modules\POS\Pricing\Domain\Events\PriceResolved;
 use Modules\POS\Pricing\Domain\Exceptions\InvalidPriceCurrencyException;
@@ -28,20 +29,20 @@ final class PriceResolutionService
 
     public function __construct(
         private readonly PricingGatewayInterface $gateway,
-        private readonly PriceValidator          $validator,
+        private readonly PriceValidator $validator,
     ) {}
 
     /**
      * Resolve the price for a single product.
      *
-     * @throws \InvalidArgumentException      on empty productId
-     * @throws InvalidPriceCurrencyException  on unsupported / malformed currency
-     * @throws PriceResolutionException       if the gateway cannot price the product
+     * @throws InvalidArgumentException on empty productId
+     * @throws InvalidPriceCurrencyException on unsupported / malformed currency
+     * @throws PriceResolutionException if the gateway cannot price the product
      */
     public function resolve(string $productId, string $currency): ResolvedPrice
     {
         if (trim($productId) === '') {
-            throw new \InvalidArgumentException('productId cannot be empty.');
+            throw new InvalidArgumentException('productId cannot be empty.');
         }
         $this->validator->validateCurrency($currency);
 
@@ -49,9 +50,9 @@ final class PriceResolutionService
         $this->validator->validatePrice($resolved->unitPrice);
 
         $this->domainEvents[] = PriceResolved::now(
-            productId:  $resolved->productId,
-            unitPrice:  $resolved->unitPrice,
-            source:     $resolved->source,
+            productId: $resolved->productId,
+            unitPrice: $resolved->unitPrice,
+            source: $resolved->source,
             resolvedAt: $resolved->resolvedAt->format(DATE_ATOM),
         );
 
@@ -61,8 +62,9 @@ final class PriceResolutionService
     /**
      * Resolve prices for multiple products in a single gateway call.
      *
-     * @param  string[] $productIds
+     * @param  string[]  $productIds
      * @return array<string, ResolvedPrice>
+     *
      * @throws InvalidPriceCurrencyException
      * @throws PriceResolutionException
      */
@@ -79,9 +81,9 @@ final class PriceResolutionService
             $this->validator->validatePrice($resolved->unitPrice);
 
             $this->domainEvents[] = PriceResolved::now(
-                productId:  $resolved->productId,
-                unitPrice:  $resolved->unitPrice,
-                source:     $resolved->source,
+                productId: $resolved->productId,
+                unitPrice: $resolved->unitPrice,
+                source: $resolved->source,
                 resolvedAt: $resolved->resolvedAt->format(DATE_ATOM),
             );
         }
@@ -99,14 +101,16 @@ final class PriceResolutionService
     public function snapshot(string $productId, string $productName, string $currency): PriceSnapshot
     {
         $resolved = $this->resolve($productId, $currency);
+
         return PriceSnapshot::fromResolvedPrice($resolved, $productName);
     }
 
     /** Pull all queued domain events and reset the queue. */
     public function pullDomainEvents(): array
     {
-        $events             = $this->domainEvents;
+        $events = $this->domainEvents;
         $this->domainEvents = [];
+
         return $events;
     }
 }

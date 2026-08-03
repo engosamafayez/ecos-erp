@@ -34,7 +34,7 @@ class ManufacturingPolicyTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->policy = new ManufacturingPolicy();
+        $this->policy = new ManufacturingPolicy;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -42,19 +42,19 @@ class ManufacturingPolicyTest extends TestCase
     private function validRequest(float $qty = 5.0): ManufacturingPolicyRequest
     {
         return new ManufacturingPolicyRequest(
-            product_id:   'product-uuid',
+            product_id: 'product-uuid',
             required_qty: $qty,
-            actor_id:     'actor-uuid',
+            actor_id: 'actor-uuid',
         );
     }
 
     private function validOrder(string $status = 'pending', bool $alreadyManufactured = false): OrderContext
     {
         return new OrderContext(
-            order_id:             'order-uuid',
-            order_line_id:        'line-uuid',
-            order_status:         $status,
-            is_cancelled:         false,
+            order_id: 'order-uuid',
+            order_line_id: 'line-uuid',
+            order_status: $status,
+            is_cancelled: false,
             already_manufactured: $alreadyManufactured,
         );
     }
@@ -65,9 +65,9 @@ class ManufacturingPolicyTest extends TestCase
         bool $inventoryManaged = true,
     ): ProductContext {
         return new ProductContext(
-            product_id:           'product-uuid',
-            can_manufacture:      $canManufacture,
-            has_active_recipe:    $hasRecipe,
+            product_id: 'product-uuid',
+            can_manufacture: $canManufacture,
+            has_active_recipe: $hasRecipe,
             is_inventory_managed: $inventoryManaged,
         );
     }
@@ -79,7 +79,7 @@ class ManufacturingPolicyTest extends TestCase
     ): ManufacturingPolicyResult {
         return $this->policy->evaluate(
             $request ?? $this->validRequest(),
-            $order   ?? $this->validOrder(),
+            $order ?? $this->validOrder(),
             $product ?? $this->validProduct(),
         );
     }
@@ -112,11 +112,11 @@ class ManufacturingPolicyTest extends TestCase
 
     public function test_ineligible_when_order_is_cancelled(): void
     {
-        $order  = new OrderContext(
-            order_id:             'order-uuid',
-            order_line_id:        'line-uuid',
-            order_status:         'cancelled',
-            is_cancelled:         true,
+        $order = new OrderContext(
+            order_id: 'order-uuid',
+            order_line_id: 'line-uuid',
+            order_status: 'cancelled',
+            is_cancelled: true,
             already_manufactured: false,
         );
         $result = $this->evaluate(order: $order);
@@ -129,11 +129,11 @@ class ManufacturingPolicyTest extends TestCase
     public function test_cancellation_supersedes_all_other_rules(): void
     {
         // Even when every other flag is wrong, is_cancelled wins first
-        $order  = new OrderContext(
-            order_id:             'order-uuid',
-            order_line_id:        'line-uuid',
-            order_status:         'completed', // would also fail rule 2
-            is_cancelled:         true,
+        $order = new OrderContext(
+            order_id: 'order-uuid',
+            order_line_id: 'line-uuid',
+            order_status: 'completed', // would also fail rule 2
+            is_cancelled: true,
             already_manufactured: true,        // would also fail rule 7
         );
         $product = $this->validProduct(canManufacture: false); // would also fail rule 3
@@ -166,11 +166,11 @@ class ManufacturingPolicyTest extends TestCase
     public function test_status_check_occurs_after_cancellation_check(): void
     {
         // Non-cancelled but disallowed status → rule 2, not rule 1
-        $order  = new OrderContext(
-            order_id:             'order-uuid',
-            order_line_id:        'line-uuid',
-            order_status:         'completed',
-            is_cancelled:         false,
+        $order = new OrderContext(
+            order_id: 'order-uuid',
+            order_line_id: 'line-uuid',
+            order_status: 'completed',
+            is_cancelled: false,
             already_manufactured: false,
         );
         $result = $this->evaluate(order: $order);
@@ -309,7 +309,7 @@ class ManufacturingPolicyTest extends TestCase
     public function test_result_ineligible_factory_sets_correct_code(): void
     {
         $result = ManufacturingPolicyResult::ineligible(
-            code:   PolicyCode::OrderCancelled,
+            code: PolicyCode::OrderCancelled,
             reason: 'Custom reason',
         );
 
@@ -322,7 +322,7 @@ class ManufacturingPolicyTest extends TestCase
     public function test_result_serializes_to_array_with_all_keys(): void
     {
         $result = $this->evaluate();
-        $array  = $result->toArray();
+        $array = $result->toArray();
 
         $this->assertArrayHasKey('eligible', $array);
         $this->assertArrayHasKey('reason', $array);
@@ -335,7 +335,7 @@ class ManufacturingPolicyTest extends TestCase
     public function test_ineligible_result_serializes_policy_code_as_string(): void
     {
         $result = $this->evaluate(order: $this->validOrder(status: 'completed'));
-        $array  = $result->toArray();
+        $array = $result->toArray();
 
         $this->assertEquals('order_status_not_allowed', $array['policy_code']);
         $this->assertFalse($array['eligible']);

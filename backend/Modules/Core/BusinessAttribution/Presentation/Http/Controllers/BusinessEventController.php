@@ -29,7 +29,7 @@ class BusinessEventController extends Controller
         ]);
 
         $perPage = min((int) $request->query('per_page', 50), 200);
-        $events  = $this->bus->timeline($filters, $perPage);
+        $events = $this->bus->timeline($filters, $perPage);
 
         return BusinessEventResource::collection($events);
     }
@@ -38,7 +38,7 @@ class BusinessEventController extends Controller
     public function forDna(Request $request, string $dnaId): AnonymousResourceCollection
     {
         $perPage = min((int) $request->query('per_page', 25), 100);
-        $events  = $this->bus->getByDna($dnaId, $perPage);
+        $events = $this->bus->getByDna($dnaId, $perPage);
 
         return BusinessEventResource::collection($events);
     }
@@ -48,11 +48,11 @@ class BusinessEventController extends Controller
     {
         $request->validate([
             'entity_type' => ['required', 'string'],
-            'entity_id'   => ['required', 'uuid'],
+            'entity_id' => ['required', 'uuid'],
         ]);
 
         $perPage = min((int) $request->query('per_page', 25), 100);
-        $events  = $this->bus->getByEntity(
+        $events = $this->bus->getByEntity(
             $request->query('entity_type'),
             $request->query('entity_id'),
             $perPage,
@@ -74,26 +74,26 @@ class BusinessEventController extends Controller
     public function publish(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'event_name'      => ['required', 'string', 'max:150'],
-            'category'        => ['required', 'string'],
+            'event_name' => ['required', 'string', 'max:150'],
+            'category' => ['required', 'string'],
             'producer_module' => ['required', 'string', 'max:100'],
             'producer_entity' => ['required', 'string', 'max:100'],
-            'entity_id'       => ['nullable', 'uuid'],
-            'entity_type'     => ['nullable', 'string', 'max:100'],
-            'company_id'      => ['nullable', 'uuid'],
-            'brand_id'        => ['nullable', 'uuid'],
-            'channel_id'      => ['nullable', 'uuid'],
-            'warehouse_id'    => ['nullable', 'uuid'],
-            'business_unit'   => ['nullable', 'string', 'max:100'],
-            'cost_center'     => ['nullable', 'string', 'max:100'],
-            'actor_id'        => ['nullable', 'uuid'],
-            'actor_type'      => ['nullable', 'string', 'max:100'],
-            'occurred_at'     => ['nullable', 'date'],
-            'correlation_id'  => ['nullable', 'uuid'],
+            'entity_id' => ['nullable', 'uuid'],
+            'entity_type' => ['nullable', 'string', 'max:100'],
+            'company_id' => ['nullable', 'uuid'],
+            'brand_id' => ['nullable', 'uuid'],
+            'channel_id' => ['nullable', 'uuid'],
+            'warehouse_id' => ['nullable', 'uuid'],
+            'business_unit' => ['nullable', 'string', 'max:100'],
+            'cost_center' => ['nullable', 'string', 'max:100'],
+            'actor_id' => ['nullable', 'uuid'],
+            'actor_type' => ['nullable', 'string', 'max:100'],
+            'occurred_at' => ['nullable', 'date'],
+            'correlation_id' => ['nullable', 'uuid'],
             'business_dna_id' => ['nullable', 'uuid'],
-            'payload'         => ['required', 'array'],
-            'metadata'        => ['nullable', 'array'],
-            'version'         => ['nullable', 'string', 'max:10'],
+            'payload' => ['required', 'array'],
+            'metadata' => ['nullable', 'array'],
+            'version' => ['nullable', 'string', 'max:10'],
         ]);
 
         $event = $this->publishAction->execute($data);

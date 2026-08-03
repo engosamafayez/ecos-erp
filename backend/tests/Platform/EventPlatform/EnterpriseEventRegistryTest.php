@@ -16,7 +16,7 @@ class EnterpriseEventRegistryTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->registry = new EnterpriseEventRegistry();
+        $this->registry = new EnterpriseEventRegistry;
     }
 
     public function test_subscribe_and_get_subscribers(): void

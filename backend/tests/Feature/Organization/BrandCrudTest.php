@@ -93,7 +93,7 @@ class BrandCrudTest extends TestCase
         Brand::factory()->create(['company_id' => $this->company->id, 'code' => 'BRD-000001', 'slug' => 'brand-a']);
         Brand::factory()->create(['company_id' => $other->id, 'code' => 'BRD-000001', 'slug' => 'brand-b']);
 
-        $this->auth()->getJson('/api/brands?company_id=' . $this->company->id)
+        $this->auth()->getJson('/api/brands?company_id='.$this->company->id)
             ->assertOk()
             ->assertJsonPath('data.meta.total', 1);
     }

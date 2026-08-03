@@ -33,33 +33,33 @@ final class PerformanceTrendsController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $filter      = IntelligenceFilterDto::fromRequest($request);
+        $filter = IntelligenceFilterDto::fromRequest($request);
         $granularity = $this->allowedGranularity($request->query('granularity', 'day'));
-        $level       = $this->allowedLevel($request->query('level', 'campaign'));
+        $level = $this->allowedLevel($request->query('level', 'campaign'));
 
         $data = $this->engine->trends($filter, $granularity, $level);
 
         [$start, $end] = $filter->resolvedDates();
 
         // Compute summary totals over the trend period
-        $totalSpend   = array_sum(array_column($data, 'spend'));
+        $totalSpend = array_sum(array_column($data, 'spend'));
         $totalRevenue = array_sum(array_column($data, 'revenue'));
 
         return response()->json([
             'data' => $data,
             'meta' => [
-                'granularity'  => $granularity,
-                'level'        => $level,
-                'date_from'    => $start,
-                'date_to'      => $end,
-                'days'         => $filter->periodDays(),
-                'data_points'  => count($data),
+                'granularity' => $granularity,
+                'level' => $level,
+                'date_from' => $start,
+                'date_to' => $end,
+                'days' => $filter->periodDays(),
+                'data_points' => count($data),
                 'summary' => [
-                    'total_spend'    => round($totalSpend, 2),
-                    'total_revenue'  => round($totalRevenue, 2),
+                    'total_spend' => round($totalSpend, 2),
+                    'total_revenue' => round($totalRevenue, 2),
                     'total_purchases' => array_sum(array_column($data, 'purchases')),
-                    'total_leads'    => array_sum(array_column($data, 'leads')),
-                    'avg_roas'       => $totalSpend > 0 ? round($totalRevenue / $totalSpend, 4) : null,
+                    'total_leads' => array_sum(array_column($data, 'leads')),
+                    'avg_roas' => $totalSpend > 0 ? round($totalRevenue / $totalSpend, 4) : null,
                 ],
             ],
         ]);
@@ -73,25 +73,25 @@ final class PerformanceTrendsController extends Controller
      */
     public function compare(Request $request): JsonResponse
     {
-        $filter      = IntelligenceFilterDto::fromRequest($request);
+        $filter = IntelligenceFilterDto::fromRequest($request);
         $granularity = $this->allowedGranularity($request->query('granularity', 'day'));
-        $level       = $this->allowedLevel($request->query('level', 'campaign'));
+        $level = $this->allowedLevel($request->query('level', 'campaign'));
 
-        $current  = $this->engine->trends($filter, $granularity, $level);
+        $current = $this->engine->trends($filter, $granularity, $level);
         $previous = $this->engine->trends($filter->previousPeriodFilter(), $granularity, $level);
 
         [$currentStart, $currentEnd] = $filter->resolvedDates();
         $prevFilter = $filter->previousPeriodFilter();
-        [$prevStart, $prevEnd]       = $prevFilter->resolvedDates();
+        [$prevStart, $prevEnd] = $prevFilter->resolvedDates();
 
         return response()->json([
             'current' => [
                 'period' => ['from' => $currentStart, 'to' => $currentEnd],
-                'data'   => $current,
+                'data' => $current,
             ],
             'previous' => [
                 'period' => ['from' => $prevStart, 'to' => $prevEnd],
-                'data'   => $previous,
+                'data' => $previous,
             ],
             'granularity' => $granularity,
         ]);

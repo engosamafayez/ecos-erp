@@ -20,12 +20,17 @@ use RuntimeException;
  */
 final class MetaApiClient implements MarketingApiClientContract
 {
-    private const GRAPH_BASE    = 'https://graph.facebook.com/v21.0';
-    private const OAUTH_BASE    = 'https://www.facebook.com/v21.0/dialog/oauth';
-    private const TOKEN_URL     = 'https://graph.facebook.com/v21.0/oauth/access_token';
-    private const MAX_RETRIES   = 3;
-    private const TIMEOUT       = 30;
-    private const PAGE_LIMIT    = 200;
+    private const GRAPH_BASE = 'https://graph.facebook.com/v21.0';
+
+    private const OAUTH_BASE = 'https://www.facebook.com/v21.0/dialog/oauth';
+
+    private const TOKEN_URL = 'https://graph.facebook.com/v21.0/oauth/access_token';
+
+    private const MAX_RETRIES = 3;
+
+    private const TIMEOUT = 30;
+
+    private const PAGE_LIMIT = 200;
 
     public function __construct(
         private readonly string $appId,
@@ -37,15 +42,15 @@ final class MetaApiClient implements MarketingApiClientContract
     /**
      * Generate an OAuth authorization URL.
      *
-     * @param list<string> $scopes
+     * @param  list<string>  $scopes
      */
     public function buildAuthUrl(string $redirectUri, string $state, array $scopes): string
     {
-        return self::OAUTH_BASE . '?' . http_build_query([
-            'client_id'     => $this->appId,
-            'redirect_uri'  => $redirectUri,
-            'state'         => $state,
-            'scope'         => implode(',', $scopes),
+        return self::OAUTH_BASE.'?'.http_build_query([
+            'client_id' => $this->appId,
+            'redirect_uri' => $redirectUri,
+            'state' => $state,
+            'scope' => implode(',', $scopes),
             'response_type' => 'code',
         ]);
     }
@@ -58,10 +63,10 @@ final class MetaApiClient implements MarketingApiClientContract
     public function exchangeCode(string $code, string $redirectUri): array
     {
         $response = $this->retryGet(self::TOKEN_URL, [
-            'client_id'     => $this->appId,
+            'client_id' => $this->appId,
             'client_secret' => $this->appSecret,
-            'code'          => $code,
-            'redirect_uri'  => $redirectUri,
+            'code' => $code,
+            'redirect_uri' => $redirectUri,
         ], 'token exchange');
 
         return $response->json();
@@ -75,9 +80,9 @@ final class MetaApiClient implements MarketingApiClientContract
     public function extendToken(string $shortLivedToken): array
     {
         $response = $this->retryGet(self::TOKEN_URL, [
-            'grant_type'        => 'fb_exchange_token',
-            'client_id'         => $this->appId,
-            'client_secret'     => $this->appSecret,
+            'grant_type' => 'fb_exchange_token',
+            'client_id' => $this->appId,
+            'client_secret' => $this->appSecret,
             'fb_exchange_token' => $shortLivedToken,
         ], 'token extension');
 
@@ -89,9 +94,9 @@ final class MetaApiClient implements MarketingApiClientContract
      */
     public function debugToken(string $userToken): array
     {
-        $appToken  = $this->appId . '|' . $this->appSecret;
-        $response  = $this->retryGet(self::GRAPH_BASE . '/debug_token', [
-            'input_token'  => $userToken,
+        $appToken = $this->appId.'|'.$this->appSecret;
+        $response = $this->retryGet(self::GRAPH_BASE.'/debug_token', [
+            'input_token' => $userToken,
             'access_token' => $appToken,
         ], 'debug_token');
 
@@ -103,10 +108,10 @@ final class MetaApiClient implements MarketingApiClientContract
     /** @return array{data: list<array{id: string, name: string}>} */
     public function getBusinessManagers(string $accessToken): array
     {
-        $response = $this->retryGet(self::GRAPH_BASE . '/me/businesses', [
+        $response = $this->retryGet(self::GRAPH_BASE.'/me/businesses', [
             'access_token' => $accessToken,
-            'fields'       => 'id,name,link,primary_page,timezone_id,created_time,verification_status,owned_pages',
-            'limit'        => self::PAGE_LIMIT,
+            'fields' => 'id,name,link,primary_page,timezone_id,created_time,verification_status,owned_pages',
+            'limit' => self::PAGE_LIMIT,
         ], 'businesses');
 
         return $response->json();
@@ -114,89 +119,89 @@ final class MetaApiClient implements MarketingApiClientContract
 
     public function getAdAccountsForBusiness(string $businessId, string $accessToken): array
     {
-        return $this->paginate(self::GRAPH_BASE . "/{$businessId}/owned_ad_accounts", [
+        return $this->paginate(self::GRAPH_BASE."/{$businessId}/owned_ad_accounts", [
             'access_token' => $accessToken,
-            'fields'       => 'id,name,account_id,account_status,currency,timezone_name,business,created_time',
+            'fields' => 'id,name,account_id,account_status,currency,timezone_name,business,created_time',
         ]);
     }
 
     public function getPagesForBusiness(string $businessId, string $accessToken): array
     {
-        return $this->paginate(self::GRAPH_BASE . "/{$businessId}/owned_pages", [
+        return $this->paginate(self::GRAPH_BASE."/{$businessId}/owned_pages", [
             'access_token' => $accessToken,
-            'fields'       => 'id,name,category,fan_count,verification_status,link,created_time',
+            'fields' => 'id,name,category,fan_count,verification_status,link,created_time',
         ]);
     }
 
     public function getInstagramAccountsForBusiness(string $businessId, string $accessToken): array
     {
-        return $this->paginate(self::GRAPH_BASE . "/{$businessId}/instagram_accounts", [
+        return $this->paginate(self::GRAPH_BASE."/{$businessId}/instagram_accounts", [
             'access_token' => $accessToken,
-            'fields'       => 'id,name,username,profile_pic,followers_count,is_verified',
+            'fields' => 'id,name,username,profile_pic,followers_count,is_verified',
         ]);
     }
 
     public function getWhatsAppAccountsForBusiness(string $businessId, string $accessToken): array
     {
-        return $this->paginate(self::GRAPH_BASE . "/{$businessId}/whatsapp_business_accounts", [
+        return $this->paginate(self::GRAPH_BASE."/{$businessId}/whatsapp_business_accounts", [
             'access_token' => $accessToken,
-            'fields'       => 'id,name,currency,timezone_id,message_template_namespace',
+            'fields' => 'id,name,currency,timezone_id,message_template_namespace',
         ]);
     }
 
     public function getPixelsForBusiness(string $businessId, string $accessToken): array
     {
-        return $this->paginate(self::GRAPH_BASE . "/{$businessId}/owned_pixels", [
+        return $this->paginate(self::GRAPH_BASE."/{$businessId}/owned_pixels", [
             'access_token' => $accessToken,
-            'fields'       => 'id,name,code,creation_time,last_fired_time,is_unavailable',
+            'fields' => 'id,name,code,creation_time,last_fired_time,is_unavailable',
         ]);
     }
 
     public function getCatalogsForBusiness(string $businessId, string $accessToken): array
     {
-        return $this->paginate(self::GRAPH_BASE . "/{$businessId}/owned_product_catalogs", [
+        return $this->paginate(self::GRAPH_BASE."/{$businessId}/owned_product_catalogs", [
             'access_token' => $accessToken,
-            'fields'       => 'id,name,product_count,vertical,created_time',
+            'fields' => 'id,name,product_count,vertical,created_time',
         ]);
     }
 
     public function getDomainsForBusiness(string $businessId, string $accessToken): array
     {
-        return $this->paginate(self::GRAPH_BASE . "/{$businessId}/owned_domains", [
+        return $this->paginate(self::GRAPH_BASE."/{$businessId}/owned_domains", [
             'access_token' => $accessToken,
-            'fields'       => 'id,name,created_time',
+            'fields' => 'id,name,created_time',
         ]);
     }
 
     public function getDatasetsForBusiness(string $businessId, string $accessToken): array
     {
-        return $this->paginate(self::GRAPH_BASE . "/{$businessId}/datasets", [
+        return $this->paginate(self::GRAPH_BASE."/{$businessId}/datasets", [
             'access_token' => $accessToken,
-            'fields'       => 'id,name,event_stats,created_time',
+            'fields' => 'id,name,event_stats,created_time',
         ]);
     }
 
     public function getAppsForBusiness(string $businessId, string $accessToken): array
     {
-        return $this->paginate(self::GRAPH_BASE . "/{$businessId}/owned_apps", [
+        return $this->paginate(self::GRAPH_BASE."/{$businessId}/owned_apps", [
             'access_token' => $accessToken,
-            'fields'       => 'id,name,category,created_time',
+            'fields' => 'id,name,category,created_time',
         ]);
     }
 
     public function getProductsForCatalog(string $catalogId, string $accessToken): array
     {
-        return $this->paginate(self::GRAPH_BASE . "/{$catalogId}/products", [
+        return $this->paginate(self::GRAPH_BASE."/{$catalogId}/products", [
             'access_token' => $accessToken,
-            'fields'       => 'id,name,price,currency,availability,condition,url,image_url,brand,category',
+            'fields' => 'id,name,price,currency,availability,condition,url,image_url,brand,category',
         ]);
     }
 
     public function getProductSetsForCatalog(string $catalogId, string $accessToken): array
     {
-        return $this->paginate(self::GRAPH_BASE . "/{$catalogId}/product_sets", [
+        return $this->paginate(self::GRAPH_BASE."/{$catalogId}/product_sets", [
             'access_token' => $accessToken,
-            'fields'       => 'id,name,product_count,filter',
+            'fields' => 'id,name,product_count,filter',
         ]);
     }
 
@@ -205,15 +210,15 @@ final class MetaApiClient implements MarketingApiClientContract
     /**
      * Get all campaigns for an ad account.
      *
-     * @param  array<string, mixed> $extraParams
+     * @param  array<string, mixed>  $extraParams
      * @return array{data: list<array<string, mixed>>}
      */
     public function getCampaignsForAdAccount(string $adAccountId, string $accessToken, array $extraParams = []): array
     {
-        $response = $this->retryGet(self::GRAPH_BASE . "/{$adAccountId}/campaigns", array_merge([
+        $response = $this->retryGet(self::GRAPH_BASE."/{$adAccountId}/campaigns", array_merge([
             'access_token' => $accessToken,
-            'fields'       => 'id,name,status,effective_status,objective,buying_type,bid_strategy,daily_budget,lifetime_budget,budget_remaining,special_ad_categories,start_time,stop_time,created_time,updated_time,account_id',
-            'limit'        => self::PAGE_LIMIT,
+            'fields' => 'id,name,status,effective_status,objective,buying_type,bid_strategy,daily_budget,lifetime_budget,budget_remaining,special_ad_categories,start_time,stop_time,created_time,updated_time,account_id',
+            'limit' => self::PAGE_LIMIT,
         ], $extraParams), 'campaigns');
 
         return $response->json();
@@ -222,18 +227,18 @@ final class MetaApiClient implements MarketingApiClientContract
     /** @return list<array<string, mixed>> */
     public function getAdSetsForCampaign(string $campaignId, string $accessToken): array
     {
-        return $this->paginate(self::GRAPH_BASE . "/{$campaignId}/adsets", [
+        return $this->paginate(self::GRAPH_BASE."/{$campaignId}/adsets", [
             'access_token' => $accessToken,
-            'fields'       => 'id,name,status,effective_status,daily_budget,lifetime_budget,bid_amount,bid_strategy,optimization_goal,billing_event,targeting,schedule,start_time,end_time,campaign_id,created_time,updated_time',
+            'fields' => 'id,name,status,effective_status,daily_budget,lifetime_budget,bid_amount,bid_strategy,optimization_goal,billing_event,targeting,schedule,start_time,end_time,campaign_id,created_time,updated_time',
         ]);
     }
 
     /** @return list<array<string, mixed>> */
     public function getAdsForAdSet(string $adSetId, string $accessToken): array
     {
-        return $this->paginate(self::GRAPH_BASE . "/{$adSetId}/ads", [
+        return $this->paginate(self::GRAPH_BASE."/{$adSetId}/ads", [
             'access_token' => $accessToken,
-            'fields'       => 'id,name,status,effective_status,creative,tracking_specs,adset_id,campaign_id,created_time,updated_time',
+            'fields' => 'id,name,status,effective_status,creative,tracking_specs,adset_id,campaign_id,created_time,updated_time',
         ]);
     }
 
@@ -246,16 +251,16 @@ final class MetaApiClient implements MarketingApiClientContract
      * @return list<array<string, mixed>>
      */
     public function getInsights(
-        string  $entityId,
-        string  $accessToken,
-        string  $datePreset  = 'last_30d',
-        ?string $dateStart   = null,
-        ?string $dateStop    = null,
-        string  $level       = 'campaign',
+        string $entityId,
+        string $accessToken,
+        string $datePreset = 'last_30d',
+        ?string $dateStart = null,
+        ?string $dateStop = null,
+        string $level = 'campaign',
     ): array {
         $params = [
-            'access_token'   => $accessToken,
-            'fields'         => implode(',', [
+            'access_token' => $accessToken,
+            'fields' => implode(',', [
                 // Delivery
                 'spend', 'reach', 'impressions', 'frequency',
                 // Efficiency
@@ -281,16 +286,16 @@ final class MetaApiClient implements MarketingApiClientContract
             $params['date_preset'] = $datePreset;
         }
 
-        return $this->paginate(self::GRAPH_BASE . "/{$entityId}/insights", $params);
+        return $this->paginate(self::GRAPH_BASE."/{$entityId}/insights", $params);
     }
 
     /** @return list<array<string, mixed>> */
     public function getAdCreatives(string $adId, string $accessToken): array
     {
-        $response = $this->retryGet(self::GRAPH_BASE . "/{$adId}/adcreatives", [
+        $response = $this->retryGet(self::GRAPH_BASE."/{$adId}/adcreatives", [
             'access_token' => $accessToken,
-            'fields'       => 'id,name,title,body,call_to_action_type,object_story_spec,image_url,image_hash,video_id,thumbnail_url,link_url,asset_feed_spec',
-            'limit'        => 20,
+            'fields' => 'id,name,title,body,call_to_action_type,object_story_spec,image_url,image_hash,video_id,thumbnail_url,link_url,asset_feed_spec',
+            'limit' => 20,
         ], 'adcreatives');
 
         return $response->json('data', []);
@@ -300,9 +305,9 @@ final class MetaApiClient implements MarketingApiClientContract
 
     public function getMe(string $accessToken): array
     {
-        $response = $this->retryGet(self::GRAPH_BASE . '/me', [
+        $response = $this->retryGet(self::GRAPH_BASE.'/me', [
             'access_token' => $accessToken,
-            'fields'       => 'id,name',
+            'fields' => 'id,name',
         ], 'me');
 
         return $response->json();
@@ -316,23 +321,23 @@ final class MetaApiClient implements MarketingApiClientContract
      *
      * Uses the app access token: app_id|app_secret.
      *
-     * @param  list<string> $fields
+     * @param  list<string>  $fields
      * @return array{success: bool}
      */
     public function subscribeApp(
         string $object,
-        array  $fields,
+        array $fields,
         string $callbackUrl,
         string $verifyToken,
     ): array {
-        $appToken = $this->appId . '|' . $this->appSecret;
+        $appToken = $this->appId.'|'.$this->appSecret;
 
         $response = $this->retryPost(
-            url:    self::GRAPH_BASE . "/{$this->appId}/subscriptions",
+            url: self::GRAPH_BASE."/{$this->appId}/subscriptions",
             params: [
-                'object'       => $object,
+                'object' => $object,
                 'callback_url' => $callbackUrl,
-                'fields'       => implode(',', $fields),
+                'fields' => implode(',', $fields),
                 'verify_token' => $verifyToken,
                 'access_token' => $appToken,
             ],
@@ -349,10 +354,10 @@ final class MetaApiClient implements MarketingApiClientContract
      */
     public function getAppSubscriptions(): array
     {
-        $appToken = $this->appId . '|' . $this->appSecret;
+        $appToken = $this->appId.'|'.$this->appSecret;
 
         $response = $this->retryGet(
-            url:    self::GRAPH_BASE . "/{$this->appId}/subscriptions",
+            url: self::GRAPH_BASE."/{$this->appId}/subscriptions",
             params: ['access_token' => $appToken],
             context: 'app_subscriptions',
         );
@@ -365,10 +370,10 @@ final class MetaApiClient implements MarketingApiClientContract
      */
     public function deleteAppSubscription(string $object): void
     {
-        $appToken = $this->appId . '|' . $this->appSecret;
+        $appToken = $this->appId.'|'.$this->appSecret;
 
-        Http::timeout(self::TIMEOUT)->delete(self::GRAPH_BASE . "/{$this->appId}/subscriptions", [
-            'object'       => $object,
+        Http::timeout(self::TIMEOUT)->delete(self::GRAPH_BASE."/{$this->appId}/subscriptions", [
+            'object' => $object,
             'access_token' => $appToken,
         ]);
     }
@@ -377,18 +382,18 @@ final class MetaApiClient implements MarketingApiClientContract
      * Subscribe a Page to receive webhook events through this app.
      * Requires a page access token.
      *
-     * @param  list<string> $subscribedFields
+     * @param  list<string>  $subscribedFields
      */
     public function subscribePage(
         string $pageId,
-        array  $subscribedFields,
+        array $subscribedFields,
         string $pageAccessToken,
     ): void {
         $this->retryPost(
-            url:    self::GRAPH_BASE . "/{$pageId}/subscribed_apps",
+            url: self::GRAPH_BASE."/{$pageId}/subscribed_apps",
             params: [
                 'subscribed_fields' => implode(',', $subscribedFields),
-                'access_token'      => $pageAccessToken,
+                'access_token' => $pageAccessToken,
             ],
             context: "page/{$pageId}/subscribed_apps",
         );
@@ -400,10 +405,10 @@ final class MetaApiClient implements MarketingApiClientContract
     public function getPageAccessToken(string $pageId, string $userAccessToken): string
     {
         $response = $this->retryGet(
-            url:    self::GRAPH_BASE . "/{$pageId}",
+            url: self::GRAPH_BASE."/{$pageId}",
             params: [
                 'access_token' => $userAccessToken,
-                'fields'       => 'access_token',
+                'fields' => 'access_token',
             ],
             context: "page/{$pageId}/access_token",
         );
@@ -416,7 +421,7 @@ final class MetaApiClient implements MarketingApiClientContract
      */
     public function unsubscribePage(string $pageId, string $pageAccessToken): void
     {
-        Http::timeout(self::TIMEOUT)->delete(self::GRAPH_BASE . "/{$pageId}/subscribed_apps", [
+        Http::timeout(self::TIMEOUT)->delete(self::GRAPH_BASE."/{$pageId}/subscribed_apps", [
             'access_token' => $pageAccessToken,
         ]);
     }
@@ -433,9 +438,9 @@ final class MetaApiClient implements MarketingApiClientContract
         $data = $this->debugToken($accessToken);
 
         return [
-            'is_valid'   => (bool) ($data['is_valid'] ?? false),
+            'is_valid' => (bool) ($data['is_valid'] ?? false),
             'expires_at' => $data['expires_at'] ?? null,
-            'scopes'     => $data['scopes'] ?? [],
+            'scopes' => $data['scopes'] ?? [],
         ];
     }
 
@@ -448,17 +453,17 @@ final class MetaApiClient implements MarketingApiClientContract
      */
     public function paginate(string $url, array $params): array
     {
-        $all    = [];
+        $all = [];
         $params['limit'] = $params['limit'] ?? self::PAGE_LIMIT;
 
         do {
             $response = $this->retryGet($url, $params, 'paginate');
-            $data     = $response->json('data', []);
-            $all      = array_merge($all, $data);
+            $data = $response->json('data', []);
+            $all = array_merge($all, $data);
 
             $nextUrl = $response->json('paging.next');
             if ($nextUrl) {
-                $url    = $nextUrl;
+                $url = $nextUrl;
                 $params = []; // next URL already has all params encoded
             }
         } while ($nextUrl !== null && count($data) > 0);
@@ -512,7 +517,7 @@ final class MetaApiClient implements MarketingApiClientContract
      */
     private function withRetry(callable $fn, string $context): Response
     {
-        $attempt  = 0;
+        $attempt = 0;
         $response = null;
 
         do {
@@ -539,10 +544,10 @@ final class MetaApiClient implements MarketingApiClientContract
     private function assertSuccess(Response $response, string $context): void
     {
         if (! $response->successful()) {
-            $error   = $response->json('error.message', 'Unknown error');
-            $code    = $response->json('error.code', 0);
+            $error = $response->json('error.message', 'Unknown error');
+            $code = $response->json('error.code', 0);
             throw new RuntimeException(
-                "Meta API [{$context}] failed (code {$code}): {$error}"
+                "Meta API [{$context}] failed (code {$code}): {$error}",
             );
         }
     }

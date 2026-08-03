@@ -26,7 +26,7 @@ final class StoreWarehouseRequest extends FormRequest
 
         return [
             'company_id' => ['required', 'uuid', 'exists:companies,id'],
-            'code'       => [
+            'code' => [
                 'nullable',
                 'string',
                 'max:20',
@@ -34,11 +34,11 @@ final class StoreWarehouseRequest extends FormRequest
                     fn ($query) => $query->where('company_id', $companyId)->whereNull('deleted_at'),
                 ),
             ],
-            'name'       => ['required', 'string', 'max:255'],
-            'address'    => ['nullable', 'string', 'max:255'],
-            'city'       => ['nullable', 'string', 'max:100'],
-            'country'    => ['nullable', 'string', 'max:100'],
-            'is_active'  => ['boolean'],
+            'name' => ['required', 'string', 'max:255'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'country' => ['nullable', 'string', 'max:100'],
+            'is_active' => ['boolean'],
         ];
     }
 }

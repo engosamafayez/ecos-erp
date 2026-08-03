@@ -19,31 +19,33 @@ final class ProductPricingGatewayTest extends TestCase
     use RefreshDatabase;
 
     private ProductPricingGateway $gateway;
-    private string                $categoryId;
-    private string                $unitId;
+
+    private string $categoryId;
+
+    private string $unitId;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->gateway = new ProductPricingGateway();
+        $this->gateway = new ProductPricingGateway;
 
         $category = Category::create([
-            'code'       => 'TEST-CAT',
-            'name'       => 'Test Category',
-            'level'      => 1,
+            'code' => 'TEST-CAT',
+            'name' => 'Test Category',
+            'level' => 1,
             'sort_order' => 0,
-            'is_active'  => true,
+            'is_active' => true,
         ]);
 
         $unit = Unit::create([
-            'code'      => 'PCS',
-            'name'      => 'Piece',
+            'code' => 'PCS',
+            'name' => 'Piece',
             'is_active' => true,
         ]);
 
         $this->categoryId = (string) $category->id;
-        $this->unitId     = (string) $unit->id;
+        $this->unitId = (string) $unit->id;
     }
 
     // ── resolvePrice() ────────────────────────────────────────────────────────
@@ -82,7 +84,7 @@ final class ProductPricingGatewayTest extends TestCase
 
     public function test_resolved_price_product_id_matches(): void
     {
-        $product  = $this->makeProduct(regularPrice: 50.00);
+        $product = $this->makeProduct(regularPrice: 50.00);
         $resolved = $this->gateway->resolvePrice((string) $product->id, 'EGP');
 
         $this->assertSame((string) $product->id, $resolved->productId);
@@ -90,7 +92,7 @@ final class ProductPricingGatewayTest extends TestCase
 
     public function test_resolved_at_is_utc(): void
     {
-        $product  = $this->makeProduct(regularPrice: 50.00);
+        $product = $this->makeProduct(regularPrice: 50.00);
         $resolved = $this->gateway->resolvePrice((string) $product->id, 'EGP');
 
         $this->assertSame('UTC', $resolved->resolvedAt->getTimezone()->getName());
@@ -126,7 +128,7 @@ final class ProductPricingGatewayTest extends TestCase
 
     public function test_currency_is_applied_from_caller(): void
     {
-        $product  = $this->makeProduct(regularPrice: 50.00);
+        $product = $this->makeProduct(regularPrice: 50.00);
         $resolved = $this->gateway->resolvePrice((string) $product->id, 'USD');
 
         $this->assertSame('USD', $resolved->unitPrice->currency);
@@ -172,7 +174,7 @@ final class ProductPricingGatewayTest extends TestCase
 
     public function test_resolve_prices_throws_for_inactive_product_in_batch(): void
     {
-        $active   = $this->makeProduct(regularPrice: 10.00);
+        $active = $this->makeProduct(regularPrice: 10.00);
         $inactive = $this->makeProduct(regularPrice: 20.00, active: false);
 
         $this->expectException(PriceResolutionException::class);
@@ -187,21 +189,21 @@ final class ProductPricingGatewayTest extends TestCase
 
     private function makeProduct(
         ?float $regularPrice = null,
-        ?float $salePrice    = null,
-        bool   $active       = true,
+        ?float $salePrice = null,
+        bool $active = true,
     ): Product {
         static $sku = 0;
         $sku++;
 
         return Product::create([
-            'sku'          => 'TEST-' . str_pad((string) $sku, 4, '0', STR_PAD_LEFT),
-            'name'         => "Test Product {$sku}",
-            'category_id'  => $this->categoryId,
-            'unit_id'      => $this->unitId,
+            'sku' => 'TEST-'.str_pad((string) $sku, 4, '0', STR_PAD_LEFT),
+            'name' => "Test Product {$sku}",
+            'category_id' => $this->categoryId,
+            'unit_id' => $this->unitId,
             'product_type' => Product::TYPE_FINISHED_GOOD,
-            'is_active'    => $active,
+            'is_active' => $active,
             'regular_price' => $regularPrice,
-            'sale_price'   => $salePrice,
+            'sale_price' => $salePrice,
         ]);
     }
 }

@@ -10,6 +10,6 @@ final class AdUpdated
 {
     public function __construct(
         public readonly CampaignAd $ad,
-        public readonly string     $previousStatus,
+        public readonly string $previousStatus,
     ) {}
 }

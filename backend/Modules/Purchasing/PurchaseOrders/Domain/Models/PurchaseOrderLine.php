@@ -18,8 +18,8 @@ use Modules\Purchasing\PurchaseOrders\Infrastructure\Database\Factories\Purchase
  * @property string $purchase_order_id
  * @property string $product_id
  * @property string|null $description
- * @property numeric-string $quantity       Ordered quantity (alias: ordered_qty)
- * @property numeric-string $received_qty   Cumulative received across all posted GRs
+ * @property numeric-string $quantity Ordered quantity (alias: ordered_qty)
+ * @property numeric-string $received_qty Cumulative received across all posted GRs
  * @property numeric-string $unit_price
  * @property numeric-string $line_total
  */
@@ -52,10 +52,10 @@ class PurchaseOrderLine extends Model
     protected function casts(): array
     {
         return [
-            'quantity'     => 'decimal:4',
+            'quantity' => 'decimal:4',
             'received_qty' => 'decimal:4',
-            'unit_price'   => 'decimal:2',
-            'line_total'   => 'decimal:2',
+            'unit_price' => 'decimal:2',
+            'line_total' => 'decimal:2',
         ];
     }
 

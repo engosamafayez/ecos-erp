@@ -23,10 +23,10 @@ final class CustomerServiceProvider extends ServiceProvider
         $this->app->bind(StoreCreditGatewayInterface::class, NullStoreCreditGateway::class);
 
         $this->app->bind(CustomerResolutionService::class, fn ($app) => new CustomerResolutionService(
-            customerGateway:     $app->make(CustomerGatewayInterface::class),
-            loyaltyGateway:      $app->make(LoyaltyGatewayInterface::class),
-            storeCreditGateway:  $app->make(StoreCreditGatewayInterface::class),
-            validator:           new CustomerValidator(),
+            customerGateway: $app->make(CustomerGatewayInterface::class),
+            loyaltyGateway: $app->make(LoyaltyGatewayInterface::class),
+            storeCreditGateway: $app->make(StoreCreditGatewayInterface::class),
+            validator: new CustomerValidator,
         ));
     }
 

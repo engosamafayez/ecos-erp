@@ -26,7 +26,7 @@ final class DriverAssignmentController extends Controller
         string $assignmentId,
         AssignDriverAction $action,
     ): JsonResponse {
-        $session    = $this->findSession($sessionId, $request->user()->company_id);
+        $session = $this->findSession($sessionId, $request->user()->company_id);
         $this->authorize('operate', $session);
 
         $assignment = VehicleAssignment::where('id', $assignmentId)
@@ -37,13 +37,13 @@ final class DriverAssignmentController extends Controller
             abort(404, "Vehicle assignment [{$assignmentId}] not found.");
         }
 
-        $validated       = $request->validated();
+        $validated = $request->validated();
         $driverAssignment = $action->execute(
-            assignment:     $assignment,
-            driverId:       $validated['driver_id'],
-            driverName:     $validated['driver_name'],
-            assignedBy:     (string) $request->user()->id,
-            driverPhone:    $validated['driver_phone'] ?? null,
+            assignment: $assignment,
+            driverId: $validated['driver_id'],
+            driverName: $validated['driver_name'],
+            assignedBy: (string) $request->user()->id,
+            driverPhone: $validated['driver_phone'] ?? null,
             assignmentType: $validated['assignment_type'] ?? 'primary',
         );
 
@@ -52,7 +52,7 @@ final class DriverAssignmentController extends Controller
 
     public function show(Request $request, string $sessionId, string $assignmentId): JsonResponse
     {
-        $session    = $this->findSession($sessionId, $request->user()->company_id);
+        $session = $this->findSession($sessionId, $request->user()->company_id);
         $this->authorize('view', $session);
 
         $assignment = VehicleAssignment::where('id', $assignmentId)

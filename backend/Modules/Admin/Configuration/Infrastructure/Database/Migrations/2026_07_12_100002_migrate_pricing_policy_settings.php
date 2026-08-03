@@ -31,7 +31,7 @@ return new class extends Migration
 
                 // discount_type + discount_value (from maximum_discount_pct)
                 if (! isset($settings['discount_type'])) {
-                    $settings['discount_type']  = 'percentage';
+                    $settings['discount_type'] = 'percentage';
                     $settings['discount_value'] = (float) ($settings['maximum_discount_pct'] ?? 15);
                 }
 

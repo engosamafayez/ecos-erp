@@ -7,8 +7,8 @@ namespace Tests\Platform\EventPlatform;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Platform\EventPlatform\Application\Services\EnterpriseEventBus;
 use Modules\Platform\EventPlatform\Application\Services\EnterpriseEventRegistry;
-use Modules\Platform\EventPlatform\Domain\Contracts\EnterpriseEventStoreInterface;
 use Modules\Platform\EventPlatform\Domain\Models\StoredEvent;
+use stdClass;
 use Tests\Platform\EventPlatform\Fixtures\TestOrderCreatedEvent;
 use Tests\Platform\EventPlatform\Fixtures\TestOrderSubscriber;
 use Tests\TestCase;
@@ -18,12 +18,13 @@ class EnterpriseEventBusTest extends TestCase
     use RefreshDatabase;
 
     private EnterpriseEventBus $bus;
+
     private EnterpriseEventRegistry $registry;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->bus      = $this->app->make(EnterpriseEventBus::class);
+        $this->bus = $this->app->make(EnterpriseEventBus::class);
         $this->registry = $this->app->make(EnterpriseEventRegistry::class);
     }
 
@@ -33,7 +34,7 @@ class EnterpriseEventBusTest extends TestCase
         $this->bus->publish($event);
 
         $this->assertDatabaseHas('enterprise_events', [
-            'event_id'   => $event->eventId(),
+            'event_id' => $event->eventId(),
             'event_name' => $event->eventName(),
         ]);
     }
@@ -68,7 +69,7 @@ class EnterpriseEventBusTest extends TestCase
     public function test_subscribers_sorted_by_priority(): void
     {
         $this->bus->subscribe('orders.order_created', TestOrderSubscriber::class, priority: 50);
-        $this->bus->subscribe('orders.order_created', \stdClass::class, priority: 10);
+        $this->bus->subscribe('orders.order_created', stdClass::class, priority: 10);
 
         $subscribers = $this->registry->getSubscribersFor('orders.order_created');
         $this->assertEquals(10, $subscribers[0]['priority']);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\POS\Customer;
 
 use DateTimeImmutable;
+use InvalidArgumentException;
 use Modules\POS\Customer\Domain\Contracts\CustomerGatewayInterface;
 use Modules\POS\Customer\Domain\Contracts\LoyaltyGatewayInterface;
 use Modules\POS\Customer\Domain\Contracts\StoreCreditGatewayInterface;
@@ -26,10 +27,13 @@ use PHPUnit\Framework\TestCase;
 
 final class StubCustomerGateway implements CustomerGatewayInterface
 {
-    private array $byId    = [];
+    private array $byId = [];
+
     private array $byPhone = [];
+
     private array $byEmail = [];
-    private array $byCode  = [];
+
+    private array $byCode = [];
 
     public function add(CustomerSnapshot $snapshot): void
     {
@@ -67,7 +71,8 @@ final class StubCustomerGateway implements CustomerGatewayInterface
 final class StubLoyaltyGateway implements LoyaltyGatewayInterface
 {
     public int $pointsToEarn = 10;
-    public int $balance      = 500;
+
+    public int $balance = 500;
 
     public function getBalance(string $customerId, string $currency): LoyaltyBalance
     {
@@ -106,24 +111,27 @@ final class StubStoreCreditGateway implements StoreCreditGatewayInterface
 
 final class CustomerResolutionServiceTest extends TestCase
 {
-    private StubCustomerGateway    $customerGateway;
-    private StubLoyaltyGateway     $loyaltyGateway;
+    private StubCustomerGateway $customerGateway;
+
+    private StubLoyaltyGateway $loyaltyGateway;
+
     private StubStoreCreditGateway $storeCreditGateway;
+
     private CustomerResolutionService $service;
 
     private CustomerSnapshot $snapshot;
 
     protected function setUp(): void
     {
-        $this->customerGateway    = new StubCustomerGateway();
-        $this->loyaltyGateway     = new StubLoyaltyGateway();
-        $this->storeCreditGateway = new StubStoreCreditGateway();
+        $this->customerGateway = new StubCustomerGateway;
+        $this->loyaltyGateway = new StubLoyaltyGateway;
+        $this->storeCreditGateway = new StubStoreCreditGateway;
 
         $this->service = new CustomerResolutionService(
-            customerGateway:    $this->customerGateway,
-            loyaltyGateway:     $this->loyaltyGateway,
+            customerGateway: $this->customerGateway,
+            loyaltyGateway: $this->loyaltyGateway,
             storeCreditGateway: $this->storeCreditGateway,
-            validator:          new CustomerValidator(),
+            validator: new CustomerValidator,
         );
 
         $this->snapshot = CustomerSnapshot::capture(
@@ -182,7 +190,7 @@ final class CustomerResolutionServiceTest extends TestCase
 
     public function test_identify_rejects_empty_lookup(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         $this->service->identify('', CustomerLookupType::ByCode);
     }
@@ -208,7 +216,7 @@ final class CustomerResolutionServiceTest extends TestCase
 
     public function test_get_loyalty_balance_rejects_invalid_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         $this->service->getLoyaltyBalance('not-a-uuid', 'EGP');
     }

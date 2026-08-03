@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Application\Services;
 
 use Illuminate\Support\Facades\DB;
@@ -19,13 +21,13 @@ class ProductSelectorService
             ->where('products.is_active', true)
             ->where(function ($sq) use ($term) {
                 $sq->where('products.name', 'ilike', "%{$term}%")
-                   ->orWhere('products.sku', 'ilike', "%{$term}%");
+                    ->orWhere('products.sku', 'ilike', "%{$term}%");
             });
 
         if ($companyId) {
             // Filter by brand ownership — join brands
             $q->join('brands', 'products.brand_id', '=', 'brands.id')
-              ->where('brands.company_id', $companyId);
+                ->where('brands.company_id', $companyId);
         }
 
         return $q->limit($limit)->get()->toArray();

@@ -85,7 +85,7 @@ final readonly class AvailabilityResult
     public function missingMaterials(): array
     {
         return array_values(
-            array_filter($this->raw_materials, fn(RawMaterialAvailability $m): bool => $m->missing_qty > 0.0),
+            array_filter($this->raw_materials, fn (RawMaterialAvailability $m): bool => $m->missing_qty > 0.0),
         );
     }
 
@@ -93,20 +93,20 @@ final readonly class AvailabilityResult
     public function toArray(): array
     {
         return [
-            'product_id'               => $this->product_id,
-            'warehouse_id'             => $this->warehouse_id,
-            'required_qty'             => $this->required_qty,
+            'product_id' => $this->product_id,
+            'warehouse_id' => $this->warehouse_id,
+            'required_qty' => $this->required_qty,
             'available_finished_goods' => $this->available_finished_goods,
-            'qty_to_manufacture'       => $this->qty_to_manufacture,
-            'needs_manufacturing'      => $this->needs_manufacturing,
-            'recipe_snapshot'          => $this->recipe_snapshot?->toArray(),
-            'raw_materials'            => array_map(
-                fn(RawMaterialAvailability $m): array => $m->toArray(),
+            'qty_to_manufacture' => $this->qty_to_manufacture,
+            'needs_manufacturing' => $this->needs_manufacturing,
+            'recipe_snapshot' => $this->recipe_snapshot?->toArray(),
+            'raw_materials' => array_map(
+                fn (RawMaterialAvailability $m): array => $m->toArray(),
                 $this->raw_materials,
             ),
-            'can_manufacture'          => $this->can_manufacture,
-            'eligibility'              => $this->eligibility->value,
-            'evaluated_at'             => $this->evaluated_at,
+            'can_manufacture' => $this->can_manufacture,
+            'eligibility' => $this->eligibility->value,
+            'evaluated_at' => $this->evaluated_at,
         ];
     }
 }

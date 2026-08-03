@@ -11,25 +11,25 @@ use Modules\Operations\Loading\Domain\Enums\ExceptionSeverity;
 use Modules\Operations\Loading\Domain\Enums\LoadingExceptionStatus;
 
 /**
- * @property string                   $id
- * @property string                   $company_id
- * @property string                   $loading_session_id
- * @property string|null              $vehicle_assignment_id
- * @property string                   $exception_type
- * @property ExceptionSeverity        $severity
- * @property string|null              $entity_type
- * @property string|null              $entity_id
- * @property string                   $description
- * @property LoadingExceptionStatus   $status
- * @property \Carbon\Carbon|null      $resolved_at
- * @property string|null              $resolved_by
- * @property string|null              $resolution_notes
- * @property \Carbon\Carbon|null      $escalated_at
- * @property string|null              $escalated_to
- * @property string                   $created_by
- * @property string                   $updated_by
- * @property \Carbon\Carbon           $created_at
- * @property \Carbon\Carbon           $updated_at
+ * @property string $id
+ * @property string $company_id
+ * @property string $loading_session_id
+ * @property string|null $vehicle_assignment_id
+ * @property string $exception_type
+ * @property ExceptionSeverity $severity
+ * @property string|null $entity_type
+ * @property string|null $entity_id
+ * @property string $description
+ * @property LoadingExceptionStatus $status
+ * @property \Carbon\Carbon|null $resolved_at
+ * @property string|null $resolved_by
+ * @property string|null $resolution_notes
+ * @property \Carbon\Carbon|null $escalated_at
+ * @property string|null $escalated_to
+ * @property string $created_by
+ * @property string $updated_by
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class LoadingException extends Model
 {
@@ -65,9 +65,9 @@ class LoadingException extends Model
     protected function casts(): array
     {
         return [
-            'severity'     => ExceptionSeverity::class,
-            'status'       => LoadingExceptionStatus::class,
-            'resolved_at'  => 'datetime',
+            'severity' => ExceptionSeverity::class,
+            'status' => LoadingExceptionStatus::class,
+            'resolved_at' => 'datetime',
             'escalated_at' => 'datetime',
         ];
     }

@@ -209,3 +209,33 @@ export function useRawMaterialStockMovements(
     placeholderData: keepPreviousData,
   });
 }
+
+/**
+ * Purchase history from the canonical receipt-layer source — powers the
+ * rebuilt Suppliers (Supplier History) tab. No new schema/endpoint.
+ */
+export function useRawMaterialPurchaseHistory(productId: string | undefined) {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
+  return useQuery({
+    queryKey: ['company', companyId, 'material-purchase-history', productId],
+    queryFn:  () => rawMaterialsService.purchaseHistory(productId!),
+    enabled:  !!productId,
+    placeholderData: keepPreviousData,
+  });
+}
+
+/**
+ * Per-warehouse stock distribution from the canonical inventory service.
+ * Powers the Inventory tab's Warehouse Distribution section.
+ */
+export function useRawMaterialWarehouseDistribution(productId: string | undefined) {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
+  return useQuery({
+    queryKey: ['company', companyId, 'material-warehouse-distribution', productId],
+    queryFn:  () => rawMaterialsService.warehouseDistribution(productId!),
+    enabled:  !!productId,
+    placeholderData: keepPreviousData,
+  });
+}

@@ -24,9 +24,9 @@ final class WarehouseSeeder extends Seeder
         Warehouse::updateOrCreate(
             ['company_id' => $company->id, 'code' => 'WH-MAIN'],
             [
-                'name'      => 'Main Warehouse',
-                'city'      => 'Cairo',
-                'country'   => 'Egypt',
+                'name' => 'Main Warehouse',
+                'city' => 'Cairo',
+                'country' => 'Egypt',
                 'is_active' => true,
             ],
         );

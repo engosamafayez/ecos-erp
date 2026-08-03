@@ -53,14 +53,14 @@ class WarehouseLiability extends Model
     protected function casts(): array
     {
         return [
-            'quantity'                   => 'decimal:4',
-            'unit_cost'                  => 'decimal:4',
-            'total_cost'                 => 'decimal:2',
-            'cost_snapshot_unit_cost'    => 'decimal:4',
-            'cost_snapshot_total_value'  => 'decimal:2',
-            'status'                     => WarehouseLiabilityStatus::class,
-            'approved_at'                => 'datetime',
-            'metadata'                   => 'array',
+            'quantity' => 'decimal:4',
+            'unit_cost' => 'decimal:4',
+            'total_cost' => 'decimal:2',
+            'cost_snapshot_unit_cost' => 'decimal:4',
+            'cost_snapshot_total_value' => 'decimal:2',
+            'status' => WarehouseLiabilityStatus::class,
+            'approved_at' => 'datetime',
+            'metadata' => 'array',
         ];
     }
 

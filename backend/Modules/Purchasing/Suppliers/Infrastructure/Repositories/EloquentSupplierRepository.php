@@ -29,27 +29,27 @@ final class EloquentSupplierRepository implements SupplierRepositoryInterface
             ->where('goods_receipts.status', 'posted')
             ->whereNull('goods_receipts.deleted_at')
             ->whereNull('purchase_orders.deleted_at')
-            ->selectRaw("
+            ->selectRaw('
                 purchase_orders.supplier_id,
                 COALESCE(SUM(goods_receipts.invoice_total_amount), 0) AS total_invoiced,
                 COALESCE(SUM(goods_receipts.paid_amount), 0)          AS total_paid,
                 MAX(goods_receipts.receipt_date)                       AS last_purchase_date,
                 COUNT(goods_receipts.id)                               AS purchase_count
-            ")
+            ')
             ->groupBy('purchase_orders.supplier_id');
 
         $poStats = DB::table('purchase_orders')
             ->whereIn('status', ['approved', 'partially_received'])
             ->whereNull('deleted_at')
-            ->selectRaw("supplier_id, COUNT(*) AS active_pos_count")
+            ->selectRaw('supplier_id, COUNT(*) AS active_pos_count')
             ->groupBy('supplier_id');
 
         $invStats = DB::table('inventory_receipt_layers')
             ->where('remaining_qty', '>', 0)
-            ->selectRaw("
+            ->selectRaw('
                 supplier_id,
                 COALESCE(SUM(remaining_qty * landed_unit_cost), 0) AS inventory_cost_value
-            ")
+            ')
             ->groupBy('supplier_id');
 
         $query->leftJoinSub($grStats, 'gr_agg', fn ($j) => $j->on('suppliers.id', '=', 'gr_agg.supplier_id'));
@@ -57,12 +57,12 @@ final class EloquentSupplierRepository implements SupplierRepositoryInterface
         $query->leftJoinSub($invStats, 'inv_agg', fn ($j) => $j->on('suppliers.id', '=', 'inv_agg.supplier_id'));
 
         $query->addSelect([
-            DB::raw("COALESCE(gr_agg.total_invoiced, 0)                          AS total_invoiced"),
-            DB::raw("COALESCE(gr_agg.total_paid, 0)                              AS total_paid"),
-            DB::raw("GREATEST(0, COALESCE(gr_agg.total_invoiced, 0) - COALESCE(gr_agg.total_paid, 0)) AS outstanding_balance"),
-            DB::raw("gr_agg.last_purchase_date"),
-            DB::raw("COALESCE(po_agg.active_pos_count, 0)                        AS active_pos_count"),
-            DB::raw("COALESCE(inv_agg.inventory_cost_value, 0)                   AS inventory_cost_value"),
+            DB::raw('COALESCE(gr_agg.total_invoiced, 0)                          AS total_invoiced'),
+            DB::raw('COALESCE(gr_agg.total_paid, 0)                              AS total_paid'),
+            DB::raw('GREATEST(0, COALESCE(gr_agg.total_invoiced, 0) - COALESCE(gr_agg.total_paid, 0)) AS outstanding_balance'),
+            DB::raw('gr_agg.last_purchase_date'),
+            DB::raw('COALESCE(po_agg.active_pos_count, 0)                        AS active_pos_count'),
+            DB::raw('COALESCE(inv_agg.inventory_cost_value, 0)                   AS inventory_cost_value'),
         ]);
 
         // ── Filters ───────────────────────────────────────────────────────────

@@ -59,18 +59,18 @@ final class ChannelDTO extends BaseDTO
     public function channelAttributes(): array
     {
         return [
-            'brand_id'             => $this->brand_id,
-            'business_account_id'  => $this->business_account_id,
-            'name'                 => $this->name,
-            'channel_type'         => $this->channel_type,
-            'channel_role'         => $this->channel_role,
-            'platform'             => $this->platform->value,
-            'store_url'            => $this->store_url,
-            'is_active'            => $this->is_active,
-            'sync_products'        => $this->sync_products,
-            'sync_prices'          => $this->sync_prices,
-            'sync_stock'           => $this->sync_stock,
-            'sync_customers'       => $this->sync_customers,
+            'brand_id' => $this->brand_id,
+            'business_account_id' => $this->business_account_id,
+            'name' => $this->name,
+            'channel_type' => $this->channel_type,
+            'channel_role' => $this->channel_role,
+            'platform' => $this->platform->value,
+            'store_url' => $this->store_url,
+            'is_active' => $this->is_active,
+            'sync_products' => $this->sync_products,
+            'sync_prices' => $this->sync_prices,
+            'sync_stock' => $this->sync_stock,
+            'sync_customers' => $this->sync_customers,
         ];
     }
 
@@ -84,7 +84,7 @@ final class ChannelDTO extends BaseDTO
         }
 
         return [
-            'consumer_key'    => $this->consumer_key ?? '',
+            'consumer_key' => $this->consumer_key ?? '',
             'consumer_secret' => $this->consumer_secret ?? '',
         ];
     }

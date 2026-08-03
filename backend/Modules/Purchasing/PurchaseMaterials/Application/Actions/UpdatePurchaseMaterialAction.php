@@ -35,20 +35,20 @@ final class UpdatePurchaseMaterialAction
         }
 
         $attributes = [
-            'warehouse_id'  => $dto->warehouse_id,
-            'company_id'    => $dto->company_id,
-            'channel_id'    => $dto->channel_id,
-            'priority'      => $dto->priority,
+            'warehouse_id' => $dto->warehouse_id,
+            'company_id' => $dto->company_id,
+            'channel_id' => $dto->channel_id,
+            'priority' => $dto->priority,
             'required_date' => $dto->required_date,
-            'notes'         => $dto->notes,
-            'updated_by'    => (string) $request->user()?->id,
+            'notes' => $dto->notes,
+            'updated_by' => (string) $request->user()?->id,
         ];
 
         $lines = array_map(fn (PurchaseMaterialLineDTO $line): array => [
-            'product_id'    => $line->product_id,
+            'product_id' => $line->product_id,
             'requested_qty' => $line->requested_qty,
-            'unit_label'    => $line->unit_label,
-            'notes'         => $line->notes,
+            'unit_label' => $line->unit_label,
+            'notes' => $line->notes,
         ], $dto->lines);
 
         $updated = $this->repository->update($material, $attributes, $lines);

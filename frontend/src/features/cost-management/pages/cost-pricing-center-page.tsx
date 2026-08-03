@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   AlertTriangle,
@@ -81,27 +82,6 @@ import { getMediaUrl } from '@/lib/media';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/router/routes';
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const STATUS_OPTIONS: { value: ReviewStatus | 'all'; label: string }[] = [
-  { value: 'all',          label: 'All Statuses' },
-  { value: 'pending',      label: 'Pending' },
-  { value: 'approved',     label: 'Approved' },
-  { value: 'kept',         label: 'Price Kept' },
-  { value: 'custom_price', label: 'Custom Price' },
-  { value: 'snoozed',      label: 'Snoozed' },
-  { value: 'rejected',     label: 'Rejected' },
-];
-
-const IMPACT_OPTIONS: { value: ImpactType | 'all'; label: string }[] = [
-  { value: 'all',               label: 'All Impacts' },
-  { value: 'margin_below_target', label: 'Below Target' },
-  { value: 'cost_increased',    label: 'Cost Increased' },
-  { value: 'cost_decreased',    label: 'Cost Decreased' },
-  { value: 'recipe_changed',    label: 'Recipe Changed' },
-  { value: 'packaging_changed', label: 'Packaging Changed' },
-];
-
 // ── Formatting ────────────────────────────────────────────────────────────────
 
 function fmt(n: number | null | undefined) {
@@ -118,15 +98,18 @@ function fmtDate(d: string) {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(d));
 }
 
-function impactReasons(impacts: ImpactType[]): string {
+function impactReasons(
+  t: (key: string) => string,
+  impacts: ImpactType[],
+): string {
   if (impacts.length === 0) return '—';
   return impacts.map((i) => {
     switch (i) {
-      case 'recipe_changed':      return 'Recipe changed';
-      case 'cost_increased':      return 'Cost increased';
-      case 'cost_decreased':      return 'Cost decreased';
-      case 'margin_below_target': return 'Below margin target';
-      case 'packaging_changed':   return 'Packaging changed';
+      case 'recipe_changed':      return t('priceReview.impactReason.recipeChanged');
+      case 'cost_increased':      return t('priceReview.impactReason.costIncreased');
+      case 'cost_decreased':      return t('priceReview.impactReason.costDecreased');
+      case 'margin_below_target': return t('priceReview.impactReason.belowMarginTarget');
+      case 'packaging_changed':   return t('priceReview.impactReason.packagingChanged');
     }
   }).join(', ');
 }
@@ -183,16 +166,18 @@ const STATUS_BADGE: Record<ReviewStatus, string> = {
   rejected:     'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
 };
 
-const STATUS_LABEL: Record<ReviewStatus, string> = {
-  pending:      'Pending',
-  approved:     'Approved',
-  kept:         'Kept',
-  custom_price: 'Custom',
-  snoozed:      'Snoozed',
-  rejected:     'Rejected',
-};
-
 function StatusBadge({ status }: { status: ReviewStatus }) {
+  const { t } = useTranslation('cost-management');
+
+  const STATUS_LABEL: Record<ReviewStatus, string> = {
+    pending:      t('priceReview.statusLabel.pending'),
+    approved:     t('priceReview.statusLabel.approved'),
+    kept:         t('priceReview.statusLabel.kept'),
+    custom_price: t('priceReview.statusLabel.custom'),
+    snoozed:      t('priceReview.statusLabel.snoozed'),
+    rejected:     t('priceReview.statusLabel.rejected'),
+  };
+
   return (
     <span className={cn('inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium', STATUS_BADGE[status])}>
       {STATUS_LABEL[status]}
@@ -201,26 +186,27 @@ function StatusBadge({ status }: { status: ReviewStatus }) {
 }
 
 function ImpactIcons({ impacts }: { impacts: ImpactType[] }) {
+  const { t } = useTranslation('cost-management');
   return (
     <div className="flex items-center gap-1 flex-wrap">
       {impacts.includes('margin_below_target') && (
-        <span title="Below target margin">
+        <span title={t('priceReview.impactTitle.belowTargetMargin')}>
           <AlertTriangle className="size-3.5 text-amber-500" />
         </span>
       )}
       {impacts.includes('cost_increased') && (
-        <span title="Cost increased">
+        <span title={t('priceReview.impactTitle.costIncreased')}>
           <TrendingUp className="size-3.5 text-red-500" />
         </span>
       )}
       {impacts.includes('cost_decreased') && (
-        <span title="Cost decreased">
+        <span title={t('priceReview.impactTitle.costDecreased')}>
           <TrendingDown className="size-3.5 text-emerald-500" />
         </span>
       )}
       {impacts.includes('recipe_changed') && (
-        <span title="Recipe changed" className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded px-1 font-medium">
-          Recipe
+        <span title={t('priceReview.impactTitle.recipeChanged')} className="text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded px-1 font-medium">
+          {t('priceReview.impactTitle.recipeBadge')}
         </span>
       )}
     </div>
@@ -230,6 +216,7 @@ function ImpactIcons({ impacts }: { impacts: ImpactType[] }) {
 // ── Smart policy indicator badges ─────────────────────────────────────────────
 
 function PolicyBadge({ review }: { review: PricingReview }) {
+  const { t } = useTranslation('cost-management');
   const isCustom = review.product.pricing_mode === 'custom';
   const brandMargin = review.brand?.default_target_margin;
   const belowBrand = brandMargin != null && review.current_margin < brandMargin;
@@ -242,26 +229,26 @@ function PolicyBadge({ review }: { review: PricingReview }) {
     <div className="flex flex-wrap gap-1">
       {isCustom ? (
         <Badge variant="outline" className="text-[10px] px-1 py-0 border-purple-400 text-purple-600 dark:text-purple-400">
-          Custom
+          {t('priceReview.policy.custom')}
         </Badge>
       ) : (
         <Badge variant="outline" className="text-[10px] px-1 py-0 border-blue-400 text-blue-600 dark:text-blue-400">
-          Brand Policy
+          {t('priceReview.policy.brandPolicy')}
         </Badge>
       )}
       {belowBrand && (
         <Badge variant="outline" className="text-[10px] px-1 py-0 border-red-400 text-red-600 dark:text-red-400">
-          Below Brand ↓
+          {t('priceReview.policy.belowBrand')}
         </Badge>
       )}
       {saleMarginLow && (
         <Badge variant="outline" className="text-[10px] px-1 py-0 border-amber-400 text-amber-600 dark:text-amber-400">
-          Low Sale Margin
+          {t('priceReview.policy.lowSaleMargin')}
         </Badge>
       )}
       {costChanged && (
         <Badge variant="outline" className="text-[10px] px-1 py-0 border-orange-400 text-orange-600 dark:text-orange-400">
-          Cost ↑
+          {t('priceReview.policy.costIncreased')}
         </Badge>
       )}
     </div>
@@ -291,6 +278,7 @@ function InlinePriceEditor({
   canEdit = true,
   suffix,
 }: InlinePriceEditorProps) {
+  const { t } = useTranslation('cost-management');
   const [open, setOpen] = useState(false);
   const [val, setVal] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -351,7 +339,7 @@ function InlinePriceEditor({
         </div>
         <div className="flex gap-2 mt-2">
           <Button size="sm" className="h-7 flex-1" onClick={handleSave} disabled={isSaving || !val || isNaN(parseFloat(val))}>
-            {isSaving ? <Loader2 className="size-3 animate-spin" /> : 'Save'}
+            {isSaving ? <Loader2 className="size-3 animate-spin" /> : t('priceReview.inlineEditor.save')}
           </Button>
           <Button size="sm" variant="ghost" className="h-7" onClick={() => setOpen(false)}>
             ✕
@@ -363,8 +351,6 @@ function InlinePriceEditor({
 }
 
 // ── Pricing Strategy cell (Margin/Markup mutual exclusivity) ──────────────────
-// Only the active strategy's input is editable; the derived value is read-only.
-// Saving either field calls the inline endpoint which derives and returns both.
 
 type PricingStrategyMode = 'margin' | 'markup';
 
@@ -377,12 +363,13 @@ function PricingStrategyCell({
   isSaving: boolean;
   onSave: (reviewId: string, payload: InlineUpdatePayload) => void;
 }) {
+  const { t } = useTranslation('cost-management');
   const [mode, setMode] = useState<PricingStrategyMode>('margin');
 
   const activeField  = mode === 'margin' ? 'target_margin' : 'markup';
   const activeValue  = mode === 'margin' ? review.target_margin : review.markup;
-  const activeLabel  = mode === 'margin' ? 'Target Margin %' : 'Markup %';
-  const derivedLabel = mode === 'margin' ? 'Markup' : 'Margin';
+  const activeLabel  = mode === 'margin' ? t('priceReview.pricingStrategy.targetMarginPct') : t('priceReview.pricingStrategy.markupPct');
+  const derivedLabel = mode === 'margin' ? t('priceReview.pricingStrategy.markup') : t('priceReview.pricingStrategy.margin');
   const derivedValue = mode === 'margin' ? review.markup : review.target_margin;
 
   return (
@@ -399,7 +386,7 @@ function PricingStrategyCell({
               : 'text-muted-foreground hover:text-foreground',
           )}
         >
-          Margin
+          {t('priceReview.pricingStrategy.margin')}
         </button>
         <span className="text-muted-foreground/40 text-[10px]">|</span>
         <button
@@ -412,7 +399,7 @@ function PricingStrategyCell({
               : 'text-muted-foreground hover:text-foreground',
           )}
         >
-          Markup
+          {t('priceReview.pricingStrategy.markup')}
         </button>
       </div>
       {/* Active field — editable via pencil popover */}
@@ -455,6 +442,7 @@ function CustomPriceDialog({
   onCancel: () => void;
   isPending: boolean;
 }) {
+  const { t } = useTranslation('cost-management');
   const [price,  setPrice]  = useState(review.suggested_selling_price.toFixed(2));
   const [reason, setReason] = useState('');
 
@@ -467,12 +455,12 @@ function CustomPriceDialog({
     <Dialog open onOpenChange={(o) => { if (!o) onCancel(); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Set Custom Price</DialogTitle>
+          <DialogTitle>{t('priceReview.dialog.customPrice.title')}</DialogTitle>
           <DialogDescription>{review.product.name}</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4 py-2">
           <div>
-            <Label className="mb-1.5 block text-sm">Custom Selling Price</Label>
+            <Label className="mb-1.5 block text-sm">{t('priceReview.dialog.customPrice.label')}</Label>
             <Input
               type="number" min="0" step="0.01" value={price}
               onChange={(e) => setPrice(e.target.value)}
@@ -480,34 +468,34 @@ function CustomPriceDialog({
             />
             <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
               <div className="rounded-md border p-2 text-center">
-                <p className="text-muted-foreground">Margin</p>
+                <p className="text-muted-foreground">{t('priceReview.dialog.customPrice.margin')}</p>
                 <p className={cn('font-medium', margin >= review.target_margin ? 'text-emerald-600' : 'text-red-600')}>
                   {margin.toFixed(1)}%
                 </p>
               </div>
               <div className="rounded-md border p-2 text-center">
-                <p className="text-muted-foreground">Profit/Unit</p>
+                <p className="text-muted-foreground">{t('priceReview.dialog.customPrice.profitUnit')}</p>
                 <p className={cn('font-medium', profit >= 0 ? 'text-emerald-600' : 'text-red-600')}>
                   {fmt(profit)}
                 </p>
               </div>
               <div className="rounded-md border p-2 text-center">
-                <p className="text-muted-foreground">Target</p>
+                <p className="text-muted-foreground">{t('priceReview.dialog.customPrice.target')}</p>
                 <p className="font-medium">{review.target_margin.toFixed(1)}%</p>
               </div>
             </div>
           </div>
           <div>
-            <Label className="mb-1.5 block text-sm">Reason <span className="text-destructive">*</span></Label>
+            <Label className="mb-1.5 block text-sm">{t('priceReview.dialog.customPrice.reason')} <span className="text-destructive">*</span></Label>
             <Textarea
               value={reason} onChange={(e) => setReason(e.target.value)}
-              placeholder="Why is this price appropriate?" rows={3}
+              placeholder={t('priceReview.dialog.customPrice.reasonPlaceholder')} rows={3}
             />
           </div>
           <div className="flex gap-2 text-xs">
             {[
-              { label: 'Current',    value: review.selling_price },
-              { label: 'Suggested',  value: review.suggested_selling_price },
+              { label: t('priceReview.dialog.customPrice.refCurrent'),   value: review.selling_price },
+              { label: t('priceReview.dialog.customPrice.refSuggested'), value: review.suggested_selling_price },
             ].map((ref) => (
               <button
                 key={ref.label} type="button"
@@ -521,10 +509,10 @@ function CustomPriceDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={isPending}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel} disabled={isPending}>{t('priceReview.dialog.cancel')}</Button>
           <Button onClick={() => onConfirm(priceNum, reason)} disabled={!valid || isPending}>
             {isPending && <Loader2 className="size-4 animate-spin" />}
-            Confirm Price
+            {t('priceReview.dialog.customPrice.confirm')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -540,38 +528,34 @@ function KeepCurrentDialog({
   onCancel: () => void;
   isPending: boolean;
 }) {
+  const { t } = useTranslation('cost-management');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
   const [reason, setReason] = useState('');
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onCancel(); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Keep Current Price</DialogTitle>
-          <DialogDescription>{review.product.name} — Current price {fmt(review.selling_price)}</DialogDescription>
+          <DialogTitle>{t('priceReview.dialog.keepCurrent.title')}</DialogTitle>
+          <DialogDescription>{tAny('priceReview.dialog.keepCurrent.description', { name: review.product.name, price: fmt(review.selling_price) })}</DialogDescription>
         </DialogHeader>
         <div className="py-2">
-          <Label className="mb-1.5 block text-sm">Reason <span className="text-destructive">*</span></Label>
+          <Label className="mb-1.5 block text-sm">{t('priceReview.dialog.keepCurrent.reason')} <span className="text-destructive">*</span></Label>
           <Textarea
             value={reason} onChange={(e) => setReason(e.target.value)}
-            placeholder="Why keep the current price?" rows={4}
+            placeholder={t('priceReview.dialog.keepCurrent.placeholder')} rows={4}
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={isPending}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel} disabled={isPending}>{t('priceReview.dialog.cancel')}</Button>
           <Button onClick={() => onConfirm(reason)} disabled={!reason.trim() || isPending}>
             {isPending && <Loader2 className="size-4 animate-spin" />}
-            Confirm
+            {t('priceReview.dialog.keepCurrent.confirm')}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
-
-const SNOOZE_PRESETS = [
-  { label: 'Tomorrow', days: 1 },
-  { label: '3 Days',   days: 3 },
-  { label: '1 Week',   days: 7 },
-];
 
 function SnoozeDialog({
   review, onConfirm, onCancel, isPending,
@@ -581,17 +565,26 @@ function SnoozeDialog({
   onCancel: () => void;
   isPending: boolean;
 }) {
+  const { t } = useTranslation('cost-management');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
+
+  const snoozePresets = [
+    { label: t('priceReview.dialog.snooze.presets.tomorrow'), days: 1 },
+    { label: t('priceReview.dialog.snooze.presets.threeDays'), days: 3 },
+    { label: t('priceReview.dialog.snooze.presets.oneWeek'), days: 7 },
+  ];
+
   const [selected, setSelected] = useState<string>(addDays(3));
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onCancel(); }}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Snooze Review</DialogTitle>
+          <DialogTitle>{t('priceReview.dialog.snooze.title')}</DialogTitle>
           <DialogDescription>{review.product.name}</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-3 py-2">
           <div className="grid grid-cols-3 gap-2">
-            {SNOOZE_PRESETS.map((p) => {
+            {snoozePresets.map((p) => {
               const val = addDays(p.days);
               return (
                 <button
@@ -608,7 +601,7 @@ function SnoozeDialog({
           </div>
           <Separator />
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-muted-foreground">Custom:</span>
+            <span className="text-muted-foreground">{t('priceReview.dialog.snooze.custom')}</span>
             <Input
               type="date" value={selected}
               min={new Date().toISOString().slice(0, 10)}
@@ -618,10 +611,10 @@ function SnoozeDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={isPending}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel} disabled={isPending}>{t('priceReview.dialog.cancel')}</Button>
           <Button onClick={() => onConfirm(selected)} disabled={!selected || isPending}>
             {isPending && <Loader2 className="size-4 animate-spin" />}
-            Snooze until {selected}
+            {tAny('priceReview.dialog.snooze.confirm', { date: selected })}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -637,23 +630,24 @@ function AssignDialog({
   onCancel: () => void;
   isPending: boolean;
 }) {
+  const { t } = useTranslation('cost-management');
   const [name, setName] = useState(review.reviewer?.name ?? '');
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onCancel(); }}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Assign Reviewer</DialogTitle>
+          <DialogTitle>{t('priceReview.dialog.assign.title')}</DialogTitle>
           <DialogDescription>{review.product.name}</DialogDescription>
         </DialogHeader>
         <div className="py-2">
-          <Label className="mb-1.5 block text-sm">Reviewer Name <span className="text-destructive">*</span></Label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter reviewer name" />
+          <Label className="mb-1.5 block text-sm">{t('priceReview.dialog.assign.label')} <span className="text-destructive">*</span></Label>
+          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('priceReview.dialog.assign.placeholder')} />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={isPending}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel} disabled={isPending}>{t('priceReview.dialog.cancel')}</Button>
           <Button onClick={() => onConfirm(name)} disabled={!name.trim() || isPending}>
             {isPending && <Loader2 className="size-4 animate-spin" />}
-            Assign
+            {t('priceReview.dialog.assign.confirm')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -673,6 +667,7 @@ function BulkValueDialog({
   onCancel: () => void;
   isPending: boolean;
 }) {
+  const { t } = useTranslation('cost-management');
   const [val, setVal] = useState('');
   const num = parseFloat(val);
   return (
@@ -694,10 +689,10 @@ function BulkValueDialog({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={isPending}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel} disabled={isPending}>{t('priceReview.dialog.cancel')}</Button>
           <Button onClick={() => onConfirm(num)} disabled={isNaN(num) || num < 0 || isPending}>
             {isPending && <Loader2 className="size-4 animate-spin" />}
-            Apply to Selected
+            {t('priceReview.dialog.applyToSelected')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -712,16 +707,25 @@ function BulkSnoozeDialog({
   onCancel: () => void;
   isPending: boolean;
 }) {
+  const { t } = useTranslation('cost-management');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
+
+  const snoozePresets = [
+    { label: t('priceReview.dialog.snooze.presets.tomorrow'), days: 1 },
+    { label: t('priceReview.dialog.snooze.presets.threeDays'), days: 3 },
+    { label: t('priceReview.dialog.snooze.presets.oneWeek'), days: 7 },
+  ];
+
   const [selected, setSelected] = useState<string>(addDays(3));
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onCancel(); }}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Snooze Selected Reviews</DialogTitle>
+          <DialogTitle>{t('priceReview.dialog.bulkSnooze.title')}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-3 py-2">
           <div className="grid grid-cols-3 gap-2">
-            {SNOOZE_PRESETS.map((p) => {
+            {snoozePresets.map((p) => {
               const val = addDays(p.days);
               return (
                 <button
@@ -744,10 +748,10 @@ function BulkSnoozeDialog({
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={isPending}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel} disabled={isPending}>{t('priceReview.dialog.cancel')}</Button>
           <Button onClick={() => onConfirm(selected)} disabled={!selected || isPending}>
             {isPending && <Loader2 className="size-4 animate-spin" />}
-            Snooze until {selected}
+            {tAny('priceReview.dialog.bulkSnooze.confirm', { date: selected })}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -763,29 +767,31 @@ function RejectDialog({
   onCancel: () => void;
   isPending: boolean;
 }) {
+  const { t } = useTranslation('cost-management');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
   const [reason, setReason] = useState('');
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onCancel(); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Reject Pricing Review</DialogTitle>
-          <DialogDescription>{review.product.name} — Current price {fmt(review.selling_price)}</DialogDescription>
+          <DialogTitle>{t('priceReview.dialog.reject.title')}</DialogTitle>
+          <DialogDescription>{tAny('priceReview.dialog.reject.description', { name: review.product.name, price: fmt(review.selling_price) })}</DialogDescription>
         </DialogHeader>
         <div className="py-2">
-          <Label className="mb-1.5 block text-sm">Rejection Reason <span className="text-destructive">*</span></Label>
+          <Label className="mb-1.5 block text-sm">{t('priceReview.dialog.reject.label')} <span className="text-destructive">*</span></Label>
           <Textarea
             value={reason} onChange={(e) => setReason(e.target.value)}
-            placeholder="Why is this pricing review being rejected?" rows={3}
+            placeholder={t('priceReview.dialog.reject.placeholder')} rows={3}
           />
           <p className="mt-2 text-xs text-muted-foreground">
-            No price changes will be applied. The review will be closed.
+            {t('priceReview.dialog.reject.note')}
           </p>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={isPending}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel} disabled={isPending}>{t('priceReview.dialog.cancel')}</Button>
           <Button variant="destructive" onClick={() => onConfirm(reason)} disabled={!reason.trim() || isPending}>
             {isPending && <Loader2 className="size-4 animate-spin" />}
-            Reject Review
+            {t('priceReview.dialog.reject.confirm')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -801,26 +807,28 @@ function BulkRejectDialog({
   onCancel: () => void;
   isPending: boolean;
 }) {
+  const { t } = useTranslation('cost-management');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
   const [reason, setReason] = useState('');
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onCancel(); }}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Reject {count} Reviews</DialogTitle>
-          <DialogDescription>No price changes will be applied to any of these items.</DialogDescription>
+          <DialogTitle>{tAny('priceReview.dialog.bulkReject.title', { count })}</DialogTitle>
+          <DialogDescription>{t('priceReview.dialog.bulkReject.description')}</DialogDescription>
         </DialogHeader>
         <div className="py-2">
-          <Label className="mb-1.5 block text-sm">Reason <span className="text-destructive">*</span></Label>
+          <Label className="mb-1.5 block text-sm">{t('priceReview.dialog.bulkReject.reason')} <span className="text-destructive">*</span></Label>
           <Textarea
             value={reason} onChange={(e) => setReason(e.target.value)}
-            placeholder="Rejection reason" rows={3}
+            placeholder={t('priceReview.dialog.bulkReject.placeholder')} rows={3}
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel} disabled={isPending}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel} disabled={isPending}>{t('priceReview.dialog.cancel')}</Button>
           <Button variant="destructive" onClick={() => onConfirm(reason)} disabled={!reason.trim() || isPending}>
             {isPending && <Loader2 className="size-4 animate-spin" />}
-            Reject {count} Reviews
+            {tAny('priceReview.dialog.bulkReject.confirm', { count })}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -831,6 +839,29 @@ function BulkRejectDialog({
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function CostPricingCenterPage() {
+  const { t } = useTranslation('cost-management');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
+
+  // ── Arrays that use t() must be inside the component body ─────────────────
+  const STATUS_OPTIONS: { value: ReviewStatus | 'all'; label: string }[] = [
+    { value: 'all',          label: t('priceReview.status.allStatuses') },
+    { value: 'pending',      label: t('priceReview.status.pending') },
+    { value: 'approved',     label: t('priceReview.status.approved') },
+    { value: 'kept',         label: t('priceReview.status.priceKept') },
+    { value: 'custom_price', label: t('priceReview.status.customPrice') },
+    { value: 'snoozed',      label: t('priceReview.status.snoozed') },
+    { value: 'rejected',     label: t('priceReview.status.rejected') },
+  ];
+
+  const IMPACT_OPTIONS: { value: ImpactType | 'all'; label: string }[] = [
+    { value: 'all',                label: t('priceReview.impact.allImpacts') },
+    { value: 'margin_below_target', label: t('priceReview.impact.belowTarget') },
+    { value: 'cost_increased',     label: t('priceReview.impact.costIncreased') },
+    { value: 'cost_decreased',     label: t('priceReview.impact.costDecreased') },
+    { value: 'recipe_changed',     label: t('priceReview.impact.recipeChanged') },
+    { value: 'packaging_changed',  label: t('priceReview.impact.packagingChanged') },
+  ];
+
   const [query,       setQuery]       = useState<PricingReviewsQuery>({ status: 'pending', page: 1, per_page: 25 });
   const [impactFilter,setImpactFilter]= useState<ImpactType | 'all'>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -854,8 +885,6 @@ export function CostPricingCenterPage() {
   const items   = data?.data    ?? [];
   const summary = data?.summary ?? { pending: 0, approved: 0, kept: 0, custom_price: 0, snoozed: 0, rejected: 0 };
 
-  // Optimistically remove resolved items from the current query cache so they
-  // disappear immediately without waiting for the background refetch.
   function removeFromCurrentList(ids: string | string[]) {
     const idSet = new Set(Array.isArray(ids) ? ids : [ids]);
     queryClient.setQueryData<PricingReviewsResult>(
@@ -864,7 +893,6 @@ export function CostPricingCenterPage() {
     );
   }
 
-  // Below-brand-margin count computed client-side
   const belowBrandCount = items.filter((r) => {
     const brandMargin = r.brand?.default_target_margin;
     return brandMargin != null && r.current_margin < brandMargin;
@@ -886,7 +914,6 @@ export function CostPricingCenterPage() {
     });
   }
 
-  // ── Sort helpers ─────────────────────────────────────────────────────────────
   function handleSort(field: string) {
     if (sortField === field) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     else { setSortField(field); setSortDir('desc'); }
@@ -897,20 +924,18 @@ export function CostPricingCenterPage() {
     return sortDir === 'asc' ? <ChevronUp className="size-3 ml-1" /> : <ChevronDown className="size-3 ml-1" />;
   }
 
-  // ── Inline update handler ────────────────────────────────────────────────────
   function handleInlineSave(reviewId: string, payload: InlineUpdatePayload) {
     setSavingId(reviewId);
     inlineUpdate.mutate(
       { id: reviewId, payload },
       {
-        onSuccess: () => toast.success('Updated', 'Pricing policy saved.'),
-        onError:   () => toast.error('Update failed'),
+        onSuccess: () => toast.success(t('priceReview.toast.updated'), t('priceReview.toast.updatedDesc')),
+        onError:   () => toast.error(t('priceReview.toast.updateFailed')),
         onSettled: () => setSavingId(null),
       },
     );
   }
 
-  // ── Action handlers ──────────────────────────────────────────────────────────
   function openDrawer(review: PricingReview) {
     setDrawerReview(review);
     setDrawerOpen(true);
@@ -921,7 +946,7 @@ export function CostPricingCenterPage() {
       { id: review.id, payload: { action: 'approve_suggested' } },
       {
         onSuccess: () => {
-          toast.success('Approved', `Suggested price applied for ${review.product.name}`);
+          toast.success(t('priceReview.toast.approved'), tAny('priceReview.toast.approvedDesc', { name: review.product.name }));
           removeFromCurrentList(review.id);
         },
       },
@@ -933,7 +958,7 @@ export function CostPricingCenterPage() {
       { id: review.id, payload: { action: 'custom_price', custom_price: price, reason } },
       {
         onSuccess: () => {
-          toast.success('Custom price set', `${review.product.name} → ${fmt(price)}`);
+          toast.success(t('priceReview.toast.customPriceSet'), `${review.product.name} → ${fmt(price)}`);
           removeFromCurrentList(review.id);
           setDialogState(null);
         },
@@ -946,7 +971,7 @@ export function CostPricingCenterPage() {
       { id: review.id, payload: { action: 'keep_current', reason } },
       {
         onSuccess: () => {
-          toast.success('Current price kept', review.product.name);
+          toast.success(t('priceReview.toast.keptCurrent'), review.product.name);
           removeFromCurrentList(review.id);
           setDialogState(null);
         },
@@ -957,14 +982,14 @@ export function CostPricingCenterPage() {
   function handleSnoozeConfirm(review: PricingReview, until: string) {
     snoozeReview.mutate(
       { id: review.id, payload: { until } },
-      { onSuccess: () => { toast.success('Review snoozed', `${review.product.name} until ${until}`); setDialogState(null); } },
+      { onSuccess: () => { toast.success(t('priceReview.toast.snoozed'), tAny('priceReview.toast.snoozedDesc', { name: review.product.name, date: until })); setDialogState(null); } },
     );
   }
 
   function handleAssignConfirm(review: PricingReview, name: string) {
     assignReview.mutate(
       { id: review.id, payload: { reviewer_name: name } },
-      { onSuccess: () => { toast.success('Reviewer assigned', `${review.product.name} → ${name}`); setDialogState(null); } },
+      { onSuccess: () => { toast.success(t('priceReview.toast.reviewerAssigned'), `${review.product.name} → ${name}`); setDialogState(null); } },
     );
   }
 
@@ -974,7 +999,7 @@ export function CostPricingCenterPage() {
       { ids, action: 'approve_suggested' },
       {
         onSuccess: () => {
-          toast.success('Bulk approved', `${ids.length} reviews updated`);
+          toast.success(t('priceReview.toast.bulkApproved'), tAny('priceReview.toast.bulkApprovedDesc', { count: ids.length }));
           removeFromCurrentList(ids);
           setSelectedIds(new Set());
         },
@@ -988,7 +1013,7 @@ export function CostPricingCenterPage() {
       { ids, action: 'keep_current' },
       {
         onSuccess: () => {
-          toast.success('Kept current', `${ids.length} reviews`);
+          toast.success(t('priceReview.toast.keptCurrentBulk'), tAny('priceReview.toast.keptCurrentBulkDesc', { count: ids.length }));
           removeFromCurrentList(ids);
           setSelectedIds(new Set());
         },
@@ -1000,7 +1025,7 @@ export function CostPricingCenterPage() {
     const ids = Array.from(selectedIds);
     bulkPolicy.mutate(
       { ids, action: 'apply_brand_policy' },
-      { onSuccess: () => { toast.success('Brand policy applied', `${ids.length} reviews updated`); setSelectedIds(new Set()); } },
+      { onSuccess: () => { toast.success(t('priceReview.toast.brandPolicyApplied'), tAny('priceReview.toast.brandPolicyAppliedDesc', { count: ids.length })); setSelectedIds(new Set()); } },
     );
   }
 
@@ -1008,7 +1033,7 @@ export function CostPricingCenterPage() {
     const ids = Array.from(selectedIds);
     bulkPolicy.mutate(
       { ids, action: 'set_target_margin', value },
-      { onSuccess: () => { toast.success('Target margin set', `${ids.length} reviews updated`); setSelectedIds(new Set()); setDialogState(null); } },
+      { onSuccess: () => { toast.success(t('priceReview.toast.targetMarginSet'), tAny('priceReview.toast.targetMarginSetDesc', { count: ids.length })); setSelectedIds(new Set()); setDialogState(null); } },
     );
   }
 
@@ -1016,7 +1041,7 @@ export function CostPricingCenterPage() {
     const ids = Array.from(selectedIds);
     bulkPolicy.mutate(
       { ids, action: 'set_markup', value },
-      { onSuccess: () => { toast.success('Markup set', `${ids.length} reviews updated`); setSelectedIds(new Set()); setDialogState(null); } },
+      { onSuccess: () => { toast.success(t('priceReview.toast.markupSet'), tAny('priceReview.toast.markupSetDesc', { count: ids.length })); setSelectedIds(new Set()); setDialogState(null); } },
     );
   }
 
@@ -1024,7 +1049,7 @@ export function CostPricingCenterPage() {
     const ids = Array.from(selectedIds);
     bulkPolicy.mutate(
       { ids, action: 'snooze', snooze_until: until },
-      { onSuccess: () => { toast.success('Snoozed', `${ids.length} reviews snoozed until ${until}`); setSelectedIds(new Set()); setDialogState(null); } },
+      { onSuccess: () => { toast.success(t('priceReview.toast.snoozedBulk'), tAny('priceReview.toast.snoozedBulkDesc', { count: ids.length, date: until })); setSelectedIds(new Set()); setDialogState(null); } },
     );
   }
 
@@ -1033,7 +1058,7 @@ export function CostPricingCenterPage() {
       { id: review.id, payload: { action: 'reject', reason } },
       {
         onSuccess: () => {
-          toast.success('Review rejected', review.product.name);
+          toast.success(t('priceReview.toast.reviewRejected'), review.product.name);
           removeFromCurrentList(review.id);
           setDialogState(null);
         },
@@ -1047,7 +1072,7 @@ export function CostPricingCenterPage() {
       { ids, action: 'reject', reason },
       {
         onSuccess: () => {
-          toast.success('Rejected', `${ids.length} reviews rejected`);
+          toast.success(t('priceReview.toast.rejected'), tAny('priceReview.toast.rejectedDesc', { count: ids.length }));
           removeFromCurrentList(ids);
           setSelectedIds(new Set());
           setDialogState(null);
@@ -1056,17 +1081,28 @@ export function CostPricingCenterPage() {
     );
   }
 
-  // client-side impact filter
   const filteredItems = impactFilter === 'all'
     ? items
     : items.filter((r) => r.impacts.includes(impactFilter));
 
   function handleExport() {
     const headers = [
-      'Product', 'SKU', 'Brand', 'Product Cost', 'Previous Cost', 'Change%',
-      'Target Margin%', 'Markup%', 'Regular Price', 'Sale Price',
-      'Suggested Regular', 'Suggested Sale', 'Current Margin%', 'Gross Profit%', 'Final Margin%',
-      'Status',
+      t('priceReview.exportHeaders.product'),
+      t('priceReview.exportHeaders.sku'),
+      t('priceReview.exportHeaders.brand'),
+      t('priceReview.exportHeaders.productCost'),
+      t('priceReview.exportHeaders.previousCost'),
+      t('priceReview.exportHeaders.changePct'),
+      t('priceReview.exportHeaders.targetMarginPct'),
+      t('priceReview.exportHeaders.markupPct'),
+      t('priceReview.exportHeaders.regularPrice'),
+      t('priceReview.exportHeaders.salePrice'),
+      t('priceReview.exportHeaders.suggestedRegular'),
+      t('priceReview.exportHeaders.suggestedSale'),
+      t('priceReview.exportHeaders.currentMarginPct'),
+      t('priceReview.exportHeaders.grossProfitPct'),
+      t('priceReview.exportHeaders.finalMarginPct'),
+      t('priceReview.exportHeaders.status'),
     ];
     const rows = items.map((r) => [
       r.product.name, r.product.sku, r.brand?.name ?? '',
@@ -1096,7 +1132,7 @@ export function CostPricingCenterPage() {
         onValueChange={(v) => setQuery((q) => ({ ...q, status: v as ReviewStatus | 'all', page: 1 }))}
       >
         <SelectTrigger className="w-40">
-          <SelectValue placeholder="Status" />
+          <SelectValue placeholder={t('priceReview.status.allStatuses')} />
         </SelectTrigger>
         <SelectContent>
           {STATUS_OPTIONS.map((o) => (
@@ -1110,7 +1146,7 @@ export function CostPricingCenterPage() {
         onValueChange={(v) => setImpactFilter(v as ImpactType | 'all')}
       >
         <SelectTrigger className="w-44">
-          <SelectValue placeholder="Impact" />
+          <SelectValue placeholder={t('priceReview.impact.allImpacts')} />
         </SelectTrigger>
         <SelectContent>
           {IMPACT_OPTIONS.map((o) => (
@@ -1128,16 +1164,16 @@ export function CostPricingCenterPage() {
     <div className="flex flex-col gap-6 p-6">
       {/* Page header */}
       <PageHeader
-        title="Pricing Decision Center"
-        subtitle="Manage product pricing policy, review cost changes, and set selling prices across all brands"
+        title={t('priceReview.pageTitle')}
+        subtitle={t('priceReview.pageSubtitle')}
         breadcrumbs={[
-          { label: 'Inventory', to: ROUTES.inventory },
-          { label: 'Pricing Decision Center' },
+          { label: t('priceReview.breadcrumb.inventory'), to: ROUTES.inventory },
+          { label: t('priceReview.breadcrumb.pricingDecisionCenter') },
         ]}
         actions={
           <Button variant="outline" size="sm" onClick={handleExport}>
             <Download className="size-4" />
-            Export
+            {t('priceReview.actions.export')}
           </Button>
         }
       />
@@ -1145,56 +1181,56 @@ export function CostPricingCenterPage() {
       {/* KPI cards */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <KpiCard
-          label="Pending"
+          label={t('priceReview.kpi.pending')}
           value={summary.pending}
           icon={<AlertTriangle className="size-5" />}
           accent={summary.pending > 0 ? 'amber' : 'default'}
         />
         <KpiCard
-          label="Approved"
+          label={t('priceReview.kpi.approved')}
           value={summary.approved}
           icon={<CheckCircle2 className="size-5" />}
           accent={summary.approved > 0 ? 'green' : 'default'}
         />
         <KpiCard
-          label="Price Kept"
+          label={t('priceReview.kpi.priceKept')}
           value={summary.kept}
           icon={<XCircle className="size-5" />}
         />
         <KpiCard
-          label="Custom Price"
+          label={t('priceReview.kpi.customPrice')}
           value={summary.custom_price}
           icon={<TrendingUp className="size-5" />}
           accent="blue"
         />
         <KpiCard
-          label="Snoozed"
+          label={t('priceReview.kpi.snoozed')}
           value={summary.snoozed}
           icon={<TrendingDown className="size-5" />}
           accent={summary.snoozed > 0 ? 'amber' : 'default'}
         />
         <KpiCard
-          label="Below Brand Margin"
+          label={t('priceReview.kpi.belowBrandMargin')}
           value={belowBrandCount}
           icon={<ShieldCheck className="size-5" />}
           accent={belowBrandCount > 0 ? 'red' : 'default'}
-          subtext="vs. brand policy"
+          subtext={t('priceReview.kpi.belowBrandMarginSub')}
         />
       </div>
 
       {/* Bulk action bar */}
       {someSelected && (
         <div className="flex items-center gap-2 flex-wrap rounded-lg border border-primary/30 bg-primary/5 px-4 py-2">
-          <span className="text-sm font-medium mr-1">{selectedIds.size} selected</span>
+          <span className="text-sm font-medium mr-1">{tAny('priceReview.bulk.selected', { count: selectedIds.size })}</span>
           <Separator orientation="vertical" className="h-4" />
 
           <Button size="sm" variant="outline" onClick={handleBulkApprove} disabled={bulkApprove.isPending}>
             {bulkApprove.isPending && <Loader2 className="size-3 animate-spin" />}
             <CheckCircle2 className="size-3.5" />
-            Approve Suggested
+            {t('priceReview.bulk.approveSuggested')}
           </Button>
           <Button size="sm" variant="outline" onClick={handleBulkKeep} disabled={bulkApprove.isPending}>
-            Keep Prices
+            {t('priceReview.bulk.keepPrices')}
           </Button>
           <Button
             size="sm" variant="outline"
@@ -1202,30 +1238,30 @@ export function CostPricingCenterPage() {
             onClick={() => setDialogState({ type: 'bulk_reject' })} disabled={bulkApprove.isPending}
           >
             <X className="size-3.5" />
-            Reject
+            {t('priceReview.bulk.reject')}
           </Button>
           <Button size="sm" variant="outline" onClick={handleBulkApplyBrandPolicy} disabled={bulkPolicy.isPending}>
             <ShieldCheck className="size-3.5" />
-            Apply Brand Policy
+            {t('priceReview.bulk.applyBrandPolicy')}
           </Button>
           <Button size="sm" variant="outline" onClick={() => setDialogState({ type: 'bulk_margin' })} disabled={bulkPolicy.isPending}>
-            Set Target Margin
+            {t('priceReview.bulk.setTargetMargin')}
           </Button>
           <Button size="sm" variant="outline" onClick={() => setDialogState({ type: 'bulk_markup' })} disabled={bulkPolicy.isPending}>
-            Set Markup
+            {t('priceReview.bulk.setMarkup')}
           </Button>
           <Button size="sm" variant="outline" onClick={() => setDialogState({ type: 'bulk_snooze' })} disabled={bulkPolicy.isPending}>
-            Snooze
+            {t('priceReview.bulk.snooze')}
           </Button>
           <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
-            Clear
+            {t('priceReview.bulk.clear')}
           </Button>
         </div>
       )}
 
       {/* Toolbar */}
       <EntityToolbar
-        searchPlaceholder="Search by product name or SKU…"
+        searchPlaceholder={t('priceReview.search')}
         onSearchChange={(s) => setQuery((q) => ({ ...q, search: s || undefined, page: 1 }))}
         onRefresh={() => refetch()}
         isRefreshing={isFetching}
@@ -1247,34 +1283,34 @@ export function CostPricingCenterPage() {
                 </th>
                 <th className="px-3 py-3">
                   <button type="button" className="flex items-center" onClick={() => handleSort('product')}>
-                    Product <SortIcon field="product" />
+                    {t('priceReview.columns.product')} <SortIcon field="product" />
                   </button>
                 </th>
-                <th className="px-3 py-3">Brand</th>
+                <th className="px-3 py-3">{t('priceReview.columns.brand')}</th>
                 <th className="px-3 py-3">
                   <button type="button" className="flex items-center" onClick={() => handleSort('product_cost')}>
-                    Product Cost <SortIcon field="product_cost" />
+                    {t('priceReview.columns.productCost')} <SortIcon field="product_cost" />
                   </button>
                 </th>
-                <th className="px-3 py-3">Pricing Strategy</th>
-                <th className="px-3 py-3">Regular Price</th>
-                <th className="px-3 py-3">Sale Price</th>
-                <th className="px-3 py-3">Suggested Regular</th>
-                <th className="px-3 py-3">Suggested Sale</th>
+                <th className="px-3 py-3">{t('priceReview.columns.pricingStrategy')}</th>
+                <th className="px-3 py-3">{t('priceReview.columns.regularPrice')}</th>
+                <th className="px-3 py-3">{t('priceReview.columns.salePrice')}</th>
+                <th className="px-3 py-3">{t('priceReview.columns.suggestedRegular')}</th>
+                <th className="px-3 py-3">{t('priceReview.columns.suggestedSale')}</th>
                 <th className="px-3 py-3">
                   <button type="button" className="flex items-center" onClick={() => handleSort('gross_profit_pct')}>
-                    Gross Profit <SortIcon field="gross_profit_pct" />
+                    {t('priceReview.columns.grossProfit')} <SortIcon field="gross_profit_pct" />
                   </button>
                 </th>
                 <th className="px-3 py-3">
                   <button type="button" className="flex items-center" onClick={() => handleSort('final_margin_pct')}>
-                    Final Margin <SortIcon field="final_margin_pct" />
+                    {t('priceReview.columns.finalMargin')} <SortIcon field="final_margin_pct" />
                   </button>
                 </th>
-                <th className="px-3 py-3">Impacts</th>
-                <th className="px-3 py-3">Policy</th>
-                <th className="px-3 py-3">Status</th>
-                <th className="px-3 py-3">Updated</th>
+                <th className="px-3 py-3">{t('priceReview.columns.impacts')}</th>
+                <th className="px-3 py-3">{t('priceReview.columns.policy')}</th>
+                <th className="px-3 py-3">{t('priceReview.columns.status')}</th>
+                <th className="px-3 py-3">{t('priceReview.columns.updated')}</th>
                 <th className="w-10 px-3 py-3" />
               </tr>
             </thead>
@@ -1288,15 +1324,15 @@ export function CostPricingCenterPage() {
               ) : isError ? (
                 <tr>
                   <td colSpan={colSpan} className="py-12 text-center text-muted-foreground">
-                    Failed to load reviews.
-                    <Button variant="link" size="sm" onClick={() => refetch()}>Retry</Button>
+                    {t('priceReview.table.failedToLoad')}
+                    <Button variant="link" size="sm" onClick={() => refetch()}>{t('priceReview.table.retry')}</Button>
                   </td>
                 </tr>
               ) : filteredItems.length === 0 ? (
                 <tr>
                   <td colSpan={colSpan} className="py-16 text-center">
                     <CheckCircle2 className="size-8 mx-auto mb-2 text-emerald-500" />
-                    <p className="text-sm text-muted-foreground">No pending reviews — all prices are up to date.</p>
+                    <p className="text-sm text-muted-foreground">{t('priceReview.table.noReviews')}</p>
                   </td>
                 </tr>
               ) : (
@@ -1344,9 +1380,9 @@ export function CostPricingCenterPage() {
                             <p className="text-sm font-medium truncate max-w-[100px]">{review.brand.name}</p>
                             {review.brand.default_target_margin != null && (
                               <p className="text-[11px] text-muted-foreground">
-                                Margin {review.brand.default_target_margin.toFixed(0)}%
+                                {tAny('priceReview.brandInfo.margin', { value: review.brand.default_target_margin.toFixed(0) })}
                                 {review.brand.default_discount_pct != null && (
-                                  <span> · Disc. {review.brand.default_discount_pct.toFixed(0)}%</span>
+                                  <span> · {tAny('priceReview.brandInfo.discount', { value: review.brand.default_discount_pct.toFixed(0) })}</span>
                                 )}
                               </p>
                             )}
@@ -1371,7 +1407,7 @@ export function CostPricingCenterPage() {
                         </div>
                       </td>
 
-                      {/* Pricing Strategy — only one of Margin / Markup editable at a time */}
+                      {/* Pricing Strategy */}
                       <td className="px-3 py-3">
                         <div className="flex flex-col gap-0.5">
                           <PricingStrategyCell
@@ -1380,30 +1416,30 @@ export function CostPricingCenterPage() {
                             onSave={handleInlineSave}
                           />
                           <span className={cn('text-[10px]', belowTarget ? 'text-red-500' : 'text-emerald-500')}>
-                            Actual {fmtPct(review.current_margin)}
+                            {tAny('priceReview.pricingStrategy.actual', { value: fmtPct(review.current_margin) })}
                           </span>
                         </div>
                       </td>
 
-                      {/* Regular Price — inline editable */}
+                      {/* Regular Price */}
                       <td className="px-3 py-3">
                         <InlinePriceEditor
                           reviewId={review.id}
                           field="regular_price"
                           currentValue={review.selling_price}
-                          label="Regular Price"
+                          label={t('priceReview.columns.regularPrice')}
                           isSaving={isSaving}
                           onSave={handleInlineSave}
                         />
                       </td>
 
-                      {/* Sale Price — inline editable */}
+                      {/* Sale Price */}
                       <td className="px-3 py-3">
                         <InlinePriceEditor
                           reviewId={review.id}
                           field="sale_price"
                           currentValue={review.sale_price}
-                          label="Sale Price"
+                          label={t('priceReview.columns.salePrice')}
                           isSaving={isSaving}
                           onSave={handleInlineSave}
                         />
@@ -1447,7 +1483,7 @@ export function CostPricingCenterPage() {
                       <td className="px-3 py-3">
                         <ImpactIcons impacts={review.impacts} />
                         <p className="text-[10px] text-muted-foreground mt-0.5 max-w-[100px] truncate">
-                          {impactReasons(review.impacts)}
+                          {impactReasons(t as unknown as (key: string) => string, review.impacts)}
                         </p>
                       </td>
 
@@ -1462,11 +1498,11 @@ export function CostPricingCenterPage() {
                         {review.publish_status === 'pending_publish' && (
                           <p className="text-[11px] text-blue-600 dark:text-blue-400 font-medium mt-0.5 flex items-center gap-0.5">
                             <Upload className="size-2.5" />
-                            Pending Publish
+                            {t('priceReview.statusBadge.pendingPublish')}
                           </p>
                         )}
                         {review.snooze_until && (
-                          <p className="text-[11px] text-muted-foreground mt-0.5">Until {review.snooze_until}</p>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">{tAny('priceReview.statusBadge.until', { date: review.snooze_until })}</p>
                         )}
                       </td>
 
@@ -1475,7 +1511,7 @@ export function CostPricingCenterPage() {
                         {fmtDate(review.updated_at)}
                       </td>
 
-                      {/* Actions — visible buttons for pending/snoozed; Publish button for pending_publish */}
+                      {/* Actions */}
                       <td className="px-3 py-2">
                         <div className="flex items-center gap-0.5">
                           {(review.status === 'pending' || review.status === 'snoozed') && (
@@ -1483,7 +1519,7 @@ export function CostPricingCenterPage() {
                               <Button
                                 size="icon" variant="ghost"
                                 className="size-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
-                                title="Approve suggested price"
+                                title={t('priceReview.actions.approveSuggestedTitle')}
                                 onClick={() => handleApprove(review)}
                                 disabled={approveReview.isPending}
                               >
@@ -1492,7 +1528,7 @@ export function CostPricingCenterPage() {
                               <Button
                                 size="icon" variant="ghost"
                                 className="size-7 hover:bg-muted"
-                                title="Keep current price"
+                                title={t('priceReview.actions.keepCurrentPriceTitle')}
                                 onClick={() => setDialogState({ type: 'keep_current', review })}
                               >
                                 <Minus className="size-3.5" />
@@ -1500,7 +1536,7 @@ export function CostPricingCenterPage() {
                               <Button
                                 size="icon" variant="ghost"
                                 className="size-7 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                                title="Reject review"
+                                title={t('priceReview.actions.rejectReviewTitle')}
                                 onClick={() => setDialogState({ type: 'reject', review })}
                               >
                                 <X className="size-3.5" />
@@ -1508,7 +1544,7 @@ export function CostPricingCenterPage() {
                               <Button
                                 size="icon" variant="ghost"
                                 className="size-7 text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/30"
-                                title="Snooze review"
+                                title={t('priceReview.actions.snoozeReviewTitle')}
                                 onClick={() => setDialogState({ type: 'snooze', review })}
                               >
                                 <Clock className="size-3.5" />
@@ -1519,9 +1555,9 @@ export function CostPricingCenterPage() {
                             <Button
                               size="icon" variant="ghost"
                               className="size-7 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30"
-                              title="Publish prices to catalog"
+                              title={t('priceReview.actions.publishPricesToCatalogTitle')}
                               onClick={() => publishReview.mutate(review.id, {
-                                onSuccess: () => toast.success('Published', `${review.product.name} is now active.`),
+                                onSuccess: () => toast.success(t('priceReview.toast.published'), tAny('priceReview.toast.publishedDesc', { name: review.product.name })),
                               })}
                               disabled={publishReview.isPending}
                             >
@@ -1537,22 +1573,22 @@ export function CostPricingCenterPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => openDrawer(review)}>
                                 <ExternalLink className="size-4" />
-                                View Cost Analysis
+                                {t('priceReview.actions.viewCostAnalysis')}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => setDialogState({ type: 'custom_price', review })}>
-                                Set Custom Price
+                                {t('priceReview.actions.setCustomPrice')}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() =>
                                 handleInlineSave(review.id, { pricing_mode: review.product.pricing_mode === 'custom' ? 'brand_policy' : 'custom' })
                               }>
                                 <ShieldCheck className="size-4" />
-                                {review.product.pricing_mode === 'custom' ? 'Revert to Brand Policy' : 'Switch to Custom Policy'}
+                                {review.product.pricing_mode === 'custom' ? t('priceReview.actions.revertToBrandPolicy') : t('priceReview.actions.switchToCustomPolicy')}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => setDialogState({ type: 'assign', review })}>
                                 <UserPlus className="size-4" />
-                                Assign Reviewer
+                                {t('priceReview.actions.assignReviewer')}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -1569,7 +1605,7 @@ export function CostPricingCenterPage() {
         {data && (data.pagination?.total ?? 0) > 0 && (
           <div className="flex items-center justify-between border-t px-4 py-3 text-sm text-muted-foreground">
             <span>
-              {data.pagination.total} total · page {data.pagination.current_page} of {data.pagination.last_page}
+              {tAny('priceReview.pagination.summary', { total: data.pagination.total, currentPage: data.pagination.current_page, lastPage: data.pagination.last_page })}
             </span>
             <div className="flex gap-2">
               <Button
@@ -1577,14 +1613,14 @@ export function CostPricingCenterPage() {
                 disabled={data.pagination.current_page <= 1}
                 onClick={() => setQuery((q) => ({ ...q, page: (q.page ?? 1) - 1 }))}
               >
-                Previous
+                {t('priceReview.pagination.previous')}
               </Button>
               <Button
                 variant="outline" size="sm"
                 disabled={data.pagination.current_page >= data.pagination.last_page}
                 onClick={() => setQuery((q) => ({ ...q, page: (q.page ?? 1) + 1 }))}
               >
-                Next
+                {t('priceReview.pagination.next')}
               </Button>
             </div>
           </div>
@@ -1636,8 +1672,10 @@ export function CostPricingCenterPage() {
       {/* Bulk dialogs */}
       {dialogState?.type === 'bulk_margin' && (
         <BulkValueDialog
-          title="Set Target Margin for Selected"
-          label="Gross Margin %" placeholder="e.g. 35" unit="%"
+          title={t('priceReview.dialog.bulkMargin.title')}
+          label={t('priceReview.dialog.bulkMargin.label')}
+          placeholder={t('priceReview.dialog.bulkMargin.placeholder')}
+          unit="%"
           onConfirm={handleBulkMarginConfirm}
           onCancel={() => setDialogState(null)}
           isPending={bulkPolicy.isPending}
@@ -1645,8 +1683,10 @@ export function CostPricingCenterPage() {
       )}
       {dialogState?.type === 'bulk_markup' && (
         <BulkValueDialog
-          title="Set Markup for Selected"
-          label="Markup %" placeholder="e.g. 53.85" unit="%"
+          title={t('priceReview.dialog.bulkMarkup.title')}
+          label={t('priceReview.dialog.bulkMarkup.label')}
+          placeholder={t('priceReview.dialog.bulkMarkup.placeholder')}
+          unit="%"
           onConfirm={handleBulkMarkupConfirm}
           onCancel={() => setDialogState(null)}
           isPending={bulkPolicy.isPending}

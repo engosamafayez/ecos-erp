@@ -6,6 +6,6 @@ namespace Modules\ClaudeBridge\Domain\Enums;
 
 enum WorkerStatus: string
 {
-    case Online  = 'online';
+    case Online = 'online';
     case Offline = 'offline';
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Presentation\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
@@ -18,30 +20,35 @@ class DashboardController extends Controller
     public function kpis(Request $request): JsonResponse
     {
         $data = $this->dashboardService->getKpis($request->company_id);
+
         return response()->json(['data' => $data]);
     }
 
     public function agentPerformance(Request $request): JsonResponse
     {
         $data = $this->dashboardService->getAgentPerformance($request->company_id);
+
         return response()->json(['data' => $data]);
     }
 
     public function providerDistribution(Request $request): JsonResponse
     {
         $data = $this->dashboardService->getProviderDistribution($request->company_id);
+
         return response()->json(['data' => $data]);
     }
 
     public function statusDistribution(Request $request): JsonResponse
     {
         $data = $this->dashboardService->getStatusDistribution($request->company_id);
+
         return response()->json(['data' => $data]);
     }
 
     public function unreadCount(Request $request): JsonResponse
     {
         $count = $this->inboxService->getUnreadCount($request->company_id);
+
         return response()->json(['count' => $count]);
     }
 }

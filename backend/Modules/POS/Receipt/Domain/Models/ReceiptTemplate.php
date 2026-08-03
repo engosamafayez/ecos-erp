@@ -25,7 +25,7 @@ class ReceiptTemplate extends Model
     {
         return [
             'is_default' => 'boolean',
-            'settings'   => 'array',
+            'settings' => 'array',
         ];
     }
 

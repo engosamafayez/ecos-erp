@@ -83,6 +83,8 @@ export type Recipe = {
   version: string;
   is_active: boolean;
   notes: string | null;
+  /** Units produced per recipe run — divisor for per-unit finished-good costing. */
+  yield_quantity: number;
   manufacturing_cost: number;
   other_costs: number;
   /** Materials-only subtotal (raw + packaging). Use cost_summary.recipe_cost for the total. */
@@ -111,6 +113,7 @@ export type RecipePayload = {
   version: string;
   is_active: boolean;
   notes?: string | null;
+  yield_quantity?: number;
   manufacturing_cost?: number;
   other_costs?: number;
   execution_instructions?: string | null;

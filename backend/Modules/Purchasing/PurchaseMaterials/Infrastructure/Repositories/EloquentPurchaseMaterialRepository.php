@@ -18,17 +18,17 @@ final class EloquentPurchaseMaterialRepository implements PurchaseMaterialReposi
 
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = PurchaseMaterial::query()->with(['company', 'warehouse', 'lines.product']);
+        $query = PurchaseMaterial::query()->with(['company', 'warehouse', 'channel', 'lines.product']);
 
         // Inline aggregates for list columns
         $query->withCount('lines as items_count')
-              ->withSum('lines as total_requested_qty', 'requested_qty');
+            ->withSum('lines as total_requested_qty', 'requested_qty');
 
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
             $query->where(function (Builder $b) use ($search): void {
                 $b->where('request_number', 'like', "%{$search}%")
-                  ->orWhere('notes', 'like', "%{$search}%");
+                    ->orWhere('notes', 'like', "%{$search}%");
             });
         }
 
@@ -86,7 +86,7 @@ final class EloquentPurchaseMaterialRepository implements PurchaseMaterialReposi
     public function findById(string $id): ?PurchaseMaterial
     {
         return PurchaseMaterial::query()
-            ->with(['company', 'warehouse', 'lines.product'])
+            ->with(['company', 'warehouse', 'channel', 'lines.product'])
             ->find($id);
     }
 

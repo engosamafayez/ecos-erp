@@ -34,10 +34,10 @@ use Modules\Common\Snapshots\Domain\Timeline\SnapshotTimelineBuilder;
 final class SnapshotManager
 {
     public function __construct(
-        private readonly SnapshotValidator             $validator,
+        private readonly SnapshotValidator $validator,
         private readonly BusinessContextSnapshotBuilder $contextBuilder,
-        private readonly FinancialSnapshotBuilder       $financialBuilder,
-        private readonly SnapshotTimelineBuilder        $timelineBuilder,
+        private readonly FinancialSnapshotBuilder $financialBuilder,
+        private readonly SnapshotTimelineBuilder $timelineBuilder,
     ) {}
 
     /**
@@ -49,10 +49,10 @@ final class SnapshotManager
      * @throws \Modules\Common\Snapshots\Domain\Exceptions\SnapshotConsistencyException
      */
     public function createFor(
-        BusinessContextProvider    $contextProvider,
-        FinancialSnapshotProvider  $financialProvider,
+        BusinessContextProvider $contextProvider,
+        FinancialSnapshotProvider $financialProvider,
         SnapshotPersistenceAdapter $persistence,
-        ?string                    $actorId = null,
+        ?string $actorId = null,
     ): ?FinancialSnapshotDTO {
         // Already fully created — idempotent guard
         if ($persistence->businessContextExists() && $persistence->financialSnapshotExists()) {
@@ -63,7 +63,7 @@ final class SnapshotManager
         $this->validator->validateConsistency($financialProvider);
 
         // Build DTOs (pure computation, no I/O)
-        $contextDto   = $this->contextBuilder->build($contextProvider);
+        $contextDto = $this->contextBuilder->build($contextProvider);
         $financialDto = $this->financialBuilder->build($financialProvider);
 
         // Persist inside a single transaction
@@ -108,38 +108,38 @@ final class SnapshotManager
         $now = now()->toIso8601String();
 
         Event::dispatch(new SnapshotCreated(
-            snapshotUuid:  $financialDto->snapshotUuid,
-            snapshotType:  'business_context',
+            snapshotUuid: $financialDto->snapshotUuid,
+            snapshotType: 'business_context',
             aggregateType: $contextDto->aggregateType,
-            aggregateId:   $contextDto->aggregateId,
-            companyId:     $financialProvider->getSnapshotCompanyId(),
-            brandId:       $financialDto->brandId,
-            channelId:     $financialDto->channelId,
-            timestamp:     $now,
+            aggregateId: $contextDto->aggregateId,
+            companyId: $financialProvider->getSnapshotCompanyId(),
+            brandId: $financialDto->brandId,
+            channelId: $financialDto->channelId,
+            timestamp: $now,
         ));
 
         Event::dispatch(new SnapshotCreated(
-            snapshotUuid:  $financialDto->snapshotUuid,
-            snapshotType:  'financial',
+            snapshotUuid: $financialDto->snapshotUuid,
+            snapshotType: 'financial',
             aggregateType: $financialDto->aggregateType,
-            aggregateId:   $financialDto->aggregateId,
-            companyId:     $financialProvider->getSnapshotCompanyId(),
-            brandId:       $financialDto->brandId,
-            channelId:     $financialDto->channelId,
-            timestamp:     $now,
+            aggregateId: $financialDto->aggregateId,
+            companyId: $financialProvider->getSnapshotCompanyId(),
+            brandId: $financialDto->brandId,
+            channelId: $financialDto->channelId,
+            timestamp: $now,
         ));
 
         Event::dispatch(new SnapshotLocked(
-            snapshotUuid:        $financialDto->snapshotUuid,
-            aggregateType:       $financialDto->aggregateType,
-            aggregateId:         $financialDto->aggregateId,
-            companyId:           $financialProvider->getSnapshotCompanyId(),
-            grandTotal:          $financialDto->grandTotal,
-            grossProfit:         $financialDto->grossProfit,
+            snapshotUuid: $financialDto->snapshotUuid,
+            aggregateType: $financialDto->aggregateType,
+            aggregateId: $financialDto->aggregateId,
+            companyId: $financialProvider->getSnapshotCompanyId(),
+            grandTotal: $financialDto->grandTotal,
+            grossProfit: $financialDto->grossProfit,
             actualMarginPercent: $financialDto->actualMarginPercent,
-            marginStatus:        $financialDto->marginStatus,
-            integrityHash:       $financialDto->integrityHash,
-            lockedAt:            $now,
+            marginStatus: $financialDto->marginStatus,
+            integrityHash: $financialDto->integrityHash,
+            lockedAt: $now,
         ));
 
         return $financialDto;

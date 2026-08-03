@@ -27,7 +27,7 @@ final class ReturnToConfirmedWorkflow implements FulfillmentWorkflowInterface
     {
         if ($ctx->order->status !== OrderStatus::Returned) {
             throw new WorkflowPreconditionException(
-                "Order [{$ctx->order->id}] must be in Returned status to return-to-confirmed. Current: [{$ctx->order->status->value}]."
+                "Order [{$ctx->order->id}] must be in Returned status to return-to-confirmed. Current: [{$ctx->order->status->value}].",
             );
         }
     }
@@ -41,10 +41,10 @@ final class ReturnToConfirmedWorkflow implements FulfillmentWorkflowInterface
         // ReserveOrderInventoryAction skips idempotently (Reserved / Released in
         // skipStates) and the order proceeds to Preparing with zero held stock.
         $order->update([
-            'status'                 => OrderStatus::Confirmed,
-            'inventory_reserved_at'  => null,
-            'inventory_released_at'  => null,
-            'inventory_shipped_at'   => null,
+            'status' => OrderStatus::InProgress,
+            'inventory_reserved_at' => null,
+            'inventory_released_at' => null,
+            'inventory_shipped_at' => null,
             'inventory_completed_at' => null,
         ]);
 
@@ -55,7 +55,7 @@ final class ReturnToConfirmedWorkflow implements FulfillmentWorkflowInterface
 
         return FulfillmentResult::success(
             $order,
-            "Order #{$order->order_number} returned to Confirmed. Inventory lifecycle reset — reservation will be re-attempted.",
+            "Order #{$order->order_number} returned to In Progress. Inventory lifecycle reset — reservation will be re-attempted.",
             ['actor_id' => $ctx->actorId, 'inventory_reset' => true],
         );
     }

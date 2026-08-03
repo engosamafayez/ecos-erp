@@ -1,4 +1,5 @@
 import { RefreshCw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -10,14 +11,14 @@ import {
 import type { IntelligenceFilters } from '../../types/intelligence';
 
 const DATE_PRESETS = [
-  { value: 'today',      label: 'Today' },
-  { value: 'yesterday',  label: 'Yesterday' },
-  { value: 'last_7d',    label: 'Last 7 days' },
-  { value: 'last_30d',   label: 'Last 30 days' },
-  { value: 'last_90d',   label: 'Last 90 days' },
-  { value: 'last_180d',  label: 'Last 180 days' },
-  { value: 'this_month', label: 'This month' },
-  { value: 'last_month', label: 'Last month' },
+  'today',
+  'yesterday',
+  'last_7d',
+  'last_30d',
+  'last_90d',
+  'last_180d',
+  'this_month',
+  'last_month',
 ];
 
 interface Props {
@@ -36,6 +37,8 @@ export function IntelligenceFilterBar({
   isFetching,
   children,
 }: Props) {
+  const { t } = useTranslation('marketing');
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Select
@@ -43,11 +46,11 @@ export function IntelligenceFilterBar({
         onValueChange={(v) => onFilterChange({ date_preset: v, date_start: undefined, date_stop: undefined })}
       >
         <SelectTrigger className="w-36 h-8 text-sm">
-          <SelectValue placeholder="Date range" />
+          <SelectValue placeholder={t('intelligence.filters.dateRange')} />
         </SelectTrigger>
         <SelectContent>
           {DATE_PRESETS.map((p) => (
-            <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+            <SelectItem key={p} value={p}>{t(`intelligence.datePreset.${p}`)}</SelectItem>
           ))}
         </SelectContent>
       </Select>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   Bot,
@@ -28,7 +29,9 @@ import {
   useBrandAudit,
   useHealthScore,
 } from '../hooks/use-configuration';
-import { PolicyWorkspace }           from '../components/policy-workspace';
+import { PolicyWorkspace }                from '../components/policy-workspace';
+import { DeliveryCoverageWorkspace }     from '../components/delivery-coverage-workspace';
+import { DeliveryShippingWorkspace }     from '../components/delivery-shipping-workspace';
 import type { ConfigHealthScore, ConfigAuditEntry } from '../types/configuration';
 
 // ── Dashboard card definitions ─────────────────────────────────────────────────
@@ -37,36 +40,28 @@ type WorkspaceId =
   | 'preparation' | 'inventory' | 'manufacturing'
   | 'pricing' | 'order' | 'logistics' | 'crm' | 'marketing'
   | 'workflow' | 'notification' | 'security' | 'integration' | 'ai'
-  | 'numbering' | 'approval' | 'audit';
+  | 'numbering' | 'approval' | 'audit' | 'windows';
 
 type WorkspaceCard = {
-  id:          WorkspaceId;
-  label:       string;
-  description: string;
-  icon:        React.ReactNode;
+  id:     WorkspaceId;
+  icon:   React.ReactNode;
   /** Health check keys that determine this card's status */
-  checks:      (keyof ConfigHealthScore['checks'])[];
+  checks: (keyof ConfigHealthScore['checks'])[];
 };
 
 const OPERATIONS_CARDS: WorkspaceCard[] = [
   {
     id: 'preparation',
-    label: 'Preparation',
-    description: 'Wave strategy, batch sizes, and exception handling.',
     icon: <Package className="h-5 w-5" />,
     checks: ['preparation_policy'],
   },
   {
     id: 'inventory',
-    label: 'Inventory',
-    description: 'Stock reservation, costing method, and alerts.',
     icon: <ClipboardList className="h-5 w-5" />,
     checks: ['inventory_policy'],
   },
   {
     id: 'manufacturing',
-    label: 'Manufacturing',
-    description: 'Recipe versioning, BOM validation, and production rules.',
     icon: <Cog className="h-5 w-5" />,
     checks: ['manufacturing_policy'],
   },
@@ -75,22 +70,16 @@ const OPERATIONS_CARDS: WorkspaceCard[] = [
 const COMMERCE_CARDS: WorkspaceCard[] = [
   {
     id: 'logistics',
-    label: 'Logistics',
-    description: 'Vehicle/driver assignment and route planning rules.',
     icon: <Truck className="h-5 w-5" />,
     checks: [],
   },
   {
     id: 'crm',
-    label: 'CRM',
-    description: 'VIP thresholds, follow-up schedules, and loyalty program.',
     icon: <Users className="h-5 w-5" />,
     checks: [],
   },
   {
     id: 'marketing',
-    label: 'Marketing',
-    description: 'UTM attribution, campaign windows, and tracking.',
     icon: <Bot className="h-5 w-5" />,
     checks: [],
   },
@@ -99,57 +88,41 @@ const COMMERCE_CARDS: WorkspaceCard[] = [
 const SYSTEM_CARDS: WorkspaceCard[] = [
   {
     id: 'workflow',
-    label: 'Workflow',
-    description: 'Workflow modes for orders, preparation, and procurement.',
     icon: <RotateCcw className="h-5 w-5" />,
     checks: ['workflow_policy'],
   },
   {
     id: 'notification',
-    label: 'Notifications',
-    description: 'Email, SMS, WhatsApp, and escalation timers.',
     icon: <Bot className="h-5 w-5" />,
     checks: [],
   },
   {
     id: 'security',
-    label: 'Security',
-    description: 'Session timeout, login attempts, and MFA.',
     icon: <ShieldCheck className="h-5 w-5" />,
     checks: [],
   },
   {
     id: 'integration',
-    label: 'Integrations',
-    description: 'WooCommerce, Meta, and Google Ads integrations.',
     icon: <Webhook className="h-5 w-5" />,
     checks: ['integrations'],
   },
   {
     id: 'ai',
-    label: 'AI Configuration',
-    description: 'Confidence thresholds and auto-decision settings.',
     icon: <Brain className="h-5 w-5" />,
     checks: ['ai_configuration'],
   },
   {
     id: 'numbering',
-    label: 'Numbering',
-    description: 'Document number prefixes and sequence padding.',
     icon: <Settings className="h-5 w-5" />,
     checks: [],
   },
   {
     id: 'approval',
-    label: 'Approvals',
-    description: 'Approval requirements for prices, recipes, and discounts.',
     icon: <CheckCircle2 className="h-5 w-5" />,
     checks: [],
   },
   {
     id: 'audit',
-    label: 'Audit Log',
-    description: 'Complete history of all configuration changes.',
     icon: <History className="h-5 w-5" />,
     checks: [],
   },
@@ -162,6 +135,7 @@ export function BrandConfigurationPage() {
   const navigate              = useNavigate();
   const [params, setParams]   = useSearchParams();
   const activeWorkspace       = (params.get('tab') ?? '') as WorkspaceId | '';
+  const { t }                 = useTranslation('settings');
 
   const { data: brand }       = useBrandQuery(brandId ?? '');
   const { data: health }      = useHealthScore(brandId ?? null);
@@ -200,14 +174,15 @@ export function BrandConfigurationPage() {
           <ArrowLeft className="h-4 w-4" />
         </button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-base font-semibold leading-none">Brand Configuration</h1>
+          {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+          <h1 className="text-base font-semibold leading-none">{t('brandConfig.pageTitle' as any)}</h1>
           {brand && (
             <p className="text-xs text-muted-foreground mt-0.5">{brand.name}</p>
           )}
         </div>
         {health && (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Health</span>
+            <span className="text-xs text-muted-foreground">{t('brandConfig.health.scoreLabel')}</span>
             <span className={`text-sm font-bold ${
               health.score >= 80 ? 'text-emerald-600 dark:text-emerald-400' :
               health.score >= 50 ? 'text-amber-600 dark:text-amber-400' :
@@ -226,7 +201,7 @@ export function BrandConfigurationPage() {
 
         {/* OPERATIONS section */}
         <DashboardSection
-          label="OPERATIONS"
+          label={t('brandConfig.sections.operations')}
           cards={OPERATIONS_CARDS}
           health={health}
           onOpen={openWorkspace}
@@ -234,7 +209,7 @@ export function BrandConfigurationPage() {
 
         {/* COMMERCE section */}
         <DashboardSection
-          label="COMMERCE"
+          label={t('brandConfig.sections.commerce')}
           cards={COMMERCE_CARDS}
           health={health}
           onOpen={openWorkspace}
@@ -242,7 +217,7 @@ export function BrandConfigurationPage() {
 
         {/* SYSTEM section */}
         <DashboardSection
-          label="SYSTEM"
+          label={t('brandConfig.sections.system')}
           cards={SYSTEM_CARDS}
           health={health}
           onOpen={openWorkspace}
@@ -255,6 +230,8 @@ export function BrandConfigurationPage() {
 // ── Config Health Panel ───────────────────────────────────────────────────────
 
 function ConfigHealthPanel({ health }: { health: ConfigHealthScore | undefined }) {
+  const { t } = useTranslation('settings');
+
   if (!health) {
     return (
       <div className="rounded-xl border border-border/60 bg-card p-5 animate-pulse">
@@ -272,28 +249,13 @@ function ConfigHealthPanel({ health }: { health: ConfigHealthScore | undefined }
     : health.score >= 50 ? 'text-amber-700 dark:text-amber-400'
     : 'text-red-600 dark:text-red-400';
 
-  const LABELS: Partial<Record<keyof ConfigHealthScore['checks'], string>> = {
-    channels:             'Sales Channels',
-    delivery_coverage:    'Delivery Coverage',
-    delivery_zones:       'Delivery Zones',
-    delivery_windows:     'Delivery Windows',
-    shipping_prices:      'Shipping Prices',
-    pricing_policy:       'Pricing Policy',
-    preparation_policy:   'Preparation Policy',
-    inventory_policy:     'Inventory Policy',
-    manufacturing_policy: 'Manufacturing Policy',
-    workflow_policy:      'Workflow',
-    ai_configuration:     'AI Configuration',
-    integrations:         'Integrations',
-  };
-
   return (
     <div className="rounded-xl border border-border/60 bg-card p-5 space-y-3">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-sm font-semibold">Configuration Health</h2>
+          <h2 className="text-sm font-semibold">{t('brandConfig.health.title')}</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {health.passed} of {health.total} checks complete
+            {t('brandConfig.health.checksComplete', { passed: health.passed, total: health.total })}
           </p>
         </div>
         <span className={`text-3xl font-bold tabular-nums ${textColor}`}>
@@ -322,7 +284,8 @@ function ConfigHealthPanel({ health }: { health: ConfigHealthScore | undefined }
               ? <CheckCircle2 className="h-3 w-3 shrink-0" />
               : <XCircle      className="h-3 w-3 shrink-0 opacity-40" />
             }
-            <span className={!ok ? 'opacity-60' : ''}>{LABELS[key] ?? key}</span>
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            <span className={!ok ? 'opacity-60' : ''}>{t(`brandConfig.checkLabels.${key}` as any)}</span>
           </span>
         ))}
       </div>
@@ -369,6 +332,8 @@ function WorkspaceConfigCard({
   health: ConfigHealthScore | undefined;
   onOpen: (id: WorkspaceId) => void;
 }) {
+  const { t } = useTranslation('settings');
+
   // Compute card status from health checks
   let status: 'complete' | 'partial' | 'missing' | 'none' = 'none';
   if (health && card.checks.length > 0) {
@@ -390,22 +355,24 @@ function WorkspaceConfigCard({
         </div>
         {status === 'complete' && (
           <Badge className="text-[10px] py-0 h-5 bg-emerald-50 text-emerald-700 border-emerald-200 shrink-0">
-            Complete
+            {t('brandConfig.statusBadge.complete')}
           </Badge>
         )}
         {status === 'partial' && (
           <Badge className="text-[10px] py-0 h-5 bg-amber-50 text-amber-700 border-amber-200 shrink-0">
-            Partial
+            {t('brandConfig.statusBadge.partial')}
           </Badge>
         )}
         {status === 'missing' && (
           <Badge className="text-[10px] py-0 h-5 bg-muted text-muted-foreground border-0 shrink-0">
-            Not Set
+            {t('brandConfig.statusBadge.notSet')}
           </Badge>
         )}
       </div>
-      <h3 className="text-sm font-semibold mb-0.5">{card.label}</h3>
-      <p className="text-xs text-muted-foreground line-clamp-2">{card.description}</p>
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+      <h3 className="text-sm font-semibold mb-0.5">{t(`brandConfig.cards.${card.id}.label` as any)}</h3>
+      {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+      <p className="text-xs text-muted-foreground line-clamp-2">{t(`brandConfig.cards.${card.id}.desc` as any)}</p>
       <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
         <ChevronRight className="h-4 w-4 text-primary" />
       </div>
@@ -432,7 +399,11 @@ function WorkspaceView({
   brandName?: string;
   onBack:     () => void;
 }) {
-  const workspaceLabel = getWorkspaceLabel(workspace);
+  const { t } = useTranslation('settings');
+  const tAny = t as (key: string) => string;
+  const workspaceLabel =
+    workspace === 'audit' ? t('brandConfig.auditLog') :
+    (tAny(`brandConfig.cards.${workspace}.label`) || POLICY_GROUP_LABELS[workspace as PolicyGroup] || workspace);
 
   return (
     <div className="flex flex-col h-full">
@@ -443,7 +414,7 @@ function WorkspaceView({
           className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-muted/50"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Dashboard
+          {t('brandConfig.back')}
         </button>
         <div className="h-4 w-px bg-border/60" />
         <div className="flex-1 min-w-0">
@@ -457,6 +428,7 @@ function WorkspaceView({
       {/* Workspace content */}
       <div className="flex-1 overflow-auto">
         {workspace === 'audit'             && <AuditWorkspace            brandId={brandId} />}
+        {workspace === 'windows'           && <DeliveryWorkspaceTabs     brandId={brandId} />}
         {POLICY_GROUPS_SET.has(workspace)  && (
           <PolicyWorkspace brandId={brandId} group={workspace as PolicyGroup} />
         )}
@@ -465,37 +437,69 @@ function WorkspaceView({
   );
 }
 
-function getWorkspaceLabel(id: string): string {
-  if (id === 'windows')           return 'Delivery Windows';
-  if (id === 'audit')             return 'Audit Log';
-  return POLICY_GROUP_LABELS[id as PolicyGroup] ?? id;
+// ── Delivery Workspace Tabs ───────────────────────────────────────────────────
+
+const DELIVERY_TABS: Array<'coverage' | 'shipping'> = ['coverage', 'shipping'];
+
+function DeliveryWorkspaceTabs({ brandId }: { brandId: string }) {
+  const { t } = useTranslation('settings');
+  const tAny = t as (key: string) => string;
+  const [tab, setTab] = useState<'coverage' | 'shipping'>('coverage');
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="border-b border-border/60 px-6 flex gap-6 shrink-0">
+        {DELIVERY_TABS.map((key) => (
+          <button
+            key={key}
+            onClick={() => setTab(key)}
+            className={`py-2.5 text-xs font-medium border-b-2 -mb-px transition-colors ${
+              tab === key
+                ? 'border-primary text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {tAny(`brandConfig.deliveryWindowsTabs.${key}`)}
+          </button>
+        ))}
+      </div>
+      <div className="flex-1 overflow-auto">
+        {tab === 'coverage' && <DeliveryCoverageWorkspace brandId={brandId} />}
+        {tab === 'shipping' && <DeliveryShippingWorkspace brandId={brandId} />}
+      </div>
+    </div>
+  );
 }
 
 // ── Audit Workspace ───────────────────────────────────────────────────────────
 
 function AuditWorkspace({ brandId }: { brandId: string }) {
   const { data: entries = [], isLoading } = useBrandAudit(brandId, 100);
+  const { t } = useTranslation('settings');
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-16 gap-2 text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
-        <span className="text-sm">Loading audit log…</span>
+        <span className="text-sm">{t('brandConfig.audit.loading')}</span>
       </div>
     );
   }
 
+  const count = entries.length;
+
   return (
     <div className="p-6 max-w-4xl space-y-4">
       <div className="flex items-center gap-2">
-        <h2 className="text-sm font-semibold">Configuration Audit Log</h2>
-        <Badge variant="outline" className="text-xs">{entries.length} entries</Badge>
+        <h2 className="text-sm font-semibold">{t('brandConfig.audit.title')}</h2>
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        <Badge variant="outline" className="text-xs">{t('brandConfig.audit.entries', { count } as any)}</Badge>
       </div>
 
       {entries.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 rounded-lg border border-dashed border-border/60">
           <History className="h-8 w-8 text-muted-foreground/30 mb-2" />
-          <p className="text-sm text-muted-foreground">No audit entries yet.</p>
+          <p className="text-sm text-muted-foreground">{t('brandConfig.audit.empty')}</p>
         </div>
       ) : (
         <div className="space-y-1">
@@ -508,14 +512,15 @@ function AuditWorkspace({ brandId }: { brandId: string }) {
 
 function AuditTimelineEntry({ entry }: { entry: ConfigAuditEntry }) {
   const [expanded, setExpanded] = useState(false);
+  const { t } = useTranslation('settings');
 
   const dotColor = entry.action === 'create' ? 'bg-emerald-500'
     : entry.action === 'delete' ? 'bg-red-500'
     : 'bg-blue-500';
 
-  const actionLabel = entry.action === 'create' ? 'Created'
-    : entry.action === 'delete' ? 'Deleted'
-    : 'Updated';
+  const actionLabel = entry.action === 'create' ? t('brandConfig.audit.created')
+    : entry.action === 'delete' ? t('brandConfig.audit.deleted')
+    : t('brandConfig.audit.updated');
 
   const hasChanges = entry.old_value || entry.new_value;
 
@@ -545,7 +550,10 @@ function AuditTimelineEntry({ entry }: { entry: ConfigAuditEntry }) {
 
         <div className="flex items-center gap-2 mt-0.5">
           {entry.actor_name && (
-            <span className="text-xs text-muted-foreground">by {entry.actor_name}</span>
+            <span className="text-xs text-muted-foreground">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              {t('brandConfig.audit.by' as any, { actor: entry.actor_name })}
+            </span>
           )}
           {entry.reason && (
             <span className="text-xs text-muted-foreground italic">"{entry.reason}"</span>
@@ -555,7 +563,7 @@ function AuditTimelineEntry({ entry }: { entry: ConfigAuditEntry }) {
               onClick={() => setExpanded(!expanded)}
               className="text-[11px] text-primary underline underline-offset-2 hover:no-underline"
             >
-              {expanded ? 'Hide diff' : 'Show diff'}
+              {expanded ? t('brandConfig.audit.hideDiff') : t('brandConfig.audit.showDiff')}
             </button>
           )}
         </div>
@@ -564,7 +572,7 @@ function AuditTimelineEntry({ entry }: { entry: ConfigAuditEntry }) {
           <div className="mt-2 grid grid-cols-2 gap-2">
             {entry.old_value && (
               <div className="rounded-md border border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-800 p-2">
-                <p className="text-[10px] font-medium text-red-700 dark:text-red-400 mb-1">Before</p>
+                <p className="text-[10px] font-medium text-red-700 dark:text-red-400 mb-1">{t('brandConfig.audit.before')}</p>
                 <pre className="text-[10px] text-muted-foreground overflow-auto max-h-24 whitespace-pre-wrap">
                   {JSON.stringify(entry.old_value, null, 2)}
                 </pre>
@@ -572,7 +580,7 @@ function AuditTimelineEntry({ entry }: { entry: ConfigAuditEntry }) {
             )}
             {entry.new_value && (
               <div className="rounded-md border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:border-emerald-800 p-2">
-                <p className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400 mb-1">After</p>
+                <p className="text-[10px] font-medium text-emerald-700 dark:text-emerald-400 mb-1">{t('brandConfig.audit.after')}</p>
                 <pre className="text-[10px] text-muted-foreground overflow-auto max-h-24 whitespace-pre-wrap">
                   {JSON.stringify(entry.new_value, null, 2)}
                 </pre>

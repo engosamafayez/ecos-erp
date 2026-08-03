@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 
 import { Combobox } from '@/components/crud';
@@ -14,10 +15,12 @@ type ProductCategorySelectProps = {
 export function ProductCategorySelect({
   value,
   onChange,
-  placeholder = 'Select category…',
+  placeholder,
   disabled,
   className,
 }: ProductCategorySelectProps) {
+  const { t } = useTranslation('products');
+
   const { data, isLoading } = useQuery({
     queryKey: ['category-options', 'product'],
     queryFn: () =>
@@ -36,9 +39,9 @@ export function ProductCategorySelect({
       value={value ?? ''}
       onChange={onChange}
       loading={isLoading}
-      placeholder={placeholder}
-      searchPlaceholder="Search categories…"
-      emptyText="No product categories found"
+      placeholder={placeholder ?? t('selects.categoryPlaceholder')}
+      searchPlaceholder={t('selects.categorySearch')}
+      emptyText={t('selects.productCategoryEmpty')}
       disabled={disabled}
       className={className}
     />

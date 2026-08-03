@@ -12,11 +12,11 @@ final class ProductCostChanged
     use Dispatchable, SerializesModels;
 
     public function __construct(
-        public readonly string  $productId,
-        public readonly string  $companyId,
-        public readonly float   $previousCost,
-        public readonly float   $newCost,
-        public readonly string  $triggerReason,
+        public readonly string $productId,
+        public readonly string $companyId,
+        public readonly float $previousCost,
+        public readonly float $newCost,
+        public readonly string $triggerReason,
         public readonly ?string $triggerSource = null,
     ) {}
 }

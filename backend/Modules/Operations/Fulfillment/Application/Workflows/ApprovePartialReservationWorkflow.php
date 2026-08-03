@@ -34,20 +34,20 @@ final class ApprovePartialReservationWorkflow implements FulfillmentWorkflowInte
 
         if ($order->reservation_status !== ReservationStatus::PartialReserved) {
             throw new WorkflowPreconditionException(
-                "Order [{$order->id}] is not in PartialReserved state (current: [{$order->reservation_status?->value}]). Only partially-reserved orders require this approval."
+                "Order [{$order->id}] is not in PartialReserved state (current: [{$order->reservation_status?->value}]). Only partially-reserved orders require this approval.",
             );
         }
 
-        $approvableStatuses = [OrderStatus::Confirmed, OrderStatus::Processing, OrderStatus::AwaitingStock];
+        $approvableStatuses = [OrderStatus::InProgress, OrderStatus::AwaitingStock, OrderStatus::NewOrder];
         if (! in_array($order->status, $approvableStatuses, true)) {
             throw new WorkflowPreconditionException(
-                "Order [{$order->id}] cannot receive partial-reservation approval from status [{$order->status->value}]."
+                "Order [{$order->id}] cannot receive partial-reservation approval from status [{$order->status->value}].",
             );
         }
 
         if ($order->partial_reservation_approved_at !== null) {
             throw new WorkflowPreconditionException(
-                "Order [{$order->id}] has already been approved for partial reservation on [{$order->partial_reservation_approved_at}]."
+                "Order [{$order->id}] has already been approved for partial reservation on [{$order->partial_reservation_approved_at}].",
             );
         }
     }
@@ -58,8 +58,8 @@ final class ApprovePartialReservationWorkflow implements FulfillmentWorkflowInte
         $notes = $ctx->get('notes');
 
         $order->update([
-            'partial_reservation_approved_at'    => now(),
-            'partial_reservation_approved_by'    => $ctx->actorId,
+            'partial_reservation_approved_at' => now(),
+            'partial_reservation_approved_by' => $ctx->actorId,
             'partial_reservation_approval_notes' => $notes,
         ]);
 
@@ -69,9 +69,9 @@ final class ApprovePartialReservationWorkflow implements FulfillmentWorkflowInte
             $order,
             "Partial reservation approved for order #{$order->order_number}. Order may now proceed to preparation.",
             [
-                'approved_by'  => $ctx->actorId,
-                'approved_at'  => $order->partial_reservation_approved_at?->toIso8601String(),
-                'notes'        => $notes,
+                'approved_by' => $ctx->actorId,
+                'approved_at' => $order->partial_reservation_approved_at?->toIso8601String(),
+                'notes' => $notes,
             ],
         );
     }
@@ -83,12 +83,12 @@ final class ApprovePartialReservationWorkflow implements FulfillmentWorkflowInte
 
         return [
             new PartialReservationApprovedEvent(
-                orderId:    $order->id,
+                orderId: $order->id,
                 orderNumber: $order->order_number,
-                companyId:  $order->company_id ?? '',
+                companyId: $order->company_id ?? '',
                 approvedAt: $result->meta['approved_at'] ?? now()->toIso8601String(),
                 approvedBy: $result->meta['approved_by'] ?? null,
-                notes:      $result->meta['notes'] ?? null,
+                notes: $result->meta['notes'] ?? null,
             ),
         ];
     }

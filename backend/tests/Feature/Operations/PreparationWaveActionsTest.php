@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Operations;
 
-use App\Core\Audit\AuditLog;
 use App\Core\FeatureFlags\FeatureFlagService;
-use App\Core\Timeline\TimelineEvent;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
@@ -44,20 +42,22 @@ class PreparationWaveActionsTest extends TestCase
     use RefreshDatabase;
 
     private User $user;
+
     private Company $company;
+
     private Warehouse $warehouse;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->company   = Company::factory()->create();
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $this->user      = User::factory()->create(['company_id' => $this->company->id]);
+        $this->user = User::factory()->create(['company_id' => $this->company->id]);
 
         $role = Role::create([
-            'name'      => 'System Admin',
-            'slug'      => 'sysadmin',
+            'name' => 'System Admin',
+            'slug' => 'sysadmin',
             'is_system' => true,
         ]);
         $this->user->roles()->attach($role->id);
@@ -72,42 +72,42 @@ class PreparationWaveActionsTest extends TestCase
     private function makeWave(WaveStatus $status = WaveStatus::Draft): PreparationWave
     {
         return PreparationWave::create([
-            'company_id'       => $this->company->id,
-            'warehouse_id'     => $this->warehouse->id,
-            'wave_number'      => 'PREP-' . now()->format('Ym') . '-' . str_pad((string) random_int(1, 9999), 6, '0', STR_PAD_LEFT),
-            'planning_date'    => now()->addDay()->toDateString(),
-            'status'           => $status->value,
-            'orders_count'     => 0,
-            'products_count'   => 0,
-            'lines_count'      => 0,
+            'company_id' => $this->company->id,
+            'warehouse_id' => $this->warehouse->id,
+            'wave_number' => 'PREP-'.now()->format('Ym').'-'.str_pad((string) random_int(1, 9999), 6, '0', STR_PAD_LEFT),
+            'planning_date' => now()->addDay()->toDateString(),
+            'status' => $status->value,
+            'orders_count' => 0,
+            'products_count' => 0,
+            'lines_count' => 0,
             'total_units_required' => 0,
             'total_units_prepared' => 0,
-            'shortage_detected'=> false,
-            'created_by'       => $this->user->id,
-            'updated_by'       => $this->user->id,
+            'shortage_detected' => false,
+            'created_by' => $this->user->id,
+            'updated_by' => $this->user->id,
         ]);
     }
 
     private function makeWaveItem(PreparationWave $wave, float $qty = 5.0): PreparationWaveItem
     {
         return PreparationWaveItem::create([
-            'company_id'          => $wave->company_id,
+            'company_id' => $wave->company_id,
             'preparation_wave_id' => $wave->id,
-            'product_id'          => Str::uuid()->toString(),
-            'sku_snapshot'        => 'SKU-TEST-' . uniqid(),
-            'name_snapshot'       => 'Test Product',
-            'quantity_required'   => $qty,
-            'quantity_prepared'   => 0,
-            'quantity_short'      => 0,
-            'status'              => WaveItemStatus::Pending->value,
-            'created_by'          => $this->user->id,
-            'updated_by'          => $this->user->id,
+            'product_id' => Str::uuid()->toString(),
+            'sku_snapshot' => 'SKU-TEST-'.uniqid(),
+            'name_snapshot' => 'Test Product',
+            'quantity_required' => $qty,
+            'quantity_prepared' => 0,
+            'quantity_short' => 0,
+            'status' => WaveItemStatus::Pending->value,
+            'created_by' => $this->user->id,
+            'updated_by' => $this->user->id,
         ]);
     }
 
     private function waveApiPath(string $waveId, string $suffix = ''): string
     {
-        return "/api/v1/preparation/waves/{$waveId}" . ($suffix ? "/{$suffix}" : '');
+        return "/api/v1/preparation/waves/{$waveId}".($suffix ? "/{$suffix}" : '');
     }
 
     // ── 1. Create Wave ────────────────────────────────────────────────────────
@@ -116,12 +116,12 @@ class PreparationWaveActionsTest extends TestCase
     {
         Event::fake([WaveCreated::class]);
 
-        $dto  = new CreateWaveDTO(
-            companyId:    $this->company->id,
-            warehouseId:  $this->warehouse->id,
+        $dto = new CreateWaveDTO(
+            companyId: $this->company->id,
+            warehouseId: $this->warehouse->id,
             planningDate: now()->addDay()->toDateString(),
-            orderLines:   [],
-            actorId:      $this->user->id,
+            orderLines: [],
+            actorId: $this->user->id,
         );
 
         $wave = app(CreateWaveAction::class)->execute($dto);
@@ -130,14 +130,14 @@ class PreparationWaveActionsTest extends TestCase
 
         $this->assertDatabaseHas('timeline_events', [
             'subject_type' => 'PreparationWave',
-            'subject_id'   => $wave->id,
-            'event_type'   => 'wave.created',
+            'subject_id' => $wave->id,
+            'event_type' => 'wave.created',
         ]);
 
         $this->assertDatabaseHas('audit_logs', [
             'entity_type' => 'PreparationWave',
-            'entity_id'   => $wave->id,
-            'action'      => 'preparation.wave.created',
+            'entity_id' => $wave->id,
+            'action' => 'preparation.wave.created',
         ]);
 
         $this->assertSame(WaveStatus::Draft->value, $wave->status->value);
@@ -155,14 +155,14 @@ class PreparationWaveActionsTest extends TestCase
 
         $this->assertDatabaseHas('timeline_events', [
             'subject_type' => 'PreparationWave',
-            'subject_id'   => $wave->id,
-            'event_type'   => 'wave.demand_generated',
+            'subject_id' => $wave->id,
+            'event_type' => 'wave.demand_generated',
         ]);
 
         $this->assertDatabaseHas('audit_logs', [
             'entity_type' => 'PreparationWave',
-            'entity_id'   => $wave->id,
-            'action'      => 'preparation.wave.demand_generated',
+            'entity_id' => $wave->id,
+            'action' => 'preparation.wave.demand_generated',
         ]);
     }
 
@@ -176,14 +176,14 @@ class PreparationWaveActionsTest extends TestCase
 
         $this->assertDatabaseHas('timeline_events', [
             'subject_type' => 'PreparationWave',
-            'subject_id'   => $wave->id,
-            'event_type'   => 'wave.materials_analyzed',
+            'subject_id' => $wave->id,
+            'event_type' => 'wave.materials_analyzed',
         ]);
 
         $this->assertDatabaseHas('audit_logs', [
             'entity_type' => 'PreparationWave',
-            'entity_id'   => $wave->id,
-            'action'      => 'preparation.wave.materials_analyzed',
+            'entity_id' => $wave->id,
+            'action' => 'preparation.wave.materials_analyzed',
         ]);
 
         // With no BOMs in DB, result stays Planning (no shortages)
@@ -203,7 +203,7 @@ class PreparationWaveActionsTest extends TestCase
         $this->makeWaveItem($wave);
         $wave->load('waveItems');
 
-        $dto    = new StartPreparationDTO(actorId: $this->user->id);
+        $dto = new StartPreparationDTO(actorId: $this->user->id);
         $result = app(StartPreparationAction::class)->execute($wave, $dto);
 
         Event::assertDispatched(WaveStarted::class, fn ($e) => $e->waveId === $wave->id);
@@ -212,14 +212,14 @@ class PreparationWaveActionsTest extends TestCase
 
         $this->assertDatabaseHas('timeline_events', [
             'subject_type' => 'PreparationWave',
-            'subject_id'   => $wave->id,
-            'event_type'   => 'wave.started',
+            'subject_id' => $wave->id,
+            'event_type' => 'wave.started',
         ]);
 
         $this->assertDatabaseHas('audit_logs', [
             'entity_type' => 'PreparationWave',
-            'entity_id'   => $wave->id,
-            'action'      => 'preparation.wave.started',
+            'entity_id' => $wave->id,
+            'action' => 'preparation.wave.started',
         ]);
     }
 
@@ -246,14 +246,14 @@ class PreparationWaveActionsTest extends TestCase
 
         $this->assertDatabaseHas('timeline_events', [
             'subject_type' => 'PreparationWave',
-            'subject_id'   => $wave->id,
-            'event_type'   => 'wave.product_prepared',
+            'subject_id' => $wave->id,
+            'event_type' => 'wave.product_prepared',
         ]);
 
         $this->assertDatabaseHas('audit_logs', [
             'entity_type' => 'PreparationWaveItem',
-            'entity_id'   => $item->id,
-            'action'      => 'preparation.wave_item.completed',
+            'entity_id' => $item->id,
+            'action' => 'preparation.wave_item.completed',
         ]);
     }
 
@@ -276,14 +276,14 @@ class PreparationWaveActionsTest extends TestCase
 
         $this->assertDatabaseHas('timeline_events', [
             'subject_type' => 'PreparationWave',
-            'subject_id'   => $wave->id,
-            'event_type'   => 'wave.completed',
+            'subject_id' => $wave->id,
+            'event_type' => 'wave.completed',
         ]);
 
         $this->assertDatabaseHas('audit_logs', [
             'entity_type' => 'PreparationWave',
-            'entity_id'   => $wave->id,
-            'action'      => 'preparation.wave.completed',
+            'entity_id' => $wave->id,
+            'action' => 'preparation.wave.completed',
         ]);
     }
 
@@ -304,14 +304,14 @@ class PreparationWaveActionsTest extends TestCase
 
         $this->assertDatabaseHas('timeline_events', [
             'subject_type' => 'PreparationWave',
-            'subject_id'   => $wave->id,
-            'event_type'   => 'wave.cancelled',
+            'subject_id' => $wave->id,
+            'event_type' => 'wave.cancelled',
         ]);
 
         $this->assertDatabaseHas('audit_logs', [
             'entity_type' => 'PreparationWave',
-            'entity_id'   => $wave->id,
-            'action'      => 'preparation.wave.cancelled',
+            'entity_id' => $wave->id,
+            'action' => 'preparation.wave.cancelled',
         ]);
     }
 
@@ -325,11 +325,11 @@ class PreparationWaveActionsTest extends TestCase
         $this->expectException(\Symfony\Component\HttpKernel\Exception\HttpException::class);
 
         $dto = new CreateWaveDTO(
-            companyId:    $this->company->id,
-            warehouseId:  $this->warehouse->id,
+            companyId: $this->company->id,
+            warehouseId: $this->warehouse->id,
             planningDate: now()->addDay()->toDateString(),
-            orderLines:   [],
-            actorId:      $this->user->id,
+            orderLines: [],
+            actorId: $this->user->id,
         );
 
         app(CreateWaveAction::class)->execute($dto);
@@ -371,13 +371,13 @@ class PreparationWaveActionsTest extends TestCase
 
     public function test_wrong_company_user_cannot_view_wave(): void
     {
-        $otherCompany   = Company::factory()->create();
+        $otherCompany = Company::factory()->create();
         $otherWarehouse = Warehouse::factory()->create(['company_id' => $otherCompany->id]);
-        $otherUser      = User::factory()->create(['company_id' => $otherCompany->id]);
+        $otherUser = User::factory()->create(['company_id' => $otherCompany->id]);
 
         $role = Role::create([
-            'name'      => 'System Admin Other',
-            'slug'      => 'sysadmin-other',
+            'name' => 'System Admin Other',
+            'slug' => 'sysadmin-other',
             'is_system' => true,
         ]);
         $otherUser->roles()->attach($role->id);
@@ -401,12 +401,12 @@ class PreparationWaveActionsTest extends TestCase
 
         // Write a timeline entry directly
         app(\App\Core\Timeline\TimelineService::class)->record(
-            companyId:   $this->company->id,
+            companyId: $this->company->id,
             subjectType: 'PreparationWave',
-            subjectId:   $wave->id,
-            eventType:   'wave.created',
-            title:       'Wave created',
-            sourceModule:'Operations.Preparation',
+            subjectId: $wave->id,
+            eventType: 'wave.created',
+            title: 'Wave created',
+            sourceModule: 'Operations.Preparation',
         );
 
         $this->actingAs($this->user)

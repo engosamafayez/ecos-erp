@@ -16,7 +16,18 @@ final class TestOrderSubscriber implements EnterpriseEventSubscriberInterface
         self::$callCount++;
     }
 
-    public function subscribesTo(): array     { return ['orders.order_created']; }
-    public function minSupportedVersion(): int { return 1; }
-    public function maxSupportedVersion(): int { return 0; }
+    public function subscribesTo(): array
+    {
+        return ['orders.order_created'];
+    }
+
+    public function minSupportedVersion(): int
+    {
+        return 1;
+    }
+
+    public function maxSupportedVersion(): int
+    {
+        return 0;
+    }
 }

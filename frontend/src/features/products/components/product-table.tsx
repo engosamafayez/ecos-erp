@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
   UniversalDataGrid,
@@ -69,10 +70,11 @@ export function ProductTable({
   pagination,
   emptyState,
 }: ProductTableProps) {
+  const { t } = useTranslation('products');
   const columns = useMemo(
-    () => createProductColumns({ onView, onEdit, onDelete, onStatusToggle, onViewRecipe, onCreateRecipe }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [onView, onEdit, onDelete, onStatusToggle, onViewRecipe, onCreateRecipe],
+    () => createProductColumns({ onView, onEdit, onDelete, onStatusToggle, onViewRecipe, onCreateRecipe }, t as unknown as (key: string, opts?: Record<string, unknown>) => string),
+     
+    [t, onView, onEdit, onDelete, onStatusToggle, onViewRecipe, onCreateRecipe],
   );
 
   return (
@@ -89,7 +91,7 @@ export function ProductTable({
       columnVisibility={columnVisibility}
       pagination={pagination}
       skeletonRows={8}
-      emptyState={emptyState ?? <EmptyState title="No products found" />}
+      emptyState={emptyState ?? <EmptyState title={t('emptyState.withFiltersTitle')} />}
       errorState={<ErrorState />}
       renderMobileCard={(product, sel) => (
         <ProductMobileCard

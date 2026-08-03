@@ -11,14 +11,14 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * Reusable mapping profile that groups rules for auto-mapping new assets.
  *
- * @property string       $id
- * @property string|null  $company_id
- * @property string       $name
- * @property string|null  $description
- * @property string|null  $connector_type   null = applies to all connectors
- * @property bool         $is_active
- * @property bool         $auto_apply       automatically apply when new assets are discovered
- * @property string|null  $created_by
+ * @property string $id
+ * @property string|null $company_id
+ * @property string $name
+ * @property string|null $description
+ * @property string|null $connector_type null = applies to all connectors
+ * @property bool $is_active
+ * @property bool $auto_apply automatically apply when new assets are discovered
+ * @property string|null $created_by
  */
 class MappingProfile extends Model
 {
@@ -45,7 +45,7 @@ class MappingProfile extends Model
     protected function casts(): array
     {
         return [
-            'is_active'  => 'boolean',
+            'is_active' => 'boolean',
             'auto_apply' => 'boolean',
         ];
     }

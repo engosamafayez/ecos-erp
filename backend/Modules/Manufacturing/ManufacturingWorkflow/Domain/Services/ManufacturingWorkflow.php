@@ -56,53 +56,53 @@ final class ManufacturingWorkflow
      */
     public function run(ManufacturingWorkflowRequest $request): ManufacturingWorkflowResult
     {
-        $workflowId  = $this->generateUuid();
-        $completedAt = fn (): string => (new DateTimeImmutable())->format(DateTimeInterface::ATOM);
+        $workflowId = $this->generateUuid();
+        $completedAt = fn (): string => (new DateTimeImmutable)->format(DateTimeInterface::ATOM);
 
         // ── Stage 1: Decision Orchestrator ────────────────────────────────────
         try {
             $orchestratorResult = $this->orchestrator->orchestrate(
-                trigger:    $request->trigger,
-                builder:    new ManufacturingContextBuilder(),
+                trigger: $request->trigger,
+                builder: new ManufacturingContextBuilder,
                 parameters: [
-                    'product_id'   => $request->product_id,
-                    'ordered_qty'  => $request->required_qty,
+                    'product_id' => $request->product_id,
+                    'ordered_qty' => $request->required_qty,
                     'available_qty' => 0.0,
-                    'shortage_qty'  => $request->required_qty,
-                    'warehouse_id'  => $request->warehouse_id,
+                    'shortage_qty' => $request->required_qty,
+                    'warehouse_id' => $request->warehouse_id,
                 ],
                 metadata: $request->metadata,
             );
         } catch (RecipeResolverException $e) {
             return new ManufacturingWorkflowResult(
-                workflow_id:         $workflowId,
-                stage:               WorkflowStage::DecisionEvaluated,
-                is_blocked:          true,
-                blocking_reason:     WorkflowBlockingReason::RecipeNotFound,
-                decision_result:     null,
-                recipe_snapshot:     null,
+                workflow_id: $workflowId,
+                stage: WorkflowStage::DecisionEvaluated,
+                is_blocked: true,
+                blocking_reason: WorkflowBlockingReason::RecipeNotFound,
+                decision_result: null,
+                recipe_snapshot: null,
                 availability_result: null,
-                plan:                null,
-                metadata:            array_merge($request->metadata, [
+                plan: null,
+                metadata: array_merge($request->metadata, [
                     'recipe_resolver_error' => $e->getMessage(),
-                    'recipe_resolver_code'  => $e->getMessage(),
+                    'recipe_resolver_code' => $e->getMessage(),
                 ]),
-                completed_at:        $completedAt(),
+                completed_at: $completedAt(),
             );
         } catch (NoMatchingRuleException $e) {
             return new ManufacturingWorkflowResult(
-                workflow_id:         $workflowId,
-                stage:               WorkflowStage::DecisionEvaluated,
-                is_blocked:          true,
-                blocking_reason:     WorkflowBlockingReason::NoMatchingRule,
-                decision_result:     null,
-                recipe_snapshot:     null,
+                workflow_id: $workflowId,
+                stage: WorkflowStage::DecisionEvaluated,
+                is_blocked: true,
+                blocking_reason: WorkflowBlockingReason::NoMatchingRule,
+                decision_result: null,
+                recipe_snapshot: null,
                 availability_result: null,
-                plan:                null,
-                metadata:            array_merge($request->metadata, [
+                plan: null,
+                metadata: array_merge($request->metadata, [
                     'no_matching_rule_context' => $e->contextType(),
                 ]),
-                completed_at:        $completedAt(),
+                completed_at: $completedAt(),
             );
         }
 
@@ -111,48 +111,48 @@ final class ManufacturingWorkflow
         // Block if the decision is not positive (Reject, Defer, Escalate)
         if (! $decisionResult->decision->isPositive()) {
             return new ManufacturingWorkflowResult(
-                workflow_id:         $workflowId,
-                stage:               WorkflowStage::DecisionEvaluated,
-                is_blocked:          true,
-                blocking_reason:     WorkflowBlockingReason::fromDecisionType($decisionResult->decision),
-                decision_result:     $decisionResult,
-                recipe_snapshot:     $orchestratorResult->recipe_snapshot,
+                workflow_id: $workflowId,
+                stage: WorkflowStage::DecisionEvaluated,
+                is_blocked: true,
+                blocking_reason: WorkflowBlockingReason::fromDecisionType($decisionResult->decision),
+                decision_result: $decisionResult,
+                recipe_snapshot: $orchestratorResult->recipe_snapshot,
                 availability_result: null,
-                plan:                null,
-                metadata:            array_merge($request->metadata, $orchestratorResult->metadata),
-                completed_at:        $completedAt(),
+                plan: null,
+                metadata: array_merge($request->metadata, $orchestratorResult->metadata),
+                completed_at: $completedAt(),
             );
         }
 
         // ── Stage 2: Inventory Availability Engine ────────────────────────────
         $availabilityResult = $this->availabilityEngine->analyse(
-            productId:   $request->product_id,
+            productId: $request->product_id,
             warehouseId: $request->warehouse_id,
             requiredQty: $request->required_qty,
-            companyId:   $request->company_id,
+            companyId: $request->company_id,
         );
 
         // Block if eligibility prevents manufacturing (CannotManufacture, NoRecipe)
         if (! $availabilityResult->eligibility->allowsManufacturing()) {
             return new ManufacturingWorkflowResult(
-                workflow_id:         $workflowId,
-                stage:               WorkflowStage::AvailabilityAnalysed,
-                is_blocked:          true,
-                blocking_reason:     WorkflowBlockingReason::fromEligibility($availabilityResult->eligibility),
-                decision_result:     $decisionResult,
-                recipe_snapshot:     $orchestratorResult->recipe_snapshot,
+                workflow_id: $workflowId,
+                stage: WorkflowStage::AvailabilityAnalysed,
+                is_blocked: true,
+                blocking_reason: WorkflowBlockingReason::fromEligibility($availabilityResult->eligibility),
+                decision_result: $decisionResult,
+                recipe_snapshot: $orchestratorResult->recipe_snapshot,
                 availability_result: $availabilityResult,
-                plan:                null,
-                metadata:            array_merge($request->metadata, $orchestratorResult->metadata),
-                completed_at:        $completedAt(),
+                plan: null,
+                metadata: array_merge($request->metadata, $orchestratorResult->metadata),
+                completed_at: $completedAt(),
             );
         }
 
         // ── Stage 3: Manufacturing Planner ────────────────────────────────────
         $plan = $this->planner->plan(
             availability: $availabilityResult,
-            decision:     $decisionResult,
-            metadata:     array_merge($request->metadata, $orchestratorResult->metadata, [
+            decision: $decisionResult,
+            metadata: array_merge($request->metadata, $orchestratorResult->metadata, [
                 'workflow_id' => $workflowId,
             ]),
         );
@@ -160,39 +160,39 @@ final class ManufacturingWorkflow
         // Block when manufacturing is not actually needed (Sufficient stock)
         if (! $plan->should_manufacture) {
             return new ManufacturingWorkflowResult(
-                workflow_id:         $workflowId,
-                stage:               WorkflowStage::PlanProduced,
-                is_blocked:          true,
-                blocking_reason:     WorkflowBlockingReason::ManufacturingNotNeeded,
-                decision_result:     $decisionResult,
-                recipe_snapshot:     $orchestratorResult->recipe_snapshot,
+                workflow_id: $workflowId,
+                stage: WorkflowStage::PlanProduced,
+                is_blocked: true,
+                blocking_reason: WorkflowBlockingReason::ManufacturingNotNeeded,
+                decision_result: $decisionResult,
+                recipe_snapshot: $orchestratorResult->recipe_snapshot,
                 availability_result: $availabilityResult,
-                plan:                $plan,
-                metadata:            $plan->metadata,
-                completed_at:        $completedAt(),
+                plan: $plan,
+                metadata: $plan->metadata,
+                completed_at: $completedAt(),
             );
         }
 
         // ── Success: plan is ready for execution ──────────────────────────────
         return new ManufacturingWorkflowResult(
-            workflow_id:         $workflowId,
-            stage:               WorkflowStage::PlanProduced,
-            is_blocked:          false,
-            blocking_reason:     null,
-            decision_result:     $decisionResult,
-            recipe_snapshot:     $orchestratorResult->recipe_snapshot,
+            workflow_id: $workflowId,
+            stage: WorkflowStage::PlanProduced,
+            is_blocked: false,
+            blocking_reason: null,
+            decision_result: $decisionResult,
+            recipe_snapshot: $orchestratorResult->recipe_snapshot,
             availability_result: $availabilityResult,
-            plan:                $plan,
-            metadata:            $plan->metadata,
-            completed_at:        $completedAt(),
+            plan: $plan,
+            metadata: $plan->metadata,
+            completed_at: $completedAt(),
         );
     }
 
     private function generateUuid(): string
     {
-        $data    = random_bytes(16);
-        $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
-        $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
+        $data = random_bytes(16);
+        $data[6] = chr(ord($data[6]) & 0x0F | 0x40);
+        $data[8] = chr(ord($data[8]) & 0x3F | 0x80);
 
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
     }

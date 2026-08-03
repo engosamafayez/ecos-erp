@@ -153,20 +153,20 @@ export function ProductFormDrawer({
               <div className="flex size-10 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/40">
                 <ChefHat className="size-5 text-emerald-600 dark:text-emerald-400" aria-hidden />
               </div>
-              <DialogTitle>Product created successfully</DialogTitle>
+              <DialogTitle>{t('recipePrompt.title')}</DialogTitle>
             </div>
             <DialogDescription>
-              <strong className="text-foreground">{recipePrompt?.name}</strong> has been created but has no recipe yet.
-              Would you like to create its recipe now?
+              <strong className="text-foreground">{recipePrompt?.name}</strong>{' '}
+              {t('recipePrompt.description')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setRecipePrompt(null)}>
-              Later
+              {t('recipePrompt.later')}
             </Button>
             <Button onClick={handleCreateRecipe} className="gap-2">
               <BookOpen className="size-4" aria-hidden />
-              Create Recipe
+              {t('recipePrompt.createRecipe')}
             </Button>
           </DialogFooter>
         </DialogContent>

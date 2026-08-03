@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Modules\Logistics\Delivery\Domain\Enums\AttemptStatus;
 use Modules\Logistics\Delivery\Domain\Enums\DeliveryStatus;
+use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Logistics\Distribution\Domain\Models\DeliveryStop;
 
 /**
@@ -127,6 +128,12 @@ class Delivery extends Model
     public function currentStop(): BelongsTo
     {
         return $this->belongsTo(DeliveryStop::class, 'current_stop_id');
+    }
+
+    /** Read-only reference into Commerce for display (order number + customer snapshot). */
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class, 'order_id');
     }
 
     // ── Domain logic ──────────────────────────────────────────────────────────

@@ -11,14 +11,14 @@ use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 
 /**
- * @property string      $id
- * @property string      $company_id
+ * @property string $id
+ * @property string $company_id
  * @property string|null $channel_id
  * @property string|null $governorate
  * @property string|null $zone
- * @property string      $warehouse_id
- * @property int         $priority
- * @property bool        $is_active
+ * @property string $warehouse_id
+ * @property int $priority
+ * @property bool $is_active
  * @property string|null $notes
  * @property string|null $created_by
  * @property string|null $updated_by
@@ -50,7 +50,7 @@ class WarehouseAssignmentPolicy extends Model
     /** @var array<string, string> */
     protected $casts = [
         'is_active' => 'boolean',
-        'priority'  => 'integer',
+        'priority' => 'integer',
     ];
 
     /**

@@ -23,13 +23,13 @@ final class CategoryFactory extends Factory
     public function definition(): array
     {
         return [
-            'parent_id'      => null,
-            'code'           => strtoupper($this->faker->unique()->bothify('CAT-####')),
-            'name'           => ucfirst($this->faker->unique()->word()),
-            'description'    => $this->faker->sentence(),
-            'level'          => 1,
-            'sort_order'     => $this->faker->numberBetween(0, 50),
-            'is_active'      => true,
+            'parent_id' => null,
+            'code' => strtoupper($this->faker->unique()->bothify('CAT-####')),
+            'name' => ucfirst($this->faker->unique()->word()),
+            'description' => $this->faker->sentence(),
+            'level' => 1,
+            'sort_order' => $this->faker->numberBetween(0, 50),
+            'is_active' => true,
             'category_scope' => 'product',
         ];
     }

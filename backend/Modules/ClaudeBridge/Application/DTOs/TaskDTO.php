@@ -23,14 +23,14 @@ final readonly class TaskDTO
     public static function fromRequest(array $data, string $companyId, string $userId): self
     {
         return new self(
-            companyId:       $companyId,
+            companyId: $companyId,
             createdByUserId: $userId,
-            title:           $data['title'],
-            description:     $data['description'],
-            repositoryPath:  $data['repository_path'],
-            targetBranch:    $data['target_branch'] ?? 'main',
-            status:          TaskStatus::Pending,
-            priority:        TaskPriority::from($data['priority'] ?? 'normal'),
+            title: $data['title'],
+            description: $data['description'],
+            repositoryPath: $data['repository_path'],
+            targetBranch: $data['target_branch'] ?? 'main',
+            status: TaskStatus::Pending,
+            priority: TaskPriority::from($data['priority'] ?? 'normal'),
         );
     }
 }

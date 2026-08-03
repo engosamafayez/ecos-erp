@@ -48,7 +48,7 @@ final class ProviderRegistry
     }
 
     /**
-     * @return list<string>  provider keys
+     * @return list<string> provider keys
      */
     public function keys(): array
     {
@@ -63,7 +63,7 @@ final class ProviderRegistry
     public function findByCapability(string $capability): array
     {
         return array_values(
-            array_filter($this->definitions, fn ($d) => $d->supports($capability))
+            array_filter($this->definitions, fn ($d) => $d->supports($capability)),
         );
     }
 
@@ -75,7 +75,7 @@ final class ProviderRegistry
     public function findByType(string $providerType): array
     {
         return array_values(
-            array_filter($this->definitions, fn ($d) => $d->providerType === $providerType)
+            array_filter($this->definitions, fn ($d) => $d->providerType === $providerType),
         );
     }
 

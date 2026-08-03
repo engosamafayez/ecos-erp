@@ -26,24 +26,31 @@ final class ProcessSaleIntegrationTest extends TestCase
 {
     use RefreshDatabase;
 
-    private ProcessSaleService       $service;
-    private CartRepositoryInterface  $cartRepo;
-    private SaleRepositoryInterface  $saleRepo;
+    private ProcessSaleService $service;
+
+    private CartRepositoryInterface $cartRepo;
+
+    private SaleRepositoryInterface $saleRepo;
+
     private ReceiptRepositoryInterface $receiptRepo;
 
-    private const SESSION_ID  = 'a1000000-0000-4000-a000-000000000001';
-    private const SHIFT_ID    = 'b1000000-0000-4000-b000-000000000001';
+    private const SESSION_ID = 'a1000000-0000-4000-a000-000000000001';
+
+    private const SHIFT_ID = 'b1000000-0000-4000-b000-000000000001';
+
     private const TERMINAL_ID = 'c1000000-0000-4000-c000-000000000001';
-    private const CASHIER_ID  = 'd1000000-0000-4000-d000-000000000001';
-    private const CURRENCY    = 'EGP';
+
+    private const CASHIER_ID = 'd1000000-0000-4000-d000-000000000001';
+
+    private const CURRENCY = 'EGP';
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->service     = app(ProcessSaleService::class);
-        $this->cartRepo    = app(CartRepositoryInterface::class);
-        $this->saleRepo    = app(SaleRepositoryInterface::class);
+        $this->service = app(ProcessSaleService::class);
+        $this->cartRepo = app(CartRepositoryInterface::class);
+        $this->saleRepo = app(SaleRepositoryInterface::class);
         $this->receiptRepo = app(ReceiptRepositoryInterface::class);
     }
 
@@ -52,14 +59,14 @@ final class ProcessSaleIntegrationTest extends TestCase
         $cart = $this->makePersistedCart();
 
         $result = $this->service->execute(new ProcessSaleCommand(
-            cartId:      (string) $cart->id,
-            sessionId:   self::SESSION_ID,
-            shiftId:     self::SHIFT_ID,
-            terminalId:  self::TERMINAL_ID,
-            cashierId:   self::CASHIER_ID,
-            customerId:  null,
-            currency:    self::CURRENCY,
-            payments:    [['type' => 'cash', 'amount' => '100.00', 'currency' => self::CURRENCY]],
+            cartId: (string) $cart->id,
+            sessionId: self::SESSION_ID,
+            shiftId: self::SHIFT_ID,
+            terminalId: self::TERMINAL_ID,
+            cashierId: self::CASHIER_ID,
+            customerId: null,
+            currency: self::CURRENCY,
+            payments: [['type' => 'cash', 'amount' => '100.00', 'currency' => self::CURRENCY]],
             cashierName: 'Ali Hassan',
         ));
 
@@ -73,14 +80,14 @@ final class ProcessSaleIntegrationTest extends TestCase
         $cart = $this->makePersistedCart();
 
         $result = $this->service->execute(new ProcessSaleCommand(
-            cartId:      (string) $cart->id,
-            sessionId:   self::SESSION_ID,
-            shiftId:     self::SHIFT_ID,
-            terminalId:  self::TERMINAL_ID,
-            cashierId:   self::CASHIER_ID,
-            customerId:  null,
-            currency:    self::CURRENCY,
-            payments:    [['type' => 'cash', 'amount' => '100.00', 'currency' => self::CURRENCY]],
+            cartId: (string) $cart->id,
+            sessionId: self::SESSION_ID,
+            shiftId: self::SHIFT_ID,
+            terminalId: self::TERMINAL_ID,
+            cashierId: self::CASHIER_ID,
+            customerId: null,
+            currency: self::CURRENCY,
+            payments: [['type' => 'cash', 'amount' => '100.00', 'currency' => self::CURRENCY]],
             cashierName: 'Ali Hassan',
         ));
 
@@ -95,14 +102,14 @@ final class ProcessSaleIntegrationTest extends TestCase
         $cart = $this->makePersistedCart();
 
         $result = $this->service->execute(new ProcessSaleCommand(
-            cartId:      (string) $cart->id,
-            sessionId:   self::SESSION_ID,
-            shiftId:     self::SHIFT_ID,
-            terminalId:  self::TERMINAL_ID,
-            cashierId:   self::CASHIER_ID,
-            customerId:  null,
-            currency:    self::CURRENCY,
-            payments:    [['type' => 'cash', 'amount' => '100.00', 'currency' => self::CURRENCY]],
+            cartId: (string) $cart->id,
+            sessionId: self::SESSION_ID,
+            shiftId: self::SHIFT_ID,
+            terminalId: self::TERMINAL_ID,
+            cashierId: self::CASHIER_ID,
+            customerId: null,
+            currency: self::CURRENCY,
+            payments: [['type' => 'cash', 'amount' => '100.00', 'currency' => self::CURRENCY]],
             cashierName: 'Ali Hassan',
         ));
 
@@ -117,14 +124,14 @@ final class ProcessSaleIntegrationTest extends TestCase
         $cartId = (string) $cart->id;
 
         $this->service->execute(new ProcessSaleCommand(
-            cartId:      $cartId,
-            sessionId:   self::SESSION_ID,
-            shiftId:     self::SHIFT_ID,
-            terminalId:  self::TERMINAL_ID,
-            cashierId:   self::CASHIER_ID,
-            customerId:  null,
-            currency:    self::CURRENCY,
-            payments:    [['type' => 'cash', 'amount' => '100.00', 'currency' => self::CURRENCY]],
+            cartId: $cartId,
+            sessionId: self::SESSION_ID,
+            shiftId: self::SHIFT_ID,
+            terminalId: self::TERMINAL_ID,
+            cashierId: self::CASHIER_ID,
+            customerId: null,
+            currency: self::CURRENCY,
+            payments: [['type' => 'cash', 'amount' => '100.00', 'currency' => self::CURRENCY]],
             cashierName: 'Ali Hassan',
         ));
 
@@ -137,14 +144,14 @@ final class ProcessSaleIntegrationTest extends TestCase
         $cart = $this->makePersistedCart();
 
         $result = $this->service->execute(new ProcessSaleCommand(
-            cartId:      (string) $cart->id,
-            sessionId:   self::SESSION_ID,
-            shiftId:     self::SHIFT_ID,
-            terminalId:  self::TERMINAL_ID,
-            cashierId:   self::CASHIER_ID,
-            customerId:  null,
-            currency:    self::CURRENCY,
-            payments:    [['type' => 'cash', 'amount' => '120.00', 'currency' => self::CURRENCY]],
+            cartId: (string) $cart->id,
+            sessionId: self::SESSION_ID,
+            shiftId: self::SHIFT_ID,
+            terminalId: self::TERMINAL_ID,
+            cashierId: self::CASHIER_ID,
+            customerId: null,
+            currency: self::CURRENCY,
+            payments: [['type' => 'cash', 'amount' => '120.00', 'currency' => self::CURRENCY]],
             cashierName: 'Ali Hassan',
         ));
 
@@ -157,11 +164,11 @@ final class ProcessSaleIntegrationTest extends TestCase
     private function makePersistedCart(): Cart
     {
         $cart = Cart::open(
-            sessionId:  self::SESSION_ID,
-            shiftId:    self::SHIFT_ID,
+            sessionId: self::SESSION_ID,
+            shiftId: self::SHIFT_ID,
             terminalId: self::TERMINAL_ID,
-            cashierId:  self::CASHIER_ID,
-            currency:   self::CURRENCY,
+            cashierId: self::CASHIER_ID,
+            currency: self::CURRENCY,
         );
 
         $cart->addLine('prod-1', 'Widget', 'WGT-001', Quantity::of('1'), Money::of('100.00', self::CURRENCY));

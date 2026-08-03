@@ -163,6 +163,39 @@ function SummaryTab({ customer }: { customer: Customer }) {
           />
         ) : null}
       </div>
+
+      {/* Brands */}
+      {customer.brands && customer.brands.length > 0 ? (
+        <div className="flex flex-col gap-1.5 rounded-lg border p-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {t('drawer.summary.brands', 'Brands')}
+          </p>
+          <div className="flex flex-col gap-1.5">
+            {customer.brands.map((b) => (
+              <div
+                key={b.id}
+                className="flex items-center justify-between gap-2 rounded-md border bg-muted/20 px-2.5 py-1.5"
+              >
+                <span className="flex min-w-0 items-center gap-1.5 truncate text-xs font-medium">
+                  {b.is_primary && <span className="text-primary">★</span>}
+                  <span className="truncate">{b.brand_name ?? b.brand_code ?? '—'}</span>
+                </span>
+                <span className="flex shrink-0 items-center gap-3 text-[11px] text-muted-foreground">
+                  <span>{b.orders_count} {t('drawer.summary.brandOrders', 'orders')}</span>
+                  <span className="font-medium tabular-nums text-foreground">
+                    {Number(b.lifetime_value ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </span>
+                  {b.last_order_at && (
+                    <span className="hidden sm:inline">
+                      {new Date(b.last_order_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -391,19 +424,6 @@ function MemoryTab({
   );
 }
 
-// ── Activity tab (coming soon placeholder) ────────────────────────────────────
-
-function ActivityTab() {
-  const { t } = useTranslation('customers');
-  return (
-    <div className="flex flex-col items-center gap-2 py-12 text-center">
-      <Calendar className="size-10 text-muted-foreground/30" />
-      <p className="text-sm font-medium text-muted-foreground">{t('drawer.activity.title')}</p>
-      <p className="text-xs text-muted-foreground/70">{t('drawer.activity.empty')}</p>
-    </div>
-  );
-}
-
 // ── Helper ────────────────────────────────────────────────────────────────────
 
 function InfoRow({ label, value }: { label: string; value: string }) {
@@ -461,11 +481,6 @@ export function CustomerDrawer({ customer, open, onOpenChange, onEdit, defaultTa
       content: (
         <MemoryTab customer={customer} onEdit={onEdit} onOpenChange={onOpenChange} />
       ),
-    },
-    {
-      key: 'activity',
-      label: t('drawer.tabs.activity'),
-      content: <ActivityTab />,
     },
   ];
 

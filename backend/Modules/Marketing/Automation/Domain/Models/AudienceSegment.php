@@ -14,7 +14,8 @@ class AudienceSegment extends Model
 {
     use HasUuids, SoftDeletes;
 
-    protected $table    = 'automation_audience_segments';
+    protected $table = 'automation_audience_segments';
+
     protected $fillable = [
         'name', 'description', 'company_id', 'segment_type', 'rules',
         'entity_type', 'member_count', 'is_dynamic', 'is_active',
@@ -22,10 +23,10 @@ class AudienceSegment extends Model
     ];
 
     protected $casts = [
-        'segment_type'       => SegmentType::class,
-        'rules'              => 'array',
-        'is_dynamic'         => 'boolean',
-        'is_active'          => 'boolean',
+        'segment_type' => SegmentType::class,
+        'rules' => 'array',
+        'is_dynamic' => 'boolean',
+        'is_active' => 'boolean',
         'last_calculated_at' => 'datetime',
     ];
 

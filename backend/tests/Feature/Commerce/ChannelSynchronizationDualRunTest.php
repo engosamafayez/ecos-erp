@@ -7,6 +7,7 @@ namespace Tests\Feature\Commerce;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
+use Mockery;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\ProductMappings\Domain\Models\ProductMapping;
 use Modules\Commerce\Synchronization\Application\Jobs\InventorySyncJob;
@@ -49,18 +50,21 @@ class ChannelSynchronizationDualRunTest extends TestCase
     use RefreshDatabase;
 
     private Company $company;
+
     private Brand $brand;
+
     private Warehouse $warehouse;
+
     private Product $product;
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->company   = Company::factory()->create();
-        $this->brand     = Brand::factory()->create(['company_id' => $this->company->id]);
+        $this->company = Company::factory()->create();
+        $this->brand = Brand::factory()->create(['company_id' => $this->company->id]);
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $this->product   = Product::factory()->create();
+        $this->product = Product::factory()->create();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -68,20 +72,20 @@ class ChannelSynchronizationDualRunTest extends TestCase
     private function dto(float $quantity): StockOperationDTO
     {
         return StockOperationDTO::fromArray([
-            'warehouse_id'   => $this->warehouse->id,
-            'product_id'     => $this->product->id,
-            'company_id'     => $this->company->id,
-            'quantity'       => $quantity,
+            'warehouse_id' => $this->warehouse->id,
+            'product_id' => $this->product->id,
+            'company_id' => $this->company->id,
+            'quantity' => $quantity,
             'reference_type' => 'test',
-            'reference_id'   => 'dual-run-ref',
+            'reference_id' => 'dual-run-ref',
         ]);
     }
 
     private function activeChannel(): Channel
     {
         return Channel::factory()->create([
-            'brand_id'   => $this->brand->id,
-            'is_active'  => true,
+            'brand_id' => $this->brand->id,
+            'is_active' => true,
             'sync_stock' => true,
         ]);
     }
@@ -97,13 +101,13 @@ class ChannelSynchronizationDualRunTest extends TestCase
     private function receivedEvent(): InventoryStockReceived
     {
         return new InventoryStockReceived(
-            inventoryItemId:  'item-uuid',
-            warehouseId:      $this->warehouse->id,
-            productId:        $this->product->id,
-            companyId:        $this->company->id,
+            inventoryItemId: 'item-uuid',
+            warehouseId: $this->warehouse->id,
+            productId: $this->product->id,
+            companyId: $this->company->id,
             quantityReceived: 10.0,
-            onHandBefore:     0.0,
-            onHandAfter:      10.0,
+            onHandBefore: 0.0,
+            onHandAfter: 10.0,
         );
     }
 
@@ -116,7 +120,7 @@ class ChannelSynchronizationDualRunTest extends TestCase
         $service = $this->mock(ChannelSynchronizationService::class);
         $service->shouldReceive('handleEvent')
             ->once()
-            ->with(\Mockery::type(InventoryStockReceived::class));
+            ->with(Mockery::type(InventoryStockReceived::class));
 
         app(InventoryChannelSynchronizationListener::class)->handle($this->receivedEvent());
     }
@@ -159,8 +163,8 @@ class ChannelSynchronizationDualRunTest extends TestCase
 
         // Active channel exists but no ProductMapping for this product.
         Channel::factory()->create([
-            'brand_id'   => $this->brand->id,
-            'is_active'  => true,
+            'brand_id' => $this->brand->id,
+            'is_active' => true,
             'sync_stock' => true,
         ]);
 
@@ -174,8 +178,8 @@ class ChannelSynchronizationDualRunTest extends TestCase
         Queue::fake();
 
         $channel = Channel::factory()->create([
-            'brand_id'   => $this->brand->id,
-            'is_active'  => false,
+            'brand_id' => $this->brand->id,
+            'is_active' => false,
             'sync_stock' => true,
         ]);
         $this->mapProduct($channel);
@@ -190,8 +194,8 @@ class ChannelSynchronizationDualRunTest extends TestCase
         Queue::fake();
 
         $channel = Channel::factory()->create([
-            'brand_id'   => $this->brand->id,
-            'is_active'  => true,
+            'brand_id' => $this->brand->id,
+            'is_active' => true,
             'sync_stock' => false,
         ]);
         $this->mapProduct($channel);
@@ -238,10 +242,10 @@ class ChannelSynchronizationDualRunTest extends TestCase
 
         $this->assertNotNull($loggedContext, 'Service must log "[ChannelSync] Event processed".');
         $this->assertSame($event->correlationId(), $loggedContext['correlation_id']);
-        $this->assertSame($event->eventName(),     $loggedContext['event_name']);
-        $this->assertSame($event->eventVersion(),  $loggedContext['event_version']);
-        $this->assertSame($this->product->id,      $loggedContext['product_id']);
-        $this->assertSame(1,                       $loggedContext['jobs_dispatched']);
+        $this->assertSame($event->eventName(), $loggedContext['event_name']);
+        $this->assertSame($event->eventVersion(), $loggedContext['event_version']);
+        $this->assertSame($this->product->id, $loggedContext['product_id']);
+        $this->assertSame(1, $loggedContext['jobs_dispatched']);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -312,10 +316,10 @@ class ChannelSynchronizationDualRunTest extends TestCase
 
         $event = new InventoryCountApproved(
             countSessionId: 'session-uuid-001',
-            countNumber:    'CNT-2026-001',
-            warehouseId:    $this->warehouse->id,
-            companyId:      $this->company->id,
-            linesAdjusted:  3,
+            countNumber: 'CNT-2026-001',
+            warehouseId: $this->warehouse->id,
+            companyId: $this->company->id,
+            linesAdjusted: 3,
         );
 
         // Must not throw — session events are silently no-op'd by the service.
@@ -334,10 +338,10 @@ class ChannelSynchronizationDualRunTest extends TestCase
 
         $event = new InventoryCountApproved(
             countSessionId: 'session-uuid-002',
-            countNumber:    'CNT-2026-002',
-            warehouseId:    $this->warehouse->id,
-            companyId:      $this->company->id,
-            linesAdjusted:  5,
+            countNumber: 'CNT-2026-002',
+            warehouseId: $this->warehouse->id,
+            companyId: $this->company->id,
+            linesAdjusted: 5,
         );
 
         app(InventoryChannelSynchronizationListener::class)->handle($event);
@@ -357,13 +361,13 @@ class ChannelSynchronizationDualRunTest extends TestCase
         // Direct StockMovement creation triggers the observer's `created` hook.
         // This path is completely independent of the domain event system.
         StockMovement::create([
-            'warehouse_id'   => $this->warehouse->id,
-            'product_id'     => $this->product->id,
-            'movement_type'  => MovementType::PurchaseReceipt->value,
-            'quantity'       => 20.0,
+            'warehouse_id' => $this->warehouse->id,
+            'product_id' => $this->product->id,
+            'movement_type' => MovementType::PurchaseReceipt->value,
+            'quantity' => 20.0,
             'balance_before' => 0.0,
-            'balance_after'  => 20.0,
-            'movement_date'  => now()->toDateString(),
+            'balance_after' => 20.0,
+            'movement_date' => now()->toDateString(),
         ]);
 
         Queue::assertPushed(InventorySyncJob::class, 1);
@@ -374,13 +378,13 @@ class ChannelSynchronizationDualRunTest extends TestCase
         Queue::fake();
 
         StockMovement::create([
-            'warehouse_id'   => $this->warehouse->id,
-            'product_id'     => $this->product->id,
-            'movement_type'  => MovementType::PurchaseReceipt->value,
-            'quantity'       => 5.0,
+            'warehouse_id' => $this->warehouse->id,
+            'product_id' => $this->product->id,
+            'movement_type' => MovementType::PurchaseReceipt->value,
+            'quantity' => 5.0,
             'balance_before' => 0.0,
-            'balance_after'  => 5.0,
-            'movement_date'  => now()->toDateString(),
+            'balance_after' => 5.0,
+            'movement_date' => now()->toDateString(),
         ]);
 
         Queue::assertNothingPushed();
@@ -405,13 +409,13 @@ class ChannelSynchronizationDualRunTest extends TestCase
         // Path B — Legacy observer pipeline.
         // Direct StockMovement creation triggers StockMovementObserver → dispatches InventorySyncJob.
         StockMovement::create([
-            'warehouse_id'   => $this->warehouse->id,
-            'product_id'     => $this->product->id,
-            'movement_type'  => MovementType::PurchaseReceipt->value,
-            'quantity'       => 10.0,
+            'warehouse_id' => $this->warehouse->id,
+            'product_id' => $this->product->id,
+            'movement_type' => MovementType::PurchaseReceipt->value,
+            'quantity' => 10.0,
             'balance_before' => 0.0,
-            'balance_after'  => 10.0,
-            'movement_date'  => now()->toDateString(),
+            'balance_after' => 10.0,
+            'movement_date' => now()->toDateString(),
         ]);
 
         // Both pipelines must have dispatched a job independently — 2 total.

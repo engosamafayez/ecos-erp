@@ -68,11 +68,11 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->unique(['entity_type', 'entity_id'],      'bae_dna_entity_uq');
-            $table->index(['company_id', 'entity_type'],       'bae_dna_co_type_idx');
-            $table->index('campaign_id',                       'bae_dna_camp_idx');
-            $table->index('initiative_id',                     'bae_dna_init_idx');
-            $table->index('customer_lifetime_stage',           'bae_dna_stage_idx');
+            $table->unique(['entity_type', 'entity_id'], 'bae_dna_entity_uq');
+            $table->index(['company_id', 'entity_type'], 'bae_dna_co_type_idx');
+            $table->index('campaign_id', 'bae_dna_camp_idx');
+            $table->index('initiative_id', 'bae_dna_init_idx');
+            $table->index('customer_lifetime_stage', 'bae_dna_stage_idx');
         });
     }
 

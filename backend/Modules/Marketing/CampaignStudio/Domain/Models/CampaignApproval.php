@@ -23,7 +23,7 @@ class CampaignApproval extends Model
     ];
 
     protected $casts = [
-        'status'       => ApprovalStatus::class,
+        'status' => ApprovalStatus::class,
         'submitted_at' => 'datetime',
         'completed_at' => 'datetime',
     ];

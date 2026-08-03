@@ -23,7 +23,6 @@ use Modules\Operations\Preparation\Domain\Events\OrderMovedToPreparing;
 use Modules\Operations\Preparation\Domain\Events\OrderRemovedFromWave;
 use Modules\Operations\Preparation\Domain\Events\WaveClosed;
 use Modules\Operations\Preparation\Domain\Events\WaveCreated;
-use Modules\Platform\EventPlatform\Application\Services\EnterpriseDeadLetterQueue;
 use Modules\Platform\EventPlatform\Application\Services\EnterpriseEventBus;
 use Modules\Platform\EventPlatform\Application\Services\EnterpriseEventDispatcher;
 use Modules\Platform\EventPlatform\Application\Services\EnterpriseEventMonitor;
@@ -92,13 +91,13 @@ final class EventPlatformServiceProvider extends ServiceProvider
 
     private function registerDemandEngineSubscribers(EnterpriseEventBus $bus): void
     {
-        $bus->subscribe('preparation.wave.created',                  WaveCreatedListener::class,             RetryPolicy::standard(), priority: 10, queue: 'demand');
-        $bus->subscribe('preparation.wave.closed',                   WaveClosedListener::class,              RetryPolicy::standard(), priority: 10, queue: 'demand');
-        $bus->subscribe('preparation.wave.demand_refresh_requested', DemandRefreshRequestedListener::class,  RetryPolicy::standard(), priority: 10, queue: 'demand');
-        $bus->subscribe('preparation.wave.order_added',              OrderAddedToWaveListener::class,        RetryPolicy::standard(), priority: 10, queue: 'demand');
-        $bus->subscribe('preparation.wave.order_removed',            OrderRemovedFromWaveListener::class,    RetryPolicy::standard(), priority: 10, queue: 'demand');
-        $bus->subscribe('preparation.wave.order_moved_to_preparing', OrderMovedToPreparingListener::class,  RetryPolicy::standard(), priority: 10, queue: 'demand');
-        $bus->subscribe('manufacturing.production_job.completed',    ManufacturingCompletedListener::class,  RetryPolicy::standard(), priority: 10, queue: 'demand');
+        $bus->subscribe('preparation.wave.created', WaveCreatedListener::class, RetryPolicy::standard(), priority: 10, queue: 'demand');
+        $bus->subscribe('preparation.wave.closed', WaveClosedListener::class, RetryPolicy::standard(), priority: 10, queue: 'demand');
+        $bus->subscribe('preparation.wave.demand_refresh_requested', DemandRefreshRequestedListener::class, RetryPolicy::standard(), priority: 10, queue: 'demand');
+        $bus->subscribe('preparation.wave.order_added', OrderAddedToWaveListener::class, RetryPolicy::standard(), priority: 10, queue: 'demand');
+        $bus->subscribe('preparation.wave.order_removed', OrderRemovedFromWaveListener::class, RetryPolicy::standard(), priority: 10, queue: 'demand');
+        $bus->subscribe('preparation.wave.order_moved_to_preparing', OrderMovedToPreparingListener::class, RetryPolicy::standard(), priority: 10, queue: 'demand');
+        $bus->subscribe('manufacturing.production_job.completed', ManufacturingCompletedListener::class, RetryPolicy::standard(), priority: 10, queue: 'demand');
         // GoodsReceiptCompleted and InventoryReturned: listeners are ready; wire once events are available.
         // $bus->subscribe('inventory.goods_receipt.completed', GoodsReceiptCompletedListener::class, RetryPolicy::standard(), priority: 10, queue: 'demand');
         // $bus->subscribe('inventory.returned',                InventoryReturnedListener::class,     RetryPolicy::standard(), priority: 10, queue: 'demand');
@@ -115,12 +114,12 @@ final class EventPlatformServiceProvider extends ServiceProvider
      */
     private function bridgeLegacyEvents(EnterpriseEventBus $bus): void
     {
-        Event::listen(WaveCreated::class,            fn (WaveCreated $e)            => $bus->publish($e));
-        Event::listen(WaveClosed::class,             fn (WaveClosed $e)             => $bus->publish($e));
+        Event::listen(WaveCreated::class, fn (WaveCreated $e) => $bus->publish($e));
+        Event::listen(WaveClosed::class, fn (WaveClosed $e) => $bus->publish($e));
         Event::listen(DemandRefreshRequested::class, fn (DemandRefreshRequested $e) => $bus->publish($e));
-        Event::listen(OrderAddedToWave::class,       fn (OrderAddedToWave $e)       => $bus->publish($e));
-        Event::listen(OrderRemovedFromWave::class,   fn (OrderRemovedFromWave $e)   => $bus->publish($e));
-        Event::listen(OrderMovedToPreparing::class,  fn (OrderMovedToPreparing $e)  => $bus->publish($e));
+        Event::listen(OrderAddedToWave::class, fn (OrderAddedToWave $e) => $bus->publish($e));
+        Event::listen(OrderRemovedFromWave::class, fn (OrderRemovedFromWave $e) => $bus->publish($e));
+        Event::listen(OrderMovedToPreparing::class, fn (OrderMovedToPreparing $e) => $bus->publish($e));
 
         // ManufacturingJobCompletedEvent does not implement DomainEvent — keep legacy listener for now.
         // TODO: Convert ManufacturingJobCompletedEvent to a proper EnterpriseEvent when Manufacturing OS is migrated.

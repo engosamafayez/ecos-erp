@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
 
 import type { FitnessVerdict } from '../types/fleet';
@@ -10,13 +11,14 @@ import type { FitnessVerdict } from '../types/fleet';
  * screen that says "unfit" without saying why is not acceptable.
  */
 export function BlockerList({ verdict, compact = false }: { verdict: FitnessVerdict; compact?: boolean }) {
+  const { t } = useTranslation('logistics');
   const hasFindings = verdict.blockers.length > 0 || verdict.warnings.length > 0;
 
   if (!hasFindings) {
     return (
       <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <CheckCircle2 className="size-3.5 text-emerald-600" />
-        Nothing outstanding.
+        {t('fleet.blockers.none')}
       </p>
     );
   }

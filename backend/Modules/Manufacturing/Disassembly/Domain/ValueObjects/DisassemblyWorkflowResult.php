@@ -33,11 +33,11 @@ final readonly class DisassemblyWorkflowResult
     public static function blocked(string $reason, array $metadata = []): self
     {
         return new self(
-            is_blocked:      true,
+            is_blocked: true,
             blocking_reason: $reason,
-            plan:            null,
+            plan: null,
             recipe_snapshot: null,
-            metadata:        $metadata,
+            metadata: $metadata,
         );
     }
 
@@ -45,11 +45,11 @@ final readonly class DisassemblyWorkflowResult
     public static function ready(DisassemblyPlan $plan, array $metadata = []): self
     {
         return new self(
-            is_blocked:      false,
+            is_blocked: false,
             blocking_reason: null,
-            plan:            $plan,
+            plan: $plan,
             recipe_snapshot: $plan->recipe_snapshot,
-            metadata:        $metadata,
+            metadata: $metadata,
         );
     }
 }

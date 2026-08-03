@@ -63,12 +63,12 @@ final class DecisionKernel
         $winner = $evaluations[0];
 
         return new DecisionResult(
-            decision:     $winner->decision_type,
-            reason:       $winner->reason,
+            decision: $winner->decision_type,
+            reason: $winner->reason,
             matched_rule: $winner,
-            context:      $context,
-            trigger:      $trigger,
-            decided_at:   (new DateTimeImmutable())->format(DateTimeInterface::ATOM),
+            context: $context,
+            trigger: $trigger,
+            decided_at: (new DateTimeImmutable)->format(DateTimeInterface::ATOM),
         );
     }
 }

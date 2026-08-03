@@ -30,14 +30,14 @@ final class EloquentInventoryItemRepository implements InventoryItemRepositoryIn
         // skips — no unique-constraint exception and no transaction abort, unlike
         // the firstOrCreate SELECT→INSERT race condition.
         DB::table('inventory_items')->insertOrIgnore([
-            'id'           => (string) Str::orderedUuid(),
+            'id' => (string) Str::orderedUuid(),
             'warehouse_id' => $warehouseId,
-            'product_id'   => $productId,
-            'company_id'   => $companyId,
-            'on_hand_qty'  => 0,
+            'product_id' => $productId,
+            'company_id' => $companyId,
+            'on_hand_qty' => 0,
             'reserved_qty' => 0,
-            'created_at'   => now(),
-            'updated_at'   => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         return InventoryItem::query()

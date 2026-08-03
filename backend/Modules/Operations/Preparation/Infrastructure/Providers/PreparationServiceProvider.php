@@ -10,6 +10,7 @@ use App\Core\FeatureFlags\FeatureFlagService;
 use App\Core\Timeline\TimelineService;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Inventory\DomainEvents\Events\InventoryStockReceived;
 use Modules\Operations\Preparation\Application\Events\Inbound\LoadingPoolReservationReleasedEvent;
 use Modules\Operations\Preparation\Application\Events\Inbound\LoadingPoolReservedEvent;
@@ -23,33 +24,32 @@ use Modules\Operations\Preparation\Application\Listeners\ManufacturingJobComplet
 use Modules\Operations\Preparation\Application\Listeners\ManufacturingJobCreatedListener;
 use Modules\Operations\Preparation\Application\Listeners\StockAddedListener;
 use Modules\Operations\Preparation\Application\Listeners\WarehouseAssignedListener;
-use Modules\Operations\Preparation\Domain\Events\WarehouseAssigned;
-use Modules\Operations\Preparation\Domain\Models\PreparedProductsPool;
-use Modules\Operations\Preparation\Domain\Models\PreparationSession;
-use Modules\Operations\Preparation\Domain\Models\PreparationStation;
-use Modules\Operations\Preparation\Domain\Models\PreparationWave;
-use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Operations\Preparation\Application\Observers\OrderPreparationObserver;
 use Modules\Operations\Preparation\Application\Services\DailyPreparationSessionManager;
 use Modules\Operations\Preparation\Application\Services\PreparationReleaseEngine;
 use Modules\Operations\Preparation\Application\Services\SoftReservationService;
 use Modules\Operations\Preparation\Application\Services\WarehouseAssignmentEngine;
-use Modules\Operations\Preparation\Domain\Services\BrandConfigurationResolverService;
-use Modules\Operations\Preparation\Domain\Services\EnterpriseQueueSorterService;
-use Modules\Operations\Preparation\Domain\Services\FulfillmentPolicyService;
-use Modules\Operations\Preparation\Domain\Services\PreparationPolicyService;
 use Modules\Operations\Preparation\Application\Services\WaveEngine\DemandRefreshDispatcher;
 use Modules\Operations\Preparation\Application\Services\WaveEngine\WaveLifecycleService;
 use Modules\Operations\Preparation\Application\Services\WaveEngine\WaveManager;
 use Modules\Operations\Preparation\Application\Services\WaveEngine\WaveMembershipService;
 use Modules\Operations\Preparation\Application\Services\WaveEngine\WavePreparationService;
+use Modules\Operations\Preparation\Domain\Events\WarehouseAssigned;
+use Modules\Operations\Preparation\Domain\Models\PreparationSession;
+use Modules\Operations\Preparation\Domain\Models\PreparationStation;
+use Modules\Operations\Preparation\Domain\Models\PreparationWave;
+use Modules\Operations\Preparation\Domain\Models\PreparedProductsPool;
+use Modules\Operations\Preparation\Domain\Services\BrandConfigurationResolverService;
+use Modules\Operations\Preparation\Domain\Services\EnterpriseQueueSorterService;
+use Modules\Operations\Preparation\Domain\Services\FulfillmentPolicyService;
+use Modules\Operations\Preparation\Domain\Services\PreparationPolicyService;
 use Modules\Operations\Preparation\Infrastructure\Console\Commands\CreateDailyPreparationSessionsCommand;
 use Modules\Operations\Preparation\Infrastructure\Console\Commands\FreezePreparationSessionsCommand;
 use Modules\Operations\Preparation\Infrastructure\Console\Commands\RunWaveSchedulerCommand;
-use Modules\Operations\Preparation\Policies\PreparedPoolPolicy;
 use Modules\Operations\Preparation\Policies\PreparationSessionPolicy;
 use Modules\Operations\Preparation\Policies\PreparationStationPolicy;
 use Modules\Operations\Preparation\Policies\PreparationWavePolicy;
+use Modules\Operations\Preparation\Policies\PreparedPoolPolicy;
 
 final class PreparationServiceProvider extends ServiceProvider
 {
@@ -62,12 +62,12 @@ final class PreparationServiceProvider extends ServiceProvider
 
         $this->app->singleton(
             FulfillmentPolicyService::class,
-            fn ($app) => new FulfillmentPolicyService($app->make(FeatureFlagService::class))
+            fn ($app) => new FulfillmentPolicyService($app->make(FeatureFlagService::class)),
         );
 
         $this->app->singleton(
             PreparationPolicyService::class,
-            fn ($app) => new PreparationPolicyService($app->make(FeatureFlagService::class))
+            fn ($app) => new PreparationPolicyService($app->make(FeatureFlagService::class)),
         );
 
         $this->app->singleton(SoftReservationService::class);

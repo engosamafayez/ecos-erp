@@ -1,0 +1,195 @@
+{
+  "common": {
+    "cancel": "إلغاء",
+    "save": "حفظ",
+    "saveChanges": "حفظ التغييرات",
+    "saving": "جارٍ الحفظ…",
+    "creating": "جارٍ الإنشاء…",
+    "clear": "مسح",
+    "search": "بحث",
+    "loading": "جارٍ التحميل…",
+    "notAssigned": "غير مُسنَد",
+    "system": "النظام",
+    "department": "القسم",
+    "allDepartments": "جميع الأقسام",
+    "employee": "الموظف",
+    "status": "الحالة",
+    "notes": "ملاحظات",
+    "date": "التاريخ",
+    "actions": "الإجراءات"
+  },
+  "employees": {
+    "title": "الموظفون",
+    "subtitle": "المصدر الوحيد للحقيقة لهوية القوى العاملة — تشير إليه جميع الوحدات الأخرى.",
+    "newEmployee": "موظف جديد",
+    "searchPlaceholder": "ابحث بالاسم أو الرقم أو البريد الإلكتروني…",
+    "stats": {
+      "total": "إجمالي الموظفين",
+      "activeOnPage": "نشط (في هذه الصفحة)",
+      "onLeaveOnPage": "في إجازة (في هذه الصفحة)"
+    },
+    "filters": {
+      "department": "القسم",
+      "allDepartments": "جميع الأقسام",
+      "status": "الحالة",
+      "allStatuses": "الكل"
+    },
+    "status": {
+      "active": "نشط",
+      "probation": "تحت التجربة",
+      "onLeave": "في إجازة",
+      "suspended": "موقوف",
+      "resigned": "مستقيل",
+      "terminated": "منتهية خدمته"
+    },
+    "table": {
+      "number": "الرقم",
+      "name": "الاسم",
+      "department": "القسم",
+      "position": "المسمى الوظيفي",
+      "workEmail": "البريد الإلكتروني للعمل",
+      "hired": "تاريخ التعيين",
+      "status": "الحالة"
+    },
+    "actions": {
+      "menuLabel": "إجراءات {{name}}",
+      "view360": "الملف الشامل للموظف",
+      "endEmployment": "إنهاء الخدمة"
+    },
+    "terminate": {
+      "title": "إنهاء الخدمة",
+      "description": "هل تريد إنهاء خدمة {{name}}؟ هذا الإجراء نهائي — الموظف العائد يُعاد توظيفه ولا تُستعاد بياناته.",
+      "confirm": "إنهاء الخدمة"
+    }
+  },
+  "employeeForm": {
+    "title": "موظف جديد",
+    "description": "يُنشئ هوية القوى العاملة التي ستشير إليها جميع الوحدات الأخرى.",
+    "submit": "إنشاء موظف",
+    "positionFull": "(مكتمل)",
+    "fields": {
+      "firstName": "الاسم الأول",
+      "lastName": "اسم العائلة",
+      "workEmail": "البريد الإلكتروني للعمل",
+      "mobile": "المحمول",
+      "nationalId": "الرقم القومي",
+      "hireDate": "تاريخ التعيين",
+      "department": "القسم",
+      "position": "المسمى الوظيفي",
+      "jobGrade": "الدرجة الوظيفية",
+      "employmentType": "نوع التوظيف"
+    },
+    "errors": {
+      "nameRequired": "الاسم الأول واسم العائلة مطلوبان.",
+      "createFailed": "تعذر إنشاء الموظف."
+    }
+  },
+  "orgChart": {
+    "title": "الهيكل التنظيمي",
+    "subtitle": "خطوط التبعية عبر الشركة. اضغط على اسم لفتح ملفه الشامل.",
+    "noPosition": "بلا مسمى وظيفي",
+    "empty": "لا يوجد موظفون بعد. بمجرد إضافة الأشخاص سيظهرون هنا، وإسناد المديرين يرتّبهم في الهيكل.",
+    "stats": {
+      "employees": "الموظفون",
+      "topLevel": "المستوى الأعلى",
+      "outsideChart": "خارج الهيكل"
+    }
+  },
+  "tags": {
+    "title": "وسوم المتقدمين",
+    "subtitle": "كتالوج للشركة وليس كلمات مكتوبة — ولهذا فإن التصفية بوسم واحد تجد الجميع فعلاً.",
+    "catalogue": "الكتالوج",
+    "matchAll": "مطابقة كل الوسوم المحددة",
+    "matchAny": "مطابقة أي وسم محدد",
+    "applicantCount_zero": "لا يوجد متقدمون",
+    "applicantCount_one": "متقدم واحد",
+    "applicantCount_two": "متقدمان",
+    "applicantCount_few": "{{count}} متقدمين",
+    "applicantCount_many": "{{count}} متقدماً",
+    "applicantCount_other": "{{count}} متقدم",
+    "matchingApplicants": "المتقدمون المطابقون",
+    "selectTagHint": "اختر وسماً أعلاه لتصفية المجموعة.",
+    "emptyAll": "لا أحد يحمل كل هذه الوسوم.",
+    "emptyAny": "لا أحد يحمل أياً من هذه الوسوم.",
+    "talentPool": "مجموعة المواهب",
+    "timeline": "الجدول الزمني",
+    "pickApplicantHint": "اختر متقدماً لقراءة قصته كاملة بالترتيب.",
+    "timelineEmpty": "لم يُسجَّل شيء بعد."
+  },
+  "attendance": {
+    "title": "الحضور",
+    "subtitle": "سجّل اليوم لفريقك. إعادة تسجيل اليوم تصحّحه — ولا تُكرّره أبداً.",
+    "saveRegister": "حفظ السجل",
+    "savedSummary": "تم تسجيل {{registered}} من {{total}}.",
+    "holidayNotice": "— الشركة مغلقة، لذا يكون الوضع الافتراضي لكل صف هو عطلة.",
+    "nonWorkingDayNotice": "هذا ليس يوم عمل وفق تقويم الشركة — الوضع الافتراضي للصفوف هو يوم راحة.",
+    "markAll": "تحديد الكل",
+    "emptySheet": "لا يوجد موظفون لتسجيلهم في هذا التاريخ.",
+    "recorded": "مُسجَّل",
+    "notYet": "لم يُسجَّل بعد",
+    "status": {
+      "present": "حاضر",
+      "absent": "غائب",
+      "leave": "إجازة",
+      "holiday": "عطلة",
+      "restDay": "يوم راحة"
+    },
+    "table": {
+      "number": "الرقم",
+      "employee": "الموظف",
+      "department": "القسم",
+      "recorded": "مُسجَّل",
+      "status": "الحالة"
+    }
+  },
+  "careers": {
+    "portal": {
+      "eyebrow": "الوظائف",
+      "heading": "الوظائف المتاحة",
+      "intro": "جميع الوظائف التي نوظّف لها حالياً. تقدّم مباشرة — وستحصل على رقم مرجعي على الفور.",
+      "searchPlaceholder": "ابحث عن وظائف أو مواقع…",
+      "searchLabel": "البحث عن وظائف",
+      "loading": "جارٍ تحميل الوظائف…",
+      "loadError": "تعذر تحميل الوظائف الآن. يرجى المحاولة مرة أخرى بعد قليل.",
+      "emptyTitle": "لا توجد وظائف متاحة حالياً",
+      "emptySearch": "لا توجد نتائج مطابقة لهذا البحث.",
+      "emptyHint": "يرجى العودة قريباً.",
+      "openings_zero": "لا توجد شواغر",
+      "openings_one": "شاغر واحد",
+      "openings_two": "شاغران",
+      "openings_few": "{{count}} شواغر",
+      "openings_many": "{{count}} شاغراً",
+      "openings_other": "{{count}} شاغر",
+      "viewAndApply": "عرض وتقديم"
+    },
+    "apply": {
+      "allRoles": "جميع الوظائف",
+      "backToRoles": "العودة إلى جميع الوظائف",
+      "unavailableTitle": "هذه الوظيفة غير متاحة",
+      "unavailableHint": "ربما أُغلقت منذ أن اتبعت الرابط.",
+      "receiptBody": "رقمك المرجعي لوظيفة <title>{{jobTitle}}</title> هو <ref>{{reference}}</ref>. يرجى الاحتفاظ به في سجلاتك.",
+      "aboutRole": "عن الوظيفة",
+      "responsibilities": "المسؤوليات",
+      "requirements": "المتطلبات",
+      "applyHeading": "التقديم",
+      "closed": "هذه الوظيفة لم تعد تستقبل الطلبات.",
+      "yourDetails": "بياناتك",
+      "yourExperience": "خبرتك",
+      "submitting": "جارٍ الإرسال…",
+      "submitButton": "إرسال الطلب",
+      "submitFailed": "تعذر إرسال طلبك.",
+      "fields": {
+        "fullName": "الاسم الكامل",
+        "mobile": "رقم المحمول",
+        "email": "البريد الإلكتروني",
+        "birthDate": "تاريخ الميلاد",
+        "yearsExperience": "سنوات الخبرة",
+        "currentEmployer": "جهة العمل الحالية أو السابقة",
+        "expectedSalary": "الراتب المتوقع",
+        "availableFrom": "متاح اعتباراً من",
+        "cv": "السيرة الذاتية (PDF أو Word، حتى 5 ميجابايت)",
+        "additionalNotes": "أي شيء آخر تود إخبارنا به"
+      }
+    }
+  }
+}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Gauge, Loader2, Wallet, Wrench } from 'lucide-react';
 
 import { PageDrawer } from '@/components/page/drawer/page-drawer';
@@ -44,6 +45,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 // ── Overview ─────────────────────────────────────────────────────────────────
 
 function Overview({ unitId }: { unitId: string }) {
+  const { t } = useTranslation('logistics');
   const { data: unit } = useFleetUnit(unitId);
   const { data: health } = useHealth(unitId);
 
@@ -52,20 +54,20 @@ function Overview({ unitId }: { unitId: string }) {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Fitness">
+        <Field label={t('fleet.table.fitness')}>
           <FitnessBadge level={unit.fitness.level} />
         </Field>
-        <Field label="Lifecycle">
+        <Field label={t('fleet.table.lifecycle')}>
           <LifecycleBadge state={unit.lifecycle_state} />
         </Field>
-        <Field label="Plate">{unit.vehicle?.plate_number ?? '—'}</Field>
-        <Field label="Vehicle code">{unit.vehicle?.vehicle_code ?? '—'}</Field>
-        <Field label="Odometer">
+        <Field label={t('fleet.unit.plate')}>{unit.vehicle?.plate_number ?? '—'}</Field>
+        <Field label={t('fleet.unit.vehicleCode')}>{unit.vehicle?.vehicle_code ?? '—'}</Field>
+        <Field label={t('fleet.table.odometer')}>
           {unit.current_odometer_km !== null
-            ? `${unit.current_odometer_km.toLocaleString()} km`
+            ? t('fleet.kmValue', { value: unit.current_odometer_km.toLocaleString() })
             : '—'}
         </Field>
-        <Field label="Commissioned">{formatDate(unit.commissioned_at)}</Field>
+        <Field label={t('fleet.unit.commissioned')}>{formatDate(unit.commissioned_at)}</Field>
       </div>
 
       {unit.lifecycle_reason && (
@@ -77,7 +79,7 @@ function Overview({ unitId }: { unitId: string }) {
       <Separator />
 
       <div className="space-y-2">
-        <p className="text-sm font-medium">Readiness</p>
+        <p className="text-sm font-medium">{t('fleet.unit.readiness')}</p>
         <BlockerList verdict={unit.fitness} />
       </div>
 
@@ -86,9 +88,9 @@ function Overview({ unitId }: { unitId: string }) {
           <Separator />
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-sm font-medium">Health</p>
+              <p className="text-sm font-medium">{t('fleet.health.title')}</p>
               <Badge variant="outline" className="text-xs">
-                {health.value}/100 · {health.band}
+                {health.value}/100 · {t(`fleet.health.band.${health.band}`)}
               </Badge>
             </div>
             <div className="space-y-1.5">
@@ -109,7 +111,7 @@ function Overview({ unitId }: { unitId: string }) {
                       style={{ width: `${Math.round(factor.score * 100)}%` }}
                     />
                   </div>
-                  <span className="w-40 shrink-0 text-right text-muted-foreground">
+                  <span className="w-40 shrink-0 text-end text-muted-foreground">
                     {factor.note}
                   </span>
                 </div>
@@ -125,6 +127,7 @@ function Overview({ unitId }: { unitId: string }) {
 // ── Odometer ─────────────────────────────────────────────────────────────────
 
 function Odometer({ unitId }: { unitId: string }) {
+  const { t } = useTranslation('logistics');
   const { data, isLoading } = useOdometerHistory(unitId);
   const record = useRecordOdometer();
   const { toast } = useToast();
@@ -140,12 +143,14 @@ function Odometer({ unitId }: { unitId: string }) {
       const result = await record.mutateAsync({ id: unitId, readingKm: km });
       setReading('');
       toast({
-        title: result.is_accepted ? 'Reading recorded.' : 'Reading recorded but not accepted',
+        title: result.is_accepted
+          ? t('fleet.odometer.toastRecorded')
+          : t('fleet.odometer.toastNotAccepted'),
         description: result.rejection_reason ?? undefined,
         variant: result.is_accepted ? undefined : 'destructive',
       });
     } catch {
-      toast({ title: 'The reading could not be recorded.', variant: 'destructive' });
+      toast({ title: t('fleet.odometer.toastFailed'), variant: 'destructive' });
     }
   }
 
@@ -154,7 +159,7 @@ function Odometer({ unitId }: { unitId: string }) {
       <div className="flex items-end gap-2">
         <div className="flex-1 space-y-1">
           <Label htmlFor="odometer" className="text-xs">
-            New reading (km)
+            {t('fleet.odometer.newReading')}
           </Label>
           <Input
             id="odometer"
@@ -167,15 +172,14 @@ function Odometer({ unitId }: { unitId: string }) {
         </div>
         <Button size="sm" className="gap-1.5" disabled={!reading || record.isPending} onClick={submit}>
           {record.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Gauge className="size-3.5" />}
-          Record
+          {t('fleet.odometer.record')}
         </Button>
       </div>
 
       {data?.meta.is_stale && (
         <Alert>
           <AlertDescription className="text-xs">
-            No recent reading. Distance is the denominator of most cost metrics, so a stale
-            odometer quietly distorts every report that divides by it.
+            {t('fleet.odometer.staleWarning')}
           </AlertDescription>
         </Alert>
       )}
@@ -183,24 +187,26 @@ function Odometer({ unitId }: { unitId: string }) {
       <table className="w-full text-xs">
         <thead>
           <tr className="border-b text-muted-foreground">
-            <th className="py-1 text-left font-normal">Reading</th>
-            <th className="py-1 text-left font-normal">Source</th>
-            <th className="py-1 text-left font-normal">When</th>
-            <th className="py-1 text-left font-normal">Accepted</th>
+            <th className="py-1 text-start font-normal">{t('fleet.odometer.colReading')}</th>
+            <th className="py-1 text-start font-normal">{t('fleet.odometer.colSource')}</th>
+            <th className="py-1 text-start font-normal">{t('fleet.odometer.colWhen')}</th>
+            <th className="py-1 text-start font-normal">{t('fleet.odometer.colAccepted')}</th>
           </tr>
         </thead>
         <tbody className="divide-y">
           {(data?.data ?? []).map((row) => (
             <tr key={row.id}>
-              <td className="py-1 tabular-nums">{row.reading_km.toLocaleString()} km</td>
+              <td className="py-1 tabular-nums">
+                {t('fleet.kmValue', { value: row.reading_km.toLocaleString() })}
+              </td>
               <td className="py-1 text-muted-foreground">{row.source_label}</td>
               <td className="py-1 text-muted-foreground">{formatDate(row.recorded_at)}</td>
               <td className="py-1">
                 {row.is_accepted ? (
-                  <span className="text-emerald-600">Yes</span>
+                  <span className="text-emerald-600">{t('common.yes')}</span>
                 ) : (
                   <span className="text-destructive" title={row.rejection_reason ?? undefined}>
-                    Rejected
+                    {t('fleet.odometer.rejected')}
                   </span>
                 )}
               </td>
@@ -215,11 +221,16 @@ function Odometer({ unitId }: { unitId: string }) {
 // ── Maintenance ──────────────────────────────────────────────────────────────
 
 function Maintenance({ unitId }: { unitId: string }) {
+  const { t } = useTranslation('logistics');
   const { data: plans, isLoading } = useMaintenancePlans(unitId);
 
   if (isLoading) return <Skeleton className="h-48 w-full" />;
   if (!plans || plans.length === 0) {
-    return <p className="py-8 text-center text-sm text-muted-foreground">No maintenance plans.</p>;
+    return (
+      <p className="py-8 text-center text-sm text-muted-foreground">
+        {t('fleet.maintenance.empty')}
+      </p>
+    );
   }
 
   return (
@@ -233,27 +244,31 @@ function Maintenance({ unitId }: { unitId: string }) {
             </div>
             {plan.is_overdue ? (
               <Badge variant="destructive" className="text-[10px]">
-                Overdue
+                {t('fleet.maintenance.overdue')}
               </Badge>
             ) : plan.is_due ? (
-              <Badge className="bg-amber-500 text-[10px] hover:bg-amber-500">Due</Badge>
+              <Badge className="bg-amber-500 text-[10px] hover:bg-amber-500">
+                {t('fleet.maintenance.due')}
+              </Badge>
             ) : (
               <Badge variant="outline" className="text-[10px]">
-                Scheduled
+                {t('common.scheduled')}
               </Badge>
             )}
           </div>
 
           <div className="mt-2 grid grid-cols-3 gap-3">
-            <Field label="Next due (date)">{plan.next_due_date ?? '—'}</Field>
-            <Field label="Next due (km)">
-              {plan.next_due_km !== null ? `${plan.next_due_km.toLocaleString()} km` : '—'}
+            <Field label={t('fleet.maintenance.nextDueDate')}>{plan.next_due_date ?? '—'}</Field>
+            <Field label={t('fleet.maintenance.nextDueKm')}>
+              {plan.next_due_km !== null
+                ? t('fleet.kmValue', { value: plan.next_due_km.toLocaleString() })
+                : '—'}
             </Field>
-            <Field label="Remaining">
+            <Field label={t('fleet.maintenance.remaining')}>
               {plan.km_until_due !== null
-                ? `${plan.km_until_due.toLocaleString()} km`
+                ? t('fleet.kmValue', { value: plan.km_until_due.toLocaleString() })
                 : plan.days_until_due !== null
-                  ? `${plan.days_until_due} d`
+                  ? t('fleet.daysShort', { days: plan.days_until_due })
                   : '—'}
             </Field>
           </div>
@@ -262,7 +277,10 @@ function Maintenance({ unitId }: { unitId: string }) {
             <div className="mt-2 flex flex-wrap gap-1">
               {plan.rules.map((rule) => (
                 <Badge key={rule.id} variant="secondary" className="text-[10px]">
-                  every {rule.interval_value.toLocaleString()} {rule.unit}
+                  {t('fleet.maintenance.everyInterval', {
+                    value: rule.interval_value.toLocaleString(),
+                    unit: rule.unit,
+                  })}
                 </Badge>
               ))}
             </div>
@@ -276,6 +294,7 @@ function Maintenance({ unitId }: { unitId: string }) {
 // ── Cost ─────────────────────────────────────────────────────────────────────
 
 function Cost({ unitId }: { unitId: string }) {
+  const { t } = useTranslation('logistics');
   const { data: costs, isLoading } = useUnitCosts(unitId);
 
   if (isLoading) return <Skeleton className="h-48 w-full" />;
@@ -284,18 +303,20 @@ function Cost({ unitId }: { unitId: string }) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-3 gap-3">
-        <Field label="Total">
+        <Field label={t('common.total')}>
           {costs.total.toLocaleString()} {costs.currency}
         </Field>
-        <Field label="Distance">
-          {costs.distance_km !== null ? `${costs.distance_km.toLocaleString()} km` : '—'}
+        <Field label={t('fleet.cost.distance')}>
+          {costs.distance_km !== null
+            ? t('fleet.kmValue', { value: costs.distance_km.toLocaleString() })
+            : '—'}
         </Field>
-        <Field label="Cost per km">
+        <Field label={t('fleet.cost.costPerKm')}>
           {costs.cost_per_km !== null ? (
             `${costs.cost_per_km} ${costs.currency}`
           ) : (
             // Null, never zero — a silent zero reads as "free to run".
-            <span className="text-muted-foreground">Not enough odometer data</span>
+            <span className="text-muted-foreground">{t('fleet.cost.notEnoughOdometer')}</span>
           )}
         </Field>
       </div>
@@ -307,7 +328,7 @@ function Cost({ unitId }: { unitId: string }) {
           .filter(([, amount]) => amount !== 0)
           .map(([type, amount]) => (
             <div key={type} className="flex items-center justify-between text-xs">
-              <span className="capitalize text-muted-foreground">{type}</span>
+              <span className="capitalize text-muted-foreground">{t(`fleet.costType.${type}`)}</span>
               <span className="tabular-nums">
                 {amount.toLocaleString()} {costs.currency}
               </span>
@@ -315,10 +336,7 @@ function Cost({ unitId }: { unitId: string }) {
           ))}
       </div>
 
-      <p className="text-[11px] text-muted-foreground">
-        Operational cost only. Accounting remains the financial authority, and trip cash is
-        settled in Distribution.
-      </p>
+      <p className="text-[11px] text-muted-foreground">{t('fleet.cost.authorityNote')}</p>
     </div>
   );
 }
@@ -334,6 +352,7 @@ export function FleetUnitDrawer({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation('logistics');
   const { data: unit } = useFleetUnit(open ? unitId : null);
 
   return (
@@ -341,18 +360,24 @@ export function FleetUnitDrawer({
       open={open}
       onOpenChange={onOpenChange}
       size="2xl"
-      title={unit ? `Vehicle · ${unit.vehicle?.plate_number ?? unit.vehicle_id}` : 'Fleet unit'}
+      title={
+        unit
+          ? t('fleet.drawer.titleWithPlate', {
+              plate: unit.vehicle?.plate_number ?? unit.vehicle_id,
+            })
+          : t('fleet.drawer.title')
+      }
       description={unit?.vehicle?.name ?? undefined}
     >
       {!unitId ? null : (
         <Tabs defaultValue="overview" className="w-full">
           <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
-            <TabsTrigger value="odometer">Odometer</TabsTrigger>
+            <TabsTrigger value="overview">{t('common.overview')}</TabsTrigger>
+            <TabsTrigger value="maintenance">{t('fleet.drawer.tabMaintenance')}</TabsTrigger>
+            <TabsTrigger value="odometer">{t('fleet.drawer.tabOdometer')}</TabsTrigger>
             <TabsTrigger value="cost">
-              <Wallet className="mr-1 size-3.5" />
-              Cost
+              <Wallet className="me-1 size-3.5" />
+              {t('fleet.drawer.tabCost')}
             </TabsTrigger>
           </TabsList>
 

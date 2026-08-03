@@ -1,4 +1,5 @@
 import { Check, RotateCcw, SlidersHorizontal } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -25,8 +26,10 @@ export function ColumnVisibilityMenu({
   visibility,
   onToggle,
   onReset,
-  label = 'Columns',
+  label,
 }: ColumnVisibilityMenuProps) {
+  const { t } = useTranslation('common');
+  const buttonLabel = label ?? t('dataGrid.columns');
   const toggleable = columns.filter((c) => !c.alwaysVisible && c.label);
 
   return (
@@ -34,7 +37,7 @@ export function ColumnVisibilityMenu({
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="gap-1.5">
           <SlidersHorizontal className="size-3.5" />
-          {label}
+          {buttonLabel}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48">
@@ -63,7 +66,7 @@ export function ColumnVisibilityMenu({
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={onReset} className="gap-2">
           <RotateCcw className="size-3.5" />
-          <span className="text-sm">Reset to defaults</span>
+          <span className="text-sm">{t('dataGrid.resetToDefaults')}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

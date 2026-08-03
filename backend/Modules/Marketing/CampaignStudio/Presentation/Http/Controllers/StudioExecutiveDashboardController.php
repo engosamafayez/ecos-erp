@@ -18,14 +18,14 @@ use Modules\Marketing\CampaignStudio\Domain\Models\PublishingJob;
 class StudioExecutiveDashboardController extends Controller
 {
     public function __construct(
-        private readonly CampaignDraftService   $draftService,
+        private readonly CampaignDraftService $draftService,
         private readonly PublishingEngineService $publishingEngine,
     ) {}
 
     /** GET /mkt/studio/dashboard */
     public function index(Request $request): JsonResponse
     {
-        $filters   = $request->only(['company_id']);
+        $filters = $request->only(['company_id']);
         $companyId = $filters['company_id'] ?? null;
 
         $draftQuery = CampaignDraft::query();
@@ -53,7 +53,7 @@ class StudioExecutiveDashboardController extends Controller
         // Validation issues
         $validationIssues = CampaignValidationResult::whereHas(
             'draft',
-            fn ($q) => $companyId ? $q->where('company_id', $companyId) : $q
+            fn ($q) => $companyId ? $q->where('company_id', $companyId) : $q,
         )
             ->where('is_resolved', false)
             ->where('severity', 'blocking')
@@ -73,15 +73,15 @@ class StudioExecutiveDashboardController extends Controller
         return response()->json([
             'data' => [
                 'campaigns' => [
-                    'drafts'           => (int) ($statusCounts['draft'] ?? 0),
-                    'pending_review'   => (int) ($statusCounts['pending_review'] ?? 0),
-                    'approved'         => (int) ($statusCounts['approved'] ?? 0),
-                    'scheduled'        => (int) ($statusCounts['scheduled'] ?? 0),
-                    'active'           => (int) ($statusCounts['published'] ?? 0),
-                    'paused'           => (int) ($statusCounts['paused'] ?? 0),
-                    'archived'         => (int) ($statusCounts['archived'] ?? 0),
-                    'failed'           => (int) ($statusCounts['failed'] ?? 0),
-                    'published_today'  => $publishedToday,
+                    'drafts' => (int) ($statusCounts['draft'] ?? 0),
+                    'pending_review' => (int) ($statusCounts['pending_review'] ?? 0),
+                    'approved' => (int) ($statusCounts['approved'] ?? 0),
+                    'scheduled' => (int) ($statusCounts['scheduled'] ?? 0),
+                    'active' => (int) ($statusCounts['published'] ?? 0),
+                    'paused' => (int) ($statusCounts['paused'] ?? 0),
+                    'archived' => (int) ($statusCounts['archived'] ?? 0),
+                    'failed' => (int) ($statusCounts['failed'] ?? 0),
+                    'published_today' => $publishedToday,
                 ],
                 'approvals' => [
                     'pending' => $pendingApprovals,
@@ -89,8 +89,8 @@ class StudioExecutiveDashboardController extends Controller
                 'publishing_queue' => $queueStats,
                 'health' => [
                     'blocking_validation_issues' => $validationIssues,
-                    'recent_failures_7d'         => $recentFailed,
-                    'version_changes_24h'        => $recentVersions,
+                    'recent_failures_7d' => $recentFailed,
+                    'version_changes_24h' => $recentVersions,
                 ],
             ],
         ]);

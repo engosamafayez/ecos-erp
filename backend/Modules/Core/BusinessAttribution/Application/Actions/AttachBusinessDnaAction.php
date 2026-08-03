@@ -18,7 +18,7 @@ final class AttachBusinessDnaAction
     ) {}
 
     /**
-     * @param  array<string, mixed> $dnaData
+     * @param  array<string, mixed>  $dnaData
      */
     public function execute(
         string $entityType,
@@ -28,7 +28,7 @@ final class AttachBusinessDnaAction
         $dna = $this->dnaService->getOrCreate($entityType, $entityId, $dnaData);
 
         // If extra enrichment data is provided after first create, update
-        if ($dna->wasRecentlyCreated === false && !empty($dnaData)) {
+        if ($dna->wasRecentlyCreated === false && ! empty($dnaData)) {
             $this->dnaService->update($dna->id, $dnaData);
             $dna->refresh();
         }

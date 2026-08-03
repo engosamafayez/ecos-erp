@@ -11,7 +11,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-                if (Schema::hasTable('preparation_inventory_reservations')) {
+        if (Schema::hasTable('preparation_inventory_reservations')) {
             return;
         }
 
@@ -42,16 +42,16 @@ return new class extends Migration
         });
 
         DB::statement(
-            "ALTER TABLE preparation_inventory_reservations ADD CONSTRAINT chk_prep_reserv_type "
-            . "CHECK (reservable_type IN ('raw_material','finished_good'))"
+            'ALTER TABLE preparation_inventory_reservations ADD CONSTRAINT chk_prep_reserv_type '
+            ."CHECK (reservable_type IN ('raw_material','finished_good'))",
         );
         DB::statement(
-            "ALTER TABLE preparation_inventory_reservations ADD CONSTRAINT chk_prep_reserv_status "
-            . "CHECK (status IN ('created','updated','released','consumed'))"
+            'ALTER TABLE preparation_inventory_reservations ADD CONSTRAINT chk_prep_reserv_status '
+            ."CHECK (status IN ('created','updated','released','consumed'))",
         );
         DB::statement(
             'ALTER TABLE preparation_inventory_reservations ADD CONSTRAINT chk_prep_reserv_qty_positive '
-            . 'CHECK (quantity_reserved > 0)'
+            .'CHECK (quantity_reserved > 0)',
         );
     }
 

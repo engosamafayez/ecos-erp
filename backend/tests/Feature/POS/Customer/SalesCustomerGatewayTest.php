@@ -21,7 +21,7 @@ final class SalesCustomerGatewayTest extends TestCase
     {
         parent::setUp();
 
-        $this->gateway = new SalesCustomerGateway();
+        $this->gateway = new SalesCustomerGateway;
     }
 
     // ── findById() ────────────────────────────────────────────────────────────
@@ -87,10 +87,10 @@ final class SalesCustomerGatewayTest extends TestCase
     public function test_find_by_phone_matches_mobile_field(): void
     {
         Customer::create([
-            'code'      => 'C-MOB',
-            'name'      => 'Mobile Only',
-            'phone'     => null,
-            'mobile'    => '01198765432',
+            'code' => 'C-MOB',
+            'name' => 'Mobile Only',
+            'phone' => null,
+            'mobile' => '01198765432',
             'is_active' => true,
         ]);
 
@@ -157,17 +157,17 @@ final class SalesCustomerGatewayTest extends TestCase
     // ── Helper ────────────────────────────────────────────────────────────────
 
     private function makeCustomer(
-        string  $code   = 'C-001',
-        string  $email  = 'customer@example.com',
-        string  $phone  = '0501000000',
-        bool    $active = true,
+        string $code = 'C-001',
+        string $email = 'customer@example.com',
+        string $phone = '0501000000',
+        bool $active = true,
     ): Customer {
         return Customer::create([
-            'code'      => $code,
-            'name'      => 'Test Customer',
-            'email'     => $email,
-            'phone'     => $phone,
-            'mobile'    => null,
+            'code' => $code,
+            'name' => 'Test Customer',
+            'email' => $email,
+            'phone' => $phone,
+            'mobile' => null,
             'is_active' => $active,
         ]);
     }

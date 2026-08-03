@@ -17,14 +17,14 @@ interface BomRepositoryInterface
     public function findById(string $id): ?BillOfMaterial;
 
     /**
-     * @param  array<string, mixed>       $attributes
-     * @param  list<array<string, mixed>> $lines
+     * @param  array<string, mixed>  $attributes
+     * @param  list<array<string, mixed>>  $lines
      */
     public function create(array $attributes, array $lines): BillOfMaterial;
 
     /**
-     * @param  array<string, mixed>       $attributes
-     * @param  list<array<string, mixed>> $lines
+     * @param  array<string, mixed>  $attributes
+     * @param  list<array<string, mixed>>  $lines
      */
     public function update(BillOfMaterial $bom, array $attributes, array $lines): BillOfMaterial;
 

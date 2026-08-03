@@ -61,11 +61,11 @@ final class SupplierReturnController extends Controller
 
         return $this->success([
             'items' => SupplierReturnResource::collection($paginator->items()),
-            'meta'  => [
+            'meta' => [
                 'current_page' => $paginator->currentPage(),
-                'per_page'     => $paginator->perPage(),
-                'total'        => $paginator->total(),
-                'last_page'    => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'last_page' => $paginator->lastPage(),
             ],
         ]);
     }
@@ -74,10 +74,10 @@ final class SupplierReturnController extends Controller
     {
         $return = SupplierReturn::query()->create(
             array_merge($request->safe()->except('lines'), [
-                'return_number' => (new SupplierReturn())->generateReturnNumber(),
-                'status'        => SupplierReturnStatus::Draft,
+                'return_number' => (new SupplierReturn)->generateReturnNumber(),
+                'status' => SupplierReturnStatus::Draft,
                 'total_return_value' => 0,
-            ])
+            ]),
         );
 
         $total = 0;
@@ -128,7 +128,7 @@ final class SupplierReturnController extends Controller
         }
 
         $supplierReturn->update([
-            'status'       => SupplierReturnStatus::WaitingApproval,
+            'status' => SupplierReturnStatus::WaitingApproval,
             'submitted_by' => auth()->id(),
             'submitted_at' => now(),
         ]);
@@ -143,7 +143,7 @@ final class SupplierReturnController extends Controller
         }
 
         $supplierReturn->update([
-            'status'      => SupplierReturnStatus::Approved,
+            'status' => SupplierReturnStatus::Approved,
             'approved_by' => auth()->id(),
             'approved_at' => now(),
         ]);
@@ -164,7 +164,7 @@ final class SupplierReturnController extends Controller
         }
 
         $supplierReturn->update([
-            'status'           => SupplierReturnStatus::Rejected,
+            'status' => SupplierReturnStatus::Rejected,
             'rejection_reason' => $request->input('reason'),
         ]);
 
@@ -200,11 +200,11 @@ final class SupplierReturnController extends Controller
         }
 
         $data = array_filter([
-            'status'               => SupplierReturnStatus::Completed,
-            'completed_by'         => auth()->id(),
-            'completed_at'         => now(),
-            'credit_amount'        => $request->input('credit_amount'),
-            'debit_note_number'    => $request->input('debit_note_number'),
+            'status' => SupplierReturnStatus::Completed,
+            'completed_by' => auth()->id(),
+            'completed_at' => now(),
+            'credit_amount' => $request->input('credit_amount'),
+            'debit_note_number' => $request->input('debit_note_number'),
             'credit_received_date' => $request->input('credit_received_date'),
         ], fn ($v) => $v !== null);
 
@@ -245,13 +245,13 @@ final class SupplierReturnController extends Controller
         };
 
         $stats = [
-            'total'          => SupplierReturn::query()->tap($scope)->count(),
-            'draft'          => SupplierReturn::query()->tap($scope)->where('status', 'draft')->count(),
-            'waiting'        => SupplierReturn::query()->tap($scope)->where('status', 'waiting_approval')->count(),
-            'approved'       => SupplierReturn::query()->tap($scope)->where('status', 'approved')->count(),
+            'total' => SupplierReturn::query()->tap($scope)->count(),
+            'draft' => SupplierReturn::query()->tap($scope)->where('status', 'draft')->count(),
+            'waiting' => SupplierReturn::query()->tap($scope)->where('status', 'waiting_approval')->count(),
+            'approved' => SupplierReturn::query()->tap($scope)->where('status', 'approved')->count(),
             'credit_pending' => SupplierReturn::query()->tap($scope)->where('status', 'credit_pending')->count(),
-            'completed'      => SupplierReturn::query()->tap($scope)->where('status', 'completed')->count(),
-            'total_value'    => (float) SupplierReturn::query()->tap($scope)->whereIn('status', ['approved', 'sent', 'credit_pending', 'completed'])->sum('total_return_value'),
+            'completed' => SupplierReturn::query()->tap($scope)->where('status', 'completed')->count(),
+            'total_value' => (float) SupplierReturn::query()->tap($scope)->whereIn('status', ['approved', 'sent', 'credit_pending', 'completed'])->sum('total_return_value'),
         ];
 
         return $this->success($stats);

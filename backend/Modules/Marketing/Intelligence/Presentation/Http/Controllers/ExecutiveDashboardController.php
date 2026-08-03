@@ -26,7 +26,7 @@ use Modules\Marketing\Intelligence\Application\Services\MarketingKpiEngine;
 final class ExecutiveDashboardController extends Controller
 {
     public function __construct(
-        private readonly MarketingKpiEngine          $engine,
+        private readonly MarketingKpiEngine $engine,
         private readonly MarketingHealthScoreService $healthScore,
     ) {}
 
@@ -37,61 +37,61 @@ final class ExecutiveDashboardController extends Controller
         [$start, $end] = $filter->resolvedDates();
 
         // All calls share the same filter → KPI Engine caches individually
-        $kpis   = $this->engine->kpis($filter);
+        $kpis = $this->engine->kpis($filter);
         $growth = $this->engine->growth($filter);
         $health = $this->healthScore->compute($filter);
 
-        $topCampaigns  = $this->engine->topEntities($filter, 'campaign', 5, 'roas');
+        $topCampaigns = $this->engine->topEntities($filter, 'campaign', 5, 'roas');
         $worstCampaigns = $this->engine->worstEntities($filter, 'campaign', 5);
 
         // Attach campaign names to ranked entities
-        $topCampaigns   = $this->attachCampaignNames($topCampaigns, 'entity_id');
+        $topCampaigns = $this->attachCampaignNames($topCampaigns, 'entity_id');
         $worstCampaigns = $this->attachCampaignNames($worstCampaigns, 'entity_id');
 
-        $topCreatives  = $this->engine->creativeBreakdown($filter, 'total_revenue', 'desc', 5, 1);
+        $topCreatives = $this->engine->creativeBreakdown($filter, 'total_revenue', 'desc', 5, 1);
         $worstCreatives = $this->engine->creativeBreakdown($filter, 'total_spend', 'asc', 5, 1);
 
         return response()->json([
             'period' => [
-                'date_from'   => $start,
-                'date_to'     => $end,
-                'days'        => $filter->periodDays(),
+                'date_from' => $start,
+                'date_to' => $end,
+                'days' => $filter->periodDays(),
                 'date_preset' => $filter->datePreset,
             ],
             'kpis' => [
-                'spend'         => $kpis['spend'],
-                'revenue'       => $kpis['revenue'],
-                'roas'          => $kpis['roas'],
-                'cpa'           => $kpis['cpa'],
-                'ctr'           => $kpis['ctr'],
-                'ctr_pct'       => $kpis['ctr'] !== null ? round($kpis['ctr'] * 100, 4) : null,
-                'cpc'           => $kpis['cpc'],
-                'cpm'           => $kpis['cpm'],
-                'purchases'     => $kpis['purchases'],
-                'leads'         => $kpis['leads'],
-                'impressions'   => $kpis['impressions'],
-                'clicks'        => $kpis['clicks'],
-                'reach'         => $kpis['reach'],
-                'messages'      => $kpis['messages'],
+                'spend' => $kpis['spend'],
+                'revenue' => $kpis['revenue'],
+                'roas' => $kpis['roas'],
+                'cpa' => $kpis['cpa'],
+                'ctr' => $kpis['ctr'],
+                'ctr_pct' => $kpis['ctr'] !== null ? round($kpis['ctr'] * 100, 4) : null,
+                'cpc' => $kpis['cpc'],
+                'cpm' => $kpis['cpm'],
+                'purchases' => $kpis['purchases'],
+                'leads' => $kpis['leads'],
+                'impressions' => $kpis['impressions'],
+                'clicks' => $kpis['clicks'],
+                'reach' => $kpis['reach'],
+                'messages' => $kpis['messages'],
                 'unique_clicks' => $kpis['unique_clicks'],
-                'engagement'    => $kpis['engagement'],
+                'engagement' => $kpis['engagement'],
             ],
             'growth' => $growth,
             'health' => $health,
-            'top_campaigns'   => array_slice($topCampaigns, 0, 1),
+            'top_campaigns' => array_slice($topCampaigns, 0, 1),
             'worst_campaigns' => array_slice($worstCampaigns, 0, 1),
-            'top_5_campaigns'   => $topCampaigns,
+            'top_5_campaigns' => $topCampaigns,
             'worst_5_campaigns' => $worstCampaigns,
-            'top_creative'    => $topCreatives['data'][0] ?? null,
-            'worst_creative'  => $worstCreatives['data'][0] ?? null,
-            'top_5_creatives'   => $topCreatives['data'],
+            'top_creative' => $topCreatives['data'][0] ?? null,
+            'worst_creative' => $worstCreatives['data'][0] ?? null,
+            'top_5_creatives' => $topCreatives['data'],
         ]);
     }
 
     /**
      * Attach campaign name to entity rows by fetching from campaigns table.
      *
-     * @param list<array<string, mixed>> $entities
+     * @param  list<array<string, mixed>>  $entities
      * @return list<array<string, mixed>>
      */
     private function attachCampaignNames(array $entities, string $idKey): array
@@ -106,6 +106,7 @@ final class ExecutiveDashboardController extends Controller
 
         return array_map(function (array $entity) use ($campaigns, $idKey) {
             $entity['name'] = $campaigns[$entity[$idKey]] ?? null;
+
             return $entity;
         }, $entities);
     }

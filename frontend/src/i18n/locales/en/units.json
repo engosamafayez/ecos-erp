@@ -5,7 +5,11 @@
   "actions": {
     "new": "New Unit",
     "create": "Create unit",
-    "edit": "Edit Unit"
+    "edit": "Edit Unit",
+    "ariaLabel": "Actions for {{name}}"
+  },
+  "breadcrumb": {
+    "inventory": "Inventory"
   },
   "columns": {
     "code": "Code",
@@ -29,7 +33,8 @@
     "submitCreate": "Create unit",
     "submitEdit": "Save changes",
     "saving": "Saving…",
-    "errorTitle": "Unable to save"
+    "errorTitle": "Unable to save",
+    "errorFallback": "Something went wrong. Please try again."
   },
   "delete": {
     "title": "Delete unit",

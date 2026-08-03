@@ -22,19 +22,19 @@ final class FinishedProductCostChanged
     use Dispatchable, SerializesModels;
 
     public function __construct(
-        public readonly string               $productId,
-        public readonly string               $companyId,
-        public readonly float                $oldCost,
-        public readonly float                $newCost,
-        public readonly float                $difference,
-        public readonly float                $differencePercent,
+        public readonly string $productId,
+        public readonly string $companyId,
+        public readonly float $oldCost,
+        public readonly float $newCost,
+        public readonly float $difference,
+        public readonly float $differencePercent,
         public readonly PricingTriggerReason $triggerReason,
-        public readonly ?string              $triggerSource,
+        public readonly ?string $triggerSource,
         /** ISO-8601 timestamp when the cost change occurred */
-        public readonly string               $occurredAt,
+        public readonly string $occurredAt,
         /** Optional: full cost breakdown snapshot for this calculation */
-        public readonly ?array               $costSnapshot = null,
+        public readonly ?array $costSnapshot = null,
         /** Optional: ID of the cost history record that triggered this */
-        public readonly ?string              $costHistoryId = null,
+        public readonly ?string $costHistoryId = null,
     ) {}
 }

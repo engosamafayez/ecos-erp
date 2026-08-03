@@ -201,9 +201,9 @@ class ProductManufacturingFieldsTest extends TestCase
     {
         // Simulate pre-PKG-01 factory usage — should not throw
         $product = Product::factory()->create([
-            'sku'          => 'COMPAT-001',
-            'name'         => 'Legacy Product',
-            'is_active'    => true,
+            'sku' => 'COMPAT-001',
+            'name' => 'Legacy Product',
+            'is_active' => true,
             'product_type' => Product::TYPE_FINISHED_GOOD,
         ]);
 
@@ -258,9 +258,9 @@ class ProductManufacturingFieldsTest extends TestCase
         $product = Product::factory()->create();
 
         $product->update([
-            'cost_source'          => CostSource::Recipe->value,
-            'can_manufacture'      => true,
-            'can_disassemble'      => false,
+            'cost_source' => CostSource::Recipe->value,
+            'can_manufacture' => true,
+            'can_disassemble' => false,
             'allow_negative_stock' => false,
         ]);
 

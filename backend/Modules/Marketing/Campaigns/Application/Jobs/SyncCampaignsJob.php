@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Marketing\Campaigns\Application\Jobs;
 
+use DateTime;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -25,15 +26,17 @@ final class SyncCampaignsJob implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
-    public int   $tries   = 3;
-    public int   $timeout = 600; // 10 min — large accounts can have thousands of ads
+    public int $tries = 3;
+
+    public int $timeout = 600; // 10 min — large accounts can have thousands of ads
+
     public array $backoff = [60, 120, 300]; // 1 min → 2 min → 5 min
 
     public function __construct(
-        public readonly string   $connectionId,
-        public readonly string   $syncType   = 'full',
-        public readonly bool     $includeCreatives = true,
-        public readonly ?string  $actorId    = null,
+        public readonly string $connectionId,
+        public readonly string $syncType = 'full',
+        public readonly bool $includeCreatives = true,
+        public readonly ?string $actorId = null,
     ) {}
 
     public function handle(SyncCampaignsAction $action): void
@@ -43,16 +46,16 @@ final class SyncCampaignsJob implements ShouldQueue
         $type = SyncType::tryFrom($this->syncType) ?? SyncType::Full;
 
         $action->execute(
-            connection:        $connection,
-            syncInsights:      false,
-            syncCreatives:     $this->includeCreatives,
+            connection: $connection,
+            syncInsights: false,
+            syncCreatives: $this->includeCreatives,
             insightDatePreset: 'last_30d',
-            actorId:           $this->actorId,
-            syncType:          $type,
+            actorId: $this->actorId,
+            syncType: $type,
         );
     }
 
-    public function retryUntil(): \DateTime
+    public function retryUntil(): DateTime
     {
         return now()->addHours(2);
     }

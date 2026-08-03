@@ -35,7 +35,7 @@ return new class extends Migration
                   WHERE CONSTRAINT_TYPE = 'FOREIGN KEY'
                     AND TABLE_SCHEMA    = DATABASE()
                     AND TABLE_NAME      = 'meta_webhooks'
-                    AND CONSTRAINT_NAME LIKE 'meta_webhooks_marketing_connection%'"
+                    AND CONSTRAINT_NAME LIKE 'meta_webhooks_marketing_connection%'",
             )?->cnt;
 
             $hasUnique = (bool) DB::selectOne(
@@ -44,7 +44,7 @@ return new class extends Migration
                   WHERE CONSTRAINT_TYPE = 'UNIQUE'
                     AND TABLE_SCHEMA    = DATABASE()
                     AND TABLE_NAME      = 'meta_webhooks'
-                    AND CONSTRAINT_NAME = '" . self::UNIQUE_IDX . "'"
+                    AND CONSTRAINT_NAME = '".self::UNIQUE_IDX."'",
             )?->cnt;
 
             if ($hasFk && $hasUnique) {
@@ -56,21 +56,22 @@ return new class extends Migration
                 Schema::drop('meta_webhooks');
                 // Falls through to Schema::create below.
             } else {
-                if (!$hasFk) {
+                if (! $hasFk) {
                     Schema::table('meta_webhooks', static function (Blueprint $table): void {
                         $table->foreign('marketing_connection_id')
                             ->references('id')->on('marketing_connections')
                             ->onDelete('cascade');
                     });
                 }
-                if (!$hasUnique) {
+                if (! $hasUnique) {
                     Schema::table('meta_webhooks', static function (Blueprint $table): void {
                         $table->unique(
                             ['marketing_connection_id', 'object_type', 'object_id'],
-                            self::UNIQUE_IDX
+                            self::UNIQUE_IDX,
                         );
                     });
                 }
+
                 return;
             }
         }
@@ -103,7 +104,7 @@ return new class extends Migration
 
             $table->unique(
                 ['marketing_connection_id', 'object_type', 'object_id'],
-                'mw_conn_objtype_objid_unique'
+                'mw_conn_objtype_objid_unique',
             );
         });
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\Promotion;
 
+use InvalidArgumentException;
 use Modules\POS\Promotion\Domain\Enums\PromotionConditionType;
 use Modules\POS\Promotion\Domain\ValueObjects\PromotionCondition;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
@@ -24,7 +25,7 @@ final class PromotionConditionTest extends TestCase
 
     public function test_minimum_cart_total_stores_amount(): void
     {
-        $min  = Money::of('100.00', 'EGP');
+        $min = Money::of('100.00', 'EGP');
         $cond = PromotionCondition::minimumCartTotal($min);
 
         $this->assertSame(PromotionConditionType::MinimumCartTotal, $cond->type);
@@ -33,13 +34,13 @@ final class PromotionConditionTest extends TestCase
 
     public function test_minimum_cart_total_throws_on_zero(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         PromotionCondition::minimumCartTotal(Money::zero('EGP'));
     }
 
     public function test_minimum_cart_total_throws_on_negative(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         PromotionCondition::minimumCartTotal(Money::of('-50.00', 'EGP'));
     }
 
@@ -62,13 +63,13 @@ final class PromotionConditionTest extends TestCase
 
     public function test_minimum_quantity_throws_on_zero(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         PromotionCondition::minimumQuantity(0);
     }
 
     public function test_minimum_quantity_throws_on_negative(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         PromotionCondition::minimumQuantity(-1);
     }
 
@@ -83,7 +84,7 @@ final class PromotionConditionTest extends TestCase
 
     public function test_specific_product_throws_on_empty_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         PromotionCondition::specificProduct('');
     }
 
@@ -98,7 +99,7 @@ final class PromotionConditionTest extends TestCase
 
     public function test_customer_group_throws_on_empty_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         PromotionCondition::customerGroup('');
     }
 

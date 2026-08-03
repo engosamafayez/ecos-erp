@@ -140,7 +140,7 @@ export function CategoriesContent() {
         onSortChange={handleSort}
         rowActions={(category) => (
           <ActionMenu
-            label={`Actions for ${category.name}`}
+            label={t('actions.ariaLabel', { name: category.name })}
             items={[
               { key: 'view', label: tCommon('actions.view'), icon: Eye, onSelect: () => { setDrawerCategory(category); setDrawerOpen(true); } },
               { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => { setDrawerCategory(category); setDrawerOpen(true); } },

@@ -10,6 +10,7 @@ use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Operations\Fulfillment\Application\FulfillmentEngine;
 use Modules\Operations\Fulfillment\Application\Workflows\ReturnToProcessingWorkflow;
 use Modules\Operations\Preparation\Domain\Events\WaveCancelled;
+use Throwable;
 
 /**
  * Returns Preparing orders to Processing status when a preparation wave is cancelled.
@@ -24,8 +25,8 @@ use Modules\Operations\Preparation\Domain\Events\WaveCancelled;
 final class HandlePreparationWaveCancelled
 {
     public function __construct(
-        private readonly FulfillmentEngine           $fulfillmentEngine,
-        private readonly ReturnToProcessingWorkflow  $returnToProcessing,
+        private readonly FulfillmentEngine $fulfillmentEngine,
+        private readonly ReturnToProcessingWorkflow $returnToProcessing,
     ) {}
 
     public function handle(WaveCancelled $event): void
@@ -36,7 +37,7 @@ final class HandlePreparationWaveCancelled
 
         // Load Preparing orders via Eloquent (respects soft deletes and company scope).
         $orders = Order::whereIn('id', $event->orderIds)
-            ->where('status', OrderStatus::Preparing)
+            ->where('status', OrderStatus::ReadyForDispatch)
             ->get();
 
         foreach ($orders as $order) {
@@ -47,12 +48,12 @@ final class HandlePreparationWaveCancelled
                     ['wave_id' => $event->waveId],
                     null,
                 );
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 Log::channel('daily')->error('[WaveCancellation] Failed to return order to Processing', [
-                    'order_id'     => $order->id,
+                    'order_id' => $order->id,
                     'order_number' => $order->order_number,
-                    'wave_id'      => $event->waveId,
-                    'error'        => $e->getMessage(),
+                    'wave_id' => $event->waveId,
+                    'error' => $e->getMessage(),
                 ]);
             }
         }

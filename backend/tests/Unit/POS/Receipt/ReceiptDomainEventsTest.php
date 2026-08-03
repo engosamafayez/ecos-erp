@@ -57,22 +57,22 @@ final class ReceiptDomainEventsTest extends TestCase
     {
         $array = $this->makeIssued()->toArray();
 
-        $this->assertArrayHasKey('event_id',                    $array);
-        $this->assertArrayHasKey('event_name',                  $array);
-        $this->assertArrayHasKey('occurred_at',                 $array);
-        $this->assertArrayHasKey('event_version',               $array);
-        $this->assertArrayHasKey('correlation_id',              $array);
-        $this->assertArrayHasKey('receipt_id',                  $array);
-        $this->assertArrayHasKey('receipt_number',              $array);
-        $this->assertArrayHasKey('type',                        $array);
-        $this->assertArrayHasKey('original_transaction_id',     $array);
+        $this->assertArrayHasKey('event_id', $array);
+        $this->assertArrayHasKey('event_name', $array);
+        $this->assertArrayHasKey('occurred_at', $array);
+        $this->assertArrayHasKey('event_version', $array);
+        $this->assertArrayHasKey('correlation_id', $array);
+        $this->assertArrayHasKey('receipt_id', $array);
+        $this->assertArrayHasKey('receipt_number', $array);
+        $this->assertArrayHasKey('type', $array);
+        $this->assertArrayHasKey('original_transaction_id', $array);
         $this->assertArrayHasKey('original_transaction_number', $array);
-        $this->assertArrayHasKey('terminal_id',                 $array);
-        $this->assertArrayHasKey('cashier_id',                  $array);
-        $this->assertArrayHasKey('customer_id',                 $array);
-        $this->assertArrayHasKey('currency',                    $array);
-        $this->assertArrayHasKey('total_amount',                $array);
-        $this->assertArrayHasKey('line_count',                  $array);
+        $this->assertArrayHasKey('terminal_id', $array);
+        $this->assertArrayHasKey('cashier_id', $array);
+        $this->assertArrayHasKey('customer_id', $array);
+        $this->assertArrayHasKey('currency', $array);
+        $this->assertArrayHasKey('total_amount', $array);
+        $this->assertArrayHasKey('line_count', $array);
     }
 
     // ── ReceiptReprinted ──────────────────────────────────────────────────────
@@ -112,13 +112,13 @@ final class ReceiptDomainEventsTest extends TestCase
     {
         $array = $this->makeReprinted()->toArray();
 
-        $this->assertArrayHasKey('event_id',       $array);
-        $this->assertArrayHasKey('receipt_id',     $array);
+        $this->assertArrayHasKey('event_id', $array);
+        $this->assertArrayHasKey('receipt_id', $array);
         $this->assertArrayHasKey('receipt_number', $array);
-        $this->assertArrayHasKey('reprint_count',  $array);
-        $this->assertArrayHasKey('cashier_id',     $array);
-        $this->assertArrayHasKey('terminal_id',    $array);
-        $this->assertArrayHasKey('reason',         $array);
+        $this->assertArrayHasKey('reprint_count', $array);
+        $this->assertArrayHasKey('cashier_id', $array);
+        $this->assertArrayHasKey('terminal_id', $array);
+        $this->assertArrayHasKey('reason', $array);
     }
 
     // ── ReceiptVoided ─────────────────────────────────────────────────────────
@@ -158,11 +158,11 @@ final class ReceiptDomainEventsTest extends TestCase
     {
         $array = $this->makeVoided()->toArray();
 
-        $this->assertArrayHasKey('event_id',       $array);
-        $this->assertArrayHasKey('receipt_id',     $array);
+        $this->assertArrayHasKey('event_id', $array);
+        $this->assertArrayHasKey('receipt_id', $array);
         $this->assertArrayHasKey('receipt_number', $array);
-        $this->assertArrayHasKey('voided_by',      $array);
-        $this->assertArrayHasKey('void_reason',    $array);
+        $this->assertArrayHasKey('voided_by', $array);
+        $this->assertArrayHasKey('void_reason', $array);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -170,39 +170,39 @@ final class ReceiptDomainEventsTest extends TestCase
     private function makeIssued(): ReceiptIssued
     {
         return ReceiptIssued::now(
-            receiptId:                 'rcpt-1',
-            receiptNumber:             'RCP-20260701-T01-00001',
-            type:                      'sale',
-            originalTransactionId:     'sale-1',
+            receiptId: 'rcpt-1',
+            receiptNumber: 'RCP-20260701-T01-00001',
+            type: 'sale',
+            originalTransactionId: 'sale-1',
             originalTransactionNumber: 'SALE-0001',
-            terminalId:                'term-1',
-            cashierId:                 'usr-1',
-            customerId:                null,
-            currency:                  'EGP',
-            totalAmount:               '114.00',
-            lineCount:                 2,
+            terminalId: 'term-1',
+            cashierId: 'usr-1',
+            customerId: null,
+            currency: 'EGP',
+            totalAmount: '114.00',
+            lineCount: 2,
         );
     }
 
     private function makeReprinted(): ReceiptReprinted
     {
         return ReceiptReprinted::now(
-            receiptId:     'rcpt-1',
+            receiptId: 'rcpt-1',
             receiptNumber: 'RCP-20260701-T01-00001',
-            reprintCount:  1,
-            cashierId:     'usr-1',
-            terminalId:    'term-1',
-            reason:        'customer_request',
+            reprintCount: 1,
+            cashierId: 'usr-1',
+            terminalId: 'term-1',
+            reason: 'customer_request',
         );
     }
 
     private function makeVoided(): ReceiptVoided
     {
         return ReceiptVoided::now(
-            receiptId:     'rcpt-1',
+            receiptId: 'rcpt-1',
             receiptNumber: 'RCP-20260701-T01-00001',
-            voidedBy:      'usr-1',
-            voidReason:    'Duplicate receipt',
+            voidedBy: 'usr-1',
+            voidReason: 'Duplicate receipt',
         );
     }
 }

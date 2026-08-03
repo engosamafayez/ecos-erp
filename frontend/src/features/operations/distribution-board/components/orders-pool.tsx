@@ -1,4 +1,5 @@
 import { MapPin, Package, User } from 'lucide-react';
+import { useFormatter } from '@/hooks/use-formatter';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { PoolOrder } from '../types/distribution-board';
@@ -12,6 +13,7 @@ interface OrdersPoolProps {
 }
 
 function OrderCard({ order, onClick }: { order: PoolOrder; onClick?: () => void }) {
+  const { money } = useFormatter();
   return (
     <button
       onClick={onClick}
@@ -20,7 +22,7 @@ function OrderCard({ order, onClick }: { order: PoolOrder; onClick?: () => void 
       <div className="flex items-start justify-between gap-2 mb-1.5">
         <span className="text-xs font-mono font-medium text-primary">#{order.order_number}</span>
         <span className="text-xs font-semibold tabular-nums">
-          EGP {Number(order.grand_total).toLocaleString('ar-EG', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+          {money(Number(order.grand_total))}
         </span>
       </div>
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-1">

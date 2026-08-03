@@ -17,9 +17,11 @@ use PHPUnit\Framework\TestCase;
  */
 final class SessionDomainEventsTest extends TestCase
 {
-    private const SESSION_ID  = 'session-uuid-1';
+    private const SESSION_ID = 'session-uuid-1';
+
     private const TERMINAL_ID = 'terminal-uuid-1';
-    private const CASHIER_ID  = 'cashier-uuid-1';
+
+    private const CASHIER_ID = 'cashier-uuid-1';
 
     // ── SessionOpened ────────────────────────────────────────────────────────
 
@@ -57,8 +59,8 @@ final class SessionDomainEventsTest extends TestCase
         $array = $this->makeSessionOpened()->toArray();
 
         foreach (['event_id', 'event_name', 'occurred_at', 'event_version', 'correlation_id',
-                  'session_id', 'terminal_id', 'cashier_id', 'device_fingerprint',
-                  'device_type', 'ip_address'] as $key) {
+            'session_id', 'terminal_id', 'cashier_id', 'device_fingerprint',
+            'device_type', 'ip_address'] as $key) {
             $this->assertArrayHasKey($key, $array, "Missing key: {$key}");
         }
     }
@@ -106,7 +108,7 @@ final class SessionDomainEventsTest extends TestCase
         $array = SessionSuspended::now(self::SESSION_ID, self::TERMINAL_ID, self::CASHIER_ID)->toArray();
 
         foreach (['event_id', 'event_name', 'occurred_at', 'event_version', 'correlation_id',
-                  'session_id', 'terminal_id', 'cashier_id'] as $key) {
+            'session_id', 'terminal_id', 'cashier_id'] as $key) {
             $this->assertArrayHasKey($key, $array, "Missing key: {$key}");
         }
     }
@@ -123,7 +125,7 @@ final class SessionDomainEventsTest extends TestCase
 
     public function test_session_resumed_carries_same_device_flag(): void
     {
-        $sameDevice    = SessionResumed::now(self::SESSION_ID, self::TERMINAL_ID, self::CASHIER_ID, true);
+        $sameDevice = SessionResumed::now(self::SESSION_ID, self::TERMINAL_ID, self::CASHIER_ID, true);
         $differentDevice = SessionResumed::now(self::SESSION_ID, self::TERMINAL_ID, self::CASHIER_ID, false);
 
         $this->assertTrue($sameDevice->toArray()['same_device']);
@@ -135,7 +137,7 @@ final class SessionDomainEventsTest extends TestCase
         $array = SessionResumed::now(self::SESSION_ID, self::TERMINAL_ID, self::CASHIER_ID, true)->toArray();
 
         foreach (['event_id', 'event_name', 'occurred_at', 'event_version', 'correlation_id',
-                  'session_id', 'terminal_id', 'cashier_id', 'same_device'] as $key) {
+            'session_id', 'terminal_id', 'cashier_id', 'same_device'] as $key) {
             $this->assertArrayHasKey($key, $array, "Missing key: {$key}");
         }
     }
@@ -163,7 +165,7 @@ final class SessionDomainEventsTest extends TestCase
         $array = SessionClosed::now(self::SESSION_ID, self::TERMINAL_ID, self::CASHIER_ID, 60)->toArray();
 
         foreach (['event_id', 'event_name', 'occurred_at', 'event_version', 'correlation_id',
-                  'session_id', 'terminal_id', 'cashier_id', 'duration_minutes'] as $key) {
+            'session_id', 'terminal_id', 'cashier_id', 'duration_minutes'] as $key) {
             $this->assertArrayHasKey($key, $array, "Missing key: {$key}");
         }
     }
@@ -173,12 +175,12 @@ final class SessionDomainEventsTest extends TestCase
     private function makeSessionOpened(): SessionOpened
     {
         return SessionOpened::now(
-            sessionId:         self::SESSION_ID,
-            terminalId:        self::TERMINAL_ID,
-            cashierId:         self::CASHIER_ID,
+            sessionId: self::SESSION_ID,
+            terminalId: self::TERMINAL_ID,
+            cashierId: self::CASHIER_ID,
             deviceFingerprint: 'fp-hash-abc',
-            deviceType:        'browser',
-            ipAddress:         '192.168.1.1',
+            deviceType: 'browser',
+            ipAddress: '192.168.1.1',
         );
     }
 }

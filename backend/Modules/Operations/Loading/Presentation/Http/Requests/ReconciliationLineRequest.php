@@ -17,7 +17,7 @@ final class ReconciliationLineRequest extends FormRequest
     {
         return [
             'quantity_returned_actual' => ['required', 'numeric', 'min:0'],
-            'resolution_notes'         => ['nullable', 'string', 'max:1000'],
+            'resolution_notes' => ['nullable', 'string', 'max:1000'],
         ];
     }
 }

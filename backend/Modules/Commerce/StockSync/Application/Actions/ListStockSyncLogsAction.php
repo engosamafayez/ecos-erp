@@ -44,11 +44,11 @@ final class ListStockSyncLogsAction extends BaseAction
         }
 
         if (! empty($filters['search'])) {
-            $search = '%' . $filters['search'] . '%';
+            $search = '%'.$filters['search'].'%';
             $query->where(function ($q) use ($search): void {
                 $q->whereHas('product', fn ($p) => $p->where('name', 'like', $search)
                     ->orWhere('sku', 'like', $search))
-                  ->orWhereHas('channel', fn ($c) => $c->where('name', 'like', $search));
+                    ->orWhereHas('channel', fn ($c) => $c->where('name', 'like', $search));
             });
         }
 

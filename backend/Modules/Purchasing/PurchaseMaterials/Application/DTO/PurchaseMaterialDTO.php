@@ -10,17 +10,17 @@ namespace Modules\Purchasing\PurchaseMaterials\Application\DTO;
 final class PurchaseMaterialDTO
 {
     /**
-     * @param list<PurchaseMaterialLineDTO> $lines
+     * @param  list<PurchaseMaterialLineDTO>  $lines
      */
     public function __construct(
-        public readonly string  $warehouse_id,
+        public readonly string $warehouse_id,
         public readonly ?string $company_id,
         public readonly ?string $channel_id,
-        public readonly string  $priority,
+        public readonly string $priority,
         public readonly ?string $required_date,
         public readonly ?string $notes,
-        public readonly array   $lines,
-        public readonly string  $record_type = 'material_request',
+        public readonly array $lines,
+        public readonly string $record_type = 'material_request',
         public readonly ?string $source_type = null,
     ) {}
 
@@ -35,15 +35,15 @@ final class PurchaseMaterialDTO
         ));
 
         return new self(
-            warehouse_id:  (string) ($data['warehouse_id'] ?? ''),
-            company_id:    self::nullStr($data, 'company_id'),
-            channel_id:    self::nullStr($data, 'channel_id'),
-            priority:      (string) ($data['priority'] ?? 'normal'),
+            warehouse_id: (string) ($data['warehouse_id'] ?? ''),
+            company_id: self::nullStr($data, 'company_id'),
+            channel_id: self::nullStr($data, 'channel_id'),
+            priority: (string) ($data['priority'] ?? 'normal'),
             required_date: self::nullStr($data, 'required_date'),
-            notes:         self::nullStr($data, 'notes'),
-            lines:         $lines,
-            record_type:   (string) ($data['record_type'] ?? 'material_request'),
-            source_type:   self::nullStr($data, 'source_type'),
+            notes: self::nullStr($data, 'notes'),
+            lines: $lines,
+            record_type: (string) ($data['record_type'] ?? 'material_request'),
+            source_type: self::nullStr($data, 'source_type'),
         );
     }
 
@@ -51,6 +51,7 @@ final class PurchaseMaterialDTO
     private static function nullStr(array $data, string $key): ?string
     {
         $v = $data[$key] ?? null;
+
         return $v === null || $v === '' ? null : (string) $v;
     }
 }

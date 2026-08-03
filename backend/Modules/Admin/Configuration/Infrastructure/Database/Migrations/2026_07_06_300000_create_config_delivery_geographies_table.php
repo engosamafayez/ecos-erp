@@ -16,7 +16,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-                if (Schema::hasTable('config_delivery_geographies')) {
+        if (Schema::hasTable('config_delivery_geographies')) {
             return;
         }
 

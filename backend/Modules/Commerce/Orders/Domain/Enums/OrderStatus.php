@@ -4,92 +4,90 @@ declare(strict_types=1);
 
 namespace Modules\Commerce\Orders\Domain\Enums;
 
+/**
+ * V3 Order Status Lifecycle (TASK-ORDERS-LIFECYCLE-ARCH-002).
+ *
+ * Primary flow:  New → In Progress → Ready for Dispatch → Out for Delivery → Delivered
+ * Exception:     Awaiting Payment / Awaiting Stock / Scheduled / On Hold
+ * Terminal:      Delivered / Cancelled / Returned
+ */
 enum OrderStatus: string
 {
-    // ── Main lifecycle ──────────────────────────────────────────────────
-    case Pending         = 'pending';
-    case Scheduled       = 'scheduled';
-    case AwaitingPayment = 'awaiting_payment';
-    case Processing      = 'processing';
-    case AwaitingStock   = 'awaiting_stock';
-    case Confirmed       = 'confirmed';
-    case Preparing       = 'preparing';
-    case OutForDelivery  = 'out_for_delivery';
-    case Delivered       = 'delivered';
-    case Completed       = 'completed';
+    // ── Primary Flow ──────────────────────────────────────────────────────
+    case NewOrder          = 'new';
+    case InProgress        = 'in_progress';
+    case ReadyForDispatch  = 'ready_for_dispatch';
+    case OutForDelivery    = 'out_for_delivery';
+    case Delivered         = 'delivered';
 
-    // ── Exceptional states ──────────────────────────────────────────────
-    case Cancelled       = 'cancelled';
-    case Review          = 'review';
-    case Returned        = 'returned';
-    case Rescheduled     = 'rescheduled';
+    // ── Exception States ──────────────────────────────────────────────────
+    case AwaitingPayment   = 'awaiting_payment';
+    case AwaitingStock     = 'awaiting_stock';
+    case Scheduled         = 'scheduled';
+    case OnHold            = 'on_hold';
+
+    // ── Terminal ──────────────────────────────────────────────────────────
+    case Cancelled         = 'cancelled';
+    case Returned          = 'returned';
 
     public function label(): string
     {
         return match ($this) {
-            self::Pending         => 'Pending',
-            self::Scheduled       => 'Scheduled',
-            self::AwaitingPayment => 'Payment',         // V2: renamed from "Awaiting Payment"
-            self::Processing      => 'Processing',
-            self::AwaitingStock   => 'Awaiting Stock',
-            self::Confirmed       => 'Confirmed',
-            self::Preparing       => 'Preparing',
-            self::OutForDelivery  => 'Out for Delivery',
-            self::Delivered       => 'Delivered',
-            self::Completed       => 'Completed',
-            self::Cancelled       => 'Cancelled',
-            self::Review          => 'Review',
-            self::Returned        => 'Returned',
-            self::Rescheduled     => 'Rescheduled',
+            self::NewOrder         => 'New',
+            self::InProgress       => 'In Progress',
+            self::ReadyForDispatch => 'Ready for Dispatch',
+            self::OutForDelivery   => 'Out for Delivery',
+            self::Delivered        => 'Delivered',
+            self::AwaitingPayment  => 'Awaiting Payment',
+            self::AwaitingStock    => 'Awaiting Stock',
+            self::Scheduled        => 'Scheduled',
+            self::OnHold           => 'On Hold',
+            self::Cancelled        => 'Cancelled',
+            self::Returned         => 'Returned',
         };
     }
 
     /**
-     * V2: Only Completed is terminal. Cancelled is recoverable — orders may be reopened.
-     * Completed = financial closure. True end-of-life.
+     * Terminal: order has reached its final business state.
+     * Delivered = fulfilled; Cancelled = explicitly ended; Returned = return processed.
      */
     public function isTerminal(): bool
     {
-        return $this === self::Completed;
+        return in_array($this, [self::Delivered, self::Cancelled, self::Returned], true);
     }
 
     /**
-     * Structural lock: product/price/shipping data becomes immutable from Processing onward.
-     * The only way to unlock is to return the order to Pending or Payment (AwaitingPayment).
+     * Structural lock: product/price/shipping data is immutable from InProgress onward.
+     * To unlock, return the order to New or AwaitingPayment.
      */
     public function isLocked(): bool
     {
-        return ! in_array($this, [self::Pending, self::Scheduled, self::AwaitingPayment], true);
+        return ! in_array($this, [self::NewOrder, self::Scheduled, self::AwaitingPayment], true);
     }
 
-    /** Returns true if the order is pre-activation (not yet in the operational queue). */
+    /** Returns true if the order is pre-activation (future-dated). */
     public function isPreActivation(): bool
     {
         return $this === self::Scheduled;
     }
 
     /**
-     * Official V2 display order across all dashboards, filters, and analytics.
-     * Order: Pending → Payment → Processing → Confirmed → Preparing → Out for Delivery
-     *        → Delivered → Returned → Awaiting Stock → Rescheduled → Review → Cancelled → Completed
+     * Official V3 display order across all dashboards, filters, and analytics.
      */
     public static function displayOrder(): array
     {
         return [
+            self::NewOrder,
             self::Scheduled,
-            self::Pending,
             self::AwaitingPayment,
-            self::Processing,
-            self::Confirmed,
-            self::Preparing,
+            self::InProgress,
+            self::AwaitingStock,
+            self::ReadyForDispatch,
             self::OutForDelivery,
             self::Delivered,
             self::Returned,
-            self::AwaitingStock,
-            self::Rescheduled,
-            self::Review,
+            self::OnHold,
             self::Cancelled,
-            self::Completed,
         ];
     }
 }

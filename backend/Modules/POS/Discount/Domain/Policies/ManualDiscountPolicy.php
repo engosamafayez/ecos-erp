@@ -40,9 +40,16 @@ final class ManualDiscountPolicy
     /** Returns true if the value exceeds the cashier-level limit and requires approval. */
     public function requiresApproval(DiscountValue $value): bool
     {
-        return !$this->cashierLimit->isWithin($value);
+        return ! $this->cashierLimit->isWithin($value);
     }
 
-    public function cashierLimit(): DiscountLimit    { return $this->cashierLimit; }
-    public function supervisorLimit(): DiscountLimit { return $this->supervisorLimit; }
+    public function cashierLimit(): DiscountLimit
+    {
+        return $this->cashierLimit;
+    }
+
+    public function supervisorLimit(): DiscountLimit
+    {
+        return $this->supervisorLimit;
+    }
 }

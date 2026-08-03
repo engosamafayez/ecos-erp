@@ -27,7 +27,7 @@ return new class extends Migration
 
         // Backfill from orders: pick the first company found for each customer.
         // Customers without orders remain nullable — they will be scoped on first write.
-        DB::statement(<<<SQL
+        DB::statement(<<<'SQL'
             UPDATE customers c
             SET company_id = (
                 SELECT o.company_id

@@ -21,8 +21,10 @@ final class SessionPersistenceTest extends TestCase
 
     private SessionRepositoryInterface $repository;
 
-    private const CASHIER_ID   = 'b0000000-0000-4000-b000-000000000001';
-    private const COMPANY_ID   = 'c0000000-0000-4000-c000-000000000001';
+    private const CASHIER_ID = 'b0000000-0000-4000-b000-000000000001';
+
+    private const COMPANY_ID = 'c0000000-0000-4000-c000-000000000001';
+
     private const WAREHOUSE_ID = 'd0000000-0000-4000-d000-000000000001';
 
     protected function setUp(): void
@@ -33,17 +35,17 @@ final class SessionPersistenceTest extends TestCase
     }
 
     private function makeSession(
-        string  $cashierId   = self::CASHIER_ID,
-        string  $fingerprint = 'test-fp-001',
-        string  $ip          = '10.0.0.1',
+        string $cashierId = self::CASHIER_ID,
+        string $fingerprint = 'test-fp-001',
+        string $ip = '10.0.0.1',
     ): Session {
         return Session::open(
-            cashierId:   $cashierId,
-            companyId:   self::COMPANY_ID,
-            channelId:   null,
+            cashierId: $cashierId,
+            companyId: self::COMPANY_ID,
+            channelId: null,
             warehouseId: self::WAREHOUSE_ID,
             fingerprint: DeviceFingerprint::of($fingerprint),
-            ipAddress:   $ip,
+            ipAddress: $ip,
         );
     }
 
@@ -89,13 +91,13 @@ final class SessionPersistenceTest extends TestCase
     public function test_device_type_enum_round_trips_through_database(): void
     {
         $session = Session::open(
-            cashierId:   self::CASHIER_ID,
-            companyId:   self::COMPANY_ID,
-            channelId:   null,
+            cashierId: self::CASHIER_ID,
+            companyId: self::COMPANY_ID,
+            channelId: null,
             warehouseId: self::WAREHOUSE_ID,
             fingerprint: DeviceFingerprint::of('fp-mobile'),
-            ipAddress:   '1.2.3.4',
-            deviceType:  DeviceType::Mobile,
+            ipAddress: '1.2.3.4',
+            deviceType: DeviceType::Mobile,
         );
         $this->repository->save($session);
 

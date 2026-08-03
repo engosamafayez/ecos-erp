@@ -49,15 +49,15 @@ final class DecisionOrchestrator
      * Orchestrate a decision for the given trigger and context.
      *
      * @param  array<string, mixed>  $parameters  Domain-specific parameters for the builder.
-     * @param  array<string, mixed>  $metadata    Caller metadata merged into OrchestratorResult.
+     * @param  array<string, mixed>  $metadata  Caller metadata merged into OrchestratorResult.
      *
-     * @throws OrchestratorException           When builder requires recipe but product_id is absent.
+     * @throws OrchestratorException When builder requires recipe but product_id is absent.
      * @throws \Modules\Manufacturing\BillsOfMaterials\Domain\Exceptions\RecipeResolverException
-     *                                         When recipe resolution fails (propagated unchanged).
+     *                                                                                           When recipe resolution fails (propagated unchanged).
      * @throws \Modules\Manufacturing\DecisionKernel\Domain\Exceptions\NoMatchingRuleException
-     *                                         When no rule matches (propagated unchanged).
+     *                                                                                         When no rule matches (propagated unchanged).
      * @throws \Modules\Manufacturing\DecisionOrchestrator\Domain\Exceptions\NoProviderForContextException
-     *                                         When no rule provider is registered for this context type.
+     *                                                                                                     When no rule provider is registered for this context type.
      */
     public function orchestrate(
         DecisionTrigger $trigger,
@@ -79,7 +79,7 @@ final class DecisionOrchestrator
             }
 
             $snapshot = $this->resolver->resolve($productId);
-            $context  = $this->enrichWithRecipe($context, $snapshot);
+            $context = $this->enrichWithRecipe($context, $snapshot);
         }
 
         // ── Step 3: Select rule provider ──────────────────────────────────────
@@ -92,9 +92,9 @@ final class DecisionOrchestrator
         $mergedMetadata = $this->buildMetadata($context, $snapshot, $metadata);
 
         return new OrchestratorResult(
-            decision:        $decision,
+            decision: $decision,
             recipe_snapshot: $snapshot,
-            metadata:        $mergedMetadata,
+            metadata: $mergedMetadata,
         );
     }
 
@@ -105,17 +105,16 @@ final class DecisionOrchestrator
     private function enrichWithRecipe(DecisionContext $context, RecipeSnapshot $snapshot): DecisionContext
     {
         return $context
-            ->with('recipe_id',          $snapshot->recipe_id)
+            ->with('recipe_id', $snapshot->recipe_id)
             ->with('bom_version_number', $snapshot->bom_version_number)
-            ->with('component_count',    $snapshot->componentCount())
-            ->with('recipe_resolved',    true);
+            ->with('component_count', $snapshot->componentCount())
+            ->with('recipe_resolved', true);
     }
 
     /**
      * Build the merged metadata for OrchestratorResult.
      *
-     * @param  array<string, mixed>   $callerMetadata
-     * @param  RecipeSnapshot|null    $snapshot
+     * @param  array<string, mixed>  $callerMetadata
      * @return array<string, mixed>
      */
     private function buildMetadata(
@@ -128,7 +127,7 @@ final class DecisionOrchestrator
         ];
 
         if ($snapshot !== null) {
-            $base['recipe_id']          = $snapshot->recipe_id;
+            $base['recipe_id'] = $snapshot->recipe_id;
             $base['bom_version_number'] = $snapshot->bom_version_number;
         }
 

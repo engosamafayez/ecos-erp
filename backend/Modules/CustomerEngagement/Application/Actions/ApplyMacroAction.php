@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Application\Actions;
 
 use Modules\CustomerEngagement\Application\Services\MacroService;
@@ -11,7 +13,7 @@ use Modules\CustomerEngagement\Domain\Models\Message;
 class ApplyMacroAction
 {
     public function __construct(
-        private readonly MacroService           $macroService,
+        private readonly MacroService $macroService,
         private readonly OutboundMessageService $outboundService,
     ) {}
 
@@ -21,7 +23,7 @@ class ApplyMacroAction
 
         return $this->outboundService->send($conversation, $agentId, [
             'message_type' => 'text',
-            'content'      => $resolvedContent,
+            'content' => $resolvedContent,
         ]);
     }
 }

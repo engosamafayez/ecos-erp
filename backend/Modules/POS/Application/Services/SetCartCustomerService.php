@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\POS\Application\Services;
 
+use InvalidArgumentException;
 use Modules\POS\Application\Commands\SetCartCustomerCommand;
 use Modules\POS\Application\Exceptions\CartNotFoundException;
 use Modules\POS\Cart\Domain\Contracts\CartRepositoryInterface;
@@ -24,8 +25,8 @@ final class SetCartCustomerService
         }
 
         if ($cart->status->isTerminal()) {
-            throw new \InvalidArgumentException(
-                "Cannot set customer on a cart in terminal state ({$cart->status->value})."
+            throw new InvalidArgumentException(
+                "Cannot set customer on a cart in terminal state ({$cart->status->value}).",
             );
         }
 

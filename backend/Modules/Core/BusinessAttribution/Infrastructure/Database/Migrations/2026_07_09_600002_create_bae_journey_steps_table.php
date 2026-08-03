@@ -48,8 +48,8 @@ return new class extends Migration
 
             $table->index(['business_dna_id', 'occurred_at'], 'bae_js_dna_at_idx');
             $table->index(['business_dna_id', 'journey_stage'], 'bae_js_dna_stage_idx');
-            $table->index('event_id',                           'bae_js_event_idx');
-            $table->index('previous_step_id',                   'bae_js_prev_idx');
+            $table->index('event_id', 'bae_js_event_idx');
+            $table->index('previous_step_id', 'bae_js_prev_idx');
         });
     }
 

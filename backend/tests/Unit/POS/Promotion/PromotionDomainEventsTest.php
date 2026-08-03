@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\Promotion;
 
-use DateTimeImmutable;
 use Modules\POS\Promotion\Domain\Events\PromotionActivated;
 use Modules\POS\Promotion\Domain\Events\PromotionCancelled;
 use Modules\POS\Promotion\Domain\Events\PromotionCreated;
@@ -50,8 +49,8 @@ final class PromotionDomainEventsTest extends TestCase
     {
         $data = $this->makeCreated()->toArray();
         foreach (['event_id', 'event_name', 'occurred_at', 'event_version', 'correlation_id',
-                  'promotion_id', 'name', 'status', 'condition_count', 'reward_type',
-                  'valid_from', 'valid_until', 'max_uses', 'priority'] as $key) {
+            'promotion_id', 'name', 'status', 'condition_count', 'reward_type',
+            'valid_from', 'valid_until', 'max_uses', 'priority'] as $key) {
             $this->assertArrayHasKey($key, $data, "Missing key: $key");
         }
     }
@@ -59,15 +58,15 @@ final class PromotionDomainEventsTest extends TestCase
     public function test_promotion_created_carries_payload(): void
     {
         $event = PromotionCreated::now(
-            promotionId:    'promo-001',
-            name:           'Summer Sale',
-            status:         'draft',
+            promotionId: 'promo-001',
+            name: 'Summer Sale',
+            status: 'draft',
             conditionCount: 2,
-            rewardType:     'percentage_discount',
-            validFrom:      '2026-07-01T00:00:00+00:00',
-            validUntil:     '2026-07-31T23:59:59+00:00',
-            maxUses:        100,
-            priority:       5,
+            rewardType: 'percentage_discount',
+            validFrom: '2026-07-01T00:00:00+00:00',
+            validUntil: '2026-07-31T23:59:59+00:00',
+            maxUses: 100,
+            priority: 5,
         );
 
         $this->assertSame('promo-001', $event->promotionId);
@@ -110,7 +109,7 @@ final class PromotionDomainEventsTest extends TestCase
     {
         $data = $this->makeActivated()->toArray();
         foreach (['event_id', 'event_name', 'occurred_at', 'event_version', 'correlation_id',
-                  'promotion_id', 'name', 'activated_at'] as $key) {
+            'promotion_id', 'name', 'activated_at'] as $key) {
             $this->assertArrayHasKey($key, $data, "Missing key: $key");
         }
     }
@@ -136,7 +135,7 @@ final class PromotionDomainEventsTest extends TestCase
     {
         $data = $this->makePaused()->toArray();
         foreach (['event_id', 'event_name', 'occurred_at', 'event_version',
-                  'promotion_id', 'name', 'paused_at'] as $key) {
+            'promotion_id', 'name', 'paused_at'] as $key) {
             $this->assertArrayHasKey($key, $data, "Missing key: $key");
         }
     }
@@ -162,9 +161,9 @@ final class PromotionDomainEventsTest extends TestCase
     {
         $event = PromotionExpired::now(
             promotionId: 'promo-1',
-            name:        'Old Sale',
-            totalUses:   42,
-            expiredAt:   '2026-07-31T23:59:59+00:00',
+            name: 'Old Sale',
+            totalUses: 42,
+            expiredAt: '2026-07-31T23:59:59+00:00',
         );
         $data = $event->toArray();
         $this->assertSame(42, $data['total_uses']);
@@ -174,7 +173,7 @@ final class PromotionDomainEventsTest extends TestCase
     {
         $data = $this->makeExpired()->toArray();
         foreach (['event_id', 'event_name', 'occurred_at', 'event_version',
-                  'promotion_id', 'name', 'total_uses', 'expired_at'] as $key) {
+            'promotion_id', 'name', 'total_uses', 'expired_at'] as $key) {
             $this->assertArrayHasKey($key, $data, "Missing key: $key");
         }
     }
@@ -200,9 +199,9 @@ final class PromotionDomainEventsTest extends TestCase
     {
         $event = PromotionCancelled::now(
             promotionId: 'promo-1',
-            name:        'Old',
+            name: 'Old',
             cancelledAt: '2026-07-01T12:00:00+00:00',
-            reason:      null,
+            reason: null,
         );
         $this->assertNull($event->toArray()['reason']);
     }
@@ -211,9 +210,9 @@ final class PromotionDomainEventsTest extends TestCase
     {
         $event = PromotionCancelled::now(
             promotionId: 'promo-1',
-            name:        'Old',
+            name: 'Old',
             cancelledAt: '2026-07-01T12:00:00+00:00',
-            reason:      'Duplicate campaign',
+            reason: 'Duplicate campaign',
         );
         $this->assertSame('Duplicate campaign', $event->toArray()['reason']);
     }
@@ -222,7 +221,7 @@ final class PromotionDomainEventsTest extends TestCase
     {
         $data = $this->makeCancelled()->toArray();
         foreach (['event_id', 'event_name', 'occurred_at', 'event_version',
-                  'promotion_id', 'name', 'cancelled_at', 'reason'] as $key) {
+            'promotion_id', 'name', 'cancelled_at', 'reason'] as $key) {
             $this->assertArrayHasKey($key, $data, "Missing key: $key");
         }
     }
@@ -232,15 +231,15 @@ final class PromotionDomainEventsTest extends TestCase
     private function makeCreated(): PromotionCreated
     {
         return PromotionCreated::now(
-            promotionId:    'promo-test',
-            name:           'Test',
-            status:         'draft',
+            promotionId: 'promo-test',
+            name: 'Test',
+            status: 'draft',
             conditionCount: 1,
-            rewardType:     'percentage_discount',
-            validFrom:      '2026-07-01T00:00:00+00:00',
-            validUntil:     null,
-            maxUses:        null,
-            priority:       0,
+            rewardType: 'percentage_discount',
+            validFrom: '2026-07-01T00:00:00+00:00',
+            validUntil: null,
+            maxUses: null,
+            priority: 0,
         );
     }
 
@@ -248,7 +247,7 @@ final class PromotionDomainEventsTest extends TestCase
     {
         return PromotionActivated::now(
             promotionId: 'promo-test',
-            name:        'Test',
+            name: 'Test',
             activatedAt: '2026-07-01T12:00:00+00:00',
         );
     }
@@ -257,8 +256,8 @@ final class PromotionDomainEventsTest extends TestCase
     {
         return PromotionPaused::now(
             promotionId: 'promo-test',
-            name:        'Test',
-            pausedAt:    '2026-07-01T12:00:00+00:00',
+            name: 'Test',
+            pausedAt: '2026-07-01T12:00:00+00:00',
         );
     }
 
@@ -266,9 +265,9 @@ final class PromotionDomainEventsTest extends TestCase
     {
         return PromotionExpired::now(
             promotionId: 'promo-test',
-            name:        'Test',
-            totalUses:   0,
-            expiredAt:   '2026-07-01T12:00:00+00:00',
+            name: 'Test',
+            totalUses: 0,
+            expiredAt: '2026-07-01T12:00:00+00:00',
         );
     }
 
@@ -276,9 +275,9 @@ final class PromotionDomainEventsTest extends TestCase
     {
         return PromotionCancelled::now(
             promotionId: 'promo-test',
-            name:        'Test',
+            name: 'Test',
             cancelledAt: '2026-07-01T12:00:00+00:00',
-            reason:      null,
+            reason: null,
         );
     }
 }

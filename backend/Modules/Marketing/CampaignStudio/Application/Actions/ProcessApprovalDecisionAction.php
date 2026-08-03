@@ -12,15 +12,15 @@ use Modules\Marketing\CampaignStudio\Domain\Models\CampaignApprovalDecision;
 class ProcessApprovalDecisionAction
 {
     public function __construct(
-        private readonly CampaignApprovalService   $approvalService,
-        private readonly CampaignVersioningService  $versioningService,
+        private readonly CampaignApprovalService $approvalService,
+        private readonly CampaignVersioningService $versioningService,
     ) {}
 
     public function execute(
         CampaignApproval $approval,
-        string           $decision,
-        string           $decidedBy,
-        ?string          $notes = null,
+        string $decision,
+        string $decidedBy,
+        ?string $notes = null,
     ): CampaignApprovalDecision {
         $decisionRecord = $this->approvalService->decide($approval, $decision, $decidedBy, $notes);
 

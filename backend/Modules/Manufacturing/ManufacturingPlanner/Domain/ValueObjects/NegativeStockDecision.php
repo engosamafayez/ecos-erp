@@ -40,12 +40,12 @@ final readonly class NegativeStockDecision
     public function toArray(): array
     {
         return [
-            'component_id'      => $this->component_id,
-            'sku'               => $this->sku,
-            'name'              => $this->name,
-            'unit_symbol'       => $this->unit_symbol,
-            'available_qty'     => $this->available_qty,
-            'qty_to_consume'    => $this->qty_to_consume,
+            'component_id' => $this->component_id,
+            'sku' => $this->sku,
+            'name' => $this->name,
+            'unit_symbol' => $this->unit_symbol,
+            'available_qty' => $this->available_qty,
+            'qty_to_consume' => $this->qty_to_consume,
             'projected_balance' => $this->projected_balance,
         ];
     }

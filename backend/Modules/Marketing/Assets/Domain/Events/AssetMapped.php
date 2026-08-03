@@ -10,7 +10,7 @@ final class AssetMapped
 {
     public function __construct(
         public readonly MarketingAssetRelationship $relationship,
-        public readonly string                     $actorId,
-        public readonly bool                       $isAutoSuggested,
+        public readonly string $actorId,
+        public readonly bool $isAutoSuggested,
     ) {}
 }

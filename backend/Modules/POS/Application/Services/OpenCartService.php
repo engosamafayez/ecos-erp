@@ -13,18 +13,18 @@ use Modules\POS\Cart\Domain\Models\Cart;
 final class OpenCartService
 {
     public function __construct(
-        private readonly CartRepositoryInterface       $cartRepo,
+        private readonly CartRepositoryInterface $cartRepo,
         private readonly DomainEventPublisherInterface $publisher,
     ) {}
 
     public function execute(OpenCartCommand $command): OpenCartResult
     {
         $cart = Cart::open(
-            sessionId:  $command->sessionId,
-            shiftId:    $command->shiftId,
+            sessionId: $command->sessionId,
+            shiftId: $command->shiftId,
             terminalId: $command->terminalId,
-            cashierId:  $command->cashierId,
-            currency:   $command->currency,
+            cashierId: $command->cashierId,
+            currency: $command->currency,
             customerId: $command->customerId,
         );
 

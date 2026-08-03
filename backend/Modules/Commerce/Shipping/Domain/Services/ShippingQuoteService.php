@@ -48,6 +48,7 @@ final class ShippingQuoteService
         }
 
         $defaultPrice = Governorate::where('id', $governorateId)->value('default_shipping_price');
+
         return $defaultPrice !== null ? (float) $defaultPrice : 0.0;
     }
 
@@ -92,6 +93,7 @@ final class ShippingQuoteService
         }
 
         $default = BrandShippingSettings::where('brand_id', $brandId)->value('default_cod_enabled');
+
         return $default !== null ? (bool) $default : true;
     }
 
@@ -115,7 +117,7 @@ final class ShippingQuoteService
     /**
      * Check whether the free-shipping threshold is met.
      *
-     * @param float $orderSubtotal The order's item subtotal (before shipping)
+     * @param  float  $orderSubtotal  The order's item subtotal (before shipping)
      */
     public function isFreeShippingEligible(string $brandId, float $orderSubtotal): bool
     {
@@ -143,10 +145,10 @@ final class ShippingQuoteService
     public function quote(string $brandId, int $governorateId, ?int $cityId): array
     {
         return [
-            'price'              => $this->calculatePrice($brandId, $governorateId, $cityId),
-            'delivery_days'      => $this->estimateDeliveryDays($brandId, $governorateId),
-            'same_day'           => $this->isSameDaySupported($brandId, $governorateId),
-            'cod_allowed'        => $this->isCodAllowed($brandId, $cityId),
+            'price' => $this->calculatePrice($brandId, $governorateId, $cityId),
+            'delivery_days' => $this->estimateDeliveryDays($brandId, $governorateId),
+            'same_day' => $this->isSameDaySupported($brandId, $governorateId),
+            'cod_allowed' => $this->isCodAllowed($brandId, $cityId),
             'preferred_provider' => $this->resolvePreferredProvider($brandId, $governorateId),
         ];
     }

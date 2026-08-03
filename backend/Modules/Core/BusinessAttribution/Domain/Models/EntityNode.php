@@ -13,15 +13,15 @@ use Modules\Core\BusinessAttribution\Domain\Enums\NodeType;
 /**
  * A node in the Business Graph Layer.
  *
- * @property string      $id
- * @property NodeType    $node_type
- * @property string      $entity_id
- * @property string      $entity_type
+ * @property string $id
+ * @property NodeType $node_type
+ * @property string $entity_id
+ * @property string $entity_type
  * @property string|null $company_id
  * @property string|null $label
- * @property array|null  $properties
- * @property Carbon      $created_at
- * @property Carbon      $updated_at
+ * @property array|null $properties
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class EntityNode extends Model
 {
@@ -34,7 +34,7 @@ class EntityNode extends Model
     protected function casts(): array
     {
         return [
-            'node_type'  => NodeType::class,
+            'node_type' => NodeType::class,
             'properties' => 'array',
         ];
     }

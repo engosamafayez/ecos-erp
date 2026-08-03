@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\Core\BusinessAttribution\Application\Services;
 
 use Carbon\Carbon;
@@ -26,14 +28,14 @@ class TimeMachineService
     public function getHistoricalView(string $entityType, string $entityId, Carbon $asOf): array
     {
         $context = TimestampContext::at($asOf);
-        $state   = $this->resolveAt($entityType, $entityId, $asOf);
+        $state = $this->resolveAt($entityType, $entityId, $asOf);
 
         return [
-            'entity_type'       => $entityType,
-            'entity_id'         => $entityId,
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
             'timestamp_context' => $context->toArray(),
-            'state'             => $state->toArray(),
-            'is_historical'     => $context->isHistorical(),
+            'state' => $state->toArray(),
+            'is_historical' => $context->isHistorical(),
         ];
     }
 
@@ -52,9 +54,9 @@ class TimeMachineService
         Carbon $to,
     ): array {
         $stateFrom = $this->resolveAt($entityType, $entityId, $from);
-        $stateTo   = $this->resolveAt($entityType, $entityId, $to);
+        $stateTo = $this->resolveAt($entityType, $entityId, $to);
 
-        $added   = [];
+        $added = [];
         $removed = [];
         $changed = [];
 
@@ -64,7 +66,7 @@ class TimeMachineService
             } elseif ($stateFrom->state[$key] !== $valueNew) {
                 $changed[$key] = [
                     'from' => $stateFrom->state[$key],
-                    'to'   => $valueNew,
+                    'to' => $valueNew,
                 ];
             }
         }
@@ -76,13 +78,13 @@ class TimeMachineService
         }
 
         return [
-            'from'            => $from->toIso8601String(),
-            'to'              => $to->toIso8601String(),
+            'from' => $from->toIso8601String(),
+            'to' => $to->toIso8601String(),
             'events_in_range' => $stateTo->eventsApplied - $stateFrom->eventsApplied,
-            'added'           => $added,
-            'removed'         => $removed,
-            'changed'         => $changed,
-            'has_changes'     => ! empty($added) || ! empty($removed) || ! empty($changed),
+            'added' => $added,
+            'removed' => $removed,
+            'changed' => $changed,
+            'has_changes' => ! empty($added) || ! empty($removed) || ! empty($changed),
         ];
     }
 

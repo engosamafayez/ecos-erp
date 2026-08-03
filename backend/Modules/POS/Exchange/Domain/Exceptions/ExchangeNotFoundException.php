@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\POS\Exchange\Domain\Exceptions;
 
-final class ExchangeNotFoundException extends \DomainException
+use DomainException;
+
+final class ExchangeNotFoundException extends DomainException
 {
     public static function withId(string $id): self
     {

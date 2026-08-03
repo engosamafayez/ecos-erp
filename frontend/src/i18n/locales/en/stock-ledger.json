@@ -1,10 +1,24 @@
 {
   "title": "Stock Ledger",
-  "subtitle": "Complete audit history of all inventory movements.",
+  "subtitle": "Complete audit trail of all inventory movements.",
+  "breadcrumb": {
+    "home": "Home",
+    "page": "Stock Ledger"
+  },
   "search": "Search by product name, SKU, or warehouse…",
+  "actions": {
+    "exportCsv": "Export CSV",
+    "refresh": "Refresh",
+    "clear": "Clear"
+  },
   "filters": {
+    "searchLabel": "Search",
+    "searchPlaceholder": "Product name or SKU…",
     "type": "Movement Type",
+    "typeLabel": "Movement Type",
     "allTypes": "All Types",
+    "fromLabel": "From",
+    "toLabel": "To",
     "dateFrom": "Date From",
     "dateTo": "Date To",
     "warehouse": "Warehouse",
@@ -23,13 +37,33 @@
   },
   "columns": {
     "date": "Date",
+    "type": "Type",
+    "productMaterial": "Product / Material",
     "product": "Product",
     "warehouse": "Warehouse",
-    "type": "Type",
+    "in": "In",
+    "out": "Out",
+    "balance": "Balance",
     "quantity": "Quantity",
     "before": "Before",
     "after": "After",
     "refType": "Ref. Type",
+    "reference": "Reference"
+  },
+  "table": {
+    "loading": "Loading…",
+    "error": "Failed to load. Try refreshing.",
+    "empty": "No movements found."
+  },
+  "csv": {
+    "date": "Date",
+    "type": "Type",
+    "product": "Product",
+    "sku": "SKU",
+    "warehouse": "Warehouse",
+    "in": "In",
+    "out": "Out",
+    "balance": "Balance",
     "reference": "Reference"
   }
 }

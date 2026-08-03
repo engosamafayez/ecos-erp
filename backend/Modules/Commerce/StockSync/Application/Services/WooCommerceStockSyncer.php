@@ -20,7 +20,7 @@ final class WooCommerceStockSyncer
             $response = Http::withBasicAuth($consumerKey, $consumerSecret)
                 ->timeout(15)
                 ->put(
-                    rtrim($storeUrl, '/') . '/wp-json/wc/v3/products/' . $externalProductId,
+                    rtrim($storeUrl, '/').'/wp-json/wc/v3/products/'.$externalProductId,
                     [
                         'stock_quantity' => $stockQuantity,
                         'manage_stock' => true,

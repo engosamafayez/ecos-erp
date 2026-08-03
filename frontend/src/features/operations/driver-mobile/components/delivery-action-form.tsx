@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useFormatter } from '@/hooks/use-formatter';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -31,6 +32,7 @@ export function DeliveryActionForm({
   onCancel,
   isLoading,
 }: DeliveryActionFormProps) {
+  const { currency } = useFormatter();
   const [reason, setReason]           = useState('');
   const [notes, setNotes]             = useState('');
   const [newDate, setNewDate]         = useState('');
@@ -111,7 +113,7 @@ export function DeliveryActionForm({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="pay-amount">Amount (EGP)</Label>
+            <Label htmlFor="pay-amount">Amount ({currency})</Label>
             <Input
               id="pay-amount"
               type="number"

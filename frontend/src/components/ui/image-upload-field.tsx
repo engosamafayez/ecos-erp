@@ -22,11 +22,14 @@ export function ImageUploadField({ existingUrl, onChange }: ImageUploadFieldProp
 
   // Sync preview when the existing URL prop changes (e.g. drawer reused for a
   // different record). Only syncs when the user has not picked a new local file.
+  //
+  // `fileName` is a real dependency: with it listed, clearing a local pick
+  // restores the record's existing image instead of leaving the preview blank.
   useEffect(() => {
     if (!fileName) {
       setPreview(getMediaUrl(existingUrl));
     }
-  }, [existingUrl]);
+  }, [existingUrl, fileName]);
 
   function handleFile(file: File | null) {
     if (!file) {

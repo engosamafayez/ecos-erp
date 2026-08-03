@@ -2,6 +2,16 @@
   "title": "Inventory Control",
   "dashboard": {
     "title": "Inventory Dashboard",
+    "subtitle": "Real-time inventory health and count analytics.",
+    "breadcrumb": {
+      "home": "Home",
+      "page": "Dashboard"
+    },
+    "sections": {
+      "inventoryValue": "Inventory Value",
+      "countHealth": "Count Session Health",
+      "variances": "Top Variances"
+    },
     "kpis": {
       "accuracy": "Inventory Accuracy",
       "openSessions": "Open Count Sessions",
@@ -10,7 +20,16 @@
       "shrinkage": "Shrinkage (Month)",
       "lastCountDate": "Last Count Date",
       "never": "Never",
-      "notAvailable": "N/A"
+      "notAvailable": "N/A",
+      "totalValue": "Total Inventory Value",
+      "rawMaterials": "Raw Materials Value",
+      "finishedGoods": "Finished Goods Value",
+      "packagingMaterials": "Packaging Materials Value",
+      "availableUnits": "Available Units",
+      "unitsOnHand": "units on hand",
+      "reserved": "reserved",
+      "sku": "SKU",
+      "matched": "matched"
     },
     "health": {
       "excellent": "Excellent",
@@ -19,21 +38,25 @@
       "critical": "Critical",
       "unknown": "No Data"
     },
+    "noData": "No data available",
     "topVariances": {
-      "negativeTitle": "Top Shrinkage",
-      "positiveTitle": "Top Overages",
+      "negativeTitle": "Top Negative Variances (Shortage)",
+      "positiveTitle": "Top Positive Variances (Surplus)",
       "product": "Product",
       "sku": "SKU",
-      "varianceQty": "Variance Qty",
-      "varianceValue": "Variance Value"
+      "varianceQty": "Variance (Qty)",
+      "varianceValue": "Variance (Value)"
     },
     "recentSessions": {
       "title": "Recent Count Sessions",
       "session": "Session",
       "warehouse": "Warehouse",
       "completedAt": "Completed",
+      "completionDate": "Completion Date",
       "accuracy": "Accuracy",
-      "status": "Status"
+      "status": "Status",
+      "noSessions": "No sessions yet.",
+      "createSession": "Create a session"
     }
   },
   "abc": {

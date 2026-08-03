@@ -26,10 +26,10 @@ type CategoryFormDrawerProps = {
   defaultScope?: CategoryScope;
 };
 
-function extractMessage(error: unknown): string {
+function extractMessage(error: unknown, fallback: string): string {
   return axios.isAxiosError(error) && typeof error.response?.data?.message === 'string'
     ? error.response.data.message
-    : 'Something went wrong. Please try again.';
+    : fallback;
 }
 
 export function CategoryFormDrawer({ open, onOpenChange, category, defaultScope }: CategoryFormDrawerProps) {
@@ -63,7 +63,7 @@ export function CategoryFormDrawer({ open, onOpenChange, category, defaultScope 
     const payload = toPayload(values);
     const handlers = {
       onSuccess: () => handleOpenChange(false),
-      onError: (error: unknown) => setServerError(extractMessage(error)),
+      onError: (error: unknown) => setServerError(extractMessage(error, t('drawer.errorFallback'))),
     };
 
     if (isEdit && category) {

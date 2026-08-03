@@ -16,7 +16,7 @@ interface MarketingApiClientContract
     /**
      * Build the OAuth authorization URL for this platform.
      *
-     * @param  list<string> $scopes
+     * @param  list<string>  $scopes
      */
     public function buildAuthUrl(string $redirectUri, string $state, array $scopes): string;
 
@@ -30,7 +30,7 @@ interface MarketingApiClientContract
     /**
      * Inspect/debug the current token.
      *
-     * @return array<string, mixed>  Platform-specific token metadata
+     * @return array<string, mixed> Platform-specific token metadata
      */
     public function debugToken(string $accessToken): array;
 }

@@ -25,20 +25,20 @@ class AutomationGovernanceController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'company_id'                               => 'nullable|uuid',
-            'name'                                     => 'required|string|max:255',
-            'description'                              => 'nullable|string',
-            'max_executions_per_customer_per_day'      => 'nullable|integer|min:1',
+            'company_id' => 'nullable|uuid',
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'max_executions_per_customer_per_day' => 'nullable|integer|min:1',
             'max_executions_per_customer_per_workflow' => 'nullable|integer|min:1',
-            'max_total_executions_per_day'             => 'nullable|integer|min:1',
-            'quiet_hours_start'                        => 'nullable|date_format:H:i',
-            'quiet_hours_end'                          => 'nullable|date_format:H:i',
-            'quiet_hours_timezone'                     => 'nullable|string',
-            'blacklisted_channels'                     => 'nullable|array',
-            'opt_out_rules'                            => 'nullable|array',
-            'allowed_action_types'                     => 'nullable|array',
-            'requires_approval'                        => 'boolean',
-            'is_default'                               => 'boolean',
+            'max_total_executions_per_day' => 'nullable|integer|min:1',
+            'quiet_hours_start' => 'nullable|date_format:H:i',
+            'quiet_hours_end' => 'nullable|date_format:H:i',
+            'quiet_hours_timezone' => 'nullable|string',
+            'blacklisted_channels' => 'nullable|array',
+            'opt_out_rules' => 'nullable|array',
+            'allowed_action_types' => 'nullable|array',
+            'requires_approval' => 'boolean',
+            'is_default' => 'boolean',
         ]);
 
         $policy = $this->service->create($validated, (string) $request->user()->id);
@@ -54,17 +54,17 @@ class AutomationGovernanceController extends Controller
     public function update(Request $request, AutomationGovernancePolicy $policy): JsonResponse
     {
         $validated = $request->validate([
-            'name'                                     => 'sometimes|string|max:255',
-            'description'                              => 'nullable|string',
-            'max_executions_per_customer_per_day'      => 'nullable|integer|min:1',
+            'name' => 'sometimes|string|max:255',
+            'description' => 'nullable|string',
+            'max_executions_per_customer_per_day' => 'nullable|integer|min:1',
             'max_executions_per_customer_per_workflow' => 'nullable|integer|min:1',
-            'max_total_executions_per_day'             => 'nullable|integer|min:1',
-            'quiet_hours_start'                        => 'nullable|date_format:H:i',
-            'quiet_hours_end'                          => 'nullable|date_format:H:i',
-            'quiet_hours_timezone'                     => 'nullable|string',
-            'blacklisted_channels'                     => 'nullable|array',
-            'requires_approval'                        => 'boolean',
-            'is_default'                               => 'boolean',
+            'max_total_executions_per_day' => 'nullable|integer|min:1',
+            'quiet_hours_start' => 'nullable|date_format:H:i',
+            'quiet_hours_end' => 'nullable|date_format:H:i',
+            'quiet_hours_timezone' => 'nullable|string',
+            'blacklisted_channels' => 'nullable|array',
+            'requires_approval' => 'boolean',
+            'is_default' => 'boolean',
         ]);
 
         $policy = $this->service->update($policy, $validated, (string) $request->user()->id);

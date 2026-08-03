@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useFormatter } from '@/hooks/use-formatter';
 import { useNavigate } from 'react-router-dom';
 import {
   Controller,
@@ -92,20 +93,17 @@ import { parseGoogleMapsUrl, isGoogleMapsUrl } from '@/features/orders/utils/goo
 const FORM_ID = 'manual-order-form';
 
 const STATUS_LABELS: Record<string, string> = {
-  scheduled:        'Scheduled',
-  pending:          'Pending',
-  awaiting_payment: 'Awaiting Payment',
-  processing:       'Processing',
-  awaiting_stock:   'Awaiting Stock',
-  confirmed:        'Confirmed',
-  preparing:        'Preparing',
-  rescheduled:      'Rescheduled',
-  out_for_delivery: 'Out for Delivery',
-  delivered:        'Delivered',
-  completed:        'Completed',
-  cancelled:        'Cancelled',
-  review:           'Under Review',
-  returned:         'Returned',
+  new:               'New',
+  in_progress:       'In Progress',
+  ready_for_dispatch: 'Ready for Dispatch',
+  out_for_delivery:  'Out for Delivery',
+  delivered:         'Delivered',
+  awaiting_payment:  'Awaiting Payment',
+  awaiting_stock:    'Awaiting Stock',
+  scheduled:         'Scheduled',
+  on_hold:           'On Hold',
+  cancelled:         'Cancelled',
+  returned:          'Returned',
 };
 
 // Statuses managed exclusively by workflow automation — never selectable as manual entry points
@@ -393,7 +391,7 @@ function ManualLineRow({
     if (!productId || pricing?.approved_price == null) return;
     setValue(`lines.${index}.unit_price`, String(pricing.approved_price), { shouldValidate: false });
     if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
+       
       console.log('[Pricing]', { productId, approved: pricing.approved_price, source: pricing.source });
     }
   }, [pricing?.approved_price, productId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -734,15 +732,16 @@ type Props = {
 };
 
 export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
+  const { money, currency } = useFormatter();
   const { t } = useTranslation('orders');
   const navigate = useNavigate();
   const createManual  = useCreateManualOrder();
   const updateManual  = useUpdateManualOrder();
   const isEdit = mode === 'edit';
   // Structural lock: products/price/shipping/discount are read-only once an order leaves Pending/AwaitingPayment.
-  const isStructurallyLocked = isEdit && order != null && !['pending', 'awaiting_payment'].includes(order.status);
-  // Terminal: only Completed is fully read-only. Cancelled orders remain editable (V2 workflow).
-  const isTerminal = isEdit && order != null && order.status === 'completed';
+  const isStructurallyLocked = isEdit && order != null && !['new', 'awaiting_payment'].includes(order.status);
+  // Terminal: Delivered/Cancelled/Returned are fully read-only.
+  const isTerminal = isEdit && order != null && ['delivered', 'cancelled', 'returned'].includes(order.status);
 
   const [serverError, setServerError] = useState<string | null>(null);
   const [slotError, setSlotError] = useState<string | null>(null);
@@ -850,7 +849,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
             : [{ product_id: '', quantity: '1', unit_price: '' }],
         }
       : {
-          status:                   'pending',
+          status:                   'new',
           order_date:               new Date().toISOString().slice(0, 10),
           requested_delivery_date:  new Date().toISOString().slice(0, 10),
           payment_method_manual:    'cod',
@@ -897,7 +896,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
         value: key,
         label: t(`workspace.paymentMethodLabels.${key}`, { defaultValue: PAYMENT_METHOD_LABELS[key] ?? key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) }),
       }));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, [orderPolicy, t]);
 
   // Phase 7 — Brand shipping engine governorates
@@ -980,7 +979,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
   // 'covered' → use the quoted price. Any other status → cost must be 0.
   useEffect(() => {
     if (overrideUnlocked || !shippingQuote) return;
-    // eslint-disable-next-line no-console
+     
     if (import.meta.env.DEV) console.log('[Shipping][STEP 3] coverage effect fired:', { coverage_status: shippingQuote.coverage_status, shipping_price: shippingQuote.shipping_price, available: shippingQuote.available });
     if (shippingQuote.coverage_status === 'covered' && shippingQuote.shipping_price != null) {
       form.setValue('shipping_cost', String(shippingQuote.shipping_price));
@@ -989,7 +988,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
       form.setValue('shipping_cost', '0', { shouldValidate: false });
       form.setValue('shipping_cost_source', undefined, { shouldValidate: false });
     }
-    // eslint-disable-next-line no-console
+     
     if (import.meta.env.DEV) console.log('[Shipping][STEP 4] shipping_cost set to:', shippingQuote.coverage_status === 'covered' ? shippingQuote.shipping_price : 0);
   }, [shippingQuote?.coverage_status, shippingQuote?.shipping_price, overrideUnlocked]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1075,7 +1074,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
     const all = Array.isArray(mp) ? mp : [mp];
     const choices = all.filter((s) => !INTERNAL_STATUSES.has(s));
     const validChoices = choices.length > 0 ? choices : all;
-    const first = validChoices[0] ?? 'pending';
+    const first = validChoices[0] ?? 'new';
     const current = form.getValues('status');
     if (!current || !validChoices.includes(current)) {
       form.setValue('status', first);
@@ -1347,7 +1346,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
           if (axios.isAxiosError(err)) {
             const errors = err.response?.data?.errors as Record<string, unknown> | undefined;
             if (errors?.delivery_window_id) {
-              // eslint-disable-next-line no-console
+               
               if (import.meta.env.DEV) console.log('[SERVER-ERROR] doEditSave onError — delivery_window_id backend rejection');
               form.setValue('delivery_window_id', undefined);
               form.setValue('delivery_window', undefined);
@@ -1357,7 +1356,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
               return;
             }
           }
-          // eslint-disable-next-line no-console
+           
           if (import.meta.env.DEV) console.log('[SERVER-ERROR] doEditSave onError — generic:', extractMessage(err));
           setServerError(extractMessage(err));
         },
@@ -1366,7 +1365,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
   };
 
   const handleSubmit = (values: ManualOrderFormValues) => {
-    // eslint-disable-next-line no-console
+     
     if (import.meta.env.DEV) console.log('[Submit][STEP 2] Zod PASSED — handleSubmit entered. lines:', values.lines.length, '| status:', values.status);
     setServerError(null);
     if (isEdit && order) {
@@ -1378,7 +1377,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
       doEditSave(values);
       return;
     }
-    // eslint-disable-next-line no-console
+     
     if (import.meta.env.DEV) console.log('[Submit][STEP 3] config check — is_ready:', configHealth?.is_ready);
     if (configHealth && !configHealth.is_ready) {
       setServerError(t('workspace.brandConfigIncomplete'));
@@ -1386,7 +1385,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
     }
     // Financial consistency validation
     const filledLines = values.lines.filter((l) => Boolean(l.product_id));
-    // eslint-disable-next-line no-console
+     
     if (import.meta.env.DEV) console.log('[Submit][STEP 3] financial validation — filledLines:', filledLines.length);
     if (filledLines.length > 0) {
       const productsTotal = filledLines.reduce(
@@ -1399,7 +1398,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
       }
       const hasZeroPrice = filledLines.some((l) => !l.unit_price || Number(l.unit_price) === 0);
       if (hasZeroPrice) {
-        // eslint-disable-next-line no-console
+         
         if (import.meta.env.DEV) console.log('[Submit][STEP 3] BLOCKED — zero-price line detected:', filledLines.filter((l) => !l.unit_price || Number(l.unit_price) === 0));
         setServerError(t('workspace.pricingMissing'));
         return;
@@ -1407,33 +1406,33 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
     }
     const shippingCost = Number(values.shipping_cost || 0);
     if (shippingCost > 0 && shippingQuote && shippingQuote.coverage_status !== 'covered') {
-      // eslint-disable-next-line no-console
+       
       if (import.meta.env.DEV) console.log('[Submit][STEP 3] BLOCKED — shipping cost conflict:', { shippingCost, coverage_status: shippingQuote.coverage_status });
       setServerError(t('workspace.shippingNotCoveredSave'));
       return;
     }
-    // eslint-disable-next-line no-console
+     
     if (import.meta.env.DEV) console.log('[Submit][STEP 4] all validations passed — building payload');
     const payload = toManualPayload(values);
     // pass numeric governorate/city IDs for Shipping Engine validation
     if (shippingGovernorateId) payload.governorate_id = shippingGovernorateId;
     if (shippingCityId) payload.city_id = shippingCityId;
-    // eslint-disable-next-line no-console
+     
     if (import.meta.env.DEV) console.log('[Submit][STEP 5] calling createManual.mutate →', { lines: payload.lines, status: payload.status, shipping_cost: payload.shipping_cost, delivery_window_id: payload.delivery_window_id ?? '(none)', delivery_window: payload.delivery_window ?? '(none)' });
     createManual.mutate(payload, {
       onSuccess: (created) => {
-        // eslint-disable-next-line no-console
+         
         if (import.meta.env.DEV) console.log('[Submit][STEP 6] POST /orders/manual SUCCESS — order id:', created.id);
         navigate(`${ROUTES.orders}/${created.id}`);
       },
       onError: (err) => {
-        // eslint-disable-next-line no-console
+         
         if (import.meta.env.DEV) console.log('[Submit][STEP 6] POST /orders/manual FAILED:', err);
         // Part 7 — Delivery window slot no longer valid (deleted/deactivated between form load and submit)
         if (axios.isAxiosError(err)) {
           const errors = err.response?.data?.errors as Record<string, unknown> | undefined;
           if (errors?.delivery_window_id) {
-            // eslint-disable-next-line no-console
+             
             if (import.meta.env.DEV) console.log('[SLOT-ERROR] createManual onError — delivery_window_id backend rejection → setting slotError');
             form.setValue('delivery_window_id', undefined);
             form.setValue('delivery_window', undefined);
@@ -1444,7 +1443,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
             return;
           }
         }
-        // eslint-disable-next-line no-console
+         
         if (import.meta.env.DEV) console.log('[SERVER-ERROR] createManual onError — generic:', extractMessage(err));
         setServerError(extractMessage(err));
       },
@@ -1535,12 +1534,12 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
         <form
           id={FORM_ID}
           onSubmit={(e) => {
-            // eslint-disable-next-line no-console
+             
             if (import.meta.env.DEV) console.log('[Submit][STEP 1] form onSubmit fired — running RHF + Zod');
             return form.handleSubmit(
               handleSubmit,
               (errs) => {
-                // eslint-disable-next-line no-console
+                 
                 if (import.meta.env.DEV) console.log('[Submit][STEP 2] Zod FAILED — validation errors:', errs);
                 // Silent failures are forbidden — surface the first blocking error to the user.
                 const linesMsg = (errs.lines as { message?: string } | undefined)?.message;
@@ -1548,7 +1547,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                   .filter(([k]) => k !== 'lines')
                   .map(([, v]) => (v as { message?: string })?.message)
                   .filter(Boolean)[0] as string | undefined;
-                // eslint-disable-next-line no-console
+                 
                 if (import.meta.env.DEV) console.log('[SERVER-ERROR] onInvalid (Zod) — errors:', errs, '→ message:', linesMsg ?? firstFieldMsg);
                 setServerError(linesMsg ?? firstFieldMsg ?? t('workspace.formError'));
               },
@@ -1958,7 +1957,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                                       <span className={`font-medium ${tc}`}>{coverageLabel}</span>
                                       {isCovered && shippingQuote.shipping_price != null && (
                                         <span className="font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
-                                          {shippingQuote.shipping_price.toLocaleString(undefined, { minimumFractionDigits: 2 })} EGP
+                                          {money(shippingQuote.shipping_price)}
                                         </span>
                                       )}
                                     </div>
@@ -2182,7 +2181,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                         {isStructurallyLocked ? (
                           <div className="flex h-9 items-center justify-between rounded-md border bg-muted/50 px-3 text-sm">
                             <span className="font-medium tabular-nums">
-                              {fmt(Number(form.watch('shipping_cost') || 0))} EGP
+                              {money(Number(form.watch('shipping_cost') || 0))}
                             </span>
                             <span className="flex items-center gap-1 text-xs text-muted-foreground">
                               <Lock className="size-3" />
@@ -2196,7 +2195,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                               <div className="flex h-9 flex-1 items-center justify-between rounded-md border bg-muted/50 px-3 text-sm">
                                 <input type="hidden" {...form.register('shipping_cost')} />
                                 <span className="font-medium tabular-nums">
-                                  {fmt(Number(form.watch('shipping_cost') || 0))} EGP
+                                  {money(Number(form.watch('shipping_cost') || 0))}
                                 </span>
                                 <span className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
                                   <CheckCircle2 className="size-3" />
@@ -2303,7 +2302,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                               <div className="flex h-9 items-center gap-2 rounded-md border bg-muted/50 px-3 text-sm">
                                 <span className="font-medium tabular-nums">
                                   {form.watch('discount_amount') || '0'}
-                                  {watchedDiscountType === 'percentage' ? '%' : ' EGP'}
+                                  {watchedDiscountType === 'percentage' ? '%' : ` ${currency}`}
                                 </span>
                                 <span className="text-xs capitalize text-muted-foreground">({watchedDiscountType})</span>
                                 <Lock className="ms-auto size-3 text-muted-foreground/60" />
@@ -2359,7 +2358,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                                     className="pr-8"
                                   />
                                   <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground select-none">
-                                    {watchedDiscountType === 'percentage' ? '%' : 'EGP'}
+                                    {watchedDiscountType === 'percentage' ? '%' : currency}
                                   </span>
                                 </div>
                               </div>
@@ -2392,7 +2391,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                               className="pr-10"
                             />
                             <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground select-none">
-                              EGP
+                              {currency}
                             </span>
                           </div>
                         )}

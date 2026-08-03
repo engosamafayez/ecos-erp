@@ -18,16 +18,16 @@ class AutomationDashboardController extends Controller
     {
         $companyId = $request->get('company_id');
 
-        $kpis     = $this->workflowService->getKpis(['company_id' => $companyId]);
+        $kpis = $this->workflowService->getKpis(['company_id' => $companyId]);
         $trending = $this->getTrendingWorkflows($companyId);
-        $recent   = $this->getRecentExecutions($companyId);
-        $health   = $this->getHealthMetrics($companyId);
+        $recent = $this->getRecentExecutions($companyId);
+        $health = $this->getHealthMetrics($companyId);
 
         return response()->json([
-            'kpis'              => $kpis,
+            'kpis' => $kpis,
             'trending_workflows' => $trending,
             'recent_executions' => $recent,
-            'health'            => $health,
+            'health' => $health,
         ]);
     }
 

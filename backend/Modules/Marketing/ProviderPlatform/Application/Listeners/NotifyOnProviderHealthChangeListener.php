@@ -25,9 +25,11 @@ final class NotifyOnProviderHealthChangeListener implements ShouldQueue
 {
     use InteractsWithQueue;
 
-    public string $queue   = 'notifications';
-    public int    $tries   = 2;
-    public int    $timeout = 10;
+    public string $queue = 'notifications';
+
+    public int $tries = 2;
+
+    public int $timeout = 10;
 
     public function handleHealthChanged(ProviderHealthChanged $event): void
     {
@@ -41,10 +43,10 @@ final class NotifyOnProviderHealthChangeListener implements ShouldQueue
 
         $this->notify(
             companyId: $event->companyId,
-            severity:  'critical',
-            title:     "Provider {$event->provider} health degraded",
-            message:   "Status changed from {$event->previousStatus} to {$event->currentStatus}.",
-            context:   $event->toArray(),
+            severity: 'critical',
+            title: "Provider {$event->provider} health degraded",
+            message: "Status changed from {$event->previousStatus} to {$event->currentStatus}.",
+            context: $event->toArray(),
         );
     }
 
@@ -52,10 +54,10 @@ final class NotifyOnProviderHealthChangeListener implements ShouldQueue
     {
         $this->notify(
             companyId: $event->companyId,
-            severity:  'warning',
-            title:     "Provider {$event->provider} token expired",
-            message:   'The OAuth access token has expired. Please reconnect to restore syncing.',
-            context:   $event->toArray(),
+            severity: 'warning',
+            title: "Provider {$event->provider} token expired",
+            message: 'The OAuth access token has expired. Please reconnect to restore syncing.',
+            context: $event->toArray(),
         );
     }
 
@@ -65,10 +67,10 @@ final class NotifyOnProviderHealthChangeListener implements ShouldQueue
 
         $this->notify(
             companyId: $event->companyId,
-            severity:  'warning',
-            title:     "Provider {$event->provider} credential validation failed",
-            message:   implode(' ', $errors),
-            context:   $event->toArray(),
+            severity: 'warning',
+            title: "Provider {$event->provider} credential validation failed",
+            message: implode(' ', $errors),
+            context: $event->toArray(),
         );
     }
 
@@ -77,18 +79,18 @@ final class NotifyOnProviderHealthChangeListener implements ShouldQueue
         string $severity,
         string $title,
         string $message,
-        array  $context,
+        array $context,
     ): void {
         // TODO: replace with Notification OS dispatch when available.
         Log::channel('slack')->warning("[Provider Alert] [{$severity}] {$title}: {$message}", [
             'company_id' => $companyId,
-            'context'    => $context,
+            'context' => $context,
         ]);
 
         Log::warning("[ProviderPlatform] Notification: {$title}", [
-            'severity'   => $severity,
+            'severity' => $severity,
             'company_id' => $companyId,
-            'message'    => $message,
+            'message' => $message,
         ]);
     }
 }

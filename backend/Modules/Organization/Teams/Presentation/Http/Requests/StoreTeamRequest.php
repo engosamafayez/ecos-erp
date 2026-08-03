@@ -20,9 +20,9 @@ final class StoreTeamRequest extends FormRequest
         $companyId = (string) $this->input('company_id');
 
         return [
-            'company_id'  => ['required', 'uuid', 'exists:companies,id'],
-            'name'        => ['required', 'string', 'max:255'],
-            'code'        => [
+            'company_id' => ['required', 'uuid', 'exists:companies,id'],
+            'name' => ['required', 'string', 'max:255'],
+            'code' => [
                 'nullable',
                 'string',
                 'max:20',
@@ -32,7 +32,7 @@ final class StoreTeamRequest extends FormRequest
             ],
             'leader_name' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
-            'is_active'   => ['boolean'],
+            'is_active' => ['boolean'],
         ];
     }
 }

@@ -12,13 +12,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * Permanent Egypt master geography record — one row per governorate.
  * Not brand-specific. Seeded once by EgyptMasterGeographySeeder.
  *
- * @property string      $id
- * @property string      $name
+ * @property string $id
+ * @property string $name
  * @property string|null $name_ar
- * @property string      $code
- * @property int         $sort_order
- * @property bool        $is_active
- * @property bool        $is_archived
+ * @property string $code
+ * @property int $sort_order
+ * @property bool $is_active
+ * @property bool $is_archived
  */
 class MasterGovernorate extends Model
 {
@@ -44,8 +44,8 @@ class MasterGovernorate extends Model
     protected function casts(): array
     {
         return [
-            'sort_order'  => 'integer',
-            'is_active'   => 'boolean',
+            'sort_order' => 'integer',
+            'is_active' => 'boolean',
             'is_archived' => 'boolean',
         ];
     }

@@ -6,6 +6,7 @@ namespace Modules\Operations\Loading\Presentation\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
+use BackedEnum;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Operations\Loading\Application\Actions\CancelLoadingSessionAction;
@@ -29,22 +30,22 @@ final class LoadingSessionController extends Controller
         $this->authorize('viewAny', LoadingSession::class);
 
         $request->validate([
-            'status'           => ['nullable', 'string'],
-            'warehouse_id'     => ['nullable', 'uuid'],
+            'status' => ['nullable', 'string'],
+            'warehouse_id' => ['nullable', 'uuid'],
             'operational_date' => ['nullable', 'date_format:Y-m-d'],
-            'search'           => ['nullable', 'string', 'max:100'],
-            'page'             => ['nullable', 'integer', 'min:1'],
-            'per_page'         => ['nullable', 'integer', 'min:1', 'max:100'],
+            'search' => ['nullable', 'string', 'max:100'],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
         $companyId = $request->user()->company_id;
-        $perPage   = (int) ($request->query('per_page', 25));
+        $perPage = (int) ($request->query('per_page', 25));
 
         $query = LoadingSession::where('company_id', $companyId)
-            ->when($request->query('status'),           fn ($q, $v) => $q->where('status', $v))
-            ->when($request->query('warehouse_id'),     fn ($q, $v) => $q->where('warehouse_id', $v))
+            ->when($request->query('status'), fn ($q, $v) => $q->where('status', $v))
+            ->when($request->query('warehouse_id'), fn ($q, $v) => $q->where('warehouse_id', $v))
             ->when($request->query('operational_date'), fn ($q, $v) => $q->whereDate('operational_date', $v))
-            ->when($request->query('search'),           fn ($q, $v) => $q->where('session_number', 'ilike', "%{$v}%"))
+            ->when($request->query('search'), fn ($q, $v) => $q->where('session_number', 'ilike', "%{$v}%"))
             ->orderByDesc('created_at');
 
         $paginator = $query->paginate($perPage);
@@ -52,9 +53,9 @@ final class LoadingSessionController extends Controller
         return $this->success([
             'data' => LoadingSessionResource::collection($paginator->items()),
             'meta' => [
-                'page'      => $paginator->currentPage(),
-                'per_page'  => $paginator->perPage(),
-                'total'     => $paginator->total(),
+                'page' => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
                 'last_page' => $paginator->lastPage(),
             ],
         ]);
@@ -65,13 +66,13 @@ final class LoadingSessionController extends Controller
         $this->authorize('create', LoadingSession::class);
 
         $validated = $request->validated();
-        $session   = $action->execute(
-            companyId:       $request->user()->company_id,
-            warehouseId:     $validated['warehouse_id'],
+        $session = $action->execute(
+            companyId: $request->user()->company_id,
+            warehouseId: $validated['warehouse_id'],
             operationalDate: $validated['operational_date'],
-            actorId:         (string) $request->user()->id,
-            sessionType:     $validated['session_type'] ?? 'standard',
-            notes:           $validated['notes'] ?? null,
+            actorId: (string) $request->user()->id,
+            sessionType: $validated['session_type'] ?? 'standard',
+            notes: $validated['notes'] ?? null,
         );
 
         return $this->created(new LoadingSessionResource($session));
@@ -125,9 +126,9 @@ final class LoadingSessionController extends Controller
         $result = $action->execute($session, (string) $request->user()->id, $request->validated('reason'));
 
         return $this->success([
-            'id'                  => $result->id,
-            'status'              => $result->status instanceof \BackedEnum ? $result->status->value : $result->status,
-            'cancelled_at'        => $result->cancelled_at?->toIso8601String(),
+            'id' => $result->id,
+            'status' => $result->status instanceof BackedEnum ? $result->status->value : $result->status,
+            'cancelled_at' => $result->cancelled_at?->toIso8601String(),
             'cancellation_reason' => $result->cancellation_reason,
         ]);
     }

@@ -13,7 +13,7 @@ final class InvalidPurchaseOrderStatusException extends BusinessException
     {
         $allowedStr = implode(', ', $allowed);
         parent::__construct(
-            message: "Purchase order {$poNumber} has status '{$current}'" .
+            message: "Purchase order {$poNumber} has status '{$current}'".
                      ($allowedStr !== '' ? "; allowed statuses: {$allowedStr}" : ''),
             errors: ['po_number' => $poNumber, 'current_status' => $current, 'allowed' => $allowed],
             statusCode: 422,

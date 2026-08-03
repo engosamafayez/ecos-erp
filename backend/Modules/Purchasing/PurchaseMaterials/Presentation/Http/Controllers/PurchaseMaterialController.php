@@ -22,8 +22,8 @@ use Modules\Purchasing\PurchaseMaterials\Application\Actions\RejectPurchaseMater
 use Modules\Purchasing\PurchaseMaterials\Application\Actions\SelectLineSupplierAction;
 use Modules\Purchasing\PurchaseMaterials\Application\Actions\SubmitPurchaseMaterialAction;
 use Modules\Purchasing\PurchaseMaterials\Application\Actions\UpdatePurchaseMaterialAction;
-use Modules\Purchasing\PurchaseMaterials\Domain\Services\PurchaseMaterialRuleEngine;
 use Modules\Purchasing\PurchaseMaterials\Application\DTO\PurchaseMaterialDTO;
+use Modules\Purchasing\PurchaseMaterials\Domain\Services\PurchaseMaterialRuleEngine;
 use Modules\Purchasing\PurchaseMaterials\Presentation\Http\Requests\StorePurchaseMaterialRequest;
 use Modules\Purchasing\PurchaseMaterials\Presentation\Http\Requests\UpdatePurchaseMaterialRequest;
 use Modules\Purchasing\PurchaseMaterials\Presentation\Http\Resources\PurchaseMaterialResource;
@@ -35,29 +35,29 @@ final class PurchaseMaterialController extends Controller
     public function index(Request $request, ListPurchaseMaterialsAction $action): JsonResponse
     {
         $filters = [
-            'search'         => $request->query('search'),
-            'status'         => $request->query('status', 'all'),
-            'priority'       => $request->query('priority', 'all'),
-            'warehouse_id'   => $request->query('warehouse_id'),
-            'company_id'     => $request->query('company_id'),
-            'channel_id'     => $request->query('channel_id'),
+            'search' => $request->query('search'),
+            'status' => $request->query('status', 'all'),
+            'priority' => $request->query('priority', 'all'),
+            'warehouse_id' => $request->query('warehouse_id'),
+            'company_id' => $request->query('company_id'),
+            'channel_id' => $request->query('channel_id'),
             'assigned_buyer' => $request->query('assigned_buyer'),
-            'date_from'      => $request->query('date_from'),
-            'date_to'        => $request->query('date_to'),
-            'sort_by'        => $request->query('sort_by', 'created_at'),
-            'sort_dir'       => $request->query('sort_dir', 'desc'),
-            'per_page'       => $request->query('per_page', 15),
+            'date_from' => $request->query('date_from'),
+            'date_to' => $request->query('date_to'),
+            'sort_by' => $request->query('sort_by', 'created_at'),
+            'sort_dir' => $request->query('sort_dir', 'desc'),
+            'per_page' => $request->query('per_page', 15),
         ];
 
         $paginator = $action->execute($filters)->data();
 
         return $this->success([
             'items' => PurchaseMaterialResource::collection($paginator->items()),
-            'meta'  => [
+            'meta' => [
                 'current_page' => $paginator->currentPage(),
-                'per_page'     => $paginator->perPage(),
-                'total'        => $paginator->total(),
-                'last_page'    => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'last_page' => $paginator->lastPage(),
             ],
         ]);
     }
@@ -182,9 +182,9 @@ final class PurchaseMaterialController extends Controller
         SelectLineSupplierAction $action,
     ): JsonResponse {
         $request->validate([
-            'supplier_id'    => ['required', 'uuid', 'exists:suppliers,id'],
-            'agreed_price'   => ['nullable', 'numeric', 'min:0'],
-            'agreed_qty'     => ['nullable', 'numeric', 'min:0.0001'],
+            'supplier_id' => ['required', 'uuid', 'exists:suppliers,id'],
+            'agreed_price' => ['nullable', 'numeric', 'min:0'],
+            'agreed_qty' => ['nullable', 'numeric', 'min:0.0001'],
             'lead_time_days' => ['nullable', 'integer', 'min:0'],
         ]);
 

@@ -6,19 +6,19 @@ namespace Modules\Operations\Loading\Domain\Enums;
 
 enum DriverAssignmentStatus: string
 {
-    case Assigned    = 'assigned';
-    case OnTrip      = 'on_trip';
-    case Returned    = 'returned';
-    case Reconciled  = 'reconciled';
-    case Cancelled   = 'cancelled';
-    case Reassigned  = 'reassigned';
+    case Assigned = 'assigned';
+    case OnTrip = 'on_trip';
+    case Returned = 'returned';
+    case Reconciled = 'reconciled';
+    case Cancelled = 'cancelled';
+    case Reassigned = 'reassigned';
 
     public function canTransitionTo(self $next): bool
     {
         return match ($this) {
-            self::Assigned   => in_array($next, [self::OnTrip, self::Cancelled, self::Reassigned], true),
-            self::OnTrip     => in_array($next, [self::Returned], true),
-            self::Returned   => in_array($next, [self::Reconciled], true),
+            self::Assigned => in_array($next, [self::OnTrip, self::Cancelled, self::Reassigned], true),
+            self::OnTrip => in_array($next, [self::Returned], true),
+            self::Returned => in_array($next, [self::Reconciled], true),
             self::Reconciled, self::Cancelled, self::Reassigned => false,
         };
     }
@@ -30,6 +30,6 @@ enum DriverAssignmentStatus: string
 
     public function isActive(): bool
     {
-        return !$this->isTerminal();
+        return ! $this->isTerminal();
     }
 }

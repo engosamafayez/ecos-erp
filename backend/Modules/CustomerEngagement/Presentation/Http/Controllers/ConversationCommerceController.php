@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Presentation\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
@@ -13,7 +15,7 @@ class ConversationCommerceController extends Controller
 {
     public function __construct(
         private readonly CreateOrderFromConversationAction $createOrderAction,
-        private readonly ConversationCommerceService       $commerceService,
+        private readonly ConversationCommerceService $commerceService,
     ) {}
 
     /**
@@ -31,7 +33,8 @@ class ConversationCommerceController extends Controller
     public function prepareOrder(Request $request, Conversation $conversation): JsonResponse
     {
         $orderData = $request->input('order_data', []);
-        $prepared  = $this->createOrderAction->execute($conversation, $orderData, (string) $request->user()->id);
+        $prepared = $this->createOrderAction->execute($conversation, $orderData, (string) $request->user()->id);
+
         return response()->json($prepared);
     }
 
@@ -42,7 +45,7 @@ class ConversationCommerceController extends Controller
     {
         $data = $request->validate([
             'entity_type' => 'required|string|in:order,quote,lead,invoice',
-            'entity_id'   => 'required|uuid',
+            'entity_id' => 'required|uuid',
             'entity_code' => 'required|string',
         ]);
 
@@ -59,6 +62,7 @@ class ConversationCommerceController extends Controller
     public function kpis(Request $request): JsonResponse
     {
         $companyId = $request->input('company_id');
+
         return response()->json($this->commerceService->getConversationKpis($companyId));
     }
 }

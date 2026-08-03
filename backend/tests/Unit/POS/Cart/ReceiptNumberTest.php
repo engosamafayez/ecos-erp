@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\Cart;
 
+use InvalidArgumentException;
 use Modules\POS\Cart\Domain\ValueObjects\ReceiptNumber;
 use PHPUnit\Framework\TestCase;
 
@@ -28,7 +29,7 @@ final class ReceiptNumberTest extends TestCase
 
     public function test_empty_string_throws(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('cannot be empty');
 
         ReceiptNumber::of('');
@@ -36,14 +37,14 @@ final class ReceiptNumberTest extends TestCase
 
     public function test_whitespace_only_throws(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
 
         ReceiptNumber::of('   ');
     }
 
     public function test_exceeding_100_chars_throws(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('100 characters');
 
         ReceiptNumber::of(str_repeat('X', 101));

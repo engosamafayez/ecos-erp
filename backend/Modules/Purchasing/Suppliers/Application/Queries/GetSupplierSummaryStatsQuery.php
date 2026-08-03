@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Purchasing\Suppliers\Application\Queries;
 
-use Illuminate\Support\Facades\DB;
 use Modules\Inventory\ReceiptLayers\Domain\Models\InventoryReceiptLayer;
 use Modules\Purchasing\GoodsReceipts\Domain\Enums\GoodsReceiptStatus;
 use Modules\Purchasing\GoodsReceipts\Domain\Models\GoodsReceipt;
@@ -20,7 +19,7 @@ final class GetSupplierSummaryStatsQuery
      */
     public function execute(): array
     {
-        $totalSuppliers  = Supplier::query()->count();
+        $totalSuppliers = Supplier::query()->count();
         $activeSuppliers = Supplier::query()->where('is_active', true)->count();
 
         $newThisMonth = Supplier::query()
@@ -43,14 +42,14 @@ final class GetSupplierSummaryStatsQuery
         $financials = GoodsReceipt::query()
             ->where('status', GoodsReceiptStatus::Posted->value)
             ->whereNull('deleted_at')
-            ->selectRaw("
+            ->selectRaw('
                 COALESCE(SUM(invoice_total_amount), 0) as total_invoiced,
                 COALESCE(SUM(paid_amount), 0)          as total_paid
-            ")
+            ')
             ->first();
 
-        $totalInvoiced    = (float) ($financials?->total_invoiced ?? 0);
-        $totalPaid        = (float) ($financials?->total_paid ?? 0);
+        $totalInvoiced = (float) ($financials?->total_invoiced ?? 0);
+        $totalPaid = (float) ($financials?->total_paid ?? 0);
         $totalOutstanding = max(0.0, $totalInvoiced - $totalPaid);
 
         $totalInventoryValue = (float) (InventoryReceiptLayer::query()
@@ -70,14 +69,14 @@ final class GetSupplierSummaryStatsQuery
             ->count();
 
         return [
-            'total_suppliers'      => $totalSuppliers,
-            'active_suppliers'     => $activeSuppliers,
-            'new_this_month'       => $newThisMonth,
-            'open_pos_total'       => $openPos,
-            'delayed_pos'          => $delayedPos,
-            'total_outstanding'    => round($totalOutstanding, 2),
+            'total_suppliers' => $totalSuppliers,
+            'active_suppliers' => $activeSuppliers,
+            'new_this_month' => $newThisMonth,
+            'open_pos_total' => $openPos,
+            'delayed_pos' => $delayedPos,
+            'total_outstanding' => round($totalOutstanding, 2),
             'total_inventory_value' => round($totalInventoryValue, 2),
-            'needs_review_count'   => $needsReviewCount,
+            'needs_review_count' => $needsReviewCount,
         ];
     }
 }

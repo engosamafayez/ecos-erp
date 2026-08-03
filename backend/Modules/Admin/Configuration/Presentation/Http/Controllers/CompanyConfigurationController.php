@@ -10,7 +10,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Modules\Admin\Configuration\Domain\Models\ConfigAuditEntry;
-use Modules\Admin\Configuration\Domain\Models\ConfigCompanySetting;
 use Modules\Admin\Configuration\Domain\Services\ConfigurationManager;
 
 /**
@@ -30,7 +29,7 @@ final class CompanyConfigurationController extends Controller
     public function index(): JsonResponse
     {
         $companyId = Auth::user()?->company_id ?? '';
-        $settings  = $this->manager->getCompanySettings($companyId);
+        $settings = $this->manager->getCompanySettings($companyId);
 
         return $this->success($settings);
     }
@@ -38,10 +37,10 @@ final class CompanyConfigurationController extends Controller
     public function showGroup(string $group): JsonResponse
     {
         $companyId = Auth::user()?->company_id ?? '';
-        $settings  = $this->manager->getCompanySettings($companyId, $group);
+        $settings = $this->manager->getCompanySettings($companyId, $group);
 
         return $this->success([
-            'group'    => $group,
+            'group' => $group,
             'settings' => $settings,
         ]);
     }
@@ -49,9 +48,9 @@ final class CompanyConfigurationController extends Controller
     public function updateGroup(Request $request, string $group): JsonResponse
     {
         $validated = $request->validate([
-            'settings'          => 'required|array',
-            'settings.*'        => 'nullable',
-            'reason'            => 'nullable|string|max:500',
+            'settings' => 'required|array',
+            'settings.*' => 'nullable',
+            'reason' => 'nullable|string|max:500',
         ]);
 
         $companyId = Auth::user()?->company_id ?? '';
@@ -59,23 +58,23 @@ final class CompanyConfigurationController extends Controller
         foreach ($validated['settings'] as $key => $value) {
             $this->manager->setCompanySetting(
                 companyId: $companyId,
-                group:     $group,
-                key:       (string) $key,
-                value:     $value,
-                reason:    $validated['reason'] ?? null,
+                group: $group,
+                key: (string) $key,
+                value: $value,
+                reason: $validated['reason'] ?? null,
             );
         }
 
         return $this->updated(
             $this->manager->getCompanySettings($companyId, $group),
-            'Company settings updated.'
+            'Company settings updated.',
         );
     }
 
     public function audit(Request $request): JsonResponse
     {
         $companyId = Auth::user()?->company_id ?? '';
-        $limit     = min((int) $request->query('limit', 50), 200);
+        $limit = min((int) $request->query('limit', 50), 200);
 
         $entries = ConfigAuditEntry::where('company_id', $companyId)
             ->whereNull('brand_id')

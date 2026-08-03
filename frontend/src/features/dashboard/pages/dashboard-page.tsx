@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Briefcase,
   ChevronDown,
@@ -33,42 +34,17 @@ import type { DashboardProfile }    from '../registry/widget-definitions';
 
 // ── Profile definitions ────────────────────────────────────────────────────
 
-interface ProfileDef {
-  label:       string;
-  description: string;
-  icon:        React.ComponentType<{ className?: string }>;
-}
-
-const PROFILES: Record<DashboardProfile, ProfileDef> = {
-  executive:     { label: 'Executive (CEO)',       description: 'Revenue, orders, and business health',     icon: Briefcase },
-  operations:    { label: 'Operations Manager',    description: 'Orders, shipping, logistics, waves',       icon: Factory },
-  marketing:     { label: 'Marketing Manager',     description: 'Campaigns, ROAS, spend, acquisition',     icon: Megaphone },
-  warehouse:     { label: 'Warehouse Manager',     description: 'Inventory, trips, COD, shipping',         icon: Package },
-  finance:       { label: 'Finance Manager',       description: 'Revenue, profit, COD, financial health',  icon: Landmark },
-  manufacturing: { label: 'Manufacturing Manager', description: 'Production waves, capacity, materials',   icon: Wrench },
-  crm:           { label: 'CRM Manager',           description: 'Customer orders, acquisition, retention', icon: Users },
+const PROFILE_ICONS: Record<DashboardProfile, React.ComponentType<{ className?: string }>> = {
+  executive: Briefcase, operations: Factory, marketing: Megaphone,
+  warehouse: Package, finance: Landmark, manufacturing: Wrench, crm: Users,
 };
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function greeting(): string {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  if (h < 21) return 'Good evening';
-  return 'Good night';
-}
-
-function todayLabel(): string {
-  return new Date().toLocaleDateString('en-US', {
-    weekday: 'long', month: 'long', day: 'numeric',
-  });
-}
-
 function loadProfile(): DashboardProfile {
   try {
     const v = localStorage.getItem('ecos-dashboard:profile');
-    if (v && v in PROFILES) return v as DashboardProfile;
+    if (v && v in PROFILE_ICONS) return v as DashboardProfile;
   } catch { /* ignore */ }
   return 'executive';
 }
@@ -99,8 +75,12 @@ function SectionLabel({
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export function DashboardPage() {
+  const { t, i18n } = useTranslation('dashboard');
   const user      = useAuthStore((s) => s.user);
-  const firstName = user?.name?.split(' ')[0] ?? 'there';
+  const firstName = user?.name?.split(' ')[0] ?? t('page.fallbackName');
+  const locale = i18n.language === 'ar' ? 'ar-EG' : 'en-US';
+  const greetingText = (() => { const h = new Date().getHours(); if (h < 12) return t('page.goodMorning'); if (h < 17) return t('page.goodAfternoon'); if (h < 21) return t('page.goodEvening'); return t('page.goodNight'); })();
+  const todayText = new Date().toLocaleDateString(locale, { weekday: 'long', month: 'long', day: 'numeric' });
 
   const [profile, setProfile] = useState<DashboardProfile>(loadProfile);
 
@@ -116,7 +96,7 @@ export function DashboardPage() {
     ? (data.sales.cancelled_today > 0 ? 1 : 0) + (data.shipping.failed_today > 0 ? 1 : 0)
     : 0;
   const operational = alertCount === 0;
-  const ProfileIcon = PROFILES[profile].icon;
+  const ProfileIcon = PROFILE_ICONS[profile];
 
   return (
     <div className="flex flex-col gap-0 pb-10">
@@ -127,9 +107,9 @@ export function DashboardPage() {
         {/* Left — greeting */}
         <div>
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-            <p className="text-[11px] font-medium text-muted-foreground">{greeting()}</p>
+            <p className="text-[11px] font-medium text-muted-foreground">{greetingText}</p>
             <span className="text-muted-foreground/30">·</span>
-            <p className="text-[11px] text-muted-foreground">{todayLabel()}</p>
+            <p className="text-[11px] text-muted-foreground">{todayText}</p>
           </div>
           <h1 className="mt-0.5 text-2xl font-bold tracking-tight">{firstName}</h1>
 
@@ -148,16 +128,16 @@ export function DashboardPage() {
                 'inline-block h-1.5 w-1.5 rounded-full',
                 operational ? 'bg-emerald-500' : 'bg-rose-500 animate-pulse',
               )} />
-              {operational ? 'All Systems Operational' : `${alertCount} Critical Alert${alertCount > 1 ? 's' : ''}`}
+              {operational ? t('page.statusOperational') : (alertCount > 1 ? t('page.statusAlertPlural', { count: alertCount }) : t('page.statusAlertSingular', { count: alertCount }))}
             </Badge>
             {data?.sales.out_for_delivery ? (
               <Badge variant="outline" className="gap-1.5 text-xs text-blue-600 dark:text-blue-400">
-                {data.sales.out_for_delivery} out for delivery
+                {t('page.outForDelivery', { count: data.sales.out_for_delivery })}
               </Badge>
             ) : null}
             {data?.operations.active_waves ? (
               <Badge variant="outline" className="gap-1.5 text-xs text-violet-600 dark:text-violet-400">
-                {data.operations.active_waves} active {data.operations.active_waves === 1 ? 'wave' : 'waves'}
+                {data.operations.active_waves === 1 ? t('page.activeWaveSingular', { count: data.operations.active_waves }) : t('page.activeWavePlural', { count: data.operations.active_waves })}
               </Badge>
             ) : null}
           </div>
@@ -168,32 +148,32 @@ export function DashboardPage() {
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="h-9 gap-1.5 text-xs">
               <ProfileIcon className="h-3.5 w-3.5" />
-              {PROFILES[profile].label}
+              {t(`profiles.${profile}.label`)}
               <ChevronDown className="h-3 w-3 text-muted-foreground" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-60">
             <DropdownMenuLabel className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-              Dashboard Profile
+              {t('page.profileLabel')}
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {(Object.entries(PROFILES) as [DashboardProfile, ProfileDef][]).map(([key, p]) => (
+            {(Object.entries(PROFILE_ICONS) as [DashboardProfile, React.ComponentType<{ className?: string }>][]).map(([key, Icon]) => (
               <DropdownMenuItem
                 key={key}
                 onClick={() => handleProfileChange(key)}
                 className={cn('gap-2 text-sm', profile === key && 'bg-muted')}
               >
-                <p.icon className="h-3.5 w-3.5 text-muted-foreground" />
+                <Icon className="h-3.5 w-3.5 text-muted-foreground" />
                 <div className="min-w-0">
-                  <p className="font-medium">{p.label}</p>
-                  <p className="truncate text-[10px] text-muted-foreground">{p.description}</p>
+                  <p className="font-medium">{t(`profiles.${key}.label`)}</p>
+                  <p className="truncate text-[10px] text-muted-foreground">{t(`profiles.${key}.description`)}</p>
                 </div>
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
             <DropdownMenuItem className="gap-2 text-xs text-muted-foreground" disabled>
               <Settings className="h-3.5 w-3.5" />
-              Workspace settings — coming soon
+              {t('page.workspaceSettings')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -210,11 +190,11 @@ export function DashboardPage() {
           <SectionLabel
             aside={
               <span className="text-[10px] text-muted-foreground/50">
-                Updates every 5 min
+                {t('page.updatesEvery5min')}
               </span>
             }
           >
-            AI Executive Brief
+            {t('page.aiBriefSection')}
           </SectionLabel>
           <DashboardAiBrief data={data} loading={loading} />
         </section>
@@ -227,11 +207,11 @@ export function DashboardPage() {
           <SectionLabel
             aside={
               <Badge variant="outline" className="text-[10px] text-muted-foreground">
-                Monthly · Historical
+                {t('page.monthlyHistorical')}
               </Badge>
             }
           >
-            Business Analytics
+            {t('page.analyticsSection')}
           </SectionLabel>
           <DashboardAnalytics data={data} loading={loading} />
         </section>

@@ -16,7 +16,7 @@ use Modules\Marketing\MappingEngine\Application\Services\MappingSuggestionServic
 final class AssetRelationshipController extends Controller
 {
     public function __construct(
-        private readonly MapAssetAction           $mapAsset,
+        private readonly MapAssetAction $mapAsset,
         private readonly MappingSuggestionService $suggestions,
         private readonly RelationshipGraphService $graphService,
     ) {}
@@ -40,16 +40,16 @@ final class AssetRelationshipController extends Controller
     {
         $data = $request->validate([
             'related_type' => ['required', 'string'],
-            'related_id'   => ['required', 'string'],
-            'confidence'   => ['sometimes', 'integer', 'min:0', 'max:100'],
+            'related_id' => ['required', 'string'],
+            'confidence' => ['sometimes', 'integer', 'min:0', 'max:100'],
         ]);
 
         $rel = $this->mapAsset->execute(
-            assetId:         $marketingAsset->id,
-            relatedType:     $data['related_type'],
-            relatedId:       $data['related_id'],
-            actorId:         (string) (string) $request->user()->id,
-            confidence:      $data['confidence'] ?? 100,
+            assetId: $marketingAsset->id,
+            relatedType: $data['related_type'],
+            relatedId: $data['related_id'],
+            actorId: (string) (string) $request->user()->id,
+            confidence: $data['confidence'] ?? 100,
             isAutoSuggested: false,
         );
 
@@ -92,7 +92,7 @@ final class AssetRelationshipController extends Controller
     public function suggestions(Request $request): JsonResponse
     {
         $companyId = $request->string('company_id')->toString();
-        $pending   = $this->suggestions->pendingForCompany($companyId);
+        $pending = $this->suggestions->pendingForCompany($companyId);
 
         return response()->json(['data' => $pending]);
     }

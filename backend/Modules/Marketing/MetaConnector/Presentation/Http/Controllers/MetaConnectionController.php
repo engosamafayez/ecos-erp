@@ -28,8 +28,8 @@ final class MetaConnectionController extends Controller
 {
     public function __construct(
         private readonly MetaPermissionsService $permissions,
-        private readonly MetaWebhookService     $webhooks,
-        private readonly ProviderHealthMonitor  $healthMonitor,
+        private readonly MetaWebhookService $webhooks,
+        private readonly ProviderHealthMonitor $healthMonitor,
     ) {}
 
     // ── Dashboard ─────────────────────────────────────────────────────────────
@@ -51,7 +51,7 @@ final class MetaConnectionController extends Controller
         // Assets summary
         $assetsQuery = MarketingAsset::where('marketing_connection_id', $connection->id);
         $totalAssets = $assetsQuery->count();
-        $byType      = $assetsQuery->select('asset_type', DB::raw('count(*) as count'))
+        $byType = $assetsQuery->select('asset_type', DB::raw('count(*) as count'))
             ->groupBy('asset_type')
             ->pluck('count', 'asset_type')
             ->toArray();
@@ -86,34 +86,34 @@ final class MetaConnectionController extends Controller
 
         return response()->json([
             'connection' => [
-                'id'                   => $connection->id,
-                'label'                => $connection->label,
-                'status'               => $connection->status,
-                'connected_at'         => $connection->connected_at?->toISOString(),
-                'last_synced_at'       => $connection->last_synced_at?->toISOString(),
-                'token_expires_at'     => $connection->token_expires_at?->toISOString(),
-                'external_account_id'  => $connection->external_account_id,
-                'connector_meta'       => $connection->connector_meta,
+                'id' => $connection->id,
+                'label' => $connection->label,
+                'status' => $connection->status,
+                'connected_at' => $connection->connected_at?->toISOString(),
+                'last_synced_at' => $connection->last_synced_at?->toISOString(),
+                'token_expires_at' => $connection->token_expires_at?->toISOString(),
+                'external_account_id' => $connection->external_account_id,
+                'connector_meta' => $connection->connector_meta,
             ],
             'health' => $health,
             'assets' => [
-                'total'   => $totalAssets,
+                'total' => $totalAssets,
                 'by_type' => $byType,
             ],
             'webhooks' => $webhookList->map(fn (MetaWebhook $w) => [
-                'id'               => $w->id,
-                'object_type'      => $w->object_type,
-                'object_id'        => $w->object_id,
-                'status'           => $w->status,
+                'id' => $w->id,
+                'object_type' => $w->object_type,
+                'object_id' => $w->object_id,
+                'status' => $w->status,
                 'subscribed_fields' => $w->subscribed_fields,
-                'verified_at'      => $w->verified_at?->toISOString(),
+                'verified_at' => $w->verified_at?->toISOString(),
                 'last_delivery_at' => $w->last_delivery_at?->toISOString(),
-                'last_error'       => $w->last_error,
-                'retry_count'      => $w->retry_count,
+                'last_error' => $w->last_error,
+                'retry_count' => $w->retry_count,
             ])->values(),
-            'recent_syncs'   => $recentSyncs,
-            'recent_events'  => $recentEvents,
-            'recent_errors'  => $recentErrors,
+            'recent_syncs' => $recentSyncs,
+            'recent_events' => $recentEvents,
+            'recent_errors' => $recentErrors,
         ]);
     }
 
@@ -139,8 +139,8 @@ final class MetaConnectionController extends Controller
         $selectedIds = $connection->connector_meta['selected_business_ids'] ?? null;
 
         return response()->json([
-            'businesses'          => $businesses,
-            'selected_ids'        => $selectedIds,
+            'businesses' => $businesses,
+            'selected_ids' => $selectedIds,
         ]);
     }
 
@@ -152,7 +152,7 @@ final class MetaConnectionController extends Controller
     public function selectBusinesses(Request $request, string $connectionId): JsonResponse
     {
         $request->validate([
-            'business_ids'   => ['required', 'array'],
+            'business_ids' => ['required', 'array'],
             'business_ids.*' => ['string'],
         ]);
 
@@ -198,7 +198,7 @@ final class MetaConnectionController extends Controller
 
         return response()->json([
             'assets' => $assets,
-            'total'  => $assets->count(),
+            'total' => $assets->count(),
         ]);
     }
 
@@ -224,8 +224,8 @@ final class MetaConnectionController extends Controller
         $asset->update(['is_enabled' => $request->boolean('is_enabled')]);
 
         return response()->json([
-            'message'    => 'Asset updated.',
-            'id'         => $asset->id,
+            'message' => 'Asset updated.',
+            'id' => $asset->id,
             'is_enabled' => $asset->is_enabled,
         ]);
     }
@@ -286,14 +286,14 @@ final class MetaConnectionController extends Controller
 
         return response()->json([
             'is_running' => $isRunning,
-            'last_sync'  => $lastSync ? [
-                'id'                => $lastSync->id,
-                'sync_type'         => $lastSync->sync_type->value,
-                'status'            => $lastSync->status->value,
-                'started_at'        => $lastSync->started_at?->toISOString(),
-                'completed_at'      => $lastSync->completed_at?->toISOString(),
+            'last_sync' => $lastSync ? [
+                'id' => $lastSync->id,
+                'sync_type' => $lastSync->sync_type->value,
+                'status' => $lastSync->status->value,
+                'started_at' => $lastSync->started_at?->toISOString(),
+                'completed_at' => $lastSync->completed_at?->toISOString(),
                 'assets_discovered' => $lastSync->assets_discovered,
-                'error_message'     => $lastSync->error_message,
+                'error_message' => $lastSync->error_message,
             ] : null,
         ]);
     }
@@ -336,7 +336,7 @@ final class MetaConnectionController extends Controller
         $actions = $this->buildRecoveryActions($connection);
 
         return response()->json([
-            'status'  => $connection->status,
+            'status' => $connection->status,
             'actions' => $actions,
         ]);
     }
@@ -353,43 +353,43 @@ final class MetaConnectionController extends Controller
 
     private function buildRecoveryActions(MarketingConnection $connection): array
     {
-        $status  = $connection->status->value;
+        $status = $connection->status->value;
         $actions = [];
 
         if ($status === 'expired') {
             $actions[] = [
-                'key'         => 'reconnect',
-                'label'       => 'Reconnect Meta Account',
+                'key' => 'reconnect',
+                'label' => 'Reconnect Meta Account',
                 'description' => 'Your Meta access token has expired. Click Reconnect to re-authorize.',
-                'severity'    => 'critical',
-                'can_auto'    => true,
+                'severity' => 'critical',
+                'can_auto' => true,
             ];
         }
 
         if ($status === 'warning') {
             $actions[] = [
-                'key'         => 'verify_permissions',
-                'label'       => 'Verify & Request Permissions',
+                'key' => 'verify_permissions',
+                'label' => 'Verify & Request Permissions',
                 'description' => 'One or more required permissions are missing. Check the Permissions tab.',
-                'severity'    => 'warning',
-                'can_auto'    => false,
+                'severity' => 'warning',
+                'can_auto' => false,
             ];
             $actions[] = [
-                'key'         => 'reconnect',
-                'label'       => 'Reconnect to Re-request Permissions',
+                'key' => 'reconnect',
+                'label' => 'Reconnect to Re-request Permissions',
                 'description' => 'Reconnecting will re-request all required permissions from Meta.',
-                'severity'    => 'warning',
-                'can_auto'    => true,
+                'severity' => 'warning',
+                'can_auto' => true,
             ];
         }
 
         if ($status === 'disconnected') {
             $actions[] = [
-                'key'         => 'reconnect',
-                'label'       => 'Reconnect Meta Account',
+                'key' => 'reconnect',
+                'label' => 'Reconnect Meta Account',
                 'description' => 'The connection is disconnected. Click Reconnect to restore it.',
-                'severity'    => 'critical',
-                'can_auto'    => true,
+                'severity' => 'critical',
+                'can_auto' => true,
             ];
         }
 
@@ -400,32 +400,32 @@ final class MetaConnectionController extends Controller
 
         if ($failedWebhooks > 0) {
             $actions[] = [
-                'key'         => 're_register_webhooks',
-                'label'       => "Re-register {$failedWebhooks} Failed Webhook(s)",
+                'key' => 're_register_webhooks',
+                'label' => "Re-register {$failedWebhooks} Failed Webhook(s)",
                 'description' => 'Some webhook subscriptions are not active. Re-register to restore real-time updates.',
-                'severity'    => 'warning',
-                'can_auto'    => true,
+                'severity' => 'warning',
+                'can_auto' => true,
             ];
         }
 
         // Suggest sync if stale
         if ($connection->last_synced_at === null || $connection->last_synced_at->diffInHours(now()) > 24) {
             $actions[] = [
-                'key'         => 'sync',
-                'label'       => 'Run Sync Now',
+                'key' => 'sync',
+                'label' => 'Run Sync Now',
                 'description' => 'Asset data may be stale. Run a sync to refresh.',
-                'severity'    => 'info',
-                'can_auto'    => true,
+                'severity' => 'info',
+                'can_auto' => true,
             ];
         }
 
         if (empty($actions)) {
             $actions[] = [
-                'key'         => 'none',
-                'label'       => 'Everything looks good',
+                'key' => 'none',
+                'label' => 'Everything looks good',
                 'description' => 'No recovery actions required.',
-                'severity'    => 'success',
-                'can_auto'    => false,
+                'severity' => 'success',
+                'can_auto' => false,
             ];
         }
 

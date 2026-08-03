@@ -20,17 +20,17 @@ class CampaignScheduleController extends Controller
     public function store(Request $request, CampaignDraft $draft): JsonResponse
     {
         $validated = $request->validate([
-            'action'       => ['required', 'in:publish,pause'],
+            'action' => ['required', 'in:publish,pause'],
             'scheduled_at' => ['required', 'date', 'after:now'],
-            'timezone'     => ['nullable', 'string', 'max:100'],
+            'timezone' => ['nullable', 'string', 'max:100'],
         ]);
 
-        $at       = Carbon::parse($validated['scheduled_at']);
+        $at = Carbon::parse($validated['scheduled_at']);
         $timezone = $validated['timezone'] ?? 'UTC';
 
         $task = match ($validated['action']) {
             'publish' => $this->schedulingService->schedulePublish($draft, $at, $timezone, (string) $request->user()->id),
-            'pause'   => $this->schedulingService->schedulePause($draft, $at, $timezone, (string) $request->user()->id),
+            'pause' => $this->schedulingService->schedulePause($draft, $at, $timezone, (string) $request->user()->id),
         };
 
         return response()->json(['data' => $task], 201);
@@ -40,6 +40,7 @@ class CampaignScheduleController extends Controller
     public function destroy(CampaignScheduleTask $task): JsonResponse
     {
         $this->schedulingService->cancelTask($task);
+
         return response()->json(null, 204);
     }
 
@@ -47,6 +48,7 @@ class CampaignScheduleController extends Controller
     public function pending(CampaignDraft $draft): JsonResponse
     {
         $tasks = $this->schedulingService->getPendingTasks($draft);
+
         return response()->json(['data' => $tasks]);
     }
 }

@@ -46,7 +46,7 @@ return new class extends Migration
             Schema::table('channels', function (Blueprint $table): void {
                 $table->unique(['company_id', 'code']);
             });
-        } catch (\Exception) {
+        } catch (Exception) {
             // Unique constraint already exists
         }
     }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useFormatter } from '@/hooks/use-formatter';
 import { Banknote, CreditCard, RotateCcw, Wallet, X, Check, AlertCircle } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ type PaymentPanelProps = {
 };
 
 export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
+  const { money } = useFormatter();
   const { cartId, currency, setTenderDraft } = usePosStore();
   const { data: cart } = useCart();
   const processSale = useProcessSale();
@@ -121,13 +123,13 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
         <div className="rounded-lg bg-muted p-3">
           <div className="flex justify-between text-sm text-muted-foreground">
             <span>Total Due</span>
-            <span>{currency} {total.toFixed(2)}</span>
+            <span>{money(total, currency)}</span>
           </div>
           {tendered > 0 && (
             <>
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Amount Tendered</span>
-                <span>{currency} {tendered.toFixed(2)}</span>
+                <span>{money(tendered, currency)}</span>
               </div>
               <Separator className="my-2" />
               <div className={cn(
@@ -135,7 +137,7 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
                 remaining > 0 ? 'text-destructive' : 'text-emerald-600',
               )}>
                 <span>{remaining > 0 ? 'Remaining' : 'Change'}</span>
-                <span>{currency} {remaining > 0 ? remaining.toFixed(2) : change.toFixed(2)}</span>
+                <span>{money(remaining > 0 ? remaining : change, currency)}</span>
               </div>
             </>
           )}
@@ -221,7 +223,7 @@ export function PaymentPanel({ onClose, onSuccess }: PaymentPanelProps) {
               <div key={i} className="flex items-center justify-between rounded bg-muted px-3 py-1.5 text-sm">
                 <span className="capitalize">{t.method.replace('_', ' ')}</span>
                 <div className="flex items-center gap-2">
-                  <span className="tabular-nums">{currency} {t.amount}</span>
+                  <span className="tabular-nums">{money(Number(t.amount), currency)}</span>
                   <button
                     onClick={() => setTenders((prev) => prev.filter((_, j) => j !== i))}
                     className="text-muted-foreground hover:text-destructive"

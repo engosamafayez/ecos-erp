@@ -15,16 +15,16 @@ use Modules\Marketing\ProviderPlatform\Domain\Enums\ProviderCapability;
 final class ProviderDefinition
 {
     /**
-     * @param list<string> $capabilities  ProviderCapability::* constants
+     * @param  list<string>  $capabilities  ProviderCapability::* constants
      */
     public function __construct(
-        public readonly string  $providerKey,
-        public readonly string  $displayName,
-        public readonly string  $providerType,
-        public readonly string  $version,
-        public readonly array   $capabilities,
+        public readonly string $providerKey,
+        public readonly string $displayName,
+        public readonly string $providerType,
+        public readonly string $version,
+        public readonly array $capabilities,
         public readonly ?string $documentationUrl = null,
-        public readonly ?string $logoUrl          = null,
+        public readonly ?string $logoUrl = null,
     ) {}
 
     public function supports(string $capability): bool
@@ -35,13 +35,13 @@ final class ProviderDefinition
     public function toArray(): array
     {
         return [
-            'provider_key'      => $this->providerKey,
-            'display_name'      => $this->displayName,
-            'provider_type'     => $this->providerType,
-            'version'           => $this->version,
-            'capabilities'      => $this->capabilities,
+            'provider_key' => $this->providerKey,
+            'display_name' => $this->displayName,
+            'provider_type' => $this->providerType,
+            'version' => $this->version,
+            'capabilities' => $this->capabilities,
             'documentation_url' => $this->documentationUrl,
-            'logo_url'          => $this->logoUrl,
+            'logo_url' => $this->logoUrl,
         ];
     }
 }

@@ -12,7 +12,8 @@ class AutomationGovernancePolicy extends Model
 {
     use HasUuids, SoftDeletes;
 
-    protected $table    = 'automation_governance_policies';
+    protected $table = 'automation_governance_policies';
+
     protected $fillable = [
         'company_id', 'name', 'description',
         'max_executions_per_customer_per_day',
@@ -26,20 +27,20 @@ class AutomationGovernancePolicy extends Model
 
     protected $casts = [
         'blacklisted_channels' => 'array',
-        'opt_out_rules'        => 'array',
+        'opt_out_rules' => 'array',
         'allowed_action_types' => 'array',
-        'requires_approval'    => 'boolean',
-        'is_default'           => 'boolean',
-        'is_active'            => 'boolean',
+        'requires_approval' => 'boolean',
+        'is_default' => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     public function isInQuietHours(): bool
     {
-        if (!$this->quiet_hours_start || !$this->quiet_hours_end) {
+        if (! $this->quiet_hours_start || ! $this->quiet_hours_end) {
             return false;
         }
 
-        $tz  = $this->quiet_hours_timezone ?? 'UTC';
+        $tz = $this->quiet_hours_timezone ?? 'UTC';
         $now = now()->setTimezone($tz)->format('H:i:s');
 
         if ($this->quiet_hours_start <= $this->quiet_hours_end) {

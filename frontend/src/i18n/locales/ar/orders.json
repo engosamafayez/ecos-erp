@@ -69,7 +69,11 @@
     "scheduled": "مجدول",
     "rescheduled": "مُعاد جدولته",
     "scrollLeft": "تمرير لليسار",
-    "scrollRight": "تمرير لليمين"
+    "scrollRight": "تمرير لليمين",
+    "new": "جديد",
+    "in_progress": "قيد التنفيذ",
+    "ready_for_dispatch": "جاهز للإرسال",
+    "on_hold": "معلّق"
   },
   "filters": {
     "status": "الحالة",
@@ -121,8 +125,8 @@
     "paymentProof": "إثبات الدفع",
     "withProof": "بإثبات دفع",
     "withoutProof": "بدون إثبات دفع",
-    "minAmount": "أدنى مبلغ (ج.م)",
-    "maxAmount": "أقصى مبلغ (ج.م)"
+    "minAmount": "أدنى مبلغ",
+    "maxAmount": "أقصى مبلغ"
   },
   "customerIntelligence": {
     "title": "ذكاء العملاء",
@@ -223,7 +227,11 @@
     "cancelled": "ملغى",
     "review": "مراجعة",
     "rescheduled": "مُعاد جدولته",
-    "returned": "مُعاد"
+    "returned": "مُعاد",
+    "new": "جديد",
+    "in_progress": "قيد التنفيذ",
+    "ready_for_dispatch": "جاهز للإرسال",
+    "on_hold": "معلّق"
   },
   "columns": {
     "number": "رقم الطلب",
@@ -484,7 +492,17 @@
       "assignedWarehouse": "المستودع المخصص",
       "lineItems": "عناصر الطلب",
       "inventoryItems": "عناصر المخزون",
-      "itemCount": "{{count}} عنصر"
+      "itemCount": "{{count}} عنصر",
+      "qty": {
+        "reserved": "محجوز",
+        "prepared": "تم التجهيز",
+        "packed": "تم التغليف",
+        "loaded": "تم التحميل",
+        "delivered": "تم التسليم",
+        "returned": "مُعاد",
+        "cancelled": "ملغى",
+        "batch": "الدفعة"
+      }
     },
     "products_tab": {
       "priceLockTitle": "قفل سعر الطلب نشط",

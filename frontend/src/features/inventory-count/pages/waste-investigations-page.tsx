@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AlertTriangle, CheckCircle, Clock, Eye, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,58 +26,6 @@ import type {
 } from '../types/inventory-count';
 import { WasteInvestigationDetailDrawer } from '../components/waste-investigation-detail-drawer';
 
-const OUTCOME_OPTIONS: { value: WasteInvestigationOutcome; label: string; description: string }[] = [
-  { value: 'operational_waste', label: 'Operational Waste', description: 'Natural loss — deduct from inventory, no liability' },
-  { value: 'warehouse_responsibility', label: 'Warehouse Responsibility', description: 'Attributed to warehouse manager as liability + deduct from inventory' },
-  { value: 'supplier_responsibility', label: 'Supplier Responsibility', description: 'Supplier-caused damage — create supplier claim, no deduction' },
-  { value: 'preparation_responsibility', label: 'Preparation Responsibility', description: 'Damage during preparation — route to prep system, no deduction now' },
-];
-
-function SlaChip({ inv }: { inv: WasteInvestigation }) {
-  if (inv.status !== 'pending_investigation') return null;
-  if (inv.is_overdue_7) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 text-destructive px-2 py-0.5 text-[11px] font-medium">
-        <AlertTriangle className="size-2.5" /> 7+ days
-      </span>
-    );
-  }
-  if (inv.is_overdue_3) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300 px-2 py-0.5 text-[11px] font-medium">
-        <Clock className="size-2.5" /> 3+ days
-      </span>
-    );
-  }
-  return null;
-}
-
-function statusBadge(status: string) {
-  if (status === 'resolved') {
-    return (
-      <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 text-xs">
-        <CheckCircle className="size-3 mr-1" />Resolved
-      </Badge>
-    );
-  }
-  return (
-    <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950/20 text-xs">
-      <Clock className="size-3 mr-1" />Pending
-    </Badge>
-  );
-}
-
-function outcomeBadge(outcome: string | null) {
-  if (!outcome) return null;
-  const map: Record<string, string> = {
-    operational_waste:          'Operational',
-    warehouse_responsibility:   'Warehouse',
-    supplier_responsibility:    'Supplier',
-    preparation_responsibility: 'Preparation',
-  };
-  return <span className="text-xs text-muted-foreground">{map[outcome] ?? outcome}</span>;
-}
-
 type ResolveState = {
   investigation: WasteInvestigation;
   outcome: WasteInvestigationOutcome | '';
@@ -84,6 +33,16 @@ type ResolveState = {
 };
 
 export function WasteInvestigationsPage() {
+  const { t } = useTranslation('inventory-count');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
+
+  const OUTCOME_OPTIONS: { value: WasteInvestigationOutcome; label: string; description: string }[] = [
+    { value: 'operational_waste', label: t('waste.outcomeOptions.operational_waste.label'), description: t('waste.outcomeOptions.operational_waste.description') },
+    { value: 'warehouse_responsibility', label: t('waste.outcomeOptions.warehouse_responsibility.label'), description: t('waste.outcomeOptions.warehouse_responsibility.description') },
+    { value: 'supplier_responsibility', label: t('waste.outcomeOptions.supplier_responsibility.label'), description: t('waste.outcomeOptions.supplier_responsibility.description') },
+    { value: 'preparation_responsibility', label: t('waste.outcomeOptions.preparation_responsibility.label'), description: t('waste.outcomeOptions.preparation_responsibility.description') },
+  ];
+
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending_investigation' | 'resolved'>('all');
   const [resolveState, setResolveState] = useState<ResolveState | null>(null);
@@ -100,6 +59,32 @@ export function WasteInvestigationsPage() {
   const items: WasteInvestigation[] = query.data?.data ?? [];
   const summary = query.data?.summary;
 
+  function statusBadge(status: string) {
+    if (status === 'resolved') {
+      return (
+        <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 text-xs">
+          <CheckCircle className="size-3 mr-1" />{t('waste.status.resolved')}
+        </Badge>
+      );
+    }
+    return (
+      <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50 dark:bg-amber-950/20 text-xs">
+        <Clock className="size-3 mr-1" />{t('waste.status.pending')}
+      </Badge>
+    );
+  }
+
+  function outcomeBadge(outcome: string | null) {
+    if (!outcome) return null;
+    const outcomeMap: Record<string, string> = {
+      operational_waste:          t('waste.outcomes.operational'),
+      warehouse_responsibility:   t('waste.outcomes.warehouse'),
+      supplier_responsibility:    t('waste.outcomes.supplier'),
+      preparation_responsibility: t('waste.outcomes.preparation'),
+    };
+    return <span className="text-xs text-muted-foreground">{outcomeMap[outcome] ?? outcome}</span>;
+  }
+
   async function handleResolve() {
     if (!resolveState || !resolveState.outcome || !resolvedBy.trim()) return;
     try {
@@ -111,41 +96,41 @@ export function WasteInvestigationsPage() {
           investigator_notes: resolveState.notes || null,
         },
       });
-      toast.success('Investigation resolved.');
+      toast.success(t('waste.toast.resolved'));
       setResolveState(null);
       setResolvedBy('');
     } catch {
-      toast.error('Failed to resolve investigation.');
+      toast.error(t('waste.toast.failed'));
     }
   }
 
   return (
     <div className="flex flex-col gap-6 p-6">
       <PageHeader
-        title="Waste Investigations"
-        subtitle="Review and resolve damaged inventory items from count sessions"
+        title={t('waste.pageTitle')}
+        subtitle={t('waste.subtitle')}
       />
 
       {/* KPI strip */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Pending</p>
+          <p className="text-xs text-muted-foreground">{t('waste.kpis.pending')}</p>
           <p className="text-2xl font-semibold mt-1 text-amber-600">{summary?.pending ?? '—'}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Overdue 3+ Days</p>
+          <p className="text-xs text-muted-foreground">{t('waste.kpis.overdue3')}</p>
           <p className="text-2xl font-semibold mt-1 text-amber-600">{summary?.pending_over_3 ?? '—'}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Overdue 7+ Days</p>
+          <p className="text-xs text-muted-foreground">{t('waste.kpis.overdue7')}</p>
           <p className="text-2xl font-semibold mt-1 text-destructive">{summary?.pending_over_7 ?? '—'}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Resolved</p>
+          <p className="text-xs text-muted-foreground">{t('waste.kpis.resolved')}</p>
           <p className="text-2xl font-semibold mt-1 text-emerald-600">{summary?.resolved ?? '—'}</p>
         </div>
         <div className="rounded-lg border bg-card p-4">
-          <p className="text-xs text-muted-foreground">Month</p>
+          <p className="text-xs text-muted-foreground">{t('waste.kpis.month')}</p>
           <input
             type="month"
             value={month}
@@ -167,7 +152,7 @@ export function WasteInvestigationsPage() {
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
           >
-            {s === 'all' ? 'All' : s === 'pending_investigation' ? 'Pending' : 'Resolved'}
+            {s === 'all' ? t('waste.filters.all') : s === 'pending_investigation' ? t('waste.filters.pending') : t('waste.filters.resolved')}
           </button>
         ))}
       </div>
@@ -181,20 +166,20 @@ export function WasteInvestigationsPage() {
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-16 text-center">
             <AlertTriangle className="size-8 text-muted-foreground/40" />
-            <p className="text-sm text-muted-foreground">No waste investigations</p>
+            <p className="text-sm text-muted-foreground">{t('waste.empty')}</p>
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/40">
-                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Product</th>
-                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">Quantity</th>
-                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">Value</th>
-                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Damage Reason</th>
-                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Warehouse</th>
-                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Status</th>
-                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">Outcome</th>
-                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">Actions</th>
+                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('waste.table.product')}</th>
+                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">{t('waste.table.quantity')}</th>
+                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">{t('waste.table.value')}</th>
+                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('waste.table.damageReason')}</th>
+                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('waste.table.warehouse')}</th>
+                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('waste.table.status')}</th>
+                <th className="px-4 py-2.5 text-start text-xs font-medium text-muted-foreground">{t('waste.table.outcome')}</th>
+                <th className="px-4 py-2.5 text-end text-xs font-medium text-muted-foreground">{t('waste.table.actions')}</th>
               </tr>
             </thead>
             <tbody>
@@ -222,7 +207,16 @@ export function WasteInvestigationsPage() {
                   <td className="px-4 py-2.5">
                     <div className="flex flex-col gap-1">
                       {statusBadge(inv.status)}
-                      <SlaChip inv={inv} />
+                      {inv.status === 'pending_investigation' && inv.is_overdue_7 && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 text-destructive px-2 py-0.5 text-[11px] font-medium">
+                          <AlertTriangle className="size-2.5" /> {t('waste.sla.overdue7')}
+                        </span>
+                      )}
+                      {inv.status === 'pending_investigation' && !inv.is_overdue_7 && inv.is_overdue_3 && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300 px-2 py-0.5 text-[11px] font-medium">
+                          <Clock className="size-2.5" /> {t('waste.sla.overdue3')}
+                        </span>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 py-2.5">{outcomeBadge(inv.outcome)}</td>
@@ -232,7 +226,7 @@ export function WasteInvestigationsPage() {
                         size="sm"
                         variant="ghost"
                         className="h-7 w-7 p-0 text-muted-foreground"
-                        title="View Details"
+                        title={t('waste.viewDetails')}
                         onClick={() => setDetailId(inv.id)}
                       >
                         <Eye className="size-3.5" />
@@ -244,7 +238,7 @@ export function WasteInvestigationsPage() {
                           className="h-7 text-xs"
                           onClick={() => setResolveState({ investigation: inv, outcome: '', notes: '' })}
                         >
-                          Resolve
+                          {t('waste.resolve')}
                         </Button>
                       )}
                     </div>
@@ -256,7 +250,6 @@ export function WasteInvestigationsPage() {
         )}
       </div>
 
-      {/* Detail drawer */}
       <WasteInvestigationDetailDrawer
         investigationId={detailId}
         open={!!detailId}
@@ -267,20 +260,20 @@ export function WasteInvestigationsPage() {
       <Dialog open={!!resolveState} onOpenChange={(o) => { if (!o) setResolveState(null); }}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Resolve Waste Investigation</DialogTitle>
+            <DialogTitle>{t('waste.dialog.title')}</DialogTitle>
           </DialogHeader>
           {resolveState && (
             <div className="space-y-4 py-2">
               <div className="rounded-md border bg-muted/40 px-4 py-3 text-sm">
                 <p className="font-medium">{resolveState.investigation.product?.name}</p>
                 <p className="text-muted-foreground text-xs mt-0.5">
-                  Quantity: {Number(resolveState.investigation.quantity).toFixed(2)} ·
-                  Reason: {resolveState.investigation.damage_reason ?? '—'}
+                  {t('waste.dialog.quantity')} {Number(resolveState.investigation.quantity).toFixed(2)} ·
+                  {' '}{t('waste.dialog.reason')} {resolveState.investigation.damage_reason ?? '—'}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-xs font-medium">Outcome</Label>
+                <Label className="text-xs font-medium">{t('waste.dialog.outcomeLabel')}</Label>
                 <div className="space-y-2">
                   {OUTCOME_OPTIONS.map((opt) => (
                     <label
@@ -309,23 +302,23 @@ export function WasteInvestigationsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="resolved-by" className="text-xs font-medium">Resolved By</Label>
+                <Label htmlFor="resolved-by" className="text-xs font-medium">{t('waste.dialog.resolvedBy')}</Label>
                 <input
                   id="resolved-by"
                   value={resolvedBy}
                   onChange={(e) => setResolvedBy(e.target.value)}
-                  placeholder="Investigator name"
+                  placeholder={tAny('waste.dialog.resolvedByPlaceholder')}
                   className="h-9 w-full rounded border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="inv-notes" className="text-xs font-medium">Investigator Notes (optional)</Label>
+                <Label htmlFor="inv-notes" className="text-xs font-medium">{t('waste.dialog.notesLabel')}</Label>
                 <Textarea
                   id="inv-notes"
                   value={resolveState.notes}
                   onChange={(e) => setResolveState((s) => s ? { ...s, notes: e.target.value } : s)}
-                  placeholder="Investigation findings, evidence, etc…"
+                  placeholder={tAny('waste.dialog.notesPlaceholder')}
                   rows={3}
                   className="text-sm"
                 />
@@ -333,13 +326,13 @@ export function WasteInvestigationsPage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setResolveState(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setResolveState(null)}>{t('waste.dialog.cancel')}</Button>
             <Button
               onClick={handleResolve}
               disabled={!resolveState?.outcome || !resolvedBy.trim() || resolveMutation.isPending}
             >
               {resolveMutation.isPending && <Loader2 className="size-3.5 mr-1.5 animate-spin" />}
-              Confirm Resolution
+              {t('waste.dialog.confirm')}
             </Button>
           </DialogFooter>
         </DialogContent>

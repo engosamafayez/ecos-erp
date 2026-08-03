@@ -20,23 +20,23 @@ return new class extends Migration
             $table->string('transfer_number')->unique();
 
             $table->foreignUuid('company_id')
-                  ->constrained('companies')
-                  ->restrictOnDelete();
+                ->constrained('companies')
+                ->restrictOnDelete();
 
             $table->foreignUuid('source_warehouse_id')
-                  ->constrained('warehouses')
-                  ->restrictOnDelete();
+                ->constrained('warehouses')
+                ->restrictOnDelete();
 
             $table->foreignUuid('destination_warehouse_id')
-                  ->constrained('warehouses')
-                  ->restrictOnDelete();
+                ->constrained('warehouses')
+                ->restrictOnDelete();
 
             $table->foreignUuid('product_id')
-                  ->constrained('products')
-                  ->restrictOnDelete();
+                ->constrained('products')
+                ->restrictOnDelete();
 
-            $table->decimal('quantity',           15, 4);
-            $table->decimal('total_cost',         15, 4)->default(0);
+            $table->decimal('quantity', 15, 4);
+            $table->decimal('total_cost', 15, 4)->default(0);
             $table->decimal('weighted_unit_cost', 15, 4)->default(0);
 
             $table->string('status')->default('completed');

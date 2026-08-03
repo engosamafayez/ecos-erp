@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\POS\Shared\Domain\Exceptions;
 
-final class InvalidMoneyOperationException extends \InvalidArgumentException
+use InvalidArgumentException;
+
+final class InvalidMoneyOperationException extends InvalidArgumentException
 {
     public static function currencyMismatch(string $left, string $right): self
     {
         return new self(
-            "Cannot operate on money values with different currencies: {$left} vs {$right}."
+            "Cannot operate on money values with different currencies: {$left} vs {$right}.",
         );
     }
 

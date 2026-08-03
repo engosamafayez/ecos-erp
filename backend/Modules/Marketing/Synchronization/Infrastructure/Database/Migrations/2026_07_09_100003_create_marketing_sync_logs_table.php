@@ -18,7 +18,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuid('marketing_connection_id')->index();
             $table->string('sync_type', 30)->default('manual');      // manual | scheduled | incremental | full
-            $table->string('status', 30)->default('pending')->index();// pending | running | completed | failed | cancelled
+            $table->string('status', 30)->default('pending')->index(); // pending | running | completed | failed | cancelled
             $table->integer('assets_discovered')->default(0);
             $table->integer('assets_created')->default(0);
             $table->integer('assets_updated')->default(0);

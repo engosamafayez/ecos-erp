@@ -27,24 +27,27 @@ final class MetaIncrementalSyncJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int   $tries   = 2;
-    public int   $timeout = 120;
+    public int $tries = 2;
+
+    public int $timeout = 120;
+
     public array $backoff = [30, 90]; // 30 s → 90 s — rate-limit courtesy delay
 
     public function __construct(
-        private readonly string   $connectionId,
-        private readonly string   $companyId,
+        private readonly string $connectionId,
+        private readonly string $companyId,
         private readonly SyncType $syncType = SyncType::Incremental,
     ) {}
 
     public function handle(
-        RunSyncAction             $runSync,
+        RunSyncAction $runSync,
         ProviderCredentialContext $context,
     ): void {
         $connection = MarketingConnection::find($this->connectionId);
 
         if ($connection === null) {
             Log::warning('MetaIncrementalSyncJob: connection not found', ['connection_id' => $this->connectionId]);
+
             return;
         }
 
@@ -54,8 +57,9 @@ final class MetaIncrementalSyncJob implements ShouldQueue
         ], true)) {
             Log::info('MetaIncrementalSyncJob: skipping — connection not active', [
                 'connection_id' => $this->connectionId,
-                'status'        => $connection->status->value,
+                'status' => $connection->status->value,
             ]);
+
             return;
         }
 

@@ -7,15 +7,15 @@ namespace Modules\POS\Session\Domain\Enums;
 enum DeviceType: string
 {
     case Browser = 'browser';
-    case Mobile  = 'mobile';
-    case Agent   = 'agent';
+    case Mobile = 'mobile';
+    case Agent = 'agent';
 
     public function label(): string
     {
         return match ($this) {
             self::Browser => 'Web Browser',
-            self::Mobile  => 'Mobile Device',
-            self::Agent   => 'Hardware Agent',
+            self::Mobile => 'Mobile Device',
+            self::Agent => 'Hardware Agent',
         };
     }
 }

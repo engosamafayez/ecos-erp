@@ -11,8 +11,8 @@ final class WaveCompletedNotification extends Notification
     public function __construct(
         private readonly string $waveNumber,
         private readonly string $waveId,
-        private readonly float  $completionPct,
-        private readonly int    $poolEntriesCreated,
+        private readonly float $completionPct,
+        private readonly int $poolEntriesCreated,
     ) {}
 
     /** @return list<string> */
@@ -25,13 +25,13 @@ final class WaveCompletedNotification extends Notification
     public function toDatabase(mixed $notifiable): array
     {
         return [
-            'type'                => 'wave_completed',
-            'wave_id'             => $this->waveId,
-            'wave_number'         => $this->waveNumber,
-            'message'             => "Wave {$this->waveNumber} completed — {$this->poolEntriesCreated} products in Prepared Pool",
-            'completion_pct'      => $this->completionPct,
-            'pool_entries_created'=> $this->poolEntriesCreated,
-            'severity'            => 'success',
+            'type' => 'wave_completed',
+            'wave_id' => $this->waveId,
+            'wave_number' => $this->waveNumber,
+            'message' => "Wave {$this->waveNumber} completed — {$this->poolEntriesCreated} products in Prepared Pool",
+            'completion_pct' => $this->completionPct,
+            'pool_entries_created' => $this->poolEntriesCreated,
+            'severity' => 'success',
         ];
     }
 }

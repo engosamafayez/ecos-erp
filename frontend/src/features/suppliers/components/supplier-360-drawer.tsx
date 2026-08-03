@@ -1,4 +1,5 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Activity,
   AlertTriangle,
@@ -18,7 +19,6 @@ import {
   Package,
   Pencil,
   ShoppingCart,
-  Sparkles,
   Trash2,
   Truck,
   Upload,
@@ -46,6 +46,7 @@ import {
   useUploadSupplierDocument,
 } from '@/features/suppliers/hooks/use-supplier-analytics';
 import { ProcurementHealthBadge } from '@/features/suppliers/components/procurement-health-badge';
+import { useFormatter } from '@/hooks/use-formatter';
 import type { SupplierAnalytics, SupplierDocument, SupplierPriceHistoryEntry, ProcurementHealthResult } from '@/features/suppliers/types/supplier-analytics';
 import type { Supplier } from '@/features/suppliers/types/supplier';
 
@@ -54,6 +55,8 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: (supplier: Supplier) => void;
+  /** Tab to open on mount / when the drawer is (re)opened. Defaults to 'overview'. */
+  initialTab?: TabId;
 };
 
 function fmt(n: number, decimals = 2) {
@@ -93,6 +96,7 @@ function exportCsv(filename: string, headers: string[], rows: (string | number |
 // ── Smart Insights ────────────────────────────────────────────────────────────
 
 function SmartInsights({ analytics, health }: { analytics: SupplierAnalytics | null; health: ProcurementHealthResult | null }) {
+  const { t } = useTranslation('suppliers');
   type Alert = { severity: 'warning' | 'info'; message: string };
   const alerts: Alert[] = [];
 
@@ -128,7 +132,7 @@ function SmartInsights({ analytics, health }: { analytics: SupplierAnalytics | n
 
   return (
     <div>
-      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Smart Insights</h3>
+      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">{t('drawer360.smartInsights')}</h3>
       <div className="flex flex-col gap-2">
         {alerts.map((a, i) => (
           <div
@@ -154,53 +158,107 @@ function SmartInsights({ analytics, health }: { analytics: SupplierAnalytics | n
 // ── Overview Tab ─────────────────────────────────────────────────────────────
 
 function OverviewTab({ supplier, supplierId }: { supplier: Supplier; supplierId: string }) {
+  const { t } = useTranslation('suppliers');
+  const { money } = useFormatter();
   const { data: analytics, isLoading } = useSupplierAnalytics(supplierId);
   const { data: health } = useSupplierHealth(supplierId);
+
+  const openingType = supplier.opening_balance_type ?? 'credit';
+  const openingAmount = supplier.opening_balance_amount ?? 0;
+  const previousBalance = supplier.previous_balance ?? 0;
+  const currentBalance = supplier.current_supplier_balance;
+  const hasFinancialPosition =
+    openingAmount !== 0 || previousBalance !== 0 || currentBalance != null;
+
+  const mapsHref = supplier.google_maps_url?.trim() || null;
 
   return (
     <div className="flex flex-col gap-6 p-6">
       <SmartInsights analytics={analytics ?? null} health={health ?? null} />
 
       <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Supplier Information</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('drawer360.overview.supplierInfo')}</h3>
         <Card>
           <CardContent className="p-4">
-            <InfoRow label="Supplier Code" value={supplier.code} />
-            <InfoRow label="Name" value={supplier.name} />
-            <InfoRow label="Country" value={supplier.country} />
-            <InfoRow label="City" value={supplier.city} />
-            <InfoRow label="Address" value={supplier.address} />
+            <InfoRow label={t('drawer360.overview.fields.supplierCode')} value={supplier.code} />
+            <InfoRow label={t('drawer360.overview.fields.name')} value={supplier.name} />
           </CardContent>
         </Card>
       </div>
 
       <div>
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Contact Details</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('drawer360.overview.location')}</h3>
         <Card>
           <CardContent className="p-4">
-            <InfoRow label="Contact Person" value={supplier.contact_person} />
-            <InfoRow label="Phone" value={supplier.phone} />
-            <InfoRow label="Mobile" value={supplier.mobile} />
-            <InfoRow label="Email" value={supplier.email} />
+            <InfoRow label={t('form.country')} value={supplier.country} />
+            <InfoRow label={t('form.state')} value={supplier.state} />
+            <InfoRow label={t('form.city')} value={supplier.city} />
+            <InfoRow label={t('form.district')} value={supplier.district} />
+            <InfoRow label={t('form.address')} value={supplier.address} />
+            <div className="flex items-baseline justify-between gap-4 py-2 border-b last:border-0">
+              <span className="text-xs text-muted-foreground shrink-0">{t('form.googleMapsUrl')}</span>
+              {mapsHref ? (
+                <a
+                  href={mapsHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-end text-primary hover:underline truncate max-w-[60%]"
+                >
+                  {t('drawer360.overview.openInMaps')}
+                </a>
+              ) : (
+                <span className="text-sm text-end">—</span>
+              )}
+            </div>
           </CardContent>
         </Card>
       </div>
 
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('drawer360.overview.contactDetails')}</h3>
+        <Card>
+          <CardContent className="p-4">
+            <InfoRow label={t('drawer360.overview.fields.contactPerson')} value={supplier.contact_person} />
+            <InfoRow label={t('drawer360.overview.fields.phone')} value={supplier.phone} />
+            <InfoRow label={t('drawer360.overview.fields.mobile')} value={supplier.mobile} />
+            <InfoRow label={t('drawer360.overview.fields.email')} value={supplier.email} />
+          </CardContent>
+        </Card>
+      </div>
+
+      {hasFinancialPosition && (
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('drawer360.overview.financialPosition')}</h3>
+          <Card>
+            <CardContent className="p-4">
+              <InfoRow
+                label={t('drawer360.overview.openingBalance')}
+                value={`${money(openingAmount)} · ${openingType === 'debit' ? t('form.openingBalanceDebit') : t('form.openingBalanceCredit')}`}
+              />
+              <InfoRow label={t('drawer360.overview.previousBalance')} value={money(previousBalance)} />
+              {currentBalance != null && (
+                <InfoRow label={t('drawer360.overview.currentBalance')} value={money(currentBalance)} />
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {isLoading ? (
-        <LoadingState label="Loading analytics…" />
+        <LoadingState label={t('drawer360.overview.loadingAnalytics')} />
       ) : analytics ? (
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Quick Summary</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('drawer360.overview.quickSummary')}</h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <KpiMini label="Total Purchases" value={`$${fmt(analytics.total_invoiced)}`} />
-            <KpiMini label="Total Paid" value={`$${fmt(analytics.total_paid)}`} />
+            <KpiMini label={t('drawer360.overview.kpis.totalPurchases')} value={money(analytics.total_invoiced)} />
+            <KpiMini label={t('drawer360.overview.kpis.totalPaid')} value={money(analytics.total_paid)} />
             <KpiMini
-              label="Outstanding"
-              value={`$${fmt(analytics.outstanding_balance)}`}
+              label={t('drawer360.overview.kpis.outstanding')}
+              value={money(analytics.outstanding_balance)}
               emphasis={analytics.outstanding_balance > 0 ? 'negative' : undefined}
             />
             <KpiMini
-              label="Last Purchase"
+              label={t('drawer360.overview.kpis.lastPurchase')}
               value={analytics.last_purchase_date ? analytics.last_purchase_date.slice(0, 10) : '—'}
             />
           </div>
@@ -209,13 +267,13 @@ function OverviewTab({ supplier, supplierId }: { supplier: Supplier; supplierId:
 
       {health && (
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Procurement Health</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('drawer360.overview.procurementHealth')}</h3>
           <Card>
             <CardContent className="flex items-center gap-4 pt-4 pb-4">
               <div className="text-3xl font-bold tabular-nums">{health.score.toFixed(0)}</div>
               <div>
                 <ProcurementHealthBadge score={health.tier} />
-                <p className="text-xs text-muted-foreground mt-1">out of 100</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('drawer360.overview.outOf100')}</p>
               </div>
             </CardContent>
           </Card>
@@ -224,7 +282,7 @@ function OverviewTab({ supplier, supplierId }: { supplier: Supplier; supplierId:
 
       {supplier.notes && (
         <div>
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">Notes</h3>
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t('drawer360.overview.notes')}</h3>
           <Card><CardContent className="p-4 text-sm text-muted-foreground">{supplier.notes}</CardContent></Card>
         </div>
       )}
@@ -235,6 +293,8 @@ function OverviewTab({ supplier, supplierId }: { supplier: Supplier; supplierId:
 // ── Products Tab ─────────────────────────────────────────────────────────────
 
 function ProductsTab({ supplierId }: { supplierId: string }) {
+  const { t } = useTranslation('suppliers');
+  const { money } = useFormatter();
   const { data: products, isLoading, isError } = useSupplierInventoryBreakdown(supplierId);
 
   if (isLoading) return <div className="p-6"><LoadingState /></div>;
@@ -251,22 +311,35 @@ function ProductsTab({ supplierId }: { supplierId: string }) {
     );
   }
 
+  const columnHeaders = [
+    t('drawer360.products.columns.product'),
+    t('drawer360.products.columns.onHand'),
+    t('drawer360.products.columns.avgCost'),
+    t('drawer360.products.columns.salePrice', 'Sale Price'),
+    t('drawer360.products.columns.costValue'),
+    t('drawer360.products.columns.saleValue'),
+    t('drawer360.products.columns.grossProfit', 'Gross Profit'),
+    t('drawer360.products.columns.oldestReceipt', 'Oldest Receipt'),
+    t('drawer360.products.columns.lastReceipt'),
+    t('drawer360.products.columns.receipts'),
+  ];
+
   return (
     <div className="p-0">
       {items.length === 0 ? (
-        <p className="text-muted-foreground text-sm text-center py-16">No products from this supplier yet.</p>
+        <p className="text-muted-foreground text-sm text-center py-16">{t('drawer360.products.empty')}</p>
       ) : (
         <>
           <div className="flex items-center justify-end px-4 py-2 border-b">
             <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs" onClick={handleExport}>
-              <Download className="size-3.5" />Export
+              <Download className="size-3.5" />{t('drawer360.products.export')}
             </Button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[760px]">
               <thead>
                 <tr className="border-b bg-muted/40">
-                  {['Product', 'On Hand', 'Avg Cost', 'Cost Value', 'Sale Value', 'Last Receipt', 'Receipts'].map((h) => (
+                  {columnHeaders.map((h) => (
                     <th key={h} className="px-4 py-2.5 text-xs font-medium text-muted-foreground text-end first:text-start">{h}</th>
                   ))}
                 </tr>
@@ -279,9 +352,12 @@ function ProductsTab({ supplierId }: { supplierId: string }) {
                       <p className="text-[10px] text-muted-foreground font-mono">{p.product_sku}</p>
                     </td>
                     <td className="px-4 py-2.5 text-end tabular-nums">{fmt(p.remaining_quantity, 4).replace(/\.?0+$/, '')}</td>
-                    <td className="px-4 py-2.5 text-end tabular-nums">${fmt(p.average_cost ?? 0)}</td>
-                    <td className="px-4 py-2.5 text-end tabular-nums">${fmt(p.cost_value)}</td>
-                    <td className="px-4 py-2.5 text-end tabular-nums">${fmt(p.sale_value)}</td>
+                    <td className="px-4 py-2.5 text-end tabular-nums">{money(p.average_cost ?? 0)}</td>
+                    <td className="px-4 py-2.5 text-end tabular-nums">{money(p.sale_price)}</td>
+                    <td className="px-4 py-2.5 text-end tabular-nums">{money(p.cost_value)}</td>
+                    <td className="px-4 py-2.5 text-end tabular-nums">{money(p.sale_value)}</td>
+                    <td className={`px-4 py-2.5 text-end tabular-nums ${p.gross_profit < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>{money(p.gross_profit)}</td>
+                    <td className="px-4 py-2.5 text-end text-xs text-muted-foreground">{p.oldest_receipt_date?.slice(0, 10) ?? '—'}</td>
                     <td className="px-4 py-2.5 text-end text-xs text-muted-foreground">{p.latest_receipt_date?.slice(0, 10) ?? '—'}</td>
                     <td className="px-4 py-2.5 text-end text-muted-foreground">{p.receipt_count}</td>
                   </tr>
@@ -298,6 +374,8 @@ function ProductsTab({ supplierId }: { supplierId: string }) {
 // ── Purchase Orders Tab ───────────────────────────────────────────────────────
 
 function PurchaseOrdersTab({ supplierId }: { supplierId: string }) {
+  const { t } = useTranslation('suppliers');
+  const { money } = useFormatter();
   const { data, isLoading, isError } = usePurchaseOrdersQuery({ supplier_id: supplierId, per_page: 50 });
 
   if (isLoading) return <div className="p-6"><LoadingState /></div>;
@@ -305,16 +383,24 @@ function PurchaseOrdersTab({ supplierId }: { supplierId: string }) {
 
   const items = data?.items ?? [];
 
+  const columnHeaders = [
+    t('drawer360.purchaseOrders.columns.poNo'),
+    t('drawer360.purchaseOrders.columns.date'),
+    t('drawer360.purchaseOrders.columns.expected'),
+    t('drawer360.purchaseOrders.columns.status'),
+    t('drawer360.purchaseOrders.columns.total'),
+  ];
+
   return (
     <div className="p-0">
       {items.length === 0 ? (
-        <p className="text-muted-foreground text-sm text-center py-16">No purchase orders for this supplier.</p>
+        <p className="text-muted-foreground text-sm text-center py-16">{t('drawer360.purchaseOrders.empty')}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[600px]">
             <thead>
               <tr className="border-b bg-muted/40">
-                {['PO #', 'Date', 'Expected', 'Status', 'Total'].map((h, i) => (
+                {columnHeaders.map((h, i) => (
                   <th key={h} className={`px-4 py-2.5 text-xs font-medium text-muted-foreground ${i === 4 ? 'text-end' : 'text-start'}`}>{h}</th>
                 ))}
               </tr>
@@ -326,7 +412,7 @@ function PurchaseOrdersTab({ supplierId }: { supplierId: string }) {
                   <td className="px-4 py-2.5 text-xs text-muted-foreground">{po.order_date}</td>
                   <td className="px-4 py-2.5 text-xs text-muted-foreground">{po.expected_date ?? '—'}</td>
                   <td className="px-4 py-2.5"><Badge variant="outline" className="text-xs">{po.status_label}</Badge></td>
-                  <td className="px-4 py-2.5 text-end tabular-nums font-medium">${fmt(po.grand_total)}</td>
+                  <td className="px-4 py-2.5 text-end tabular-nums font-medium">{money(po.grand_total)}</td>
                 </tr>
               ))}
             </tbody>
@@ -340,6 +426,8 @@ function PurchaseOrdersTab({ supplierId }: { supplierId: string }) {
 // ── Goods Receipts Tab ────────────────────────────────────────────────────────
 
 function GoodsReceiptsTab({ supplierId }: { supplierId: string }) {
+  const { t } = useTranslation('suppliers');
+  const { money } = useFormatter();
   const { data, isLoading, isError } = useGoodsReceiptsQuery({ supplier_id: supplierId, per_page: 50 });
 
   if (isLoading) return <div className="p-6"><LoadingState /></div>;
@@ -347,16 +435,25 @@ function GoodsReceiptsTab({ supplierId }: { supplierId: string }) {
 
   const items = data?.items ?? [];
 
+  const columnHeaders = [
+    t('drawer360.goodsReceipts.columns.receiptNo'),
+    t('drawer360.goodsReceipts.columns.date'),
+    t('drawer360.goodsReceipts.columns.poNo'),
+    t('drawer360.goodsReceipts.columns.status'),
+    t('drawer360.goodsReceipts.columns.invoiceTotal'),
+    t('drawer360.goodsReceipts.columns.outstanding'),
+  ];
+
   return (
     <div className="p-0">
       {items.length === 0 ? (
-        <p className="text-muted-foreground text-sm text-center py-16">No goods receipts for this supplier.</p>
+        <p className="text-muted-foreground text-sm text-center py-16">{t('drawer360.goodsReceipts.empty')}</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[600px]">
             <thead>
               <tr className="border-b bg-muted/40">
-                {['Receipt #', 'Date', 'PO #', 'Status', 'Invoice Total', 'Outstanding'].map((h, i) => (
+                {columnHeaders.map((h, i) => (
                   <th key={h} className={`px-4 py-2.5 text-xs font-medium text-muted-foreground ${i >= 4 ? 'text-end' : 'text-start'}`}>{h}</th>
                 ))}
               </tr>
@@ -368,9 +465,9 @@ function GoodsReceiptsTab({ supplierId }: { supplierId: string }) {
                   <td className="px-4 py-2.5 text-xs text-muted-foreground">{gr.receipt_date}</td>
                   <td className="px-4 py-2.5 text-xs text-muted-foreground font-mono">{gr.purchase_order?.po_number ?? '—'}</td>
                   <td className="px-4 py-2.5"><Badge variant="outline" className="text-xs">{gr.payment_status_label}</Badge></td>
-                  <td className="px-4 py-2.5 text-end tabular-nums">${fmt(gr.invoice_total_amount)}</td>
+                  <td className="px-4 py-2.5 text-end tabular-nums">{money(gr.invoice_total_amount)}</td>
                   <td className="px-4 py-2.5 text-end tabular-nums font-medium text-destructive">
-                    {gr.outstanding_amount > 0 ? `$${fmt(gr.outstanding_amount)}` : '—'}
+                    {gr.outstanding_amount > 0 ? money(gr.outstanding_amount) : '—'}
                   </td>
                 </tr>
               ))}
@@ -385,6 +482,8 @@ function GoodsReceiptsTab({ supplierId }: { supplierId: string }) {
 // ── Financial Tab ─────────────────────────────────────────────────────────────
 
 function FinancialTab({ supplierId }: { supplierId: string }) {
+  const { t } = useTranslation('suppliers');
+  const { money } = useFormatter();
   const { data, isLoading, isError } = useSupplierAnalytics(supplierId);
 
   if (isLoading) return <div className="p-6"><LoadingState /></div>;
@@ -420,33 +519,33 @@ function FinancialTab({ supplierId }: { supplierId: string }) {
     <div className="flex flex-col gap-6 p-6">
       <div className="flex items-center justify-end">
         <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs" onClick={handleExport}>
-          <Download className="size-3.5" />Export
+          <Download className="size-3.5" />{t('drawer360.financial.export')}
         </Button>
       </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <KpiMini label="Total Purchases" value={String(data.total_purchases)} sub="Posted GRs" />
-        <KpiMini label="Total Invoiced" value={`$${fmt(data.total_invoiced)}`} />
-        <KpiMini label="Total Paid" value={`$${fmt(data.total_paid)}`} />
+        <KpiMini label={t('drawer360.financial.kpis.totalPurchases')} value={String(data.total_purchases)} sub={t('drawer360.financial.kpis.totalPurchasesSub')} />
+        <KpiMini label={t('drawer360.financial.kpis.totalInvoiced')} value={money(data.total_invoiced)} />
+        <KpiMini label={t('drawer360.financial.kpis.totalPaid')} value={money(data.total_paid)} />
         <KpiMini
-          label="Outstanding Balance"
-          value={`$${fmt(data.outstanding_balance)}`}
+          label={t('drawer360.financial.kpis.outstandingBalance')}
+          value={money(data.outstanding_balance)}
           emphasis={data.outstanding_balance > 0 ? 'negative' : undefined}
-          sub={data.outstanding_balance > 0 ? 'Payable' : undefined}
+          sub={data.outstanding_balance > 0 ? t('drawer360.financial.kpis.outstandingBalanceSub') : undefined}
         />
         <KpiMini
-          label="Payment Completion"
+          label={t('drawer360.financial.kpis.paymentCompletion')}
           value={paymentPct !== null ? `${paymentPct}%` : '—'}
           emphasis={paymentPct !== null && parseFloat(paymentPct) >= 90 ? 'positive' : 'warning'}
         />
         <KpiMini
-          label="Avg PO Value"
-          value={avgPoValue !== null ? `$${fmt(avgPoValue)}` : '—'}
+          label={t('drawer360.financial.kpis.avgPoValue')}
+          value={avgPoValue !== null ? money(avgPoValue) : '—'}
         />
       </div>
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Last Purchase</CardTitle>
+          <CardTitle className="text-sm">{t('drawer360.financial.lastPurchase')}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-2xl font-semibold tabular-nums">
@@ -461,6 +560,8 @@ function FinancialTab({ supplierId }: { supplierId: string }) {
 // ── Inventory Tab ─────────────────────────────────────────────────────────────
 
 function InventoryTab({ supplierId }: { supplierId: string }) {
+  const { t } = useTranslation('suppliers');
+  const { money } = useFormatter();
   const { data: analytics, isLoading: aLoading } = useSupplierAnalytics(supplierId);
   const { data: products, isLoading: pLoading } = useSupplierInventoryBreakdown(supplierId);
 
@@ -474,34 +575,34 @@ function InventoryTab({ supplierId }: { supplierId: string }) {
   return (
     <div className="flex flex-col gap-6 p-6">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <KpiMini label="Total Products" value={String(items.length)} />
-        <KpiMini label="Inventory Value" value={analytics ? `$${fmt(analytics.current_inventory_cost_value)}` : '—'} />
-        <KpiMini label="Total Quantity" value={analytics ? fmt(analytics.current_inventory_quantity, 0) : '—'} />
-        <KpiMini label="Low Stock" value={String(lowStock)} sub="< 10 units" emphasis={lowStock > 0 ? 'warning' : undefined} />
-        <KpiMini label="Out of Stock" value={String(outOfStock)} emphasis={outOfStock > 0 ? 'negative' : undefined} />
-        <KpiMini label="Overstock" value={String(overstock)} sub="> 1000 units" />
+        <KpiMini label={t('drawer360.inventory.kpis.totalProducts')} value={String(items.length)} />
+        <KpiMini label={t('drawer360.inventory.kpis.inventoryValue')} value={analytics ? money(analytics.current_inventory_cost_value) : '—'} />
+        <KpiMini label={t('drawer360.inventory.kpis.totalQuantity')} value={analytics ? fmt(analytics.current_inventory_quantity, 0) : '—'} />
+        <KpiMini label={t('drawer360.inventory.kpis.lowStock')} value={String(lowStock)} sub={t('drawer360.inventory.kpis.lowStockSub')} emphasis={lowStock > 0 ? 'warning' : undefined} />
+        <KpiMini label={t('drawer360.inventory.kpis.outOfStock')} value={String(outOfStock)} emphasis={outOfStock > 0 ? 'negative' : undefined} />
+        <KpiMini label={t('drawer360.inventory.kpis.overstock')} value={String(overstock)} sub={t('drawer360.inventory.kpis.overstockSub')} />
       </div>
 
       {analytics && (
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Value Breakdown</CardTitle>
+            <CardTitle className="text-sm">{t('drawer360.inventory.valueBreakdown')}</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-3 gap-4">
             <div>
-              <p className="text-xs text-muted-foreground">Cost Value</p>
-              <p className="text-lg font-semibold">${fmt(analytics.current_inventory_cost_value)}</p>
+              <p className="text-xs text-muted-foreground">{t('drawer360.inventory.costValue')}</p>
+              <p className="text-lg font-semibold">{money(analytics.current_inventory_cost_value)}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Sale Value</p>
-              <p className="text-lg font-semibold">${fmt(analytics.current_inventory_sale_value)}</p>
+              <p className="text-xs text-muted-foreground">{t('drawer360.inventory.saleValue')}</p>
+              <p className="text-lg font-semibold">{money(analytics.current_inventory_sale_value)}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Potential Profit</p>
+              <p className="text-xs text-muted-foreground">{t('drawer360.inventory.potentialProfit')}</p>
               <p className="text-lg font-semibold text-emerald-600">
-                ${fmt(analytics.potential_gross_profit)}
+                {money(analytics.potential_gross_profit)}
               </p>
-              <p className="text-[10px] text-muted-foreground">{analytics.inventory_remaining_margin_percent.toFixed(1)}% margin</p>
+              <p className="text-[10px] text-muted-foreground">{analytics.inventory_remaining_margin_percent.toFixed(1)}% {t('drawer360.inventory.margin')}</p>
             </div>
           </CardContent>
         </Card>
@@ -513,6 +614,9 @@ function InventoryTab({ supplierId }: { supplierId: string }) {
 // ── Price History Tab ─────────────────────────────────────────────────────────
 
 function PriceHistoryTab({ supplierId }: { supplierId: string }) {
+  const { t } = useTranslation('suppliers');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
+  const { money } = useFormatter();
   const { data, isLoading, isError } = useSupplierPriceHistory(supplierId);
 
   if (isLoading) return <div className="p-6"><LoadingState /></div>;
@@ -528,6 +632,18 @@ function PriceHistoryTab({ supplierId }: { supplierId: string }) {
         r.quantity, r.unit_cost, r.landed_unit_cost ?? '', r.previous_price ?? '', r.price_diff_pct ?? '']),
     );
   }
+
+  const columnHeaders = [
+    t('drawer360.priceHistory.columns.date'),
+    t('drawer360.priceHistory.columns.poNo'),
+    t('drawer360.priceHistory.columns.product'),
+    t('drawer360.priceHistory.columns.warehouse'),
+    t('drawer360.priceHistory.columns.qty'),
+    t('drawer360.priceHistory.columns.unitCost'),
+    t('drawer360.priceHistory.columns.landed'),
+    t('drawer360.priceHistory.columns.vsPrevious'),
+    t('drawer360.priceHistory.columns.pctChange'),
+  ];
 
   function PriceChange({ entry }: { entry: SupplierPriceHistoryEntry }) {
     if (entry.price_diff_pct === null) return <span className="text-muted-foreground text-xs">—</span>;
@@ -549,20 +665,20 @@ function PriceHistoryTab({ supplierId }: { supplierId: string }) {
   return (
     <div className="p-0">
       {items.length === 0 ? (
-        <p className="text-muted-foreground text-sm text-center py-16">No purchase history yet.</p>
+        <p className="text-muted-foreground text-sm text-center py-16">{t('drawer360.priceHistory.empty')}</p>
       ) : (
         <>
           <div className="flex items-center justify-between px-4 py-2 border-b">
-            <p className="text-xs text-muted-foreground">{items.length} records</p>
+            <p className="text-xs text-muted-foreground">{tAny('drawer360.priceHistory.records', { count: items.length })}</p>
             <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs" onClick={handleExport}>
-              <Download className="size-3.5" />Export
+              <Download className="size-3.5" />{t('drawer360.priceHistory.export')}
             </Button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[800px]">
               <thead>
                 <tr className="border-b bg-muted/40">
-                  {['Date', 'PO #', 'Product', 'Warehouse', 'Qty', 'Unit Cost', 'Landed', 'vs Previous', '% Change'].map((h, i) => (
+                  {columnHeaders.map((h, i) => (
                     <th key={h} className={`px-3 py-2.5 text-xs font-medium text-muted-foreground ${i >= 4 ? 'text-end' : 'text-start'}`}>{h}</th>
                   ))}
                 </tr>
@@ -578,12 +694,12 @@ function PriceHistoryTab({ supplierId }: { supplierId: string }) {
                     </td>
                     <td className="px-3 py-2.5 text-xs text-muted-foreground">{r.warehouse_name}</td>
                     <td className="px-3 py-2.5 text-end tabular-nums text-xs">{fmt(r.quantity, 2)}</td>
-                    <td className="px-3 py-2.5 text-end tabular-nums text-sm font-medium">${fmt(r.unit_cost, 4)}</td>
+                    <td className="px-3 py-2.5 text-end tabular-nums text-sm font-medium">{money(r.unit_cost, undefined, 4)}</td>
                     <td className="px-3 py-2.5 text-end tabular-nums text-xs text-muted-foreground">
-                      {r.landed_unit_cost != null ? `$${fmt(r.landed_unit_cost, 4)}` : '—'}
+                      {r.landed_unit_cost != null ? money(r.landed_unit_cost, undefined, 4) : '—'}
                     </td>
                     <td className="px-3 py-2.5 text-end tabular-nums text-xs text-muted-foreground">
-                      {r.previous_price != null ? `$${fmt(r.previous_price, 4)}` : '—'}
+                      {r.previous_price != null ? money(r.previous_price, undefined, 4) : '—'}
                     </td>
                     <td className="px-3 py-2.5 text-end"><PriceChange entry={r} /></td>
                   </tr>
@@ -622,6 +738,8 @@ function ScoreBar({ score, weight }: { score: number; weight: number }) {
 }
 
 function PerformanceTab({ supplierId }: { supplierId: string }) {
+  const { t } = useTranslation('suppliers');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
   const { data: health, isLoading: hLoading, isError: hError } = useSupplierHealth(supplierId);
   const { data: analytics, isLoading: aLoading } = useSupplierAnalytics(supplierId);
 
@@ -648,28 +766,28 @@ function PerformanceTab({ supplierId }: { supplierId: string }) {
               </div>
               <div>
                 <ProcurementHealthBadge score={health.tier} />
-                <p className="text-xs text-muted-foreground mt-1">Overall Procurement Health</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('drawer360.performance.overallHealth')}</p>
               </div>
             </div>
             <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs" onClick={handleExport}>
-              <Download className="size-3.5" />Export
+              <Download className="size-3.5" />{t('drawer360.performance.export')}
             </Button>
           </div>
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Score Components</CardTitle>
+              <CardTitle className="text-sm">{t('drawer360.performance.scoreComponents')}</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-3">
               {Object.entries(health.components).map(([key, score]) => (
                 <div key={key}>
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-muted-foreground">{COMPONENT_LABELS[key] ?? key}</span>
+                    <span className="text-xs text-muted-foreground">{tAny(`drawer360.performance.components.${key}`, { defaultValue: COMPONENT_LABELS[key] ?? key })}</span>
                   </div>
                   <ScoreBar score={score} weight={health.weights[key] ?? 0} />
                 </div>
               ))}
-              <p className="text-[10px] text-muted-foreground mt-1">Score · Weight (per component)</p>
+              <p className="text-[10px] text-muted-foreground mt-1">{t('drawer360.performance.scoreWeight')}</p>
             </CardContent>
           </Card>
         </>
@@ -678,23 +796,23 @@ function PerformanceTab({ supplierId }: { supplierId: string }) {
       {analytics && (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
           <KpiMini
-            label="On-Time Delivery"
+            label={t('drawer360.performance.kpis.onTimeDelivery')}
             value={analytics.on_time_delivery_rate !== null ? `${analytics.on_time_delivery_rate.toFixed(0)}%` : '—'}
             emphasis={analytics.on_time_delivery_rate !== null ? (analytics.on_time_delivery_rate >= 80 ? 'positive' : 'warning') : undefined}
           />
           <KpiMini
-            label="Fill Rate"
+            label={t('drawer360.performance.kpis.fillRate')}
             value={analytics.fill_rate !== null ? `${analytics.fill_rate.toFixed(0)}%` : '—'}
             emphasis={analytics.fill_rate !== null ? (analytics.fill_rate >= 90 ? 'positive' : 'warning') : undefined}
           />
           <KpiMini
-            label="Avg Lead Time"
-            value={analytics.avg_lead_time_days !== null ? `${analytics.avg_lead_time_days.toFixed(0)} days` : '—'}
+            label={t('drawer360.performance.kpis.avgLeadTime')}
+            value={analytics.avg_lead_time_days !== null ? `${analytics.avg_lead_time_days.toFixed(0)} ${t('drawer360.performance.kpis.avgLeadTimeSuffix')}` : '—'}
             emphasis={analytics.avg_lead_time_days !== null ? (analytics.avg_lead_time_days <= 7 ? 'positive' : analytics.avg_lead_time_days > 14 ? 'warning' : undefined) : undefined}
           />
-          <KpiMini label="Active POs" value={String(analytics.active_pos_count)} />
-          <KpiMini label="Pending GRs" value={String(analytics.pending_grs_count)} />
-          <KpiMini label="Products Supplied" value={String(analytics.total_products_supplied)} />
+          <KpiMini label={t('drawer360.performance.kpis.activePOs')} value={String(analytics.active_pos_count)} />
+          <KpiMini label={t('drawer360.performance.kpis.pendingGRs')} value={String(analytics.pending_grs_count)} />
+          <KpiMini label={t('drawer360.performance.kpis.productsSupplied')} value={String(analytics.total_products_supplied)} />
         </div>
       )}
     </div>
@@ -703,14 +821,6 @@ function PerformanceTab({ supplierId }: { supplierId: string }) {
 
 // ── Documents Tab ─────────────────────────────────────────────────────────────
 
-const DOC_TYPE_LABELS: Record<string, string> = {
-  commercial_registration: 'Commercial Registration',
-  tax_card:  'Tax Card',
-  contract:  'Contract',
-  certificate: 'Certificate',
-  attachment: 'Attachment',
-};
-
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -718,11 +828,20 @@ function formatBytes(bytes: number) {
 }
 
 function DocumentsTab({ supplierId }: { supplierId: string }) {
+  const { t } = useTranslation('suppliers');
   const { data: docs, isLoading, isError } = useSupplierDocuments(supplierId);
   const upload = useUploadSupplierDocument(supplierId);
   const remove = useDeleteSupplierDocument(supplierId);
   const fileRef = useRef<HTMLInputElement>(null);
   const [docType, setDocType] = useState<string>('attachment');
+
+  const docTypeLabels: Record<string, string> = {
+    commercial_registration: t('drawer360.documents.docTypes.commercial_registration'),
+    tax_card:                t('drawer360.documents.docTypes.tax_card'),
+    contract:                t('drawer360.documents.docTypes.contract'),
+    certificate:             t('drawer360.documents.docTypes.certificate'),
+    attachment:              t('drawer360.documents.docTypes.attachment'),
+  };
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -732,8 +851,8 @@ function DocumentsTab({ supplierId }: { supplierId: string }) {
     fd.append('document_type', docType);
     fd.append('name', file.name);
     upload.mutate(fd, {
-      onSuccess: () => toast.success('Document uploaded.'),
-      onError: () => toast.error('Upload failed.'),
+      onSuccess: () => toast.success(t('drawer360.documents.toast.uploaded')),
+      onError: () => toast.error(t('drawer360.documents.toast.uploadFailed')),
     });
     e.target.value = '';
   }
@@ -749,14 +868,14 @@ function DocumentsTab({ supplierId }: { supplierId: string }) {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      toast.error('Download failed.');
+      toast.error(t('drawer360.documents.toast.downloadFailed'));
     }
   }
 
   function handleDelete(doc: SupplierDocument) {
     remove.mutate(doc.id, {
-      onSuccess: () => toast.success('Document deleted.'),
-      onError: () => toast.error('Delete failed.'),
+      onSuccess: () => toast.success(t('drawer360.documents.toast.deleted')),
+      onError: () => toast.error(t('drawer360.documents.toast.deleteFailed')),
     });
   }
 
@@ -772,13 +891,13 @@ function DocumentsTab({ supplierId }: { supplierId: string }) {
         <CardContent className="p-4">
           <div className="flex items-end gap-3">
             <div className="flex-1">
-              <Label className="text-xs">Document Type</Label>
+              <Label className="text-xs">{t('drawer360.documents.uploadArea.documentType')}</Label>
               <select
                 value={docType}
                 onChange={(e) => setDocType(e.target.value)}
                 className="mt-1 h-8 w-full rounded-md border bg-background px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
               >
-                {Object.entries(DOC_TYPE_LABELS).map(([v, l]) => (
+                {Object.entries(docTypeLabels).map(([v, l]) => (
                   <option key={v} value={v}>{l}</option>
                 ))}
               </select>
@@ -790,7 +909,7 @@ function DocumentsTab({ supplierId }: { supplierId: string }) {
               onClick={() => fileRef.current?.click()}
             >
               <Upload className="size-3.5" />
-              {upload.isPending ? 'Uploading…' : 'Upload File'}
+              {upload.isPending ? t('drawer360.documents.uploadArea.uploading') : t('drawer360.documents.uploadArea.uploadFile')}
             </Button>
             <input ref={fileRef} type="file" className="hidden" onChange={handleFileChange} />
           </div>
@@ -799,7 +918,7 @@ function DocumentsTab({ supplierId }: { supplierId: string }) {
 
       {/* Document List */}
       {items.length === 0 ? (
-        <p className="text-center text-sm text-muted-foreground py-8">No documents uploaded yet.</p>
+        <p className="text-center text-sm text-muted-foreground py-8">{t('drawer360.documents.empty')}</p>
       ) : (
         <div className="flex flex-col divide-y rounded-lg border">
           {items.map((doc) => (
@@ -808,7 +927,7 @@ function DocumentsTab({ supplierId }: { supplierId: string }) {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{doc.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  <span className="rounded bg-muted px-1 py-0.5 mr-1.5">{DOC_TYPE_LABELS[doc.document_type] ?? doc.document_type}</span>
+                  <span className="rounded bg-muted px-1 py-0.5 mr-1.5">{docTypeLabels[doc.document_type] ?? doc.document_type}</span>
                   {formatBytes(doc.file_size)} · {doc.created_at.slice(0, 10)}
                 </p>
               </div>
@@ -846,6 +965,7 @@ const TIMELINE_EVENT_CONFIG: Record<string, { icon: typeof Activity; label: stri
 };
 
 function TimelineTab({ supplierId }: { supplierId: string }) {
+  const { t } = useTranslation('suppliers');
   const { data, isLoading, isError } = useSupplierTimeline(supplierId);
 
   if (isLoading) return <div className="p-6"><LoadingState /></div>;
@@ -856,7 +976,7 @@ function TimelineTab({ supplierId }: { supplierId: string }) {
   return (
     <div className="p-6">
       {events.length === 0 ? (
-        <p className="text-center text-sm text-muted-foreground py-8">No timeline events yet.</p>
+        <p className="text-center text-sm text-muted-foreground py-8">{t('drawer360.timeline.empty')}</p>
       ) : (
         <div className="relative">
           <div className="absolute left-5 top-0 bottom-0 w-px bg-border" />
@@ -902,65 +1022,50 @@ function TimelineTab({ supplierId }: { supplierId: string }) {
   );
 }
 
-// ── AI Ready Tab ──────────────────────────────────────────────────────────────
-
-function AiReadyTab() {
-  const alerts = [
-    { label: 'Price Increase Alert',      desc: 'Detect significant unit price changes across POs.' },
-    { label: 'Alternative Supplier',      desc: 'Suggest suppliers with similar products and better lead times.' },
-    { label: 'Low Coverage Alert',        desc: 'Warn when estimated stock coverage drops below threshold.' },
-    { label: 'Delivery Delay Alert',      desc: 'Flag POs past expected delivery with no goods receipt.' },
-    { label: 'Purchase Recommendation',   desc: 'Suggest reorder quantities based on consumption rate.' },
-  ];
-
-  return (
-    <div className="flex flex-col gap-6 p-6">
-      <div className="flex items-center gap-2">
-        <Sparkles className="size-4 text-primary" />
-        <h3 className="text-sm font-semibold">Procurement AI — Coming Soon</h3>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        AI-powered procurement insights will appear here. Each alert type is listed below — implementation will be integrated with the Procurement AI engine in a future release.
-      </p>
-      <div className="flex flex-col gap-3">
-        {alerts.map((a) => (
-          <div key={a.label} className="flex items-start gap-3 rounded-lg border bg-muted/20 p-4">
-            <Sparkles className="size-3.5 mt-0.5 shrink-0 text-muted-foreground" />
-            <div>
-              <p className="text-sm font-medium">{a.label}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{a.desc}</p>
-            </div>
-            <Badge variant="secondary" className="ms-auto shrink-0 text-[10px]">Soon</Badge>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ── Main Drawer ───────────────────────────────────────────────────────────────
 
 type TabId =
   | 'overview' | 'products' | 'purchase-orders' | 'goods-receipts'
   | 'financial' | 'inventory' | 'price-history' | 'performance'
-  | 'documents' | 'timeline' | 'ai';
+  | 'documents' | 'timeline';
 
-const TABS: { id: TabId; label: string; icon: typeof Building2 }[] = [
-  { id: 'overview',        label: 'Overview',        icon: Building2 },
-  { id: 'products',        label: 'Products',        icon: Package },
-  { id: 'purchase-orders', label: 'Purchase Orders', icon: ShoppingCart },
-  { id: 'goods-receipts',  label: 'Goods Receipts',  icon: Truck },
-  { id: 'financial',       label: 'Financial',       icon: CreditCard },
-  { id: 'inventory',       label: 'Inventory',       icon: Archive },
-  { id: 'price-history',   label: 'Price History',   icon: History },
-  { id: 'performance',     label: 'Performance',     icon: BarChart3 },
-  { id: 'documents',       label: 'Documents',       icon: FileText },
-  { id: 'timeline',        label: 'Timeline',        icon: Clock },
-  { id: 'ai',              label: 'AI Ready',        icon: Sparkles },
-];
+export function Supplier360Drawer({ supplier, open, onOpenChange, onEdit, initialTab = 'overview' }: Props) {
+  const { t } = useTranslation('suppliers');
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
 
-export function Supplier360Drawer({ supplier, open, onOpenChange, onEdit }: Props) {
-  const [activeTab, setActiveTab] = useState<TabId>('overview');
+  // Re-target the tab whenever the drawer is opened (e.g. Activity action → timeline).
+  //
+  // Adjusted during render rather than in an effect: an effect would paint the
+  // previous tab first and then swap it, which shows as a visible flash of the
+  // wrong tab each time the drawer opens.
+  const [openedWith, setOpenedWith] = useState<{ open: boolean; tab: TabId; supplierId?: string }>({
+    open,
+    tab: initialTab,
+    supplierId: supplier?.id,
+  });
+
+  if (
+    open !== openedWith.open ||
+    initialTab !== openedWith.tab ||
+    supplier?.id !== openedWith.supplierId
+  ) {
+    setOpenedWith({ open, tab: initialTab, supplierId: supplier?.id });
+
+    if (open) setActiveTab(initialTab);
+  }
+
+  const TABS: { id: TabId; label: string; icon: typeof Building2 }[] = useMemo(() => [
+    { id: 'overview',        label: t('drawer360.tabs.overview'),        icon: Building2 },
+    { id: 'products',        label: t('drawer360.tabs.products'),        icon: Package },
+    { id: 'purchase-orders', label: t('drawer360.tabs.purchaseOrders'),  icon: ShoppingCart },
+    { id: 'goods-receipts',  label: t('drawer360.tabs.goodsReceipts'),   icon: Truck },
+    { id: 'financial',       label: t('drawer360.tabs.financial'),       icon: CreditCard },
+    { id: 'inventory',       label: t('drawer360.tabs.inventory'),       icon: Archive },
+    { id: 'price-history',   label: t('drawer360.tabs.priceHistory'),    icon: History },
+    { id: 'performance',     label: t('drawer360.tabs.performance'),     icon: BarChart3 },
+    { id: 'documents',       label: t('drawer360.tabs.documents'),       icon: FileText },
+    { id: 'timeline',        label: t('drawer360.tabs.timeline'),        icon: Clock },
+  ], [t]);
 
   if (!supplier) return null;
 
@@ -974,7 +1079,7 @@ export function Supplier360Drawer({ supplier, open, onOpenChange, onEdit }: Prop
       footer={
         <Button variant="outline" size="sm" onClick={() => onEdit(supplier)} className="gap-1.5">
           <Pencil className="size-3.5" />
-          Edit Supplier
+          {t('drawer360.editSupplier')}
         </Button>
       }
     >
@@ -1005,7 +1110,6 @@ export function Supplier360Drawer({ supplier, open, onOpenChange, onEdit }: Prop
           <TabsContent value="performance"     className="m-0"><PerformanceTab supplierId={supplier.id} /></TabsContent>
           <TabsContent value="documents"       className="m-0"><DocumentsTab supplierId={supplier.id} /></TabsContent>
           <TabsContent value="timeline"        className="m-0"><TimelineTab supplierId={supplier.id} /></TabsContent>
-          <TabsContent value="ai"              className="m-0"><AiReadyTab /></TabsContent>
         </div>
       </Tabs>
     </PageDrawer>

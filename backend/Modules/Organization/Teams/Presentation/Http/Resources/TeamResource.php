@@ -15,20 +15,20 @@ final class TeamResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id'          => $this->id,
-            'company_id'  => $this->company_id,
-            'company'     => $this->whenLoaded('company', fn (): array => [
-                'id'   => $this->company->id,
+            'id' => $this->id,
+            'company_id' => $this->company_id,
+            'company' => $this->whenLoaded('company', fn (): array => [
+                'id' => $this->company->id,
                 'code' => $this->company->code,
                 'name' => $this->company->name,
             ]),
-            'code'        => $this->code,
-            'name'        => $this->name,
+            'code' => $this->code,
+            'name' => $this->name,
             'leader_name' => $this->leader_name,
             'description' => $this->description,
-            'is_active'   => (bool) $this->is_active,
-            'created_at'  => $this->created_at?->toIso8601String(),
-            'updated_at'  => $this->updated_at?->toIso8601String(),
+            'is_active' => (bool) $this->is_active,
+            'created_at' => $this->created_at?->toIso8601String(),
+            'updated_at' => $this->updated_at?->toIso8601String(),
         ];
     }
 }

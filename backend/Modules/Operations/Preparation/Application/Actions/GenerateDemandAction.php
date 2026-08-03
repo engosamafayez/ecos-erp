@@ -17,8 +17,8 @@ use Modules\Operations\Preparation\Domain\Models\PreparationWaveItem;
 final class GenerateDemandAction
 {
     public function __construct(
-        private readonly AuditService       $audit,
-        private readonly TimelineService    $timeline,
+        private readonly AuditService $audit,
+        private readonly TimelineService $timeline,
         private readonly FeatureFlagService $flags,
     ) {}
 
@@ -38,7 +38,7 @@ final class GenerateDemandAction
                 ->join(
                     'preparation_wave_orders as pwo',
                     fn ($j) => $j->on('pwo.order_id', '=', 'ol.order_id')
-                        ->where('pwo.preparation_wave_id', '=', $wave->id)
+                        ->where('pwo.preparation_wave_id', '=', $wave->id),
                 )
                 ->selectRaw('
                     ol.product_id,
@@ -54,58 +54,58 @@ final class GenerateDemandAction
                 ->join(
                     'preparation_wave_orders as pwo',
                     fn ($j) => $j->on('pwo.order_id', '=', 'ol.order_id')
-                        ->where('pwo.preparation_wave_id', '=', $wave->id)
+                        ->where('pwo.preparation_wave_id', '=', $wave->id),
                 )
                 ->count();
 
             $totalRequired = 0.0;
-            $now           = now()->toIso8601String();
+            $now = now()->toIso8601String();
 
             foreach ($rows as $row) {
-                $qty            = (float) $row->total_qty;
+                $qty = (float) $row->total_qty;
                 $totalRequired += $qty;
 
                 PreparationWaveItem::create([
-                    'company_id'         => $wave->company_id,
-                    'preparation_wave_id'=> $wave->id,
-                    'product_id'         => $row->product_id,
-                    'sku_snapshot'       => $row->sku,
-                    'name_snapshot'      => $row->name,
-                    'quantity_required'  => $qty,
-                    'quantity_prepared'  => 0,
-                    'quantity_short'     => 0,
-                    'status'             => WaveItemStatus::Pending->value,
-                    'created_by'         => $actorId,
-                    'updated_by'         => $actorId,
+                    'company_id' => $wave->company_id,
+                    'preparation_wave_id' => $wave->id,
+                    'product_id' => $row->product_id,
+                    'sku_snapshot' => $row->sku,
+                    'name_snapshot' => $row->name,
+                    'quantity_required' => $qty,
+                    'quantity_prepared' => 0,
+                    'quantity_short' => 0,
+                    'status' => WaveItemStatus::Pending->value,
+                    'created_by' => $actorId,
+                    'updated_by' => $actorId,
                 ]);
             }
 
             $wave->update([
-                'status'               => WaveStatus::Planning->value,
-                'products_count'       => $rows->count(),
-                'lines_count'          => $linesCount,
+                'status' => WaveStatus::Planning->value,
+                'products_count' => $rows->count(),
+                'lines_count' => $linesCount,
                 'total_units_required' => $totalRequired,
-                'updated_by'           => $actorId,
+                'updated_by' => $actorId,
             ]);
 
             $this->timeline->record(
-                companyId:   $wave->company_id,
+                companyId: $wave->company_id,
                 subjectType: 'PreparationWave',
-                subjectId:   $wave->id,
-                eventType:   'wave.demand_generated',
-                title:       "Demand generated for wave {$wave->wave_number}",
-                description: $rows->count() . ' product(s), ' . $totalRequired . ' total units',
-                actorId:     (int) $actorId,
-                sourceModule:'Operations.Preparation',
+                subjectId: $wave->id,
+                eventType: 'wave.demand_generated',
+                title: "Demand generated for wave {$wave->wave_number}",
+                description: $rows->count().' product(s), '.$totalRequired.' total units',
+                actorId: (int) $actorId,
+                sourceModule: 'Operations.Preparation',
             );
 
             $this->audit->record(
-                action:      'preparation.wave.demand_generated',
-                entityType:  'PreparationWave',
-                entityId:    $wave->id,
-                companyId:   $wave->company_id,
-                userId:      (int) $actorId,
-                newValues:   ['status' => WaveStatus::Planning->value, 'products_count' => $rows->count()],
+                action: 'preparation.wave.demand_generated',
+                entityType: 'PreparationWave',
+                entityId: $wave->id,
+                companyId: $wave->company_id,
+                userId: (int) $actorId,
+                newValues: ['status' => WaveStatus::Planning->value, 'products_count' => $rows->count()],
             );
 
             return $wave->fresh(['waveItems']) ?? $wave;

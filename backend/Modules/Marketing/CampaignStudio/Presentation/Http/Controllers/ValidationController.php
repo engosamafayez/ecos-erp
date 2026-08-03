@@ -21,12 +21,12 @@ class ValidationController extends Controller
 
         return response()->json([
             'data' => [
-                'can_publish'     => $result['can_publish'],
-                'total_issues'    => $result['total_issues'],
+                'can_publish' => $result['can_publish'],
+                'total_issues' => $result['total_issues'],
                 'blocking_errors' => $result['blocking_errors'],
-                'warnings'        => $result['warnings'],
-                'results'         => ValidationResultResource::collection(
-                    $draft->validationResults()->where('is_resolved', false)->get()
+                'warnings' => $result['warnings'],
+                'results' => ValidationResultResource::collection(
+                    $draft->validationResults()->where('is_resolved', false)->get(),
                 )->resolve(),
             ],
         ]);
@@ -38,10 +38,10 @@ class ValidationController extends Controller
         $results = $draft->validationResults()->where('is_resolved', false)->get();
 
         return response()->json([
-            'data'            => ValidationResultResource::collection($results)->resolve(),
-            'can_publish'     => !$results->where('severity.value', 'blocking')->count(),
-            'blocking_count'  => $results->where('severity', 'blocking')->count(),
-            'warning_count'   => $results->where('severity', 'warning')->count(),
+            'data' => ValidationResultResource::collection($results)->resolve(),
+            'can_publish' => ! $results->where('severity.value', 'blocking')->count(),
+            'blocking_count' => $results->where('severity', 'blocking')->count(),
+            'warning_count' => $results->where('severity', 'warning')->count(),
         ]);
     }
 }

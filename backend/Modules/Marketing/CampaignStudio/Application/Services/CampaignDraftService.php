@@ -57,8 +57,8 @@ class CampaignDraftService
         $draft = CampaignDraft::create(array_merge($data, [
             'internal_status' => CampaignInternalStatus::DRAFT,
             'current_version_number' => 1,
-            'created_by'     => $userId,
-            'updated_by'     => $userId,
+            'created_by' => $userId,
+            'updated_by' => $userId,
         ]));
 
         // Create empty audience and placement records
@@ -70,9 +70,9 @@ class CampaignDraftService
 
         CampaignDraftPlacement::create([
             'campaign_draft_id' => $draft->id,
-            'placement_mode'    => 'auto',
-            'facebook_feed'     => true,
-            'instagram_feed'    => true,
+            'placement_mode' => 'auto',
+            'facebook_feed' => true,
+            'instagram_feed' => true,
         ]);
 
         return $draft->fresh(['audience', 'placement']);
@@ -81,6 +81,7 @@ class CampaignDraftService
     public function update(CampaignDraft $draft, array $data, string $userId): CampaignDraft
     {
         $draft->update(array_merge($data, ['updated_by' => $userId]));
+
         return $draft->fresh();
     }
 
@@ -88,6 +89,7 @@ class CampaignDraftService
     {
         $audience = $draft->audience ?? CampaignDraftAudience::create(['campaign_draft_id' => $draft->id]);
         $audience->update($data);
+
         return $audience->fresh();
     }
 
@@ -96,6 +98,7 @@ class CampaignDraftService
         if ($creativeId) {
             $creative = CampaignDraftCreative::where('campaign_draft_id', $draft->id)->findOrFail($creativeId);
             $creative->update($data);
+
             return $creative->fresh();
         }
 
@@ -111,6 +114,7 @@ class CampaignDraftService
     {
         $placement = $draft->placement ?? CampaignDraftPlacement::create(['campaign_draft_id' => $draft->id]);
         $placement->update($data);
+
         return $placement->fresh();
     }
 
@@ -122,12 +126,12 @@ class CampaignDraftService
     public function duplicate(CampaignDraft $draft, string $userId): CampaignDraft
     {
         $newDraft = $draft->replicate(['id', 'external_campaign_id', 'external_account_id', 'linked_campaign_id', 'published_at', 'last_published_at', 'submitted_for_approval_at', 'scheduled_publish_at', 'current_version_id']);
-        $newDraft->name             = $draft->name . ' (Copy)';
-        $newDraft->internal_status  = CampaignInternalStatus::DRAFT;
+        $newDraft->name = $draft->name.' (Copy)';
+        $newDraft->internal_status = CampaignInternalStatus::DRAFT;
         $newDraft->current_version_number = 1;
-        $newDraft->current_version_id     = null;
-        $newDraft->created_by       = $userId;
-        $newDraft->updated_by       = $userId;
+        $newDraft->current_version_id = null;
+        $newDraft->created_by = $userId;
+        $newDraft->updated_by = $userId;
         $newDraft->save();
 
         if ($draft->audience) {
@@ -157,16 +161,16 @@ class CampaignDraftService
             ->pluck('total', 'internal_status');
 
         return [
-            'drafts'           => (int) ($counts['draft'] ?? 0),
-            'pending_review'   => (int) ($counts['pending_review'] ?? 0),
-            'approved'         => (int) ($counts['approved'] ?? 0),
-            'scheduled'        => (int) ($counts['scheduled'] ?? 0),
-            'publishing'       => (int) ($counts['publishing'] ?? 0),
-            'published'        => (int) ($counts['published'] ?? 0),
-            'paused'           => (int) ($counts['paused'] ?? 0),
-            'archived'         => (int) ($counts['archived'] ?? 0),
-            'failed'           => (int) ($counts['failed'] ?? 0),
-            'total'            => (int) $counts->sum(),
+            'drafts' => (int) ($counts['draft'] ?? 0),
+            'pending_review' => (int) ($counts['pending_review'] ?? 0),
+            'approved' => (int) ($counts['approved'] ?? 0),
+            'scheduled' => (int) ($counts['scheduled'] ?? 0),
+            'publishing' => (int) ($counts['publishing'] ?? 0),
+            'published' => (int) ($counts['published'] ?? 0),
+            'paused' => (int) ($counts['paused'] ?? 0),
+            'archived' => (int) ($counts['archived'] ?? 0),
+            'failed' => (int) ($counts['failed'] ?? 0),
+            'total' => (int) $counts->sum(),
         ];
     }
 }

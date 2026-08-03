@@ -22,15 +22,15 @@ final class PreparedPoolService
      * @return Collection<int, PreparedProductsPool>
      */
     public function getEntries(
-        string  $companyId,
-        ?string $warehouseId   = null,
+        string $companyId,
+        ?string $warehouseId = null,
         ?string $qualityStatus = null,
-        bool    $availableOnly = false,
+        bool $availableOnly = false,
     ): Collection {
         return PreparedProductsPool::where('company_id', $companyId)
-            ->when($warehouseId,   fn ($q, $v) => $q->where('warehouse_id', $v))
+            ->when($warehouseId, fn ($q, $v) => $q->where('warehouse_id', $v))
             ->when($qualityStatus, fn ($q, $v) => $q->where('quality_status', $v))
-            ->when($availableOnly, fn ($q)     => $q->where('quantity_available', '>', 0))
+            ->when($availableOnly, fn ($q) => $q->where('quantity_available', '>', 0))
             ->orderByDesc('prepared_at')
             ->get();
     }
@@ -59,10 +59,10 @@ final class PreparedPoolService
             ->when($warehouseId, fn ($q, $v) => $q->where('warehouse_id', $v));
 
         return [
-            'products_count'  => (int) $q->count(),
+            'products_count' => (int) $q->count(),
             'units_available' => (float) $q->sum('quantity_available'),
-            'units_reserved'  => (float) $q->sum('quantity_reserved'),
-            'units_loaded'    => (float) $q->sum('quantity_loaded'),
+            'units_reserved' => (float) $q->sum('quantity_reserved'),
+            'units_loaded' => (float) $q->sum('quantity_loaded'),
         ];
     }
 }

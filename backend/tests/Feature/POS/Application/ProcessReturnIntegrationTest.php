@@ -29,23 +29,30 @@ final class ProcessReturnIntegrationTest extends TestCase
 {
     use RefreshDatabase;
 
-    private ProcessReturnService       $service;
-    private SaleRepositoryInterface    $saleRepo;
+    private ProcessReturnService $service;
+
+    private SaleRepositoryInterface $saleRepo;
+
     private SaleReturnRepositoryInterface $returnRepo;
+
     private ReceiptRepositoryInterface $receiptRepo;
 
-    private const SESSION_ID  = 'a2000000-0000-4000-a000-000000000001';
-    private const SHIFT_ID    = 'b2000000-0000-4000-b000-000000000001';
+    private const SESSION_ID = 'a2000000-0000-4000-a000-000000000001';
+
+    private const SHIFT_ID = 'b2000000-0000-4000-b000-000000000001';
+
     private const TERMINAL_ID = 'c2000000-0000-4000-c000-000000000001';
-    private const CASHIER_ID  = 'd2000000-0000-4000-d000-000000000001';
-    private const CURRENCY    = 'EGP';
+
+    private const CASHIER_ID = 'd2000000-0000-4000-d000-000000000001';
+
+    private const CURRENCY = 'EGP';
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->service    = app(ProcessReturnService::class);
-        $this->saleRepo   = app(SaleRepositoryInterface::class);
+        $this->service = app(ProcessReturnService::class);
+        $this->saleRepo = app(SaleRepositoryInterface::class);
         $this->returnRepo = app(SaleReturnRepositoryInterface::class);
         $this->receiptRepo = app(ReceiptRepositoryInterface::class);
     }
@@ -85,7 +92,7 @@ final class ProcessReturnIntegrationTest extends TestCase
 
     public function test_sale_is_marked_fully_refunded_when_full_amount(): void
     {
-        $sale   = $this->makePersistedSale('100.00');
+        $sale = $this->makePersistedSale('100.00');
         $saleId = (string) $sale->id;
 
         $this->service->execute($this->makeCommand($saleId, '100.00'));
@@ -96,7 +103,7 @@ final class ProcessReturnIntegrationTest extends TestCase
 
     public function test_sale_is_marked_partially_refunded_when_partial_amount(): void
     {
-        $sale   = $this->makePersistedSale('100.00');
+        $sale = $this->makePersistedSale('100.00');
         $saleId = (string) $sale->id;
 
         $this->service->execute($this->makeCommand($saleId, '50.00'));
@@ -108,16 +115,16 @@ final class ProcessReturnIntegrationTest extends TestCase
     private function makePersistedSale(string $totalAmount): Sale
     {
         $sale = Sale::record(
-            cartId:           'a2000000-cart-4000-a000-000000000001',
-            paymentId:        'a2000000-pay0-4000-a000-000000000001',
-            sessionId:        self::SESSION_ID,
-            shiftId:          self::SHIFT_ID,
-            terminalId:       self::TERMINAL_ID,
-            cashierId:        self::CASHIER_ID,
-            customerId:       null,
-            currency:         self::CURRENCY,
-            receiptNumber:    'SALE-INTG-001',
-            lines:            [
+            cartId: 'a2000000-cart-4000-a000-000000000001',
+            paymentId: 'a2000000-pay0-4000-a000-000000000001',
+            sessionId: self::SESSION_ID,
+            shiftId: self::SHIFT_ID,
+            terminalId: self::TERMINAL_ID,
+            cashierId: self::CASHIER_ID,
+            customerId: null,
+            currency: self::CURRENCY,
+            receiptNumber: 'SALE-INTG-001',
+            lines: [
                 new SaleLine(
                     'ln-intg-1', 'prod-1', 'Widget', 'WGT-001',
                     Quantity::of('1'), Money::of($totalAmount, self::CURRENCY),
@@ -125,11 +132,11 @@ final class ProcessReturnIntegrationTest extends TestCase
                     Money::of($totalAmount, self::CURRENCY), 0,
                 ),
             ],
-            subtotal:         Money::of($totalAmount, self::CURRENCY),
-            discountTotal:    Money::of('0.00', self::CURRENCY),
-            total:            Money::of($totalAmount, self::CURRENCY),
-            amountPaid:       Money::of($totalAmount, self::CURRENCY),
-            changeGiven:      Money::of('0.00', self::CURRENCY),
+            subtotal: Money::of($totalAmount, self::CURRENCY),
+            discountTotal: Money::of('0.00', self::CURRENCY),
+            total: Money::of($totalAmount, self::CURRENCY),
+            amountPaid: Money::of($totalAmount, self::CURRENCY),
+            changeGiven: Money::of('0.00', self::CURRENCY),
             paymentSummaries: [
                 new PaymentSummaryLine(
                     PaymentMethodType::Cash,
@@ -148,30 +155,30 @@ final class ProcessReturnIntegrationTest extends TestCase
     private function makeCommand(string $saleId, string $refundAmount): ProcessReturnCommand
     {
         return new ProcessReturnCommand(
-            saleId:                $saleId,
+            saleId: $saleId,
             originalReceiptNumber: 'SALE-INTG-001',
-            sessionId:             self::SESSION_ID,
-            shiftId:               self::SHIFT_ID,
-            terminalId:            self::TERMINAL_ID,
-            cashierId:             self::CASHIER_ID,
-            customerId:            null,
-            currency:              self::CURRENCY,
-            lines:                 [
+            sessionId: self::SESSION_ID,
+            shiftId: self::SHIFT_ID,
+            terminalId: self::TERMINAL_ID,
+            cashierId: self::CASHIER_ID,
+            customerId: null,
+            currency: self::CURRENCY,
+            lines: [
                 [
-                    'line_id'        => 'ln-intg-1',
-                    'product_id'     => 'prod-1',
-                    'product_name'   => 'Widget',
-                    'sku'            => 'WGT-001',
-                    'quantity'       => '1',
-                    'unit_price'     => ['amount' => '100.00', 'currency' => self::CURRENCY],
-                    'refund_amount'  => ['amount' => $refundAmount, 'currency' => self::CURRENCY],
-                    'reason'         => 'customer_preference',
+                    'line_id' => 'ln-intg-1',
+                    'product_id' => 'prod-1',
+                    'product_name' => 'Widget',
+                    'sku' => 'WGT-001',
+                    'quantity' => '1',
+                    'unit_price' => ['amount' => '100.00', 'currency' => self::CURRENCY],
+                    'refund_amount' => ['amount' => $refundAmount, 'currency' => self::CURRENCY],
+                    'reason' => 'customer_preference',
                     'should_restock' => true,
-                    'sort_order'     => 0,
+                    'sort_order' => 0,
                 ],
             ],
-            refundTotalAmount:     $refundAmount,
-            refundMethod:          'cash',
+            refundTotalAmount: $refundAmount,
+            refundMethod: 'cash',
         );
     }
 }

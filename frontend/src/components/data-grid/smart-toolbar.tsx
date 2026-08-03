@@ -1,5 +1,6 @@
 import type { ComponentType, ReactNode } from 'react';
 import { ChevronDown, Plus, RefreshCw } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -59,13 +60,14 @@ export function SmartToolbar({
   primaryAction,
   secondaryActions,
   bulkActions,
-  bulkActionsLabel = 'Bulk Actions',
+  bulkActionsLabel,
   selectedCount = 0,
   onRefresh,
   isFetching = false,
-  refreshLabel = 'Refresh',
+  refreshLabel,
   viewControls,
 }: SmartToolbarProps) {
+  const { t } = useTranslation('common');
   const hasSelection = selectedCount > 0;
   const PrimaryIcon: IconComponent = primaryAction?.icon ?? Plus;
 
@@ -100,7 +102,7 @@ export function SmartToolbar({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="sm" className="gap-1.5">
-                {bulkActionsLabel}
+                {bulkActionsLabel ?? t('toolbar.bulkActions')}
                 <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-foreground/20 px-1 text-[10px] font-semibold tabular-nums">
                   {selectedCount}
                 </span>
@@ -140,7 +142,7 @@ export function SmartToolbar({
             className="size-8"
             onClick={onRefresh}
             disabled={isFetching}
-            aria-label={refreshLabel}
+            aria-label={refreshLabel ?? t('toolbar.refresh')}
           >
             <RefreshCw className={cn('size-3.5', isFetching && 'animate-spin')} />
           </Button>

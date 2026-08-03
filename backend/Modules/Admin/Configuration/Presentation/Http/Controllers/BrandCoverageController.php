@@ -44,9 +44,9 @@ final class BrandCoverageController extends Controller
             ->get();
 
         // Brand geographies: keyed by master_governorate_id for linked records
-        $allBrandGeos      = DeliveryGeography::where('brand_id', $brandId)->get();
+        $allBrandGeos = DeliveryGeography::where('brand_id', $brandId)->get();
         $brandGeosByMaster = $allBrandGeos->whereNotNull('master_governorate_id')->keyBy('master_governorate_id');
-        $brandGeosByName   = $allBrandGeos->whereNull('master_governorate_id')
+        $brandGeosByName = $allBrandGeos->whereNull('master_governorate_id')
             ->keyBy(fn ($g) => strtolower((string) $g->name));
 
         // Brand zones keyed by master_zone_id
@@ -63,28 +63,29 @@ final class BrandCoverageController extends Controller
 
             $zones = $gov->zones->map(function (MasterZone $mz) use ($brandZones) {
                 $brandZone = $brandZones->get($mz->id);
+
                 return [
-                    'id'                   => $mz->id,
-                    'name'                 => $mz->name,
-                    'sort_order'           => $mz->sort_order,
-                    'is_enabled'           => $brandZone?->is_active ?? true,
+                    'id' => $mz->id,
+                    'name' => $mz->name,
+                    'sort_order' => $mz->sort_order,
+                    'is_enabled' => $brandZone?->is_active ?? true,
                     'custom_shipping_cost' => $brandZone?->custom_shipping_cost,
-                    'zone_id'              => $brandZone?->id,
+                    'zone_id' => $brandZone?->id,
                 ];
             });
 
             return [
-                'id'                   => $gov->id,
-                'name'                 => $gov->name,
-                'name_ar'              => $gov->name_ar,
-                'code'                 => $gov->code,
-                'sort_order'           => $gov->sort_order,
-                'is_enabled'           => $brandGeo?->is_active ?? false,
-                'default_shipping_cost'=> $brandGeo?->default_shipping_cost,
-                'geo_id'               => $brandGeo?->id,
-                'total_zones'          => $gov->zones->count(),
-                'enabled_zones'        => $zones->where('is_enabled', true)->count(),
-                'zones'                => $zones->values(),
+                'id' => $gov->id,
+                'name' => $gov->name,
+                'name_ar' => $gov->name_ar,
+                'code' => $gov->code,
+                'sort_order' => $gov->sort_order,
+                'is_enabled' => $brandGeo?->is_active ?? false,
+                'default_shipping_cost' => $brandGeo?->default_shipping_cost,
+                'geo_id' => $brandGeo?->id,
+                'total_zones' => $gov->zones->count(),
+                'enabled_zones' => $zones->where('is_enabled', true)->count(),
+                'zones' => $zones->values(),
             ];
         });
 
@@ -96,19 +97,20 @@ final class BrandCoverageController extends Controller
     public function stats(string $brandId): JsonResponse
     {
         $totalGovernorates = MasterGovernorate::count() ?: 27;
-        $totalZones        = MasterZone::count();
+        $totalZones = MasterZone::count();
 
         $geos = DeliveryGeography::where('brand_id', $brandId)
             ->with(['zones' => fn ($q) => $q->with('shippingRule')])
             ->get();
 
-        $allZones    = $geos->flatMap(fn ($g) => $g->zones);
+        $allZones = $geos->flatMap(fn ($g) => $g->zones);
         $activeZones = $allZones->where('is_active', true);
         $enabledGeos = $geos->where('is_active', true);
 
         // Effective cost: custom_shipping_cost (new) → zone shipping rule (legacy) → geo default
         $costs = $activeZones->map(function (DeliveryZone $zone) use ($geos) {
             $geo = $geos->firstWhere('id', $zone->delivery_geography_id);
+
             return $zone->custom_shipping_cost
                 ?? $zone->shippingRule?->shipping_cost
                 ?? $geo?->default_shipping_cost;
@@ -116,22 +118,22 @@ final class BrandCoverageController extends Controller
 
         $avgCost = $costs->count() > 0 ? round($costs->avg(), 2) : null;
 
-        $coveredNames  = $enabledGeos->pluck('name')->map(fn ($n) => strtolower($n))->flip()->toArray();
+        $coveredNames = $enabledGeos->pluck('name')->map(fn ($n) => strtolower($n))->flip()->toArray();
         $allMasterNames = MasterGovernorate::orderBy('sort_order')->pluck('name')->toArray()
             ?: self::egyptGovernorateNames();
 
         $uncovered = array_values(
-            array_filter($allMasterNames, fn ($n) => !isset($coveredNames[strtolower($n)]))
+            array_filter($allMasterNames, fn ($n) => ! isset($coveredNames[strtolower($n)])),
         );
 
         return $this->success([
-            'enabled_governorates'   => $enabledGeos->count(),
-            'total_governorates'     => $totalGovernorates,
-            'coverage_percentage'    => $totalGovernorates > 0
+            'enabled_governorates' => $enabledGeos->count(),
+            'total_governorates' => $totalGovernorates,
+            'coverage_percentage' => $totalGovernorates > 0
                 ? round(($enabledGeos->count() / $totalGovernorates) * 100, 1)
                 : 0,
-            'active_zones'           => $activeZones->count(),
-            'total_zones'            => $totalZones ?: $allZones->count(),
+            'active_zones' => $activeZones->count(),
+            'total_zones' => $totalZones ?: $allZones->count(),
             'avg_effective_shipping' => $avgCost,
             'uncovered_governorates' => $uncovered,
         ]);
@@ -144,31 +146,31 @@ final class BrandCoverageController extends Controller
         Brand::findOrFail($brandId);
 
         $checks = [
-            'channels'             => Channel::where('brand_id', $brandId)->where('is_active', true)->exists(),
-            'delivery_coverage'    => DeliveryGeography::where('brand_id', $brandId)->where('is_active', true)->exists(),
-            'delivery_zones'       => DeliveryZone::where('brand_id', $brandId)->where('is_active', true)->exists(),
-            'delivery_windows'     => DeliveryWindow::where('brand_id', $brandId)->where('is_enabled', true)->exists(),
-            'shipping_prices'      => BrandShippingRule::where('brand_id', $brandId)->where('is_enabled', true)->exists()
+            'channels' => Channel::where('brand_id', $brandId)->where('is_active', true)->exists(),
+            'delivery_coverage' => DeliveryGeography::where('brand_id', $brandId)->where('is_active', true)->exists(),
+            'delivery_zones' => DeliveryZone::where('brand_id', $brandId)->where('is_active', true)->exists(),
+            'delivery_windows' => DeliveryWindow::where('brand_id', $brandId)->where('is_enabled', true)->exists(),
+            'shipping_prices' => BrandShippingRule::where('brand_id', $brandId)->where('is_enabled', true)->exists()
                                         || DeliveryGeography::where('brand_id', $brandId)->whereNotNull('default_shipping_cost')->exists(),
-            'pricing_policy'       => BrandPolicy::where('brand_id', $brandId)->where('policy_group', 'pricing')->exists(),
-            'preparation_policy'   => BrandPolicy::where('brand_id', $brandId)->where('policy_group', 'preparation')->exists(),
-            'inventory_policy'     => BrandPolicy::where('brand_id', $brandId)->where('policy_group', 'inventory')->exists(),
+            'pricing_policy' => BrandPolicy::where('brand_id', $brandId)->where('policy_group', 'pricing')->exists(),
+            'preparation_policy' => BrandPolicy::where('brand_id', $brandId)->where('policy_group', 'preparation')->exists(),
+            'inventory_policy' => BrandPolicy::where('brand_id', $brandId)->where('policy_group', 'inventory')->exists(),
             'manufacturing_policy' => BrandPolicy::where('brand_id', $brandId)->where('policy_group', 'manufacturing')->exists(),
-            'workflow_policy'      => BrandPolicy::where('brand_id', $brandId)->where('policy_group', 'workflow')->exists(),
-            'ai_configuration'     => BrandPolicy::where('brand_id', $brandId)->where('policy_group', 'ai')->exists(),
-            'integrations'         => BrandPolicy::where('brand_id', $brandId)->where('policy_group', 'integration')->exists(),
+            'workflow_policy' => BrandPolicy::where('brand_id', $brandId)->where('policy_group', 'workflow')->exists(),
+            'ai_configuration' => BrandPolicy::where('brand_id', $brandId)->where('policy_group', 'ai')->exists(),
+            'integrations' => BrandPolicy::where('brand_id', $brandId)->where('policy_group', 'integration')->exists(),
         ];
 
         $passed = count(array_filter($checks));
-        $total  = count($checks);
-        $score  = $total > 0 ? (int) round(($passed / $total) * 100) : 0;
+        $total = count($checks);
+        $score = $total > 0 ? (int) round(($passed / $total) * 100) : 0;
 
         return $this->success([
-            'score'    => $score,
-            'passed'   => $passed,
-            'total'    => $total,
+            'score' => $score,
+            'passed' => $passed,
+            'total' => $total,
             'is_ready' => $passed === $total,
-            'checks'   => $checks,
+            'checks' => $checks,
         ]);
     }
 
@@ -178,19 +180,19 @@ final class BrandCoverageController extends Controller
     {
         $request->validate([
             'copy_geographies' => 'nullable|boolean',
-            'copy_zones'       => 'nullable|boolean',
-            'copy_windows'     => 'nullable|boolean',
+            'copy_zones' => 'nullable|boolean',
+            'copy_windows' => 'nullable|boolean',
         ]);
 
-        $copyGeos    = $request->boolean('copy_geographies', true);
-        $copyZones   = $request->boolean('copy_zones', true);
+        $copyGeos = $request->boolean('copy_geographies', true);
+        $copyZones = $request->boolean('copy_zones', true);
         $copyWindows = $request->boolean('copy_windows', true);
 
         Brand::findOrFail($brandId);
         Brand::findOrFail($sourceBrandId);
 
         $companyId = Auth::user()?->company_id ?? '';
-        $actorId   = Auth::id() ?? '';
+        $actorId = Auth::id() ?? '';
 
         $stats = DB::transaction(function () use (
             $brandId, $sourceBrandId, $companyId, $actorId,
@@ -208,14 +210,14 @@ final class BrandCoverageController extends Controller
                     $geo = DeliveryGeography::firstOrCreate(
                         ['brand_id' => $brandId, 'name' => $srcGeo->name],
                         [
-                            'company_id'            => $companyId,
-                            'name_ar'               => $srcGeo->name_ar,
-                            'code'                  => $srcGeo->code,
-                            'sort_order'            => $srcGeo->sort_order,
-                            'is_active'             => $srcGeo->is_active,
+                            'company_id' => $companyId,
+                            'name_ar' => $srcGeo->name_ar,
+                            'code' => $srcGeo->code,
+                            'sort_order' => $srcGeo->sort_order,
+                            'is_active' => $srcGeo->is_active,
                             'default_shipping_cost' => $srcGeo->default_shipping_cost,
-                            'created_by'            => $actorId,
-                            'updated_by'            => $actorId,
+                            'created_by' => $actorId,
+                            'updated_by' => $actorId,
                         ],
                     );
 
@@ -224,8 +226,8 @@ final class BrandCoverageController extends Controller
                     } else {
                         $geo->update([
                             'default_shipping_cost' => $srcGeo->default_shipping_cost,
-                            'is_active'             => $srcGeo->is_active,
-                            'updated_by'            => $actorId,
+                            'is_active' => $srcGeo->is_active,
+                            'updated_by' => $actorId,
                         ]);
                     }
 
@@ -234,10 +236,10 @@ final class BrandCoverageController extends Controller
                             $zone = DeliveryZone::firstOrCreate(
                                 ['delivery_geography_id' => $geo->id, 'name' => $srcZone->name],
                                 [
-                                    'brand_id'   => $brandId,
-                                    'name_ar'    => $srcZone->name_ar,
+                                    'brand_id' => $brandId,
+                                    'name_ar' => $srcZone->name_ar,
                                     'sort_order' => $srcZone->sort_order,
-                                    'is_active'  => $srcZone->is_active,
+                                    'is_active' => $srcZone->is_active,
                                     'created_by' => $actorId,
                                     'updated_by' => $actorId,
                                 ],
@@ -252,12 +254,12 @@ final class BrandCoverageController extends Controller
                                 BrandShippingRule::updateOrCreate(
                                     ['brand_id' => $brandId, 'delivery_zone_id' => $zone->id],
                                     [
-                                        'company_id'   => $companyId,
+                                        'company_id' => $companyId,
                                         'shipping_cost' => $srcZone->shippingRule->shipping_cost,
-                                        'is_enabled'   => $srcZone->shippingRule->is_enabled,
-                                        'notes'        => $srcZone->shippingRule->notes,
-                                        'created_by'   => $actorId,
-                                        'updated_by'   => $actorId,
+                                        'is_enabled' => $srcZone->shippingRule->is_enabled,
+                                        'notes' => $srcZone->shippingRule->notes,
+                                        'created_by' => $actorId,
+                                        'updated_by' => $actorId,
                                     ],
                                 );
                             }
@@ -274,8 +276,8 @@ final class BrandCoverageController extends Controller
                         ['brand_id' => $brandId, 'label' => $srcWin->label],
                         [
                             'company_id' => $companyId,
-                            'starts_at'  => $srcWin->starts_at,
-                            'ends_at'    => $srcWin->ends_at,
+                            'starts_at' => $srcWin->starts_at,
+                            'ends_at' => $srcWin->ends_at,
                             'sort_order' => $srcWin->sort_order,
                             'is_enabled' => $srcWin->is_enabled,
                             'created_by' => $actorId,
@@ -294,18 +296,18 @@ final class BrandCoverageController extends Controller
 
         $this->audit->record(
             companyId: $companyId,
-            module:    'delivery_geography',
-            category:  'clone',
-            action:    'create',
-            oldValue:  null,
-            newValue:  ['source_brand_id' => $sourceBrandId, ...$stats],
-            brandId:   $brandId,
+            module: 'delivery_geography',
+            category: 'clone',
+            action: 'create',
+            oldValue: null,
+            newValue: ['source_brand_id' => $sourceBrandId, ...$stats],
+            brandId: $brandId,
         );
 
         return $this->success([
             'cloned_governorates' => $stats['clonedGeos'],
-            'cloned_zones'        => $stats['clonedZones'],
-            'cloned_windows'      => $stats['clonedWindows'],
+            'cloned_zones' => $stats['clonedZones'],
+            'cloned_windows' => $stats['clonedWindows'],
         ], 'Configuration cloned successfully.');
     }
 

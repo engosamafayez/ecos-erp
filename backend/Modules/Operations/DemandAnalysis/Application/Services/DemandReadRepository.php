@@ -7,10 +7,10 @@ namespace Modules\Operations\DemandAnalysis\Application\Services;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Modules\Operations\DemandAnalysis\Domain\Models\WaveKpi;
+use Modules\Operations\DemandAnalysis\Domain\Models\WaveManufacturingDemand;
 use Modules\Operations\DemandAnalysis\Domain\Models\WaveMaterialDemand;
 use Modules\Operations\DemandAnalysis\Domain\Models\WaveMissingMaterial;
 use Modules\Operations\DemandAnalysis\Domain\Models\WaveProductDemand;
-use Modules\Operations\DemandAnalysis\Domain\Models\WaveManufacturingDemand;
 
 /**
  * Persistence layer for all demand read models.
@@ -66,7 +66,7 @@ final class DemandReadRepository
     // ── Writes ────────────────────────────────────────────────────────────────
 
     /**
-     * @param list<array<string, mixed>> $rows
+     * @param  list<array<string, mixed>>  $rows
      */
     public function upsertProductDemand(array $rows): void
     {
@@ -80,14 +80,14 @@ final class DemandReadRepository
                 $chunk,
                 ['preparation_wave_id', 'product_id'],
                 ['product_name', 'product_sku', 'required_qty', 'prepared_qty',
-                 'remaining_qty', 'orders_count', 'completion_pct',
-                 'data_hash', 'last_calculated_at', 'updated_at'],
+                    'remaining_qty', 'orders_count', 'completion_pct',
+                    'data_hash', 'last_calculated_at', 'updated_at'],
             );
         }
     }
 
     /**
-     * @param list<array<string, mixed>> $rows
+     * @param  list<array<string, mixed>>  $rows
      */
     public function upsertMaterialDemand(array $rows): void
     {
@@ -100,14 +100,14 @@ final class DemandReadRepository
                 $chunk,
                 ['preparation_wave_id', 'material_id'],
                 ['material_name', 'material_sku', 'required_qty', 'available_qty',
-                 'reserved_qty', 'expected_today', 'in_transit_qty',
-                 'missing_qty', 'coverage_pct', 'data_hash', 'last_calculated_at', 'updated_at'],
+                    'reserved_qty', 'expected_today', 'in_transit_qty',
+                    'missing_qty', 'coverage_pct', 'data_hash', 'last_calculated_at', 'updated_at'],
             );
         }
     }
 
     /**
-     * @param list<array<string, mixed>> $rows
+     * @param  list<array<string, mixed>>  $rows
      */
     public function upsertMissingMaterials(array $rows): void
     {
@@ -120,13 +120,13 @@ final class DemandReadRepository
                 $chunk,
                 ['preparation_wave_id', 'material_id'],
                 ['material_name', 'missing_qty', 'affected_orders_count',
-                 'priority', 'procurement_status', 'last_calculated_at', 'updated_at'],
+                    'priority', 'procurement_status', 'last_calculated_at', 'updated_at'],
             );
         }
     }
 
     /**
-     * @param list<array<string, mixed>> $rows
+     * @param  list<array<string, mixed>>  $rows
      */
     public function upsertManufacturingDemand(array $rows): void
     {
@@ -139,25 +139,25 @@ final class DemandReadRepository
                 $chunk,
                 ['preparation_wave_id', 'product_id'],
                 ['product_name', 'required_qty', 'planned_qty', 'manufacturing_qty',
-                 'completed_qty', 'remaining_qty', 'last_calculated_at', 'updated_at'],
+                    'completed_qty', 'remaining_qty', 'last_calculated_at', 'updated_at'],
             );
         }
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function upsertWaveKpis(array $data): void
     {
         // Strip meta-keys (underscore-prefixed) that are meant for callers but not DB columns.
-        $row = array_filter($data, static fn ($k) => !str_starts_with($k, '_'), ARRAY_FILTER_USE_KEY);
+        $row = array_filter($data, static fn ($k) => ! str_starts_with($k, '_'), ARRAY_FILTER_USE_KEY);
 
         DB::table('wave_kpis')->upsert(
             [$row],
             ['preparation_wave_id'],
             ['orders_count', 'products_count', 'materials_count', 'missing_materials_count',
-             'prepared_count', 'remaining_count', 'completion_pct',
-             'last_calculated_at', 'updated_at'],
+                'prepared_count', 'remaining_count', 'completion_pct',
+                'last_calculated_at', 'updated_at'],
         );
     }
 

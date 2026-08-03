@@ -9,21 +9,21 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Operations\Loading\Domain\Enums\MovementType;
 
 /**
- * @property string          $id
- * @property string          $company_id
- * @property string          $vehicle_inventory_item_id
- * @property string          $vehicle_assignment_id
- * @property string          $vehicle_id
- * @property string          $product_id
- * @property \Carbon\Carbon  $operational_date
- * @property MovementType    $movement_type
- * @property float           $quantity
- * @property string          $reference_type
- * @property string          $reference_id
- * @property string          $actor_id
- * @property string          $actor_type
- * @property string|null     $notes
- * @property \Carbon\Carbon  $recorded_at
+ * @property string $id
+ * @property string $company_id
+ * @property string $vehicle_inventory_item_id
+ * @property string $vehicle_assignment_id
+ * @property string $vehicle_id
+ * @property string $product_id
+ * @property \Carbon\Carbon $operational_date
+ * @property MovementType $movement_type
+ * @property float $quantity
+ * @property string $reference_type
+ * @property string $reference_id
+ * @property string $actor_id
+ * @property string $actor_type
+ * @property string|null $notes
+ * @property \Carbon\Carbon $recorded_at
  */
 class VehicleInventoryMovement extends Model
 {
@@ -58,10 +58,10 @@ class VehicleInventoryMovement extends Model
     protected function casts(): array
     {
         return [
-            'movement_type'    => MovementType::class,
+            'movement_type' => MovementType::class,
             'operational_date' => 'date:Y-m-d',
-            'quantity'         => 'float',
-            'recorded_at'      => 'datetime',
+            'quantity' => 'float',
+            'recorded_at' => 'datetime',
         ];
     }
 

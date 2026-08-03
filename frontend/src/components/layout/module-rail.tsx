@@ -13,7 +13,7 @@ export function ModuleRail({ activeModule, className }: ModuleRailProps) {
   const { t } = useTranslation('common');
   return (
     <nav
-      aria-label="Module navigation"
+      aria-label={t('nav.moduleNavigation')}
       className={cn(
         'w-[72px] shrink-0 flex-col border-e bg-sidebar',
         className,

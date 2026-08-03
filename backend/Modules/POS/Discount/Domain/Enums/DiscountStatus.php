@@ -6,7 +6,7 @@ namespace Modules\POS\Discount\Domain\Enums;
 
 enum DiscountStatus: string
 {
-    case Pending  = 'pending';
+    case Pending = 'pending';
     case Approved = 'approved';
     case Rejected = 'rejected';
 

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\POS\Terminal\Domain\Models;
 
+use DateTimeImmutable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use InvalidArgumentException;
 use Modules\POS\Terminal\Domain\Enums\TerminalStatus;
 use Modules\POS\Terminal\Domain\Exceptions\InvalidTerminalStatusTransitionException;
 use Modules\POS\Terminal\Domain\ValueObjects\HardwareConfig;
@@ -20,16 +22,16 @@ use Modules\POS\Terminal\Domain\ValueObjects\HardwareConfig;
  * Persistence: EloquentTerminalRepository.save() persists the in-memory state.
  * Domain events: collected in the application service after each command.
  *
- * @property string         $id
- * @property string         $terminal_code
- * @property string         $name
- * @property string         $branch_id
- * @property string         $warehouse_id
+ * @property string $id
+ * @property string $terminal_code
+ * @property string $name
+ * @property string $branch_id
+ * @property string $warehouse_id
  * @property TerminalStatus $status
- * @property array          $hardware_config
- * @property string|null    $last_seen_at
- * @property string|null    $last_seen_ip
- * @property array|null     $metadata
+ * @property array $hardware_config
+ * @property string|null $last_seen_at
+ * @property string|null $last_seen_ip
+ * @property array|null $metadata
  */
 final class Terminal extends Model
 {
@@ -58,10 +60,10 @@ final class Terminal extends Model
     protected function casts(): array
     {
         return [
-            'status'          => TerminalStatus::class,
+            'status' => TerminalStatus::class,
             'hardware_config' => 'array',
-            'metadata'        => 'array',
-            'last_seen_at'    => 'datetime',
+            'metadata' => 'array',
+            'last_seen_at' => 'datetime',
         ];
     }
 
@@ -74,26 +76,26 @@ final class Terminal extends Model
      * The caller must persist via TerminalRepositoryInterface::save().
      */
     public static function register(
-        string         $terminalCode,
-        string         $name,
-        string         $branchId,
-        string         $warehouseId,
+        string $terminalCode,
+        string $name,
+        string $branchId,
+        string $warehouseId,
         HardwareConfig $hardwareConfig,
     ): self {
         if (trim($terminalCode) === '') {
-            throw new \InvalidArgumentException('Terminal code cannot be empty.');
+            throw new InvalidArgumentException('Terminal code cannot be empty.');
         }
         if (trim($name) === '') {
-            throw new \InvalidArgumentException('Terminal name cannot be empty.');
+            throw new InvalidArgumentException('Terminal name cannot be empty.');
         }
 
-        $terminal                   = new self();
-        $terminal->terminal_code    = strtoupper(trim($terminalCode));
-        $terminal->name             = trim($name);
-        $terminal->branch_id        = $branchId;
-        $terminal->warehouse_id     = $warehouseId;
-        $terminal->status           = TerminalStatus::Inactive;
-        $terminal->hardware_config  = $hardwareConfig->toArray();
+        $terminal = new self;
+        $terminal->terminal_code = strtoupper(trim($terminalCode));
+        $terminal->name = trim($name);
+        $terminal->branch_id = $branchId;
+        $terminal->warehouse_id = $warehouseId;
+        $terminal->status = TerminalStatus::Inactive;
+        $terminal->hardware_config = $hardwareConfig->toArray();
 
         return $terminal;
     }
@@ -164,7 +166,7 @@ final class Terminal extends Model
      * Record a heartbeat from the terminal device.
      * Caller provides timestamp so the domain remains framework-independent.
      */
-    public function recordHeartbeat(\DateTimeImmutable $at, string $ipAddress): void
+    public function recordHeartbeat(DateTimeImmutable $at, string $ipAddress): void
     {
         $this->last_seen_at = $at->format('Y-m-d H:i:s');
         $this->last_seen_ip = $ipAddress;

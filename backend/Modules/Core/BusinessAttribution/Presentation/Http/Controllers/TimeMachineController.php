@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\Core\BusinessAttribution\Presentation\Http\Controllers;
 
 use Carbon\Carbon;
@@ -13,7 +15,7 @@ use Modules\Core\BusinessAttribution\Presentation\Http\Resources\EntityStateReso
 class TimeMachineController
 {
     public function __construct(
-        private readonly TimeMachineService        $timeMachine,
+        private readonly TimeMachineService $timeMachine,
         private readonly ResolveEntityAtTimeAction $resolveAction,
     ) {}
 
@@ -29,10 +31,10 @@ class TimeMachineController
 
         $state = $this->resolveAction->execute(
             entityType: $entityType,
-            entityId:   $entityId,
-            asOf:       Carbon::parse($validated['at']),
-            purpose:    (string) $request->query('purpose', 'Time Machine Query'),
-            userId:     $request->user()?->id,
+            entityId: $entityId,
+            asOf: Carbon::parse($validated['at']),
+            purpose: (string) $request->query('purpose', 'Time Machine Query'),
+            userId: $request->user()?->id,
         );
 
         return response()->json(new EntityStateResource($state));
@@ -65,7 +67,7 @@ class TimeMachineController
     {
         $validated = $request->validate([
             'from' => ['required', 'date'],
-            'to'   => ['required', 'date', 'after:from'],
+            'to' => ['required', 'date', 'after:from'],
         ]);
 
         $diff = $this->timeMachine->diff(
@@ -84,7 +86,7 @@ class TimeMachineController
      */
     public function context(Request $request): JsonResponse
     {
-        $at      = $request->query('at') ? Carbon::parse($request->query('at')) : Carbon::now();
+        $at = $request->query('at') ? Carbon::parse($request->query('at')) : Carbon::now();
         $context = TimestampContext::at($at);
 
         return response()->json(['data' => $context->toArray()]);

@@ -20,44 +20,109 @@ use Modules\Sales\ShippingPricing\Domain\Scopes\CompanyScope;
  */
 final class OrderFinancialSnapshotAdapter implements FinancialSnapshotProvider, IntegrityProvider
 {
-    /** @var FinancialLineSnapshotDTO[]|null Lazy-converted from $lineData arrays. */
+    /** @var FinancialLineSnapshotDTO[]|null Lazy-converted from arrays. */
     private ?array $lineDTOs = null;
 
     /** @var array{string|null, string|null, string|null, bool}|null Lazy-resolved shipping snapshot. */
     private ?array $shippingSnapshot = null;
 
     public function __construct(
-        private readonly Order   $order,
-        private readonly array   $lineData,
+        private readonly Order $order,
+        private readonly array $lineData,
         private readonly ?string $companyId,
         private readonly ?string $actorId,
     ) {}
 
     // ── Snapshotable ──────────────────────────────────────────────────────────
 
-    public function getSnapshotAggregateId(): string   { return $this->order->id; }
-    public function getSnapshotAggregateType(): string { return 'order'; }
-    public function getSnapshotCompanyId(): ?string    { return $this->companyId; }
+    public function getSnapshotAggregateId(): string
+    {
+        return $this->order->id;
+    }
+
+    public function getSnapshotAggregateType(): string
+    {
+        return 'order';
+    }
+
+    public function getSnapshotCompanyId(): ?string
+    {
+        return $this->companyId;
+    }
 
     // ── Financial totals ──────────────────────────────────────────────────────
 
-    public function getSubtotal(): float         { return (float) ($this->order->subtotal ?? 0); }
-    public function getGrandTotal(): float        { return (float) $this->order->total; }
-    public function getDiscountAmount(): float    { return (float) ($this->order->discount_amount ?? 0); }
-    public function getDiscountType(): ?string    { return $this->order->discount_type; }
-    public function getShippingCost(): float      { return (float) ($this->order->shipping_cost ?? 0); }
-    public function getDepositAmount(): float     { return (float) ($this->order->deposit_amount ?? 0); }
-    public function getRemainingBalance(): float  { return (float) ($this->order->remaining_balance ?? 0); }
-    public function getCurrency(): string         { return 'EGP'; }
-    public function getPaymentMethod(): ?string   { return $this->order->payment_method_manual ?? $this->order->payment_method; }
+    public function getSubtotal(): float
+    {
+        return (float) ($this->order->subtotal ?? 0);
+    }
+
+    public function getGrandTotal(): float
+    {
+        return (float) $this->order->total;
+    }
+
+    public function getDiscountAmount(): float
+    {
+        return (float) ($this->order->discount_amount ?? 0);
+    }
+
+    public function getDiscountType(): ?string
+    {
+        return $this->order->discount_type;
+    }
+
+    public function getShippingCost(): float
+    {
+        return (float) ($this->order->shipping_cost ?? 0);
+    }
+
+    public function getDepositAmount(): float
+    {
+        return (float) ($this->order->deposit_amount ?? 0);
+    }
+
+    public function getRemainingBalance(): float
+    {
+        return (float) ($this->order->remaining_balance ?? 0);
+    }
+
+    public function getCurrency(): string
+    {
+        return 'EGP';
+    }
+
+    public function getPaymentMethod(): ?string
+    {
+        return $this->order->payment_method_manual ?? $this->order->payment_method;
+    }
 
     // ── Party identifiers ─────────────────────────────────────────────────────
 
-    public function getCustomerId(): ?string   { return $this->order->customer_id; }
-    public function getCustomerName(): ?string { return $this->order->customer?->name; }
-    public function getBrandId(): ?string      { return $this->order->channel?->brand_id ?? null; }
-    public function getChannelId(): ?string    { return $this->order->channel_id; }
-    public function getChannelName(): ?string  { return $this->order->channel?->name; }
+    public function getCustomerId(): ?string
+    {
+        return $this->order->customer_id;
+    }
+
+    public function getCustomerName(): ?string
+    {
+        return $this->order->customer?->name;
+    }
+
+    public function getBrandId(): ?string
+    {
+        return $this->order->channel?->brand_id ?? null;
+    }
+
+    public function getChannelId(): ?string
+    {
+        return $this->order->channel_id;
+    }
+
+    public function getChannelName(): ?string
+    {
+        return $this->order->channel?->name;
+    }
 
     // ── Shipping context ──────────────────────────────────────────────────────
 
@@ -103,7 +168,10 @@ final class OrderFinancialSnapshotAdapter implements FinancialSnapshotProvider, 
 
     // ── Actor ─────────────────────────────────────────────────────────────────
 
-    public function getSnapshotCreatedBy(): ?string { return $this->actorId; }
+    public function getSnapshotCreatedBy(): ?string
+    {
+        return $this->actorId;
+    }
 
     // ── IntegrityProvider ─────────────────────────────────────────────────────
 
@@ -140,31 +208,31 @@ final class OrderFinancialSnapshotAdapter implements FinancialSnapshotProvider, 
     private function toLineDTO(array $ld): FinancialLineSnapshotDTO
     {
         return new FinancialLineSnapshotDTO(
-            aggregateId:          $this->order->id,
-            sourceLineId:         $ld['order_line_id'] ?? null,
-            productId:            $ld['product_id'] ?? null,
-            productSku:           $ld['product_sku'] ?? null,
-            productName:          $ld['product_name'] ?? null,
-            quantity:             (float) ($ld['quantity'] ?? 0),
-            unitPriceAtSale:      (float) ($ld['unit_price_at_sale'] ?? 0),
-            regularPriceAtSale:   isset($ld['regular_price_at_sale']) ? (float) $ld['regular_price_at_sale'] : null,
-            salePriceAtSale:      isset($ld['sale_price_at_sale']) ? (float) $ld['sale_price_at_sale'] : null,
-            lineTotal:            (float) ($ld['line_total'] ?? 0),
-            rawMaterialCost:      isset($ld['raw_material_cost']) ? (float) $ld['raw_material_cost'] : null,
-            packagingCost:        isset($ld['packaging_cost']) ? (float) $ld['packaging_cost'] : null,
-            manufacturingCost:    isset($ld['manufacturing_cost']) ? (float) $ld['manufacturing_cost'] : null,
-            otherCost:            isset($ld['other_cost']) ? (float) $ld['other_cost'] : null,
-            recipeCost:           isset($ld['recipe_cost']) ? (float) $ld['recipe_cost'] : null,
-            unitCost:             isset($ld['unit_cost']) ? (float) $ld['unit_cost'] : null,
-            lineCost:             isset($ld['line_cost']) ? (float) $ld['line_cost'] : null,
-            targetMarginPercent:  (float) ($ld['target_margin_percent'] ?? 30.0),
-            bomId:                $ld['bom_id'] ?? null,
-            bomVersionNumber:     isset($ld['bom_version_number']) ? (int) $ld['bom_version_number'] : null,
-            sourceRecipeVersion:  $ld['source_recipe_version'] ?? null,
-            priceReviewId:        $ld['price_review_id'] ?? null,
+            aggregateId: $this->order->id,
+            sourceLineId: $ld['order_line_id'] ?? null,
+            productId: $ld['product_id'] ?? null,
+            productSku: $ld['product_sku'] ?? null,
+            productName: $ld['product_name'] ?? null,
+            quantity: (float) ($ld['quantity'] ?? 0),
+            unitPriceAtSale: (float) ($ld['unit_price_at_sale'] ?? 0),
+            regularPriceAtSale: isset($ld['regular_price_at_sale']) ? (float) $ld['regular_price_at_sale'] : null,
+            salePriceAtSale: isset($ld['sale_price_at_sale']) ? (float) $ld['sale_price_at_sale'] : null,
+            lineTotal: (float) ($ld['line_total'] ?? 0),
+            rawMaterialCost: isset($ld['raw_material_cost']) ? (float) $ld['raw_material_cost'] : null,
+            packagingCost: isset($ld['packaging_cost']) ? (float) $ld['packaging_cost'] : null,
+            manufacturingCost: isset($ld['manufacturing_cost']) ? (float) $ld['manufacturing_cost'] : null,
+            otherCost: isset($ld['other_cost']) ? (float) $ld['other_cost'] : null,
+            recipeCost: isset($ld['recipe_cost']) ? (float) $ld['recipe_cost'] : null,
+            unitCost: isset($ld['unit_cost']) ? (float) $ld['unit_cost'] : null,
+            lineCost: isset($ld['line_cost']) ? (float) $ld['line_cost'] : null,
+            targetMarginPercent: (float) ($ld['target_margin_percent'] ?? 30.0),
+            bomId: $ld['bom_id'] ?? null,
+            bomVersionNumber: isset($ld['bom_version_number']) ? (int) $ld['bom_version_number'] : null,
+            sourceRecipeVersion: $ld['source_recipe_version'] ?? null,
+            priceReviewId: $ld['price_review_id'] ?? null,
             priceReviewApprovedAt: $ld['price_review_approved_at'] ?? null,
             priceReviewApprovedBy: $ld['price_review_approved_by'] ?? null,
-            costSnapshot:         $ld['cost_snapshot'] ?? null,
+            costSnapshot: $ld['cost_snapshot'] ?? null,
         );
     }
 
@@ -175,10 +243,10 @@ final class OrderFinancialSnapshotAdapter implements FinancialSnapshotProvider, 
             return $this->shippingSnapshot;
         }
 
-        $zone            = implode(' › ', array_filter([$this->order->governorate, $this->order->area])) ?: null;
+        $zone = implode(' › ', array_filter([$this->order->governorate, $this->order->area])) ?: null;
         $overrideApplied = $this->order->shipping_cost_source === 'override';
-        $ruleId          = null;
-        $ruleName        = null;
+        $ruleId = null;
+        $ruleName = null;
 
         if (! $overrideApplied && $this->order->governorate) {
             $rule = ShippingPricingRule::withoutGlobalScope(CompanyScope::class)
@@ -195,7 +263,7 @@ final class OrderFinancialSnapshotAdapter implements FinancialSnapshotProvider, 
                     ->first();
 
             if ($rule) {
-                $ruleId   = $rule->id;
+                $ruleId = $rule->id;
                 $ruleName = implode(' › ', array_filter([$rule->governorate, $rule->city, $rule->area]));
             }
         }

@@ -45,9 +45,9 @@ final class WarehouseAssignedListener
         }
 
         $this->manager->attachOrder(
-            session:    $session,
-            order:      $order,
-            source:     'auto',
+            session: $session,
+            order: $order,
+            source: 'auto',
             attachedBy: null,
         );
     }

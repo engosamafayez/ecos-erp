@@ -23,7 +23,7 @@ use Modules\Inventory\Products\Domain\Models\Product;
 final class WooCommerceProductSyncer
 {
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      * @return array{action: string, product_id: string|null}
      */
     public function syncCreated(Channel $channel, array $payload): array
@@ -50,7 +50,7 @@ final class WooCommerceProductSyncer
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      * @return array{action: string, product_id: string|null}
      */
     public function syncUpdated(Channel $channel, array $payload): array
@@ -77,7 +77,7 @@ final class WooCommerceProductSyncer
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      * @return array{action: string, product_id: string|null}
      */
     public function syncDeleted(Channel $channel, array $payload): array
@@ -114,7 +114,7 @@ final class WooCommerceProductSyncer
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     private function applyProductFields(Product $product, array $payload): void
     {

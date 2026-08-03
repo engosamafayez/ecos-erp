@@ -36,18 +36,18 @@ final class VehicleInventoryController extends Controller
             ->get();
 
         $summary = [
-            'vehicle_assignment_id'  => $assignment->id,
-            'assignment_number'      => $assignment->assignment_number,
-            'total_quantity_loaded'  => (float) $items->sum('quantity_loaded'),
-            'total_quantity_delivered'  => (float) $items->sum('quantity_delivered'),
-            'total_quantity_returned'   => (float) $items->sum('quantity_returned'),
-            'total_quantity_on_hand'    => (float) $items->sum('quantity_on_hand'),
-            'products_count'         => $items->count(),
+            'vehicle_assignment_id' => $assignment->id,
+            'assignment_number' => $assignment->assignment_number,
+            'total_quantity_loaded' => (float) $items->sum('quantity_loaded'),
+            'total_quantity_delivered' => (float) $items->sum('quantity_delivered'),
+            'total_quantity_returned' => (float) $items->sum('quantity_returned'),
+            'total_quantity_on_hand' => (float) $items->sum('quantity_on_hand'),
+            'products_count' => $items->count(),
         ];
 
         return $this->success([
             'summary' => $summary,
-            'items'   => VehicleInventoryItemResource::collection($items),
+            'items' => VehicleInventoryItemResource::collection($items),
         ]);
     }
 

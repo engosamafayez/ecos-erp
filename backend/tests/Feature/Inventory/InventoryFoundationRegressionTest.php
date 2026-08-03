@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Inventory;
 
+use BackedEnum;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Modules\Commerce\Orders\Application\Actions\ReserveOrderInventoryAction;
 use Modules\Commerce\Orders\Application\Actions\ShipOrderInventoryAction;
@@ -37,17 +38,20 @@ class InventoryFoundationRegressionTest extends TestCase
     use DatabaseTransactions;
 
     private Company $company;
+
     private Warehouse $warehouse;
+
     private Customer $customer;
+
     private Supplier $supplier;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->company   = Company::factory()->create();
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $this->customer  = Customer::factory()->create();
-        $this->supplier  = Supplier::factory()->create();
+        $this->customer = Customer::factory()->create();
+        $this->supplier = Supplier::factory()->create();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -56,7 +60,7 @@ class InventoryFoundationRegressionTest extends TestCase
     {
         return Product::factory()->create([
             'regular_price' => 200.0,
-            'sale_price'    => 200.0,
+            'sale_price' => 200.0,
         ]);
     }
 
@@ -64,32 +68,32 @@ class InventoryFoundationRegressionTest extends TestCase
     {
         return InventoryItem::query()->create([
             'warehouse_id' => $this->warehouse->id,
-            'product_id'   => $product->id,
-            'company_id'   => $this->company->id,
-            'on_hand_qty'  => $onHand,
+            'product_id' => $product->id,
+            'company_id' => $this->company->id,
+            'on_hand_qty' => $onHand,
             'reserved_qty' => $reserved,
         ]);
     }
 
     private function addLayer(InventoryItem $item, float $qty, float $cost, ?string $receiptDate = null): InventoryReceiptLayer
     {
-        $gr    = GoodsReceipt::factory()->create(['warehouse_id' => $this->warehouse->id]);
+        $gr = GoodsReceipt::factory()->create(['warehouse_id' => $this->warehouse->id]);
         $grLine = GoodsReceiptLine::factory()->create([
             'goods_receipt_id' => $gr->id,
-            'product_id'       => $item->product_id,
+            'product_id' => $item->product_id,
         ]);
 
         return InventoryReceiptLayer::query()->create([
-            'company_id'            => $this->company->id,
-            'supplier_id'           => $this->supplier->id,
-            'product_id'            => $item->product_id,
-            'goods_receipt_id'      => $gr->id,
+            'company_id' => $this->company->id,
+            'supplier_id' => $this->supplier->id,
+            'product_id' => $item->product_id,
+            'goods_receipt_id' => $gr->id,
             'goods_receipt_line_id' => $grLine->id,
-            'warehouse_id'          => $this->warehouse->id,
-            'received_qty'          => $qty,
-            'remaining_qty'         => $qty,
-            'landed_unit_cost'      => $cost,
-            'receipt_date'          => $receiptDate ?? now()->toDateString(),
+            'warehouse_id' => $this->warehouse->id,
+            'received_qty' => $qty,
+            'remaining_qty' => $qty,
+            'landed_unit_cost' => $cost,
+            'receipt_date' => $receiptDate ?? now()->toDateString(),
         ]);
     }
 
@@ -97,24 +101,24 @@ class InventoryFoundationRegressionTest extends TestCase
     {
         return Order::query()->create([
             'assigned_warehouse_id' => $this->warehouse->id,
-            'customer_id'           => $this->customer->id,
-            'order_number'          => 'ORD-' . uniqid(),
-            'order_date'            => now()->toDateString(),
-            'status'                => OrderStatus::Processing->value,
-            'subtotal'              => $total,
-            'total'                 => $total,
-            'shipping_total'        => 0,
-            'discount_total'        => 0,
-            'tax_total'             => 0,
+            'customer_id' => $this->customer->id,
+            'order_number' => 'ORD-'.uniqid(),
+            'order_date' => now()->toDateString(),
+            'status' => OrderStatus::Processing->value,
+            'subtotal' => $total,
+            'total' => $total,
+            'shipping_total' => 0,
+            'discount_total' => 0,
+            'tax_total' => 0,
         ]);
     }
 
     private function addOrderLine(Order $order, Product $product, float $qty, float $price = 100.0): OrderLine
     {
         return OrderLine::query()->create([
-            'order_id'   => $order->id,
+            'order_id' => $order->id,
             'product_id' => $product->id,
-            'quantity'   => $qty,
+            'quantity' => $qty,
             'unit_price' => $price,
             'line_total' => $qty * $price,
         ]);
@@ -128,8 +132,8 @@ class InventoryFoundationRegressionTest extends TestCase
     public function test_receipt_layer_stores_company_id(): void
     {
         $product = $this->makeProduct();
-        $item    = $this->seedItem($product, 10.0);
-        $layer   = $this->addLayer($item, 10.0, 100.0);
+        $item = $this->seedItem($product, 10.0);
+        $layer = $this->addLayer($item, 10.0, 100.0);
 
         $this->assertNotNull($layer->company_id);
         $this->assertEquals($this->company->id, $layer->company_id);
@@ -139,15 +143,15 @@ class InventoryFoundationRegressionTest extends TestCase
     public function test_consume_succeeds_with_company_id_filter(): void
     {
         $product = $this->makeProduct();
-        $item    = $this->seedItem($product, 10.0);
+        $item = $this->seedItem($product, 10.0);
         $this->addLayer($item, 10.0, 100.0);
 
         $result = app(InventoryLayerConsumptionService::class)->consume(
             inventoryItemId: $item->id,
-            productId:       $product->id,
-            warehouseId:     $this->warehouse->id,
-            companyId:       $this->company->id,
-            quantity:        10.0,
+            productId: $product->id,
+            warehouseId: $this->warehouse->id,
+            companyId: $this->company->id,
+            quantity: 10.0,
         );
 
         $this->assertEquals(10.0, $result->totalQuantity);
@@ -157,16 +161,16 @@ class InventoryFoundationRegressionTest extends TestCase
     /** F-INV-C1-03: tenant isolation — Company B cannot consume Company A's layers */
     public function test_tenant_isolation_company_b_cannot_consume_company_a_layers(): void
     {
-        $companyB    = Company::factory()->create();
-        $warehouseB  = Warehouse::factory()->create(['company_id' => $companyB->id]);
-        $product     = $this->makeProduct();
+        $companyB = Company::factory()->create();
+        $warehouseB = Warehouse::factory()->create(['company_id' => $companyB->id]);
+        $product = $this->makeProduct();
 
         // Seed InventoryItem for Company B
         $itemB = InventoryItem::query()->create([
             'warehouse_id' => $warehouseB->id,
-            'product_id'   => $product->id,
-            'company_id'   => $companyB->id,
-            'on_hand_qty'  => 10.0,
+            'product_id' => $product->id,
+            'company_id' => $companyB->id,
+            'on_hand_qty' => 10.0,
             'reserved_qty' => 0.0,
         ]);
 
@@ -178,10 +182,10 @@ class InventoryFoundationRegressionTest extends TestCase
 
         app(InventoryLayerConsumptionService::class)->consume(
             inventoryItemId: $itemB->id,
-            productId:       $product->id,
-            warehouseId:     $warehouseB->id,
-            companyId:       $companyB->id,
-            quantity:        5.0,
+            productId: $product->id,
+            warehouseId: $warehouseB->id,
+            companyId: $companyB->id,
+            quantity: 5.0,
         );
     }
 
@@ -189,8 +193,8 @@ class InventoryFoundationRegressionTest extends TestCase
     public function test_goods_receipt_layer_carries_company_id(): void
     {
         $product = $this->makeProduct();
-        $item    = $this->seedItem($product, 10.0);
-        $layer   = $this->addLayer($item, 10.0, 80.0);
+        $item = $this->seedItem($product, 10.0);
+        $layer = $this->addLayer($item, 10.0, 80.0);
 
         $this->assertEquals($this->company->id, $layer->company_id);
 
@@ -212,7 +216,7 @@ class InventoryFoundationRegressionTest extends TestCase
     public function test_manual_add_updates_inventory_item_on_hand(): void
     {
         $product = $this->makeProduct();
-        $item    = $this->seedItem($product, 0.0);
+        $item = $this->seedItem($product, 0.0);
 
         app(AddManualStockAction::class)->execute($product, $this->warehouse, 10.0, [
             'unit_cost' => 50.0,
@@ -229,7 +233,7 @@ class InventoryFoundationRegressionTest extends TestCase
 
         app(AddManualStockAction::class)->execute($product, $this->warehouse, 10.0, [
             'unit_cost' => 50.0,
-            'notes'     => 'opening stock',
+            'notes' => 'opening stock',
         ]);
 
         $entry = StockLedgerEntry::query()
@@ -239,7 +243,7 @@ class InventoryFoundationRegressionTest extends TestCase
             ->first();
 
         $this->assertNotNull($entry);
-        $movementType = $entry->movement_type instanceof \BackedEnum ? $entry->movement_type->value : (string) $entry->movement_type;
+        $movementType = $entry->movement_type instanceof BackedEnum ? $entry->movement_type->value : (string) $entry->movement_type;
         $this->assertEquals('adjustment_in', $movementType);
         $this->assertEquals(10.0, (float) $entry->quantity);
         $this->assertEquals($this->company->id, $entry->company_id);
@@ -282,10 +286,10 @@ class InventoryFoundationRegressionTest extends TestCase
 
         $result = app(InventoryLayerConsumptionService::class)->consume(
             inventoryItemId: $item->id,
-            productId:       $product->id,
-            warehouseId:     $this->warehouse->id,
-            companyId:       $this->company->id,
-            quantity:        10.0,
+            productId: $product->id,
+            warehouseId: $this->warehouse->id,
+            companyId: $this->company->id,
+            quantity: 10.0,
         );
 
         $this->assertEquals(10.0, $result->totalQuantity);
@@ -296,7 +300,7 @@ class InventoryFoundationRegressionTest extends TestCase
     public function test_fifo_order_preserved_across_manual_and_gr_layers(): void
     {
         $product = $this->makeProduct();
-        $item    = $this->seedItem($product, 0.0);
+        $item = $this->seedItem($product, 0.0);
 
         // Manual add @ 40 (should be consumed first)
         app(AddManualStockAction::class)->execute($product, $this->warehouse, 5.0, [
@@ -314,10 +318,10 @@ class InventoryFoundationRegressionTest extends TestCase
 
         $result = app(InventoryLayerConsumptionService::class)->consume(
             inventoryItemId: $freshItem->id,
-            productId:       $product->id,
-            warehouseId:     $this->warehouse->id,
-            companyId:       $this->company->id,
-            quantity:        5.0,
+            productId: $product->id,
+            warehouseId: $this->warehouse->id,
+            companyId: $this->company->id,
+            quantity: 5.0,
         );
 
         // Must consume the manual (@ 40) layer first
@@ -333,7 +337,7 @@ class InventoryFoundationRegressionTest extends TestCase
     public function test_audit_record_exists_after_shipment(): void
     {
         $product = $this->makeProduct();
-        $item    = $this->seedItem($product, 10.0, 10.0);
+        $item = $this->seedItem($product, 10.0, 10.0);
         $this->addLayer($item, 10.0, 100.0);
 
         $order = $this->makeOrder(1000.0);
@@ -386,7 +390,7 @@ class InventoryFoundationRegressionTest extends TestCase
     public function test_reservation_does_not_corrupt_on_hand_qty(): void
     {
         $product = $this->makeProduct();
-        $item    = $this->seedItem($product, 10.0);
+        $item = $this->seedItem($product, 10.0);
         $this->addLayer($item, 10.0, 100.0);
 
         $order = $this->makeOrder(1000.0);

@@ -7,11 +7,9 @@ namespace Modules\CostManagement\Presentation\Http\Controllers;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\DB;
 use Modules\CostManagement\Domain\Enums\PricingReviewStatus;
 use Modules\CostManagement\Domain\Models\MaterialCostHistory;
 use Modules\CostManagement\Domain\Models\PricingReview;
-use Modules\Inventory\Products\Domain\Models\Product;
 
 class CostManagementDashboardController extends Controller
 {
@@ -64,13 +62,13 @@ class CostManagementDashboardController extends Controller
 
         return response()->json([
             'data' => [
-                'pending_reviews'         => $pendingReviews,
-                'below_target_margin'     => $belowTargetMargin,
-                'cost_increased_today'    => $costIncreasedToday,
-                'cost_decreased_today'    => $costDecreasedToday,
-                'expected_profit_impact'  => round((float) ($profitImpact ?? 0), 2),
-                'average_margin'          => $avgMargin !== null ? round((float) $avgMargin, 2) : null,
-                'awaiting_approval'       => $awaitingApproval,
+                'pending_reviews' => $pendingReviews,
+                'below_target_margin' => $belowTargetMargin,
+                'cost_increased_today' => $costIncreasedToday,
+                'cost_decreased_today' => $costDecreasedToday,
+                'expected_profit_impact' => round((float) ($profitImpact ?? 0), 2),
+                'average_margin' => $avgMargin !== null ? round((float) $avgMargin, 2) : null,
+                'awaiting_approval' => $awaitingApproval,
             ],
         ]);
     }

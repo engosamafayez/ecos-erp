@@ -13,15 +13,15 @@ namespace Modules\Common\Snapshots\Domain\Events;
 final class SnapshotLocked
 {
     public function __construct(
-        public readonly string  $snapshotUuid,
-        public readonly string  $aggregateType,
-        public readonly string  $aggregateId,
+        public readonly string $snapshotUuid,
+        public readonly string $aggregateType,
+        public readonly string $aggregateId,
         public readonly ?string $companyId,
-        public readonly float   $grandTotal,
-        public readonly ?float  $grossProfit,
-        public readonly ?float  $actualMarginPercent,
+        public readonly float $grandTotal,
+        public readonly ?float $grossProfit,
+        public readonly ?float $actualMarginPercent,
         public readonly ?string $marginStatus,
-        public readonly string  $integrityHash,
-        public readonly string  $lockedAt,
+        public readonly string $integrityHash,
+        public readonly string $lockedAt,
     ) {}
 }

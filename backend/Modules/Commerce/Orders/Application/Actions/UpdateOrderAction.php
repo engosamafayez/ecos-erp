@@ -9,9 +9,6 @@ use App\Core\Responses\OperationResult;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Modules\Commerce\Orders\Application\Actions\ReleaseOrderInventoryAction;
-use Modules\Commerce\Orders\Application\Actions\ReserveOrderInventoryAction;
-use Modules\Commerce\Orders\Application\Actions\UpdateReservationStatusAction;
 use Modules\Commerce\Orders\Application\DTO\OrderDTO;
 use Modules\Commerce\Orders\Domain\Contracts\OrderRepositoryInterface;
 use Modules\Commerce\Orders\Domain\Enums\ReservationStatus;
@@ -20,6 +17,7 @@ use Modules\Commerce\Orders\Domain\Exceptions\OrderNotFoundException;
 use Modules\Commerce\Orders\Domain\Models\OrderEvent;
 use Modules\Sales\Customers\Domain\Models\Customer;
 use Modules\Sales\Customers\Domain\Models\CustomerAddress;
+use Throwable;
 
 final class UpdateOrderAction extends BaseAction
 {
@@ -50,9 +48,9 @@ final class UpdateOrderAction extends BaseAction
     ];
 
     public function __construct(
-        private readonly OrderRepositoryInterface     $orders,
-        private readonly ReleaseOrderInventoryAction  $releaseInventory,
-        private readonly ReserveOrderInventoryAction  $reserveInventory,
+        private readonly OrderRepositoryInterface $orders,
+        private readonly ReleaseOrderInventoryAction $releaseInventory,
+        private readonly ReserveOrderInventoryAction $reserveInventory,
         private readonly UpdateReservationStatusAction $updateReservationStatus,
     ) {}
 
@@ -102,17 +100,17 @@ final class UpdateOrderAction extends BaseAction
                 $newDeposit = (float) ($attributes['deposit_amount'] ?? 0);
 
                 // Recompute grand_total from stored order values to get the correct base.
-                $subtotal     = (float) $order->subtotal;
-                $rawDiscount  = (float) ($order->discount_amount ?? 0);
+                $subtotal = (float) $order->subtotal;
+                $rawDiscount = (float) ($order->discount_amount ?? 0);
                 $discountType = (string) ($order->discount_type ?? '');
-                $monetary     = $discountType === 'percentage'
+                $monetary = $discountType === 'percentage'
                     ? round($subtotal * $rawDiscount / 100, 2)
                     : $rawDiscount;
-                $shipping     = $order->shipping_cost !== null
+                $shipping = $order->shipping_cost !== null
                     ? (float) $order->shipping_cost
                     : (float) ($order->shipping_total ?? 0);
-                $tax          = (float) ($order->tax_total ?? 0);
-                $grandTotal   = max(0.0, round($subtotal + $shipping - $monetary + $tax, 2));
+                $tax = (float) ($order->tax_total ?? 0);
+                $grandTotal = max(0.0, round($subtotal + $shipping - $monetary + $tax, 2));
 
                 $attributes['remaining_balance'] = max(0.0, round($grandTotal - $newDeposit, 2));
             }
@@ -128,18 +126,18 @@ final class UpdateOrderAction extends BaseAction
                 }
             }
 
-            $subtotal         = array_sum(array_column($dto->lineAttributes(), 'line_total'));
-            $rawDiscount      = (float) ($attributes['discount_amount'] ?? 0);
-            $discountType     = (string) ($attributes['discount_type'] ?? '');
+            $subtotal = array_sum(array_column($dto->lineAttributes(), 'line_total'));
+            $rawDiscount = (float) ($attributes['discount_amount'] ?? 0);
+            $discountType = (string) ($attributes['discount_type'] ?? '');
             $monetaryDiscount = $discountType === 'percentage'
                 ? round($subtotal * $rawDiscount / 100, 2)
                 : $rawDiscount;
-            $shippingCost     = (float) ($attributes['shipping_cost'] ?? 0);
-            $depositAmount    = (float) ($attributes['deposit_amount'] ?? 0);
-            $grandTotal       = max(0.0, round($subtotal - $monetaryDiscount + $shippingCost, 2));
+            $shippingCost = (float) ($attributes['shipping_cost'] ?? 0);
+            $depositAmount = (float) ($attributes['deposit_amount'] ?? 0);
+            $grandTotal = max(0.0, round($subtotal - $monetaryDiscount + $shippingCost, 2));
 
-            $attributes['subtotal']          = $subtotal;
-            $attributes['total']             = $grandTotal;
+            $attributes['subtotal'] = $subtotal;
+            $attributes['total'] = $grandTotal;
             $attributes['remaining_balance'] = max(0.0, round($grandTotal - $depositAmount, 2));
 
             // BUG-001 fix: detect whether the order has an active reservation before
@@ -148,7 +146,7 @@ final class UpdateOrderAction extends BaseAction
             // against the new lines. Without this, deleting lines orphans the reservation:
             // stock remains locked in inventory_items.reserved_qty but no order line tracks it.
             $activeReservationStates = [ReservationStatus::Reserved, ReservationStatus::PartialReserved];
-            $hasActiveReservation    = in_array($order->reservation_status, $activeReservationStates, true)
+            $hasActiveReservation = in_array($order->reservation_status, $activeReservationStates, true)
                 && $order->inventory_reserved_at !== null
                 && $order->assigned_warehouse_id !== null;
 
@@ -174,10 +172,10 @@ final class UpdateOrderAction extends BaseAction
                     // H-4 fix: also clear partial_reservation_approved_at — after a structural
                     // edit the order lines change, so the previous shortage approval is stale.
                     $updated->update([
-                        'inventory_released_at'           => null,
-                        'inventory_reserved_at'           => null,
-                        'reservation_status'              => null,
-                        'reservation_failure_reason'      => null,
+                        'inventory_released_at' => null,
+                        'inventory_reserved_at' => null,
+                        'reservation_status' => null,
+                        'reservation_failure_reason' => null,
                         'partial_reservation_approved_at' => null,
                     ]);
                     $updated->refresh();
@@ -186,10 +184,10 @@ final class UpdateOrderAction extends BaseAction
                     try {
                         $this->reserveInventory->execute($updated);
                         $updated->refresh();
-                    } catch (\Throwable $e) {
+                    } catch (Throwable $e) {
                         Log::channel('daily')->warning('[UpdateOrder] Re-reserve after structural edit failed', [
                             'order_id' => $updated->id,
-                            'error'    => $e->getMessage(),
+                            'error' => $e->getMessage(),
                         ]);
                         // Mark the order as awaiting stock so it is not left with a null
                         // reservation_status while still appearing active. The operator will
@@ -197,7 +195,7 @@ final class UpdateOrderAction extends BaseAction
                         $this->updateReservationStatus->execute(
                             $updated,
                             ReservationStatus::AwaitingStock,
-                            'Re-reservation failed after structural order edit: ' . $e->getMessage(),
+                            'Re-reservation failed after structural order edit: '.$e->getMessage(),
                         );
                         $updated->refresh();
                     }
@@ -207,7 +205,7 @@ final class UpdateOrderAction extends BaseAction
             });
         }
 
-        $actorId   = Auth::id() !== null ? (string) Auth::id() : null;
+        $actorId = Auth::id() !== null ? (string) Auth::id() : null;
         $actorName = Auth::user()?->name;
         $actorRole = Auth::user()?->roles()->value('name');
 
@@ -238,7 +236,7 @@ final class UpdateOrderAction extends BaseAction
         OrderEvent::log(
             $updated->id,
             'order_updated',
-            "Order #{$updated->order_number} updated" . ($isLocked ? ' (soft fields only — order is locked).' : '.'),
+            "Order #{$updated->order_number} updated".($isLocked ? ' (soft fields only — order is locked).' : '.'),
             [],
             $actorId,
             $actorName,
@@ -269,26 +267,26 @@ final class UpdateOrderAction extends BaseAction
     private function syncCustomerDefaultAddress(string $customerId, array $data): void
     {
         $governorate = $data['governorate'] ?? null;
-        $city        = $data['city']        ?? null;
+        $city = $data['city'] ?? null;
 
         if ($governorate === null && $city === null) {
             return;
         }
 
         $fields = [
-            'governorate'     => $governorate,
-            'city'            => $city,
-            'area'            => $data['area']             ?? null,
-            'address_line'    => $data['shipping_address'] ?? null,
-            'building'        => $data['building']         ?? null,
-            'floor'           => $data['floor']            ?? null,
-            'apartment'       => $data['apartment']        ?? null,
-            'landmark'        => $data['landmark']         ?? null,
-            'address_notes'   => $data['address_notes']    ?? null,
-            'google_maps_lat' => $data['google_maps_lat']  ?? null,
-            'google_maps_lng' => $data['google_maps_lng']  ?? null,
-            'google_maps_url' => $data['google_maps_url']  ?? null,
-            'location_source' => $data['location_source']  ?? null,
+            'governorate' => $governorate,
+            'city' => $city,
+            'area' => $data['area'] ?? null,
+            'address_line' => $data['shipping_address'] ?? null,
+            'building' => $data['building'] ?? null,
+            'floor' => $data['floor'] ?? null,
+            'apartment' => $data['apartment'] ?? null,
+            'landmark' => $data['landmark'] ?? null,
+            'address_notes' => $data['address_notes'] ?? null,
+            'google_maps_lat' => $data['google_maps_lat'] ?? null,
+            'google_maps_lng' => $data['google_maps_lng'] ?? null,
+            'google_maps_url' => $data['google_maps_url'] ?? null,
+            'location_source' => $data['location_source'] ?? null,
         ];
 
         $updates = array_filter($fields, static fn ($v) => $v !== null);
@@ -306,8 +304,8 @@ final class UpdateOrderAction extends BaseAction
         } else {
             CustomerAddress::create(array_merge($updates, [
                 'customer_id' => $customerId,
-                'label'       => 'Default',
-                'is_default'  => true,
+                'label' => 'Default',
+                'is_default' => true,
             ]));
         }
 

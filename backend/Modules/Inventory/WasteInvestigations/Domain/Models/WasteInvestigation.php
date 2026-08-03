@@ -55,16 +55,16 @@ class WasteInvestigation extends Model
     protected function casts(): array
     {
         return [
-            'quantity'                   => 'decimal:4',
-            'unit_cost'                  => 'decimal:4',
-            'total_cost'                 => 'decimal:2',
-            'cost_snapshot_unit_cost'    => 'decimal:4',
-            'cost_snapshot_total_value'  => 'decimal:2',
-            'status'                     => WasteInvestigationStatus::class,
-            'outcome'                    => WasteInvestigationOutcome::class,
-            'resolved_at'                => 'datetime',
-            'cost_snapshot_at'           => 'datetime',
-            'metadata'                   => 'array',
+            'quantity' => 'decimal:4',
+            'unit_cost' => 'decimal:4',
+            'total_cost' => 'decimal:2',
+            'cost_snapshot_unit_cost' => 'decimal:4',
+            'cost_snapshot_total_value' => 'decimal:2',
+            'status' => WasteInvestigationStatus::class,
+            'outcome' => WasteInvestigationOutcome::class,
+            'resolved_at' => 'datetime',
+            'cost_snapshot_at' => 'datetime',
+            'metadata' => 'array',
         ];
     }
 
@@ -74,8 +74,8 @@ class WasteInvestigation extends Model
         static::created(static function (WasteInvestigation $investigation): void {
             WasteInvestigationEvent::log(
                 investigationId: $investigation->id,
-                eventType:       'created',
-                description:     'Waste investigation created.',
+                eventType: 'created',
+                description: 'Waste investigation created.',
             );
         });
     }

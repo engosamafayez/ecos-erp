@@ -30,14 +30,16 @@ class InventoryAvailabilityEngineTest extends TestCase
     use RefreshDatabase;
 
     private InventoryAvailabilityEngine $engine;
+
     private Company $company;
+
     private Warehouse $warehouse;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->engine    = app(InventoryAvailabilityEngine::class);
-        $this->company   = Company::factory()->create();
+        $this->engine = app(InventoryAvailabilityEngine::class);
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
     }
 
@@ -58,11 +60,11 @@ class InventoryAvailabilityEngineTest extends TestCase
     private function makeRecipe(Product $output, int $version = 1): Recipe
     {
         return Recipe::create([
-            'bom_number'         => 'BOM-AE-' . uniqid(),
-            'product_id'         => $output->id,
-            'version'            => "{$version}.0",
+            'bom_number' => 'BOM-AE-'.uniqid(),
+            'product_id' => $output->id,
+            'version' => "{$version}.0",
             'bom_version_number' => $version,
-            'is_active'          => true,
+            'is_active' => true,
         ]);
     }
 
@@ -70,7 +72,7 @@ class InventoryAvailabilityEngineTest extends TestCase
     {
         $recipe->components()->create([
             'raw_material_id' => $component->id,
-            'quantity'        => $qty,
+            'quantity' => $qty,
         ]);
     }
 
@@ -78,9 +80,9 @@ class InventoryAvailabilityEngineTest extends TestCase
     {
         return InventoryItem::query()->create([
             'warehouse_id' => $this->warehouse->id,
-            'product_id'   => $product->id,
-            'company_id'   => $this->company->id,
-            'on_hand_qty'  => $onHand,
+            'product_id' => $product->id,
+            'company_id' => $this->company->id,
+            'on_hand_qty' => $onHand,
             'reserved_qty' => $reserved,
         ]);
     }
@@ -123,9 +125,9 @@ class InventoryAvailabilityEngineTest extends TestCase
 
     public function test_rc1_only_shortage_is_manufactured_not_full_qty(): void
     {
-        $product   = $this->makeOutput();
+        $product = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($product);
+        $recipe = $this->makeRecipe($product);
         $this->addLine($recipe, $component, qty: 2.0);
 
         $this->seedInventory($product, onHand: 3.0);  // available = 3.0
@@ -148,9 +150,9 @@ class InventoryAvailabilityEngineTest extends TestCase
     public function test_can_manufacture_when_all_materials_covered(): void
     {
         $product = $this->makeOutput();
-        $mat1    = $this->makeComponent();
-        $mat2    = $this->makeComponent();
-        $recipe  = $this->makeRecipe($product);
+        $mat1 = $this->makeComponent();
+        $mat2 = $this->makeComponent();
+        $recipe = $this->makeRecipe($product);
         $this->addLine($recipe, $mat1, qty: 3.0);
         $this->addLine($recipe, $mat2, qty: 1.5);
 
@@ -174,9 +176,9 @@ class InventoryAvailabilityEngineTest extends TestCase
 
     public function test_can_manufacture_when_no_fg_stock_at_all(): void
     {
-        $product   = $this->makeOutput();
+        $product = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($product);
+        $recipe = $this->makeRecipe($product);
         $this->addLine($recipe, $component, qty: 2.0);
 
         // No FG inventory record exists at all
@@ -193,9 +195,9 @@ class InventoryAvailabilityEngineTest extends TestCase
 
     public function test_partial_when_all_unsatisfied_components_allow_negative_stock(): void
     {
-        $product   = $this->makeOutput();
+        $product = $this->makeOutput();
         $component = $this->makeComponent(allowNegative: true);
-        $recipe    = $this->makeRecipe($product);
+        $recipe = $this->makeRecipe($product);
         $this->addLine($recipe, $component, qty: 5.0);
 
         // Component has only 2 units; need 50 (5 × 10) → missing 48, but allow_negative_stock=true
@@ -214,14 +216,14 @@ class InventoryAvailabilityEngineTest extends TestCase
 
     public function test_partial_when_mixed_satisfied_and_negative_stock_components(): void
     {
-        $product      = $this->makeOutput();
-        $matCovered   = $this->makeComponent();
-        $matNegative  = $this->makeComponent(allowNegative: true);
-        $recipe       = $this->makeRecipe($product);
-        $this->addLine($recipe, $matCovered,  qty: 2.0);
+        $product = $this->makeOutput();
+        $matCovered = $this->makeComponent();
+        $matNegative = $this->makeComponent(allowNegative: true);
+        $recipe = $this->makeRecipe($product);
+        $this->addLine($recipe, $matCovered, qty: 2.0);
         $this->addLine($recipe, $matNegative, qty: 3.0);
 
-        $this->seedInventory($matCovered,  onHand: 20.0); // need 2*5=10 ✓
+        $this->seedInventory($matCovered, onHand: 20.0); // need 2*5=10 ✓
         $this->seedInventory($matNegative, onHand: 0.0);  // need 3*5=15, missing 15, but negative allowed
 
         $result = $this->analyse($product, required: 5.0);
@@ -233,9 +235,9 @@ class InventoryAvailabilityEngineTest extends TestCase
 
     public function test_cannot_manufacture_when_component_short_and_no_negative_stock(): void
     {
-        $product   = $this->makeOutput();
+        $product = $this->makeOutput();
         $component = $this->makeComponent(allowNegative: false);
-        $recipe    = $this->makeRecipe($product);
+        $recipe = $this->makeRecipe($product);
         $this->addLine($recipe, $component, qty: 10.0);
 
         // Need 100 units; only 5 available; negative stock NOT allowed
@@ -253,17 +255,17 @@ class InventoryAvailabilityEngineTest extends TestCase
 
     public function test_cannot_manufacture_even_one_hard_blocker_fails_all(): void
     {
-        $product     = $this->makeOutput();
-        $matOk       = $this->makeComponent();
-        $matNeg      = $this->makeComponent(allowNegative: true);
+        $product = $this->makeOutput();
+        $matOk = $this->makeComponent();
+        $matNeg = $this->makeComponent(allowNegative: true);
         $matBlocking = $this->makeComponent(allowNegative: false);
-        $recipe      = $this->makeRecipe($product);
-        $this->addLine($recipe, $matOk,       qty: 1.0);
-        $this->addLine($recipe, $matNeg,      qty: 1.0);
+        $recipe = $this->makeRecipe($product);
+        $this->addLine($recipe, $matOk, qty: 1.0);
+        $this->addLine($recipe, $matNeg, qty: 1.0);
         $this->addLine($recipe, $matBlocking, qty: 1.0);
 
-        $this->seedInventory($matOk,       onHand: 100.0); // covered
-        $this->seedInventory($matNeg,      onHand: 0.0);   // missing but negative allowed
+        $this->seedInventory($matOk, onHand: 100.0); // covered
+        $this->seedInventory($matNeg, onHand: 0.0);   // missing but negative allowed
         $this->seedInventory($matBlocking, onHand: 0.0);   // missing, no negative stock → BLOCKER
 
         $result = $this->analyse($product, required: 5.0);
@@ -291,12 +293,12 @@ class InventoryAvailabilityEngineTest extends TestCase
     public function test_no_recipe_when_bom_exists_but_is_inactive(): void
     {
         $product = $this->makeOutput();
-        $recipe  = Recipe::create([
-            'bom_number'         => 'BOM-INACTIVE-' . uniqid(),
-            'product_id'         => $product->id,
-            'version'            => '1.0',
+        $recipe = Recipe::create([
+            'bom_number' => 'BOM-INACTIVE-'.uniqid(),
+            'product_id' => $product->id,
+            'version' => '1.0',
             'bom_version_number' => 1,
-            'is_active'          => false,  // inactive
+            'is_active' => false,  // inactive
         ]);
         $component = $this->makeComponent();
         $recipe->components()->create(['raw_material_id' => $component->id, 'quantity' => 1.0]);
@@ -310,9 +312,9 @@ class InventoryAvailabilityEngineTest extends TestCase
 
     public function test_missing_inventory_record_is_treated_as_zero_stock(): void
     {
-        $product   = $this->makeOutput();
+        $product = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($product);
+        $recipe = $this->makeRecipe($product);
         $this->addLine($recipe, $component, qty: 1.0);
 
         // No InventoryItem rows seeded at all (neither FG nor component)
@@ -327,12 +329,12 @@ class InventoryAvailabilityEngineTest extends TestCase
 
     public function test_engine_does_not_modify_inventory_records(): void
     {
-        $product   = $this->makeOutput();
+        $product = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($product);
+        $recipe = $this->makeRecipe($product);
         $this->addLine($recipe, $component, qty: 2.0);
 
-        $fgItem  = $this->seedInventory($product,   onHand: 3.0);
+        $fgItem = $this->seedInventory($product, onHand: 3.0);
         $matItem = $this->seedInventory($component, onHand: 4.0);
 
         $this->analyse($product, required: 10.0);
@@ -346,9 +348,9 @@ class InventoryAvailabilityEngineTest extends TestCase
 
     public function test_result_contains_correct_product_and_warehouse_ids(): void
     {
-        $product   = $this->makeOutput();
+        $product = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($product);
+        $recipe = $this->makeRecipe($product);
         $this->addLine($recipe, $component, qty: 1.0);
         $this->seedInventory($component, onHand: 100.0);
 
@@ -361,9 +363,9 @@ class InventoryAvailabilityEngineTest extends TestCase
 
     public function test_result_includes_recipe_snapshot_with_correct_version(): void
     {
-        $product   = $this->makeOutput();
+        $product = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($product, version: 3);
+        $recipe = $this->makeRecipe($product, version: 3);
         $this->addLine($recipe, $component, qty: 1.0);
         $this->seedInventory($component, onHand: 100.0);
 
@@ -376,9 +378,9 @@ class InventoryAvailabilityEngineTest extends TestCase
 
     public function test_raw_material_availability_has_correct_structure(): void
     {
-        $product   = $this->makeOutput();
+        $product = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($product);
+        $recipe = $this->makeRecipe($product);
         $this->addLine($recipe, $component, qty: 3.0);
         $this->seedInventory($component, onHand: 6.0);
 
@@ -389,46 +391,46 @@ class InventoryAvailabilityEngineTest extends TestCase
         $this->assertInstanceOf(RawMaterialAvailability::class, $mat);
         $this->assertSame($component->id, $mat->component_id);
         $this->assertSame(15.0, $mat->required_qty);  // 3.0 × 5
-        $this->assertSame(6.0,  $mat->available_qty);
-        $this->assertSame(9.0,  $mat->missing_qty);   // 15 - 6
+        $this->assertSame(6.0, $mat->available_qty);
+        $this->assertSame(9.0, $mat->missing_qty);   // 15 - 6
     }
 
     public function test_to_array_serialises_all_fields(): void
     {
-        $product   = $this->makeOutput();
+        $product = $this->makeOutput();
         $component = $this->makeComponent();
-        $recipe    = $this->makeRecipe($product);
+        $recipe = $this->makeRecipe($product);
         $this->addLine($recipe, $component, qty: 1.0);
         $this->seedInventory($component, onHand: 100.0);
 
         $result = $this->analyse($product, required: 5.0);
-        $array  = $result->toArray();
+        $array = $result->toArray();
 
-        $this->assertArrayHasKey('product_id',               $array);
-        $this->assertArrayHasKey('warehouse_id',             $array);
-        $this->assertArrayHasKey('required_qty',             $array);
+        $this->assertArrayHasKey('product_id', $array);
+        $this->assertArrayHasKey('warehouse_id', $array);
+        $this->assertArrayHasKey('required_qty', $array);
         $this->assertArrayHasKey('available_finished_goods', $array);
-        $this->assertArrayHasKey('qty_to_manufacture',       $array);
-        $this->assertArrayHasKey('needs_manufacturing',      $array);
-        $this->assertArrayHasKey('recipe_snapshot',          $array);
-        $this->assertArrayHasKey('raw_materials',            $array);
-        $this->assertArrayHasKey('can_manufacture',          $array);
-        $this->assertArrayHasKey('eligibility',              $array);
-        $this->assertArrayHasKey('evaluated_at',             $array);
+        $this->assertArrayHasKey('qty_to_manufacture', $array);
+        $this->assertArrayHasKey('needs_manufacturing', $array);
+        $this->assertArrayHasKey('recipe_snapshot', $array);
+        $this->assertArrayHasKey('raw_materials', $array);
+        $this->assertArrayHasKey('can_manufacture', $array);
+        $this->assertArrayHasKey('eligibility', $array);
+        $this->assertArrayHasKey('evaluated_at', $array);
         $this->assertSame('can_manufacture', $array['eligibility']);
         $this->assertIsArray($array['raw_materials']);
     }
 
     public function test_missing_materials_helper_returns_only_unmet_components(): void
     {
-        $product  = $this->makeOutput();
-        $matOk    = $this->makeComponent();
+        $product = $this->makeOutput();
+        $matOk = $this->makeComponent();
         $matShort = $this->makeComponent();
-        $recipe   = $this->makeRecipe($product);
-        $this->addLine($recipe, $matOk,    qty: 1.0);
+        $recipe = $this->makeRecipe($product);
+        $this->addLine($recipe, $matOk, qty: 1.0);
         $this->addLine($recipe, $matShort, qty: 10.0);
 
-        $this->seedInventory($matOk,    onHand: 100.0);
+        $this->seedInventory($matOk, onHand: 100.0);
         $this->seedInventory($matShort, onHand: 1.0);   // short
 
         $result = $this->analyse($product, required: 5.0);

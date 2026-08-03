@@ -33,15 +33,17 @@ class InventoryAbcClassificationTest extends TestCase
     use RefreshDatabase;
 
     private Company $company;
+
     private Warehouse $warehouse;
+
     private Supplier $supplier;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->company   = Company::factory()->create();
+        $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $this->supplier  = Supplier::factory()->create();
+        $this->supplier = Supplier::factory()->create();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -50,7 +52,7 @@ class InventoryAbcClassificationTest extends TestCase
     {
         return Product::factory()->create([
             'regular_price' => 100.0,
-            'average_cost'  => 50.0,
+            'average_cost' => 50.0,
         ]);
     }
 
@@ -58,9 +60,9 @@ class InventoryAbcClassificationTest extends TestCase
     {
         return InventoryItem::query()->create([
             'warehouse_id' => $this->warehouse->id,
-            'product_id'   => $product->id,
-            'company_id'   => $this->company->id,
-            'on_hand_qty'  => $onHand,
+            'product_id' => $product->id,
+            'company_id' => $this->company->id,
+            'on_hand_qty' => $onHand,
             'reserved_qty' => 0,
         ]);
     }
@@ -80,25 +82,25 @@ class InventoryAbcClassificationTest extends TestCase
     ): InventoryReceiptLayer {
         // Create a layer directly (no GoodsReceipt factory → no phantom products)
         $layer = InventoryReceiptLayer::query()->create([
-            'product_id'       => $item->product_id,
-            'warehouse_id'     => $this->warehouse->id,
-            'received_qty'     => $qty,
-            'remaining_qty'    => 0,
+            'product_id' => $item->product_id,
+            'warehouse_id' => $this->warehouse->id,
+            'received_qty' => $qty,
+            'remaining_qty' => 0,
             'landed_unit_cost' => $cost,
-            'receipt_date'     => now()->toDateString(),
+            'receipt_date' => now()->toDateString(),
         ]);
 
         \Illuminate\Support\Facades\DB::table('inventory_layer_consumptions')->insert([
-            'id'                         => Str::uuid()->toString(),
-            'inventory_item_id'          => $item->id,
+            'id' => Str::uuid()->toString(),
+            'inventory_item_id' => $item->id,
             'inventory_receipt_layer_id' => $layer->id,
-            'product_id'                 => $item->product_id,
-            'warehouse_id'               => $this->warehouse->id,
-            'company_id'                 => $this->company->id,
-            'quantity'                   => $qty,
-            'unit_cost'                  => $cost,
-            'total_cost'                 => round($qty * $cost, 4),
-            'created_at'                 => $at ?? now()->toDateTimeString(),
+            'product_id' => $item->product_id,
+            'warehouse_id' => $this->warehouse->id,
+            'company_id' => $this->company->id,
+            'quantity' => $qty,
+            'unit_cost' => $cost,
+            'total_cost' => round($qty * $cost, 4),
+            'created_at' => $at ?? now()->toDateTimeString(),
         ]);
 
         return $layer;
@@ -134,7 +136,7 @@ class InventoryAbcClassificationTest extends TestCase
     public function test_single_consuming_product_gets_classified(): void
     {
         $product = $this->makeProduct();
-        $item    = $this->seedItem($product, 100.0);
+        $item = $this->seedItem($product, 100.0);
         $this->addConsumption($item, 50.0, 40.0); // total_cost = 2000
 
         $this->service()->recalculate();
@@ -236,7 +238,7 @@ class InventoryAbcClassificationTest extends TestCase
     public function test_product_never_counted_has_overdue_cycle_plan(): void
     {
         $product = $this->makeProduct();
-        $item    = $this->seedItem($product, 10.0);
+        $item = $this->seedItem($product, 10.0);
         $this->addConsumption($item, 70.0, 10.0);
 
         $this->service()->recalculate();
@@ -253,14 +255,14 @@ class InventoryAbcClassificationTest extends TestCase
     public function test_recently_counted_product_is_not_overdue(): void
     {
         $product = $this->makeProduct();
-        $item    = $this->seedItem($product, 10.0);
+        $item = $this->seedItem($product, 10.0);
         $this->addConsumption($item, 70.0, 10.0);
 
         // Create and approve a count session today
         $session = app(CreateCountSessionAction::class)->execute([
-            'company_id'   => $this->company->id,
+            'company_id' => $this->company->id,
             'warehouse_id' => $this->warehouse->id,
-            'notes'        => 'recent count',
+            'notes' => 'recent count',
         ]);
         app(StartCountSessionAction::class)->execute($session);
         InventoryCountLine::query()
@@ -289,7 +291,7 @@ class InventoryAbcClassificationTest extends TestCase
     public function test_recalculate_is_idempotent(): void
     {
         $product = $this->makeProduct();
-        $item    = $this->seedItem($product, 10.0);
+        $item = $this->seedItem($product, 10.0);
         $this->addConsumption($item, 50.0, 10.0);
 
         $this->service()->recalculate();
@@ -304,7 +306,7 @@ class InventoryAbcClassificationTest extends TestCase
     public function test_consumptions_older_than_12_months_are_excluded(): void
     {
         $product = $this->makeProduct();
-        $item    = $this->seedItem($product, 10.0);
+        $item = $this->seedItem($product, 10.0);
 
         // Consumption outside the rolling 12-month window
         $this->addConsumption($item, 100.0, 50.0, Carbon::now()->subMonths(13)->toDateTimeString());
@@ -320,12 +322,12 @@ class InventoryAbcClassificationTest extends TestCase
 
     public function test_abc_class_frequency_and_label_helpers(): void
     {
-        $this->assertEquals(30,  AbcClass::A->frequencyDays());
-        $this->assertEquals(90,  AbcClass::B->frequencyDays());
+        $this->assertEquals(30, AbcClass::A->frequencyDays());
+        $this->assertEquals(90, AbcClass::B->frequencyDays());
         $this->assertEquals(180, AbcClass::C->frequencyDays());
 
-        $this->assertEquals('Monthly',     AbcClass::A->frequencyLabel());
-        $this->assertEquals('Quarterly',   AbcClass::B->frequencyLabel());
+        $this->assertEquals('Monthly', AbcClass::A->frequencyLabel());
+        $this->assertEquals('Quarterly', AbcClass::B->frequencyLabel());
         $this->assertEquals('Semi-Annual', AbcClass::C->frequencyLabel());
     }
 }

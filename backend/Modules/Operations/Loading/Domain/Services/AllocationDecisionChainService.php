@@ -22,24 +22,24 @@ final class AllocationDecisionChainService
     ): AllocationDecision {
         return DB::transaction(function () use ($record, $quantityAllocated): AllocationDecision {
             $decision = AllocationDecision::create([
-                'id'                   => Str::ulid()->toBase32(),
-                'company_id'           => $record->company_id,
+                'id' => Str::ulid()->toBase32(),
+                'company_id' => $record->company_id,
                 'allocation_record_id' => $record->id,
-                'revision_number'      => 1,
-                'actor_type'           => 'system',
-                'actor_id'             => null,
-                'quantity_before'      => 0.0,
-                'quantity_after'       => $quantityAllocated,
-                'reason'               => 'System auto-allocation',
-                'recorded_at'          => now(),
+                'revision_number' => 1,
+                'actor_type' => 'system',
+                'actor_id' => null,
+                'quantity_before' => 0.0,
+                'quantity_after' => $quantityAllocated,
+                'reason' => 'System auto-allocation',
+                'recorded_at' => now(),
             ]);
 
             $record->update([
-                'quantity_allocated'    => $quantityAllocated,
-                'last_decision_id'      => $decision->id,
-                'allocated_by'          => 'system',
-                'allocated_by_user_id'  => null,
-                'updated_by'            => 'system',
+                'quantity_allocated' => $quantityAllocated,
+                'last_decision_id' => $decision->id,
+                'allocated_by' => 'system',
+                'allocated_by_user_id' => null,
+                'updated_by' => 'system',
             ]);
 
             return $decision;
@@ -99,24 +99,24 @@ final class AllocationDecisionChainService
             $nextRevision = (AllocationDecision::where('allocation_record_id', $record->id)->max('revision_number') ?? 0) + 1;
 
             $decision = AllocationDecision::create([
-                'id'                   => Str::ulid()->toBase32(),
-                'company_id'           => $record->company_id,
+                'id' => Str::ulid()->toBase32(),
+                'company_id' => $record->company_id,
                 'allocation_record_id' => $record->id,
-                'revision_number'      => $nextRevision,
-                'actor_type'           => $actorType,
-                'actor_id'             => $actorId,
-                'quantity_before'      => $record->quantity_allocated,
-                'quantity_after'       => $newQuantity,
-                'reason'               => $reason,
-                'recorded_at'          => now(),
+                'revision_number' => $nextRevision,
+                'actor_type' => $actorType,
+                'actor_id' => $actorId,
+                'quantity_before' => $record->quantity_allocated,
+                'quantity_after' => $newQuantity,
+                'reason' => $reason,
+                'recorded_at' => now(),
             ]);
 
             $record->update([
-                'quantity_allocated'   => $newQuantity,
-                'last_decision_id'     => $decision->id,
-                'allocated_by'         => $actorType,
+                'quantity_allocated' => $newQuantity,
+                'last_decision_id' => $decision->id,
+                'allocated_by' => $actorType,
                 'allocated_by_user_id' => $actorId,
-                'updated_by'           => $actorId,
+                'updated_by' => $actorId,
             ]);
 
             return $decision;

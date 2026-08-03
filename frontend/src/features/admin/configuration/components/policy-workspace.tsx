@@ -107,11 +107,11 @@ const GROUP_FIELDS: Partial<Record<PolicyGroup, FieldDef[]>> = {
       ],
     },
     { key: 'discount_type',            label: 'Discount Limit Type',       type: 'select',
-      options: [{ value: 'percentage', label: 'Percentage (%)' }, { value: 'fixed_amount', label: 'Fixed Amount (EGP)' }],
+      options: [{ value: 'percentage', label: 'Percentage (%)' }, { value: 'fixed_amount', label: 'Fixed Amount' }],
       hint: 'How the maximum discount limit is expressed.',
     },
     { key: 'discount_value',           label: 'Maximum Discount Value',    type: 'number',   min: 0, hint: 'Maximum allowed discount per order. 0 = no limit.' },
-    { key: 'required_approval_above',  label: 'Approval Threshold (EGP)',  type: 'nullable-number', hint: 'Require manager approval when price change exceeds this value.', visibleWhen: (form) => String(form['publishing_strategy'] ?? '') === 'approval_only' },
+    { key: 'required_approval_above',  label: 'Approval Threshold',  type: 'nullable-number', hint: 'Require manager approval when price change exceeds this value.', visibleWhen: (form) => String(form['publishing_strategy'] ?? '') === 'approval_only' },
     { key: '_approval_role',           label: 'Approval Role',             type: 'placeholder-role', hint: 'The role required to approve price changes. Coming in a future update.', visibleWhen: (form) => String(form['publishing_strategy'] ?? '') === 'approval_only' },
     { key: 'pending_review_threshold', label: 'Pending Review Alert',      type: 'number',   hint: 'Show dashboard alert when pending reviews exceed this count.', min: 1 },
     { key: 'price_expiration_days',    label: 'Price Expiry (days)',       type: 'nullable-number', hint: 'Auto-expire prices after this many days. Leave blank for no expiry.' },
@@ -255,7 +255,7 @@ const GROUP_FIELDS: Partial<Record<PolicyGroup, FieldDef[]>> = {
   approval: [
     { key: 'price_approval_required',     label: 'Price Approval Required',       type: 'boolean' },
     { key: 'recipe_approval_required',    label: 'Recipe Approval Required',      type: 'boolean' },
-    { key: 'purchase_approval_threshold', label: 'Purchase Approval Threshold (EGP)', type: 'nullable-number', hint: 'Require approval for purchases above this amount.' },
+    { key: 'purchase_approval_threshold', label: 'Purchase Approval Threshold', type: 'nullable-number', hint: 'Require approval for purchases above this amount.' },
     { key: 'discount_approval_required',  label: 'Discount Approval Required',    type: 'boolean' },
     { key: 'refund_approval_required',    label: 'Refund Approval Required',      type: 'boolean' },
   ],
@@ -382,13 +382,13 @@ export function PolicyWorkspace({ brandId, group }: { brandId: string; group: Po
           {data?.configured ? (
             <>
               <Badge className="text-[10px] py-0 h-5 bg-emerald-50 text-emerald-700 border-emerald-200">
-                <CheckCircle2 className="h-2.5 w-2.5 mr-1" />
+                <CheckCircle2 className="h-2.5 w-2.5 me-1" />
                 {t('policy.configuredVersion', { version: data?.version ?? 1 })}
               </Badge>
             </>
           ) : (
             <Badge className="text-[10px] py-0 h-5 bg-amber-50 text-amber-700 border-amber-200">
-              <XCircle className="h-2.5 w-2.5 mr-1" />
+              <XCircle className="h-2.5 w-2.5 me-1" />
               {t('policy.usingDefaults')}
             </Badge>
           )}
@@ -724,11 +724,11 @@ function AuditLine({ entry }: { entry: ConfigAuditEntry }) {
           {tAny(`policy.auditActions.${entry.action}`, { defaultValue: entry.action })}
         </span>
         {entry.actor_name && (
-          <span className="text-muted-foreground ml-1">
+          <span className="text-muted-foreground ms-1">
             {tAny('policy.auditBy')} {entry.actor_name}
           </span>
         )}
-        {entry.reason && <span className="text-muted-foreground italic ml-1">"{entry.reason}"</span>}
+        {entry.reason && <span className="text-muted-foreground italic ms-1">"{entry.reason}"</span>}
       </div>
       <span className="text-muted-foreground shrink-0 whitespace-nowrap">
         {new Date(entry.occurred_at).toLocaleString(i18n.language, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}

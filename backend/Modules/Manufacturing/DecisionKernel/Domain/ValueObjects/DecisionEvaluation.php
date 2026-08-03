@@ -35,13 +35,13 @@ final readonly class DecisionEvaluation
     public function toArray(): array
     {
         return [
-            'rule_id'       => $this->rule_id,
-            'rule_name'     => $this->rule_name,
-            'priority'      => $this->priority,
-            'matched'       => $this->matched,
+            'rule_id' => $this->rule_id,
+            'rule_name' => $this->rule_name,
+            'priority' => $this->priority,
+            'matched' => $this->matched,
             'decision_type' => $this->decision_type->value,
-            'reason'        => $this->reason->toArray(),
-            'metadata'      => $this->metadata,
+            'reason' => $this->reason->toArray(),
+            'metadata' => $this->metadata,
         ];
     }
 }

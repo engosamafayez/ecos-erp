@@ -49,29 +49,29 @@ final class DisassemblyInventoryAdapter
         string $companyId,
         string $executionUuid,
     ): string {
-        $item       = $this->inventoryItems->findOrCreate($warehouseId, $productId, $companyId);
+        $item = $this->inventoryItems->findOrCreate($warehouseId, $productId, $companyId);
         $lockedItem = $this->inventoryItems->lockForUpdate($item->id);
 
         $onHandBefore = (float) $lockedItem->on_hand_qty;
-        $onHandAfter  = $onHandBefore - $qty;
+        $onHandAfter = $onHandBefore - $qty;
 
         $lockedItem->on_hand_qty = $onHandAfter;
         $this->inventoryItems->save($lockedItem);
 
         $entry = $this->inventoryItems->recordEntry([
             'inventory_item_id' => $lockedItem->id,
-            'warehouse_id'      => $warehouseId,
-            'product_id'        => $productId,
-            'company_id'        => $companyId,
-            'movement_type'     => LedgerMovementType::DisassemblyConsumption->value,
-            'quantity'          => $qty,
-            'on_hand_before'    => $onHandBefore,
-            'on_hand_after'     => $onHandAfter,
-            'reserved_before'   => (float) $lockedItem->reserved_qty,
-            'reserved_after'    => (float) $lockedItem->reserved_qty,
-            'reference_type'    => 'disassembly_plan',
-            'reference_id'      => $planId,
-            'notes'             => "Finished good consumed for disassembly {$executionUuid}",
+            'warehouse_id' => $warehouseId,
+            'product_id' => $productId,
+            'company_id' => $companyId,
+            'movement_type' => LedgerMovementType::DisassemblyConsumption->value,
+            'quantity' => $qty,
+            'on_hand_before' => $onHandBefore,
+            'on_hand_after' => $onHandAfter,
+            'reserved_before' => (float) $lockedItem->reserved_qty,
+            'reserved_after' => (float) $lockedItem->reserved_qty,
+            'reference_type' => 'disassembly_plan',
+            'reference_id' => $planId,
+            'notes' => "Finished good consumed for disassembly {$executionUuid}",
         ]);
 
         // Consume FIFO layers if available (gracefully skipped for manufactured FG with no layers)
@@ -92,39 +92,39 @@ final class DisassemblyInventoryAdapter
         string $companyId,
         string $executionUuid,
     ): ComponentProductionRecord {
-        $item       = $this->inventoryItems->findOrCreate($warehouseId, $component->component_id, $companyId);
+        $item = $this->inventoryItems->findOrCreate($warehouseId, $component->component_id, $companyId);
         $lockedItem = $this->inventoryItems->lockForUpdate($item->id);
 
         $onHandBefore = (float) $lockedItem->on_hand_qty;
-        $onHandAfter  = $onHandBefore + $component->qty_to_produce;
+        $onHandAfter = $onHandBefore + $component->qty_to_produce;
 
         $lockedItem->on_hand_qty = $onHandAfter;
         $this->inventoryItems->save($lockedItem);
 
         $entry = $this->inventoryItems->recordEntry([
             'inventory_item_id' => $lockedItem->id,
-            'warehouse_id'      => $warehouseId,
-            'product_id'        => $component->component_id,
-            'company_id'        => $companyId,
-            'movement_type'     => LedgerMovementType::DisassemblyOutput->value,
-            'quantity'          => $component->qty_to_produce,
-            'on_hand_before'    => $onHandBefore,
-            'on_hand_after'     => $onHandAfter,
-            'reserved_before'   => (float) $lockedItem->reserved_qty,
-            'reserved_after'    => (float) $lockedItem->reserved_qty,
-            'reference_type'    => 'disassembly_plan',
-            'reference_id'      => $planId,
-            'notes'             => "Component produced by disassembly {$executionUuid}",
+            'warehouse_id' => $warehouseId,
+            'product_id' => $component->component_id,
+            'company_id' => $companyId,
+            'movement_type' => LedgerMovementType::DisassemblyOutput->value,
+            'quantity' => $component->qty_to_produce,
+            'on_hand_before' => $onHandBefore,
+            'on_hand_after' => $onHandAfter,
+            'reserved_before' => (float) $lockedItem->reserved_qty,
+            'reserved_after' => (float) $lockedItem->reserved_qty,
+            'reference_type' => 'disassembly_plan',
+            'reference_id' => $planId,
+            'notes' => "Component produced by disassembly {$executionUuid}",
         ]);
 
         return new ComponentProductionRecord(
-            component_id:    $component->component_id,
-            sku:             $component->sku,
-            name:            $component->name,
-            unit_symbol:     $component->unit_symbol,
-            qty_produced:    $component->qty_to_produce,
-            on_hand_before:  $onHandBefore,
-            on_hand_after:   $onHandAfter,
+            component_id: $component->component_id,
+            sku: $component->sku,
+            name: $component->name,
+            unit_symbol: $component->unit_symbol,
+            qty_produced: $component->qty_to_produce,
+            on_hand_before: $onHandBefore,
+            on_hand_after: $onHandAfter,
             ledger_entry_id: $entry->id,
         );
     }
@@ -157,10 +157,10 @@ final class DisassemblyInventoryAdapter
 
         $this->layerService->consume(
             inventoryItemId: $inventoryItemId,
-            productId:       $productId,
-            warehouseId:     $warehouseId,
-            companyId:       $companyId,
-            quantity:        $layerQtyToConsume,
+            productId: $productId,
+            warehouseId: $warehouseId,
+            companyId: $companyId,
+            quantity: $layerQtyToConsume,
         );
     }
 }

@@ -31,11 +31,11 @@ final readonly class ComponentProductionPlan
     public function toArray(): array
     {
         return [
-            'component_id'      => $this->component_id,
-            'sku'               => $this->sku,
-            'name'              => $this->name,
-            'unit_symbol'       => $this->unit_symbol,
-            'qty_to_produce'    => $this->qty_to_produce,
+            'component_id' => $this->component_id,
+            'sku' => $this->sku,
+            'name' => $this->name,
+            'unit_symbol' => $this->unit_symbol,
+            'qty_to_produce' => $this->qty_to_produce,
             'required_per_unit' => $this->required_per_unit,
         ];
     }

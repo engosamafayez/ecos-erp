@@ -10,16 +10,16 @@ final class VehicleAssignmentNumberGenerator
 {
     public function next(string $companyId): string
     {
-        $prefix    = 'VASN-' . now()->format('Ym') . '-';
+        $prefix = 'VASN-'.now()->format('Ym').'-';
         $prefixLen = strlen($prefix);
 
         $max = DB::table('vehicle_assignments')
             ->where('company_id', $companyId)
-            ->where('assignment_number', 'like', $prefix . '%')
-            ->max(DB::raw("CAST(SUBSTR(assignment_number, " . ($prefixLen + 1) . ") AS UNSIGNED)"));
+            ->where('assignment_number', 'like', $prefix.'%')
+            ->max(DB::raw('CAST(SUBSTR(assignment_number, '.($prefixLen + 1).') AS UNSIGNED)'));
 
         $next = ($max ?? 0) + 1;
 
-        return $prefix . str_pad((string) $next, 6, '0', STR_PAD_LEFT);
+        return $prefix.str_pad((string) $next, 6, '0', STR_PAD_LEFT);
     }
 }

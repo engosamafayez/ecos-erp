@@ -16,7 +16,7 @@ final class ConfigurationServiceProvider extends ServiceProvider
 
         $this->app->singleton(
             ConfigurationManager::class,
-            fn ($app) => new ConfigurationManager($app->make(ConfigAuditService::class))
+            fn ($app) => new ConfigurationManager($app->make(ConfigAuditService::class)),
         );
     }
 

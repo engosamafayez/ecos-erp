@@ -63,7 +63,7 @@ final class AdjustmentOutAction extends BaseAction
                 throw new InvalidInventoryMovementException('InventoryItem disappeared during transaction');
             }
 
-            $onHandBefore   = (float) $locked->on_hand_qty;
+            $onHandBefore = (float) $locked->on_hand_qty;
             $reservedBefore = (float) $locked->reserved_qty;
 
             if ($onHandBefore < $dto->quantity) {
@@ -82,8 +82,8 @@ final class AdjustmentOutAction extends BaseAction
             $onHandAfter = $onHandBefore - $dto->quantity;
             if (! $dto->bypassReserveGuard && $onHandAfter < $reservedBefore) {
                 throw new InvalidInventoryMovementException(
-                    "Cannot adjust out {$dto->quantity} units: on_hand_qty would fall below reserved_qty ({$reservedBefore}). " .
-                    'Release or fulfil reserved orders first.'
+                    "Cannot adjust out {$dto->quantity} units: on_hand_qty would fall below reserved_qty ({$reservedBefore}). ".
+                    'Release or fulfil reserved orders first.',
                 );
             }
 
@@ -92,33 +92,33 @@ final class AdjustmentOutAction extends BaseAction
 
             $this->inventory->recordEntry([
                 'inventory_item_id' => $locked->id,
-                'warehouse_id'      => $dto->warehouse_id,
-                'product_id'        => $dto->product_id,
-                'company_id'        => $dto->company_id,
-                'movement_type'     => LedgerMovementType::AdjustmentOut->value,
-                'quantity'          => $dto->quantity,
-                'on_hand_before'    => $onHandBefore,
-                'on_hand_after'     => $onHandAfter,
-                'reserved_before'   => $reservedBefore,
-                'reserved_after'    => $reservedBefore,
-                'reference_type'    => $dto->reference_type,
-                'reference_id'      => $dto->reference_id,
-                'notes'             => $dto->notes,
+                'warehouse_id' => $dto->warehouse_id,
+                'product_id' => $dto->product_id,
+                'company_id' => $dto->company_id,
+                'movement_type' => LedgerMovementType::AdjustmentOut->value,
+                'quantity' => $dto->quantity,
+                'on_hand_before' => $onHandBefore,
+                'on_hand_after' => $onHandAfter,
+                'reserved_before' => $reservedBefore,
+                'reserved_after' => $reservedBefore,
+                'reference_type' => $dto->reference_type,
+                'reference_id' => $dto->reference_id,
+                'notes' => $dto->notes,
             ]);
 
             $locked->refresh();
 
             $event = new InventoryStockAdjusted(
                 inventoryItemId: $locked->id,
-                warehouseId:     $dto->warehouse_id,
-                productId:       $dto->product_id,
-                companyId:       $dto->company_id,
-                adjustmentType:  InventoryStockAdjusted::TYPE_OUT,
-                quantity:        $dto->quantity,
-                onHandBefore:    $onHandBefore,
-                onHandAfter:     $onHandAfter,
-                referenceType:   $dto->reference_type,
-                referenceId:     $dto->reference_id,
+                warehouseId: $dto->warehouse_id,
+                productId: $dto->product_id,
+                companyId: $dto->company_id,
+                adjustmentType: InventoryStockAdjusted::TYPE_OUT,
+                quantity: $dto->quantity,
+                onHandBefore: $onHandBefore,
+                onHandAfter: $onHandAfter,
+                referenceType: $dto->reference_type,
+                referenceId: $dto->reference_id,
             );
 
             return $locked;

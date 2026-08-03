@@ -11,12 +11,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { TrendsFilters } from '../../types/intelligence';
+import { useFormatter } from '@/hooks/use-formatter';
 
-function fmt(n: number | null | undefined, prefix = ''): string {
+function fmt(n: number | null | undefined): string {
   if (n == null) return '—';
-  if (n >= 1_000_000) return `${prefix}${(n / 1_000_000).toFixed(2)}M`;
-  if (n >= 1_000)     return `${prefix}${(n / 1_000).toFixed(1)}K`;
-  return `${prefix}${n.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
+  if (n >= 1_000)     return `${(n / 1_000).toFixed(1)}K`;
+  return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
 }
 
 type Metric = {
@@ -26,27 +27,29 @@ type Metric = {
   format: (v: number) => string;
 };
 
-const METRICS: Metric[] = [
-  { key: 'spend',       label: 'Spend',       color: '#6366F1', format: (v) => `$${(v / 1000).toFixed(1)}K` },
-  { key: 'revenue',     label: 'Revenue',     color: '#16A34A', format: (v) => `$${(v / 1000).toFixed(1)}K` },
-  { key: 'roas',        label: 'ROAS',        color: '#0891B2', format: (v) => `${v.toFixed(2)}x` },
-  { key: 'ctr',         label: 'CTR',         color: '#D97706', format: (v) => `${(v * 100).toFixed(2)}%` },
-  { key: 'cpa',         label: 'CPA',         color: '#DC2626', format: (v) => `$${v.toFixed(2)}` },
-  { key: 'purchases',   label: 'Purchases',   color: '#7C3AED', format: (v) => v.toLocaleString() },
-  { key: 'leads',       label: 'Leads',       color: '#059669', format: (v) => v.toLocaleString() },
-  { key: 'impressions', label: 'Impressions', color: '#64748B', format: (v) => `${(v / 1000).toFixed(0)}K` },
-  { key: 'clicks',      label: 'Clicks',      color: '#F59E0B', format: (v) => v.toLocaleString() },
-];
-
 const ACTIVE_METRICS_DEFAULT = ['spend', 'revenue', 'roas', 'purchases'];
 
 export function PerformanceTrendsPage() {
+  const { money, moneyCompact } = useFormatter();
   const [filters, setFilters] = useState<TrendsFilters>({
     date_preset:  'last_30d',
     granularity:  'day',
     level:        'campaign',
   });
   const [activeMetrics, setActiveMetrics] = useState<string[]>(ACTIVE_METRICS_DEFAULT);
+
+  // Currency metrics route through the centralized formatter (company currency).
+  const METRICS: Metric[] = [
+    { key: 'spend',       label: 'Spend',       color: '#6366F1', format: (v) => moneyCompact(v) },
+    { key: 'revenue',     label: 'Revenue',     color: '#16A34A', format: (v) => moneyCompact(v) },
+    { key: 'roas',        label: 'ROAS',        color: '#0891B2', format: (v) => `${v.toFixed(2)}x` },
+    { key: 'ctr',         label: 'CTR',         color: '#D97706', format: (v) => `${(v * 100).toFixed(2)}%` },
+    { key: 'cpa',         label: 'CPA',         color: '#DC2626', format: (v) => money(v) },
+    { key: 'purchases',   label: 'Purchases',   color: '#7C3AED', format: (v) => v.toLocaleString() },
+    { key: 'leads',       label: 'Leads',       color: '#059669', format: (v) => v.toLocaleString() },
+    { key: 'impressions', label: 'Impressions', color: '#64748B', format: (v) => `${(v / 1000).toFixed(0)}K` },
+    { key: 'clicks',      label: 'Clicks',      color: '#F59E0B', format: (v) => v.toLocaleString() },
+  ];
 
   const { data, isLoading, isFetching, refetch } = useIntelligenceTrends(filters);
 
@@ -111,8 +114,8 @@ export function PerformanceTrendsPage() {
           Array.from({ length: 5 }).map((_, i) => <KpiCardSkeleton key={i} />)
         ) : (
           <>
-            <KpiCard label="Total Spend"     value={fmt(summary?.total_spend, '$')}   accent="default" />
-            <KpiCard label="Total Revenue"   value={fmt(summary?.total_revenue, '$')} accent="green"   />
+            <KpiCard label="Total Spend"     value={moneyCompact(summary?.total_spend)}   accent="default" />
+            <KpiCard label="Total Revenue"   value={moneyCompact(summary?.total_revenue)} accent="green"   />
             <KpiCard label="Avg ROAS"        value={summary?.avg_roas != null ? `${summary.avg_roas.toFixed(2)}x` : null} accent="blue" />
             <KpiCard label="Total Purchases" value={fmt(summary?.total_purchases)}    accent="default" />
             <KpiCard label="Total Leads"     value={fmt(summary?.total_leads)}        accent="default" />

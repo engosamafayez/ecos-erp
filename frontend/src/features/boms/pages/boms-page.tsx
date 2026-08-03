@@ -67,46 +67,49 @@ export function BomsPage() {
     setPage(1);
   };
 
-  const columns: ColumnDef<Bom>[] = [
-    {
-      key: 'bom_number',
-      header: t('columns.bomNumber'),
-      sortable: true,
-      cell: (bom) => <span className="font-mono font-medium">{bom.bom_number}</span>,
-    },
-    {
-      key: 'product',
-      header: t('columns.product'),
-      cell: (bom) => bom.product?.name ?? '—',
-    },
-    {
-      key: 'version',
-      header: t('columns.version'),
-      sortable: true,
-      cell: (bom) => bom.version,
-    },
-    {
-      key: 'lines',
-      header: t('columns.lines'),
-      cell: (bom) => bom.lines?.length ?? 0,
-    },
-    {
-      key: 'is_active',
-      header: t('columns.status'),
-      cell: (bom) =>
-        bom.is_active ? (
-          <Badge variant="default">{t('status.active')}</Badge>
-        ) : (
-          <Badge variant="secondary">{t('status.inactive')}</Badge>
-        ),
-    },
-    {
-      key: 'created_at',
-      header: t('columns.createdAt'),
-      sortable: true,
-      cell: (bom) => (bom.created_at ? bom.created_at.slice(0, 10) : '—'),
-    },
-  ];
+  const columns = useMemo<ColumnDef<Bom>[]>(
+    () => [
+      {
+        key: 'bom_number',
+        header: t('columns.bomNumber'),
+        sortable: true,
+        cell: (bom) => <span className="font-mono font-medium">{bom.bom_number}</span>,
+      },
+      {
+        key: 'product',
+        header: t('columns.product'),
+        cell: (bom) => bom.product?.name ?? '—',
+      },
+      {
+        key: 'version',
+        header: t('columns.version'),
+        sortable: true,
+        cell: (bom) => bom.version,
+      },
+      {
+        key: 'lines',
+        header: t('columns.lines'),
+        cell: (bom) => bom.lines?.length ?? 0,
+      },
+      {
+        key: 'is_active',
+        header: t('columns.status'),
+        cell: (bom) =>
+          bom.is_active ? (
+            <Badge variant="default">{t('status.active')}</Badge>
+          ) : (
+            <Badge variant="secondary">{t('status.inactive')}</Badge>
+          ),
+      },
+      {
+        key: 'created_at',
+        header: t('columns.createdAt'),
+        sortable: true,
+        cell: (bom) => (bom.created_at ? bom.created_at.slice(0, 10) : '—'),
+      },
+    ],
+    [t],
+  );
 
   return (
     <div className="flex flex-col gap-6">
@@ -163,7 +166,7 @@ export function BomsPage() {
             onSortChange={handleSort}
             rowActions={(bom) => (
               <ActionMenu
-                label={`Actions for ${bom.bom_number}`}
+                label={t('actions.actionsFor', { number: bom.bom_number })}
                 items={[
                   {
                     key: 'view',

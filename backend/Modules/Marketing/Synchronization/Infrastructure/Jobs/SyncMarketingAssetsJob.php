@@ -20,14 +20,16 @@ final class SyncMarketingAssetsJob implements ShouldQueue
     use Queueable;
     use SerializesModels;
 
-    public int   $tries   = 3;
-    public int   $timeout = 120;
+    public int $tries = 3;
+
+    public int $timeout = 120;
+
     public array $backoff = [30, 90];
 
     public function __construct(
         private readonly MarketingConnection $connection,
-        private readonly SyncType            $syncType = SyncType::Scheduled,
-        private readonly ?string             $triggeredBy = null,
+        private readonly SyncType $syncType = SyncType::Scheduled,
+        private readonly ?string $triggeredBy = null,
     ) {}
 
     public function handle(RunSyncAction $action): void

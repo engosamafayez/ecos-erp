@@ -41,6 +41,7 @@ class InventoryLayerConsumption extends Model
 
     // Immutable — no updated_at column
     public $timestamps = false;
+
     public const CREATED_AT = 'created_at';
 
     /** @var list<string> */
@@ -62,8 +63,8 @@ class InventoryLayerConsumption extends Model
     protected function casts(): array
     {
         return [
-            'quantity'   => 'decimal:4',
-            'unit_cost'  => 'decimal:4',
+            'quantity' => 'decimal:4',
+            'unit_cost' => 'decimal:4',
             'total_cost' => 'decimal:4',
             'created_at' => 'datetime',
         ];

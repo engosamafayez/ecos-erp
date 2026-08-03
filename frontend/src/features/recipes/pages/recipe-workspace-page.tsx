@@ -4,6 +4,7 @@ import { Controller, FormProvider, useFieldArray, useForm, useWatch } from 'reac
 import type { SubmitHandler, UseFormReturn } from 'react-hook-form';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import {
   AlertCircle,
@@ -74,21 +75,22 @@ function fmt(value: number, decimals = 2): string {
   });
 }
 
-function fmtCost(n: number, currency = 'EGP', locale = 'en-EG'): string {
+function fmtCost(n: number, currency: string, locale = 'en-EG'): string {
   return formatMoney(n, currency, locale);
 }
 
 function MaterialTypeBadge({ type }: { type: string }) {
+  const { t } = useTranslation('recipes');
   if (type === 'packaging_material') {
     return (
       <Badge variant="outline" className="text-xs border-violet-300 text-violet-700 dark:border-violet-700 dark:text-violet-400">
-        Packaging
+        {t('materialTypes.packaging')}
       </Badge>
     );
   }
   return (
     <Badge variant="outline" className="text-xs border-sky-300 text-sky-700 dark:border-sky-700 dark:text-sky-400">
-      Raw Material
+      {t('materialTypes.rawMaterial')}
     </Badge>
   );
 }
@@ -123,6 +125,7 @@ type QuickMaterialDialogProps = {
 };
 
 function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: QuickMaterialDialogProps) {
+  const { t } = useTranslation('recipes');
   const createMaterial = useCreateRawMaterial();
   const { data: categoriesResult } = useCategoriesQuery({ status: 'active', per_page: 200 });
   const { data: unitsResult }      = useUnitsQuery({ per_page: 200 });
@@ -146,9 +149,9 @@ function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: Qui
   }
 
   function handleSave() {
-    if (!name.trim())    { setError('Name is required.');      return; }
-    if (!categoryId)     { setError('Category is required.'); return; }
-    if (!unitId)         { setError('Unit is required.');     return; }
+    if (!name.trim())    { setError(t('createMaterial.nameRequired'));      return; }
+    if (!categoryId)     { setError(t('createMaterial.categoryRequired')); return; }
+    if (!unitId)         { setError(t('createMaterial.unitRequired'));     return; }
 
     setError('');
     createMaterial.mutate(
@@ -163,7 +166,7 @@ function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: Qui
       },
       {
         onSuccess: (product) => {
-          toast.success(`"${product.name}" created successfully.`);
+          toast.success(t('createMaterial.createdSuccess', { name: product.name }));
           onCreated(product as unknown as Product);
           handleClose(false);
         },
@@ -176,7 +179,7 @@ function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: Qui
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Create Material</DialogTitle>
+          <DialogTitle>{t('createMaterial.title')}</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-4 py-1">
@@ -186,21 +189,21 @@ function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: Qui
 
           {/* Type */}
           <div>
-            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Material Type</Label>
+            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t('createMaterial.typeLabel')}</Label>
             <div className="flex gap-2">
-              {(['raw_material', 'packaging_material'] as const).map((t) => (
+              {(['raw_material', 'packaging_material'] as const).map((tp) => (
                 <button
-                  key={t}
+                  key={tp}
                   type="button"
-                  onClick={() => setType(t)}
+                  onClick={() => setType(tp)}
                   className={cn(
                     'flex-1 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors',
-                    type === t
+                    type === tp
                       ? 'border-primary bg-primary text-primary-foreground'
                       : 'border-border hover:bg-muted',
                   )}
                 >
-                  {t === 'raw_material' ? 'Raw Material' : 'Packaging'}
+                  {tp === 'raw_material' ? t('materialTypes.rawMaterial') : t('materialTypes.packaging')}
                 </button>
               ))}
             </div>
@@ -208,24 +211,24 @@ function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: Qui
 
           {/* Name */}
           <div>
-            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Name *</Label>
+            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t('createMaterial.nameLabel')}</Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Material name…"
+              placeholder={t('createMaterial.namePlaceholder')}
               autoFocus
             />
           </div>
 
           {/* Category */}
           <div>
-            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Category *</Label>
+            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t('createMaterial.categoryLabel')}</Label>
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
               className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm"
             >
-              <option value="">Select category…</option>
+              <option value="">{t('createMaterial.categoryPlaceholder')}</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
@@ -234,13 +237,13 @@ function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: Qui
 
           {/* Unit */}
           <div>
-            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">Unit *</Label>
+            <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">{t('createMaterial.unitLabel')}</Label>
             <select
               value={unitId}
               onChange={(e) => setUnitId(e.target.value)}
               className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm"
             >
-              <option value="">Select unit…</option>
+              <option value="">{t('createMaterial.unitPlaceholder')}</option>
               {units.map((u) => (
                 <option key={u.id} value={u.id}>{u.name} ({u.symbol})</option>
               ))}
@@ -249,9 +252,9 @@ function QuickMaterialDialog({ open, onOpenChange, defaultType, onCreated }: Qui
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => handleClose(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => handleClose(false)}>{t('createMaterial.cancel')}</Button>
           <Button onClick={handleSave} disabled={createMaterial.isPending}>
-            {createMaterial.isPending ? 'Creating…' : 'Create Material'}
+            {createMaterial.isPending ? t('createMaterial.creating') : t('createMaterial.submit')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -274,6 +277,7 @@ type MaterialPickerProps = {
 function MaterialPicker({
   open, onOpenChange, materials, isLoading, alreadySelected, onSelect, onMaterialCreated,
 }: MaterialPickerProps) {
+  const { t } = useTranslation('recipes');
   const [search,      setSearch]      = useState('');
   const [createOpen,  setCreateOpen]  = useState(false);
   const [createType,  setCreateType]  = useState<'raw_material' | 'packaging_material'>('raw_material');
@@ -304,14 +308,14 @@ function MaterialPicker({
       <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) setSearch(''); }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Add Material</DialogTitle>
+            <DialogTitle>{t('materialPicker.title')}</DialogTitle>
           </DialogHeader>
 
           <div className="relative">
             <Search className="text-muted-foreground absolute top-2.5 left-2.5 size-4" />
             <Input
               className="pl-8"
-              placeholder="Search by name or SKU…"
+              placeholder={t('materialPicker.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               autoFocus
@@ -320,16 +324,16 @@ function MaterialPicker({
 
           <div className="max-h-[360px] overflow-y-auto divide-y">
             {isLoading ? (
-              <p className="text-muted-foreground py-6 text-center text-sm">Loading materials…</p>
+              <p className="text-muted-foreground py-6 text-center text-sm">{t('materialPicker.loading')}</p>
             ) : filtered.length === 0 ? (
               <div className="py-8 text-center">
-                <p className="text-muted-foreground text-sm mb-3">No materials</p>
+                <p className="text-muted-foreground text-sm mb-3">{t('materialPicker.noMaterials')}</p>
                 <div className="flex gap-2 justify-center">
                   <Button type="button" size="sm" variant="outline" onClick={() => handleOpenCreate('raw_material')}>
-                    <Plus className="size-3.5 mr-1" /> Raw Material
+                    <Plus className="size-3.5 mr-1" /> {t('materialTypes.rawMaterial')}
                   </Button>
                   <Button type="button" size="sm" variant="outline" onClick={() => handleOpenCreate('packaging_material')}>
-                    <Plus className="size-3.5 mr-1" /> Packaging
+                    <Plus className="size-3.5 mr-1" /> {t('materialTypes.packaging')}
                   </Button>
                 </div>
               </div>
@@ -340,10 +344,10 @@ function MaterialPicker({
                   <>
                     <div className="px-3 py-1.5 bg-muted/40 flex items-center justify-between">
                       <span className="text-xs font-semibold text-sky-700 dark:text-sky-400 uppercase tracking-wide">
-                        Raw Materials
+                        {t('materialsGroup.rawMaterials')}
                       </span>
                       <Button type="button" size="sm" variant="ghost" className="h-5 px-1.5 text-xs" onClick={() => handleOpenCreate('raw_material')}>
-                        <Plus className="size-3" /> New
+                        <Plus className="size-3" /> {t('actions.newButton')}
                       </Button>
                     </div>
                     {rawMaterials.map((m) => <MaterialRow key={m.id} m={m} alreadySelected={alreadySelected} onSelect={onSelect} onClose={() => { onOpenChange(false); setSearch(''); }} />)}
@@ -355,10 +359,10 @@ function MaterialPicker({
                   <>
                     <div className="px-3 py-1.5 bg-muted/40 flex items-center justify-between">
                       <span className="text-xs font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wide">
-                        Packaging Materials
+                        {t('materialsGroup.packagingMaterials')}
                       </span>
                       <Button type="button" size="sm" variant="ghost" className="h-5 px-1.5 text-xs" onClick={() => handleOpenCreate('packaging_material')}>
-                        <Plus className="size-3" /> New
+                        <Plus className="size-3" /> {t('actions.newButton')}
                       </Button>
                     </div>
                     {pkgMaterials.map((m) => <MaterialRow key={m.id} m={m} alreadySelected={alreadySelected} onSelect={onSelect} onClose={() => { onOpenChange(false); setSearch(''); }} />)}
@@ -372,10 +376,10 @@ function MaterialPicker({
           {!isLoading && filtered.length > 0 && (
             <div className="border-t pt-3 flex gap-2">
               <Button type="button" size="sm" variant="outline" className="flex-1" onClick={() => handleOpenCreate('raw_material')}>
-                <Plus className="size-3.5 mr-1" /> Create Raw Material
+                <Plus className="size-3.5 mr-1" /> {t('materialPicker.createRawMaterial')}
               </Button>
               <Button type="button" size="sm" variant="outline" className="flex-1" onClick={() => handleOpenCreate('packaging_material')}>
-                <Plus className="size-3.5 mr-1" /> Create Packaging
+                <Plus className="size-3.5 mr-1" /> {t('materialPicker.createPackaging')}
               </Button>
             </div>
           )}
@@ -395,6 +399,7 @@ function MaterialPicker({
 function MaterialRow({
   m, alreadySelected, onSelect, onClose,
 }: { m: Product; alreadySelected: string[]; onSelect: (m: Product) => void; onClose: () => void }) {
+  const { t } = useTranslation('recipes');
   const { currency, locale } = useCompany();
   const added = alreadySelected.includes(m.id);
   return (
@@ -426,11 +431,11 @@ function MaterialRow({
           <span className="text-xs font-medium tabular-nums">{fmtCost(m.material_cost, currency, locale)}</span>
         ) : (
           <span className="text-xs text-amber-500 flex items-center gap-0.5">
-            <TriangleAlert className="size-3" />No cost
+            <TriangleAlert className="size-3" />{t('noCost')}
           </span>
         )}
       </div>
-      {added && <Badge variant="secondary" className="text-xs ml-1">Added</Badge>}
+      {added && <Badge variant="secondary" className="text-xs ml-1">{t('materialPicker.added')}</Badge>}
     </button>
   );
 }
@@ -439,6 +444,7 @@ function MaterialRow({
 // ─── View Workspace ───────────────────────────────────────────────────────────
 
 function ViewWorkspace({ recipe }: { recipe: Recipe }) {
+  const { t } = useTranslation('recipes');
   const { currency, locale } = useCompany();
   const navigate = useNavigate();
   const [drawerMaterial, setDrawerMaterial] = useState<Product | null>(null);
@@ -487,14 +493,14 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
       <PageHeader
         title={recipe.product?.name ?? recipe.bom_number}
         breadcrumbs={[
-          { label: 'Home',    to: ROUTES.dashboard },
-          { label: 'Recipes', to: ROUTES.recipes },
+          { label: t('page.breadcrumbs.home'),    to: ROUTES.dashboard },
+          { label: t('page.breadcrumbs.recipes'), to: ROUTES.recipes },
           { label: recipe.product?.name ?? recipe.bom_number },
         ]}
         actions={
           <Button onClick={() => navigate(`${ROUTES.recipes}/${recipe.id}/edit`)}>
             <Pencil className="size-4" />
-            Edit Recipe
+            {t('actions.edit')}
           </Button>
         }
       />
@@ -502,39 +508,39 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
         <div className="flex flex-col gap-6">
           {/* Details */}
-          <WorkspaceCard title="Details">
+          <WorkspaceCard title={t('workspace.details')}>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              <LabelValue label="Recipe #" value={<span className="font-mono text-xs">{recipe.bom_number}</span>} />
-              <LabelValue label="Product"  value={recipe.product?.name} />
+              <LabelValue label={t('workspace.recipeNumber')} value={<span className="font-mono text-xs">{recipe.bom_number}</span>} />
+              <LabelValue label={t('workspace.product_label')} value={recipe.product?.name} />
               <LabelValue
-                label="Status"
+                label={t('workspace.status')}
                 value={
                   recipe.is_active
-                    ? <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">Active</Badge>
-                    : <Badge variant="outline" className="text-xs text-muted-foreground">Draft</Badge>
+                    ? <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-xs">{t('status.active')}</Badge>
+                    : <Badge variant="outline" className="text-xs text-muted-foreground">{t('status.draft')}</Badge>
                 }
               />
             </div>
           </WorkspaceCard>
 
           {/* Materials — grouped */}
-          <WorkspaceCard title="Materials">
+          <WorkspaceCard title={t('workspace.materials')}>
             {recipe.lines.length === 0 ? (
-              <p className="text-muted-foreground text-sm">No materials defined.</p>
+              <p className="text-muted-foreground text-sm">{t('workspace.noMaterialsView')}</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="text-muted-foreground border-b text-start">
-                      <th className="pb-2 pe-3 font-medium">Material</th>
-                      <th className="pb-2 pe-3 font-medium w-24">Type</th>
-                      <th className="pb-2 pe-3 font-medium w-24">Category</th>
-                      <th className="pb-2 pe-3 font-medium w-14">Unit</th>
-                      <th className="pb-2 pe-3 text-end font-medium w-20">Req. Qty</th>
-                      <th className="pb-2 pe-3 text-end font-medium w-16">Waste%</th>
-                      <th className="pb-2 pe-3 text-end font-medium w-20">Eff. Qty</th>
-                      <th className="pb-2 pe-3 text-end font-medium w-28">Unit Cost</th>
-                      <th className="pb-2 text-end font-medium w-28">Total Cost</th>
+                      <th className="pb-2 pe-3 font-medium">{t('tableColumns.material')}</th>
+                      <th className="pb-2 pe-3 font-medium w-24">{t('tableColumns.type')}</th>
+                      <th className="pb-2 pe-3 font-medium w-24">{t('tableColumns.category')}</th>
+                      <th className="pb-2 pe-3 font-medium w-14">{t('tableColumns.unit')}</th>
+                      <th className="pb-2 pe-3 text-end font-medium w-20">{t('tableColumns.reqQty')}</th>
+                      <th className="pb-2 pe-3 text-end font-medium w-16">{t('tableColumns.wastePct')}</th>
+                      <th className="pb-2 pe-3 text-end font-medium w-20">{t('tableColumns.effQty')}</th>
+                      <th className="pb-2 pe-3 text-end font-medium w-28">{t('tableColumns.unitCost')}</th>
+                      <th className="pb-2 text-end font-medium w-28">{t('tableColumns.totalCost')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -544,7 +550,7 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
                         <tr>
                           <td colSpan={9} className="py-1.5 px-0">
                             <span className="text-xs font-semibold text-sky-700 dark:text-sky-400 uppercase tracking-wide">
-                              Raw Materials
+                              {t('materialsGroup.rawMaterials')}
                             </span>
                           </td>
                         </tr>
@@ -552,7 +558,7 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
                           <MaterialViewRow key={line.id} line={line} onOpenDrawer={(p) => setDrawerMaterial(p)} />
                         ))}
                         <tr className="bg-muted/30">
-                          <td colSpan={8} className="py-1.5 pe-3 text-end text-xs font-medium text-muted-foreground">Raw Materials Subtotal</td>
+                          <td colSpan={8} className="py-1.5 pe-3 text-end text-xs font-medium text-muted-foreground">{t('materialsGroup.rawSubtotal')}</td>
                           <td className="py-1.5 text-end text-xs font-semibold tabular-nums">{fmtCost(rawSubtotal, currency, locale)}</td>
                         </tr>
                       </>
@@ -564,7 +570,7 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
                         <tr>
                           <td colSpan={9} className="py-1.5 px-0">
                             <span className="text-xs font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wide">
-                              Packaging Materials
+                              {t('materialsGroup.packagingMaterials')}
                             </span>
                           </td>
                         </tr>
@@ -572,7 +578,7 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
                           <MaterialViewRow key={line.id} line={line} onOpenDrawer={(p) => setDrawerMaterial(p)} />
                         ))}
                         <tr className="bg-muted/30">
-                          <td colSpan={8} className="py-1.5 pe-3 text-end text-xs font-medium text-muted-foreground">Packaging Subtotal</td>
+                          <td colSpan={8} className="py-1.5 pe-3 text-end text-xs font-medium text-muted-foreground">{t('materialsGroup.packagingSubtotal')}</td>
                           <td className="py-1.5 text-end text-xs font-semibold tabular-nums">{fmtCost(pkgSubtotal, currency, locale)}</td>
                         </tr>
                       </>
@@ -585,14 +591,14 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
 
           {/* Recipe Notes */}
           {recipe.notes && (
-            <WorkspaceCard title="Recipe Notes">
+            <WorkspaceCard title={t('workspace.recipeNotes')}>
               <p className="text-sm whitespace-pre-wrap">{recipe.notes}</p>
             </WorkspaceCard>
           )}
 
           {/* Execution Instructions */}
           {recipe.execution_instructions && (
-            <WorkspaceCard title="Execution Instructions">
+            <WorkspaceCard title={t('workspace.executionInstructions')}>
               <p className="text-sm whitespace-pre-wrap font-mono text-muted-foreground">{recipe.execution_instructions}</p>
             </WorkspaceCard>
           )}
@@ -600,30 +606,30 @@ function ViewWorkspace({ recipe }: { recipe: Recipe }) {
 
         {/* Cost Summary */}
         <div className="flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
-          <WorkspaceCard title="Cost Summary">
+          <WorkspaceCard title={t('costSummary.title')}>
             <div className="flex flex-col gap-3">
-              <LabelValue label="Total Materials" value={recipe.lines.length} />
+              <LabelValue label={t('costSummary.totalMaterials')} value={recipe.lines.length} />
               <Separator />
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Raw Materials</span>
+                <span className="text-muted-foreground">{t('costSummary.rawMaterials')}</span>
                 <span className="tabular-nums">{fmtCost(rawMaterialCost, currency, locale)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Packaging</span>
+                <span className="text-muted-foreground">{t('costSummary.packaging')}</span>
                 <span className="tabular-nums">{fmtCost(packagingCost, currency, locale)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Manufacturing</span>
+                <span className="text-muted-foreground">{t('costSummary.manufacturing')}</span>
                 <span className="tabular-nums">{fmtCost(manufacturingCost, currency, locale)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Other Costs</span>
+                <span className="text-muted-foreground">{t('costSummary.otherCosts')}</span>
                 <span className="tabular-nums">{fmtCost(otherCosts, currency, locale)}</span>
               </div>
               <Separator />
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-1.5 text-sm font-semibold">
-                  Recipe Cost
+                  {t('costSummary.recipeCost')}
                   <LiveCostBadge />
                 </span>
                 <span className="text-sm font-bold tabular-nums">{fmtCost(recipeCost, currency, locale)}</span>
@@ -656,6 +662,7 @@ type LineCostRow = {
 };
 
 function MaterialViewRow({ line, onOpenDrawer }: { line: LineCostRow; onOpenDrawer: (p: Product) => void }) {
+  const { t } = useTranslation('recipes');
   const { currency, locale } = useCompany();
   const mat = line.product;
   return (
@@ -705,7 +712,7 @@ function MaterialViewRow({ line, onOpenDrawer }: { line: LineCostRow; onOpenDraw
           <span className="tabular-nums">{fmtCost(line.unitCost as number, currency, locale)}</span>
         ) : (
           <span className="text-amber-500 text-xs flex items-center justify-end gap-1">
-            <TriangleAlert className="size-3" />No cost
+            <TriangleAlert className="size-3" />{t('noCost')}
           </span>
         )}
       </td>
@@ -728,18 +735,19 @@ type LineError = {
 function DuplicateDialog({
   open, productName, onReplace, onCancel,
 }: { open: boolean; productName: string; onReplace: () => void; onCancel: () => void }) {
+  const { t } = useTranslation('recipes');
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) onCancel(); }}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Recipe Already Exists</DialogTitle>
+          <DialogTitle>{t('duplicateDialog.title')}</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          A recipe already exists for <strong>{productName}</strong>. Do you want to replace the current recipe?
+          {t('duplicateDialog.description', { name: productName })}
         </p>
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel}>Cancel</Button>
-          <Button variant="destructive" onClick={onReplace}>Replace</Button>
+          <Button variant="outline" onClick={onCancel}>{t('duplicateDialog.cancel')}</Button>
+          <Button variant="destructive" onClick={onReplace}>{t('duplicateDialog.replace')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -747,6 +755,7 @@ function DuplicateDialog({
 }
 
 function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create' | 'edit' }) {
+  const { t } = useTranslation('recipes');
   const { currency, locale } = useCompany();
   const navigate = useNavigate();
   const location = useLocation();
@@ -816,7 +825,8 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
     value: r.id,
     label: r.product?.name ? `${r.product.name} (${r.bom_number})` : r.bom_number,
   }));
-  const allMaterials  = allMaterialsData?.items ?? [];
+  // Memoised so the empty-state fallback keeps a stable identity between renders.
+  const allMaterials  = useMemo(() => allMaterialsData?.items ?? [], [allMaterialsData]);
 
   // Seed company/channel cascade from prefilled product (navigated from product page)
   const prefilledSeededRef = useRef(false);
@@ -847,13 +857,14 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
           execution_instructions: recipe.execution_instructions ?? '',
           manufacturing_cost:     recipe.manufacturing_cost ?? 0,
           other_costs:            recipe.other_costs ?? 0,
+          yield_quantity:         recipe.yield_quantity ?? 1,
           lines: (recipe.lines ?? []).map((l) => ({
             raw_material_id:  l.raw_material_id,
             quantity:         l.quantity,
             waste_percentage: l.waste_percentage ?? 0,
           })),
         }
-      : { product_id: prefilledProductId, notes: '', execution_instructions: '', manufacturing_cost: 0, other_costs: 0, lines: [] },
+      : { product_id: prefilledProductId, notes: '', execution_instructions: '', manufacturing_cost: 0, other_costs: 0, yield_quantity: 1, lines: [] },
   });
 
   const { fields, append, remove } = useFieldArray({ control: form.control, name: 'lines' });
@@ -882,6 +893,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
         execution_instructions: sourceRecipeDetail.execution_instructions ?? '',
         manufacturing_cost:     sourceRecipeDetail.manufacturing_cost ?? 0,
         other_costs:            sourceRecipeDetail.other_costs ?? 0,
+        yield_quantity:         sourceRecipeDetail.yield_quantity ?? 1,
         lines: sourceRecipeDetail.lines.map((l) => ({
           raw_material_id:  l.raw_material_id,
           quantity:         l.quantity,
@@ -901,6 +913,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
         execution_instructions: recipe.execution_instructions ?? '',
         manufacturing_cost:     recipe.manufacturing_cost ?? 0,
         other_costs:            recipe.other_costs ?? 0,
+        yield_quantity:         recipe.yield_quantity ?? 1,
         lines: (recipe.lines ?? []).map((l) => ({
           raw_material_id:  l.raw_material_id,
           quantity:         l.quantity,
@@ -980,7 +993,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
     if (value === 'blank') {
       setSourceRecipeId('');
       lastAppliedSourceIdRef.current = '';
-      form.reset({ product_id: '', notes: '', execution_instructions: '', manufacturing_cost: 0, other_costs: 0, lines: [] });
+      form.reset({ product_id: '', notes: '', execution_instructions: '', manufacturing_cost: 0, other_costs: 0, yield_quantity: 1, lines: [] });
     }
   }
 
@@ -1014,6 +1027,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
       version:                 recipe?.version ?? '1.0',
       is_active:               recipe?.is_active ?? true,
       notes:                   values.notes || null,
+      yield_quantity:          values.yield_quantity ?? 1,
       manufacturing_cost:      values.manufacturing_cost ?? 0,
       other_costs:             values.other_costs ?? 0,
       execution_instructions:  values.execution_instructions || null,
@@ -1039,16 +1053,16 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
 
   const isPending = createRecipe.isPending || updateRecipe.isPending;
   const title = mode === 'create'
-    ? 'Create Product Recipe'
-    : `Edit: ${recipe?.product?.name ?? recipe?.bom_number ?? ''}`;
+    ? t('workspace.createTitle')
+    : t('workspace.editTitle', { name: recipe?.product?.name ?? recipe?.bom_number ?? '' });
 
   return (
     <div className="flex flex-col gap-6 pb-24">
       <PageHeader
         title={title}
         breadcrumbs={[
-          { label: 'Home',    to: ROUTES.dashboard },
-          { label: 'Recipes', to: ROUTES.recipes },
+          { label: t('page.breadcrumbs.home'),    to: ROUTES.dashboard },
+          { label: t('page.breadcrumbs.recipes'), to: ROUTES.recipes },
           { label: title },
         ]}
       />
@@ -1056,7 +1070,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
       {serverError && (
         <Alert variant="destructive">
           <AlertCircle className="size-4" />
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>{t('workspace.error')}</AlertTitle>
           <AlertDescription>{serverError}</AlertDescription>
         </Alert>
       )}
@@ -1066,11 +1080,11 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_300px]">
             <div className="flex flex-col gap-6">
               {/* Product selection */}
-              <WorkspaceCard title="Product">
+              <WorkspaceCard title={t('workspace.product')}>
                 {/* Company filter */}
                 <div className="flex flex-col gap-1.5">
                   <Label className="text-xs text-muted-foreground">
-                    Company <span className="font-normal">(optional — narrows the product list)</span>
+                    {t('companyFilter.label')} <span className="font-normal">{t('companyFilter.hint')}</span>
                   </Label>
                   <Combobox
                     options={companyOptions ?? []}
@@ -1080,7 +1094,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                       setSelectedChannelId('');
                       form.setValue('product_id', '');
                     }}
-                    placeholder="All Companies…"
+                    placeholder={t('companyFilter.placeholder')}
                     loading={loadingCompanies}
                   />
                 </div>
@@ -1088,7 +1102,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                 {/* Channel filter */}
                 <div className="mt-3 flex flex-col gap-1.5">
                   <Label className="text-xs text-muted-foreground">
-                    Channel <span className="font-normal">(optional)</span>
+                    {t('channelFilter.label')} <span className="font-normal">{t('channelFilter.hint')}</span>
                   </Label>
                   <Combobox
                     options={filteredChannelOptions}
@@ -1097,13 +1111,13 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                       setSelectedChannelId(v ?? '');
                       form.setValue('product_id', '');
                     }}
-                    placeholder={selectedCompanyId ? 'All Channels…' : 'Select a company first…'}
+                    placeholder={selectedCompanyId ? t('channelFilter.placeholder') : t('channelFilter.selectCompanyFirst')}
                     loading={loadingChannels}
                   />
                 </div>
 
                 <div className="mt-3">
-                  <FormField name="product_id" label="Product" required>
+                  <FormField name="product_id" label={t('workspace.product_label')} required>
                     <Controller
                       control={form.control}
                       name="product_id"
@@ -1112,7 +1126,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                           options={fgOptions}
                           value={field.value || null}
                           onChange={(v) => void handleProductChange(v)}
-                          placeholder="Select a product…"
+                          placeholder={t('productFilter.placeholder')}
                           loading={loadingFG || isCheckingDuplicate}
                         />
                       )}
@@ -1123,13 +1137,13 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                 {!watchedProductId && (
                   <div className="mt-3 flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
                     <TriangleAlert className="size-4 flex-shrink-0" />
-                    Select a product before adding materials.
+                    {t('workspace.selectProductWarning')}
                   </div>
                 )}
               </WorkspaceCard>
 
               {/* Materials table */}
-              <WorkspaceCard title="Materials">
+              <WorkspaceCard title={t('workspace.materials')}>
                 <div className="flex flex-col gap-4">
                   {typeof form.formState.errors.lines?.message === 'string' && (
                     <Alert variant="destructive">
@@ -1141,9 +1155,9 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                   {fields.length === 0 ? (
                     <div className="rounded-lg border-2 border-dashed py-10 text-center">
                       <PackageOpen className="size-8 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-muted-foreground text-sm">No materials added yet.</p>
+                      <p className="text-muted-foreground text-sm">{t('workspace.noMaterialsForm')}</p>
                       <p className="text-muted-foreground mt-1 text-xs">
-                        Click "Add Material" to select raw materials or packaging materials.
+                        {t('workspace.noMaterialsHint')}
                       </p>
                     </div>
                   ) : (
@@ -1151,15 +1165,15 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="text-muted-foreground border-b text-start">
-                            <th className="pb-2 pe-3 font-medium">Material</th>
-                            <th className="pb-2 pe-3 font-medium w-24">Type</th>
-                            <th className="pb-2 pe-3 font-medium w-24">Category</th>
-                            <th className="pb-2 pe-3 font-medium w-14">Unit</th>
-                            <th className="pb-2 pe-3 font-medium w-24">Req. Qty</th>
-                            <th className="pb-2 pe-3 font-medium w-20">Waste %</th>
-                            <th className="pb-2 pe-3 text-end font-medium w-20">Eff. Qty</th>
-                            <th className="pb-2 pe-3 text-end font-medium w-28">Unit Cost</th>
-                            <th className="pb-2 pe-3 text-end font-medium w-28">Total Cost</th>
+                            <th className="pb-2 pe-3 font-medium">{t('tableColumns.material')}</th>
+                            <th className="pb-2 pe-3 font-medium w-24">{t('tableColumns.type')}</th>
+                            <th className="pb-2 pe-3 font-medium w-24">{t('tableColumns.category')}</th>
+                            <th className="pb-2 pe-3 font-medium w-14">{t('tableColumns.unit')}</th>
+                            <th className="pb-2 pe-3 font-medium w-24">{t('tableColumns.reqQty')}</th>
+                            <th className="pb-2 pe-3 font-medium w-20">{t('tableColumns.wastePct')}</th>
+                            <th className="pb-2 pe-3 text-end font-medium w-20">{t('tableColumns.effQty')}</th>
+                            <th className="pb-2 pe-3 text-end font-medium w-28">{t('tableColumns.unitCost')}</th>
+                            <th className="pb-2 pe-3 text-end font-medium w-28">{t('tableColumns.totalCost')}</th>
                             <th className="pb-2 w-16" />
                           </tr>
                         </thead>
@@ -1170,7 +1184,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                               <tr>
                                 <td colSpan={10} className="py-1.5 px-0">
                                   <span className="text-xs font-semibold text-sky-700 dark:text-sky-400 uppercase tracking-wide">
-                                    Raw Materials
+                                    {t('materialsGroup.rawMaterials')}
                                   </span>
                                 </td>
                               </tr>
@@ -1188,7 +1202,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                                 />
                               ))}
                               <tr className="bg-muted/30">
-                                <td colSpan={8} className="py-1 pe-3 text-end text-xs font-medium text-muted-foreground">Raw Materials Subtotal</td>
+                                <td colSpan={8} className="py-1 pe-3 text-end text-xs font-medium text-muted-foreground">{t('materialsGroup.rawSubtotal')}</td>
                                 <td className="py-1 pe-3 text-end text-xs font-semibold tabular-nums">{fmtCost(rawSubtotal, currency, locale)}</td>
                                 <td />
                               </tr>
@@ -1201,7 +1215,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                               <tr>
                                 <td colSpan={10} className="py-1.5 px-0">
                                   <span className="text-xs font-semibold text-violet-700 dark:text-violet-400 uppercase tracking-wide">
-                                    Packaging Materials
+                                    {t('materialsGroup.packagingMaterials')}
                                   </span>
                                 </td>
                               </tr>
@@ -1219,7 +1233,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                                 />
                               ))}
                               <tr className="bg-muted/30">
-                                <td colSpan={8} className="py-1 pe-3 text-end text-xs font-medium text-muted-foreground">Packaging Subtotal</td>
+                                <td colSpan={8} className="py-1 pe-3 text-end text-xs font-medium text-muted-foreground">{t('materialsGroup.packagingSubtotal')}</td>
                                 <td className="py-1 pe-3 text-end text-xs font-semibold tabular-nums">{fmtCost(pkgSubtotal, currency, locale)}</td>
                                 <td />
                               </tr>
@@ -1238,16 +1252,16 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                     disabled={!watchedProductId}
                   >
                     <Plus className="size-4" />
-                    Add Material
+                    {t('actions.addMaterial')}
                   </Button>
                 </div>
               </WorkspaceCard>
 
               {/* Recipe Notes */}
-              <WorkspaceCard title="Recipe Notes">
+              <WorkspaceCard title={t('workspace.recipeNotes')}>
                 <FormField name="notes" label="">
                   <Textarea
-                    placeholder="General notes about this recipe…"
+                    placeholder={t('workspace.notesPlaceholder')}
                     rows={3}
                     {...form.register('notes')}
                   />
@@ -1255,17 +1269,17 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
               </WorkspaceCard>
 
               {/* Execution Instructions */}
-              <WorkspaceCard title="Execution Instructions">
+              <WorkspaceCard title={t('workspace.executionInstructions')}>
                 <FormField name="execution_instructions" label="">
                   <Textarea
-                    placeholder={"1. Mix ingredients\n2. Heat 5 minutes\n3. Cool\n4. Fill containers\n5. Seal"}
+                    placeholder={t('workspace.executionPlaceholder')}
                     rows={5}
                     className="font-mono text-sm"
                     {...form.register('execution_instructions')}
                   />
                 </FormField>
                 <p className="mt-1.5 text-xs text-muted-foreground">
-                  Step-by-step manufacturing instructions used by the manufacturing system.
+                  {t('workspace.executionHint')}
                 </p>
               </WorkspaceCard>
             </div>
@@ -1275,7 +1289,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
 
               {/* Start From — create mode only */}
               {mode === 'create' && (
-                <WorkspaceCard title="Start From">
+                <WorkspaceCard title={t('startFrom.title')}>
                   <div className="flex flex-col gap-3">
                     {/* Radio buttons */}
                     <div className="flex flex-col gap-2">
@@ -1290,7 +1304,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                             className="accent-primary size-3.5"
                           />
                           <span className="text-sm font-medium">
-                            {opt === 'blank' ? 'Blank Recipe' : 'Existing Recipe'}
+                            {opt === 'blank' ? t('startFrom.blank') : t('startFrom.existing')}
                           </span>
                         </label>
                       ))}
@@ -1301,24 +1315,24 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                       <>
                         <Separator />
                         <div className="flex flex-col gap-1.5">
-                          <Label className="text-xs text-muted-foreground">Select Existing Recipe</Label>
+                          <Label className="text-xs text-muted-foreground">{t('startFrom.selectExisting')}</Label>
                           <Combobox
                             options={recipeOptions}
                             value={sourceRecipeId || null}
                             onChange={(v) => setSourceRecipeId(v ?? '')}
-                            placeholder="Search recipes…"
+                            placeholder={t('startFrom.searchPlaceholder')}
                             loading={false}
                           />
                           {loadingSourceRecipe && (
-                            <p className="text-xs text-muted-foreground">Loading recipe…</p>
+                            <p className="text-xs text-muted-foreground">{t('startFrom.loadingRecipe')}</p>
                           )}
                           {sourceRecipeId && sourceRecipeDetail && !loadingSourceRecipe && (
                             <div className="flex items-start gap-2 rounded-md border border-blue-200 bg-blue-50 px-2.5 py-2 text-xs text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300">
                               <Copy className="size-3.5 shrink-0 mt-0.5" />
                               <span>
-                                Copied {sourceRecipeDetail.lines?.length ?? 0} material(s)
-                                {(sourceRecipeDetail.manufacturing_cost ?? 0) > 0 && `, manufacturing ${fmtCost(sourceRecipeDetail.manufacturing_cost ?? 0, currency, locale)}`}
-                                {' '}from <strong>{sourceRecipeDetail.product?.name ?? sourceRecipeDetail.bom_number}</strong>.
+                                {t('startFrom.copiedCount', { count: sourceRecipeDetail.lines?.length ?? 0 })}
+                                {(sourceRecipeDetail.manufacturing_cost ?? 0) > 0 && t('startFrom.manufacturingAppend', { cost: fmtCost(sourceRecipeDetail.manufacturing_cost ?? 0, currency, locale) })}
+                                {' '}{t('startFrom.fromLabel')} <strong>{sourceRecipeDetail.product?.name ?? sourceRecipeDetail.bom_number}</strong>{t('startFrom.period')}
                               </span>
                             </div>
                           )}
@@ -1330,32 +1344,49 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
               )}
 
               {/* Cost Summary */}
-              <WorkspaceCard title="Cost Summary">
+              <WorkspaceCard title={t('costSummary.title')}>
                 <div className="flex flex-col gap-3">
                   {recipe && (
                     <LabelValue
-                      label="Recipe #"
+                      label={t('costSummary.recipeNumber')}
                       value={<span className="font-mono text-xs">{recipe.bom_number}</span>}
                     />
                   )}
-                  <LabelValue label="Total Materials" value={fields.length} />
+                  <LabelValue label={t('costSummary.totalMaterials')} value={fields.length} />
                   <Separator />
 
                   {/* Raw / Packaging live rows */}
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Raw Materials</span>
+                    <span className="text-muted-foreground">{t('costSummary.rawMaterials')}</span>
                     <span className="tabular-nums">{fmtCost(rawMaterialCost, currency, locale)}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Packaging</span>
+                    <span className="text-muted-foreground">{t('costSummary.packaging')}</span>
                     <span className="tabular-nums">{fmtCost(packagingCost, currency, locale)}</span>
                   </div>
 
                   <Separator />
 
+                  {/* Yield Quantity — units produced per recipe run (drives per-unit costing) */}
+                  <div className="flex flex-col gap-1.5">
+                    <Label className="text-xs text-muted-foreground">{t('costSummary.yieldQuantity')}</Label>
+                    <Input
+                      type="number"
+                      min="0.0001"
+                      step="0.01"
+                      className="h-8 text-sm"
+                      placeholder="1"
+                      {...form.register('yield_quantity', { valueAsNumber: true })}
+                    />
+                    {form.formState.errors.yield_quantity && (
+                      <p className="text-xs text-destructive">{form.formState.errors.yield_quantity.message}</p>
+                    )}
+                    <p className="text-[10px] text-muted-foreground">{t('costSummary.yieldHint')}</p>
+                  </div>
+
                   {/* Manufacturing Cost — editable */}
                   <div className="flex flex-col gap-1.5">
-                    <Label className="text-xs text-muted-foreground">Manufacturing Cost</Label>
+                    <Label className="text-xs text-muted-foreground">{t('costSummary.manufacturingCost')}</Label>
                     <Input
                       type="number"
                       min="0"
@@ -1367,12 +1398,12 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                     {form.formState.errors.manufacturing_cost && (
                       <p className="text-xs text-destructive">{form.formState.errors.manufacturing_cost.message}</p>
                     )}
-                    <p className="text-[10px] text-muted-foreground">Labor, utilities, machine time, overhead</p>
+                    <p className="text-[10px] text-muted-foreground">{t('costSummary.manufacturingHint')}</p>
                   </div>
 
                   {/* Other Costs — editable */}
                   <div className="flex flex-col gap-1.5">
-                    <Label className="text-xs text-muted-foreground">Other Costs</Label>
+                    <Label className="text-xs text-muted-foreground">{t('costSummary.otherCosts')}</Label>
                     <Input
                       type="number"
                       min="0"
@@ -1389,7 +1420,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                   <Separator />
                   <div className="flex items-center justify-between">
                     <span className="flex items-center gap-1.5 text-sm font-semibold">
-                      Recipe Cost
+                      {t('costSummary.recipeCost')}
                       <LiveCostBadge />
                     </span>
                     <span className="text-sm font-bold tabular-nums">{fmtCost(recipeCost, currency, locale)}</span>
@@ -1398,7 +1429,7 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
                   {anyMissingCost && (
                     <div className="flex items-start gap-1.5 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300">
                       <TriangleAlert className="size-3.5 flex-shrink-0 mt-0.5" />
-                      <span>Some materials have no defined cost. Recipe cost may be incomplete.</span>
+                      <span>{t('costSummary.missingCost')}</span>
                     </div>
                   )}
                 </div>
@@ -1416,12 +1447,12 @@ function FormWorkspace({ recipe, mode }: { recipe: Recipe | null; mode: 'create'
             variant="outline"
             onClick={() => navigate(recipe ? `${ROUTES.recipes}/${recipe.id}` : ROUTES.recipes)}
           >
-            Cancel
+            {t('footer.cancel')}
           </Button>
           <Button type="submit" form={FORM_ID} disabled={isPending}>
             {isPending
-              ? mode === 'create' ? 'Creating…' : 'Saving…'
-              : mode === 'create' ? 'Create Recipe' : 'Save Changes'}
+              ? (mode === 'create' ? t('footer.creating') : t('footer.saving'))
+              : (mode === 'create' ? t('footer.create') : t('footer.save'))}
           </Button>
         </div>
       </div>
@@ -1475,6 +1506,7 @@ function MaterialFormRow({
   onRemove:    (index: number) => void;
   onView:      (p: Product) => void;
 }) {
+  const { t } = useTranslation('recipes');
   const { currency, locale } = useCompany();
   const errs    = lineErrors?.[index];
   const line    = watchedLines[index];
@@ -1563,7 +1595,7 @@ function MaterialFormRow({
           fmtCost(unitCost as number, currency, locale)
         ) : (
           <span className="text-amber-500 text-xs flex items-center justify-end gap-1">
-            <TriangleAlert className="size-3" />No cost
+            <TriangleAlert className="size-3" />{t('noCost')}
           </span>
         )}
       </td>
@@ -1583,7 +1615,7 @@ function MaterialFormRow({
               size="icon"
               className="size-7"
               onClick={() => onView(product)}
-              title="View Material Details"
+              title={t('actions.viewMaterialDetails')}
             >
               <Eye className="size-3.5" />
             </Button>
@@ -1606,6 +1638,7 @@ function MaterialFormRow({
 // ─── Page Shell ──────────────────────────────────────────────────────────────
 
 export function RecipeWorkspacePage() {
+  const { t } = useTranslation('recipes');
   const { id = '' } = useParams<{ id?: string }>();
   const { pathname } = useLocation();
 
@@ -1616,7 +1649,7 @@ export function RecipeWorkspacePage() {
   if (id && isLoading) {
     return (
       <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
-        Loading recipe…
+        {t('workspace.loading')}
       </div>
     );
   }
@@ -1624,9 +1657,9 @@ export function RecipeWorkspacePage() {
   if (id && (isError || (recipe === undefined && !isLoading))) {
     return (
       <div className="flex h-48 flex-col items-center justify-center gap-1">
-        <p className="font-medium">Recipe Not Found</p>
+        <p className="font-medium">{t('workspace.notFound')}</p>
         <p className="text-muted-foreground text-sm">
-          The recipe may have been deleted or the identifier is invalid.
+          {t('workspace.notFoundDesc')}
         </p>
       </div>
     );

@@ -25,7 +25,7 @@ final class GetSupplierPriceHistoryQuery
             throw new SupplierNotFoundException($supplierId);
         }
 
-        $rows = DB::select("
+        $rows = DB::select('
             SELECT
                 grl.id,
                 gr.receipt_date                                      AS date,
@@ -53,31 +53,31 @@ final class GetSupplierPriceHistoryQuery
               AND p.deleted_at    IS NULL
             ORDER BY gr.receipt_date DESC, grl.id DESC
             LIMIT :lim
-        ", [
+        ', [
             'supplier_id' => $supplierId,
-            'posted'      => GoodsReceiptStatus::Posted->value,
-            'lim'         => $limit,
+            'posted' => GoodsReceiptStatus::Posted->value,
+            'lim' => $limit,
         ]);
 
         return collect($rows)->map(function (object $r): array {
-            $unitCost  = $r->unit_cost !== null ? round((float) $r->unit_cost, 4) : 0.0;
+            $unitCost = $r->unit_cost !== null ? round((float) $r->unit_cost, 4) : 0.0;
             $prevPrice = $r->previous_price !== null ? round((float) $r->previous_price, 4) : null;
-            $diffPct   = ($prevPrice !== null && $prevPrice > 0)
+            $diffPct = ($prevPrice !== null && $prevPrice > 0)
                 ? round(($unitCost - $prevPrice) / $prevPrice * 100, 2)
                 : null;
 
             return [
-                'id'               => $r->id,
-                'date'             => $r->date,
-                'po_number'        => $r->po_number,
-                'warehouse_name'   => $r->warehouse_name,
-                'product_name'     => $r->product_name,
-                'product_sku'      => $r->product_sku,
-                'quantity'         => round((float) ($r->quantity ?? 0), 4),
-                'unit_cost'        => $unitCost,
+                'id' => $r->id,
+                'date' => $r->date,
+                'po_number' => $r->po_number,
+                'warehouse_name' => $r->warehouse_name,
+                'product_name' => $r->product_name,
+                'product_sku' => $r->product_sku,
+                'quantity' => round((float) ($r->quantity ?? 0), 4),
+                'unit_cost' => $unitCost,
                 'landed_unit_cost' => $r->landed_unit_cost !== null ? round((float) $r->landed_unit_cost, 4) : null,
-                'previous_price'   => $prevPrice,
-                'price_diff_pct'   => $diffPct,
+                'previous_price' => $prevPrice,
+                'price_diff_pct' => $diffPct,
             ];
         });
     }

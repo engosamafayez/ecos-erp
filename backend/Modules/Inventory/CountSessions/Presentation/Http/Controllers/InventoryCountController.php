@@ -50,7 +50,7 @@ final class InventoryCountController extends Controller
             $query->where('status', $status);
         }
 
-        $perPage  = min((int) $request->query('per_page', 15), 100);
+        $perPage = min((int) $request->query('per_page', 15), 100);
         $sessions = $query->paginate($perPage);
 
         $sessionIds = collect($sessions->items())->pluck('id')->all();
@@ -90,17 +90,18 @@ final class InventoryCountController extends Controller
         return $this->success([
             'data' => collect($sessions->items())->map(function ($s) use ($shortageValues, $wasteValues, $attachmentCounts): array {
                 $stats = [
-                    'shortage_value'   => isset($shortageValues[$s->id]) ? (float) $shortageValues[$s->id]->shortage_value : null,
-                    'waste_value'      => isset($wasteValues[$s->id]) ? (float) $wasteValues[$s->id]->waste_value : null,
+                    'shortage_value' => isset($shortageValues[$s->id]) ? (float) $shortageValues[$s->id]->shortage_value : null,
+                    'waste_value' => isset($wasteValues[$s->id]) ? (float) $wasteValues[$s->id]->waste_value : null,
                     'attachment_count' => isset($attachmentCounts[$s->id]) ? (int) $attachmentCounts[$s->id]->attachment_count : 0,
                 ];
+
                 return $this->formatSession($s, false, false, $stats);
             }),
             'meta' => [
                 'current_page' => $sessions->currentPage(),
-                'per_page'     => $sessions->perPage(),
-                'total'        => $sessions->total(),
-                'last_page'    => $sessions->lastPage(),
+                'per_page' => $sessions->perPage(),
+                'total' => $sessions->total(),
+                'last_page' => $sessions->lastPage(),
             ],
         ]);
     }
@@ -111,10 +112,10 @@ final class InventoryCountController extends Controller
     public function store(Request $request, CreateCountSessionAction $action): JsonResponse
     {
         $validated = $request->validate([
-            'company_id'    => 'required|uuid|exists:companies,id',
-            'warehouse_id'  => 'required|uuid|exists:warehouses,id',
-            'notes'         => 'nullable|string|max:1000',
-            'product_ids'   => 'nullable|array',
+            'company_id' => 'required|uuid|exists:companies,id',
+            'warehouse_id' => 'required|uuid|exists:warehouses,id',
+            'notes' => 'nullable|string|max:1000',
+            'product_ids' => 'nullable|array',
             'product_ids.*' => 'uuid|exists:products,id',
         ]);
 
@@ -153,14 +154,14 @@ final class InventoryCountController extends Controller
         }
 
         $validated = $request->validate([
-            'notes'                 => 'nullable|string|max:1000',
-            'lines'                 => 'nullable|array',
-            'lines.*.id'            => 'required|uuid|exists:inventory_count_lines,id',
-            'lines.*.counted_qty'   => 'nullable|numeric|min:0',
-            'lines.*.damaged_qty'   => 'nullable|numeric|min:0',
+            'notes' => 'nullable|string|max:1000',
+            'lines' => 'nullable|array',
+            'lines.*.id' => 'required|uuid|exists:inventory_count_lines,id',
+            'lines.*.counted_qty' => 'nullable|numeric|min:0',
+            'lines.*.damaged_qty' => 'nullable|numeric|min:0',
             'lines.*.damage_reason' => 'nullable|string|max:100',
-            'lines.*.damage_notes'  => 'nullable|string|max:500',
-            'lines.*.notes'         => 'nullable|string|max:500',
+            'lines.*.damage_notes' => 'nullable|string|max:500',
+            'lines.*.notes' => 'nullable|string|max:500',
         ]);
 
         if (isset($validated['notes'])) {
@@ -169,15 +170,25 @@ final class InventoryCountController extends Controller
 
         foreach ($validated['lines'] ?? [] as $lineData) {
             $updates = [];
-            if (array_key_exists('counted_qty',   $lineData)) $updates['counted_qty']   = $lineData['counted_qty'];
-            if (array_key_exists('damaged_qty',   $lineData)) $updates['damaged_qty']   = $lineData['damaged_qty'] ?? 0;
-            if (array_key_exists('damage_reason', $lineData)) $updates['damage_reason'] = $lineData['damage_reason'];
-            if (array_key_exists('damage_notes',  $lineData)) $updates['notes']         = $lineData['damage_notes'];
-            if (array_key_exists('notes',         $lineData)) $updates['notes']         = $lineData['notes'];
+            if (array_key_exists('counted_qty', $lineData)) {
+                $updates['counted_qty'] = $lineData['counted_qty'];
+            }
+            if (array_key_exists('damaged_qty', $lineData)) {
+                $updates['damaged_qty'] = $lineData['damaged_qty'] ?? 0;
+            }
+            if (array_key_exists('damage_reason', $lineData)) {
+                $updates['damage_reason'] = $lineData['damage_reason'];
+            }
+            if (array_key_exists('damage_notes', $lineData)) {
+                $updates['notes'] = $lineData['damage_notes'];
+            }
+            if (array_key_exists('notes', $lineData)) {
+                $updates['notes'] = $lineData['notes'];
+            }
 
             if (! empty($updates)) {
                 InventoryCountLine::query()
-                    ->where('id',         $lineData['id'])
+                    ->where('id', $lineData['id'])
                     ->where('session_id', $inventoryCount->id)
                     ->update($updates);
             }
@@ -207,25 +218,29 @@ final class InventoryCountController extends Controller
     public function start(InventoryCountSession $inventoryCount, StartCountSessionAction $action): JsonResponse
     {
         $session = $action->execute($inventoryCount);
+
         return $this->updated($this->formatSession($session));
     }
 
     public function complete(InventoryCountSession $inventoryCount, CompleteCountSessionAction $action): JsonResponse
     {
         $session = $action->execute($inventoryCount);
+
         return $this->updated($this->formatSession($session->load('lines.product', 'lines.attachments', 'warehouse')));
     }
 
     public function approve(Request $request, InventoryCountSession $inventoryCount, ApproveCountSessionAction $action): JsonResponse
     {
         $approvedBy = (string) $request->user()->id;
-        $session    = $action->execute($inventoryCount, $approvedBy);
+        $session = $action->execute($inventoryCount, $approvedBy);
+
         return $this->updated($this->formatSession($session->load('lines.product', 'lines.attachments', 'warehouse'), true, false));
     }
 
     public function cancel(InventoryCountSession $inventoryCount, CancelCountSessionAction $action): JsonResponse
     {
         $session = $action->execute($inventoryCount);
+
         return $this->updated($this->formatSession($session));
     }
 
@@ -253,13 +268,13 @@ final class InventoryCountController extends Controller
             ->where('count_session_id', $inventoryCount->id)
             ->sum('total_cost');
 
-        $totalSystemQty  = $lines->sum(fn ($l) => (float) $l->system_qty);
+        $totalSystemQty = $lines->sum(fn ($l) => (float) $l->system_qty);
         $totalCountedQty = $lines->sum(fn ($l) => (float) ($l->counted_qty ?? 0));
         $totalDamagedQty = $lines->sum(fn ($l) => (float) ($l->damaged_qty ?? 0));
         $totalShortageQty = $lines->sum(fn ($l) => (float) ($l->shortage_qty ?? 0));
-        $countedLines     = $lines->filter(fn ($l) => $l->counted_qty !== null)->count();
-        $correctLines     = $lines->filter(fn ($l) => $l->counted_qty !== null && (float) $l->variance_qty === 0.0)->count();
-        $accuracyPct      = $countedLines > 0 ? round($correctLines / $countedLines * 100, 2) : null;
+        $countedLines = $lines->filter(fn ($l) => $l->counted_qty !== null)->count();
+        $correctLines = $lines->filter(fn ($l) => $l->counted_qty !== null && (float) $l->variance_qty === 0.0)->count();
+        $accuracyPct = $countedLines > 0 ? round($correctLines / $countedLines * 100, 2) : null;
 
         $investigations = DB::table('waste_investigations')
             ->where('count_session_id', $inventoryCount->id)
@@ -277,68 +292,68 @@ final class InventoryCountController extends Controller
 
         $productDetails = $lines->filter(fn ($l) => $l->counted_qty !== null)->map(function (InventoryCountLine $line): array {
             $costSnapshot = $line->unit_cost_snapshot !== null ? (float) $line->unit_cost_snapshot : null;
-            $countedQty   = (float) $line->counted_qty;
-            $totalValue   = $costSnapshot !== null ? round($costSnapshot * $countedQty, 2) : null;
+            $countedQty = (float) $line->counted_qty;
+            $totalValue = $costSnapshot !== null ? round($costSnapshot * $countedQty, 2) : null;
 
             return [
-                'id'             => $line->id,
-                'product_id'     => $line->product_id,
-                'product'        => $line->product ? [
-                    'id'        => $line->product->id,
-                    'sku'       => $line->product->sku,
-                    'name'      => $line->product->name,
+                'id' => $line->id,
+                'product_id' => $line->product_id,
+                'product' => $line->product ? [
+                    'id' => $line->product->id,
+                    'sku' => $line->product->sku,
+                    'name' => $line->product->name,
                     'image_url' => $line->product->image_url,
                 ] : null,
-                'system_qty'         => (float) $line->system_qty,
-                'counted_qty'        => $countedQty,
-                'damaged_qty'        => (float) ($line->damaged_qty ?? 0),
-                'shortage_qty'       => $line->shortage_qty !== null ? (float) $line->shortage_qty : null,
-                'variance_qty'       => $line->variance_qty !== null ? (float) $line->variance_qty : null,
+                'system_qty' => (float) $line->system_qty,
+                'counted_qty' => $countedQty,
+                'damaged_qty' => (float) ($line->damaged_qty ?? 0),
+                'shortage_qty' => $line->shortage_qty !== null ? (float) $line->shortage_qty : null,
+                'variance_qty' => $line->variance_qty !== null ? (float) $line->variance_qty : null,
                 'unit_cost_snapshot' => $costSnapshot,
-                'total_value'        => $totalValue,
-                'damage_reason'      => $line->damage_reason,
-                'notes'              => $line->notes,
-                'attachments'        => $line->relationLoaded('attachments')
+                'total_value' => $totalValue,
+                'damage_reason' => $line->damage_reason,
+                'notes' => $line->notes,
+                'attachments' => $line->relationLoaded('attachments')
                     ? $line->attachments->map(fn ($a) => $this->formatAttachment($a))->values()->toArray()
                     : [],
-                'decision'           => $this->lineDecision($line),
+                'decision' => $this->lineDecision($line),
             ];
         })->values();
 
         return $this->success([
             'session' => [
-                'id'           => $inventoryCount->id,
+                'id' => $inventoryCount->id,
                 'count_number' => $inventoryCount->count_number,
-                'warehouse'    => $inventoryCount->warehouse ? ['id' => $inventoryCount->warehouse->id, 'name' => $inventoryCount->warehouse->name] : null,
-                'started_at'   => $inventoryCount->started_at?->toIso8601String(),
+                'warehouse' => $inventoryCount->warehouse ? ['id' => $inventoryCount->warehouse->id, 'name' => $inventoryCount->warehouse->name] : null,
+                'started_at' => $inventoryCount->started_at?->toIso8601String(),
                 'completed_at' => $inventoryCount->completed_at?->toIso8601String(),
-                'approved_at'  => $inventoryCount->updated_at?->toIso8601String(),
-                'approved_by'  => $inventoryCount->approved_by,
-                'notes'        => $inventoryCount->notes,
+                'approved_at' => $inventoryCount->updated_at?->toIso8601String(),
+                'approved_by' => $inventoryCount->approved_by,
+                'notes' => $inventoryCount->notes,
             ],
             'inventory_summary' => [
-                'total_lines'         => $lines->count(),
-                'counted_lines'       => $countedLines,
-                'system_qty'          => round($totalSystemQty, 4),
-                'counted_qty'         => round($totalCountedQty, 4),
-                'damaged_qty'         => round($totalDamagedQty, 4),
-                'shortage_qty'        => round($totalShortageQty, 4),
-                'inventory_accuracy'  => $accuracyPct,
+                'total_lines' => $lines->count(),
+                'counted_lines' => $countedLines,
+                'system_qty' => round($totalSystemQty, 4),
+                'counted_qty' => round($totalCountedQty, 4),
+                'damaged_qty' => round($totalDamagedQty, 4),
+                'shortage_qty' => round($totalShortageQty, 4),
+                'inventory_accuracy' => $accuracyPct,
             ],
             'financial_summary' => [
-                'shortage_value'    => round($shortageValue, 2),
-                'waste_value'       => round($wasteValue, 2),
-                'total_adjustment'  => round($shortageValue + $wasteValue, 2),
+                'shortage_value' => round($shortageValue, 2),
+                'waste_value' => round($wasteValue, 2),
+                'total_adjustment' => round($shortageValue + $wasteValue, 2),
             ],
             'investigation_summary' => [
-                'pending'           => (int) ($investigations['pending_investigation']?->cnt ?? 0),
-                'resolved'          => (int) ($investigations['resolved']?->cnt ?? 0),
-                'pending_value'     => (float) ($investigations['pending_investigation']?->total_value ?? 0),
+                'pending' => (int) ($investigations['pending_investigation']?->cnt ?? 0),
+                'resolved' => (int) ($investigations['resolved']?->cnt ?? 0),
+                'pending_value' => (float) ($investigations['pending_investigation']?->total_value ?? 0),
             ],
             'liability_summary' => [
-                'pending'           => (int) ($liabilities['pending']?->cnt ?? 0),
-                'approved'          => (int) ($liabilities['approved']?->cnt ?? 0),
-                'pending_value'     => (float) ($liabilities['pending']?->total_value ?? 0),
+                'pending' => (int) ($liabilities['pending']?->cnt ?? 0),
+                'approved' => (int) ($liabilities['approved']?->cnt ?? 0),
+                'pending_value' => (float) ($liabilities['pending']?->total_value ?? 0),
             ],
             'product_details' => $productDetails,
         ]);
@@ -357,22 +372,22 @@ final class InventoryCountController extends Controller
             ->firstOrFail();
 
         $request->validate([
-            'file'        => ['required', 'file', 'max:' . (self::MAX_ATTACHMENT_MB * 1024), 'mimes:jpg,jpeg,png,pdf,mp4,mov'],
+            'file' => ['required', 'file', 'max:'.(self::MAX_ATTACHMENT_MB * 1024), 'mimes:jpg,jpeg,png,pdf,mp4,mov'],
             'description' => ['nullable', 'string', 'max:500'],
             'uploaded_by' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $file       = $request->file('file');
-        $path       = $file->store("count-line-attachments/{$inventoryCount->id}/{$lineId}", 'local');
+        $file = $request->file('file');
+        $path = $file->store("count-line-attachments/{$inventoryCount->id}/{$lineId}", 'local');
         $attachment = InventoryCountLineAttachment::query()->create([
             'count_line_id' => $line->id,
-            'session_id'    => $inventoryCount->id,
-            'file_path'     => $path,
-            'file_name'     => $file->getClientOriginalName(),
-            'mime_type'     => $file->getMimeType() ?? 'application/octet-stream',
-            'file_size'     => $file->getSize(),
-            'description'   => $request->input('description'),
-            'uploaded_by'   => $request->input('uploaded_by'),
+            'session_id' => $inventoryCount->id,
+            'file_path' => $path,
+            'file_name' => $file->getClientOriginalName(),
+            'mime_type' => $file->getMimeType() ?? 'application/octet-stream',
+            'file_size' => $file->getSize(),
+            'description' => $request->input('description'),
+            'uploaded_by' => $request->input('uploaded_by'),
         ]);
 
         return response()->json(['message' => 'Attachment uploaded.', 'data' => $this->formatAttachment($attachment)], 201);
@@ -403,49 +418,49 @@ final class InventoryCountController extends Controller
     private function formatSession(
         InventoryCountSession $session,
         bool $includeLines = false,
-        bool $hideSysQty   = false,
-        array $stats       = [],
+        bool $hideSysQty = false,
+        array $stats = [],
     ): array {
         $data = [
-            'id'               => $session->id,
-            'count_number'     => $session->count_number,
-            'company_id'       => $session->company_id,
-            'warehouse_id'     => $session->warehouse_id,
-            'warehouse'        => $session->relationLoaded('warehouse')
+            'id' => $session->id,
+            'count_number' => $session->count_number,
+            'company_id' => $session->company_id,
+            'warehouse_id' => $session->warehouse_id,
+            'warehouse' => $session->relationLoaded('warehouse')
                 ? ['id' => $session->warehouse->id, 'name' => $session->warehouse->name]
                 : null,
-            'status'           => $session->status->value,
-            'status_label'     => $session->status->label(),
-            'started_at'       => $session->started_at?->toIso8601String(),
-            'completed_at'     => $session->completed_at?->toIso8601String(),
-            'notes'            => $session->notes,
-            'created_by'       => $session->created_by,
-            'approved_by'      => $session->approved_by,
-            'created_at'       => $session->created_at?->toIso8601String(),
-            'updated_at'       => $session->updated_at?->toIso8601String(),
+            'status' => $session->status->value,
+            'status_label' => $session->status->label(),
+            'started_at' => $session->started_at?->toIso8601String(),
+            'completed_at' => $session->completed_at?->toIso8601String(),
+            'notes' => $session->notes,
+            'created_by' => $session->created_by,
+            'approved_by' => $session->approved_by,
+            'created_at' => $session->created_at?->toIso8601String(),
+            'updated_at' => $session->updated_at?->toIso8601String(),
             // Financial summary (available after approval, from list aggregate or computed)
-            'shortage_value'   => $stats['shortage_value'] ?? null,
-            'waste_value'      => $stats['waste_value'] ?? null,
+            'shortage_value' => $stats['shortage_value'] ?? null,
+            'waste_value' => $stats['waste_value'] ?? null,
             'attachment_count' => $stats['attachment_count'] ?? 0,
         ];
 
         if ($session->relationLoaded('lines')) {
             $lines = $session->lines->map(function (InventoryCountLine $line) use ($hideSysQty): array {
                 $row = [
-                    'id'             => $line->id,
-                    'product_id'     => $line->product_id,
-                    'product'        => $line->relationLoaded('product') && $line->product !== null
+                    'id' => $line->id,
+                    'product_id' => $line->product_id,
+                    'product' => $line->relationLoaded('product') && $line->product !== null
                         ? ['id' => $line->product->id, 'sku' => $line->product->sku, 'name' => $line->product->name, 'image_url' => $line->product->image_url]
                         : null,
-                    'counted_qty'        => $line->counted_qty !== null ? (float) $line->counted_qty : null,
-                    'damaged_qty'        => (float) ($line->damaged_qty ?? 0),
-                    'damage_reason'      => $line->damage_reason,
-                    'shortage_qty'       => $line->shortage_qty !== null ? (float) $line->shortage_qty : null,
-                    'variance_qty'       => $line->variance_qty !== null ? (float) $line->variance_qty : null,
-                    'variance_value'     => $line->variance_value !== null ? (float) $line->variance_value : null,
+                    'counted_qty' => $line->counted_qty !== null ? (float) $line->counted_qty : null,
+                    'damaged_qty' => (float) ($line->damaged_qty ?? 0),
+                    'damage_reason' => $line->damage_reason,
+                    'shortage_qty' => $line->shortage_qty !== null ? (float) $line->shortage_qty : null,
+                    'variance_qty' => $line->variance_qty !== null ? (float) $line->variance_qty : null,
+                    'variance_value' => $line->variance_value !== null ? (float) $line->variance_value : null,
                     'unit_cost_snapshot' => $line->unit_cost_snapshot !== null ? (float) $line->unit_cost_snapshot : null,
-                    'notes'              => $line->notes,
-                    'attachments'        => $line->relationLoaded('attachments')
+                    'notes' => $line->notes,
+                    'attachments' => $line->relationLoaded('attachments')
                         ? $line->attachments->map(fn ($a) => $this->formatAttachment($a))->values()->toArray()
                         : [],
                 ];
@@ -462,10 +477,10 @@ final class InventoryCountController extends Controller
             // Variance summary only after completion
             if (in_array($session->status->value, ['completed', 'approved'], true)) {
                 $data['variance_summary'] = [
-                    'total_lines'          => count($lines),
-                    'counted_lines'        => collect($session->lines)->filter(fn ($l) => $l->counted_qty !== null)->count(),
-                    'positive_lines'       => collect($session->lines)->filter(fn ($l) => (float) ($l->variance_qty ?? 0) > 0)->count(),
-                    'negative_lines'       => collect($session->lines)->filter(fn ($l) => (float) ($l->variance_qty ?? 0) < 0)->count(),
+                    'total_lines' => count($lines),
+                    'counted_lines' => collect($session->lines)->filter(fn ($l) => $l->counted_qty !== null)->count(),
+                    'positive_lines' => collect($session->lines)->filter(fn ($l) => (float) ($l->variance_qty ?? 0) > 0)->count(),
+                    'negative_lines' => collect($session->lines)->filter(fn ($l) => (float) ($l->variance_qty ?? 0) < 0)->count(),
                     'total_variance_value' => round($session->lines->sum(fn ($l) => (float) ($l->variance_value ?? 0)), 2),
                     'inventory_accuracy_pct' => $this->calcAccuracy($session),
                 ];
@@ -475,11 +490,11 @@ final class InventoryCountController extends Controller
             if ($session->status->value === 'approved') {
                 $data['shortage_value'] = round(
                     $session->lines->sum(fn ($l) => $l->shortage_qty > 0 ? ((float) ($l->unit_cost_snapshot ?? 0)) * (float) $l->shortage_qty : 0),
-                    2
+                    2,
                 );
                 $data['waste_value'] = round(
                     $session->lines->sum(fn ($l) => $l->damaged_qty > 0 ? ((float) ($l->unit_cost_snapshot ?? 0)) * (float) $l->damaged_qty : 0),
-                    2
+                    2,
                 );
                 $data['attachment_count'] = $session->lines->sum(fn ($l) => $l->relationLoaded('attachments') ? $l->attachments->count() : 0);
             }
@@ -488,34 +503,42 @@ final class InventoryCountController extends Controller
         return $data;
     }
 
-    /** @param  InventoryCountLineAttachment  $attachment */
     private function formatAttachment(InventoryCountLineAttachment $attachment): array
     {
         return [
-            'id'            => $attachment->id,
+            'id' => $attachment->id,
             'count_line_id' => $attachment->count_line_id,
-            'file_name'     => $attachment->file_name,
-            'mime_type'     => $attachment->mime_type,
-            'file_size'     => $attachment->file_size,
-            'description'   => $attachment->description,
-            'uploaded_by'   => $attachment->uploaded_by,
-            'created_at'    => $attachment->created_at?->toIso8601String(),
+            'file_name' => $attachment->file_name,
+            'mime_type' => $attachment->mime_type,
+            'file_size' => $attachment->file_size,
+            'description' => $attachment->description,
+            'uploaded_by' => $attachment->uploaded_by,
+            'created_at' => $attachment->created_at?->toIso8601String(),
         ];
     }
 
     private function lineDecision(InventoryCountLine $line): string
     {
-        if ($line->shortage_qty > 0 && $line->damaged_qty > 0) return 'shortage_and_waste';
-        if ($line->shortage_qty > 0) return 'shortage';
-        if ($line->damaged_qty > 0)  return 'waste';
-        if ((float) ($line->variance_qty ?? 0) > 0) return 'overstock';
+        if ($line->shortage_qty > 0 && $line->damaged_qty > 0) {
+            return 'shortage_and_waste';
+        }
+        if ($line->shortage_qty > 0) {
+            return 'shortage';
+        }
+        if ($line->damaged_qty > 0) {
+            return 'waste';
+        }
+        if ((float) ($line->variance_qty ?? 0) > 0) {
+            return 'overstock';
+        }
+
         return 'match';
     }
 
-    private function calcAccuracy(InventoryCountSession $session): float|null
+    private function calcAccuracy(InventoryCountSession $session): ?float
     {
         $counted = $session->lines->filter(fn ($l) => $l->counted_qty !== null);
-        $total   = $counted->count();
+        $total = $counted->count();
 
         if ($total === 0) {
             return null;

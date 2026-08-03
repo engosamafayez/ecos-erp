@@ -84,6 +84,57 @@ export type RawMaterialPayload = {
   internal_notes?: string | null;
 };
 
+// ─── Purchase history (from inventory_receipt_layers) ─────────────────────────
+// Sourced from the existing GET /products/{id}/cost-history (receipt layers).
+// This is the canonical, real purchasing history for a material — no new schema.
+
+export type PurchaseLayer = {
+  id:            string;
+  receipt_date:  string | null;
+  supplier:      { id: string; name: string } | null;
+  goods_receipt: { id: string; receipt_number: string } | null;
+  received_qty:  number;
+  remaining_qty: number;
+  unit_cost:     number;
+  layer_value:   number;
+  status:        'open' | 'consumed';
+};
+
+export type MaterialPurchaseHistory = {
+  receipt_layers: PurchaseLayer[];
+};
+
+/** Derived per-supplier summary for the Suppliers tab (Supplier History). */
+export type SupplierHistoryRow = {
+  supplier_id:        string;
+  supplier_name:      string;
+  last_purchase_date: string | null;
+  last_purchase_cost: number | null;
+  total_received:     number;
+  receipts:           number;
+};
+
+// ─── Warehouse distribution (from inventory_items, canonical) ─────────────────
+// Sourced from GET /products/{id}/warehouse-distribution — availability is the
+// official InventoryItem::availableQty(), not a repo/frontend calculation.
+
+export type WarehouseDistributionRow = {
+  warehouse_id:   string;
+  warehouse_name: string | null;
+  warehouse_code: string | null;
+  on_hand_qty:    number;
+  reserved_qty:   number;
+  available_qty:  number;
+};
+
+export type WarehouseDistribution = {
+  product_id:      string;
+  warehouses:      WarehouseDistributionRow[];
+  total_on_hand:   number;
+  total_reserved:  number;
+  total_available: number;
+};
+
 // ─── Stats ────────────────────────────────────────────────────────────────────
 
 export type RawMaterialStats = {

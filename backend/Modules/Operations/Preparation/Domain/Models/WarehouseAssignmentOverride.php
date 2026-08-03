@@ -12,12 +12,12 @@ use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 /**
  * Immutable audit record for every manual warehouse override.
  *
- * @property string      $id
- * @property string      $order_id
+ * @property string $id
+ * @property string $order_id
  * @property string|null $previous_warehouse_id
- * @property string      $new_warehouse_id
- * @property string      $reason
- * @property string      $overridden_by
+ * @property string $new_warehouse_id
+ * @property string $reason
+ * @property string $overridden_by
  * @property \Carbon\Carbon $overridden_at
  */
 class WarehouseAssignmentOverride extends Model

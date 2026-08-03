@@ -41,7 +41,7 @@ return new class extends Migration
 
             $table->unique(
                 ['preparation_wave_id', 'raw_material_id'],
-                'uq_prep_material_req_wave_material'
+                'uq_prep_material_req_wave_material',
             );
             $table->index('preparation_wave_id', 'idx_prep_material_req_wave_id');
             $table->index('raw_material_id', 'idx_prep_material_req_material_id');

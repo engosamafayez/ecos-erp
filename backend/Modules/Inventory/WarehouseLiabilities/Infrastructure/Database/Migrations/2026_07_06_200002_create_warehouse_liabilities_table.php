@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -8,7 +10,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-                if (Schema::hasTable('warehouse_liabilities')) {
+        if (Schema::hasTable('warehouse_liabilities')) {
             return;
         }
 
@@ -28,8 +30,8 @@ return new class extends Migration
             // inventory_shortage | waste_transferred
             $table->string('liability_type', 50)->default('inventory_shortage');
 
-            $table->decimal('quantity',   15, 4);
-            $table->decimal('unit_cost',  15, 4);
+            $table->decimal('quantity', 15, 4);
+            $table->decimal('unit_cost', 15, 4);
             $table->decimal('total_cost', 15, 2);
 
             // pending | approved | rejected

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle,
   CheckCircle,
@@ -56,16 +57,16 @@ function TableSkeleton() {
 }
 
 function EmptyDeliveries({ hasFilter }: { hasFilter: boolean }) {
+  const { t } = useTranslation('logistics');
+
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border bg-card py-16 text-center">
       <Truck className="mb-3 size-12 text-muted-foreground/20" />
       <p className="text-sm font-medium">
-        {hasFilter ? 'No deliveries match your filters' : 'Nothing needs attention'}
+        {hasFilter ? t('delivery.empty.filteredTitle') : t('delivery.empty.title')}
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
-        {hasFilter
-          ? 'Try a different status or clear the exception filters.'
-          : 'Open deliveries appear here as trips go out. Closed ones are hidden by default.'}
+        {hasFilter ? t('delivery.empty.filteredHint') : t('delivery.empty.hint')}
       </p>
     </div>
   );
@@ -94,6 +95,8 @@ function DeliveriesTable({
   hasFilter: boolean;
   onRowClick: (delivery: Delivery) => void;
 }) {
+  const { t } = useTranslation('logistics');
+
   if (isLoading) return <TableSkeleton />;
   if (rows.length === 0) return <EmptyDeliveries hasFilter={hasFilter} />;
 
@@ -101,13 +104,13 @@ function DeliveriesTable({
     <div className="overflow-x-auto rounded-lg border bg-card">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b bg-muted/60 text-left text-xs uppercase tracking-wide text-muted-foreground">
-            <th className="h-10 px-3 font-medium">Order</th>
-            <th className="h-10 px-3 font-medium">Status</th>
-            <th className="h-10 px-3 text-center font-medium">Attempts</th>
-            <th className="h-10 px-3 font-medium">Last failure</th>
-            <th className="h-10 px-3 font-medium">Promised</th>
-            <th className="h-10 px-3 font-medium">SLA</th>
+          <tr className="border-b bg-muted/60 text-start text-xs uppercase tracking-wide text-muted-foreground">
+            <th className="h-10 px-3 font-medium">{t('delivery.field.order')}</th>
+            <th className="h-10 px-3 font-medium">{t('common.status')}</th>
+            <th className="h-10 px-3 text-center font-medium">{t('delivery.field.attempts')}</th>
+            <th className="h-10 px-3 font-medium">{t('delivery.table.lastFailure')}</th>
+            <th className="h-10 px-3 font-medium">{t('delivery.field.promised')}</th>
+            <th className="h-10 px-3 font-medium">{t('delivery.table.sla')}</th>
             <th className="h-10 w-10 px-3" />
           </tr>
         </thead>
@@ -121,7 +124,12 @@ function DeliveriesTable({
                 className="cursor-pointer hover:bg-muted/40"
                 onClick={() => onRowClick(delivery)}
               >
-                <td className="px-3 py-2.5 font-mono text-xs">{delivery.order_id}</td>
+                <td className="px-3 py-2.5">
+                  <span className="font-medium text-xs">{delivery.order_number ?? '—'}</span>
+                  {delivery.order_customer_name && (
+                    <span className="block text-[11px] text-muted-foreground">{delivery.order_customer_name}</span>
+                  )}
+                </td>
                 <td className="px-3 py-2.5">
                   <DeliveryStatusBadge status={delivery.status} />
                 </td>
@@ -135,8 +143,8 @@ function DeliveriesTable({
                     <span className="text-muted-foreground">
                       {failure.reason_label}
                       {!failure.is_retryable && (
-                        <Badge variant="destructive" className="ml-1.5 text-[10px]">
-                          Final
+                        <Badge variant="destructive" className="ms-1.5 text-[10px]">
+                          {t('delivery.table.final')}
                         </Badge>
                       )}
                     </span>
@@ -151,13 +159,13 @@ function DeliveriesTable({
                   {delivery.sla_breached ? (
                     <Badge variant="destructive" className="gap-1 text-[10px]">
                       <Clock className="size-3" />
-                      Breached
+                      {t('delivery.sla.breached')}
                     </Badge>
                   ) : (
-                    <span className="text-xs text-muted-foreground">On time</span>
+                    <span className="text-xs text-muted-foreground">{t('delivery.sla.onTime')}</span>
                   )}
                 </td>
-                <td className="px-3 py-2.5 text-right">
+                <td className="px-3 py-2.5 text-end">
                   <ChevronRight className="size-4 text-muted-foreground" />
                 </td>
               </tr>
@@ -172,12 +180,12 @@ function DeliveriesTable({
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 const STATUS_FILTERS = [
-  { key: 'open', label: 'Open' },
-  { key: 'all', label: 'All' },
-  { key: 'out_for_delivery', label: 'Out for delivery' },
-  { key: 'awaiting_retry', label: 'Awaiting retry' },
-  { key: 'failed', label: 'Failed' },
-  { key: 'returning', label: 'Returning' },
+  { key: 'open', labelKey: 'delivery.filter.open' },
+  { key: 'all', labelKey: 'common.all' },
+  { key: 'out_for_delivery', labelKey: 'delivery.status.outForDelivery' },
+  { key: 'awaiting_retry', labelKey: 'delivery.status.awaitingRetry' },
+  { key: 'failed', labelKey: 'common.failed' },
+  { key: 'returning', labelKey: 'delivery.status.returning' },
 ] as const;
 
 type StatusFilterKey = (typeof STATUS_FILTERS)[number]['key'];
@@ -189,6 +197,7 @@ type StatusFilterKey = (typeof STATUS_FILTERS)[number]['key'];
  * leads with what is failing, breaching SLA or waiting on a retry decision.
  */
 export function DeliveryPage() {
+  const { t } = useTranslation('logistics');
   const [orderId, setOrderId] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilterKey>('open');
   const [categoryFilter, setCategoryFilter] = useState<FailureCategory | 'all'>('all');
@@ -230,20 +239,20 @@ export function DeliveryPage() {
   }
 
   const metrics = [
-    { id: 'out', icon: Truck, label: 'Out for Delivery', value: stats?.out_for_delivery ?? 0, isLoading: !stats },
-    { id: 'delivered', icon: CheckCircle, label: 'Delivered', value: stats?.delivered ?? 0, isLoading: !stats, colorClass: 'text-emerald-600' },
-    { id: 'failed', icon: PackageX, label: 'Failed', value: stats?.failed ?? 0, isLoading: !stats, colorClass: 'text-destructive' },
-    { id: 'retry', icon: RotateCcw, label: 'Awaiting Retry', value: stats?.awaiting_retry ?? 0, isLoading: !stats, colorClass: 'text-amber-600' },
-    { id: 'sla', icon: AlertTriangle, label: 'SLA Breached', value: stats?.sla_breached ?? 0, isLoading: !stats, colorClass: 'text-destructive' },
-    { id: 'returning', icon: Undo2, label: 'Returning', value: stats?.returning ?? 0, isLoading: !stats },
+    { id: 'out', icon: Truck, label: t('delivery.status.outForDelivery'), value: stats?.out_for_delivery ?? 0, isLoading: !stats },
+    { id: 'delivered', icon: CheckCircle, label: t('delivery.status.delivered'), value: stats?.delivered ?? 0, isLoading: !stats, colorClass: 'text-emerald-600' },
+    { id: 'failed', icon: PackageX, label: t('common.failed'), value: stats?.failed ?? 0, isLoading: !stats, colorClass: 'text-destructive' },
+    { id: 'retry', icon: RotateCcw, label: t('delivery.status.awaitingRetry'), value: stats?.awaiting_retry ?? 0, isLoading: !stats, colorClass: 'text-amber-600' },
+    { id: 'sla', icon: AlertTriangle, label: t('delivery.stats.slaBreached'), value: stats?.sla_breached ?? 0, isLoading: !stats, colorClass: 'text-destructive' },
+    { id: 'returning', icon: Undo2, label: t('delivery.status.returning'), value: stats?.returning ?? 0, isLoading: !stats },
   ];
 
   return (
     <>
       <WorkspaceHeader
-        breadcrumbs={[{ label: 'Logistics OS' }, { label: 'Delivery' }]}
-        title="Delivery & Tracking"
-        description="Track every order's journey to the customer — attempts, proof, failures and retries"
+        breadcrumbs={[{ label: t('delivery.page.breadcrumbRoot') }, { label: t('delivery.entity') }]}
+        title={t('delivery.page.title')}
+        description={t('delivery.page.description')}
         metrics={metrics}
       />
 
@@ -256,7 +265,7 @@ export function DeliveryPage() {
         quickFilters={
           <div className="flex flex-wrap items-center gap-2 px-4 py-2 sm:px-6">
             <Input
-              placeholder="Filter by order ID…"
+              placeholder={t('delivery.filter.orderIdPlaceholder')}
               value={orderId}
               onChange={(e) => {
                 setOrderId(e.target.value);
@@ -273,7 +282,7 @@ export function DeliveryPage() {
                 className="h-8 text-xs"
                 onClick={() => resetPage(setStatusFilter)(s.key)}
               >
-                {s.label}
+                {t(s.labelKey)}
               </Button>
             ))}
 
@@ -286,7 +295,7 @@ export function DeliveryPage() {
               onClick={() => resetPage(setSlaOnly)(!slaOnly)}
             >
               <Clock className="size-3" />
-              SLA breached
+              {t('delivery.filter.slaBreached')}
             </Button>
 
             {(options?.failure_categories ?? []).map((category) => (

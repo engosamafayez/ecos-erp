@@ -42,32 +42,32 @@ final class ReverseSupplierReturnInventoryAction
         $return->loadMissing(['lines.product', 'warehouse']);
 
         $warehouseId = (string) $return->warehouse_id;
-        $companyId   = (string) ($return->warehouse?->company_id ?? '');
+        $companyId = (string) ($return->warehouse?->company_id ?? '');
 
         DB::transaction(function () use ($return, $warehouseId, $companyId): void {
             foreach ($return->lines as $line) {
                 $productId = (string) $line->product_id;
-                $quantity  = (float)  $line->return_quantity;
+                $quantity = (float) $line->return_quantity;
 
                 if ($quantity <= 0 || $productId === '') {
                     continue;
                 }
 
                 $dto = new StockOperationDTO(
-                    warehouse_id:   $warehouseId,
-                    product_id:     $productId,
-                    company_id:     $companyId,
-                    quantity:       $quantity,
+                    warehouse_id: $warehouseId,
+                    product_id: $productId,
+                    company_id: $companyId,
+                    quantity: $quantity,
                     reference_type: 'supplier_return',
-                    reference_id:   (string) $return->id,
-                    notes:          "Inventory reversal for supplier return {$return->return_number}",
+                    reference_id: (string) $return->id,
+                    notes: "Inventory reversal for supplier return {$return->return_number}",
                 );
 
                 $this->adjustmentOut->execute($dto);
             }
 
             // Stamp the return as inventory-restocked
-            $return->inventory_restocked    = true;
+            $return->inventory_restocked = true;
             $return->inventory_restocked_at = now();
             $return->save();
         });

@@ -12,7 +12,7 @@ use Modules\Marketing\CampaignStudio\Domain\Models\CampaignDraft;
 class CreateCampaignDraftAction
 {
     public function __construct(
-        private readonly CampaignDraftService     $draftService,
+        private readonly CampaignDraftService $draftService,
         private readonly CampaignVersioningService $versioningService,
     ) {}
 

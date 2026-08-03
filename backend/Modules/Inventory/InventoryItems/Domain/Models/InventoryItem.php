@@ -54,7 +54,7 @@ class InventoryItem extends Model
     protected function casts(): array
     {
         return [
-            'on_hand_qty'  => 'decimal:4',
+            'on_hand_qty' => 'decimal:4',
             'reserved_qty' => 'decimal:4',
         ];
     }

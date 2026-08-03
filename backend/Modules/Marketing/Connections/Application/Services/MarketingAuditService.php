@@ -15,69 +15,69 @@ use Modules\Marketing\Connections\Domain\Models\MarketingAuditLog;
 final class MarketingAuditService
 {
     public function logConnection(
-        string  $connectionId,
-        string  $action,       // 'connected' | 'disconnected' | 'reconnected' | 'validated'
-        ?string $actorId   = null,
+        string $connectionId,
+        string $action,       // 'connected' | 'disconnected' | 'reconnected' | 'validated'
+        ?string $actorId = null,
         ?string $actorName = null,
-        array   $before    = [],
-        array   $after     = [],
-        ?string $reason    = null,
+        array $before = [],
+        array $after = [],
+        ?string $reason = null,
         ?string $connectorType = null,
     ): MarketingAuditLog {
         return MarketingAuditLog::record(
-            entityType:    'connection',
-            entityId:      $connectionId,
-            action:        $action,
-            actorId:       $actorId,
-            actorName:     $actorName,
-            before:        $before,
-            after:         $after,
-            reason:        $reason,
-            connectionId:  $connectionId,
+            entityType: 'connection',
+            entityId: $connectionId,
+            action: $action,
+            actorId: $actorId,
+            actorName: $actorName,
+            before: $before,
+            after: $after,
+            reason: $reason,
+            connectionId: $connectionId,
             connectorType: $connectorType,
         );
     }
 
     public function logAsset(
-        string  $assetId,
-        string  $action,        // 'discovered' | 'updated' | 'mapped' | 'unmapped' | 'health_checked'
-        ?string $actorId       = null,
-        ?string $actorName     = null,
-        array   $before        = [],
-        array   $after         = [],
-        ?string $connectionId  = null,
+        string $assetId,
+        string $action,        // 'discovered' | 'updated' | 'mapped' | 'unmapped' | 'health_checked'
+        ?string $actorId = null,
+        ?string $actorName = null,
+        array $before = [],
+        array $after = [],
+        ?string $connectionId = null,
         ?string $connectorType = null,
     ): MarketingAuditLog {
         return MarketingAuditLog::record(
-            entityType:    'asset',
-            entityId:      $assetId,
-            action:        $action,
-            actorId:       $actorId,
-            actorName:     $actorName,
-            before:        $before,
-            after:         $after,
-            connectionId:  $connectionId,
-            assetId:       $assetId,
+            entityType: 'asset',
+            entityId: $assetId,
+            action: $action,
+            actorId: $actorId,
+            actorName: $actorName,
+            before: $before,
+            after: $after,
+            connectionId: $connectionId,
+            assetId: $assetId,
             connectorType: $connectorType,
         );
     }
 
     public function logMapping(
-        string  $relationshipId,
-        string  $action,         // 'suggested' | 'accepted' | 'rejected' | 'explicit'
-        string  $assetId,
-        ?string $actorId   = null,
+        string $relationshipId,
+        string $action,         // 'suggested' | 'accepted' | 'rejected' | 'explicit'
+        string $assetId,
+        ?string $actorId = null,
         ?string $actorName = null,
-        ?string $reason    = null,
+        ?string $reason = null,
     ): MarketingAuditLog {
         return MarketingAuditLog::record(
             entityType: 'relationship',
-            entityId:   $relationshipId,
-            action:     $action,
-            actorId:    $actorId,
-            actorName:  $actorName,
-            reason:     $reason,
-            assetId:    $assetId,
+            entityId: $relationshipId,
+            action: $action,
+            actorId: $actorId,
+            actorName: $actorName,
+            reason: $reason,
+            assetId: $assetId,
         );
     }
 

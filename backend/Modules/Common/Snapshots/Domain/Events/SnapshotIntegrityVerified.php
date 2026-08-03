@@ -10,10 +10,10 @@ namespace Modules\Common\Snapshots\Domain\Events;
 final class SnapshotIntegrityVerified
 {
     public function __construct(
-        public readonly string  $snapshotUuid,
-        public readonly string  $aggregateType,
-        public readonly string  $aggregateId,
-        public readonly string  $verifiedAt,
+        public readonly string $snapshotUuid,
+        public readonly string $aggregateType,
+        public readonly string $aggregateId,
+        public readonly string $verifiedAt,
         public readonly ?string $verifiedBy,
     ) {}
 }

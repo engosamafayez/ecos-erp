@@ -13,8 +13,9 @@ class CampaignValidationResult extends Model
 {
     use HasUuids;
 
-    protected $table    = 'marketing_campaign_validation_results';
-    public    $timestamps = false;
+    protected $table = 'marketing_campaign_validation_results';
+
+    public $timestamps = false;
 
     protected $fillable = [
         'campaign_draft_id', 'validation_type', 'severity',
@@ -23,12 +24,12 @@ class CampaignValidationResult extends Model
     ];
 
     protected $casts = [
-        'severity'    => ValidationSeverity::class,
-        'context'     => 'array',
+        'severity' => ValidationSeverity::class,
+        'context' => 'array',
         'is_resolved' => 'boolean',
         'resolved_at' => 'datetime',
         'validated_at' => 'datetime',
-        'created_at'  => 'datetime',
+        'created_at' => 'datetime',
     ];
 
     public function draft(): BelongsTo

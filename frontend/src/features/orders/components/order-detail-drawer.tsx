@@ -45,6 +45,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useFormatter } from '@/hooks/use-formatter';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -66,19 +67,8 @@ import type { Order, OrderActivity } from '@/features/orders/types/order';
 import {
   useOrderActivities,
   useOrderQuery,
-  useOrderWorkflowCancel,
-  useOrderWorkflowComplete,
-  useOrderWorkflowCompleteDelivery,
-  useOrderWorkflowConfirm,
-  useOrderWorkflowDispatch,
-  useOrderWorkflowMarkAwaitingStock,
-  useOrderWorkflowMoveToPreparation,
-  useOrderWorkflowMoveToReview,
   useOrderWorkflowReschedule,
-  useOrderWorkflowResume,
-  useOrderWorkflowResumeToConfirmed,
-  useOrderWorkflowReturn,
-  useOrderWorkflowReturnToConfirmed,
+  useOrderWorkflowTransition,
 } from '@/features/orders/hooks/use-orders';
 import { getMediaUrl } from '@/lib/media';
 import { cn } from '@/lib/utils';
@@ -126,20 +116,18 @@ function formatDateTime(d: string | null): string {
 }
 
 /** Raw number → "X,XXX.XX" without currency, for inline use (line items). */
-function formatMoney(n: number): string {
-  const v = Object.is(n, -0) ? 0 : n;
-  return v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
 /**
- * Enterprise currency formatting: "EGP X,XXX.XX".
- * Returns "—" for zero or near-zero values (handles -0.00).
- * Pass allowZero=true to show "EGP 0.00" explicitly.
+ * Currency formatting bound to the company currency (Settings → Company Settings).
+ * Returns "—" for zero/near-zero values unless allowZero=true. Magnitude only (sign stripped),
+ * matching the previous ledger-style presentation.
  */
-function fmtCur(n: number | null | undefined, allowZero = false): string {
-  const v = Object.is(n ?? 0, -0) ? 0 : (n ?? 0);
-  if (!allowZero && Math.abs(v) < 0.005) return '—';
-  return `EGP ${Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+function useOrderMoney() {
+  const { money } = useFormatter();
+  return (n: number | null | undefined, allowZero = false): string => {
+    const v = Object.is(n ?? 0, -0) ? 0 : (n ?? 0);
+    if (!allowZero && Math.abs(v) < 0.005) return '—';
+    return money(Math.abs(v));
+  };
 }
 
 // ── Payment method labels ─────────────────────────────────────────────────────
@@ -200,6 +188,7 @@ function FinancialRow({
   bold?: boolean;
   allowZero?: boolean;
 }) {
+  const fmtCur = useOrderMoney();
   const effectiveLabel = pct != null ? `${label} (${pct}%)` : label;
   let display: React.ReactNode;
 
@@ -241,6 +230,7 @@ function KpiCard({ label, value, variant }: { label: string; value: string; vari
 // ── Tab panels ────────────────────────────────────────────────────────────────
 
 function SummaryTab({ order, t }: { order: Order; t: OrdersT }) {
+  const fmtCur = useOrderMoney();
   const paymentLabel = resolvePaymentLabel(order);
   const hasDiscount = order.discount_amount > 0.005;
   const hasDeposit  = order.deposit_paid > 0.005;
@@ -369,6 +359,7 @@ function NoteCard({
 // ── Customer Tab ──────────────────────────────────────────────────────────────
 
 function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
+  const fmtCur = useOrderMoney();
   const cust = order.customer;
   const primaryPhone   = order.billing_phone ?? cust?.phone;
   const secondaryPhone = cust?.mobile;
@@ -746,6 +737,7 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
 }
 
 function ProductsTab({ order, t }: { order: Order; t: OrdersT }) {
+  const fmtCur = useOrderMoney();
   return (
     <div className="flex flex-col gap-0 p-4">
       {/* Price protection banner — prices are frozen at order creation */}
@@ -777,7 +769,7 @@ function ProductsTab({ order, t }: { order: Order; t: OrdersT }) {
               <div className="text-end shrink-0">
                 <p className="text-sm font-medium tabular-nums">{fmtCur(line.line_total, true)}</p>
                 <div className="flex items-center justify-end gap-1 mt-0.5">
-                  <p className="text-xs text-muted-foreground">{line.quantity} × EGP {formatMoney(line.unit_price)}</p>
+                  <p className="text-xs text-muted-foreground">{line.quantity} × {fmtCur(line.unit_price, true)}</p>
                   <span className="inline-flex items-center gap-0.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
                     <Lock className="h-2.5 w-2.5" />
                     {t('drawer.products_tab.locked')}
@@ -821,6 +813,7 @@ function ProductsTab({ order, t }: { order: Order; t: OrdersT }) {
 }
 
 function PaymentTab({ order, t }: { order: Order; t: OrdersT }) {
+  const fmtCur = useOrderMoney();
   const paymentLabel = resolvePaymentLabel(order);
 
   // Derive payment status
@@ -1164,9 +1157,6 @@ function ShippingTab({ order, t }: { order: Order; t: OrdersT }) {
           <DetailRow label={t('drawer.shipping.requestedDelivery')}>{formatDate(order.requested_delivery_date)}</DetailRow>
           <DetailRow label={t('drawer.shipping.deliveryWindow')}>{order.delivery_window}</DetailRow>
           <DetailRow label={t('drawer.shipping.preferredTime')}>{order.preferred_delivery_time}</DetailRow>
-          <DetailRow label={t('drawer.shipping.eta')}>{null}</DetailRow>
-          <DetailRow label={t('drawer.shipping.priority')}>{null}</DetailRow>
-          <DetailRow label={t('drawer.shipping.serviceLevel')}>{null}</DetailRow>
         </DetailGrid>
       </div>
 
@@ -1178,12 +1168,6 @@ function ShippingTab({ order, t }: { order: Order; t: OrdersT }) {
         <DetailGrid>
           <DetailRow label={t('drawer.shipping.shippingCompany')}>{order.shipping_company_name}</DetailRow>
           <DetailRow label={t('drawer.shipping.carrier')}>{order.shipping_method}</DetailRow>
-          <DetailRow label={t('drawer.shipping.driver')}>{null}</DetailRow>
-          <DetailRow label={t('drawer.shipping.vehicle')}>{null}</DetailRow>
-          <DetailRow label={t('drawer.shipping.vehicleCode')}>{null}</DetailRow>
-          <DetailRow label={t('drawer.shipping.route')}>{null}</DetailRow>
-          <DetailRow label={t('drawer.shipping.wave')}>{null}</DetailRow>
-          <DetailRow label={t('drawer.shipping.loadingBatch')}>{null}</DetailRow>
         </DetailGrid>
       </div>
 
@@ -1198,7 +1182,6 @@ function ShippingTab({ order, t }: { order: Order; t: OrdersT }) {
               ? <span className="font-mono text-xs">{order.tracking_number}</span>
               : null}
           </DetailRow>
-          <DetailRow label={t('drawer.shipping.trackingLink')}>{null}</DetailRow>
           <DetailRow label={t('drawer.shipping.shipmentStatus')}>
             {attemptsLabel}
           </DetailRow>
@@ -1290,12 +1273,6 @@ function ShippingTab({ order, t }: { order: Order; t: OrdersT }) {
               {t('drawer.shipping.copyCoordinates')}
             </Button>
           )}
-          {order.tracking_number ? (
-            <Button variant="outline" size="sm" disabled>
-              <ExternalLink className="size-3.5" />
-              {t('drawer.shipping.trackShipment')}
-            </Button>
-          ) : null}
         </div>
       </div>
     </div>
@@ -1380,119 +1357,50 @@ function LocationTab({ order, t }: { order: Order; t: OrdersT }) {
 
 // ── Workflow Tab ──────────────────────────────────────────────────────────────
 
-type WorkflowAction = {
-  key: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  variant: 'default' | 'outline' | 'destructive';
-};
-
-const WORKFLOW_ACTIONS: Record<string, WorkflowAction[]> = {
-  pending: [
-    { key: 'confirm',          label: 'Confirm Order',          icon: CheckCircle2,     variant: 'default'     },
-    { key: 'cancel',           label: 'Cancel Order',           icon: XCircle,          variant: 'destructive' },
-  ],
-  awaiting_payment: [
-    { key: 'confirm',          label: 'Confirm Order',          icon: CheckCircle2,     variant: 'default'     },
-    { key: 'cancel',           label: 'Cancel Order',           icon: XCircle,          variant: 'destructive' },
-  ],
-  processing: [
-    { key: 'prepare',          label: 'Move to Preparation',    icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'awaiting_stock',   label: 'Hold: Awaiting Stock',   icon: Box,              variant: 'outline'     },
-    { key: 'review',           label: 'Send to Review',         icon: Activity,         variant: 'outline'     },
-    { key: 'cancel',           label: 'Cancel Order',           icon: XCircle,          variant: 'destructive' },
-  ],
-  awaiting_stock: [
-    { key: 'resume',           label: 'Resume Processing',      icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'cancel',           label: 'Cancel Order',           icon: XCircle,          variant: 'destructive' },
-  ],
-  confirmed: [
-    { key: 'prepare',          label: 'Move to Preparation',    icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'reschedule',       label: 'Reschedule',             icon: Clock,            variant: 'outline'     },
-    { key: 'cancel',           label: 'Cancel Order',           icon: XCircle,          variant: 'destructive' },
-  ],
-  preparing: [
-    { key: 'dispatch',         label: 'Dispatch Orders',        icon: Truck,            variant: 'default'     },
-    { key: 'review',           label: 'Send to Review',         icon: Activity,         variant: 'outline'     },
-    { key: 'reschedule',       label: 'Reschedule',             icon: Clock,            variant: 'outline'     },
-    { key: 'cancel',           label: 'Cancel Order',           icon: XCircle,          variant: 'destructive' },
-  ],
-  out_for_delivery: [
-    { key: 'complete_delivery', label: 'Complete Delivery',     icon: CheckCircle2,     variant: 'default'     },
-    { key: 'return',            label: 'Process Return',        icon: RotateCcw,        variant: 'outline'     },
-    { key: 'review',            label: 'Send to Review',        icon: Activity,         variant: 'outline'     },
-    { key: 'reschedule',        label: 'Reschedule',            icon: Clock,            variant: 'outline'     },
-  ],
-  delivered: [
-    { key: 'complete',          label: 'Complete Accounts Review', icon: CheckCircle2,  variant: 'default'     },
-    { key: 'review',            label: 'Send to Review',        icon: Activity,         variant: 'outline'     },
-    { key: 'resume',            label: 'Resume Processing',     icon: ArrowRightCircle, variant: 'outline'     },
-    { key: 'resume_confirmed',  label: 'Resume: Confirmed',     icon: ArrowRightCircle, variant: 'outline'     },
-    { key: 'reschedule',        label: 'Reschedule',            icon: Clock,            variant: 'outline'     },
-    { key: 'cancel',            label: 'Cancel Order',          icon: XCircle,          variant: 'destructive' },
-  ],
-  returned: [
-    { key: 'return_to_confirmed', label: 'Return to Confirmed', icon: RotateCcw,        variant: 'default'     },
-    { key: 'review',              label: 'Move to Review',      icon: Activity,         variant: 'outline'     },
-    { key: 'cancel',              label: 'Cancel Order',        icon: XCircle,          variant: 'destructive' },
-  ],
-  review: [
-    { key: 'resume',             label: 'Resume Processing',    icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'reschedule',         label: 'Reschedule',           icon: Clock,            variant: 'outline'     },
-    { key: 'cancel',             label: 'Cancel Order',         icon: XCircle,          variant: 'destructive' },
-  ],
-  rescheduled: [
-    { key: 'resume',             label: 'Resume Processing',    icon: ArrowRightCircle, variant: 'default'     },
-    { key: 'reschedule',         label: 'Reschedule',           icon: Clock,            variant: 'outline'     },
-    { key: 'cancel',             label: 'Cancel Order',         icon: XCircle,          variant: 'destructive' },
-  ],
-  completed: [],
-  cancelled: [],
+const WORKFLOW_TARGET_ICON: Record<string, React.ComponentType<{ className?: string }>> = {
+  pending:          RotateCcw,
+  processing:       ArrowRightCircle,
+  confirmed:        CheckCircle2,
+  awaiting_payment: Banknote,
+  preparing:        ArrowRightCircle,
+  out_for_delivery: Truck,
+  delivered:        CheckCircle2,
+  completed:        CheckCircle2,
+  cancelled:        XCircle,
+  awaiting_stock:   Box,
+  rescheduled:      Clock,
+  review:           Activity,
+  returned:         RotateCcw,
 };
 
 function WorkflowTab({ order, onClose }: { order: Order; onClose: () => void }) {
   const { t } = useTranslation('orders');
-  const confirm          = useOrderWorkflowConfirm();
-  const moveToPrep       = useOrderWorkflowMoveToPreparation();
-  const completeDeliv    = useOrderWorkflowCompleteDelivery();
-  const completeOrder    = useOrderWorkflowComplete();
-  const processReturn    = useOrderWorkflowReturn();
-  const cancelOrder      = useOrderWorkflowCancel();
-  const moveToReview     = useOrderWorkflowMoveToReview();
-  const resume           = useOrderWorkflowResume();
-  const dispatch         = useOrderWorkflowDispatch();
-  const reschedule       = useOrderWorkflowReschedule();
-  const markAwaitingStock = useOrderWorkflowMarkAwaitingStock();
-  const resumeConfirmed  = useOrderWorkflowResumeToConfirmed();
-  const returnConfirmed  = useOrderWorkflowReturnToConfirmed();
+  const transition = useOrderWorkflowTransition();
+  const reschedule = useOrderWorkflowReschedule();
 
   const today = new Date().toISOString().slice(0, 10);
   const [showRescheduleForm, setShowRescheduleForm] = useState(false);
-  const [rescheduleDate, setRescheduleDate] = useState(today);
+  const [rescheduleDate, setRescheduleDate]         = useState(today);
+  const [activeReason, setActiveReason]             = useState<string | null>(null);
+  const [reasonText, setReasonText]                 = useState('');
 
-  const actions = WORKFLOW_ACTIONS[order.status] ?? [];
-  const isPending = [
-    confirm, moveToPrep, completeDeliv, completeOrder, processReturn,
-    cancelOrder, moveToReview, resume, dispatch, reschedule,
-    markAwaitingStock, resumeConfirmed, returnConfirmed,
-  ].some((m) => m.isPending);
+  const transitions = order.allowed_status_transitions ?? [];
+  const isPending   = transition.isPending || reschedule.isPending;
 
-  function handleAction(key: string) {
-    switch (key) {
-      case 'confirm':           confirm.mutate(order.id, { onSuccess: onClose }); break;
-      case 'prepare':           moveToPrep.mutate(order.id, { onSuccess: onClose }); break;
-      case 'complete_delivery': completeDeliv.mutate(order.id, { onSuccess: onClose }); break;
-      case 'complete':          completeOrder.mutate(order.id, { onSuccess: onClose }); break;
-      case 'return':            processReturn.mutate({ id: order.id }, { onSuccess: onClose }); break;
-      case 'cancel':            cancelOrder.mutate({ id: order.id }, { onSuccess: onClose }); break;
-      case 'review':            moveToReview.mutate({ id: order.id }, { onSuccess: onClose }); break;
-      case 'resume':            resume.mutate(order.id, { onSuccess: onClose }); break;
-      case 'dispatch':          dispatch.mutate(order.id, { onSuccess: onClose }); break;
-      case 'awaiting_stock':    markAwaitingStock.mutate({ id: order.id }, { onSuccess: onClose }); break;
-      case 'resume_confirmed':  resumeConfirmed.mutate(order.id, { onSuccess: onClose }); break;
-      case 'return_to_confirmed': returnConfirmed.mutate(order.id, { onSuccess: onClose }); break;
-      case 'reschedule':        setShowRescheduleForm(true); break;
+  function handleAction(targetStatus: string) {
+    if (targetStatus === 'scheduled') {
+      setShowRescheduleForm(true);
+      return;
     }
+    const tr = transitions.find((tr) => tr.target_status === targetStatus);
+    if (tr?.requires_reason && activeReason !== targetStatus) {
+      setActiveReason(targetStatus);
+      setReasonText('');
+      return;
+    }
+    const reason = reasonText.trim() || undefined;
+    const done   = () => { setActiveReason(null); setReasonText(''); onClose(); };
+    transition.mutate({ id: order.id, targetStatus, reason }, { onSuccess: done });
   }
 
   function handleRescheduleConfirm() {
@@ -1503,78 +1411,105 @@ function WorkflowTab({ order, onClose }: { order: Order; onClose: () => void }) 
     );
   }
 
-  const actionLabel = (key: string): string => {
-    const map: Record<string, string> = {
-      confirm:            t('drawer.workflow.actions.confirm'),
-      cancel:             t('drawer.workflow.actions.cancel'),
-      prepare:            t('drawer.workflow.actions.prepare'),
-      awaiting_stock:     t('drawer.workflow.actions.awaiting_stock'),
-      review:             t('drawer.workflow.actions.review'),
-      resume:             t('drawer.workflow.actions.resume'),
-      dispatch:           t('drawer.workflow.actions.dispatch'),
-      complete_delivery:  t('drawer.workflow.actions.complete_delivery'),
-      complete:           t('drawer.workflow.actions.complete'),
-      return:             t('drawer.workflow.actions.return'),
-      reschedule:         t('drawer.workflow.actions.reschedule'),
-      return_to_confirmed: t('drawer.workflow.actions.return_to_confirmed'),
-      resume_confirmed:   t('drawer.workflow.actions.resume_confirmed'),
-    };
-    return map[key] ?? key;
-  };
-
   return (
     <div className="flex flex-col gap-6 p-4">
       <div>
         <SectionTitle>{t('drawer.workflow.currentStatus')}</SectionTitle>
         <OrderStatusBadge status={order.status} />
       </div>
-      {actions.length > 0 ? (
+      {transitions.length > 0 ? (
         <div>
           <SectionTitle>{t('drawer.workflow.availableActions')}</SectionTitle>
           <div className="flex flex-col gap-2">
-            {actions.map((action) => {
-              if (action.key === 'reschedule' && showRescheduleForm) {
+            {showRescheduleForm ? (
+              <div className="flex flex-col gap-2 rounded-md border p-3">
+                <label className="text-xs font-medium text-muted-foreground">{t('drawer.workflow.newDeliveryDate')}</label>
+                <input
+                  type="date"
+                  value={rescheduleDate}
+                  min={today}
+                  onChange={(e) => setRescheduleDate(e.target.value)}
+                  className="h-8 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={handleRescheduleConfirm}
+                    disabled={reschedule.isPending || !rescheduleDate}
+                    className="gap-1.5"
+                  >
+                    {reschedule.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Clock className="size-3.5" />}
+                    {t('drawer.workflow.confirmReschedule')}
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setShowRescheduleForm(false)}>
+                    {t('drawer.workflow.cancel')}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              transitions.map((tr, idx) => {
+                const Icon    = WORKFLOW_TARGET_ICON[tr.target_status] ?? ArrowRightCircle;
+                const variant = tr.target_status === 'cancelled' ? 'destructive'
+                              : idx === 0                        ? 'default'
+                              : 'outline';
+                const isActive = activeReason === tr.target_status;
                 return (
-                  <div key="reschedule-form" className="flex flex-col gap-2 rounded-md border p-3">
-                    <label className="text-xs font-medium text-muted-foreground">{t('drawer.workflow.newDeliveryDate')}</label>
-                    <input
-                      type="date"
-                      value={rescheduleDate}
-                      min={today}
-                      onChange={(e) => setRescheduleDate(e.target.value)}
-                      className="h-8 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                    />
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={handleRescheduleConfirm}
-                        disabled={reschedule.isPending || !rescheduleDate}
-                        className="gap-1.5"
-                      >
-                        {reschedule.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Clock className="size-3.5" />}
-                        {t('drawer.workflow.confirmReschedule')}
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setShowRescheduleForm(false)}>
-                        {t('drawer.workflow.cancel')}
-                      </Button>
-                    </div>
+                  <div key={tr.target_status}>
+                    <Button
+                      variant={variant as 'default' | 'outline' | 'destructive'}
+                      size="sm"
+                      onClick={() => {
+                        if (isActive) { setActiveReason(null); setReasonText(''); }
+                        else { handleAction(tr.target_status); }
+                      }}
+                      disabled={isPending}
+                      className="w-full justify-start gap-2"
+                    >
+                      {isPending && activeReason === tr.target_status
+                        ? <Loader2 className="size-4 animate-spin" />
+                        : <Icon className="size-4" />
+                      }
+                      {tr.label}
+                    </Button>
+
+                    {isActive && tr.requires_reason && (
+                      <div className="mt-1.5 flex flex-col gap-1.5 rounded-md border bg-muted/30 p-2">
+                        <input
+                          autoFocus
+                          placeholder="Enter reason…"
+                          value={reasonText}
+                          onChange={(e) => setReasonText(e.target.value)}
+                          className="h-7 w-full rounded-md border border-input bg-background px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleAction(tr.target_status);
+                            if (e.key === 'Escape') { setActiveReason(null); setReasonText(''); }
+                          }}
+                        />
+                        <div className="flex gap-1.5">
+                          <Button
+                            size="sm"
+                            variant={variant as 'default' | 'outline' | 'destructive'}
+                            className="h-6 flex-1 text-xs"
+                            disabled={isPending}
+                            onClick={() => handleAction(tr.target_status)}
+                          >
+                            {isPending ? <Loader2 className="size-3 animate-spin" /> : t('drawer.workflow.confirmReschedule')}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 text-xs"
+                            onClick={() => { setActiveReason(null); setReasonText(''); }}
+                          >
+                            {t('drawer.workflow.cancel')}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
-              }
-              return (
-                <Button
-                  key={action.key}
-                  variant={action.variant}
-                  size="sm"
-                  onClick={() => handleAction(action.key)}
-                  disabled={isPending}
-                  className="justify-start gap-2"
-                >
-                  <action.icon className="size-4" />
-                  {actionLabel(action.key)}
-                </Button>
-              );
-            })}
+              })
+            )}
           </div>
         </div>
       ) : (
@@ -1591,8 +1526,11 @@ function InventoryTab({ order }: { order: Order }) {
   const inv = order as Order & {
     inventory_reserved_at?: string | null;
     inventory_shipped_at?: string | null;
-    assigned_warehouse_id?: string | null;
   };
+  const lines = order.lines ?? [];
+  // Resolve the assigned warehouse from the line data the backend already supplies,
+  // rather than exposing the raw assigned_warehouse_id UUID (W2-A).
+  const warehouseName = lines.map((l) => l.warehouse_name).find(Boolean) ?? null;
 
   return (
     <div className="flex flex-col gap-6 p-4">
@@ -1616,10 +1554,10 @@ function InventoryTab({ order }: { order: Order }) {
         <SectionTitle>{t('drawer.inventory_tab.fulfillment')}</SectionTitle>
         <DetailGrid>
           <DetailRow label={t('drawer.inventory_tab.assignedWarehouse')}>
-            {inv.assigned_warehouse_id ?? '—'}
+            {warehouseName ?? <span className="text-muted-foreground text-sm">—</span>}
           </DetailRow>
           <DetailRow label={t('drawer.inventory_tab.lineItems')}>
-            {t('drawer.inventory_tab.itemCount', { count: (order.lines ?? []).length })}
+            {t('drawer.inventory_tab.itemCount', { count: lines.length })}
           </DetailRow>
         </DetailGrid>
       </div>
@@ -1627,16 +1565,48 @@ function InventoryTab({ order }: { order: Order }) {
       <div>
         <SectionTitle>{t('drawer.inventory_tab.inventoryItems')}</SectionTitle>
         <div className="flex flex-col gap-2">
-          {(order.lines ?? []).map((line) => (
-            <div key={line.id} className="flex items-center gap-3 rounded-md border bg-muted/20 px-3 py-2 text-sm">
-              <Box className="size-4 shrink-0 text-muted-foreground" />
-              <div className="flex-1 min-w-0">
-                <p className="truncate font-medium">{line.product?.name ?? line.product_id}</p>
-                <p className="font-mono text-xs text-muted-foreground">{line.product?.sku}</p>
+          {lines.map((line) => {
+            const steps: Array<{ label: string; value: number }> = [
+              { label: t('drawer.inventory_tab.qty.reserved'),  value: line.reserved_qty },
+              { label: t('drawer.inventory_tab.qty.prepared'),  value: line.prepared_qty },
+              { label: t('drawer.inventory_tab.qty.packed'),    value: line.packed_qty },
+              { label: t('drawer.inventory_tab.qty.loaded'),    value: line.loaded_qty },
+              { label: t('drawer.inventory_tab.qty.delivered'), value: line.delivered_qty },
+              { label: t('drawer.inventory_tab.qty.returned'),  value: line.returned_qty },
+              { label: t('drawer.inventory_tab.qty.cancelled'), value: line.cancelled_qty },
+            ].filter((s) => s.value > 0);
+            return (
+              <div key={line.id} className="rounded-md border bg-muted/20 px-3 py-2 text-sm">
+                <div className="flex items-center gap-3">
+                  <Box className="size-4 shrink-0 text-muted-foreground" />
+                  <div className="flex-1 min-w-0">
+                    <p className="truncate font-medium">{line.product?.name ?? '—'}</p>
+                    <p className="font-mono text-xs text-muted-foreground">{line.product?.sku}</p>
+                  </div>
+                  <span className="shrink-0 tabular-nums font-medium">×{line.quantity}</span>
+                </div>
+                {(steps.length > 0 || line.warehouse_name || line.batch_number) && (
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5 pl-7">
+                    {steps.map((s) => (
+                      <span key={s.label} className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+                        {s.label} <span className="font-medium text-foreground tabular-nums">{s.value}</span>
+                      </span>
+                    ))}
+                    {line.warehouse_name && (
+                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+                        {line.warehouse_name}
+                      </span>
+                    )}
+                    {line.batch_number && (
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-mono text-muted-foreground">
+                        {t('drawer.inventory_tab.qty.batch')} {line.batch_number}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
-              <span className="shrink-0 tabular-nums font-medium">×{line.quantity}</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
@@ -1811,6 +1781,7 @@ function StatusTransitionCard({
 // ── Per-event structured details ──────────────────────────────────────────────
 
 function EventDetails({ ev, t }: { ev: OrderActivity; t: OrdersT }) {
+  const fmtCur = useOrderMoney();
   const meta = (ev.metadata      ?? {}) as Record<string, unknown>;
   const pl   = (ev.payload       ?? {}) as Record<string, unknown>;
   const prev = ev.previous_value as Record<string, unknown> | null;

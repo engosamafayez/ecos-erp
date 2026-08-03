@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Marketing\MappingEngine\Application\Services;
 
-use Illuminate\Support\Facades\DB;
 use Modules\Marketing\Assets\Domain\Models\MarketingAsset;
 use Modules\Marketing\Assets\Domain\Models\MarketingAssetRelationship;
 use Modules\Marketing\MappingEngine\Domain\Models\MappingProfile;
@@ -26,21 +25,21 @@ final class MappingSuggestionService
         $profiles = MappingProfile::query()
             ->where('is_active', true)
             ->where('auto_apply', true)
-            ->where(function ($q) use ($companyId, $asset): void {
+            ->where(function ($q) use ($asset): void {
                 $q->whereNull('connector_type')
-                  ->orWhere('connector_type', $asset->connector_type->value);
+                    ->orWhere('connector_type', $asset->connector_type->value);
             })
             ->where(function ($q) use ($companyId): void {
                 $q->whereNull('company_id')
-                  ->orWhere('company_id', $companyId);
+                    ->orWhere('company_id', $companyId);
             })
             ->with('rules')
             ->get();
 
         $assetData = [
-            'name'        => $asset->name,
+            'name' => $asset->name,
             'external_id' => $asset->external_id,
-            'asset_type'  => $asset->asset_type->value,
+            'asset_type' => $asset->asset_type->value,
         ];
 
         foreach ($profiles as $profile) {
@@ -64,11 +63,11 @@ final class MappingSuggestionService
 
                 MarketingAssetRelationship::create([
                     'marketing_asset_id' => $asset->id,
-                    'related_type'       => $rule->related_type,
-                    'related_id'         => $rule->related_id,
-                    'is_auto_suggested'  => true,
-                    'confidence'         => $confidence,
-                    'mapped_at'          => now(),
+                    'related_type' => $rule->related_type,
+                    'related_id' => $rule->related_id,
+                    'is_auto_suggested' => true,
+                    'confidence' => $confidence,
+                    'mapped_at' => now(),
                 ]);
             }
         }
@@ -84,11 +83,11 @@ final class MappingSuggestionService
         return MarketingAssetRelationship::whereHas('asset', function ($q) use ($companyId): void {
             $q->where('company_id', $companyId);
         })
-        ->where('is_auto_suggested', true)
-        ->whereNull('accepted_at')
-        ->whereNull('rejected_at')
-        ->orderByDesc('confidence')
-        ->with('asset')
-        ->get();
+            ->where('is_auto_suggested', true)
+            ->whereNull('accepted_at')
+            ->whereNull('rejected_at')
+            ->orderByDesc('confidence')
+            ->with('asset')
+            ->get();
     }
 }

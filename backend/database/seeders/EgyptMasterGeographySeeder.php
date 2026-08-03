@@ -27,11 +27,11 @@ class EgyptMasterGeographySeeder extends Seeder
             $masterGov = MasterGovernorate::updateOrCreate(
                 ['name' => $gov['name']],
                 [
-                    'name_ar'    => $gov['name_ar'],
-                    'code'       => $gov['code'],
+                    'name_ar' => $gov['name_ar'],
+                    'code' => $gov['code'],
                     'sort_order' => $idx,
-                    'is_active'  => true,
-                    'is_archived'=> false,
+                    'is_active' => true,
+                    'is_archived' => false,
                 ],
             );
 
@@ -46,53 +46,53 @@ class EgyptMasterGeographySeeder extends Seeder
             foreach ($gov['zones'] as $zoneIdx => $zoneName) {
                 $existing = MasterZone::where([
                     'master_governorate_id' => $masterGov->id,
-                    'name'                  => $zoneName,
+                    'name' => $zoneName,
                 ])->first();
 
                 if ($existing) {
                     // Ensure code is set (idempotent backfill for existing rows)
-                    if (!$existing->code) {
+                    if (! $existing->code) {
                         $code = $this->makeZoneCode($gov['code'], $zoneName, $usedCodes);
                         $existing->update(['code' => $code]);
                     } else {
                         $usedCodes[$existing->code] = true;
                     }
                     $existing->update([
-                        'sort_order'  => $zoneIdx,
-                        'is_active'   => true,
+                        'sort_order' => $zoneIdx,
+                        'is_active' => true,
                         'is_archived' => false,
                     ]);
                 } else {
                     $code = $this->makeZoneCode($gov['code'], $zoneName, $usedCodes);
                     MasterZone::create([
                         'master_governorate_id' => $masterGov->id,
-                        'name'                  => $zoneName,
-                        'code'                  => $code,
-                        'sort_order'            => $zoneIdx,
-                        'is_active'             => true,
-                        'is_archived'           => false,
+                        'name' => $zoneName,
+                        'code' => $code,
+                        'sort_order' => $zoneIdx,
+                        'is_active' => true,
+                        'is_archived' => false,
                     ]);
                 }
             }
 
-            $this->command->line("  ✓ {$gov['name']} (" . count($gov['zones']) . ' zones)');
+            $this->command->line("  ✓ {$gov['name']} (".count($gov['zones']).' zones)');
         }
 
         // Link existing brand geographies to master by name (case-insensitive)
-        DB::statement("
+        DB::statement('
             UPDATE config_delivery_geographies cdg
             INNER JOIN master_governorates mg ON LOWER(cdg.name) = LOWER(mg.name)
             SET cdg.master_governorate_id = mg.id
             WHERE cdg.master_governorate_id IS NULL
-        ");
+        ');
 
         // Link existing brand zones to master by name
-        DB::statement("
+        DB::statement('
             UPDATE config_delivery_zones cdz
             INNER JOIN master_zones mz ON LOWER(cdz.name) = LOWER(mz.name)
             SET cdz.master_zone_id = mz.id
             WHERE cdz.master_zone_id IS NULL
-        ");
+        ');
 
         // Auto-create brand zones for all geographies already linked to master
         $this->createMissingBrandZones();
@@ -109,26 +109,26 @@ class EgyptMasterGeographySeeder extends Seeder
 
         $created = 0;
         foreach ($linked as $geo) {
-            $masterZones = \Modules\Admin\Configuration\Domain\Models\MasterZone::where(
-                'master_governorate_id', $geo->master_governorate_id
+            $masterZones = MasterZone::where(
+                'master_governorate_id', $geo->master_governorate_id,
             )->orderBy('sort_order')->get();
 
             foreach ($masterZones as $mz) {
                 $exists = \Modules\Admin\Configuration\Domain\Models\DeliveryZone::where([
                     'delivery_geography_id' => $geo->id,
-                    'master_zone_id'        => $mz->id,
+                    'master_zone_id' => $mz->id,
                 ])->exists();
 
-                if (!$exists) {
+                if (! $exists) {
                     \Modules\Admin\Configuration\Domain\Models\DeliveryZone::create([
                         'delivery_geography_id' => $geo->id,
-                        'brand_id'              => $geo->brand_id,
-                        'master_zone_id'        => $mz->id,
-                        'name'                  => $mz->name,
-                        'sort_order'            => $mz->sort_order,
-                        'is_active'             => true,
-                        'created_by'            => $geo->created_by,
-                        'updated_by'            => $geo->updated_by,
+                        'brand_id' => $geo->brand_id,
+                        'master_zone_id' => $mz->id,
+                        'name' => $mz->name,
+                        'sort_order' => $mz->sort_order,
+                        'is_active' => true,
+                        'created_by' => $geo->created_by,
+                        'updated_by' => $geo->updated_by,
                     ]);
                     $created++;
                 }
@@ -145,22 +145,23 @@ class EgyptMasterGeographySeeder extends Seeder
      * Format: GOV_CODE-ABBR (e.g. CAI-HEL, GIZ-DOK, ALX-SMO).
      * Resolves collisions by appending a number (CAI-EL2, CAI-EL3…).
      *
-     * @param array<string, bool> $usedCodes  Passed by reference — updated in-place.
+     * @param  array<string, bool>  $usedCodes  Passed by reference — updated in-place.
      */
     private function makeZoneCode(string $govCode, string $zoneName, array &$usedCodes): string
     {
         // Compact: remove spaces, uppercase, take first 3 chars
         $compact = preg_replace('/\s+/', '', strtoupper($zoneName)) ?? strtoupper($zoneName);
-        $clean   = preg_replace('/[^A-Z0-9]/', '', $compact) ?? $compact;
-        $abbr    = str_pad(substr($clean, 0, 3), 3, 'X');
+        $clean = preg_replace('/[^A-Z0-9]/', '', $compact) ?? $compact;
+        $abbr = str_pad(substr($clean, 0, 3), 3, 'X');
 
-        $code = $govCode . '-' . $abbr;
-        $n    = 2;
+        $code = $govCode.'-'.$abbr;
+        $n = 2;
         while (isset($usedCodes[$code])) {
-            $code = $govCode . '-' . substr($abbr, 0, 2) . $n;
+            $code = $govCode.'-'.substr($abbr, 0, 2).$n;
             $n++;
         }
         $usedCodes[$code] = true;
+
         return $code;
     }
 

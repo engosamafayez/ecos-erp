@@ -29,9 +29,11 @@ final class ShiftPersistenceTest extends TestCase
     private ShiftRepositoryInterface $repository;
 
     // No FK constraints on these — any UUID is valid.
-    private const SESSION_ID  = 'a1000000-0000-4000-a000-000000000001';
+    private const SESSION_ID = 'a1000000-0000-4000-a000-000000000001';
+
     private const TERMINAL_ID = 'b1000000-0000-4000-b000-000000000001';
-    private const CASHIER_ID  = 'c1000000-0000-4000-c000-000000000001';
+
+    private const CASHIER_ID = 'c1000000-0000-4000-c000-000000000001';
 
     protected function setUp(): void
     {
@@ -43,9 +45,9 @@ final class ShiftPersistenceTest extends TestCase
     private function makeShift(int $number = 1, string $currency = 'EGP'): Shift
     {
         return Shift::open(
-            sessionId:   self::SESSION_ID,
-            terminalId:  self::TERMINAL_ID,
-            cashierId:   self::CASHIER_ID,
+            sessionId: self::SESSION_ID,
+            terminalId: self::TERMINAL_ID,
+            cashierId: self::CASHIER_ID,
             openingCash: Money::of('1000.00', $currency),
             shiftNumber: ShiftNumber::of($number),
         );

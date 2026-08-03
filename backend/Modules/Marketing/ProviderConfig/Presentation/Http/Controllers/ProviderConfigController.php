@@ -24,7 +24,7 @@ final class ProviderConfigController extends Controller
 
     public function __construct(
         private readonly ProviderCredentialService $service,
-        private readonly ProviderHealthMonitor     $health,
+        private readonly ProviderHealthMonitor $health,
     ) {}
 
     /**
@@ -49,13 +49,13 @@ final class ProviderConfigController extends Controller
         $this->guardProvider($provider);
 
         $request->validate([
-            'app_id'     => ['required', 'string', 'max:255'],
+            'app_id' => ['required', 'string', 'max:255'],
             'app_secret' => ['required', 'string', 'max:500'],
         ]);
 
         $result = $this->service->validate(
-            provider:  $provider,
-            appId:     $request->string('app_id')->toString(),
+            provider: $provider,
+            appId: $request->string('app_id')->toString(),
             appSecret: $request->string('app_secret')->toString(),
             companyId: $this->companyId($request),
         );
@@ -73,20 +73,20 @@ final class ProviderConfigController extends Controller
         $this->guardAdminPermission($request);
 
         $request->validate([
-            'app_id'       => ['required', 'string', 'max:255'],
-            'app_secret'   => ['nullable', 'string', 'max:500'],
+            'app_id' => ['required', 'string', 'max:255'],
+            'app_secret' => ['nullable', 'string', 'max:500'],
             'redirect_uri' => ['nullable', 'url', 'max:500', 'starts_with:https://,http://'],
         ]);
 
         $companyId = $this->companyId($request);
 
         $result = $this->service->validateAndSave(
-            companyId:   $companyId,
-            provider:    $provider,
-            appId:       $request->string('app_id')->toString(),
-            appSecret:   $request->filled('app_secret') ? $request->string('app_secret')->toString() : null,
+            companyId: $companyId,
+            provider: $provider,
+            appId: $request->string('app_id')->toString(),
+            appSecret: $request->filled('app_secret') ? $request->string('app_secret')->toString() : null,
             redirectUri: $request->string('redirect_uri', '')->toString(),
-            actorId:     (string) $request->user()->id,
+            actorId: (string) $request->user()->id,
         );
 
         $this->health->invalidate($companyId, $provider);
@@ -110,18 +110,18 @@ final class ProviderConfigController extends Controller
         $this->guardAdminPermission($request);
 
         $request->validate([
-            'app_id'         => ['required', 'string', 'max:255'],
+            'app_id' => ['required', 'string', 'max:255'],
             'new_app_secret' => ['required', 'string', 'max:500'],
         ]);
 
         $companyId = $this->companyId($request);
 
         $result = $this->service->rotateSecret(
-            companyId:    $companyId,
-            provider:     $provider,
-            appId:        $request->string('app_id')->toString(),
+            companyId: $companyId,
+            provider: $provider,
+            appId: $request->string('app_id')->toString(),
             newAppSecret: $request->string('new_app_secret')->toString(),
-            actorId:      (string) $request->user()->id,
+            actorId: (string) $request->user()->id,
         );
 
         if ($result['rotated']) {
@@ -162,8 +162,8 @@ final class ProviderConfigController extends Controller
 
         $this->service->clear(
             companyId: $companyId,
-            provider:  $provider,
-            actorId:   (string) $request->user()->id,
+            provider: $provider,
+            actorId: (string) $request->user()->id,
         );
 
         $this->health->invalidate($companyId, $provider);
@@ -190,6 +190,7 @@ final class ProviderConfigController extends Controller
     private function companyId(Request $request): ?string
     {
         $id = $request->user()?->company_id;
+
         return ($id !== null && $id !== '') ? (string) $id : null;
     }
 }

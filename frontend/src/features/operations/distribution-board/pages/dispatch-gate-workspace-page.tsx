@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useFormatter } from '@/hooks/use-formatter';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -32,6 +33,7 @@ const TABS: { id: Tab; label: string; icon: React.ElementType }[] = [
 ];
 
 export function DispatchGateWorkspacePage() {
+  const { currency } = useFormatter();
   const { tripId }  = useParams<{ tripId: string }>();
   const navigate    = useNavigate();
   const [tab, setTab] = useState<Tab>('review');
@@ -115,7 +117,7 @@ export function DispatchGateWorkspacePage() {
             <span className="font-semibold">{trip.orders_count}</span>
           </div>
           <div className="text-xs px-2 py-1 rounded-md bg-muted border">
-            <span className="text-muted-foreground">EGP </span>
+            <span className="text-muted-foreground">{currency}</span>
             <span className="font-semibold">
               {trip.collection_amount.toLocaleString('en-US', { maximumFractionDigits: 0 })}
             </span>

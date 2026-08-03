@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { generatePath, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Brain,
@@ -29,8 +30,6 @@ import { ROUTES }         from '@/router/routes';
 
 type ConfigCategory = {
   key: string;
-  label: string;
-  description: string;
   icon: LucideIcon;
   color: string;
   policyGroup?: string;
@@ -38,112 +37,84 @@ type ConfigCategory = {
 
 const CATEGORIES: ConfigCategory[] = [
   {
-    key:         'windows',
-    label:       'Delivery Windows',
-    description: 'Available time slots for delivery',
-    icon:        Clock,
-    color:       'text-violet-600 bg-violet-50',
+    key:   'windows',
+    icon:  Clock,
+    color: 'text-violet-600 bg-violet-50',
   },
   {
     key:         'preparation',
-    label:       'Preparation',
-    description: 'Session, wave, and batch configuration',
     icon:        Package,
     color:       'text-orange-600 bg-orange-50',
     policyGroup: 'preparation',
   },
   {
     key:         'inventory',
-    label:       'Inventory',
-    description: 'Stock, reservation, and costing rules',
     icon:        Box,
     color:       'text-teal-600 bg-teal-50',
     policyGroup: 'inventory',
   },
   {
     key:         'manufacturing',
-    label:       'Manufacturing',
-    description: 'Recipe, BOM, and production policies',
     icon:        Cpu,
     color:       'text-cyan-600 bg-cyan-50',
     policyGroup: 'manufacturing',
   },
   {
     key:         'logistics',
-    label:       'Logistics',
-    description: 'Vehicle, driver, and route configuration',
     icon:        Globe,
     color:       'text-sky-600 bg-sky-50',
     policyGroup: 'logistics',
   },
   {
     key:         'crm',
-    label:       'CRM',
-    description: 'Customer classification and loyalty rules',
     icon:        Users,
     color:       'text-rose-600 bg-rose-50',
     policyGroup: 'crm',
   },
   {
     key:         'marketing',
-    label:       'Marketing',
-    description: 'Campaign attribution and lead sources',
     icon:        Zap,
     color:       'text-pink-600 bg-pink-50',
     policyGroup: 'marketing',
   },
   {
     key:         'ai',
-    label:       'AI Configuration',
-    description: 'Prediction rules, thresholds, and permissions',
     icon:        Brain,
     color:       'text-purple-600 bg-purple-50',
     policyGroup: 'ai',
   },
   {
     key:         'workflow',
-    label:       'Workflow',
-    description: 'Order, preparation, and approval chains',
     icon:        Workflow,
     color:       'text-amber-600 bg-amber-50',
     policyGroup: 'workflow',
   },
   {
     key:         'notification',
-    label:       'Notifications',
-    description: 'Email, SMS, WhatsApp, and escalation rules',
     icon:        Bell,
     color:       'text-yellow-600 bg-yellow-50',
     policyGroup: 'notification',
   },
   {
     key:         'integration',
-    label:       'Integrations',
-    description: 'WooCommerce, Meta, payment gateways',
     icon:        Layers,
     color:       'text-slate-600 bg-slate-50',
     policyGroup: 'integration',
   },
   {
     key:         'security',
-    label:       'Security',
-    description: 'Password policy, session timeout, MFA',
     icon:        Shield,
     color:       'text-red-600 bg-red-50',
     policyGroup: 'security',
   },
   {
     key:         'numbering',
-    label:       'Numbering',
-    description: 'Document prefix and sequence formats',
     icon:        Settings,
     color:       'text-gray-600 bg-gray-50',
     policyGroup: 'numbering',
   },
   {
     key:         'approval',
-    label:       'Approval Policies',
-    description: 'Multi-level approval matrices',
     icon:        CheckCircle2,
     color:       'text-lime-600 bg-lime-50',
     policyGroup: 'approval',
@@ -151,6 +122,7 @@ const CATEGORIES: ConfigCategory[] = [
 ];
 
 export function ConfigurationOsPage() {
+  const { t } = useTranslation('settings');
   const navigate  = useNavigate();
   const [search, setSearch] = useState('');
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null);
@@ -165,8 +137,10 @@ export function ConfigurationOsPage() {
   const filtered = search
     ? CATEGORIES.filter(
         (c) =>
-          c.label.toLowerCase().includes(search.toLowerCase()) ||
-          c.description.toLowerCase().includes(search.toLowerCase()),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (t(`configOs.cat.${c.key}.label` as any) as string).toLowerCase().includes(search.toLowerCase()) ||
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (t(`configOs.cat.${c.key}.desc` as any) as string).toLowerCase().includes(search.toLowerCase()),
       )
     : CATEGORIES;
 
@@ -181,23 +155,23 @@ export function ConfigurationOsPage() {
       <div className="px-6 pt-5 pb-4 border-b border-border/60">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-lg font-semibold">Configuration OS</h1>
+            <h1 className="text-lg font-semibold">{t('configOs.title')}</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Enterprise governance platform — every configurable rule across ECOS ERP
+              {t('configOs.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-2">
             <Lock className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">All changes are audited</span>
+            <span className="text-xs text-muted-foreground">{t('configOs.auditEnabled')}</span>
           </div>
         </div>
 
         {/* KPI Row */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
-          <KpiCard icon={<Building2 className="h-4 w-4" />} label="Configuration Areas" value={CATEGORIES.length} />
-          <KpiCard icon={<Layers      className="h-4 w-4" />} label="Brands"           value={brands.length} />
-          <KpiCard icon={<CheckCircle2 className="h-4 w-4" />} label="Audit Enabled"  value="Yes" />
-          <KpiCard icon={<Zap         className="h-4 w-4" />} label="Cache TTL"        value="1 hr" />
+          <KpiCard icon={<Building2 className="h-4 w-4" />} label={t('configOs.kpi.areas')} value={CATEGORIES.length} />
+          <KpiCard icon={<Layers      className="h-4 w-4" />} label={t('configOs.kpi.brands')}     value={brands.length} />
+          <KpiCard icon={<CheckCircle2 className="h-4 w-4" />} label={t('configOs.kpi.audit')}     value={t('configOs.kpi.yes')} />
+          <KpiCard icon={<Zap         className="h-4 w-4" />} label={t('configOs.kpi.cacheTtl')}   value={t('configOs.kpi.oneHour')} />
         </div>
       </div>
 
@@ -208,11 +182,11 @@ export function ConfigurationOsPage() {
         <section>
           <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
             <Layers className="h-4 w-4 text-muted-foreground" />
-            Select Brand to Configure
+            {t('configOs.selectBrand')}
           </h2>
           {brandsLoading ? (
             <div className="flex items-center gap-2 text-muted-foreground text-sm py-3">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading brands…
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('configOs.loadingBrands')}
             </div>
           ) : (
             <div className="flex flex-wrap gap-2">
@@ -227,13 +201,16 @@ export function ConfigurationOsPage() {
                   }`}
                 >
                   {b.name}
-                  {selectedBrandId === b.id && <span className="ml-1.5 text-xs opacity-75">Selected</span>}
+                  {selectedBrandId === b.id && <span className="ml-1.5 text-xs opacity-75">{t('configOs.selected')}</span>}
                 </button>
               ))}
             </div>
           )}
           {!selectedBrandId && brands.length > 0 && (
-            <p className="text-xs text-muted-foreground mt-2">Select a brand above to open its configuration workspace.</p>
+            <p className="text-xs text-muted-foreground mt-2">
+              {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+              {t('configOs.selectBrandWorkspace' as any)}
+            </p>
           )}
         </section>
 
@@ -241,7 +218,7 @@ export function ConfigurationOsPage() {
         <section>
           <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
             <Building2 className="h-4 w-4 text-muted-foreground" />
-            Company Configuration
+            {t('configOs.companyConfig')}
           </h2>
           <button
             onClick={() => navigate(ROUTES.configurationCompany)}
@@ -251,8 +228,8 @@ export function ConfigurationOsPage() {
               <Building2 className="h-4 w-4" />
             </span>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium">Company Settings</div>
-              <div className="text-xs text-muted-foreground">Currency, timezone, fiscal year, default warehouse, language</div>
+              <div className="text-sm font-medium">{t('configOs.companySettings')}</div>
+              <div className="text-xs text-muted-foreground">{t('configOs.companySettingsDesc')}</div>
             </div>
             <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
           </button>
@@ -264,13 +241,13 @@ export function ConfigurationOsPage() {
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-semibold flex items-center gap-2">
                 <Settings className="h-4 w-4 text-muted-foreground" />
-                Brand Settings
+                {t('configOs.brandSettings')}
                 <Badge className="text-xs bg-primary/10 text-primary border-0">
                   {brands.find((b) => b.id === selectedBrandId)?.name}
                 </Badge>
               </h2>
               <Input
-                placeholder="Search categories…"
+                placeholder={t('configOs.searchCategories')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="h-8 w-48 text-xs"
@@ -291,7 +268,8 @@ export function ConfigurationOsPage() {
         {!selectedBrandId && brands.length > 0 && (
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
             <Settings className="h-10 w-10 opacity-30" />
-            <p className="text-sm">Select a brand above to view its configuration categories.</p>
+            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+            <p className="text-sm">{t('configOs.selectBrandCategories' as any)}</p>
           </div>
         )}
       </div>
@@ -300,6 +278,7 @@ export function ConfigurationOsPage() {
 }
 
 function CategoryCard({ cat, onClick }: { cat: ConfigCategory; onClick: () => void }) {
+  const { t } = useTranslation('settings');
   return (
     <button
       onClick={onClick}
@@ -309,8 +288,10 @@ function CategoryCard({ cat, onClick }: { cat: ConfigCategory; onClick: () => vo
         <cat.icon className="h-4 w-4" />
       </span>
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium">{cat.label}</div>
-        <div className="text-xs text-muted-foreground truncate">{cat.description}</div>
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        <div className="text-sm font-medium">{t(`configOs.cat.${cat.key}.label` as any)}</div>
+        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        <div className="text-xs text-muted-foreground truncate">{t(`configOs.cat.${cat.key}.desc` as any)}</div>
       </div>
       <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
     </button>

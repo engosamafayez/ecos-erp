@@ -14,8 +14,8 @@ namespace Modules\POS\Shared\Domain\Enums;
 enum RoundingMethod: string
 {
     case Nearest = 'nearest';
-    case Up      = 'up';
-    case Down    = 'down';
+    case Up = 'up';
+    case Down = 'down';
 
     /**
      * Apply this rounding method to a raw amount given a rounding unit.
@@ -23,12 +23,13 @@ enum RoundingMethod: string
      */
     public function round(string $amount, string $unit = '0.01'): string
     {
-        $units      = (float) $amount / (float) $unit;
+        $units = (float) $amount / (float) $unit;
         $roundedUnits = match ($this) {
-            self::Up      => ceil($units),
-            self::Down    => floor($units),
+            self::Up => ceil($units),
+            self::Down => floor($units),
             self::Nearest => round($units),
         };
+
         return bcmul((string) $roundedUnits, $unit, 2);
     }
 }

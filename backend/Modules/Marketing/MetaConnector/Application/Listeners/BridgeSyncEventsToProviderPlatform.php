@@ -33,8 +33,8 @@ final class BridgeSyncEventsToProviderPlatform
         }
 
         $this->events->providerSyncStarted(
-            companyId:    (string) $connection->company_id,
-            provider:     'meta',
+            companyId: (string) $connection->company_id,
+            provider: 'meta',
             connectionId: $connection->id,
         );
     }
@@ -46,16 +46,16 @@ final class BridgeSyncEventsToProviderPlatform
             return;
         }
 
-        $started    = $event->syncLog->started_at;
-        $completed  = $event->syncLog->completed_at ?? now();
-        $duration   = $started ? (int) $started->diffInSeconds($completed) : 0;
+        $started = $event->syncLog->started_at;
+        $completed = $event->syncLog->completed_at ?? now();
+        $duration = $started ? (int) $started->diffInSeconds($completed) : 0;
 
         $this->events->providerSyncCompleted(
-            companyId:        (string) $connection->company_id,
-            provider:         'meta',
-            connectionId:     $connection->id,
+            companyId: (string) $connection->company_id,
+            provider: 'meta',
+            connectionId: $connection->id,
             assetsDiscovered: $event->assetsDiscovered,
-            durationSeconds:  $duration,
+            durationSeconds: $duration,
         );
     }
 
@@ -67,10 +67,10 @@ final class BridgeSyncEventsToProviderPlatform
         }
 
         $this->events->providerSyncFailed(
-            companyId:    (string) $connection->company_id,
-            provider:     'meta',
+            companyId: (string) $connection->company_id,
+            provider: 'meta',
             connectionId: $connection->id,
-            reason:       $event->errorMessage,
+            reason: $event->errorMessage,
         );
     }
 }

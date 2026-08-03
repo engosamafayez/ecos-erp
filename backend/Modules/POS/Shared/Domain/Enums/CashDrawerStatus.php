@@ -6,7 +6,7 @@ namespace Modules\POS\Shared\Domain\Enums;
 
 enum CashDrawerStatus: string
 {
-    case Open   = 'open';
+    case Open = 'open';
     case Closed = 'closed';
 
     public function isTerminal(): bool

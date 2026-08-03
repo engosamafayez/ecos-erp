@@ -60,8 +60,8 @@ final class RetrySyncLogAction extends BaseAction
                     return OperationResult::failure('Product no longer exists.');
                 }
                 match ($log->entity_type) {
-                    SyncEntityType::Product   => ProductSyncJob::dispatch($channel, $product),
-                    SyncEntityType::Price     => PriceSyncJob::dispatch($channel, $product),
+                    SyncEntityType::Product => ProductSyncJob::dispatch($channel, $product),
+                    SyncEntityType::Price => PriceSyncJob::dispatch($channel, $product),
                     SyncEntityType::Inventory => InventorySyncJob::dispatch(
                         $channel,
                         $product,
@@ -100,7 +100,7 @@ final class RetrySyncLogAction extends BaseAction
     private function retryInbound(SyncLog $log, Channel $channel): OperationResult
     {
         $payload = is_array($log->request_payload) ? $log->request_payload : [];
-        $action  = (string) ($log->action ?? '');
+        $action = (string) ($log->action ?? '');
 
         switch ($log->entity_type) {
             case SyncEntityType::Product:

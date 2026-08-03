@@ -259,7 +259,7 @@ export function ProductsView({
           onSortChange={handleSort}
           rowActions={(product) => (
             <ActionMenu
-              label={`Actions for ${product.name}`}
+              label={t('viewTabs.actionsFor', { name: product.name })}
               items={[
                 {
                   key: 'view',
@@ -270,8 +270,8 @@ export function ProductsView({
                 { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => openEdit(product) },
                 ...(onViewTab
                   ? [
-                      { key: 'stock-history', label: 'Stock History', icon: History, onSelect: () => onViewTab(product, 'stock-history') },
-                      { key: 'price-history', label: 'Price History', icon: TrendingUp, onSelect: () => onViewTab(product, 'price-history') },
+                      { key: 'stock-history', label: t('viewTabs.stockHistory'), icon: History, onSelect: () => onViewTab(product, 'stock-history') },
+                      { key: 'price-history', label: t('viewTabs.priceHistory'), icon: TrendingUp, onSelect: () => onViewTab(product, 'price-history') },
                     ]
                   : []),
                 {
@@ -395,7 +395,7 @@ export function ProductsView({
             onSortChange={handleSort}
             rowActions={(product) => (
               <ActionMenu
-                label={`Actions for ${product.name}`}
+                label={t('viewTabs.actionsFor', { name: product.name })}
                 items={[
                   { key: 'view', label: tCommon('actions.view'), icon: Eye, onSelect: () => openEdit(product) },
                   { key: 'edit', label: tCommon('common.edit'), icon: Pencil, onSelect: () => openEdit(product) },

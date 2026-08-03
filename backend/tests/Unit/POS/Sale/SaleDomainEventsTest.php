@@ -18,15 +18,23 @@ use PHPUnit\Framework\TestCase;
  */
 final class SaleDomainEventsTest extends TestCase
 {
-    private const SALE_ID        = 'sale-uuid-1';
-    private const CART_ID        = 'cart-uuid-1';
-    private const PAYMENT_ID     = 'pay-uuid-1';
-    private const SESSION_ID     = 'session-uuid-1';
-    private const SHIFT_ID       = 'shift-uuid-1';
-    private const TERMINAL_ID    = 'terminal-uuid-1';
-    private const CASHIER_ID     = 'cashier-uuid-1';
+    private const SALE_ID = 'sale-uuid-1';
+
+    private const CART_ID = 'cart-uuid-1';
+
+    private const PAYMENT_ID = 'pay-uuid-1';
+
+    private const SESSION_ID = 'session-uuid-1';
+
+    private const SHIFT_ID = 'shift-uuid-1';
+
+    private const TERMINAL_ID = 'terminal-uuid-1';
+
+    private const CASHIER_ID = 'cashier-uuid-1';
+
     private const RECEIPT_NUMBER = 'RCP-2026-000001';
-    private const CURRENCY       = 'EGP';
+
+    private const CURRENCY = 'EGP';
 
     // ── SaleRecorded ──────────────────────────────────────────────────────────
 

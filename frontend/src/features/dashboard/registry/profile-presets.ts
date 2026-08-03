@@ -60,11 +60,9 @@ export const PROFILE_PRESETS: Record<DashboardProfile, ProfilePreset> = {
       'sales-revenue',
       'analytics-workspace',
       'shipping-logistics',
-      'operations-center',
       'ai-intelligence',
-      'activity-feed',
     ],
-    collapsed: ['sales-revenue', 'shipping-logistics', 'operations-center', 'analytics-workspace', 'ai-intelligence'],
+    collapsed: ['sales-revenue', 'shipping-logistics', 'analytics-workspace', 'ai-intelligence'],
     hidden:    [],
   },
 
@@ -83,7 +81,7 @@ export const PROFILE_PRESETS: Record<DashboardProfile, ProfilePreset> = {
     icon:        Landmark,
     widgetOrder: DEFAULT_WIDGET_ORDER,
     collapsed:   ['shipping-logistics', 'analytics-workspace', 'ai-intelligence'],
-    hidden:      ['operations-center'],
+    hidden:      [],
   },
 
   manufacturing: {
@@ -101,7 +99,7 @@ export const PROFILE_PRESETS: Record<DashboardProfile, ProfilePreset> = {
     icon:        Users,
     widgetOrder: DEFAULT_WIDGET_ORDER,
     collapsed:   ['shipping-logistics', 'analytics-workspace', 'ai-intelligence'],
-    hidden:      ['operations-center'],
+    hidden:      [],
   },
 };
 

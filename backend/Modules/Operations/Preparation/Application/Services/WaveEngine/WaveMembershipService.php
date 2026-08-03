@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Operations\Preparation\Application\Services\WaveEngine;
 
+use BackedEnum;
 use Illuminate\Support\Facades\DB;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Operations\Preparation\Domain\Enums\WaveStatus;
@@ -39,7 +40,7 @@ final class WaveMembershipService
             ->whereNotExists(fn ($q) => $q
                 ->select(DB::raw(1))
                 ->from('preparation_wave_orders')
-                ->whereColumn('preparation_wave_orders.order_id', 'orders.id')
+                ->whereColumn('preparation_wave_orders.order_id', 'orders.id'),
             )
             ->get();
 
@@ -70,29 +71,29 @@ final class WaveMembershipService
         try {
             $waveOrder = DB::transaction(function () use ($wave, $order, $actorId): PreparationWaveOrder {
                 return PreparationWaveOrder::create([
-                    'company_id'               => $wave->company_id,
-                    'preparation_wave_id'      => $wave->id,
-                    'order_id'                 => $order->id,
-                    'order_number'             => $order->order_number,
-                    'order_confirmed_at'       => $order->confirmed_at ?? now(),
-                    'customer_name_snapshot'   => $order->customer_name ?? null,
-                    'delivery_zone_snapshot'   => $order->delivery_zone ?? null,
-                    'governorate_snapshot'     => $order->governorate ?? null,
-                    'zone_code_snapshot'       => $order->zone_code ?? null,
-                    'shipping_cost_snapshot'   => $order->shipping_cost ?? null,
-                    'is_paid'                  => in_array(
-                        $order->payment_status instanceof \BackedEnum
+                    'company_id' => $wave->company_id,
+                    'preparation_wave_id' => $wave->id,
+                    'order_id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'order_confirmed_at' => $order->confirmed_at ?? now(),
+                    'customer_name_snapshot' => $order->customer_name ?? null,
+                    'delivery_zone_snapshot' => $order->delivery_zone ?? null,
+                    'governorate_snapshot' => $order->governorate ?? null,
+                    'zone_code_snapshot' => $order->zone_code ?? null,
+                    'shipping_cost_snapshot' => $order->shipping_cost ?? null,
+                    'is_paid' => in_array(
+                        $order->payment_status instanceof BackedEnum
                             ? $order->payment_status->value
                             : (string) ($order->payment_status ?? ''),
                         ['paid', 'partially_paid'],
                         true,
                     ),
-                    'payment_status_snapshot'  => $order->payment_status instanceof \BackedEnum
+                    'payment_status_snapshot' => $order->payment_status instanceof BackedEnum
                         ? $order->payment_status->value
                         : ($order->payment_status ?? null),
-                    'preparation_priority'     => 5,
-                    'added_at'                 => now(),
-                    'added_by'                 => $actorId,
+                    'preparation_priority' => 5,
+                    'added_at' => now(),
+                    'added_by' => $actorId,
                 ]);
             });
         } catch (\Illuminate\Database\UniqueConstraintViolationException) {
@@ -102,26 +103,26 @@ final class WaveMembershipService
         $now = now()->toIso8601String();
 
         event(new OrderAddedToWave(
-            waveId:      $wave->id,
-            waveNumber:  $wave->wave_number,
-            companyId:   $wave->company_id,
+            waveId: $wave->id,
+            waveNumber: $wave->wave_number,
+            companyId: $wave->company_id,
             warehouseId: $wave->warehouse_id,
-            orderId:     $order->id,
+            orderId: $order->id,
             orderNumber: $order->order_number,
-            waveStatus:  $wave->status->value,
-            addedBy:     $actorId,
-            addedAt:     $now,
+            waveStatus: $wave->status->value,
+            addedBy: $actorId,
+            addedAt: $now,
         ));
 
         // Orders joining a Preparing wave immediately enter the preparation phase
         if ($wave->status === WaveStatus::Preparing) {
             event(new OrderMovedToPreparing(
-                waveId:      $wave->id,
-                orderId:     $order->id,
-                companyId:   $wave->company_id,
+                waveId: $wave->id,
+                orderId: $order->id,
+                companyId: $wave->company_id,
                 warehouseId: $wave->warehouse_id,
-                movedBy:     $actorId,
-                movedAt:     $now,
+                movedBy: $actorId,
+                movedAt: $now,
             ));
         }
 
@@ -147,12 +148,12 @@ final class WaveMembershipService
 
         if ($deleted > 0) {
             event(new OrderRemovedFromWave(
-                waveId:      $wave->id,
-                orderId:     $orderId,
-                companyId:   $wave->company_id,
+                waveId: $wave->id,
+                orderId: $orderId,
+                companyId: $wave->company_id,
                 warehouseId: $wave->warehouse_id,
-                reason:      $reason,
-                removedBy:   $actorId,
+                reason: $reason,
+                removedBy: $actorId,
             ));
 
             $wave->decrement('orders_count');

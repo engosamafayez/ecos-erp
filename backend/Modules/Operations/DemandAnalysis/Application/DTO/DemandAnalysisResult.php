@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Operations\DemandAnalysis\Application\DTO;
 
+use DateTimeImmutable;
 use Modules\Operations\DemandAnalysis\Domain\Enums\InventoryStatus;
 
 /**
@@ -14,14 +15,14 @@ use Modules\Operations\DemandAnalysis\Domain\Enums\InventoryStatus;
 final class DemandAnalysisResult
 {
     /**
-     * @param list<DemandLine> $demandLines Sorted descending by orderedQty.
+     * @param  list<DemandLine>  $demandLines  Sorted descending by orderedQty.
      */
     public function __construct(
         /** The date this analysis was generated for (Y-m-d). */
         public readonly string $operationalDay,
 
         /** UTC timestamp when the analysis was produced. */
-        public readonly \DateTimeImmutable $generatedAt,
+        public readonly DateTimeImmutable $generatedAt,
 
         /** Total count of eligible operational orders included in this analysis. */
         public readonly int $totalOrders,

@@ -1,4 +1,5 @@
 import { SearchX } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -24,9 +25,10 @@ export function PageNoResultsState({
   onClear,
   className,
 }: PageNoResultsStateProps) {
+  const { t } = useTranslation('common');
   const defaultDescription = query
-    ? `No matches for "${query}". Try different keywords or clear your filters.`
-    : 'No items match your current filters. Try adjusting or clearing them.';
+    ? t('noResults.withQuery', { query })
+    : t('noResults.withoutQuery');
 
   return (
     <div
@@ -39,14 +41,14 @@ export function PageNoResultsState({
         <SearchX className="size-8" aria-hidden />
       </span>
       <div className="space-y-1">
-        <p className="text-base font-semibold">No results found</p>
+        <p className="text-base font-semibold">{t('noResults.title')}</p>
         <p className="mx-auto max-w-xs text-sm text-muted-foreground">
           {description ?? defaultDescription}
         </p>
       </div>
       {onClear ? (
         <Button variant="outline" size="sm" onClick={onClear} className="mt-1">
-          Clear filters
+          {t('toolbar.clearFilters')}
         </Button>
       ) : null}
     </div>

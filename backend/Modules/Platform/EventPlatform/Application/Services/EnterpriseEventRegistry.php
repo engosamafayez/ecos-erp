@@ -23,7 +23,7 @@ final class EnterpriseEventRegistry implements EnterpriseEventRegistryInterface
         int $priority = 100,
         string $queue = 'default',
     ): void {
-        if (!isset($this->subscribers[$eventName])) {
+        if (! isset($this->subscribers[$eventName])) {
             $this->subscribers[$eventName] = [];
         }
 
@@ -35,10 +35,10 @@ final class EnterpriseEventRegistry implements EnterpriseEventRegistryInterface
         }
 
         $this->subscribers[$eventName][] = [
-            'class'        => $subscriberClass,
+            'class' => $subscriberClass,
             'retry_policy' => $retryPolicy,
-            'priority'     => $priority,
-            'queue'        => $queue,
+            'priority' => $priority,
+            'queue' => $queue,
         ];
 
         // Sort by priority ascending (lower number = runs first)
@@ -52,7 +52,7 @@ final class EnterpriseEventRegistry implements EnterpriseEventRegistryInterface
 
     public function isRegistered(string $eventName): bool
     {
-        return !empty($this->subscribers[$eventName]);
+        return ! empty($this->subscribers[$eventName]);
     }
 
     public function allEventNames(): array

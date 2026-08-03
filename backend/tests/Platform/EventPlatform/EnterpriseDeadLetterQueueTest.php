@@ -7,6 +7,7 @@ namespace Tests\Platform\EventPlatform;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Platform\EventPlatform\Domain\Contracts\EnterpriseDeadLetterQueueInterface;
 use Modules\Platform\EventPlatform\Domain\Contracts\EnterpriseEventStoreInterface;
+use RuntimeException;
 use Tests\Platform\EventPlatform\Fixtures\TestOrderCreatedEvent;
 use Tests\TestCase;
 
@@ -15,20 +16,21 @@ class EnterpriseDeadLetterQueueTest extends TestCase
     use RefreshDatabase;
 
     private EnterpriseDeadLetterQueueInterface $dlq;
+
     private EnterpriseEventStoreInterface $store;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->dlq   = $this->app->make(EnterpriseDeadLetterQueueInterface::class);
+        $this->dlq = $this->app->make(EnterpriseDeadLetterQueueInterface::class);
         $this->store = $this->app->make(EnterpriseEventStoreInterface::class);
     }
 
     public function test_enqueue_creates_dlq_entry(): void
     {
-        $event   = TestOrderCreatedEvent::make();
-        $stored  = $this->store->persist($event);
-        $failure = new \RuntimeException('Processing failed');
+        $event = TestOrderCreatedEvent::make();
+        $stored = $this->store->persist($event);
+        $failure = new RuntimeException('Processing failed');
 
         $entry = $this->dlq->enqueue($event, 'TestSubscriber', $failure, 3, $stored->id);
 
@@ -45,7 +47,7 @@ class EnterpriseDeadLetterQueueTest extends TestCase
         $event2 = TestOrderCreatedEvent::make(companyId: 'co-1');
         $stored1 = $this->store->persist($event1);
         $stored2 = $this->store->persist($event2);
-        $failure = new \RuntimeException('err');
+        $failure = new RuntimeException('err');
 
         $entry1 = $this->dlq->enqueue($event1, 'Sub1', $failure, 1, $stored1->id);
         $entry2 = $this->dlq->enqueue($event2, 'Sub2', $failure, 1, $stored2->id);
@@ -59,9 +61,9 @@ class EnterpriseDeadLetterQueueTest extends TestCase
 
     public function test_mark_replayed_updates_status_and_timestamp(): void
     {
-        $event   = TestOrderCreatedEvent::make();
-        $stored  = $this->store->persist($event);
-        $entry   = $this->dlq->enqueue($event, 'Sub', new \RuntimeException('e'), 1, $stored->id);
+        $event = TestOrderCreatedEvent::make();
+        $stored = $this->store->persist($event);
+        $entry = $this->dlq->enqueue($event, 'Sub', new RuntimeException('e'), 1, $stored->id);
 
         $this->dlq->markReplayed($entry->id);
         $entry->refresh();
@@ -72,9 +74,9 @@ class EnterpriseDeadLetterQueueTest extends TestCase
 
     public function test_count_returns_pending_only(): void
     {
-        $event1  = TestOrderCreatedEvent::make(companyId: 'co-99');
+        $event1 = TestOrderCreatedEvent::make(companyId: 'co-99');
         $stored1 = $this->store->persist($event1);
-        $failure = new \RuntimeException('x');
+        $failure = new RuntimeException('x');
 
         $entry = $this->dlq->enqueue($event1, 'Sub', $failure, 1, $stored1->id);
         $this->assertEquals(1, $this->dlq->count('co-99'));

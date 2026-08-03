@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useFormatter } from '@/hooks/use-formatter';
 import {
   AlertCircle,
   CheckCircle2,
@@ -71,6 +72,7 @@ function InvoiceDetailDrawer({
   const postMutation     = usePostSupplierInvoice();
   const cancelMutation   = useCancelSupplierInvoice();
   const { t } = useTranslation('supplier-invoices');
+  const fmt = useFormatter();
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -153,30 +155,30 @@ function InvoiceDetailDrawer({
               <div className="bg-gray-50 rounded-lg p-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-500">{t('detail.financial.subtotal')}</span>
-                  <span>SAR {invoice.subtotal.toLocaleString()}</span>
+                  <span>{fmt.money(invoice.subtotal)}</span>
                 </div>
                 {invoice.tax_total > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">{t('detail.financial.tax')}</span>
-                    <span>SAR {invoice.tax_total.toLocaleString()}</span>
+                    <span>{fmt.money(invoice.tax_total)}</span>
                   </div>
                 )}
                 {invoice.freight_amount > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">{t('detail.financial.freight')}</span>
-                    <span>SAR {invoice.freight_amount.toLocaleString()}</span>
+                    <span>{fmt.money(invoice.freight_amount)}</span>
                   </div>
                 )}
                 {invoice.additional_costs > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">{t('detail.financial.additionalCosts')}</span>
-                    <span>SAR {invoice.additional_costs.toLocaleString()}</span>
+                    <span>{fmt.money(invoice.additional_costs)}</span>
                   </div>
                 )}
                 <Separator className="my-1" />
                 <div className="flex justify-between text-sm font-semibold">
                   <span>{t('detail.financial.grandTotal')}</span>
-                  <span className="text-gray-900">SAR {invoice.grand_total.toLocaleString()}</span>
+                  <span className="text-gray-900">{fmt.money(invoice.grand_total)}</span>
                 </div>
               </div>
 
@@ -191,16 +193,16 @@ function InvoiceDetailDrawer({
                         <div>
                           <p className="text-sm font-medium">{line.product?.name ?? line.product_id}</p>
                           <p className="text-xs text-gray-500">
-                            {line.quantity} × SAR {line.unit_price}
+                            {line.quantity} × {fmt.money(line.unit_price)}
                             {line.tax_rate > 0 && ` + ${line.tax_rate}% tax`}
                           </p>
                           {line.landed_unit_cost !== null && (
                             <p className="text-xs text-blue-600 mt-0.5">
-                              {t('detail.landedCostFormat', { value: line.landed_unit_cost })}
+                              {t('detail.landedCostFormat', { value: fmt.money(line.landed_unit_cost) })}
                             </p>
                           )}
                         </div>
-                        <span className="text-sm font-semibold">SAR {line.line_total.toLocaleString()}</span>
+                        <span className="text-sm font-semibold">{fmt.money(line.line_total)}</span>
                       </div>
                     </div>
                   ))}
@@ -253,6 +255,7 @@ function InvoiceDetailDrawer({
 
 export function SupplierInvoicesPage() {
   const { t } = useTranslation('supplier-invoices');
+  const fmt = useFormatter();
   const [search, setSearch]           = useState('');
   const [statusFilter, setStatus]     = useState<SupplierInvoiceStatus | 'all'>('all');
   const [page, setPage]               = useState(1);
@@ -338,7 +341,7 @@ export function SupplierInvoicesPage() {
       key: 'grand_total',
       header: t('page.columns.grandTotal'),
       cell: (inv) => (
-        <span className="text-sm font-semibold">SAR {inv.grand_total.toLocaleString()}</span>
+        <span className="text-sm font-semibold">{fmt.money(inv.grand_total)}</span>
       ),
     },
     {
@@ -369,7 +372,7 @@ export function SupplierInvoicesPage() {
         </div>
       ),
     },
-  ], [t, handlePost, postMutation.isPending]);
+  ], [t, fmt, handlePost, postMutation.isPending]);
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -407,7 +410,7 @@ export function SupplierInvoicesPage() {
             )}
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-lg text-xs text-gray-600 ms-auto">
               <DollarSign className="w-3.5 h-3.5" />
-              <span>{t('page.stats.postedValue')}: <strong>SAR {(stats.total_value / 1000).toFixed(1)}K</strong></span>
+              <span>{t('page.stats.postedValue')}: <strong>{fmt.moneyCompact(stats.total_value)}</strong></span>
             </div>
           </div>
         )}

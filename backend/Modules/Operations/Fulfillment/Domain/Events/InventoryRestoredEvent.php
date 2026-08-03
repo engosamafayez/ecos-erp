@@ -12,12 +12,12 @@ final class InventoryRestoredEvent
     use Dispatchable, SerializesModels;
 
     public function __construct(
-        public readonly string  $orderId,
-        public readonly string  $returnId,
-        public readonly string  $companyId,
-        public readonly string  $warehouseId,
-        public readonly int     $linesRestored,
-        public readonly string  $restoredAt,
+        public readonly string $orderId,
+        public readonly string $returnId,
+        public readonly string $companyId,
+        public readonly string $warehouseId,
+        public readonly int $linesRestored,
+        public readonly string $restoredAt,
         public readonly ?string $actorId,
     ) {}
 }

@@ -89,19 +89,19 @@ class GoodsReceipt extends Model
     protected function casts(): array
     {
         return [
-            'status'               => GoodsReceiptStatus::class,
-            'receipt_date'         => 'date',
+            'status' => GoodsReceiptStatus::class,
+            'receipt_date' => 'date',
             'supplier_invoice_date' => 'date',
-            'payment_due_date'     => 'date',
-            'posted_at'            => 'datetime',
+            'payment_due_date' => 'date',
+            'posted_at' => 'datetime',
             'invoice_total_amount' => 'decimal:2',
-            'paid_amount'          => 'decimal:2',
-            'freight_amount'       => 'decimal:2',
-            'tax_amount'           => 'decimal:2',
-            'additional_costs'     => 'decimal:2',
-            'payment_status'       => PaymentStatus::class,
-            'payment_method'       => PaymentMethod::class,
-            'payment_terms_days'   => 'integer',
+            'paid_amount' => 'decimal:2',
+            'freight_amount' => 'decimal:2',
+            'tax_amount' => 'decimal:2',
+            'additional_costs' => 'decimal:2',
+            'payment_status' => PaymentStatus::class,
+            'payment_method' => PaymentMethod::class,
+            'payment_terms_days' => 'integer',
         ];
     }
 
@@ -120,6 +120,7 @@ class GoodsReceipt extends Model
         if ($invoiceTotal > 0 && $paidAmount >= $invoiceTotal) {
             return PaymentStatus::Paid->value;
         }
+
         return PaymentStatus::PartiallyPaid->value;
     }
 

@@ -80,6 +80,12 @@ export const NAMESPACES = [
 
   // ── Marketing ─────────────────────────────────────────────────────────────
   'marketing',
+
+  // ── HR & Workforce ────────────────────────────────────────────────────────
+  'hr',
+
+  // ── Engineering OS ────────────────────────────────────────────────────────
+  'engineering',
 ] as const;
 
 export type Namespace = (typeof NAMESPACES)[number];

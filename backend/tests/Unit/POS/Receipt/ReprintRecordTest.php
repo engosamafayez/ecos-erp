@@ -38,7 +38,7 @@ final class ReprintRecordTest extends TestCase
         $record = $this->makeRecord();
 
         $this->assertSame('cashier-1', $record->cashierId);
-        $this->assertSame('term-1',    $record->terminalId);
+        $this->assertSame('term-1', $record->terminalId);
     }
 
     public function test_stores_reason_as_value(): void
@@ -59,11 +59,11 @@ final class ReprintRecordTest extends TestCase
     {
         $array = $this->makeRecord()->toArray();
 
-        $this->assertArrayHasKey('reprint_id',   $array);
-        $this->assertArrayHasKey('cashier_id',   $array);
-        $this->assertArrayHasKey('terminal_id',  $array);
+        $this->assertArrayHasKey('reprint_id', $array);
+        $this->assertArrayHasKey('cashier_id', $array);
+        $this->assertArrayHasKey('terminal_id', $array);
         $this->assertArrayHasKey('reprinted_at', $array);
-        $this->assertArrayHasKey('reason',       $array);
+        $this->assertArrayHasKey('reason', $array);
     }
 
     public function test_round_trips_via_array(): void
@@ -71,10 +71,10 @@ final class ReprintRecordTest extends TestCase
         $original = $this->makeRecord();
         $restored = ReprintRecord::fromArray($original->toArray());
 
-        $this->assertSame($original->reprintId,   $restored->reprintId);
-        $this->assertSame($original->cashierId,   $restored->cashierId);
-        $this->assertSame($original->terminalId,  $restored->terminalId);
+        $this->assertSame($original->reprintId, $restored->reprintId);
+        $this->assertSame($original->cashierId, $restored->cashierId);
+        $this->assertSame($original->terminalId, $restored->terminalId);
         $this->assertSame($original->reprintedAt, $restored->reprintedAt);
-        $this->assertSame($original->reason,      $restored->reason);
+        $this->assertSame($original->reason, $restored->reason);
     }
 }

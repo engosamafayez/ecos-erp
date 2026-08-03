@@ -26,12 +26,12 @@ class CampaignSchedulingService
 
         return CampaignScheduleTask::create([
             'campaign_draft_id' => $draft->id,
-            'task_type'         => 'publish',
-            'scheduled_for'     => $scheduledAt,
-            'timezone'          => $timezone,
-            'status'            => 'pending',
+            'task_type' => 'publish',
+            'scheduled_for' => $scheduledAt,
+            'timezone' => $timezone,
+            'status' => 'pending',
             'publishing_job_id' => $publishingJob->id,
-            'created_by'        => $userId,
+            'created_by' => $userId,
         ]);
     }
 
@@ -41,11 +41,11 @@ class CampaignSchedulingService
 
         return CampaignScheduleTask::create([
             'campaign_draft_id' => $draft->id,
-            'task_type'         => 'pause',
-            'scheduled_for'     => $scheduledAt,
-            'timezone'          => $timezone,
-            'status'            => 'pending',
-            'created_by'        => $userId,
+            'task_type' => 'pause',
+            'scheduled_for' => $scheduledAt,
+            'timezone' => $timezone,
+            'status' => 'pending',
+            'created_by' => $userId,
         ]);
     }
 

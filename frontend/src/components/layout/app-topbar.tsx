@@ -1,4 +1,5 @@
 import { PanelLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { BrandLogo } from '@/components/common/brand-logo';
@@ -28,6 +29,8 @@ type AppTopbarProps = {
  * Language + Theme are accessible via the UserMenu dropdown on all screen sizes.
  */
 export function AppTopbar({ onOpenSidebar }: AppTopbarProps) {
+  const { t } = useTranslation('common');
+
   return (
     <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 backdrop-blur-sm px-3 sm:px-4">
 
@@ -39,7 +42,7 @@ export function AppTopbar({ onOpenSidebar }: AppTopbarProps) {
         size="icon"
         className="hidden md:flex lg:hidden shrink-0"
         onClick={onOpenSidebar}
-        aria-label="Toggle sidebar navigation"
+        aria-label={t('nav.toggleSidebar')}
       >
         <PanelLeft className="size-5" aria-hidden data-flip-rtl />
       </Button>

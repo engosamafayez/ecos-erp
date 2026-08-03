@@ -1,4 +1,5 @@
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -13,11 +14,13 @@ type PageLoadingStateProps = {
 
 // ── Variants ──────────────────────────────────────────────────────────────────
 
-function SpinnerLoading({ label = 'Loading…', className }: { label?: string; className?: string }) {
+function SpinnerLoading({ label, className }: { label?: string; className?: string }) {
+  const { t } = useTranslation('common');
+
   return (
     <div className={cn('flex flex-col items-center justify-center gap-3 py-20 text-muted-foreground', className)}>
       <Loader2 className="size-8 animate-spin" />
-      <span className="text-sm">{label}</span>
+      <span className="text-sm">{label ?? t('loading')}</span>
     </div>
   );
 }

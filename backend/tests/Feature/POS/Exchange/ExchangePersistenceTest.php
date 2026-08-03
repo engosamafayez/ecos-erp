@@ -25,7 +25,7 @@ final class ExchangePersistenceTest extends TestCase
     {
         parent::setUp();
 
-        $this->repo = new EloquentExchangeRepository();
+        $this->repo = new EloquentExchangeRepository;
     }
 
     // ── save / findById ───────────────────────────────────────────────────────
@@ -96,11 +96,11 @@ final class ExchangePersistenceTest extends TestCase
         $lines = $found->getReturnedLines();
 
         $this->assertCount(1, $lines);
-        $this->assertSame('line-01',     $lines[0]->originalLineId);
-        $this->assertSame('prod-1',      $lines[0]->productId);
+        $this->assertSame('line-01', $lines[0]->originalLineId);
+        $this->assertSame('prod-1', $lines[0]->productId);
         $this->assertSame('Blue Shirt S', $lines[0]->productName);
-        $this->assertSame('100.00',      $lines[0]->unitPrice->amount);
-        $this->assertSame('EGP',         $lines[0]->unitPrice->currency);
+        $this->assertSame('100.00', $lines[0]->unitPrice->amount);
+        $this->assertSame('EGP', $lines[0]->unitPrice->currency);
     }
 
     public function test_replacement_lines_persist_and_reload_correctly(): void
@@ -113,7 +113,7 @@ final class ExchangePersistenceTest extends TestCase
 
         $this->assertCount(1, $lines);
         $this->assertNull($lines[0]->originalLineId);
-        $this->assertSame('prod-1',       $lines[0]->productId);
+        $this->assertSame('prod-1', $lines[0]->productId);
         $this->assertSame('Blue Shirt M', $lines[0]->productName);
     }
 
@@ -125,7 +125,7 @@ final class ExchangePersistenceTest extends TestCase
         $found = $this->repo->findById((string) $exchange->id);
 
         $this->assertSame('100.00', $found->getReturnedTotal()->amount);
-        $this->assertSame('EGP',    $found->getReturnedTotal()->currency);
+        $this->assertSame('EGP', $found->getReturnedTotal()->currency);
     }
 
     public function test_replacement_total_persists_correctly(): void
@@ -202,8 +202,8 @@ final class ExchangePersistenceTest extends TestCase
     // ── Helper ────────────────────────────────────────────────────────────────
 
     private function makeExchange(
-        string $exchangeNumber  = 'EXC-001',
-        string $saleId          = 'sale-001',
+        string $exchangeNumber = 'EXC-001',
+        string $saleId = 'sale-001',
         string $replacementPrice = '100.00',
     ): Exchange {
         return Exchange::initiate(

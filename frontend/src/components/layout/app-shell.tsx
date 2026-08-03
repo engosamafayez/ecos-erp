@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Outlet } from 'react-router-dom';
 
 import { CommandProvider } from '@/components/command-center';
@@ -15,6 +16,7 @@ import { CompanyProvider } from '@/features/organization/context/company-context
 import { useActiveModule } from '@/hooks/use-active-module';
 
 export function AppShell() {
+  const { t } = useTranslation('common');
   const activeModule = useActiveModule();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [tabletSidebarOpen, setTabletSidebarOpen] = useState(false);
@@ -57,7 +59,7 @@ export function AppShell() {
         {/* Tablet sidebar overlay — md to lg */}
         <Sheet open={tabletSidebarOpen} onOpenChange={setTabletSidebarOpen}>
           <SheetContent side="left" className="w-64 p-0 bg-sidebar flex flex-col lg:hidden">
-            <SheetTitle className="sr-only">Navigation</SheetTitle>
+            <SheetTitle className="sr-only">{t('nav.navigation')}</SheetTitle>
             <AppSidebar
               activeModule={activeModule}
               onNavigate={() => setTabletSidebarOpen(false)}

@@ -22,7 +22,9 @@ use Tests\TestCase;
 final class VoidReceiptServiceTest extends TestCase
 {
     private ReceiptRepositoryInterface $receiptRepo;
+
     private DomainEventPublisherInterface $publisher;
+
     private VoidReceiptService $service;
 
     protected function setUp(): void
@@ -30,8 +32,8 @@ final class VoidReceiptServiceTest extends TestCase
         parent::setUp();
 
         $this->receiptRepo = $this->createMock(ReceiptRepositoryInterface::class);
-        $this->publisher   = $this->createMock(DomainEventPublisherInterface::class);
-        $this->service     = new VoidReceiptService($this->receiptRepo, $this->publisher);
+        $this->publisher = $this->createMock(DomainEventPublisherInterface::class);
+        $this->service = new VoidReceiptService($this->receiptRepo, $this->publisher);
     }
 
     public function test_voids_receipt_and_saves(): void
@@ -68,8 +70,7 @@ final class VoidReceiptServiceTest extends TestCase
         $this->publisher
             ->expects($this->once())
             ->method('publishAll')
-            ->with($this->callback(fn(array $events) =>
-                count($events) === 1 && $events[0] instanceof ReceiptVoided
+            ->with($this->callback(fn (array $events) => count($events) === 1 && $events[0] instanceof ReceiptVoided,
             ));
 
         $this->service->execute(new VoidReceiptCommand('rcpt-1', 'cashier-1', 'Duplicate'));
@@ -78,24 +79,24 @@ final class VoidReceiptServiceTest extends TestCase
     private function makeReceipt(): Receipt
     {
         $receipt = Receipt::issue(
-            receiptNumber:             'RCP-001',
-            type:                      ReceiptType::Sale,
-            originalTransactionId:     'sale-1',
+            receiptNumber: 'RCP-001',
+            type: ReceiptType::Sale,
+            originalTransactionId: 'sale-1',
             originalTransactionNumber: 'SALE-001',
-            terminalId:                'term-1',
-            sessionId:                 'sess-1',
-            shiftId:                   'shift-1',
-            cashierId:                 'cashier-1',
-            cashierName:               'Test Cashier',
-            customerId:                null,
-            customerName:              null,
-            currency:                  'EGP',
-            lineItems:                 [
+            terminalId: 'term-1',
+            sessionId: 'sess-1',
+            shiftId: 'shift-1',
+            cashierId: 'cashier-1',
+            cashierName: 'Test Cashier',
+            customerId: null,
+            customerName: null,
+            currency: 'EGP',
+            lineItems: [
                 ReceiptLineItem::of('prod-1', 'Product A', 'SKU-001', '1', '100.00', '100.00', 'EGP'),
             ],
-            totals:                    ReceiptTotals::of('100.00', '0.00', '0.00', '100.00', '100.00', '0.00', 'EGP'),
-            payments:                  [ReceiptPayment::of('cash', '100.00', 'EGP')],
-            issuedAt:                  new DateTimeImmutable('now', new DateTimeZone('UTC')),
+            totals: ReceiptTotals::of('100.00', '0.00', '0.00', '100.00', '100.00', '0.00', 'EGP'),
+            payments: [ReceiptPayment::of('cash', '100.00', 'EGP')],
+            issuedAt: new DateTimeImmutable('now', new DateTimeZone('UTC')),
         );
 
         $receipt->pullDomainEvents();

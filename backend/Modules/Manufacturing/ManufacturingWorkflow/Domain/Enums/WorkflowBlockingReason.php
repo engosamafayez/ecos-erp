@@ -49,19 +49,19 @@ enum WorkflowBlockingReason: string
     public static function fromDecisionType(DecisionType $type): self
     {
         return match ($type) {
-            DecisionType::Reject   => self::DecisionRejected,
-            DecisionType::Defer    => self::DecisionDeferred,
+            DecisionType::Reject => self::DecisionRejected,
+            DecisionType::Defer => self::DecisionDeferred,
             DecisionType::Escalate => self::DecisionEscalated,
-            default                => self::DecisionRejected,
+            default => self::DecisionRejected,
         };
     }
 
     public static function fromEligibility(ManufacturingEligibility $eligibility): self
     {
         return match ($eligibility) {
-            ManufacturingEligibility::NoRecipe        => self::NoRecipe,
+            ManufacturingEligibility::NoRecipe => self::NoRecipe,
             ManufacturingEligibility::CannotManufacture => self::CannotManufacture,
-            default                                    => self::CannotManufacture,
+            default => self::CannotManufacture,
         };
     }
 }

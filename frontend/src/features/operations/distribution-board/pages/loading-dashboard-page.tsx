@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useFormatter } from '@/hooks/use-formatter';
 import {
   ClipboardList,
   Package,
@@ -44,6 +45,7 @@ function LoadingProgressBar({ value, max, className }: { value: number; max: num
 }
 
 function TripLoadingCard({ trip }: { trip: LoadingDashboardTrip }) {
+  const { money } = useFormatter();
   const navigate = useNavigate();
   const badgeClass = LOADING_STATUS_COLORS[trip.loading_status as LoadingStatus] ?? 'bg-muted text-muted-foreground';
 
@@ -106,7 +108,7 @@ function TripLoadingCard({ trip }: { trip: LoadingDashboardTrip }) {
           </div>
           <div className="text-center">
             <div className="text-lg font-bold tabular-nums">
-              EGP {trip.collection_amount.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+              {money(trip.collection_amount)}
             </div>
             <div className="text-xs text-muted-foreground">Collection</div>
           </div>

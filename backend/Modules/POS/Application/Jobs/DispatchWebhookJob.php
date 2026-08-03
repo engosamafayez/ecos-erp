@@ -11,6 +11,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Queued job: delivers a POS webhook payload to a configured endpoint.
@@ -35,7 +36,8 @@ final class DispatchWebhookJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries   = 3;
+    public int $tries = 3;
+
     public int $timeout = 30;
 
     /** @var int[] */
@@ -45,21 +47,21 @@ final class DispatchWebhookJob implements ShouldQueue
         private readonly string $endpointUrl,
         private readonly string $eventName,
         private readonly string $idempotencyKey,
-        private readonly array  $payload,
+        private readonly array $payload,
     ) {}
 
     public function handle(): void
     {
-        $secret    = config('pos.webhooks.secret');
-        $body      = json_encode($this->payload, JSON_THROW_ON_ERROR);
-        $headers   = [
-            'Content-Type'    => 'application/json',
-            'X-ECOS-Event'    => $this->eventName,
+        $secret = config('pos.webhooks.secret');
+        $body = json_encode($this->payload, JSON_THROW_ON_ERROR);
+        $headers = [
+            'Content-Type' => 'application/json',
+            'X-ECOS-Event' => $this->eventName,
             'X-Idempotency-Key' => $this->idempotencyKey,
         ];
 
         if ($secret) {
-            $headers['X-ECOS-Signature'] = 'sha256=' . hash_hmac('sha256', $body, (string) $secret);
+            $headers['X-ECOS-Signature'] = 'sha256='.hash_hmac('sha256', $body, (string) $secret);
         }
 
         $response = Http::withHeaders($headers)
@@ -68,11 +70,11 @@ final class DispatchWebhookJob implements ShouldQueue
 
         if ($response->failed()) {
             Log::channel('daily')->warning('[POS][Webhook] Delivery failed — will retry', [
-                'url'             => $this->endpointUrl,
-                'event_name'      => $this->eventName,
+                'url' => $this->endpointUrl,
+                'event_name' => $this->eventName,
                 'idempotency_key' => $this->idempotencyKey,
-                'status'          => $response->status(),
-                'attempt'         => $this->attempts(),
+                'status' => $response->status(),
+                'attempt' => $this->attempts(),
             ]);
 
             $this->release(
@@ -83,20 +85,20 @@ final class DispatchWebhookJob implements ShouldQueue
         }
 
         Log::channel('daily')->info('[POS][Webhook] Delivered successfully', [
-            'url'             => $this->endpointUrl,
-            'event_name'      => $this->eventName,
+            'url' => $this->endpointUrl,
+            'event_name' => $this->eventName,
             'idempotency_key' => $this->idempotencyKey,
-            'status'          => $response->status(),
+            'status' => $response->status(),
         ]);
     }
 
-    public function failed(\Throwable $e): void
+    public function failed(Throwable $e): void
     {
         Log::channel('daily')->error('[POS][Webhook] Final delivery failure', [
-            'url'             => $this->endpointUrl,
-            'event_name'      => $this->eventName,
+            'url' => $this->endpointUrl,
+            'event_name' => $this->eventName,
             'idempotency_key' => $this->idempotencyKey,
-            'error'           => $e->getMessage(),
+            'error' => $e->getMessage(),
         ]);
     }
 }

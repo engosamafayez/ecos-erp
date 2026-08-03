@@ -29,15 +29,15 @@ class ShippingQuoteController extends Controller
     public function quote(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'brand_id'       => 'required|string|exists:brands,id',
+            'brand_id' => 'required|string|exists:brands,id',
             'governorate_id' => 'required|integer|exists:logistics_governorates,id',
-            'city_id'        => 'nullable|integer|exists:logistics_cities,id',
+            'city_id' => 'nullable|integer|exists:logistics_cities,id',
         ]);
 
         $result = $this->engine->evaluate(
-            brandId:        $data['brand_id'],
-            governorateId:  (int) $data['governorate_id'],
-            cityId:         isset($data['city_id']) ? (int) $data['city_id'] : null,
+            brandId: $data['brand_id'],
+            governorateId: (int) $data['governorate_id'],
+            cityId: isset($data['city_id']) ? (int) $data['city_id'] : null,
             isDeliveryOrder: true,
         );
 

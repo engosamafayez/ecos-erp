@@ -22,27 +22,33 @@ final class ReturnApiTest extends TestCase
 {
     use RefreshDatabase;
 
-    private User                    $user;
+    private User $user;
+
     private SaleRepositoryInterface $saleRepo;
 
-    private const SESSION_ID  = 'a0000000-0000-4000-a000-000000000031';
-    private const SHIFT_ID    = 'b0000000-0000-4000-b000-000000000031';
+    private const SESSION_ID = 'a0000000-0000-4000-a000-000000000031';
+
+    private const SHIFT_ID = 'b0000000-0000-4000-b000-000000000031';
+
     private const TERMINAL_ID = 'c0000000-0000-4000-c000-000000000031';
-    private const CASHIER_ID  = 'd0000000-0000-4000-d000-000000000031';
-    private const PRODUCT_ID  = 'e0000000-0000-4000-e000-000000000031';
-    private const CURRENCY    = 'EGP';
+
+    private const CASHIER_ID = 'd0000000-0000-4000-d000-000000000031';
+
+    private const PRODUCT_ID = 'e0000000-0000-4000-e000-000000000031';
+
+    private const CURRENCY = 'EGP';
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->user     = User::factory()->create();
+        $this->user = User::factory()->create();
         $this->saleRepo = app(SaleRepositoryInterface::class);
     }
 
     public function test_process_return_returns_201_with_return_data(): void
     {
-        $sale   = $this->makePersistedSale('100.00');
+        $sale = $this->makePersistedSale('100.00');
         $saleId = (string) $sale->id;
 
         $response = $this->actingAs($this->user)
@@ -58,7 +64,7 @@ final class ReturnApiTest extends TestCase
 
     public function test_return_number_follows_sequential_format(): void
     {
-        $sale   = $this->makePersistedSale('100.00');
+        $sale = $this->makePersistedSale('100.00');
         $saleId = (string) $sale->id;
 
         $response = $this->actingAs($this->user)
@@ -81,10 +87,10 @@ final class ReturnApiTest extends TestCase
 
         $this->actingAs($this->user)
             ->postJson('/api/pos/returns', [
-                'sale_id'       => (string) $sale->id,
-                'cashier_id'    => self::CASHIER_ID,
-                'currency'      => self::CURRENCY,
-                'refund_total'  => '100.00',
+                'sale_id' => (string) $sale->id,
+                'cashier_id' => self::CASHIER_ID,
+                'currency' => self::CURRENCY,
+                'refund_total' => '100.00',
                 'refund_method' => 'cash',
                 // missing lines
             ])
@@ -107,16 +113,16 @@ final class ReturnApiTest extends TestCase
     private function makePersistedSale(string $total): Sale
     {
         $sale = Sale::record(
-            cartId:           'a0000000-cart-4000-a000-000000000031',
-            paymentId:        'a0000000-pay0-4000-a000-000000000031',
-            sessionId:        self::SESSION_ID,
-            shiftId:          self::SHIFT_ID,
-            terminalId:       self::TERMINAL_ID,
-            cashierId:        self::CASHIER_ID,
-            customerId:       null,
-            currency:         self::CURRENCY,
-            receiptNumber:    'SALE-RTN-API-001',
-            lines:            [
+            cartId: 'a0000000-cart-4000-a000-000000000031',
+            paymentId: 'a0000000-pay0-4000-a000-000000000031',
+            sessionId: self::SESSION_ID,
+            shiftId: self::SHIFT_ID,
+            terminalId: self::TERMINAL_ID,
+            cashierId: self::CASHIER_ID,
+            customerId: null,
+            currency: self::CURRENCY,
+            receiptNumber: 'SALE-RTN-API-001',
+            lines: [
                 new SaleLine(
                     'ln-rtn-api-1', self::PRODUCT_ID, 'Widget', 'WGT-001',
                     Quantity::of('1'), Money::of($total, self::CURRENCY),
@@ -124,11 +130,11 @@ final class ReturnApiTest extends TestCase
                     Money::of($total, self::CURRENCY), 0,
                 ),
             ],
-            subtotal:         Money::of($total, self::CURRENCY),
-            discountTotal:    Money::of('0.00', self::CURRENCY),
-            total:            Money::of($total, self::CURRENCY),
-            amountPaid:       Money::of($total, self::CURRENCY),
-            changeGiven:      Money::of('0.00', self::CURRENCY),
+            subtotal: Money::of($total, self::CURRENCY),
+            discountTotal: Money::of('0.00', self::CURRENCY),
+            total: Money::of($total, self::CURRENCY),
+            amountPaid: Money::of($total, self::CURRENCY),
+            changeGiven: Money::of('0.00', self::CURRENCY),
             paymentSummaries: [
                 new PaymentSummaryLine(
                     PaymentMethodType::Cash,
@@ -148,23 +154,23 @@ final class ReturnApiTest extends TestCase
     private function makePayload(string $saleId, string $refundAmount): array
     {
         return [
-            'sale_id'       => $saleId,
-            'cashier_id'    => self::CASHIER_ID,
-            'currency'      => self::CURRENCY,
-            'refund_total'  => $refundAmount,
+            'sale_id' => $saleId,
+            'cashier_id' => self::CASHIER_ID,
+            'currency' => self::CURRENCY,
+            'refund_total' => $refundAmount,
             'refund_method' => 'cash',
-            'lines'         => [
+            'lines' => [
                 [
-                    'line_id'        => 'ln-rtn-api-1',
-                    'product_id'     => self::PRODUCT_ID,
-                    'product_name'   => 'Widget',
-                    'sku'            => 'WGT-001',
-                    'quantity'       => '1',
-                    'unit_price'     => ['amount' => '100.00', 'currency' => self::CURRENCY],
-                    'refund_amount'  => ['amount' => $refundAmount, 'currency' => self::CURRENCY],
-                    'reason'         => 'customer_preference',
+                    'line_id' => 'ln-rtn-api-1',
+                    'product_id' => self::PRODUCT_ID,
+                    'product_name' => 'Widget',
+                    'sku' => 'WGT-001',
+                    'quantity' => '1',
+                    'unit_price' => ['amount' => '100.00', 'currency' => self::CURRENCY],
+                    'refund_amount' => ['amount' => $refundAmount, 'currency' => self::CURRENCY],
+                    'reason' => 'customer_preference',
                     'should_restock' => true,
-                    'sort_order'     => 0,
+                    'sort_order' => 0,
                 ],
             ],
         ];

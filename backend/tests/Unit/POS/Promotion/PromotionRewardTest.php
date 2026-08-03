@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\POS\Promotion;
 
+use InvalidArgumentException;
 use Modules\POS\Promotion\Domain\Enums\PromotionRewardType;
 use Modules\POS\Promotion\Domain\ValueObjects\PromotionReward;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
@@ -35,13 +36,13 @@ final class PromotionRewardTest extends TestCase
 
     public function test_percentage_discount_invalid_scope_throws(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         PromotionReward::percentageDiscount(Percentage::of('10'), 'invalid_scope');
     }
 
     public function test_percentage_discount_get_percentage(): void
     {
-        $pct    = Percentage::of('20');
+        $pct = Percentage::of('20');
         $reward = PromotionReward::percentageDiscount($pct);
         $this->assertTrue($pct->equals($reward->getPercentage()));
     }
@@ -63,13 +64,13 @@ final class PromotionRewardTest extends TestCase
 
     public function test_fixed_amount_throws_on_zero(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         PromotionReward::fixedAmountDiscount(Money::zero('EGP'));
     }
 
     public function test_fixed_amount_throws_on_negative(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         PromotionReward::fixedAmountDiscount(Money::of('-10.00', 'EGP'));
     }
 
@@ -97,13 +98,13 @@ final class PromotionRewardTest extends TestCase
 
     public function test_free_item_throws_on_empty_product_id(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         PromotionReward::freeItem('');
     }
 
     public function test_free_item_throws_on_zero_quantity(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         PromotionReward::freeItem('prod-uuid-001', 0);
     }
 
@@ -117,14 +118,14 @@ final class PromotionRewardTest extends TestCase
 
     public function test_bundle_price_stores_price(): void
     {
-        $price  = Money::of('199.99', 'EGP');
+        $price = Money::of('199.99', 'EGP');
         $reward = PromotionReward::bundlePrice($price);
         $this->assertTrue($price->equals($reward->getAmount()));
     }
 
     public function test_bundle_price_throws_on_zero(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         PromotionReward::bundlePrice(Money::zero('EGP'));
     }
 

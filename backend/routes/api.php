@@ -297,15 +297,28 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('admin/dashboard', AdminDashboardController::class);
     Route::get('admin/executive-dashboard', ExecutiveDashboardController::class);
     Route::get('context/company', CompanyContextController::class);
-    Route::apiResource('companies', CompanyController::class);
-    Route::apiResource('branches', BranchController::class);
+    // AUTHZ: reuses permissions that were already seeded and already assigned to
+    // roles — nothing invented. Reads stay open to any authenticated user, as
+    // before; only the mutating verbs are gated. Roles flagged is_system bypass
+    // unconditionally, so Super Admin is unaffected.
+    Route::apiResource('companies', CompanyController::class)
+        ->middlewareFor('store', 'permission:organization.companies.create')
+        ->middlewareFor('update', 'permission:organization.companies.update')
+        ->middlewareFor('destroy', 'permission:organization.companies.delete');
+    Route::apiResource('branches', BranchController::class)
+        ->middlewareFor('store', 'permission:organization.branches.create')
+        ->middlewareFor('update', 'permission:organization.branches.update')
+        ->middlewareFor('destroy', 'permission:organization.branches.delete');
     Route::prefix('branches/{branch}')->group(function (): void {
         Route::get('coverage', [BranchCoverageController::class, 'index']);
-        Route::post('coverage', [BranchCoverageController::class, 'store']);
-        Route::put('coverage/{area}', [BranchCoverageController::class, 'update']);
-        Route::delete('coverage/{area}', [BranchCoverageController::class, 'destroy']);
+        Route::post('coverage', [BranchCoverageController::class, 'store'])->middleware('permission:organization.branches.update');
+        Route::put('coverage/{area}', [BranchCoverageController::class, 'update'])->middleware('permission:organization.branches.update');
+        Route::delete('coverage/{area}', [BranchCoverageController::class, 'destroy'])->middleware('permission:organization.branches.update');
     });
-    Route::apiResource('brands', BrandController::class);
+    Route::apiResource('brands', BrandController::class)
+        ->middlewareFor('store', 'permission:organization.brands.create')
+        ->middlewareFor('update', 'permission:organization.brands.update')
+        ->middlewareFor('destroy', 'permission:organization.brands.delete');
     Route::prefix('brands/{brand}')->group(function (): void {
         Route::get('delivery-geography', [BrandDeliveryController::class, 'geography']);
         Route::get('delivery-windows', [BrandDeliveryController::class, 'windows']);
@@ -314,24 +327,30 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
         Route::post('transfer', [BrandController::class, 'transfer']);
 
         // Brand Delivery Time Slots (customer checkout time windows)
-        Route::post('delivery-time-slots/seed-defaults', [BrandDeliveryTimeSlotController::class, 'seedDefaults']);
-        Route::patch('delivery-time-slots/reorder', [BrandDeliveryTimeSlotController::class, 'reorder']);
+        Route::post('delivery-time-slots/seed-defaults', [BrandDeliveryTimeSlotController::class, 'seedDefaults'])->middleware('permission:organization.brands.update');
+        Route::patch('delivery-time-slots/reorder', [BrandDeliveryTimeSlotController::class, 'reorder'])->middleware('permission:organization.brands.update');
         Route::get('delivery-time-slots', [BrandDeliveryTimeSlotController::class, 'index']);
-        Route::post('delivery-time-slots', [BrandDeliveryTimeSlotController::class, 'store']);
-        Route::put('delivery-time-slots/{slot}', [BrandDeliveryTimeSlotController::class, 'update']);
-        Route::delete('delivery-time-slots/{slot}', [BrandDeliveryTimeSlotController::class, 'destroy']);
+        Route::post('delivery-time-slots', [BrandDeliveryTimeSlotController::class, 'store'])->middleware('permission:organization.brands.update');
+        Route::put('delivery-time-slots/{slot}', [BrandDeliveryTimeSlotController::class, 'update'])->middleware('permission:organization.brands.update');
+        Route::delete('delivery-time-slots/{slot}', [BrandDeliveryTimeSlotController::class, 'destroy'])->middleware('permission:organization.brands.update');
 
         // Brand Shipping Configuration (Geography-aware, policy-driven)
         Route::get('shipping-settings', [BrandShippingController::class, 'getSettings']);
-        Route::put('shipping-settings', [BrandShippingController::class, 'updateSettings']);
+        Route::put('shipping-settings', [BrandShippingController::class, 'updateSettings'])->middleware('permission:organization.brands.update');
         Route::get('shipping/governorates', [BrandShippingController::class, 'listGovernorates']);
-        Route::put('shipping/governorates/{governorate}', [BrandShippingController::class, 'updateGovernorate']);
+        Route::put('shipping/governorates/{governorate}', [BrandShippingController::class, 'updateGovernorate'])->middleware('permission:organization.brands.update');
         Route::get('shipping/cities', [BrandShippingController::class, 'listCities']);
-        Route::put('shipping/cities/{city}', [BrandShippingController::class, 'updateCity']);
+        Route::put('shipping/cities/{city}', [BrandShippingController::class, 'updateCity'])->middleware('permission:organization.brands.update');
         Route::get('shipping/calculate', [BrandShippingController::class, 'calculatePrice']);
     });
-    Route::apiResource('business-accounts', BusinessAccountController::class);
-    Route::apiResource('teams', TeamController::class);
+    Route::apiResource('business-accounts', BusinessAccountController::class)
+        ->middlewareFor('store', 'permission:organization.business_accounts.create')
+        ->middlewareFor('update', 'permission:organization.business_accounts.update')
+        ->middlewareFor('destroy', 'permission:organization.business_accounts.delete');
+    Route::apiResource('teams', TeamController::class)
+        ->middlewareFor('store', 'permission:organization.teams.create')
+        ->middlewareFor('update', 'permission:organization.teams.update')
+        ->middlewareFor('destroy', 'permission:organization.teams.delete');
 });
 
 /*
@@ -340,7 +359,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
-    Route::post('shipping/quote', [ShippingQuoteController::class, 'quote']);
+    Route::post('shipping/quote', [ShippingQuoteController::class, 'quote'])->middleware('permission:logistics.shipping.quote');
 });
 
 /*
@@ -349,9 +368,18 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
-    Route::apiResource('warehouses', WarehouseController::class);
-    Route::apiResource('categories', CategoryController::class);
-    Route::apiResource('units', UnitController::class);
+    Route::apiResource('warehouses', WarehouseController::class)
+        ->middlewareFor('store', 'permission:inventory.warehouses.create')
+        ->middlewareFor('update', 'permission:inventory.warehouses.update')
+        ->middlewareFor('destroy', 'permission:inventory.warehouses.delete');
+    Route::apiResource('categories', CategoryController::class)
+        ->middlewareFor('store', 'permission:inventory.categories.create')
+        ->middlewareFor('update', 'permission:inventory.categories.update')
+        ->middlewareFor('destroy', 'permission:inventory.categories.delete');
+    Route::apiResource('units', UnitController::class)
+        ->middlewareFor('store', 'permission:inventory.units.create')
+        ->middlewareFor('update', 'permission:inventory.units.update')
+        ->middlewareFor('destroy', 'permission:inventory.units.delete');
 });
 
 /*
@@ -372,14 +400,17 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('products/stats', [ProductController::class, 'stats']);
     Route::get('products/next-sku', [ProductController::class, 'nextSku']);
     Route::middleware(['throttle:10,1'])->group(function (): void {
-        Route::post('products/import', [ProductController::class, 'import']);
+        Route::post('products/import', [ProductController::class, 'import'])->middleware('permission:inventory.products.create');
     });
-    Route::apiResource('products', ProductController::class);
-    Route::patch('products/{product}', [ProductController::class, 'patch']);
+    Route::apiResource('products', ProductController::class)
+        ->middlewareFor('store', 'permission:inventory.products.create')
+        ->middlewareFor('update', 'permission:inventory.products.update')
+        ->middlewareFor('destroy', 'permission:inventory.products.delete');
+    Route::patch('products/{product}', [ProductController::class, 'patch'])->middleware('permission:inventory.products.update');
     Route::get('products/{product}/cost-history', [InventoryLayerController::class, 'costHistory']);
     Route::get('products/{product}/warehouse-distribution', [InventoryLayerController::class, 'warehouseDistribution']);
     Route::get('stock-movements', [StockMovementController::class, 'index']);
-    Route::post('stock-movements', [StockMovementController::class, 'store']);
+    Route::post('stock-movements', [StockMovementController::class, 'store'])->middleware('permission:inventory.stock.adjust');
     Route::get('stock-movements/{stockMovement}', [StockMovementController::class, 'show']);
     Route::get('inventory/layers', [InventoryLayerController::class, 'index']);
 });
@@ -419,9 +450,9 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('inventory/waste-investigations/report', [WasteInvestigationController::class, 'report']);
     Route::get('inventory/waste-investigations', [WasteInvestigationController::class, 'index']);
     Route::get('inventory/waste-investigations/{id}', [WasteInvestigationController::class, 'show']);
-    Route::post('inventory/waste-investigations/{id}/resolve', [WasteInvestigationController::class, 'resolve']);
-    Route::post('inventory/waste-investigations/{id}/attachments', [WasteInvestigationController::class, 'storeAttachment']);
-    Route::delete('inventory/waste-investigations/{id}/attachments/{attachmentId}', [WasteInvestigationController::class, 'destroyAttachment']);
+    Route::post('inventory/waste-investigations/{id}/resolve', [WasteInvestigationController::class, 'resolve'])->middleware('permission:inventory.waste.resolve');
+    Route::post('inventory/waste-investigations/{id}/attachments', [WasteInvestigationController::class, 'storeAttachment'])->middleware('permission:inventory.waste.resolve');
+    Route::delete('inventory/waste-investigations/{id}/attachments/{attachmentId}', [WasteInvestigationController::class, 'destroyAttachment'])->middleware('permission:inventory.waste.resolve');
 });
 
 /*
@@ -433,8 +464,8 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('inventory/warehouse-liabilities/report', [WarehouseLiabilityController::class, 'report']);
     Route::get('inventory/warehouse-liabilities', [WarehouseLiabilityController::class, 'index']);
     Route::get('inventory/warehouse-liabilities/{id}', [WarehouseLiabilityController::class, 'show']);
-    Route::post('inventory/warehouse-liabilities/{id}/approve', [WarehouseLiabilityController::class, 'approve']);
-    Route::post('inventory/warehouse-liabilities/{id}/reject', [WarehouseLiabilityController::class, 'reject']);
+    Route::post('inventory/warehouse-liabilities/{id}/approve', [WarehouseLiabilityController::class, 'approve'])->middleware('permission:inventory.liabilities.approve');
+    Route::post('inventory/warehouse-liabilities/{id}/reject', [WarehouseLiabilityController::class, 'reject'])->middleware('permission:inventory.liabilities.reject');
 });
 
 /*
@@ -444,8 +475,14 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 */
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('customers/search-by-phone', [CustomerController::class, 'searchByPhone']);
-    Route::apiResource('customers', CustomerController::class);
-    Route::apiResource('customers.addresses', CustomerAddressController::class)->shallow();
+    Route::apiResource('customers', CustomerController::class)
+        ->middlewareFor('store', 'permission:crm.customers.create')
+        ->middlewareFor('update', 'permission:crm.customers.update')
+        ->middlewareFor('destroy', 'permission:crm.customers.delete');
+    Route::apiResource('customers.addresses', CustomerAddressController::class)->shallow()
+        ->middlewareFor('store', 'permission:crm.customers.update')
+        ->middlewareFor('update', 'permission:crm.customers.update')
+        ->middlewareFor('destroy', 'permission:crm.customers.update');
 });
 
 /*
@@ -454,39 +491,51 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
-    Route::apiResource('channels', ChannelController::class);
-    Route::post('channels/{channel}/test-connection', [ConnectorController::class, 'testConnection']);
+    Route::apiResource('channels', ChannelController::class)
+        ->middlewareFor('store', 'permission:sales.channels.create')
+        ->middlewareFor('update', 'permission:sales.channels.update')
+        ->middlewareFor('destroy', 'permission:sales.channels.delete');
+    Route::post('channels/{channel}/test-connection', [ConnectorController::class, 'testConnection'])->middleware('permission:sales.channels.update');
     Route::middleware(['throttle:10,1'])->group(function (): void {
-        Route::post('channels/{channel}/import-products', [ProductImportController::class, 'importProducts']);
-        Route::post('channels/{channel}/import-orders', [OrderImportController::class, 'importOrders']);
+        Route::post('channels/{channel}/import-products', [ProductImportController::class, 'importProducts'])->middleware('permission:sales.channels.sync');
+        Route::post('channels/{channel}/import-orders', [OrderImportController::class, 'importOrders'])->middleware('permission:sales.channels.sync');
     });
-    Route::apiResource('product-mappings', ProductMappingController::class);
+    Route::apiResource('product-mappings', ProductMappingController::class)
+        ->middlewareFor('store', 'permission:sales.channels.update')
+        ->middlewareFor('update', 'permission:sales.channels.update')
+        ->middlewareFor('destroy', 'permission:sales.channels.update');
     Route::get('orders/statuses', [OrderController::class, 'orderStatuses']);
     Route::get('orders/filter/payment-methods', [OrderController::class, 'paymentMethods']);
     Route::get('orders/filter/shipping-companies', [OrderController::class, 'shippingCompanies']);
     Route::post('orders/manual', [OrderController::class, 'storeManual']);
-    Route::post('orders/maps/resolve-url', [OrderController::class, 'resolveMapsUrl']);
+    Route::post('orders/maps/resolve-url', [OrderController::class, 'resolveMapsUrl'])->middleware('permission:sales.orders.update');
     Route::get('orders/pricing/product/{productId}', [OrderController::class, 'productPricing']);
     Route::patch('orders/{order}/quick-update', [OrderController::class, 'quickUpdate']);
-    Route::patch('orders/{order}/zone', [OrderController::class, 'updateZone']);
-    Route::post('orders/{order}/confirm-customer', [OrderController::class, 'confirmCustomer']);
+    Route::patch('orders/{order}/zone', [OrderController::class, 'updateZone'])->middleware('permission:sales.orders.update');
+    Route::post('orders/{order}/confirm-customer', [OrderController::class, 'confirmCustomer'])->middleware('permission:sales.orders.update');
     Route::get('orders/{order}/activities', [OrderController::class, 'activities']);
-    Route::post('orders/{order}/notes', [OrderController::class, 'addNote']);
-    Route::patch('orders/{order}/notes/{note}', [OrderController::class, 'updateNote']);
-    Route::delete('orders/{order}/notes/{note}', [OrderController::class, 'deleteNote']);
+    Route::post('orders/{order}/notes', [OrderController::class, 'addNote'])->middleware('permission:sales.orders.update');
+    Route::patch('orders/{order}/notes/{note}', [OrderController::class, 'updateNote'])->middleware('permission:sales.orders.update');
+    Route::delete('orders/{order}/notes/{note}', [OrderController::class, 'deleteNote'])->middleware('permission:sales.orders.update');
     Route::get('orders/{order}/snapshot', [OrderController::class, 'financialSnapshot']);
-    Route::apiResource('orders', OrderController::class);
-    Route::post('orders/{order}/prepare', [OrderController::class, 'prepare']);
+    Route::apiResource('orders', OrderController::class)
+        ->middlewareFor('store', 'permission:sales.orders.create')
+        ->middlewareFor('update', 'permission:sales.orders.update')
+        ->middlewareFor('destroy', 'permission:sales.orders.delete');
+    Route::post('orders/{order}/prepare', [OrderController::class, 'prepare'])->middleware('permission:sales.orders.update');
     Route::post('orders/{order}/verify-payment', [OrderController::class, 'verifyPayment']);
     // CR-PREP-001: Warehouse assignment
-    Route::post('orders/{order}/assign-warehouse', [WarehouseAssignmentController::class, 'assignWarehouse']);
+    Route::post('orders/{order}/assign-warehouse', [WarehouseAssignmentController::class, 'assignWarehouse'])->middleware('permission:sales.orders.update');
     Route::post('orders/{order}/override-warehouse', [WarehouseAssignmentController::class, 'overrideWarehouse']);
     Route::get('orders/{order}/assignment-history', [WarehouseAssignmentController::class, 'assignmentHistory']);
-    Route::apiResource('fulfillments', FulfillmentController::class);
-    Route::post('fulfillments/{fulfillment}/fulfill', [FulfillmentController::class, 'fulfill']);
-    Route::post('fulfillments/{fulfillment}/cancel', [FulfillmentController::class, 'cancel']);
+    Route::apiResource('fulfillments', FulfillmentController::class)
+        ->middlewareFor('store', 'permission:sales.fulfillments.create')
+        ->middlewareFor('update', 'permission:sales.fulfillments.update')
+        ->middlewareFor('destroy', 'permission:sales.fulfillments.delete');
+    Route::post('fulfillments/{fulfillment}/fulfill', [FulfillmentController::class, 'fulfill'])->middleware('permission:sales.fulfillments.update');
+    Route::post('fulfillments/{fulfillment}/cancel', [FulfillmentController::class, 'cancel'])->middleware('permission:sales.fulfillments.update');
     Route::get('stock-sync-logs', [StockSyncController::class, 'index']);
-    Route::post('channels/{channel}/sync-stock', [StockSyncController::class, 'syncStock']);
+    Route::post('channels/{channel}/sync-stock', [StockSyncController::class, 'syncStock'])->middleware('permission:sales.channels.sync');
 });
 
 /*
@@ -496,22 +545,31 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 */
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('suppliers/stats', [SupplierAnalyticsController::class, 'summaryStats']);
-    Route::apiResource('suppliers', SupplierController::class);
+    Route::apiResource('suppliers', SupplierController::class)
+        ->middlewareFor('store', 'permission:purchasing.suppliers.create')
+        ->middlewareFor('update', 'permission:purchasing.suppliers.update')
+        ->middlewareFor('destroy', 'permission:purchasing.suppliers.delete');
     Route::get('suppliers/{supplier}/analytics', [SupplierAnalyticsController::class, 'analytics']);
     Route::get('suppliers/{supplier}/inventory-breakdown', [SupplierAnalyticsController::class, 'inventoryBreakdown']);
     Route::get('suppliers/{supplier}/health', [SupplierAnalyticsController::class, 'health']);
     Route::get('suppliers/{supplier}/price-history', [SupplierAnalyticsController::class, 'priceHistory']);
     Route::get('suppliers/{supplier}/timeline', [SupplierAnalyticsController::class, 'timeline']);
     Route::get('suppliers/{supplier}/documents', [SupplierDocumentController::class, 'index']);
-    Route::post('suppliers/{supplier}/documents', [SupplierDocumentController::class, 'store']);
-    Route::delete('suppliers/{supplier}/documents/{document}', [SupplierDocumentController::class, 'destroy']);
+    Route::post('suppliers/{supplier}/documents', [SupplierDocumentController::class, 'store'])->middleware('permission:purchasing.suppliers.update');
+    Route::delete('suppliers/{supplier}/documents/{document}', [SupplierDocumentController::class, 'destroy'])->middleware('permission:purchasing.suppliers.update');
     Route::get('suppliers/{supplier}/documents/{document}/download', [SupplierDocumentController::class, 'download']);
-    Route::apiResource('purchase-orders', PurchaseOrderController::class);
-    Route::post('purchase-orders/{purchaseOrder}/submit', [PurchaseOrderController::class, 'submit']);
-    Route::post('purchase-orders/{purchaseOrder}/approve', [PurchaseOrderController::class, 'approve']);
-    Route::post('purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel']);
-    Route::apiResource('goods-receipts', GoodsReceiptController::class);
-    Route::post('goods-receipts/{goodsReceipt}/post', [GoodsReceiptController::class, 'post']);
+    Route::apiResource('purchase-orders', PurchaseOrderController::class)
+        ->middlewareFor('store', 'permission:purchasing.purchase_orders.create')
+        ->middlewareFor('update', 'permission:purchasing.purchase_orders.update')
+        ->middlewareFor('destroy', 'permission:purchasing.purchase_orders.delete');
+    Route::post('purchase-orders/{purchaseOrder}/submit', [PurchaseOrderController::class, 'submit'])->middleware('permission:purchasing.purchase_orders.update');
+    Route::post('purchase-orders/{purchaseOrder}/approve', [PurchaseOrderController::class, 'approve'])->middleware('permission:purchasing.purchase_orders.update');
+    Route::post('purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->middleware('permission:purchasing.purchase_orders.update');
+    Route::apiResource('goods-receipts', GoodsReceiptController::class)
+        ->middlewareFor('store', 'permission:purchasing.goods_receipts.create')
+        ->middlewareFor('update', 'permission:purchasing.goods_receipts.update')
+        ->middlewareFor('destroy', 'permission:purchasing.goods_receipts.delete');
+    Route::post('goods-receipts/{goodsReceipt}/post', [GoodsReceiptController::class, 'post'])->middleware('permission:purchasing.goods_receipts.update');
 
     // Purchase Materials
     Route::middleware('permission:purchasing.materials.view')
@@ -551,14 +609,17 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 */
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('supplier-returns/stats', [SupplierReturnController::class, 'stats']);
-    Route::apiResource('supplier-returns', SupplierReturnController::class);
-    Route::post('supplier-returns/{supplierReturn}/submit', [SupplierReturnController::class, 'submit']);
-    Route::post('supplier-returns/{supplierReturn}/approve', [SupplierReturnController::class, 'approve']);
-    Route::post('supplier-returns/{supplierReturn}/reject', [SupplierReturnController::class, 'reject']);
-    Route::post('supplier-returns/{supplierReturn}/mark-sent', [SupplierReturnController::class, 'markSent']);
-    Route::post('supplier-returns/{supplierReturn}/credit-pending', [SupplierReturnController::class, 'creditPending']);
-    Route::post('supplier-returns/{supplierReturn}/complete', [SupplierReturnController::class, 'complete']);
-    Route::post('supplier-returns/{supplierReturn}/cancel', [SupplierReturnController::class, 'cancel']);
+    Route::apiResource('supplier-returns', SupplierReturnController::class)
+        ->middlewareFor('store', 'permission:purchasing.supplier_returns.create')
+        ->middlewareFor('update', 'permission:purchasing.supplier_returns.edit')
+        ->middlewareFor('destroy', 'permission:purchasing.supplier_returns.cancel');
+    Route::post('supplier-returns/{supplierReturn}/submit', [SupplierReturnController::class, 'submit'])->middleware('permission:purchasing.supplier_returns.submit');
+    Route::post('supplier-returns/{supplierReturn}/approve', [SupplierReturnController::class, 'approve'])->middleware('permission:purchasing.supplier_returns.approve');
+    Route::post('supplier-returns/{supplierReturn}/reject', [SupplierReturnController::class, 'reject'])->middleware('permission:purchasing.supplier_returns.reject');
+    Route::post('supplier-returns/{supplierReturn}/mark-sent', [SupplierReturnController::class, 'markSent'])->middleware('permission:purchasing.supplier_returns.mark_sent');
+    Route::post('supplier-returns/{supplierReturn}/credit-pending', [SupplierReturnController::class, 'creditPending'])->middleware('permission:purchasing.supplier_returns.credit_pending');
+    Route::post('supplier-returns/{supplierReturn}/complete', [SupplierReturnController::class, 'complete'])->middleware('permission:purchasing.supplier_returns.complete');
+    Route::post('supplier-returns/{supplierReturn}/cancel', [SupplierReturnController::class, 'cancel'])->middleware('permission:purchasing.supplier_returns.cancel');
 });
 
 /*
@@ -568,10 +629,13 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 */
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('supplier-invoices/stats', [SupplierInvoiceController::class, 'stats']);
-    Route::apiResource('supplier-invoices', SupplierInvoiceController::class);
-    Route::post('supplier-invoices/{supplierInvoice}/validate', [SupplierInvoiceController::class, 'validate']);
-    Route::post('supplier-invoices/{supplierInvoice}/post', [SupplierInvoiceController::class, 'post']);
-    Route::post('supplier-invoices/{supplierInvoice}/cancel', [SupplierInvoiceController::class, 'cancel']);
+    Route::apiResource('supplier-invoices', SupplierInvoiceController::class)
+        ->middlewareFor('store', 'permission:purchasing.supplier_invoices.create')
+        ->middlewareFor('update', 'permission:purchasing.supplier_invoices.edit')
+        ->middlewareFor('destroy', 'permission:purchasing.supplier_invoices.cancel');
+    Route::post('supplier-invoices/{supplierInvoice}/validate', [SupplierInvoiceController::class, 'validate'])->middleware('permission:purchasing.supplier_invoices.validate');
+    Route::post('supplier-invoices/{supplierInvoice}/post', [SupplierInvoiceController::class, 'post'])->middleware('permission:purchasing.supplier_invoices.post');
+    Route::post('supplier-invoices/{supplierInvoice}/cancel', [SupplierInvoiceController::class, 'cancel'])->middleware('permission:purchasing.supplier_invoices.cancel');
 });
 
 /*
@@ -580,7 +644,10 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
-    Route::apiResource('boms', BomController::class);
+    Route::apiResource('boms', BomController::class)
+        ->middlewareFor('store', 'permission:inventory.recipes.create')
+        ->middlewareFor('update', 'permission:inventory.recipes.update')
+        ->middlewareFor('destroy', 'permission:inventory.recipes.delete');
     Route::get('boms/{bom}/cost-history', [BomController::class, 'costHistory']);
 });
 
@@ -591,7 +658,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 */
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('sync-logs', [SynchronizationController::class, 'index']);
-    Route::post('sync-logs/{syncLog}/retry', [SynchronizationController::class, 'retry']);
+    Route::post('sync-logs/{syncLog}/retry', [SynchronizationController::class, 'retry'])->middleware('permission:sales.channels.sync');
 });
 
 /*
@@ -602,7 +669,7 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('inventory/dashboard', [InventoryDashboardController::class, 'index']);
     Route::get('inventory/abc-classifications', [AbcClassificationController::class, 'index']);
-    Route::post('inventory/abc-classifications/recalculate', [AbcClassificationController::class, 'recalculate']);
+    Route::post('inventory/abc-classifications/recalculate', [AbcClassificationController::class, 'recalculate'])->middleware('permission:inventory.abc.recalculate');
     Route::get('inventory/variance-analytics', [VarianceAnalyticsController::class, 'index']);
     Route::get('inventory/warehouse-performance', [WarehousePerformanceController::class, 'index']);
     Route::get('inventory/cycle-count-plans', [CycleCountPlanController::class, 'index']);
@@ -644,7 +711,7 @@ Route::middleware('auth:sanctum')->prefix('me')->group(function (): void {
 | POS — Point of Sale (protected)
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth:sanctum')->prefix('pos')->group(function (): void {
+Route::middleware(['auth:sanctum', 'permission:pos.terminal.operate'])->prefix('pos')->group(function (): void {
     // Terminals
     Route::get('terminals', [PosTerminalController::class, 'index']);
 
@@ -701,18 +768,18 @@ Route::middleware('auth:sanctum')->prefix('cost-management')->group(function ():
     Route::get('pricing-reviews', [PricingReviewController::class, 'index']);
     Route::get('pricing-reviews/badge', [PricingReviewController::class, 'badge']);
     Route::get('pricing-reviews/{id}/detail', [PricingReviewController::class, 'detail']);
-    Route::post('pricing-reviews/{id}/approve', [PricingReviewController::class, 'approve']);
-    Route::post('pricing-reviews/{id}/snooze', [PricingReviewController::class, 'snooze']);
-    Route::post('pricing-reviews/{id}/assign', [PricingReviewController::class, 'assign']);
-    Route::post('pricing-reviews/{id}/publish', [PricingReviewController::class, 'publish']);
-    Route::post('pricing-reviews/bulk-approve', [PricingReviewController::class, 'bulkApprove']);
-    Route::patch('pricing-reviews/{id}/inline', [PricingReviewController::class, 'inline']);
-    Route::post('pricing-reviews/bulk-policy', [PricingReviewController::class, 'bulkPolicy']);
+    Route::post('pricing-reviews/{id}/approve', [PricingReviewController::class, 'approve'])->middleware('permission:inventory.price_review.approve');
+    Route::post('pricing-reviews/{id}/snooze', [PricingReviewController::class, 'snooze'])->middleware('permission:inventory.price_review.update');
+    Route::post('pricing-reviews/{id}/assign', [PricingReviewController::class, 'assign'])->middleware('permission:inventory.price_review.update');
+    Route::post('pricing-reviews/{id}/publish', [PricingReviewController::class, 'publish'])->middleware('permission:inventory.price_review.publish');
+    Route::post('pricing-reviews/bulk-approve', [PricingReviewController::class, 'bulkApprove'])->middleware('permission:inventory.price_review.approve');
+    Route::patch('pricing-reviews/{id}/inline', [PricingReviewController::class, 'inline'])->middleware('permission:inventory.price_review.update');
+    Route::post('pricing-reviews/bulk-policy', [PricingReviewController::class, 'bulkPolicy'])->middleware('permission:inventory.price_review.approve');
 
     // Material Cost History (global and per-material)
     Route::get('cost-history', [MaterialCostController::class, 'globalHistory']);
     Route::get('materials/{productId}/cost-history', [MaterialCostController::class, 'history']);
-    Route::patch('materials/{productId}/cost', [MaterialCostController::class, 'update']);
+    Route::patch('materials/{productId}/cost', [MaterialCostController::class, 'update'])->middleware('permission:inventory.price_review.update');
 });
 
 /*
@@ -764,28 +831,28 @@ Route::middleware('auth:sanctum')->prefix('preparation')->group(function (): voi
     Route::get('sessions/today', [PreparationSessionController::class, 'today']);
 
     Route::get('sessions', [PreparationSessionController::class, 'index']);
-    Route::post('sessions', [PreparationSessionController::class, 'store']);
+    Route::post('sessions', [PreparationSessionController::class, 'store'])->middleware('permission:operations.preparation.create');
     Route::get('sessions/{sessionId}', [PreparationSessionController::class, 'show']);
-    Route::post('sessions/{sessionId}/start', [PreparationSessionController::class, 'start']);
-    Route::post('sessions/{sessionId}/plan', [PreparationSessionController::class, 'plan']);
-    Route::post('sessions/{sessionId}/approve', [PreparationSessionController::class, 'approve']);
-    Route::post('sessions/{sessionId}/close', [PreparationSessionController::class, 'close']);
-    Route::post('sessions/{sessionId}/complete', [PreparationSessionController::class, 'complete']);
-    Route::post('sessions/{sessionId}/cancel', [PreparationSessionController::class, 'cancel']);
-    Route::post('sessions/{sessionId}/waves', [PreparationSessionController::class, 'addWave']);
+    Route::post('sessions/{sessionId}/start', [PreparationSessionController::class, 'start'])->middleware('permission:operations.preparation.update');
+    Route::post('sessions/{sessionId}/plan', [PreparationSessionController::class, 'plan'])->middleware('permission:operations.preparation.update');
+    Route::post('sessions/{sessionId}/approve', [PreparationSessionController::class, 'approve'])->middleware('permission:operations.preparation.update');
+    Route::post('sessions/{sessionId}/close', [PreparationSessionController::class, 'close'])->middleware('permission:operations.preparation.update');
+    Route::post('sessions/{sessionId}/complete', [PreparationSessionController::class, 'complete'])->middleware('permission:operations.preparation.update');
+    Route::post('sessions/{sessionId}/cancel', [PreparationSessionController::class, 'cancel'])->middleware('permission:operations.preparation.update');
+    Route::post('sessions/{sessionId}/waves', [PreparationSessionController::class, 'addWave'])->middleware('permission:operations.preparation.update');
     Route::get('sessions/{sessionId}/consolidation', [PreparationSessionController::class, 'consolidation']);
     // CR-PREP-001: Freeze + Session Orders + Session Products
-    Route::post('sessions/{sessionId}/freeze', [PreparationSessionController::class, 'freeze']);
+    Route::post('sessions/{sessionId}/freeze', [PreparationSessionController::class, 'freeze'])->middleware('permission:operations.preparation.update');
     Route::get('sessions/{sessionId}/orders', [PreparationSessionController::class, 'sessionOrders']);
-    Route::post('sessions/{sessionId}/attach-order', [PreparationSessionController::class, 'attachOrder']);
-    Route::delete('sessions/{sessionId}/orders/{sessionOrderId}', [PreparationSessionController::class, 'detachOrder']);
+    Route::post('sessions/{sessionId}/attach-order', [PreparationSessionController::class, 'attachOrder'])->middleware('permission:operations.preparation.update');
+    Route::delete('sessions/{sessionId}/orders/{sessionOrderId}', [PreparationSessionController::class, 'detachOrder'])->middleware('permission:operations.preparation.update');
     Route::get('sessions/{sessionId}/products', [PreparationSessionController::class, 'sessionProducts']);
 
     // CR-PREP-001: Warehouse Assignment Policies
     Route::get('warehouse-assignment-policies', [WarehouseAssignmentController::class, 'indexPolicies']);
-    Route::post('warehouse-assignment-policies', [WarehouseAssignmentController::class, 'storePolicy']);
-    Route::put('warehouse-assignment-policies/{id}', [WarehouseAssignmentController::class, 'updatePolicy']);
-    Route::delete('warehouse-assignment-policies/{id}', [WarehouseAssignmentController::class, 'destroyPolicy']);
+    Route::post('warehouse-assignment-policies', [WarehouseAssignmentController::class, 'storePolicy'])->middleware('permission:operations.preparation.create');
+    Route::put('warehouse-assignment-policies/{id}', [WarehouseAssignmentController::class, 'updatePolicy'])->middleware('permission:operations.preparation.update');
+    Route::delete('warehouse-assignment-policies/{id}', [WarehouseAssignmentController::class, 'destroyPolicy'])->middleware('permission:operations.preparation.delete');
 
     Route::get('pool', [PreparedPoolController::class, 'index']);
     Route::patch('pool/{poolId}/quality', [PreparedPoolController::class, 'updateQuality']);
@@ -855,36 +922,36 @@ Route::middleware('auth:sanctum')->prefix('configuration')->group(function (): v
     Route::get('company', [CompanyConfigurationController::class, 'index']);
     Route::get('company/audit', [CompanyConfigurationController::class, 'audit']);
     Route::get('company/{group}', [CompanyConfigurationController::class, 'showGroup']);
-    Route::put('company/{group}', [CompanyConfigurationController::class, 'updateGroup']);
+    Route::put('company/{group}', [CompanyConfigurationController::class, 'updateGroup'])->middleware('permission:configuration.settings.manage');
 
     // Brand-level policy groups
     Route::get('brands/{brandId}/policies', [BrandConfigurationController::class, 'index']);
     Route::get('brands/{brandId}/policies/{group}', [BrandConfigurationController::class, 'show']);
-    Route::put('brands/{brandId}/policies/{group}', [BrandConfigurationController::class, 'update']);
+    Route::put('brands/{brandId}/policies/{group}', [BrandConfigurationController::class, 'update'])->middleware('permission:configuration.settings.manage');
     Route::get('brands/{brandId}/audit', [BrandConfigurationController::class, 'audit']);
 
     // Delivery Windows — REMOVED (moved to Brand OS: /brands/{brand}/delivery-time-slots)
 
     // Preparation Policies (Configuration OS facade over Preparation OS)
     Route::get('brands/{brandId}/preparation-policies', [PreparationPolicyController::class, 'index']);
-    Route::post('brands/{brandId}/preparation-policies', [PreparationPolicyController::class, 'store']);
-    Route::put('brands/{brandId}/preparation-policies/{id}', [PreparationPolicyController::class, 'update']);
+    Route::post('brands/{brandId}/preparation-policies', [PreparationPolicyController::class, 'store'])->middleware('permission:configuration.settings.manage');
+    Route::put('brands/{brandId}/preparation-policies/{id}', [PreparationPolicyController::class, 'update'])->middleware('permission:configuration.settings.manage');
 
     // Master Geography — governorates
     Route::prefix('master-geography')->group(function (): void {
         Route::get('/', [MasterGeographyController::class, 'index']);
-        Route::post('/', [MasterGeographyController::class, 'store']);
+        Route::post('/', [MasterGeographyController::class, 'store'])->middleware('permission:configuration.settings.manage');
         Route::get('/{id}', [MasterGeographyController::class, 'show']);
-        Route::put('/{id}', [MasterGeographyController::class, 'update']);
-        Route::delete('/{id}', [MasterGeographyController::class, 'destroy']);
-        Route::post('/{id}/archive', [MasterGeographyController::class, 'archive']);
+        Route::put('/{id}', [MasterGeographyController::class, 'update'])->middleware('permission:configuration.settings.manage');
+        Route::delete('/{id}', [MasterGeographyController::class, 'destroy'])->middleware('permission:configuration.settings.manage');
+        Route::post('/{id}/archive', [MasterGeographyController::class, 'archive'])->middleware('permission:configuration.settings.manage');
 
         // Master zones nested under a governorate
         Route::get('/{govId}/zones', [MasterZoneController::class, 'index']);
-        Route::post('/{govId}/zones', [MasterZoneController::class, 'store']);
-        Route::put('/{govId}/zones/{id}', [MasterZoneController::class, 'update']);
-        Route::delete('/{govId}/zones/{id}', [MasterZoneController::class, 'destroy']);
-        Route::post('/{govId}/zones/{id}/archive', [MasterZoneController::class, 'archive']);
+        Route::post('/{govId}/zones', [MasterZoneController::class, 'store'])->middleware('permission:configuration.settings.manage');
+        Route::put('/{govId}/zones/{id}', [MasterZoneController::class, 'update'])->middleware('permission:configuration.settings.manage');
+        Route::delete('/{govId}/zones/{id}', [MasterZoneController::class, 'destroy'])->middleware('permission:configuration.settings.manage');
+        Route::post('/{govId}/zones/{id}/archive', [MasterZoneController::class, 'archive'])->middleware('permission:configuration.settings.manage');
     });
 });
 
@@ -893,7 +960,7 @@ Route::middleware('auth:sanctum')->prefix('configuration')->group(function (): v
 | Operations — Fulfillment Engine (protected)
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth:sanctum')->prefix('fulfillment')->group(function (): void {
+Route::middleware(['auth:sanctum', 'permission:operations.fulfillment.manage'])->prefix('fulfillment')->group(function (): void {
     // Single-order workflow transitions (ADR TASK-ORDER-LIFECYCLE-001)
     Route::post('orders/{order}/confirm', [OrderFulfillmentController::class, 'confirm']);
     Route::post('orders/{order}/cancel', [OrderFulfillmentController::class, 'cancel']);
@@ -937,7 +1004,7 @@ Route::middleware('auth:sanctum')->prefix('fulfillment')->group(function (): voi
 | Marketing OS — Meta Integration Platform (protected)
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth:sanctum')->prefix('marketing')->group(function (): void {
+Route::middleware(['auth:sanctum', 'permission:marketing.workspace.manage'])->prefix('marketing')->group(function (): void {
     // Dashboard
     Route::get('dashboard', [Modules\Marketing\Dashboard\Presentation\Http\Controllers\MarketingDashboardController::class, 'index']);
 
@@ -971,8 +1038,8 @@ Route::middleware('auth:sanctum')->prefix('marketing')->group(function (): void 
     Route::post('meta/connections/{connection}/disconnect', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaAuthController::class, 'disconnect']);
 
     // Meta — Incoming Webhook (no auth — Meta does not send auth headers)
-    Route::get('meta/webhook', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'verify'])->withoutMiddleware(['auth:sanctum']);
-    Route::post('meta/webhook', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'receive'])->withoutMiddleware(['auth:sanctum']);
+    Route::get('meta/webhook', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'verify'])->withoutMiddleware(['auth:sanctum', 'permission:marketing.workspace.manage']);
+    Route::post('meta/webhook', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaWebhookController::class, 'receive'])->withoutMiddleware(['auth:sanctum', 'permission:marketing.workspace.manage']);
 
     // Meta — Connection Dashboard & Management
     Route::get('meta/connections/{connection}/dashboard', [Modules\Marketing\MetaConnector\Presentation\Http\Controllers\MetaConnectionController::class, 'dashboard']);
@@ -1075,7 +1142,7 @@ Route::middleware('auth:sanctum')->prefix('marketing')->group(function (): void 
 | Marketing Intelligence — Analytics, KPI Engine, Reports
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth:sanctum')->prefix('marketing/intelligence')->group(function (): void {
+Route::middleware(['auth:sanctum', 'permission:marketing.workspace.manage'])->prefix('marketing/intelligence')->group(function (): void {
     // ─── Executive Dashboard ────────────────────────────────────────────────
     Route::get('dashboard', [Modules\Marketing\Intelligence\Presentation\Http\Controllers\ExecutiveDashboardController::class, 'index']);
 
@@ -1112,7 +1179,7 @@ Route::middleware('auth:sanctum')->prefix('marketing/intelligence')->group(funct
 | Campaign Studio — ECOS-Native Campaign Operations Platform
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth:sanctum')->prefix('marketing/studio')->group(function (): void {
+Route::middleware(['auth:sanctum', 'permission:marketing.workspace.manage'])->prefix('marketing/studio')->group(function (): void {
     // ─── Studio KPIs & Dashboard ────────────────────────────────────────────────
     Route::get('kpis', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\CampaignStudioController::class, 'kpis']);
     Route::get('dashboard', [Modules\Marketing\CampaignStudio\Presentation\Http\Controllers\StudioExecutiveDashboardController::class, 'index']);
@@ -1210,7 +1277,7 @@ Route::middleware('auth:sanctum')->prefix('marketing/studio')->group(function ()
 | NEVER depends on Marketing — all modules depend on BAE.
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth:sanctum')->prefix('bae')->group(function (): void {
+Route::middleware(['auth:sanctum', 'permission:bae.attribution.manage'])->prefix('bae')->group(function (): void {
     // ─── Event Bus ────────────────────────────────────────────────────────────
     Route::get('events/timeline', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessEventController::class, 'timeline']);
     Route::get('events/for-entity', [Modules\Core\BusinessAttribution\Presentation\Http\Controllers\BusinessEventController::class, 'forEntity']);
@@ -1273,7 +1340,7 @@ Route::middleware('auth:sanctum')->prefix('bae')->group(function (): void {
 | Customer Engagement Platform (CEP) — Unified Customer Communication
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth:sanctum')->prefix('cep')->group(function (): void {
+Route::middleware(['auth:sanctum', 'permission:cep.inbox.manage'])->prefix('cep')->group(function (): void {
     // ─── Dashboard ────────────────────────────────────────────────────────────
     Route::get('dashboard/kpis', [Modules\CustomerEngagement\Presentation\Http\Controllers\DashboardController::class, 'kpis']);
     Route::get('dashboard/agents', [Modules\CustomerEngagement\Presentation\Http\Controllers\DashboardController::class, 'agentPerformance']);
@@ -1331,7 +1398,7 @@ Route::middleware('auth:sanctum')->prefix('cep')->group(function (): void {
 | Prefix: marketing/automation
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth:sanctum')->prefix('marketing/automation')->group(function (): void {
+Route::middleware(['auth:sanctum', 'permission:marketing.workspace.manage'])->prefix('marketing/automation')->group(function (): void {
     // ─── Dashboard ────────────────────────────────────────────────────────────
     Route::get('dashboard', [Modules\Marketing\Automation\Presentation\Http\Controllers\AutomationDashboardController::class, 'index']);
 
@@ -1403,7 +1470,7 @@ Route::middleware(['throttle:30,1'])->prefix('marketing/automation')->group(func
 | Omnichannel Commerce (MKT-007) — WhatsApp / Messenger / Instagram Direct
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth:sanctum')->prefix('omnichannel')->group(function (): void {
+Route::middleware(['auth:sanctum', 'permission:omnichannel.inbox.manage'])->prefix('omnichannel')->group(function (): void {
     // ─── Channel Providers ────────────────────────────────────────────────────
     Route::get('providers', [Modules\CustomerEngagement\Presentation\Http\Controllers\ChannelProviderController::class, 'index']);
     Route::post('providers', [Modules\CustomerEngagement\Presentation\Http\Controllers\ChannelProviderController::class, 'store']);
@@ -1475,11 +1542,11 @@ Route::middleware('auth:sanctum')->prefix('logistics/distribution')->group(funct
     Route::get('/next-code', [DistributionZoneController::class, 'nextCode']);
     Route::get('/areas', [DistributionZoneController::class, 'areas']);
     Route::get('/zones', [DistributionZoneController::class, 'index']);
-    Route::post('/zones', [DistributionZoneController::class, 'store']);
+    Route::post('/zones', [DistributionZoneController::class, 'store'])->middleware('permission:logistics.distribution.create');
     Route::get('/zones/{id}', [DistributionZoneController::class, 'show']);
-    Route::put('/zones/{id}', [DistributionZoneController::class, 'update']);
-    Route::delete('/zones/{id}', [DistributionZoneController::class, 'destroy']);
-    Route::patch('/zones/{id}/status', [DistributionZoneController::class, 'toggleStatus']);
+    Route::put('/zones/{id}', [DistributionZoneController::class, 'update'])->middleware('permission:logistics.distribution.update');
+    Route::delete('/zones/{id}', [DistributionZoneController::class, 'destroy'])->middleware('permission:logistics.distribution.delete');
+    Route::patch('/zones/{id}/status', [DistributionZoneController::class, 'toggleStatus'])->middleware('permission:logistics.distribution.update');
 });
 
 // ── Logistics OS — Distribution: Trips / Delivery / Settlement (TASK-LOG-004B) ──
@@ -1495,56 +1562,56 @@ Route::middleware('auth:sanctum')->prefix('logistics/distribution')->group(funct
 
     // Trips
     Route::get('/trips', [LogisticsTripController::class, 'index']);
-    Route::post('/trips', [LogisticsTripController::class, 'store']);
+    Route::post('/trips', [LogisticsTripController::class, 'store'])->middleware('permission:logistics.distribution.create');
     Route::get('/trips/{id}', [LogisticsTripController::class, 'show']);
-    Route::put('/trips/{id}', [LogisticsTripController::class, 'update']);
-    Route::patch('/trips/{id}/status', [LogisticsTripController::class, 'setStatus']);
+    Route::put('/trips/{id}', [LogisticsTripController::class, 'update'])->middleware('permission:logistics.distribution.update');
+    Route::patch('/trips/{id}/status', [LogisticsTripController::class, 'setStatus'])->middleware('permission:logistics.distribution.update');
     Route::get('/trips/{id}/dispatch-readiness', [LogisticsTripController::class, 'dispatchReadiness']);
-    Route::patch('/trips/{id}/driver-acceptance', [LogisticsTripController::class, 'recordDriverAcceptance']);
-    Route::patch('/trips/{id}/assignment', [LogisticsTripController::class, 'assignDriverVehicle']);
+    Route::patch('/trips/{id}/driver-acceptance', [LogisticsTripController::class, 'recordDriverAcceptance'])->middleware('permission:logistics.distribution.update');
+    Route::patch('/trips/{id}/assignment', [LogisticsTripController::class, 'assignDriverVehicle'])->middleware('permission:logistics.distribution.update');
 
     // Trip orders
     Route::get('/trips/{id}/orders', [LogisticsTripController::class, 'orders']);
-    Route::post('/trips/{id}/orders', [LogisticsTripController::class, 'addOrder']);
-    Route::delete('/trips/{id}/orders/{orderId}', [LogisticsTripController::class, 'removeOrder']);
-    Route::post('/trips/{id}/orders/move', [LogisticsTripController::class, 'moveOrder']);
+    Route::post('/trips/{id}/orders', [LogisticsTripController::class, 'addOrder'])->middleware('permission:logistics.distribution.update');
+    Route::delete('/trips/{id}/orders/{orderId}', [LogisticsTripController::class, 'removeOrder'])->middleware('permission:logistics.distribution.update');
+    Route::post('/trips/{id}/orders/move', [LogisticsTripController::class, 'moveOrder'])->middleware('permission:logistics.distribution.update');
 
     // Custody
     Route::get('/trips/{id}/custody', [LogisticsTripController::class, 'custody']);
-    Route::post('/trips/{id}/custody', [LogisticsTripController::class, 'addCustody']);
-    Route::patch('/trips/{id}/custody/{custodyId}/confirm', [LogisticsTripController::class, 'confirmCustody']);
-    Route::delete('/trips/{id}/custody/{custodyId}', [LogisticsTripController::class, 'removeCustody']);
+    Route::post('/trips/{id}/custody', [LogisticsTripController::class, 'addCustody'])->middleware('permission:logistics.distribution.update');
+    Route::patch('/trips/{id}/custody/{custodyId}/confirm', [LogisticsTripController::class, 'confirmCustody'])->middleware('permission:logistics.distribution.update');
+    Route::delete('/trips/{id}/custody/{custodyId}', [LogisticsTripController::class, 'removeCustody'])->middleware('permission:logistics.distribution.update');
 
     // Delivery execution
     Route::get('/trips/{tripId}/stops', [LogisticsDeliveryController::class, 'stops']);
-    Route::post('/trips/{tripId}/stops/generate', [LogisticsDeliveryController::class, 'generateStops']);
+    Route::post('/trips/{tripId}/stops/generate', [LogisticsDeliveryController::class, 'generateStops'])->middleware('permission:logistics.distribution.update');
     Route::get('/trips/{tripId}/stops/{stopId}', [LogisticsDeliveryController::class, 'showStop']);
-    Route::patch('/trips/{tripId}/stops/{stopId}/start', [LogisticsDeliveryController::class, 'startStop']);
-    Route::patch('/trips/{tripId}/stops/{stopId}/complete', [LogisticsDeliveryController::class, 'completeStop']);
-    Route::post('/trips/{tripId}/stops/{stopId}/actions', [LogisticsDeliveryController::class, 'recordAction']);
-    Route::post('/trips/{tripId}/stops/{stopId}/proof', [LogisticsDeliveryController::class, 'captureProof']);
+    Route::patch('/trips/{tripId}/stops/{stopId}/start', [LogisticsDeliveryController::class, 'startStop'])->middleware('permission:logistics.distribution.update');
+    Route::patch('/trips/{tripId}/stops/{stopId}/complete', [LogisticsDeliveryController::class, 'completeStop'])->middleware('permission:logistics.distribution.update');
+    Route::post('/trips/{tripId}/stops/{stopId}/actions', [LogisticsDeliveryController::class, 'recordAction'])->middleware('permission:logistics.distribution.update');
+    Route::post('/trips/{tripId}/stops/{stopId}/proof', [LogisticsDeliveryController::class, 'captureProof'])->middleware('permission:logistics.distribution.update');
 
     // Exceptions
     Route::get('/trips/{tripId}/exceptions', [LogisticsDeliveryController::class, 'exceptions']);
-    Route::post('/trips/{tripId}/exceptions', [LogisticsDeliveryController::class, 'raiseException']);
-    Route::patch('/trips/{tripId}/exceptions/{exceptionId}/resolve', [LogisticsDeliveryController::class, 'resolveException']);
+    Route::post('/trips/{tripId}/exceptions', [LogisticsDeliveryController::class, 'raiseException'])->middleware('permission:logistics.distribution.update');
+    Route::patch('/trips/{tripId}/exceptions/{exceptionId}/resolve', [LogisticsDeliveryController::class, 'resolveException'])->middleware('permission:logistics.distribution.update');
 
     // Returns (product + custody, unified)
     Route::get('/trips/{tripId}/returns', [LogisticsDeliveryController::class, 'returns']);
-    Route::post('/trips/{tripId}/returns', [LogisticsDeliveryController::class, 'recordReturn']);
-    Route::patch('/trips/{tripId}/returns/{returnId}/confirm', [LogisticsDeliveryController::class, 'confirmReturn']);
+    Route::post('/trips/{tripId}/returns', [LogisticsDeliveryController::class, 'recordReturn'])->middleware('permission:logistics.distribution.update');
+    Route::patch('/trips/{tripId}/returns/{returnId}/confirm', [LogisticsDeliveryController::class, 'confirmReturn'])->middleware('permission:logistics.distribution.update');
 
     // Settlement
     Route::get('/trips/{tripId}/payments', [LogisticsSettlementController::class, 'payments']);
-    Route::post('/trips/{tripId}/stops/{stopId}/payments', [LogisticsSettlementController::class, 'recordPayment']);
-    Route::patch('/trips/{tripId}/payments/{paymentId}/verify', [LogisticsSettlementController::class, 'verifyPayment']);
-    Route::patch('/trips/{tripId}/payments/{paymentId}/reject', [LogisticsSettlementController::class, 'rejectPayment']);
+    Route::post('/trips/{tripId}/stops/{stopId}/payments', [LogisticsSettlementController::class, 'recordPayment'])->middleware('permission:logistics.distribution.update');
+    Route::patch('/trips/{tripId}/payments/{paymentId}/verify', [LogisticsSettlementController::class, 'verifyPayment'])->middleware('permission:logistics.distribution.update');
+    Route::patch('/trips/{tripId}/payments/{paymentId}/reject', [LogisticsSettlementController::class, 'rejectPayment'])->middleware('permission:logistics.distribution.update');
     Route::get('/trips/{tripId}/settlement', [LogisticsSettlementController::class, 'show']);
-    Route::post('/trips/{tripId}/settlement', [LogisticsSettlementController::class, 'open']);
-    Route::patch('/trips/{tripId}/settlement/submit-cash', [LogisticsSettlementController::class, 'submitCash']);
-    Route::patch('/trips/{tripId}/settlement/reconcile', [LogisticsSettlementController::class, 'reconcile']);
-    Route::patch('/trips/{tripId}/settlement/dispute', [LogisticsSettlementController::class, 'dispute']);
-    Route::patch('/trips/{tripId}/settlement/finalize', [LogisticsSettlementController::class, 'finalize']);
+    Route::post('/trips/{tripId}/settlement', [LogisticsSettlementController::class, 'open'])->middleware('permission:logistics.distribution.update');
+    Route::patch('/trips/{tripId}/settlement/submit-cash', [LogisticsSettlementController::class, 'submitCash'])->middleware('permission:logistics.distribution.update');
+    Route::patch('/trips/{tripId}/settlement/reconcile', [LogisticsSettlementController::class, 'reconcile'])->middleware('permission:logistics.distribution.update');
+    Route::patch('/trips/{tripId}/settlement/dispute', [LogisticsSettlementController::class, 'dispute'])->middleware('permission:logistics.distribution.update');
+    Route::patch('/trips/{tripId}/settlement/finalize', [LogisticsSettlementController::class, 'finalize'])->middleware('permission:logistics.distribution.update');
     Route::get('/trips/{tripId}/financial-summary', [LogisticsSettlementController::class, 'summary']);
 });
 
@@ -2054,8 +2121,12 @@ Route::middleware('auth:sanctum')->prefix('logistics/operations')->group(functio
 // ADDITIVE and READ-ONLY. No table, no writer, no permission, no migration:
 // every endpoint interprets or digests projections Phases 1-5 already own.
 // Readiness never calculates Fleet readiness or Network capacity itself.
-Route::middleware('auth:sanctum')->prefix('logistics/operations')
-    ->middleware('permission:operations.view')
+// SECURITY: both middleware go in ONE array. Chaining ->middleware() twice on a
+// route registrar makes the second call REPLACE the first, which silently
+// dropped auth:sanctum here and left these endpoints reachable without a
+// session. Verified against the route table, not by reading the chain.
+Route::middleware(['auth:sanctum', 'permission:operations.view'])
+    ->prefix('logistics/operations')
     ->group(function (): void {
 
         // A + B. Operational readiness and cross-module validation.
@@ -2096,8 +2167,12 @@ Route::middleware('auth:sanctum')->prefix('logistics/operations')
 // modules already produce and returns decision support — recommendations,
 // deterministic optimisations and deterministic forecasts. It reuses the
 // existing operations.view permission.
-Route::middleware('auth:sanctum')->prefix('logistics/intelligence')
-    ->middleware('permission:operations.view')
+// SECURITY: both middleware go in ONE array. Chaining ->middleware() twice on a
+// route registrar makes the second call REPLACE the first, which silently
+// dropped auth:sanctum here and left these endpoints reachable without a
+// session. Verified against the route table, not by reading the chain.
+Route::middleware(['auth:sanctum', 'permission:operations.view'])
+    ->prefix('logistics/intelligence')
     ->group(function (): void {
 
         // Decision Engine.
@@ -2142,8 +2217,12 @@ Route::middleware('auth:sanctum')->prefix('logistics/intelligence')
 // ADDITIVE and READ-ONLY. The automation consumers run off event dispatch; these
 // endpoints only expose what is wired up — policies, metrics and monitoring.
 // No table, no writer, no new permission; reuses operations.view.
-Route::middleware('auth:sanctum')->prefix('logistics/automation')
-    ->middleware('permission:operations.view')
+// SECURITY: both middleware go in ONE array. Chaining ->middleware() twice on a
+// route registrar makes the second call REPLACE the first, which silently
+// dropped auth:sanctum here and left these endpoints reachable without a
+// session. Verified against the route table, not by reading the chain.
+Route::middleware(['auth:sanctum', 'permission:operations.view'])
+    ->prefix('logistics/automation')
     ->group(function (): void {
         Route::get('/policies', [AutomationController::class, 'policies']);
         Route::get('/monitoring', [AutomationController::class, 'monitoring']);
@@ -2557,8 +2636,8 @@ Route::middleware('auth:sanctum')->prefix('logistics/distribution/planning')->gr
     Route::get('/zones', [DistributionPlanningController::class, 'zones']);
     Route::get('/unassigned', [DistributionPlanningController::class, 'unassigned']);
     Route::get('/zones/{zoneId}/detail', [DistributionPlanningController::class, 'zoneDetail']);
-    Route::patch('/zones/{zoneId}/start', [DistributionPlanningController::class, 'startPlanning']);
-    Route::patch('/zones/{zoneId}/planned', [DistributionPlanningController::class, 'markPlanned']);
+    Route::patch('/zones/{zoneId}/start', [DistributionPlanningController::class, 'startPlanning'])->middleware('permission:logistics.distribution.update');
+    Route::patch('/zones/{zoneId}/planned', [DistributionPlanningController::class, 'markPlanned'])->middleware('permission:logistics.distribution.update');
 });
 
 Route::middleware('auth:sanctum')->prefix('logistics/geography')->group(function (): void {
@@ -2567,26 +2646,26 @@ Route::middleware('auth:sanctum')->prefix('logistics/geography')->group(function
 
     // Governorates
     Route::get('/governorates', [GovernorateController::class, 'index']);
-    Route::post('/governorates', [GovernorateController::class, 'store']);
-    Route::patch('/governorates/reorder', [GovernorateController::class, 'reorder']);
+    Route::post('/governorates', [GovernorateController::class, 'store'])->middleware('permission:logistics.geography.create');
+    Route::patch('/governorates/reorder', [GovernorateController::class, 'reorder'])->middleware('permission:logistics.geography.update');
     Route::get('/governorates/{id}', [GovernorateController::class, 'show']);
-    Route::put('/governorates/{id}', [GovernorateController::class, 'update']);
-    Route::delete('/governorates/{id}', [GovernorateController::class, 'destroy']);
-    Route::patch('/governorates/{id}/status', [GovernorateController::class, 'toggleStatus']);
+    Route::put('/governorates/{id}', [GovernorateController::class, 'update'])->middleware('permission:logistics.geography.update');
+    Route::delete('/governorates/{id}', [GovernorateController::class, 'destroy'])->middleware('permission:logistics.geography.delete');
+    Route::patch('/governorates/{id}/status', [GovernorateController::class, 'toggleStatus'])->middleware('permission:logistics.geography.update');
 
     // Cities nested under governorate
     Route::get('/governorates/{govId}/cities', [CityController::class, 'index']);
-    Route::post('/governorates/{govId}/cities', [CityController::class, 'store']);
+    Route::post('/governorates/{govId}/cities', [CityController::class, 'store'])->middleware('permission:logistics.geography.create');
     Route::get('/governorates/{govId}/cities/{id}', [CityController::class, 'show']);
-    Route::put('/governorates/{govId}/cities/{id}', [CityController::class, 'update']);
-    Route::delete('/governorates/{govId}/cities/{id}', [CityController::class, 'destroy']);
-    Route::patch('/governorates/{govId}/cities/{id}/status', [CityController::class, 'toggleStatus']);
+    Route::put('/governorates/{govId}/cities/{id}', [CityController::class, 'update'])->middleware('permission:logistics.geography.update');
+    Route::delete('/governorates/{govId}/cities/{id}', [CityController::class, 'destroy'])->middleware('permission:logistics.geography.delete');
+    Route::patch('/governorates/{govId}/cities/{id}/status', [CityController::class, 'toggleStatus'])->middleware('permission:logistics.geography.update');
 
     // Aliases nested under city
     Route::get('/cities/{cityId}/aliases', [CityAliasController::class, 'index']);
-    Route::post('/cities/{cityId}/aliases', [CityAliasController::class, 'store']);
-    Route::put('/cities/{cityId}/aliases/{id}', [CityAliasController::class, 'update']);
-    Route::delete('/cities/{cityId}/aliases/{id}', [CityAliasController::class, 'destroy']);
+    Route::post('/cities/{cityId}/aliases', [CityAliasController::class, 'store'])->middleware('permission:logistics.geography.update');
+    Route::put('/cities/{cityId}/aliases/{id}', [CityAliasController::class, 'update'])->middleware('permission:logistics.geography.update');
+    Route::delete('/cities/{cityId}/aliases/{id}', [CityAliasController::class, 'destroy'])->middleware('permission:logistics.geography.update');
 });
 
 // ── Logistics OS — Shipping Companies (TASK-LOG-001) ─────────────────────────
@@ -2595,22 +2674,22 @@ Route::middleware('auth:sanctum')->prefix('logistics/shipping-companies')->group
     Route::get('/next-code', [ShippingCompanyController::class, 'nextCode']);
 
     Route::get('/', [ShippingCompanyController::class, 'index']);
-    Route::post('/', [ShippingCompanyController::class, 'store']);
+    Route::post('/', [ShippingCompanyController::class, 'store'])->middleware('permission:logistics.carriers.create');
     Route::get('/{id}', [ShippingCompanyController::class, 'show']);
-    Route::put('/{id}', [ShippingCompanyController::class, 'update']);
-    Route::patch('/{id}/status', [ShippingCompanyController::class, 'setStatus']);
+    Route::put('/{id}', [ShippingCompanyController::class, 'update'])->middleware('permission:logistics.carriers.update');
+    Route::patch('/{id}/status', [ShippingCompanyController::class, 'setStatus'])->middleware('permission:logistics.carriers.update');
 
     // Contracts
     Route::get('/{id}/contracts', [ShippingCompanyController::class, 'contracts']);
-    Route::post('/{id}/contracts', [ShippingCompanyController::class, 'storeContract']);
-    Route::put('/{id}/contracts/{contractId}', [ShippingCompanyController::class, 'updateContract']);
-    Route::delete('/{id}/contracts/{contractId}', [ShippingCompanyController::class, 'destroyContract']);
-    Route::patch('/{id}/contracts/{contractId}/activate', [ShippingCompanyController::class, 'activateContract']);
+    Route::post('/{id}/contracts', [ShippingCompanyController::class, 'storeContract'])->middleware('permission:logistics.carriers.update');
+    Route::put('/{id}/contracts/{contractId}', [ShippingCompanyController::class, 'updateContract'])->middleware('permission:logistics.carriers.update');
+    Route::delete('/{id}/contracts/{contractId}', [ShippingCompanyController::class, 'destroyContract'])->middleware('permission:logistics.carriers.update');
+    Route::patch('/{id}/contracts/{contractId}/activate', [ShippingCompanyController::class, 'activateContract'])->middleware('permission:logistics.carriers.update');
 
     // ECOS company mappings
     Route::get('/{id}/companies', [ShippingCompanyController::class, 'mappings']);
-    Route::post('/{id}/companies', [ShippingCompanyController::class, 'storeMapping']);
-    Route::delete('/{id}/companies/{mappingId}', [ShippingCompanyController::class, 'destroyMapping']);
+    Route::post('/{id}/companies', [ShippingCompanyController::class, 'storeMapping'])->middleware('permission:logistics.carriers.update');
+    Route::delete('/{id}/companies/{mappingId}', [ShippingCompanyController::class, 'destroyMapping'])->middleware('permission:logistics.carriers.update');
 });
 
 // ── Logistics OS — Vehicles / Fleet (TASK-LOG-003) ───────────────────────────
@@ -2622,22 +2701,22 @@ Route::middleware('auth:sanctum')->prefix('logistics/vehicles')->group(function 
     Route::get('/maintenance-permissions', [VehicleMaintenanceController::class, 'permissions']);
 
     Route::get('/', [VehicleController::class, 'index']);
-    Route::post('/', [VehicleController::class, 'store']);
+    Route::post('/', [VehicleController::class, 'store'])->middleware('permission:logistics.vehicles.create');
     Route::get('/{id}', [VehicleController::class, 'show']);
-    Route::put('/{id}', [VehicleController::class, 'update']);
-    Route::patch('/{id}/status', [VehicleController::class, 'setStatus']);
+    Route::put('/{id}', [VehicleController::class, 'update'])->middleware('permission:logistics.vehicles.update');
+    Route::patch('/{id}/status', [VehicleController::class, 'setStatus'])->middleware('permission:logistics.vehicles.update');
 
     // Documents
     Route::get('/{id}/documents', [VehicleController::class, 'documents']);
-    Route::post('/{id}/documents', [VehicleController::class, 'storeDocument']);
+    Route::post('/{id}/documents', [VehicleController::class, 'storeDocument'])->middleware('permission:logistics.vehicles.update');
     Route::get('/{id}/documents/{documentId}/download', [VehicleController::class, 'downloadDocument']);
-    Route::delete('/{id}/documents/{documentId}', [VehicleController::class, 'destroyDocument']);
+    Route::delete('/{id}/documents/{documentId}', [VehicleController::class, 'destroyDocument'])->middleware('permission:logistics.vehicles.update');
 
     // Maintenance ledger — amend/delete are permission-gated (BR-8)
     Route::get('/{id}/maintenance', [VehicleMaintenanceController::class, 'index']);
-    Route::post('/{id}/maintenance', [VehicleMaintenanceController::class, 'store']);
-    Route::put('/{id}/maintenance/{recordId}', [VehicleMaintenanceController::class, 'update']);
-    Route::delete('/{id}/maintenance/{recordId}', [VehicleMaintenanceController::class, 'destroy']);
+    Route::post('/{id}/maintenance', [VehicleMaintenanceController::class, 'store'])->middleware('permission:logistics.vehicles.update');
+    Route::put('/{id}/maintenance/{recordId}', [VehicleMaintenanceController::class, 'update'])->middleware('permission:logistics.vehicles.update');
+    Route::delete('/{id}/maintenance/{recordId}', [VehicleMaintenanceController::class, 'destroy'])->middleware('permission:logistics.vehicles.update');
 });
 
 // ── Logistics OS — Drivers (TASK-LOG-002) ────────────────────────────────────
@@ -2647,21 +2726,21 @@ Route::middleware('auth:sanctum')->prefix('logistics/drivers')->group(function (
     Route::get('/next-code', [DriverController::class, 'nextCode']);
 
     Route::get('/', [DriverController::class, 'index']);
-    Route::post('/', [DriverController::class, 'store']);
+    Route::post('/', [DriverController::class, 'store'])->middleware('permission:logistics.drivers.create');
     Route::get('/{id}', [DriverController::class, 'show']);
-    Route::put('/{id}', [DriverController::class, 'update']);
-    Route::patch('/{id}/status', [DriverController::class, 'setStatus']);
+    Route::put('/{id}', [DriverController::class, 'update'])->middleware('permission:logistics.drivers.update');
+    Route::patch('/{id}/status', [DriverController::class, 'setStatus'])->middleware('permission:logistics.drivers.update');
 
     // Documents
     Route::get('/{id}/documents', [DriverController::class, 'documents']);
-    Route::post('/{id}/documents', [DriverController::class, 'storeDocument']);
+    Route::post('/{id}/documents', [DriverController::class, 'storeDocument'])->middleware('permission:logistics.drivers.update');
     Route::get('/{id}/documents/{documentId}/download', [DriverController::class, 'downloadDocument']);
-    Route::delete('/{id}/documents/{documentId}', [DriverController::class, 'destroyDocument']);
+    Route::delete('/{id}/documents/{documentId}', [DriverController::class, 'destroyDocument'])->middleware('permission:logistics.drivers.update');
 
     // Vehicle assignment + history
     Route::get('/{id}/assignments', [DriverController::class, 'assignmentHistory']);
-    Route::post('/{id}/vehicle', [DriverController::class, 'assignVehicle']);
-    Route::delete('/{id}/vehicle', [DriverController::class, 'releaseVehicle']);
+    Route::post('/{id}/vehicle', [DriverController::class, 'assignVehicle'])->middleware('permission:logistics.drivers.update');
+    Route::delete('/{id}/vehicle', [DriverController::class, 'releaseVehicle'])->middleware('permission:logistics.drivers.update');
 });
 
 /*
@@ -2669,7 +2748,7 @@ Route::middleware('auth:sanctum')->prefix('logistics/drivers')->group(function (
 | Engineering OS — System module (Super Admin / CTO / DevOps only)
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth:sanctum')->prefix('system/engineering')->group(function (): void {
+Route::middleware(['auth:sanctum', 'permission:engineering.platform.manage'])->prefix('system/engineering')->group(function (): void {
     // Certification data
     Route::get('/dashboard', [EngineeringDashboardController::class, 'dashboard']);
     Route::get('/runs',      [EngineeringDashboardController::class, 'runs']);
@@ -2766,7 +2845,7 @@ Route::middleware('auth:sanctum')->prefix('system/engineering')->group(function 
 | Claude Bridge — UI-facing endpoints (Sanctum auth)
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth:sanctum')->prefix('cb')->group(function (): void {
+Route::middleware(['auth:sanctum', 'permission:claude_bridge.platform.manage'])->prefix('cb')->group(function (): void {
     Route::get('/dashboard', [CbDashboardController::class, 'show']);
 
     // Tasks
@@ -2808,7 +2887,7 @@ Route::middleware(VerifyWorkerToken::class)->prefix('cb/worker')->group(function
 });
 
 // ─── Execution Cluster ───────────────────────────────────────────────────────
-Route::prefix('system/engineering')->middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+Route::prefix('system/engineering')->middleware(['auth:sanctum', 'throttle:60,1', 'permission:engineering.platform.manage'])->group(function () {
 
     // Workers
     Route::get('workers', [\Modules\System\Engineering\Presentation\Http\Controllers\WorkerController::class, 'index']);
@@ -2850,7 +2929,7 @@ Route::prefix('system/engineering')->middleware(['auth:sanctum', 'throttle:60,1'
 });
 
 // ─── Release Orchestrator ───────────────────────────────────────────────────
-Route::prefix('system/engineering')->middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+Route::prefix('system/engineering')->middleware(['auth:sanctum', 'throttle:60,1', 'permission:engineering.platform.manage'])->group(function () {
 
     // Dashboard
     Route::get('releases/dashboard', [\Modules\System\Engineering\Presentation\Http\Controllers\ReleaseController::class, 'dashboard']);
@@ -2896,7 +2975,7 @@ Route::prefix('system/engineering')->middleware(['auth:sanctum', 'throttle:60,1'
 });
 
 // ─── AI Engineering Supervisor (ENG-009) ────────────────────────────────────
-Route::prefix('system/engineering')->middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+Route::prefix('system/engineering')->middleware(['auth:sanctum', 'throttle:60,1', 'permission:engineering.platform.manage'])->group(function () {
 
     // AI Reviews
     Route::prefix('ai-reviews')->group(function () {
@@ -2940,7 +3019,7 @@ Route::prefix('system/engineering')->middleware(['auth:sanctum', 'throttle:60,1'
 });
 
 // ─── AI Repair Platform (ENG-V2-001) ────────────────────────────────────────
-Route::prefix('system/engineering')->middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+Route::prefix('system/engineering')->middleware(['auth:sanctum', 'throttle:60,1', 'permission:engineering.platform.manage'])->group(function () {
 
     Route::prefix('repair')->group(function () {
         Route::get('/dashboard', [RepairDashboardController::class, 'index']);

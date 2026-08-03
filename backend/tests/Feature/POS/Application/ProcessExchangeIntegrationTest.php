@@ -29,25 +29,32 @@ final class ProcessExchangeIntegrationTest extends TestCase
 {
     use RefreshDatabase;
 
-    private ProcessExchangeService      $service;
-    private SaleRepositoryInterface     $saleRepo;
-    private ExchangeRepositoryInterface $exchangeRepo;
-    private ReceiptRepositoryInterface  $receiptRepo;
+    private ProcessExchangeService $service;
 
-    private const SESSION_ID  = 'a3000000-0000-4000-a000-000000000001';
-    private const SHIFT_ID    = 'b3000000-0000-4000-b000-000000000001';
+    private SaleRepositoryInterface $saleRepo;
+
+    private ExchangeRepositoryInterface $exchangeRepo;
+
+    private ReceiptRepositoryInterface $receiptRepo;
+
+    private const SESSION_ID = 'a3000000-0000-4000-a000-000000000001';
+
+    private const SHIFT_ID = 'b3000000-0000-4000-b000-000000000001';
+
     private const TERMINAL_ID = 'c3000000-0000-4000-c000-000000000001';
-    private const CASHIER_ID  = 'd3000000-0000-4000-d000-000000000001';
-    private const CURRENCY    = 'EGP';
+
+    private const CASHIER_ID = 'd3000000-0000-4000-d000-000000000001';
+
+    private const CURRENCY = 'EGP';
 
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->service      = app(ProcessExchangeService::class);
-        $this->saleRepo     = app(SaleRepositoryInterface::class);
+        $this->service = app(ProcessExchangeService::class);
+        $this->saleRepo = app(SaleRepositoryInterface::class);
         $this->exchangeRepo = app(ExchangeRepositoryInterface::class);
-        $this->receiptRepo  = app(ReceiptRepositoryInterface::class);
+        $this->receiptRepo = app(ReceiptRepositoryInterface::class);
     }
 
     public function test_processes_exchange_and_persists_all_entities(): void
@@ -96,16 +103,16 @@ final class ProcessExchangeIntegrationTest extends TestCase
     private function makePersistedSale(): Sale
     {
         $sale = Sale::record(
-            cartId:           'a3000000-cart-4000-a000-000000000001',
-            paymentId:        'a3000000-pay0-4000-a000-000000000001',
-            sessionId:        self::SESSION_ID,
-            shiftId:          self::SHIFT_ID,
-            terminalId:       self::TERMINAL_ID,
-            cashierId:        self::CASHIER_ID,
-            customerId:       null,
-            currency:         self::CURRENCY,
-            receiptNumber:    'SALE-EXC-INTG-001',
-            lines:            [
+            cartId: 'a3000000-cart-4000-a000-000000000001',
+            paymentId: 'a3000000-pay0-4000-a000-000000000001',
+            sessionId: self::SESSION_ID,
+            shiftId: self::SHIFT_ID,
+            terminalId: self::TERMINAL_ID,
+            cashierId: self::CASHIER_ID,
+            customerId: null,
+            currency: self::CURRENCY,
+            receiptNumber: 'SALE-EXC-INTG-001',
+            lines: [
                 new SaleLine(
                     'ln-exc-intg-1', 'prod-1', 'Widget A', 'WGT-001',
                     Quantity::of('1'), Money::of('100.00', self::CURRENCY),
@@ -113,11 +120,11 @@ final class ProcessExchangeIntegrationTest extends TestCase
                     Money::of('100.00', self::CURRENCY), 0,
                 ),
             ],
-            subtotal:         Money::of('100.00', self::CURRENCY),
-            discountTotal:    Money::of('0.00', self::CURRENCY),
-            total:            Money::of('100.00', self::CURRENCY),
-            amountPaid:       Money::of('100.00', self::CURRENCY),
-            changeGiven:      Money::of('0.00', self::CURRENCY),
+            subtotal: Money::of('100.00', self::CURRENCY),
+            discountTotal: Money::of('0.00', self::CURRENCY),
+            total: Money::of('100.00', self::CURRENCY),
+            amountPaid: Money::of('100.00', self::CURRENCY),
+            changeGiven: Money::of('0.00', self::CURRENCY),
             paymentSummaries: [
                 new PaymentSummaryLine(
                     PaymentMethodType::Cash,
@@ -136,39 +143,39 @@ final class ProcessExchangeIntegrationTest extends TestCase
     private function makeCommand(string $saleId): ProcessExchangeCommand
     {
         return new ProcessExchangeCommand(
-            originalSaleId:     $saleId,
+            originalSaleId: $saleId,
             originalSaleNumber: 'SALE-EXC-INTG-001',
-            sessionId:          self::SESSION_ID,
-            shiftId:            self::SHIFT_ID,
-            terminalId:         self::TERMINAL_ID,
-            cashierId:          self::CASHIER_ID,
-            customerId:         null,
-            currency:           self::CURRENCY,
-            returnedLines:      [
+            sessionId: self::SESSION_ID,
+            shiftId: self::SHIFT_ID,
+            terminalId: self::TERMINAL_ID,
+            cashierId: self::CASHIER_ID,
+            customerId: null,
+            currency: self::CURRENCY,
+            returnedLines: [
                 [
                     'original_line_id' => 'ln-exc-intg-1',
-                    'product_id'       => 'prod-1',
-                    'product_name'     => 'Widget A',
-                    'sku'              => 'WGT-001',
-                    'quantity'         => '1',
-                    'unit_price'       => ['amount' => '100.00', 'currency' => self::CURRENCY],
-                    'line_total'       => ['amount' => '100.00', 'currency' => self::CURRENCY],
-                    'sort_order'       => 0,
+                    'product_id' => 'prod-1',
+                    'product_name' => 'Widget A',
+                    'sku' => 'WGT-001',
+                    'quantity' => '1',
+                    'unit_price' => ['amount' => '100.00', 'currency' => self::CURRENCY],
+                    'line_total' => ['amount' => '100.00', 'currency' => self::CURRENCY],
+                    'sort_order' => 0,
                 ],
             ],
-            replacementLines:   [
+            replacementLines: [
                 [
                     'original_line_id' => null,
-                    'product_id'       => 'prod-2',
-                    'product_name'     => 'Widget B',
-                    'sku'              => 'WGT-002',
-                    'quantity'         => '1',
-                    'unit_price'       => ['amount' => '120.00', 'currency' => self::CURRENCY],
-                    'line_total'       => ['amount' => '120.00', 'currency' => self::CURRENCY],
-                    'sort_order'       => 0,
+                    'product_id' => 'prod-2',
+                    'product_name' => 'Widget B',
+                    'sku' => 'WGT-002',
+                    'quantity' => '1',
+                    'unit_price' => ['amount' => '120.00', 'currency' => self::CURRENCY],
+                    'line_total' => ['amount' => '120.00', 'currency' => self::CURRENCY],
+                    'sort_order' => 0,
                 ],
             ],
-            reason:             'defective',
+            reason: 'defective',
         );
     }
 }

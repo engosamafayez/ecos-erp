@@ -35,7 +35,7 @@ class EloquentDeliveryRepository implements DeliveryRepositoryInterface
             ->withCount(['attempts', 'failures', 'returns'])
             // The list leads with why a delivery is stuck, so the latest
             // attempt's failure travels with it rather than costing a click.
-            ->with(['latestAttempt.failure', 'codRecord'])
+            ->with(['order', 'latestAttempt.failure', 'codRecord'])
             ->latest('id');
 
         $this->applyFilters($query, $filters);
@@ -121,6 +121,7 @@ class EloquentDeliveryRepository implements DeliveryRepositoryInterface
         return Delivery::query()
             ->withCount(['attempts', 'failures', 'returns'])
             ->with([
+                'order',
                 'attempts.failure',
                 'attempts.pod.artifacts',
                 'latestAttempt',

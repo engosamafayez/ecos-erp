@@ -57,7 +57,7 @@ final class UserPreferenceService
     /**
      * Create or fully replace the preference payload for one category.
      *
-     * @param  array<string, mixed> $payload
+     * @param  array<string, mixed>  $payload
      */
     public function upsert(int $userId, string $category, array $payload): UserPreference
     {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\POS\Discount\Domain\ValueObjects;
 
+use InvalidArgumentException;
 use Modules\POS\Shared\Domain\Enums\DiscountType;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
 use Modules\POS\Shared\Domain\ValueObjects\Percentage;
@@ -18,8 +19,8 @@ final readonly class DiscountValue
 {
     private function __construct(
         public DiscountType $type,
-        public string       $rawValue,  // percentage: "10.0000"; fixed: "50.00"
-        public ?string      $currency,  // null for percentage; ISO 4217 for fixed
+        public string $rawValue,  // percentage: "10.0000"; fixed: "50.00"
+        public ?string $currency,  // null for percentage; ISO 4217 for fixed
     ) {}
 
     public static function percentage(Percentage $percentage): self
@@ -29,9 +30,10 @@ final readonly class DiscountValue
 
     public static function fixed(Money $amount): self
     {
-        if (!$amount->isPositive()) {
-            throw new \InvalidArgumentException('Fixed discount amount must be positive.');
+        if (! $amount->isPositive()) {
+            throw new InvalidArgumentException('Fixed discount amount must be positive.');
         }
+
         return new self(DiscountType::FixedAmount, $amount->amount, $amount->currency);
     }
 
@@ -49,6 +51,7 @@ final readonly class DiscountValue
         if ($this->type !== DiscountType::Percentage) {
             return null;
         }
+
         return Percentage::of($this->rawValue);
     }
 
@@ -57,25 +60,33 @@ final readonly class DiscountValue
         if ($this->type !== DiscountType::FixedAmount || $this->currency === null) {
             return null;
         }
+
         return Money::of($this->rawValue, $this->currency);
     }
 
-    public function isPercentage(): bool  { return $this->type === DiscountType::Percentage; }
-    public function isFixed(): bool       { return $this->type === DiscountType::FixedAmount; }
+    public function isPercentage(): bool
+    {
+        return $this->type === DiscountType::Percentage;
+    }
+
+    public function isFixed(): bool
+    {
+        return $this->type === DiscountType::FixedAmount;
+    }
 
     public function toArray(): array
     {
         return [
-            'type'      => $this->type->value,
+            'type' => $this->type->value,
             'raw_value' => $this->rawValue,
-            'currency'  => $this->currency,
+            'currency' => $this->currency,
         ];
     }
 
     public static function fromArray(array $data): self
     {
         return new self(
-            type:     DiscountType::from($data['type']),
+            type: DiscountType::from($data['type']),
             rawValue: $data['raw_value'],
             currency: $data['currency'] ?? null,
         );

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Modules\CustomerEngagement\Domain\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -21,17 +23,17 @@ class Message extends Model
     protected function casts(): array
     {
         return [
-            'direction'    => MessageDirection::class,
+            'direction' => MessageDirection::class,
             'message_type' => MessageType::class,
-            'metadata'     => 'array',
-            'is_read'      => 'boolean',
-            'is_deleted'   => 'boolean',
-            'sent_at'      => 'datetime',
+            'metadata' => 'array',
+            'is_read' => 'boolean',
+            'is_deleted' => 'boolean',
+            'sent_at' => 'datetime',
             'delivered_at' => 'datetime',
-            'read_at'      => 'datetime',
-            'failed_at'    => 'datetime',
-            'created_at'   => 'datetime',
-            'media_size'   => 'integer',
+            'read_at' => 'datetime',
+            'failed_at' => 'datetime',
+            'created_at' => 'datetime',
+            'media_size' => 'integer',
         ];
     }
 

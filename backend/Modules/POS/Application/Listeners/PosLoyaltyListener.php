@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 use Modules\POS\Application\Events\SaleFinalized;
 use Modules\POS\Customer\Domain\Contracts\LoyaltyGatewayInterface;
 use Modules\POS\Shared\Domain\ValueObjects\Money;
+use Throwable;
 
 /**
  * Subscriber 5 — Loyalty Points
@@ -38,11 +39,11 @@ final class PosLoyaltyListener
 
     public function handle(SaleFinalized $event): void
     {
-        if (!(bool) config('pos.loyalty.enabled', false)) {
+        if (! (bool) config('pos.loyalty.enabled', false)) {
             return;
         }
 
-        if (!$event->hasCustomer()) {
+        if (! $event->hasCustomer()) {
             return;
         }
 
@@ -50,22 +51,22 @@ final class PosLoyaltyListener
             $saleTotal = Money::of($event->grandTotal, $event->currency);
 
             $pointsEarned = $this->loyalty->earnPoints(
-                customerId:     (string) $event->customerId,
-                saleTotal:      $saleTotal,
+                customerId: (string) $event->customerId,
+                saleTotal: $saleTotal,
                 transactionRef: $event->saleId,
             );
 
             Log::channel('daily')->info('[POS][Loyalty] Points earned', [
-                'customer_id'   => $event->customerId,
-                'sale_id'       => $event->saleId,
+                'customer_id' => $event->customerId,
+                'sale_id' => $event->saleId,
                 'points_earned' => $pointsEarned,
-                'sale_total'    => $event->grandTotal,
+                'sale_total' => $event->grandTotal,
             ]);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             Log::channel('daily')->error('[POS][Loyalty] Failed to award loyalty points', [
                 'customer_id' => $event->customerId,
-                'sale_id'     => $event->saleId,
-                'error'       => $e->getMessage(),
+                'sale_id' => $event->saleId,
+                'error' => $e->getMessage(),
             ]);
         }
     }

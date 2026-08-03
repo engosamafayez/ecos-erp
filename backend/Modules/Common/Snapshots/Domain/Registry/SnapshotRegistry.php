@@ -12,14 +12,14 @@ final class SnapshotRegistry
 {
     /** @var array<string, array{description: string, module: string}> */
     private static array $types = [
-        'order'              => ['description' => 'Commerce Order',          'module' => 'Commerce\Orders'],
-        'pos_sale'           => ['description' => 'POS Sale',                'module' => 'POS\Sale'],
-        'invoice'            => ['description' => 'Customer Invoice',        'module' => 'Commerce\Invoices'],
-        'purchase_order'     => ['description' => 'Procurement Purchase Order', 'module' => 'Purchasing\PurchaseOrders'],
-        'goods_receipt'      => ['description' => 'Inventory Goods Receipt', 'module' => 'Purchasing\GoodsReceipts'],
-        'supplier_invoice'   => ['description' => 'Supplier Invoice',        'module' => 'Purchasing\SupplierInvoices'],
+        'order' => ['description' => 'Commerce Order',          'module' => 'Commerce\Orders'],
+        'pos_sale' => ['description' => 'POS Sale',                'module' => 'POS\Sale'],
+        'invoice' => ['description' => 'Customer Invoice',        'module' => 'Commerce\Invoices'],
+        'purchase_order' => ['description' => 'Procurement Purchase Order', 'module' => 'Purchasing\PurchaseOrders'],
+        'goods_receipt' => ['description' => 'Inventory Goods Receipt', 'module' => 'Purchasing\GoodsReceipts'],
+        'supplier_invoice' => ['description' => 'Supplier Invoice',        'module' => 'Purchasing\SupplierInvoices'],
         'manufacturing_order' => ['description' => 'Manufacturing Order',    'module' => 'Manufacturing'],
-        'supplier_return'    => ['description' => 'Supplier Return',         'module' => 'Purchasing\SupplierReturns'],
+        'supplier_return' => ['description' => 'Supplier Return',         'module' => 'Purchasing\SupplierReturns'],
     ];
 
     /** Register a new aggregate type. Call from consuming module service providers. */

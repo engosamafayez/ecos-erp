@@ -14,8 +14,8 @@ return new class extends Migration
         // 1. Extend the status CHECK constraint to include the three new lifecycle states.
         DB::statement('ALTER TABLE preparation_sessions DROP CHECK chk_preparation_sessions_status');
         DB::statement(
-            "ALTER TABLE preparation_sessions ADD CONSTRAINT chk_preparation_sessions_status "
-            . "CHECK (status IN ('draft','planning','in_progress','paused','completed','approved','closed','cancelled'))"
+            'ALTER TABLE preparation_sessions ADD CONSTRAINT chk_preparation_sessions_status '
+            ."CHECK (status IN ('draft','planning','in_progress','paused','completed','approved','closed','cancelled'))",
         );
 
         // 2. Add the six new lifecycle timestamp/actor columns (nullable, additive).
@@ -45,8 +45,8 @@ return new class extends Migration
 
         DB::statement('ALTER TABLE preparation_sessions DROP CHECK chk_preparation_sessions_status');
         DB::statement(
-            "ALTER TABLE preparation_sessions ADD CONSTRAINT chk_preparation_sessions_status "
-            . "CHECK (status IN ('draft','in_progress','paused','completed','cancelled'))"
+            'ALTER TABLE preparation_sessions ADD CONSTRAINT chk_preparation_sessions_status '
+            ."CHECK (status IN ('draft','in_progress','paused','completed','cancelled'))",
         );
     }
 };
