@@ -27,7 +27,8 @@
     "branch": "الفرع",
     "warehouse": "المستودع",
     "status": "الحالة",
-    "lastSync": "آخر مزامنة"
+    "lastSync": "آخر مزامنة",
+    "brand": "العلامة التجارية"
   },
   "platforms": {
     "shopify": "Shopify",
@@ -40,16 +41,46 @@
     "other": "أخرى"
   },
   "form": {
-    "company": { "label": "الشركة", "placeholder": "اختر شركة…" },
-    "name": { "label": "الاسم", "placeholder": "المتجر الرئيسي" },
-    "platform": { "label": "المنصة", "placeholder": "اختر منصة…" },
-    "branch": { "label": "الفرع", "placeholder": "اختر فرعاً…" },
-    "warehouse": { "label": "المستودع", "placeholder": "اختر مستودعاً…" },
-    "apiKey": { "label": "مفتاح API", "placeholder": "أدخل مفتاح API…" },
-    "apiSecret": { "label": "سر API", "placeholder": "أدخل سر API…" },
-    "consumerKey": { "label": "مفتاح العميل", "placeholder": "ck_…" },
-    "consumerSecret": { "label": "سر العميل", "placeholder": "cs_…" },
-    "storeUrl": { "label": "رابط المتجر", "placeholder": "https://store.example.com" },
+    "company": {
+      "label": "الشركة",
+      "placeholder": "اختر شركة…"
+    },
+    "name": {
+      "label": "الاسم",
+      "placeholder": "المتجر الرئيسي"
+    },
+    "platform": {
+      "label": "المنصة",
+      "placeholder": "اختر منصة…"
+    },
+    "branch": {
+      "label": "الفرع",
+      "placeholder": "اختر فرعاً…"
+    },
+    "warehouse": {
+      "label": "المستودع",
+      "placeholder": "اختر مستودعاً…"
+    },
+    "apiKey": {
+      "label": "مفتاح API",
+      "placeholder": "أدخل مفتاح API…"
+    },
+    "apiSecret": {
+      "label": "سر API",
+      "placeholder": "أدخل سر API…"
+    },
+    "consumerKey": {
+      "label": "مفتاح العميل",
+      "placeholder": "ck_…"
+    },
+    "consumerSecret": {
+      "label": "سر العميل",
+      "placeholder": "cs_…"
+    },
+    "storeUrl": {
+      "label": "رابط المتجر",
+      "placeholder": "https://store.example.com"
+    },
     "syncSettings": "إعدادات المزامنة",
     "syncOrders": "مزامنة الطلبات",
     "syncProducts": "مزامنة المنتجات",
@@ -57,7 +88,11 @@
     "syncStock": "مزامنة المخزون",
     "syncCustomers": "مزامنة العملاء",
     "syncInventory": "مزامنة المخزون",
-    "active": "نشط"
+    "active": "نشط",
+    "brand": {
+      "label": "العلامة التجارية",
+      "placeholder": "اختر علامة تجارية"
+    }
   },
   "drawer": {
     "createTitle": "إنشاء قناة",
@@ -72,5 +107,11 @@
   "delete": {
     "title": "حذف القناة",
     "confirm": "حذف"
+  },
+  "kpi": {
+    "total": "إجمالي القنوات",
+    "active": "القنوات النشطة",
+    "connected": "القنوات المتصلة",
+    "platforms": "المنصات"
   }
 }

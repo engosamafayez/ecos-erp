@@ -18,9 +18,18 @@
       "status": "Status"
     },
     "form": {
-      "nameAr": { "label": "Name (Arabic)", "placeholder": "القاهرة" },
-      "nameEn": { "label": "Name (English)", "placeholder": "Cairo" },
-      "code": { "label": "Code", "placeholder": "CAI" },
+      "nameAr": {
+        "label": "Name (Arabic)",
+        "placeholder": "القاهرة"
+      },
+      "nameEn": {
+        "label": "Name (English)",
+        "placeholder": "Cairo"
+      },
+      "code": {
+        "label": "Code",
+        "placeholder": "CAI"
+      },
       "active": "Active"
     }
   },
@@ -40,9 +49,18 @@
       "status": "Status"
     },
     "form": {
-      "nameAr": { "label": "Name (Arabic)", "placeholder": "مدينة نصر" },
-      "nameEn": { "label": "Name (English)", "placeholder": "Nasr City" },
-      "governorate": { "label": "Governorate", "placeholder": "Select governorate…" },
+      "nameAr": {
+        "label": "Name (Arabic)",
+        "placeholder": "مدينة نصر"
+      },
+      "nameEn": {
+        "label": "Name (English)",
+        "placeholder": "Nasr City"
+      },
+      "governorate": {
+        "label": "Governorate",
+        "placeholder": "Select governorate…"
+      },
       "active": "Active"
     }
   },
@@ -62,14 +80,1146 @@
       "status": "Status"
     },
     "form": {
-      "name": { "label": "Zone Name", "placeholder": "Zone A — Downtown" },
-      "city": { "label": "City", "placeholder": "Select city…" },
-      "baseShipping": { "label": "Base Shipping Cost" },
+      "name": {
+        "label": "Zone Name",
+        "placeholder": "Zone A — Downtown"
+      },
+      "city": {
+        "label": "City",
+        "placeholder": "Select city…"
+      },
+      "baseShipping": {
+        "label": "Base Shipping Cost"
+      },
       "active": "Active"
     }
   },
   "delete": {
     "title": "Delete",
     "confirm": "Delete"
+  },
+  "delivery": {
+    "errors": {
+      "actionFailed": "The action could not be completed",
+      "actionRefused": "The action was refused",
+      "podValidationFailed": "Proof of delivery validation failed",
+      "validationRefused": "Validation was refused",
+      "failureRecordFailed": "Could not record the failure"
+    },
+    "field": {
+      "order": "Order",
+      "attempts": "Attempts",
+      "promised": "Promised",
+      "escalationLevel": "Escalation Level",
+      "arrived": "Arrived",
+      "dwell": "Dwell Time",
+      "stop": "Stop"
+    },
+    "overview": {
+      "attemptsOf": "of",
+      "attemptsLeft": "attempts left"
+    },
+    "status": {
+      "delivered": "Delivered",
+      "outForDelivery": "Out for Delivery",
+      "awaitingRetry": "Awaiting Retry",
+      "returning": "Returning"
+    },
+    "alert": {
+      "slaBreachedBy": "SLA breached by",
+      "slaBreached": "SLA breached",
+      "manualReview": "Requires manual review"
+    },
+    "cod": {
+      "title": "Cash on Delivery",
+      "due": "Due",
+      "collected": "Collected",
+      "shortfall": "Shortfall",
+      "note": "Amounts are reconciled at driver settlement."
+    },
+    "retry": {
+      "title": "Retry",
+      "eligible": "Eligible for retry",
+      "schedule": "Schedule Retry"
+    },
+    "toast": {
+      "retryScheduled": "Retry scheduled",
+      "addressCorrected": "Address marked as corrected",
+      "cancelled": "Delivery cancelled",
+      "podValidated": "Proof of delivery validated",
+      "failureRecorded": "Failure recorded"
+    },
+    "action": {
+      "markAddressCorrected": "Mark Address Corrected"
+    },
+    "cancel": {
+      "title": "Cancel delivery",
+      "reasonPlaceholder": "Reason for cancellation"
+    },
+    "pod": {
+      "title": "Proof of Delivery",
+      "missing": "No proof of delivery",
+      "validate": "Validate"
+    },
+    "attempts": {
+      "empty": "No delivery attempts",
+      "attemptNo": "Attempt",
+      "dwellMinutes": "minutes"
+    },
+    "failure": {
+      "retryable": "Retryable",
+      "notRetryable": "Not retryable",
+      "recordTitle": "Record Failure",
+      "recordHint": "Record why this delivery attempt failed.",
+      "selectReason": "Select a reason",
+      "final": "Final failure",
+      "recordButton": "Record Failure"
+    },
+    "returns": {
+      "discrepancy": "Discrepancy",
+      "colProduct": "Product",
+      "colReturned": "Returned",
+      "colCounted": "Counted",
+      "colDifference": "Difference",
+      "empty": "No returns",
+      "title": "Returns"
+    },
+    "timeline": {
+      "empty": "No timeline events",
+      "customerVisible": "Visible to customer"
+    },
+    "drawer": {
+      "titleWithOrder": "Delivery",
+      "attemptsUsed": "Attempts used"
+    },
+    "entity": "Delivery",
+    "empty": {
+      "filteredTitle": "No deliveries match your filters",
+      "title": "No deliveries",
+      "filteredHint": "Try adjusting or clearing the filters.",
+      "hint": "Deliveries appear here once dispatched."
+    },
+    "table": {
+      "lastFailure": "Last Failure",
+      "sla": "SLA",
+      "final": "Final"
+    },
+    "sla": {
+      "breached": "Breached",
+      "onTime": "On time"
+    },
+    "stats": {
+      "slaBreached": "SLA Breached"
+    },
+    "page": {
+      "breadcrumbRoot": "Logistics",
+      "title": "Deliveries",
+      "description": "Track delivery attempts, proof of delivery and SLA."
+    },
+    "filter": {
+      "orderIdPlaceholder": "Search by order #",
+      "slaBreached": "SLA breached only"
+    }
+  },
+  "common": {
+    "status": "Status",
+    "overview": "Overview",
+    "timeline": "Timeline",
+    "failed": "Failed",
+    "noDataYet": "No data yet",
+    "priority": "Priority",
+    "unknown": "Unknown",
+    "confirm": "Confirm",
+    "assigned": "Assigned",
+    "close": "Close",
+    "reason": "Reason",
+    "loading": "Loading…",
+    "phone": "Phone",
+    "city": "City",
+    "total": "Total",
+    "cancel": "Cancel",
+    "export": "Export",
+    "refresh": "Refresh",
+    "zone": "Zone",
+    "address": "Address",
+    "notes": "Notes",
+    "type": "Type",
+    "delete": "Delete",
+    "assign": "Assign",
+    "active": "Active",
+    "inactive": "Inactive",
+    "driver": "Driver",
+    "vehicle": "Vehicle",
+    "history": "History",
+    "saveChanges": "Save Changes",
+    "code": "Code",
+    "unassigned": "Unassigned",
+    "na": "N/A",
+    "yes": "Yes",
+    "scheduled": "Scheduled",
+    "no": "No",
+    "actions": "Actions",
+    "viewDetails": "View Details",
+    "required": "Required",
+    "capacity": "Capacity",
+    "critical": "Critical",
+    "optional": "Optional",
+    "date": "Date",
+    "description": "Description"
+  },
+  "dispatch": {
+    "conflicts": {
+      "blocksRelease": "Blocks release",
+      "openFor": "Open for",
+      "ownedByOther": "Owned by {{authority}}",
+      "actionPlaceholder": "What was done?",
+      "markResolved": "Mark Resolved",
+      "override": "Override",
+      "ownedElsewhere": "Owned elsewhere",
+      "title": "Conflicts",
+      "empty": "No conflicts"
+    },
+    "toast": {
+      "conflictClosed": "Conflict closed",
+      "conflictCloseFailed": "Could not close the conflict",
+      "overrideRecorded": "Override recorded",
+      "overrideRefused": "The override was refused",
+      "approved": "Approved",
+      "approveFailed": "Could not approve",
+      "rejected": "Rejected",
+      "rejectFailed": "Could not reject",
+      "queueNothingNew": "Nothing new to queue",
+      "queueBuilt": "Queue built",
+      "queueBuildFailed": "Could not build the queue",
+      "queueEmpty": "The queue is empty",
+      "claimFailed": "Could not claim the item",
+      "lockBroken": "Lock released",
+      "lockBreakFailed": "Could not release the lock",
+      "sessionClosedLocksReleased": "Session closed and locks released",
+      "sessionCloseFailed": "Could not close the session",
+      "priorityUpdated": "Priority updated",
+      "priorityFailed": "Could not update the priority",
+      "itemDeferred": "Item deferred",
+      "deferFailed": "Could not defer the item"
+    },
+    "reviews": {
+      "empty": "No pending reviews",
+      "waitingFor": "Waiting for",
+      "notePlaceholder": "Add a note",
+      "approve": "Approve",
+      "reject": "Reject",
+      "title": "Pending Reviews"
+    },
+    "units": {
+      "minutes": "minutes",
+      "minutesShort": "min"
+    },
+    "monitoring": {
+      "dispatch": "Dispatch",
+      "sessionsOpened": "Sessions Opened",
+      "sessionsActive": "Active Sessions",
+      "sessionsAbandoned": "Abandoned Sessions",
+      "allocationsAttempted": "Allocations Attempted",
+      "allocationsConfirmed": "Allocations Confirmed",
+      "allocationsFailed": "Allocations Failed",
+      "confirmationRate": "Confirmation Rate",
+      "automaticShare": "Automatic Share",
+      "avgSessionLength": "Average Session Length",
+      "queue": "Queue",
+      "depth": "Depth",
+      "needsAction": "Needs Action",
+      "stuck": "Stuck",
+      "avgWait": "Average Wait",
+      "longestWait": "Longest Wait",
+      "assignmentHealth": "Assignment Health",
+      "openConflicts": "Open Conflicts",
+      "blockingConflicts": "Blocking Conflicts",
+      "oldestConflict": "Oldest Conflict",
+      "pendingReviews": "Pending Reviews",
+      "oldestReview": "Oldest Review",
+      "heldResources": "Held Resources",
+      "capacityOwnedByNetwork": "Capacity is owned by the network.",
+      "slots": "Slots",
+      "avgUtilisation": "Average Utilisation",
+      "nearCapacity": "Near Capacity",
+      "exhausted": "Exhausted"
+    },
+    "queue": {
+      "pickBoardTitle": "Pick Board",
+      "pickBoardHint": "Claim the next item to begin dispatching.",
+      "build": "Build Queue",
+      "claimNext": "Claim Next",
+      "openSessionHint": "Open a session to claim items.",
+      "emptyTitle": "The queue is empty",
+      "emptyHint": "Build the queue to load pending trips.",
+      "colTrip": "Trip",
+      "colWaiting": "Waiting",
+      "colAttempts": "Attempts",
+      "colClaimedBy": "Claimed By",
+      "repeatedlyFailed": "Repeatedly failed",
+      "itemFallbackTitle": "Queue Item",
+      "drawerDescription": "Review and dispatch this queued trip.",
+      "rank": "Rank",
+      "tripCapacity": "Trip Capacity",
+      "queuedAt": "Queued At",
+      "whyPriority": "Why this priority",
+      "stuckFailed": "Failed attempts",
+      "stuckLastReason": "Last reason",
+      "stuckAdvice": "Resolve the blocking cause before retrying.",
+      "notEditable": "Not editable",
+      "changeReasonPlaceholder": "Reason for the change",
+      "setPriority": "Set Priority",
+      "defer": "Defer"
+    },
+    "locks": {
+      "empty": "No held locks",
+      "heldBy": "Held by",
+      "lapsed": "Lapsed",
+      "minutesLeft": "minutes left",
+      "break": "Release Lock",
+      "reasonPlaceholder": "Reason for releasing the lock",
+      "title": "Resource Locks"
+    },
+    "sessions": {
+      "title": "Dispatch Sessions",
+      "empty": "No sessions",
+      "colOperator": "Operator",
+      "colMode": "Mode",
+      "colReleased": "Released",
+      "colConflicts": "Conflicts",
+      "colDuration": "Duration",
+      "idle": "Idle",
+      "mode": {
+        "manual": "Manual",
+        "automatic": "Automatic",
+        "hybrid": "Hybrid"
+      }
+    },
+    "timeline": {
+      "boardTitle": "Dispatch Timeline",
+      "pickBoard": "Pick Board",
+      "empty": "No timeline events",
+      "overridesTitle": "Overrides",
+      "overridesEmpty": "No overrides"
+    },
+    "authority": {
+      "fleet": "Fleet",
+      "drivers": "Drivers",
+      "network": "Network",
+      "distribution": "Distribution",
+      "dispatch": "Dispatch"
+    }
+  },
+  "planning": {
+    "status": {
+      "planned": "Planned",
+      "inPlanning": "In Planning",
+      "ready": "Ready"
+    },
+    "actions": {
+      "plannedDone": "Mark as Planned",
+      "continuePlanning": "Continue Planning",
+      "startPlanning": "Start Planning",
+      "viewPlan": "View Plan",
+      "continue": "Continue"
+    },
+    "metrics": {
+      "orders": "Orders",
+      "collection": "Collection",
+      "customers": "Customers",
+      "products": "Products",
+      "stops": "Stops",
+      "estimatedStops": "Estimated Stops",
+      "expectedCollection": "Expected Collection",
+      "weight": "Weight"
+    },
+    "card": {
+      "estSessions": "Estimated Sessions"
+    },
+    "unassigned": {
+      "title": "Unassigned Orders",
+      "hint": "These orders are not assigned to any zone.",
+      "empty": "No unassigned orders",
+      "colOrderNumber": "Order #",
+      "colCustomer": "Customer",
+      "colReason": "Reason",
+      "open": "Open"
+    },
+    "dialog": {
+      "startTitle": "Start planning",
+      "startDescription": "Start planning for this zone?",
+      "starting": "Starting…"
+    },
+    "toast": {
+      "started": "Planning started",
+      "startFailed": "Could not start planning",
+      "markedPlanned": "Marked as planned",
+      "markFailed": "Could not update the plan"
+    },
+    "kpi": {
+      "readyZones": "Ready Zones",
+      "plannedZones": "Planned Zones",
+      "readyOrders": "Ready Orders"
+    },
+    "toolbar": {
+      "cardView": "Card view",
+      "tableView": "Table view",
+      "unassignedCount": "Unassigned",
+      "hideEmptyZones": "Hide empty zones",
+      "showEmptyZones": "Show empty zones"
+    },
+    "title": "Distribution Planning",
+    "description": "Plan daily deliveries by zone.",
+    "breadcrumbRoot": "Logistics",
+    "filters": {
+      "deliveryDate": "Delivery Date",
+      "planningStatus": "Planning Status",
+      "allStatuses": "All statuses",
+      "searchZone": "Search zone",
+      "searchZonePlaceholder": "Search zones…"
+    },
+    "summary": {
+      "readyCount": "Ready",
+      "inPlanningCount": "In Planning",
+      "plannedCount": "Planned"
+    },
+    "empty": {
+      "allPlannedTitle": "All zones are planned",
+      "allPlannedHint": "Nothing left to plan for this date.",
+      "noMatchTitle": "No zones match your filters",
+      "noOrdersTitle": "No orders to plan",
+      "noMatchHint": "Try adjusting or clearing the filters.",
+      "noOrdersForDate": "No orders for the selected date.",
+      "noOrdersAssigned": "No orders assigned to a zone.",
+      "needZoneAssignment": "Assign orders to a zone to begin planning."
+    },
+    "table": {
+      "colAction": "Action",
+      "empty": "No zones",
+      "zoneCount": "Zones",
+      "customerCount": "Customers",
+      "productCount": "Products",
+      "totalCollection": "Total Collection"
+    },
+    "orderStatus": {
+      "confirmed": "Confirmed",
+      "preparing": "Preparing",
+      "pending": "Pending",
+      "processing": "Processing"
+    }
+  },
+  "drivers": {
+    "fields": {
+      "driverCode": "Driver Code",
+      "fullName": "Full Name",
+      "mobileNumber": "Mobile Number",
+      "nationalId": "National ID",
+      "dateOfBirth": "Date of Birth",
+      "employmentDate": "Employment Date",
+      "shippingCompany": "Shipping Company",
+      "shippingCompanyPlaceholder": "Select a shipping company"
+    },
+    "license": {
+      "alert": {
+        "expired": "The licence has expired.",
+        "expiringSoon": "The licence expires soon.",
+        "expiringToday": "The licence expires today.",
+        "expiringInDays": "The licence expires soon.",
+        "missing": "No licence recorded."
+      },
+      "currentStatus": "Current Status",
+      "number": "Licence Number",
+      "type": "Licence Type",
+      "typePlaceholder": "Select a licence type",
+      "issueDate": "Issue Date",
+      "expiryDate": "Expiry Date",
+      "issuingAuthority": "Issuing Authority",
+      "issuingAuthorityPlaceholder": "Enter the issuing authority",
+      "status": {
+        "expired": "Expired"
+      },
+      "countdown": {
+        "expiresToday": "Expires today",
+        "expiresInDays": "Expires in",
+        "expiredAgo": "Expired"
+      }
+    },
+    "toast": {
+      "chooseFile": "Choose a file",
+      "documentUploaded": "Document uploaded",
+      "uploadFailed": "Could not upload the document",
+      "downloadFailed": "Could not download the document",
+      "documentDeleted": "Document deleted",
+      "deleteFailed": "Could not delete the document",
+      "vehicleChanged": "Vehicle changed",
+      "vehicleAssigned": "Vehicle assigned",
+      "assignmentFailed": "Could not assign the vehicle",
+      "vehicleReleased": "Vehicle released",
+      "releaseFailed": "Could not release the vehicle",
+      "requiredFields": "Fill in the required fields",
+      "created": "Driver created",
+      "saved": "Driver saved",
+      "saveFailed": "Could not save the driver",
+      "archived": "Driver archived",
+      "activated": "Driver activated",
+      "deactivated": "Driver deactivated",
+      "statusFailed": "Could not update the driver status"
+    },
+    "documents": {
+      "archivedNotice": "Archived drivers cannot receive new documents.",
+      "uploadHeading": "Upload Document",
+      "expiresOn": "Expires On",
+      "title": "Document Title",
+      "titlePlaceholder": "Enter a document title",
+      "file": "File",
+      "fileHint": "PDF or image, up to 10 MB.",
+      "upload": "Upload",
+      "empty": {
+        "title": "No documents",
+        "hint": "Upload licences and identification documents."
+      },
+      "expiresMeta": "Expires",
+      "deleteDialog": {
+        "title": "Delete document",
+        "body": "Delete this document?"
+      }
+    },
+    "vehicle": {
+      "intro": "Vehicle currently assigned to this driver.",
+      "since": "Since",
+      "release": "Release",
+      "empty": {
+        "title": "No vehicle assigned",
+        "hint": "Assign a vehicle to make this driver dispatchable."
+      },
+      "archivedNotice": "Archived drivers cannot be assigned a vehicle.",
+      "changeLabel": "Change Vehicle",
+      "assignLabel": "Assign Vehicle",
+      "loadingPlaceholder": "Loading vehicles…",
+      "noneAvailable": "No vehicles available",
+      "selectPlaceholder": "Select a vehicle",
+      "change": "Change",
+      "releaseDialog": {
+        "title": "Release vehicle",
+        "body": "Release this vehicle from the driver?"
+      }
+    },
+    "history": {
+      "empty": {
+        "title": "No assignment history",
+        "hint": "Vehicle assignments appear here."
+      },
+      "count": "Assignments",
+      "vehicleFallback": "Vehicle",
+      "released": "Released",
+      "durationDays": "days",
+      "present": "Present",
+      "assignedBy": "Assigned by",
+      "releasedBy": "Released by"
+    },
+    "status": {
+      "archived": "Archived"
+    },
+    "page": {
+      "newDriver": "New Driver",
+      "breadcrumbModule": "Logistics",
+      "title": "Drivers",
+      "description": "Manage drivers, licences and vehicle assignments.",
+      "searchPlaceholder": "Search drivers…"
+    },
+    "drawer": {
+      "descriptionNew": "Add a driver to the fleet.",
+      "descriptionEdit": "Update driver details.",
+      "noVehicle": "No vehicle",
+      "licenceSection": "Licence",
+      "createDriver": "Create Driver",
+      "tabs": {
+        "details": "Details",
+        "license": "Licence",
+        "documents": "Documents"
+      },
+      "saveLicence": "Save Licence"
+    },
+    "actions": {
+      "restoreFromArchive": "Restore from Archive",
+      "deactivate": "Deactivate",
+      "activate": "Activate",
+      "archive": "Archive"
+    },
+    "empty": {
+      "filtered": {
+        "title": "No drivers match your filters",
+        "hint": "Try adjusting or clearing the filters."
+      },
+      "none": {
+        "title": "No drivers",
+        "hint": "Add a driver to begin assigning deliveries.",
+        "action": "Add Driver"
+      }
+    },
+    "table": {
+      "mobile": "Mobile",
+      "license": "Licence",
+      "shippingCompany": "Shipping Company"
+    },
+    "metrics": {
+      "total": "Total Drivers",
+      "active": "Active",
+      "inactive": "Inactive",
+      "expiredLicense": "Expired Licence",
+      "withoutVehicle": "Without Vehicle"
+    }
+  },
+  "fleet": {
+    "blockers": {
+      "none": "No blockers"
+    },
+    "table": {
+      "fitness": "Fitness",
+      "lifecycle": "Lifecycle",
+      "odometer": "Odometer",
+      "why": "Reason"
+    },
+    "unit": {
+      "plate": "Plate Number",
+      "vehicleCode": "Vehicle Code",
+      "commissioned": "Commissioned",
+      "readiness": "Readiness"
+    },
+    "kmValue": "km",
+    "health": {
+      "title": "Fleet Health",
+      "band": {
+        "good": "Good",
+        "critical": "Critical",
+        "fair": "Fair",
+        "poor": "Poor"
+      }
+    },
+    "odometer": {
+      "toastRecorded": "Odometer reading recorded",
+      "toastNotAccepted": "Reading not accepted",
+      "toastFailed": "Could not record the reading",
+      "newReading": "New Reading",
+      "record": "Record Reading",
+      "staleWarning": "The odometer reading is out of date.",
+      "colReading": "Reading",
+      "colSource": "Source",
+      "colWhen": "When",
+      "colAccepted": "Accepted",
+      "rejected": "Rejected"
+    },
+    "maintenance": {
+      "empty": "No maintenance records",
+      "overdue": "Overdue",
+      "due": "Due",
+      "nextDueDate": "Next Due Date",
+      "nextDueKm": "Next Due (km)",
+      "remaining": "Remaining",
+      "everyInterval": "Every"
+    },
+    "daysShort": "d",
+    "cost": {
+      "distance": "Distance",
+      "costPerKm": "Cost per km",
+      "notEnoughOdometer": "Not enough odometer data to calculate cost.",
+      "authorityNote": "Costs are attributed to the owning authority."
+    },
+    "drawer": {
+      "titleWithPlate": "Fleet Unit",
+      "title": "Fleet Unit",
+      "tabMaintenance": "Maintenance",
+      "tabOdometer": "Odometer",
+      "tabCost": "Cost"
+    },
+    "empty": {
+      "filteredTitle": "No fleet units match your filters",
+      "title": "No fleet units",
+      "filteredHint": "Try adjusting or clearing the filters.",
+      "hint": "Add a vehicle to build the fleet."
+    },
+    "metrics": {
+      "criticalDefects": "Critical Defects",
+      "overdueMaintenance": "Overdue Maintenance",
+      "openWorkOrders": "Open Work Orders",
+      "staleOdometer": "Stale Odometer"
+    },
+    "lifecycle": {
+      "suspended": "Suspended"
+    },
+    "breadcrumbRoot": "Logistics",
+    "breadcrumbFleet": "Fleet",
+    "title": "Fleet Dashboard",
+    "description": "Monitor vehicle readiness, maintenance and cost.",
+    "filters": {
+      "criticalDefects": "Critical defects only"
+    },
+    "costType": {
+      "fuel": "Fuel",
+      "maintenance": "Maintenance",
+      "inspection": "Inspection",
+      "insurance": "Insurance",
+      "licensing": "Licensing",
+      "depreciation": "Depreciation",
+      "tyres": "Tyres",
+      "other": "Other"
+    }
+  },
+  "network": {
+    "area": {
+      "dispatchRegion": "Dispatch Region",
+      "leadTime": "Lead Time",
+      "hoursValue": "Hours",
+      "acceptsCommitments": "Accepts Commitments",
+      "noMembersWarning": "This service area has no members.",
+      "coverage": "Coverage",
+      "coverageHint": "Zones covered by this service area.",
+      "carvedOut": "Carved Out"
+    },
+    "serviceLevels": {
+      "title": "Service Levels",
+      "colLevel": "Level",
+      "colCutoff": "Cut-off",
+      "colSurcharge": "Surcharge"
+    },
+    "hoursShort": "h",
+    "capacity": {
+      "empty": "No capacity defined",
+      "published": "Published",
+      "allDay": "All day",
+      "exhausted": "Exhausted",
+      "nearCapacity": "Near capacity",
+      "remainingUnit": "remaining",
+      "binding": "Binding"
+    },
+    "areaStatus": {
+      "draft": "Draft"
+    },
+    "drawer": {
+      "titleWithName": "Service Area",
+      "title": "Service Area",
+      "tabCapacity": "Capacity"
+    },
+    "empty": {
+      "filteredTitle": "No service areas match your filters",
+      "title": "No service areas",
+      "filteredHint": "Try adjusting or clearing the filters.",
+      "hint": "Create a service area to define delivery coverage."
+    },
+    "metrics": {
+      "serviceAreas": "Service Areas",
+      "dispatchRegions": "Dispatch Regions",
+      "withoutCoverage": "Without Coverage"
+    },
+    "breadcrumbRoot": "Logistics",
+    "breadcrumbNetwork": "Network",
+    "title": "Service Areas",
+    "description": "Define delivery coverage and service levels across zones.",
+    "table": {
+      "area": "Service Area",
+      "members": "Members",
+      "noCoverageTooltip": "No coverage defined for this area."
+    }
+  },
+  "operations": {
+    "capacity": {
+      "mostCommonRefusal": "Most Common Refusal",
+      "slotsToday": "Slots Today",
+      "slots": "Slots",
+      "averageUtilisation": "Average Utilisation",
+      "nearCapacity": "Near Capacity",
+      "exhausted": "Exhausted",
+      "ourReservations": "Our Reservations",
+      "requested": "Requested",
+      "currentlyHolding": "Currently Holding",
+      "confirmed": "Confirmed",
+      "refused": "Refused",
+      "refusalRate": "Refusal Rate",
+      "rebalanced": "Rebalanced",
+      "reservationsTitle": "Capacity Reservations",
+      "empty": "No reservations",
+      "colPurpose": "Purpose",
+      "colLedger": "Ledger",
+      "colOrders": "Orders",
+      "colWindow": "Window",
+      "toast": {
+        "confirmed": "Reservation confirmed",
+        "confirmFailed": "Could not confirm the reservation"
+      },
+      "manage": "Manage Capacity"
+    },
+    "exceptionDrawer": {
+      "notes": {
+        "placeholder": "Add a note",
+        "toast": {
+          "added": "Note added",
+          "addFailed": "Could not add the note"
+        },
+        "add": "Add Note",
+        "pinsToTop": "Pins to top",
+        "empty": "No notes"
+      },
+      "escalations": {
+        "reasonPlaceholder": "Reason for escalation",
+        "toRole": "To role",
+        "toast": {
+          "escalated": "Escalated",
+          "refused": "The escalation was refused"
+        },
+        "escalate": "Escalate",
+        "empty": "No escalations",
+        "level": "Level",
+        "automatic": "Automatic"
+      },
+      "title": "Exception",
+      "seenTimes": "Seen",
+      "overdue": "Overdue",
+      "ownedElsewhereNotice": "This exception is owned by another authority.",
+      "severity": "Severity",
+      "firstSeen": "First Seen",
+      "lastSeen": "Last Seen",
+      "age": "Age",
+      "minutes": "minutes",
+      "unacknowledged": "Unacknowledged",
+      "acknowledged": "Acknowledged",
+      "escalationLevel": "Escalation Level",
+      "subject": "Subject",
+      "tabs": {
+        "act": "Act",
+        "escalations": "Escalations"
+      },
+      "toast": {
+        "acknowledged": "Exception acknowledged",
+        "acknowledgeFailed": "Could not acknowledge the exception",
+        "closed": "Exception closed",
+        "closeFailed": "Could not close the exception",
+        "suppressed": "Exception suppressed",
+        "suppressFailed": "Could not suppress the exception"
+      },
+      "alreadyAcknowledged": "Already acknowledged",
+      "acknowledge": "Acknowledge",
+      "resolution": "Resolution",
+      "whatWasDone": "What was done?",
+      "closeException": "Close Exception",
+      "suppress": "Suppress",
+      "closedAsBy": "Closed by",
+      "closedAs": "Closed as"
+    },
+    "exceptions": {
+      "alertsLive": "Live Alerts",
+      "pastEscalationThreshold": "Past escalation threshold",
+      "ownedElsewhere": "Owned elsewhere",
+      "emptyTitle": "No exceptions",
+      "emptyBody": "Operations are running without exceptions.",
+      "overdue": "Overdue",
+      "openMinutes": "Open for",
+      "unlookedAtMinutes": "Unattended for",
+      "acknowledged": "Acknowledged"
+    },
+    "activityCenter": {
+      "emptyWindow": "No activity in this window",
+      "truncated": {
+        "showing": "Showing",
+        "cappedSources": "Some sources were capped.",
+        "narrow": "Narrow the time window for full detail."
+      },
+      "auditIntro": "Audit trail of operational activity.",
+      "assignments": {
+        "empty": "No assignments",
+        "colMode": "Mode",
+        "colFleetVerdict": "Fleet Verdict",
+        "colAllocated": "Allocated"
+      },
+      "sessions": {
+        "empty": "No sessions",
+        "colOperator": "Operator",
+        "colReleased": "Released",
+        "colConflicts": "Conflicts",
+        "colDuration": "Duration",
+        "colStarted": "Started",
+        "minutesShort": "min"
+      },
+      "capacity": {
+        "empty": "No capacity activity",
+        "colPurpose": "Purpose",
+        "colOrders": "Orders",
+        "colRequested": "Requested"
+      },
+      "breadcrumbRoot": "Logistics",
+      "breadcrumbSection": "Operations",
+      "title": "Activity Centre",
+      "description": "Review operational activity across dispatch and capacity.",
+      "tabs": {
+        "audit": "Audit",
+        "assignments": "Assignments",
+        "sessions": "Sessions"
+      }
+    },
+    "alertCenter": {
+      "empty": {
+        "title": "No alerts",
+        "hint": "Operations are running without alerts."
+      },
+      "overdue": "Overdue",
+      "meta": {
+        "open": "Open",
+        "unacknowledgedFor": "Unacknowledged for",
+        "acknowledged": "Acknowledged",
+        "level": "Level"
+      },
+      "toast": {
+        "acknowledged": "Alert acknowledged",
+        "acknowledgeFailed": "Could not acknowledge the alert"
+      },
+      "ack": "Acknowledge",
+      "history": {
+        "empty": "No alert history"
+      },
+      "metrics": {
+        "live": "Live Alerts",
+        "unacknowledged": "Unacknowledged"
+      },
+      "breadcrumbRoot": "Logistics",
+      "breadcrumbSection": "Operations",
+      "title": "Alert Centre",
+      "description": "Monitor and acknowledge operational alerts.",
+      "tabs": {
+        "live": "Live"
+      }
+    },
+    "readiness": {
+      "gradeValue": "Grade",
+      "panel": {
+        "healthScore": "Health Score",
+        "moduleReadiness": "Module Readiness",
+        "checklist": "Checklist",
+        "systemHealth": "System Health",
+        "dependencyHealth": "Dependency Health",
+        "projections": "Projections",
+        "executive": "Executive Summary",
+        "todaysOperations": "Today's Operations",
+        "fleet": "Fleet"
+      },
+      "countReady": "Ready",
+      "countDegraded": "Degraded",
+      "countNotReady": "Not Ready",
+      "weightingNote": "Checks are weighted by operational impact.",
+      "checksWeight": "Weight",
+      "blockingChecks": "Blocking Checks",
+      "projection": {
+        "queue": "Queue",
+        "dispatch": "Dispatch",
+        "exceptions": "Exceptions"
+      },
+      "quiet": "Quiet",
+      "stat": {
+        "healthScore": "Health Score",
+        "criticalAlerts": "Critical Alerts",
+        "canFieldToday": "Can Field Today",
+        "activeSessions": "Active Sessions",
+        "confirmed": "Confirmed",
+        "confirmationRate": "Confirmation Rate",
+        "queueDepth": "Queue Depth",
+        "assignableVehicles": "Assignable Vehicles",
+        "availableDrivers": "Available Drivers",
+        "fieldableUnits": "Fieldable Units",
+        "vehicleUseNow": "Vehicles In Use"
+      },
+      "metrics": {
+        "healthScore": "Health Score",
+        "overall": "Overall",
+        "grade": "Grade"
+      },
+      "breadcrumbRoot": "Logistics",
+      "breadcrumbSection": "Operations",
+      "title": "Enterprise Readiness",
+      "description": "Assess operational readiness across modules and fleet."
+    },
+    "badges": {
+      "authority": {
+        "drivers": "Drivers",
+        "fleet": "Fleet"
+      }
+    }
+  },
+  "shippingCompanies": {
+    "empty": {
+      "filteredTitle": "No carriers match your filters",
+      "filteredHint": "Try adjusting or clearing the filters.",
+      "title": "No shipping companies",
+      "hint": "Add a shipping company to start assigning deliveries.",
+      "addFirst": "Add the first company"
+    },
+    "type": {
+      "internal": "Internal",
+      "external": "External"
+    },
+    "status": {
+      "archived": "Archived"
+    },
+    "table": {
+      "company": "Company",
+      "contact": "Contact",
+      "activeContract": "Active Contract",
+      "contracts": "Contracts",
+      "companies": "Companies",
+      "noActiveContract": "No active contract"
+    },
+    "metrics": {
+      "total": "Total Companies",
+      "active": "Active",
+      "internal": "Internal",
+      "external": "External"
+    },
+    "breadcrumbRoot": "Logistics",
+    "title": "Shipping Companies",
+    "description": "Manage carriers and their delivery contracts.",
+    "newCompany": "New Company",
+    "searchPlaceholder": "Search companies…"
+  },
+  "vehicles": {
+    "form": {
+      "vehicleCode": "Vehicle Code",
+      "plateNumber": "Plate Number",
+      "vehicleName": "Vehicle Name",
+      "vehicleNamePlaceholder": "Enter a vehicle name",
+      "vehicleType": "Vehicle Type",
+      "selectType": "Select a type",
+      "shippingCompany": "Shipping Company",
+      "selectCarrier": "Select a carrier",
+      "capacityOrders": "Capacity (Orders)",
+      "capacityWeight": "Capacity (Weight)",
+      "capacityVolume": "Capacity (Volume)",
+      "capacityHint": "Used to plan loading and dispatch.",
+      "specification": "Specification",
+      "fuelType": "Fuel Type",
+      "selectFuelType": "Select a fuel type",
+      "manufacturer": "Manufacturer",
+      "model": "Model",
+      "year": "Year",
+      "color": "Color",
+      "vin": "VIN"
+    },
+    "maintenance": {
+      "toast": {
+        "dateRequired": "A service date is required",
+        "amended": "Maintenance record amended",
+        "recorded": "Maintenance recorded",
+        "saveFailed": "Could not save the maintenance record",
+        "deleted": "Maintenance record deleted",
+        "deleteFailed": "Could not delete the maintenance record"
+      },
+      "recordCount": "Records",
+      "immutableNote": "Recorded services cannot be edited, only amended.",
+      "recordService": "Record Service",
+      "permissionNotice": "You do not have permission to record maintenance.",
+      "amendRecord": "Amend Record",
+      "newRecord": "New Record",
+      "cost": "Cost",
+      "vendor": "Vendor",
+      "nextDate": "Next Service Date",
+      "saveAmendment": "Save Amendment",
+      "record": "Record",
+      "emptyTitle": "No maintenance records",
+      "emptyDescription": "Recorded services appear here.",
+      "serviceDue": "Service due",
+      "amended": "Amended",
+      "noVendor": "No vendor",
+      "nextOn": "Next on",
+      "byUser": "by",
+      "amendedBy": "Amended by",
+      "deleteTitle": "Delete maintenance record",
+      "deleteDescription": "Delete this maintenance record?"
+    },
+    "documents": {
+      "toast": {
+        "chooseFile": "Choose a file",
+        "uploaded": "Document uploaded",
+        "uploadFailed": "Could not upload the document",
+        "downloadFailed": "Could not download the document",
+        "deleted": "Document deleted",
+        "deleteFailed": "Could not delete the document"
+      },
+      "joinAnd": "and",
+      "blockedAlert": "This vehicle is blocked by expired documents.",
+      "archivedNotice": "Archived vehicles cannot receive new documents.",
+      "uploadTitle": "Upload Document",
+      "expiresOn": "Expires On",
+      "referenceNumber": "Reference Number",
+      "file": "File",
+      "fileHint": "PDF or image, up to 10 MB.",
+      "upload": "Upload",
+      "emptyTitle": "No documents",
+      "emptyDescription": "Upload licences, insurance and inspection documents.",
+      "expired": "Expired",
+      "expiresInDays": "Expires in",
+      "ref": "Ref",
+      "expiresValue": "Expires",
+      "deleteTitle": "Delete document",
+      "deletePrefix": "Delete",
+      "deleteSuffix": "?"
+    },
+    "assignment": {
+      "intro": "Driver assignments for this vehicle.",
+      "assignedOn": "Assigned on",
+      "emptyTitle": "No assignments",
+      "emptyDescription": "Assign a driver to make this vehicle dispatchable.",
+      "dispatchReadiness": "Dispatch Readiness",
+      "statusLine": "Status",
+      "nextDocExpiry": "Next document expiry",
+      "blockedByExpired": "Blocked by expired documents"
+    },
+    "dispatch": {
+      "readyForDispatch": "Ready for dispatch",
+      "notDispatchable": "Not dispatchable"
+    },
+    "toast": {
+      "requiredFields": "Fill in the required fields",
+      "created": "Vehicle created",
+      "saved": "Vehicle saved",
+      "saveFailed": "Could not save the vehicle",
+      "statusChanged": "Vehicle status updated",
+      "statusChangeFailed": "Could not update the vehicle status"
+    },
+    "drawer": {
+      "newTitle": "New Vehicle",
+      "fallbackTitle": "Vehicle",
+      "createDescription": "Add a vehicle to the fleet.",
+      "editDescription": "Update vehicle details."
+    },
+    "actions": {
+      "create": "Create Vehicle",
+      "mark": "Mark"
+    },
+    "tabs": {
+      "details": "Details",
+      "service": "Service",
+      "docs": "Documents"
+    },
+    "statusDialog": {
+      "title": "Change vehicle status",
+      "movePrefix": "Move",
+      "moveMiddle": "to",
+      "moveSuffix": "?",
+      "archivedNote": "Archived vehicles cannot be dispatched.",
+      "outOfServiceNote": "Out-of-service vehicles are excluded from planning."
+    },
+    "empty": {
+      "filteredTitle": "No vehicles match your filters",
+      "filteredDescription": "Try adjusting or clearing the filters.",
+      "title": "No vehicles",
+      "description": "Add a vehicle to build the fleet.",
+      "action": "Add Vehicle"
+    },
+    "table": {
+      "colVehicle": "Vehicle",
+      "colDispatch": "Dispatch"
+    },
+    "documentType": {
+      "license": "Licence",
+      "insurance": "Insurance",
+      "inspection": "Inspection",
+      "other": "Other"
+    }
   }
 }

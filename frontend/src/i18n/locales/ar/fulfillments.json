@@ -24,13 +24,23 @@
     "customer": "العميل",
     "warehouse": "المستودع",
     "fulfillmentDate": "التاريخ",
-    "status": "الحالة"
+    "status": "الحالة",
+    "channel": "القناة"
   },
   "form": {
-    "order": { "label": "الطلب", "placeholder": "اختر طلباً…" },
-    "warehouse": { "label": "المستودع", "placeholder": "اختر مستودعاً…" },
+    "order": {
+      "label": "الطلب",
+      "placeholder": "اختر طلباً…"
+    },
+    "warehouse": {
+      "label": "المستودع",
+      "placeholder": "اختر مستودعاً…"
+    },
     "fulfillmentDate": "تاريخ التنفيذ",
-    "notes": { "label": "ملاحظات", "placeholder": "ملاحظات اختيارية…" }
+    "notes": {
+      "label": "ملاحظات",
+      "placeholder": "ملاحظات اختيارية…"
+    }
   },
   "lines": {
     "title": "بنود التنفيذ",

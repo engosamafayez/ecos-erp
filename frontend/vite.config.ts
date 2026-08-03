@@ -21,7 +21,7 @@ export default defineConfig({
     dedupe: ['react', 'react-dom', '@radix-ui/react-dismissable-layer'],
   },
   optimizeDeps: {
-    include: ['react', 'react-dom', 'use-sync-external-store/shim'],
+    include: ['react', 'react-dom'],
   },
   // Served by Nginx under /app (see docker/nginx/default.conf) when built.
   base: '/app/',

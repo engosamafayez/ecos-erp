@@ -96,18 +96,34 @@
     "inactive": "غير نشط"
   },
   "form": {
-    "code": { "label": "الكود", "placeholder": "CUST-001" },
-    "name": { "label": "اسم العميل", "placeholder": "مثال: أحمد محمد" },
+    "code": {
+      "label": "الكود",
+      "placeholder": "CUST-001"
+    },
+    "name": {
+      "label": "اسم العميل",
+      "placeholder": "مثال: أحمد محمد"
+    },
     "phone": "الهاتف الرئيسي",
     "phonePlaceholder": "أدخل رقم الهاتف…",
     "mobile": "هاتف ثانوي",
     "contactPerson": "جهة الاتصال",
-    "email": { "label": "البريد الإلكتروني", "placeholder": "customer@example.com" },
+    "email": {
+      "label": "البريد الإلكتروني",
+      "placeholder": "customer@example.com"
+    },
     "country": "الدولة",
     "city": "المدينة",
     "address": "العنوان",
-    "notes": { "label": "ملاحظات", "placeholder": "ملاحظات اختيارية…" },
-    "active": "نشط"
+    "notes": {
+      "label": "ملاحظات",
+      "placeholder": "ملاحظات اختيارية…"
+    },
+    "active": "نشط",
+    "brand": {
+      "label": "العلامة التجارية",
+      "placeholder": "اختر علامة تجارية"
+    }
   },
   "drawer": {
     "createTitle": "عميل جديد",
@@ -152,7 +168,9 @@
       "totalOrders": "إجمالي الطلبات",
       "lastOrder": "آخر طلب",
       "totalSpend": "إجمالي الإنفاق",
-      "noOrders": "لا توجد طلبات بعد."
+      "noOrders": "لا توجد طلبات بعد.",
+      "brands": "العلامات التجارية",
+      "brandOrders": "الطلبات حسب العلامة التجارية"
     },
     "phonesTab": {
       "title": "أرقام الهاتف",

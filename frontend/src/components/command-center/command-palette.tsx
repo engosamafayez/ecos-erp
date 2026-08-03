@@ -77,6 +77,7 @@ function CommandItem({ command, isActive, 'data-index': dataIndex, onSelect, onH
       {/* Shortcut hint */}
       {command.shortcut && (
         <kbd
+          dir="ltr"
           aria-hidden
           className="shrink-0 rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground"
         >
@@ -324,6 +325,7 @@ export function GlobalCommandPalette({ open, onClose }: GlobalCommandPaletteProp
               </button>
             ) : (
               <kbd
+          dir="ltr"
                 aria-hidden
                 className="hidden select-none rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:inline-block"
               >
@@ -363,15 +365,15 @@ export function GlobalCommandPalette({ open, onClose }: GlobalCommandPaletteProp
             className="flex shrink-0 items-center gap-3 border-t px-4 py-2 text-[11px] text-muted-foreground"
           >
             <span className="flex items-center gap-1">
-              <kbd className="rounded border bg-muted px-1 py-0.5 font-mono text-[10px]">↑↓</kbd>
+              <kbd dir="ltr" className="rounded border bg-muted px-1 py-0.5 font-mono text-[10px]">↑↓</kbd>
               {t($ => $.palette.navigate)}
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="rounded border bg-muted px-1 py-0.5 font-mono text-[10px]">↵</kbd>
+              <kbd dir="ltr" className="rounded border bg-muted px-1 py-0.5 font-mono text-[10px]">↵</kbd>
               {t($ => $.palette.select)}
             </span>
             <span className="flex items-center gap-1">
-              <kbd className="rounded border bg-muted px-1 py-0.5 font-mono text-[10px]">ESC</kbd>
+              <kbd dir="ltr" className="rounded border bg-muted px-1 py-0.5 font-mono text-[10px]">ESC</kbd>
               {t($ => $.palette.close)}
             </span>
             <span className="ms-auto flex items-center gap-1 text-primary/70">

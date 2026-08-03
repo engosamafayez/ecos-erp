@@ -181,12 +181,14 @@ import { AuthLayout } from '@/layouts/auth-layout';
 import { GuestRoute } from '@/router/guards/guest-route';
 import { ProtectedRoute } from '@/router/guards/protected-route';
 import { ROUTES } from '@/router/routes';
+// ROUTES.settings is deliberately absent: the real settings workspace already
+// exists at ROUTES.configurationOs, so a Coming Soon placeholder here was a dead
+// link competing with it in the same menu (UAT BUG-04). It redirects instead.
 const moduleRoutes = [
   ROUTES.sales,
   ROUTES.accounting,
   ROUTES.crm,
   ROUTES.reports,
-  ROUTES.settings,
   ROUTES.users,
   ROUTES.roles,
 ].map((path) => ({ path, Component: ComingSoonPage }));
@@ -443,6 +445,10 @@ export const router = createBrowserRouter(
             { path: ROUTES.driverTripTimeline,    Component: DriverTripTimelinePage },
             { path: ROUTES.driverTripMap,         Component: DriverMapPage },
             ...moduleRoutes,
+            // UAT BUG-04 — the menu's "Settings" entry pointed at a Coming Soon
+            // placeholder while the real workspace lived elsewhere. Redirect so
+            // the existing link resolves instead of dead-ending.
+            { path: ROUTES.settings, loader: () => redirect(ROUTES.configurationOs) },
             { path: '*', Component: NotFoundPage },
           ],
         },

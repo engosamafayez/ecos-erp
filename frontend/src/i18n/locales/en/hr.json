@@ -110,7 +110,8 @@
     "talentPool": "talent pool",
     "timeline": "Timeline",
     "pickApplicantHint": "Pick an applicant to read their whole story in order.",
-    "timelineEmpty": "Nothing recorded yet."
+    "timelineEmpty": "Nothing recorded yet.",
+    "applicantCount": "{{count}} applicants"
   },
   "attendance": {
     "title": "Attendance",
@@ -152,7 +153,8 @@
       "emptyHint": "Please check back soon.",
       "openings_one": "{{count}} position",
       "openings_other": "{{count}} positions",
-      "viewAndApply": "View & Apply"
+      "viewAndApply": "View & Apply",
+      "openings": "{{count}} openings"
     },
     "apply": {
       "allRoles": "All roles",
@@ -182,6 +184,116 @@
         "cv": "CV / Resume (PDF or Word, up to 5 MB)",
         "additionalNotes": "Anything else you would like us to know"
       }
+    }
+  },
+  "employee360": {
+    "breadcrumbWorkforce": "Workforce",
+    "stats": {
+      "tenure": "Tenure",
+      "tenureDays": "Days of service",
+      "present30d": "Present (30 days)",
+      "absent30d": "Absent (30 days)",
+      "attendanceRate": "Attendance Rate"
+    },
+    "expiringDocuments": "Expiring Documents",
+    "placement": {
+      "title": "Placement",
+      "department": "Department",
+      "position": "Position",
+      "jobGrade": "Job Grade",
+      "employmentType": "Employment Type",
+      "hireDate": "Hire Date",
+      "terminationDate": "Termination Date"
+    },
+    "contract": {
+      "title": "Contract",
+      "none": "No active contract",
+      "number": "Contract #",
+      "type": "Contract Type",
+      "status": "Status",
+      "start": "Start Date",
+      "end": "End Date",
+      "openEnded": "Open-ended",
+      "weeklyHours": "Weekly Hours",
+      "daysUntilExpiry": "Days Until Expiry"
+    },
+    "reporting": {
+      "title": "Reporting Line",
+      "manager": "Manager",
+      "chain": "Reporting Chain",
+      "directReports": "Direct Reports"
+    },
+    "contact": {
+      "title": "Contact Details",
+      "workEmail": "Work Email",
+      "personalEmail": "Personal Email",
+      "mobile": "Mobile",
+      "phone": "Phone",
+      "city": "City",
+      "country": "Country",
+      "emergencyContact": "Emergency Contact",
+      "emergencyPhone": "Emergency Phone"
+    },
+    "documents": {
+      "title": "Documents",
+      "none": "No documents",
+      "expires": "Expires",
+      "noExpiry": "No expiry"
+    }
+  },
+  "leave": {
+    "errors": {
+      "employeeRequired": "Select an employee",
+      "submitFailed": "Could not submit the leave request"
+    },
+    "title": "Leave Requests",
+    "subtitle": "Review and decide employee leave requests.",
+    "newRequest": "New Request",
+    "stats": {
+      "showing": "Showing",
+      "awaitingApproval": "Awaiting Approval",
+      "daysRequested": "Days Requested"
+    },
+    "status": {
+      "all": "All",
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
+    },
+    "empty": "No leave requests",
+    "table": {
+      "number": "Request #",
+      "employee": "Employee",
+      "dates": "Dates",
+      "days": "Days",
+      "payroll": "Payroll",
+      "status": "Status",
+      "decision": "Decision"
+    },
+    "approve": "Approve",
+    "reject": "Reject",
+    "form": {
+      "title": "New Leave Request",
+      "description": "Submit a leave request for an employee.",
+      "submitting": "Submitting…",
+      "submit": "Submit Request",
+      "chooseEmployee": "Choose an employee",
+      "from": "From",
+      "to": "To",
+      "payrollTreatment": "Payroll Treatment",
+      "deductSalary": "Deduct from salary",
+      "doNotDeductSalary": "Do not deduct from salary",
+      "payrollHint": "Determines whether the leave days are deducted from the employee salary.",
+      "reason": "Reason",
+      "optional": "Optional"
+    },
+    "decide": {
+      "approveTitle": "Approve leave request",
+      "rejectTitle": "Reject leave request",
+      "approveDescription": "Approve this leave request?",
+      "thisEmployee": "this employee",
+      "rejectDescription": "Reject this leave request?"
     }
   }
 }

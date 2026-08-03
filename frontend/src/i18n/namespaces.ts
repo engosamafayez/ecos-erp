@@ -18,6 +18,7 @@ export const NAMESPACES = [
   'auth',
   'settings',
   'home',
+  'command-palette',
 
   // ── Organization ──────────────────────────────────────────────────────────
   'companies',

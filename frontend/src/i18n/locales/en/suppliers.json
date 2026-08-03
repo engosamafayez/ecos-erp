@@ -8,12 +8,12 @@
     "edit": "Edit Supplier"
   },
   "status": {
-    "draft":     "Draft",
-    "active":    "Active",
+    "draft": "Draft",
+    "active": "Active",
     "preferred": "Preferred",
-    "on_hold":   "On Hold",
-    "blocked":   "Blocked",
-    "archived":  "Archived"
+    "on_hold": "On Hold",
+    "blocked": "Blocked",
+    "archived": "Archived"
   },
   "columns": {
     "code": "Code",
@@ -26,13 +26,25 @@
     "status": "Status"
   },
   "form": {
-    "code": { "label": "Code", "placeholder": "SUP-001" },
-    "name": { "label": "Name", "placeholder": "Delta Trading" },
+    "code": {
+      "label": "Code",
+      "placeholder": "SUP-001"
+    },
+    "name": {
+      "label": "Name",
+      "placeholder": "Delta Trading"
+    },
     "contactPerson": "Contact person",
-    "email": { "label": "Email", "placeholder": "supplier@example.com" },
+    "email": {
+      "label": "Email",
+      "placeholder": "supplier@example.com"
+    },
     "phone": "Phone",
     "mobile": "Mobile",
-    "website": { "label": "Website", "placeholder": "https://supplier.com" },
+    "website": {
+      "label": "Website",
+      "placeholder": "https://supplier.com"
+    },
     "country": "Country",
     "state": "State / Governorate",
     "city": "City",
@@ -47,7 +59,10 @@
     "sectionLocation": "Location",
     "sectionFinancial": "Opening balance",
     "sectionFinancialHint": "For companies operating before ECOS — the balance carried into the system.",
-    "notes": { "label": "Notes", "placeholder": "Optional notes…" },
+    "notes": {
+      "label": "Notes",
+      "placeholder": "Optional notes…"
+    },
     "active": "Active"
   },
   "drawer": {
@@ -98,9 +113,16 @@
     "needsReview": "Needs Review"
   },
   "page": {
-    "breadcrumbs": { "procurement": "Procurement", "suppliers": "Suppliers" },
+    "breadcrumbs": {
+      "procurement": "Procurement",
+      "suppliers": "Suppliers"
+    },
     "description": "Manage your procurement supplier network.",
-    "savedViews": { "all": "All Suppliers", "active": "Active", "preferred": "Preferred" }
+    "savedViews": {
+      "all": "All Suppliers",
+      "active": "Active",
+      "preferred": "Preferred"
+    }
   },
   "columnsExtra": {
     "code": "Supplier Code",
@@ -130,7 +152,11 @@
     "archive": "Archive",
     "delete": "Delete"
   },
-  "filters": { "all": "All", "active": "Active", "inactive": "Inactive" },
+  "filters": {
+    "all": "All",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
   "confirmDelete": {
     "title": "Delete Supplier",
     "description": "Are you sure you want to delete {{name}}? This action cannot be undone.",
@@ -139,7 +165,11 @@
   "exportCsv": "Export CSV",
   "edit": "Edit",
   "deleteSelected": "Delete {{count}} selected",
-  "toast": { "deleted": "Supplier deleted.", "archived": "Supplier archived.", "archiveFailed": "Failed to archive supplier." },
+  "toast": {
+    "deleted": "Supplier deleted.",
+    "archived": "Supplier archived.",
+    "archiveFailed": "Failed to archive supplier."
+  },
   "emptyState": {
     "title": "No suppliers yet",
     "description": "Add your first supplier to start managing your procurement network."
@@ -154,7 +184,11 @@
   "wizard": {
     "title": "New Supplier",
     "subtitle": "Add a new supplier to your procurement network.",
-    "steps": { "basicInfo": "Basic Info", "contact": "Contact", "review": "Review" },
+    "steps": {
+      "basicInfo": "Basic Info",
+      "contact": "Contact",
+      "review": "Review"
+    },
     "fields": {
       "name": "Supplier Name",
       "namePlaceholder": "e.g. Al Futtaim Trading",
@@ -263,7 +297,10 @@
         "costValue": "Cost Value",
         "saleValue": "Sale Value",
         "lastReceipt": "Last Receipt",
-        "receipts": "Receipts"
+        "receipts": "Receipts",
+        "salePrice": "Sale Price",
+        "grossProfit": "Gross Profit",
+        "oldestReceipt": "Oldest Receipt"
       }
     },
     "purchaseOrders": {

@@ -114,7 +114,8 @@
     "talentPool": "مجموعة المواهب",
     "timeline": "الجدول الزمني",
     "pickApplicantHint": "اختر متقدماً لقراءة قصته كاملة بالترتيب.",
-    "timelineEmpty": "لم يُسجَّل شيء بعد."
+    "timelineEmpty": "لم يُسجَّل شيء بعد.",
+    "applicantCount": "{{count}} متقدمين"
   },
   "attendance": {
     "title": "الحضور",
@@ -160,7 +161,8 @@
       "openings_few": "{{count}} شواغر",
       "openings_many": "{{count}} شاغراً",
       "openings_other": "{{count}} شاغر",
-      "viewAndApply": "عرض وتقديم"
+      "viewAndApply": "عرض وتقديم",
+      "openings": "{{count}} وظائف شاغرة"
     },
     "apply": {
       "allRoles": "جميع الوظائف",
@@ -190,6 +192,116 @@
         "cv": "السيرة الذاتية (PDF أو Word، حتى 5 ميجابايت)",
         "additionalNotes": "أي شيء آخر تود إخبارنا به"
       }
+    }
+  },
+  "employee360": {
+    "breadcrumbWorkforce": "القوى العاملة",
+    "stats": {
+      "tenure": "مدة الخدمة",
+      "tenureDays": "أيام الخدمة",
+      "present30d": "الحضور (٣٠ يوماً)",
+      "absent30d": "الغياب (٣٠ يوماً)",
+      "attendanceRate": "معدل الحضور"
+    },
+    "expiringDocuments": "مستندات على وشك الانتهاء",
+    "placement": {
+      "title": "التعيين الوظيفي",
+      "department": "القسم",
+      "position": "المنصب",
+      "jobGrade": "الدرجة الوظيفية",
+      "employmentType": "نوع التوظيف",
+      "hireDate": "تاريخ التعيين",
+      "terminationDate": "تاريخ إنهاء الخدمة"
+    },
+    "contract": {
+      "title": "العقد",
+      "none": "لا يوجد عقد ساري",
+      "number": "رقم العقد",
+      "type": "نوع العقد",
+      "status": "الحالة",
+      "start": "تاريخ البداية",
+      "end": "تاريخ النهاية",
+      "openEnded": "غير محدد المدة",
+      "weeklyHours": "ساعات العمل الأسبوعية",
+      "daysUntilExpiry": "الأيام المتبقية للانتهاء"
+    },
+    "reporting": {
+      "title": "التسلسل الإداري",
+      "manager": "المدير المباشر",
+      "chain": "سلسلة التسلسل الإداري",
+      "directReports": "المرؤوسون المباشرون"
+    },
+    "contact": {
+      "title": "بيانات الاتصال",
+      "workEmail": "البريد الإلكتروني للعمل",
+      "personalEmail": "البريد الإلكتروني الشخصي",
+      "mobile": "الهاتف المحمول",
+      "phone": "الهاتف",
+      "city": "المدينة",
+      "country": "الدولة",
+      "emergencyContact": "جهة الاتصال في الطوارئ",
+      "emergencyPhone": "هاتف الطوارئ"
+    },
+    "documents": {
+      "title": "المستندات",
+      "none": "لا توجد مستندات",
+      "expires": "تنتهي في",
+      "noExpiry": "بلا تاريخ انتهاء"
+    }
+  },
+  "leave": {
+    "errors": {
+      "employeeRequired": "اختر موظفاً",
+      "submitFailed": "تعذر إرسال طلب الإجازة"
+    },
+    "title": "طلبات الإجازة",
+    "subtitle": "مراجعة طلبات إجازات الموظفين والبت فيها.",
+    "newRequest": "طلب جديد",
+    "stats": {
+      "showing": "عرض",
+      "awaitingApproval": "بانتظار الموافقة",
+      "daysRequested": "الأيام المطلوبة"
+    },
+    "status": {
+      "all": "الكل",
+      "pending": "قيد الانتظار",
+      "approved": "موافق عليها",
+      "rejected": "مرفوضة",
+      "cancelled": "ملغاة"
+    },
+    "empty": "لا توجد طلبات إجازة",
+    "table": {
+      "number": "رقم الطلب",
+      "employee": "الموظف",
+      "dates": "التواريخ",
+      "days": "الأيام",
+      "payroll": "الرواتب",
+      "status": "الحالة",
+      "decision": "القرار"
+    },
+    "approve": "موافقة",
+    "reject": "رفض",
+    "form": {
+      "title": "طلب إجازة جديد",
+      "description": "تقديم طلب إجازة لموظف.",
+      "submitting": "جارٍ الإرسال…",
+      "submit": "إرسال الطلب",
+      "chooseEmployee": "اختر موظفاً",
+      "from": "من",
+      "to": "إلى",
+      "payrollTreatment": "المعالجة في الرواتب",
+      "deductSalary": "خصم من الراتب",
+      "doNotDeductSalary": "عدم الخصم من الراتب",
+      "payrollHint": "يحدد ما إذا كانت أيام الإجازة تُخصم من راتب الموظف.",
+      "reason": "السبب",
+      "optional": "اختياري"
+    },
+    "decide": {
+      "approveTitle": "الموافقة على طلب الإجازة",
+      "rejectTitle": "رفض طلب الإجازة",
+      "approveDescription": "هل تريد الموافقة على طلب الإجازة هذا؟",
+      "thisEmployee": "هذا الموظف",
+      "rejectDescription": "هل تريد رفض طلب الإجازة هذا؟"
     }
   }
 }

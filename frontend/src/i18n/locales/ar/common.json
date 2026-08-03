@@ -5,7 +5,8 @@
     "create": "إنشاء",
     "edit": "تعديل",
     "delete": "حذف",
-    "search": "بحث"
+    "search": "بحث",
+    "confirm": "تأكيد"
   },
   "topbar": {
     "search": "بحث…"
@@ -171,7 +172,17 @@
       "reports": "التقارير",
       "administration": "الإدارة",
       "engineering": "منصة الهندسة"
-    }
+    },
+    "navigation": "التنقل",
+    "expandSidebar": "توسيع الشريط الجانبي",
+    "collapseSidebar": "طي الشريط الجانبي",
+    "moduleNav": "تنقل الوحدات",
+    "toggleSidebar": "إظهار أو إخفاء الشريط الجانبي",
+    "mobileNavigation": "التنقل على الجوال",
+    "menu": "القائمة",
+    "closeMenu": "إغلاق القائمة",
+    "workspaces": "مساحات العمل",
+    "moduleNavigation": "تنقل الوحدات"
   },
   "language": {
     "switcher": "اللغة",
@@ -185,7 +196,13 @@
     "view": "عرض",
     "back": "رجوع",
     "approve": "موافقة",
-    "post": "ترحيل"
+    "post": "ترحيل",
+    "openActions": "فتح الإجراءات",
+    "working": "جارٍ التنفيذ…",
+    "clear": "مسح",
+    "more": "المزيد",
+    "new": "جديد",
+    "viewAll": "عرض الكل"
   },
   "status": {
     "active": "نشط",
@@ -223,7 +240,10 @@
   "toolbar": {
     "filters": "تصفية",
     "refresh": "تحديث",
-    "export": "تصدير"
+    "export": "تصدير",
+    "bulkActions": "إجراءات جماعية",
+    "quickFilters": "عوامل تصفية سريعة",
+    "clearFilters": "مسح عوامل التصفية"
   },
   "table": {
     "empty": "—",
@@ -245,7 +265,13 @@
     "next": "التالي",
     "pageOf": "صفحة {{page}} من {{lastPage}} · {{total}} إجمالي",
     "noResults": "لا توجد نتائج",
-    "refresh": "تحديث"
+    "refresh": "تحديث",
+    "showing": "عرض",
+    "previousPage": "الصفحة السابقة",
+    "pageNumber": "صفحة",
+    "nextPage": "الصفحة التالية",
+    "rows": "الصفوف",
+    "rowsPerPage": "عدد الصفوف في الصفحة"
   },
   "permission": {
     "accessDenied": "رفض الوصول",
@@ -254,5 +280,51 @@
   "dataGrid": {
     "columns": "الأعمدة",
     "resetToDefaults": "إعادة إلى الافتراضي"
+  },
+  "search": {
+    "placeholder": "بحث…",
+    "clear": "مسح البحث"
+  },
+  "selection": {
+    "bulkActionsFor": "إجراءات جماعية للعناصر المحددة",
+    "items": "العناصر",
+    "selected": "المحددة",
+    "clear": "إلغاء التحديد",
+    "selectAllRows": "تحديد كل الصفوف",
+    "selectRow": "تحديد الصف"
+  },
+  "savedViews": {
+    "label": "العروض المحفوظة",
+    "empty": "لا توجد عروض محفوظة",
+    "saveCurrent": "حفظ العرض الحالي"
+  },
+  "footer": {
+    "copyright": "جميع الحقوق محفوظة",
+    "build": "الإصدار"
+  },
+  "switcher": {
+    "currentBrand": "العلامة التجارية الحالية",
+    "filterByBrand": "تصفية حسب العلامة التجارية",
+    "allBrands": "كل العلامات التجارية",
+    "noFilter": "بدون تصفية",
+    "searchBrands": "البحث في العلامات التجارية",
+    "brands": "العلامات التجارية",
+    "availableBrands": "العلامات التجارية المتاحة",
+    "noBrandsFound": "لم يتم العثور على علامات تجارية",
+    "tryDifferentName": "جرّب اسمًا آخر",
+    "noFilterApplied": "لم يتم تطبيق أي تصفية",
+    "newBrand": "علامة تجارية جديدة",
+    "currentCompany": "الشركة الحالية",
+    "selectCompany": "اختر الشركة",
+    "searchCompanies": "البحث في الشركات",
+    "companies": "الشركات",
+    "availableCompanies": "الشركات المتاحة",
+    "noCompaniesFound": "لم يتم العثور على شركات",
+    "newCompany": "شركة جديدة"
+  },
+  "noResults": {
+    "withQuery": "لا توجد نتائج مطابقة لبحثك",
+    "withoutQuery": "لا توجد نتائج",
+    "title": "لا توجد نتائج"
   }
 }

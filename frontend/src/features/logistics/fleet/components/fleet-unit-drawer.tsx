@@ -21,6 +21,7 @@ import {
   useRecordOdometer,
   useUnitCosts,
 } from '../hooks/use-fleet';
+import type { CostType } from '../types/fleet';
 import { BlockerList } from './blocker-list';
 import { FitnessBadge, LifecycleBadge } from './fitness-badge';
 
@@ -324,7 +325,9 @@ function Cost({ unitId }: { unitId: string }) {
       <Separator />
 
       <div className="space-y-1.5">
-        {Object.entries(costs.by_type)
+        {/* Object.entries widens keys to `string`; by_type is Record<CostType, number>,
+            so this restores the key type the signature discards. */}
+        {(Object.entries(costs.by_type) as [CostType, number][])
           .filter(([, amount]) => amount !== 0)
           .map(([type, amount]) => (
             <div key={type} className="flex items-center justify-between text-xs">

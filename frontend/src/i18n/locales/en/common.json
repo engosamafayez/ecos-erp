@@ -5,7 +5,8 @@
     "create": "Create",
     "edit": "Edit",
     "delete": "Delete",
-    "search": "Search"
+    "search": "Search",
+    "confirm": "Confirm"
   },
   "topbar": {
     "search": "Search…"
@@ -171,7 +172,17 @@
       "reports": "Reports",
       "administration": "Administration",
       "engineering": "Engineering Platform"
-    }
+    },
+    "navigation": "Navigation",
+    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "Collapse sidebar",
+    "moduleNav": "Module navigation",
+    "toggleSidebar": "Toggle sidebar",
+    "mobileNavigation": "Mobile navigation",
+    "menu": "Menu",
+    "closeMenu": "Close menu",
+    "workspaces": "Workspaces",
+    "moduleNavigation": "Module navigation"
   },
   "language": {
     "switcher": "Language",
@@ -185,7 +196,13 @@
     "view": "View",
     "back": "Back",
     "approve": "Approve",
-    "post": "Post"
+    "post": "Post",
+    "openActions": "Open actions",
+    "working": "Working…",
+    "clear": "Clear",
+    "more": "More",
+    "new": "New",
+    "viewAll": "View all"
   },
   "status": {
     "active": "Active",
@@ -223,7 +240,10 @@
   "toolbar": {
     "filters": "Filters",
     "refresh": "Refresh",
-    "export": "Export"
+    "export": "Export",
+    "bulkActions": "Bulk actions",
+    "quickFilters": "Quick filters",
+    "clearFilters": "Clear filters"
   },
   "table": {
     "empty": "—",
@@ -245,7 +265,13 @@
     "next": "Next",
     "pageOf": "Page {{page}} of {{lastPage}} · {{total}} total",
     "noResults": "No results",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "showing": "Showing",
+    "previousPage": "Previous page",
+    "pageNumber": "Page",
+    "nextPage": "Next page",
+    "rows": "Rows",
+    "rowsPerPage": "Rows per page"
   },
   "permission": {
     "accessDenied": "Access denied",
@@ -254,5 +280,51 @@
   "dataGrid": {
     "columns": "Columns",
     "resetToDefaults": "Reset to defaults"
+  },
+  "search": {
+    "placeholder": "Search…",
+    "clear": "Clear search"
+  },
+  "selection": {
+    "bulkActionsFor": "Bulk actions for selected items",
+    "items": "Items",
+    "selected": "Selected",
+    "clear": "Clear selection",
+    "selectAllRows": "Select all rows",
+    "selectRow": "Select row"
+  },
+  "savedViews": {
+    "label": "Saved views",
+    "empty": "No saved views",
+    "saveCurrent": "Save current view"
+  },
+  "footer": {
+    "copyright": "All rights reserved",
+    "build": "Build"
+  },
+  "switcher": {
+    "currentBrand": "Current brand",
+    "filterByBrand": "Filter by brand",
+    "allBrands": "All brands",
+    "noFilter": "No filter",
+    "searchBrands": "Search brands",
+    "brands": "Brands",
+    "availableBrands": "Available brands",
+    "noBrandsFound": "No brands found",
+    "tryDifferentName": "Try a different name",
+    "noFilterApplied": "No filter applied",
+    "newBrand": "New brand",
+    "currentCompany": "Current company",
+    "selectCompany": "Select company",
+    "searchCompanies": "Search companies",
+    "companies": "Companies",
+    "availableCompanies": "Available companies",
+    "noCompaniesFound": "No companies found",
+    "newCompany": "New company"
+  },
+  "noResults": {
+    "withQuery": "No results match your search",
+    "withoutQuery": "No results",
+    "title": "No results"
   }
 }

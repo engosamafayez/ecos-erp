@@ -1,0 +1,144 @@
+name: Quality Gates
+
+# PROGRAM-E — Enterprise CI Foundation.
+#
+# Runs the gates that are measured green and ratcheted. Each job is independent
+# so a failure names one thing, not "CI is red".
+#
+# Deliberately NOT here yet:
+#   • Backend tests — 3,525 methods exist but phpunit.xml forces DB_CONNECTION=mysql
+#     while CI installs only pdo_pgsql. Resolving that drift is a breaking change
+#     to every developer environment and needs its own decision (see PQ-004).
+#   • Frontend tests — 2 test files against 1,010 sources; a gate here would
+#     assert coverage that does not exist.
+
+on:
+  push:
+    branches: [main, staging]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static-analysis:
+    name: PHPStan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo, pdo_pgsql, pdo_mysql, mbstring, xml, curl
+          # PHPStan's parallel workers crash on this codebase at the 128M
+          # default. Measured requirement: 4G platform, 2G core.
+          ini-values: memory_limit=4G
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: backend/vendor
+          key: composer-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install PHP dependencies
+        working-directory: backend
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      # PHPStan's result cache makes reruns substantially cheaper. Keyed on the
+      # configs and baselines so a policy change invalidates it.
+      - name: Cache PHPStan result cache
+        uses: actions/cache@v4
+        with:
+          path: backend/storage/framework/cache/phpstan*
+          key: phpstan-${{ hashFiles('backend/phpstan*.neon*') }}-${{ github.sha }}
+          restore-keys: phpstan-${{ hashFiles('backend/phpstan*.neon*') }}-
+
+      # Platform-wide, level 0, 4,153 files. Baseline freezes existing debt;
+      # any NEW violation fails this job.
+      - name: PHPStan — platform (level 0)
+        working-directory: backend
+        run: php vendor/bin/phpstan analyse --no-progress --memory-limit=4G
+
+      # Core Framework, level 6. Must not regress.
+      - name: PHPStan — core (level 6)
+        working-directory: backend
+        run: php vendor/bin/phpstan analyse --no-progress --memory-limit=2G -c phpstan-core.neon.dist
+
+  typecheck:
+    name: TypeScript
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        working-directory: frontend
+        run: npm ci --silent
+
+      # tsc -b writes incremental state; caching it turns a cold check into a
+      # warm one. Keyed on the tsconfigs so a config change invalidates.
+      - name: Cache TypeScript build info
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules/.tmp
+          key: tsbuildinfo-${{ hashFiles('frontend/tsconfig*.json') }}-${{ github.sha }}
+          restore-keys: tsbuildinfo-${{ hashFiles('frontend/tsconfig*.json') }}-
+
+      # Ratchet, not cliff. 309 pre-existing diagnostics are frozen per error
+      # code; a NEW one fails. Per-code rather than a single total, because a
+      # total hides a regression offset by an improvement elsewhere — exactly
+      # how three migration regressions survived a net-favourable count in EPIC-1.
+      - name: TypeScript ratchet
+        working-directory: frontend
+        run: node scripts/typecheck-ratchet.mjs --check
+
+  lint:
+    name: ESLint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        working-directory: frontend
+        run: npm ci --silent
+
+      # Errors fail. 4,985 pre-existing violations are frozen in
+      # eslint-suppressions.json; a NEW violation is not suppressed and fails here.
+      - name: ESLint
+        working-directory: frontend
+        run: npm run lint
+
+  architecture:
+    name: Architecture Ratchet
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Static import parsing only — no compiler, no install needed.
+      # Fails only when a ratcheted metric gets WORSE than the recorded baseline.
+      - name: Architecture ratchet
+        working-directory: frontend
+        run: node scripts/analyze-architecture.mjs --check

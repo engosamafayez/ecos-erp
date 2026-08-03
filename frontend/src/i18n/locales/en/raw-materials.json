@@ -25,15 +25,39 @@
     "archived": "Archived"
   },
   "form": {
-    "name": { "label": "Material Name", "placeholder": "e.g. Wheat Flour 72%" },
-    "code": { "label": "Material Code", "placeholder": "MAT-001" },
-    "category": { "label": "Category", "placeholder": "Select category…" },
-    "unit": { "label": "Base Unit", "placeholder": "Select unit…" },
-    "reorderPoint": { "label": "Reorder Point" },
-    "reorderQty": { "label": "Reorder Quantity" },
-    "supplier": { "label": "Primary Supplier", "placeholder": "Select supplier…" },
-    "unitCost": { "label": "Standard Unit Cost" },
-    "notes": { "label": "Notes", "placeholder": "Storage or handling notes…" }
+    "name": {
+      "label": "Material Name",
+      "placeholder": "e.g. Wheat Flour 72%"
+    },
+    "code": {
+      "label": "Material Code",
+      "placeholder": "MAT-001"
+    },
+    "category": {
+      "label": "Category",
+      "placeholder": "Select category…"
+    },
+    "unit": {
+      "label": "Base Unit",
+      "placeholder": "Select unit…"
+    },
+    "reorderPoint": {
+      "label": "Reorder Point"
+    },
+    "reorderQty": {
+      "label": "Reorder Quantity"
+    },
+    "supplier": {
+      "label": "Primary Supplier",
+      "placeholder": "Select supplier…"
+    },
+    "unitCost": {
+      "label": "Standard Unit Cost"
+    },
+    "notes": {
+      "label": "Notes",
+      "placeholder": "Storage or handling notes…"
+    }
   },
   "stock": {
     "currentStock": "Current Stock",
@@ -52,7 +76,6 @@
     "saving": "Saving…",
     "errorTitle": "Unable to save"
   },
-
   "page": {
     "titleRaw": "Raw Materials",
     "titlePackaging": "Packaging Materials",
@@ -75,7 +98,6 @@
       "confirmLabel": "Delete {{count}} items"
     }
   },
-
   "bulk": {
     "selected": "{{count}} selected",
     "allowNegative": "Allow Negative",
@@ -85,7 +107,6 @@
     "delete": "Delete",
     "clear": "Clear"
   },
-
   "filters": {
     "searchPlaceholder": "Search by name, SKU…",
     "allMaterials": "All Materials",
@@ -111,7 +132,6 @@
     "reset": "Reset",
     "locked": "locked"
   },
-
   "table": {
     "image": "Image",
     "name": "Name",
@@ -146,7 +166,6 @@
     "actionAddStock": "Add Stock",
     "actionDelete": "Delete"
   },
-
   "stats": {
     "labelRaw": "Raw Materials",
     "labelPackaging": "Packaging Materials",
@@ -156,13 +175,11 @@
     "totalAvailable": "Total Available",
     "totalInventoryValue": "Total Inventory Value"
   },
-
   "categorySelect": {
     "placeholder": "Select category…",
     "searchPlaceholder": "Search categories…",
     "emptyText": "No material categories"
   },
-
   "csv": {
     "imageUrl": "Image URL",
     "name": "Name",
@@ -184,7 +201,6 @@
     "yes": "Yes",
     "no": "No"
   },
-
   "formDrawer": {
     "titleNew": "New Raw Material",
     "titleEdit": "Edit Raw Material",
@@ -272,7 +288,6 @@
       "create": "Create Category"
     }
   },
-
   "detail": {
     "titleSr": "{{name}} — Raw Material Details",
     "addStock": "Add Stock",
@@ -385,7 +400,8 @@
       "sourcePurchase": "Purchase",
       "sourceManual": "Manual",
       "recipesCount_one": "{{count}} recipe",
-      "recipesCount_other": "{{count}} recipes"
+      "recipesCount_other": "{{count}} recipes",
+      "recipesCount": "{{count}} recipes"
     },
     "stockHistory": {
       "movementsTotal": "{{count}} movements total",
@@ -431,7 +447,6 @@
       "comingSoonDesc": "Charts and trend analytics will appear here when connected to the reporting module."
     }
   },
-
   "addStock": {
     "title": "Add Stock — {{name}}",
     "stepLabel": "Step {{current}} of {{total}} — ",
@@ -475,7 +490,6 @@
     "adding": "Adding…",
     "confirm": "Confirm & Add Stock"
   },
-
   "costEditor": {
     "ariaLabel": "Edit cost for material: {{cost}}",
     "title": "Update Material Cost",

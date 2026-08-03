@@ -25,6 +25,12 @@ import type {
 /** Order statuses that have a dedicated translation; anything else falls back to the raw value. */
 const ORDER_STATUS_KEYS = ['confirmed', 'preparing', 'pending', 'processing'] as const;
 
+type OrderStatusKey = (typeof ORDER_STATUS_KEYS)[number];
+
+/** Type guard so a raw status string can be used as a translation key. */
+const isOrderStatusKey = (s: string): s is OrderStatusKey =>
+  (ORDER_STATUS_KEYS as readonly string[]).includes(s);
+
 function OrderStatusBadge({ status }: { status: string }) {
   const { t } = useTranslation('logistics');
   const map: Record<string, string> = {
@@ -33,11 +39,14 @@ function OrderStatusBadge({ status }: { status: string }) {
     pending:    'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
     processing: 'bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300',
   };
-  const known = (ORDER_STATUS_KEYS as readonly string[]).includes(status);
+  // Narrow to the translated key union. The selector runs inside a closure, so
+  // control-flow narrowing from the ternary does not reach it — hence the
+  // assertion, which the `key` guard immediately above proves safe.
+  const key: OrderStatusKey | null = isOrderStatusKey(status) ? status : null;
 
   return (
     <Badge className={`text-[11px] ${map[status] ?? 'bg-gray-100 text-gray-700'}`}>
-      {known ? t($ => $.planning.orderStatus[status]) : status.replace(/_/g, ' ')}
+      {key ? t($ => $.planning.orderStatus[key!]) : status.replace(/_/g, ' ')}
     </Badge>
   );
 }
