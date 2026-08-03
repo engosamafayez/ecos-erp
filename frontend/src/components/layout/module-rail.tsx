@@ -2,8 +2,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
-import { type AppModule } from '@/config/module-navigation';
-import { useNavigation } from '@/features/authorization';
+import { APP_MODULES, type AppModule } from '@/config/module-navigation';
 
 type ModuleRailProps = {
   activeModule: AppModule | undefined;
@@ -12,9 +11,6 @@ type ModuleRailProps = {
 
 export function ModuleRail({ activeModule, className }: ModuleRailProps) {
   const { t } = useTranslation('common');
-  // Dynamic sidebar (TASK-IAM-005): the rail builds itself from the user's effective
-  // navigation + feature flags instead of rendering every module unconditionally.
-  const { modules } = useNavigation();
   return (
     <nav
       aria-label={t($ => $.nav.moduleNavigation)}
@@ -24,7 +20,7 @@ export function ModuleRail({ activeModule, className }: ModuleRailProps) {
       )}
     >
       <div className="flex flex-col items-center gap-0.5 overflow-y-auto py-2 px-1.5">
-        {modules.map((mod) => {
+        {APP_MODULES.map((mod) => {
           const Icon = mod.icon;
           const isActive = activeModule?.id === mod.id;
 

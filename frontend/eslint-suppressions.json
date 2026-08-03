@@ -212,11 +212,6 @@
       "count": 2
     }
   },
-  "src/features/authorization/components/can.tsx": {
-    "jsx-a11y/no-noninteractive-tabindex": {
-      "count": 1
-    }
-  },
   "src/features/branches/components/coverage-area-dialog.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
       "count": 7
