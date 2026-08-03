@@ -98,12 +98,7 @@ export function LoginForm({ isRTL = false }: { isRTL?: boolean }) {
     setFormError(null);
     try {
       await login(values);
-      // Dynamic landing page (TASK-IAM-005): open the workspace assigned by the user's
-      // Role Templates; fall back to the dashboard when none is set.
-      const landingKey = useAuthStore.getState().user?.authorization?.landing_page;
-      const landingPath =
-        (landingKey && (ROUTES as Record<string, string>)[landingKey]) || ROUTES.dashboard;
-      navigate(landingPath, { replace: true });
+      navigate(ROUTES.dashboard, { replace: true });
     } catch (error) {
       if (!axios.isAxiosError(error)) {
         setFormError(t($ => $.login.error.message));
