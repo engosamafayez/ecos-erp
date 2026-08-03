@@ -8,12 +8,12 @@
     "edit": "تعديل المورد"
   },
   "status": {
-    "draft":     "مسودة",
-    "active":    "نشط",
+    "draft": "مسودة",
+    "active": "نشط",
     "preferred": "مفضل",
-    "on_hold":   "معلق",
-    "blocked":   "محظور",
-    "archived":  "مؤرشف"
+    "on_hold": "معلق",
+    "blocked": "محظور",
+    "archived": "مؤرشف"
   },
   "columns": {
     "code": "الرمز",
@@ -26,13 +26,25 @@
     "status": "الحالة"
   },
   "form": {
-    "code": { "label": "الرمز", "placeholder": "SUP-001" },
-    "name": { "label": "الاسم", "placeholder": "اسم المورد" },
+    "code": {
+      "label": "الرمز",
+      "placeholder": "SUP-001"
+    },
+    "name": {
+      "label": "الاسم",
+      "placeholder": "اسم المورد"
+    },
     "contactPerson": "جهة الاتصال",
-    "email": { "label": "البريد الإلكتروني", "placeholder": "supplier@example.com" },
+    "email": {
+      "label": "البريد الإلكتروني",
+      "placeholder": "supplier@example.com"
+    },
     "phone": "الهاتف",
     "mobile": "المحمول",
-    "website": { "label": "الموقع الإلكتروني", "placeholder": "https://supplier.com" },
+    "website": {
+      "label": "الموقع الإلكتروني",
+      "placeholder": "https://supplier.com"
+    },
     "country": "الدولة",
     "state": "المحافظة",
     "city": "المدينة",
@@ -47,7 +59,10 @@
     "sectionLocation": "الموقع",
     "sectionFinancial": "الرصيد الافتتاحي",
     "sectionFinancialHint": "للشركات العاملة قبل النظام — الرصيد المُرحَّل إلى النظام.",
-    "notes": { "label": "ملاحظات", "placeholder": "ملاحظات اختيارية…" },
+    "notes": {
+      "label": "ملاحظات",
+      "placeholder": "ملاحظات اختيارية…"
+    },
     "active": "نشط"
   },
   "drawer": {
@@ -98,9 +113,16 @@
     "needsReview": "يحتاج مراجعة"
   },
   "page": {
-    "breadcrumbs": { "procurement": "المشتريات", "suppliers": "الموردون" },
+    "breadcrumbs": {
+      "procurement": "المشتريات",
+      "suppliers": "الموردون"
+    },
     "description": "إدارة شبكة موردي المشتريات.",
-    "savedViews": { "all": "جميع الموردين", "active": "النشطون", "preferred": "المفضلون" }
+    "savedViews": {
+      "all": "جميع الموردين",
+      "active": "النشطون",
+      "preferred": "المفضلون"
+    }
   },
   "columnsExtra": {
     "code": "رمز المورد",
@@ -122,7 +144,11 @@
     "lastPurchase": "آخر شراء",
     "procurementHealth": "صحة المشتريات"
   },
-  "filters": { "all": "الكل", "active": "النشط", "inactive": "غير نشط" },
+  "filters": {
+    "all": "الكل",
+    "active": "النشط",
+    "inactive": "غير نشط"
+  },
   "confirmDelete": {
     "title": "حذف المورد",
     "description": "هل أنت متأكد من حذف {{name}}؟ لا يمكن التراجع عن هذا الإجراء.",
@@ -131,7 +157,11 @@
   "exportCsv": "تصدير CSV",
   "edit": "تعديل",
   "deleteSelected": "حذف {{count}} محدد",
-  "toast": { "deleted": "تم حذف المورد.", "archived": "تمت أرشفة المورد.", "archiveFailed": "فشل في أرشفة المورد." },
+  "toast": {
+    "deleted": "تم حذف المورد.",
+    "archived": "تمت أرشفة المورد.",
+    "archiveFailed": "فشل في أرشفة المورد."
+  },
   "actionMenu": {
     "view": "عرض",
     "edit": "تعديل",
@@ -154,7 +184,11 @@
   "wizard": {
     "title": "مورد جديد",
     "subtitle": "أضف مورداً جديداً إلى شبكة مشترياتك.",
-    "steps": { "basicInfo": "المعلومات الأساسية", "contact": "جهة الاتصال", "review": "المراجعة" },
+    "steps": {
+      "basicInfo": "المعلومات الأساسية",
+      "contact": "جهة الاتصال",
+      "review": "المراجعة"
+    },
     "fields": {
       "name": "اسم المورد",
       "namePlaceholder": "مثال: الفطيم للتجارة",
@@ -263,7 +297,10 @@
         "costValue": "قيمة التكلفة",
         "saleValue": "قيمة البيع",
         "lastReceipt": "آخر استلام",
-        "receipts": "الإيصالات"
+        "receipts": "الإيصالات",
+        "salePrice": "TODO",
+        "grossProfit": "TODO",
+        "oldestReceipt": "TODO"
       }
     },
     "purchaseOrders": {

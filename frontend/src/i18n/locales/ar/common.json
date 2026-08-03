@@ -5,7 +5,8 @@
     "create": "إنشاء",
     "edit": "تعديل",
     "delete": "حذف",
-    "search": "بحث"
+    "search": "بحث",
+    "confirm": "TODO"
   },
   "topbar": {
     "search": "بحث…"
@@ -171,7 +172,17 @@
       "reports": "التقارير",
       "administration": "الإدارة",
       "engineering": "منصة الهندسة"
-    }
+    },
+    "navigation": "TODO",
+    "expandSidebar": "TODO",
+    "collapseSidebar": "TODO",
+    "moduleNav": "TODO",
+    "toggleSidebar": "TODO",
+    "mobileNavigation": "TODO",
+    "menu": "TODO",
+    "closeMenu": "TODO",
+    "workspaces": "TODO",
+    "moduleNavigation": "TODO"
   },
   "language": {
     "switcher": "اللغة",
@@ -185,7 +196,13 @@
     "view": "عرض",
     "back": "رجوع",
     "approve": "موافقة",
-    "post": "ترحيل"
+    "post": "ترحيل",
+    "openActions": "TODO",
+    "working": "TODO",
+    "clear": "TODO",
+    "more": "TODO",
+    "new": "TODO",
+    "viewAll": "TODO"
   },
   "status": {
     "active": "نشط",
@@ -223,7 +240,10 @@
   "toolbar": {
     "filters": "تصفية",
     "refresh": "تحديث",
-    "export": "تصدير"
+    "export": "تصدير",
+    "bulkActions": "TODO",
+    "quickFilters": "TODO",
+    "clearFilters": "TODO"
   },
   "table": {
     "empty": "—",
@@ -245,7 +265,13 @@
     "next": "التالي",
     "pageOf": "صفحة {{page}} من {{lastPage}} · {{total}} إجمالي",
     "noResults": "لا توجد نتائج",
-    "refresh": "تحديث"
+    "refresh": "تحديث",
+    "showing": "TODO",
+    "previousPage": "TODO",
+    "pageNumber": "TODO",
+    "nextPage": "TODO",
+    "rows": "TODO",
+    "rowsPerPage": "TODO"
   },
   "permission": {
     "accessDenied": "رفض الوصول",
@@ -254,5 +280,51 @@
   "dataGrid": {
     "columns": "الأعمدة",
     "resetToDefaults": "إعادة إلى الافتراضي"
+  },
+  "search": {
+    "placeholder": "TODO",
+    "clear": "TODO"
+  },
+  "selection": {
+    "bulkActionsFor": "TODO",
+    "items": "TODO",
+    "selected": "TODO",
+    "clear": "TODO",
+    "selectAllRows": "TODO",
+    "selectRow": "TODO"
+  },
+  "savedViews": {
+    "label": "TODO",
+    "empty": "TODO",
+    "saveCurrent": "TODO"
+  },
+  "footer": {
+    "copyright": "TODO",
+    "build": "TODO"
+  },
+  "switcher": {
+    "currentBrand": "TODO",
+    "filterByBrand": "TODO",
+    "allBrands": "TODO",
+    "noFilter": "TODO",
+    "searchBrands": "TODO",
+    "brands": "TODO",
+    "availableBrands": "TODO",
+    "noBrandsFound": "TODO",
+    "tryDifferentName": "TODO",
+    "noFilterApplied": "TODO",
+    "newBrand": "TODO",
+    "currentCompany": "TODO",
+    "selectCompany": "TODO",
+    "searchCompanies": "TODO",
+    "companies": "TODO",
+    "availableCompanies": "TODO",
+    "noCompaniesFound": "TODO",
+    "newCompany": "TODO"
+  },
+  "noResults": {
+    "withQuery": "TODO",
+    "withoutQuery": "TODO",
+    "title": "TODO"
   }
 }

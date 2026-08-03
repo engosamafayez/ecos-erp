@@ -27,7 +27,8 @@
     "branch": "Branch",
     "warehouse": "Warehouse",
     "status": "Status",
-    "lastSync": "Last Sync"
+    "lastSync": "Last Sync",
+    "brand": "TODO"
   },
   "platforms": {
     "shopify": "Shopify",
@@ -40,16 +41,46 @@
     "other": "Other"
   },
   "form": {
-    "company": { "label": "Company", "placeholder": "Select company…" },
-    "name": { "label": "Name", "placeholder": "ECOS Main Store" },
-    "platform": { "label": "Platform", "placeholder": "Select platform…" },
-    "branch": { "label": "Branch", "placeholder": "Select branch…" },
-    "warehouse": { "label": "Warehouse", "placeholder": "Select warehouse…" },
-    "apiKey": { "label": "API Key", "placeholder": "Enter API key…" },
-    "apiSecret": { "label": "API Secret", "placeholder": "Enter API secret…" },
-    "consumerKey": { "label": "Consumer Key", "placeholder": "ck_…" },
-    "consumerSecret": { "label": "Consumer Secret", "placeholder": "cs_…" },
-    "storeUrl": { "label": "Store URL", "placeholder": "https://store.example.com" },
+    "company": {
+      "label": "Company",
+      "placeholder": "Select company…"
+    },
+    "name": {
+      "label": "Name",
+      "placeholder": "ECOS Main Store"
+    },
+    "platform": {
+      "label": "Platform",
+      "placeholder": "Select platform…"
+    },
+    "branch": {
+      "label": "Branch",
+      "placeholder": "Select branch…"
+    },
+    "warehouse": {
+      "label": "Warehouse",
+      "placeholder": "Select warehouse…"
+    },
+    "apiKey": {
+      "label": "API Key",
+      "placeholder": "Enter API key…"
+    },
+    "apiSecret": {
+      "label": "API Secret",
+      "placeholder": "Enter API secret…"
+    },
+    "consumerKey": {
+      "label": "Consumer Key",
+      "placeholder": "ck_…"
+    },
+    "consumerSecret": {
+      "label": "Consumer Secret",
+      "placeholder": "cs_…"
+    },
+    "storeUrl": {
+      "label": "Store URL",
+      "placeholder": "https://store.example.com"
+    },
     "syncSettings": "Sync Settings",
     "syncOrders": "Sync Orders",
     "syncProducts": "Sync Products",
@@ -57,7 +88,11 @@
     "syncStock": "Sync Stock",
     "syncCustomers": "Sync Customers",
     "syncInventory": "Sync Inventory",
-    "active": "Active"
+    "active": "Active",
+    "brand": {
+      "label": "TODO",
+      "placeholder": "TODO"
+    }
   },
   "drawer": {
     "createTitle": "Create Channel",
@@ -72,5 +107,11 @@
   "delete": {
     "title": "Delete channel",
     "confirm": "Delete"
+  },
+  "kpi": {
+    "total": "TODO",
+    "active": "TODO",
+    "connected": "TODO",
+    "platforms": "TODO"
   }
 }

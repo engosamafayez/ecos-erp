@@ -110,7 +110,8 @@
     "talentPool": "talent pool",
     "timeline": "Timeline",
     "pickApplicantHint": "Pick an applicant to read their whole story in order.",
-    "timelineEmpty": "Nothing recorded yet."
+    "timelineEmpty": "Nothing recorded yet.",
+    "applicantCount": "TODO"
   },
   "attendance": {
     "title": "Attendance",
@@ -152,7 +153,8 @@
       "emptyHint": "Please check back soon.",
       "openings_one": "{{count}} position",
       "openings_other": "{{count}} positions",
-      "viewAndApply": "View & Apply"
+      "viewAndApply": "View & Apply",
+      "openings": "TODO"
     },
     "apply": {
       "allRoles": "All roles",
@@ -182,6 +184,116 @@
         "cv": "CV / Resume (PDF or Word, up to 5 MB)",
         "additionalNotes": "Anything else you would like us to know"
       }
+    }
+  },
+  "employee360": {
+    "breadcrumbWorkforce": "TODO",
+    "stats": {
+      "tenure": "TODO",
+      "tenureDays": "TODO",
+      "present30d": "TODO",
+      "absent30d": "TODO",
+      "attendanceRate": "TODO"
+    },
+    "expiringDocuments": "TODO",
+    "placement": {
+      "title": "TODO",
+      "department": "TODO",
+      "position": "TODO",
+      "jobGrade": "TODO",
+      "employmentType": "TODO",
+      "hireDate": "TODO",
+      "terminationDate": "TODO"
+    },
+    "contract": {
+      "title": "TODO",
+      "none": "TODO",
+      "number": "TODO",
+      "type": "TODO",
+      "status": "TODO",
+      "start": "TODO",
+      "end": "TODO",
+      "openEnded": "TODO",
+      "weeklyHours": "TODO",
+      "daysUntilExpiry": "TODO"
+    },
+    "reporting": {
+      "title": "TODO",
+      "manager": "TODO",
+      "chain": "TODO",
+      "directReports": "TODO"
+    },
+    "contact": {
+      "title": "TODO",
+      "workEmail": "TODO",
+      "personalEmail": "TODO",
+      "mobile": "TODO",
+      "phone": "TODO",
+      "city": "TODO",
+      "country": "TODO",
+      "emergencyContact": "TODO",
+      "emergencyPhone": "TODO"
+    },
+    "documents": {
+      "title": "TODO",
+      "none": "TODO",
+      "expires": "TODO",
+      "noExpiry": "TODO"
+    }
+  },
+  "leave": {
+    "errors": {
+      "employeeRequired": "TODO",
+      "submitFailed": "TODO"
+    },
+    "title": "TODO",
+    "subtitle": "TODO",
+    "newRequest": "TODO",
+    "stats": {
+      "showing": "TODO",
+      "awaitingApproval": "TODO",
+      "daysRequested": "TODO"
+    },
+    "status": {
+      "all": "TODO",
+      "pending": "TODO",
+      "approved": "TODO",
+      "rejected": "TODO",
+      "cancelled": "TODO"
+    },
+    "empty": "TODO",
+    "table": {
+      "number": "TODO",
+      "employee": "TODO",
+      "dates": "TODO",
+      "days": "TODO",
+      "payroll": "TODO",
+      "status": "TODO",
+      "decision": "TODO"
+    },
+    "approve": "TODO",
+    "reject": "TODO",
+    "form": {
+      "title": "TODO",
+      "description": "TODO",
+      "submitting": "TODO",
+      "submit": "TODO",
+      "chooseEmployee": "TODO",
+      "from": "TODO",
+      "to": "TODO",
+      "payrollTreatment": "TODO",
+      "deductSalary": "TODO",
+      "doNotDeductSalary": "TODO",
+      "payrollHint": "TODO",
+      "reason": "TODO",
+      "optional": "TODO"
+    },
+    "decide": {
+      "approveTitle": "TODO",
+      "rejectTitle": "TODO",
+      "approveDescription": "TODO",
+      "thisEmployee": "TODO",
+      "rejectDescription": "TODO"
     }
   }
 }

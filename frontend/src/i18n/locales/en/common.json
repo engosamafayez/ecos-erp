@@ -5,7 +5,8 @@
     "create": "Create",
     "edit": "Edit",
     "delete": "Delete",
-    "search": "Search"
+    "search": "Search",
+    "confirm": "TODO"
   },
   "topbar": {
     "search": "Search…"
@@ -171,7 +172,17 @@
       "reports": "Reports",
       "administration": "Administration",
       "engineering": "Engineering Platform"
-    }
+    },
+    "navigation": "TODO",
+    "expandSidebar": "TODO",
+    "collapseSidebar": "TODO",
+    "moduleNav": "TODO",
+    "toggleSidebar": "TODO",
+    "mobileNavigation": "TODO",
+    "menu": "TODO",
+    "closeMenu": "TODO",
+    "workspaces": "TODO",
+    "moduleNavigation": "TODO"
   },
   "language": {
     "switcher": "Language",
@@ -185,7 +196,13 @@
     "view": "View",
     "back": "Back",
     "approve": "Approve",
-    "post": "Post"
+    "post": "Post",
+    "openActions": "TODO",
+    "working": "TODO",
+    "clear": "TODO",
+    "more": "TODO",
+    "new": "TODO",
+    "viewAll": "TODO"
   },
   "status": {
     "active": "Active",
@@ -223,7 +240,10 @@
   "toolbar": {
     "filters": "Filters",
     "refresh": "Refresh",
-    "export": "Export"
+    "export": "Export",
+    "bulkActions": "TODO",
+    "quickFilters": "TODO",
+    "clearFilters": "TODO"
   },
   "table": {
     "empty": "—",
@@ -245,7 +265,13 @@
     "next": "Next",
     "pageOf": "Page {{page}} of {{lastPage}} · {{total}} total",
     "noResults": "No results",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "showing": "TODO",
+    "previousPage": "TODO",
+    "pageNumber": "TODO",
+    "nextPage": "TODO",
+    "rows": "TODO",
+    "rowsPerPage": "TODO"
   },
   "permission": {
     "accessDenied": "Access denied",
@@ -254,5 +280,51 @@
   "dataGrid": {
     "columns": "Columns",
     "resetToDefaults": "Reset to defaults"
+  },
+  "search": {
+    "placeholder": "TODO",
+    "clear": "TODO"
+  },
+  "selection": {
+    "bulkActionsFor": "TODO",
+    "items": "TODO",
+    "selected": "TODO",
+    "clear": "TODO",
+    "selectAllRows": "TODO",
+    "selectRow": "TODO"
+  },
+  "savedViews": {
+    "label": "TODO",
+    "empty": "TODO",
+    "saveCurrent": "TODO"
+  },
+  "footer": {
+    "copyright": "TODO",
+    "build": "TODO"
+  },
+  "switcher": {
+    "currentBrand": "TODO",
+    "filterByBrand": "TODO",
+    "allBrands": "TODO",
+    "noFilter": "TODO",
+    "searchBrands": "TODO",
+    "brands": "TODO",
+    "availableBrands": "TODO",
+    "noBrandsFound": "TODO",
+    "tryDifferentName": "TODO",
+    "noFilterApplied": "TODO",
+    "newBrand": "TODO",
+    "currentCompany": "TODO",
+    "selectCompany": "TODO",
+    "searchCompanies": "TODO",
+    "companies": "TODO",
+    "availableCompanies": "TODO",
+    "noCompaniesFound": "TODO",
+    "newCompany": "TODO"
+  },
+  "noResults": {
+    "withQuery": "TODO",
+    "withoutQuery": "TODO",
+    "title": "TODO"
   }
 }

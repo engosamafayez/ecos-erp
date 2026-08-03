@@ -24,13 +24,23 @@
     "customer": "Customer",
     "warehouse": "Warehouse",
     "fulfillmentDate": "Date",
-    "status": "Status"
+    "status": "Status",
+    "channel": "TODO"
   },
   "form": {
-    "order": { "label": "Order", "placeholder": "Select order…" },
-    "warehouse": { "label": "Warehouse", "placeholder": "Select warehouse…" },
+    "order": {
+      "label": "Order",
+      "placeholder": "Select order…"
+    },
+    "warehouse": {
+      "label": "Warehouse",
+      "placeholder": "Select warehouse…"
+    },
     "fulfillmentDate": "Fulfillment Date",
-    "notes": { "label": "Notes", "placeholder": "Optional notes…" }
+    "notes": {
+      "label": "Notes",
+      "placeholder": "Optional notes…"
+    }
   },
   "lines": {
     "title": "Fulfillment Lines",

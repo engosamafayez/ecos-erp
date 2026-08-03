@@ -159,7 +159,9 @@
     "avgOrder": "Avg Order",
     "customerSince": "Customer Since",
     "aov": "AOV",
-    "firstOrder": "First Order"
+    "firstOrder": "First Order",
+    "rejected": "TODO",
+    "openOrders": "TODO"
   },
   "notesTab": {
     "filterAll": "All",
@@ -192,7 +194,8 @@
     "unknown": "Unknown",
     "added": "Added",
     "by": "By",
-    "updatedBy": "Updated by {{name}}"
+    "updatedBy": "Updated by {{name}}",
+    "results": "TODO"
   },
   "smartToolbar": {
     "groupCustomer": "Customer",
@@ -637,7 +640,7 @@
     "lineTotal": "Line Total",
     "subtotal": "Subtotal",
     "shippingTotal": "Shipping",
-    "discountTotal": "Discount",
+    "discountTotal": "Total Discount",
     "total": "Total",
     "back": "Back",
     "loading": "Loading…",
@@ -676,7 +679,6 @@
     "tax": "Tax",
     "grandTotal": "Grand Total",
     "deposit": "Deposit",
-    "discountTotal": "Total Discount",
     "formula": "Formula"
   },
   "statusSelector": {
@@ -918,7 +920,9 @@
     "overrideShippingCost": "Override shipping cost",
     "autoCalculated": "Auto-calculated ({{level}} rate). Click unlock to override.",
     "manualOverrideActive": "Manual override active — will be audited.",
-    "headerNotesPlaceholder": "Optional notes…"
+    "headerNotesPlaceholder": "Optional notes…",
+    "estDays": "TODO",
+    "days": "TODO"
   },
   "zoneEditor": {
     "noBrandChannel": "No brand channel — zone cannot be assigned.",
@@ -1005,7 +1009,8 @@
     "notReserved": "Not Reserved",
     "unitsReserved_one": "{{count}} unit reserved",
     "unitsReserved_other": "{{count}} units reserved",
-    "unitsPartialReserved": "{{reserved}} of {{total}} units reserved"
+    "unitsPartialReserved": "{{reserved}} of {{total}} units reserved",
+    "unitsReserved": "TODO"
   },
   "snapshot": {
     "snapshotNotAvailable": "Snapshot Not Available",
@@ -1297,5 +1302,20 @@
     "manifestNote": "A loading manifest exists for this trip. You may need to regenerate it from the Dispatch Gate after saving.",
     "saveAnyway": "Save Anyway",
     "confirmSave": "Confirm & Save"
+  },
+  "confirmation": {
+    "success": "TODO",
+    "successDesc": "TODO",
+    "error": "TODO",
+    "title": "TODO",
+    "method": "TODO",
+    "result": "TODO",
+    "notes": "TODO",
+    "notesPlaceholder": "TODO",
+    "saving": "TODO",
+    "save": "TODO"
+  },
+  "common": {
+    "optional": "TODO"
   }
 }

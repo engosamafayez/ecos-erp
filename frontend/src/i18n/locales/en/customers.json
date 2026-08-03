@@ -96,18 +96,34 @@
     "inactive": "Inactive"
   },
   "form": {
-    "code": { "label": "Code", "placeholder": "CUST-001" },
-    "name": { "label": "Customer Name", "placeholder": "e.g. Ahmed Mohamed" },
+    "code": {
+      "label": "Code",
+      "placeholder": "CUST-001"
+    },
+    "name": {
+      "label": "Customer Name",
+      "placeholder": "e.g. Ahmed Mohamed"
+    },
     "phone": "Primary Phone",
     "phonePlaceholder": "Enter phone number…",
     "mobile": "Secondary Phone",
     "contactPerson": "Contact Person",
-    "email": { "label": "Email", "placeholder": "customer@example.com" },
+    "email": {
+      "label": "Email",
+      "placeholder": "customer@example.com"
+    },
     "country": "Country",
     "city": "City",
     "address": "Address",
-    "notes": { "label": "Notes", "placeholder": "Optional notes…" },
-    "active": "Active"
+    "notes": {
+      "label": "Notes",
+      "placeholder": "Optional notes…"
+    },
+    "active": "Active",
+    "brand": {
+      "label": "TODO",
+      "placeholder": "TODO"
+    }
   },
   "drawer": {
     "createTitle": "New Customer",
@@ -152,7 +168,9 @@
       "totalOrders": "Total Orders",
       "lastOrder": "Last Order",
       "totalSpend": "Total Spend",
-      "noOrders": "No orders yet."
+      "noOrders": "No orders yet.",
+      "brands": "TODO",
+      "brandOrders": "TODO"
     },
     "phonesTab": {
       "title": "Phone Numbers",

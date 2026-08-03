@@ -70,20 +70,57 @@
     "packaging_material": "Packaging Material"
   },
   "form": {
-    "sku": { "label": "SKU", "placeholder": "FG-LAPTOP-XPS" },
+    "sku": {
+      "label": "SKU",
+      "placeholder": "FG-LAPTOP-XPS"
+    },
     "barcode": "Barcode",
-    "code": { "label": "Code", "placeholder": "PROD-001" },
-    "name": { "label": "Name", "placeholder": "Product Name" },
-    "type": { "label": "Type", "placeholder": "Select type…" },
-    "category": { "label": "Category", "placeholder": "Select category…" },
-    "unit": { "label": "Unit", "placeholder": "Select unit…" },
-    "stockStatus": { "label": "Stock Status", "placeholder": "Select stock status…" },
-    "regularPrice": { "label": "Regular Price" },
-    "salePrice": { "label": "Sale Price" },
-    "imageUrl": { "label": "Image URL", "placeholder": "https://example.com/image.jpg" },
-    "description": { "label": "Description", "placeholder": "Optional internal description…" },
-    "shortDescription": { "label": "Short Description", "placeholder": "Brief product summary…" },
-    "longDescription": { "label": "Long Description", "placeholder": "Full product description…" },
+    "code": {
+      "label": "Code",
+      "placeholder": "PROD-001"
+    },
+    "name": {
+      "label": "Name",
+      "placeholder": "Product Name"
+    },
+    "type": {
+      "label": "Type",
+      "placeholder": "Select type…"
+    },
+    "category": {
+      "label": "Category",
+      "placeholder": "Select category…"
+    },
+    "unit": {
+      "label": "Unit",
+      "placeholder": "Select unit…"
+    },
+    "stockStatus": {
+      "label": "Stock Status",
+      "placeholder": "Select stock status…"
+    },
+    "regularPrice": {
+      "label": "Regular Price"
+    },
+    "salePrice": {
+      "label": "Sale Price"
+    },
+    "imageUrl": {
+      "label": "Image URL",
+      "placeholder": "https://example.com/image.jpg"
+    },
+    "description": {
+      "label": "Description",
+      "placeholder": "Optional internal description…"
+    },
+    "shortDescription": {
+      "label": "Short Description",
+      "placeholder": "Brief product summary…"
+    },
+    "longDescription": {
+      "label": "Long Description",
+      "placeholder": "Full product description…"
+    },
     "active": "Active"
   },
   "drawer": {
@@ -278,7 +315,8 @@
     "selectBrandFirst": "Select a brand first.",
     "loadingChannels": "Loading channels…",
     "noChannelsForBrand": "No channels for this brand.",
-    "generatingSku": "Generating…"
+    "generatingSku": "Generating…",
+    "channelsSelected": "TODO"
   },
   "pricingSection": {
     "title": "Pricing",

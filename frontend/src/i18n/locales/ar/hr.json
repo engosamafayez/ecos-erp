@@ -114,7 +114,8 @@
     "talentPool": "مجموعة المواهب",
     "timeline": "الجدول الزمني",
     "pickApplicantHint": "اختر متقدماً لقراءة قصته كاملة بالترتيب.",
-    "timelineEmpty": "لم يُسجَّل شيء بعد."
+    "timelineEmpty": "لم يُسجَّل شيء بعد.",
+    "applicantCount": "TODO"
   },
   "attendance": {
     "title": "الحضور",
@@ -160,7 +161,8 @@
       "openings_few": "{{count}} شواغر",
       "openings_many": "{{count}} شاغراً",
       "openings_other": "{{count}} شاغر",
-      "viewAndApply": "عرض وتقديم"
+      "viewAndApply": "عرض وتقديم",
+      "openings": "TODO"
     },
     "apply": {
       "allRoles": "جميع الوظائف",
@@ -190,6 +192,116 @@
         "cv": "السيرة الذاتية (PDF أو Word، حتى 5 ميجابايت)",
         "additionalNotes": "أي شيء آخر تود إخبارنا به"
       }
+    }
+  },
+  "employee360": {
+    "breadcrumbWorkforce": "TODO",
+    "stats": {
+      "tenure": "TODO",
+      "tenureDays": "TODO",
+      "present30d": "TODO",
+      "absent30d": "TODO",
+      "attendanceRate": "TODO"
+    },
+    "expiringDocuments": "TODO",
+    "placement": {
+      "title": "TODO",
+      "department": "TODO",
+      "position": "TODO",
+      "jobGrade": "TODO",
+      "employmentType": "TODO",
+      "hireDate": "TODO",
+      "terminationDate": "TODO"
+    },
+    "contract": {
+      "title": "TODO",
+      "none": "TODO",
+      "number": "TODO",
+      "type": "TODO",
+      "status": "TODO",
+      "start": "TODO",
+      "end": "TODO",
+      "openEnded": "TODO",
+      "weeklyHours": "TODO",
+      "daysUntilExpiry": "TODO"
+    },
+    "reporting": {
+      "title": "TODO",
+      "manager": "TODO",
+      "chain": "TODO",
+      "directReports": "TODO"
+    },
+    "contact": {
+      "title": "TODO",
+      "workEmail": "TODO",
+      "personalEmail": "TODO",
+      "mobile": "TODO",
+      "phone": "TODO",
+      "city": "TODO",
+      "country": "TODO",
+      "emergencyContact": "TODO",
+      "emergencyPhone": "TODO"
+    },
+    "documents": {
+      "title": "TODO",
+      "none": "TODO",
+      "expires": "TODO",
+      "noExpiry": "TODO"
+    }
+  },
+  "leave": {
+    "errors": {
+      "employeeRequired": "TODO",
+      "submitFailed": "TODO"
+    },
+    "title": "TODO",
+    "subtitle": "TODO",
+    "newRequest": "TODO",
+    "stats": {
+      "showing": "TODO",
+      "awaitingApproval": "TODO",
+      "daysRequested": "TODO"
+    },
+    "status": {
+      "all": "TODO",
+      "pending": "TODO",
+      "approved": "TODO",
+      "rejected": "TODO",
+      "cancelled": "TODO"
+    },
+    "empty": "TODO",
+    "table": {
+      "number": "TODO",
+      "employee": "TODO",
+      "dates": "TODO",
+      "days": "TODO",
+      "payroll": "TODO",
+      "status": "TODO",
+      "decision": "TODO"
+    },
+    "approve": "TODO",
+    "reject": "TODO",
+    "form": {
+      "title": "TODO",
+      "description": "TODO",
+      "submitting": "TODO",
+      "submit": "TODO",
+      "chooseEmployee": "TODO",
+      "from": "TODO",
+      "to": "TODO",
+      "payrollTreatment": "TODO",
+      "deductSalary": "TODO",
+      "doNotDeductSalary": "TODO",
+      "payrollHint": "TODO",
+      "reason": "TODO",
+      "optional": "TODO"
+    },
+    "decide": {
+      "approveTitle": "TODO",
+      "rejectTitle": "TODO",
+      "approveDescription": "TODO",
+      "thisEmployee": "TODO",
+      "rejectDescription": "TODO"
     }
   }
 }

@@ -1241,7 +1241,8 @@
       "brandZones_two": "منطقتا علامة تجارية",
       "brandZones_few": "{{count}} مناطق علامة تجارية",
       "brandZones_many": "{{count}} منطقة علامة تجارية",
-      "brandZones_other": "{{count}} منطقة علامة تجارية"
+      "brandZones_other": "{{count}} منطقة علامة تجارية",
+      "brandZones": "TODO"
     },
     "page": {
       "title": "جغرافيا مصر",
@@ -1259,7 +1260,8 @@
       "zonesCount_other": "{{count}} منطقة",
       "selectGovPrompt": "اختر محافظة لعرض مناطقها",
       "loadingZones": "جارٍ تحميل المناطق…",
-      "noZones": "لا توجد مناطق"
+      "noZones": "لا توجد مناطق",
+      "zonesCount": "TODO"
     }
   }
 }

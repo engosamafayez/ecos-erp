@@ -81,6 +81,43 @@
       "size": "حجم الجمهور",
       "criteria": "معايير الاستهداف",
       "lastUpdated": "آخر تحديث"
+    },
+    "drawer": {
+      "editTitle": "TODO",
+      "newTitle": "TODO",
+      "nameLabel": "TODO",
+      "namePlaceholder": "TODO",
+      "descriptionPlaceholder": "TODO",
+      "segmentTypeLabel": "TODO",
+      "entityTypeLabel": "TODO",
+      "isDynamicLabel": "TODO",
+      "create": "TODO"
+    },
+    "entityType": {
+      "customer": "TODO",
+      "lead": "TODO",
+      "order": "TODO"
+    },
+    "pageSubtitle": "TODO",
+    "actions": {
+      "new": "TODO",
+      "recalculate": "TODO"
+    },
+    "loading": "TODO",
+    "empty": "TODO",
+    "dynamic": "TODO",
+    "static": "TODO",
+    "members": "TODO",
+    "updatedOn": "TODO",
+    "segmentType": {
+      "demographic": "TODO",
+      "geographic": "TODO",
+      "behavioral": "TODO",
+      "transactional": "TODO",
+      "marketing": "TODO",
+      "business": "TODO",
+      "operational": "TODO",
+      "custom": "TODO"
     }
   },
   "meta": {
@@ -101,6 +138,213 @@
     "actions": "الإجراءات",
     "conditions": "الشروط",
     "enabled": "مفعّل",
-    "disabled": "معطّل"
+    "disabled": "معطّل",
+    "workflows": {
+      "drawer": {
+        "editTitle": "TODO",
+        "newTitle": "TODO",
+        "nameLabel": "TODO",
+        "namePlaceholder": "TODO",
+        "descriptionPlaceholder": "TODO",
+        "triggerTypeLabel": "TODO",
+        "eventTypeLabel": "TODO",
+        "eventTypePlaceholder": "TODO",
+        "eventTypeHint": "TODO",
+        "tagsPlaceholder": "TODO",
+        "create": "TODO"
+      },
+      "actions": {
+        "editDetails": "TODO",
+        "openBuilder": "TODO",
+        "duplicate": "TODO",
+        "activate": "TODO",
+        "pause": "TODO",
+        "archive": "TODO",
+        "templates": "TODO",
+        "new": "TODO",
+        "browseTemplates": "TODO"
+      },
+      "lastRun": "TODO",
+      "title": "TODO",
+      "subtitle": "TODO",
+      "search": "TODO",
+      "loading": "TODO",
+      "empty": "TODO"
+    },
+    "templates": {
+      "global": "TODO",
+      "usedTimes": "TODO",
+      "use": "TODO",
+      "title": "TODO",
+      "search": "TODO",
+      "loading": "TODO",
+      "empty": "TODO"
+    },
+    "dashboard": {
+      "loading": "TODO",
+      "title": "TODO",
+      "subtitle": "TODO",
+      "kpis": {
+        "activeWorkflows": "TODO",
+        "totalExecutions": "TODO",
+        "completed7d": "TODO",
+        "failed7d": "TODO"
+      },
+      "health": {
+        "title": "TODO",
+        "successRate": "TODO"
+      },
+      "trending": {
+        "title": "TODO",
+        "empty": "TODO",
+        "runs": "TODO"
+      },
+      "recent": {
+        "title": "TODO",
+        "empty": "TODO",
+        "columns": {
+          "workflow": "TODO",
+          "entity": "TODO",
+          "time": "TODO"
+        }
+      }
+    },
+    "executionStatus": {
+      "completed": "TODO",
+      "failed": "TODO"
+    },
+    "governance": {
+      "limits": {
+        "perCustomerPerDay": "TODO",
+        "perCustomerPerWorkflow": "TODO",
+        "totalPerDay": "TODO",
+        "quietHours": "TODO",
+        "requiresApproval": "TODO"
+      },
+      "title": "TODO",
+      "subtitle": "TODO",
+      "actions": {
+        "new": "TODO",
+        "create": "TODO",
+        "edit": "TODO",
+        "newFull": "TODO"
+      },
+      "loading": "TODO",
+      "empty": "TODO",
+      "formPlaceholder": "TODO"
+    },
+    "workflowStatus": {
+      "pending_approval": "TODO"
+    },
+    "triggerType": {
+      "business_event": "TODO",
+      "schedule": "TODO",
+      "date_based": "TODO",
+      "webhook": "TODO",
+      "api": "TODO",
+      "manual": "TODO"
+    },
+    "templateCategory": {
+      "welcome_series": "TODO",
+      "abandoned_cart": "TODO",
+      "lead_nurturing": "TODO",
+      "no_reply_reminder": "TODO",
+      "payment_reminder": "TODO",
+      "shipment_notification": "TODO",
+      "order_delivered": "TODO",
+      "review_request": "TODO",
+      "birthday_campaign": "TODO",
+      "vip_upgrade": "TODO",
+      "win_back_customer": "TODO",
+      "seasonal_campaign": "TODO",
+      "ramadan_journey": "TODO",
+      "black_friday_journey": "TODO",
+      "product_launch": "TODO",
+      "custom": "TODO"
+    }
+  },
+  "common": {
+    "description": "TODO",
+    "saving": "TODO",
+    "saveChanges": "TODO",
+    "cancel": "TODO",
+    "tags": "TODO",
+    "all": "TODO",
+    "edit": "TODO",
+    "delete": "TODO",
+    "noDataAvailable": "TODO",
+    "status": "TODO",
+    "default": "TODO",
+    "deactivate": "TODO",
+    "yes": "TODO",
+    "close": "TODO",
+    "no": "TODO",
+    "noData": "TODO"
+  },
+  "connections": {
+    "healthCard": {
+      "authStatus": "TODO",
+      "apiAvailable": "TODO",
+      "tokenExpires": "TODO",
+      "lastSuccess": "TODO",
+      "lastFailure": "TODO",
+      "errors7d": "TODO",
+      "avgSync": "TODO",
+      "rateLimitLeft": "TODO",
+      "title": "TODO"
+    },
+    "status": {
+      "disconnected": "TODO",
+      "connected": "TODO",
+      "error": "TODO"
+    },
+    "health": {
+      "error": "TODO",
+      "warning": "TODO",
+      "healthy": "TODO"
+    }
+  },
+  "assets": {
+    "graph": {
+      "loading": "TODO",
+      "loadError": "TODO",
+      "empty": "TODO",
+      "aria": "TODO",
+      "legendAccepted": "TODO",
+      "legendSuggested": "TODO"
+    },
+    "health": {
+      "healthy": "TODO",
+      "warning": "TODO",
+      "disconnected": "TODO",
+      "expired_token": "TODO",
+      "permission_missing": "TODO",
+      "sync_failed": "TODO",
+      "inactive": "TODO",
+      "unknown": "TODO"
+    }
+  },
+  "intelligence": {
+    "filters": {
+      "dateRange": "TODO"
+    },
+    "chart": {
+      "lineChartAria": "TODO"
+    }
+  },
+  "providers": {
+    "status": {
+      "not_configured": "TODO",
+      "invalid": "TODO",
+      "invalid_configuration": "TODO",
+      "ready": "TODO",
+      "connected": "TODO",
+      "token_expired": "TODO",
+      "permission_error": "TODO",
+      "webhook_missing": "TODO",
+      "sync_disabled": "TODO",
+      "service_unavailable": "TODO",
+      "unknown": "TODO"
+    }
   }
 }

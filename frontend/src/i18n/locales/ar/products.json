@@ -70,20 +70,57 @@
     "packaging_material": "مادة تغليف"
   },
   "form": {
-    "sku": { "label": "رمز المنتج", "placeholder": "FG-LAPTOP-XPS" },
+    "sku": {
+      "label": "رمز المنتج",
+      "placeholder": "FG-LAPTOP-XPS"
+    },
     "barcode": "الباركود",
-    "code": { "label": "الرمز", "placeholder": "PROD-001" },
-    "name": { "label": "الاسم", "placeholder": "اسم المنتج" },
-    "type": { "label": "النوع", "placeholder": "اختر نوعاً…" },
-    "category": { "label": "الفئة", "placeholder": "اختر فئة…" },
-    "unit": { "label": "الوحدة", "placeholder": "اختر وحدة…" },
-    "stockStatus": { "label": "حالة المخزون", "placeholder": "اختر حالة المخزون…" },
-    "regularPrice": { "label": "السعر الأصلي" },
-    "salePrice": { "label": "سعر البيع" },
-    "imageUrl": { "label": "رابط الصورة", "placeholder": "https://example.com/image.jpg" },
-    "description": { "label": "الوصف الداخلي", "placeholder": "وصف داخلي اختياري…" },
-    "shortDescription": { "label": "وصف مختصر", "placeholder": "ملخص مختصر للمنتج…" },
-    "longDescription": { "label": "وصف تفصيلي", "placeholder": "وصف كامل للمنتج…" },
+    "code": {
+      "label": "الرمز",
+      "placeholder": "PROD-001"
+    },
+    "name": {
+      "label": "الاسم",
+      "placeholder": "اسم المنتج"
+    },
+    "type": {
+      "label": "النوع",
+      "placeholder": "اختر نوعاً…"
+    },
+    "category": {
+      "label": "الفئة",
+      "placeholder": "اختر فئة…"
+    },
+    "unit": {
+      "label": "الوحدة",
+      "placeholder": "اختر وحدة…"
+    },
+    "stockStatus": {
+      "label": "حالة المخزون",
+      "placeholder": "اختر حالة المخزون…"
+    },
+    "regularPrice": {
+      "label": "السعر الأصلي"
+    },
+    "salePrice": {
+      "label": "سعر البيع"
+    },
+    "imageUrl": {
+      "label": "رابط الصورة",
+      "placeholder": "https://example.com/image.jpg"
+    },
+    "description": {
+      "label": "الوصف الداخلي",
+      "placeholder": "وصف داخلي اختياري…"
+    },
+    "shortDescription": {
+      "label": "وصف مختصر",
+      "placeholder": "ملخص مختصر للمنتج…"
+    },
+    "longDescription": {
+      "label": "وصف تفصيلي",
+      "placeholder": "وصف كامل للمنتج…"
+    },
     "active": "نشط"
   },
   "drawer": {
@@ -278,7 +315,8 @@
     "selectBrandFirst": "اختر العلامة التجارية أولاً.",
     "loadingChannels": "جارٍ تحميل القنوات…",
     "noChannelsForBrand": "لا توجد قنوات لهذه العلامة.",
-    "generatingSku": "جارٍ الإنشاء…"
+    "generatingSku": "جارٍ الإنشاء…",
+    "channelsSelected": "TODO"
   },
   "pricingSection": {
     "title": "التسعير",

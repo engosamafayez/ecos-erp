@@ -2,7 +2,6 @@
   "title": "Recipes",
   "subtitle": "Bill of materials and production recipes for finished goods.",
   "search": "Search recipes by product name or SKU…",
-
   "page": {
     "title": "Recipes",
     "subtitle": "Manage production recipes and their material components.",
@@ -18,7 +17,6 @@
       "avgCost": "Avg Recipe Cost"
     }
   },
-
   "toolbar": {
     "searchPlaceholder": "Search by name or SKU…",
     "allStatuses": "All Statuses",
@@ -30,14 +28,12 @@
     "refresh": "Refresh",
     "export": "Export"
   },
-
   "columnManager": {
     "title": "Columns",
     "showAll": "Show All",
     "reset": "Reset",
     "locked": "Locked"
   },
-
   "filtersPanel": {
     "title": "Filters",
     "clearAll": "Clear All",
@@ -48,13 +44,11 @@
     "to": "To",
     "toConnector": "to"
   },
-
   "bulk": {
     "selected": "{{count}} selected",
     "exportSelected": "Export Selected",
     "clearSelection": "Clear Selection"
   },
-
   "table": {
     "headers": {
       "image": "Image",
@@ -78,7 +72,6 @@
       "description": "Try adjusting the filters or create a new recipe."
     }
   },
-
   "actions": {
     "new": "New Recipe",
     "edit": "Edit Recipe",
@@ -98,13 +91,11 @@
     "viewMaterialDetails": "View Material Details",
     "newButton": "New"
   },
-
   "status": {
     "active": "Active",
     "draft": "Draft",
     "archived": "Archived"
   },
-
   "waste": {
     "excellent": "Excellent",
     "normal": "Normal",
@@ -112,9 +103,7 @@
     "critical": "Critical",
     "wasteSuffix": "+{{pct}}% waste"
   },
-
   "noCost": "No cost",
-
   "preview": {
     "ariaLabel": "Preview {{count}} materials for {{name}}",
     "materialsCount_one": "{{count}} material",
@@ -122,9 +111,9 @@
     "rawCount": "{{count}} raw",
     "pkgCount": "{{count}} packaging",
     "noMaterials": "No materials.",
-    "total": "{{count}} total"
+    "total": "{{count}} total",
+    "materialsCount": "TODO"
   },
-
   "csv": {
     "headers": {
       "image": "Product Image",
@@ -139,26 +128,22 @@
       "status": "Status"
     }
   },
-
   "delete": {
     "title": "Delete Recipe",
     "description": "Are you sure you want to delete the recipe for \"{{name}}\"? This action cannot be undone.",
     "confirm": "Delete"
   },
-
   "materialTypes": {
     "raw": "Raw",
     "rawMaterial": "Raw Material",
     "packaging": "Packaging"
   },
-
   "materialsGroup": {
     "rawMaterials": "Raw Materials",
     "packagingMaterials": "Packaging Materials",
     "rawSubtotal": "Raw Materials Subtotal",
     "packagingSubtotal": "Packaging Subtotal"
   },
-
   "costSummary": {
     "title": "Cost Summary",
     "recipeNumber": "Recipe #",
@@ -175,7 +160,6 @@
     "yieldHint": "Units produced per recipe run (used for per-unit costing)",
     "missingCost": "Some materials have no defined cost. Recipe cost may be incomplete."
   },
-
   "tableColumns": {
     "material": "Material",
     "type": "Type",
@@ -188,7 +172,6 @@
     "totalCost": "Total Cost",
     "qty": "Qty"
   },
-
   "workspace": {
     "details": "Details",
     "materials": "Materials",
@@ -212,7 +195,6 @@
     "status": "Status",
     "product_label": "Product"
   },
-
   "startFrom": {
     "title": "Start From",
     "blank": "Blank Recipe",
@@ -225,31 +207,26 @@
     "fromLabel": "from",
     "period": "."
   },
-
   "companyFilter": {
     "label": "Company",
     "hint": "(optional — narrows the product list)",
     "placeholder": "All Companies…"
   },
-
   "channelFilter": {
     "label": "Channel",
     "hint": "(optional)",
     "placeholder": "All Channels…",
     "selectCompanyFirst": "Select a company first…"
   },
-
   "productFilter": {
     "placeholder": "Select a product…"
   },
-
   "duplicateDialog": {
     "title": "Recipe Already Exists",
     "description": "A recipe already exists for {{name}}. Do you want to replace the current recipe?",
     "cancel": "Cancel",
     "replace": "Replace"
   },
-
   "createMaterial": {
     "title": "Create Material",
     "typeLabel": "Material Type",
@@ -267,7 +244,6 @@
     "cancel": "Cancel",
     "createdSuccess": "\"{{name}}\" created successfully."
   },
-
   "materialPicker": {
     "title": "Add Material",
     "searchPlaceholder": "Search by name or SKU…",
@@ -277,7 +253,6 @@
     "createPackaging": "Create Packaging",
     "added": "Added"
   },
-
   "drawer": {
     "createTitle": "New Recipe",
     "editTitle": "Edit Recipe",
@@ -305,7 +280,6 @@
       "company": "Company"
     }
   },
-
   "overview": {
     "missingCost": "{{count}} material(s) with no defined cost. The total cost below is a partial estimate.",
     "costDetails": "Cost Details",
@@ -321,15 +295,14 @@
       "executionInstructions": "Execution Instructions"
     },
     "materialsCount_one": "{{count}} material",
-    "materialsCount_other": "{{count}} materials"
+    "materialsCount_other": "{{count}} materials",
+    "materialsCount": "TODO"
   },
-
   "materialsTab": {
     "noMaterials": "No materials defined for this recipe.",
     "missingCost": "Some materials have no defined cost — totals are partial estimates.",
     "totalMaterials": "Total Materials"
   },
-
   "costHistory": {
     "loading": "Loading cost history…",
     "empty": "No cost recalculations recorded yet.",
@@ -339,7 +312,6 @@
       "material_cost_update": "Material Cost Updated"
     }
   },
-
   "costSources": {
     "fifo": "FIFO",
     "average": "Average",
@@ -347,7 +319,6 @@
     "manual": "Manual",
     "missing": "No cost"
   },
-
   "footer": {
     "cancel": "Cancel",
     "create": "Create Recipe",
@@ -355,15 +326,27 @@
     "creating": "Creating…",
     "saving": "Saving…"
   },
-
   "form": {
-    "product": { "label": "Finished Product", "placeholder": "Select product…" },
-    "version": { "label": "Version", "placeholder": "1.0" },
-    "yieldQty": { "label": "Yield Quantity" },
-    "yieldUnit": { "label": "Yield Unit", "placeholder": "Select unit…" },
-    "notes": { "label": "Production Notes", "placeholder": "Optional notes…" }
+    "product": {
+      "label": "Finished Product",
+      "placeholder": "Select product…"
+    },
+    "version": {
+      "label": "Version",
+      "placeholder": "1.0"
+    },
+    "yieldQty": {
+      "label": "Yield Quantity"
+    },
+    "yieldUnit": {
+      "label": "Yield Unit",
+      "placeholder": "Select unit…"
+    },
+    "notes": {
+      "label": "Production Notes",
+      "placeholder": "Optional notes…"
+    }
   },
-
   "ingredients": {
     "title": "Ingredients",
     "addIngredient": "Add Ingredient",
@@ -377,7 +360,6 @@
     "selectMaterial": "Select raw material…",
     "noIngredients": "No ingredients added yet."
   },
-
   "cost": {
     "title": "Cost Breakdown",
     "materialCost": "Total Material Cost",

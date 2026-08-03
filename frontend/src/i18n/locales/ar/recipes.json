@@ -2,7 +2,6 @@
   "title": "الوصفات",
   "subtitle": "قوائم المكونات ووصفات الإنتاج للسلع الجاهزة.",
   "search": "بحث بالمنتج أو الرمز…",
-
   "page": {
     "title": "الوصفات",
     "subtitle": "إدارة وصفات الإنتاج ومكوناتها.",
@@ -18,7 +17,6 @@
       "avgCost": "متوسط تكلفة الوصفة"
     }
   },
-
   "toolbar": {
     "searchPlaceholder": "بحث بالاسم أو الرمز…",
     "allStatuses": "جميع الحالات",
@@ -30,14 +28,12 @@
     "refresh": "تحديث",
     "export": "تصدير"
   },
-
   "columnManager": {
     "title": "الأعمدة",
     "showAll": "عرض الكل",
     "reset": "إعادة ضبط",
     "locked": "مثبّت"
   },
-
   "filtersPanel": {
     "title": "تصفية",
     "clearAll": "مسح الكل",
@@ -48,13 +44,11 @@
     "to": "إلى",
     "toConnector": "إلى"
   },
-
   "bulk": {
     "selected": "{{count}} محدد",
     "exportSelected": "تصدير المحدد",
     "clearSelection": "إلغاء التحديد"
   },
-
   "table": {
     "headers": {
       "image": "صورة",
@@ -78,7 +72,6 @@
       "description": "جرب تعديل عوامل التصفية أو أنشئ وصفة جديدة."
     }
   },
-
   "actions": {
     "new": "وصفة جديدة",
     "edit": "تعديل الوصفة",
@@ -98,13 +91,11 @@
     "viewMaterialDetails": "عرض تفاصيل المادة",
     "newButton": "جديد"
   },
-
   "status": {
     "active": "نشطة",
     "draft": "مسودة",
     "archived": "مؤرشفة"
   },
-
   "waste": {
     "excellent": "ممتاز",
     "normal": "طبيعي",
@@ -112,9 +103,7 @@
     "critical": "حرج",
     "wasteSuffix": "+{{pct}}% هدر"
   },
-
   "noCost": "لا تكلفة",
-
   "preview": {
     "ariaLabel": "معاينة {{count}} مادة لـ {{name}}",
     "materialsCount_one": "مادة واحدة",
@@ -125,9 +114,9 @@
     "rawCount": "{{count}} خام",
     "pkgCount": "{{count}} تعبئة",
     "noMaterials": "لا توجد مواد.",
-    "total": "{{count}} إجمالي"
+    "total": "{{count}} إجمالي",
+    "materialsCount": "TODO"
   },
-
   "csv": {
     "headers": {
       "image": "صورة المنتج",
@@ -142,26 +131,22 @@
       "status": "الحالة"
     }
   },
-
   "delete": {
     "title": "حذف الوصفة",
     "description": "هل أنت متأكد من حذف وصفة \"{{name}}\"؟ لا يمكن التراجع عن هذا الإجراء.",
     "confirm": "حذف"
   },
-
   "materialTypes": {
     "raw": "خام",
     "rawMaterial": "مادة خام",
     "packaging": "تعبئة"
   },
-
   "materialsGroup": {
     "rawMaterials": "المواد الخام",
     "packagingMaterials": "مواد التعبئة",
     "rawSubtotal": "إجمالي المواد الخام",
     "packagingSubtotal": "إجمالي التعبئة"
   },
-
   "costSummary": {
     "title": "ملخص التكلفة",
     "recipeNumber": "رقم الوصفة",
@@ -178,7 +163,6 @@
     "yieldHint": "الوحدات المنتجة لكل تشغيل للوصفة (تُستخدم لحساب تكلفة الوحدة)",
     "missingCost": "بعض المواد لا تحتوي على تكلفة محددة. قد تكون تكلفة الوصفة غير مكتملة."
   },
-
   "tableColumns": {
     "material": "المادة",
     "type": "النوع",
@@ -191,7 +175,6 @@
     "totalCost": "إجمالي التكلفة",
     "qty": "الكمية"
   },
-
   "workspace": {
     "details": "التفاصيل",
     "materials": "المواد",
@@ -215,7 +198,6 @@
     "status": "الحالة",
     "product_label": "المنتج"
   },
-
   "startFrom": {
     "title": "البدء من",
     "blank": "وصفة فارغة",
@@ -228,31 +210,26 @@
     "fromLabel": "من",
     "period": "."
   },
-
   "companyFilter": {
     "label": "الشركة",
     "hint": "(اختياري — يضيّق قائمة المنتجات)",
     "placeholder": "جميع الشركات…"
   },
-
   "channelFilter": {
     "label": "القناة",
     "hint": "(اختياري)",
     "placeholder": "جميع القنوات…",
     "selectCompanyFirst": "اختر شركة أولاً…"
   },
-
   "productFilter": {
     "placeholder": "اختر منتجاً…"
   },
-
   "duplicateDialog": {
     "title": "الوصفة موجودة مسبقاً",
     "description": "توجد وصفة بالفعل لـ {{name}}. هل تريد استبدال الوصفة الحالية؟",
     "cancel": "إلغاء",
     "replace": "استبدال"
   },
-
   "createMaterial": {
     "title": "إنشاء مادة",
     "typeLabel": "نوع المادة",
@@ -270,7 +247,6 @@
     "cancel": "إلغاء",
     "createdSuccess": "تم إنشاء «{{name}}» بنجاح."
   },
-
   "materialPicker": {
     "title": "إضافة مادة",
     "searchPlaceholder": "بحث بالاسم أو الرمز…",
@@ -280,7 +256,6 @@
     "createPackaging": "إنشاء مادة تعبئة",
     "added": "مُضافة"
   },
-
   "drawer": {
     "createTitle": "وصفة جديدة",
     "editTitle": "تعديل الوصفة",
@@ -308,7 +283,6 @@
       "company": "الشركة"
     }
   },
-
   "overview": {
     "missingCost": "{{count}} مادة بلا تكلفة محددة. الإجمالي أدناه تقدير جزئي.",
     "costDetails": "تفاصيل التكلفة",
@@ -328,15 +302,14 @@
     "materialsCount_two": "مادتان",
     "materialsCount_few": "{{count}} مواد",
     "materialsCount_many": "{{count}} مادة",
-    "materialsCount_other": "{{count}} مادة"
+    "materialsCount_other": "{{count}} مادة",
+    "materialsCount": "TODO"
   },
-
   "materialsTab": {
     "noMaterials": "لا توجد مواد محددة لهذه الوصفة.",
     "missingCost": "بعض المواد لا تحتوي على تكلفة محددة — الإجماليات تقديرية جزئية.",
     "totalMaterials": "إجمالي المواد"
   },
-
   "costHistory": {
     "loading": "جارٍ تحميل سجل التكلفة…",
     "empty": "لا توجد إعادة حسابات مسجّلة بعد.",
@@ -346,7 +319,6 @@
       "material_cost_update": "تم تحديث تكلفة المادة"
     }
   },
-
   "costSources": {
     "fifo": "FIFO",
     "average": "متوسط",
@@ -354,7 +326,6 @@
     "manual": "يدوي",
     "missing": "لا تكلفة"
   },
-
   "footer": {
     "cancel": "إلغاء",
     "create": "إنشاء الوصفة",
@@ -362,15 +333,27 @@
     "creating": "جارٍ الإنشاء…",
     "saving": "جارٍ الحفظ…"
   },
-
   "form": {
-    "product": { "label": "المنتج النهائي", "placeholder": "اختر منتجاً…" },
-    "version": { "label": "الإصدار", "placeholder": "1.0" },
-    "yieldQty": { "label": "كمية الإنتاج" },
-    "yieldUnit": { "label": "وحدة الإنتاج", "placeholder": "اختر وحدة…" },
-    "notes": { "label": "ملاحظات الإنتاج", "placeholder": "ملاحظات اختيارية…" }
+    "product": {
+      "label": "المنتج النهائي",
+      "placeholder": "اختر منتجاً…"
+    },
+    "version": {
+      "label": "الإصدار",
+      "placeholder": "1.0"
+    },
+    "yieldQty": {
+      "label": "كمية الإنتاج"
+    },
+    "yieldUnit": {
+      "label": "وحدة الإنتاج",
+      "placeholder": "اختر وحدة…"
+    },
+    "notes": {
+      "label": "ملاحظات الإنتاج",
+      "placeholder": "ملاحظات اختيارية…"
+    }
   },
-
   "ingredients": {
     "title": "المكونات",
     "addIngredient": "إضافة مكوّن",
@@ -384,7 +367,6 @@
     "selectMaterial": "اختر مادة خام…",
     "noIngredients": "لم تُضف مكونات بعد."
   },
-
   "cost": {
     "title": "تفاصيل التكلفة",
     "materialCost": "إجمالي تكلفة المواد",
