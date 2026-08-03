@@ -36,7 +36,13 @@ function fmtPct(val: number | null) {
 }
 
 function healthVariant(h: HealthLabel): 'default' | 'secondary' | 'destructive' | 'outline' {
-  return h === 'excellent' || h === 'good' ? 'default' : h === 'warning' ? 'secondary' : 'destructive';
+  // UAT BUG-12 — 'unknown' previously fell through to `destructive`, painting an
+  // absence of data red. Red is an error colour; "no data" is not an error.
+  // Only `critical` is genuinely bad; `unknown` renders neutral.
+  if (h === 'excellent' || h === 'good') return 'default';
+  if (h === 'warning') return 'secondary';
+  if (h === 'critical') return 'destructive';
+  return 'outline';
 }
 
 type ValueKpiProps = {

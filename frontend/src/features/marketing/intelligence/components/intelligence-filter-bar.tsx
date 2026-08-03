@@ -19,7 +19,7 @@ const DATE_PRESETS = [
   'last_180d',
   'this_month',
   'last_month',
-];
+] as const;
 
 interface Props {
   filters:         IntelligenceFilters;

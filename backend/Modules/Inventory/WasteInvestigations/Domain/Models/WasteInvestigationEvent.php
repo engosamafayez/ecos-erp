@@ -53,7 +53,7 @@ class WasteInvestigationEvent extends Model
         ?string $description = null,
         ?array $changes = null,
     ): static {
-        return static::query()->create([  // @phpstan-ignore-line
+        return static::query()->create([
             'investigation_id' => $investigationId,
             'event_type' => $eventType,
             'performed_by' => $performedBy,
