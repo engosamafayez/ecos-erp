@@ -298,9 +298,9 @@
         "saleValue": "قيمة البيع",
         "lastReceipt": "آخر استلام",
         "receipts": "الإيصالات",
-        "salePrice": "TODO",
-        "grossProfit": "TODO",
-        "oldestReceipt": "TODO"
+        "salePrice": "سعر البيع",
+        "grossProfit": "إجمالي الربح",
+        "oldestReceipt": "أقدم استلام"
       }
     },
     "purchaseOrders": {

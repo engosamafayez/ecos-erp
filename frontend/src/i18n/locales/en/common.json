@@ -6,7 +6,7 @@
     "edit": "Edit",
     "delete": "Delete",
     "search": "Search",
-    "confirm": "TODO"
+    "confirm": "Confirm"
   },
   "topbar": {
     "search": "Search…"
@@ -173,16 +173,16 @@
       "administration": "Administration",
       "engineering": "Engineering Platform"
     },
-    "navigation": "TODO",
-    "expandSidebar": "TODO",
-    "collapseSidebar": "TODO",
-    "moduleNav": "TODO",
-    "toggleSidebar": "TODO",
-    "mobileNavigation": "TODO",
-    "menu": "TODO",
-    "closeMenu": "TODO",
-    "workspaces": "TODO",
-    "moduleNavigation": "TODO"
+    "navigation": "Navigation",
+    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "Collapse sidebar",
+    "moduleNav": "Module navigation",
+    "toggleSidebar": "Toggle sidebar",
+    "mobileNavigation": "Mobile navigation",
+    "menu": "Menu",
+    "closeMenu": "Close menu",
+    "workspaces": "Workspaces",
+    "moduleNavigation": "Module navigation"
   },
   "language": {
     "switcher": "Language",
@@ -197,12 +197,12 @@
     "back": "Back",
     "approve": "Approve",
     "post": "Post",
-    "openActions": "TODO",
-    "working": "TODO",
-    "clear": "TODO",
-    "more": "TODO",
-    "new": "TODO",
-    "viewAll": "TODO"
+    "openActions": "Open actions",
+    "working": "Working…",
+    "clear": "Clear",
+    "more": "More",
+    "new": "New",
+    "viewAll": "View all"
   },
   "status": {
     "active": "Active",
@@ -241,9 +241,9 @@
     "filters": "Filters",
     "refresh": "Refresh",
     "export": "Export",
-    "bulkActions": "TODO",
-    "quickFilters": "TODO",
-    "clearFilters": "TODO"
+    "bulkActions": "Bulk actions",
+    "quickFilters": "Quick filters",
+    "clearFilters": "Clear filters"
   },
   "table": {
     "empty": "—",
@@ -266,12 +266,12 @@
     "pageOf": "Page {{page}} of {{lastPage}} · {{total}} total",
     "noResults": "No results",
     "refresh": "Refresh",
-    "showing": "TODO",
-    "previousPage": "TODO",
-    "pageNumber": "TODO",
-    "nextPage": "TODO",
-    "rows": "TODO",
-    "rowsPerPage": "TODO"
+    "showing": "Showing",
+    "previousPage": "Previous page",
+    "pageNumber": "Page",
+    "nextPage": "Next page",
+    "rows": "Rows",
+    "rowsPerPage": "Rows per page"
   },
   "permission": {
     "accessDenied": "Access denied",
@@ -282,49 +282,49 @@
     "resetToDefaults": "Reset to defaults"
   },
   "search": {
-    "placeholder": "TODO",
-    "clear": "TODO"
+    "placeholder": "Search…",
+    "clear": "Clear search"
   },
   "selection": {
-    "bulkActionsFor": "TODO",
-    "items": "TODO",
-    "selected": "TODO",
-    "clear": "TODO",
-    "selectAllRows": "TODO",
-    "selectRow": "TODO"
+    "bulkActionsFor": "Bulk actions for selected items",
+    "items": "Items",
+    "selected": "Selected",
+    "clear": "Clear selection",
+    "selectAllRows": "Select all rows",
+    "selectRow": "Select row"
   },
   "savedViews": {
-    "label": "TODO",
-    "empty": "TODO",
-    "saveCurrent": "TODO"
+    "label": "Saved views",
+    "empty": "No saved views",
+    "saveCurrent": "Save current view"
   },
   "footer": {
-    "copyright": "TODO",
-    "build": "TODO"
+    "copyright": "All rights reserved",
+    "build": "Build"
   },
   "switcher": {
-    "currentBrand": "TODO",
-    "filterByBrand": "TODO",
-    "allBrands": "TODO",
-    "noFilter": "TODO",
-    "searchBrands": "TODO",
-    "brands": "TODO",
-    "availableBrands": "TODO",
-    "noBrandsFound": "TODO",
-    "tryDifferentName": "TODO",
-    "noFilterApplied": "TODO",
-    "newBrand": "TODO",
-    "currentCompany": "TODO",
-    "selectCompany": "TODO",
-    "searchCompanies": "TODO",
-    "companies": "TODO",
-    "availableCompanies": "TODO",
-    "noCompaniesFound": "TODO",
-    "newCompany": "TODO"
+    "currentBrand": "Current brand",
+    "filterByBrand": "Filter by brand",
+    "allBrands": "All brands",
+    "noFilter": "No filter",
+    "searchBrands": "Search brands",
+    "brands": "Brands",
+    "availableBrands": "Available brands",
+    "noBrandsFound": "No brands found",
+    "tryDifferentName": "Try a different name",
+    "noFilterApplied": "No filter applied",
+    "newBrand": "New brand",
+    "currentCompany": "Current company",
+    "selectCompany": "Select company",
+    "searchCompanies": "Search companies",
+    "companies": "Companies",
+    "availableCompanies": "Available companies",
+    "noCompaniesFound": "No companies found",
+    "newCompany": "New company"
   },
   "noResults": {
-    "withQuery": "TODO",
-    "withoutQuery": "TODO",
-    "title": "TODO"
+    "withQuery": "No results match your search",
+    "withoutQuery": "No results",
+    "title": "No results"
   }
 }

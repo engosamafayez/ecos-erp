@@ -112,7 +112,7 @@
     "pkgCount": "{{count}} packaging",
     "noMaterials": "No materials.",
     "total": "{{count}} total",
-    "materialsCount": "TODO"
+    "materialsCount": "{{count}} materials"
   },
   "csv": {
     "headers": {
@@ -296,7 +296,7 @@
     },
     "materialsCount_one": "{{count}} material",
     "materialsCount_other": "{{count}} materials",
-    "materialsCount": "TODO"
+    "materialsCount": "{{count}} materials"
   },
   "materialsTab": {
     "noMaterials": "No materials defined for this recipe.",

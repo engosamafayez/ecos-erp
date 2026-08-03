@@ -401,7 +401,7 @@
       "sourceManual": "Manual",
       "recipesCount_one": "{{count}} recipe",
       "recipesCount_other": "{{count}} recipes",
-      "recipesCount": "TODO"
+      "recipesCount": "{{count}} recipes"
     },
     "stockHistory": {
       "movementsTotal": "{{count}} movements total",

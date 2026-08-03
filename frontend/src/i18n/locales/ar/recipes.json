@@ -115,7 +115,7 @@
     "pkgCount": "{{count}} تعبئة",
     "noMaterials": "لا توجد مواد.",
     "total": "{{count}} إجمالي",
-    "materialsCount": "TODO"
+    "materialsCount": "{{count}} مادة"
   },
   "csv": {
     "headers": {
@@ -303,7 +303,7 @@
     "materialsCount_few": "{{count}} مواد",
     "materialsCount_many": "{{count}} مادة",
     "materialsCount_other": "{{count}} مادة",
-    "materialsCount": "TODO"
+    "materialsCount": "{{count}} مادة"
   },
   "materialsTab": {
     "noMaterials": "لا توجد مواد محددة لهذه الوصفة.",

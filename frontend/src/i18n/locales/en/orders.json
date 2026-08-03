@@ -160,8 +160,8 @@
     "customerSince": "Customer Since",
     "aov": "AOV",
     "firstOrder": "First Order",
-    "rejected": "TODO",
-    "openOrders": "TODO"
+    "rejected": "Rejected",
+    "openOrders": "Open Orders"
   },
   "notesTab": {
     "filterAll": "All",
@@ -195,7 +195,7 @@
     "added": "Added",
     "by": "By",
     "updatedBy": "Updated by {{name}}",
-    "results": "TODO"
+    "results": "{{count}} results"
   },
   "smartToolbar": {
     "groupCustomer": "Customer",
@@ -921,8 +921,8 @@
     "autoCalculated": "Auto-calculated ({{level}} rate). Click unlock to override.",
     "manualOverrideActive": "Manual override active — will be audited.",
     "headerNotesPlaceholder": "Optional notes…",
-    "estDays": "TODO",
-    "days": "TODO"
+    "estDays": "Est. {{count}} days",
+    "days": "{{count}} days"
   },
   "zoneEditor": {
     "noBrandChannel": "No brand channel — zone cannot be assigned.",
@@ -1010,7 +1010,7 @@
     "unitsReserved_one": "{{count}} unit reserved",
     "unitsReserved_other": "{{count}} units reserved",
     "unitsPartialReserved": "{{reserved}} of {{total}} units reserved",
-    "unitsReserved": "TODO"
+    "unitsReserved": "{{count}} units reserved"
   },
   "snapshot": {
     "snapshotNotAvailable": "Snapshot Not Available",
@@ -1304,18 +1304,18 @@
     "confirmSave": "Confirm & Save"
   },
   "confirmation": {
-    "success": "TODO",
-    "successDesc": "TODO",
-    "error": "TODO",
-    "title": "TODO",
-    "method": "TODO",
-    "result": "TODO",
-    "notes": "TODO",
-    "notesPlaceholder": "TODO",
-    "saving": "TODO",
-    "save": "TODO"
+    "success": "Confirmation recorded",
+    "successDesc": "The order confirmation has been saved.",
+    "error": "Could not save the confirmation",
+    "title": "Order Confirmation",
+    "method": "Confirmation Method",
+    "result": "Confirmation Result",
+    "notes": "Notes",
+    "notesPlaceholder": "Add a note…",
+    "saving": "Saving…",
+    "save": "Save confirmation"
   },
   "common": {
-    "optional": "TODO"
+    "optional": "Optional"
   }
 }

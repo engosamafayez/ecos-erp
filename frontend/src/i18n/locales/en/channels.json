@@ -28,7 +28,7 @@
     "warehouse": "Warehouse",
     "status": "Status",
     "lastSync": "Last Sync",
-    "brand": "TODO"
+    "brand": "Brand"
   },
   "platforms": {
     "shopify": "Shopify",
@@ -90,8 +90,8 @@
     "syncInventory": "Sync Inventory",
     "active": "Active",
     "brand": {
-      "label": "TODO",
-      "placeholder": "TODO"
+      "label": "Brand",
+      "placeholder": "Select a brand"
     }
   },
   "drawer": {
@@ -109,9 +109,9 @@
     "confirm": "Delete"
   },
   "kpi": {
-    "total": "TODO",
-    "active": "TODO",
-    "connected": "TODO",
-    "platforms": "TODO"
+    "total": "Total channels",
+    "active": "Active channels",
+    "connected": "Connected channels",
+    "platforms": "Platforms"
   }
 }

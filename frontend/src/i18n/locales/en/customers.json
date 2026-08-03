@@ -121,8 +121,8 @@
     },
     "active": "Active",
     "brand": {
-      "label": "TODO",
-      "placeholder": "TODO"
+      "label": "Brand",
+      "placeholder": "Select a brand"
     }
   },
   "drawer": {
@@ -169,8 +169,8 @@
       "lastOrder": "Last Order",
       "totalSpend": "Total Spend",
       "noOrders": "No orders yet.",
-      "brands": "TODO",
-      "brandOrders": "TODO"
+      "brands": "Brands",
+      "brandOrders": "Orders by Brand"
     },
     "phonesTab": {
       "title": "Phone Numbers",

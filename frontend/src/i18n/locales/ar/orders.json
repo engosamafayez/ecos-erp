@@ -160,8 +160,8 @@
     "customerSince": "عميل منذ",
     "aov": "متوسط قيمة الطلب",
     "firstOrder": "أول طلب",
-    "rejected": "TODO",
-    "openOrders": "TODO"
+    "rejected": "مرفوضة",
+    "openOrders": "الطلبات المفتوحة"
   },
   "notesTab": {
     "filterAll": "الكل",
@@ -195,7 +195,7 @@
     "added": "تمت الإضافة",
     "by": "بواسطة",
     "updatedBy": "تم التحديث بواسطة {{name}}",
-    "results": "TODO"
+    "results": "{{count}} نتائج"
   },
   "smartToolbar": {
     "groupCustomer": "العملاء",
@@ -921,8 +921,8 @@
     "autoCalculated": "محسوب تلقائياً ({{level}}). انقر على فتح القفل للتعديل.",
     "manualOverrideActive": "تجاوز يدوي نشط — سيتم تدقيقه.",
     "headerNotesPlaceholder": "ملاحظات اختيارية…",
-    "estDays": "TODO",
-    "days": "TODO"
+    "estDays": "التسليم خلال {{count}} أيام",
+    "days": "{{count}} أيام"
   },
   "zoneEditor": {
     "noBrandChannel": "لا توجد قناة علامة تجارية — لا يمكن تحديد المنطقة.",
@@ -1010,7 +1010,7 @@
     "unitsReserved_one": "{{count}} وحدة محجوزة",
     "unitsReserved_other": "{{count}} وحدة محجوزة",
     "unitsPartialReserved": "{{reserved}} من {{total}} وحدة محجوزة",
-    "unitsReserved": "TODO"
+    "unitsReserved": "{{count}} وحدة محجوزة"
   },
   "snapshot": {
     "snapshotNotAvailable": "اللقطة غير متاحة",
@@ -1304,18 +1304,18 @@
     "confirmSave": "تأكيد والحفظ"
   },
   "confirmation": {
-    "success": "TODO",
-    "successDesc": "TODO",
-    "error": "TODO",
-    "title": "TODO",
-    "method": "TODO",
-    "result": "TODO",
-    "notes": "TODO",
-    "notesPlaceholder": "TODO",
-    "saving": "TODO",
-    "save": "TODO"
+    "success": "تم تسجيل التأكيد",
+    "successDesc": "تم حفظ تأكيد الطلب.",
+    "error": "تعذر حفظ التأكيد",
+    "title": "تأكيد الطلب",
+    "method": "طريقة التأكيد",
+    "result": "نتيجة التأكيد",
+    "notes": "ملاحظات",
+    "notesPlaceholder": "أضف ملاحظة…",
+    "saving": "جارٍ الحفظ…",
+    "save": "حفظ التأكيد"
   },
   "common": {
-    "optional": "TODO"
+    "optional": "اختياري"
   }
 }

@@ -224,7 +224,7 @@
     "lowMargin": "Low Margin",
     "mfgInStock": "🟢 In Stock",
     "mfgOutOfStock": "🔴 Out of Stock",
-    "mfgRecipeMissing": "⚪ Recipe Missing"
+    "mfgRecipeMissing": "Manufacturing — Recipe Missing"
   },
   "filterBar": {
     "category": "Category",
@@ -243,7 +243,7 @@
     "clear": "Clear",
     "mfgInStock": "🟢 In Stock",
     "mfgOutOfStock": "🔴 Out of Stock",
-    "mfgRecipeMissing": "⚪ Recipe Missing",
+    "mfgRecipeMissing": "Manufacturing — Recipe Missing",
     "hasRecipe": "Has Recipe",
     "missingRecipe": "Missing Recipe",
     "published": "Published",
@@ -316,7 +316,7 @@
     "loadingChannels": "Loading channels…",
     "noChannelsForBrand": "No channels for this brand.",
     "generatingSku": "Generating…",
-    "channelsSelected": "TODO"
+    "channelsSelected": "{{count}} channels selected"
   },
   "pricingSection": {
     "title": "Pricing",

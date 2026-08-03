@@ -224,7 +224,7 @@
     "lowMargin": "هامش منخفض",
     "mfgInStock": "🟢 في المخزن",
     "mfgOutOfStock": "🔴 نفاد المخزون",
-    "mfgRecipeMissing": "⚪ وصفة مفقودة"
+    "mfgRecipeMissing": "التصنيع — وصفة مفقودة"
   },
   "filterBar": {
     "category": "الفئة",
@@ -243,7 +243,7 @@
     "clear": "مسح",
     "mfgInStock": "🟢 في المخزن",
     "mfgOutOfStock": "🔴 نفاد المخزون",
-    "mfgRecipeMissing": "⚪ وصفة مفقودة",
+    "mfgRecipeMissing": "التصنيع — وصفة مفقودة",
     "hasRecipe": "لديه وصفة",
     "missingRecipe": "وصفة مفقودة",
     "published": "منشور",
@@ -316,7 +316,7 @@
     "loadingChannels": "جارٍ تحميل القنوات…",
     "noChannelsForBrand": "لا توجد قنوات لهذه العلامة.",
     "generatingSku": "جارٍ الإنشاء…",
-    "channelsSelected": "TODO"
+    "channelsSelected": "{{count}} قنوات محددة"
   },
   "pricingSection": {
     "title": "التسعير",

@@ -298,9 +298,9 @@
         "saleValue": "Sale Value",
         "lastReceipt": "Last Receipt",
         "receipts": "Receipts",
-        "salePrice": "TODO",
-        "grossProfit": "TODO",
-        "oldestReceipt": "TODO"
+        "salePrice": "Sale Price",
+        "grossProfit": "Gross Profit",
+        "oldestReceipt": "Oldest Receipt"
       }
     },
     "purchaseOrders": {

@@ -25,7 +25,7 @@
     "warehouse": "المستودع",
     "fulfillmentDate": "التاريخ",
     "status": "الحالة",
-    "channel": "TODO"
+    "channel": "القناة"
   },
   "form": {
     "order": {

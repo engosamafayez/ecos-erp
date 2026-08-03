@@ -409,7 +409,7 @@
       "recipesCount_few": "{{count}} وصفات",
       "recipesCount_many": "{{count}} وصفة",
       "recipesCount_other": "{{count}} وصفة",
-      "recipesCount": "TODO"
+      "recipesCount": "{{count}} وصفة"
     },
     "stockHistory": {
       "movementsTotal": "{{count}} حركة إجمالاً",

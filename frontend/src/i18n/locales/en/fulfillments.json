@@ -25,7 +25,7 @@
     "warehouse": "Warehouse",
     "fulfillmentDate": "Date",
     "status": "Status",
-    "channel": "TODO"
+    "channel": "Channel"
   },
   "form": {
     "order": {

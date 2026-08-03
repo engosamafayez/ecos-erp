@@ -6,7 +6,7 @@
     "edit": "تعديل",
     "delete": "حذف",
     "search": "بحث",
-    "confirm": "TODO"
+    "confirm": "تأكيد"
   },
   "topbar": {
     "search": "بحث…"
@@ -173,16 +173,16 @@
       "administration": "الإدارة",
       "engineering": "منصة الهندسة"
     },
-    "navigation": "TODO",
-    "expandSidebar": "TODO",
-    "collapseSidebar": "TODO",
-    "moduleNav": "TODO",
-    "toggleSidebar": "TODO",
-    "mobileNavigation": "TODO",
-    "menu": "TODO",
-    "closeMenu": "TODO",
-    "workspaces": "TODO",
-    "moduleNavigation": "TODO"
+    "navigation": "التنقل",
+    "expandSidebar": "توسيع الشريط الجانبي",
+    "collapseSidebar": "طي الشريط الجانبي",
+    "moduleNav": "تنقل الوحدات",
+    "toggleSidebar": "إظهار أو إخفاء الشريط الجانبي",
+    "mobileNavigation": "التنقل على الجوال",
+    "menu": "القائمة",
+    "closeMenu": "إغلاق القائمة",
+    "workspaces": "مساحات العمل",
+    "moduleNavigation": "تنقل الوحدات"
   },
   "language": {
     "switcher": "اللغة",
@@ -197,12 +197,12 @@
     "back": "رجوع",
     "approve": "موافقة",
     "post": "ترحيل",
-    "openActions": "TODO",
-    "working": "TODO",
-    "clear": "TODO",
-    "more": "TODO",
-    "new": "TODO",
-    "viewAll": "TODO"
+    "openActions": "فتح الإجراءات",
+    "working": "جارٍ التنفيذ…",
+    "clear": "مسح",
+    "more": "المزيد",
+    "new": "جديد",
+    "viewAll": "عرض الكل"
   },
   "status": {
     "active": "نشط",
@@ -241,9 +241,9 @@
     "filters": "تصفية",
     "refresh": "تحديث",
     "export": "تصدير",
-    "bulkActions": "TODO",
-    "quickFilters": "TODO",
-    "clearFilters": "TODO"
+    "bulkActions": "إجراءات جماعية",
+    "quickFilters": "عوامل تصفية سريعة",
+    "clearFilters": "مسح عوامل التصفية"
   },
   "table": {
     "empty": "—",
@@ -266,12 +266,12 @@
     "pageOf": "صفحة {{page}} من {{lastPage}} · {{total}} إجمالي",
     "noResults": "لا توجد نتائج",
     "refresh": "تحديث",
-    "showing": "TODO",
-    "previousPage": "TODO",
-    "pageNumber": "TODO",
-    "nextPage": "TODO",
-    "rows": "TODO",
-    "rowsPerPage": "TODO"
+    "showing": "عرض",
+    "previousPage": "الصفحة السابقة",
+    "pageNumber": "صفحة",
+    "nextPage": "الصفحة التالية",
+    "rows": "الصفوف",
+    "rowsPerPage": "عدد الصفوف في الصفحة"
   },
   "permission": {
     "accessDenied": "رفض الوصول",
@@ -282,49 +282,49 @@
     "resetToDefaults": "إعادة إلى الافتراضي"
   },
   "search": {
-    "placeholder": "TODO",
-    "clear": "TODO"
+    "placeholder": "بحث…",
+    "clear": "مسح البحث"
   },
   "selection": {
-    "bulkActionsFor": "TODO",
-    "items": "TODO",
-    "selected": "TODO",
-    "clear": "TODO",
-    "selectAllRows": "TODO",
-    "selectRow": "TODO"
+    "bulkActionsFor": "إجراءات جماعية للعناصر المحددة",
+    "items": "العناصر",
+    "selected": "المحددة",
+    "clear": "إلغاء التحديد",
+    "selectAllRows": "تحديد كل الصفوف",
+    "selectRow": "تحديد الصف"
   },
   "savedViews": {
-    "label": "TODO",
-    "empty": "TODO",
-    "saveCurrent": "TODO"
+    "label": "العروض المحفوظة",
+    "empty": "لا توجد عروض محفوظة",
+    "saveCurrent": "حفظ العرض الحالي"
   },
   "footer": {
-    "copyright": "TODO",
-    "build": "TODO"
+    "copyright": "جميع الحقوق محفوظة",
+    "build": "الإصدار"
   },
   "switcher": {
-    "currentBrand": "TODO",
-    "filterByBrand": "TODO",
-    "allBrands": "TODO",
-    "noFilter": "TODO",
-    "searchBrands": "TODO",
-    "brands": "TODO",
-    "availableBrands": "TODO",
-    "noBrandsFound": "TODO",
-    "tryDifferentName": "TODO",
-    "noFilterApplied": "TODO",
-    "newBrand": "TODO",
-    "currentCompany": "TODO",
-    "selectCompany": "TODO",
-    "searchCompanies": "TODO",
-    "companies": "TODO",
-    "availableCompanies": "TODO",
-    "noCompaniesFound": "TODO",
-    "newCompany": "TODO"
+    "currentBrand": "العلامة التجارية الحالية",
+    "filterByBrand": "تصفية حسب العلامة التجارية",
+    "allBrands": "كل العلامات التجارية",
+    "noFilter": "بدون تصفية",
+    "searchBrands": "البحث في العلامات التجارية",
+    "brands": "العلامات التجارية",
+    "availableBrands": "العلامات التجارية المتاحة",
+    "noBrandsFound": "لم يتم العثور على علامات تجارية",
+    "tryDifferentName": "جرّب اسمًا آخر",
+    "noFilterApplied": "لم يتم تطبيق أي تصفية",
+    "newBrand": "علامة تجارية جديدة",
+    "currentCompany": "الشركة الحالية",
+    "selectCompany": "اختر الشركة",
+    "searchCompanies": "البحث في الشركات",
+    "companies": "الشركات",
+    "availableCompanies": "الشركات المتاحة",
+    "noCompaniesFound": "لم يتم العثور على شركات",
+    "newCompany": "شركة جديدة"
   },
   "noResults": {
-    "withQuery": "TODO",
-    "withoutQuery": "TODO",
-    "title": "TODO"
+    "withQuery": "لا توجد نتائج مطابقة لبحثك",
+    "withoutQuery": "لا توجد نتائج",
+    "title": "لا توجد نتائج"
   }
 }

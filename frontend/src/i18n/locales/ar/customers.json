@@ -121,8 +121,8 @@
     },
     "active": "نشط",
     "brand": {
-      "label": "TODO",
-      "placeholder": "TODO"
+      "label": "العلامة التجارية",
+      "placeholder": "اختر علامة تجارية"
     }
   },
   "drawer": {
@@ -169,8 +169,8 @@
       "lastOrder": "آخر طلب",
       "totalSpend": "إجمالي الإنفاق",
       "noOrders": "لا توجد طلبات بعد.",
-      "brands": "TODO",
-      "brandOrders": "TODO"
+      "brands": "العلامات التجارية",
+      "brandOrders": "الطلبات حسب العلامة التجارية"
     },
     "phonesTab": {
       "title": "أرقام الهاتف",

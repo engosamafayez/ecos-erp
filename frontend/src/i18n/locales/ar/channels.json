@@ -28,7 +28,7 @@
     "warehouse": "المستودع",
     "status": "الحالة",
     "lastSync": "آخر مزامنة",
-    "brand": "TODO"
+    "brand": "العلامة التجارية"
   },
   "platforms": {
     "shopify": "Shopify",
@@ -90,8 +90,8 @@
     "syncInventory": "مزامنة المخزون",
     "active": "نشط",
     "brand": {
-      "label": "TODO",
-      "placeholder": "TODO"
+      "label": "العلامة التجارية",
+      "placeholder": "اختر علامة تجارية"
     }
   },
   "drawer": {
@@ -109,9 +109,9 @@
     "confirm": "حذف"
   },
   "kpi": {
-    "total": "TODO",
-    "active": "TODO",
-    "connected": "TODO",
-    "platforms": "TODO"
+    "total": "إجمالي القنوات",
+    "active": "القنوات النشطة",
+    "connected": "القنوات المتصلة",
+    "platforms": "المنصات"
   }
 }

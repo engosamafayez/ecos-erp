@@ -115,7 +115,7 @@
     "timeline": "الجدول الزمني",
     "pickApplicantHint": "اختر متقدماً لقراءة قصته كاملة بالترتيب.",
     "timelineEmpty": "لم يُسجَّل شيء بعد.",
-    "applicantCount": "TODO"
+    "applicantCount": "{{count}} متقدمين"
   },
   "attendance": {
     "title": "الحضور",
@@ -162,7 +162,7 @@
       "openings_many": "{{count}} شاغراً",
       "openings_other": "{{count}} شاغر",
       "viewAndApply": "عرض وتقديم",
-      "openings": "TODO"
+      "openings": "{{count}} وظائف شاغرة"
     },
     "apply": {
       "allRoles": "جميع الوظائف",
@@ -195,113 +195,113 @@
     }
   },
   "employee360": {
-    "breadcrumbWorkforce": "TODO",
+    "breadcrumbWorkforce": "القوى العاملة",
     "stats": {
-      "tenure": "TODO",
-      "tenureDays": "TODO",
-      "present30d": "TODO",
-      "absent30d": "TODO",
-      "attendanceRate": "TODO"
+      "tenure": "مدة الخدمة",
+      "tenureDays": "أيام الخدمة",
+      "present30d": "الحضور (٣٠ يوماً)",
+      "absent30d": "الغياب (٣٠ يوماً)",
+      "attendanceRate": "معدل الحضور"
     },
-    "expiringDocuments": "TODO",
+    "expiringDocuments": "مستندات على وشك الانتهاء",
     "placement": {
-      "title": "TODO",
-      "department": "TODO",
-      "position": "TODO",
-      "jobGrade": "TODO",
-      "employmentType": "TODO",
-      "hireDate": "TODO",
-      "terminationDate": "TODO"
+      "title": "التعيين الوظيفي",
+      "department": "القسم",
+      "position": "المنصب",
+      "jobGrade": "الدرجة الوظيفية",
+      "employmentType": "نوع التوظيف",
+      "hireDate": "تاريخ التعيين",
+      "terminationDate": "تاريخ إنهاء الخدمة"
     },
     "contract": {
-      "title": "TODO",
-      "none": "TODO",
-      "number": "TODO",
-      "type": "TODO",
-      "status": "TODO",
-      "start": "TODO",
-      "end": "TODO",
-      "openEnded": "TODO",
-      "weeklyHours": "TODO",
-      "daysUntilExpiry": "TODO"
+      "title": "العقد",
+      "none": "لا يوجد عقد ساري",
+      "number": "رقم العقد",
+      "type": "نوع العقد",
+      "status": "الحالة",
+      "start": "تاريخ البداية",
+      "end": "تاريخ النهاية",
+      "openEnded": "غير محدد المدة",
+      "weeklyHours": "ساعات العمل الأسبوعية",
+      "daysUntilExpiry": "الأيام المتبقية للانتهاء"
     },
     "reporting": {
-      "title": "TODO",
-      "manager": "TODO",
-      "chain": "TODO",
-      "directReports": "TODO"
+      "title": "التسلسل الإداري",
+      "manager": "المدير المباشر",
+      "chain": "سلسلة التسلسل الإداري",
+      "directReports": "المرؤوسون المباشرون"
     },
     "contact": {
-      "title": "TODO",
-      "workEmail": "TODO",
-      "personalEmail": "TODO",
-      "mobile": "TODO",
-      "phone": "TODO",
-      "city": "TODO",
-      "country": "TODO",
-      "emergencyContact": "TODO",
-      "emergencyPhone": "TODO"
+      "title": "بيانات الاتصال",
+      "workEmail": "البريد الإلكتروني للعمل",
+      "personalEmail": "البريد الإلكتروني الشخصي",
+      "mobile": "الهاتف المحمول",
+      "phone": "الهاتف",
+      "city": "المدينة",
+      "country": "الدولة",
+      "emergencyContact": "جهة الاتصال في الطوارئ",
+      "emergencyPhone": "هاتف الطوارئ"
     },
     "documents": {
-      "title": "TODO",
-      "none": "TODO",
-      "expires": "TODO",
-      "noExpiry": "TODO"
+      "title": "المستندات",
+      "none": "لا توجد مستندات",
+      "expires": "تنتهي في",
+      "noExpiry": "بلا تاريخ انتهاء"
     }
   },
   "leave": {
     "errors": {
-      "employeeRequired": "TODO",
-      "submitFailed": "TODO"
+      "employeeRequired": "اختر موظفاً",
+      "submitFailed": "تعذر إرسال طلب الإجازة"
     },
-    "title": "TODO",
-    "subtitle": "TODO",
-    "newRequest": "TODO",
+    "title": "طلبات الإجازة",
+    "subtitle": "مراجعة طلبات إجازات الموظفين والبت فيها.",
+    "newRequest": "طلب جديد",
     "stats": {
-      "showing": "TODO",
-      "awaitingApproval": "TODO",
-      "daysRequested": "TODO"
+      "showing": "عرض",
+      "awaitingApproval": "بانتظار الموافقة",
+      "daysRequested": "الأيام المطلوبة"
     },
     "status": {
-      "all": "TODO",
-      "pending": "TODO",
-      "approved": "TODO",
-      "rejected": "TODO",
-      "cancelled": "TODO"
+      "all": "الكل",
+      "pending": "قيد الانتظار",
+      "approved": "موافق عليها",
+      "rejected": "مرفوضة",
+      "cancelled": "ملغاة"
     },
-    "empty": "TODO",
+    "empty": "لا توجد طلبات إجازة",
     "table": {
-      "number": "TODO",
-      "employee": "TODO",
-      "dates": "TODO",
-      "days": "TODO",
-      "payroll": "TODO",
-      "status": "TODO",
-      "decision": "TODO"
+      "number": "رقم الطلب",
+      "employee": "الموظف",
+      "dates": "التواريخ",
+      "days": "الأيام",
+      "payroll": "الرواتب",
+      "status": "الحالة",
+      "decision": "القرار"
     },
-    "approve": "TODO",
-    "reject": "TODO",
+    "approve": "موافقة",
+    "reject": "رفض",
     "form": {
-      "title": "TODO",
-      "description": "TODO",
-      "submitting": "TODO",
-      "submit": "TODO",
-      "chooseEmployee": "TODO",
-      "from": "TODO",
-      "to": "TODO",
-      "payrollTreatment": "TODO",
-      "deductSalary": "TODO",
-      "doNotDeductSalary": "TODO",
-      "payrollHint": "TODO",
-      "reason": "TODO",
-      "optional": "TODO"
+      "title": "طلب إجازة جديد",
+      "description": "تقديم طلب إجازة لموظف.",
+      "submitting": "جارٍ الإرسال…",
+      "submit": "إرسال الطلب",
+      "chooseEmployee": "اختر موظفاً",
+      "from": "من",
+      "to": "إلى",
+      "payrollTreatment": "المعالجة في الرواتب",
+      "deductSalary": "خصم من الراتب",
+      "doNotDeductSalary": "عدم الخصم من الراتب",
+      "payrollHint": "يحدد ما إذا كانت أيام الإجازة تُخصم من راتب الموظف.",
+      "reason": "السبب",
+      "optional": "اختياري"
     },
     "decide": {
-      "approveTitle": "TODO",
-      "rejectTitle": "TODO",
-      "approveDescription": "TODO",
-      "thisEmployee": "TODO",
-      "rejectDescription": "TODO"
+      "approveTitle": "الموافقة على طلب الإجازة",
+      "rejectTitle": "رفض طلب الإجازة",
+      "approveDescription": "هل تريد الموافقة على طلب الإجازة هذا؟",
+      "thisEmployee": "هذا الموظف",
+      "rejectDescription": "هل تريد رفض طلب الإجازة هذا؟"
     }
   }
 }

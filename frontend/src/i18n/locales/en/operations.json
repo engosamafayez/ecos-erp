@@ -111,8 +111,8 @@
         "available": "Available",
         "missing": "Missing",
         "more": "+{{count}} more materials — open Raw Material Demand for the full list.",
-        "reserved": "TODO",
-        "coverage": "TODO"
+        "reserved": "Reserved",
+        "coverage": "Coverage"
       },
       "missingTable": {
         "material": "Material",
@@ -137,11 +137,11 @@
         "live": "Live"
       },
       "mfgTable": {
-        "product": "TODO",
-        "planned": "TODO",
-        "manufacturing": "TODO",
-        "completed": "TODO",
-        "remaining": "TODO"
+        "product": "Product",
+        "planned": "Planned",
+        "manufacturing": "Manufacturing",
+        "completed": "Completed",
+        "remaining": "Remaining"
       }
     },
     "productDemand": {

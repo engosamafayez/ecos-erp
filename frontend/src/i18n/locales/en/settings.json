@@ -1238,7 +1238,7 @@
       "sla": "{{hours}}h SLA",
       "brandZones_one": "{{count}} brand zone",
       "brandZones_other": "{{count}} brand zones",
-      "brandZones": "TODO"
+      "brandZones": "Brand zones"
     },
     "page": {
       "title": "Egypt Geography",
@@ -1253,7 +1253,7 @@
       "selectGovPrompt": "Select a governorate to view its zones",
       "loadingZones": "Loading zones…",
       "noZones": "No zones found",
-      "zonesCount": "TODO"
+      "zonesCount": "Zones"
     }
   }
 }

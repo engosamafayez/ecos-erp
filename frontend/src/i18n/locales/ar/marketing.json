@@ -83,41 +83,41 @@
       "lastUpdated": "آخر تحديث"
     },
     "drawer": {
-      "editTitle": "TODO",
-      "newTitle": "TODO",
-      "nameLabel": "TODO",
-      "namePlaceholder": "TODO",
-      "descriptionPlaceholder": "TODO",
-      "segmentTypeLabel": "TODO",
-      "entityTypeLabel": "TODO",
-      "isDynamicLabel": "TODO",
-      "create": "TODO"
+      "editTitle": "تعديل الشريحة",
+      "newTitle": "شريحة جديدة",
+      "nameLabel": "اسم الشريحة",
+      "namePlaceholder": "أدخل اسم الشريحة",
+      "descriptionPlaceholder": "وصف هذه الشريحة",
+      "segmentTypeLabel": "نوع الشريحة",
+      "entityTypeLabel": "نوع الكيان",
+      "isDynamicLabel": "شريحة ديناميكية",
+      "create": "إنشاء الشريحة"
     },
     "entityType": {
-      "customer": "TODO",
-      "lead": "TODO",
-      "order": "TODO"
+      "customer": "العميل",
+      "lead": "العميل المحتمل",
+      "order": "الطلب"
     },
-    "pageSubtitle": "TODO",
+    "pageSubtitle": "إنشاء شرائح العملاء وإدارتها لأغراض الاستهداف.",
     "actions": {
-      "new": "TODO",
-      "recalculate": "TODO"
+      "new": "شريحة جديدة",
+      "recalculate": "إعادة الاحتساب"
     },
-    "loading": "TODO",
-    "empty": "TODO",
-    "dynamic": "TODO",
-    "static": "TODO",
-    "members": "TODO",
-    "updatedOn": "TODO",
+    "loading": "جارٍ تحميل الشرائح…",
+    "empty": "لا توجد شرائح",
+    "dynamic": "ديناميكية",
+    "static": "ثابتة",
+    "members": "الأعضاء",
+    "updatedOn": "حُدِّثت في",
     "segmentType": {
-      "demographic": "TODO",
-      "geographic": "TODO",
-      "behavioral": "TODO",
-      "transactional": "TODO",
-      "marketing": "TODO",
-      "business": "TODO",
-      "operational": "TODO",
-      "custom": "TODO"
+      "demographic": "ديموغرافية",
+      "geographic": "جغرافية",
+      "behavioral": "سلوكية",
+      "transactional": "معاملات",
+      "marketing": "تسويقية",
+      "business": "أعمال",
+      "operational": "تشغيلية",
+      "custom": "مخصصة"
     }
   },
   "meta": {
@@ -141,210 +141,220 @@
     "disabled": "معطّل",
     "workflows": {
       "drawer": {
-        "editTitle": "TODO",
-        "newTitle": "TODO",
-        "nameLabel": "TODO",
-        "namePlaceholder": "TODO",
-        "descriptionPlaceholder": "TODO",
-        "triggerTypeLabel": "TODO",
-        "eventTypeLabel": "TODO",
-        "eventTypePlaceholder": "TODO",
-        "eventTypeHint": "TODO",
-        "tagsPlaceholder": "TODO",
-        "create": "TODO"
+        "editTitle": "تعديل سير العمل",
+        "newTitle": "سير عمل جديد",
+        "nameLabel": "اسم سير العمل",
+        "namePlaceholder": "أدخل اسم سير العمل",
+        "descriptionPlaceholder": "وصف سير العمل",
+        "triggerTypeLabel": "نوع المُشغِّل",
+        "eventTypeLabel": "نوع الحدث",
+        "eventTypePlaceholder": "اختر نوع الحدث",
+        "eventTypeHint": "حدث الأعمال الذي يبدأ سير العمل.",
+        "tagsPlaceholder": "أضف وسوماً",
+        "create": "إنشاء سير العمل"
       },
       "actions": {
-        "editDetails": "TODO",
-        "openBuilder": "TODO",
-        "duplicate": "TODO",
-        "activate": "TODO",
-        "pause": "TODO",
-        "archive": "TODO",
-        "templates": "TODO",
-        "new": "TODO",
-        "browseTemplates": "TODO"
+        "editDetails": "تعديل التفاصيل",
+        "openBuilder": "فتح المُنشئ",
+        "duplicate": "نسخ",
+        "activate": "تفعيل",
+        "pause": "إيقاف مؤقت",
+        "archive": "أرشفة",
+        "templates": "القوالب",
+        "new": "سير عمل جديد",
+        "browseTemplates": "استعراض القوالب"
       },
-      "lastRun": "TODO",
-      "title": "TODO",
-      "subtitle": "TODO",
-      "search": "TODO",
-      "loading": "TODO",
-      "empty": "TODO"
+      "lastRun": "آخر تشغيل",
+      "title": "مسارات العمل",
+      "subtitle": "أتمتة رحلات العملاء عبر القنوات.",
+      "search": "بحث في مسارات العمل…",
+      "loading": "جارٍ تحميل مسارات العمل…",
+      "empty": "لا توجد مسارات عمل"
     },
     "templates": {
-      "global": "TODO",
-      "usedTimes": "TODO",
-      "use": "TODO",
-      "title": "TODO",
-      "search": "TODO",
-      "loading": "TODO",
-      "empty": "TODO"
+      "global": "عام",
+      "usedTimes": "مرات الاستخدام",
+      "use": "استخدام القالب",
+      "title": "قوالب مسارات العمل",
+      "search": "بحث في القوالب…",
+      "loading": "جارٍ تحميل القوالب…",
+      "empty": "لا توجد قوالب"
     },
     "dashboard": {
-      "loading": "TODO",
-      "title": "TODO",
-      "subtitle": "TODO",
+      "loading": "جارٍ تحميل لوحة التحكم…",
+      "title": "لوحة تحكم الأتمتة",
+      "subtitle": "متابعة أداء مسارات العمل وسلامة التنفيذ.",
       "kpis": {
-        "activeWorkflows": "TODO",
-        "totalExecutions": "TODO",
-        "completed7d": "TODO",
-        "failed7d": "TODO"
+        "activeWorkflows": "مسارات العمل النشطة",
+        "totalExecutions": "إجمالي عمليات التنفيذ",
+        "completed7d": "المكتملة (٧ أيام)",
+        "failed7d": "الفاشلة (٧ أيام)"
       },
       "health": {
-        "title": "TODO",
-        "successRate": "TODO"
+        "title": "سلامة التنفيذ",
+        "successRate": "معدل النجاح"
       },
       "trending": {
-        "title": "TODO",
-        "empty": "TODO",
-        "runs": "TODO"
+        "title": "مسارات العمل الأكثر نشاطاً",
+        "empty": "لا يوجد نشاط",
+        "runs": "عمليات التشغيل"
       },
       "recent": {
-        "title": "TODO",
-        "empty": "TODO",
+        "title": "عمليات التنفيذ الأخيرة",
+        "empty": "لا توجد عمليات تنفيذ حديثة",
         "columns": {
-          "workflow": "TODO",
-          "entity": "TODO",
-          "time": "TODO"
+          "workflow": "سير العمل",
+          "entity": "الكيان",
+          "time": "الوقت"
         }
       }
     },
     "executionStatus": {
-      "completed": "TODO",
-      "failed": "TODO"
+      "completed": "مكتمل",
+      "failed": "فاشل"
     },
     "governance": {
       "limits": {
-        "perCustomerPerDay": "TODO",
-        "perCustomerPerWorkflow": "TODO",
-        "totalPerDay": "TODO",
-        "quietHours": "TODO",
-        "requiresApproval": "TODO"
+        "perCustomerPerDay": "لكل عميل يومياً",
+        "perCustomerPerWorkflow": "لكل عميل لكل سير عمل",
+        "totalPerDay": "الإجمالي اليومي",
+        "quietHours": "ساعات الهدوء",
+        "requiresApproval": "يتطلب موافقة"
       },
-      "title": "TODO",
-      "subtitle": "TODO",
+      "title": "حوكمة الأتمتة",
+      "subtitle": "تحديد حدود الإرسال وقواعد الموافقة.",
       "actions": {
-        "new": "TODO",
-        "create": "TODO",
-        "edit": "TODO",
-        "newFull": "TODO"
+        "new": "سياسة جديدة",
+        "create": "إنشاء السياسة",
+        "edit": "تعديل السياسة",
+        "newFull": "سياسة حوكمة جديدة"
       },
-      "loading": "TODO",
-      "empty": "TODO",
-      "formPlaceholder": "TODO"
+      "loading": "جارٍ تحميل السياسات…",
+      "empty": "لا توجد سياسات حوكمة",
+      "formPlaceholder": "إعدادات السياسة"
     },
     "workflowStatus": {
-      "pending_approval": "TODO"
+      "pending_approval": "بانتظار الموافقة"
     },
     "triggerType": {
-      "business_event": "TODO",
-      "schedule": "TODO",
-      "date_based": "TODO",
-      "webhook": "TODO",
-      "api": "TODO",
-      "manual": "TODO"
+      "business_event": "حدث أعمال",
+      "schedule": "جدول زمني",
+      "date_based": "حسب التاريخ",
+      "webhook": "ويب هوك",
+      "api": "واجهة برمجية",
+      "manual": "يدوي"
     },
     "templateCategory": {
-      "welcome_series": "TODO",
-      "abandoned_cart": "TODO",
-      "lead_nurturing": "TODO",
-      "no_reply_reminder": "TODO",
-      "payment_reminder": "TODO",
-      "shipment_notification": "TODO",
-      "order_delivered": "TODO",
-      "review_request": "TODO",
-      "birthday_campaign": "TODO",
-      "vip_upgrade": "TODO",
-      "win_back_customer": "TODO",
-      "seasonal_campaign": "TODO",
-      "ramadan_journey": "TODO",
-      "black_friday_journey": "TODO",
-      "product_launch": "TODO",
-      "custom": "TODO"
+      "welcome_series": "سلسلة الترحيب",
+      "abandoned_cart": "سلة متروكة",
+      "lead_nurturing": "رعاية العملاء المحتملين",
+      "no_reply_reminder": "تذكير بعدم الرد",
+      "payment_reminder": "تذكير بالدفع",
+      "shipment_notification": "إشعار الشحن",
+      "order_delivered": "تم تسليم الطلب",
+      "review_request": "طلب تقييم",
+      "birthday_campaign": "حملة أعياد الميلاد",
+      "vip_upgrade": "ترقية إلى VIP",
+      "win_back_customer": "استعادة العميل",
+      "seasonal_campaign": "حملة موسمية",
+      "ramadan_journey": "رحلة رمضان",
+      "black_friday_journey": "رحلة الجمعة البيضاء",
+      "product_launch": "إطلاق منتج",
+      "custom": "مخصص"
     }
   },
   "common": {
-    "description": "TODO",
-    "saving": "TODO",
-    "saveChanges": "TODO",
-    "cancel": "TODO",
-    "tags": "TODO",
-    "all": "TODO",
-    "edit": "TODO",
-    "delete": "TODO",
-    "noDataAvailable": "TODO",
-    "status": "TODO",
-    "default": "TODO",
-    "deactivate": "TODO",
-    "yes": "TODO",
-    "close": "TODO",
-    "no": "TODO",
-    "noData": "TODO"
+    "description": "الوصف",
+    "saving": "جارٍ الحفظ…",
+    "saveChanges": "حفظ التغييرات",
+    "cancel": "إلغاء",
+    "tags": "الوسوم",
+    "all": "الكل",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "noDataAvailable": "لا توجد بيانات متاحة",
+    "status": "الحالة",
+    "default": "افتراضي",
+    "deactivate": "إلغاء التفعيل",
+    "yes": "نعم",
+    "close": "إغلاق",
+    "no": "لا",
+    "noData": "لا توجد بيانات"
   },
   "connections": {
     "healthCard": {
-      "authStatus": "TODO",
-      "apiAvailable": "TODO",
-      "tokenExpires": "TODO",
-      "lastSuccess": "TODO",
-      "lastFailure": "TODO",
-      "errors7d": "TODO",
-      "avgSync": "TODO",
-      "rateLimitLeft": "TODO",
-      "title": "TODO"
+      "authStatus": "حالة المصادقة",
+      "apiAvailable": "الواجهة البرمجية متاحة",
+      "tokenExpires": "انتهاء صلاحية الرمز",
+      "lastSuccess": "آخر نجاح",
+      "lastFailure": "آخر إخفاق",
+      "errors7d": "الأخطاء (٧ أيام)",
+      "avgSync": "متوسط المزامنة",
+      "rateLimitLeft": "المتبقي من حد الطلبات",
+      "title": "سلامة الاتصال"
     },
     "status": {
-      "disconnected": "TODO",
-      "connected": "TODO",
-      "error": "TODO"
+      "disconnected": "غير متصل",
+      "connected": "متصل",
+      "error": "خطأ"
     },
     "health": {
-      "error": "TODO",
-      "warning": "TODO",
-      "healthy": "TODO"
+      "error": "خطأ",
+      "warning": "تحذير",
+      "healthy": "سليم"
     }
   },
   "assets": {
     "graph": {
-      "loading": "TODO",
-      "loadError": "TODO",
-      "empty": "TODO",
-      "aria": "TODO",
-      "legendAccepted": "TODO",
-      "legendSuggested": "TODO"
+      "loading": "جارٍ تحميل العلاقات…",
+      "loadError": "تعذر تحميل مخطط العلاقات",
+      "empty": "لا توجد علاقات",
+      "aria": "مخطط علاقات الأصول",
+      "legendAccepted": "مقبول",
+      "legendSuggested": "مُقترح"
     },
     "health": {
-      "healthy": "TODO",
-      "warning": "TODO",
-      "disconnected": "TODO",
-      "expired_token": "TODO",
-      "permission_missing": "TODO",
-      "sync_failed": "TODO",
-      "inactive": "TODO",
-      "unknown": "TODO"
+      "healthy": "سليم",
+      "warning": "تحذير",
+      "disconnected": "غير متصل",
+      "expired_token": "رمز منتهي الصلاحية",
+      "permission_missing": "صلاحية مفقودة",
+      "sync_failed": "فشلت المزامنة",
+      "inactive": "غير نشط",
+      "unknown": "غير معروف"
     }
   },
   "intelligence": {
     "filters": {
-      "dateRange": "TODO"
+      "dateRange": "النطاق الزمني"
     },
     "chart": {
-      "lineChartAria": "TODO"
+      "lineChartAria": "مخطط اتجاه الأداء"
+    },
+    "datePreset": {
+      "today": "اليوم",
+      "yesterday": "أمس",
+      "last_7d": "آخر ٧ أيام",
+      "last_30d": "آخر ٣٠ يوماً",
+      "last_90d": "آخر ٩٠ يوماً",
+      "last_180d": "آخر ١٨٠ يوماً",
+      "this_month": "هذا الشهر",
+      "last_month": "الشهر الماضي"
     }
   },
   "providers": {
     "status": {
-      "not_configured": "TODO",
-      "invalid": "TODO",
-      "invalid_configuration": "TODO",
-      "ready": "TODO",
-      "connected": "TODO",
-      "token_expired": "TODO",
-      "permission_error": "TODO",
-      "webhook_missing": "TODO",
-      "sync_disabled": "TODO",
-      "service_unavailable": "TODO",
-      "unknown": "TODO"
+      "not_configured": "غير مُهيأ",
+      "invalid": "غير صالح",
+      "invalid_configuration": "إعدادات غير صالحة",
+      "ready": "جاهز",
+      "connected": "متصل",
+      "token_expired": "انتهت صلاحية الرمز",
+      "permission_error": "خطأ في الصلاحيات",
+      "webhook_missing": "ويب هوك مفقود",
+      "sync_disabled": "المزامنة معطلة",
+      "service_unavailable": "الخدمة غير متاحة",
+      "unknown": "غير معروف"
     }
   }
 }

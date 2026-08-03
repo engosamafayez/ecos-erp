@@ -100,1110 +100,1126 @@
   },
   "delivery": {
     "errors": {
-      "actionFailed": "TODO",
-      "actionRefused": "TODO",
-      "podValidationFailed": "TODO",
-      "validationRefused": "TODO",
-      "failureRecordFailed": "TODO"
+      "actionFailed": "The action could not be completed",
+      "actionRefused": "The action was refused",
+      "podValidationFailed": "Proof of delivery validation failed",
+      "validationRefused": "Validation was refused",
+      "failureRecordFailed": "Could not record the failure"
     },
     "field": {
-      "order": "TODO",
-      "attempts": "TODO",
-      "promised": "TODO",
-      "escalationLevel": "TODO",
-      "arrived": "TODO",
-      "dwell": "TODO",
-      "stop": "TODO"
+      "order": "Order",
+      "attempts": "Attempts",
+      "promised": "Promised",
+      "escalationLevel": "Escalation Level",
+      "arrived": "Arrived",
+      "dwell": "Dwell Time",
+      "stop": "Stop"
     },
     "overview": {
-      "attemptsOf": "TODO",
-      "attemptsLeft": "TODO"
+      "attemptsOf": "of",
+      "attemptsLeft": "attempts left"
     },
     "status": {
-      "delivered": "TODO",
-      "outForDelivery": "TODO",
-      "awaitingRetry": "TODO",
-      "returning": "TODO"
+      "delivered": "Delivered",
+      "outForDelivery": "Out for Delivery",
+      "awaitingRetry": "Awaiting Retry",
+      "returning": "Returning"
     },
     "alert": {
-      "slaBreachedBy": "TODO",
-      "slaBreached": "TODO",
-      "manualReview": "TODO"
+      "slaBreachedBy": "SLA breached by",
+      "slaBreached": "SLA breached",
+      "manualReview": "Requires manual review"
     },
     "cod": {
-      "title": "TODO",
-      "due": "TODO",
-      "collected": "TODO",
-      "shortfall": "TODO",
-      "note": "TODO"
+      "title": "Cash on Delivery",
+      "due": "Due",
+      "collected": "Collected",
+      "shortfall": "Shortfall",
+      "note": "Amounts are reconciled at driver settlement."
     },
     "retry": {
-      "title": "TODO",
-      "eligible": "TODO",
-      "schedule": "TODO"
+      "title": "Retry",
+      "eligible": "Eligible for retry",
+      "schedule": "Schedule Retry"
     },
     "toast": {
-      "retryScheduled": "TODO",
-      "addressCorrected": "TODO",
-      "cancelled": "TODO",
-      "podValidated": "TODO",
-      "failureRecorded": "TODO"
+      "retryScheduled": "Retry scheduled",
+      "addressCorrected": "Address marked as corrected",
+      "cancelled": "Delivery cancelled",
+      "podValidated": "Proof of delivery validated",
+      "failureRecorded": "Failure recorded"
     },
     "action": {
-      "markAddressCorrected": "TODO"
+      "markAddressCorrected": "Mark Address Corrected"
     },
     "cancel": {
-      "title": "TODO",
-      "reasonPlaceholder": "TODO"
+      "title": "Cancel delivery",
+      "reasonPlaceholder": "Reason for cancellation"
     },
     "pod": {
-      "title": "TODO",
-      "missing": "TODO",
-      "validate": "TODO"
+      "title": "Proof of Delivery",
+      "missing": "No proof of delivery",
+      "validate": "Validate"
     },
     "attempts": {
-      "empty": "TODO",
-      "attemptNo": "TODO",
-      "dwellMinutes": "TODO"
+      "empty": "No delivery attempts",
+      "attemptNo": "Attempt",
+      "dwellMinutes": "minutes"
     },
     "failure": {
-      "retryable": "TODO",
-      "notRetryable": "TODO",
-      "recordTitle": "TODO",
-      "recordHint": "TODO",
-      "selectReason": "TODO",
-      "final": "TODO",
-      "recordButton": "TODO"
+      "retryable": "Retryable",
+      "notRetryable": "Not retryable",
+      "recordTitle": "Record Failure",
+      "recordHint": "Record why this delivery attempt failed.",
+      "selectReason": "Select a reason",
+      "final": "Final failure",
+      "recordButton": "Record Failure"
     },
     "returns": {
-      "discrepancy": "TODO",
-      "colProduct": "TODO",
-      "colReturned": "TODO",
-      "colCounted": "TODO",
-      "colDifference": "TODO",
-      "empty": "TODO",
-      "title": "TODO"
+      "discrepancy": "Discrepancy",
+      "colProduct": "Product",
+      "colReturned": "Returned",
+      "colCounted": "Counted",
+      "colDifference": "Difference",
+      "empty": "No returns",
+      "title": "Returns"
     },
     "timeline": {
-      "empty": "TODO",
-      "customerVisible": "TODO"
+      "empty": "No timeline events",
+      "customerVisible": "Visible to customer"
     },
     "drawer": {
-      "titleWithOrder": "TODO",
-      "attemptsUsed": "TODO"
+      "titleWithOrder": "Delivery",
+      "attemptsUsed": "Attempts used"
     },
-    "entity": "TODO",
+    "entity": "Delivery",
     "empty": {
-      "filteredTitle": "TODO",
-      "title": "TODO",
-      "filteredHint": "TODO",
-      "hint": "TODO"
+      "filteredTitle": "No deliveries match your filters",
+      "title": "No deliveries",
+      "filteredHint": "Try adjusting or clearing the filters.",
+      "hint": "Deliveries appear here once dispatched."
     },
     "table": {
-      "lastFailure": "TODO",
-      "sla": "TODO",
-      "final": "TODO"
+      "lastFailure": "Last Failure",
+      "sla": "SLA",
+      "final": "Final"
     },
     "sla": {
-      "breached": "TODO",
-      "onTime": "TODO"
+      "breached": "Breached",
+      "onTime": "On time"
     },
     "stats": {
-      "slaBreached": "TODO"
+      "slaBreached": "SLA Breached"
     },
     "page": {
-      "breadcrumbRoot": "TODO",
-      "title": "TODO",
-      "description": "TODO"
+      "breadcrumbRoot": "Logistics",
+      "title": "Deliveries",
+      "description": "Track delivery attempts, proof of delivery and SLA."
     },
     "filter": {
-      "orderIdPlaceholder": "TODO",
-      "slaBreached": "TODO"
+      "orderIdPlaceholder": "Search by order #",
+      "slaBreached": "SLA breached only"
     }
   },
   "common": {
-    "status": "TODO",
-    "overview": "TODO",
-    "timeline": "TODO",
-    "failed": "TODO",
-    "noDataYet": "TODO",
-    "priority": "TODO",
-    "unknown": "TODO",
-    "confirm": "TODO",
-    "assigned": "TODO",
-    "close": "TODO",
-    "reason": "TODO",
-    "loading": "TODO",
-    "phone": "TODO",
-    "city": "TODO",
-    "total": "TODO",
-    "cancel": "TODO",
-    "export": "TODO",
-    "refresh": "TODO",
-    "zone": "TODO",
-    "address": "TODO",
-    "notes": "TODO",
-    "type": "TODO",
-    "delete": "TODO",
-    "assign": "TODO",
-    "active": "TODO",
-    "inactive": "TODO",
-    "driver": "TODO",
-    "vehicle": "TODO",
-    "history": "TODO",
-    "saveChanges": "TODO",
-    "code": "TODO",
-    "unassigned": "TODO",
-    "na": "TODO",
-    "yes": "TODO",
-    "scheduled": "TODO",
-    "no": "TODO",
-    "actions": "TODO",
-    "viewDetails": "TODO",
-    "required": "TODO",
-    "capacity": "TODO",
-    "critical": "TODO",
-    "optional": "TODO",
-    "date": "TODO",
-    "description": "TODO"
+    "status": "Status",
+    "overview": "Overview",
+    "timeline": "Timeline",
+    "failed": "Failed",
+    "noDataYet": "No data yet",
+    "priority": "Priority",
+    "unknown": "Unknown",
+    "confirm": "Confirm",
+    "assigned": "Assigned",
+    "close": "Close",
+    "reason": "Reason",
+    "loading": "Loading…",
+    "phone": "Phone",
+    "city": "City",
+    "total": "Total",
+    "cancel": "Cancel",
+    "export": "Export",
+    "refresh": "Refresh",
+    "zone": "Zone",
+    "address": "Address",
+    "notes": "Notes",
+    "type": "Type",
+    "delete": "Delete",
+    "assign": "Assign",
+    "active": "Active",
+    "inactive": "Inactive",
+    "driver": "Driver",
+    "vehicle": "Vehicle",
+    "history": "History",
+    "saveChanges": "Save Changes",
+    "code": "Code",
+    "unassigned": "Unassigned",
+    "na": "N/A",
+    "yes": "Yes",
+    "scheduled": "Scheduled",
+    "no": "No",
+    "actions": "Actions",
+    "viewDetails": "View Details",
+    "required": "Required",
+    "capacity": "Capacity",
+    "critical": "Critical",
+    "optional": "Optional",
+    "date": "Date",
+    "description": "Description"
   },
   "dispatch": {
     "conflicts": {
-      "blocksRelease": "TODO",
-      "openFor": "TODO",
-      "ownedByOther": "TODO",
-      "actionPlaceholder": "TODO",
-      "markResolved": "TODO",
-      "override": "TODO",
-      "ownedElsewhere": "TODO",
-      "title": "TODO",
-      "empty": "TODO"
+      "blocksRelease": "Blocks release",
+      "openFor": "Open for",
+      "ownedByOther": "Owned by {{authority}}",
+      "actionPlaceholder": "What was done?",
+      "markResolved": "Mark Resolved",
+      "override": "Override",
+      "ownedElsewhere": "Owned elsewhere",
+      "title": "Conflicts",
+      "empty": "No conflicts"
     },
     "toast": {
-      "conflictClosed": "TODO",
-      "conflictCloseFailed": "TODO",
-      "overrideRecorded": "TODO",
-      "overrideRefused": "TODO",
-      "approved": "TODO",
-      "approveFailed": "TODO",
-      "rejected": "TODO",
-      "rejectFailed": "TODO",
-      "queueNothingNew": "TODO",
-      "queueBuilt": "TODO",
-      "queueBuildFailed": "TODO",
-      "queueEmpty": "TODO",
-      "claimFailed": "TODO",
-      "lockBroken": "TODO",
-      "lockBreakFailed": "TODO",
-      "sessionClosedLocksReleased": "TODO",
-      "sessionCloseFailed": "TODO",
-      "priorityUpdated": "TODO",
-      "priorityFailed": "TODO",
-      "itemDeferred": "TODO",
-      "deferFailed": "TODO"
+      "conflictClosed": "Conflict closed",
+      "conflictCloseFailed": "Could not close the conflict",
+      "overrideRecorded": "Override recorded",
+      "overrideRefused": "The override was refused",
+      "approved": "Approved",
+      "approveFailed": "Could not approve",
+      "rejected": "Rejected",
+      "rejectFailed": "Could not reject",
+      "queueNothingNew": "Nothing new to queue",
+      "queueBuilt": "Queue built",
+      "queueBuildFailed": "Could not build the queue",
+      "queueEmpty": "The queue is empty",
+      "claimFailed": "Could not claim the item",
+      "lockBroken": "Lock released",
+      "lockBreakFailed": "Could not release the lock",
+      "sessionClosedLocksReleased": "Session closed and locks released",
+      "sessionCloseFailed": "Could not close the session",
+      "priorityUpdated": "Priority updated",
+      "priorityFailed": "Could not update the priority",
+      "itemDeferred": "Item deferred",
+      "deferFailed": "Could not defer the item"
     },
     "reviews": {
-      "empty": "TODO",
-      "waitingFor": "TODO",
-      "notePlaceholder": "TODO",
-      "approve": "TODO",
-      "reject": "TODO",
-      "title": "TODO"
+      "empty": "No pending reviews",
+      "waitingFor": "Waiting for",
+      "notePlaceholder": "Add a note",
+      "approve": "Approve",
+      "reject": "Reject",
+      "title": "Pending Reviews"
     },
     "units": {
-      "minutes": "TODO",
-      "minutesShort": "TODO"
+      "minutes": "minutes",
+      "minutesShort": "min"
     },
     "monitoring": {
-      "dispatch": "TODO",
-      "sessionsOpened": "TODO",
-      "sessionsActive": "TODO",
-      "sessionsAbandoned": "TODO",
-      "allocationsAttempted": "TODO",
-      "allocationsConfirmed": "TODO",
-      "allocationsFailed": "TODO",
-      "confirmationRate": "TODO",
-      "automaticShare": "TODO",
-      "avgSessionLength": "TODO",
-      "queue": "TODO",
-      "depth": "TODO",
-      "needsAction": "TODO",
-      "stuck": "TODO",
-      "avgWait": "TODO",
-      "longestWait": "TODO",
-      "assignmentHealth": "TODO",
-      "openConflicts": "TODO",
-      "blockingConflicts": "TODO",
-      "oldestConflict": "TODO",
-      "pendingReviews": "TODO",
-      "oldestReview": "TODO",
-      "heldResources": "TODO",
-      "capacityOwnedByNetwork": "TODO",
-      "slots": "TODO",
-      "avgUtilisation": "TODO",
-      "nearCapacity": "TODO",
-      "exhausted": "TODO"
+      "dispatch": "Dispatch",
+      "sessionsOpened": "Sessions Opened",
+      "sessionsActive": "Active Sessions",
+      "sessionsAbandoned": "Abandoned Sessions",
+      "allocationsAttempted": "Allocations Attempted",
+      "allocationsConfirmed": "Allocations Confirmed",
+      "allocationsFailed": "Allocations Failed",
+      "confirmationRate": "Confirmation Rate",
+      "automaticShare": "Automatic Share",
+      "avgSessionLength": "Average Session Length",
+      "queue": "Queue",
+      "depth": "Depth",
+      "needsAction": "Needs Action",
+      "stuck": "Stuck",
+      "avgWait": "Average Wait",
+      "longestWait": "Longest Wait",
+      "assignmentHealth": "Assignment Health",
+      "openConflicts": "Open Conflicts",
+      "blockingConflicts": "Blocking Conflicts",
+      "oldestConflict": "Oldest Conflict",
+      "pendingReviews": "Pending Reviews",
+      "oldestReview": "Oldest Review",
+      "heldResources": "Held Resources",
+      "capacityOwnedByNetwork": "Capacity is owned by the network.",
+      "slots": "Slots",
+      "avgUtilisation": "Average Utilisation",
+      "nearCapacity": "Near Capacity",
+      "exhausted": "Exhausted"
     },
     "queue": {
-      "pickBoardTitle": "TODO",
-      "pickBoardHint": "TODO",
-      "build": "TODO",
-      "claimNext": "TODO",
-      "openSessionHint": "TODO",
-      "emptyTitle": "TODO",
-      "emptyHint": "TODO",
-      "colTrip": "TODO",
-      "colWaiting": "TODO",
-      "colAttempts": "TODO",
-      "colClaimedBy": "TODO",
-      "repeatedlyFailed": "TODO",
-      "itemFallbackTitle": "TODO",
-      "drawerDescription": "TODO",
-      "rank": "TODO",
-      "tripCapacity": "TODO",
-      "queuedAt": "TODO",
-      "whyPriority": "TODO",
-      "stuckFailed": "TODO",
-      "stuckLastReason": "TODO",
-      "stuckAdvice": "TODO",
-      "notEditable": "TODO",
-      "changeReasonPlaceholder": "TODO",
-      "setPriority": "TODO",
-      "defer": "TODO"
+      "pickBoardTitle": "Pick Board",
+      "pickBoardHint": "Claim the next item to begin dispatching.",
+      "build": "Build Queue",
+      "claimNext": "Claim Next",
+      "openSessionHint": "Open a session to claim items.",
+      "emptyTitle": "The queue is empty",
+      "emptyHint": "Build the queue to load pending trips.",
+      "colTrip": "Trip",
+      "colWaiting": "Waiting",
+      "colAttempts": "Attempts",
+      "colClaimedBy": "Claimed By",
+      "repeatedlyFailed": "Repeatedly failed",
+      "itemFallbackTitle": "Queue Item",
+      "drawerDescription": "Review and dispatch this queued trip.",
+      "rank": "Rank",
+      "tripCapacity": "Trip Capacity",
+      "queuedAt": "Queued At",
+      "whyPriority": "Why this priority",
+      "stuckFailed": "Failed attempts",
+      "stuckLastReason": "Last reason",
+      "stuckAdvice": "Resolve the blocking cause before retrying.",
+      "notEditable": "Not editable",
+      "changeReasonPlaceholder": "Reason for the change",
+      "setPriority": "Set Priority",
+      "defer": "Defer"
     },
     "locks": {
-      "empty": "TODO",
-      "heldBy": "TODO",
-      "lapsed": "TODO",
-      "minutesLeft": "TODO",
-      "break": "TODO",
-      "reasonPlaceholder": "TODO",
-      "title": "TODO"
+      "empty": "No held locks",
+      "heldBy": "Held by",
+      "lapsed": "Lapsed",
+      "minutesLeft": "minutes left",
+      "break": "Release Lock",
+      "reasonPlaceholder": "Reason for releasing the lock",
+      "title": "Resource Locks"
     },
     "sessions": {
-      "title": "TODO",
-      "empty": "TODO",
-      "colOperator": "TODO",
-      "colMode": "TODO",
-      "colReleased": "TODO",
-      "colConflicts": "TODO",
-      "colDuration": "TODO",
-      "idle": "TODO",
+      "title": "Dispatch Sessions",
+      "empty": "No sessions",
+      "colOperator": "Operator",
+      "colMode": "Mode",
+      "colReleased": "Released",
+      "colConflicts": "Conflicts",
+      "colDuration": "Duration",
+      "idle": "Idle",
       "mode": {
-        "manual": "TODO",
-        "automatic": "TODO",
-        "hybrid": "TODO"
+        "manual": "Manual",
+        "automatic": "Automatic",
+        "hybrid": "Hybrid"
       }
     },
     "timeline": {
-      "boardTitle": "TODO",
-      "pickBoard": "TODO",
-      "empty": "TODO",
-      "overridesTitle": "TODO",
-      "overridesEmpty": "TODO"
+      "boardTitle": "Dispatch Timeline",
+      "pickBoard": "Pick Board",
+      "empty": "No timeline events",
+      "overridesTitle": "Overrides",
+      "overridesEmpty": "No overrides"
     },
     "authority": {
-      "fleet": "TODO",
-      "drivers": "TODO",
-      "network": "TODO",
-      "distribution": "TODO",
-      "dispatch": "TODO"
+      "fleet": "Fleet",
+      "drivers": "Drivers",
+      "network": "Network",
+      "distribution": "Distribution",
+      "dispatch": "Dispatch"
     }
   },
   "planning": {
     "status": {
-      "planned": "TODO",
-      "inPlanning": "TODO",
-      "ready": "TODO"
+      "planned": "Planned",
+      "inPlanning": "In Planning",
+      "ready": "Ready"
     },
     "actions": {
-      "plannedDone": "TODO",
-      "continuePlanning": "TODO",
-      "startPlanning": "TODO",
-      "viewPlan": "TODO",
-      "continue": "TODO"
+      "plannedDone": "Mark as Planned",
+      "continuePlanning": "Continue Planning",
+      "startPlanning": "Start Planning",
+      "viewPlan": "View Plan",
+      "continue": "Continue"
     },
     "metrics": {
-      "orders": "TODO",
-      "collection": "TODO",
-      "customers": "TODO",
-      "products": "TODO",
-      "stops": "TODO",
-      "estimatedStops": "TODO",
-      "expectedCollection": "TODO",
-      "weight": "TODO"
+      "orders": "Orders",
+      "collection": "Collection",
+      "customers": "Customers",
+      "products": "Products",
+      "stops": "Stops",
+      "estimatedStops": "Estimated Stops",
+      "expectedCollection": "Expected Collection",
+      "weight": "Weight"
     },
     "card": {
-      "estSessions": "TODO"
+      "estSessions": "Estimated Sessions"
     },
     "unassigned": {
-      "title": "TODO",
-      "hint": "TODO",
-      "empty": "TODO",
-      "colOrderNumber": "TODO",
-      "colCustomer": "TODO",
-      "colReason": "TODO",
-      "open": "TODO"
+      "title": "Unassigned Orders",
+      "hint": "These orders are not assigned to any zone.",
+      "empty": "No unassigned orders",
+      "colOrderNumber": "Order #",
+      "colCustomer": "Customer",
+      "colReason": "Reason",
+      "open": "Open"
     },
     "dialog": {
-      "startTitle": "TODO",
-      "startDescription": "TODO",
-      "starting": "TODO"
+      "startTitle": "Start planning",
+      "startDescription": "Start planning for this zone?",
+      "starting": "Starting…"
     },
     "toast": {
-      "started": "TODO",
-      "startFailed": "TODO",
-      "markedPlanned": "TODO",
-      "markFailed": "TODO"
+      "started": "Planning started",
+      "startFailed": "Could not start planning",
+      "markedPlanned": "Marked as planned",
+      "markFailed": "Could not update the plan"
     },
     "kpi": {
-      "readyZones": "TODO",
-      "plannedZones": "TODO",
-      "readyOrders": "TODO"
+      "readyZones": "Ready Zones",
+      "plannedZones": "Planned Zones",
+      "readyOrders": "Ready Orders"
     },
     "toolbar": {
-      "cardView": "TODO",
-      "tableView": "TODO",
-      "unassignedCount": "TODO",
-      "hideEmptyZones": "TODO",
-      "showEmptyZones": "TODO"
+      "cardView": "Card view",
+      "tableView": "Table view",
+      "unassignedCount": "Unassigned",
+      "hideEmptyZones": "Hide empty zones",
+      "showEmptyZones": "Show empty zones"
     },
-    "title": "TODO",
-    "description": "TODO",
-    "breadcrumbRoot": "TODO",
+    "title": "Distribution Planning",
+    "description": "Plan daily deliveries by zone.",
+    "breadcrumbRoot": "Logistics",
     "filters": {
-      "deliveryDate": "TODO",
-      "planningStatus": "TODO",
-      "allStatuses": "TODO",
-      "searchZone": "TODO",
-      "searchZonePlaceholder": "TODO"
+      "deliveryDate": "Delivery Date",
+      "planningStatus": "Planning Status",
+      "allStatuses": "All statuses",
+      "searchZone": "Search zone",
+      "searchZonePlaceholder": "Search zones…"
     },
     "summary": {
-      "readyCount": "TODO",
-      "inPlanningCount": "TODO",
-      "plannedCount": "TODO"
+      "readyCount": "Ready",
+      "inPlanningCount": "In Planning",
+      "plannedCount": "Planned"
     },
     "empty": {
-      "allPlannedTitle": "TODO",
-      "allPlannedHint": "TODO",
-      "noMatchTitle": "TODO",
-      "noOrdersTitle": "TODO",
-      "noMatchHint": "TODO",
-      "noOrdersForDate": "TODO",
-      "noOrdersAssigned": "TODO",
-      "needZoneAssignment": "TODO"
+      "allPlannedTitle": "All zones are planned",
+      "allPlannedHint": "Nothing left to plan for this date.",
+      "noMatchTitle": "No zones match your filters",
+      "noOrdersTitle": "No orders to plan",
+      "noMatchHint": "Try adjusting or clearing the filters.",
+      "noOrdersForDate": "No orders for the selected date.",
+      "noOrdersAssigned": "No orders assigned to a zone.",
+      "needZoneAssignment": "Assign orders to a zone to begin planning."
     },
     "table": {
-      "colAction": "TODO",
-      "empty": "TODO",
-      "zoneCount": "TODO",
-      "customerCount": "TODO",
-      "productCount": "TODO",
-      "totalCollection": "TODO"
+      "colAction": "Action",
+      "empty": "No zones",
+      "zoneCount": "Zones",
+      "customerCount": "Customers",
+      "productCount": "Products",
+      "totalCollection": "Total Collection"
+    },
+    "orderStatus": {
+      "confirmed": "Confirmed",
+      "preparing": "Preparing",
+      "pending": "Pending",
+      "processing": "Processing"
     }
   },
   "drivers": {
     "fields": {
-      "driverCode": "TODO",
-      "fullName": "TODO",
-      "mobileNumber": "TODO",
-      "nationalId": "TODO",
-      "dateOfBirth": "TODO",
-      "employmentDate": "TODO",
-      "shippingCompany": "TODO",
-      "shippingCompanyPlaceholder": "TODO"
+      "driverCode": "Driver Code",
+      "fullName": "Full Name",
+      "mobileNumber": "Mobile Number",
+      "nationalId": "National ID",
+      "dateOfBirth": "Date of Birth",
+      "employmentDate": "Employment Date",
+      "shippingCompany": "Shipping Company",
+      "shippingCompanyPlaceholder": "Select a shipping company"
     },
     "license": {
       "alert": {
-        "expired": "TODO",
-        "expiringSoon": "TODO",
-        "expiringToday": "TODO",
-        "expiringInDays": "TODO",
-        "missing": "TODO"
+        "expired": "The licence has expired.",
+        "expiringSoon": "The licence expires soon.",
+        "expiringToday": "The licence expires today.",
+        "expiringInDays": "The licence expires soon.",
+        "missing": "No licence recorded."
       },
-      "currentStatus": "TODO",
-      "number": "TODO",
-      "type": "TODO",
-      "typePlaceholder": "TODO",
-      "issueDate": "TODO",
-      "expiryDate": "TODO",
-      "issuingAuthority": "TODO",
-      "issuingAuthorityPlaceholder": "TODO",
+      "currentStatus": "Current Status",
+      "number": "Licence Number",
+      "type": "Licence Type",
+      "typePlaceholder": "Select a licence type",
+      "issueDate": "Issue Date",
+      "expiryDate": "Expiry Date",
+      "issuingAuthority": "Issuing Authority",
+      "issuingAuthorityPlaceholder": "Enter the issuing authority",
       "status": {
-        "expired": "TODO"
+        "expired": "Expired"
       },
       "countdown": {
-        "expiresToday": "TODO",
-        "expiresInDays": "TODO",
-        "expiredAgo": "TODO"
+        "expiresToday": "Expires today",
+        "expiresInDays": "Expires in",
+        "expiredAgo": "Expired"
       }
     },
     "toast": {
-      "chooseFile": "TODO",
-      "documentUploaded": "TODO",
-      "uploadFailed": "TODO",
-      "downloadFailed": "TODO",
-      "documentDeleted": "TODO",
-      "deleteFailed": "TODO",
-      "vehicleChanged": "TODO",
-      "vehicleAssigned": "TODO",
-      "assignmentFailed": "TODO",
-      "vehicleReleased": "TODO",
-      "releaseFailed": "TODO",
-      "requiredFields": "TODO",
-      "created": "TODO",
-      "saved": "TODO",
-      "saveFailed": "TODO",
-      "archived": "TODO",
-      "activated": "TODO",
-      "deactivated": "TODO",
-      "statusFailed": "TODO"
+      "chooseFile": "Choose a file",
+      "documentUploaded": "Document uploaded",
+      "uploadFailed": "Could not upload the document",
+      "downloadFailed": "Could not download the document",
+      "documentDeleted": "Document deleted",
+      "deleteFailed": "Could not delete the document",
+      "vehicleChanged": "Vehicle changed",
+      "vehicleAssigned": "Vehicle assigned",
+      "assignmentFailed": "Could not assign the vehicle",
+      "vehicleReleased": "Vehicle released",
+      "releaseFailed": "Could not release the vehicle",
+      "requiredFields": "Fill in the required fields",
+      "created": "Driver created",
+      "saved": "Driver saved",
+      "saveFailed": "Could not save the driver",
+      "archived": "Driver archived",
+      "activated": "Driver activated",
+      "deactivated": "Driver deactivated",
+      "statusFailed": "Could not update the driver status"
     },
     "documents": {
-      "archivedNotice": "TODO",
-      "uploadHeading": "TODO",
-      "expiresOn": "TODO",
-      "title": "TODO",
-      "titlePlaceholder": "TODO",
-      "file": "TODO",
-      "fileHint": "TODO",
-      "upload": "TODO",
+      "archivedNotice": "Archived drivers cannot receive new documents.",
+      "uploadHeading": "Upload Document",
+      "expiresOn": "Expires On",
+      "title": "Document Title",
+      "titlePlaceholder": "Enter a document title",
+      "file": "File",
+      "fileHint": "PDF or image, up to 10 MB.",
+      "upload": "Upload",
       "empty": {
-        "title": "TODO",
-        "hint": "TODO"
+        "title": "No documents",
+        "hint": "Upload licences and identification documents."
       },
-      "expiresMeta": "TODO",
+      "expiresMeta": "Expires",
       "deleteDialog": {
-        "title": "TODO",
-        "body": "TODO"
+        "title": "Delete document",
+        "body": "Delete this document?"
       }
     },
     "vehicle": {
-      "intro": "TODO",
-      "since": "TODO",
-      "release": "TODO",
+      "intro": "Vehicle currently assigned to this driver.",
+      "since": "Since",
+      "release": "Release",
       "empty": {
-        "title": "TODO",
-        "hint": "TODO"
+        "title": "No vehicle assigned",
+        "hint": "Assign a vehicle to make this driver dispatchable."
       },
-      "archivedNotice": "TODO",
-      "changeLabel": "TODO",
-      "assignLabel": "TODO",
-      "loadingPlaceholder": "TODO",
-      "noneAvailable": "TODO",
-      "selectPlaceholder": "TODO",
-      "change": "TODO",
+      "archivedNotice": "Archived drivers cannot be assigned a vehicle.",
+      "changeLabel": "Change Vehicle",
+      "assignLabel": "Assign Vehicle",
+      "loadingPlaceholder": "Loading vehicles…",
+      "noneAvailable": "No vehicles available",
+      "selectPlaceholder": "Select a vehicle",
+      "change": "Change",
       "releaseDialog": {
-        "title": "TODO",
-        "body": "TODO"
+        "title": "Release vehicle",
+        "body": "Release this vehicle from the driver?"
       }
     },
     "history": {
       "empty": {
-        "title": "TODO",
-        "hint": "TODO"
+        "title": "No assignment history",
+        "hint": "Vehicle assignments appear here."
       },
-      "count": "TODO",
-      "vehicleFallback": "TODO",
-      "released": "TODO",
-      "durationDays": "TODO",
-      "present": "TODO",
-      "assignedBy": "TODO",
-      "releasedBy": "TODO"
+      "count": "Assignments",
+      "vehicleFallback": "Vehicle",
+      "released": "Released",
+      "durationDays": "days",
+      "present": "Present",
+      "assignedBy": "Assigned by",
+      "releasedBy": "Released by"
     },
     "status": {
-      "archived": "TODO"
+      "archived": "Archived"
     },
     "page": {
-      "newDriver": "TODO",
-      "breadcrumbModule": "TODO",
-      "title": "TODO",
-      "description": "TODO",
-      "searchPlaceholder": "TODO"
+      "newDriver": "New Driver",
+      "breadcrumbModule": "Logistics",
+      "title": "Drivers",
+      "description": "Manage drivers, licences and vehicle assignments.",
+      "searchPlaceholder": "Search drivers…"
     },
     "drawer": {
-      "descriptionNew": "TODO",
-      "descriptionEdit": "TODO",
-      "noVehicle": "TODO",
-      "licenceSection": "TODO",
-      "createDriver": "TODO",
+      "descriptionNew": "Add a driver to the fleet.",
+      "descriptionEdit": "Update driver details.",
+      "noVehicle": "No vehicle",
+      "licenceSection": "Licence",
+      "createDriver": "Create Driver",
       "tabs": {
-        "details": "TODO",
-        "license": "TODO",
-        "documents": "TODO"
+        "details": "Details",
+        "license": "Licence",
+        "documents": "Documents"
       },
-      "saveLicence": "TODO"
+      "saveLicence": "Save Licence"
     },
     "actions": {
-      "restoreFromArchive": "TODO",
-      "deactivate": "TODO",
-      "activate": "TODO",
-      "archive": "TODO"
+      "restoreFromArchive": "Restore from Archive",
+      "deactivate": "Deactivate",
+      "activate": "Activate",
+      "archive": "Archive"
     },
     "empty": {
       "filtered": {
-        "title": "TODO",
-        "hint": "TODO"
+        "title": "No drivers match your filters",
+        "hint": "Try adjusting or clearing the filters."
       },
       "none": {
-        "title": "TODO",
-        "hint": "TODO",
-        "action": "TODO"
+        "title": "No drivers",
+        "hint": "Add a driver to begin assigning deliveries.",
+        "action": "Add Driver"
       }
     },
     "table": {
-      "mobile": "TODO",
-      "license": "TODO",
-      "shippingCompany": "TODO"
+      "mobile": "Mobile",
+      "license": "Licence",
+      "shippingCompany": "Shipping Company"
     },
     "metrics": {
-      "total": "TODO",
-      "active": "TODO",
-      "inactive": "TODO",
-      "expiredLicense": "TODO",
-      "withoutVehicle": "TODO"
+      "total": "Total Drivers",
+      "active": "Active",
+      "inactive": "Inactive",
+      "expiredLicense": "Expired Licence",
+      "withoutVehicle": "Without Vehicle"
     }
   },
   "fleet": {
     "blockers": {
-      "none": "TODO"
+      "none": "No blockers"
     },
     "table": {
-      "fitness": "TODO",
-      "lifecycle": "TODO",
-      "odometer": "TODO",
-      "why": "TODO"
+      "fitness": "Fitness",
+      "lifecycle": "Lifecycle",
+      "odometer": "Odometer",
+      "why": "Reason"
     },
     "unit": {
-      "plate": "TODO",
-      "vehicleCode": "TODO",
-      "commissioned": "TODO",
-      "readiness": "TODO"
+      "plate": "Plate Number",
+      "vehicleCode": "Vehicle Code",
+      "commissioned": "Commissioned",
+      "readiness": "Readiness"
     },
-    "kmValue": "TODO",
+    "kmValue": "km",
     "health": {
-      "title": "TODO",
+      "title": "Fleet Health",
       "band": {
-        "good": "TODO",
-        "critical": "TODO",
-        "fair": "TODO",
-        "poor": "TODO"
+        "good": "Good",
+        "critical": "Critical",
+        "fair": "Fair",
+        "poor": "Poor"
       }
     },
     "odometer": {
-      "toastRecorded": "TODO",
-      "toastNotAccepted": "TODO",
-      "toastFailed": "TODO",
-      "newReading": "TODO",
-      "record": "TODO",
-      "staleWarning": "TODO",
-      "colReading": "TODO",
-      "colSource": "TODO",
-      "colWhen": "TODO",
-      "colAccepted": "TODO",
-      "rejected": "TODO"
+      "toastRecorded": "Odometer reading recorded",
+      "toastNotAccepted": "Reading not accepted",
+      "toastFailed": "Could not record the reading",
+      "newReading": "New Reading",
+      "record": "Record Reading",
+      "staleWarning": "The odometer reading is out of date.",
+      "colReading": "Reading",
+      "colSource": "Source",
+      "colWhen": "When",
+      "colAccepted": "Accepted",
+      "rejected": "Rejected"
     },
     "maintenance": {
-      "empty": "TODO",
-      "overdue": "TODO",
-      "due": "TODO",
-      "nextDueDate": "TODO",
-      "nextDueKm": "TODO",
-      "remaining": "TODO",
-      "everyInterval": "TODO"
+      "empty": "No maintenance records",
+      "overdue": "Overdue",
+      "due": "Due",
+      "nextDueDate": "Next Due Date",
+      "nextDueKm": "Next Due (km)",
+      "remaining": "Remaining",
+      "everyInterval": "Every"
     },
-    "daysShort": "TODO",
+    "daysShort": "d",
     "cost": {
-      "distance": "TODO",
-      "costPerKm": "TODO",
-      "notEnoughOdometer": "TODO",
-      "authorityNote": "TODO"
+      "distance": "Distance",
+      "costPerKm": "Cost per km",
+      "notEnoughOdometer": "Not enough odometer data to calculate cost.",
+      "authorityNote": "Costs are attributed to the owning authority."
     },
     "drawer": {
-      "titleWithPlate": "TODO",
-      "title": "TODO",
-      "tabMaintenance": "TODO",
-      "tabOdometer": "TODO",
-      "tabCost": "TODO"
+      "titleWithPlate": "Fleet Unit",
+      "title": "Fleet Unit",
+      "tabMaintenance": "Maintenance",
+      "tabOdometer": "Odometer",
+      "tabCost": "Cost"
     },
     "empty": {
-      "filteredTitle": "TODO",
-      "title": "TODO",
-      "filteredHint": "TODO",
-      "hint": "TODO"
+      "filteredTitle": "No fleet units match your filters",
+      "title": "No fleet units",
+      "filteredHint": "Try adjusting or clearing the filters.",
+      "hint": "Add a vehicle to build the fleet."
     },
     "metrics": {
-      "criticalDefects": "TODO",
-      "overdueMaintenance": "TODO",
-      "openWorkOrders": "TODO",
-      "staleOdometer": "TODO"
+      "criticalDefects": "Critical Defects",
+      "overdueMaintenance": "Overdue Maintenance",
+      "openWorkOrders": "Open Work Orders",
+      "staleOdometer": "Stale Odometer"
     },
     "lifecycle": {
-      "suspended": "TODO"
+      "suspended": "Suspended"
     },
-    "breadcrumbRoot": "TODO",
-    "breadcrumbFleet": "TODO",
-    "title": "TODO",
-    "description": "TODO",
+    "breadcrumbRoot": "Logistics",
+    "breadcrumbFleet": "Fleet",
+    "title": "Fleet Dashboard",
+    "description": "Monitor vehicle readiness, maintenance and cost.",
     "filters": {
-      "criticalDefects": "TODO"
+      "criticalDefects": "Critical defects only"
+    },
+    "costType": {
+      "fuel": "Fuel",
+      "maintenance": "Maintenance",
+      "inspection": "Inspection",
+      "insurance": "Insurance",
+      "licensing": "Licensing",
+      "depreciation": "Depreciation",
+      "tyres": "Tyres",
+      "other": "Other"
     }
   },
   "network": {
     "area": {
-      "dispatchRegion": "TODO",
-      "leadTime": "TODO",
-      "hoursValue": "TODO",
-      "acceptsCommitments": "TODO",
-      "noMembersWarning": "TODO",
-      "coverage": "TODO",
-      "coverageHint": "TODO",
-      "carvedOut": "TODO"
+      "dispatchRegion": "Dispatch Region",
+      "leadTime": "Lead Time",
+      "hoursValue": "Hours",
+      "acceptsCommitments": "Accepts Commitments",
+      "noMembersWarning": "This service area has no members.",
+      "coverage": "Coverage",
+      "coverageHint": "Zones covered by this service area.",
+      "carvedOut": "Carved Out"
     },
     "serviceLevels": {
-      "title": "TODO",
-      "colLevel": "TODO",
-      "colCutoff": "TODO",
-      "colSurcharge": "TODO"
+      "title": "Service Levels",
+      "colLevel": "Level",
+      "colCutoff": "Cut-off",
+      "colSurcharge": "Surcharge"
     },
-    "hoursShort": "TODO",
+    "hoursShort": "h",
     "capacity": {
-      "empty": "TODO",
-      "published": "TODO",
-      "allDay": "TODO",
-      "exhausted": "TODO",
-      "nearCapacity": "TODO",
-      "remainingUnit": "TODO",
-      "binding": "TODO"
+      "empty": "No capacity defined",
+      "published": "Published",
+      "allDay": "All day",
+      "exhausted": "Exhausted",
+      "nearCapacity": "Near capacity",
+      "remainingUnit": "remaining",
+      "binding": "Binding"
     },
     "areaStatus": {
-      "draft": "TODO"
+      "draft": "Draft"
     },
     "drawer": {
-      "titleWithName": "TODO",
-      "title": "TODO",
-      "tabCapacity": "TODO"
+      "titleWithName": "Service Area",
+      "title": "Service Area",
+      "tabCapacity": "Capacity"
     },
     "empty": {
-      "filteredTitle": "TODO",
-      "title": "TODO",
-      "filteredHint": "TODO",
-      "hint": "TODO"
+      "filteredTitle": "No service areas match your filters",
+      "title": "No service areas",
+      "filteredHint": "Try adjusting or clearing the filters.",
+      "hint": "Create a service area to define delivery coverage."
     },
     "metrics": {
-      "serviceAreas": "TODO",
-      "dispatchRegions": "TODO",
-      "withoutCoverage": "TODO"
+      "serviceAreas": "Service Areas",
+      "dispatchRegions": "Dispatch Regions",
+      "withoutCoverage": "Without Coverage"
     },
-    "breadcrumbRoot": "TODO",
-    "breadcrumbNetwork": "TODO",
-    "title": "TODO",
-    "description": "TODO",
+    "breadcrumbRoot": "Logistics",
+    "breadcrumbNetwork": "Network",
+    "title": "Service Areas",
+    "description": "Define delivery coverage and service levels across zones.",
     "table": {
-      "area": "TODO",
-      "members": "TODO",
-      "noCoverageTooltip": "TODO"
+      "area": "Service Area",
+      "members": "Members",
+      "noCoverageTooltip": "No coverage defined for this area."
     }
   },
   "operations": {
     "capacity": {
-      "mostCommonRefusal": "TODO",
-      "slotsToday": "TODO",
-      "slots": "TODO",
-      "averageUtilisation": "TODO",
-      "nearCapacity": "TODO",
-      "exhausted": "TODO",
-      "ourReservations": "TODO",
-      "requested": "TODO",
-      "currentlyHolding": "TODO",
-      "confirmed": "TODO",
-      "refused": "TODO",
-      "refusalRate": "TODO",
-      "rebalanced": "TODO",
-      "reservationsTitle": "TODO",
-      "empty": "TODO",
-      "colPurpose": "TODO",
-      "colLedger": "TODO",
-      "colOrders": "TODO",
-      "colWindow": "TODO",
+      "mostCommonRefusal": "Most Common Refusal",
+      "slotsToday": "Slots Today",
+      "slots": "Slots",
+      "averageUtilisation": "Average Utilisation",
+      "nearCapacity": "Near Capacity",
+      "exhausted": "Exhausted",
+      "ourReservations": "Our Reservations",
+      "requested": "Requested",
+      "currentlyHolding": "Currently Holding",
+      "confirmed": "Confirmed",
+      "refused": "Refused",
+      "refusalRate": "Refusal Rate",
+      "rebalanced": "Rebalanced",
+      "reservationsTitle": "Capacity Reservations",
+      "empty": "No reservations",
+      "colPurpose": "Purpose",
+      "colLedger": "Ledger",
+      "colOrders": "Orders",
+      "colWindow": "Window",
       "toast": {
-        "confirmed": "TODO",
-        "confirmFailed": "TODO"
+        "confirmed": "Reservation confirmed",
+        "confirmFailed": "Could not confirm the reservation"
       },
-      "manage": "TODO"
+      "manage": "Manage Capacity"
     },
     "exceptionDrawer": {
       "notes": {
-        "placeholder": "TODO",
+        "placeholder": "Add a note",
         "toast": {
-          "added": "TODO",
-          "addFailed": "TODO"
+          "added": "Note added",
+          "addFailed": "Could not add the note"
         },
-        "add": "TODO",
-        "pinsToTop": "TODO",
-        "empty": "TODO"
+        "add": "Add Note",
+        "pinsToTop": "Pins to top",
+        "empty": "No notes"
       },
       "escalations": {
-        "reasonPlaceholder": "TODO",
-        "toRole": "TODO",
+        "reasonPlaceholder": "Reason for escalation",
+        "toRole": "To role",
         "toast": {
-          "escalated": "TODO",
-          "refused": "TODO"
+          "escalated": "Escalated",
+          "refused": "The escalation was refused"
         },
-        "escalate": "TODO",
-        "empty": "TODO",
-        "level": "TODO",
-        "automatic": "TODO"
+        "escalate": "Escalate",
+        "empty": "No escalations",
+        "level": "Level",
+        "automatic": "Automatic"
       },
-      "title": "TODO",
-      "seenTimes": "TODO",
-      "overdue": "TODO",
-      "ownedElsewhereNotice": "TODO",
-      "severity": "TODO",
-      "firstSeen": "TODO",
-      "lastSeen": "TODO",
-      "age": "TODO",
-      "minutes": "TODO",
-      "unacknowledged": "TODO",
-      "acknowledged": "TODO",
-      "escalationLevel": "TODO",
-      "subject": "TODO",
+      "title": "Exception",
+      "seenTimes": "Seen",
+      "overdue": "Overdue",
+      "ownedElsewhereNotice": "This exception is owned by another authority.",
+      "severity": "Severity",
+      "firstSeen": "First Seen",
+      "lastSeen": "Last Seen",
+      "age": "Age",
+      "minutes": "minutes",
+      "unacknowledged": "Unacknowledged",
+      "acknowledged": "Acknowledged",
+      "escalationLevel": "Escalation Level",
+      "subject": "Subject",
       "tabs": {
-        "act": "TODO",
-        "escalations": "TODO"
+        "act": "Act",
+        "escalations": "Escalations"
       },
       "toast": {
-        "acknowledged": "TODO",
-        "acknowledgeFailed": "TODO",
-        "closed": "TODO",
-        "closeFailed": "TODO",
-        "suppressed": "TODO",
-        "suppressFailed": "TODO"
+        "acknowledged": "Exception acknowledged",
+        "acknowledgeFailed": "Could not acknowledge the exception",
+        "closed": "Exception closed",
+        "closeFailed": "Could not close the exception",
+        "suppressed": "Exception suppressed",
+        "suppressFailed": "Could not suppress the exception"
       },
-      "alreadyAcknowledged": "TODO",
-      "acknowledge": "TODO",
-      "resolution": "TODO",
-      "whatWasDone": "TODO",
-      "closeException": "TODO",
-      "suppress": "TODO",
-      "closedAsBy": "TODO",
-      "closedAs": "TODO"
+      "alreadyAcknowledged": "Already acknowledged",
+      "acknowledge": "Acknowledge",
+      "resolution": "Resolution",
+      "whatWasDone": "What was done?",
+      "closeException": "Close Exception",
+      "suppress": "Suppress",
+      "closedAsBy": "Closed by",
+      "closedAs": "Closed as"
     },
     "exceptions": {
-      "alertsLive": "TODO",
-      "pastEscalationThreshold": "TODO",
-      "ownedElsewhere": "TODO",
-      "emptyTitle": "TODO",
-      "emptyBody": "TODO",
-      "overdue": "TODO",
-      "openMinutes": "TODO",
-      "unlookedAtMinutes": "TODO",
-      "acknowledged": "TODO"
+      "alertsLive": "Live Alerts",
+      "pastEscalationThreshold": "Past escalation threshold",
+      "ownedElsewhere": "Owned elsewhere",
+      "emptyTitle": "No exceptions",
+      "emptyBody": "Operations are running without exceptions.",
+      "overdue": "Overdue",
+      "openMinutes": "Open for",
+      "unlookedAtMinutes": "Unattended for",
+      "acknowledged": "Acknowledged"
     },
     "activityCenter": {
-      "emptyWindow": "TODO",
+      "emptyWindow": "No activity in this window",
       "truncated": {
-        "showing": "TODO",
-        "cappedSources": "TODO",
-        "narrow": "TODO"
+        "showing": "Showing",
+        "cappedSources": "Some sources were capped.",
+        "narrow": "Narrow the time window for full detail."
       },
-      "auditIntro": "TODO",
+      "auditIntro": "Audit trail of operational activity.",
       "assignments": {
-        "empty": "TODO",
-        "colMode": "TODO",
-        "colFleetVerdict": "TODO",
-        "colAllocated": "TODO"
+        "empty": "No assignments",
+        "colMode": "Mode",
+        "colFleetVerdict": "Fleet Verdict",
+        "colAllocated": "Allocated"
       },
       "sessions": {
-        "empty": "TODO",
-        "colOperator": "TODO",
-        "colReleased": "TODO",
-        "colConflicts": "TODO",
-        "colDuration": "TODO",
-        "colStarted": "TODO",
-        "minutesShort": "TODO"
+        "empty": "No sessions",
+        "colOperator": "Operator",
+        "colReleased": "Released",
+        "colConflicts": "Conflicts",
+        "colDuration": "Duration",
+        "colStarted": "Started",
+        "minutesShort": "min"
       },
       "capacity": {
-        "empty": "TODO",
-        "colPurpose": "TODO",
-        "colOrders": "TODO",
-        "colRequested": "TODO"
+        "empty": "No capacity activity",
+        "colPurpose": "Purpose",
+        "colOrders": "Orders",
+        "colRequested": "Requested"
       },
-      "breadcrumbRoot": "TODO",
-      "breadcrumbSection": "TODO",
-      "title": "TODO",
-      "description": "TODO",
+      "breadcrumbRoot": "Logistics",
+      "breadcrumbSection": "Operations",
+      "title": "Activity Centre",
+      "description": "Review operational activity across dispatch and capacity.",
       "tabs": {
-        "audit": "TODO",
-        "assignments": "TODO",
-        "sessions": "TODO"
+        "audit": "Audit",
+        "assignments": "Assignments",
+        "sessions": "Sessions"
       }
     },
     "alertCenter": {
       "empty": {
-        "title": "TODO",
-        "hint": "TODO"
+        "title": "No alerts",
+        "hint": "Operations are running without alerts."
       },
-      "overdue": "TODO",
+      "overdue": "Overdue",
       "meta": {
-        "open": "TODO",
-        "unacknowledgedFor": "TODO",
-        "acknowledged": "TODO",
-        "level": "TODO"
+        "open": "Open",
+        "unacknowledgedFor": "Unacknowledged for",
+        "acknowledged": "Acknowledged",
+        "level": "Level"
       },
       "toast": {
-        "acknowledged": "TODO",
-        "acknowledgeFailed": "TODO"
+        "acknowledged": "Alert acknowledged",
+        "acknowledgeFailed": "Could not acknowledge the alert"
       },
-      "ack": "TODO",
+      "ack": "Acknowledge",
       "history": {
-        "empty": "TODO"
+        "empty": "No alert history"
       },
       "metrics": {
-        "live": "TODO",
-        "unacknowledged": "TODO"
+        "live": "Live Alerts",
+        "unacknowledged": "Unacknowledged"
       },
-      "breadcrumbRoot": "TODO",
-      "breadcrumbSection": "TODO",
-      "title": "TODO",
-      "description": "TODO",
+      "breadcrumbRoot": "Logistics",
+      "breadcrumbSection": "Operations",
+      "title": "Alert Centre",
+      "description": "Monitor and acknowledge operational alerts.",
       "tabs": {
-        "live": "TODO"
+        "live": "Live"
       }
     },
     "readiness": {
-      "gradeValue": "TODO",
+      "gradeValue": "Grade",
       "panel": {
-        "healthScore": "TODO",
-        "moduleReadiness": "TODO",
-        "checklist": "TODO",
-        "systemHealth": "TODO",
-        "dependencyHealth": "TODO",
-        "projections": "TODO",
-        "executive": "TODO",
-        "todaysOperations": "TODO",
-        "fleet": "TODO"
+        "healthScore": "Health Score",
+        "moduleReadiness": "Module Readiness",
+        "checklist": "Checklist",
+        "systemHealth": "System Health",
+        "dependencyHealth": "Dependency Health",
+        "projections": "Projections",
+        "executive": "Executive Summary",
+        "todaysOperations": "Today's Operations",
+        "fleet": "Fleet"
       },
-      "countReady": "TODO",
-      "countDegraded": "TODO",
-      "countNotReady": "TODO",
-      "weightingNote": "TODO",
-      "checksWeight": "TODO",
-      "blockingChecks": "TODO",
+      "countReady": "Ready",
+      "countDegraded": "Degraded",
+      "countNotReady": "Not Ready",
+      "weightingNote": "Checks are weighted by operational impact.",
+      "checksWeight": "Weight",
+      "blockingChecks": "Blocking Checks",
       "projection": {
-        "queue": "TODO",
-        "dispatch": "TODO",
-        "exceptions": "TODO"
+        "queue": "Queue",
+        "dispatch": "Dispatch",
+        "exceptions": "Exceptions"
       },
-      "quiet": "TODO",
+      "quiet": "Quiet",
       "stat": {
-        "healthScore": "TODO",
-        "criticalAlerts": "TODO",
-        "canFieldToday": "TODO",
-        "activeSessions": "TODO",
-        "confirmed": "TODO",
-        "confirmationRate": "TODO",
-        "queueDepth": "TODO",
-        "assignableVehicles": "TODO",
-        "availableDrivers": "TODO",
-        "fieldableUnits": "TODO",
-        "vehicleUseNow": "TODO"
+        "healthScore": "Health Score",
+        "criticalAlerts": "Critical Alerts",
+        "canFieldToday": "Can Field Today",
+        "activeSessions": "Active Sessions",
+        "confirmed": "Confirmed",
+        "confirmationRate": "Confirmation Rate",
+        "queueDepth": "Queue Depth",
+        "assignableVehicles": "Assignable Vehicles",
+        "availableDrivers": "Available Drivers",
+        "fieldableUnits": "Fieldable Units",
+        "vehicleUseNow": "Vehicles In Use"
       },
       "metrics": {
-        "healthScore": "TODO",
-        "overall": "TODO",
-        "grade": "TODO"
+        "healthScore": "Health Score",
+        "overall": "Overall",
+        "grade": "Grade"
       },
-      "breadcrumbRoot": "TODO",
-      "breadcrumbSection": "TODO",
-      "title": "TODO",
-      "description": "TODO"
+      "breadcrumbRoot": "Logistics",
+      "breadcrumbSection": "Operations",
+      "title": "Enterprise Readiness",
+      "description": "Assess operational readiness across modules and fleet."
     },
     "badges": {
       "authority": {
-        "drivers": "TODO",
-        "fleet": "TODO"
+        "drivers": "Drivers",
+        "fleet": "Fleet"
       }
     }
   },
   "shippingCompanies": {
     "empty": {
-      "filteredTitle": "TODO",
-      "filteredHint": "TODO",
-      "title": "TODO",
-      "hint": "TODO",
-      "addFirst": "TODO"
+      "filteredTitle": "No carriers match your filters",
+      "filteredHint": "Try adjusting or clearing the filters.",
+      "title": "No shipping companies",
+      "hint": "Add a shipping company to start assigning deliveries.",
+      "addFirst": "Add the first company"
     },
     "type": {
-      "internal": "TODO",
-      "external": "TODO"
+      "internal": "Internal",
+      "external": "External"
     },
     "status": {
-      "archived": "TODO"
+      "archived": "Archived"
     },
     "table": {
-      "company": "TODO",
-      "contact": "TODO",
-      "activeContract": "TODO",
-      "contracts": "TODO",
-      "companies": "TODO",
-      "noActiveContract": "TODO"
+      "company": "Company",
+      "contact": "Contact",
+      "activeContract": "Active Contract",
+      "contracts": "Contracts",
+      "companies": "Companies",
+      "noActiveContract": "No active contract"
     },
     "metrics": {
-      "total": "TODO",
-      "active": "TODO",
-      "internal": "TODO",
-      "external": "TODO"
+      "total": "Total Companies",
+      "active": "Active",
+      "internal": "Internal",
+      "external": "External"
     },
-    "breadcrumbRoot": "TODO",
-    "title": "TODO",
-    "description": "TODO",
-    "newCompany": "TODO",
-    "searchPlaceholder": "TODO"
+    "breadcrumbRoot": "Logistics",
+    "title": "Shipping Companies",
+    "description": "Manage carriers and their delivery contracts.",
+    "newCompany": "New Company",
+    "searchPlaceholder": "Search companies…"
   },
   "vehicles": {
     "form": {
-      "vehicleCode": "TODO",
-      "plateNumber": "TODO",
-      "vehicleName": "TODO",
-      "vehicleNamePlaceholder": "TODO",
-      "vehicleType": "TODO",
-      "selectType": "TODO",
-      "shippingCompany": "TODO",
-      "selectCarrier": "TODO",
-      "capacityOrders": "TODO",
-      "capacityWeight": "TODO",
-      "capacityVolume": "TODO",
-      "capacityHint": "TODO",
-      "specification": "TODO",
-      "fuelType": "TODO",
-      "selectFuelType": "TODO",
-      "manufacturer": "TODO",
-      "model": "TODO",
-      "year": "TODO",
-      "color": "TODO",
-      "vin": "TODO"
+      "vehicleCode": "Vehicle Code",
+      "plateNumber": "Plate Number",
+      "vehicleName": "Vehicle Name",
+      "vehicleNamePlaceholder": "Enter a vehicle name",
+      "vehicleType": "Vehicle Type",
+      "selectType": "Select a type",
+      "shippingCompany": "Shipping Company",
+      "selectCarrier": "Select a carrier",
+      "capacityOrders": "Capacity (Orders)",
+      "capacityWeight": "Capacity (Weight)",
+      "capacityVolume": "Capacity (Volume)",
+      "capacityHint": "Used to plan loading and dispatch.",
+      "specification": "Specification",
+      "fuelType": "Fuel Type",
+      "selectFuelType": "Select a fuel type",
+      "manufacturer": "Manufacturer",
+      "model": "Model",
+      "year": "Year",
+      "color": "Color",
+      "vin": "VIN"
     },
     "maintenance": {
       "toast": {
-        "dateRequired": "TODO",
-        "amended": "TODO",
-        "recorded": "TODO",
-        "saveFailed": "TODO",
-        "deleted": "TODO",
-        "deleteFailed": "TODO"
+        "dateRequired": "A service date is required",
+        "amended": "Maintenance record amended",
+        "recorded": "Maintenance recorded",
+        "saveFailed": "Could not save the maintenance record",
+        "deleted": "Maintenance record deleted",
+        "deleteFailed": "Could not delete the maintenance record"
       },
-      "recordCount": "TODO",
-      "immutableNote": "TODO",
-      "recordService": "TODO",
-      "permissionNotice": "TODO",
-      "amendRecord": "TODO",
-      "newRecord": "TODO",
-      "cost": "TODO",
-      "vendor": "TODO",
-      "nextDate": "TODO",
-      "saveAmendment": "TODO",
-      "record": "TODO",
-      "emptyTitle": "TODO",
-      "emptyDescription": "TODO",
-      "serviceDue": "TODO",
-      "amended": "TODO",
-      "noVendor": "TODO",
-      "nextOn": "TODO",
-      "byUser": "TODO",
-      "amendedBy": "TODO",
-      "deleteTitle": "TODO",
-      "deleteDescription": "TODO"
+      "recordCount": "Records",
+      "immutableNote": "Recorded services cannot be edited, only amended.",
+      "recordService": "Record Service",
+      "permissionNotice": "You do not have permission to record maintenance.",
+      "amendRecord": "Amend Record",
+      "newRecord": "New Record",
+      "cost": "Cost",
+      "vendor": "Vendor",
+      "nextDate": "Next Service Date",
+      "saveAmendment": "Save Amendment",
+      "record": "Record",
+      "emptyTitle": "No maintenance records",
+      "emptyDescription": "Recorded services appear here.",
+      "serviceDue": "Service due",
+      "amended": "Amended",
+      "noVendor": "No vendor",
+      "nextOn": "Next on",
+      "byUser": "by",
+      "amendedBy": "Amended by",
+      "deleteTitle": "Delete maintenance record",
+      "deleteDescription": "Delete this maintenance record?"
     },
     "documents": {
       "toast": {
-        "chooseFile": "TODO",
-        "uploaded": "TODO",
-        "uploadFailed": "TODO",
-        "downloadFailed": "TODO",
-        "deleted": "TODO",
-        "deleteFailed": "TODO"
+        "chooseFile": "Choose a file",
+        "uploaded": "Document uploaded",
+        "uploadFailed": "Could not upload the document",
+        "downloadFailed": "Could not download the document",
+        "deleted": "Document deleted",
+        "deleteFailed": "Could not delete the document"
       },
-      "joinAnd": "TODO",
-      "blockedAlert": "TODO",
-      "archivedNotice": "TODO",
-      "uploadTitle": "TODO",
-      "expiresOn": "TODO",
-      "referenceNumber": "TODO",
-      "file": "TODO",
-      "fileHint": "TODO",
-      "upload": "TODO",
-      "emptyTitle": "TODO",
-      "emptyDescription": "TODO",
-      "expired": "TODO",
-      "expiresInDays": "TODO",
-      "ref": "TODO",
-      "expiresValue": "TODO",
-      "deleteTitle": "TODO",
-      "deletePrefix": "TODO",
-      "deleteSuffix": "TODO"
+      "joinAnd": "and",
+      "blockedAlert": "This vehicle is blocked by expired documents.",
+      "archivedNotice": "Archived vehicles cannot receive new documents.",
+      "uploadTitle": "Upload Document",
+      "expiresOn": "Expires On",
+      "referenceNumber": "Reference Number",
+      "file": "File",
+      "fileHint": "PDF or image, up to 10 MB.",
+      "upload": "Upload",
+      "emptyTitle": "No documents",
+      "emptyDescription": "Upload licences, insurance and inspection documents.",
+      "expired": "Expired",
+      "expiresInDays": "Expires in",
+      "ref": "Ref",
+      "expiresValue": "Expires",
+      "deleteTitle": "Delete document",
+      "deletePrefix": "Delete",
+      "deleteSuffix": "?"
     },
     "assignment": {
-      "intro": "TODO",
-      "assignedOn": "TODO",
-      "emptyTitle": "TODO",
-      "emptyDescription": "TODO",
-      "dispatchReadiness": "TODO",
-      "statusLine": "TODO",
-      "nextDocExpiry": "TODO",
-      "blockedByExpired": "TODO"
+      "intro": "Driver assignments for this vehicle.",
+      "assignedOn": "Assigned on",
+      "emptyTitle": "No assignments",
+      "emptyDescription": "Assign a driver to make this vehicle dispatchable.",
+      "dispatchReadiness": "Dispatch Readiness",
+      "statusLine": "Status",
+      "nextDocExpiry": "Next document expiry",
+      "blockedByExpired": "Blocked by expired documents"
     },
     "dispatch": {
-      "readyForDispatch": "TODO",
-      "notDispatchable": "TODO"
+      "readyForDispatch": "Ready for dispatch",
+      "notDispatchable": "Not dispatchable"
     },
     "toast": {
-      "requiredFields": "TODO",
-      "created": "TODO",
-      "saved": "TODO",
-      "saveFailed": "TODO",
-      "statusChanged": "TODO",
-      "statusChangeFailed": "TODO"
+      "requiredFields": "Fill in the required fields",
+      "created": "Vehicle created",
+      "saved": "Vehicle saved",
+      "saveFailed": "Could not save the vehicle",
+      "statusChanged": "Vehicle status updated",
+      "statusChangeFailed": "Could not update the vehicle status"
     },
     "drawer": {
-      "newTitle": "TODO",
-      "fallbackTitle": "TODO",
-      "createDescription": "TODO",
-      "editDescription": "TODO"
+      "newTitle": "New Vehicle",
+      "fallbackTitle": "Vehicle",
+      "createDescription": "Add a vehicle to the fleet.",
+      "editDescription": "Update vehicle details."
     },
     "actions": {
-      "create": "TODO",
-      "mark": "TODO"
+      "create": "Create Vehicle",
+      "mark": "Mark"
     },
     "tabs": {
-      "details": "TODO",
-      "service": "TODO",
-      "docs": "TODO"
+      "details": "Details",
+      "service": "Service",
+      "docs": "Documents"
     },
     "statusDialog": {
-      "title": "TODO",
-      "movePrefix": "TODO",
-      "moveMiddle": "TODO",
-      "moveSuffix": "TODO",
-      "archivedNote": "TODO",
-      "outOfServiceNote": "TODO"
+      "title": "Change vehicle status",
+      "movePrefix": "Move",
+      "moveMiddle": "to",
+      "moveSuffix": "?",
+      "archivedNote": "Archived vehicles cannot be dispatched.",
+      "outOfServiceNote": "Out-of-service vehicles are excluded from planning."
     },
     "empty": {
-      "filteredTitle": "TODO",
-      "filteredDescription": "TODO",
-      "title": "TODO",
-      "description": "TODO",
-      "action": "TODO"
+      "filteredTitle": "No vehicles match your filters",
+      "filteredDescription": "Try adjusting or clearing the filters.",
+      "title": "No vehicles",
+      "description": "Add a vehicle to build the fleet.",
+      "action": "Add Vehicle"
     },
     "table": {
-      "colVehicle": "TODO",
-      "colDispatch": "TODO"
+      "colVehicle": "Vehicle",
+      "colDispatch": "Dispatch"
     },
     "documentType": {
-      "license": "TODO",
-      "insurance": "TODO",
-      "inspection": "TODO",
-      "other": "TODO"
+      "license": "Licence",
+      "insurance": "Insurance",
+      "inspection": "Inspection",
+      "other": "Other"
     }
   }
 }

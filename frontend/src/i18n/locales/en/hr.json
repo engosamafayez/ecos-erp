@@ -111,7 +111,7 @@
     "timeline": "Timeline",
     "pickApplicantHint": "Pick an applicant to read their whole story in order.",
     "timelineEmpty": "Nothing recorded yet.",
-    "applicantCount": "TODO"
+    "applicantCount": "{{count}} applicants"
   },
   "attendance": {
     "title": "Attendance",
@@ -154,7 +154,7 @@
       "openings_one": "{{count}} position",
       "openings_other": "{{count}} positions",
       "viewAndApply": "View & Apply",
-      "openings": "TODO"
+      "openings": "{{count}} openings"
     },
     "apply": {
       "allRoles": "All roles",
@@ -187,113 +187,113 @@
     }
   },
   "employee360": {
-    "breadcrumbWorkforce": "TODO",
+    "breadcrumbWorkforce": "Workforce",
     "stats": {
-      "tenure": "TODO",
-      "tenureDays": "TODO",
-      "present30d": "TODO",
-      "absent30d": "TODO",
-      "attendanceRate": "TODO"
+      "tenure": "Tenure",
+      "tenureDays": "Days of service",
+      "present30d": "Present (30 days)",
+      "absent30d": "Absent (30 days)",
+      "attendanceRate": "Attendance Rate"
     },
-    "expiringDocuments": "TODO",
+    "expiringDocuments": "Expiring Documents",
     "placement": {
-      "title": "TODO",
-      "department": "TODO",
-      "position": "TODO",
-      "jobGrade": "TODO",
-      "employmentType": "TODO",
-      "hireDate": "TODO",
-      "terminationDate": "TODO"
+      "title": "Placement",
+      "department": "Department",
+      "position": "Position",
+      "jobGrade": "Job Grade",
+      "employmentType": "Employment Type",
+      "hireDate": "Hire Date",
+      "terminationDate": "Termination Date"
     },
     "contract": {
-      "title": "TODO",
-      "none": "TODO",
-      "number": "TODO",
-      "type": "TODO",
-      "status": "TODO",
-      "start": "TODO",
-      "end": "TODO",
-      "openEnded": "TODO",
-      "weeklyHours": "TODO",
-      "daysUntilExpiry": "TODO"
+      "title": "Contract",
+      "none": "No active contract",
+      "number": "Contract #",
+      "type": "Contract Type",
+      "status": "Status",
+      "start": "Start Date",
+      "end": "End Date",
+      "openEnded": "Open-ended",
+      "weeklyHours": "Weekly Hours",
+      "daysUntilExpiry": "Days Until Expiry"
     },
     "reporting": {
-      "title": "TODO",
-      "manager": "TODO",
-      "chain": "TODO",
-      "directReports": "TODO"
+      "title": "Reporting Line",
+      "manager": "Manager",
+      "chain": "Reporting Chain",
+      "directReports": "Direct Reports"
     },
     "contact": {
-      "title": "TODO",
-      "workEmail": "TODO",
-      "personalEmail": "TODO",
-      "mobile": "TODO",
-      "phone": "TODO",
-      "city": "TODO",
-      "country": "TODO",
-      "emergencyContact": "TODO",
-      "emergencyPhone": "TODO"
+      "title": "Contact Details",
+      "workEmail": "Work Email",
+      "personalEmail": "Personal Email",
+      "mobile": "Mobile",
+      "phone": "Phone",
+      "city": "City",
+      "country": "Country",
+      "emergencyContact": "Emergency Contact",
+      "emergencyPhone": "Emergency Phone"
     },
     "documents": {
-      "title": "TODO",
-      "none": "TODO",
-      "expires": "TODO",
-      "noExpiry": "TODO"
+      "title": "Documents",
+      "none": "No documents",
+      "expires": "Expires",
+      "noExpiry": "No expiry"
     }
   },
   "leave": {
     "errors": {
-      "employeeRequired": "TODO",
-      "submitFailed": "TODO"
+      "employeeRequired": "Select an employee",
+      "submitFailed": "Could not submit the leave request"
     },
-    "title": "TODO",
-    "subtitle": "TODO",
-    "newRequest": "TODO",
+    "title": "Leave Requests",
+    "subtitle": "Review and decide employee leave requests.",
+    "newRequest": "New Request",
     "stats": {
-      "showing": "TODO",
-      "awaitingApproval": "TODO",
-      "daysRequested": "TODO"
+      "showing": "Showing",
+      "awaitingApproval": "Awaiting Approval",
+      "daysRequested": "Days Requested"
     },
     "status": {
-      "all": "TODO",
-      "pending": "TODO",
-      "approved": "TODO",
-      "rejected": "TODO",
-      "cancelled": "TODO"
+      "all": "All",
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled"
     },
-    "empty": "TODO",
+    "empty": "No leave requests",
     "table": {
-      "number": "TODO",
-      "employee": "TODO",
-      "dates": "TODO",
-      "days": "TODO",
-      "payroll": "TODO",
-      "status": "TODO",
-      "decision": "TODO"
+      "number": "Request #",
+      "employee": "Employee",
+      "dates": "Dates",
+      "days": "Days",
+      "payroll": "Payroll",
+      "status": "Status",
+      "decision": "Decision"
     },
-    "approve": "TODO",
-    "reject": "TODO",
+    "approve": "Approve",
+    "reject": "Reject",
     "form": {
-      "title": "TODO",
-      "description": "TODO",
-      "submitting": "TODO",
-      "submit": "TODO",
-      "chooseEmployee": "TODO",
-      "from": "TODO",
-      "to": "TODO",
-      "payrollTreatment": "TODO",
-      "deductSalary": "TODO",
-      "doNotDeductSalary": "TODO",
-      "payrollHint": "TODO",
-      "reason": "TODO",
-      "optional": "TODO"
+      "title": "New Leave Request",
+      "description": "Submit a leave request for an employee.",
+      "submitting": "Submitting…",
+      "submit": "Submit Request",
+      "chooseEmployee": "Choose an employee",
+      "from": "From",
+      "to": "To",
+      "payrollTreatment": "Payroll Treatment",
+      "deductSalary": "Deduct from salary",
+      "doNotDeductSalary": "Do not deduct from salary",
+      "payrollHint": "Determines whether the leave days are deducted from the employee salary.",
+      "reason": "Reason",
+      "optional": "Optional"
     },
     "decide": {
-      "approveTitle": "TODO",
-      "rejectTitle": "TODO",
-      "approveDescription": "TODO",
-      "thisEmployee": "TODO",
-      "rejectDescription": "TODO"
+      "approveTitle": "Approve leave request",
+      "rejectTitle": "Reject leave request",
+      "approveDescription": "Approve this leave request?",
+      "thisEmployee": "this employee",
+      "rejectDescription": "Reject this leave request?"
     }
   }
 }

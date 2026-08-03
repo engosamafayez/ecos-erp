@@ -111,8 +111,8 @@
         "available": "المتاح",
         "missing": "المفقود",
         "more": "+{{count}} مادة إضافية — افتح طلب المواد الخام للقائمة الكاملة.",
-        "reserved": "TODO",
-        "coverage": "TODO"
+        "reserved": "المحجوز",
+        "coverage": "التغطية"
       },
       "missingTable": {
         "material": "المادة",
@@ -137,11 +137,11 @@
         "live": "مباشر"
       },
       "mfgTable": {
-        "product": "TODO",
-        "planned": "TODO",
-        "manufacturing": "TODO",
-        "completed": "TODO",
-        "remaining": "TODO"
+        "product": "المنتج",
+        "planned": "المخطط",
+        "manufacturing": "قيد التصنيع",
+        "completed": "المكتمل",
+        "remaining": "المتبقي"
       }
     },
     "productDemand": {
