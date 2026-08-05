@@ -226,6 +226,27 @@ class FinanceException extends RuntimeException
         return new self("Posting role '{$role}' is not mapped to an account for this company. Map it in the account-role configuration before this event can post.");
     }
 
+    /**
+     * A leg needed the inventory class to choose its account, and the event did
+     * not state one. Refused rather than defaulted: picking an inventory account
+     * arbitrarily misstates the balance sheet in a way nothing downstream detects.
+     */
+    public static function inventoryClassMissing(string $eventCode): self
+    {
+        return new self(
+            "Event '{$eventCode}' posts to an inventory account chosen by inventory class, but carried none. "
+            .'The publishing module must state the class on the event; Finance will not assume one.'
+        );
+    }
+
+    public static function inventoryClassUnknown(string $class, string $eventCode): self
+    {
+        return new self(
+            "Event '{$eventCode}' declared inventory class '{$class}', which maps to no account role. "
+            .'Add the mapping deliberately — an unrecognised class never falls back to a default account.'
+        );
+    }
+
     public static function noPostingRule(string $eventCode): self
     {
         return new self("No active posting rule maps the business event '{$eventCode}'.");

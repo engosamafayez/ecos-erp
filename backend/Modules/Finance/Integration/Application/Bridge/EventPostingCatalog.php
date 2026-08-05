@@ -149,6 +149,9 @@ final class EventPostingCatalog
             dimensions: [
                 'branch_id' => $this->str($payload, ['branchId', 'branch_id', 'warehouseId', 'warehouse_id']),
                 'cost_center_id' => $payload['costCenterId'] ?? $payload['cost_center_id'] ?? null,
+                // Carried verbatim from the publisher. Finance uses it to pick an
+                // account role and never interprets it further.
+                'inventory_class' => $this->str($payload, ['inventory_class', 'inventoryClass']),
             ],
             currency: (string) ($payload['currency'] ?? 'EGP'),
             actorId: isset($payload['actorId']) ? (int) $payload['actorId'] : (isset($payload['userId']) ? (int) $payload['userId'] : null),

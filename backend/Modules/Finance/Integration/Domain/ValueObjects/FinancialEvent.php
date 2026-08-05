@@ -62,6 +62,21 @@ final class FinancialEvent
         return $c !== null ? (int) $c : null;
     }
 
+    /**
+     * The class of stock this movement concerned, as stated by the publisher.
+     *
+     * Finance treats it as an opaque token: it selects an account role and is
+     * never interpreted, never mapped back to a product, never looked up. Null
+     * means the event made no claim, which for a rule that needs one is a
+     * refusal rather than an invitation to pick a default.
+     */
+    public function inventoryClass(): ?string
+    {
+        $c = $this->dimensions['inventory_class'] ?? null;
+
+        return is_string($c) && $c !== '' ? $c : null;
+    }
+
     public function eventCode(): string
     {
         return $this->eventType->value;

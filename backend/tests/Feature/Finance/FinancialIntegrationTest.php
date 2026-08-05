@@ -56,7 +56,7 @@ class FinancialIntegrationTest extends TestCase
 
     public function test_a_goods_receipt_posts_the_correct_balanced_journal(): void
     {
-        $inventory = $this->mapRole('inventory', AccountType::Asset);
+        $inventory = $this->mapRole('raw_materials', AccountType::Asset);
         $this->mapRole('grni', AccountType::Liability);
 
         $outcome = $this->process(BusinessEventType::GoodsReceipt, ['net' => 500.0], 'gr-1');
@@ -75,7 +75,7 @@ class FinancialIntegrationTest extends TestCase
 
     public function test_posting_is_exactly_once(): void
     {
-        $this->mapRole('inventory', AccountType::Asset);
+        $this->mapRole('raw_materials', AccountType::Asset);
         $this->mapRole('grni', AccountType::Liability);
 
         $first = $this->process(BusinessEventType::GoodsReceipt, ['net' => 100.0], 'dup-1');
@@ -108,7 +108,7 @@ class FinancialIntegrationTest extends TestCase
     public function test_an_unmapped_role_dead_letters_then_replays_after_mapping(): void
     {
         // inventory mapped, grni deliberately NOT — the event cannot post.
-        $this->mapRole('inventory', AccountType::Asset);
+        $this->mapRole('raw_materials', AccountType::Asset);
 
         $failed = $this->process(BusinessEventType::GoodsReceipt, ['net' => 250.0], 'dl-1');
         $this->assertSame(PostingResult::Failed, $failed->result);
@@ -127,7 +127,7 @@ class FinancialIntegrationTest extends TestCase
 
     public function test_preview_does_not_post(): void
     {
-        $this->mapRole('inventory', AccountType::Asset);
+        $this->mapRole('raw_materials', AccountType::Asset);
         $this->mapRole('grni', AccountType::Liability);
 
         $auditBefore = PostingAuditEntry::count();
@@ -345,7 +345,7 @@ class FinancialIntegrationTest extends TestCase
 
     public function test_audit_entries_are_append_only(): void
     {
-        $this->mapRole('inventory', AccountType::Asset);
+        $this->mapRole('raw_materials', AccountType::Asset);
         $this->mapRole('grni', AccountType::Liability);
         $this->process(BusinessEventType::GoodsReceipt, ['net' => 10.0], 'ap-1');
 
@@ -410,6 +410,9 @@ class FinancialIntegrationTest extends TestCase
             amounts: $amounts,
             occurredAt: Carbon::today(),
             idempotencyKey: $type->value.':'.$entityId,
+            // Inventory rules choose their account from the class the publisher
+            // states (TASK-FIN-004A). These fixtures are raw material.
+            dimensions: ['inventory_class' => 'raw_material'],
         );
     }
 
