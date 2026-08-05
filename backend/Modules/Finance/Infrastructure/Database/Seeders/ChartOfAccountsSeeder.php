@@ -61,6 +61,10 @@ class ChartOfAccountsSeeder extends Seeder
             ['1110', 'Cash on Hand', 'النقد بالصندوق', $A, 'current_asset', $D, true, null],
             ['1120', 'Petty Cash', 'المصروفات النثرية', $A, 'current_asset', $D, true, null],
             ['1130', 'Cash in Transit', 'نقد في الطريق', $A, 'current_asset', $D, true, null],
+            // Takings recorded at the till but not yet reconciled to a deposit.
+            // Distinct from Cash in Transit, which is money already on its way to
+            // the bank: POS Clearing is cleared by the cash-drawer reconciliation.
+            ['1140', 'POS Clearing', 'تسوية نقاط البيع', $A, 'current_asset', $D, true, null],
 
             ['1200', 'Banks', 'البنوك', $A, 'current_asset', $D, false, null],
             ['1210', 'Bank — Current Accounts', 'البنك — حسابات جارية', $A, 'current_asset', $D, true, null],
@@ -184,6 +188,15 @@ class ChartOfAccountsSeeder extends Seeder
             ['5910', 'Bad Debt Expense', 'ديون معدومة', $X, 'other_expense', $D, true, null],
             ['5920', 'Write-Offs', 'إعدامات', $X, 'other_expense', $D, true, null],
             ['5930', 'Delivery Failure Cost', 'تكلفة فشل التسليم', $X, 'other_expense', $D, true, null],
+            // The cost of points EARNED, recognised when the obligation arises.
+            // Redemption is settled against 2430 Loyalty Points Liability and
+            // reported through 4240 Loyalty Redemptions — earning and redeeming
+            // are different events and must not share an account.
+            //
+            // Placed under 5900 because 5510–5590 are fully allocated and a code
+            // that does not end in 0 would be left without a parent by the
+            // hierarchy derivation below.
+            ['5940', 'Loyalty Expense', 'مصروف نقاط الولاء', $X, 'other_expense', $D, true, null],
         ];
     }
 

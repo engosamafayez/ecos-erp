@@ -102,12 +102,63 @@ class AccountRoleMappingTest extends TestCase
 
     public function test_an_unmapped_role_throws_rather_than_resolving_to_nothing(): void
     {
-        // 'inventory' is deliberately unmapped: 1400 is a non-postable parent and
-        // the postable children are split by class, so no single account is correct.
-        // The contract that matters is that this fails loudly instead of posting.
+        // 'inventory' is unmapped by policy: stock stays separated by class, so
+        // there is no single postable Inventory account to resolve to. The
+        // contract that matters is that this fails loudly instead of posting.
         $this->expectException(FinanceException::class);
 
         app(AccountRoleResolver::class)->resolve((string) $this->company->id, 'inventory');
+    }
+
+    /** Requirement 2 — inventory stays separated by class, never collapsed. */
+    public function test_inventory_classes_are_four_distinct_postable_control_accounts(): void
+    {
+        $classes = ['1420' => 'raw_materials', '1440' => 'packaging_materials', '1430' => 'wip', '1410' => 'finished_goods'];
+
+        $accountIds = [];
+
+        foreach ($classes as $code => $role) {
+            $account = DB::table('finance_accounts')
+                ->where('company_id', $this->company->id)->where('code', $code)->first();
+
+            $this->assertNotNull($account, "Inventory class account {$code} is missing.");
+            $this->assertTrue((bool) $account->is_postable, "Inventory class {$code} must be postable.");
+            $this->assertTrue((bool) $account->is_control, "Inventory class {$code} must be a control account.");
+            $this->assertSame('inventory', $account->control_subledger, "Inventory class {$code} must carry the inventory subledger.");
+
+            $accountIds[] = app(AccountRoleResolver::class)->resolve((string) $this->company->id, $role);
+        }
+
+        $this->assertCount(4, array_unique($accountIds), 'The four inventory classes must never collapse onto one account.');
+
+        // 1400 is the header. If it ever became postable, a generic inventory leg
+        // could silently start resolving and defeat the whole policy.
+        $this->assertFalse(
+            (bool) DB::table('finance_accounts')
+                ->where('company_id', $this->company->id)->where('code', '1400')->value('is_postable'),
+            '1400 Inventory must remain a non-postable header.',
+        );
+    }
+
+    /** Requirement 3 — one operational revenue account, not one per channel. */
+    public function test_sales_revenue_resolves_to_product_sales_for_every_channel(): void
+    {
+        $accountId = app(AccountRoleResolver::class)->resolve((string) $this->company->id, 'sales_revenue');
+
+        $this->assertSame('4110', DB::table('finance_accounts')->where('id', $accountId)->value('code'));
+    }
+
+    /** Requirement 5 — earning and redeeming are different accounting events. */
+    public function test_loyalty_expense_is_a_different_account_from_loyalty_redemptions(): void
+    {
+        $expense = app(AccountRoleResolver::class)->resolve((string) $this->company->id, 'loyalty_expense');
+
+        $this->assertSame('5940', DB::table('finance_accounts')->where('id', $expense)->value('code'));
+
+        $redemptions = DB::table('finance_accounts')
+            ->where('company_id', $this->company->id)->where('code', '4240')->value('id');
+
+        $this->assertNotSame((int) $redemptions, (int) $expense, 'Loyalty expense must not reuse Loyalty Redemptions.');
     }
 
     public function test_a_role_mapped_for_another_company_does_not_leak(): void

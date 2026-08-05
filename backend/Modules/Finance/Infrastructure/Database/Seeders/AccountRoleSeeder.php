@@ -23,25 +23,24 @@ use Illuminate\Support\Str;
  * │ journals.                                                                │
  * └──────────────────────────────────────────────────────────────────────────┘
  *
- * ┌─ WHAT IS DELIBERATELY NOT MAPPED ───────────────────────────────────────┐
- * │ Four roles required by existing rules are NOT mapped here, because the   │
- * │ Chart of Accounts does not name a single obvious account for them and    │
- * │ guessing would post real money to the wrong place:                      │
+ * ┌─ WHY 'inventory' IS NOT MAPPED (TASK-FIN-003A) ─────────────────────────┐
+ * │ The approved inventory policy keeps stock separated by class. There is   │
+ * │ deliberately NO single postable Inventory account: 1400 is a header, and │
+ * │ the postable control accounts are                                        │
  * │                                                                          │
- * │   inventory       1400 Inventory is a non-postable parent. The postable  │
- * │                   children are 1410/1420/1430/1440 by class. A generic   │
- * │                   "inventory" leg has no single correct target.          │
- * │   sales_revenue   4100 Sales Revenue is a non-postable parent; 4110      │
- * │                   Product Sales and 4120 POS Sales are both plausible.   │
- * │   pos_clearing    No POS clearing account exists. 1130 Cash in Transit   │
- * │                   is the nearest, but that is an inference, not a name.  │
- * │   loyalty_expense Points EARNED create a cost; 4240 Loyalty Redemptions  │
- * │                   is about redemption. Earning is not redeeming.        │
+ * │   1420 Raw Materials      1440 Packaging Materials                       │
+ * │   1430 Work In Progress   1410 Finished Goods                            │
  * │                                                                          │
- * │ Resolving these means either adding a postable control account or        │
- * │ splitting the rules by inventory class — a Chart of Accounts or posting  │
- * │ rule decision, both outside a configuration task. Until then the         │
- * │ affected events dead-letter, which is the safe failure.                 │
+ * │ all four carrying control_subledger = inventory. Nine posting rules      │
+ * │ still name a generic 'inventory' role, and RulePostingStrategy resolves  │
+ * │ leg roles verbatim — it has no way to pick a class from the event. So    │
+ * │ the generic role CANNOT be mapped without collapsing the four classes    │
+ * │ into one account, which the policy forbids.                              │
+ * │                                                                          │
+ * │ Those nine rules must be re-authored to name the class role they mean.   │
+ * │ That is posting-rule work, not chart configuration. Until then they      │
+ * │ dead-letter: the operational transaction is unaffected and no amount is  │
+ * │ posted to a guessed account.                                             │
  * └──────────────────────────────────────────────────────────────────────────┘
  *
  * IDEMPOTENT: keyed on (company_id, role). Re-running never overwrites a
@@ -65,7 +64,9 @@ class AccountRoleSeeder extends Seeder
             'inventory_in_transit' => ['1450', 'Goods In Transit'],
             'finished_goods' => ['1410', 'Finished Goods'],
             'raw_materials' => ['1420', 'Raw Materials'],
+            'packaging_materials' => ['1440', 'Packaging Materials'],
             'wip' => ['1430', 'Work In Progress'],
+            'pos_clearing' => ['1140', 'POS Clearing'],
             'vat_input' => ['1530', 'VAT Receivable (Input)'],
             'ar_control' => ['1310', 'Trade Receivables — control, subledger receivables'],
 
@@ -78,6 +79,11 @@ class AccountRoleSeeder extends Seeder
             'refund_clearing' => ['2440', 'Refunds Payable'],
 
             // ── Revenue and revenue deductions ───────────────────────────────
+            // Product Sales is the default operational revenue account for every
+            // channel. POS, WooCommerce and future channels report by channel
+            // analytically; they do not each get their own revenue account unless
+            // a posting rule names one.
+            'sales_revenue' => ['4110', 'Product Sales — default operational revenue, all channels'],
             'sales_returns' => ['4210', 'Sales Returns'],
             'sales_discount' => ['4220', 'Sales Discounts'],
             'coupon_expense' => ['4230', 'Coupon Redemptions — contra-revenue, debit normal'],
@@ -91,6 +97,7 @@ class AccountRoleSeeder extends Seeder
             // ── Operating expenses ───────────────────────────────────────────
             'shipping_expense' => ['5550', 'Shipping & Delivery'],
             'marketing_credit_expense' => ['5560', 'Marketing & Advertising'],
+            'loyalty_expense' => ['5940', 'Loyalty Expense — points EARNED, not redeemed'],
         ];
     }
 
