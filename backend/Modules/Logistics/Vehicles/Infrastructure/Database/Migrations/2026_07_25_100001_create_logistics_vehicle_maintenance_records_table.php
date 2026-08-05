@@ -44,8 +44,11 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->index(['vehicle_id', 'performed_on']);
-            $table->index('next_maintenance_date');
+            // Explicit names: the table name is 37 characters, so Laravel's
+            // auto-generated identifiers (67 and 65 chars) exceed MySQL's 64-char
+            // limit and the migration aborts. Same indexes, same columns.
+            $table->index(['vehicle_id', 'performed_on'], 'idx_lvmr_vehicle_performed');
+            $table->index('next_maintenance_date', 'idx_lvmr_next_maintenance');
         });
     }
 

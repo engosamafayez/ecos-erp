@@ -46,6 +46,20 @@ return new class extends Migration
         // ── Step 2: Migrate existing brand_id from customers table ────────────
         // Only runs if the old column still exists (handles fresh installs too).
         if (Schema::hasColumn('customers', 'brand_id')) {
+            // This statement was written against PostgreSQL and could never execute:
+            // the platform runs MySQL 8.4 and defines no other engine. gen_random_uuid()
+            // does not exist there, and ON CONFLICT is not MySQL syntax, so migrate:fresh
+            // aborted here — at migration 411 of 699 — taking every RefreshDatabase test
+            // with it. Translated in place; the shape, columns and semantics are unchanged.
+            //
+            //   gen_random_uuid()  -> UUID()                       both yield a char(36) UUID
+            //   ON CONFLICT ... DO NOTHING
+            //                      -> ON DUPLICATE KEY UPDATE customer_id = customer_id
+            //
+            // The no-op UPDATE is the exact analogue of DO NOTHING against the
+            // uq_customer_brands unique key. INSERT IGNORE would also skip duplicates but
+            // would swallow unrelated errors as warnings, which this backfill must not do —
+            // the row-count gate below depends on real failures surfacing.
             DB::statement(<<<'SQL'
                 INSERT INTO customer_brands (
                     id,
@@ -57,7 +71,7 @@ return new class extends Migration
                     updated_at
                 )
                 SELECT
-                    gen_random_uuid(),
+                    UUID(),
                     c.id,
                     c.brand_id,
                     true,
@@ -66,7 +80,7 @@ return new class extends Migration
                     NOW()
                 FROM customers c
                 WHERE c.brand_id IS NOT NULL
-                ON CONFLICT (customer_id, brand_id) DO NOTHING
+                ON DUPLICATE KEY UPDATE customer_id = customer_id
             SQL);
 
             // ── Step 3: Safety gate — abort if row counts do not match ────────
