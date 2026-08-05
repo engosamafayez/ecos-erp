@@ -132,6 +132,11 @@ final class ApproveCountSessionAction
                     $this->adjustmentIn->execute($dto);
 
                     InventoryReceiptLayer::query()->create([
+                        // NOT NULL on inventory_receipt_layers. $companyId is the
+                        // session's tenant, already resolved above and used for the
+                        // FIFO refresh below; omitting it aborted every overstock
+                        // approval with an integrity-constraint violation.
+                        'company_id' => $companyId,
                         'supplier_id' => $product?->last_supplier_id,
                         'product_id' => $line->product_id,
                         'goods_receipt_id' => null,

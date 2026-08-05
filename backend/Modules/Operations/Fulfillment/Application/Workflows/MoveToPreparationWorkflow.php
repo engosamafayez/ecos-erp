@@ -132,6 +132,10 @@ final class MoveToPreparationWorkflow implements FulfillmentWorkflowInterface
                 orderNumber: $order->order_number,
                 companyId: $order->company_id ?? '',
                 warehouseId: $order->assigned_warehouse_id ?? '',
+                // handle() already publishes this into meta alongside actor_id and
+                // started_at. It was populated but never read, so the constructor
+                // received six of its seven required arguments and always threw.
+                reservationStatus: $result->meta['reservation_status'] ?? '',
                 actorId: $result->meta['actor_id'] ?? null,
                 startedAt: $result->meta['started_at'] ?? now()->toIso8601String(),
             ),

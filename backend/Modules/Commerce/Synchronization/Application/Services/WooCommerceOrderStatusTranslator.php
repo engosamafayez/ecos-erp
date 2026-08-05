@@ -14,10 +14,21 @@ use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
  */
 final class WooCommerceOrderStatusTranslator
 {
+    /**
+     * WooCommerce status → ECOS OrderStatus backing value.
+     *
+     * Right-hand values follow the V3 lifecycle established by
+     * 2026_07_22_100000_simplify_order_lifecycle_v3.php:
+     *   pending → new, processing → in_progress, completed → delivered.
+     *
+     * 'pending' and 'processing' were ECOS statuses before V3 and no longer
+     * exist on the enum, so tryFrom() returned null for them and every imported
+     * pending or processing WooCommerce order silently lost its status.
+     */
     private const MAP = [
-        'pending' => 'pending',
+        'pending' => 'new',
         'on-hold' => 'awaiting_payment',
-        'processing' => 'processing',
+        'processing' => 'in_progress',
         'completed' => 'delivered',
         'cancelled' => 'cancelled',
         'refunded' => 'returned',

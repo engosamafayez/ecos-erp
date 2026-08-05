@@ -277,12 +277,6 @@ parameters:
 			path: Modules/Marketing/MetaConnector/Application/Services/MetaPermissionsService.php
 
 		-
-			message: '#^Missing parameter \$reservationStatus \(string\) in call to Modules\\Operations\\Fulfillment\\Domain\\Events\\OrderPreparationStartedEvent constructor\.$#'
-			identifier: argument.missing
-			count: 1
-			path: Modules/Operations/Fulfillment/Application/Workflows/MoveToPreparationWorkflow.php
-
-		-
 			message: '#^Undefined variable\: \$request$#'
 			identifier: variable.undefined
 			count: 1

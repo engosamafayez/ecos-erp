@@ -6,7 +6,12 @@ namespace Modules\Platform\EventPlatform\Infrastructure\Providers;
 
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
-use Modules\Inventory\DomainEvents\Contracts\DomainEventBus;
+use Modules\Inventory\DomainEvents\Events\InventoryCountApproved;
+use Modules\Inventory\DomainEvents\Events\InventoryStockAdjusted;
+use Modules\Inventory\DomainEvents\Events\InventoryStockReceived;
+use Modules\Inventory\DomainEvents\Events\InventoryStockReleased;
+use Modules\Inventory\DomainEvents\Events\InventoryStockReserved;
+use Modules\Inventory\DomainEvents\Events\InventoryStockShipped;
 use Modules\Operations\DemandAnalysis\Application\Listeners\DemandRefreshRequestedListener;
 use Modules\Operations\DemandAnalysis\Application\Listeners\GoodsReceiptCompletedListener;
 use Modules\Operations\DemandAnalysis\Application\Listeners\InventoryReturnedListener;
@@ -61,9 +66,22 @@ final class EventPlatformServiceProvider extends ServiceProvider
         $this->app->singleton(EnterpriseEventBus::class);
         $this->app->singleton(EnterpriseEventBusInterface::class, EnterpriseEventBus::class);
 
-        // ── Bind legacy DomainEventBus to the enterprise bus ─────────────────
-        // Any code injecting DomainEventBus now routes through the enterprise bus.
-        $this->app->bind(DomainEventBus::class, EnterpriseEventBus::class);
+        // DomainEventBus is deliberately NOT rebound here.
+        //
+        // This provider loads after DomainEventServiceProvider, so binding
+        // DomainEventBus to EnterpriseEventBus silently overrode
+        // LaravelDomainEventBus. Inventory actions then published straight into
+        // EnterpriseEventPublisher, which routes through EnterpriseEventDispatcher
+        // and never touches Illuminate's dispatcher — so the six
+        // InventoryChannelSynchronizationListener registrations in
+        // DomainEventServiceProvider::boot() could never fire, and no enterprise
+        // subscriber was registered for those events either (see the commented-out
+        // inventory.goods_receipt.completed line below). The events reached the
+        // store and were routed to nothing.
+        //
+        // The platform's own pattern is the reverse: modules dispatch through
+        // Laravel, and bridgeLegacyEvents() republishes into the enterprise bus
+        // for the event store. Inventory now follows that same pattern.
     }
 
     public function boot(): void
@@ -120,6 +138,17 @@ final class EventPlatformServiceProvider extends ServiceProvider
         Event::listen(OrderAddedToWave::class, fn (OrderAddedToWave $e) => $bus->publish($e));
         Event::listen(OrderRemovedFromWave::class, fn (OrderRemovedFromWave $e) => $bus->publish($e));
         Event::listen(OrderMovedToPreparing::class, fn (OrderMovedToPreparing $e) => $bus->publish($e));
+
+        // Inventory domain events. These dispatch through LaravelDomainEventBus so
+        // DomainEventServiceProvider's listeners run; bridging them here keeps the
+        // event store complete without a second dispatch — the bus receives each
+        // event as a subscriber, exactly as it does for the wave events above.
+        Event::listen(InventoryStockReceived::class, fn (InventoryStockReceived $e) => $bus->publish($e));
+        Event::listen(InventoryStockReserved::class, fn (InventoryStockReserved $e) => $bus->publish($e));
+        Event::listen(InventoryStockReleased::class, fn (InventoryStockReleased $e) => $bus->publish($e));
+        Event::listen(InventoryStockShipped::class, fn (InventoryStockShipped $e) => $bus->publish($e));
+        Event::listen(InventoryStockAdjusted::class, fn (InventoryStockAdjusted $e) => $bus->publish($e));
+        Event::listen(InventoryCountApproved::class, fn (InventoryCountApproved $e) => $bus->publish($e));
 
         // ManufacturingJobCompletedEvent does not implement DomainEvent — keep legacy listener for now.
         // TODO: Convert ManufacturingJobCompletedEvent to a proper EnterpriseEvent when Manufacturing OS is migrated.
