@@ -175,7 +175,6 @@ export function ReadOnly({
     <div
       aria-disabled="true"
       data-readonly="true"
-      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
       className={className}
       style={{ pointerEvents: 'none', opacity: 0.7 }}
     >
