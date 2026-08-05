@@ -201,6 +201,7 @@ use Modules\Finance\Presentation\Http\Controllers\SupplierBillController as Fina
 use Modules\Finance\Presentation\Http\Controllers\SupplierLedgerController as FinanceSupplierLedgerController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierPaymentController as FinanceSupplierPaymentController;
 use Modules\Finance\Presentation\Http\Controllers\TaxController as FinanceTaxController;
+use Modules\Finance\Presentation\Http\Controllers\FinancialStatementController as FinanceStatementController;
 use Modules\Finance\Presentation\Http\Controllers\TrialBalanceController as FinanceTrialBalanceController;
 use Modules\Logistics\Routing\Presentation\Http\Controllers\RoutingController;
 use Modules\Logistics\Fleet\Presentation\Http\Controllers\FuelController as FleetFuelController;
@@ -2301,6 +2302,16 @@ Route::middleware('auth:sanctum')->prefix('finance')->group(function (): void {
     // Trial Balance — read model.
     Route::get('/trial-balance', [FinanceTrialBalanceController::class, 'show'])
         ->middleware('permission:finance.trialbalance.view');
+
+    // Statutory statements — read models over the ledger. They compute nothing
+    // themselves: totals come from the metrics kernel, so a statement can never
+    // disagree with the dashboards drawn from the same figures. Gated on the
+    // trial-balance permission because they expose the same ledger, at the same
+    // granularity, to the same audience.
+    Route::middleware('permission:finance.trialbalance.view')->group(function (): void {
+        Route::get('/statements/income-statement', [FinanceStatementController::class, 'incomeStatement']);
+        Route::get('/statements/balance-sheet', [FinanceStatementController::class, 'balanceSheet']);
+    });
 });
 
 // ── Finance OS — EPIC F2 · Subledgers (AR / AP / Cash / Banking) ──────────────
