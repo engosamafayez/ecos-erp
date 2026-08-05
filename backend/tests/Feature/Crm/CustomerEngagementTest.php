@@ -111,7 +111,7 @@ class CustomerEngagementTest extends TestCase
     {
         DB::table('orders')->insert([
             'id' => (string) Str::uuid(), 'customer_id' => $this->cid(), 'order_number' => 'ORD-'.substr((string) Str::uuid(), 0, 8),
-            'order_date' => Carbon::now()->subDay()->toDateString(), 'status' => 'completed', 'subtotal' => 100, 'total' => 100,
+            'order_date' => Carbon::now()->subDay()->toDateString(), 'status' => 'delivered', 'subtotal' => 100, 'total' => 100,
             'created_at' => Carbon::now()->subDay(), 'updated_at' => Carbon::now()->subDay(),
         ]);
 
@@ -167,7 +167,7 @@ class CustomerEngagementTest extends TestCase
         app(ActivityService::class)->log($this->companyId, $this->cid(), ActivityType::Call, ['subject' => 'c', 'occurred_at' => Carbon::now()->subDays(5)]);
         DB::table('orders')->insert([
             'id' => (string) Str::uuid(), 'customer_id' => $this->cid(), 'order_number' => 'ORD-'.substr((string) Str::uuid(), 0, 8),
-            'order_date' => Carbon::now()->subDays(3)->toDateString(), 'status' => 'completed', 'subtotal' => 50, 'total' => 50,
+            'order_date' => Carbon::now()->subDays(3)->toDateString(), 'status' => 'delivered', 'subtotal' => 50, 'total' => 50,
             'created_at' => Carbon::now()->subDays(3), 'updated_at' => Carbon::now()->subDays(3),
         ]);
 

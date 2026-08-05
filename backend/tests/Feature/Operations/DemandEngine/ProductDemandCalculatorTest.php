@@ -24,12 +24,28 @@ class ProductDemandCalculatorTest extends TestCase
 
     private ProductDemandCalculator $calculator;
 
+    private string $categoryId;
+
+    private string $unitId;
+
+    private string $customerId;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
+
+        // products.category_id and products.unit_id are NOT NULL. makeProduct()
+        // inserts raw, so no model or factory default applies.
+        $this->categoryId = (string) \Modules\MasterData\Categories\Domain\Models\Category::factory()->create()->id;
+        $this->unitId = (string) \Modules\MasterData\Units\Domain\Models\Unit::factory()->create()->id;
+
+        // orders.customer_id carries a foreign key to customers; makeOrder()
+        // previously inserted a random UUID, which cannot satisfy it.
+        $this->customerId = (string) \Modules\Sales\Customers\Domain\Models\Customer::factory()->create()->id;
+
         $this->calculator = new ProductDemandCalculator;
     }
 
@@ -194,6 +210,11 @@ class ProductDemandCalculatorTest extends TestCase
         $id = (string) \Illuminate\Support\Str::uuid();
         DB::table('products')->insert([
             'id' => $id,
+            // Raw insert bypasses the model and factory, so products.company_id
+            // (NOT NULL) must be supplied explicitly.
+            'company_id' => $this->company->id,
+            'category_id' => $this->categoryId,
+            'unit_id' => $this->unitId,
             'name' => $name,
             'sku' => 'SKU-'.random_int(1000, 9999),
             'product_type' => 'finished_good',
@@ -212,9 +233,9 @@ class ProductDemandCalculatorTest extends TestCase
             'id' => $id,
             'company_id' => $this->company->id,
             'assigned_warehouse_id' => $this->warehouse->id,
-            'customer_id' => (string) \Illuminate\Support\Str::uuid(),
+            'customer_id' => $this->customerId,
             'order_number' => 'ORD-'.random_int(10000, 99999),
-            'status' => 'confirmed',
+            'status' => 'in_progress',
             'order_date' => today()->toDateString(),
             'created_at' => now(),
             'updated_at' => now(),

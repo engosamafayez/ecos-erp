@@ -89,7 +89,14 @@ class InventoryAvailabilityEngineTest extends TestCase
 
     private function analyse(Product $product, float $required): AvailabilityResult
     {
-        return $this->engine->analyse($product->id, $this->warehouse->id, $required);
+        // $companyId is required since inventory reads became company-scoped.
+        // The fixture already owns a company; it simply was not being passed.
+        return $this->engine->analyse(
+            $product->id,
+            $this->warehouse->id,
+            $required,
+            $this->company->id,
+        );
     }
 
     // ── 1. Sufficient Stock ───────────────────────────────────────────────────

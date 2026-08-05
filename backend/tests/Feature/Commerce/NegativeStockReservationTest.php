@@ -52,7 +52,7 @@ class NegativeStockReservationTest extends TestCase
             'customer_id' => $this->customer->id,
             'order_number' => 'ORD-'.uniqid(),
             'order_date' => now()->toDateString(),
-            'status' => 'processing',
+            'status' => 'in_progress',
             'subtotal' => 0,
             'total' => 0,
             'shipping_total' => 0,

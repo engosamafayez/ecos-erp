@@ -893,9 +893,9 @@ class Phase3ModuleTest extends TestCase
     {
         $stranger = User::factory()->create(['company_id' => $this->company->id]);
 
-        $this->actingAs($stranger)->getJson(self::OPS.'/sessions')->assertForbidden();
-        $this->actingAs($stranger)->getJson(self::OPS.'/monitoring/kpis')->assertForbidden();
-        $this->actingAs($stranger)->getJson(self::OPS.'/audit')->assertForbidden();
+        $this->actingAsUnprivileged($stranger)->getJson(self::OPS.'/sessions')->assertForbidden();
+        $this->actingAsUnprivileged($stranger)->getJson(self::OPS.'/monitoring/kpis')->assertForbidden();
+        $this->actingAsUnprivileged($stranger)->getJson(self::OPS.'/audit')->assertForbidden();
     }
 
     /** Reviewing does not grant approving. */

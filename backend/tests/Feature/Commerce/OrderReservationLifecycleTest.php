@@ -55,7 +55,7 @@ class OrderReservationLifecycleTest extends TestCase
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private function makeOrder(?string $warehouseId = null, string $status = 'processing'): Order
+    private function makeOrder(?string $warehouseId = null, string $status = 'in_progress'): Order
     {
         return Order::query()->create([
             'assigned_warehouse_id' => $warehouseId ?? $this->warehouse->id,
@@ -102,6 +102,7 @@ class OrderReservationLifecycleTest extends TestCase
         ]);
 
         return InventoryReceiptLayer::query()->create([
+            'company_id' => $this->company->id,
             'supplier_id' => $this->supplier->id,
             'product_id' => $item->product_id,
             'goods_receipt_id' => $gr->id,
@@ -220,7 +221,7 @@ class OrderReservationLifecycleTest extends TestCase
     {
         $product = Product::factory()->create();
         $item = $this->seedStock($product, onHand: 10.0);
-        $order = $this->makeOrder(status: 'pending');
+        $order = $this->makeOrder(status: 'new');
         $this->addLine($order, $product);
 
         // Order was never reserved — release is a no-op for stock.

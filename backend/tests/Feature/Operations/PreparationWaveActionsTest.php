@@ -43,6 +43,14 @@ class PreparationWaveActionsTest extends TestCase
 
     private User $user;
 
+    /**
+     * users.id is bigint, but the Preparation DTOs and actions declare
+     * `string $actorId`. Production casts at the boundary — see
+     * PreparationWaveController:214 and :531, `actorId: (string) $request->user()->id`.
+     * The fixture follows the same convention instead of passing a raw int.
+     */
+    private string $actorId;
+
     private Company $company;
 
     private Warehouse $warehouse;
@@ -54,6 +62,7 @@ class PreparationWaveActionsTest extends TestCase
         $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
         $this->user = User::factory()->create(['company_id' => $this->company->id]);
+        $this->actorId = (string) $this->user->id;
 
         $role = Role::create([
             'name' => 'System Admin',
@@ -107,7 +116,7 @@ class PreparationWaveActionsTest extends TestCase
 
     private function waveApiPath(string $waveId, string $suffix = ''): string
     {
-        return "/api/v1/preparation/waves/{$waveId}".($suffix ? "/{$suffix}" : '');
+        return "/api/preparation/waves/{$waveId}".($suffix ? "/{$suffix}" : '');
     }
 
     // ── 1. Create Wave ────────────────────────────────────────────────────────
@@ -121,7 +130,7 @@ class PreparationWaveActionsTest extends TestCase
             warehouseId: $this->warehouse->id,
             planningDate: now()->addDay()->toDateString(),
             orderLines: [],
-            actorId: $this->user->id,
+            actorId: $this->actorId,
         );
 
         $wave = app(CreateWaveAction::class)->execute($dto);
@@ -149,7 +158,7 @@ class PreparationWaveActionsTest extends TestCase
     {
         $wave = $this->makeWave(WaveStatus::Draft);
 
-        $result = app(GenerateDemandAction::class)->execute($wave, $this->user->id);
+        $result = app(GenerateDemandAction::class)->execute($wave, $this->actorId);
 
         $this->assertSame(WaveStatus::Planning->value, $result->status->value);
 
@@ -172,7 +181,7 @@ class PreparationWaveActionsTest extends TestCase
     {
         $wave = $this->makeWave(WaveStatus::Planning);
 
-        $result = app(AnalyzeMaterialsAction::class)->execute($wave, $this->user->id);
+        $result = app(AnalyzeMaterialsAction::class)->execute($wave, $this->actorId);
 
         $this->assertDatabaseHas('timeline_events', [
             'subject_type' => 'PreparationWave',
@@ -203,7 +212,7 @@ class PreparationWaveActionsTest extends TestCase
         $this->makeWaveItem($wave);
         $wave->load('waveItems');
 
-        $dto = new StartPreparationDTO(actorId: $this->user->id);
+        $dto = new StartPreparationDTO(actorId: $this->actorId);
         $result = app(StartPreparationAction::class)->execute($wave, $dto);
 
         Event::assertDispatched(WaveStarted::class, fn ($e) => $e->waveId === $wave->id);
@@ -236,7 +245,7 @@ class PreparationWaveActionsTest extends TestCase
             $wave,
             $item,
             5.0,
-            $this->user->id,
+            $this->actorId,
         );
 
         Event::assertDispatched(ProductPrepared::class, fn ($e) => $e->waveItemId === $item->id);
@@ -268,7 +277,7 @@ class PreparationWaveActionsTest extends TestCase
         $wave->update(['total_units_required' => 0]);
         $wave->load('waveItems');
 
-        $result = app(CompleteWaveAction::class)->execute($wave, $this->user->id);
+        $result = app(CompleteWaveAction::class)->execute($wave, $this->actorId);
 
         Event::assertDispatched(WaveCompleted::class, fn ($e) => $e->waveId === $wave->id);
 
@@ -295,7 +304,7 @@ class PreparationWaveActionsTest extends TestCase
 
         $wave = $this->makeWave(WaveStatus::Planning);
 
-        $result = app(CancelWaveAction::class)->execute($wave, $this->user->id, 'Test cancellation reason');
+        $result = app(CancelWaveAction::class)->execute($wave, $this->actorId, 'Test cancellation reason');
 
         Event::assertDispatched(WaveCancelled::class, fn ($e) => $e->waveId === $wave->id);
 
@@ -329,7 +338,7 @@ class PreparationWaveActionsTest extends TestCase
             warehouseId: $this->warehouse->id,
             planningDate: now()->addDay()->toDateString(),
             orderLines: [],
-            actorId: $this->user->id,
+            actorId: $this->actorId,
         );
 
         app(CreateWaveAction::class)->execute($dto);
@@ -344,7 +353,7 @@ class PreparationWaveActionsTest extends TestCase
 
         $wave = $this->makeWave(WaveStatus::Planning);
 
-        app(CancelWaveAction::class)->execute($wave, $this->user->id, 'Reason');
+        app(CancelWaveAction::class)->execute($wave, $this->actorId, 'Reason');
     }
 
     // ── 9. Feature Flag: modules.preparation_os (API) ────────────────────────
@@ -355,7 +364,7 @@ class PreparationWaveActionsTest extends TestCase
         $flags->disable('modules.preparation_os', $this->company->id);
 
         $this->actingAs($this->user)
-            ->getJson('/api/v1/preparation/waves')
+            ->getJson('/api/preparation/waves')
             ->assertStatus(503);
     }
 
@@ -363,7 +372,7 @@ class PreparationWaveActionsTest extends TestCase
 
     public function test_unauthenticated_request_returns_401(): void
     {
-        $this->getJson('/api/v1/preparation/waves')
+        $this->getJson('/api/preparation/waves')
             ->assertStatus(401);
     }
 

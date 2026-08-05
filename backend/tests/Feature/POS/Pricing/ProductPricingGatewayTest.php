@@ -8,6 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\MasterData\Categories\Domain\Models\Category;
 use Modules\MasterData\Units\Domain\Models\Unit;
+use Modules\Organization\Brands\Domain\Models\Brand;
 use Modules\POS\Pricing\Domain\Enums\PriceSource;
 use Modules\POS\Pricing\Domain\Exceptions\PriceResolutionException;
 use Modules\POS\Pricing\Domain\ValueObjects\ResolvedPrice;
@@ -23,6 +24,10 @@ final class ProductPricingGatewayTest extends TestCase
     private string $categoryId;
 
     private string $unitId;
+
+    private string $brandId;
+
+    private string $companyId;
 
     protected function setUp(): void
     {
@@ -43,6 +48,13 @@ final class ProductPricingGatewayTest extends TestCase
             'name' => 'Piece',
             'is_active' => true,
         ]);
+
+        // products.company_id is NOT NULL. BrandFactory creates its own company,
+        // and ProductFactory documents the invariant that a product and its brand
+        // must belong to the same company — so both ids are taken from one brand.
+        $brand = Brand::factory()->create();
+        $this->brandId = (string) $brand->id;
+        $this->companyId = (string) $brand->company_id;
 
         $this->categoryId = (string) $category->id;
         $this->unitId = (string) $unit->id;
@@ -195,9 +207,15 @@ final class ProductPricingGatewayTest extends TestCase
         static $sku = 0;
         $sku++;
 
-        return Product::create([
+        // Product::factory() rather than Product::create(): company_id is absent
+        // from Product::$fillable, so mass assignment silently drops it and the
+        // NOT NULL insert fails. Laravel factories build models unguarded, which
+        // is why the other 30 factory-using suites were unaffected.
+        return Product::factory()->create([
             'sku' => 'TEST-'.str_pad((string) $sku, 4, '0', STR_PAD_LEFT),
             'name' => "Test Product {$sku}",
+            'brand_id' => $this->brandId,
+            'company_id' => $this->companyId,
             'category_id' => $this->categoryId,
             'unit_id' => $this->unitId,
             'product_type' => Product::TYPE_FINISHED_GOOD,

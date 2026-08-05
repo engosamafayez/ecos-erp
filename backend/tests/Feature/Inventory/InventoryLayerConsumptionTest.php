@@ -99,7 +99,7 @@ class InventoryLayerConsumptionTest extends TestCase
             'customer_id' => $this->customer->id,
             'order_number' => 'ORD-'.uniqid(),
             'order_date' => now()->toDateString(),
-            'status' => OrderStatus::Processing->value,
+            'status' => OrderStatus::InProgress->value,
             'subtotal' => $total,
             'total' => $total,
             'shipping_total' => 0,

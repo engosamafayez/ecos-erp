@@ -862,8 +862,8 @@ class DeliveryModuleTest extends TestCase
         $stranger = User::factory()->create(['company_id' => $this->company->id]);
         $delivery = $this->makeDelivery();
 
-        $this->actingAs($stranger)->getJson(self::BASE."/{$delivery->uuid}")->assertForbidden();
-        $this->actingAs($stranger)->postJson(self::BASE."/{$delivery->uuid}/retry")->assertForbidden();
+        $this->actingAsUnprivileged($stranger)->getJson(self::BASE."/{$delivery->uuid}")->assertForbidden();
+        $this->actingAsUnprivileged($stranger)->postJson(self::BASE."/{$delivery->uuid}/retry")->assertForbidden();
     }
 
     public function test_a_granted_permission_opens_only_its_own_routes(): void

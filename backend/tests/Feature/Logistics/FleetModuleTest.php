@@ -889,8 +889,8 @@ class FleetModuleTest extends TestCase
     {
         $stranger = User::factory()->create(['company_id' => $this->company->id]);
 
-        $this->actingAs($stranger)->getJson(self::BASE.'/units')->assertForbidden();
-        $this->actingAs($stranger)->postJson(self::BASE.'/units', [])->assertForbidden();
+        $this->actingAsUnprivileged($stranger)->getJson(self::BASE.'/units')->assertForbidden();
+        $this->actingAsUnprivileged($stranger)->postJson(self::BASE.'/units', [])->assertForbidden();
     }
 
     /**

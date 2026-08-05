@@ -29,12 +29,22 @@ class MaterialDemandCalculatorTest extends TestCase
 
     private MaterialDemandCalculator $calculator;
 
+    private string $categoryId;
+
+    private string $unitId;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
+
+        // products.category_id and products.unit_id are NOT NULL. makeProduct()
+        // inserts raw, so no model or factory default applies.
+        $this->categoryId = (string) \Modules\MasterData\Categories\Domain\Models\Category::factory()->create()->id;
+        $this->unitId = (string) \Modules\MasterData\Units\Domain\Models\Unit::factory()->create()->id;
+
         $this->calculator = new MaterialDemandCalculator;
     }
 
@@ -182,6 +192,11 @@ class MaterialDemandCalculatorTest extends TestCase
         $id = (string) Str::uuid();
         DB::table('products')->insert([
             'id' => $id,
+            // Raw insert bypasses the model and factory, so products.company_id
+            // (NOT NULL) must be supplied explicitly.
+            'company_id' => $this->company->id,
+            'category_id' => $this->categoryId,
+            'unit_id' => $this->unitId,
             'name' => $name,
             'sku' => 'SKU-'.random_int(1000, 9999),
             'product_type' => $type,

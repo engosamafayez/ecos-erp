@@ -81,6 +81,7 @@ class InventoryCountSessionTest extends TestCase
         ]);
 
         return InventoryReceiptLayer::query()->create([
+            'company_id' => $this->company->id,
             'supplier_id' => $this->supplier->id,
             'product_id' => $item->product_id,
             'goods_receipt_id' => $gr->id,

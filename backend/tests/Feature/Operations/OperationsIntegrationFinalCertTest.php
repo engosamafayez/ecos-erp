@@ -527,7 +527,7 @@ class OperationsIntegrationFinalCertTest extends TestCase
             'assigned_warehouse_id' => $this->warehouse->id,
             'order_number' => 'CERT-'.Str::random(8),
             'order_date' => now()->toDateString(),
-            'status' => OrderStatus::Preparing->value,
+            'status' => OrderStatus::InProgress->value,
             'inventory_reserved_at' => now(),
             'subtotal' => $qty * 100,
             'total' => $qty * 100,

@@ -49,6 +49,13 @@ class RbacTest extends TestCase
 {
     use RefreshDatabase;
 
+    /**
+     * This suite is the authorization system's own test. Its subjects must carry
+     * exactly the roles each case assigns — a baseline system role would hand them
+     * the access they assert is denied.
+     */
+    protected bool $grantsBaselineAuthorization = false;
+
     private User $user;
 
     protected function setUp(): void

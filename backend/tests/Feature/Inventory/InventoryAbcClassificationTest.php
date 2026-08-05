@@ -82,6 +82,7 @@ class InventoryAbcClassificationTest extends TestCase
     ): InventoryReceiptLayer {
         // Create a layer directly (no GoodsReceipt factory → no phantom products)
         $layer = InventoryReceiptLayer::query()->create([
+            'company_id' => $this->company->id,
             'product_id' => $item->product_id,
             'warehouse_id' => $this->warehouse->id,
             'received_qty' => $qty,

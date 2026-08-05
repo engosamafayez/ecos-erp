@@ -65,6 +65,7 @@ class InventoryDashboardKpiTest extends TestCase
     private function addLayer(InventoryItem $item, float $qty, float $cost = 80.0): InventoryReceiptLayer
     {
         return InventoryReceiptLayer::query()->create([
+            'company_id' => $this->company->id,
             'product_id' => $item->product_id,
             'warehouse_id' => $this->warehouse->id,
             'received_qty' => $qty,

@@ -163,7 +163,7 @@ class OrderManufacturingIntegrationTest extends TestCase
             'assigned_warehouse_id' => $this->warehouse->id,
             'order_number' => 'TEST-'.Str::random(6),
             'order_date' => now()->toDateString(),
-            'status' => OrderStatus::Processing->value,
+            'status' => OrderStatus::InProgress->value,
             'subtotal' => 0,
             'total' => 0,
         ]);
@@ -200,7 +200,7 @@ class OrderManufacturingIntegrationTest extends TestCase
         $this->action->execute($order->id);
 
         $order->refresh();
-        $this->assertEquals(OrderStatus::Preparing, $order->status);
+        $this->assertEquals(OrderStatus::InProgress, $order->status);
 
         $line = $this->freshLine($order->lines->first());
         $this->assertEquals(OrderLineManufacturingState::Executed, $line->manufacturing_state);
@@ -229,7 +229,7 @@ class OrderManufacturingIntegrationTest extends TestCase
 
         $this->assertDatabaseHas('orders', [
             'id' => $order->id,
-            'status' => 'preparing',
+            'status' => 'in_progress',
         ]);
     }
 
@@ -405,7 +405,7 @@ class OrderManufacturingIntegrationTest extends TestCase
         $this->assertNotNull($line->manufacturing_result);
 
         // Order must NOT be corrupted — status still set to preparing
-        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'preparing']);
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'in_progress']);
         $this->assertDatabaseCount('manufacturing_transactions', 0);
     }
 

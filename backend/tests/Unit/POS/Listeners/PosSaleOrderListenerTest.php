@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
 use Mockery;
 use Mockery\MockInterface;
+use Modules\Admin\Configuration\Domain\Services\ConfigurationManager;
 use Modules\Commerce\Orders\Application\DTO\OrderDTO;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Commerce\Orders\Domain\Models\Order;
@@ -54,7 +55,16 @@ final class PosSaleOrderListenerTest extends TestCase
         parent::setUp();
 
         $this->orderCreation = Mockery::mock(OrderCreationPortInterface::class);
-        $this->listener = new PosSaleOrderListener($this->orderCreation);
+
+        // PosSaleOrderListener::__construct takes a second dependency,
+        // ConfigurationManager. It is declared final, so Mockery cannot double it;
+        // the container-resolved instance is used instead — the same wiring
+        // production uses. It is consulted on one branch only (getBrandPolicy at
+        // PosSaleOrderListener:122), which these cases do not reach.
+        $this->listener = new PosSaleOrderListener(
+            $this->orderCreation,
+            app(ConfigurationManager::class),
+        );
     }
 
     // ── Happy path ────────────────────────────────────────────────────────────
@@ -70,7 +80,7 @@ final class PosSaleOrderListenerTest extends TestCase
             ->once()
             ->withArgs(function (OrderDTO $dto) {
                 return $dto->customer_id === self::CUSTOMER_ID
-                    && $dto->status === OrderStatus::Completed
+                    && $dto->status === OrderStatus::Delivered
                     && $dto->external_order_id === self::SALE_ID
                     && count($dto->lines) === 1
                     && $dto->lines[0]['product_id'] === self::PRODUCT_A
@@ -139,7 +149,7 @@ final class PosSaleOrderListenerTest extends TestCase
         $this->orderCreation
             ->shouldReceive('create')
             ->once()
-            ->withArgs(fn (OrderDTO $dto) => $dto->status === OrderStatus::Completed)
+            ->withArgs(fn (OrderDTO $dto) => $dto->status === OrderStatus::Delivered)
             ->andReturn(OperationResult::success($this->buildOrder()));
 
         $this->listener->handle($event);

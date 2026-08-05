@@ -930,10 +930,10 @@ class Phase2ModuleTest extends TestCase
     {
         $stranger = User::factory()->create(['company_id' => $this->company->id]);
 
-        $this->actingAs($stranger)->getJson(self::NETWORK.'/service-areas')->assertForbidden();
-        $this->actingAs($stranger)->getJson(self::DISPATCH.'/boards')->assertForbidden();
-        $this->actingAs($stranger)->getJson(self::ROUTING.'/strategies')->assertForbidden();
-        $this->actingAs($stranger)->getJson(self::CARRIERS.'/accounts')->assertForbidden();
+        $this->actingAsUnprivileged($stranger)->getJson(self::NETWORK.'/service-areas')->assertForbidden();
+        $this->actingAsUnprivileged($stranger)->getJson(self::DISPATCH.'/boards')->assertForbidden();
+        $this->actingAsUnprivileged($stranger)->getJson(self::ROUTING.'/strategies')->assertForbidden();
+        $this->actingAsUnprivileged($stranger)->getJson(self::CARRIERS.'/accounts')->assertForbidden();
     }
 
     /** Propose and release are separate so a proposal cannot commit itself. */

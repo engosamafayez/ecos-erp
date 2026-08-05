@@ -162,6 +162,9 @@ class ManufacturingWorkflowTest extends TestCase
         return new ManufacturingWorkflowRequest(
             product_id: $output->id,
             warehouse_id: $this->warehouse->id,
+            // Required since F-INV-H2 made inventory reads company-scoped. The
+            // fixture already owns a company; it simply was not being passed.
+            company_id: $this->company->id,
             required_qty: $requiredQty,
             trigger: $this->makeTrigger(),
             metadata: $metadata,
