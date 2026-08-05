@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
-import { APP_MODULES, type AppModule } from '@/config/module-navigation';
+import { type AppModule } from '@/config/module-navigation';
+import { useNavigation } from '@/features/authorization';
 
 type ModuleRailProps = {
   activeModule: AppModule | undefined;
@@ -11,6 +12,10 @@ type ModuleRailProps = {
 
 export function ModuleRail({ activeModule, className }: ModuleRailProps) {
   const { t } = useTranslation('common');
+  // Dynamic sidebar (TASK-IAM-005 / ADR-041): the rail renders the user's
+  // effective navigation rather than every module unconditionally. Resolved
+  // through the committed authorization context — no permission logic here.
+  const { modules } = useNavigation();
   return (
     <nav
       aria-label={t($ => $.nav.moduleNavigation)}
@@ -20,7 +25,7 @@ export function ModuleRail({ activeModule, className }: ModuleRailProps) {
       )}
     >
       <div className="flex flex-col items-center gap-0.5 overflow-y-auto py-2 px-1.5">
-        {APP_MODULES.map((mod) => {
+        {modules.map((mod) => {
           const Icon = mod.icon;
           const isActive = activeModule?.id === mod.id;
 

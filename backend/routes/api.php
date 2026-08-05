@@ -323,8 +323,8 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
         Route::get('delivery-geography', [BrandDeliveryController::class, 'geography']);
         Route::get('delivery-windows', [BrandDeliveryController::class, 'windows']);
         Route::get('configuration-health', [BrandDeliveryController::class, 'health']);
-        Route::post('transfer/analyze', [BrandController::class, 'analyze']);
-        Route::post('transfer', [BrandController::class, 'transfer']);
+        Route::post('transfer/analyze', [BrandController::class, 'analyze'])->middleware('permission:organization.brands.update');
+        Route::post('transfer', [BrandController::class, 'transfer'])->middleware('permission:organization.brands.update');
 
         // Brand Delivery Time Slots (customer checkout time windows)
         Route::post('delivery-time-slots/seed-defaults', [BrandDeliveryTimeSlotController::class, 'seedDefaults'])->middleware('permission:organization.brands.update');
@@ -507,10 +507,10 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('orders/statuses', [OrderController::class, 'orderStatuses']);
     Route::get('orders/filter/payment-methods', [OrderController::class, 'paymentMethods']);
     Route::get('orders/filter/shipping-companies', [OrderController::class, 'shippingCompanies']);
-    Route::post('orders/manual', [OrderController::class, 'storeManual']);
+    Route::post('orders/manual', [OrderController::class, 'storeManual'])->middleware('permission:sales.orders.create');
     Route::post('orders/maps/resolve-url', [OrderController::class, 'resolveMapsUrl'])->middleware('permission:sales.orders.update');
     Route::get('orders/pricing/product/{productId}', [OrderController::class, 'productPricing']);
-    Route::patch('orders/{order}/quick-update', [OrderController::class, 'quickUpdate']);
+    Route::patch('orders/{order}/quick-update', [OrderController::class, 'quickUpdate'])->middleware('permission:sales.orders.update');
     Route::patch('orders/{order}/zone', [OrderController::class, 'updateZone'])->middleware('permission:sales.orders.update');
     Route::post('orders/{order}/confirm-customer', [OrderController::class, 'confirmCustomer'])->middleware('permission:sales.orders.update');
     Route::get('orders/{order}/activities', [OrderController::class, 'activities']);
@@ -523,10 +523,10 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
         ->middlewareFor('update', 'permission:sales.orders.update')
         ->middlewareFor('destroy', 'permission:sales.orders.delete');
     Route::post('orders/{order}/prepare', [OrderController::class, 'prepare'])->middleware('permission:sales.orders.update');
-    Route::post('orders/{order}/verify-payment', [OrderController::class, 'verifyPayment']);
+    Route::post('orders/{order}/verify-payment', [OrderController::class, 'verifyPayment'])->middleware('permission:sales.orders.update');
     // CR-PREP-001: Warehouse assignment
     Route::post('orders/{order}/assign-warehouse', [WarehouseAssignmentController::class, 'assignWarehouse'])->middleware('permission:sales.orders.update');
-    Route::post('orders/{order}/override-warehouse', [WarehouseAssignmentController::class, 'overrideWarehouse']);
+    Route::post('orders/{order}/override-warehouse', [WarehouseAssignmentController::class, 'overrideWarehouse'])->middleware('permission:sales.orders.update');
     Route::get('orders/{order}/assignment-history', [WarehouseAssignmentController::class, 'assignmentHistory']);
     Route::apiResource('fulfillments', FulfillmentController::class)
         ->middlewareFor('store', 'permission:sales.fulfillments.create')
@@ -792,23 +792,23 @@ Route::middleware('auth:sanctum')->prefix('preparation')->group(function (): voi
     Route::get('analytics', [PreparationAnalyticsController::class, 'index']);
 
     Route::get('waves', [PreparationWaveController::class, 'index']);
-    Route::post('waves', [PreparationWaveController::class, 'store']);
+    Route::post('waves', [PreparationWaveController::class, 'store'])->middleware('permission:operations.preparation.create');
     Route::get('waves/{waveId}', [PreparationWaveController::class, 'show']);
-    Route::post('waves/{waveId}/generate-demand', [PreparationWaveController::class, 'generateDemand']);
-    Route::post('waves/{waveId}/analyze-materials', [PreparationWaveController::class, 'analyzeMaterials']);
-    Route::post('waves/{waveId}/start', [PreparationWaveController::class, 'start']);
-    Route::post('waves/{waveId}/advance', [PreparationWaveController::class, 'advance']);
-    Route::patch('waves/{waveId}/items/{itemId}/complete', [PreparationWaveController::class, 'completeItem']);
-    Route::post('waves/{waveId}/complete', [PreparationWaveController::class, 'complete']);
-    Route::post('waves/{waveId}/cancel', [PreparationWaveController::class, 'cancel']);
-    Route::post('waves/{waveId}/recalculate', [PreparationWaveController::class, 'recalculate']);
+    Route::post('waves/{waveId}/generate-demand', [PreparationWaveController::class, 'generateDemand'])->middleware('permission:operations.preparation.update');
+    Route::post('waves/{waveId}/analyze-materials', [PreparationWaveController::class, 'analyzeMaterials'])->middleware('permission:operations.preparation.update');
+    Route::post('waves/{waveId}/start', [PreparationWaveController::class, 'start'])->middleware('permission:operations.preparation.update');
+    Route::post('waves/{waveId}/advance', [PreparationWaveController::class, 'advance'])->middleware('permission:operations.preparation.update');
+    Route::patch('waves/{waveId}/items/{itemId}/complete', [PreparationWaveController::class, 'completeItem'])->middleware('permission:operations.preparation.update');
+    Route::post('waves/{waveId}/complete', [PreparationWaveController::class, 'complete'])->middleware('permission:operations.preparation.update');
+    Route::post('waves/{waveId}/cancel', [PreparationWaveController::class, 'cancel'])->middleware('permission:operations.preparation.update');
+    Route::post('waves/{waveId}/recalculate', [PreparationWaveController::class, 'recalculate'])->middleware('permission:operations.preparation.update');
     Route::get('waves/{waveId}/product-queue', [PreparationWaveController::class, 'productQueue']);
     Route::get('waves/{waveId}/items/{itemId}/workspace', [PreparationWaveController::class, 'productWorkspace']);
-    Route::post('waves/{waveId}/issues', [PreparationWaveController::class, 'reportIssue']);
-    Route::post('waves/{waveId}/approve', [PreparationWaveController::class, 'approve']);
-    Route::post('waves/{waveId}/workers', [PreparationWaveController::class, 'assignWorker']);
-    Route::delete('waves/{waveId}/workers/{userId}', [PreparationWaveController::class, 'releaseWorker']);
-    Route::post('waves/{waveId}/resolve-shortage', [PreparationWaveController::class, 'resolveShortage']);
+    Route::post('waves/{waveId}/issues', [PreparationWaveController::class, 'reportIssue'])->middleware('permission:operations.preparation.update');
+    Route::post('waves/{waveId}/approve', [PreparationWaveController::class, 'approve'])->middleware('permission:operations.preparation.update');
+    Route::post('waves/{waveId}/workers', [PreparationWaveController::class, 'assignWorker'])->middleware('permission:operations.preparation.update');
+    Route::delete('waves/{waveId}/workers/{userId}', [PreparationWaveController::class, 'releaseWorker'])->middleware('permission:operations.preparation.update');
+    Route::post('waves/{waveId}/resolve-shortage', [PreparationWaveController::class, 'resolveShortage'])->middleware('permission:operations.preparation.update');
     Route::get('waves/{waveId}/timeline', [PreparationWaveController::class, 'timeline']);
     Route::get('waves/{waveId}/documents', [PreparationWaveController::class, 'documents']);
 
@@ -855,7 +855,7 @@ Route::middleware('auth:sanctum')->prefix('preparation')->group(function (): voi
     Route::delete('warehouse-assignment-policies/{id}', [WarehouseAssignmentController::class, 'destroyPolicy'])->middleware('permission:operations.preparation.delete');
 
     Route::get('pool', [PreparedPoolController::class, 'index']);
-    Route::patch('pool/{poolId}/quality', [PreparedPoolController::class, 'updateQuality']);
+    Route::patch('pool/{poolId}/quality', [PreparedPoolController::class, 'updateQuality'])->middleware('permission:operations.preparation.update');
     Route::get('workers', [PreparationWorkerController::class, 'index']);
     Route::get('stations', [PreparationStationController::class, 'index']);
 });
