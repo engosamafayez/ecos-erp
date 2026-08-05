@@ -176,7 +176,10 @@ final class FinanceServiceProvider extends ServiceProvider
      */
     private function registerIntegrationSubscribers(): void
     {
-        if (! (bool) config('finance.integration.auto_subscribe', false)) {
+        // No inline fallback: config/finance.php is the single source of truth
+        // for whether the bridge is live. A default here would let a missing or
+        // misspelled key decide the platform's posting behaviour silently.
+        if (! (bool) config('finance.integration.auto_subscribe')) {
             return;
         }
 
@@ -190,7 +193,12 @@ final class FinanceServiceProvider extends ServiceProvider
         $catalog = $this->app->make(EventPostingCatalog::class);
 
         foreach ($catalog->knownEventNames() as $eventName) {
-            $bus->subscribe($eventName, EventPostingSubscriber::class, priority: 200, queue: 'finance-posting');
+            $bus->subscribe(
+                $eventName,
+                EventPostingSubscriber::class,
+                priority: (int) config('finance.integration.subscriber_priority'),
+                queue: (string) config('finance.integration.queue'),
+            );
         }
     }
 }
