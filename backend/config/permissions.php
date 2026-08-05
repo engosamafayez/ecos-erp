@@ -151,6 +151,18 @@ return [
         'engineering-operator' => ['name' => 'Engineering Operator', 'is_system' => false],
         'devops-operator' => ['name' => 'DevOps Operator', 'is_system' => false],
         'system-auditor' => ['name' => 'System Auditor', 'is_system' => false],
+
+        // ── Roles completed by TASK-IAM-007 ──────────────────────────────────
+        // EPIC-IAM-VERIFICATION-001 found no executable role for Finance, HR or
+        // a branch, so 95 registered permissions were reachable only through the
+        // super-admin is_system bypass. These three close that gap.
+        //
+        // No Logistics Manager is added: fleet-manager, dispatcher and
+        // shipping-coordinator already partition that domain, and a fourth role
+        // spanning them would duplicate existing coverage.
+        'finance-manager' => ['name' => 'Finance Manager', 'is_system' => false],
+        'hr-manager' => ['name' => 'HR Manager', 'is_system' => false],
+        'branch-manager' => ['name' => 'Branch Manager', 'is_system' => false],
     ],
 
     // ── Role → permission grants (used by RbacSeeder) ─────────────────────────
@@ -490,6 +502,95 @@ return [
             'logistics.distribution' => ['view'],
             'operations.preparation' => ['view'],
             'operations.fulfillment' => ['view'],
+        ],
+
+        // ── TASK-IAM-007: Finance Manager ────────────────────────────────────
+        // Owns the finance domain end to end. Every finance.* permission is
+        // registered by Finance module migrations and, until now, granted to no
+        // role at all — Finance was reachable only via the super-admin bypass.
+        // Names below are the exact rows in the permissions table; none is new.
+        'finance-manager' => [
+            'finance.gl' => ['view'],
+            'finance.coa' => ['manage'],
+            'finance.journal' => ['create', 'post', 'approve', 'reverse'],
+            'finance.trialbalance' => ['view'],
+            'finance.dimension' => ['manage'],
+            'finance.allocation' => ['manage'],
+            'finance.ar' => ['view', 'writeoff'],
+            'finance.ar.invoice' => ['create', 'post'],
+            'finance.ar.receipt' => ['create'],
+            'finance.ap' => ['view'],
+            'finance.ap.bill' => ['create', 'post'],
+            'finance.ap.payment' => ['create', 'approve'],
+            'finance.cash' => ['view', 'manage'],
+            'finance.cash.session' => ['manage'],
+            'finance.bank' => ['view', 'manage', 'reconcile'],
+            'finance.bank.rule' => ['manage'],
+            'finance.period' => ['manage', 'close', 'reopen'],
+            'finance.closing' => ['manage', 'approve'],
+            'finance.closing.workspace' => ['view'],
+            'finance.yearend' => ['manage', 'finalize'],
+            'finance.budget' => ['view', 'manage', 'approve', 'control'],
+            'finance.tax' => ['manage'],
+            'finance.vat' => ['view', 'manage'],
+            'finance.controls' => ['view', 'resolve'],
+            'finance.reports' => ['view'],
+            'finance.analytics' => ['view'],
+            'finance.scenario' => ['view'],
+            'finance.executive.workspace' => ['view'],
+            'finance.cfo.workspace' => ['view'],
+            'finance.posting' => ['manage', 'preview'],
+            'finance.posting.rule' => ['manage'],
+            'finance.posting.audit' => ['view'],
+            'finance.posting.deadletter' => ['manage'],
+            'finance.integration' => ['map'],
+        ],
+
+        // ── TASK-IAM-007: HR Manager ─────────────────────────────────────────
+        // Owns the HR domain end to end, for the same reason as Finance above.
+        'hr-manager' => [
+            'hr.employees' => ['view', 'manage'],
+            'hr.org' => ['view', 'manage'],
+            'hr.contracts' => ['view', 'manage'],
+            'hr.workforce' => ['view', 'manage'],
+            'hr.lifecycle' => ['manage'],
+            'hr.attendance' => ['view', 'register'],
+            'hr.leave' => ['view', 'request', 'approve'],
+            'hr.compensation' => ['view', 'manage', 'calculate', 'approve', 'adjust'],
+            'hr.compensation.adjust' => ['approve'],
+            'hr.commission' => ['view', 'manage'],
+            'hr.performance' => ['view', 'manage', 'review'],
+            'hr.kpi' => ['ingest'],
+            'hr.recruitment' => ['view', 'manage', 'decide', 'tag', 'bulk'],
+            'hr.recruitment.tags' => ['manage'],
+            'hr.recruitment.analytics' => ['view'],
+            'hr.interviews' => ['manage'],
+            'hr.offers' => ['view', 'manage'],
+            'hr.hiring' => ['execute'],
+            'hr.exit' => ['view', 'manage'],
+            'hr.analytics' => ['view'],
+            'hr.executive' => ['view'],
+        ],
+
+        // ── TASK-IAM-007: Branch Manager ─────────────────────────────────────
+        // Operational oversight of a single branch. Deliberately read-and-operate,
+        // not administrative: no company/branch structure changes, no finance,
+        // no HR. Every name is an existing catalogue permission.
+        'branch-manager' => [
+            'organization.branches' => ['view'],
+            'organization.companies' => ['view'],
+            'inventory.products' => ['view'],
+            'inventory.categories' => ['view'],
+            'inventory.stock' => ['view'],
+            'inventory.warehouses' => ['view'],
+            'crm.customers' => ['view'],
+            'sales.orders' => ['view', 'update'],
+            'sales.fulfillments' => ['view', 'update'],
+            'sales.channels' => ['view'],
+            'operations.preparation' => ['view', 'update'],
+            'operations.fulfillment' => ['view', 'manage'],
+            'logistics.distribution' => ['view'],
+            'logistics.shipping' => ['view'],
         ],
 
     ],

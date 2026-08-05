@@ -68,6 +68,27 @@ final class RbacSeeder extends Seeder
             count($allPermissions),
         ));
 
+        // ── 1b. Adopt permissions registered outside this catalogue ───────────
+        // Finance, HR, CRM and several Logistics sub-domains register their
+        // permissions from module migrations (DB::table('permissions')->insert)
+        // rather than from config/permissions.modules. Those rows exist, but the
+        // grant loop below resolves names against $allPermissions only, so any
+        // role_permissions entry naming one was silently discarded — no error,
+        // no warning. That is why finance.* and hr.* held zero grants across all
+        // 27 roles while 95 such permissions existed in the table.
+        //
+        // Loading the persisted set closes that gap without changing either
+        // registration mechanism: the catalogue still creates its own
+        // permissions above, and module migrations still own theirs.
+        foreach (Permission::all() as $persisted) {
+            $allPermissions[$persisted->name] ??= $persisted;
+        }
+
+        $this->command->info(sprintf(
+            '  RBAC: %d permissions resolvable for granting (incl. module-registered).',
+            count($allPermissions),
+        ));
+
         // ── 2. Create every role ───────────────────────────────────────────────
         $roles = [];
 
