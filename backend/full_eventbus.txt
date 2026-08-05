@@ -1,0 +1,779 @@
+PHPUnit 11.5.55 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.22
+Configuration: C:\ecos-develop\backend\phpunit.xml
+
+.............................................................   61 / 3664 (  1%)
+.............................................................  122 / 3664 (  3%)
+.............................................................  183 / 3664 (  4%)
+.............................................................  244 / 3664 (  6%)
+.............................................................  305 / 3664 (  8%)
+.............................................................  366 / 3664 (  9%)
+.............................................................  427 / 3664 ( 11%)
+.............................................................  488 / 3664 ( 13%)
+.............................................................  549 / 3664 ( 14%)
+.............................................................  610 / 3664 ( 16%)
+.............................................................  671 / 3664 ( 18%)
+.............................................................  732 / 3664 ( 19%)
+.............................................................  793 / 3664 ( 21%)
+.............................................................  854 / 3664 ( 23%)
+.............................................................  915 / 3664 ( 24%)
+.............................................................  976 / 3664 ( 26%)
+............................................................. 1037 / 3664 ( 28%)
+............................................................. 1098 / 3664 ( 29%)
+...............................................[41;37mF[0m..[41;37mF[0m.[41;37mF[0m........ 1159 / 3664 ( 31%)
+.............[31;1mE[0m........[41;37mF[0m[41;37mF[0m.[41;37mF[0m[41;37mF[0m...[41;37mF[0m.............................. 1220 / 3664 ( 33%)
+...........................................................[31;1mE[0m. 1281 / 3664 ( 34%)
+............................................................. 1342 / 3664 ( 36%)
+............................................................. 1403 / 3664 ( 38%)
+............................................................. 1464 / 3664 ( 39%)
+............................................................. 1525 / 3664 ( 41%)
+............................................................. 1586 / 3664 ( 43%)
+............................................................. 1647 / 3664 ( 44%)
+....................................................
+Store: Illuminate\Cache\ArrayStore
+Before: null
+Service returned: ["a.b.c"]
+After: ["a.b.c"]......... 1708 / 3664 ( 46%)
+............................................................. 1769 / 3664 ( 48%)
+.......................[41;37mF[0m[41;37mF[0m...[41;37mF[0m................................ 1830 / 3664 ( 49%)
+............................................................. 1891 / 3664 ( 51%)
+............................................................. 1952 / 3664 ( 53%)
+............................................................. 2013 / 3664 ( 54%)
+............................................................. 2074 / 3664 ( 56%)
+............................................................. 2135 / 3664 ( 58%)
+............................................................. 2196 / 3664 ( 59%)
+............................................................. 2257 / 3664 ( 61%)
+............................................................. 2318 / 3664 ( 63%)
+............................................................. 2379 / 3664 ( 64%)
+............................................................. 2440 / 3664 ( 66%)
+...[41;37mF[0m..[41;37mF[0m...................................................... 2501 / 3664 ( 68%)
+............................................................. 2562 / 3664 ( 69%)
+.....................[41;37mF[0m.............................[41;37mF[0m[41;37mF[0m[31;1mE[0m[31;1mE[0m[31;1mE[0m..... 2623 / 3664 ( 71%)
+.....[41;37mF[0m...........................[41;37mF[0m........................... 2684 / 3664 ( 73%)
+[41;37mF[0m..........[31;1mE[0m................................................. 2745 / 3664 ( 74%)
+...........................................................[41;37mF[0m. 2806 / 3664 ( 76%)
+..[41;37mF[0m[41;37mF[0m[41;37mF[0m[41;37mF[0m[41;37mF[0m.[41;37mF[0m.[41;37mF[0m.[41;37mF[0m[41;37mF[0m[41;37mF[0m.[41;37mF[0m..[41;37mF[0m......................[41;37mF[0m.................. 2867 / 3664 ( 78%)
+............................................................. 2928 / 3664 ( 79%)
+............................................................. 2989 / 3664 ( 81%)
+............................................................. 3050 / 3664 ( 83%)
+............................................................. 3111 / 3664 ( 84%)
+............................................................. 3172 / 3664 ( 86%)
+............................................................. 3233 / 3664 ( 88%)
+............................................................. 3294 / 3664 ( 89%)
+............................................................. 3355 / 3664 ( 91%)
+............................................................. 3416 / 3664 ( 93%)
+............................................................. 3477 / 3664 ( 94%)
+............................................................. 3538 / 3664 ( 96%)
+............................................................. 3599 / 3664 ( 98%)
+............................................................. 3660 / 3664 ( 99%)
+.[41;37mF[0m..                                                          3664 / 3664 (100%)
+
+Time: 13:09.816, Memory: 496.00 MB
+
+There were 6 errors:
+
+1) Tests\Feature\Core\UserPreferenceTest::test_reset_all_removes_all_categories_for_authenticated_user
+Illuminate\Database\UniqueConstraintViolationException: SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '17-suppliers' for key 'user_preferences.user_preferences_user_id_category_unique' (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: ecos_erp_test, SQL: insert into `user_preferences` (`user_id`, `category`, `payload`, `id`, `updated_at`, `created_at`) values (17, suppliers, {"columns":[],"column_order":[],"column_widths":[],"density":"comfortable","sort":{"field":null,"direction":"asc"},"page_size":25,"filter_presets":[]}, 019fd3d5-5193-710b-8cf0-59a495adb78f, 2026-08-05 21:30:00, 2026-08-05 21:30:00))
+
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php:838
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php:794
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\MySqlConnection.php:42
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php:4121
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php:2237
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1412
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1240
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:370
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Collections\Traits\EnumeratesValues.php:275
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:365
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:325
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:315
+C:\ecos-develop\backend\tests\Feature\Core\UserPreferenceTest.php:248
+
+Caused by
+PDOException: SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry '17-suppliers' for key 'user_preferences.user_preferences_user_id_category_unique'
+
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\MySqlConnection.php:53
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php:827
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php:794
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\MySqlConnection.php:42
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php:4121
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php:2237
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1412
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1240
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:370
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Collections\Traits\EnumeratesValues.php:275
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:365
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:325
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Factories\Factory.php:315
+C:\ecos-develop\backend\tests\Feature\Core\UserPreferenceTest.php:248
+
+2) Tests\Feature\ExampleTest::test_the_application_returns_a_successful_response
+Illuminate\Encryption\MissingAppKeyException: No application encryption key has been specified.
+
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Encryption\EncryptionServiceProvider.php:83
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Support\helpers.php:393
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Encryption\EncryptionServiceProvider.php:81
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Encryption\EncryptionServiceProvider.php:64
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Encryption\EncryptionServiceProvider.php:32
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Container\Container.php:1115
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Container\Container.php:933
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Application.php:1078
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Container\Container.php:864
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Application.php:1058
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Container\Container.php:1336
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Container\Container.php:1237
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Container\Container.php:1162
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Container\Container.php:933
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Application.php:1078
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Container\Container.php:864
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Application.php:1058
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php:257
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php:215
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\MakesHttpRequests.php:611
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\MakesHttpRequests.php:368
+C:\ecos-develop\backend\tests\Feature\ExampleTest.php:17
+
+3) Tests\Feature\Marketing\MetaOAuthCallbackTest::test_successful_callback_returns_201_with_connection_id
+Mockery\Exception: The class \Modules\Marketing\MetaConnector\Application\Services\MetaOAuthService is marked final and its methods cannot be replaced. Classes marked final can be passed in to \Mockery::mock() as instantiated objects to create a partial mock, but only if the mock is not subject to type hinting checks.
+
+C:\ecos-develop\backend\vendor\mockery\mockery\library\Mockery\Generator\MockConfiguration.php:367
+C:\ecos-develop\backend\vendor\mockery\mockery\library\Mockery\Generator\MockConfiguration.php:182
+C:\ecos-develop\backend\vendor\mockery\mockery\library\Mockery\Generator\StringManipulationGenerator.php:66
+C:\ecos-develop\backend\vendor\mockery\mockery\library\Mockery\Generator\CachingGenerator.php:41
+C:\ecos-develop\backend\vendor\mockery\mockery\library\Mockery\Container.php:395
+C:\ecos-develop\backend\vendor\mockery\mockery\library\Mockery.php:477
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\InteractsWithContainer.php:77
+C:\ecos-develop\backend\tests\Feature\Marketing\MetaOAuthCallbackTest.php:74
+
+4) Tests\Feature\Marketing\MetaOAuthCallbackTest::test_successful_callback_dispatches_meta_sync_job
+Mockery\Exception: The class \Modules\Marketing\MetaConnector\Application\Services\MetaOAuthService is marked final and its methods cannot be replaced. Classes marked final can be passed in to \Mockery::mock() as instantiated objects to create a partial mock, but only if the mock is not subject to type hinting checks.
+
+C:\ecos-develop\backend\vendor\mockery\mockery\library\Mockery\Generator\MockConfiguration.php:367
+C:\ecos-develop\backend\vendor\mockery\mockery\library\Mockery\Generator\MockConfiguration.php:182
+C:\ecos-develop\backend\vendor\mockery\mockery\library\Mockery\Generator\StringManipulationGenerator.php:66
+C:\ecos-develop\backend\vendor\mockery\mockery\library\Mockery\Generator\CachingGenerator.php:41
+C:\ecos-develop\backend\vendor\mockery\mockery\library\Mockery\Container.php:395
+C:\ecos-develop\backend\vendor\mockery\mockery\library\Mockery.php:477
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\InteractsWithContainer.php:77
+C:\ecos-develop\backend\tests\Feature\Marketing\MetaOAuthCallbackTest.php:98
+
+5) Tests\Feature\Marketing\MetaOAuthCallbackTest::test_initial_sync_job_is_dispatched_with_full_sync_type
+Mockery\Exception: The class \Modules\Marketing\MetaConnector\Application\Services\MetaOAuthService is marked final and its methods cannot be replaced. Classes marked final can be passed in to \Mockery::mock() as instantiated objects to create a partial mock, but only if the mock is not subject to type hinting checks.
+
+C:\ecos-develop\backend\vendor\mockery\mockery\library\Mockery\Generator\MockConfiguration.php:367
+C:\ecos-develop\backend\vendor\mockery\mockery\library\Mockery\Generator\MockConfiguration.php:182
+C:\ecos-develop\backend\vendor\mockery\mockery\library\Mockery\Generator\StringManipulationGenerator.php:66
+C:\ecos-develop\backend\vendor\mockery\mockery\library\Mockery\Generator\CachingGenerator.php:41
+C:\ecos-develop\backend\vendor\mockery\mockery\library\Mockery\Container.php:395
+C:\ecos-develop\backend\vendor\mockery\mockery\library\Mockery.php:477
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\InteractsWithContainer.php:77
+C:\ecos-develop\backend\tests\Feature\Marketing\MetaOAuthCallbackTest.php:116
+
+6) Tests\Feature\Operations\OrderExclusivityTest::test_db_unique_constraint_prevents_duplicate_company_order_pair
+Illuminate\Database\QueryException: SQLSTATE[HY000]: General error: 1364 Field 'order_confirmed_at' doesn't have a default value (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: ecos_erp_test, SQL: insert into `preparation_wave_orders` (`company_id`, `preparation_wave_id`, `order_id`, `order_number`, `added_by`, `id`) values (019fd3d9-b8ad-73a4-8d5b-e664be3a5497, 019fd3d9-b8bc-7213-8b6c-ace347cd9bf6, 1f42b109-28a5-4d13-8bbb-9d5e0089cec3, ORD-001, 711, 019fd3d9-b8bf-708b-8494-14d81f0c7c8d))
+
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php:838
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php:794
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\MySqlConnection.php:42
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php:4121
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php:2237
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1412
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1240
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php:1219
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Support\helpers.php:393
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php:1218
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Support\Traits\ForwardsCalls.php:23
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:2544
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:2560
+C:\ecos-develop\backend\tests\Feature\Operations\OrderExclusivityTest.php:158
+
+Caused by
+PDOException: SQLSTATE[HY000]: General error: 1364 Field 'order_confirmed_at' doesn't have a default value
+
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\MySqlConnection.php:53
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php:827
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php:794
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\MySqlConnection.php:42
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php:4121
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php:2237
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1412
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:1240
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php:1219
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Support\helpers.php:393
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php:1218
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Support\Traits\ForwardsCalls.php:23
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:2544
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Model.php:2560
+C:\ecos-develop\backend\tests\Feature\Operations\OrderExclusivityTest.php:158
+
+--
+
+There were 34 failures:
+
+1) Tests\Feature\Commerce\OrderImportWarehouseTest::test_channel_ownership_is_brand_not_company
+Failed asserting that true is false.
+
+C:\ecos-develop\backend\tests\Feature\Commerce\OrderImportWarehouseTest.php:133
+
+2) Tests\Feature\Commerce\OrderReservationLifecycleTest::test_reserve_idempotency_throws_already_reserved_exception
+Failed asserting that exception of type "Modules\Commerce\Orders\Domain\Exceptions\OrderAlreadyReservedException" is thrown.
+
+3) Tests\Feature\Commerce\OrderReservationLifecycleTest::test_reserve_throws_on_insufficient_stock
+Failed asserting that exception of type "Throwable" is thrown.
+
+4) Tests\Feature\CostManagement\PricingReviewCascadeTest::test_pricing_review_created_after_manual_cost_update
+Failed asserting that 0.0 matches expected 30.0.
+
+C:\ecos-develop\backend\tests\Feature\CostManagement\PricingReviewCascadeTest.php:102
+
+5) Tests\Feature\CostManagement\PricingReviewCascadeTest::test_no_review_created_when_product_cost_unchanged
+Failed asserting that table [pricing_reviews] matches expected entries count of 0. Entries found: 1.
+.
+
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\InteractsWithDatabase.php:94
+C:\ecos-develop\backend\tests\Feature\CostManagement\PricingReviewCascadeTest.php:127
+
+6) Tests\Feature\CostManagement\PricingReviewCascadeTest::test_existing_pending_review_is_updated_not_duplicated
+Failed asserting that 30.0 matches expected 40.0.
+
+C:\ecos-develop\backend\tests\Feature\CostManagement\PricingReviewCascadeTest.php:188
+
+7) Tests\Feature\CostManagement\PricingReviewCascadeTest::test_new_review_created_after_previous_one_was_resolved
+Failed asserting that 30.0 matches expected 40.0.
+
+C:\ecos-develop\backend\tests\Feature\CostManagement\PricingReviewCascadeTest.php:231
+
+8) Tests\Feature\CostManagement\PricingReviewCascadeTest::test_margin_below_target_flag_set_correctly
+Failed asserting that an array contains 'margin_below_target'.
+
+C:\ecos-develop\backend\tests\Feature\CostManagement\PricingReviewCascadeTest.php:328
+
+9) Tests\Feature\Inventory\InventoryCountSessionTest::test_approve_posts_adjustment_out_for_negative_variance
+Failed asserting that two strings are equal.
+--- Expected
++++ Actual
+@@ @@
+-'7.0000'
++'10.0000'
+
+C:\ecos-develop\backend\tests\Feature\Inventory\InventoryCountSessionTest.php:216
+
+10) Tests\Feature\Inventory\InventoryCountSessionTest::test_fifo_consumption_record_created_for_adjustment_out
+Failed asserting that two strings are equal.
+--- Expected
++++ Actual
+@@ @@
+-'8.0000'
++'10.0000'
+
+C:\ecos-develop\backend\tests\Feature\Inventory\InventoryCountSessionTest.php:236
+
+11) Tests\Feature\Inventory\InventoryCountSessionTest::test_adjustment_creates_ledger_entry
+Failed asserting that null is not null.
+
+C:\ecos-develop\backend\tests\Feature\Inventory\InventoryCountSessionTest.php:354
+
+12) Tests\Feature\Logistics\VehicleModuleTest::test_maintenance_is_immutable_without_permission
+Expected response status code [403] but received 200.
+Failed asserting that 200 is identical to 403.
+
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Testing\TestResponseAssert.php:45
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Testing\TestResponse.php:175
+C:\ecos-develop\backend\tests\Feature\Logistics\VehicleModuleTest.php:594
+
+13) Tests\Feature\Logistics\VehicleModuleTest::test_maintenance_permission_endpoint_reflects_capability
+Unable to find JSON: 
+
+[{
+    "can_manage_maintenance": false
+}]
+
+within response JSON:
+
+[{
+    "can_manage_maintenance": true
+}].
+
+
+Failed asserting that an array has the subset Array &0 [
+    'can_manage_maintenance' => false,
+].
+--- Expected
++++ Actual
+@@ @@
+ array (
+-  'can_manage_maintenance' => false,
++  'can_manage_maintenance' => true,
+ )
+
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Testing\Constraints\ArraySubset.php:80
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Testing\Assert.php:36
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Testing\AssertableJsonString.php:319
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Testing\TestResponse.php:857
+C:\ecos-develop\backend\tests\Feature\Logistics\VehicleModuleTest.php:640
+
+14) Tests\Feature\Manufacturing\RecipeFoundationTest::test_recipe_ignores_waste_percentage_if_submitted
+Failed asserting that an array does not have the key 'waste_percentage'.
+
+C:\ecos-develop\backend\tests\Feature\Manufacturing\RecipeFoundationTest.php:351
+
+15) Tests\Feature\Marketing\MetaOAuthCallbackTest::test_callback_returns_422_when_code_missing
+Expected response status code [422] but received 403.
+Failed asserting that 403 is identical to 422.
+
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Testing\TestResponseAssert.php:45
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Testing\TestResponse.php:175
+C:\ecos-develop\backend\tests\Feature\Marketing\MetaOAuthCallbackTest.php:54
+
+16) Tests\Feature\Marketing\MetaOAuthCallbackTest::test_callback_returns_422_when_state_missing
+Expected response status code [422] but received 403.
+Failed asserting that 403 is identical to 422.
+
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Testing\TestResponseAssert.php:45
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Testing\TestResponse.php:175
+C:\ecos-develop\backend\tests\Feature\Marketing\MetaOAuthCallbackTest.php:63
+
+17) Tests\Feature\Operations\BranchAssignmentEngineTest::test_assigned_warehouse_enables_reservation
+Warehouse must be assigned before reservation
+Failed asserting that null is not null.
+
+C:\ecos-develop\backend\tests\Feature\Operations\BranchAssignmentEngineTest.php:258
+
+18) Tests\Feature\Operations\DemandEngine\MaterialDemandCalculatorTest::test_missing_qty_uses_available_not_on_hand
+Failed asserting that 15.0 matches expected 7.0.
+
+C:\ecos-develop\backend\tests\Feature\Operations\DemandEngine\MaterialDemandCalculatorTest.php:153
+
+19) Tests\Feature\Operations\OperationsIntegrationFinalCertTest::scenario_d_inventory_transferred_event_has_no_registered_listener
+C-003 / ADR-026: InventoryTransferred must have no listener in Phase A. Register in Phase B — see docs/adr/ADR-026-transfer-events-phase-b.md
+Failed asserting that actual size 1 matches expected size 0.
+
+C:\ecos-develop\backend\tests\Feature\Operations\OperationsIntegrationFinalCertTest.php:300
+
+20) Tests\Feature\Orders\OrderFinancialSnapshotTest::test_consistency_validation_rejects_mismatched_subtotal
+Failed asserting that exception of type "Modules\Commerce\Orders\Domain\Exceptions\SnapshotConsistencyException" is thrown.
+
+21) Tests\Feature\Orders\OrderManufacturingIntegrationTest::test_preparing_triggers_manufacturing_for_eligible_line
+Failed asserting that two values of enumeration Modules\Commerce\Orders\Domain\Enums\OrderStatus are equal, ReadyForDispatch does not match expected InProgress.
+
+C:\ecos-develop\backend\tests\Feature\Orders\OrderManufacturingIntegrationTest.php:203
+
+22) Tests\Feature\Orders\OrderManufacturingIntegrationTest::test_preparing_sets_order_status_to_preparing
+Failed asserting that a row in the table [orders] matches the attributes {
+    "id": "019fd3d9-f901-728d-9d78-092bd62cf0f7",
+    "status": "in_progress"
+}.
+
+Found similar results: [
+    {
+        "id": "019fd3d9-f901-728d-9d78-092bd62cf0f7",
+        "status": "ready_for_dispatch"
+    }
+].
+
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\InteractsWithDatabase.php:43
+C:\ecos-develop\backend\tests\Feature\Orders\OrderManufacturingIntegrationTest.php:230
+
+23) Tests\Feature\Orders\OrderManufacturingIntegrationTest::test_preparing_twice_does_not_duplicate_manufacturing
+Failed asserting that two values of enumeration Modules\Commerce\Orders\Domain\Enums\OrderLineManufacturingState are equal, Skipped does not match expected Executed.
+
+C:\ecos-develop\backend\tests\Feature\Orders\OrderManufacturingIntegrationTest.php:262
+
+24) Tests\Feature\Orders\OrderManufacturingIntegrationTest::test_preparing_twice_preserves_executed_state_on_line
+Failed asserting that two values of enumeration Modules\Commerce\Orders\Domain\Enums\OrderLineManufacturingState are equal, Skipped does not match expected Executed.
+
+C:\ecos-develop\backend\tests\Feature\Orders\OrderManufacturingIntegrationTest.php:279
+
+25) Tests\Feature\Orders\OrderManufacturingIntegrationTest::test_mixed_order_only_manufactures_eligible_lines
+Failed asserting that two values of enumeration Modules\Commerce\Orders\Domain\Enums\OrderLineManufacturingState are equal, Skipped does not match expected Executed.
+
+C:\ecos-develop\backend\tests\Feature\Orders\OrderManufacturingIntegrationTest.php:307
+
+26) Tests\Feature\Orders\OrderManufacturingIntegrationTest::test_product_with_sufficient_fg_stock_is_marked_not_required
+Failed asserting that two values of enumeration Modules\Commerce\Orders\Domain\Enums\OrderLineManufacturingState are equal, Skipped does not match expected NotRequired.
+
+C:\ecos-develop\backend\tests\Feature\Orders\OrderManufacturingIntegrationTest.php:348
+
+27) Tests\Feature\Orders\OrderManufacturingIntegrationTest::test_failed_manufacturing_marks_line_as_failed
+Failed asserting that two values of enumeration Modules\Commerce\Orders\Domain\Enums\OrderLineManufacturingState are equal, Skipped does not match expected Failed.
+
+C:\ecos-develop\backend\tests\Feature\Orders\OrderManufacturingIntegrationTest.php:404
+
+28) Tests\Feature\Orders\OrderManufacturingIntegrationTest::test_retry_after_failure_re_evaluates_failed_line
+Failed asserting that two values of enumeration Modules\Commerce\Orders\Domain\Enums\OrderLineManufacturingState are equal, Skipped does not match expected Failed.
+
+C:\ecos-develop\backend\tests\Feature\Orders\OrderManufacturingIntegrationTest.php:449
+
+29) Tests\Feature\Orders\OrderManufacturingIntegrationTest::test_retry_does_not_re_execute_executed_lines
+Failed asserting that two values of enumeration Modules\Commerce\Orders\Domain\Enums\OrderLineManufacturingState are equal, Skipped does not match expected Executed.
+
+C:\ecos-develop\backend\tests\Feature\Orders\OrderManufacturingIntegrationTest.php:491
+
+30) Tests\Feature\Orders\OrderManufacturingIntegrationTest::test_manufacturing_result_is_stored_on_line
+Failed asserting that two strings are equal.
+--- Expected
++++ Actual
+@@ @@
+-'manufacturing_triggered'
++'status_ignored'
+
+C:\ecos-develop\backend\tests\Feature\Orders\OrderManufacturingIntegrationTest.php:519
+
+31) Tests\Feature\Orders\OrderManufacturingIntegrationTest::test_rc10_order_line_id_is_populated_on_manufacturing_transaction
+Failed asserting that a row in the table [manufacturing_transactions] matches the attributes {
+    "order_line_id": "019fd3da-0668-71a1-b92a-007eabf93aff"
+}.
+
+The table is empty.
+
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\InteractsWithDatabase.php:43
+C:\ecos-develop\backend\tests\Feature\Orders\OrderManufacturingIntegrationTest.php:551
+
+32) Tests\Feature\Organization\BrandCrudTest::test_index_search_filters_by_name_and_code
+Expected response status code [200] but received 500.
+Failed asserting that 500 is identical to 200.
+
+The following exception occurred during the last request:
+
+PDOException: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'ilike ? or `name` ilike ? or `slug` ilike ? or `description` ilike ?) and `brand' at line 1 in C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php:420
+Stack trace:
+#0 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php(420): PDO->prepare('select count(*)...')
+#1 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php(827): Illuminate\Database\Connection->{closure:Illuminate\Database\Connection::select():411}('select count(*)...', Array)
+#2 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php(794): Illuminate\Database\Connection->runQueryCallback('select count(*)...', Array, Object(Closure))
+#3 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php(411): Illuminate\Database\Connection->run('select count(*)...', Array, Object(Closure))
+#4 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3505): Illuminate\Database\Connection->select('select count(*)...', Array, true)
+#5 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3490): Illuminate\Database\Query\Builder->runSelect()
+#6 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(4080): Illuminate\Database\Query\Builder->{closure:Illuminate\Database\Query\Builder::get():3489}()
+#7 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3489): Illuminate\Database\Query\Builder->onceWithColumns(Array, Object(Closure))
+#8 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3684): Illuminate\Database\Query\Builder->get()
+#9 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3643): Illuminate\Database\Query\Builder->runPaginationCountQuery(Array)
+#10 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php(1120): Illuminate\Database\Query\Builder->getCountForPagination()
+#11 C:\ecos-develop\backend\Modules\Organization\Brands\Infrastructure\Repositories\EloquentBrandRepository.php(54): Illuminate\Database\Eloquent\Builder->paginate(10)
+#12 C:\ecos-develop\backend\Modules\Organization\Brands\Application\Actions\ListBrandsAction.php(20): Modules\Organization\Brands\Infrastructure\Repositories\EloquentBrandRepository->paginate(Array)
+#13 C:\ecos-develop\backend\Modules\Organization\Brands\Presentation\Http\Controllers\BrandController.php(37): Modules\Organization\Brands\Application\Actions\ListBrandsAction->execute(Array)
+#14 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\ControllerDispatcher.php(46): Modules\Organization\Brands\Presentation\Http\Controllers\BrandController->index(Object(Illuminate\Http\Request), Object(Modules\Organization\Brands\Application\Actions\ListBrandsAction))
+#15 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Route.php(265): Illuminate\Routing\ControllerDispatcher->dispatch(Object(Illuminate\Routing\Route), Object(Modules\Organization\Brands\Presentation\Http\Controllers\BrandController), 'index')
+#16 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Route.php(211): Illuminate\Routing\Route->runController()
+#17 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Router.php(822): Illuminate\Routing\Route->run()
+#18 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(180): Illuminate\Routing\Router->{closure:Illuminate\Routing\Router::runRouteWithinStack():821}(Object(Illuminate\Http\Request))
+#19 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Middleware\SubstituteBindings.php(50): Illuminate\Pipeline\Pipeline->{closure:Illuminate\Pipeline\Pipeline::prepareDestination():178}(Object(Illuminate\Http\Request))
+#20 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Routing\Middleware\SubstituteBindings->handle(Object(Illuminate\Http\Request), Object(Closure))
+#21 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Middleware\ThrottleRequests.php(166): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#22 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Middleware\ThrottleRequests.php(93): Illuminate\Routing\Middleware\ThrottleRequests->handleRequest(Object(Illuminate\Http\Request), Object(Closure), Array)
+#23 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Routing\Middleware\ThrottleRequests->handle(Object(Illuminate\Http\Request), Object(Closure), '120', '1')
+#24 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Auth\Middleware\Authenticate.php(63): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#25 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Auth\Middleware\Authenticate->handle(Object(Illuminate\Http\Request), Object(Closure), 'sanctum')
+#26 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(137): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#27 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Router.php(821): Illuminate\Pipeline\Pipeline->then(Object(Closure))
+#28 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Router.php(800): Illuminate\Routing\Router->runRouteWithinStack(Object(Illuminate\Routing\Route), Object(Illuminate\Http\Request))
+#29 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Router.php(764): Illuminate\Routing\Router->runRoute(Object(Illuminate\Http\Request), Object(Illuminate\Routing\Route))
+#30 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Router.php(753): Illuminate\Routing\Router->dispatchToRoute(Object(Illuminate\Http\Request))
+#31 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php(200): Illuminate\Routing\Router->dispatch(Object(Illuminate\Http\Request))
+#32 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(180): Illuminate\Foundation\Http\Kernel->{closure:Illuminate\Foundation\Http\Kernel::dispatchToRouter():197}(Object(Illuminate\Http\Request))
+#33 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\TransformsRequest.php(21): Illuminate\Pipeline\Pipeline->{closure:Illuminate\Pipeline\Pipeline::prepareDestination():178}(Object(Illuminate\Http\Request))
+#34 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull.php(31): Illuminate\Foundation\Http\Middleware\TransformsRequest->handle(Object(Illuminate\Http\Request), Object(Closure))
+#35 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull->handle(Object(Illuminate\Http\Request), Object(Closure))
+#36 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\TransformsRequest.php(21): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#37 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\TrimStrings.php(51): Illuminate\Foundation\Http\Middleware\TransformsRequest->handle(Object(Illuminate\Http\Request), Object(Closure))
+#38 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Foundation\Http\Middleware\TrimStrings->handle(Object(Illuminate\Http\Request), Object(Closure))
+#39 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Http\Middleware\ValidatePostSize.php(27): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#40 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Http\Middleware\ValidatePostSize->handle(Object(Illuminate\Http\Request), Object(Closure))
+#41 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance.php(109): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#42 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance->handle(Object(Illuminate\Http\Request), Object(Closure))
+#43 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Http\Middleware\HandleCors.php(74): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#44 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Http\Middleware\HandleCors->handle(Object(Illuminate\Http\Request), Object(Closure))
+#45 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Http\Middleware\TrustProxies.php(58): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#46 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Http\Middleware\TrustProxies->handle(Object(Illuminate\Http\Request), Object(Closure))
+#47 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks.php(22): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#48 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks->handle(Object(Illuminate\Http\Request), Object(Closure))
+#49 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Http\Middleware\ValidatePathEncoding.php(26): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#50 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Http\Middleware\ValidatePathEncoding->handle(Object(Illuminate\Http\Request), Object(Closure))
+#51 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(137): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#52 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php(175): Illuminate\Pipeline\Pipeline->then(Object(Closure))
+#53 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php(144): Illuminate\Foundation\Http\Kernel->sendRequestThroughRouter(Object(Illuminate\Http\Request))
+#54 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\MakesHttpRequests.php(607): Illuminate\Foundation\Http\Kernel->handle(Object(Illuminate\Http\Request))
+#55 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\MakesHttpRequests.php(573): Illuminate\Foundation\Testing\TestCase->call('GET', '/api/brands?sea...', Array, Array, Array, Array, '[]')
+#56 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\MakesHttpRequests.php(381): Illuminate\Foundation\Testing\TestCase->json('GET', '/api/brands?sea...', Array, Array, 0)
+#57 C:\ecos-develop\backend\tests\Feature\Organization\BrandCrudTest.php(85): Illuminate\Foundation\Testing\TestCase->getJson('/api/brands?sea...')
+#58 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestCase.php(1667): Tests\Feature\Organization\BrandCrudTest->test_index_search_filters_by_name_and_code()
+#59 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestCase.php(519): PHPUnit\Framework\TestCase->runTest()
+#60 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestRunner\TestRunner.php(87): PHPUnit\Framework\TestCase->runBare()
+#61 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestCase.php(365): PHPUnit\Framework\TestRunner->run(Object(Tests\Feature\Organization\BrandCrudTest))
+#62 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestSuite.php(369): PHPUnit\Framework\TestCase->run()
+#63 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestSuite.php(369): PHPUnit\Framework\TestSuite->run()
+#64 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestSuite.php(369): PHPUnit\Framework\TestSuite->run()
+#65 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\TextUI\TestRunner.php(64): PHPUnit\Framework\TestSuite->run()
+#66 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\TextUI\Application.php(211): PHPUnit\TextUI\TestRunner->run(Object(PHPUnit\TextUI\Configuration\Configuration), Object(PHPUnit\Runner\ResultCache\DefaultResultCache), Object(PHPUnit\Framework\TestSuite))
+#67 C:\ecos-develop\backend\vendor\phpunit\phpunit\phpunit(104): PHPUnit\TextUI\Application->run(Array)
+#68 C:\ecos-develop\backend\vendor\bin\phpunit(122): include('C:\\ecos-develop...')
+#69 {main}
+
+Next Illuminate\Database\QueryException: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'ilike ? or `name` ilike ? or `slug` ilike ? or `description` ilike ?) and `brand' at line 1 (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: ecos_erp_test, SQL: select count(*) as aggregate from `brands` where (`code` ilike %MatchMe% or `name` ilike %MatchMe% or `slug` ilike %MatchMe% or `description` ilike %MatchMe%) and `brands`.`deleted_at` is null) in C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php:838
+Stack trace:
+#0 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php(794): Illuminate\Database\Connection->runQueryCallback('select count(*)...', Array, Object(Closure))
+#1 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php(411): Illuminate\Database\Connection->run('select count(*)...', Array, Object(Closure))
+#2 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3505): Illuminate\Database\Connection->select('select count(*)...', Array, true)
+#3 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3490): Illuminate\Database\Query\Builder->runSelect()
+#4 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(4080): Illuminate\Database\Query\Builder->{closure:Illuminate\Database\Query\Builder::get():3489}()
+#5 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3489): Illuminate\Database\Query\Builder->onceWithColumns(Array, Object(Closure))
+#6 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3684): Illuminate\Database\Query\Builder->get()
+#7 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3643): Illuminate\Database\Query\Builder->runPaginationCountQuery(Array)
+#8 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php(1120): Illuminate\Database\Query\Builder->getCountForPagination()
+#9 C:\ecos-develop\backend\Modules\Organization\Brands\Infrastructure\Repositories\EloquentBrandRepository.php(54): Illuminate\Database\Eloquent\Builder->paginate(10)
+#10 C:\ecos-develop\backend\Modules\Organization\Brands\Application\Actions\ListBrandsAction.php(20): Modules\Organization\Brands\Infrastructure\Repositories\EloquentBrandRepository->paginate(Array)
+#11 C:\ecos-develop\backend\Modules\Organization\Brands\Presentation\Http\Controllers\BrandController.php(37): Modules\Organization\Brands\Application\Actions\ListBrandsAction->execute(Array)
+#12 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\ControllerDispatcher.php(46): Modules\Organization\Brands\Presentation\Http\Controllers\BrandController->index(Object(Illuminate\Http\Request), Object(Modules\Organization\Brands\Application\Actions\ListBrandsAction))
+#13 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Route.php(265): Illuminate\Routing\ControllerDispatcher->dispatch(Object(Illuminate\Routing\Route), Object(Modules\Organization\Brands\Presentation\Http\Controllers\BrandController), 'index')
+#14 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Route.php(211): Illuminate\Routing\Route->runController()
+#15 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Router.php(822): Illuminate\Routing\Route->run()
+#16 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(180): Illuminate\Routing\Router->{closure:Illuminate\Routing\Router::runRouteWithinStack():821}(Object(Illuminate\Http\Request))
+#17 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Middleware\SubstituteBindings.php(50): Illuminate\Pipeline\Pipeline->{closure:Illuminate\Pipeline\Pipeline::prepareDestination():178}(Object(Illuminate\Http\Request))
+#18 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Routing\Middleware\SubstituteBindings->handle(Object(Illuminate\Http\Request), Object(Closure))
+#19 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Middleware\ThrottleRequests.php(166): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#20 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Middleware\ThrottleRequests.php(93): Illuminate\Routing\Middleware\ThrottleRequests->handleRequest(Object(Illuminate\Http\Request), Object(Closure), Array)
+#21 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Routing\Middleware\ThrottleRequests->handle(Object(Illuminate\Http\Request), Object(Closure), '120', '1')
+#22 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Auth\Middleware\Authenticate.php(63): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#23 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Auth\Middleware\Authenticate->handle(Object(Illuminate\Http\Request), Object(Closure), 'sanctum')
+#24 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(137): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#25 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Router.php(821): Illuminate\Pipeline\Pipeline->then(Object(Closure))
+#26 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Router.php(800): Illuminate\Routing\Router->runRouteWithinStack(Object(Illuminate\Routing\Route), Object(Illuminate\Http\Request))
+#27 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Router.php(764): Illuminate\Routing\Router->runRoute(Object(Illuminate\Http\Request), Object(Illuminate\Routing\Route))
+#28 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Router.php(753): Illuminate\Routing\Router->dispatchToRoute(Object(Illuminate\Http\Request))
+#29 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php(200): Illuminate\Routing\Router->dispatch(Object(Illuminate\Http\Request))
+#30 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(180): Illuminate\Foundation\Http\Kernel->{closure:Illuminate\Foundation\Http\Kernel::dispatchToRouter():197}(Object(Illuminate\Http\Request))
+#31 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\TransformsRequest.php(21): Illuminate\Pipeline\Pipeline->{closure:Illuminate\Pipeline\Pipeline::prepareDestination():178}(Object(Illuminate\Http\Request))
+#32 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull.php(31): Illuminate\Foundation\Http\Middleware\TransformsRequest->handle(Object(Illuminate\Http\Request), Object(Closure))
+#33 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull->handle(Object(Illuminate\Http\Request), Object(Closure))
+#34 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\TransformsRequest.php(21): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#35 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\TrimStrings.php(51): Illuminate\Foundation\Http\Middleware\TransformsRequest->handle(Object(Illuminate\Http\Request), Object(Closure))
+#36 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Foundation\Http\Middleware\TrimStrings->handle(Object(Illuminate\Http\Request), Object(Closure))
+#37 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Http\Middleware\ValidatePostSize.php(27): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#38 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Http\Middleware\ValidatePostSize->handle(Object(Illuminate\Http\Request), Object(Closure))
+#39 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance.php(109): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#40 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance->handle(Object(Illuminate\Http\Request), Object(Closure))
+#41 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Http\Middleware\HandleCors.php(74): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#42 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Http\Middleware\HandleCors->handle(Object(Illuminate\Http\Request), Object(Closure))
+#43 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Http\Middleware\TrustProxies.php(58): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#44 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Http\Middleware\TrustProxies->handle(Object(Illuminate\Http\Request), Object(Closure))
+#45 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks.php(22): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#46 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks->handle(Object(Illuminate\Http\Request), Object(Closure))
+#47 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Http\Middleware\ValidatePathEncoding.php(26): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#48 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Http\Middleware\ValidatePathEncoding->handle(Object(Illuminate\Http\Request), Object(Closure))
+#49 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(137): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#50 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php(175): Illuminate\Pipeline\Pipeline->then(Object(Closure))
+#51 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php(144): Illuminate\Foundation\Http\Kernel->sendRequestThroughRouter(Object(Illuminate\Http\Request))
+#52 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\MakesHttpRequests.php(607): Illuminate\Foundation\Http\Kernel->handle(Object(Illuminate\Http\Request))
+#53 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\MakesHttpRequests.php(573): Illuminate\Foundation\Testing\TestCase->call('GET', '/api/brands?sea...', Array, Array, Array, Array, '[]')
+#54 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\MakesHttpRequests.php(381): Illuminate\Foundation\Testing\TestCase->json('GET', '/api/brands?sea...', Array, Array, 0)
+#55 C:\ecos-develop\backend\tests\Feature\Organization\BrandCrudTest.php(85): Illuminate\Foundation\Testing\TestCase->getJson('/api/brands?sea...')
+#56 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestCase.php(1667): Tests\Feature\Organization\BrandCrudTest->test_index_search_filters_by_name_and_code()
+#57 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestCase.php(519): PHPUnit\Framework\TestCase->runTest()
+#58 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestRunner\TestRunner.php(87): PHPUnit\Framework\TestCase->runBare()
+#59 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestCase.php(365): PHPUnit\Framework\TestRunner->run(Object(Tests\Feature\Organization\BrandCrudTest))
+#60 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestSuite.php(369): PHPUnit\Framework\TestCase->run()
+#61 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestSuite.php(369): PHPUnit\Framework\TestSuite->run()
+#62 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestSuite.php(369): PHPUnit\Framework\TestSuite->run()
+#63 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\TextUI\TestRunner.php(64): PHPUnit\Framework\TestSuite->run()
+#64 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\TextUI\Application.php(211): PHPUnit\TextUI\TestRunner->run(Object(PHPUnit\TextUI\Configuration\Configuration), Object(PHPUnit\Runner\ResultCache\DefaultResultCache), Object(PHPUnit\Framework\TestSuite))
+#65 C:\ecos-develop\backend\vendor\phpunit\phpunit\phpunit(104): PHPUnit\TextUI\Application->run(Array)
+#66 C:\ecos-develop\backend\vendor\bin\phpunit(122): include('C:\\ecos-develop...')
+#67 {main}
+
+----------------------------------------------------------------------------------
+
+SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'ilike ? or `name` ilike ? or `slug` ilike ? or `description` ilike ?) and `brand' at line 1 (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: ecos_erp_test, SQL: select count(*) as aggregate from `brands` where (`code` ilike %MatchMe% or `name` ilike %MatchMe% or `slug` ilike %MatchMe% or `description` ilike %MatchMe%) and `brands`.`deleted_at` is null)
+
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Testing\TestResponseAssert.php:45
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Testing\TestResponse.php:175
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Testing\Concerns\AssertsStatusCodes.php:16
+C:\ecos-develop\backend\tests\Feature\Organization\BrandCrudTest.php:86
+
+33) Tests\Feature\Organization\BusinessAccountCrudTest::test_index_searches_by_name
+Expected response status code [200] but received 500.
+Failed asserting that 500 is identical to 200.
+
+The following exception occurred during the last request:
+
+PDOException: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'ilike ? or `name` ilike ?) and `business_accounts`.`deleted_at` is null' at line 1 in C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php:420
+Stack trace:
+#0 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php(420): PDO->prepare('select count(*)...')
+#1 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php(827): Illuminate\Database\Connection->{closure:Illuminate\Database\Connection::select():411}('select count(*)...', Array)
+#2 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php(794): Illuminate\Database\Connection->runQueryCallback('select count(*)...', Array, Object(Closure))
+#3 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php(411): Illuminate\Database\Connection->run('select count(*)...', Array, Object(Closure))
+#4 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3505): Illuminate\Database\Connection->select('select count(*)...', Array, true)
+#5 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3490): Illuminate\Database\Query\Builder->runSelect()
+#6 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(4080): Illuminate\Database\Query\Builder->{closure:Illuminate\Database\Query\Builder::get():3489}()
+#7 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3489): Illuminate\Database\Query\Builder->onceWithColumns(Array, Object(Closure))
+#8 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3684): Illuminate\Database\Query\Builder->get()
+#9 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3643): Illuminate\Database\Query\Builder->runPaginationCountQuery(Array)
+#10 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php(1120): Illuminate\Database\Query\Builder->getCountForPagination()
+#11 C:\ecos-develop\backend\Modules\Organization\BusinessAccounts\Infrastructure\Repositories\EloquentBusinessAccountRepository.php(56): Illuminate\Database\Eloquent\Builder->paginate(10)
+#12 C:\ecos-develop\backend\Modules\Organization\BusinessAccounts\Application\Actions\ListBusinessAccountsAction.php(20): Modules\Organization\BusinessAccounts\Infrastructure\Repositories\EloquentBusinessAccountRepository->paginate(Array)
+#13 C:\ecos-develop\backend\Modules\Organization\BusinessAccounts\Presentation\Http\Controllers\BusinessAccountController.php(28): Modules\Organization\BusinessAccounts\Application\Actions\ListBusinessAccountsAction->execute(Array)
+#14 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\ControllerDispatcher.php(46): Modules\Organization\BusinessAccounts\Presentation\Http\Controllers\BusinessAccountController->index(Object(Illuminate\Http\Request), Object(Modules\Organization\BusinessAccounts\Application\Actions\ListBusinessAccountsAction))
+#15 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Route.php(265): Illuminate\Routing\ControllerDispatcher->dispatch(Object(Illuminate\Routing\Route), Object(Modules\Organization\BusinessAccounts\Presentation\Http\Controllers\BusinessAccountController), 'index')
+#16 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Route.php(211): Illuminate\Routing\Route->runController()
+#17 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Router.php(822): Illuminate\Routing\Route->run()
+#18 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(180): Illuminate\Routing\Router->{closure:Illuminate\Routing\Router::runRouteWithinStack():821}(Object(Illuminate\Http\Request))
+#19 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Middleware\SubstituteBindings.php(50): Illuminate\Pipeline\Pipeline->{closure:Illuminate\Pipeline\Pipeline::prepareDestination():178}(Object(Illuminate\Http\Request))
+#20 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Routing\Middleware\SubstituteBindings->handle(Object(Illuminate\Http\Request), Object(Closure))
+#21 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Middleware\ThrottleRequests.php(166): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#22 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Middleware\ThrottleRequests.php(93): Illuminate\Routing\Middleware\ThrottleRequests->handleRequest(Object(Illuminate\Http\Request), Object(Closure), Array)
+#23 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Routing\Middleware\ThrottleRequests->handle(Object(Illuminate\Http\Request), Object(Closure), '120', '1')
+#24 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Auth\Middleware\Authenticate.php(63): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#25 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Auth\Middleware\Authenticate->handle(Object(Illuminate\Http\Request), Object(Closure), 'sanctum')
+#26 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(137): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#27 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Router.php(821): Illuminate\Pipeline\Pipeline->then(Object(Closure))
+#28 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Router.php(800): Illuminate\Routing\Router->runRouteWithinStack(Object(Illuminate\Routing\Route), Object(Illuminate\Http\Request))
+#29 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Router.php(764): Illuminate\Routing\Router->runRoute(Object(Illuminate\Http\Request), Object(Illuminate\Routing\Route))
+#30 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Router.php(753): Illuminate\Routing\Router->dispatchToRoute(Object(Illuminate\Http\Request))
+#31 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php(200): Illuminate\Routing\Router->dispatch(Object(Illuminate\Http\Request))
+#32 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(180): Illuminate\Foundation\Http\Kernel->{closure:Illuminate\Foundation\Http\Kernel::dispatchToRouter():197}(Object(Illuminate\Http\Request))
+#33 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\TransformsRequest.php(21): Illuminate\Pipeline\Pipeline->{closure:Illuminate\Pipeline\Pipeline::prepareDestination():178}(Object(Illuminate\Http\Request))
+#34 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull.php(31): Illuminate\Foundation\Http\Middleware\TransformsRequest->handle(Object(Illuminate\Http\Request), Object(Closure))
+#35 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull->handle(Object(Illuminate\Http\Request), Object(Closure))
+#36 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\TransformsRequest.php(21): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#37 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\TrimStrings.php(51): Illuminate\Foundation\Http\Middleware\TransformsRequest->handle(Object(Illuminate\Http\Request), Object(Closure))
+#38 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Foundation\Http\Middleware\TrimStrings->handle(Object(Illuminate\Http\Request), Object(Closure))
+#39 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Http\Middleware\ValidatePostSize.php(27): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#40 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Http\Middleware\ValidatePostSize->handle(Object(Illuminate\Http\Request), Object(Closure))
+#41 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance.php(109): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#42 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance->handle(Object(Illuminate\Http\Request), Object(Closure))
+#43 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Http\Middleware\HandleCors.php(74): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#44 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Http\Middleware\HandleCors->handle(Object(Illuminate\Http\Request), Object(Closure))
+#45 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Http\Middleware\TrustProxies.php(58): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#46 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Http\Middleware\TrustProxies->handle(Object(Illuminate\Http\Request), Object(Closure))
+#47 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks.php(22): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#48 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks->handle(Object(Illuminate\Http\Request), Object(Closure))
+#49 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Http\Middleware\ValidatePathEncoding.php(26): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#50 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Http\Middleware\ValidatePathEncoding->handle(Object(Illuminate\Http\Request), Object(Closure))
+#51 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(137): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#52 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php(175): Illuminate\Pipeline\Pipeline->then(Object(Closure))
+#53 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php(144): Illuminate\Foundation\Http\Kernel->sendRequestThroughRouter(Object(Illuminate\Http\Request))
+#54 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\MakesHttpRequests.php(607): Illuminate\Foundation\Http\Kernel->handle(Object(Illuminate\Http\Request))
+#55 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\MakesHttpRequests.php(573): Illuminate\Foundation\Testing\TestCase->call('GET', '/api/business-a...', Array, Array, Array, Array, '[]')
+#56 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\MakesHttpRequests.php(381): Illuminate\Foundation\Testing\TestCase->json('GET', '/api/business-a...', Array, Array, 0)
+#57 C:\ecos-develop\backend\tests\Feature\Organization\BusinessAccountCrudTest.php(115): Illuminate\Foundation\Testing\TestCase->getJson('/api/business-a...')
+#58 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestCase.php(1667): Tests\Feature\Organization\BusinessAccountCrudTest->test_index_searches_by_name()
+#59 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestCase.php(519): PHPUnit\Framework\TestCase->runTest()
+#60 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestRunner\TestRunner.php(87): PHPUnit\Framework\TestCase->runBare()
+#61 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestCase.php(365): PHPUnit\Framework\TestRunner->run(Object(Tests\Feature\Organization\BusinessAccountCrudTest))
+#62 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestSuite.php(369): PHPUnit\Framework\TestCase->run()
+#63 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestSuite.php(369): PHPUnit\Framework\TestSuite->run()
+#64 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestSuite.php(369): PHPUnit\Framework\TestSuite->run()
+#65 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\TextUI\TestRunner.php(64): PHPUnit\Framework\TestSuite->run()
+#66 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\TextUI\Application.php(211): PHPUnit\TextUI\TestRunner->run(Object(PHPUnit\TextUI\Configuration\Configuration), Object(PHPUnit\Runner\ResultCache\DefaultResultCache), Object(PHPUnit\Framework\TestSuite))
+#67 C:\ecos-develop\backend\vendor\phpunit\phpunit\phpunit(104): PHPUnit\TextUI\Application->run(Array)
+#68 C:\ecos-develop\backend\vendor\bin\phpunit(122): include('C:\\ecos-develop...')
+#69 {main}
+
+Next Illuminate\Database\QueryException: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'ilike ? or `name` ilike ?) and `business_accounts`.`deleted_at` is null' at line 1 (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: ecos_erp_test, SQL: select count(*) as aggregate from `business_accounts` where (`code` ilike %FindMe% or `name` ilike %FindMe%) and `business_accounts`.`deleted_at` is null) in C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php:838
+Stack trace:
+#0 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php(794): Illuminate\Database\Connection->runQueryCallback('select count(*)...', Array, Object(Closure))
+#1 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Connection.php(411): Illuminate\Database\Connection->run('select count(*)...', Array, Object(Closure))
+#2 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3505): Illuminate\Database\Connection->select('select count(*)...', Array, true)
+#3 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3490): Illuminate\Database\Query\Builder->runSelect()
+#4 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(4080): Illuminate\Database\Query\Builder->{closure:Illuminate\Database\Query\Builder::get():3489}()
+#5 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3489): Illuminate\Database\Query\Builder->onceWithColumns(Array, Object(Closure))
+#6 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3684): Illuminate\Database\Query\Builder->get()
+#7 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Query\Builder.php(3643): Illuminate\Database\Query\Builder->runPaginationCountQuery(Array)
+#8 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Database\Eloquent\Builder.php(1120): Illuminate\Database\Query\Builder->getCountForPagination()
+#9 C:\ecos-develop\backend\Modules\Organization\BusinessAccounts\Infrastructure\Repositories\EloquentBusinessAccountRepository.php(56): Illuminate\Database\Eloquent\Builder->paginate(10)
+#10 C:\ecos-develop\backend\Modules\Organization\BusinessAccounts\Application\Actions\ListBusinessAccountsAction.php(20): Modules\Organization\BusinessAccounts\Infrastructure\Repositories\EloquentBusinessAccountRepository->paginate(Array)
+#11 C:\ecos-develop\backend\Modules\Organization\BusinessAccounts\Presentation\Http\Controllers\BusinessAccountController.php(28): Modules\Organization\BusinessAccounts\Application\Actions\ListBusinessAccountsAction->execute(Array)
+#12 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\ControllerDispatcher.php(46): Modules\Organization\BusinessAccounts\Presentation\Http\Controllers\BusinessAccountController->index(Object(Illuminate\Http\Request), Object(Modules\Organization\BusinessAccounts\Application\Actions\ListBusinessAccountsAction))
+#13 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Route.php(265): Illuminate\Routing\ControllerDispatcher->dispatch(Object(Illuminate\Routing\Route), Object(Modules\Organization\BusinessAccounts\Presentation\Http\Controllers\BusinessAccountController), 'index')
+#14 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Route.php(211): Illuminate\Routing\Route->runController()
+#15 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Router.php(822): Illuminate\Routing\Route->run()
+#16 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(180): Illuminate\Routing\Router->{closure:Illuminate\Routing\Router::runRouteWithinStack():821}(Object(Illuminate\Http\Request))
+#17 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Middleware\SubstituteBindings.php(50): Illuminate\Pipeline\Pipeline->{closure:Illuminate\Pipeline\Pipeline::prepareDestination():178}(Object(Illuminate\Http\Request))
+#18 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Routing\Middleware\SubstituteBindings->handle(Object(Illuminate\Http\Request), Object(Closure))
+#19 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Middleware\ThrottleRequests.php(166): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#20 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Middleware\ThrottleRequests.php(93): Illuminate\Routing\Middleware\ThrottleRequests->handleRequest(Object(Illuminate\Http\Request), Object(Closure), Array)
+#21 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Routing\Middleware\ThrottleRequests->handle(Object(Illuminate\Http\Request), Object(Closure), '120', '1')
+#22 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Auth\Middleware\Authenticate.php(63): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#23 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Auth\Middleware\Authenticate->handle(Object(Illuminate\Http\Request), Object(Closure), 'sanctum')
+#24 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(137): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#25 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Router.php(821): Illuminate\Pipeline\Pipeline->then(Object(Closure))
+#26 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Router.php(800): Illuminate\Routing\Router->runRouteWithinStack(Object(Illuminate\Routing\Route), Object(Illuminate\Http\Request))
+#27 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Router.php(764): Illuminate\Routing\Router->runRoute(Object(Illuminate\Http\Request), Object(Illuminate\Routing\Route))
+#28 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Routing\Router.php(753): Illuminate\Routing\Router->dispatchToRoute(Object(Illuminate\Http\Request))
+#29 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php(200): Illuminate\Routing\Router->dispatch(Object(Illuminate\Http\Request))
+#30 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(180): Illuminate\Foundation\Http\Kernel->{closure:Illuminate\Foundation\Http\Kernel::dispatchToRouter():197}(Object(Illuminate\Http\Request))
+#31 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\TransformsRequest.php(21): Illuminate\Pipeline\Pipeline->{closure:Illuminate\Pipeline\Pipeline::prepareDestination():178}(Object(Illuminate\Http\Request))
+#32 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull.php(31): Illuminate\Foundation\Http\Middleware\TransformsRequest->handle(Object(Illuminate\Http\Request), Object(Closure))
+#33 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull->handle(Object(Illuminate\Http\Request), Object(Closure))
+#34 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\TransformsRequest.php(21): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#35 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\TrimStrings.php(51): Illuminate\Foundation\Http\Middleware\TransformsRequest->handle(Object(Illuminate\Http\Request), Object(Closure))
+#36 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Foundation\Http\Middleware\TrimStrings->handle(Object(Illuminate\Http\Request), Object(Closure))
+#37 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Http\Middleware\ValidatePostSize.php(27): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#38 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Http\Middleware\ValidatePostSize->handle(Object(Illuminate\Http\Request), Object(Closure))
+#39 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance.php(109): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#40 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Foundation\Http\Middleware\PreventRequestsDuringMaintenance->handle(Object(Illuminate\Http\Request), Object(Closure))
+#41 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Http\Middleware\HandleCors.php(74): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#42 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Http\Middleware\HandleCors->handle(Object(Illuminate\Http\Request), Object(Closure))
+#43 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Http\Middleware\TrustProxies.php(58): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#44 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Http\Middleware\TrustProxies->handle(Object(Illuminate\Http\Request), Object(Closure))
+#45 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks.php(22): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#46 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Foundation\Http\Middleware\InvokeDeferredCallbacks->handle(Object(Illuminate\Http\Request), Object(Closure))
+#47 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Http\Middleware\ValidatePathEncoding.php(26): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#48 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(219): Illuminate\Http\Middleware\ValidatePathEncoding->handle(Object(Illuminate\Http\Request), Object(Closure))
+#49 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Pipeline\Pipeline.php(137): Illuminate\Pipeline\Pipeline->{closure:{closure:Illuminate\Pipeline\Pipeline::carry():194}:195}(Object(Illuminate\Http\Request))
+#50 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php(175): Illuminate\Pipeline\Pipeline->then(Object(Closure))
+#51 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Http\Kernel.php(144): Illuminate\Foundation\Http\Kernel->sendRequestThroughRouter(Object(Illuminate\Http\Request))
+#52 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\MakesHttpRequests.php(607): Illuminate\Foundation\Http\Kernel->handle(Object(Illuminate\Http\Request))
+#53 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\MakesHttpRequests.php(573): Illuminate\Foundation\Testing\TestCase->call('GET', '/api/business-a...', Array, Array, Array, Array, '[]')
+#54 C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\MakesHttpRequests.php(381): Illuminate\Foundation\Testing\TestCase->json('GET', '/api/business-a...', Array, Array, 0)
+#55 C:\ecos-develop\backend\tests\Feature\Organization\BusinessAccountCrudTest.php(115): Illuminate\Foundation\Testing\TestCase->getJson('/api/business-a...')
+#56 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestCase.php(1667): Tests\Feature\Organization\BusinessAccountCrudTest->test_index_searches_by_name()
+#57 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestCase.php(519): PHPUnit\Framework\TestCase->runTest()
+#58 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestRunner\TestRunner.php(87): PHPUnit\Framework\TestCase->runBare()
+#59 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestCase.php(365): PHPUnit\Framework\TestRunner->run(Object(Tests\Feature\Organization\BusinessAccountCrudTest))
+#60 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestSuite.php(369): PHPUnit\Framework\TestCase->run()
+#61 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestSuite.php(369): PHPUnit\Framework\TestSuite->run()
+#62 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\Framework\TestSuite.php(369): PHPUnit\Framework\TestSuite->run()
+#63 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\TextUI\TestRunner.php(64): PHPUnit\Framework\TestSuite->run()
+#64 C:\ecos-develop\backend\vendor\phpunit\phpunit\src\TextUI\Application.php(211): PHPUnit\TextUI\TestRunner->run(Object(PHPUnit\TextUI\Configuration\Configuration), Object(PHPUnit\Runner\ResultCache\DefaultResultCache), Object(PHPUnit\Framework\TestSuite))
+#65 C:\ecos-develop\backend\vendor\phpunit\phpunit\phpunit(104): PHPUnit\TextUI\Application->run(Array)
+#66 C:\ecos-develop\backend\vendor\bin\phpunit(122): include('C:\\ecos-develop...')
+#67 {main}
+
+----------------------------------------------------------------------------------
+
+SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near 'ilike ? or `name` ilike ?) and `business_accounts`.`deleted_at` is null' at line 1 (Connection: mysql, Host: 127.0.0.1, Port: 3306, Database: ecos_erp_test, SQL: select count(*) as aggregate from `business_accounts` where (`code` ilike %FindMe% or `name` ilike %FindMe%) and `business_accounts`.`deleted_at` is null)
+
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Testing\TestResponseAssert.php:45
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Testing\TestResponse.php:175
+C:\ecos-develop\backend\vendor\laravel\framework\src\Illuminate\Testing\Concerns\AssertsStatusCodes.php:16
+C:\ecos-develop\backend\tests\Feature\Organization\BusinessAccountCrudTest.php:116
+
+34) Tests\Feature\Security\WriteRouteAuthorizationTest::test_every_write_route_is_authorized
+5 write route(s) have no authorization.
+
+Every POST/PUT/PATCH/DELETE must be gated by a permission, a policy, an
+ownership check, or a FormRequest that authorizes. If a route is genuinely
+public or machine-authenticated, add it to ALLOWED with a reason.
+
+DELETE api/me/preferences
+DELETE api/me/preferences/{category}
+POST api/auth/logout
+POST api/media/upload
+PUT api/me/preferences/{category}
+Failed asserting that two arrays are identical.
+--- Expected
++++ Actual
+@@ @@
+-Array &0 []
++Array &0 [
++    0 => 'DELETE api/me/preferences',
++    1 => 'DELETE api/me/preferences/{category}',
++    2 => 'POST api/auth/logout',
++    3 => 'POST api/media/upload',
++    4 => 'PUT api/me/preferences/{category}',
++]
+
+C:\ecos-develop\backend\tests\Feature\Security\WriteRouteAuthorizationTest.php:102
+
+[37;41mERRORS![0m
+[37;41mTests: 3664[0m[37;41m, Assertions: 21243[0m[37;41m, Errors: 6[0m[37;41m, Failures: 34[0m[37;41m, PHPUnit Deprecations: 32[0m[37;41m.[0m

@@ -12,7 +12,6 @@ use Modules\Inventory\DomainEvents\Events\InventoryStockReceived;
 use Modules\Inventory\DomainEvents\Events\InventoryStockReleased;
 use Modules\Inventory\DomainEvents\Events\InventoryStockReserved;
 use Modules\Inventory\DomainEvents\Events\InventoryStockShipped;
-use Modules\Inventory\DomainEvents\Events\InventoryTransferred;
 use Modules\Operations\DemandAnalysis\Application\Listeners\DemandRefreshRequestedListener;
 use Modules\Operations\DemandAnalysis\Application\Listeners\GoodsReceiptCompletedListener;
 use Modules\Operations\DemandAnalysis\Application\Listeners\InventoryReturnedListener;
@@ -151,11 +150,15 @@ final class EventPlatformServiceProvider extends ServiceProvider
         Event::listen(InventoryStockAdjusted::class, fn (InventoryStockAdjusted $e) => $bus->publish($e));
         Event::listen(InventoryCountApproved::class, fn (InventoryCountApproved $e) => $bus->publish($e));
 
-        // Stock transfers were the one inventory movement never bridged here, so
-        // inventory.warehouse_transfer had a posting rule, an account role and a
-        // complete payload — and no way to reach any of them. The event was
-        // published all along; only this line was missing.
-        Event::listen(InventoryTransferred::class, fn (InventoryTransferred $e) => $bus->publish($e));
+        // InventoryTransferred is deliberately NOT bridged here. ADR-026 defers
+        // any transfer consumer to Phase B: a synchronous listener would couple
+        // warehouse-transfer latency to this bus, breaking the performance
+        // contract of TransferStockAction. EPIC-FIN-INTEGRATION-004 added one
+        // and OperationsIntegrationFinalCertTest caught it.
+        //
+        // The Finance side is ready — inventory.warehouse_transfer has a rule, a
+        // mapped role, a complete payload and a catalog entry. Registering the
+        // listener is a Phase B work item, not a Finance one.
 
         // ManufacturingJobCompletedEvent does not implement DomainEvent — keep legacy listener for now.
         // TODO: Convert ManufacturingJobCompletedEvent to a proper EnterpriseEvent when Manufacturing OS is migrated.
