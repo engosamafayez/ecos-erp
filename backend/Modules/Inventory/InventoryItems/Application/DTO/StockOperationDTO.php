@@ -23,6 +23,19 @@ final class StockOperationDTO extends BaseDTO
         // on_hand_qty below reserved_qty when confirmed shortage leaves no alternative.
         // Must never be set to true by general adjustment or shipment paths.
         public readonly bool $bypassReserveGuard = false,
+        /**
+         * Landed unit cost of the stock being moved, when the caller knows it.
+         *
+         * Goods-receipt posting computes the landed cost per line and passes it
+         * through, so the resulting financial event carries the price actually
+         * paid rather than a running average. Movements whose caller has no
+         * cost leave this null and the action resolves it from Inventory's own
+         * cost intelligence — it is never guessed, and never defaulted to zero
+         * to make a posting succeed.
+         *
+         * Placed last so every existing positional caller is unaffected.
+         */
+        public readonly ?float $unit_cost = null,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -40,6 +53,8 @@ final class StockOperationDTO extends BaseDTO
             notes: isset($data['notes']) && $data['notes'] !== ''
                                     ? (string) $data['notes'] : null,
             bypassReserveGuard: (bool) ($data['bypass_reserve_guard'] ?? false),
+            unit_cost: isset($data['unit_cost']) && is_numeric($data['unit_cost'])
+                                    ? (float) $data['unit_cost'] : null,
         );
     }
 }

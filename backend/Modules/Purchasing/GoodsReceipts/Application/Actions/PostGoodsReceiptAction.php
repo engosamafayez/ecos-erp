@@ -138,6 +138,10 @@ final class PostGoodsReceiptAction extends BaseAction
                         'reference_type' => 'goods_receipt',
                         'reference_id' => $receipt->id,
                         'notes' => "GR {$receipt->receipt_number}",
+                        // Hand the landed cost down so the resulting financial
+                        // event is valued at the price actually paid, not at a
+                        // running average of older stock.
+                        'unit_cost' => $landedUnitCost,
                     ]),
                 );
 

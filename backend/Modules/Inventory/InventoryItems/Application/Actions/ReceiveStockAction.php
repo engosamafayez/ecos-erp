@@ -14,6 +14,8 @@ use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
 use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInterface;
 use Modules\Inventory\InventoryItems\Domain\Enums\LedgerMovementType;
 use Modules\Inventory\InventoryItems\Domain\Exceptions\InvalidInventoryMovementException;
+use Modules\Inventory\Products\Domain\Enums\InventoryClass;
+use Modules\Inventory\Products\Domain\Models\Product;
 
 /**
  * Records stock arriving at a warehouse (e.g. from a supplier goods receipt).
@@ -95,6 +97,17 @@ final class ReceiveStockAction extends BaseAction
         // callback is held in the TransactionsManager until the outer transaction
         // commits — rollback of the outer transaction silently discards the callback,
         // guaranteeing zero events on rollback and exactly one event on success.
+        // ── Financial payload (EPIC-FIN-INTEGRATION-003) ────────────────────
+        // Resolved from Inventory's own Product aggregate so the event reaches
+        // Finance already carrying what posting needs. Products live inside this
+        // module, so this crosses no bounded context — and it is precisely what
+        // lets Finance never call back into Inventory.
+        //
+        // An unclassifiable product throws rather than posting to a guessed
+        // account. The stock movement itself has already committed above; what
+        // is refused is the claim to know how to account for it.
+        $product = Product::query()->find($dto->product_id);
+
         $event = new InventoryStockReceived(
             inventoryItemId: $result->id,
             warehouseId: $dto->warehouse_id,
@@ -103,6 +116,11 @@ final class ReceiveStockAction extends BaseAction
             quantityReceived: $dto->quantity,
             onHandBefore: $onHandBefore ?? 0.0,
             onHandAfter: (float) $result->on_hand_qty,
+            inventoryClass: InventoryClass::fromProductType($product?->product_type, $dto->product_id),
+            // Prefer the price actually paid, which goods-receipt posting passes
+            // through. A running average would value arriving stock at what
+            // older stock cost, which is a different number and the wrong one.
+            unitCost: $dto->unit_cost ?? (float) ($product?->current_fifo_cost ?? 0.0),
             referenceType: $dto->reference_type,
             referenceId: $dto->reference_id,
         );

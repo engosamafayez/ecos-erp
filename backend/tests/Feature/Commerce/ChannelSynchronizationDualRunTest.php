@@ -16,6 +16,7 @@ use Modules\Commerce\Synchronization\Application\Services\ChannelSynchronization
 use Modules\Inventory\DomainEvents\Events\InventoryCountApproved;
 use Modules\Inventory\DomainEvents\Events\InventoryStockAdjusted;
 use Modules\Inventory\DomainEvents\Events\InventoryStockReceived;
+use Modules\Inventory\Products\Domain\Enums\InventoryClass;
 use Modules\Inventory\DomainEvents\Events\InventoryStockReleased;
 use Modules\Inventory\DomainEvents\Events\InventoryStockReserved;
 use Modules\Inventory\DomainEvents\Events\InventoryStockShipped;
@@ -108,6 +109,8 @@ class ChannelSynchronizationDualRunTest extends TestCase
             quantityReceived: 10.0,
             onHandBefore: 0.0,
             onHandAfter: 10.0,
+            inventoryClass: InventoryClass::FinishedGood,
+            unitCost: 1.0,
         );
     }
 
@@ -260,7 +263,7 @@ class ChannelSynchronizationDualRunTest extends TestCase
         $i = 'item-uuid';
 
         $events = [
-            new InventoryStockReceived($i, $w, $p, $c, 10.0, 0.0, 10.0),
+            new InventoryStockReceived($i, $w, $p, $c, 10.0, 0.0, 10.0, InventoryClass::FinishedGood, 1.0),
             new InventoryStockReserved($i, $w, $p, $c, 5.0, 0.0, 5.0, 10.0),
             new InventoryStockReleased($i, $w, $p, $c, 5.0, 5.0, 0.0, 10.0),
             new InventoryStockShipped($i, $w, $p, $c, 5.0, 10.0, 5.0, 0.0, 0.0),
@@ -285,7 +288,7 @@ class ChannelSynchronizationDualRunTest extends TestCase
         $i = 'item-uuid';
 
         $events = [
-            new InventoryStockReceived($i, $w, $p, $c, 10.0, 0.0, 10.0),
+            new InventoryStockReceived($i, $w, $p, $c, 10.0, 0.0, 10.0, InventoryClass::FinishedGood, 1.0),
             new InventoryStockReserved($i, $w, $p, $c, 5.0, 0.0, 5.0, 10.0),
             new InventoryStockReleased($i, $w, $p, $c, 5.0, 5.0, 0.0, 10.0),
             new InventoryStockShipped($i, $w, $p, $c, 5.0, 10.0, 5.0, 0.0, 0.0),

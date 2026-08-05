@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
 use Modules\Inventory\DomainEvents\Contracts\DomainEvent;
+use Modules\Inventory\Products\Domain\Enums\InventoryClass;
 
 /**
  * Raised after stock physically arrives at a warehouse and is recorded in the ledger.
@@ -16,6 +17,14 @@ use Modules\Inventory\DomainEvents\Contracts\DomainEvent;
  * Trigger   : Goods receipt posting, manual stock receipt
  *
  * Payload contains only IDs (string UUIDs) and scalars — no Eloquent models.
+ *
+ * ┌─ FINANCIAL PAYLOAD (EPIC-FIN-INTEGRATION-003) ──────────────────────────┐
+ * │ Carries the accounting attributes Finance needs — inventory class and    │
+ * │ valuation — so posting never calls back into Inventory. They are         │
+ * │ constructor-required: an event that cannot say what class of stock moved │
+ * │ or what it was worth is unpostable, and that is better discovered here   │
+ * │ than in the dead-letter queue.                                           │
+ * └──────────────────────────────────────────────────────────────────────────┘
  */
 final class InventoryStockReceived implements DomainEvent
 {
@@ -31,8 +40,12 @@ final class InventoryStockReceived implements DomainEvent
         public readonly float $quantityReceived,
         public readonly float $onHandBefore,
         public readonly float $onHandAfter,
+        public readonly InventoryClass $inventoryClass,
+        public readonly float $unitCost,
         public readonly ?string $referenceType = null,
         public readonly ?string $referenceId = null,
+        public readonly string $currency = 'EGP',
+        public readonly ?int $actorId = null,
     ) {
         $this->eventId = self::generateUuid();
         $this->occurredAt = new DateTimeImmutable('now', new DateTimeZone('UTC'));
@@ -41,6 +54,12 @@ final class InventoryStockReceived implements DomainEvent
     public function eventId(): string
     {
         return $this->eventId;
+    }
+
+    /** The value of the stock that moved. Rounded to the ledger's precision. */
+    public function extendedCost(): float
+    {
+        return round($this->quantityReceived * $this->unitCost, 4);
     }
 
     public function eventName(): string
@@ -81,6 +100,17 @@ final class InventoryStockReceived implements DomainEvent
             'on_hand_after' => $this->onHandAfter,
             'reference_type' => $this->referenceType,
             'reference_id' => $this->referenceId,
+
+            // ── Financial payload ────────────────────────────────────────────
+            // extended_cost is derived here rather than passed in, so the value
+            // Finance posts can never disagree with the quantity that moved.
+            'inventory_class' => $this->inventoryClass->value,
+            'quantity' => $this->quantityReceived,
+            'unit_cost' => $this->unitCost,
+            'extended_cost' => $this->extendedCost(),
+            'posting_amount' => $this->extendedCost(),
+            'currency' => $this->currency,
+            'actor_id' => $this->actorId,
         ];
     }
 

@@ -21,6 +21,7 @@ use Modules\Inventory\DomainEvents\Contracts\DomainEventBus;
 use Modules\Inventory\DomainEvents\Events\InventoryCountApproved;
 use Modules\Inventory\DomainEvents\Events\InventoryStockAdjusted;
 use Modules\Inventory\DomainEvents\Events\InventoryStockReceived;
+use Modules\Inventory\Products\Domain\Enums\InventoryClass;
 use Modules\Inventory\DomainEvents\Events\InventoryStockReleased;
 use Modules\Inventory\DomainEvents\Events\InventoryStockReserved;
 use Modules\Inventory\DomainEvents\Events\InventoryStockShipped;
@@ -251,6 +252,8 @@ class InventoryDomainEventsTest extends TestCase
             quantityReceived: 100.0,
             onHandBefore: 0.0,
             onHandAfter: 100.0,
+            inventoryClass: InventoryClass::FinishedGood,
+            unitCost: 1.0,
         );
 
         app(InventoryChannelSynchronizationListener::class)->handle($event);
@@ -274,6 +277,8 @@ class InventoryDomainEventsTest extends TestCase
             quantityReceived: 50.0,
             onHandBefore: 0.0,
             onHandAfter: 50.0,
+            inventoryClass: InventoryClass::FinishedGood,
+            unitCost: 1.0,
         );
 
         app(InventoryChannelSynchronizationListener::class)->handle($event);
@@ -348,7 +353,7 @@ class InventoryDomainEventsTest extends TestCase
         $i = 'item-uuid-test';
 
         $events = [
-            new InventoryStockReceived($i, $w, $p, $c, 10.0, 0.0, 10.0),
+            new InventoryStockReceived($i, $w, $p, $c, 10.0, 0.0, 10.0, InventoryClass::FinishedGood, 1.0),
             new InventoryStockReserved($i, $w, $p, $c, 5.0, 0.0, 5.0, 10.0),
             new InventoryStockReleased($i, $w, $p, $c, 5.0, 5.0, 0.0, 10.0),
             new InventoryStockShipped($i, $w, $p, $c, 5.0, 10.0, 5.0, 0.0, 0.0),

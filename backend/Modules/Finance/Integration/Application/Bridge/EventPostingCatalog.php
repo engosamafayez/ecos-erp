@@ -92,7 +92,11 @@ final class EventPostingCatalog
             // ── Inventory (valued only when the event carries a cost/value) ───────
             'inventory.stock.received' => function (string $id, array $p): ?FinancialEvent {
                 $company = $this->str($p, ['companyId', 'company_id']);
-                $value = $this->num($p, ['totalValue', 'total_value', 'value', 'cost']);
+                // extended_cost is the figure the event itself derived from the
+                // quantity that actually moved (EPIC-FIN-INTEGRATION-003). The
+                // older keys stay readable so a replayed historical event is not
+                // silently revalued by this change.
+                $value = $this->num($p, ['extended_cost', 'posting_amount', 'totalValue', 'total_value', 'value', 'cost']);
                 if ($company === null || $value === null) {
                     return null; // quantity without a cost cannot be valued here
                 }
