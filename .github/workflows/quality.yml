@@ -18,7 +18,9 @@ name: Quality Gates
 
 on:
   push:
-    branches: [main, staging]
+    # develop is the active engineering branch (TASK-DEVOPS-001); main is the
+    # production line. Both run every gate — quality is not branch-dependent.
+    branches: [main, develop, staging]
   pull_request:
   workflow_dispatch:
 

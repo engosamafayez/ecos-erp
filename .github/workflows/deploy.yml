@@ -3,8 +3,9 @@ name: Deploy
 on:
   push:
     branches:
-      - main
-      - staging
+      - main       # → Production
+      - develop    # → Staging  (TASK-DEVOPS-001)
+      - staging    # → Staging  (legacy branch, retained)
   workflow_dispatch:
     inputs:
       environment:
@@ -42,8 +43,80 @@ jobs:
           else
             ENV="staging"
           fi
+
+          # ── Production originates from main, and only from main ────────────
+          # Branch pushes already satisfy this by construction. workflow_dispatch
+          # did not: the environment dropdown was selectable from any ref, so a
+          # manual run started on develop could target production. This closes
+          # that path — it is the single rule that keeps unreviewed code out of
+          # Production (TASK-DEVOPS-001 §5).
+          if [ "$ENV" = "production" ] && [ "${{ github.ref_name }}" != "main" ]; then
+            echo "::error::Production deployment must originate from 'main'." \
+                 "Refusing to deploy ref '${{ github.ref_name }}' to production." \
+                 "Merge into main via pull request, then deploy from there."
+            exit 1
+          fi
+
           echo "environment=$ENV" >> "$GITHUB_OUTPUT"
           echo "Resolved: $ENV"
+
+  # ---------------------------------------------------------------------------
+  # Quality gate barrier (TASK-DEVOPS-001 §5).
+  #
+  # Deploy and Quality Gates both fire on the same push, so they start in
+  # parallel. This job waits for the Quality Gates run on this exact SHA and
+  # fails if any check failed — nothing reaches Staging or Production without
+  # PHPStan, ESLint, both ratchets, the backend suite and the production build
+  # having passed on the identical commit.
+  #
+  # Implemented as a barrier rather than a workflow_run trigger so the existing
+  # Production deployment path is not restructured.
+  # ---------------------------------------------------------------------------
+  gates:
+    name: Verify quality gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    permissions:
+      checks: read
+      actions: read
+    steps:
+      - name: Wait for Quality Gates on ${{ github.sha }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          # Poll the check-runs API. Quality Gates publishes one check per job.
+          for i in $(seq 1 150); do
+            RUNS=$(gh api "repos/$REPO/commits/$SHA/check-runs?per_page=100" \
+                     --jq '.check_runs[] | select(.name != "Verify quality gates")
+                           | "\(.name)|\(.status)|\(.conclusion)"' 2>/dev/null || true)
+
+            if [ -z "$RUNS" ]; then
+              echo "[$i] no check runs reported yet…"; sleep 20; continue
+            fi
+
+            PENDING=$(echo "$RUNS" | grep -cv '|completed|' || true)
+            FAILED=$(echo "$RUNS" | grep -E '\|(failure|cancelled|timed_out)$' || true)
+
+            if [ -n "$FAILED" ]; then
+              echo "::error::Quality gates failed on $SHA — deployment blocked."
+              echo "$FAILED"
+              exit 1
+            fi
+
+            if [ "$PENDING" -eq 0 ]; then
+              echo "All quality gates passed on $SHA:"
+              echo "$RUNS"
+              exit 0
+            fi
+
+            echo "[$i] $PENDING check(s) still running…"
+            sleep 20
+          done
+
+          echo "::error::Timed out waiting for quality gates on $SHA."
+          exit 1
 
   # ---------------------------------------------------------------------------
   # Deploy.
@@ -63,7 +136,7 @@ jobs:
   # ---------------------------------------------------------------------------
   deploy:
     name: Deploy → ${{ needs.resolve.outputs.environment }}
-    needs: resolve
+    needs: [resolve, gates]
     runs-on: ubuntu-latest
     environment: ${{ needs.resolve.outputs.environment }}
     timeout-minutes: 30

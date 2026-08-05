@@ -1,0 +1,147 @@
+name: ecos-erp-staging
+
+# =============================================================================
+# ECOS ERP — Staging Docker Compose  (TASK-DEVOPS-001)
+#
+# Staging mirrors Production's architecture exactly — same images, same service
+# topology, same immutable-image deployment model — while sharing NOTHING with
+# it except the Git repository.
+#
+# Isolation is enforced on five independent axes, so no single mistake can
+# cross the boundary:
+#
+#   1. Compose project   ecos-erp-staging   (vs ecos-erp)
+#                        Different project name => Compose will never adopt,
+#                        recreate, or prune a Production container.
+#   2. Container names   ecos-staging-*     (vs ecos-*)
+#   3. Named volumes     staging-*          (vs app-storage / mysql-data / redis-data)
+#                        Volumes are namespaced by project, so even identical
+#                        names would not collide — they are renamed anyway so
+#                        `docker volume ls` is unambiguous to a human.
+#   4. Network           ecos-staging-network (vs ecos-network)
+#                        No route exists between the two bridges.
+#   5. Published ports   8080/8443 and 33061/63791/10251/80251
+#                        Production keeps 80/443/3306/6379/1025/8025.
+#
+# Databases, Redis instances, cache, sessions, queues, logs and storage are
+# therefore distinct at the container, volume and network level. Redis DB
+# indices are additionally separated in .env.staging.example as defence in
+# depth, so that even a misconfigured REDIS_HOST cannot collide.
+#
+# Deployment: .github/workflows/deploy.yml, develop branch only.
+# Production compose (docker-compose.yml) is NOT modified by this file and is
+# never merged with it — deploy.sh targets one file explicitly.
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # app — PHP-FPM 8.4 + Supervisor (queue worker + scheduler)
+  # ---------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    image: ecos-erp/app:staging
+    container_name: ecos-staging-app
+    restart: unless-stopped
+    env_file:
+      - backend/.env.staging
+    volumes:
+      - staging-app-storage:/var/www/html/storage
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - ecos-staging-network
+
+  # ---------------------------------------------------------------------------
+  # nginx — static server + PHP-FPM proxy
+  # Published on 8080/8443 so it cannot bind the Production listener.
+  # ---------------------------------------------------------------------------
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+    image: ecos-erp/nginx:staging
+    container_name: ecos-staging-nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+      - "8443:443"
+    depends_on:
+      - app
+    networks:
+      - ecos-staging-network
+
+  # ---------------------------------------------------------------------------
+  # mysql — isolated database instance and isolated data volume
+  # ---------------------------------------------------------------------------
+  mysql:
+    image: mysql:8.4
+    container_name: ecos-staging-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${STAGING_DB_ROOT_PASSWORD:?set STAGING_DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${STAGING_DB_DATABASE:-ecos_erp_staging}
+      MYSQL_USER: ${STAGING_DB_USERNAME:-ecos_staging}
+      MYSQL_PASSWORD: ${STAGING_DB_PASSWORD:?set STAGING_DB_PASSWORD}
+    ports:
+      - "127.0.0.1:33061:3306"
+    volumes:
+      - staging-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p${STAGING_DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ecos-staging-network
+
+  # ---------------------------------------------------------------------------
+  # redis — isolated instance backing cache, sessions and queues
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: ecos-staging-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:63791:6379"
+    volumes:
+      - staging-redis-data:/data
+    networks:
+      - ecos-staging-network
+
+  # ---------------------------------------------------------------------------
+  # mailpit — SMTP sink. Staging must never deliver mail to real recipients.
+  # ---------------------------------------------------------------------------
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: ecos-staging-mailpit
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:10251:1025"
+      - "127.0.0.1:80251:8025"
+    networks:
+      - ecos-staging-network
+
+# =============================================================================
+# Volumes — every one distinct from Production
+# =============================================================================
+volumes:
+  staging-app-storage:
+    driver: local
+  staging-mysql-data:
+    driver: local
+  staging-redis-data:
+    driver: local
+
+# =============================================================================
+# Network — no route to ecos-network
+# =============================================================================
+networks:
+  ecos-staging-network:
+    driver: bridge

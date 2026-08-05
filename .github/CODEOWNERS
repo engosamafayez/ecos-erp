@@ -1,0 +1,44 @@
+# =============================================================================
+# ECOS ERP — Code Owners                              (TASK-DEVOPS-001)
+#
+# GitHub requests a review from the owners listed here whenever a pull request
+# touches a matching path. Combined with the branch protection rule "Require
+# review from Code Owners" on main, this is what makes review mandatory before
+# anything reaches Production.
+#
+# CODEOWNERS alone does not block a merge — the branch protection rule does.
+# See docs/DEVELOPMENT-WORKFLOW.md §Branch Protection for the settings that
+# must be applied in the GitHub UI (they cannot be committed to the repo).
+#
+# Replace @ecos-erp/platform with the real GitHub team or usernames.
+# =============================================================================
+
+# Default owner for everything not matched below.
+*                                   @ecos-erp/platform
+
+# ── Release-critical infrastructure ──────────────────────────────────────────
+# Changes here alter how code reaches Staging or Production.
+/.github/                           @ecos-erp/platform
+/docker-compose.yml                 @ecos-erp/platform
+/docker-compose.staging.yml         @ecos-erp/platform
+/docker/                            @ecos-erp/platform
+/scripts/                           @ecos-erp/platform
+/deploy.sh                          @ecos-erp/platform
+
+# ── Quality gates and their baselines ────────────────────────────────────────
+# A baseline may only shrink. Review protects that rule.
+/backend/phpstan.neon.dist          @ecos-erp/platform
+/backend/phpstan-core.neon.dist     @ecos-erp/platform
+/backend/phpstan-baseline-platform.neon  @ecos-erp/platform
+/backend/phpunit.xml                @ecos-erp/platform
+/frontend/eslint-suppressions.json  @ecos-erp/platform
+/engineering/baselines/             @ecos-erp/platform
+
+# ── Environment contracts ────────────────────────────────────────────────────
+/backend/.env.example               @ecos-erp/platform
+/backend/.env.staging.example       @ecos-erp/platform
+/backend/.env.production.example    @ecos-erp/platform
+
+# ── Database schema ──────────────────────────────────────────────────────────
+# Migrations are irreversible in Production. Always reviewed.
+/backend/database/migrations/       @ecos-erp/platform
