@@ -14,6 +14,9 @@ use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
 use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInterface;
 use Modules\Inventory\InventoryItems\Domain\Enums\LedgerMovementType;
 use Modules\Inventory\InventoryItems\Domain\Exceptions\InvalidInventoryMovementException;
+use Modules\Inventory\InventoryItems\Domain\Exceptions\MissingAdjustmentValuationException;
+use Modules\Inventory\Products\Domain\Enums\InventoryClass;
+use Modules\Inventory\Products\Domain\Models\Product;
 
 /**
  * Positive inventory adjustment — used when physical count exceeds system quantity.
@@ -43,9 +46,22 @@ final class AdjustmentInAction extends BaseAction
             throw new InvalidInventoryMovementException('Quantity must be greater than zero');
         }
 
+        // ── Mandatory manual valuation (Decision 2) ─────────────────────────
+        // Checked BEFORE the transaction opens, so an unvalued adjustment never
+        // touches stock at all. Every other movement can read its value from a
+        // purchase or a consumed layer; an increase has neither, so the figure
+        // has to come from the person recording it. Substituting an average
+        // here would value new stock at what unrelated stock cost and debit the
+        // difference to a real asset account, silently.
+        $statedUnitCost = $dto->statedUnitCost();
+
+        if ($statedUnitCost === null) {
+            throw MissingAdjustmentValuationException::forProduct($dto->product_id);
+        }
+
         $event = null;
 
-        $result = DB::transaction(function () use ($dto, &$event) {
+        $result = DB::transaction(function () use ($dto, $statedUnitCost, &$event) {
             $item = $this->inventory->findOrCreate(
                 $dto->warehouse_id,
                 $dto->product_id,
@@ -83,6 +99,8 @@ final class AdjustmentInAction extends BaseAction
 
             $locked->refresh();
 
+            $product = Product::query()->find($dto->product_id);
+
             $event = new InventoryStockAdjusted(
                 inventoryItemId: $locked->id,
                 warehouseId: $dto->warehouse_id,
@@ -92,6 +110,8 @@ final class AdjustmentInAction extends BaseAction
                 quantity: $dto->quantity,
                 onHandBefore: $onHandBefore,
                 onHandAfter: (float) $locked->on_hand_qty,
+                inventoryClass: InventoryClass::fromProductType($product?->product_type, $dto->product_id),
+                unitCost: $statedUnitCost,
                 referenceType: $dto->reference_type,
                 referenceId: $dto->reference_id,
             );

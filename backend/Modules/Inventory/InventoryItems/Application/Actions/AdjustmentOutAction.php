@@ -15,6 +15,8 @@ use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInt
 use Modules\Inventory\InventoryItems\Domain\Enums\LedgerMovementType;
 use Modules\Inventory\InventoryItems\Domain\Exceptions\InsufficientStockException;
 use Modules\Inventory\InventoryItems\Domain\Exceptions\InvalidInventoryMovementException;
+use Modules\Inventory\Products\Domain\Enums\InventoryClass;
+use Modules\Inventory\Products\Domain\Models\Product;
 
 /**
  * Negative inventory adjustment — used when physical count is less than system quantity.
@@ -108,6 +110,11 @@ final class AdjustmentOutAction extends BaseAction
 
             $locked->refresh();
 
+            // Outbound stock is valued at what it cost to acquire — the
+            // canonical Inventory cost for this product. Unlike an increase,
+            // this value is discoverable: the stock was bought at a price.
+            $product = Product::query()->find($dto->product_id);
+
             $event = new InventoryStockAdjusted(
                 inventoryItemId: $locked->id,
                 warehouseId: $dto->warehouse_id,
@@ -117,6 +124,8 @@ final class AdjustmentOutAction extends BaseAction
                 quantity: $dto->quantity,
                 onHandBefore: $onHandBefore,
                 onHandAfter: $onHandAfter,
+                inventoryClass: InventoryClass::fromProductType($product?->product_type, $dto->product_id),
+                unitCost: (float) ($product?->current_fifo_cost ?? $product?->average_cost ?? 0.0),
                 referenceType: $dto->reference_type,
                 referenceId: $dto->reference_id,
             );

@@ -15,6 +15,8 @@ use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInt
 use Modules\Inventory\InventoryItems\Domain\Enums\LedgerMovementType;
 use Modules\Inventory\InventoryItems\Domain\Exceptions\InsufficientStockException;
 use Modules\Inventory\InventoryItems\Domain\Exceptions\InvalidInventoryMovementException;
+use Modules\Inventory\Products\Domain\Enums\InventoryClass;
+use Modules\Inventory\Products\Domain\Models\Product;
 
 /**
  * Records physical shipment of stock out of a warehouse.
@@ -105,6 +107,11 @@ final class ShipStockAction extends BaseAction
 
             $locked->refresh();
 
+            // Outbound stock is valued at what it cost to acquire — the
+            // canonical Inventory cost for this product. Unlike an increase,
+            // this value is discoverable: the stock was bought at a price.
+            $product = Product::query()->find($dto->product_id);
+
             $event = new InventoryStockShipped(
                 inventoryItemId: $locked->id,
                 warehouseId: $dto->warehouse_id,
@@ -115,6 +122,8 @@ final class ShipStockAction extends BaseAction
                 onHandAfter: $onHandAfter,
                 reservedBefore: $reservedBefore,
                 reservedAfter: $reservedAfter,
+                inventoryClass: InventoryClass::fromProductType($product?->product_type, $dto->product_id),
+                unitCost: (float) ($product?->current_fifo_cost ?? $product?->average_cost ?? 0.0),
                 referenceType: $dto->reference_type,
                 referenceId: $dto->reference_id,
             );

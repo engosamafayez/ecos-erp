@@ -128,6 +128,13 @@ final class ApproveCountSessionAction
                         reference_type: 'inventory_count',
                         reference_id: $session->id,
                         notes: "Overstock adjustment from count {$session->count_number}",
+                        // The valuation an upward adjustment now requires
+                        // (EPIC-FIN-INTEGRATION-003A, Decision 2). This is the
+                        // cost already frozen onto the count line above and
+                        // written to the FIFO layer below, so the adjustment,
+                        // the layer and the financial event all state the same
+                        // number rather than each resolving their own.
+                        unit_cost: $unitCost,
                     );
                     $this->adjustmentIn->execute($dto);
 

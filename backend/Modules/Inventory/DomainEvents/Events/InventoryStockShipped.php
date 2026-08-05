@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
 use Modules\Inventory\DomainEvents\Contracts\DomainEvent;
+use Modules\Inventory\Products\Domain\Enums\InventoryClass;
 
 /**
  * Raised after reserved stock is physically shipped out of a warehouse.
@@ -33,8 +34,13 @@ final class InventoryStockShipped implements DomainEvent
         public readonly float $onHandAfter,
         public readonly float $reservedBefore,
         public readonly float $reservedAfter,
+        public readonly InventoryClass $inventoryClass,
+        /** What the shipped stock cost to acquire — discoverable, unlike an increase. */
+        public readonly float $unitCost,
         public readonly ?string $referenceType = null,
         public readonly ?string $referenceId = null,
+        public readonly string $currency = 'EGP',
+        public readonly ?int $actorId = null,
     ) {
         $this->eventId = self::generateUuid();
         $this->occurredAt = new DateTimeImmutable('now', new DateTimeZone('UTC'));
@@ -43,6 +49,12 @@ final class InventoryStockShipped implements DomainEvent
     public function eventId(): string
     {
         return $this->eventId;
+    }
+
+    /** The value of the stock that left, derived from the quantity that left. */
+    public function extendedCost(): float
+    {
+        return round($this->quantityShipped * $this->unitCost, 4);
     }
 
     public function eventName(): string
@@ -85,6 +97,15 @@ final class InventoryStockShipped implements DomainEvent
             'reserved_after' => $this->reservedAfter,
             'reference_type' => $this->referenceType,
             'reference_id' => $this->referenceId,
+
+            // ── Financial payload (EPIC-FIN-INTEGRATION-003) ─────────────────
+            'inventory_class' => $this->inventoryClass->value,
+            'quantity' => $this->quantityShipped,
+            'unit_cost' => $this->unitCost,
+            'extended_cost' => $this->extendedCost(),
+            'posting_amount' => $this->extendedCost(),
+            'currency' => $this->currency,
+            'actor_id' => $this->actorId,
         ];
     }
 

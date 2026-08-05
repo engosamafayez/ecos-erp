@@ -8,6 +8,7 @@ use DateTimeImmutable;
 use DateTimeInterface;
 use DateTimeZone;
 use Modules\Inventory\DomainEvents\Contracts\DomainEvent;
+use Modules\Inventory\Products\Domain\Enums\InventoryClass;
 
 /**
  * Raised once per successful warehouse transfer, after the DB transaction commits.
@@ -30,6 +31,9 @@ final class InventoryTransferred implements DomainEvent
         public readonly float $totalCost,
         public readonly float $weightedUnitCost,
         public readonly string $transferNumber,
+        public readonly InventoryClass $inventoryClass,
+        public readonly string $currency = 'EGP',
+        public readonly ?int $actorId = null,
     ) {
         $this->eventId = self::generateUuid();
         $this->occurredAt = new DateTimeImmutable('now', new DateTimeZone('UTC'));
@@ -77,6 +81,17 @@ final class InventoryTransferred implements DomainEvent
             'quantity' => $this->quantity,
             'total_cost' => $this->totalCost,
             'weighted_unit_cost' => $this->weightedUnitCost,
+
+            // ── Financial payload (EPIC-FIN-INTEGRATION-003) ─────────────────
+            // A transfer already knew what it was worth; it just never said so
+            // in the vocabulary Finance reads.
+            'inventory_class' => $this->inventoryClass->value,
+            'unit_cost' => $this->weightedUnitCost,
+            'extended_cost' => $this->totalCost,
+            'posting_amount' => $this->totalCost,
+            'warehouse_id' => $this->sourceWarehouseId,
+            'currency' => $this->currency,
+            'actor_id' => $this->actorId,
         ];
     }
 

@@ -266,8 +266,8 @@ class ChannelSynchronizationDualRunTest extends TestCase
             new InventoryStockReceived($i, $w, $p, $c, 10.0, 0.0, 10.0, InventoryClass::FinishedGood, 1.0),
             new InventoryStockReserved($i, $w, $p, $c, 5.0, 0.0, 5.0, 10.0),
             new InventoryStockReleased($i, $w, $p, $c, 5.0, 5.0, 0.0, 10.0),
-            new InventoryStockShipped($i, $w, $p, $c, 5.0, 10.0, 5.0, 0.0, 0.0),
-            new InventoryStockAdjusted($i, $w, $p, $c, InventoryStockAdjusted::TYPE_IN, 3.0, 5.0, 8.0),
+            new InventoryStockShipped($i, $w, $p, $c, 5.0, 10.0, 5.0, 0.0, 0.0, InventoryClass::FinishedGood, 1.0),
+            new InventoryStockAdjusted($i, $w, $p, $c, InventoryStockAdjusted::TYPE_IN, 3.0, 5.0, 8.0, InventoryClass::FinishedGood, 1.0),
             new InventoryCountApproved('session-uuid', 'CNT-001', $w, $c, 1),
         ];
 
@@ -291,8 +291,8 @@ class ChannelSynchronizationDualRunTest extends TestCase
             new InventoryStockReceived($i, $w, $p, $c, 10.0, 0.0, 10.0, InventoryClass::FinishedGood, 1.0),
             new InventoryStockReserved($i, $w, $p, $c, 5.0, 0.0, 5.0, 10.0),
             new InventoryStockReleased($i, $w, $p, $c, 5.0, 5.0, 0.0, 10.0),
-            new InventoryStockShipped($i, $w, $p, $c, 5.0, 10.0, 5.0, 0.0, 0.0),
-            new InventoryStockAdjusted($i, $w, $p, $c, InventoryStockAdjusted::TYPE_IN, 3.0, 5.0, 8.0),
+            new InventoryStockShipped($i, $w, $p, $c, 5.0, 10.0, 5.0, 0.0, 0.0, InventoryClass::FinishedGood, 1.0),
+            new InventoryStockAdjusted($i, $w, $p, $c, InventoryStockAdjusted::TYPE_IN, 3.0, 5.0, 8.0, InventoryClass::FinishedGood, 1.0),
             new InventoryCountApproved('session-uuid', 'CNT-001', $w, $c, 1),
         ];
 

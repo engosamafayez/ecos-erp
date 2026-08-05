@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Inventory\Products\Presentation\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 use Modules\Inventory\Products\Domain\Enums\CostSource;
@@ -22,8 +23,75 @@ final class UpdateProductRequest extends FormRequest
         return true;
     }
 
+    /**
+     * Reject a reclassification while the product still holds stock.
+     *
+     * ┌─ WHY THIS IS BLOCKED RATHER THAN ALLOWED ───────────────────────────┐
+     * │ product_type decides which GL account a stock movement posts to. If  │
+     * │ it changes while stock exists, every FUTURE movement posts to the    │
+     * │ new account while the value already on the books stays on the old    │
+     * │ one. Nothing errors; the two accounts simply drift apart forever,    │
+     * │ and the difference is invisible until someone reconciles inventory   │
+     * │ to the ledger.                                                       │
+     * │                                                                      │
+     * │ At zero stock there is no value to strand, so the change is safe.    │
+     * │                                                                      │
+     * │ Approved as Decision 3 of EPIC-FIN-INTEGRATION-003A.                 │
+     * └──────────────────────────────────────────────────────────────────────┘
+     *
+     * FUTURE INTEGRATION POINT — Inventory Reclassification Journal.
+     * Reclassifying stocked product belongs in a journal that moves the value
+     * between the two inventory accounts as it changes the type, so the books
+     * and the classification move together. When that exists, this guard is
+     * where it hooks in: instead of rejecting, hand off to the journal. Do not
+     * relax this check until that journal can move the value.
+     */
+    private function rejectReclassificationWhileStockExists(Validator $v): void
+    {
+        $requested = $this->input('product_type');
+
+        if (! is_string($requested) || $requested === '') {
+            return;
+        }
+
+        $product = $this->route('product');
+        $productId = is_object($product) ? ($product->id ?? null) : $product;
+
+        if (! is_string($productId) || $productId === '') {
+            return;
+        }
+
+        $current = Product::query()->whereKey($productId)->value('product_type');
+
+        if ($current === null || $current === $requested) {
+            return; // not a reclassification
+        }
+
+        $onHand = (float) DB::table('inventory_items')
+            ->where('product_id', $productId)
+            ->whereNull('deleted_at')
+            ->sum('on_hand_qty');
+
+        if ($onHand > 0.0) {
+            $v->errors()->add('product_type', sprintf(
+                'This product cannot be reclassified from %s to %s while it holds stock '
+                .'(%s on hand). Its value is already recorded against the %s inventory '
+                .'account. Reduce the balance to zero first, or use an Inventory '
+                .'Reclassification Journal to move the value with the classification.',
+                $current,
+                $requested,
+                rtrim(rtrim(number_format($onHand, 4, '.', ''), '0'), '.'),
+                $current,
+            ));
+        }
+    }
+
     public function withValidator(Validator $validator): void
     {
+        $validator->after(function (Validator $v): void {
+            $this->rejectReclassificationWhileStockExists($v);
+        });
+
         $validator->after(function (Validator $v): void {
             $categoryId = $this->input('category_id');
             $productType = $this->input('product_type');

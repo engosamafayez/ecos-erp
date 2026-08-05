@@ -9,11 +9,11 @@ use App\Core\Responses\OperationResult;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Modules\CostManagement\Domain\Enums\CostUpdateSource;
-use Modules\CostManagement\Domain\Services\EnterpriseCostEngine;
 use Modules\CostManagement\Domain\Services\MaterialCostService;
 use Modules\Inventory\InventoryItems\Application\Actions\AdjustmentInAction;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
 use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInterface;
+use Modules\Inventory\InventoryItems\Domain\Exceptions\MissingAdjustmentValuationException;
 use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\Inventory\ReceiptLayers\Domain\Models\InventoryReceiptLayer;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
@@ -61,17 +61,17 @@ final class AddManualStockAction extends BaseAction
         $companyId = (string) $warehouse->company_id;
         $unitCost = isset($meta['unit_cost']) && is_numeric($meta['unit_cost'])
             ? (float) $meta['unit_cost'] : null;
+        $totalValue = isset($meta['total_value']) && is_numeric($meta['total_value'])
+            ? (float) $meta['total_value'] : null;
 
-        // Fall back to the best available cost signal on the product.
-        // Canonical (flag ON): FIFO-first via EnterpriseCostEngine. Legacy (default): average-first.
-        $fallbackCost = config('inventory_ledger.canonical_cost_resolution')
-            ? EnterpriseCostEngine::resolveUnitCost($product)
-            : (float) ($product->average_cost
-                ?? $product->last_purchase_cost
-                ?? $product->current_fifo_cost
-                ?? 0);
-        $layerCost = $unitCost ?? $fallbackCost;
-
+        // ── Mandatory manual valuation (Decision 2) ─────────────────────────
+        // This used to fall back to the product's average / FIFO / last-purchase
+        // cost. That made every manual add succeed, which is exactly the problem:
+        // stock added by hand has no purchase behind it, so those figures value
+        // it at what OTHER stock cost and debit the difference to a real asset
+        // account with nothing to back it. The caller now states the value or the
+        // add is refused. AdjustmentInAction enforces the same rule, so no path
+        // can slip past it.
         $dto = new StockOperationDTO(
             warehouse_id: $warehouse->id,
             product_id: $product->id,
@@ -80,7 +80,17 @@ final class AddManualStockAction extends BaseAction
             reference_type: 'manual_adjustment',
             reference_id: null,
             notes: $meta['notes'] ?? null,
+            unit_cost: $unitCost,
+            total_value: $totalValue,
         );
+
+        $statedUnitCost = $dto->statedUnitCost();
+
+        if ($statedUnitCost === null) {
+            throw MissingAdjustmentValuationException::forProduct((string) $product->id);
+        }
+
+        $layerCost = $statedUnitCost;
 
         DB::transaction(function () use ($product, $warehouse, $dto, $quantity, $layerCost, $companyId, $unitCost, $meta): void {
             // Step 1: update InventoryItem + write StockLedgerEntry + fire domain event

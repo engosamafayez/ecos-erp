@@ -83,6 +83,10 @@ class InventoryDomainEventsTest extends TestCase
             'quantity' => $quantity,
             'reference_type' => 'test',
             'reference_id' => 'test-ref-001',
+            // Upward adjustments must state their value (Decision 2). Supplied
+            // here so these tests exercise the movement itself rather than the
+            // valuation guard, which has its own tests.
+            'unit_cost' => 10.0,
         ], $overrides));
     }
 
@@ -356,8 +360,8 @@ class InventoryDomainEventsTest extends TestCase
             new InventoryStockReceived($i, $w, $p, $c, 10.0, 0.0, 10.0, InventoryClass::FinishedGood, 1.0),
             new InventoryStockReserved($i, $w, $p, $c, 5.0, 0.0, 5.0, 10.0),
             new InventoryStockReleased($i, $w, $p, $c, 5.0, 5.0, 0.0, 10.0),
-            new InventoryStockShipped($i, $w, $p, $c, 5.0, 10.0, 5.0, 0.0, 0.0),
-            new InventoryStockAdjusted($i, $w, $p, $c, InventoryStockAdjusted::TYPE_IN, 3.0, 5.0, 8.0),
+            new InventoryStockShipped($i, $w, $p, $c, 5.0, 10.0, 5.0, 0.0, 0.0, InventoryClass::FinishedGood, 1.0),
+            new InventoryStockAdjusted($i, $w, $p, $c, InventoryStockAdjusted::TYPE_IN, 3.0, 5.0, 8.0, InventoryClass::FinishedGood, 1.0),
             new InventoryCountApproved('session-uuid', 'CNT-001', $w, $c, 1),
         ];
 

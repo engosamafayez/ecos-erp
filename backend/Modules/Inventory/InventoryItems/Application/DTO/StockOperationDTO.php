@@ -36,7 +36,33 @@ final class StockOperationDTO extends BaseDTO
          * Placed last so every existing positional caller is unaffected.
          */
         public readonly ?float $unit_cost = null,
+        /**
+         * Total value of the movement, when the caller finds it more natural to
+         * state than a per-unit figure. Either one is enough — the other is
+         * arithmetic, not a guess.
+         */
+        public readonly ?float $total_value = null,
     ) {}
+
+    /**
+     * The stated unit cost, deriving it from a stated total when needed.
+     *
+     * Returns null when nothing was stated. Callers that must value a movement
+     * treat that null as a refusal rather than an invitation to substitute an
+     * average — see MissingAdjustmentValuationException.
+     */
+    public function statedUnitCost(): ?float
+    {
+        if ($this->unit_cost !== null) {
+            return $this->unit_cost;
+        }
+
+        if ($this->total_value !== null && $this->quantity > 0.0) {
+            return round($this->total_value / $this->quantity, 4);
+        }
+
+        return null;
+    }
 
     /** @param array<string, mixed> $data */
     public static function fromArray(array $data): self
@@ -55,6 +81,8 @@ final class StockOperationDTO extends BaseDTO
             bypassReserveGuard: (bool) ($data['bypass_reserve_guard'] ?? false),
             unit_cost: isset($data['unit_cost']) && is_numeric($data['unit_cost'])
                                     ? (float) $data['unit_cost'] : null,
+            total_value: isset($data['total_value']) && is_numeric($data['total_value'])
+                                    ? (float) $data['total_value'] : null,
         );
     }
 }

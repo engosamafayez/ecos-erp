@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Modules\Inventory\DomainEvents\Contracts\DomainEventBus;
 use Modules\Inventory\DomainEvents\Events\InventoryTransferred;
+use Modules\Inventory\Products\Domain\Enums\InventoryClass;
 use Modules\Inventory\DomainEvents\Events\WarehouseTransferCompleted;
 use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInterface;
 use Modules\Inventory\InventoryItems\Domain\Enums\LedgerMovementType;
@@ -305,6 +306,10 @@ final class TransferStockAction extends BaseAction
                 totalCost: $totalCostFloat,
                 weightedUnitCost: $weightedUnitCostFloat,
                 transferNumber: $transferNumber,
+                inventoryClass: InventoryClass::fromProductType(
+                    Product::query()->find($dto->productId)?->product_type,
+                    $dto->productId,
+                ),
             );
 
             $events[] = new WarehouseTransferCompleted(
