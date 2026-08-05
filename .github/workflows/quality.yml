@@ -5,15 +5,16 @@ name: Quality Gates
 # Runs the gates that are measured green and ratcheted. Each job is independent
 # so a failure names one thing, not "CI is red".
 #
-# Four jobs analyse source; one (Production Build) actually builds it. That last
-# one is not ratcheted — a bundle either builds or it does not.
+# Four jobs analyse source; Production Build builds it; Backend Tests executes it.
+# The last two are not ratcheted — a bundle either builds or it does not, and a
+# test either passes or it does not.
 #
 # Deliberately NOT here yet:
-#   • Backend tests — 3,525 methods exist but phpunit.xml forces DB_CONNECTION=mysql
-#     while CI installs only pdo_pgsql. Resolving that drift is a breaking change
-#     to every developer environment and needs its own decision (see PQ-004).
 #   • Frontend tests — 2 test files against 1,010 sources; a gate here would
 #     assert coverage that does not exist.
+#   • Modules/**/*Test.php — 19 files exist but no testsuite includes them; they
+#     have never executed. Adding them is a scope decision, not a config fix
+#     (TASK-ARCH-002).
 
 on:
   push:
@@ -145,6 +146,97 @@ jobs:
       - name: Architecture ratchet
         working-directory: frontend
         run: node scripts/analyze-architecture.mjs --check
+
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # MySQL 8.4 — the engine docker-compose.yml defines, and the only one the
+    # platform runs. CI previously provisioned no database at all, which is why
+    # 228 test files existed and none of them ever executed here.
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: ecos_erp_test
+          MYSQL_USER: ecos
+          MYSQL_PASSWORD: ecos_test_ci
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      # phpunit.xml does NOT force these, so real environment variables win.
+      # The suite connects to this service and nowhere else.
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USERNAME: ecos
+      DB_PASSWORD: ecos_test_ci
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo, pdo_mysql, mbstring, xml, curl, bcmath, intl
+          coverage: none
+          # The suite exhausts the 128M default and dies mid-run with a fatal
+          # error, which surfaces as a cascade of unrelated-looking errors rather
+          # than a clean OOM. Measured requirement: 2G. Same class of problem as
+          # PHPStan needing 4G on this codebase.
+          ini-values: memory_limit=2G
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: backend/vendor
+          key: composer-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install PHP dependencies
+        working-directory: backend
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare environment
+        working-directory: backend
+        run: |
+          cp .env.testing .env
+          php artisan key:generate --force
+
+      - name: Wait for MySQL
+        run: |
+          for i in $(seq 1 60); do
+            if mysqladmin ping -h 127.0.0.1 -P 3306 -uecos -pecos_test_ci --silent 2>/dev/null; then
+              echo "MySQL ready after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::MySQL did not become ready within 60s"; exit 1
+
+      # Schema is built by migration, not restored from a dump, so the suite runs
+      # against the same DDL the application ships.
+      - name: Migrate test database
+        working-directory: backend
+        run: php artisan migrate --force --no-interaction
+
+      # No --stop-on-failure: a partial run hides everything after the first red
+      # test. Failures are reported, never suppressed.
+      - name: PHPUnit
+        working-directory: backend
+        run: php vendor/bin/phpunit --no-coverage --log-junit ../phpunit-junit.xml
+
+      - name: Upload JUnit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-junit-${{ github.sha }}
+          path: phpunit-junit.xml
+          retention-days: 7
+          if-no-files-found: warn
 
   build:
     name: Production Build
