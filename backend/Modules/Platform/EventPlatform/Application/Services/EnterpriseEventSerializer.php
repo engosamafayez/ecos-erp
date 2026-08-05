@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Platform\EventPlatform\Application\Services;
 
 use Modules\Inventory\DomainEvents\Contracts\DomainEvent;
+use Modules\POS\Shared\Domain\Contracts\DomainEvent as PosDomainEvent;
 use Modules\Platform\EventPlatform\Domain\Abstracts\EnterpriseEvent;
 
 final class EnterpriseEventSerializer
@@ -13,7 +14,7 @@ final class EnterpriseEventSerializer
      * Serialize a DomainEvent (or EnterpriseEvent) to a storable array.
      * Lazy: only triggers toArray() once.
      */
-    public function serialize(DomainEvent $event): array
+    public function serialize(DomainEvent|PosDomainEvent $event): array
     {
         $data = $event->toArray();
 
@@ -44,7 +45,7 @@ final class EnterpriseEventSerializer
      * Build a canonical envelope for a legacy DomainEvent that hasn't been migrated yet.
      * Extracts the payload sub-array if present; otherwise wraps all extra keys.
      */
-    private function normalizeLegacyEvent(DomainEvent $event, array $raw): array
+    private function normalizeLegacyEvent(DomainEvent|PosDomainEvent $event, array $raw): array
     {
         // Legacy events include all fields in toArray() with a 'payload' sub-key
         $inner = $raw['payload'] ?? $raw;
@@ -70,7 +71,7 @@ final class EnterpriseEventSerializer
         ];
     }
 
-    private function guessModuleFromClass(DomainEvent $event): string
+    private function guessModuleFromClass(DomainEvent|PosDomainEvent $event): string
     {
         $parts = explode('\\', $event::class);
 

@@ -22,8 +22,13 @@ use Throwable;
  *
  * Implementation:
  *   - Delegates to AccountingPortInterface (port/adapter pattern).
- *   - Current adapter: NullAccountingAdapter (no Accounting module yet).
- *   - When Accounting module is built, swap adapter in EventServiceProvider.
+ *   - Current adapter: EnterpriseBusAccountingAdapter, which publishes the sale
+ *     onto the enterprise event bus. Finance subscribes there and posts the
+ *     journal; POS neither knows nor cares that it does (EPIC-EVENTBUS-001).
+ *   - This listener is POS's ONLY enterprise-integration boundary for a sale.
+ *     Anything else needing sales downstream subscribes to the bus rather than
+ *     taking a second adapter here — otherwise the platform regains the parallel
+ *     pipelines this EPIC removed.
  *
  * Safety: NEVER throws — the sale is already committed and must not be affected.
  */

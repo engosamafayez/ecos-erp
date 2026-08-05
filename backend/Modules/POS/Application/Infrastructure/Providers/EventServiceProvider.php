@@ -11,7 +11,7 @@ use Modules\POS\Application\Contracts\StockIssuePortInterface;
 use Modules\POS\Application\Events\SaleFinalized;
 use Modules\POS\Application\Infrastructure\Adapters\CommerceOrderCreationAdapter;
 use Modules\POS\Application\Infrastructure\Adapters\DirectStockIssueAdapter;
-use Modules\POS\Application\Infrastructure\Adapters\NullAccountingAdapter;
+use Modules\POS\Application\Infrastructure\Adapters\EnterpriseBusAccountingAdapter;
 use Modules\POS\Application\Listeners\PosAccountingListener;
 use Modules\POS\Application\Listeners\PosAnalyticsListener;
 use Modules\POS\Application\Listeners\PosCustomerListener;
@@ -30,7 +30,7 @@ use Modules\POS\Application\Listeners\PosWebhookListener;
  * Port → Adapter bindings follow the hexagonal-architecture contract:
  *   StockIssuePortInterface     → DirectStockIssueAdapter     (wraps DirectIssueStockAction)
  *   OrderCreationPortInterface  → CommerceOrderCreationAdapter (wraps CreateOrderAction)
- *   AccountingPortInterface     → NullAccountingAdapter        (no-op until Accounting module ships)
+ *   AccountingPortInterface     → EnterpriseBusAccountingAdapter (delegates to the enterprise bus)
  *
  * SaleFinalized listeners (all synchronous — Phase B will add queue dispatch):
  *   PosSaleInventoryListener  — Subscriber 1: CRIT-003, decrements stock (no DB reload)
@@ -48,7 +48,11 @@ final class EventServiceProvider extends ServiceProvider
     {
         $this->app->bind(StockIssuePortInterface::class, DirectStockIssueAdapter::class);
         $this->app->bind(OrderCreationPortInterface::class, CommerceOrderCreationAdapter::class);
-        $this->app->bind(AccountingPortInterface::class, NullAccountingAdapter::class);
+        // EPIC-EVENTBUS-001: the port now delegates to the enterprise bus instead
+        // of bypassing it, so POS keeps no accounting pipeline of its own. The
+        // null adapter it replaces was a placeholder "until the Accounting
+        // module ships" — it has since shipped.
+        $this->app->bind(AccountingPortInterface::class, EnterpriseBusAccountingAdapter::class);
     }
 
     public function boot(): void

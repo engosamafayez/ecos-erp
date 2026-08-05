@@ -9,6 +9,7 @@ use DateTimeInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Modules\Inventory\DomainEvents\Contracts\DomainEvent;
+use Modules\POS\Shared\Domain\Contracts\DomainEvent as PosDomainEvent;
 use Modules\Platform\EventPlatform\Application\Services\EnterpriseEventSerializer;
 use Modules\Platform\EventPlatform\Domain\Contracts\EnterpriseEventStoreInterface;
 use Modules\Platform\EventPlatform\Domain\Enums\EventStatus;
@@ -20,7 +21,7 @@ final class EloquentEventStore implements EnterpriseEventStoreInterface
         private readonly EnterpriseEventSerializer $serializer,
     ) {}
 
-    public function persist(DomainEvent $event): StoredEvent
+    public function persist(DomainEvent|PosDomainEvent $event): StoredEvent
     {
         $data = $this->serializer->serialize($event);
 

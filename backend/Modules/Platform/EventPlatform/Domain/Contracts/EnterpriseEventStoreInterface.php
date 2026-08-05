@@ -7,12 +7,13 @@ namespace Modules\Platform\EventPlatform\Domain\Contracts;
 use DateTimeImmutable;
 use Illuminate\Support\Collection;
 use Modules\Inventory\DomainEvents\Contracts\DomainEvent;
+use Modules\POS\Shared\Domain\Contracts\DomainEvent as PosDomainEvent;
 use Modules\Platform\EventPlatform\Domain\Models\StoredEvent;
 
 interface EnterpriseEventStoreInterface
 {
     /** Persist the event and return the StoredEvent record. */
-    public function persist(DomainEvent $event): StoredEvent;
+    public function persist(DomainEvent|PosDomainEvent $event): StoredEvent;
 
     public function findById(string $eventId): ?StoredEvent;
 

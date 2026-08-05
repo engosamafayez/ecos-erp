@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Platform\EventPlatform\Application\Services;
 
 use Modules\Inventory\DomainEvents\Contracts\DomainEvent;
+use Modules\POS\Shared\Domain\Contracts\DomainEvent as PosDomainEvent;
 use Modules\Inventory\DomainEvents\Contracts\DomainEventBus;
 use Modules\Platform\EventPlatform\Domain\Contracts\EnterpriseEventBusInterface;
 use Modules\Platform\EventPlatform\Domain\Contracts\EnterpriseEventRegistryInterface;
@@ -28,7 +29,7 @@ final class EnterpriseEventBus implements DomainEventBus, EnterpriseEventBusInte
      * - New EnterpriseEvent subclasses (PKG-17+ events)
      * - Legacy DomainEvent implementations (bridged automatically)
      */
-    public function publish(DomainEvent $event): void
+    public function publish(DomainEvent|PosDomainEvent $event): void
     {
         $this->publisher->publish($event);
     }
