@@ -196,6 +196,47 @@ class InventoryPostingPipelineTest extends TestCase
         $this->assertSame(2, DB::table('finance_posting_audit')->where('company_id', $this->company->id)->count());
     }
 
+    /**
+     * A real transfer event, through the real catalog, to a real journal.
+     *
+     * The transfer was published all along and had a rule, a role and a complete
+     * payload — it was simply never bridged onto the bus Finance listens to, and
+     * had no catalog entry. This is the end-to-end proof that both gaps closed.
+     */
+    public function test_a_real_transfer_event_translates_and_posts(): void
+    {
+        $event = new \Modules\Inventory\DomainEvents\Events\InventoryTransferred(
+            transferId: 'tr-1',
+            productId: 'prod-1',
+            companyId: (string) $this->company->id,
+            sourceWarehouseId: 'wh-src',
+            destinationWarehouseId: 'wh-dst',
+            quantity: 4.0,
+            totalCost: 400.0,
+            weightedUnitCost: 100.0,
+            transferNumber: 'TR-0001',
+            inventoryClass: \Modules\Inventory\Products\Domain\Enums\InventoryClass::PackagingMaterial,
+        );
+
+        $financial = app(\Modules\Finance\Integration\Application\Bridge\EventPostingCatalog::class)
+            ->translate($event->eventName(), $event->eventId(), $event->toArray());
+
+        $this->assertNotNull($financial, 'A transfer must now translate into a financial event.');
+        $this->assertSame(400.0, $financial->amount('net'));
+        $this->assertSame('packaging_material', $financial->inventoryClass());
+
+        $outcome = app(FinancialEventProcessor::class)->process($financial);
+
+        $codes = DB::table('finance_journal_lines as l')
+            ->join('finance_accounts as a', 'a.id', '=', 'l.account_id')
+            ->where('l.journal_entry_id', $outcome->journalEntryId)
+            ->pluck('a.code')->all();
+
+        // Packaging leaves 1440 and lands in 1450 Goods In Transit.
+        $this->assertContains('1440', $codes);
+        $this->assertContains('1450', $codes);
+    }
+
     public function test_no_inventory_posting_dead_letters(): void
     {
         $before = DB::table('finance_posting_dead_letters')->count();

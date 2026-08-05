@@ -105,6 +105,18 @@ final class EventPostingCatalog
                     $this->str($p, ['inventoryItemId', 'inventory_item_id']) ?? $id, $id,
                     ['net' => $value], $p);
             },
+            'inventory.stock.transferred' => function (string $id, array $p): ?FinancialEvent {
+                $company = $this->str($p, ['companyId', 'company_id']);
+                // A transfer already knew its total cost; it just had no entry here.
+                $value = $this->num($p, ['extended_cost', 'posting_amount', 'total_cost', 'totalCost']);
+                if ($company === null || $value === null) {
+                    return null;
+                }
+
+                return $this->event($company, BusinessEventType::WarehouseTransfer, 'inventory', 'inventory_transfer',
+                    $this->str($p, ['transferId', 'transfer_id']) ?? $id, $id,
+                    ['net' => $value], $p);
+            },
             'inventory.stock.adjusted' => function (string $id, array $p): ?FinancialEvent {
                 $company = $this->str($p, ['companyId', 'company_id']);
                 $value = $this->num($p, ['totalValue', 'total_value', 'value', 'cost']);
