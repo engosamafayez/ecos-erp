@@ -25,4 +25,29 @@ trait HasRoles
             'role_id',
         )->using(UserRole::class)->withTimestamps();
     }
+
+    /**
+     * Idempotently attach a role by model or slug (TASK-IAM-004). Additive — never detaches.
+     */
+    public function assignRole(Role|string $role): void
+    {
+        $model = $role instanceof Role ? $role : Role::where('slug', $role)->first();
+        if ($model !== null) {
+            $this->roles()->syncWithoutDetaching([$model->getKey()]);
+        }
+    }
+
+    /** Detach a role by model or slug. */
+    public function revokeRole(Role|string $role): void
+    {
+        $model = $role instanceof Role ? $role : Role::where('slug', $role)->first();
+        if ($model !== null) {
+            $this->roles()->detach($model->getKey());
+        }
+    }
+
+    public function hasRole(string $slug): bool
+    {
+        return $this->roles()->where('slug', $slug)->exists();
+    }
 }

@@ -21,7 +21,7 @@ return [
     'modules' => [
 
         'iam' => [
-            'users' => ['view', 'create', 'update', 'delete'],
+            'users' => ['view', 'create', 'update', 'delete', 'activate', 'suspend', 'assign-role', 'assign-org', 'invite', 'reset-password', 'manage-sessions'],
             'roles' => ['view', 'create', 'update', 'delete', 'assign'],
         ],
 
@@ -161,7 +161,7 @@ return [
     'role_permissions' => [
 
         'company-admin' => [
-            'iam.users' => ['view', 'create', 'update'],
+            'iam.users' => ['view', 'create', 'update', 'delete', 'activate', 'suspend', 'assign-role', 'assign-org', 'invite', 'reset-password', 'manage-sessions'],
             'iam.roles' => ['view', 'assign'],
             'organization.companies' => ['view', 'create', 'update'],
             'organization.branches' => ['view', 'create', 'update', 'delete'],

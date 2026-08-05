@@ -6,6 +6,7 @@ namespace Modules\IAM\Domain\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
@@ -26,6 +27,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property string $resource Resource within domain (e.g. "products", "orders")
  * @property string $action Action  (e.g. "view", "create", "fulfill")
  * @property string|null $description
+ * @property string|null $group_id Optional FK to permission_groups (TASK-IAM-002 Phase 1)
  */
 class Permission extends Model
 {
@@ -42,6 +44,7 @@ class Permission extends Model
         'resource',
         'action',
         'description',
+        'group_id',
     ];
 
     /** @return BelongsToMany<Role, $this> */
@@ -53,5 +56,16 @@ class Permission extends Model
             'permission_id',
             'role_id',
         )->using(RolePermission::class);
+    }
+
+    /**
+     * Optional permission group (TASK-IAM-002 Phase 1). Null for every existing
+     * permission until grouping is performed in a later phase.
+     *
+     * @return BelongsTo<PermissionGroup, $this>
+     */
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(PermissionGroup::class, 'group_id');
     }
 }

@@ -10,6 +10,7 @@ use Modules\Commerce\Fulfillments\Infrastructure\Database\Seeders\FulfillmentSee
 use Modules\Commerce\Orders\Infrastructure\Database\Seeders\OrderSeeder;
 use Modules\Commerce\ProductMappings\Infrastructure\Database\Seeders\ProductMappingSeeder;
 use Modules\IAM\Infrastructure\Database\Seeders\RbacSeeder;
+use Modules\IAM\Infrastructure\Database\Seeders\RoleTemplateSeeder;
 use Modules\Inventory\Products\Infrastructure\Database\Seeders\ProductSeeder;
 use Modules\Inventory\StockLedger\Infrastructure\Database\Seeders\StockLedgerSeeder;
 use Modules\MasterData\Categories\Infrastructure\Database\Seeders\CategorySeeder;
@@ -35,6 +36,9 @@ class DatabaseSeeder extends Seeder
     {
         // RBAC: roles and permissions must exist before any user is seeded.
         $this->call(RbacSeeder::class);
+
+        // Enterprise Role Template Library — official job profiles (IAM-003 / ADR-039).
+        $this->call(RoleTemplateSeeder::class);
 
         // Default administrator account (IAM-001).
         $this->call(AdminUserSeeder::class);

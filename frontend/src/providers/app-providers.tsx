@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import { ToastProvider } from '@/components/ds/toast-provider';
+import { AuthorizationProvider } from '@/features/authorization';
 import { AuthProvider } from '@/providers/auth-provider';
 import { LanguageProvider } from '@/providers/language-provider';
 import { QueryProvider } from '@/providers/query-provider';
@@ -12,8 +13,11 @@ export function AppProviders({ children }: { children: ReactNode }) {
       <LanguageProvider>
         <QueryProvider>
           <AuthProvider>
-            {children}
-            <ToastProvider />
+            {/* Distributes the current user's authorization context (TASK-IAM-005). */}
+            <AuthorizationProvider>
+              {children}
+              <ToastProvider />
+            </AuthorizationProvider>
           </AuthProvider>
         </QueryProvider>
       </LanguageProvider>

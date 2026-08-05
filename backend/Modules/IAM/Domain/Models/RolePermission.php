@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
  * @property string $effect 'allow' | 'deny'  (default: 'allow')
  * @property array|null $conditions JSON rule bag
  * @property string|null $expires_at
+ * @property string $data_scope Data Scope Engine — self|team|branch|…|all (default: 'all')  [TASK-IAM-002]
+ * @property array|null $scope_descriptor Descriptor bag for exotic scopes (channel/region/custom)  [TASK-IAM-002]
  */
 class RolePermission extends Pivot
 {
@@ -40,6 +42,8 @@ class RolePermission extends Pivot
         'effect',
         'conditions',
         'expires_at',
+        'data_scope',
+        'scope_descriptor',
     ];
 
     /** @return array<string, string> */
@@ -48,6 +52,7 @@ class RolePermission extends Pivot
         return [
             'conditions' => 'array',
             'expires_at' => 'datetime',
+            'scope_descriptor' => 'array',
         ];
     }
 }
