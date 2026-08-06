@@ -536,6 +536,11 @@
       "preparing": "قيد التحضير",
       "pending": "قيد الانتظار",
       "processing": "قيد المعالجة"
+    },
+    "missingReason": {
+      "missingCity": "مدينة غير محددة",
+      "unknownCity": "مدينة غير معروفة",
+      "cityNotAssigned": "المدينة غير مخصصة لمنطقة"
     }
   },
   "drivers": {

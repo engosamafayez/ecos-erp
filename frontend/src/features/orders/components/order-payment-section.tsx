@@ -120,7 +120,9 @@ export function OrderPaymentSection({ paymentProofPolicy, paymentMethods }: Orde
 
       {requiresProof && (
         <div className="sm:col-span-2">
-          <FormField name="payment_proof_path" label={t(proofRequirement === 'optional' ? 'workspace.paymentSection.proofOptional' : 'workspace.paymentSection.proofLabel')} required={proofRequirement === 'required'}>
+          <FormField name="payment_proof_path" label={(proofRequirement === 'optional'
+                ? t($ => $.workspace.paymentSection.proofOptional)
+                : t($ => $.workspace.paymentSection.proofLabel))} required={proofRequirement === 'required'}>
             {proofPath ? (
               <div className="flex items-center gap-2 rounded-md border px-3 py-2 bg-muted/40">
                 {isPdf ? (

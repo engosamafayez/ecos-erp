@@ -536,6 +536,11 @@
       "preparing": "Preparing",
       "pending": "Pending",
       "processing": "Processing"
+    },
+    "missingReason": {
+      "missingCity": "Missing city",
+      "unknownCity": "Unknown city",
+      "cityNotAssigned": "City not assigned to a zone"
     }
   },
   "drivers": {

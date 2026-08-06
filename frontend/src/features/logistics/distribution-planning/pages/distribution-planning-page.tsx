@@ -61,6 +61,16 @@ import type {
   ZonePlanCard,
   ZonePlanningStatus,
 } from '../types/distribution-planning';
+import type enLogistics from '@/i18n/locales/en/logistics.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of key
+ * strings can never type-check. Indexing this table by a runtime value is
+ * still fine — the lookup yields a selector, which is what t() expects.
+ */
+type LogisticsLabel = ($: typeof enLogistics) => string;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -128,10 +138,10 @@ function getViewMode(): ViewMode {
 // ── Missing reason badge ──────────────────────────────────────────────────────
 
 /** Raw API reason value → translation key. Falls back to the raw value. */
-const MISSING_REASON_KEYS: Record<string, string> = {
-  'Missing city':                 'planning.missingReason.missingCity',
-  'Unknown city':                 'planning.missingReason.unknownCity',
-  'City not assigned to a zone':  'planning.missingReason.cityNotAssigned',
+const MISSING_REASON_KEYS: Record<string, LogisticsLabel> = {
+  'Missing city':                 ($) => $.planning.missingReason.missingCity,
+  'Unknown city':                 ($) => $.planning.missingReason.unknownCity,
+  'City not assigned to a zone':  ($) => $.planning.missingReason.cityNotAssigned,
 };
 
 function MissingReasonBadge({ reason }: { reason: string }) {

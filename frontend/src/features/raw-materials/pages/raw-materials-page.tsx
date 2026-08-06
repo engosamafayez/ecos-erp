@@ -31,6 +31,16 @@ import { resolveMaterialStockStatus } from '@/features/raw-materials/utils/mater
 import { ROUTES } from '@/router/routes';
 import { useCategoriesQuery } from '@/features/categories/hooks/use-categories';
 import type { TFunction } from 'i18next';
+import type enRawMaterials from '@/i18n/locales/en/raw-materials.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of key
+ * strings can never type-check. Indexing this table by a runtime value is
+ * still fine — the lookup yields a selector, which is what t() expects.
+ */
+type RawMaterialsLabel = ($: typeof enRawMaterials) => string;
 
 type SortField = 'name' | 'sku' | 'material_cost' | 'on_hand_qty' | 'created_at';
 type SortDir   = 'asc' | 'desc';
@@ -57,20 +67,20 @@ const CSV_COL_DEFS: CsvColDef[] = [
 ];
 
 // CSV header key mapping
-const CSV_HEADER_KEYS: Record<string, string> = {
-  image:           'csv.imageUrl',
-  name:            'csv.name',
-  material_type:   'csv.materialType',
-  category:        'csv.category',
-  unit:            'csv.unit',
-  stock_status:    'csv.stockStatus',
-  on_hand:         'csv.onHand',
-  reserved:        'csv.reserved',
-  available:       'csv.available',
-  current_cost:    'csv.currentCost',
-  inventory_value: 'csv.inventoryValue',
-  allow_negative:  'csv.allowNegative',
-  sku:             'csv.sku',
+const CSV_HEADER_KEYS: Record<string, RawMaterialsLabel> = {
+  image:           ($) => $.csv.imageUrl,
+  name:            ($) => $.csv.name,
+  material_type:   ($) => $.csv.materialType,
+  category:        ($) => $.csv.category,
+  unit:            ($) => $.csv.unit,
+  stock_status:    ($) => $.csv.stockStatus,
+  on_hand:         ($) => $.csv.onHand,
+  reserved:        ($) => $.csv.reserved,
+  available:       ($) => $.csv.available,
+  current_cost:    ($) => $.csv.currentCost,
+  inventory_value: ($) => $.csv.inventoryValue,
+  allow_negative:  ($) => $.csv.allowNegative,
+  sku:             ($) => $.csv.sku,
 };
 
 function triggerCsvDownload(
@@ -82,7 +92,7 @@ function triggerCsvDownload(
   const cols = CSV_COL_DEFS.filter((c) => visibleColumns.has(c.key));
   const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
 
-  const header = cols.map((c) => escape(t(CSV_HEADER_KEYS[c.key] ?? c.key))).join(',');
+  const header = cols.map((c) => escape(CSV_HEADER_KEYS[c.key] ? t(CSV_HEADER_KEYS[c.key]) : c.key)).join(',');
   const rows   = items.map((m) => cols.map((c) => escape(c.value(m, t))).join(','));
   const csv    = [header, ...rows].join('\n');
 
@@ -286,11 +296,11 @@ export function RawMaterialsPage() {
   async function handleExport() {
     if (selectedIds.size > 0) {
       const selected = materials.filter((m) => selectedIds.has(m.id));
-      triggerCsvDownload(selected, visibleColumns, materialType, t as unknown as (k: string) => string);
+      triggerCsvDownload(selected, visibleColumns, materialType, t);
       return;
     }
     const result = await rawMaterialsService.list({ ...queryParams, per_page: 10_000, page: 1 });
-    triggerCsvDownload(result.items, visibleColumns, materialType, t as unknown as (k: string) => string);
+    triggerCsvDownload(result.items, visibleColumns, materialType, t);
   }
 
   // ── Delete ────────────────────────────────────────────────────────────────
