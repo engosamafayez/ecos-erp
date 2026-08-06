@@ -181,3 +181,39 @@ export interface ServiceAreaPayload {
   priority?: number;
   color?: string | null;
 }
+
+/**
+ * A network capacity commitment: a hold on a slot, later committed or released.
+ *
+ * This is the primitive layer. The operator-facing workflow is Operations'
+ * capacity reservation, which owns one of these — ops_capacity_reservations
+ * has a commitment relation to network_capacity_commitments. These endpoints
+ * exist for callers working at the network level directly.
+ *
+ * `holds_capacity` is the backend's answer to whether the row still consumes
+ * headroom; holds expire, and only the domain knows when.
+ */
+export type CapacityCommitment = {
+  id: string;
+  status: string;
+  status_label: string;
+  holds_capacity: boolean;
+  quantities: Record<string, number>;
+  reference_type: string | null;
+  reference_id: string | null;
+  expires_at: string | null;
+  committed_at: string | null;
+  released_at: string | null;
+  release_reason: string | null;
+};
+
+export type ReserveCapacityPayload = {
+  slot_id: string;
+  orders?: number;
+  stops?: number;
+  weight_kg?: number;
+  reference_type?: string | null;
+  reference_id?: string | null;
+  /** Minutes until the hold lapses. Omitted, the backend applies its default. */
+  ttl_minutes?: number | null;
+};

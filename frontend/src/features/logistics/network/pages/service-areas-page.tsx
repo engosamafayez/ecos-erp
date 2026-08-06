@@ -5,6 +5,8 @@ import { ChevronRight, Layers, MapPin, Network as NetworkIcon, PauseCircle } fro
 import { Pagination } from '@/components/crud';
 import { WorkspaceHeader } from '@/components/workspace/header/workspace-header';
 import { WorkspacePage } from '@/components/page/layout/workspace-page';
+
+import { CapacityCommitmentsPanel } from '../components/capacity-commitments-panel';
 import { SmartToolbar } from '@/components/data-grid/smart-toolbar';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -221,6 +223,8 @@ export function ServiceAreasPage() {
               onPageChange={setPage}
             />
           )}
+
+          <CapacityCommitmentsPanel />
         </div>
       </WorkspacePage>
 

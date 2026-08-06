@@ -85,12 +85,6 @@ export const tripExecutionService = {
     await api.delete(`${BASE}/${tripId}/custody/${custodyId}`);
   },
 
-  /** One stop in full, with its actions, proof and payments. */
-  async stop(tripId: string, stopId: number): Promise<DeliveryStop> {
-    const { data } = await api.get<{ data: DeliveryStop }>(`${BASE}/${tripId}/stops/${stopId}`);
-    return data.data;
-  },
-
   // ── Stops ──────────────────────────────────────────────────────────────────
 
   async stops(tripId: string): Promise<DeliveryStop[]> {

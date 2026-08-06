@@ -215,13 +215,6 @@ export function useVerifyCod() {
 
 // ── Return discrepancy and COD write-off ─────────────────────────────────────
 
-export function useDeliveryReturn(deliveryId: string | null, returnId: string | null) {
-  return useQuery({
-    queryKey: [KEY, 'return', deliveryId, returnId],
-    queryFn: () => deliveryService.deliveryReturn(deliveryId as string, returnId as string),
-    enabled: deliveryId !== null && returnId !== null,
-  });
-}
 
 export function useFlagReturnDiscrepancy() {
   return useDeliveryMutation(
@@ -235,3 +228,4 @@ export function useWriteOffCod() {
     deliveryService.writeOffCod(id, reason),
   );
 }
+

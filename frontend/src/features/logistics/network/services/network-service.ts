@@ -1,5 +1,6 @@
 import { api } from '@/lib/axios';
 import type {
+  CapacityCommitment,
   CapacityAvailability,
   CapacityPlanRow,
   CoverageAnswer,
@@ -12,6 +13,7 @@ import type {
   ServiceAreasQuery,
   ServiceAreasResult,
   ServiceLevelRow,
+  ReserveCapacityPayload,
 } from '../types/network';
 
 const BASE = '/logistics/network';
@@ -96,6 +98,38 @@ export const networkService = {
   async regions(): Promise<DispatchRegionRow[]> {
     const { data } = await api.get<{ data: DispatchRegionRow[] }>(`${BASE}/dispatch-regions`);
     return data.data;
+  },
+
+  // ── Capacity commitments (network primitive) ───────────────────────────────
+
+  /** Places a hold on a slot. The hold expires unless it is committed. */
+  async reserveCapacity(payload: ReserveCapacityPayload): Promise<CapacityCommitment> {
+    const { data } = await api.post<{ data: CapacityCommitment }>(
+      `${BASE}/capacity/reserve`,
+      payload,
+    );
+    return data.data;
+  },
+
+  async commitCapacity(id: string): Promise<CapacityCommitment> {
+    const { data } = await api.patch<{ data: CapacityCommitment }>(`${BASE}/capacity/${id}/commit`);
+    return data.data;
+  },
+
+  async releaseCapacity(id: string, reason?: string): Promise<CapacityCommitment> {
+    const { data } = await api.patch<{ data: CapacityCommitment }>(
+      `${BASE}/capacity/${id}/release`,
+      { reason: reason ?? null },
+    );
+    return data.data;
+  },
+
+  /** Housekeeping: releases holds whose TTL has lapsed. Reports how many. */
+  async sweepExpiredCapacity(): Promise<number> {
+    const { data } = await api.post<{ data: { released?: number } }>(
+      `${BASE}/capacity/sweep-expired`,
+    );
+    return data.data.released ?? 0;
   },
 
   async serviceLevels(): Promise<ServiceLevelRow[]> {

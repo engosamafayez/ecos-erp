@@ -3,6 +3,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { networkService } from '../services/network-service';
 import type {
   CoverageMemberType,
+  ReserveCapacityPayload,
   ServiceAreaPayload,
   ServiceAreaStatus,
   ServiceAreasQuery,
@@ -103,4 +104,26 @@ export function useDetachMember() {
   return useNetworkMutation(({ id, memberId }: { id: string; memberId: number }) =>
     networkService.detachMember(id, memberId),
   );
+}
+
+// ── Capacity commitments ─────────────────────────────────────────────────────
+
+export function useReserveCapacity() {
+  return useNetworkMutation((payload: ReserveCapacityPayload) =>
+    networkService.reserveCapacity(payload),
+  );
+}
+
+export function useCommitCapacity() {
+  return useNetworkMutation((id: string) => networkService.commitCapacity(id));
+}
+
+export function useReleaseCapacity() {
+  return useNetworkMutation(({ id, reason }: { id: string; reason?: string }) =>
+    networkService.releaseCapacity(id, reason),
+  );
+}
+
+export function useSweepExpiredCapacity() {
+  return useNetworkMutation(() => networkService.sweepExpiredCapacity());
 }
