@@ -15,7 +15,11 @@ import type enLogistics from '@/i18n/locales/en/logistics.json';
 
 import { useSetTripStatus, useTrip, useTripDispatchReadiness } from '../hooks/use-trips';
 import type { Trip, TripStatus, TripType } from '../types/trip';
+import { TripExceptionsTab } from './trip-exceptions-tab';
+import { TripOrdersTab } from './trip-orders-tab';
+import { TripReturnsTab } from './trip-returns-tab';
 import { TripStatusBadge } from './trip-status-badge';
+import { TripStopsTab } from './trip-stops-tab';
 
 type LogisticsLabel = ($: typeof enLogistics) => string;
 
@@ -241,6 +245,12 @@ export function TripDrawer({
             <TabsTrigger value="acceptance">{t(($) => $.trips.drawer.tabs.acceptance)}</TabsTrigger>
             <TabsTrigger value="timeline">{t(($) => $.trips.drawer.tabs.timeline)}</TabsTrigger>
             <TabsTrigger value="money">{t(($) => $.trips.drawer.tabs.money)}</TabsTrigger>
+            <TabsTrigger value="orders">{t(($) => $.trips.execution.tabs.orders)}</TabsTrigger>
+            <TabsTrigger value="stops">{t(($) => $.trips.execution.tabs.stops)}</TabsTrigger>
+            <TabsTrigger value="exceptions">
+              {t(($) => $.trips.execution.tabs.exceptions)}
+            </TabsTrigger>
+            <TabsTrigger value="returns">{t(($) => $.trips.execution.tabs.returns)}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="flex flex-col gap-5">
@@ -289,16 +299,6 @@ export function TripDrawer({
 
             {can('logistics.distribution.update') && <StatusTransition trip={trip} />}
 
-            <Alert>
-              <AlertDescription className="flex flex-col gap-1">
-                <Badge variant="outline" className="w-fit text-[10px]">
-                  {t(($) => $.trips.pending.badge)}
-                </Badge>
-                <span className="text-xs text-muted-foreground">
-                  {t(($) => $.trips.pending.orders)}
-                </span>
-              </AlertDescription>
-            </Alert>
           </TabsContent>
 
           <TabsContent value="resourcing" className="flex flex-col gap-4">
@@ -418,6 +418,22 @@ export function TripDrawer({
                 value={dateTime(trip.updated_at)}
               />
             </Grid>
+          </TabsContent>
+
+          <TabsContent value="orders">
+            <TripOrdersTab tripId={trip.id} />
+          </TabsContent>
+
+          <TabsContent value="stops">
+            <TripStopsTab tripId={trip.id} />
+          </TabsContent>
+
+          <TabsContent value="exceptions">
+            <TripExceptionsTab tripId={trip.id} />
+          </TabsContent>
+
+          <TabsContent value="returns">
+            <TripReturnsTab tripId={trip.id} />
           </TabsContent>
 
           <TabsContent value="money" className="flex flex-col gap-4">
