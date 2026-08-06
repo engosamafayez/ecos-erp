@@ -28,12 +28,12 @@ import type { Command, CommandGroup, CommandGroupMeta } from './command-types';
 // while staying reactive to language changes.
 
 export const COMMAND_GROUP_META: Record<CommandGroup, CommandGroupMeta> = {
-  navigation: { labelKey: 'command-palette:groups.navigation', icon: LayoutDashboard },
-  actions:    { labelKey: 'command-palette:groups.actions',    icon: ShoppingBag },
-  search:     { labelKey: 'command-palette:groups.search',     icon: Package },
-  recent:     { labelKey: 'command-palette:groups.recent',     icon: ClipboardList },
-  favorites:  { labelKey: 'command-palette:groups.favorites',  icon: Warehouse },
-  ai:         { labelKey: 'command-palette:groups.ai',         icon: Sparkles },
+  navigation: { label: ($) => $.groups.navigation, icon: LayoutDashboard },
+  actions:    { label: ($) => $.groups.actions,    icon: ShoppingBag },
+  search:     { label: ($) => $.groups.search,     icon: Package },
+  recent:     { label: ($) => $.groups.recent,     icon: ClipboardList },
+  favorites:  { label: ($) => $.groups.favorites,  icon: Warehouse },
+  ai:         { label: ($) => $.groups.ai,         icon: Sparkles },
 };
 
 /** Groups shown in the empty-state (no search query). */
@@ -66,7 +66,7 @@ export const SEARCH_GROUP_ORDER: CommandGroup[] = [
  *   Modules export their own command factory following the same signature:
  *
  *     export function createOrdersCommands(
- *       t: TFunction,
+ *       t: TFunction<'command-palette'>,
  *       navigate: NavigateFunction,
  *       onClose: () => void,
  *       openCreateDrawer: () => void,
@@ -79,7 +79,7 @@ export const SEARCH_GROUP_ORDER: CommandGroup[] = [
  *   to enable permission-aware and workspace-scoped command filtering.
  */
 export function createDefaultCommands(
-  t: TFunction,
+  t: TFunction<'command-palette'>,
   navigate: NavigateFunction,
   onClose: () => void,
 ): Command[] {
@@ -93,8 +93,8 @@ export function createDefaultCommands(
     // ── Navigation ────────────────────────────────────────────────────────────
     {
       id: 'nav.dashboard',
-      title: t($ => $["command-palette:nav"].dashboard.title),
-      description: t($ => $["command-palette:nav"].dashboard.description),
+      title: t($ => $.nav.dashboard.title),
+      description: t($ => $.nav.dashboard.description),
       group: 'navigation',
       icon: LayoutDashboard,
       keywords: ['home', 'overview', 'kpi'],
@@ -102,8 +102,8 @@ export function createDefaultCommands(
     },
     {
       id: 'nav.orders',
-      title: t($ => $["command-palette:nav"].orders.title),
-      description: t($ => $["command-palette:nav"].orders.description),
+      title: t($ => $.nav.orders.title),
+      description: t($ => $.nav.orders.description),
       group: 'navigation',
       icon: ShoppingBag,
       keywords: ['sales', 'commerce'],
@@ -111,8 +111,8 @@ export function createDefaultCommands(
     },
     {
       id: 'nav.fulfillments',
-      title: t($ => $["command-palette:nav"].fulfillments.title),
-      description: t($ => $["command-palette:nav"].fulfillments.description),
+      title: t($ => $.nav.fulfillments.title),
+      description: t($ => $.nav.fulfillments.description),
       group: 'navigation',
       icon: PackageCheck,
       keywords: ['shipping', 'dispatch', 'fulfillment', 'delivery'],
@@ -120,8 +120,8 @@ export function createDefaultCommands(
     },
     {
       id: 'nav.customers',
-      title: t($ => $["command-palette:nav"].customers.title),
-      description: t($ => $["command-palette:nav"].customers.description),
+      title: t($ => $.nav.customers.title),
+      description: t($ => $.nav.customers.description),
       group: 'navigation',
       icon: Users,
       keywords: ['crm', 'clients', 'contacts', 'commerce'],
@@ -129,8 +129,8 @@ export function createDefaultCommands(
     },
     {
       id: 'nav.products',
-      title: t($ => $["command-palette:nav"].products.title),
-      description: t($ => $["command-palette:nav"].products.description),
+      title: t($ => $.nav.products.title),
+      description: t($ => $.nav.products.description),
       group: 'navigation',
       icon: Package,
       keywords: ['catalog', 'sku', 'items', 'goods', 'commerce'],
@@ -138,8 +138,8 @@ export function createDefaultCommands(
     },
     {
       id: 'nav.inventory',
-      title: t($ => $["command-palette:nav"].inventory.title),
-      description: t($ => $["command-palette:nav"].inventory.description),
+      title: t($ => $.nav.inventory.title),
+      description: t($ => $.nav.inventory.description),
       group: 'navigation',
       icon: Boxes,
       keywords: ['stock', 'levels', 'wh', 'stock-ledger'],
@@ -147,8 +147,8 @@ export function createDefaultCommands(
     },
     {
       id: 'nav.warehouses',
-      title: t($ => $["command-palette:nav"].warehouses.title),
-      description: t($ => $["command-palette:nav"].warehouses.description),
+      title: t($ => $.nav.warehouses.title),
+      description: t($ => $.nav.warehouses.description),
       group: 'navigation',
       icon: Warehouse,
       keywords: ['locations', 'storage', 'facilities'],
@@ -156,8 +156,8 @@ export function createDefaultCommands(
     },
     {
       id: 'nav.suppliers',
-      title: t($ => $["command-palette:nav"].suppliers.title),
-      description: t($ => $["command-palette:nav"].suppliers.description),
+      title: t($ => $.nav.suppliers.title),
+      description: t($ => $.nav.suppliers.description),
       group: 'navigation',
       icon: Truck,
       keywords: ['vendors', 'purchasing', 'procurement'],
@@ -165,8 +165,8 @@ export function createDefaultCommands(
     },
     {
       id: 'nav.purchase-orders',
-      title: t($ => $["command-palette:nav"].purchaseOrders.title),
-      description: t($ => $["command-palette:nav"].purchaseOrders.description),
+      title: t($ => $.nav.purchaseOrders.title),
+      description: t($ => $.nav.purchaseOrders.description),
       group: 'navigation',
       icon: ClipboardList,
       keywords: ['po', 'procurement', 'purchasing'],
@@ -174,8 +174,8 @@ export function createDefaultCommands(
     },
     {
       id: 'nav.companies',
-      title: t($ => $["command-palette:nav"].companies.title),
-      description: t($ => $["command-palette:nav"].companies.description),
+      title: t($ => $.nav.companies.title),
+      description: t($ => $.nav.companies.description),
       group: 'navigation',
       icon: Building2,
       keywords: ['org', 'entity', 'organization', 'branch'],
@@ -183,8 +183,8 @@ export function createDefaultCommands(
     },
     {
       id: 'nav.manufacturing',
-      title: t($ => $["command-palette:nav"].manufacturing.title),
-      description: t($ => $["command-palette:nav"].manufacturing.description),
+      title: t($ => $.nav.manufacturing.title),
+      description: t($ => $.nav.manufacturing.description),
       group: 'navigation',
       icon: Factory,
       keywords: ['bom', 'production', 'assembly', 'recipes'],
@@ -192,8 +192,8 @@ export function createDefaultCommands(
     },
     {
       id: 'nav.reports',
-      title: t($ => $["command-palette:nav"].reports.title),
-      description: t($ => $["command-palette:nav"].reports.description),
+      title: t($ => $.nav.reports.title),
+      description: t($ => $.nav.reports.description),
       group: 'navigation',
       icon: BarChart3,
       keywords: ['analytics', 'kpi', 'metrics', 'charts'],
@@ -201,8 +201,8 @@ export function createDefaultCommands(
     },
     {
       id: 'nav.settings',
-      title: t($ => $["command-palette:nav"].settings.title),
-      description: t($ => $["command-palette:nav"].settings.description),
+      title: t($ => $.nav.settings.title),
+      description: t($ => $.nav.settings.description),
       group: 'navigation',
       icon: Settings,
       keywords: ['config', 'preferences', 'integrations'],
@@ -212,8 +212,8 @@ export function createDefaultCommands(
     // ── Quick Actions ─────────────────────────────────────────────────────────
     {
       id: 'action.order.new',
-      title: t($ => $["command-palette:actions"].orderNew.title),
-      description: t($ => $["command-palette:actions"].orderNew.description),
+      title: t($ => $.actions.orderNew.title),
+      description: t($ => $.actions.orderNew.description),
       group: 'actions',
       icon: ShoppingBag,
       shortcut: '⌘N',
@@ -222,8 +222,8 @@ export function createDefaultCommands(
     },
     {
       id: 'action.customer.new',
-      title: t($ => $["command-palette:actions"].customerNew.title),
-      description: t($ => $["command-palette:actions"].customerNew.description),
+      title: t($ => $.actions.customerNew.title),
+      description: t($ => $.actions.customerNew.description),
       group: 'actions',
       icon: Users,
       keywords: ['create', 'add', 'crm', 'contact'],
@@ -231,8 +231,8 @@ export function createDefaultCommands(
     },
     {
       id: 'action.product.new',
-      title: t($ => $["command-palette:actions"].productNew.title),
-      description: t($ => $["command-palette:actions"].productNew.description),
+      title: t($ => $.actions.productNew.title),
+      description: t($ => $.actions.productNew.description),
       group: 'actions',
       icon: Package,
       keywords: ['create', 'catalog', 'sku', 'add'],
@@ -240,8 +240,8 @@ export function createDefaultCommands(
     },
     {
       id: 'action.supplier.new',
-      title: t($ => $["command-palette:actions"].supplierNew.title),
-      description: t($ => $["command-palette:actions"].supplierNew.description),
+      title: t($ => $.actions.supplierNew.title),
+      description: t($ => $.actions.supplierNew.description),
       group: 'actions',
       icon: Truck,
       keywords: ['create', 'vendor', 'add'],
@@ -249,8 +249,8 @@ export function createDefaultCommands(
     },
     {
       id: 'action.warehouse.new',
-      title: t($ => $["command-palette:actions"].warehouseNew.title),
-      description: t($ => $["command-palette:actions"].warehouseNew.description),
+      title: t($ => $.actions.warehouseNew.title),
+      description: t($ => $.actions.warehouseNew.description),
       group: 'actions',
       icon: Warehouse,
       keywords: ['create', 'location', 'add'],
@@ -258,8 +258,8 @@ export function createDefaultCommands(
     },
     {
       id: 'action.company.new',
-      title: t($ => $["command-palette:actions"].companyNew.title),
-      description: t($ => $["command-palette:actions"].companyNew.description),
+      title: t($ => $.actions.companyNew.title),
+      description: t($ => $.actions.companyNew.description),
       group: 'actions',
       icon: Building2,
       keywords: ['create', 'org', 'entity', 'add'],
@@ -267,8 +267,8 @@ export function createDefaultCommands(
     },
     {
       id: 'action.import',
-      title: t($ => $["command-palette:actions"].import.title),
-      description: t($ => $["command-palette:actions"].import.description),
+      title: t($ => $.actions.import.title),
+      description: t($ => $.actions.import.description),
       group: 'actions',
       icon: Upload,
       keywords: ['csv', 'excel', 'upload', 'bulk'],
@@ -277,8 +277,8 @@ export function createDefaultCommands(
     },
     {
       id: 'action.export',
-      title: t($ => $["command-palette:actions"].export.title),
-      description: t($ => $["command-palette:actions"].export.description),
+      title: t($ => $.actions.export.title),
+      description: t($ => $.actions.export.description),
       group: 'actions',
       icon: Download,
       keywords: ['csv', 'excel', 'download', 'bulk'],
@@ -291,16 +291,16 @@ export function createDefaultCommands(
     // runtime via module command registration.
     {
       id: 'fav.orders',
-      title: t($ => $["command-palette:favorites"].orders.title),
-      description: t($ => $["command-palette:favorites"].orders.description),
+      title: t($ => $.favorites.orders.title),
+      description: t($ => $.favorites.orders.description),
       group: 'favorites',
       icon: ShoppingBag,
       action: go('/orders'),
     },
     {
       id: 'fav.inventory',
-      title: t($ => $["command-palette:favorites"].inventory.title),
-      description: t($ => $["command-palette:favorites"].inventory.description),
+      title: t($ => $.favorites.inventory.title),
+      description: t($ => $.favorites.inventory.description),
       group: 'favorites',
       icon: Boxes,
       action: go('/inventory'),
@@ -309,8 +309,8 @@ export function createDefaultCommands(
     // ── AI — reserved ─────────────────────────────────────────────────────────
     {
       id: 'ai.assistant',
-      title: t($ => $["command-palette:ai"].assistant.title),
-      description: t($ => $["command-palette:ai"].assistant.description),
+      title: t($ => $.ai.assistant.title),
+      description: t($ => $.ai.assistant.description),
       group: 'ai',
       icon: Sparkles,
       keywords: ['ai', 'assistant', 'ask', 'intelligence', 'chat', 'copilot'],

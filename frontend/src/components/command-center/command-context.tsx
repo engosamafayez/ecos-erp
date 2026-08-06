@@ -9,6 +9,7 @@ import type { CommandCenterCtx } from './command-center-context';
 import { createDefaultCommands } from './command-groups';
 import { commandRegistry, useRegisteredCommands } from './command-registry';
 import type { Command } from './command-types';
+import { useTranslation } from 'react-i18next';
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 
@@ -37,9 +38,11 @@ export function CommandProvider({ children }: { children: ReactNode }) {
 
   // Default command set — regenerated when navigate or closeSearch change.
   // closeSearch is a stable useCallback from HeaderContext, so this is infrequent.
+  const { t } = useTranslation('command-palette');
+
   const defaultCommands = useMemo(
-    () => createDefaultCommands(navigate, closeSearch),
-    [navigate, closeSearch],
+    () => createDefaultCommands(t, navigate, closeSearch),
+    [t, navigate, closeSearch],
   );
 
   // Module-registered commands — re-rendered on registry mutations

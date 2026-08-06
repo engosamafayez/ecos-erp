@@ -35,25 +35,25 @@ const COLUMN_STRUCTURE: ColumnStructure[] = [
 // Maps a column key to its i18n label — identical keys used in createOrderColumns().
 function resolveLabel(key: string, t: TFunction<'orders'>): string {
   switch (key) {
-    case 'order_number':        return t('columns.number');
-    case 'customer':            return t('columns.customer');
-    case 'status':              return t('columns.status');
-    case 'address':             return t('columns.address');
-    case 'zone':                return t('columns.zone');
-    case 'location':            return t('columns.location');
-    case 'inventory_execution': return t('columns.inventoryExecution');
-    case 'products_count':      return t('columns.productsCount');
-    case 'payment_method':      return t('columns.paymentMethod');
-    case 'payment_proof':       return t('columns.paymentProof');
-    case 'total':               return t('columns.total');
-    case 'customer_note':       return t('columns.customerNote');
-    case 'created_at':          return t('columns.createdAt');
-    case 'sales_rep':           return t('columns.salesRep');
-    case 'delivery_driver':     return t('columns.driver');
-    case 'store':               return t('columns.store');
-    case 'shipping_attempts':   return t('columns.shippingAttempts');
-    case 'updated_at':          return t('columns.updatedAt');
-    case 'delivery_window':     return t('columns.deliveryWindow');
+    case 'order_number':        return t($ => $.columns.number);
+    case 'customer':            return t($ => $.columns.customer);
+    case 'status':              return t($ => $.columns.status);
+    case 'address':             return t($ => $.columns.address);
+    case 'zone':                return t($ => $.columns.zone);
+    case 'location':            return t($ => $.columns.location);
+    case 'inventory_execution': return t($ => $.columns.inventoryExecution);
+    case 'products_count':      return t($ => $.columns.productsCount);
+    case 'payment_method':      return t($ => $.columns.paymentMethod);
+    case 'payment_proof':       return t($ => $.columns.paymentProof);
+    case 'total':               return t($ => $.columns.total);
+    case 'customer_note':       return t($ => $.columns.customerNote);
+    case 'created_at':          return t($ => $.columns.createdAt);
+    case 'sales_rep':           return t($ => $.columns.salesRep);
+    case 'delivery_driver':     return t($ => $.columns.driver);
+    case 'store':               return t($ => $.columns.store);
+    case 'shipping_attempts':   return t($ => $.columns.shippingAttempts);
+    case 'updated_at':          return t($ => $.columns.updatedAt);
+    case 'delivery_window':     return t($ => $.columns.deliveryWindow);
     default:                    return '';
   }
 }

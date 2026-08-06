@@ -31,7 +31,7 @@ export function ChannelFormFields() {
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <FormField name="company_id" label={t($ => $.form.company.label, 'Company (filter brands)')}>
+          <FormField name="company_id" label={t($ => $.form.company.label, { defaultValue: 'Company (filter brands)' })}>
             <Combobox
               options={companyOptions}
               value={companyId || null}
@@ -39,19 +39,19 @@ export function ChannelFormFields() {
                 setValue('company_id', val, { shouldValidate: false });
                 setValue('brand_id', '', { shouldValidate: false });
               }}
-              placeholder={t($ => $.form.company.placeholder, 'All companies')}
+              placeholder={t($ => $.form.company.placeholder, { defaultValue: 'All companies' })}
               loading={companiesLoading}
             />
           </FormField>
         </div>
 
         <div className="sm:col-span-2">
-          <FormField name="brand_id" label={t($ => $.form.brand.label, 'Brand')} required>
+          <FormField name="brand_id" label={t($ => $.form.brand.label, { defaultValue: 'Brand' })} required>
             <Combobox
               options={brandOptions}
               value={brandId || null}
               onChange={(val) => setValue('brand_id', val, { shouldValidate: true })}
-              placeholder={companyId ? t($ => $.form.brand.placeholder, 'Select brand…') : 'Select a company first'}
+              placeholder={companyId ? t($ => $.form.brand.placeholder, { defaultValue: 'Select brand…' }) : 'Select a company first'}
               loading={brandsLoading}
               disabled={!companyId}
             />

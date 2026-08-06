@@ -30,6 +30,7 @@ import type { MaterialType, RawMaterial } from '@/features/raw-materials/types';
 import { resolveMaterialStockStatus } from '@/features/raw-materials/utils/material-stock-status';
 import { ROUTES } from '@/router/routes';
 import { useCategoriesQuery } from '@/features/categories/hooks/use-categories';
+import type { TFunction } from 'i18next';
 
 type SortField = 'name' | 'sku' | 'material_cost' | 'on_hand_qty' | 'created_at';
 type SortDir   = 'asc' | 'desc';
@@ -37,7 +38,7 @@ type SortDir   = 'asc' | 'desc';
 const PER_PAGE = 25;
 
 // Module-level CSV column definitions — value functions only (no translated headers)
-type CsvColDef = { key: ColumnKey; value: (m: RawMaterial, t: (k: string) => string) => string };
+type CsvColDef = { key: ColumnKey; value: (m: RawMaterial, t: TFunction<'raw-materials'>) => string };
 
 const CSV_COL_DEFS: CsvColDef[] = [
   { key: 'image',           value: (m)    => m.image_url ?? '' },
@@ -76,7 +77,7 @@ function triggerCsvDownload(
   items: RawMaterial[],
   visibleColumns: Set<ColumnKey>,
   materialType: MaterialType | '',
-  t: (k: string) => string,
+  t: TFunction<'raw-materials'>,
 ) {
   const cols = CSV_COL_DEFS.filter((c) => visibleColumns.has(c.key));
   const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;

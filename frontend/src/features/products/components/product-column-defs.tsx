@@ -25,6 +25,7 @@ import { SyncBadge } from './badges/sync-badge';
 import { marginColorClass } from '@/features/products/lib/pricing-utils';
 import { productsService } from '@/features/products/services/products-service';
 import type { Product } from '../types/product';
+import type { TFunction } from 'i18next';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -198,7 +199,7 @@ export type ProductColumnCallbacks = {
 
 // ── t function type ───────────────────────────────────────────────────────────
 
-type TFn = (key: string, opts?: Record<string, unknown>) => string;
+type TFn = TFunction<'products'>;
 
 // ── Factory ───────────────────────────────────────────────────────────────────
 

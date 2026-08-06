@@ -206,7 +206,9 @@
   },
   "status": {
     "active": "نشط",
+    "pending": "معلق",
     "inactive": "غير نشط",
+    "archived": "مؤرشفة",
     "all": "الكل"
   },
   "fields": {

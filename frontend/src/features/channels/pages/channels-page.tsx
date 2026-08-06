@@ -271,7 +271,7 @@ export function ChannelsPage() {
     },
     {
       key: 'brand',
-      header: t($ => $.columns.brand, 'Brand'),
+      header: t($ => $.columns.brand, { defaultValue: 'Brand' }),
       cell: (c) => <span className="text-muted-foreground">{c.brand?.name ?? '—'}</span>,
     },
     {
@@ -346,13 +346,13 @@ export function ChannelsPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">{t($ => $.kpi.total, 'Total Channels')}</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.kpi.total, { defaultValue: 'Total Channels' })}</div>
             <div className="text-2xl font-bold">{isLoading ? '—' : (meta?.total ?? 0)}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">{t($ => $.kpi.active, 'Active')}</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.kpi.active, { defaultValue: 'Active' })}</div>
             <div className="text-2xl font-bold text-emerald-600">
               {isLoading ? '—' : items.filter((c) => c.is_active).length}
             </div>
@@ -360,7 +360,7 @@ export function ChannelsPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">{t($ => $.kpi.connected, 'Connected')}</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.kpi.connected, { defaultValue: 'Connected' })}</div>
             <div className="text-2xl font-bold text-blue-600">
               {isLoading ? '—' : items.filter((c) => c.connection_status === 'connected').length}
             </div>
@@ -368,7 +368,7 @@ export function ChannelsPage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">{t($ => $.kpi.platforms, 'Platforms')}</div>
+            <div className="text-muted-foreground text-sm">{t($ => $.kpi.platforms, { defaultValue: 'Platforms' })}</div>
             <div className="text-2xl font-bold">
               {isLoading ? '—' : new Set(items.map((c) => c.platform)).size}
             </div>

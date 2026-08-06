@@ -100,7 +100,7 @@ export function OrderCustomerBadge({ order }: Props) {
               {isVip
                 ? `⭐ ${t($ => $.customerBadge.vip)}`
                 : isRejected
-                  ? `⚠ ${t($ => $.customerBadge.rejected, 'Rejected')}`
+                  ? `⚠ ${t($ => $.customerBadge.rejected, { defaultValue: 'Rejected' })}`
                   : `🔁 ${t($ => $.customerBadge.returning)}`}
             </span>
           ) : null}
@@ -197,7 +197,7 @@ export function OrderCustomerBadge({ order }: Props) {
           href={`/orders?customer_id=${customer.id}`}
           className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground hover:underline"
         >
-          {t($ => $.customerBadge.openOrders, 'Orders')}
+          {t($ => $.customerBadge.openOrders, { defaultValue: 'Orders' })}
         </a>
         <a
           href={`/app/customers/${customer.id}`}

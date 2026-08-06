@@ -22,12 +22,12 @@ export function CustomerFormFields({ isEdit = false }: Props) {
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <FormField name="brand_id" label={t($ => $.form.brand.label, 'Brand')} required>
+          <FormField name="brand_id" label={t($ => $.form.brand.label, { defaultValue: 'Brand' })} required>
             <Combobox
               options={brandOptions}
               value={brandId || null}
               onChange={(val) => setValue('brand_id', val ?? '', { shouldValidate: true })}
-              placeholder={t($ => $.form.brand.placeholder, 'Select brand…')}
+              placeholder={t($ => $.form.brand.placeholder, { defaultValue: 'Select brand…' })}
               loading={brandsLoading}
               disabled={isEdit}
             />

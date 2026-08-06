@@ -44,6 +44,7 @@ import { getMediaUrl } from '@/lib/media';
 import { uploadMaterialImage } from '@/lib/media-upload';
 import { ROUTES } from '@/router/routes';
 import { cn } from '@/lib/utils';
+import type { TFunction } from 'i18next';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -157,7 +158,7 @@ function PriceHealthBadge({ margin }: { margin: number | null }) {
 // ── Product Completion Indicator ──────────────────────────────────────────────
 
 type CompletionStep = { label: string; done: boolean };
-type TFn = (key: string, opts?: Record<string, unknown>) => string;
+type TFn = TFunction<'products'>;
 
 function computeCompletion(product: Product, t: TFn): CompletionStep[] {
   const hasChannel = (product.channels?.length ?? 0) > 0;

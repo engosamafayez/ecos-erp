@@ -147,7 +147,7 @@ export function ChannelsContent() {
     },
     {
       key: 'brand',
-      header: t($ => $.columns.brand, 'Brand'),
+      header: t($ => $.columns.brand, { defaultValue: 'Brand' }),
       cell: (c) => <span className="text-muted-foreground">{c.brand?.name ?? '—'}</span>,
     },
     {

@@ -29,7 +29,7 @@ export function useInventoryCountLabels() {
   };
 
   const countStatusFilter: Array<{ value: CountSessionStatus | 'all'; label: string }> = [
-    { value: 'all',         label: t($ => $.sessions.status.all,         'All') },
+    { value: 'all',         label: t($ => $.sessions.status.all, { defaultValue: 'All' }) },
     { value: 'draft',       label: t($ => $.sessions.status.draft) },
     { value: 'in_progress', label: t($ => $.sessions.status.in_progress) },
     { value: 'completed',   label: t($ => $.sessions.status.completed) },

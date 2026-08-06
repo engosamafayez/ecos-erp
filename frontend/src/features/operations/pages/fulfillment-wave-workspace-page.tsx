@@ -185,11 +185,11 @@ export function FulfillmentWaveWorkspacePage() {
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-border/60 bg-muted/40">
-                      <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t($ => $.wave.dashboard.mfgTable.product, 'Product')}</th>
-                      <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.mfgTable.planned, 'Planned')}</th>
-                      <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.mfgTable.manufacturing, 'In Mfg')}</th>
-                      <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.mfgTable.completed, 'Completed')}</th>
-                      <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.mfgTable.remaining, 'Remaining')}</th>
+                      <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t($ => $.wave.dashboard.mfgTable.product, { defaultValue: 'Product' })}</th>
+                      <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.mfgTable.planned, { defaultValue: 'Planned' })}</th>
+                      <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.mfgTable.manufacturing, { defaultValue: 'In Mfg' })}</th>
+                      <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.mfgTable.completed, { defaultValue: 'Completed' })}</th>
+                      <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.mfgTable.remaining, { defaultValue: 'Remaining' })}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -285,9 +285,9 @@ export function FulfillmentWaveWorkspacePage() {
                         <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t($ => $.wave.dashboard.materialTable.material)}</th>
                         <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.materialTable.required)}</th>
                         <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.materialTable.available)}</th>
-                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.materialTable.reserved, 'Reserved')}</th>
+                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.materialTable.reserved, { defaultValue: 'Reserved' })}</th>
                         <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.materialTable.missing)}</th>
-                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.materialTable.coverage, 'Coverage')}</th>
+                        <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.wave.dashboard.materialTable.coverage, { defaultValue: 'Coverage' })}</th>
                       </tr>
                     </thead>
                     <tbody>

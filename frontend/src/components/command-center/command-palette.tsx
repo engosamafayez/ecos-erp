@@ -115,7 +115,7 @@ function CommandGroupSection({
         className="flex items-center gap-1.5 px-4 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70"
       >
         <GroupIcon className="size-3" />
-        {t(meta.labelKey)}
+        {t(meta.label)}
       </div>
 
       {commands.map((cmd, i) => {

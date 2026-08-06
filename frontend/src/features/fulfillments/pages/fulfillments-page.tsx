@@ -97,7 +97,7 @@ export function FulfillmentsPage() {
     },
     {
       key: 'channel',
-      header: t($ => $.columns.channel, 'Channel'),
+      header: t($ => $.columns.channel, { defaultValue: 'Channel' }),
       cell: (f) => (
         <span className="text-muted-foreground">{f.order?.channel?.name ?? '—'}</span>
       ),

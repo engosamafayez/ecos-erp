@@ -206,7 +206,9 @@
   },
   "status": {
     "active": "Active",
+    "pending": "Pending",
     "inactive": "Inactive",
+    "archived": "Archived",
     "all": "All"
   },
   "fields": {

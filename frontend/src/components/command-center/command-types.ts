@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react';
+import type enCommandPalette from '@/i18n/locales/en/command-palette.json';
 
 // ── Command group ─────────────────────────────────────────────────────────────
 
@@ -56,7 +57,17 @@ export type Command = {
 
 // ── Group metadata ─────────────────────────────────────────────────────────────
 
+/**
+ * A group's label, held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for "a key chosen at runtime", so storing
+ * 'groups.navigation' and calling t() on it cannot type-check. Storing the
+ * selector itself does: it is the same value the compiler already validates at
+ * every inline call site, just held in a constant.
+ */
+export type CommandPaletteLabel = ($: typeof enCommandPalette) => string;
+
 export type CommandGroupMeta = {
-  label: string;
+  label: CommandPaletteLabel;
   icon: ComponentType<{ className?: string }>;
 };

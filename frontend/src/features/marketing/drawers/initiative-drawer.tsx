@@ -41,6 +41,7 @@ import {
   CAMPAIGN_STATUS_LABELS,
 } from '../types/campaign';
 import { Loader2, X } from 'lucide-react';
+import { DEFAULT_CURRENCY } from '@/lib/format';
 
 const STATUS_OPTIONS: InitiativeStatus[] = ['draft', 'active', 'paused', 'completed', 'cancelled'];
 

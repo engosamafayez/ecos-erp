@@ -168,7 +168,7 @@ function SummaryTab({ customer }: { customer: Customer }) {
       {customer.brands && customer.brands.length > 0 ? (
         <div className="flex flex-col gap-1.5 rounded-lg border p-3">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            {t($ => $.drawer.summary.brands, 'Brands')}
+            {t($ => $.drawer.summary.brands, { defaultValue: 'Brands' })}
           </p>
           <div className="flex flex-col gap-1.5">
             {customer.brands.map((b) => (
@@ -181,7 +181,7 @@ function SummaryTab({ customer }: { customer: Customer }) {
                   <span className="truncate">{b.brand_name ?? b.brand_code ?? '—'}</span>
                 </span>
                 <span className="flex shrink-0 items-center gap-3 text-[11px] text-muted-foreground">
-                  <span>{b.orders_count} {t($ => $.drawer.summary.brandOrders, 'orders')}</span>
+                  <span>{b.orders_count} {t($ => $.drawer.summary.brandOrders, { defaultValue: 'orders' })}</span>
                   <span className="font-medium tabular-nums text-foreground">
                     {Number(b.lifetime_value ?? 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </span>

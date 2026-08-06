@@ -81,6 +81,7 @@ import { toast } from '@/components/ds/use-toast';
 import { getMediaUrl } from '@/lib/media';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/router/routes';
+import type { TFunction } from 'i18next';
 
 // ── Formatting ────────────────────────────────────────────────────────────────
 
@@ -99,7 +100,7 @@ function fmtDate(d: string) {
 }
 
 function impactReasons(
-  t: (key: string) => string,
+  t: TFunction<'cost-management'>,
   impacts: ImpactType[],
 ): string {
   if (impacts.length === 0) return '—';

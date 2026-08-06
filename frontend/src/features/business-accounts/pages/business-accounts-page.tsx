@@ -297,13 +297,16 @@ export function BusinessAccountsPage() {
               <DropdownMenuContent align="end" className="w-44">
                 <DropdownMenuLabel>Show/Hide Columns</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {OPTIONAL_COLS.map(({ key, label }) => (
+                {/* Driven by the real column set: a curated OPTIONAL_COLS list
+                    was referenced here but no longer exists, and inventing one
+                    would decide for the user which columns may be hidden. */}
+                {columns.map((column) => (
                   <DropdownMenuCheckboxItem
-                    key={key}
-                    checked={!hiddenCols.has(key)}
-                    onCheckedChange={() => toggleCol(key)}
+                    key={column.key}
+                    checked={!hiddenCols.has(column.key)}
+                    onCheckedChange={() => toggleCol(column.key)}
                   >
-                    {label}
+                    {column.header}
                   </DropdownMenuCheckboxItem>
                 ))}
               </DropdownMenuContent>
