@@ -22,22 +22,34 @@ final class RbacSeeder extends Seeder
 {
     public function run(): void
     {
-        // ── 0. Remove stale two-segment permissions (old module.action format) ──
+        // ── 0. NO CLEANUP. This seeder never deletes a permission. ────────────
         //
-        // Old format has exactly one dot; new format has exactly two.
-        // This keeps re-seeding idempotent when migrating from 001 → 001A.
-        //
-        $removed = Permission::all()
-            ->filter(fn (Permission $p) => substr_count($p->name, '.') === 1)
-            ->each->delete()
-            ->count();
-
-        if ($removed > 0) {
-            $this->command->warn(sprintf(
-                '  RBAC: removed %d old-format permissions (module.action → domain.resource.action).',
-                $removed,
-            ));
-        }
+        // ┌─ WHY THE CLEANUP WAS REMOVED ──────────────────────────────────┐
+        // │ This step used to delete every permission whose name contained  │
+        // │ exactly one dot, on the assumption that one dot meant the old   │
+        // │ module.action format left over from the 001 → 001A migration.   │
+        // │                                                                  │
+        // │ Name shape does not mean that. Modules register two-segment      │
+        // │ permissions legitimately from their own migrations, and the      │
+        // │ rule deleted 19 live ones on every run — every Logistics fleet,  │
+        // │ dispatch, delivery, routing, carrier and network permission,     │
+        // │ plus finance.admin. FleetPolicy authorises against fleet.view    │
+        // │ and fleet.manage, so after a routine `db:seed` those endpoints   │
+        // │ denied everyone, silently: the permission was simply gone, so no │
+        // │ role could hold it and every request was a legitimate 403.       │
+        // │                                                                  │
+        // │ There is no signal that separates a stale leftover from a live   │
+        // │ module registration — both are simply rows present before this   │
+        // │ seeder runs. So the rule could not be narrowed, only removed.    │
+        // │ A lingering obsolete permission is inert: nothing routes to it   │
+        // │ and no role is granted it. A deleted live one breaks             │
+        // │ authorisation. Between an unused row and a locked-out module,    │
+        // │ the unused row is the safe failure.                              │
+        // │                                                                  │
+        // │ Do not reintroduce a name-shape rule here. If genuinely obsolete │
+        // │ permissions ever need removing, that belongs in a migration that │
+        // │ names them explicitly, where the list is reviewable.             │
+        // └──────────────────────────────────────────────────────────────────┘
 
         // ── 1. Create every permission (domain.resource.action) ───────────────
         $allPermissions = [];
