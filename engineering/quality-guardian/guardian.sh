@@ -19,7 +19,23 @@
 set -euo pipefail
 
 GUARDIAN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "$GUARDIAN_DIR/../.." && pwd)"
+
+# Validate the tree the commit is actually happening in.
+#
+# Linked worktrees share the main repository's .git/hooks, so GUARDIAN_DIR always
+# resolves to the main checkout. Deriving PROJECT_ROOT from it meant a commit made
+# in a worktree was validated against the main working tree's files while git
+# handed the validators the worktree's staged file list — every validator read the
+# wrong source tree. Git runs hooks with the cwd at the top of the invoking working
+# tree, so ask git rather than infer from the script's own location.
+#
+# The previous location-based path remains the fallback for invocations from
+# outside a work tree (CI checkouts without .git, manual runs from elsewhere), so
+# behaviour is unchanged there. No validator semantics change: each still receives
+# PROJECT_ROOT as $1 and runs exactly the checks it ran before, on the correct tree.
+PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+[[ -n "$PROJECT_ROOT" && -d "$PROJECT_ROOT" ]] || PROJECT_ROOT="$(cd "$GUARDIAN_DIR/../.." && pwd)"
+
 VALIDATOR_DIR="$GUARDIAN_DIR/validators"
 
 source "$GUARDIAN_DIR/lib/colors.sh"

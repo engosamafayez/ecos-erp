@@ -4,6 +4,7 @@ import { Construction } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { findNavItemByPath } from '@/config/module-navigation';
+import { useNavLabel } from '@/components/layout/use-nav-label';
 
 /**
  * Generic placeholder page reused by every module route. Derives the module
@@ -12,7 +13,13 @@ import { findNavItemByPath } from '@/config/module-navigation';
  */
 export function ComingSoonPage() {
   const { pathname } = useLocation();
-  const moduleName = findNavItemByPath(pathname)?.label ?? 'Module';
+  const navLabel = useNavLabel();
+  const navItem = findNavItemByPath(pathname);
+  const moduleName = navItem
+    ? navItem.kind === 'item'
+      ? navLabel.item(navItem.key)
+      : navLabel.group(navItem.id)
+    : '';
 
   return (
     <div className="flex flex-col gap-6">

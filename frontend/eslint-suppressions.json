@@ -184,11 +184,6 @@
       "count": 4
     }
   },
-  "src/config/module-navigation.ts": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 151
-    }
-  },
   "src/config/navigation.ts": {
     "ecos-i18n/no-hardcoded-ui-strings": {
       "count": 58

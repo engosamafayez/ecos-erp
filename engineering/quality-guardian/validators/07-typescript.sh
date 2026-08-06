@@ -76,7 +76,18 @@ if [[ "$MODE" == "pre-commit" ]]; then
   # and turn off composite/incremental so this is a clean single-shot check.
   trap 'rm -f "$TMP"' EXIT
 
-  files_json="$(printf '"%s",' "${FILES[@]}" | sed 's/,$//')"
+  # Ambient declarations must be part of the program or the scoped check reports
+  # false positives. src/i18n/types.ts carries the i18next CustomTypeOptions
+  # augmentation that makes selector mode — t($ => $.key) — typed. Without it
+  # every selector in a staged file is an implicit any, so a file that happens
+  # to import the augmentation transitively passes while an identical one fails.
+  # Measured: an untouched, already-committed file reports 59 diagnostics without
+  # this and 0 with it. This widens the program only; no compiler option changes
+  # and no diagnostic is suppressed.
+  AMBIENT_FILES=()
+  [[ -f "src/i18n/types.ts" ]] && AMBIENT_FILES+=("src/i18n/types.ts")
+
+  files_json="$(printf '"%s",' "${AMBIENT_FILES[@]}" "${FILES[@]}" | sed 's/,$//')"
   cat > "$TMP" <<JSON
 {
   "extends": "./tsconfig.app.json",

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { APP_MODULES } from '@/config/module-navigation';
 import { CompanySwitcher } from '@/components/layout/header';
 import { WarehouseSwitcher } from '@/components/layout/header';
+import { useNavLabel } from './use-nav-label';
 
 type MobileMenuProps = {
   open: boolean;
@@ -16,6 +17,7 @@ type MobileMenuProps = {
 
 export function MobileMenu({ open, onClose }: MobileMenuProps) {
   const { t } = useTranslation('common');
+  const navLabel = useNavLabel();
 
   if (!open) return null;
 
@@ -67,12 +69,12 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
                   </span>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold">
-                      {t($ => $.nav.groups[mod.id], { defaultValue: mod.label })}
+                      {navLabel.group(mod.id)}
                     </p>
                     {mod.items.length > 0 && (
                       <p className="truncate text-xs text-muted-foreground">
                         {mod.items
-                          .map((i) => t($ => $.nav.items[i.key], { defaultValue: i.label }))
+                          .map((i) => navLabel.item(i.key))
                           .join(' · ')}
                       </p>
                     )}

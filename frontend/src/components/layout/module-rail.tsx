@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { type AppModule } from '@/config/module-navigation';
 import { useNavigation } from '@/features/authorization';
+import { useNavLabel } from './use-nav-label';
 
 type ModuleRailProps = {
   activeModule: AppModule | undefined;
@@ -12,6 +13,7 @@ type ModuleRailProps = {
 
 export function ModuleRail({ activeModule, className }: ModuleRailProps) {
   const { t } = useTranslation('common');
+  const navLabel = useNavLabel();
   // Dynamic sidebar (TASK-IAM-005 / ADR-041): the rail renders the user's
   // effective navigation rather than every module unconditionally. Resolved
   // through the committed authorization context — no permission logic here.
@@ -33,8 +35,8 @@ export function ModuleRail({ activeModule, className }: ModuleRailProps) {
             <Link
               key={mod.id}
               to={mod.defaultPath}
-              title={t($ => $.nav.groups[mod.id], { defaultValue: mod.label })}
-              aria-label={t($ => $.nav.groups[mod.id], { defaultValue: mod.label })}
+              title={navLabel.group(mod.id)}
+              aria-label={navLabel.group(mod.id)}
               aria-current={isActive ? 'page' : undefined}
               className={cn(
                 'group flex w-full flex-col items-center gap-1 rounded-lg px-1 py-2 transition-colors',
@@ -54,7 +56,7 @@ export function ModuleRail({ activeModule, className }: ModuleRailProps) {
                 <Icon className="size-[18px]" aria-hidden />
               </span>
               <span className="w-full truncate text-center text-[10px] font-medium leading-tight">
-                {t($ => $.nav.groups[mod.id], { defaultValue: mod.railLabel })}
+                {navLabel.group(mod.id)}
               </span>
             </Link>
           );
