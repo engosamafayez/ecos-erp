@@ -1,0 +1,78 @@
+{
+  "workspace": {
+    "title": "Customers",
+    "subtitle": "Every customer relationship in one workspace",
+    "breadcrumbRoot": "CRM"
+  },
+  "kpi": {
+    "total": "Total Customers",
+    "active": "Active",
+    "prospects": "Prospects",
+    "archived": "Archived"
+  },
+  "toolbar": {
+    "searchPlaceholder": "Search by name, code, phone or email",
+    "newCustomer": "New Customer",
+    "export": "Export",
+    "refresh": "Refresh",
+    "clearFilters": "Clear filters"
+  },
+  "filters": {
+    "status": "Status",
+    "type": "Type",
+    "group": "Group",
+    "allStatuses": "All statuses",
+    "allTypes": "All types",
+    "allGroups": "All groups"
+  },
+  "type": {
+    "individual": "Individual",
+    "business": "Business"
+  },
+  "status": {
+    "prospect": "Prospect",
+    "active": "Active",
+    "inactive": "Inactive",
+    "blocked": "Blocked",
+    "archived": "Archived"
+  },
+  "columns": {
+    "code": "Code",
+    "name": "Name",
+    "type": "Type",
+    "status": "Status",
+    "phone": "Phone",
+    "email": "Email",
+    "language": "Language",
+    "actions": "Actions"
+  },
+  "row": {
+    "merged": "Merged",
+    "mergedInto": "Merged into another record",
+    "noPhone": "No phone",
+    "noEmail": "No email"
+  },
+  "actions": {
+    "view": "View",
+    "edit": "Edit",
+    "archive": "Archive"
+  },
+  "archive": {
+    "confirmTitle": "Archive this customer?",
+    "confirmBody": "The record stays for history and reporting; it is removed from active lists.",
+    "confirm": "Archive",
+    "cancel": "Cancel",
+    "success": "Customer archived",
+    "failed": "Could not archive the customer"
+  },
+  "empty": {
+    "title": "No customers yet",
+    "body": "Customers appear here once they are created or converted from a lead.",
+    "filtered": "No customers match these filters."
+  },
+  "error": {
+    "title": "Could not load customers",
+    "body": "Try again, or contact support if this continues.",
+    "retry": "Retry"
+  }
+}

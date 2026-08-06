@@ -32,6 +32,7 @@ import { SyncLogsPage } from '@/features/sync-logs/pages/sync-logs-page';
 import { BomWorkspacePage } from '@/features/boms/pages/bom-workspace-page';
 import { RecipesPage } from '@/features/recipes/pages/recipes-page';
 import { RecipeWorkspacePage } from '@/features/recipes/pages/recipe-workspace-page';
+import { CrmCustomersWorkspacePage } from '@/features/crm/pages/crm-customers-workspace-page';
 import { CustomersPage } from '@/features/customers/pages/customers-page';
 import { CustomerProfilePage } from '@/features/customers/pages/customer-profile-page';
 import { StockLedgerPage } from '@/features/stock-ledger/pages/stock-ledger-page';
@@ -307,6 +308,7 @@ export const router = createBrowserRouter(
             { path: ROUTES.fulfillmentsNew, Component: CreateFulfillmentPage },
             { path: `${ROUTES.fulfillments}/:id`, Component: ViewFulfillmentPage },
             { path: ROUTES.customers, Component: CustomersPage },
+            { path: ROUTES.crmCustomers, Component: CrmCustomersWorkspacePage },
             { path: ROUTES.customerDetail, Component: CustomerProfilePage },
             // Configuration OS
             { path: ROUTES.configurationOs,      Component: ConfigurationOsPage },

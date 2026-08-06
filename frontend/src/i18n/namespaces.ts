@@ -42,6 +42,7 @@ export const NAMESPACES = [
   'channels',
   'orders',
   'fulfillments',
+  'crm',
   'customers',
   'business-accounts',
   'customer-engagement',
