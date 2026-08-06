@@ -75,6 +75,7 @@ import { DistributionPlanningPage } from '@/features/logistics/distribution-plan
 import { TripsWorkspacePage } from '@/features/logistics/trips/pages/trips-workspace-page';
 import { CarrierAccountsPage } from '@/features/logistics/carriers/pages/carrier-accounts-page';
 import { AutomationMonitoringPage } from '@/features/logistics/automation/pages/automation-monitoring-page';
+import { LogisticsIntelligencePage } from '@/features/logistics/intelligence/pages/logistics-intelligence-page';
 import { ShippingCompaniesPage } from '@/features/logistics/shipping-companies/pages/shipping-companies-page';
 import { DriversPage } from '@/features/logistics/drivers/pages/drivers-page';
 import { VehiclesPage } from '@/features/logistics/vehicles/pages/vehicles-page';
@@ -333,6 +334,7 @@ export const router = createBrowserRouter(
             { path: ROUTES.logisticsTrips,                Component: TripsWorkspacePage },
             { path: ROUTES.logisticsCarrierAccounts,      Component: CarrierAccountsPage },
             { path: ROUTES.logisticsAutomation,           Component: AutomationMonitoringPage },
+            { path: ROUTES.logisticsIntelligence,         Component: LogisticsIntelligencePage },
             { path: ROUTES.logisticsShippingCompanies,    Component: ShippingCompaniesPage },
             { path: ROUTES.logisticsDrivers,              Component: DriversPage },
             { path: ROUTES.logisticsVehicles,             Component: VehiclesPage },

@@ -1989,5 +1989,88 @@
       "unacknowledged": "Unacknowledged"
     },
     "error": "The automation data could not be loaded."
+  },
+  "intelligence": {
+    "title": "Logistics Intelligence",
+    "subtitle": "Deterministic decisions, insights and forecasts across the logistics estate",
+    "readOnlyNote": "Every engine here ranks and explains; none of them acts. There is no write endpoint on this surface, so nothing on this page changes operations.",
+    "refresh": "Refresh",
+    "error": "The intelligence data could not be loaded.",
+    "generatedAt": "Generated",
+    "tabs": {
+      "decisions": "Decisions",
+      "insights": "Insights",
+      "forecasts": "Forecasts",
+      "optimization": "Optimisation"
+    },
+    "decisions": {
+      "title": "Decision Summary",
+      "overallStatus": "Overall Status",
+      "count": "Recommendations",
+      "topPriority": "Top Priority",
+      "bySeverity": "By Severity",
+      "recommendations": "Recommendations",
+      "priorities": "Priority Order",
+      "conflicts": "Conflict Recommendations",
+      "noRecommendations": "No recommendations.",
+      "noConflicts": "No conflict recommendations.",
+      "priority": "Priority",
+      "severity": "Severity",
+      "category": "Category",
+      "action": "Action",
+      "sourceModule": "Source"
+    },
+    "insights": {
+      "suggestions": "Smart Suggestions",
+      "noSuggestions": "No suggestions.",
+      "why": "Why",
+      "owningModule": "Owner",
+      "bottlenecks": "Bottlenecks",
+      "noBottlenecks": "No binding constraints.",
+      "module": "Module",
+      "reason": "Reason",
+      "tightness": "Tightness",
+      "action": "Action",
+      "tightnessNote": "Tightness is the engine's own score for how close a constraint is to zero headroom.",
+      "warnings": "Capacity Warnings",
+      "noWarnings": "No capacity warnings.",
+      "operational": "Operational Insights",
+      "noInsights": "No operational insights.",
+      "topic": "Topic",
+      "signal": "Signal"
+    },
+    "forecasts": {
+      "capacity": "Capacity Forecast",
+      "dispatch": "Dispatch Forecast",
+      "workload": "Workload Forecast",
+      "method": "Method",
+      "horizon": "Horizon",
+      "projected": "Projected",
+      "avgUtilisation": "Average Utilisation",
+      "headroomShare": "Headroom Share",
+      "exhaustedSlots": "Exhausted Slots",
+      "nearCapacitySlots": "Near-Capacity Slots",
+      "currentlyHolding": "Currently Holding",
+      "refusalRate": "Refusal Rate",
+      "queueDepth": "Queue Depth",
+      "needsAction": "Needs Action",
+      "stuck": "Stuck",
+      "oldestWait": "Oldest Wait (min)",
+      "confirmationRate": "Confirmation Rate",
+      "queueNeedsAction": "Queue Needs Action",
+      "exceptionsNeedingAttention": "Exceptions Needing Attention",
+      "criticalExceptions": "Critical Exceptions",
+      "openWorkItems": "Open Work Items",
+      "methodNote": "Each forecast publishes the method it used and a note on its own limits. Both are shown here unchanged."
+    },
+    "optimization": {
+      "title": "Optimisation",
+      "vehicle": "Vehicle",
+      "capacity": "Capacity",
+      "route": "Route",
+      "assignment": "Assignment",
+      "empty": "No optimisation result.",
+      "shapeNote": "Optimisation results are engine-shaped and differ per endpoint, so they are rendered from their own fields rather than a fixed schema."
+    }
   }
 }

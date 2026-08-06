@@ -148,7 +148,8 @@
       "eng-repair": "AI Repair",
       "dashboard": "Dashboard",
       "logistics-carriers": "Carrier Accounts",
-      "logistics-automation": "Automation"
+      "logistics-automation": "Automation",
+      "logistics-intelligence": "Intelligence"
     },
     "groups": {
       "overview": "Overview",

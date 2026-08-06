@@ -1989,5 +1989,88 @@
       "unacknowledged": "غير مُقرّة"
     },
     "error": "تعذّر تحميل بيانات الأتمتة."
+  },
+  "intelligence": {
+    "title": "ذكاء اللوجستيات",
+    "subtitle": "قرارات حتمية ورؤى وتوقّعات عبر منظومة اللوجستيات",
+    "readOnlyNote": "كل محرك هنا يرتّب ويفسّر ولا ينفّذ. لا يوجد مسار كتابة في هذه الواجهة، فلا شيء في هذه الصفحة يغيّر العمليات.",
+    "refresh": "تحديث",
+    "error": "تعذّر تحميل بيانات الذكاء.",
+    "generatedAt": "وقت التوليد",
+    "tabs": {
+      "decisions": "القرارات",
+      "insights": "الرؤى",
+      "forecasts": "التوقّعات",
+      "optimization": "التحسين"
+    },
+    "decisions": {
+      "title": "ملخص القرارات",
+      "overallStatus": "الحالة العامة",
+      "count": "التوصيات",
+      "topPriority": "أعلى أولوية",
+      "bySeverity": "حسب الخطورة",
+      "recommendations": "التوصيات",
+      "priorities": "ترتيب الأولويات",
+      "conflicts": "توصيات التعارضات",
+      "noRecommendations": "لا توجد توصيات.",
+      "noConflicts": "لا توجد توصيات تعارض.",
+      "priority": "الأولوية",
+      "severity": "الخطورة",
+      "category": "الفئة",
+      "action": "الإجراء",
+      "sourceModule": "المصدر"
+    },
+    "insights": {
+      "suggestions": "اقتراحات ذكية",
+      "noSuggestions": "لا توجد اقتراحات.",
+      "why": "السبب",
+      "owningModule": "المالك",
+      "bottlenecks": "الاختناقات",
+      "noBottlenecks": "لا توجد قيود ملزِمة.",
+      "module": "الوحدة",
+      "reason": "السبب",
+      "tightness": "شدة القيد",
+      "action": "الإجراء",
+      "tightnessNote": "شدة القيد هي درجة المحرك لمدى اقتراب القيد من انعدام المتسع.",
+      "warnings": "تحذيرات السعة",
+      "noWarnings": "لا توجد تحذيرات سعة.",
+      "operational": "رؤى تشغيلية",
+      "noInsights": "لا توجد رؤى تشغيلية.",
+      "topic": "الموضوع",
+      "signal": "الإشارة"
+    },
+    "forecasts": {
+      "capacity": "توقّع السعة",
+      "dispatch": "توقّع الإرسال",
+      "workload": "توقّع عبء العمل",
+      "method": "الطريقة",
+      "horizon": "الأفق",
+      "projected": "المتوقّع",
+      "avgUtilisation": "متوسط الاستخدام",
+      "headroomShare": "نسبة المتسع",
+      "exhaustedSlots": "الفترات المستنفدة",
+      "nearCapacitySlots": "فترات قرب الامتلاء",
+      "currentlyHolding": "المحجوز حاليًا",
+      "refusalRate": "معدل الرفض",
+      "queueDepth": "عمق الطابور",
+      "needsAction": "يحتاج إجراءً",
+      "stuck": "متعطّل",
+      "oldestWait": "أطول انتظار (دقيقة)",
+      "confirmationRate": "معدل التأكيد",
+      "queueNeedsAction": "طابور يحتاج إجراءً",
+      "exceptionsNeedingAttention": "استثناءات تحتاج انتباهًا",
+      "criticalExceptions": "استثناءات حرجة",
+      "openWorkItems": "بنود عمل مفتوحة",
+      "methodNote": "ينشر كل توقّع الطريقة المستخدمة وملاحظة عن حدوده، ويُعرضان هنا دون تغيير."
+    },
+    "optimization": {
+      "title": "التحسين",
+      "vehicle": "المركبات",
+      "capacity": "السعة",
+      "route": "المسار",
+      "assignment": "التعيين",
+      "empty": "لا توجد نتيجة تحسين.",
+      "shapeNote": "نتائج التحسين تختلف باختلاف المسار، لذا تُعرض من حقولها نفسها بدلاً من مخطط ثابت."
+    }
   }
 }
