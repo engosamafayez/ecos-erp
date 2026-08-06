@@ -140,3 +140,64 @@ export type CrmTimelineEntry = {
   actor_id: number | null;
   meta: Record<string, unknown>;
 };
+
+// ── Customer intelligence ────────────────────────────────────────────────────
+// GET /crm/intelligence/customers/{id}. Every figure is computed by the backend
+// engine and stored; nothing here is derived in the client.
+
+export type CrmRiskBand = 'low' | 'medium' | 'high' | 'critical' | string;
+
+export type CrmIntelligenceProfile = {
+  customer_id: string;
+  /** Days since the last purchase. */
+  recency_days: number | null;
+  /** Order count — the orders summary the CRM API exposes. */
+  frequency: number;
+  /** Total spent. */
+  monetary: string | number;
+  rfm_segment: string | null;
+  average_order_value: string | number;
+  lifetime_value: string | number;
+  predicted_lifetime_value: string | number;
+  purchase_frequency_monthly: string | number;
+  avg_interval_days: number | null;
+  tenure_days: number;
+  churn_risk_score: number;
+  churn_risk_band: CrmRiskBand;
+  health_score: number;
+  health_band: CrmRiskBand;
+  segment: string | null;
+  lifecycle_stage: string;
+  is_repeat: boolean;
+  is_retained: boolean;
+  first_purchase_at: string | null;
+  last_purchase_at: string | null;
+  computed_at: string | null;
+};
+
+export type CrmInsight = {
+  id: string;
+  type: string;
+  severity: string;
+  title: string;
+  detail: string | null;
+  metric_key: string | null;
+  metric_value: string | number | null;
+  generated_at: string | null;
+};
+
+export type CrmRecommendation = {
+  id: string;
+  type: string;
+  title: string;
+  rationale: string | null;
+  status: string;
+  generated_at: string | null;
+};
+
+export type CrmCustomerIntelligence = {
+  /** Null until the engine has computed a profile for this customer. */
+  profile: CrmIntelligenceProfile | null;
+  insights: CrmInsight[];
+  recommendations: CrmRecommendation[];
+};

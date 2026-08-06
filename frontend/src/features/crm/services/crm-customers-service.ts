@@ -6,6 +6,7 @@ import type {
   CrmCustomersMeta,
   CrmCustomersQuery,
   CrmCustomersResult,
+  CrmCustomerIntelligence,
   CrmTimelineEntry,
 } from '@/features/crm/types/crm-customer';
 import type {
@@ -70,6 +71,17 @@ export const crmCustomersService = {
   async activities(id: string): Promise<CrmTimelineEntry[]> {
     const { data } = await api.get<ApiResponse<CrmTimelineEntry[]>>(
       `/crm/customers/${id}/activities`,
+    );
+    return data.data;
+  },
+
+  /**
+   * Customer intelligence. Lives under its own namespace, so it is a separate
+   * call from /profile rather than part of it.
+   */
+  async intelligence(id: string): Promise<CrmCustomerIntelligence> {
+    const { data } = await api.get<ApiResponse<CrmCustomerIntelligence>>(
+      `/crm/intelligence/customers/${id}`,
     );
     return data.data;
   },

@@ -125,3 +125,13 @@ export function useUpdateCrmCustomer() {
     },
   });
 }
+
+export function useCrmCustomerIntelligenceQuery(id: string | null, enabled: boolean) {
+  const companyId = useCompanyScope();
+
+  return useQuery({
+    queryKey: ['company', companyId, CRM_CUSTOMERS_KEY, id, 'intelligence'],
+    queryFn: () => crmCustomersService.intelligence(id as string),
+    enabled: Boolean(id) && enabled,
+  });
+}

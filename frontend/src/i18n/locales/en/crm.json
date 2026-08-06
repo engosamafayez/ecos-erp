@@ -122,7 +122,10 @@
       "notes": "Notes",
       "documents": "Documents",
       "timeline": "Timeline",
-      "activity": "Activity"
+      "activity": "Activity",
+      "orders": "Orders",
+      "loyalty": "Loyalty",
+      "permissions": "Permissions"
     },
     "overview": {
       "code": "Code",
@@ -175,5 +178,64 @@
     },
     "edit": "Edit",
     "close": "Close"
+  },
+  "analytics": {
+    "tab": "Analytics",
+    "loading": "Loading intelligence…",
+    "notComputed": "No intelligence profile has been computed for this customer yet.",
+    "computedAt": "Computed {{when}}",
+    "sections": {
+      "risk": "Risk",
+      "stats": "Customer statistics",
+      "orders": "Orders summary",
+      "insights": "Insights",
+      "recommendations": "Recommendations"
+    },
+    "risk": {
+      "churn": "Churn risk",
+      "health": "Health",
+      "segment": "Segment",
+      "lifecycle": "Lifecycle stage",
+      "band": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "critical": "Critical"
+      }
+    },
+    "stats": {
+      "lifetimeValue": "Lifetime value",
+      "predictedValue": "Predicted lifetime value",
+      "tenure": "Tenure",
+      "tenureDays": "{{count}} days",
+      "recency": "Days since last order",
+      "monthlyFrequency": "Orders per month",
+      "avgInterval": "Average interval",
+      "repeat": "Repeat customer",
+      "retained": "Retained"
+    },
+    "orders": {
+      "count": "Orders",
+      "total": "Total spent",
+      "average": "Average order value",
+      "first": "First order",
+      "last": "Last order",
+      "never": "No orders recorded",
+      "note": "Summary figures come from the intelligence engine. A per-order list has no CRM endpoint."
+    },
+    "insights": {
+      "none": "No insights generated"
+    },
+    "recommendations": {
+      "none": "No recommendations"
+    },
+    "yes": "Yes",
+    "no": "No"
+  },
+  "backendRequired": {
+    "badge": "Backend capability required",
+    "orders": "A customer-scoped orders endpoint (GET /crm/customers/{id}/orders) returning order id, number, date, status and total.",
+    "loyalty": "A customer-to-loyalty-account lookup. Loyalty is addressed by accountId today, so the account cannot be resolved from a customer.",
+    "permissions": "Record-level permission data for a customer. Not modelled in the domain today."
   }
 }

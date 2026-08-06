@@ -8,11 +8,14 @@ import { Tabs, type TabItem } from '@/components/ds';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { usePermission } from '@/features/authorization';
+import { CrmCustomerAnalyticsTab } from '@/features/crm/components/crm-customer-analytics-tab';
 import {
   useCrmCustomerActivitiesQuery,
+  useCrmCustomerIntelligenceQuery,
   useCrmCustomerProfileQuery,
   useCrmCustomerTimelineQuery,
 } from '@/features/crm/hooks/use-crm-customers';
+import type enCrm from '@/i18n/locales/en/crm.json';
 import type {
   CrmCustomerProfile,
   CrmCustomerStatus,
@@ -40,6 +43,8 @@ import type {
  * └──────────────────────────────────────────────────────────────────────────┘
  */
 
+type CrmLabel = ($: typeof enCrm) => string;
+
 const STATUS_VARIANT: Record<CrmCustomerStatus, StatusVariant> = {
   prospect: 'pending',
   active: 'active',
@@ -47,6 +52,29 @@ const STATUS_VARIANT: Record<CrmCustomerStatus, StatusVariant> = {
   blocked: 'inactive',
   archived: 'archived',
 };
+
+/**
+ * Tabs the CRM API cannot answer today, with the contract each would need.
+ * Recorded here rather than in a document so the requirement sits beside the
+ * code that will consume it.
+ */
+const BACKEND_REQUIRED: { key: string; label: CrmLabel; detail: CrmLabel }[] = [
+  {
+    key: 'orders',
+    label: ($) => $.drawer.tabs.orders,
+    detail: ($) => $.backendRequired.orders,
+  },
+  {
+    key: 'loyalty',
+    label: ($) => $.drawer.tabs.loyalty,
+    detail: ($) => $.backendRequired.loyalty,
+  },
+  {
+    key: 'permissions',
+    label: ($) => $.drawer.tabs.permissions,
+    detail: ($) => $.backendRequired.permissions,
+  },
+];
 
 type Props = {
   customerId: string | null;
@@ -108,6 +136,10 @@ export function CrmCustomerDrawer({ customerId, open, onOpenChange, onEdit }: Pr
   const { data: activity, isLoading: activityLoading } = useCrmCustomerActivitiesQuery(
     customerId,
     open && tab === 'activity',
+  );
+  const { data: intelligence, isLoading: intelligenceLoading } = useCrmCustomerIntelligenceQuery(
+    customerId,
+    open && tab === 'analytics',
   );
 
   const identity = profile?.identity;
@@ -305,6 +337,27 @@ export function CrmCustomerDrawer({ customerId, open, onOpenChange, onEdit }: Pr
         <EntryList entries={activity ?? []} empty={t(($) => $.drawer.activity.none)} />
       ),
     },
+    {
+      key: 'analytics',
+      label: t(($) => $.analytics.tab),
+      content: <CrmCustomerAnalyticsTab data={intelligence} isLoading={intelligenceLoading} />,
+    },
+    // Named, with the exact contract each needs. A disabled tab that says what
+    // is missing is honest; an empty one implies the data exists and failed to
+    // load.
+    ...BACKEND_REQUIRED.map((item) => ({
+      key: item.key,
+      label: t(item.label),
+      disabled: true,
+      content: (
+        <div className="flex flex-col gap-2 py-6">
+          <Badge variant="outline" className="w-fit">
+            {t(($) => $.backendRequired.badge)}
+          </Badge>
+          <p className="text-sm text-muted-foreground">{t(item.detail)}</p>
+        </div>
+      ),
+    })),
   ];
 
   return (
