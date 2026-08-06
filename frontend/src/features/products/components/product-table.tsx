@@ -72,7 +72,7 @@ export function ProductTable({
 }: ProductTableProps) {
   const { t } = useTranslation('products');
   const columns = useMemo(
-    () => createProductColumns({ onView, onEdit, onDelete, onStatusToggle, onViewRecipe, onCreateRecipe }, t as unknown as (key: string, opts?: Record<string, unknown>) => string),
+    () => createProductColumns({ onView, onEdit, onDelete, onStatusToggle, onViewRecipe, onCreateRecipe }, t),
      
     [t, onView, onEdit, onDelete, onStatusToggle, onViewRecipe, onCreateRecipe],
   );

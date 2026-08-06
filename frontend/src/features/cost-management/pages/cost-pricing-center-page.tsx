@@ -1484,7 +1484,7 @@ export function CostPricingCenterPage() {
                       <td className="px-3 py-3">
                         <ImpactIcons impacts={review.impacts} />
                         <p className="text-[10px] text-muted-foreground mt-0.5 max-w-[100px] truncate">
-                          {impactReasons(t as unknown as (key: string) => string, review.impacts)}
+                          {impactReasons(t, review.impacts)}
                         </p>
                       </td>
 
