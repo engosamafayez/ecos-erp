@@ -139,6 +139,7 @@ export const ROUTES = {
   logisticsGeography:            '/logistics/geography',
   logisticsDistributionZones:    '/logistics/distribution/zones',
   logisticsDistributionPlanning: '/logistics/distribution/planning',
+  logisticsTrips: '/logistics/distribution/trips',
   logisticsShippingCompanies:    '/logistics/shipping-companies',
   logisticsDrivers:              '/logistics/drivers',
   logisticsVehicles:             '/logistics/vehicles',

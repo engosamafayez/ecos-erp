@@ -72,6 +72,7 @@ import { BrandConfigurationPage } from '@/features/admin/configuration/pages/bra
 import { EgyptGeographyPage } from '@/features/logistics/geography/pages/egypt-geography-page';
 import { DistributionZonesPage } from '@/features/logistics/distribution-zones/pages/distribution-zones-page';
 import { DistributionPlanningPage } from '@/features/logistics/distribution-planning/pages/distribution-planning-page';
+import { TripsWorkspacePage } from '@/features/logistics/trips/pages/trips-workspace-page';
 import { ShippingCompaniesPage } from '@/features/logistics/shipping-companies/pages/shipping-companies-page';
 import { DriversPage } from '@/features/logistics/drivers/pages/drivers-page';
 import { VehiclesPage } from '@/features/logistics/vehicles/pages/vehicles-page';
@@ -327,6 +328,7 @@ export const router = createBrowserRouter(
             { path: ROUTES.logisticsGeography,            Component: EgyptGeographyPage },
             { path: ROUTES.logisticsDistributionZones,    Component: DistributionZonesPage },
             { path: ROUTES.logisticsDistributionPlanning, Component: DistributionPlanningPage },
+            { path: ROUTES.logisticsTrips,                Component: TripsWorkspacePage },
             { path: ROUTES.logisticsShippingCompanies,    Component: ShippingCompaniesPage },
             { path: ROUTES.logisticsDrivers,              Component: DriversPage },
             { path: ROUTES.logisticsVehicles,             Component: VehiclesPage },

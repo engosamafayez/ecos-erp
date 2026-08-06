@@ -1367,5 +1367,200 @@
       "maintenance": "Maintenance",
       "outOfService": "Out of Service"
     }
+  },
+  "trips": {
+    "title": "Trips",
+    "subtitle": "Plan, resource and dispatch distribution trips",
+    "stats": {
+      "total": "Total Trips",
+      "planning": "Planning",
+      "loading": "Loading",
+      "readyForDispatch": "Ready for Dispatch",
+      "dispatchBlocked": "Dispatch Blocked",
+      "onTheRoad": "On the Road",
+      "completed": "Completed",
+      "settlementPending": "Settlement Pending",
+      "onTheRoadNote": "Dispatched, out for delivery and in progress combined"
+    },
+    "toolbar": {
+      "searchPlaceholder": "Search by trip number or name",
+      "newTrip": "New Trip",
+      "refresh": "Refresh"
+    },
+    "filters": {
+      "status": "Status",
+      "type": "Type",
+      "all": "All statuses",
+      "allTypes": "All types",
+      "openOnly": "Open trips",
+      "openOnlyNote": "Closed and cancelled trips are hidden unless a status is chosen"
+    },
+    "columns": {
+      "tripNumber": "Trip",
+      "name": "Name",
+      "type": "Type",
+      "status": "Status",
+      "driver": "Driver",
+      "vehicle": "Vehicle",
+      "orders": "Orders",
+      "capacity": "Capacity",
+      "collection": "Collection"
+    },
+    "row": {
+      "unassigned": "Unassigned",
+      "ofCapacity": "of {{capacity}}",
+      "remaining": "{{count}} free"
+    },
+    "empty": {
+      "title": "No trips",
+      "description": "No trip matches the current filters.",
+      "createFirst": "Create the first trip to begin planning."
+    },
+    "error": {
+      "title": "Trips could not be loaded",
+      "retry": "Try again"
+    },
+    "status": {
+      "planning": "Planning",
+      "loading": "Loading",
+      "loading_completed": "Loading Completed",
+      "driver_accepted": "Driver Accepted",
+      "dispatch_blocked": "Dispatch Blocked",
+      "ready_for_dispatch": "Ready for Dispatch",
+      "dispatched": "Dispatched",
+      "out_for_delivery": "Out for Delivery",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "settlement_pending": "Settlement Pending",
+      "closed": "Closed",
+      "cancelled": "Cancelled"
+    },
+    "type": {
+      "company_vehicle": "Company Vehicle",
+      "personal_vehicle": "Personal Vehicle",
+      "external_carrier": "External Carrier"
+    },
+    "form": {
+      "createTitle": "New Trip",
+      "editTitle": "Edit Trip",
+      "createDescription": "A trip starts in planning. Orders, custody and stops are added afterwards.",
+      "editDescription": "Only trips that are still editable can be changed.",
+      "name": "Trip Name",
+      "namePlaceholder": "Enter a trip name",
+      "tripNumber": "Trip Number",
+      "tripNumberHint": "Left blank, the next number is assigned automatically",
+      "type": "Type",
+      "capacity": "Capacity",
+      "capacityHint": "Maximum number of orders",
+      "notes": "Notes",
+      "notesPlaceholder": "Optional notes for the operations team",
+      "save": "Save",
+      "cancel": "Cancel",
+      "saving": "Saving...",
+      "required": "This field is required",
+      "nameTooLong": "The name must be 150 characters or fewer",
+      "capacityRange": "Capacity must be between 1 and 9999",
+      "notesTooLong": "Notes must be 2000 characters or fewer",
+      "noCompany": "No active company is selected, so a trip cannot be created."
+    },
+    "drawer": {
+      "title": "Trip",
+      "loading": "Loading the trip...",
+      "notFound": "This trip could not be loaded.",
+      "edit": "Edit",
+      "tabs": {
+        "overview": "Overview",
+        "resourcing": "Resourcing",
+        "acceptance": "Driver Acceptance",
+        "timeline": "Timeline",
+        "money": "Money"
+      },
+      "overview": {
+        "tripNumber": "Trip Number",
+        "name": "Name",
+        "type": "Type",
+        "status": "Status",
+        "capacity": "Capacity",
+        "orders": "Orders",
+        "remaining": "Remaining Capacity",
+        "zone": "Distribution Zone",
+        "wave": "Preparation Wave",
+        "notes": "Notes",
+        "editable": "Editable",
+        "terminal": "Terminal"
+      },
+      "resourcing": {
+        "title": "Resourcing",
+        "shippingCompany": "Shipping Company",
+        "driver": "Driver",
+        "vehicle": "Vehicle",
+        "licenceStatus": "Licence Status",
+        "mobile": "Mobile",
+        "plate": "Plate",
+        "none": "Not assigned",
+        "note": "Driver and vehicle are resolved from the assignment, never stored on the trip."
+      },
+      "readiness": {
+        "title": "Dispatch Readiness",
+        "ready": "Ready for dispatch",
+        "notReady": "Not ready for dispatch",
+        "blockers": "Blockers",
+        "none": "No blockers.",
+        "checking": "Checking readiness..."
+      },
+      "acceptance": {
+        "products": "Products accepted",
+        "custody": "Custody accepted",
+        "equipment": "Equipment accepted",
+        "full": "Full acceptance recorded",
+        "at": "Accepted at",
+        "discrepancy": "Discrepancy reported",
+        "discrepancyNotes": "Discrepancy Notes",
+        "pending": "The driver has not accepted this trip yet.",
+        "yes": "Yes",
+        "no": "No"
+      },
+      "timeline": {
+        "finalized": "Finalized",
+        "dispatched": "Dispatched",
+        "driverNotified": "Driver Notified",
+        "departure": "Departure",
+        "started": "Started",
+        "finished": "Finished",
+        "odometerStart": "Odometer Start",
+        "odometerEnd": "Odometer End",
+        "created": "Created",
+        "updated": "Updated",
+        "none": "Not recorded"
+      },
+      "money": {
+        "collection": "Collection Amount",
+        "cash": "Cash Collected",
+        "bank": "Bank Transfers",
+        "alreadyPaid": "Already Paid",
+        "note": "Authoritative figures live in the trip settlement."
+      }
+    },
+    "actions": {
+      "changeStatus": "Change Status",
+      "changeStatusTitle": "Change trip status",
+      "changeStatusDescription": "Only the transitions this trip allows are offered.",
+      "newStatus": "New Status",
+      "reason": "Reason",
+      "reasonPlaceholder": "Optional reason for the change",
+      "confirm": "Confirm",
+      "noTransitions": "This trip has no available transitions.",
+      "failed": "The status could not be changed."
+    },
+    "counts": {
+      "stops": "Stops",
+      "custody": "Custody",
+      "exceptions": "Exceptions",
+      "tripOrders": "Orders"
+    },
+    "pending": {
+      "badge": "Coming in a later phase",
+      "orders": "Trip order assignment, custody, stops, exceptions, returns and settlement are delivered in the next phases of this EPIC."
+    }
   }
 }

@@ -1367,5 +1367,200 @@
       "maintenance": "الصيانة",
       "outOfService": "خارج الخدمة"
     }
+  },
+  "trips": {
+    "title": "الرحلات",
+    "subtitle": "تخطيط الرحلات وتوفير الموارد وإرسالها",
+    "stats": {
+      "total": "إجمالي الرحلات",
+      "planning": "قيد التخطيط",
+      "loading": "قيد التحميل",
+      "readyForDispatch": "جاهزة للإرسال",
+      "dispatchBlocked": "الإرسال محظور",
+      "onTheRoad": "على الطريق",
+      "completed": "مكتملة",
+      "settlementPending": "بانتظار التسوية",
+      "onTheRoadNote": "المرسلة وقيد التوصيل وقيد التنفيذ مجتمعة"
+    },
+    "toolbar": {
+      "searchPlaceholder": "ابحث برقم الرحلة أو الاسم",
+      "newTrip": "رحلة جديدة",
+      "refresh": "تحديث"
+    },
+    "filters": {
+      "status": "الحالة",
+      "type": "النوع",
+      "all": "كل الحالات",
+      "allTypes": "كل الأنواع",
+      "openOnly": "الرحلات المفتوحة",
+      "openOnlyNote": "الرحلات المغلقة والملغاة مخفية ما لم تُحدَّد حالة"
+    },
+    "columns": {
+      "tripNumber": "الرحلة",
+      "name": "الاسم",
+      "type": "النوع",
+      "status": "الحالة",
+      "driver": "السائق",
+      "vehicle": "المركبة",
+      "orders": "الطلبات",
+      "capacity": "السعة",
+      "collection": "التحصيل"
+    },
+    "row": {
+      "unassigned": "غير معيّن",
+      "ofCapacity": "من {{capacity}}",
+      "remaining": "{{count}} متاح"
+    },
+    "empty": {
+      "title": "لا توجد رحلات",
+      "description": "لا توجد رحلة مطابقة للمرشحات الحالية.",
+      "createFirst": "أنشئ أول رحلة لبدء التخطيط."
+    },
+    "error": {
+      "title": "تعذّر تحميل الرحلات",
+      "retry": "أعد المحاولة"
+    },
+    "status": {
+      "planning": "قيد التخطيط",
+      "loading": "قيد التحميل",
+      "loading_completed": "اكتمل التحميل",
+      "driver_accepted": "قبِلها السائق",
+      "dispatch_blocked": "الإرسال محظور",
+      "ready_for_dispatch": "جاهزة للإرسال",
+      "dispatched": "تم الإرسال",
+      "out_for_delivery": "قيد التوصيل",
+      "in_progress": "قيد التنفيذ",
+      "completed": "مكتملة",
+      "settlement_pending": "بانتظار التسوية",
+      "closed": "مغلقة",
+      "cancelled": "ملغاة"
+    },
+    "type": {
+      "company_vehicle": "مركبة الشركة",
+      "personal_vehicle": "مركبة شخصية",
+      "external_carrier": "ناقل خارجي"
+    },
+    "form": {
+      "createTitle": "رحلة جديدة",
+      "editTitle": "تعديل الرحلة",
+      "createDescription": "تبدأ الرحلة في مرحلة التخطيط. تُضاف الطلبات والعُهد والمحطات لاحقًا.",
+      "editDescription": "يمكن تعديل الرحلات القابلة للتعديل فقط.",
+      "name": "اسم الرحلة",
+      "namePlaceholder": "أدخل اسم الرحلة",
+      "tripNumber": "رقم الرحلة",
+      "tripNumberHint": "إذا تُرك فارغًا يُخصَّص الرقم التالي تلقائيًا",
+      "type": "النوع",
+      "capacity": "السعة",
+      "capacityHint": "أقصى عدد للطلبات",
+      "notes": "ملاحظات",
+      "notesPlaceholder": "ملاحظات اختيارية لفريق العمليات",
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "saving": "جارٍ الحفظ...",
+      "required": "هذا الحقل مطلوب",
+      "nameTooLong": "يجب ألا يتجاوز الاسم 150 حرفًا",
+      "capacityRange": "يجب أن تكون السعة بين 1 و9999",
+      "notesTooLong": "يجب ألا تتجاوز الملاحظات 2000 حرف",
+      "noCompany": "لا توجد شركة نشطة محدّدة، لذا لا يمكن إنشاء رحلة."
+    },
+    "drawer": {
+      "title": "الرحلة",
+      "loading": "جارٍ تحميل الرحلة...",
+      "notFound": "تعذّر تحميل هذه الرحلة.",
+      "edit": "تعديل",
+      "tabs": {
+        "overview": "نظرة عامة",
+        "resourcing": "الموارد",
+        "acceptance": "قبول السائق",
+        "timeline": "التسلسل الزمني",
+        "money": "المالية"
+      },
+      "overview": {
+        "tripNumber": "رقم الرحلة",
+        "name": "الاسم",
+        "type": "النوع",
+        "status": "الحالة",
+        "capacity": "السعة",
+        "orders": "الطلبات",
+        "remaining": "السعة المتبقية",
+        "zone": "منطقة التوزيع",
+        "wave": "موجة التجهيز",
+        "notes": "ملاحظات",
+        "editable": "قابلة للتعديل",
+        "terminal": "نهائية"
+      },
+      "resourcing": {
+        "title": "الموارد",
+        "shippingCompany": "شركة الشحن",
+        "driver": "السائق",
+        "vehicle": "المركبة",
+        "licenceStatus": "حالة الرخصة",
+        "mobile": "الهاتف",
+        "plate": "اللوحة",
+        "none": "غير معيّن",
+        "note": "يُستمد السائق والمركبة من التعيين ولا يُخزّنان على الرحلة."
+      },
+      "readiness": {
+        "title": "جاهزية الإرسال",
+        "ready": "جاهزة للإرسال",
+        "notReady": "غير جاهزة للإرسال",
+        "blockers": "الموانع",
+        "none": "لا توجد موانع.",
+        "checking": "جارٍ فحص الجاهزية..."
+      },
+      "acceptance": {
+        "products": "تم قبول المنتجات",
+        "custody": "تم قبول العُهدة",
+        "equipment": "تم قبول المعدات",
+        "full": "تم تسجيل القبول الكامل",
+        "at": "وقت القبول",
+        "discrepancy": "تم الإبلاغ عن فرق",
+        "discrepancyNotes": "ملاحظات الفرق",
+        "pending": "لم يقبل السائق هذه الرحلة بعد.",
+        "yes": "نعم",
+        "no": "لا"
+      },
+      "timeline": {
+        "finalized": "الاعتماد",
+        "dispatched": "الإرسال",
+        "driverNotified": "إخطار السائق",
+        "departure": "المغادرة",
+        "started": "البدء",
+        "finished": "الانتهاء",
+        "odometerStart": "عداد البداية",
+        "odometerEnd": "عداد النهاية",
+        "created": "الإنشاء",
+        "updated": "آخر تحديث",
+        "none": "غير مسجّل"
+      },
+      "money": {
+        "collection": "مبلغ التحصيل",
+        "cash": "النقد المحصّل",
+        "bank": "التحويلات البنكية",
+        "alreadyPaid": "المدفوع مسبقًا",
+        "note": "الأرقام المعتمدة موجودة في تسوية الرحلة."
+      }
+    },
+    "actions": {
+      "changeStatus": "تغيير الحالة",
+      "changeStatusTitle": "تغيير حالة الرحلة",
+      "changeStatusDescription": "تُعرض الانتقالات المسموح بها لهذه الرحلة فقط.",
+      "newStatus": "الحالة الجديدة",
+      "reason": "السبب",
+      "reasonPlaceholder": "سبب اختياري للتغيير",
+      "confirm": "تأكيد",
+      "noTransitions": "لا توجد انتقالات متاحة لهذه الرحلة.",
+      "failed": "تعذّر تغيير الحالة."
+    },
+    "counts": {
+      "stops": "المحطات",
+      "custody": "العُهدة",
+      "exceptions": "الاستثناءات",
+      "tripOrders": "الطلبات"
+    },
+    "pending": {
+      "badge": "قادم في مرحلة لاحقة",
+      "orders": "تعيين طلبات الرحلة والعُهدة والمحطات والاستثناءات والمرتجعات والتسوية تُسلّم في المراحل التالية من هذه المهمة."
+    }
   }
 }
