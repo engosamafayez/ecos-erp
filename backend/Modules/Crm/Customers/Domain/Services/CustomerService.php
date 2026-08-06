@@ -9,6 +9,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Crm\Customers\Domain\Enums\CustomerStatus;
 use Modules\Crm\Customers\Domain\Enums\CustomerType;
+use Modules\Crm\Customers\Domain\Events\CustomerArchived;
+use Modules\Crm\Customers\Domain\Events\CustomerCreated;
+use Modules\Crm\Customers\Domain\Events\CustomerRestored;
+use Modules\Crm\Customers\Domain\Events\CustomerUpdated;
 use Modules\Crm\Customers\Domain\Exceptions\CustomerException;
 use Modules\Crm\Customers\Domain\Models\Customer;
 use Modules\Crm\Customers\Domain\Models\CustomerAddress;
@@ -70,7 +74,18 @@ final class CustomerService
                 $this->addEmail($customer, (string) $data['email'], $data['email_label'] ?? 'primary', true);
             }
 
-            return $customer->refresh();
+            $fresh = $customer->refresh();
+
+            // Published after commit so a rolled-back creation announces nothing.
+            DB::afterCommit(static fn () => event(new CustomerCreated(
+                companyId: (string) $fresh->company_id,
+                customerId: (string) $fresh->id,
+                customerType: $type->value,
+                displayName: $fresh->name !== null ? (string) $fresh->name : null,
+                actorId: $actorId,
+            )));
+
+            return $fresh;
         });
     }
 
@@ -85,16 +100,57 @@ final class CustomerService
         $customer->fill($fields);
         // Keep the display name coherent with the structured fields.
         $customer->name = $this->resolveName($customer->customer_type, array_merge($customer->only(['first_name', 'last_name', 'business_name']), $data));
-        $customer->save();
 
-        return $customer->refresh();
+        // Captured before save, while the model still knows what moved. The
+        // event names the changed fields rather than shipping the record, so a
+        // consumer can decide whether it cares without diffing anything.
+        $changed = array_keys($customer->getDirty());
+
+        $customer->save();
+        $fresh = $customer->refresh();
+
+        if ($changed !== []) {
+            DB::afterCommit(static fn () => event(new CustomerUpdated(
+                companyId: (string) $fresh->company_id,
+                customerId: (string) $fresh->id,
+                changedFields: $changed,
+            )));
+        }
+
+        return $fresh;
     }
 
     public function setStatus(Customer $customer, CustomerStatus $status): Customer
     {
-        $customer->update(['status' => $status->value, 'is_active' => $status->isActiveFlag()]);
+        // status is enum-cast on the model, so read its value rather than casting.
+        $previous = $customer->status instanceof CustomerStatus
+            ? $customer->status->value
+            : ($customer->status !== null ? (string) $customer->status : null);
 
-        return $customer->refresh();
+        $customer->update(['status' => $status->value, 'is_active' => $status->isActiveFlag()]);
+        $fresh = $customer->refresh();
+
+        // Archiving and restoring are the two status moves anything downstream
+        // reacts to; the rest are internal lifecycle detail and stay quiet.
+        $event = match (true) {
+            $status === CustomerStatus::Archived && $previous !== CustomerStatus::Archived->value => new CustomerArchived(
+                companyId: (string) $fresh->company_id,
+                customerId: (string) $fresh->id,
+                previousStatus: $previous,
+            ),
+            $previous === CustomerStatus::Archived->value && $status !== CustomerStatus::Archived => new CustomerRestored(
+                companyId: (string) $fresh->company_id,
+                customerId: (string) $fresh->id,
+                previousStatus: $previous,
+            ),
+            default => null,
+        };
+
+        if ($event !== null) {
+            DB::afterCommit(static fn () => event($event));
+        }
+
+        return $fresh;
     }
 
     // ── Contacts ────────────────────────────────────────────────────────────────

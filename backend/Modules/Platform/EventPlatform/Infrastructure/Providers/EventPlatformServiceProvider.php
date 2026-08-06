@@ -6,6 +6,22 @@ namespace Modules\Platform\EventPlatform\Infrastructure\Providers;
 
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use Modules\Crm\Customers\Domain\Events\CustomerArchived;
+use Modules\Crm\Customers\Domain\Events\CustomerCreated;
+use Modules\Crm\Customers\Domain\Events\CustomerMerged;
+use Modules\Crm\Customers\Domain\Events\CustomerRestored;
+use Modules\Crm\Customers\Domain\Events\CustomerUpdated;
+use Modules\Crm\Sales\Domain\Events\LeadConverted;
+use Modules\Crm\Sales\Domain\Events\LeadCreated;
+use Modules\Crm\Sales\Domain\Events\LeadLost;
+use Modules\Crm\Sales\Domain\Events\LeadQualified;
+use Modules\Crm\Sales\Domain\Events\OpportunityCreated;
+use Modules\Crm\Sales\Domain\Events\OpportunityLost;
+use Modules\Crm\Sales\Domain\Events\OpportunityUpdated;
+use Modules\Crm\Sales\Domain\Events\OpportunityWon;
+use Modules\Crm\Sales\Domain\Events\QuoteApproved;
+use Modules\Crm\Sales\Domain\Events\QuoteCreated;
+use Modules\Crm\Sales\Domain\Events\QuoteRejected;
 use Modules\Crm\Loyalty\Domain\Events\LoyaltyPointsEarned;
 use Modules\Crm\Loyalty\Domain\Events\LoyaltyPointsRedeemed;
 use Modules\Inventory\DomainEvents\Events\InventoryCountApproved;
@@ -161,6 +177,24 @@ final class EventPlatformServiceProvider extends ServiceProvider
         // The Finance side is ready — inventory.warehouse_transfer has a rule, a
         // mapped role, a complete payload and a catalog entry. Registering the
         // listener is a Phase B work item, not a Finance one.
+
+        // CRM customer and sales lifecycle (EPIC-CRM-EVENTS-001B).
+        Event::listen(CustomerArchived::class, fn (CustomerArchived $e) => $bus->publish($e));
+        Event::listen(CustomerCreated::class, fn (CustomerCreated $e) => $bus->publish($e));
+        Event::listen(CustomerMerged::class, fn (CustomerMerged $e) => $bus->publish($e));
+        Event::listen(CustomerRestored::class, fn (CustomerRestored $e) => $bus->publish($e));
+        Event::listen(CustomerUpdated::class, fn (CustomerUpdated $e) => $bus->publish($e));
+        Event::listen(LeadConverted::class, fn (LeadConverted $e) => $bus->publish($e));
+        Event::listen(LeadCreated::class, fn (LeadCreated $e) => $bus->publish($e));
+        Event::listen(LeadLost::class, fn (LeadLost $e) => $bus->publish($e));
+        Event::listen(LeadQualified::class, fn (LeadQualified $e) => $bus->publish($e));
+        Event::listen(OpportunityCreated::class, fn (OpportunityCreated $e) => $bus->publish($e));
+        Event::listen(OpportunityLost::class, fn (OpportunityLost $e) => $bus->publish($e));
+        Event::listen(OpportunityUpdated::class, fn (OpportunityUpdated $e) => $bus->publish($e));
+        Event::listen(OpportunityWon::class, fn (OpportunityWon $e) => $bus->publish($e));
+        Event::listen(QuoteApproved::class, fn (QuoteApproved $e) => $bus->publish($e));
+        Event::listen(QuoteCreated::class, fn (QuoteCreated $e) => $bus->publish($e));
+        Event::listen(QuoteRejected::class, fn (QuoteRejected $e) => $bus->publish($e));
 
         // CRM loyalty. Bridged the same way as the inventory events above, so
         // Finance's crm.loyalty_earn and crm.loyalty_redeem rules — which have

@@ -7,6 +7,7 @@ namespace Modules\Crm\Customers\Domain\Services;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Crm\Customers\Domain\Enums\CustomerStatus;
+use Modules\Crm\Customers\Domain\Events\CustomerMerged;
 use Modules\Crm\Customers\Domain\Exceptions\CustomerException;
 use Modules\Crm\Customers\Domain\Models\Customer;
 use Modules\Crm\Customers\Domain\Models\CustomerAddress;
@@ -70,7 +71,18 @@ final class CustomerMergeService
                 'performed_at' => Carbon::now(),
             ]);
 
-            return $surviving->refresh();
+            $fresh = $surviving->refresh();
+
+            // Carries both ids: anything holding the losing id must repoint to
+            // the winner, and it cannot work that out from the winner alone.
+            DB::afterCommit(static fn () => event(new CustomerMerged(
+                companyId: (string) $fresh->company_id,
+                winnerCustomerId: (string) $fresh->id,
+                loserCustomerId: (string) $merged->id,
+                actorId: $actorId,
+            )));
+
+            return $fresh;
         });
     }
 

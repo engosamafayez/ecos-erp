@@ -8,6 +8,9 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Crm\Sales\Domain\Enums\QuoteStatus;
+use Modules\Crm\Sales\Domain\Events\QuoteApproved;
+use Modules\Crm\Sales\Domain\Events\QuoteCreated;
+use Modules\Crm\Sales\Domain\Events\QuoteRejected;
 use Modules\Crm\Sales\Domain\Exceptions\SalesException;
 use Modules\Crm\Sales\Domain\Models\Quote;
 use Modules\Crm\Sales\Domain\Models\QuoteLine;
@@ -57,7 +60,18 @@ final class QuoteService
 
             $this->recompute($quote);
 
-            return $quote->refresh();
+            $fresh = $quote->refresh();
+
+            DB::afterCommit(static fn () => event(new QuoteCreated(
+                companyId: $companyId,
+                quoteId: (string) $fresh->id,
+                opportunityId: $fresh->opportunity_id !== null ? (string) $fresh->opportunity_id : null,
+                total: $fresh->total !== null ? (float) $fresh->total : null,
+                currency: (string) ($fresh->currency ?? 'EGP'),
+                actorId: $actorId,
+            )));
+
+            return $fresh;
         });
     }
 
@@ -80,15 +94,31 @@ final class QuoteService
     public function accept(Quote $quote): Quote
     {
         $quote->update(['status' => QuoteStatus::Accepted->value, 'accepted_at' => Carbon::now()]);
+        $fresh = $quote->refresh();
 
-        return $quote->refresh();
+        DB::afterCommit(static fn () => event(new QuoteApproved(
+            companyId: (string) $fresh->company_id,
+            quoteId: (string) $fresh->id,
+            opportunityId: $fresh->opportunity_id !== null ? (string) $fresh->opportunity_id : null,
+            total: $fresh->total !== null ? (float) $fresh->total : null,
+            currency: (string) ($fresh->currency ?? 'EGP'),
+        )));
+
+        return $fresh;
     }
 
     public function reject(Quote $quote): Quote
     {
         $quote->update(['status' => QuoteStatus::Rejected->value]);
+        $fresh = $quote->refresh();
 
-        return $quote->refresh();
+        DB::afterCommit(static fn () => event(new QuoteRejected(
+            companyId: (string) $fresh->company_id,
+            quoteId: (string) $fresh->id,
+            opportunityId: $fresh->opportunity_id !== null ? (string) $fresh->opportunity_id : null,
+        )));
+
+        return $fresh;
     }
 
     private function number(): string

@@ -5,7 +5,12 @@ declare(strict_types=1);
 namespace Modules\Crm\Sales\Domain\Services;
 
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Modules\Crm\Sales\Domain\Enums\OpportunityStatus;
+use Modules\Crm\Sales\Domain\Events\OpportunityCreated;
+use Modules\Crm\Sales\Domain\Events\OpportunityLost;
+use Modules\Crm\Sales\Domain\Events\OpportunityUpdated;
+use Modules\Crm\Sales\Domain\Events\OpportunityWon;
 use Modules\Crm\Sales\Domain\Exceptions\SalesException;
 use Modules\Crm\Sales\Domain\Models\Opportunity;
 use Modules\Crm\Sales\Domain\Models\Pipeline;
@@ -29,7 +34,7 @@ final class OpportunityService
 
         $stage = $pipeline !== null ? $this->pipelines->firstStage($pipeline) : null;
 
-        return Opportunity::create([
+        $created = Opportunity::create([
             'company_id' => $companyId,
             'customer_id' => $data['customer_id'] ?? null,
             'lead_id' => $data['lead_id'] ?? null,
@@ -45,14 +50,30 @@ final class OpportunityService
             'owner_id' => $data['owner_id'] ?? $actorId,
             'created_by' => $actorId,
         ]);
+
+        DB::afterCommit(static fn () => event(new OpportunityCreated(
+            companyId: $companyId,
+            opportunityId: (string) $created->id,
+            customerId: $created->customer_id !== null ? (string) $created->customer_id : null,
+            amount: $created->amount !== null ? (float) $created->amount : null,
+            currency: (string) ($created->currency ?? 'EGP'),
+            actorId: $actorId,
+        )));
+
+        return $created;
     }
 
     public function moveToStage(Opportunity $opportunity, PipelineStage $stage): Opportunity
     {
         $this->assertOpen($opportunity);
 
+        $previousStageId = $opportunity->stage_id !== null ? (string) $opportunity->stage_id : null;
+
         $opportunity->update(['stage_id' => $stage->id, 'probability' => $stage->probability]);
 
+        // A move into a won or lost stage IS the win or the loss, and win()/lose()
+        // publish it. Returning here keeps one transition to one event rather
+        // than announcing both a stage change and an outcome.
         if ($stage->is_won) {
             return $this->win($opportunity->refresh());
         }
@@ -60,7 +81,16 @@ final class OpportunityService
             return $this->lose($opportunity->refresh(), 'Moved to a lost stage');
         }
 
-        return $opportunity->refresh();
+        $fresh = $opportunity->refresh();
+
+        DB::afterCommit(static fn () => event(new OpportunityUpdated(
+            companyId: (string) $fresh->company_id,
+            opportunityId: (string) $fresh->id,
+            stageId: (string) $stage->id,
+            previousStageId: $previousStageId,
+        )));
+
+        return $fresh;
     }
 
     public function win(Opportunity $opportunity, ?string $orderReference = null, ?int $actorId = null): Opportunity
@@ -74,7 +104,18 @@ final class OpportunityService
             'order_reference' => $orderReference,
         ]);
 
-        return $opportunity->refresh();
+        $fresh = $opportunity->refresh();
+
+        DB::afterCommit(static fn () => event(new OpportunityWon(
+            companyId: (string) $fresh->company_id,
+            opportunityId: (string) $fresh->id,
+            customerId: $fresh->customer_id !== null ? (string) $fresh->customer_id : null,
+            amount: $fresh->amount !== null ? (float) $fresh->amount : null,
+            currency: (string) ($fresh->currency ?? 'EGP'),
+            actorId: $actorId,
+        )));
+
+        return $fresh;
     }
 
     public function lose(Opportunity $opportunity, string $reason, ?int $actorId = null): Opportunity
@@ -88,7 +129,17 @@ final class OpportunityService
             'lost_reason' => $reason,
         ]);
 
-        return $opportunity->refresh();
+        $fresh = $opportunity->refresh();
+
+        DB::afterCommit(static fn () => event(new OpportunityLost(
+            companyId: (string) $fresh->company_id,
+            opportunityId: (string) $fresh->id,
+            customerId: $fresh->customer_id !== null ? (string) $fresh->customer_id : null,
+            reason: $reason,
+            actorId: $actorId,
+        )));
+
+        return $fresh;
     }
 
     public function reopen(Opportunity $opportunity): Opportunity

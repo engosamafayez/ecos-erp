@@ -9,6 +9,10 @@ use Illuminate\Support\Facades\DB;
 use Modules\Crm\Customers\Domain\Enums\CustomerType;
 use Modules\Crm\Customers\Domain\Services\CustomerService;
 use Modules\Crm\Sales\Domain\Enums\LeadStatus;
+use Modules\Crm\Sales\Domain\Events\LeadConverted;
+use Modules\Crm\Sales\Domain\Events\LeadCreated;
+use Modules\Crm\Sales\Domain\Events\LeadLost;
+use Modules\Crm\Sales\Domain\Events\LeadQualified;
 use Modules\Crm\Sales\Domain\Exceptions\SalesException;
 use Modules\Crm\Sales\Domain\Models\Lead;
 use Modules\Crm\Sales\Domain\Models\Opportunity;
@@ -32,7 +36,7 @@ final class LeadService
     /** @param array<string, mixed> $data */
     public function create(string $companyId, array $data, ?int $actorId = null): Lead
     {
-        return Lead::create([
+        $lead = Lead::create([
             'company_id' => $companyId,
             'name' => $data['name'],
             'phone' => $data['phone'] ?? null,
@@ -46,13 +50,49 @@ final class LeadService
             'tags' => $data['tags'] ?? null,
             'created_by' => $actorId,
         ]);
+
+        DB::afterCommit(static fn () => event(new LeadCreated(
+            companyId: $companyId,
+            leadId: (string) $lead->id,
+            name: $lead->name !== null ? (string) $lead->name : null,
+            source: $lead->source !== null ? (string) $lead->source : null,
+            actorId: $actorId,
+        )));
+
+        return $lead;
     }
 
     public function setStatus(Lead $lead, LeadStatus $status): Lead
     {
-        $lead->update(['status' => $status->value]);
+        // status is enum-cast on the model, so read its value rather than casting.
+        $previous = $lead->status instanceof LeadStatus
+            ? $lead->status->value
+            : ($lead->status !== null ? (string) $lead->status : null);
 
-        return $lead->refresh();
+        $lead->update(['status' => $status->value]);
+        $fresh = $lead->refresh();
+
+        // Qualified and unqualified are the two moves the business reacts to.
+        // Conversion has its own event and is published by convert().
+        $event = match ($status) {
+            LeadStatus::Qualified => new LeadQualified(
+                companyId: (string) $fresh->company_id,
+                leadId: (string) $fresh->id,
+                previousStatus: $previous,
+            ),
+            LeadStatus::Unqualified => new LeadLost(
+                companyId: (string) $fresh->company_id,
+                leadId: (string) $fresh->id,
+                previousStatus: $previous,
+            ),
+            default => null,
+        };
+
+        if ($event !== null) {
+            DB::afterCommit(static fn () => event($event));
+        }
+
+        return $fresh;
     }
 
     /**
@@ -85,7 +125,17 @@ final class LeadService
                 'converted_at' => Carbon::now(),
             ]);
 
-            return ['lead' => $lead->refresh(), 'customer_id' => $customerId, 'opportunity' => $opp];
+            $fresh = $lead->refresh();
+
+            DB::afterCommit(static fn () => event(new LeadConverted(
+                companyId: (string) $fresh->company_id,
+                leadId: (string) $fresh->id,
+                customerId: (string) $customerId,
+                opportunityId: (string) $opp->id,
+                actorId: $actorId,
+            )));
+
+            return ['lead' => $fresh, 'customer_id' => $customerId, 'opportunity' => $opp];
         });
     }
 
