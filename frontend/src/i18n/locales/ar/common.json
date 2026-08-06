@@ -145,7 +145,8 @@
       "eng-cluster": "عنقود التنفيذ",
       "eng-ai-section": "المشرف الذكي",
       "eng-ai-supervisor": "المشرف الذكي",
-      "eng-repair": "الإصلاح الذكي"
+      "eng-repair": "الإصلاح الذكي",
+      "dashboard": "لوحة التحكم"
     },
     "groups": {
       "overview": "نظرة عامة",

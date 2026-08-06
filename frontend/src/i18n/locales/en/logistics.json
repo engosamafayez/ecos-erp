@@ -123,7 +123,11 @@
       "delivered": "Delivered",
       "outForDelivery": "Out for Delivery",
       "awaitingRetry": "Awaiting Retry",
-      "returning": "Returning"
+      "returning": "Returning",
+      "attempted": "Attempted",
+      "inTransit": "In Transit",
+      "partiallyDelivered": "Partially Delivered",
+      "returned": "Returned"
     },
     "alert": {
       "slaBreachedBy": "SLA breached by",
@@ -218,7 +222,8 @@
     },
     "filter": {
       "orderIdPlaceholder": "Search by order #",
-      "slaBreached": "SLA breached only"
+      "slaBreached": "SLA breached only",
+      "open": "Open"
     }
   },
   "common": {
@@ -265,7 +270,14 @@
     "critical": "Critical",
     "optional": "Optional",
     "date": "Date",
-    "description": "Description"
+    "description": "Description",
+    "all": "All",
+    "available": "Available",
+    "cancelled": "Cancelled",
+    "completed": "Completed",
+    "high": "High",
+    "low": "Low",
+    "pending": "Pending"
   },
   "dispatch": {
     "conflicts": {
@@ -369,7 +381,13 @@
       "notEditable": "Not editable",
       "changeReasonPlaceholder": "Reason for the change",
       "setPriority": "Set Priority",
-      "defer": "Defer"
+      "defer": "Defer",
+      "status": {
+        "blocked": "Blocked",
+        "claimed": "Claimed",
+        "deferred": "Deferred",
+        "waiting": "Waiting"
+      }
     },
     "locks": {
       "empty": "No held locks",
@@ -408,6 +426,18 @@
       "network": "Network",
       "distribution": "Distribution",
       "dispatch": "Dispatch"
+    },
+    "priority": {
+      "normal": "Normal"
+    },
+    "session": {
+      "status": {
+        "abandoned": "Abandoned",
+        "closed": "Closed",
+        "closing": "Closing",
+        "open": "Open",
+        "paused": "Paused"
+      }
     }
   },
   "planning": {
@@ -536,7 +566,10 @@
       "issuingAuthority": "Issuing Authority",
       "issuingAuthorityPlaceholder": "Enter the issuing authority",
       "status": {
-        "expired": "Expired"
+        "expired": "Expired",
+        "expiringSoon": "Expiring Soon",
+        "missing": "Missing",
+        "valid": "Valid"
       },
       "countdown": {
         "expiresToday": "Expires today",
@@ -582,6 +615,13 @@
       "deleteDialog": {
         "title": "Delete document",
         "body": "Delete this document?"
+      },
+      "types": {
+        "employmentContract": "Employment Contract",
+        "license": "Licence",
+        "medicalCertificate": "Medical Certificate",
+        "nationalId": "National ID",
+        "other": "Other"
       }
     },
     "vehicle": {
@@ -668,6 +708,15 @@
       "inactive": "Inactive",
       "expiredLicense": "Expired Licence",
       "withoutVehicle": "Without Vehicle"
+    },
+    "filters": {
+      "license": {
+        "any": "Any Licence",
+        "missing": "Missing Licence"
+      },
+      "vehicle": {
+        "any": "Any Vehicle"
+      }
     }
   },
   "fleet": {
@@ -745,14 +794,19 @@
       "staleOdometer": "Stale Odometer"
     },
     "lifecycle": {
-      "suspended": "Suspended"
+      "suspended": "Suspended",
+      "commissioning": "Commissioning",
+      "decommissioning": "Decommissioning",
+      "draft": "Draft",
+      "retired": "Retired"
     },
     "breadcrumbRoot": "Logistics",
     "breadcrumbFleet": "Fleet",
     "title": "Fleet Dashboard",
     "description": "Monitor vehicle readiness, maintenance and cost.",
     "filters": {
-      "criticalDefects": "Critical defects only"
+      "criticalDefects": "Critical defects only",
+      "inService": "In Service"
     },
     "costType": {
       "fuel": "Fuel",
@@ -763,6 +817,11 @@
       "depreciation": "Depreciation",
       "tyres": "Tyres",
       "other": "Other"
+    },
+    "fitness": {
+      "fit": "Fit",
+      "unfit": "Unfit",
+      "warnings": "Warnings"
     }
   },
   "network": {
@@ -793,7 +852,9 @@
       "binding": "Binding"
     },
     "areaStatus": {
-      "draft": "Draft"
+      "draft": "Draft",
+      "closed": "Closed",
+      "paused": "Paused"
     },
     "drawer": {
       "titleWithName": "Service Area",
@@ -914,7 +975,11 @@
       "overdue": "Overdue",
       "openMinutes": "Open for",
       "unlookedAtMinutes": "Unattended for",
-      "acknowledged": "Acknowledged"
+      "acknowledged": "Acknowledged",
+      "filter": {
+        "info": "Info",
+        "warning": "Warning"
+      }
     },
     "activityCenter": {
       "emptyWindow": "No activity in this window",
@@ -953,6 +1018,14 @@
         "audit": "Audit",
         "assignments": "Assignments",
         "sessions": "Sessions"
+      },
+      "filter": {
+        "escalations": "Escalations",
+        "notes": "Notes"
+      },
+      "source": {
+        "capacityAudit": "Capacity Audit",
+        "dispatchTimeline": "Dispatch Timeline"
       }
     },
     "alertCenter": {
@@ -985,6 +1058,15 @@
       "description": "Monitor and acknowledge operational alerts.",
       "tabs": {
         "live": "Live"
+      },
+      "historyStatus": {
+        "autoResolved": "Auto-Resolved",
+        "resolved": "Resolved",
+        "suppressed": "Suppressed"
+      },
+      "severity": {
+        "info": "Info",
+        "warning": "Warning"
       }
     },
     "readiness": {
@@ -1033,12 +1115,41 @@
       "breadcrumbRoot": "Logistics",
       "breadcrumbSection": "Operations",
       "title": "Enterprise Readiness",
-      "description": "Assess operational readiness across modules and fleet."
+      "description": "Assess operational readiness across modules and fleet.",
+      "status": {
+        "degraded": "Degraded",
+        "notReady": "Not Ready",
+        "ready": "Ready"
+      }
     },
     "badges": {
       "authority": {
         "drivers": "Drivers",
         "fleet": "Fleet"
+      },
+      "exception": {
+        "acknowledged": "Acknowledged",
+        "autoResolved": "Auto-Resolved",
+        "escalated": "Escalated",
+        "open": "Open",
+        "resolved": "Resolved",
+        "suppressed": "Suppressed"
+      },
+      "member": {
+        "heldOut": "Held Out",
+        "inPool": "In Pool",
+        "removed": "Removed"
+      },
+      "pool": {
+        "archived": "Archived",
+        "draft": "Draft",
+        "suspended": "Suspended"
+      },
+      "reservation": {
+        "confirmed": "Confirmed",
+        "held": "Held",
+        "refused": "Refused",
+        "released": "Released"
       }
     }
   },
@@ -1075,7 +1186,10 @@
     "title": "Shipping Companies",
     "description": "Manage carriers and their delivery contracts.",
     "newCompany": "New Company",
-    "searchPlaceholder": "Search companies…"
+    "searchPlaceholder": "Search companies…",
+    "filters": {
+      "allTypes": "All Types"
+    }
   },
   "vehicles": {
     "form": {
@@ -1220,6 +1334,12 @@
       "insurance": "Insurance",
       "inspection": "Inspection",
       "other": "Other"
+    },
+    "status": {
+      "archived": "Archived",
+      "inDelivery": "In Delivery",
+      "maintenance": "Maintenance",
+      "outOfService": "Out of Service"
     }
   }
 }

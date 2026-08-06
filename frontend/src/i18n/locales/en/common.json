@@ -145,7 +145,8 @@
       "eng-cluster": "Execution Cluster",
       "eng-ai-section": "AI Supervisor",
       "eng-ai-supervisor": "AI Supervisor",
-      "eng-repair": "AI Repair"
+      "eng-repair": "AI Repair",
+      "dashboard": "Dashboard"
     },
     "groups": {
       "overview": "Overview",

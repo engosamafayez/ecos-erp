@@ -123,7 +123,11 @@
       "delivered": "تم التسليم",
       "outForDelivery": "خرج للتوصيل",
       "awaitingRetry": "بانتظار إعادة المحاولة",
-      "returning": "قيد الإرجاع"
+      "returning": "قيد الإرجاع",
+      "attempted": "تمت المحاولة",
+      "inTransit": "في الطريق",
+      "partiallyDelivered": "سُلِّمت جزئياً",
+      "returned": "مرتجعة"
     },
     "alert": {
       "slaBreachedBy": "تجاوز اتفاقية مستوى الخدمة بمقدار",
@@ -218,7 +222,8 @@
     },
     "filter": {
       "orderIdPlaceholder": "البحث برقم الطلب",
-      "slaBreached": "المتجاوِزة لاتفاقية مستوى الخدمة فقط"
+      "slaBreached": "المتجاوِزة لاتفاقية مستوى الخدمة فقط",
+      "open": "مفتوحة"
     }
   },
   "common": {
@@ -265,7 +270,14 @@
     "critical": "حرج",
     "optional": "اختياري",
     "date": "التاريخ",
-    "description": "الوصف"
+    "description": "الوصف",
+    "all": "الكل",
+    "available": "المتاح",
+    "cancelled": "ملغاة",
+    "completed": "مكتملة",
+    "high": "مرتفع",
+    "low": "منخفض",
+    "pending": "معلقة"
   },
   "dispatch": {
     "conflicts": {
@@ -369,7 +381,13 @@
       "notEditable": "غير قابل للتعديل",
       "changeReasonPlaceholder": "سبب التغيير",
       "setPriority": "تحديد الأولوية",
-      "defer": "تأجيل"
+      "defer": "تأجيل",
+      "status": {
+        "blocked": "محظورة",
+        "claimed": "مستلمة",
+        "deferred": "مؤجلة",
+        "waiting": "قيد الانتظار"
+      }
     },
     "locks": {
       "empty": "لا توجد أقفال محجوزة",
@@ -408,6 +426,18 @@
       "network": "الشبكة",
       "distribution": "التوزيع",
       "dispatch": "الإرسال"
+    },
+    "priority": {
+      "normal": "عادية"
+    },
+    "session": {
+      "status": {
+        "abandoned": "متروكة",
+        "closed": "مغلقة",
+        "closing": "جارٍ الإغلاق",
+        "open": "مفتوحة",
+        "paused": "متوقفة مؤقتاً"
+      }
     }
   },
   "planning": {
@@ -536,7 +566,10 @@
       "issuingAuthority": "جهة الإصدار",
       "issuingAuthorityPlaceholder": "أدخل جهة الإصدار",
       "status": {
-        "expired": "منتهية"
+        "expired": "منتهية",
+        "expiringSoon": "تنتهي قريباً",
+        "missing": "غير متوفرة",
+        "valid": "سارية"
       },
       "countdown": {
         "expiresToday": "تنتهي اليوم",
@@ -582,6 +615,13 @@
       "deleteDialog": {
         "title": "حذف المستند",
         "body": "هل تريد حذف هذا المستند؟"
+      },
+      "types": {
+        "employmentContract": "عقد العمل",
+        "license": "الرخصة",
+        "medicalCertificate": "شهادة صحية",
+        "nationalId": "الرقم القومي",
+        "other": "أخرى"
       }
     },
     "vehicle": {
@@ -668,6 +708,15 @@
       "inactive": "غير النشطين",
       "expiredLicense": "رخصة منتهية",
       "withoutVehicle": "بدون مركبة"
+    },
+    "filters": {
+      "license": {
+        "any": "أي رخصة",
+        "missing": "رخصة غير متوفرة"
+      },
+      "vehicle": {
+        "any": "أي مركبة"
+      }
     }
   },
   "fleet": {
@@ -745,14 +794,19 @@
       "staleOdometer": "عداد مسافة قديم"
     },
     "lifecycle": {
-      "suspended": "موقوفة"
+      "suspended": "موقوفة",
+      "commissioning": "قيد التشغيل",
+      "decommissioning": "قيد الإيقاف",
+      "draft": "مسودة",
+      "retired": "مستبعدة"
     },
     "breadcrumbRoot": "اللوجستيات",
     "breadcrumbFleet": "الأسطول",
     "title": "لوحة تحكم الأسطول",
     "description": "متابعة جاهزية المركبات والصيانة والتكلفة.",
     "filters": {
-      "criticalDefects": "الأعطال الحرجة فقط"
+      "criticalDefects": "الأعطال الحرجة فقط",
+      "inService": "في الخدمة"
     },
     "costType": {
       "fuel": "الوقود",
@@ -763,6 +817,11 @@
       "depreciation": "الإهلاك",
       "tyres": "الإطارات",
       "other": "أخرى"
+    },
+    "fitness": {
+      "fit": "صالحة",
+      "unfit": "غير صالحة",
+      "warnings": "تحذيرات"
     }
   },
   "network": {
@@ -793,7 +852,9 @@
       "binding": "ملزمة"
     },
     "areaStatus": {
-      "draft": "مسودة"
+      "draft": "مسودة",
+      "closed": "مغلقة",
+      "paused": "متوقفة مؤقتاً"
     },
     "drawer": {
       "titleWithName": "منطقة الخدمة",
@@ -914,7 +975,11 @@
       "overdue": "متأخر",
       "openMinutes": "مفتوح منذ",
       "unlookedAtMinutes": "دون متابعة منذ",
-      "acknowledged": "مُقر به"
+      "acknowledged": "مُقر به",
+      "filter": {
+        "info": "معلومة",
+        "warning": "تحذير"
+      }
     },
     "activityCenter": {
       "emptyWindow": "لا يوجد نشاط في هذه الفترة",
@@ -953,6 +1018,14 @@
         "audit": "التدقيق",
         "assignments": "الإسنادات",
         "sessions": "الجلسات"
+      },
+      "filter": {
+        "escalations": "التصعيدات",
+        "notes": "ملاحظات"
+      },
+      "source": {
+        "capacityAudit": "تدقيق السعة",
+        "dispatchTimeline": "الجدول الزمني للإرسال"
       }
     },
     "alertCenter": {
@@ -985,6 +1058,15 @@
       "description": "متابعة التنبيهات التشغيلية والإقرار بها.",
       "tabs": {
         "live": "الحية"
+      },
+      "historyStatus": {
+        "autoResolved": "حُلَّت تلقائياً",
+        "resolved": "محلولة",
+        "suppressed": "مكتومة"
+      },
+      "severity": {
+        "info": "معلومة",
+        "warning": "تحذير"
       }
     },
     "readiness": {
@@ -1033,12 +1115,41 @@
       "breadcrumbRoot": "اللوجستيات",
       "breadcrumbSection": "العمليات",
       "title": "الجاهزية المؤسسية",
-      "description": "تقييم الجاهزية التشغيلية عبر الوحدات والأسطول."
+      "description": "تقييم الجاهزية التشغيلية عبر الوحدات والأسطول.",
+      "status": {
+        "degraded": "متدهورة",
+        "notReady": "غير جاهزة",
+        "ready": "جاهزة"
+      }
     },
     "badges": {
       "authority": {
         "drivers": "السائقون",
         "fleet": "الأسطول"
+      },
+      "exception": {
+        "acknowledged": "مُقر به",
+        "autoResolved": "حُل تلقائياً",
+        "escalated": "مُصعَّد",
+        "open": "مفتوح",
+        "resolved": "محلول",
+        "suppressed": "مكتوم"
+      },
+      "member": {
+        "heldOut": "مستبعد مؤقتاً",
+        "inPool": "ضمن المجمع",
+        "removed": "مُزال"
+      },
+      "pool": {
+        "archived": "مؤرشف",
+        "draft": "مسودة",
+        "suspended": "موقوف"
+      },
+      "reservation": {
+        "confirmed": "مؤكد",
+        "held": "محجوز",
+        "refused": "مرفوض",
+        "released": "محرر"
       }
     }
   },
@@ -1075,7 +1186,10 @@
     "title": "شركات الشحن",
     "description": "إدارة شركات الشحن وعقود التوصيل الخاصة بها.",
     "newCompany": "شركة جديدة",
-    "searchPlaceholder": "بحث في الشركات…"
+    "searchPlaceholder": "بحث في الشركات…",
+    "filters": {
+      "allTypes": "كل الأنواع"
+    }
   },
   "vehicles": {
     "form": {
@@ -1220,6 +1334,12 @@
       "insurance": "التأمين",
       "inspection": "الفحص",
       "other": "أخرى"
+    },
+    "status": {
+      "archived": "مؤرشفة",
+      "inDelivery": "قيد التوصيل",
+      "maintenance": "الصيانة",
+      "outOfService": "خارج الخدمة"
     }
   }
 }
