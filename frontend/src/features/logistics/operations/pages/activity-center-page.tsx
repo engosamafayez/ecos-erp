@@ -37,12 +37,12 @@ function SeverityDot({ severity }: { severity: ActivityItem['severity'] }) {
   return <Info className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />;
 }
 
-const SOURCE_LABEL_KEY: Record<ActivitySource, string> = {
-  dispatch_timeline: 'operations.activityCenter.source.dispatchTimeline',
-  dispatch_audit: 'operations.activityCenter.source.dispatchAudit',
-  capacity_audit: 'operations.activityCenter.source.capacityAudit',
-  escalation: 'operations.activityCenter.source.escalation',
-  note: 'operations.activityCenter.source.note',
+const SOURCE_LABEL_KEY: Record<ActivitySource, LogisticsLabel> = {
+  dispatch_timeline: ($) => $.operations.activityCenter.source.dispatchTimeline,
+  dispatch_audit: ($) => $.operations.activityCenter.source.dispatchAudit,
+  capacity_audit: ($) => $.operations.activityCenter.source.capacityAudit,
+  escalation: ($) => $.operations.activityCenter.source.escalation,
+  note: ($) => $.operations.activityCenter.source.note,
 };
 
 /** A vertical time-ordered list — the Timeline component pattern. */

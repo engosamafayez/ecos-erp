@@ -880,6 +880,12 @@
       "area": "Service Area",
       "members": "Members",
       "noCoverageTooltip": "No coverage defined for this area."
+    },
+    "capacityUnits": {
+      "orders": "Orders",
+      "stops": "Stops",
+      "kg": "kg",
+      "m3": "m³"
     }
   },
   "operations": {
@@ -1037,7 +1043,10 @@
       },
       "source": {
         "capacityAudit": "Capacity Audit",
-        "dispatchTimeline": "Dispatch Timeline"
+        "dispatchTimeline": "Dispatch Timeline",
+        "dispatchAudit": "Dispatch Audit",
+        "escalation": "Escalation",
+        "note": "Note"
       }
     },
     "alertCenter": {

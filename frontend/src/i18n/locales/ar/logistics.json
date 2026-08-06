@@ -880,6 +880,12 @@
       "area": "منطقة الخدمة",
       "members": "الأعضاء",
       "noCoverageTooltip": "لم تُحدَّد تغطية لهذه المنطقة."
+    },
+    "capacityUnits": {
+      "orders": "طلبات",
+      "stops": "محطات",
+      "kg": "كجم",
+      "m3": "م³"
     }
   },
   "operations": {
@@ -1037,7 +1043,10 @@
       },
       "source": {
         "capacityAudit": "تدقيق السعة",
-        "dispatchTimeline": "الجدول الزمني للإرسال"
+        "dispatchTimeline": "الجدول الزمني للإرسال",
+        "dispatchAudit": "تدقيق الإرسال",
+        "escalation": "تصعيد",
+        "note": "ملاحظة"
       }
     },
     "alertCenter": {

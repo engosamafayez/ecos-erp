@@ -115,12 +115,12 @@ export function PriorityBadge({ priority }: { priority: QueuePriority }) {
  * Shown next to every conflict because Dispatch may not overrule another
  * authority — a dispatcher needs to know where the fix actually lives.
  */
-const AUTHORITY: Record<ConflictAuthority, string> = {
-  fleet: 'dispatch.authority.fleet',
-  drivers: 'dispatch.authority.drivers',
-  network: 'dispatch.authority.network',
-  distribution: 'dispatch.authority.distribution',
-  dispatch: 'dispatch.authority.dispatch',
+const AUTHORITY: Record<ConflictAuthority, LogisticsLabel> = {
+  fleet: ($) => $.dispatch.authority.fleet,
+  drivers: ($) => $.dispatch.authority.drivers,
+  network: ($) => $.dispatch.authority.network,
+  distribution: ($) => $.dispatch.authority.distribution,
+  dispatch: ($) => $.dispatch.authority.dispatch,
 };
 
 export function AuthorityBadge({ authority }: { authority: ConflictAuthority }) {

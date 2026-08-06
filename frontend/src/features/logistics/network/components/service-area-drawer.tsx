@@ -11,6 +11,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCapacityPlans, useServiceArea } from '../hooks/use-network';
 import type { CapacityUnit, ServiceAreaMember } from '../types/network';
 import { AreaStatusBadge } from './area-status-badge';
+import type enLogistics from '@/i18n/locales/en/logistics.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of key
+ * strings can never type-check. Indexing this table by a runtime value is
+ * still fine — the lookup yields a selector, which is what t() expects.
+ */
+type LogisticsLabel = ($: typeof enLogistics) => string;
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -136,11 +146,11 @@ function Overview({ areaId }: { areaId: string }) {
   );
 }
 
-const UNIT_LABEL_KEYS: Record<CapacityUnit, string> = {
-  orders: 'network.capacityUnits.orders',
-  stops: 'network.capacityUnits.stops',
-  weight_kg: 'network.capacityUnits.kg',
-  volume_m3: 'network.capacityUnits.m3',
+const UNIT_LABEL_KEYS: Record<CapacityUnit, LogisticsLabel> = {
+  orders: ($) => $.network.capacityUnits.orders,
+  stops: ($) => $.network.capacityUnits.stops,
+  weight_kg: ($) => $.network.capacityUnits.kg,
+  volume_m3: ($) => $.network.capacityUnits.m3,
 };
 
 function Capacity({ areaId }: { areaId: string }) {

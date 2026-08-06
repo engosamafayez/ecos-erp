@@ -115,7 +115,7 @@ const DOCUMENT_TYPES: { value: DriverDocumentType; labelKey: LogisticsLabel }[] 
 
 const DOCUMENT_TYPE_LABEL_KEY = Object.fromEntries(
   DOCUMENT_TYPES.map((d) => [d.value, d.labelKey]),
-) as Record<DriverDocumentType, string>;
+) as Record<DriverDocumentType, LogisticsLabel>;
 
 // ── Form state ─────────────────────────────────────────────────────────────────
 

@@ -19,15 +19,25 @@ import { Separator } from '@/components/ui/separator';
 import { useDeferItem, usePrioritiseItem } from '../hooks/use-dispatch-ops';
 import type { QueueItem, QueuePriority } from '../types/dispatch-ops';
 import { PriorityBadge, QueueStatusBadge } from './dispatch-status-badges';
+import type enLogistics from '@/i18n/locales/en/logistics.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of key
+ * strings can never type-check. Indexing this table by a runtime value is
+ * still fine — the lookup yields a selector, which is what t() expects.
+ */
+type LogisticsLabel = ($: typeof enLogistics) => string;
 
 const PRIORITIES: QueuePriority[] = ['critical', 'high', 'normal', 'low'];
 
 /** `logistics` namespace keys — resolved at render, never stored translated. */
-const PRIORITY_LABEL_KEYS: Record<QueuePriority, string> = {
-  critical: 'common.critical',
-  high: 'common.high',
-  normal: 'dispatch.priority.normal',
-  low: 'common.low',
+const PRIORITY_LABEL_KEYS: Record<QueuePriority, LogisticsLabel> = {
+  critical: ($) => $.common.critical,
+  high: ($) => $.common.high,
+  normal: ($) => $.dispatch.priority.normal,
+  low: ($) => $.common.low,
 };
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
