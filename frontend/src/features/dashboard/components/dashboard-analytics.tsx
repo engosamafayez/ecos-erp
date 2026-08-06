@@ -4,19 +4,31 @@ import { useTranslation } from 'react-i18next';
 import { MonthlyProgress }  from './monthly-progress';
 import type { ExecutiveDashboardData } from '../services/executive-dashboard.service';
 
+import type enDashboard from '@/i18n/locales/en/dashboard.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of key
+ * strings can never type-check. The selector is the same expression the
+ * compiler validates at an inline call site, kept in the table.
+ */
+type DashboardLabel = ($: typeof enDashboard) => string;
+
+
 // ── AI Reserved zone ───────────────────────────────────────────────────────
 
 function AiReservedZone() {
   const { t } = useTranslation('dashboard');
 
-  const AI_FEATURES = [
-    { labelKey: 'analytics.features.demandForecast'      as const, descKey: 'analytics.features.demandForecastDesc'      as const },
-    { labelKey: 'analytics.features.purchaseSuggestions' as const, descKey: 'analytics.features.purchaseSuggestionsDesc' as const },
-    { labelKey: 'analytics.features.revenuePrediction'   as const, descKey: 'analytics.features.revenuePredictionDesc'   as const },
-    { labelKey: 'analytics.features.campaignRec'         as const, descKey: 'analytics.features.campaignRecDesc'         as const },
-    { labelKey: 'analytics.features.cashFlow'            as const, descKey: 'analytics.features.cashFlowDesc'            as const },
-    { labelKey: 'analytics.features.churnRisk'           as const, descKey: 'analytics.features.churnRiskDesc'           as const },
-    { labelKey: 'analytics.features.inventoryOpt'        as const, descKey: 'analytics.features.inventoryOptDesc'        as const },
+  const AI_FEATURES: { id: string; labelKey: DashboardLabel; descKey: DashboardLabel }[] = [
+    { id: 'demand-forecast', labelKey: ($) => $.analytics.features.demandForecast, descKey: ($) => $.analytics.features.demandForecastDesc },
+    { id: 'purchase-suggestions', labelKey: ($) => $.analytics.features.purchaseSuggestions, descKey: ($) => $.analytics.features.purchaseSuggestionsDesc },
+    { id: 'revenue-prediction', labelKey: ($) => $.analytics.features.revenuePrediction, descKey: ($) => $.analytics.features.revenuePredictionDesc },
+    { id: 'campaign-recommendations', labelKey: ($) => $.analytics.features.campaignRec, descKey: ($) => $.analytics.features.campaignRecDesc },
+    { id: 'cash-flow', labelKey: ($) => $.analytics.features.cashFlow, descKey: ($) => $.analytics.features.cashFlowDesc },
+    { id: 'churn-risk', labelKey: ($) => $.analytics.features.churnRisk, descKey: ($) => $.analytics.features.churnRiskDesc },
+    { id: 'inventory-optimisation', labelKey: ($) => $.analytics.features.inventoryOpt, descKey: ($) => $.analytics.features.inventoryOptDesc },
   ];
 
   return (
@@ -33,7 +45,7 @@ function AiReservedZone() {
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
         {AI_FEATURES.map((f) => (
           <div
-            key={f.labelKey}
+            key={f.id}
             className="rounded-lg border border-dashed border-violet-500/15 bg-violet-500/[0.02] p-3 opacity-60"
           >
             <div className="flex items-center gap-1.5 mb-1">

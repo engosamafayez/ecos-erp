@@ -5,6 +5,16 @@ import type { TFunction } from 'i18next';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { ExecutiveDashboardData } from '@/features/dashboard/services/executive-dashboard.service';
+import type enDashboard from '@/i18n/locales/en/dashboard.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of key
+ * strings can never type-check. The selector is the same expression the
+ * compiler validates at an inline call site, kept in the table.
+ */
+type DashboardLabel = ($: typeof enDashboard) => string;
 
 interface Props {
   data?: ExecutiveDashboardData;
@@ -12,6 +22,8 @@ interface Props {
 
 interface Insight {
   type:    'alert' | 'tip' | 'info';
+
+
   message: string;
 }
 
@@ -68,10 +80,10 @@ function deriveInsights(data: ExecutiveDashboardData, t: TFunction<'dashboard'>,
   return insights.slice(0, 4);
 }
 
-const BADGE = {
-  alert: { labelKey: 'aiInsights.badgeAlert' as const, cls: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20' },
-  tip:   { labelKey: 'aiInsights.badgeTip'   as const, cls: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
-  info:  { labelKey: 'aiInsights.badgeInfo'  as const, cls: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20' },
+const BADGE: Record<Insight['type'], { labelKey: DashboardLabel; cls: string }> = {
+  alert: { labelKey: ($) => $.aiInsights.badgeAlert, cls: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20' },
+  tip:   { labelKey: ($) => $.aiInsights.badgeTip, cls: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
+  info:  { labelKey: ($) => $.aiInsights.badgeInfo, cls: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20' },
 };
 
 export function AiInsightsCard({ data }: Props) {

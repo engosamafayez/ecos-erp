@@ -16,21 +16,25 @@ import { cn } from '@/lib/utils';
 import { ROUTES } from '@/router/routes';
 import type { ExecutiveDashboardData } from '../services/executive-dashboard.service';
 
+import type enDashboard from '@/i18n/locales/en/dashboard.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of key
+ * strings can never type-check. The selector is the same expression the
+ * compiler validates at an inline call site, kept in the table.
+ */
+type DashboardLabel = ($: typeof enDashboard) => string;
+
+
 // ── Workspace definitions ──────────────────────────────────────────────────
 
-type WorkspaceLabelKey =
-  | 'workspaces.orders'
-  | 'workspaces.inventory'
-  | 'workspaces.manufacturing'
-  | 'workspaces.procurement'
-  | 'workspaces.crm'
-  | 'workspaces.marketing'
-  | 'workspaces.shipping'
-  | 'workspaces.finance';
+
 
 interface WorkspaceLink {
   id:       string;
-  labelKey: WorkspaceLabelKey;
+  labelKey: DashboardLabel;
   icon:     LucideIcon;
   color:    string;       // icon color class
   bgColor:  string;       // icon container background
@@ -41,7 +45,7 @@ interface WorkspaceLink {
 const WORKSPACES: WorkspaceLink[] = [
   {
     id:       'orders',
-    labelKey: 'workspaces.orders',
+    labelKey: ($) => $.workspaces.orders,
     icon:     ShoppingCart,
     color:    'text-indigo-500',
     bgColor:  'bg-indigo-500/10',
@@ -50,7 +54,7 @@ const WORKSPACES: WorkspaceLink[] = [
   },
   {
     id:       'inventory',
-    labelKey: 'workspaces.inventory',
+    labelKey: ($) => $.workspaces.inventory,
     icon:     Package,
     color:    'text-emerald-500',
     bgColor:  'bg-emerald-500/10',
@@ -58,7 +62,7 @@ const WORKSPACES: WorkspaceLink[] = [
   },
   {
     id:       'manufacturing',
-    labelKey: 'workspaces.manufacturing',
+    labelKey: ($) => $.workspaces.manufacturing,
     icon:     Factory,
     color:    'text-violet-500',
     bgColor:  'bg-violet-500/10',
@@ -67,7 +71,7 @@ const WORKSPACES: WorkspaceLink[] = [
   },
   {
     id:       'procurement',
-    labelKey: 'workspaces.procurement',
+    labelKey: ($) => $.workspaces.procurement,
     icon:     ShoppingBag,
     color:    'text-amber-500',
     bgColor:  'bg-amber-500/10',
@@ -75,7 +79,7 @@ const WORKSPACES: WorkspaceLink[] = [
   },
   {
     id:       'crm',
-    labelKey: 'workspaces.crm',
+    labelKey: ($) => $.workspaces.crm,
     icon:     Users,
     color:    'text-pink-500',
     bgColor:  'bg-pink-500/10',
@@ -83,7 +87,7 @@ const WORKSPACES: WorkspaceLink[] = [
   },
   {
     id:       'marketing',
-    labelKey: 'workspaces.marketing',
+    labelKey: ($) => $.workspaces.marketing,
     icon:     BarChart3,
     color:    'text-rose-500',
     bgColor:  'bg-rose-500/10',
@@ -91,7 +95,7 @@ const WORKSPACES: WorkspaceLink[] = [
   },
   {
     id:       'shipping',
-    labelKey: 'workspaces.shipping',
+    labelKey: ($) => $.workspaces.shipping,
     icon:     Truck,
     color:    'text-cyan-500',
     bgColor:  'bg-cyan-500/10',
@@ -100,7 +104,7 @@ const WORKSPACES: WorkspaceLink[] = [
   },
   {
     id:       'finance',
-    labelKey: 'workspaces.finance',
+    labelKey: ($) => $.workspaces.finance,
     icon:     CreditCard,
     color:    'text-teal-500',
     bgColor:  'bg-teal-500/10',
