@@ -3,6 +3,16 @@ import { useTranslation } from 'react-i18next';
 
 import { LoginForm } from '@/features/auth/components/login-form';
 import { env } from '@/lib/env';
+import type enAuth from '@/i18n/locales/en/auth.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of key
+ * strings can never type-check. The selector is the same expression the
+ * compiler validates at an inline call site, kept in the table.
+ */
+type AuthLabel = ($: typeof enAuth) => string;
 
 // ── Canvas ─────────────────────────────────────────────────────────────────
 
@@ -115,8 +125,19 @@ function CommerceCanvas() {
 // ── Data ───────────────────────────────────────────────────────────────────
 
 const STAT_VALUES = ['125K+', '99.8%', '24', '12'] as const;
-const STAT_KEYS = ['branding.statsOrders', 'branding.statsAccuracy', 'branding.statsWarehouses', 'branding.statsChannels'] as const;
-const FEATURE_KEYS = ['branding.featureAI', 'branding.featureInventory', 'branding.featureManufacturing', 'branding.featureLogistics', 'branding.featureCRM'] as const;
+const STAT_KEYS: AuthLabel[] = [
+  ($) => $.branding.statsOrders,
+  ($) => $.branding.statsAccuracy,
+  ($) => $.branding.statsWarehouses,
+  ($) => $.branding.statsChannels,
+];
+const FEATURE_KEYS: AuthLabel[] = [
+  ($) => $.branding.featureAI,
+  ($) => $.branding.featureInventory,
+  ($) => $.branding.featureManufacturing,
+  ($) => $.branding.featureLogistics,
+  ($) => $.branding.featureCRM,
+];
 
 const ENV_BADGE: Record<string, { label: string; bg: string; color: string } | undefined> = {
   development: { label: 'DEV', bg: 'rgba(34,211,238,0.15)', color: '#22D3EE' },
@@ -267,7 +288,7 @@ function BrandingPanel() {
           >
             {STAT_KEYS.map((key, i) => (
               <div
-                key={key}
+                key={i}
                 style={{
                   padding: '8px 6px',
                   textAlign: 'center',
@@ -301,9 +322,9 @@ function BrandingPanel() {
               gap: '6px 16px',
             }}
           >
-            {FEATURE_KEYS.map((key) => (
+            {FEATURE_KEYS.map((key, i) => (
               <div
-                key={key}
+                key={i}
                 style={{
                   display: 'flex',
                   alignItems: 'center',

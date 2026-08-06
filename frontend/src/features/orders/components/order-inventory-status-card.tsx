@@ -5,6 +5,16 @@ import { Button } from '@/components/ui/button';
 import type { BrandOrderPolicy } from '@/features/orders/types/order';
 import type { Product } from '@/features/products/types/product';
 import type { ManualOrderLineFormValues } from '@/features/orders/components/order-form-schema';
+import type enOrders from '@/i18n/locales/en/orders.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of key
+ * strings can never type-check. The selector is the same expression the
+ * compiler validates at an inline call site, kept in the table.
+ */
+type OrdersLabel = ($: typeof enOrders) => string;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -49,19 +59,13 @@ function deriveScenario(
 
 // ── Scenario config ───────────────────────────────────────────────────────────
 
-type InventoryCardKey =
-  | 'inventoryCard.title'
-  | 'inventoryCard.warningTitle'
-  | 'inventoryCard.policyTitle'
-  | 'inventoryCard.autoPolicy'
-  | 'inventoryCard.manualPolicy'
-  | 'inventoryCard.shortageWarning';
+
 
 type ScenarioConfig = {
   icon: React.ElementType;
-  titleKey: InventoryCardKey;
-  policyKey?: InventoryCardKey;
-  subKey?: InventoryCardKey;
+  titleKey: OrdersLabel;
+  policyKey?: OrdersLabel;
+  subKey?: OrdersLabel;
   border: string;
   bg: string;
   iconColor: string;
@@ -71,8 +75,8 @@ type ScenarioConfig = {
 const SCENARIO_CONFIG: Record<InventoryScenario, ScenarioConfig> = {
   auto_reserve: {
     icon: BadgeCheck,
-    titleKey: 'inventoryCard.title',
-    policyKey: 'inventoryCard.autoPolicy',
+    titleKey: ($) => $.inventoryCard.title,
+    policyKey: ($) => $.inventoryCard.autoPolicy,
     border: 'border-emerald-200 dark:border-emerald-800/50',
     bg: 'bg-emerald-50/60 dark:bg-emerald-950/20',
     iconColor: 'text-emerald-600 dark:text-emerald-400',
@@ -80,8 +84,8 @@ const SCENARIO_CONFIG: Record<InventoryScenario, ScenarioConfig> = {
   },
   shortage: {
     icon: AlertTriangle,
-    titleKey: 'inventoryCard.warningTitle',
-    subKey: 'inventoryCard.shortageWarning',
+    titleKey: ($) => $.inventoryCard.warningTitle,
+    subKey: ($) => $.inventoryCard.shortageWarning,
     border: 'border-amber-300 dark:border-amber-700/50',
     bg: 'bg-amber-50 dark:bg-amber-950/30',
     iconColor: 'text-amber-600 dark:text-amber-400',
@@ -89,7 +93,7 @@ const SCENARIO_CONFIG: Record<InventoryScenario, ScenarioConfig> = {
   },
   negative: {
     icon: Info,
-    titleKey: 'inventoryCard.policyTitle',
+    titleKey: ($) => $.inventoryCard.policyTitle,
     border: 'border-sky-200 dark:border-sky-800/50',
     bg: 'bg-sky-50/60 dark:bg-sky-950/20',
     iconColor: 'text-sky-600 dark:text-sky-400',
@@ -97,8 +101,8 @@ const SCENARIO_CONFIG: Record<InventoryScenario, ScenarioConfig> = {
   },
   manual: {
     icon: Info,
-    titleKey: 'inventoryCard.title',
-    policyKey: 'inventoryCard.manualPolicy',
+    titleKey: ($) => $.inventoryCard.title,
+    policyKey: ($) => $.inventoryCard.manualPolicy,
     border: 'border-border',
     bg: 'bg-muted/30',
     iconColor: 'text-muted-foreground',
@@ -106,7 +110,7 @@ const SCENARIO_CONFIG: Record<InventoryScenario, ScenarioConfig> = {
   },
   idle: {
     icon: Package,
-    titleKey: 'inventoryCard.title',
+    titleKey: ($) => $.inventoryCard.title,
     border: 'border-border',
     bg: 'bg-muted/20',
     iconColor: 'text-muted-foreground',

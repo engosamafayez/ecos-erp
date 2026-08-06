@@ -71,17 +71,27 @@ import type {
   VehicleType,
 } from '../types/vehicle';
 import { VehicleStatusBadge } from './vehicle-status-badge';
+import type enLogistics from '@/i18n/locales/en/logistics.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of key
+ * strings can never type-check. The selector is the same expression the
+ * compiler validates at an inline call site, kept in the table.
+ */
+type LogisticsLabel = ($: typeof enLogistics) => string;
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 /** Status → translation key. Kept local so this module only exports components. */
-const STATUS_LABEL_KEYS: Record<VehicleStatus, string> = {
-  available: 'common.available',
-  assigned: 'common.assigned',
-  in_delivery: 'vehicles.status.inDelivery',
-  maintenance: 'vehicles.status.maintenance',
-  out_of_service: 'vehicles.status.outOfService',
-  archived: 'vehicles.status.archived',
+const STATUS_LABEL_KEYS: Record<VehicleStatus, LogisticsLabel> = {
+  available: ($) => $.common.available,
+  assigned: ($) => $.common.assigned,
+  in_delivery: ($) => $.vehicles.status.inDelivery,
+  maintenance: ($) => $.vehicles.status.maintenance,
+  out_of_service: ($) => $.vehicles.status.outOfService,
+  archived: ($) => $.vehicles.status.archived,
 };
 
 function apiErrorMessage(err: unknown, fallback: string): string {
