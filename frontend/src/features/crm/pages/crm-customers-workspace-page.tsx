@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Archive, Plus, Sparkles, UserCheck, Users } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { UniversalDataGrid } from '@/components/data-grid/universal-data-grid';
@@ -7,7 +7,6 @@ import { SmartToolbar } from '@/components/data-grid/smart-toolbar';
 import type { DataGridColumnDef } from '@/components/data-grid/types';
 import { StatusBadge } from '@/components/crud/status-badge';
 import type { StatusVariant } from '@/components/crud/types';
-import { QuickStatCard } from '@/components/ds';
 import { Badge } from '@/components/ui/badge';
 import { usePermission } from '@/features/authorization';
 import { useCrmCustomersQuery } from '@/features/crm/hooks/use-crm-customers';
@@ -95,17 +94,6 @@ export function CrmCustomersWorkspacePage() {
   const meta = data?.meta;
   const isFiltered = Boolean(params.q || params.status || params.type);
 
-  // Derived from the page in hand. The list endpoint returns no aggregate, and
-  // inventing a second request for counts would report figures the grid below
-  // cannot corroborate.
-  const stats = useMemo(() => {
-    return {
-      total: meta?.total ?? rows.length,
-      active: rows.filter((c) => c.status === 'active').length,
-      prospects: rows.filter((c) => c.status === 'prospect').length,
-      archived: rows.filter((c) => c.status === 'archived').length,
-    };
-  }, [rows, meta]);
 
   const columns: DataGridColumnDef<CrmCustomer>[] = useMemo(
     () => [
@@ -170,36 +158,21 @@ export function CrmCustomersWorkspacePage() {
         <p className="text-sm text-muted-foreground">{t(($) => $.workspace.subtitle)}</p>
       </header>
 
-      {/* Stacks on mobile, two-up on tablet, four-up on desktop. */}
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <QuickStatCard
-          icon={Users}
-          title={t(($) => $.kpi.total)}
-          value={stats.total}
-          active={status === 'all'}
-          onClick={() => { setStatus('all'); setPage(1); }}
-        />
-        <QuickStatCard
-          icon={UserCheck}
-          title={t(($) => $.kpi.active)}
-          value={stats.active}
-          active={status === 'active'}
-          onClick={() => { setStatus('active'); setPage(1); }}
-        />
-        <QuickStatCard
-          icon={Sparkles}
-          title={t(($) => $.kpi.prospects)}
-          value={stats.prospects}
-          active={status === 'prospect'}
-          onClick={() => { setStatus('prospect'); setPage(1); }}
-        />
-        <QuickStatCard
-          icon={Archive}
-          title={t(($) => $.kpi.archived)}
-          value={stats.archived}
-          active={status === 'archived'}
-          onClick={() => { setStatus('archived'); setPage(1); }}
-        />
+      {/*
+        A KPI must describe the whole dataset. The list endpoint returns no
+        aggregate, so the per-status breakdown that used to sit here was counted
+        from the loaded page — four cards that changed meaning as you paged.
+        This states only what the API actually reports: how many records match
+        the current query.
+      */}
+      <section className="text-sm text-muted-foreground">
+        {meta ? (
+          <span>
+            {isFiltered
+              ? t(($) => $.summary.countFiltered, { count: meta.total })
+              : t(($) => $.summary.countAll, { count: meta.total })}
+          </span>
+        ) : null}
       </section>
 
       <SmartToolbar

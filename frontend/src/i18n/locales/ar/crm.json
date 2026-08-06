@@ -4,12 +4,6 @@
     "subtitle": "كل علاقات العملاء في مساحة عمل واحدة",
     "breadcrumbRoot": "إدارة العملاء"
   },
-  "kpi": {
-    "total": "إجمالي العملاء",
-    "active": "نشط",
-    "prospects": "عملاء محتملون",
-    "archived": "مؤرشف"
-  },
   "toolbar": {
     "searchPlaceholder": "ابحث بالاسم أو الكود أو الهاتف أو البريد",
     "newCustomer": "عميل جديد",
@@ -74,5 +68,49 @@
     "title": "تعذر تحميل العملاء",
     "body": "حاول مرة أخرى، أو تواصل مع الدعم إذا استمرت المشكلة.",
     "retry": "إعادة المحاولة"
+  },
+  "summary": {
+    "countAll": "{{count}} عميل",
+    "countFiltered": "{{count}} عميل مطابق لعوامل التصفية"
+  },
+  "form": {
+    "createTitle": "عميل جديد",
+    "editTitle": "تعديل العميل",
+    "createSubtitle": "أضف عميلاً إلى إدارة العملاء",
+    "editSubtitle": "تحديث بيانات هذا العميل",
+    "sectionIdentity": "الهوية",
+    "sectionContact": "بيانات الاتصال",
+    "sectionPreferences": "التفضيلات",
+    "sectionNotes": "ملاحظات",
+    "save": "حفظ",
+    "saving": "جارٍ الحفظ…",
+    "cancel": "إلغاء",
+    "createdToast": "تم إنشاء العميل",
+    "updatedToast": "تم تحديث العميل",
+    "failedToast": "تعذر حفظ العميل",
+    "identityLocked": "يُحدَّد النوع والحالة عند الإنشاء ولا يمكن تغييرهما هنا.",
+    "contactLocked": "يُدار الهاتف والبريد من سجلات اتصال العميل.",
+    "fields": {
+      "type": "النوع",
+      "status": "الحالة",
+      "firstName": "الاسم الأول",
+      "lastName": "اسم العائلة",
+      "businessName": "اسم الشركة",
+      "taxNumber": "الرقم الضريبي",
+      "contactPerson": "مسؤول التواصل",
+      "phone": "الهاتف",
+      "email": "البريد الإلكتروني",
+      "group": "مجموعة العملاء",
+      "language": "اللغة المفضلة",
+      "contactMethod": "طريقة التواصل المفضلة",
+      "country": "الدولة",
+      "city": "المدينة",
+      "notes": "ملاحظات"
+    },
+    "errors": {
+      "nameRequired": "أدخل الاسم الأول، أو اسم الشركة لعميل من نوع شركة.",
+      "email": "أدخل بريداً إلكترونياً صحيحاً.",
+      "tooLong": "هذه القيمة طويلة جداً."
+    }
   }
 }

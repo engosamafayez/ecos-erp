@@ -4,12 +4,6 @@
     "subtitle": "Every customer relationship in one workspace",
     "breadcrumbRoot": "CRM"
   },
-  "kpi": {
-    "total": "Total Customers",
-    "active": "Active",
-    "prospects": "Prospects",
-    "archived": "Archived"
-  },
   "toolbar": {
     "searchPlaceholder": "Search by name, code, phone or email",
     "newCustomer": "New Customer",
@@ -74,5 +68,49 @@
     "title": "Could not load customers",
     "body": "Try again, or contact support if this continues.",
     "retry": "Retry"
+  },
+  "summary": {
+    "countAll": "{{count}} customers",
+    "countFiltered": "{{count}} customers match these filters"
+  },
+  "form": {
+    "createTitle": "New Customer",
+    "editTitle": "Edit Customer",
+    "createSubtitle": "Add a customer to the CRM",
+    "editSubtitle": "Update this customer's details",
+    "sectionIdentity": "Identity",
+    "sectionContact": "Contact",
+    "sectionPreferences": "Preferences",
+    "sectionNotes": "Notes",
+    "save": "Save",
+    "saving": "Saving…",
+    "cancel": "Cancel",
+    "createdToast": "Customer created",
+    "updatedToast": "Customer updated",
+    "failedToast": "Could not save the customer",
+    "identityLocked": "Type and status are set at creation and cannot be changed here.",
+    "contactLocked": "Phone and email are managed from the customer's contact records.",
+    "fields": {
+      "type": "Type",
+      "status": "Status",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "businessName": "Business name",
+      "taxNumber": "Tax registration number",
+      "contactPerson": "Contact person",
+      "phone": "Phone",
+      "email": "Email",
+      "group": "Customer group",
+      "language": "Preferred language",
+      "contactMethod": "Preferred contact method",
+      "country": "Country",
+      "city": "City",
+      "notes": "Notes"
+    },
+    "errors": {
+      "nameRequired": "Enter a first name, or a business name for a business customer.",
+      "email": "Enter a valid email address.",
+      "tooLong": "This value is too long."
+    }
   }
 }
