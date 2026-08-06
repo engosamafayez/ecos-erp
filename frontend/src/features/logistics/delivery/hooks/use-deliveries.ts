@@ -212,3 +212,26 @@ export function useCollectCod() {
 export function useVerifyCod() {
   return useDeliveryMutation((id: string) => deliveryService.verifyCod(id));
 }
+
+// ── Return discrepancy and COD write-off ─────────────────────────────────────
+
+export function useDeliveryReturn(deliveryId: string | null, returnId: string | null) {
+  return useQuery({
+    queryKey: [KEY, 'return', deliveryId, returnId],
+    queryFn: () => deliveryService.deliveryReturn(deliveryId as string, returnId as string),
+    enabled: deliveryId !== null && returnId !== null,
+  });
+}
+
+export function useFlagReturnDiscrepancy() {
+  return useDeliveryMutation(
+    ({ id, returnId, notes }: { id: string; returnId: string; notes?: string }) =>
+      deliveryService.flagReturnDiscrepancy(id, returnId, notes),
+  );
+}
+
+export function useWriteOffCod() {
+  return useDeliveryMutation(({ id, reason }: { id: string; reason: string }) =>
+    deliveryService.writeOffCod(id, reason),
+  );
+}

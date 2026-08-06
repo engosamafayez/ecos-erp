@@ -224,6 +224,20 @@
       "orderIdPlaceholder": "البحث برقم الطلب",
       "slaBreached": "المتجاوِزة لاتفاقية مستوى الخدمة فقط",
       "open": "مفتوحة"
+    },
+    "completion": {
+      "flagDiscrepancy": "تسجيل فرق",
+      "flagDiscrepancyTitle": "تسجيل فرق على هذا المرتجع",
+      "flagDiscrepancyDescription": "الفرق ملاحظة وليس رفضًا: يبقى المرتجع مفتوحًا حتى تتم تسويته.",
+      "discrepancyNotes": "ملاحظات",
+      "flagFailed": "تعذّر تسجيل الفرق.",
+      "writeOff": "إعدام التحصيل",
+      "writeOffTitle": "إعدام المبلغ غير المحصّل",
+      "writeOffDescription": "يُسجّل السبب كأثر تدقيقي للمبلغ الذي قرّرت الشركة عدم متابعته.",
+      "writeOffReason": "السبب",
+      "writeOffFailed": "تعذّر إعدام التحصيل.",
+      "reasonRequired": "السبب مطلوب.",
+      "cancel": "إلغاء"
     }
   },
   "common": {

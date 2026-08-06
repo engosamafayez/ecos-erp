@@ -224,6 +224,20 @@
       "orderIdPlaceholder": "Search by order #",
       "slaBreached": "SLA breached only",
       "open": "Open"
+    },
+    "completion": {
+      "flagDiscrepancy": "Flag Discrepancy",
+      "flagDiscrepancyTitle": "Flag a discrepancy on this return",
+      "flagDiscrepancyDescription": "A discrepancy is a finding, not a rejection: the return stays open so it can be settled.",
+      "discrepancyNotes": "Notes",
+      "flagFailed": "The discrepancy could not be flagged.",
+      "writeOff": "Write Off COD",
+      "writeOffTitle": "Write off the uncollected amount",
+      "writeOffDescription": "The reason is recorded as the audit trail for money the business has decided not to pursue.",
+      "writeOffReason": "Reason",
+      "writeOffFailed": "The COD could not be written off.",
+      "reasonRequired": "A reason is required.",
+      "cancel": "Cancel"
     }
   },
   "common": {

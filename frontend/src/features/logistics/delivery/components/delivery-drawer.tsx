@@ -18,6 +18,7 @@ import {
 import { PageDrawer } from '@/components/page/drawer/page-drawer';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -43,6 +44,9 @@ import {
   useRetryDelivery,
   useValidatePod,
 } from '../hooks/use-deliveries';
+import { usePermission } from '@/features/authorization';
+
+import { useFlagReturnDiscrepancy, useWriteOffCod } from '../hooks/use-deliveries';
 import type { DeliveryAttempt, DeliveryReturn, ProofOfDelivery } from '../types/delivery';
 import { DeliveryStatusBadge } from './delivery-status-badge';
 
@@ -165,6 +169,7 @@ function Overview({ deliveryId }: { deliveryId: string }) {
             </Field>
           </div>
           <p className="mt-2 text-[11px] text-muted-foreground">{t($ => $.delivery.cod.note)}</p>
+          <CodWriteOff deliveryId={delivery.id} shortfall={cod.shortfall} />
         </div>
       )}
 
@@ -450,7 +455,160 @@ function Attempts({ deliveryId }: { deliveryId: string }) {
 
 // ── Returns ──────────────────────────────────────────────────────────────────
 
-function ReturnCard({ deliveryReturn }: { deliveryReturn: DeliveryReturn }) {
+
+/**
+ * Writing off uncollected COD.
+ *
+ * Offered only when there is a shortfall — writing off nothing is not a
+ * decision anyone needs to record. The reason is required by the API and is
+ * required here too: it is the audit trail for money the business has chosen
+ * not to pursue.
+ */
+function CodWriteOff({ deliveryId, shortfall }: { deliveryId: string; shortfall: number }) {
+  const { t } = useTranslation('logistics');
+  const { can } = usePermission();
+  const writeOff = useWriteOffCod();
+
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  if (shortfall <= 0 || !can('delivery.cod.verify')) return null;
+
+  async function submit() {
+    if (!reason.trim()) {
+      setError(t($ => $.delivery.completion.reasonRequired));
+      return;
+    }
+    setError(null);
+    try {
+      await writeOff.mutateAsync({ id: deliveryId, reason: reason.trim() });
+      setReason('');
+      setOpen(false);
+    } catch {
+      setError(t($ => $.delivery.completion.writeOffFailed));
+    }
+  }
+
+  return (
+    <div className="mt-2 flex flex-col gap-2">
+      {!open ? (
+        <Button size="sm" variant="outline" className="self-start" onClick={() => setOpen(true)}>
+          {t($ => $.delivery.completion.writeOff)}
+        </Button>
+      ) : (
+        <div className="flex flex-col gap-2 rounded-md border bg-muted/30 p-2">
+          <p className="text-xs text-muted-foreground">
+            {t($ => $.delivery.completion.writeOffDescription)}
+          </p>
+          {error && <p className="text-xs text-destructive">{error}</p>}
+          <Input
+            value={reason}
+            maxLength={1000}
+            placeholder={t($ => $.delivery.completion.writeOffReason)}
+            onChange={(e) => setReason(e.target.value)}
+            className="h-8 text-sm"
+          />
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              className="h-7 text-xs"
+              disabled={writeOff.isPending}
+              onClick={() => void submit()}
+            >
+              {t($ => $.delivery.completion.writeOff)}
+            </Button>
+            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setOpen(false)}>
+              {t($ => $.delivery.completion.cancel)}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Flagging a discrepancy on a return.
+ *
+ * Hidden once the domain already records one: re-flagging an acknowledged
+ * discrepancy adds nothing and would suggest the first flag had not taken.
+ */
+function ReturnDiscrepancyControl({
+  deliveryId,
+  returnId,
+  hasDiscrepancy,
+}: {
+  deliveryId: string;
+  returnId: string;
+  hasDiscrepancy: boolean;
+}) {
+  const { t } = useTranslation('logistics');
+  const { can } = usePermission();
+  const flag = useFlagReturnDiscrepancy();
+
+  const [open, setOpen] = useState(false);
+  const [notes, setNotes] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  if (hasDiscrepancy || !can('delivery.return.manage')) return null;
+
+  async function submit() {
+    setError(null);
+    try {
+      await flag.mutateAsync({ id: deliveryId, returnId, notes: notes.trim() || undefined });
+      setNotes('');
+      setOpen(false);
+    } catch {
+      setError(t($ => $.delivery.completion.flagFailed));
+    }
+  }
+
+  return (
+    <div className="mt-2 flex flex-col gap-2">
+      {!open ? (
+        <Button size="sm" variant="ghost" className="h-7 self-start text-xs" onClick={() => setOpen(true)}>
+          {t($ => $.delivery.completion.flagDiscrepancy)}
+        </Button>
+      ) : (
+        <div className="flex flex-col gap-2 rounded-md border bg-muted/30 p-2">
+          <p className="text-xs text-muted-foreground">
+            {t($ => $.delivery.completion.flagDiscrepancyDescription)}
+          </p>
+          {error && <p className="text-xs text-destructive">{error}</p>}
+          <Input
+            value={notes}
+            maxLength={2000}
+            placeholder={t($ => $.delivery.completion.discrepancyNotes)}
+            onChange={(e) => setNotes(e.target.value)}
+            className="h-8 text-sm"
+          />
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              className="h-7 text-xs"
+              disabled={flag.isPending}
+              onClick={() => void submit()}
+            >
+              {t($ => $.delivery.completion.flagDiscrepancy)}
+            </Button>
+            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setOpen(false)}>
+              {t($ => $.delivery.completion.cancel)}
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ReturnCard({
+  deliveryReturn,
+  deliveryId,
+}: {
+  deliveryReturn: DeliveryReturn;
+  deliveryId: string;
+}) {
   const { t } = useTranslation('logistics');
 
   return (
@@ -502,6 +660,12 @@ function ReturnCard({ deliveryReturn }: { deliveryReturn: DeliveryReturn }) {
           ))}
         </tbody>
       </table>
+
+      <ReturnDiscrepancyControl
+        deliveryId={deliveryId}
+        returnId={deliveryReturn.id}
+        hasDiscrepancy={deliveryReturn.has_discrepancy}
+      />
     </div>
   );
 }
@@ -525,7 +689,7 @@ function Returns({ deliveryId }: { deliveryId: string }) {
   return (
     <div className="space-y-3">
       {returns.map((item) => (
-        <ReturnCard key={item.id} deliveryReturn={item} />
+        <ReturnCard key={item.id} deliveryReturn={item} deliveryId={delivery.id} />
       ))}
     </div>
   );

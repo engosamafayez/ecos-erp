@@ -243,6 +243,31 @@ export const deliveryService = {
     return data.data;
   },
 
+  /** One return in full, with its lines. The list does not carry them. */
+  async deliveryReturn(deliveryId: string, returnId: string): Promise<DeliveryReturn> {
+    const { data } = await api.get<{ data: DeliveryReturn }>(
+      `${BASE}/${deliveryId}/returns/${returnId}`,
+    );
+    return data.data;
+  },
+
+  /**
+   * Flags a discrepancy on a received return. Separate from verification: a
+   * discrepancy is a finding, not a rejection, and the domain keeps the return
+   * open so it can be settled rather than closing it.
+   */
+  async flagReturnDiscrepancy(
+    deliveryId: string,
+    returnId: string,
+    notes?: string,
+  ): Promise<DeliveryReturn> {
+    const { data } = await api.patch<{ data: DeliveryReturn }>(
+      `${BASE}/${deliveryId}/returns/${returnId}/discrepancy`,
+      { notes: notes ?? null },
+    );
+    return data.data;
+  },
+
   // ── COD (completion reporting only) ────────────────────────────────────────
 
   async cod(deliveryId: string): Promise<CodRecord> {
@@ -265,6 +290,19 @@ export const deliveryService = {
 
   async verifyCod(deliveryId: string): Promise<CodRecord> {
     const { data } = await api.patch<{ data: CodRecord }>(`${BASE}/${deliveryId}/cod/verify`);
+    return data.data;
+  },
+
+  /**
+   * Writes off uncollected COD. The reason is required by the API and is the
+   * audit trail for money the business has decided not to pursue, so it is
+   * required here too rather than defaulted to an empty string.
+   */
+  async writeOffCod(deliveryId: string, reason: string): Promise<CodRecord> {
+    const { data } = await api.patch<{ data: CodRecord }>(
+      `${BASE}/${deliveryId}/cod/write-off`,
+      { reason },
+    );
     return data.data;
   },
 
