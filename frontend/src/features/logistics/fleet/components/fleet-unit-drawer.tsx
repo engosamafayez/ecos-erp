@@ -11,12 +11,14 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { usePermission } from '@/features/authorization';
 import { useToast } from '@/components/ds/use-toast';
 
 import {
   useFleetUnit,
   useHealth,
   useMaintenancePlans,
+  useReprojectMaintenancePlan,
   useOdometerHistory,
   useRecordOdometer,
   useUnitCosts,
@@ -274,6 +276,8 @@ function Maintenance({ unitId }: { unitId: string }) {
             </Field>
           </div>
 
+          <ReprojectControl unitId={unitId} planId={plan.id} />
+
           {plan.rules && plan.rules.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1">
               {plan.rules.map((rule) => (
@@ -288,6 +292,50 @@ function Maintenance({ unitId }: { unitId: string }) {
           )}
         </div>
       ))}
+    </div>
+  );
+}
+
+/**
+ * Recomputing a plan's next-due projection.
+ *
+ * The endpoint takes no payload on purpose: the projection comes from the
+ * unit's odometer and service history, and letting an operator supply a date
+ * would turn the maintenance schedule into an opinion. So this is a single
+ * action with no form.
+ */
+function ReprojectControl({ unitId, planId }: { unitId: string; planId: string }) {
+  const { t } = useTranslation('logistics');
+  const { can } = usePermission();
+  const reproject = useReprojectMaintenancePlan();
+  const [error, setError] = useState<string | null>(null);
+
+  if (!can('fleet.maintenance.schedule')) return null;
+
+  async function run() {
+    setError(null);
+    try {
+      await reproject.mutateAsync({ unitId, planId });
+    } catch {
+      setError(t($ => $.fleet.review.reprojectFailed));
+    }
+  }
+
+  return (
+    <div className="mt-2 flex flex-col gap-1">
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-7 self-start text-xs"
+        disabled={reproject.isPending}
+        onClick={() => void run()}
+      >
+        {t($ => $.fleet.review.reproject)}
+      </Button>
+      <p className="text-[11px] text-muted-foreground">
+        {t($ => $.fleet.review.reprojectDescription)}
+      </p>
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </div>
   );
 }

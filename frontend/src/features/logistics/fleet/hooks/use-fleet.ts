@@ -293,3 +293,45 @@ export function useCaptureFuel() {
 export function useReconcileFuel() {
   return useFleetMutation((id: string) => fleetService.reconcileFuel(id));
 }
+
+// ── Fuel review, inspection detail and plan reprojection ─────────────────────
+
+export function useFuelTransaction(id: string | null) {
+  return useQuery({
+    queryKey: [KEY, 'fuel-transaction', id],
+    queryFn: () => fleetService.fuelTransaction(id as string),
+    enabled: id !== null,
+  });
+}
+
+export function useInspection(unitId: string | null, id: string | null) {
+  return useQuery({
+    queryKey: [KEY, 'inspection', unitId, id],
+    queryFn: () => fleetService.inspection(unitId as string, id as string),
+    enabled: unitId !== null && id !== null,
+  });
+}
+
+export function useDisputeFuel() {
+  return useFleetMutation(({ id, reason }: { id: string; reason: string }) =>
+    fleetService.disputeFuel(id, reason),
+  );
+}
+
+export function useRejectFuel() {
+  return useFleetMutation(({ id, reason }: { id: string; reason: string }) =>
+    fleetService.rejectFuel(id, reason),
+  );
+}
+
+export function useWriteOffFuel() {
+  return useFleetMutation(({ id, reason }: { id: string; reason: string }) =>
+    fleetService.writeOffFuel(id, reason),
+  );
+}
+
+export function useReprojectMaintenancePlan() {
+  return useFleetMutation(({ unitId, planId }: { unitId: string; planId: string }) =>
+    fleetService.reprojectMaintenancePlan(unitId, planId),
+  );
+}

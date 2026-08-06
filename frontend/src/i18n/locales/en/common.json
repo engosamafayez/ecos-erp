@@ -149,7 +149,8 @@
       "dashboard": "Dashboard",
       "logistics-carriers": "Carrier Accounts",
       "logistics-automation": "Automation",
-      "logistics-intelligence": "Intelligence"
+      "logistics-intelligence": "Intelligence",
+      "logistics-fuel-review": "Fuel Review"
     },
     "groups": {
       "overview": "Overview",

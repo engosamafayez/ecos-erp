@@ -121,6 +121,18 @@ export const fleetService = {
 
   // ── Maintenance ────────────────────────────────────────────────────────────
 
+  /**
+   * Recomputes when a plan is next due from the unit's current odometer and
+   * service history. It takes no payload: the projection is the domain's, and
+   * letting the client supply a date would make the schedule an opinion.
+   */
+  async reprojectMaintenancePlan(unitId: string, planId: string): Promise<MaintenancePlan> {
+    const { data } = await api.patch<{ data: MaintenancePlan }>(
+      `${BASE}/units/${unitId}/maintenance-plans/${planId}/reproject`,
+    );
+    return data.data;
+  },
+
   async plans(unitId: string): Promise<MaintenancePlan[]> {
     const { data } = await api.get<{ data: MaintenancePlan[] }>(
       `${BASE}/units/${unitId}/maintenance-plans`,
@@ -207,6 +219,14 @@ export const fleetService = {
     const { data } = await api.get<{ data: InspectionTemplate[] }>(`${BASE}/inspection-templates`, {
       params: { kind },
     });
+    return data.data;
+  },
+
+  /** One inspection in full, with its per-item results. The list omits them. */
+  async inspection(unitId: string, id: string): Promise<Inspection> {
+    const { data } = await api.get<{ data: Inspection }>(
+      `${BASE}/units/${unitId}/inspections/${id}`,
+    );
     return data.data;
   },
 
@@ -313,6 +333,33 @@ export const fleetService = {
     const { data } = await api.post<{ data: FuelTransaction }>(
       `${BASE}/units/${unitId}/fuel-transactions`,
       payload,
+    );
+    return data.data;
+  },
+
+  /** One transaction in full, with its anomaly flags and photos. */
+  async fuelTransaction(id: string): Promise<FuelTransaction> {
+    const { data } = await api.get<{ data: FuelTransaction }>(`${BASE}/fuel-transactions/${id}`);
+    return data.data;
+  },
+
+  /**
+   * Reject and write-off are distinct outcomes, not synonyms. Rejecting says
+   * the transaction should not have been recorded; writing off accepts it and
+   * absorbs the cost. Both require a reason, and the API enforces that.
+   */
+  async rejectFuel(id: string, reason: string): Promise<FuelTransaction> {
+    const { data } = await api.patch<{ data: FuelTransaction }>(
+      `${BASE}/fuel-transactions/${id}/reject`,
+      { reason },
+    );
+    return data.data;
+  },
+
+  async writeOffFuel(id: string, reason: string): Promise<FuelTransaction> {
+    const { data } = await api.patch<{ data: FuelTransaction }>(
+      `${BASE}/fuel-transactions/${id}/write-off`,
+      { reason },
     );
     return data.data;
   },
