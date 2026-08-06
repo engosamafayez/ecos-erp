@@ -1,6 +1,7 @@
 # EPIC-LOGISTICS-UI-001 — Enterprise Logistics UI: Final Certification
 
-**Type:** Frontend delivery certification · **Status:** CLOSED · **Date:** 2026-08-07
+**Type:** Frontend delivery certification · **Status:** CERTIFIED · **Date:** 2026-08-07
+**CTO approval:** 2026-08-07 — Logistics UI functionally complete for the currently exposed backend surface.
 **Branch:** `develop` · **Commits:** 11, `88134a57` → `fdc716cb`
 **Backend changes:** none. This EPIC consumed the certified Logistics backend only.
 
@@ -62,6 +63,10 @@ Enterprise components throughout: `UniversalDataGrid`, `SmartToolbar`, `EntityDr
 
 ## 3. Remaining Backend-Dependent Capabilities
 
+**Accepted and deferred by the CTO (2026-08-07) as backend dependencies, not UI
+defects.** No further Logistics feature work is required before Go Live except
+production bug fixes or backend-driven enhancements.
+
 Four items from the requested scope cannot be built against the API as it stands.
 
 | Capability | Status |
@@ -121,4 +126,4 @@ To be executed in the single end-to-end pass across all modules, alongside CRM:
 
 ## 7. Verdict
 
-**EPIC-LOGISTICS-UI-001 is CLOSED.** Endpoint coverage 66% → 96%, with every uncovered endpoint a recorded decision and zero genuine gaps. Eleven commits, baseline held at 25 TypeScript errors throughout, suppressions unchanged, EN/AR at parity. Runtime behaviour is unverified and carried as the Go Live item above.
+**EPIC-LOGISTICS-UI-001 is CERTIFIED.** Endpoint coverage 66% → 96%, with every uncovered endpoint a recorded decision and zero genuine gaps. Eleven commits, baseline held at 25 TypeScript errors throughout, suppressions unchanged, EN/AR at parity. Runtime behaviour is unverified and carried as the Go Live item above.
