@@ -205,6 +205,7 @@ const ALL_MODULES: AppModule[] = [
       { key: 'dispatch-section',              isSection: true },
       { key: 'logistics-dispatch',        path: ROUTES.logisticsDispatch,             icon: Radio        },
       { key: 'logistics-dispatch-exec',             path: ROUTES.logisticsDispatchExecution,    icon: Zap          },
+      { key: 'logistics-dispatch-board',            path: ROUTES.logisticsDispatchBoard,        icon: LayoutDashboard },
       { key: 'operations-section',            isSection: true },
       { key: 'logistics-operations',     path: ROUTES.logisticsOperations,           icon: Activity     },
       { key: 'logistics-ops-dashboards',            path: ROUTES.logisticsOpsDashboards,        icon: Gauge        },

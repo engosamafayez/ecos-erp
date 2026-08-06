@@ -150,7 +150,8 @@
       "logistics-carriers": "Carrier Accounts",
       "logistics-automation": "Automation",
       "logistics-intelligence": "Intelligence",
-      "logistics-fuel-review": "Fuel Review"
+      "logistics-fuel-review": "Fuel Review",
+      "logistics-dispatch-board": "Dispatch Board"
     },
     "groups": {
       "overview": "Overview",

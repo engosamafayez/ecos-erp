@@ -150,7 +150,8 @@
       "logistics-carriers": "حسابات الناقلين",
       "logistics-automation": "الأتمتة",
       "logistics-intelligence": "الذكاء",
-      "logistics-fuel-review": "مراجعة الوقود"
+      "logistics-fuel-review": "مراجعة الوقود",
+      "logistics-dispatch-board": "لوحة الإرسال"
     },
     "groups": {
       "overview": "نظرة عامة",
