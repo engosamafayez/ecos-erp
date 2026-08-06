@@ -73,6 +73,8 @@ import { EgyptGeographyPage } from '@/features/logistics/geography/pages/egypt-g
 import { DistributionZonesPage } from '@/features/logistics/distribution-zones/pages/distribution-zones-page';
 import { DistributionPlanningPage } from '@/features/logistics/distribution-planning/pages/distribution-planning-page';
 import { TripsWorkspacePage } from '@/features/logistics/trips/pages/trips-workspace-page';
+import { CarrierAccountsPage } from '@/features/logistics/carriers/pages/carrier-accounts-page';
+import { AutomationMonitoringPage } from '@/features/logistics/automation/pages/automation-monitoring-page';
 import { ShippingCompaniesPage } from '@/features/logistics/shipping-companies/pages/shipping-companies-page';
 import { DriversPage } from '@/features/logistics/drivers/pages/drivers-page';
 import { VehiclesPage } from '@/features/logistics/vehicles/pages/vehicles-page';
@@ -329,6 +331,8 @@ export const router = createBrowserRouter(
             { path: ROUTES.logisticsDistributionZones,    Component: DistributionZonesPage },
             { path: ROUTES.logisticsDistributionPlanning, Component: DistributionPlanningPage },
             { path: ROUTES.logisticsTrips,                Component: TripsWorkspacePage },
+            { path: ROUTES.logisticsCarrierAccounts,      Component: CarrierAccountsPage },
+            { path: ROUTES.logisticsAutomation,           Component: AutomationMonitoringPage },
             { path: ROUTES.logisticsShippingCompanies,    Component: ShippingCompaniesPage },
             { path: ROUTES.logisticsDrivers,              Component: DriversPage },
             { path: ROUTES.logisticsVehicles,             Component: VehiclesPage },

@@ -192,6 +192,8 @@ const ALL_MODULES: AppModule[] = [
       { key: 'fulfillments',          path: ROUTES.fulfillments,                  icon: PackageCheck },
       { key: 'carriers-section',              isSection: true },
       { key: 'logistics-shipping-companies',    path: ROUTES.logisticsShippingCompanies,    icon: Truck        },
+      { key: 'logistics-carriers',           path: ROUTES.logisticsCarrierAccounts,      icon: Truck        },
+      { key: 'logistics-automation',         path: ROUTES.logisticsAutomation,           icon: GitBranch    },
       { key: 'logistics-drivers',               path: ROUTES.logisticsDrivers,              icon: UsersIcon    },
       { key: 'logistics-vehicles',              path: ROUTES.logisticsVehicles,             icon: Truck        },
       { key: 'fleet-section',                 isSection: true },

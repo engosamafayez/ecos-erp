@@ -146,7 +146,9 @@
       "eng-ai-section": "المشرف الذكي",
       "eng-ai-supervisor": "المشرف الذكي",
       "eng-repair": "الإصلاح الذكي",
-      "dashboard": "لوحة التحكم"
+      "dashboard": "لوحة التحكم",
+      "logistics-carriers": "حسابات الناقلين",
+      "logistics-automation": "الأتمتة"
     },
     "groups": {
       "overview": "نظرة عامة",

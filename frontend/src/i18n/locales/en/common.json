@@ -146,7 +146,9 @@
       "eng-ai-section": "AI Supervisor",
       "eng-ai-supervisor": "AI Supervisor",
       "eng-repair": "AI Repair",
-      "dashboard": "Dashboard"
+      "dashboard": "Dashboard",
+      "logistics-carriers": "Carrier Accounts",
+      "logistics-automation": "Automation"
     },
     "groups": {
       "overview": "Overview",
