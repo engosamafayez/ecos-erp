@@ -6,7 +6,6 @@ import type {
   ConfirmReturnPayload,
   DeliveryAction,
   DeliveryException,
-  DeliveryOptions,
   DeliveryProof,
   DeliveryStop,
   MoveTripOrderPayload,
@@ -32,11 +31,6 @@ const BASE = '/logistics/distribution/trips';
  * reason. Those rejections are propagated, never swallowed.
  */
 export const tripExecutionService = {
-  async options(): Promise<DeliveryOptions> {
-    const { data } = await api.get<DeliveryOptions>('/logistics/distribution/delivery/options');
-    return data;
-  },
-
   // ── Orders on the trip ─────────────────────────────────────────────────────
 
   async orders(tripId: string): Promise<TripOrder[]> {

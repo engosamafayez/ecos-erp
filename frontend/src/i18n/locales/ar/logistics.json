@@ -1722,6 +1722,111 @@
         "no": "لا",
         "none": "—"
       }
+    },
+    "settlement": {
+      "tabs": {
+        "settlement": "التسوية",
+        "payments": "المدفوعات"
+      },
+      "status": {
+        "draft": "مسودة",
+        "submitted": "مُقدّمة",
+        "reconciled": "مُطابَقة",
+        "disputed": "متنازع عليها",
+        "finalized": "مُعتمدة"
+      },
+      "paymentType": {
+        "cash": "نقدًا",
+        "bank_transfer": "تحويل بنكي",
+        "card": "بطاقة",
+        "already_paid": "مدفوع مسبقًا"
+      },
+      "settlement": {
+        "title": "التسوية",
+        "notOpened": "لم تُفتح تسوية لهذه الرحلة.",
+        "notOpenedHint": "فتح التسوية يشتق إجمالياتها من سجل المدفوعات.",
+        "open": "فتح التسوية",
+        "openFailed": "تعذّر فتح التسوية.",
+        "status": "الحالة",
+        "final": "نهائية",
+        "totals": "الإجماليات",
+        "cashCollected": "النقد المحصّل",
+        "bankTransfers": "تحويلات بنكية معلّقة",
+        "alreadyPaid": "مدفوع مسبقًا",
+        "totalCollected": "إجمالي المحصّل",
+        "cashExpected": "النقد المتوقّع",
+        "driverSubmitted": "النقد المُسلّم من السائق",
+        "discrepancy": "الفرق",
+        "balanced": "متوازنة",
+        "short": "عجز",
+        "notSubmitted": "لم يُسلّم",
+        "derivedNote": "تُشتق الإجماليات من سجل المدفوعات في الخادم، ولا يُحتسب شيء منها في المتصفّح.",
+        "timeline": "التسلسل الزمني",
+        "submittedAt": "وقت التقديم",
+        "reconciledAt": "وقت المطابقة",
+        "finalizedAt": "وقت الاعتماد",
+        "notes": "ملاحظات"
+      },
+      "driver": {
+        "title": "تسوية السائق",
+        "submitCash": "تسليم نقد السائق",
+        "submitCashDescription": "سجّل النقد الذي سلّمه السائق فعليًا، ويحتسب الخادم الفرق مقابل النقد المتوقّع.",
+        "amount": "المبلغ المُسلّم",
+        "submit": "تسليم",
+        "submitFailed": "تعذّر تسليم نقد السائق.",
+        "shortWarning": "النقد المُسلّم أقل من المتوقّع."
+      },
+      "actions": {
+        "title": "إجراءات التسوية",
+        "reconcile": "مطابقة",
+        "dispute": "اعتراض",
+        "finalize": "اعتماد",
+        "finalizeDescription": "الاعتماد يوافق على التسوية ويغلقها، ويسجّل الخادم المستخدم المعتمِد.",
+        "notes": "ملاحظات",
+        "notesPlaceholder": "ملاحظة اختيارية تُسجّل مع الإجراء",
+        "reconcileFailed": "تعذّرت مطابقة التسوية.",
+        "disputeFailed": "تعذّر الاعتراض على التسوية.",
+        "finalizeFailed": "تعذّر اعتماد التسوية.",
+        "noTransitions": "لا توجد انتقالات متاحة لهذه التسوية.",
+        "allowed": "الحالات التالية المسموحة"
+      },
+      "payments": {
+        "title": "سجل المدفوعات",
+        "empty": "لا توجد مدفوعات مسجّلة لهذه الرحلة.",
+        "type": "النوع",
+        "amount": "المبلغ",
+        "reference": "المرجع",
+        "status": "الحالة",
+        "stop": "المحطة",
+        "collectedBy": "حصّله",
+        "verifiedAt": "وقت التحقق",
+        "physicalCash": "نقد فعلي",
+        "countsToward": "يُحتسب ضمن النقد المتوقّع",
+        "notCounted": "لا يُحتسب ضمن النقد المتوقّع",
+        "verify": "تحقق",
+        "reject": "رفض",
+        "rejectTitle": "رفض الدفعة",
+        "rejectNotes": "السبب",
+        "verifyFailed": "تعذّر التحقق من الدفعة.",
+        "rejectFailed": "تعذّر رفض الدفعة.",
+        "record": "تسجيل دفعة",
+        "recordTitle": "تسجيل دفعة عند محطة",
+        "recordDescription": "تُسجّل المدفوعات مقابل محطة، لذا يجب اختيار محطة.",
+        "selectStop": "المحطة",
+        "noStops": "لا توجد محطات في هذه الرحلة بعد، لذا لا يمكن تسجيل دفعة.",
+        "referencePlaceholder": "رقم مرجع اختياري",
+        "recordFailed": "تعذّر تسجيل الدفعة."
+      },
+      "summary": {
+        "title": "الملخص المالي",
+        "stopsTotal": "المحطات",
+        "stopsOutstanding": "المحطات المعلّقة",
+        "noSettlement": "لا توجد تسوية بعد"
+      },
+      "carrier": {
+        "title": "تسوية الناقل",
+        "unavailable": "لا توجد واجهة برمجية لتسوية الناقل. تُسوّي المنصة الرحلة مع سائقها، وسجلات الناقلين تعرض الحسابات والعقود لا التسويات."
+      }
     }
   }
 }

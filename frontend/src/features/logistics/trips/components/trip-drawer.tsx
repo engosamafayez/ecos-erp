@@ -18,6 +18,8 @@ import type { Trip, TripStatus, TripType } from '../types/trip';
 import { TripExceptionsTab } from './trip-exceptions-tab';
 import { TripOrdersTab } from './trip-orders-tab';
 import { TripReturnsTab } from './trip-returns-tab';
+import { TripPaymentsTab } from './trip-payments-tab';
+import { TripSettlementTab } from './trip-settlement-tab';
 import { TripStatusBadge } from './trip-status-badge';
 import { TripStopsTab } from './trip-stops-tab';
 
@@ -251,6 +253,12 @@ export function TripDrawer({
               {t(($) => $.trips.execution.tabs.exceptions)}
             </TabsTrigger>
             <TabsTrigger value="returns">{t(($) => $.trips.execution.tabs.returns)}</TabsTrigger>
+            <TabsTrigger value="payments">
+              {t(($) => $.trips.settlement.tabs.payments)}
+            </TabsTrigger>
+            <TabsTrigger value="settlement">
+              {t(($) => $.trips.settlement.tabs.settlement)}
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="flex flex-col gap-5">
@@ -434,6 +442,14 @@ export function TripDrawer({
 
           <TabsContent value="returns">
             <TripReturnsTab tripId={trip.id} />
+          </TabsContent>
+
+          <TabsContent value="payments">
+            <TripPaymentsTab tripId={trip.id} />
+          </TabsContent>
+
+          <TabsContent value="settlement">
+            <TripSettlementTab tripId={trip.id} />
           </TabsContent>
 
           <TabsContent value="money" className="flex flex-col gap-4">

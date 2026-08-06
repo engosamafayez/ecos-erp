@@ -18,14 +18,6 @@ const KEY = 'logistics-trips';
 
 // ── Queries ──────────────────────────────────────────────────────────────────
 
-export function useDeliveryOptions() {
-  return useQuery({
-    queryKey: [KEY, 'delivery-options'],
-    queryFn: () => tripExecutionService.options(),
-    staleTime: 5 * 60_000,
-  });
-}
-
 export function useTripOrders(tripId: string | null) {
   return useQuery({
     queryKey: [KEY, 'orders', tripId],

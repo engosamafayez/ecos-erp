@@ -1722,6 +1722,111 @@
         "no": "No",
         "none": "—"
       }
+    },
+    "settlement": {
+      "tabs": {
+        "settlement": "Settlement",
+        "payments": "Payments"
+      },
+      "status": {
+        "draft": "Draft",
+        "submitted": "Submitted",
+        "reconciled": "Reconciled",
+        "disputed": "Disputed",
+        "finalized": "Finalized"
+      },
+      "paymentType": {
+        "cash": "Cash",
+        "bank_transfer": "Bank Transfer",
+        "card": "Card",
+        "already_paid": "Already Paid"
+      },
+      "settlement": {
+        "title": "Settlement",
+        "notOpened": "No settlement has been opened for this trip.",
+        "notOpenedHint": "Opening a settlement derives its totals from the payment ledger.",
+        "open": "Open Settlement",
+        "openFailed": "The settlement could not be opened.",
+        "status": "Status",
+        "final": "Final",
+        "totals": "Totals",
+        "cashCollected": "Cash Collected",
+        "bankTransfers": "Bank Transfers Pending",
+        "alreadyPaid": "Already Paid",
+        "totalCollected": "Total Collected",
+        "cashExpected": "Cash Expected",
+        "driverSubmitted": "Driver Cash Submitted",
+        "discrepancy": "Discrepancy",
+        "balanced": "Balanced",
+        "short": "Short",
+        "notSubmitted": "Not submitted",
+        "derivedNote": "Totals are derived from the payment ledger by the backend; nothing here is calculated in the browser.",
+        "timeline": "Timeline",
+        "submittedAt": "Submitted",
+        "reconciledAt": "Reconciled",
+        "finalizedAt": "Finalized",
+        "notes": "Notes"
+      },
+      "driver": {
+        "title": "Driver Settlement",
+        "submitCash": "Submit Driver Cash",
+        "submitCashDescription": "Record the cash the driver actually handed over. The discrepancy against cash expected is computed by the backend.",
+        "amount": "Amount Submitted",
+        "submit": "Submit",
+        "submitFailed": "The driver cash could not be submitted.",
+        "shortWarning": "The submitted cash is short of what is expected."
+      },
+      "actions": {
+        "title": "Settlement Actions",
+        "reconcile": "Reconcile",
+        "dispute": "Dispute",
+        "finalize": "Finalize",
+        "finalizeDescription": "Finalizing approves the settlement and closes it. The approving user is recorded by the backend.",
+        "notes": "Notes",
+        "notesPlaceholder": "Optional note recorded with the action",
+        "reconcileFailed": "The settlement could not be reconciled.",
+        "disputeFailed": "The settlement could not be disputed.",
+        "finalizeFailed": "The settlement could not be finalized.",
+        "noTransitions": "This settlement has no available transitions.",
+        "allowed": "Allowed next states"
+      },
+      "payments": {
+        "title": "Payment Ledger",
+        "empty": "No payments recorded for this trip.",
+        "type": "Type",
+        "amount": "Amount",
+        "reference": "Reference",
+        "status": "Status",
+        "stop": "Stop",
+        "collectedBy": "Collected by",
+        "verifiedAt": "Verified",
+        "physicalCash": "Physical cash",
+        "countsToward": "Counts toward cash expected",
+        "notCounted": "Not counted toward cash expected",
+        "verify": "Verify",
+        "reject": "Reject",
+        "rejectTitle": "Reject the payment",
+        "rejectNotes": "Reason",
+        "verifyFailed": "The payment could not be verified.",
+        "rejectFailed": "The payment could not be rejected.",
+        "record": "Record Payment",
+        "recordTitle": "Record a payment at a stop",
+        "recordDescription": "Payments are recorded against a stop, so a stop must be chosen.",
+        "selectStop": "Stop",
+        "noStops": "This trip has no stops yet, so no payment can be recorded.",
+        "referencePlaceholder": "Optional reference number",
+        "recordFailed": "The payment could not be recorded."
+      },
+      "summary": {
+        "title": "Financial Summary",
+        "stopsTotal": "Stops",
+        "stopsOutstanding": "Outstanding Stops",
+        "noSettlement": "No settlement yet"
+      },
+      "carrier": {
+        "title": "Carrier Settlement",
+        "unavailable": "Carrier settlement has no API. The platform settles a trip with its driver; carrier records expose accounts and contracts, not settlements."
+      }
     }
   }
 }
