@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { tripExecutionService } from '../services/trip-execution-service';
 import type {
+  AddCustodyPayload,
   AddTripOrderPayload,
   CaptureProofPayload,
   CompleteStopPayload,
@@ -36,6 +37,14 @@ export function useTripStops(tripId: string | null) {
     queryFn: () => tripExecutionService.stops(tripId as string),
     enabled: tripId !== null,
     staleTime: 0,
+  });
+}
+
+export function useTripCustody(tripId: string | null) {
+  return useQuery({
+    queryKey: [KEY, 'custody', tripId],
+    queryFn: () => tripExecutionService.custody(tripId as string),
+    enabled: tripId !== null,
   });
 }
 
@@ -167,6 +176,34 @@ export function useCaptureProof(tripId: string) {
   return useMutation({
     mutationFn: ({ stopId, payload }: { stopId: number; payload: CaptureProofPayload }) =>
       tripExecutionService.captureProof(tripId, stopId, payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useAddCustody(tripId: string) {
+  const invalidate = useExecutionInvalidation();
+
+  return useMutation({
+    mutationFn: (payload: AddCustodyPayload) => tripExecutionService.addCustody(tripId, payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useConfirmCustody(tripId: string) {
+  const invalidate = useExecutionInvalidation();
+
+  return useMutation({
+    mutationFn: ({ custodyId, receivedQuantity }: { custodyId: number; receivedQuantity: number }) =>
+      tripExecutionService.confirmCustody(tripId, custodyId, receivedQuantity),
+    onSuccess: invalidate,
+  });
+}
+
+export function useRemoveCustody(tripId: string) {
+  const invalidate = useExecutionInvalidation();
+
+  return useMutation({
+    mutationFn: (custodyId: number) => tripExecutionService.removeCustody(tripId, custodyId),
     onSuccess: invalidate,
   });
 }

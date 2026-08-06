@@ -1721,6 +1721,42 @@
         "yes": "Yes",
         "no": "No",
         "none": "—"
+      },
+      "custody": {
+        "title": "Custody",
+        "tab": "Custody",
+        "empty": "No custody items on this trip.",
+        "itemType": "Item",
+        "description": "Description",
+        "quantity": "Dispatched",
+        "received": "Received",
+        "shortfall": "Shortfall",
+        "confirmed": "Driver confirmed",
+        "awaiting": "Awaiting driver confirmation",
+        "confirmedAt": "Confirmed",
+        "notes": "Notes",
+        "add": "Add Custody Item",
+        "addTitle": "Add a custody item",
+        "addDescription": "Items handed to the driver with the trip. The driver confirms what was actually received.",
+        "descriptionPlaceholder": "Optional description",
+        "quantityLabel": "Quantity",
+        "confirm": "Confirm Receipt",
+        "confirmTitle": "Confirm what the driver received",
+        "receivedQuantity": "Received Quantity",
+        "remove": "Remove",
+        "addFailed": "The custody item could not be added.",
+        "confirmFailed": "The custody item could not be confirmed.",
+        "removeFailed": "The custody item could not be removed.",
+        "shortfallNote": "The shortfall is computed by the backend from the dispatched and received quantities.",
+        "type": {
+          "cash_float": "Cash Float",
+          "pos_device": "POS Device",
+          "ice_boxes": "Ice Boxes",
+          "ice_packs": "Ice Packs",
+          "thermal_bags": "Thermal Bags",
+          "delivery_bags": "Delivery Bags",
+          "other": "Other"
+        }
       }
     },
     "settlement": {

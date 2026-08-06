@@ -1721,6 +1721,42 @@
         "yes": "نعم",
         "no": "لا",
         "none": "—"
+      },
+      "custody": {
+        "title": "العُهدة",
+        "tab": "العُهدة",
+        "empty": "لا توجد عُهد في هذه الرحلة.",
+        "itemType": "الصنف",
+        "description": "الوصف",
+        "quantity": "المرسل",
+        "received": "المستلم",
+        "shortfall": "العجز",
+        "confirmed": "أكّدها السائق",
+        "awaiting": "بانتظار تأكيد السائق",
+        "confirmedAt": "وقت التأكيد",
+        "notes": "ملاحظات",
+        "add": "إضافة عُهدة",
+        "addTitle": "إضافة صنف عُهدة",
+        "addDescription": "الأصناف المُسلّمة للسائق مع الرحلة، ويؤكّد السائق ما استلمه فعليًا.",
+        "descriptionPlaceholder": "وصف اختياري",
+        "quantityLabel": "الكمية",
+        "confirm": "تأكيد الاستلام",
+        "confirmTitle": "تأكيد ما استلمه السائق",
+        "receivedQuantity": "الكمية المستلمة",
+        "remove": "إزالة",
+        "addFailed": "تعذّرت إضافة العُهدة.",
+        "confirmFailed": "تعذّر تأكيد العُهدة.",
+        "removeFailed": "تعذّرت إزالة العُهدة.",
+        "shortfallNote": "يُحتسب العجز في الخادم من الكميتين المرسلة والمستلمة.",
+        "type": {
+          "cash_float": "عهدة نقدية",
+          "pos_device": "جهاز نقاط بيع",
+          "ice_boxes": "صناديق ثلج",
+          "ice_packs": "عبوات ثلج",
+          "thermal_bags": "حقائب حرارية",
+          "delivery_bags": "حقائب توصيل",
+          "other": "أخرى"
+        }
       }
     },
     "settlement": {

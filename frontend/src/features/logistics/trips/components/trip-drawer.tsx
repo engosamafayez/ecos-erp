@@ -15,6 +15,7 @@ import type enLogistics from '@/i18n/locales/en/logistics.json';
 
 import { useSetTripStatus, useTrip, useTripDispatchReadiness } from '../hooks/use-trips';
 import type { Trip, TripStatus, TripType } from '../types/trip';
+import { TripCustodyTab } from './trip-custody-tab';
 import { TripExceptionsTab } from './trip-exceptions-tab';
 import { TripOrdersTab } from './trip-orders-tab';
 import { TripReturnsTab } from './trip-returns-tab';
@@ -250,6 +251,7 @@ export function TripDrawer({
             <TabsTrigger value="money">{t(($) => $.trips.drawer.tabs.money)}</TabsTrigger>
             <TabsTrigger value="orders">{t(($) => $.trips.execution.tabs.orders)}</TabsTrigger>
             <TabsTrigger value="stops">{t(($) => $.trips.execution.tabs.stops)}</TabsTrigger>
+            <TabsTrigger value="custody">{t(($) => $.trips.execution.custody.tab)}</TabsTrigger>
             <TabsTrigger value="exceptions">
               {t(($) => $.trips.execution.tabs.exceptions)}
             </TabsTrigger>
@@ -436,6 +438,10 @@ export function TripDrawer({
 
           <TabsContent value="stops">
             <TripStopsTab tripId={trip.id} />
+          </TabsContent>
+
+          <TabsContent value="custody">
+            <TripCustodyTab tripId={trip.id} />
           </TabsContent>
 
           <TabsContent value="exceptions">

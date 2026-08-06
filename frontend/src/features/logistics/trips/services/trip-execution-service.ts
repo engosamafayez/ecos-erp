@@ -1,5 +1,6 @@
 import { api } from '@/lib/axios';
 import type {
+  AddCustodyPayload,
   AddTripOrderPayload,
   CaptureProofPayload,
   CompleteStopPayload,
@@ -13,6 +14,7 @@ import type {
   RecordActionPayload,
   RecordReturnPayload,
   TripOrder,
+  TripCustodyItem,
   TripReturn,
 } from '../types/trip-execution';
 
@@ -49,6 +51,43 @@ export const tripExecutionService = {
 
   async moveOrder(tripId: string, payload: MoveTripOrderPayload): Promise<TripOrder> {
     const { data } = await api.post<{ data: TripOrder }>(`${BASE}/${tripId}/orders/move`, payload);
+    return data.data;
+  },
+
+  // ── Custody ────────────────────────────────────────────────────────────────
+
+  async custody(tripId: string): Promise<TripCustodyItem[]> {
+    const { data } = await api.get<{ data: TripCustodyItem[] }>(`${BASE}/${tripId}/custody`);
+    return data.data;
+  },
+
+  async addCustody(tripId: string, payload: AddCustodyPayload): Promise<TripCustodyItem> {
+    const { data } = await api.post<{ data: TripCustodyItem }>(
+      `${BASE}/${tripId}/custody`,
+      payload,
+    );
+    return data.data;
+  },
+
+  async confirmCustody(
+    tripId: string,
+    custodyId: number,
+    receivedQuantity: number,
+  ): Promise<TripCustodyItem> {
+    const { data } = await api.patch<{ data: TripCustodyItem }>(
+      `${BASE}/${tripId}/custody/${custodyId}/confirm`,
+      { received_quantity: receivedQuantity },
+    );
+    return data.data;
+  },
+
+  async removeCustody(tripId: string, custodyId: number): Promise<void> {
+    await api.delete(`${BASE}/${tripId}/custody/${custodyId}`);
+  },
+
+  /** One stop in full, with its actions, proof and payments. */
+  async stop(tripId: string, stopId: number): Promise<DeliveryStop> {
+    const { data } = await api.get<{ data: DeliveryStop }>(`${BASE}/${tripId}/stops/${stopId}`);
     return data.data;
   },
 

@@ -95,6 +95,48 @@ export type DeliveryStop = {
   created_at: string | null;
 };
 
+export const CUSTODY_ITEM_TYPES = [
+  'cash_float',
+  'pos_device',
+  'ice_boxes',
+  'ice_packs',
+  'thermal_bags',
+  'delivery_bags',
+  'other',
+] as const;
+
+export type CustodyItemType = (typeof CUSTODY_ITEM_TYPES)[number];
+
+/**
+ * Custody: equipment and cash floats handed to the driver with the trip.
+ *
+ * The shortfall is the backend's — it compares the received quantity against
+ * what was dispatched. Recomputing it here would produce a second number that
+ * disagrees the moment a partial confirmation lands.
+ */
+export type TripCustodyItem = {
+  id: number;
+  trip_id: number;
+  item_type: CustodyItemType;
+  item_type_label: string;
+  description: string | null;
+  quantity: number;
+  received_quantity: number | null;
+  has_shortfall: boolean;
+  shortfall_quantity: number | null;
+  is_driver_confirmed: boolean;
+  driver_confirmed_at: string | null;
+  notes: string | null;
+  created_at: string | null;
+};
+
+export type AddCustodyPayload = {
+  item_type: CustodyItemType;
+  description?: string | null;
+  quantity?: number;
+  notes?: string | null;
+};
+
 export type TripOrder = {
   id: number;
   trip_id: number;
