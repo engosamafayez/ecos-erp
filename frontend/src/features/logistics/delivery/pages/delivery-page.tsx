@@ -24,6 +24,16 @@ import { useDeliveries, useDeliveryOptions, useDeliveryStats } from '../hooks/us
 import type { Delivery, DeliveryStatus, FailureCategory } from '../types/delivery';
 import { DeliveryDrawer } from '../components/delivery-drawer';
 import { DeliveryStatusBadge } from '../components/delivery-status-badge';
+import type enLogistics from '@/i18n/locales/en/logistics.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of key
+ * strings can never type-check. The selector is the same expression the
+ * compiler validates at an inline call site, kept in the table.
+ */
+type LogisticsLabel = ($: typeof enLogistics) => string;
 
 // ── Skeleton ─────────────────────────────────────────────────────────────────
 
@@ -179,13 +189,13 @@ function DeliveriesTable({
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-const STATUS_FILTERS = [
-  { key: 'open', labelKey: 'delivery.filter.open' },
-  { key: 'all', labelKey: 'common.all' },
-  { key: 'out_for_delivery', labelKey: 'delivery.status.outForDelivery' },
-  { key: 'awaiting_retry', labelKey: 'delivery.status.awaitingRetry' },
-  { key: 'failed', labelKey: 'common.failed' },
-  { key: 'returning', labelKey: 'delivery.status.returning' },
+const STATUS_FILTERS: { key: string; labelKey: LogisticsLabel }[] = [
+  { key: 'open', labelKey: ($) => $.delivery.filter.open },
+  { key: 'all', labelKey: ($) => $.common.all },
+  { key: 'out_for_delivery', labelKey: ($) => $.delivery.status.outForDelivery },
+  { key: 'awaiting_retry', labelKey: ($) => $.delivery.status.awaitingRetry },
+  { key: 'failed', labelKey: ($) => $.common.failed },
+  { key: 'returning', labelKey: ($) => $.delivery.status.returning },
 ] as const;
 
 type StatusFilterKey = (typeof STATUS_FILTERS)[number]['key'];

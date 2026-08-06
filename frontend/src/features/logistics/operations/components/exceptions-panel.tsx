@@ -11,12 +11,22 @@ import { useAlerts, useExceptionSummary, useExceptions } from '../hooks/use-oper
 import type { ExceptionSeverity } from '../types/operations';
 import { ExceptionStatusBadge, SeverityIcon, SourceBadge } from './operations-badges';
 import { ExceptionDrawer } from './exception-drawer';
+import type enLogistics from '@/i18n/locales/en/logistics.json';
 
-const SEVERITY_FILTERS = [
-  { key: 'all', labelKey: 'common.all' },
-  { key: 'critical', labelKey: 'common.critical' },
-  { key: 'warning', labelKey: 'operations.exceptions.filter.warning' },
-  { key: 'info', labelKey: 'operations.exceptions.filter.info' },
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of key
+ * strings can never type-check. The selector is the same expression the
+ * compiler validates at an inline call site, kept in the table.
+ */
+type LogisticsLabel = ($: typeof enLogistics) => string;
+
+const SEVERITY_FILTERS: { key: string; labelKey: LogisticsLabel }[] = [
+  { key: 'all', labelKey: ($) => $.common.all },
+  { key: 'critical', labelKey: ($) => $.common.critical },
+  { key: 'warning', labelKey: ($) => $.operations.exceptions.filter.warning },
+  { key: 'info', labelKey: ($) => $.operations.exceptions.filter.info },
 ] as const;
 
 type SeverityFilterKey = (typeof SEVERITY_FILTERS)[number]['key'];

@@ -13,6 +13,16 @@ import { useDispatchRegions, useServiceAreas } from '../hooks/use-network';
 import type { ServiceArea, ServiceAreaStatus } from '../types/network';
 import { ServiceAreaDrawer } from '../components/service-area-drawer';
 import { AreaStatusBadge } from '../components/area-status-badge';
+import type enLogistics from '@/i18n/locales/en/logistics.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of key
+ * strings can never type-check. The selector is the same expression the
+ * compiler validates at an inline call site, kept in the table.
+ */
+type LogisticsLabel = ($: typeof enLogistics) => string;
 
 function TableSkeleton() {
   return (
@@ -58,12 +68,12 @@ function EmptyAreas({ hasFilter }: { hasFilter: boolean }) {
   );
 }
 
-const STATUS_FILTERS = [
-  { key: 'all', labelKey: 'common.all' },
-  { key: 'active', labelKey: 'common.active' },
-  { key: 'draft', labelKey: 'network.areaStatus.draft' },
-  { key: 'paused', labelKey: 'network.areaStatus.paused' },
-  { key: 'closed', labelKey: 'network.areaStatus.closed' },
+const STATUS_FILTERS: { key: string; labelKey: LogisticsLabel }[] = [
+  { key: 'all', labelKey: ($) => $.common.all },
+  { key: 'active', labelKey: ($) => $.common.active },
+  { key: 'draft', labelKey: ($) => $.network.areaStatus.draft },
+  { key: 'paused', labelKey: ($) => $.network.areaStatus.paused },
+  { key: 'closed', labelKey: ($) => $.network.areaStatus.closed },
 ] as const;
 
 type StatusFilterKey = (typeof STATUS_FILTERS)[number]['key'];

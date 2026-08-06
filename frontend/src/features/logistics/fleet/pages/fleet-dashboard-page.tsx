@@ -22,6 +22,16 @@ import type { FleetUnit, FleetUnitLifecycle } from '../types/fleet';
 import { FleetUnitDrawer } from '../components/fleet-unit-drawer';
 import { BlockerList } from '../components/blocker-list';
 import { FitnessBadge, LifecycleBadge } from '../components/fitness-badge';
+import type enLogistics from '@/i18n/locales/en/logistics.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of key
+ * strings can never type-check. The selector is the same expression the
+ * compiler validates at an inline call site, kept in the table.
+ */
+type LogisticsLabel = ($: typeof enLogistics) => string;
 
 // ── Skeleton and empty state ─────────────────────────────────────────────────
 
@@ -141,14 +151,17 @@ function UnitsTable({
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-const STATE_FILTERS = [
-  { key: 'open', labelKey: 'fleet.filters.inService' },
-  { key: 'all', labelKey: 'common.all' },
-  { key: 'active', labelKey: 'common.active' },
-  { key: 'commissioning', labelKey: 'fleet.lifecycle.commissioning' },
-  { key: 'suspended', labelKey: 'fleet.lifecycle.suspended' },
-  { key: 'retired', labelKey: 'fleet.lifecycle.retired' },
-] as const;
+const STATE_FILTERS: {
+  key: 'open' | 'all' | 'active' | 'commissioning' | 'suspended' | 'retired';
+  labelKey: LogisticsLabel;
+}[] = [
+  { key: 'open', labelKey: ($) => $.fleet.filters.inService },
+  { key: 'all', labelKey: ($) => $.common.all },
+  { key: 'active', labelKey: ($) => $.common.active },
+  { key: 'commissioning', labelKey: ($) => $.fleet.lifecycle.commissioning },
+  { key: 'suspended', labelKey: ($) => $.fleet.lifecycle.suspended },
+  { key: 'retired', labelKey: ($) => $.fleet.lifecycle.retired },
+];
 
 type StateFilterKey = (typeof STATE_FILTERS)[number]['key'];
 
