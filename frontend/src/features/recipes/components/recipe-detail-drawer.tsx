@@ -108,7 +108,7 @@ function OverviewTab({ recipe }: { recipe: Recipe }) {
         <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20 px-3 py-2.5 text-xs text-amber-700 dark:text-amber-400">
           <AlertTriangle className="size-3.5 mt-0.5 shrink-0" />
           <span>
-            {t($ => $.overview.missingCost, { count: recipe.cost_summary?.missing_material_count ?? '?' })}
+            {t($ => $.overview.missingCost, { missing: String(recipe.cost_summary?.missing_material_count ?? '?') })}
           </span>
         </div>
       )}

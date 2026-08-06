@@ -5,6 +5,16 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/router/routes';
 import { useHeaderContext } from '@/components/layout/header';
+import type enCommon from '@/i18n/locales/en/common.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of key
+ * strings can never type-check. The selector is the same expression the
+ * compiler validates at an inline call site, kept in the table.
+ */
+type CommonLabel = ($: typeof enCommon) => string;
 
 type MobileBottomNavProps = {
   onOpenMenu: () => void;
@@ -13,12 +23,12 @@ type MobileBottomNavProps = {
 const PINNED = [
   {
     key: 'dashboard',
-    labelKey: 'nav.items.dashboard',
+    labelKey: ($) => $.nav.items.dashboard,
     icon: LayoutDashboard,
     path: ROUTES.dashboard,
   },
-  { key: 'orders', labelKey: 'nav.items.orders', icon: ShoppingBag, path: ROUTES.orders },
-] as const;
+  { key: 'orders', labelKey: ($) => $.nav.items.orders, icon: ShoppingBag, path: ROUTES.orders },
+] satisfies { key: string; labelKey: CommonLabel; icon: unknown; path: string }[];
 
 export function MobileBottomNav({ onOpenMenu }: MobileBottomNavProps) {
   const { t } = useTranslation('common');

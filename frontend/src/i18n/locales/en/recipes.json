@@ -281,7 +281,7 @@
     }
   },
   "overview": {
-    "missingCost": "{{count}} material(s) with no defined cost. The total cost below is a partial estimate.",
+    "missingCost": "{{missing}} material(s) with no defined cost. The total cost below is a partial estimate.",
     "costDetails": "Cost Details",
     "labels": {
       "recipeNumber": "Recipe #",

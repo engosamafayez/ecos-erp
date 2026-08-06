@@ -25,6 +25,16 @@ import { useDriverStats, useDrivers } from '../hooks/use-drivers';
 import type { Driver, DriverStatus, LicenseStatus } from '../types/driver';
 import { DriverDrawer } from '../components/driver-drawer';
 import { LicenseStatusBadge } from '../components/license-status-badge';
+import type enLogistics from '@/i18n/locales/en/logistics.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of key
+ * strings can never type-check. The selector is the same expression the
+ * compiler validates at an inline call site, kept in the table.
+ */
+type LogisticsLabel = ($: typeof enLogistics) => string;
 
 // ── Table Skeleton ─────────────────────────────────────────────────────────────
 
@@ -208,29 +218,29 @@ function DriversTable({
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
-const STATUS_FILTERS = [
-  { key: 'all', labelKey: 'common.all' },
-  { key: 'active', labelKey: 'common.active' },
-  { key: 'inactive', labelKey: 'common.inactive' },
-  { key: 'archived', labelKey: 'drivers.status.archived' },
-] as const;
+const STATUS_FILTERS: { key: 'all' | 'active' | 'inactive' | 'archived'; labelKey: LogisticsLabel }[] = [
+  { key: 'all', labelKey: ($) => $.common.all },
+  { key: 'active', labelKey: ($) => $.common.active },
+  { key: 'inactive', labelKey: ($) => $.common.inactive },
+  { key: 'archived', labelKey: ($) => $.drivers.status.archived },
+];
 
 type StatusFilterKey = (typeof STATUS_FILTERS)[number]['key'];
 
-const LICENSE_FILTERS = [
-  { key: 'all', labelKey: 'drivers.filters.license.any' },
-  { key: 'expired', labelKey: 'drivers.license.status.expired' },
-  { key: 'expiring_soon', labelKey: 'drivers.license.status.expiringSoon' },
-  { key: 'missing', labelKey: 'drivers.filters.license.missing' },
-] as const;
+const LICENSE_FILTERS: { key: 'all' | 'expired' | 'expiring_soon' | 'missing'; labelKey: LogisticsLabel }[] = [
+  { key: 'all', labelKey: ($) => $.drivers.filters.license.any },
+  { key: 'expired', labelKey: ($) => $.drivers.license.status.expired },
+  { key: 'expiring_soon', labelKey: ($) => $.drivers.license.status.expiringSoon },
+  { key: 'missing', labelKey: ($) => $.drivers.filters.license.missing },
+];
 
 type LicenseFilterKey = (typeof LICENSE_FILTERS)[number]['key'];
 
-const VEHICLE_FILTERS = [
-  { key: 'all', labelKey: 'drivers.filters.vehicle.any' },
-  { key: 'assigned', labelKey: 'common.assigned' },
-  { key: 'unassigned', labelKey: 'common.unassigned' },
-] as const;
+const VEHICLE_FILTERS: { key: 'all' | 'assigned' | 'unassigned'; labelKey: LogisticsLabel }[] = [
+  { key: 'all', labelKey: ($) => $.drivers.filters.vehicle.any },
+  { key: 'assigned', labelKey: ($) => $.common.assigned },
+  { key: 'unassigned', labelKey: ($) => $.common.unassigned },
+];
 
 type VehicleFilterKey = (typeof VEHICLE_FILTERS)[number]['key'];
 

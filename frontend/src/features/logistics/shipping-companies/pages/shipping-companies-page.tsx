@@ -31,6 +31,16 @@ import type {
   ShippingCompanyType,
 } from '../types/shipping-company';
 import { ShippingCompanyDrawer } from '../components/shipping-company-drawer';
+import type enLogistics from '@/i18n/locales/en/logistics.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of key
+ * strings can never type-check. The selector is the same expression the
+ * compiler validates at an inline call site, kept in the table.
+ */
+type LogisticsLabel = ($: typeof enLogistics) => string;
 
 // ── Table Skeleton ─────────────────────────────────────────────────────────────
 
@@ -256,20 +266,20 @@ function CompaniesTable({
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
-const STATUS_FILTERS = [
-  { key: 'all', labelKey: 'common.all' },
-  { key: 'active', labelKey: 'common.active' },
-  { key: 'inactive', labelKey: 'common.inactive' },
-  { key: 'archived', labelKey: 'shippingCompanies.status.archived' },
-] as const;
+const STATUS_FILTERS: { key: 'all' | 'active' | 'inactive' | 'archived'; labelKey: LogisticsLabel }[] = [
+  { key: 'all', labelKey: ($) => $.common.all },
+  { key: 'active', labelKey: ($) => $.common.active },
+  { key: 'inactive', labelKey: ($) => $.common.inactive },
+  { key: 'archived', labelKey: ($) => $.shippingCompanies.status.archived },
+];
 
 type StatusFilterKey = (typeof STATUS_FILTERS)[number]['key'];
 
-const TYPE_FILTERS = [
-  { key: 'all', labelKey: 'shippingCompanies.filters.allTypes' },
-  { key: 'internal', labelKey: 'shippingCompanies.type.internal' },
-  { key: 'external', labelKey: 'shippingCompanies.type.external' },
-] as const;
+const TYPE_FILTERS: { key: 'all' | 'internal' | 'external'; labelKey: LogisticsLabel }[] = [
+  { key: 'all', labelKey: ($) => $.shippingCompanies.filters.allTypes },
+  { key: 'internal', labelKey: ($) => $.shippingCompanies.type.internal },
+  { key: 'external', labelKey: ($) => $.shippingCompanies.type.external },
+];
 
 type TypeFilterKey = (typeof TYPE_FILTERS)[number]['key'];
 

@@ -63,6 +63,16 @@ import type { Order, OrderActivity, OrderActivityActionType } from '@/features/o
 import { getMediaUrl } from '@/lib/media';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/router/routes';
+import type enOrders from '@/i18n/locales/en/orders.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of key
+ * strings can never type-check. The selector is the same expression the
+ * compiler validates at an inline call site, kept in the table.
+ */
+type OrdersLabel = ($: typeof enOrders) => string;
 
 // ── Shared formatting helpers ─────────────────────────────────────────────────
 
@@ -863,25 +873,17 @@ function PaymentCard({ order }: { order: Order }) {
 
 type AuditFilter = OrderActivityActionType | 'all';
 
-type AuditFilterLabelKey =
-  | 'orderDetail.filterAll'
-  | 'orderDetail.filterWorkflow'
-  | 'orderDetail.filterPayment'
-  | 'orderDetail.filterInventory'
-  | 'orderDetail.filterShipping'
-  | 'orderDetail.filterCustomer'
-  | 'orderDetail.filterSystem'
-  | 'orderDetail.filterNotes';
 
-const AUDIT_FILTERS: Array<{ key: AuditFilter; labelKey: AuditFilterLabelKey }> = [
-  { key: 'all',       labelKey: 'orderDetail.filterAll' },
-  { key: 'workflow',  labelKey: 'orderDetail.filterWorkflow' },
-  { key: 'payment',   labelKey: 'orderDetail.filterPayment' },
-  { key: 'inventory', labelKey: 'orderDetail.filterInventory' },
-  { key: 'shipping',  labelKey: 'orderDetail.filterShipping' },
-  { key: 'customer',  labelKey: 'orderDetail.filterCustomer' },
-  { key: 'system',    labelKey: 'orderDetail.filterSystem' },
-  { key: 'note',      labelKey: 'orderDetail.filterNotes' },
+
+const AUDIT_FILTERS: Array<{ key: AuditFilter; labelKey: OrdersLabel }> = [
+  { key: 'all',       labelKey: ($) => $.orderDetail.filterAll },
+  { key: 'workflow',  labelKey: ($) => $.orderDetail.filterWorkflow },
+  { key: 'payment',   labelKey: ($) => $.orderDetail.filterPayment },
+  { key: 'inventory', labelKey: ($) => $.orderDetail.filterInventory },
+  { key: 'shipping',  labelKey: ($) => $.orderDetail.filterShipping },
+  { key: 'customer',  labelKey: ($) => $.orderDetail.filterCustomer },
+  { key: 'system',    labelKey: ($) => $.orderDetail.filterSystem },
+  { key: 'note',      labelKey: ($) => $.orderDetail.filterNotes },
 ];
 
 type EventIconConfig = { Icon: React.ComponentType<{ className?: string }>; bg: string; ring: string; text: string };
