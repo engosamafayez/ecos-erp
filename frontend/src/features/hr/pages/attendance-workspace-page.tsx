@@ -5,6 +5,17 @@ import { CalendarDays, Check, Save } from 'lucide-react';
 import { ErrorState, LoadingState, PageHeader } from '@/components/crud';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+
+import type enHr from '@/i18n/locales/en/hr.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of
+ * key strings can never type-check. The selector is the same expression
+ * the compiler validates at an inline call site, kept in the table.
+ */
+type HrLabel = ($: typeof enHr) => string;
 import {
   useAttendanceSheetQuery,
   useDepartmentsQuery,
@@ -14,12 +25,12 @@ import type { AttendanceStatus } from '@/features/hr/types/hr';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-const STATUS_OPTIONS: Array<{ value: AttendanceStatus; labelKey: string }> = [
-  { value: 'present', labelKey: 'attendance.status.present' },
-  { value: 'absent', labelKey: 'attendance.status.absent' },
-  { value: 'leave', labelKey: 'attendance.status.leave' },
-  { value: 'holiday', labelKey: 'attendance.status.holiday' },
-  { value: 'rest_day', labelKey: 'attendance.status.restDay' },
+const STATUS_OPTIONS: Array<{ value: AttendanceStatus; labelKey: HrLabel }> = [
+  { value: 'present', labelKey: ($) => $.attendance.status.present },
+  { value: 'absent', labelKey: ($) => $.attendance.status.absent },
+  { value: 'leave', labelKey: ($) => $.attendance.status.leave },
+  { value: 'holiday', labelKey: ($) => $.attendance.status.holiday },
+  { value: 'rest_day', labelKey: ($) => $.attendance.status.restDay },
 ];
 
 /**

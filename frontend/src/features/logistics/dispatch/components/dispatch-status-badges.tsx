@@ -2,6 +2,17 @@ import { useTranslation } from 'react-i18next';
 import { AlertTriangle, Lock, XCircle } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
+
+import type enLogistics from '@/i18n/locales/en/logistics.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of
+ * key strings can never type-check. The selector is the same expression
+ * the compiler validates at an inline call site, kept in the table.
+ */
+type LogisticsLabel = ($: typeof enLogistics) => string;
 import type {
   ConflictAuthority,
   QueueItemStatus,
@@ -10,25 +21,25 @@ import type {
 } from '../types/dispatch-ops';
 
 /** `labelKey` is a `logistics` namespace key — resolved at render, never stored translated. */
-const SESSION: Record<SessionStatus, { labelKey: string; className: string }> = {
+const SESSION: Record<SessionStatus, { labelKey: LogisticsLabel; className: string }> = {
   open: {
-    labelKey: 'dispatch.session.status.open',
+    labelKey: ($) => $.dispatch.session.status.open,
     className: 'bg-emerald-600 hover:bg-emerald-600 text-white',
   },
   paused: {
-    labelKey: 'dispatch.session.status.paused',
+    labelKey: ($) => $.dispatch.session.status.paused,
     className: 'bg-amber-500 hover:bg-amber-500 text-white',
   },
   closing: {
-    labelKey: 'dispatch.session.status.closing',
+    labelKey: ($) => $.dispatch.session.status.closing,
     className: 'bg-amber-600 hover:bg-amber-600 text-white',
   },
   closed: {
-    labelKey: 'dispatch.session.status.closed',
+    labelKey: ($) => $.dispatch.session.status.closed,
     className: 'bg-muted text-muted-foreground hover:bg-muted',
   },
   abandoned: {
-    labelKey: 'dispatch.session.status.abandoned',
+    labelKey: ($) => $.dispatch.session.status.abandoned,
     className: 'bg-destructive hover:bg-destructive text-destructive-foreground',
   },
 };
@@ -40,33 +51,33 @@ export function SessionStatusBadge({ status }: { status: SessionStatus }) {
   return <Badge className={`text-xs ${className}`}>{t(labelKey)}</Badge>;
 }
 
-const QUEUE: Record<QueueItemStatus, { labelKey: string; className: string }> = {
+const QUEUE: Record<QueueItemStatus, { labelKey: LogisticsLabel; className: string }> = {
   waiting: {
-    labelKey: 'dispatch.queue.status.waiting',
+    labelKey: ($) => $.dispatch.queue.status.waiting,
     className: 'bg-muted text-muted-foreground hover:bg-muted',
   },
   claimed: {
-    labelKey: 'dispatch.queue.status.claimed',
+    labelKey: ($) => $.dispatch.queue.status.claimed,
     className: 'bg-sky-600 hover:bg-sky-600 text-white',
   },
   assigned: {
-    labelKey: 'common.assigned',
+    labelKey: ($) => $.common.assigned,
     className: 'bg-emerald-600 hover:bg-emerald-600 text-white',
   },
   blocked: {
-    labelKey: 'dispatch.queue.status.blocked',
+    labelKey: ($) => $.dispatch.queue.status.blocked,
     className: 'bg-destructive hover:bg-destructive text-destructive-foreground',
   },
   deferred: {
-    labelKey: 'dispatch.queue.status.deferred',
+    labelKey: ($) => $.dispatch.queue.status.deferred,
     className: 'bg-amber-500 hover:bg-amber-500 text-white',
   },
   completed: {
-    labelKey: 'common.completed',
+    labelKey: ($) => $.common.completed,
     className: 'bg-slate-600 hover:bg-slate-600 text-white',
   },
   cancelled: {
-    labelKey: 'common.cancelled',
+    labelKey: ($) => $.common.cancelled,
     className: 'bg-muted text-muted-foreground hover:bg-muted',
   },
 };
@@ -78,17 +89,17 @@ export function QueueStatusBadge({ status }: { status: QueueItemStatus }) {
   return <Badge className={`text-xs ${className}`}>{t(labelKey)}</Badge>;
 }
 
-const PRIORITY: Record<QueuePriority, { labelKey: string; className: string }> = {
+const PRIORITY: Record<QueuePriority, { labelKey: LogisticsLabel; className: string }> = {
   critical: {
-    labelKey: 'common.critical',
+    labelKey: ($) => $.common.critical,
     className: 'bg-destructive hover:bg-destructive text-destructive-foreground',
   },
-  high: { labelKey: 'common.high', className: 'bg-amber-500 hover:bg-amber-500 text-white' },
+  high: { labelKey: ($) => $.common.high, className: 'bg-amber-500 hover:bg-amber-500 text-white' },
   normal: {
-    labelKey: 'dispatch.priority.normal',
+    labelKey: ($) => $.dispatch.priority.normal,
     className: 'bg-sky-600 hover:bg-sky-600 text-white',
   },
-  low: { labelKey: 'common.low', className: 'bg-muted text-muted-foreground hover:bg-muted' },
+  low: { labelKey: ($) => $.common.low, className: 'bg-muted text-muted-foreground hover:bg-muted' },
 };
 
 export function PriorityBadge({ priority }: { priority: QueuePriority }) {

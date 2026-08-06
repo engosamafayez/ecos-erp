@@ -2,6 +2,17 @@ import { AlertTriangle, Info, Lock, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Badge } from '@/components/ui/badge';
+
+import type enLogistics from '@/i18n/locales/en/logistics.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of
+ * key strings can never type-check. The selector is the same expression
+ * the compiler validates at an inline call site, kept in the table.
+ */
+type LogisticsLabel = ($: typeof enLogistics) => string;
 import type {
   ExceptionSeverity,
   ExceptionSource,
@@ -11,18 +22,18 @@ import type {
   ReservationStatus,
 } from '../types/operations';
 
-const POOL: Record<PoolStatus, { labelKey: string; className: string }> = {
+const POOL: Record<PoolStatus, { labelKey: LogisticsLabel; className: string }> = {
   draft: {
-    labelKey: 'operations.badges.pool.draft',
+    labelKey: ($) => $.operations.badges.pool.draft,
     className: 'bg-sky-600 hover:bg-sky-600 text-white',
   },
-  active: { labelKey: 'common.active', className: 'bg-emerald-600 hover:bg-emerald-600 text-white' },
+  active: { labelKey: ($) => $.common.active, className: 'bg-emerald-600 hover:bg-emerald-600 text-white' },
   suspended: {
-    labelKey: 'operations.badges.pool.suspended',
+    labelKey: ($) => $.operations.badges.pool.suspended,
     className: 'bg-amber-500 hover:bg-amber-500 text-white',
   },
   archived: {
-    labelKey: 'operations.badges.pool.archived',
+    labelKey: ($) => $.operations.badges.pool.archived,
     className: 'bg-muted text-muted-foreground hover:bg-muted',
   },
 };
@@ -34,17 +45,17 @@ export function PoolStatusBadge({ status }: { status: PoolStatus }) {
   return <Badge className={`text-xs ${className}`}>{t(labelKey)}</Badge>;
 }
 
-const MEMBER: Record<PoolMemberStatus, { labelKey: string; className: string }> = {
+const MEMBER: Record<PoolMemberStatus, { labelKey: LogisticsLabel; className: string }> = {
   active: {
-    labelKey: 'operations.badges.member.inPool',
+    labelKey: ($) => $.operations.badges.member.inPool,
     className: 'bg-emerald-600 hover:bg-emerald-600 text-white',
   },
   suspended: {
-    labelKey: 'operations.badges.member.heldOut',
+    labelKey: ($) => $.operations.badges.member.heldOut,
     className: 'bg-amber-500 hover:bg-amber-500 text-white',
   },
   withdrawn: {
-    labelKey: 'operations.badges.member.removed',
+    labelKey: ($) => $.operations.badges.member.removed,
     className: 'bg-muted text-muted-foreground hover:bg-muted',
   },
 };
@@ -56,22 +67,22 @@ export function MemberStatusBadge({ status }: { status: PoolMemberStatus }) {
   return <Badge className={`text-xs ${className}`}>{t(labelKey)}</Badge>;
 }
 
-const RESERVATION: Record<ReservationStatus, { labelKey: string; className: string }> = {
-  pending: { labelKey: 'common.pending', className: 'bg-muted text-muted-foreground hover:bg-muted' },
+const RESERVATION: Record<ReservationStatus, { labelKey: LogisticsLabel; className: string }> = {
+  pending: { labelKey: ($) => $.common.pending, className: 'bg-muted text-muted-foreground hover:bg-muted' },
   held: {
-    labelKey: 'operations.badges.reservation.held',
+    labelKey: ($) => $.operations.badges.reservation.held,
     className: 'bg-sky-600 hover:bg-sky-600 text-white',
   },
   confirmed: {
-    labelKey: 'operations.badges.reservation.confirmed',
+    labelKey: ($) => $.operations.badges.reservation.confirmed,
     className: 'bg-emerald-600 hover:bg-emerald-600 text-white',
   },
   released: {
-    labelKey: 'operations.badges.reservation.released',
+    labelKey: ($) => $.operations.badges.reservation.released,
     className: 'bg-muted text-muted-foreground hover:bg-muted',
   },
   failed: {
-    labelKey: 'operations.badges.reservation.refused',
+    labelKey: ($) => $.operations.badges.reservation.refused,
     className: 'bg-destructive hover:bg-destructive text-destructive-foreground',
   },
 };
@@ -83,29 +94,29 @@ export function ReservationStatusBadge({ status }: { status: ReservationStatus }
   return <Badge className={`text-xs ${className}`}>{t(labelKey)}</Badge>;
 }
 
-const EXCEPTION: Record<ExceptionStatus, { labelKey: string; className: string }> = {
+const EXCEPTION: Record<ExceptionStatus, { labelKey: LogisticsLabel; className: string }> = {
   open: {
-    labelKey: 'operations.badges.exception.open',
+    labelKey: ($) => $.operations.badges.exception.open,
     className: 'bg-destructive hover:bg-destructive text-destructive-foreground',
   },
   acknowledged: {
-    labelKey: 'operations.badges.exception.acknowledged',
+    labelKey: ($) => $.operations.badges.exception.acknowledged,
     className: 'bg-amber-500 hover:bg-amber-500 text-white',
   },
   escalated: {
-    labelKey: 'operations.badges.exception.escalated',
+    labelKey: ($) => $.operations.badges.exception.escalated,
     className: 'bg-destructive hover:bg-destructive text-destructive-foreground',
   },
   resolved: {
-    labelKey: 'operations.badges.exception.resolved',
+    labelKey: ($) => $.operations.badges.exception.resolved,
     className: 'bg-emerald-600 hover:bg-emerald-600 text-white',
   },
   suppressed: {
-    labelKey: 'operations.badges.exception.suppressed',
+    labelKey: ($) => $.operations.badges.exception.suppressed,
     className: 'bg-muted text-muted-foreground hover:bg-muted',
   },
   auto_resolved: {
-    labelKey: 'operations.badges.exception.autoResolved',
+    labelKey: ($) => $.operations.badges.exception.autoResolved,
     className: 'bg-slate-600 hover:bg-slate-600 text-white',
   },
 };

@@ -4,27 +4,38 @@ import { AlertTriangle, BadgeCheck, CircleSlash, ShieldAlert } from 'lucide-reac
 import { Badge } from '@/components/ui/badge';
 import type { LicenseStatus } from '../types/driver';
 
+import type enLogistics from '@/i18n/locales/en/logistics.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of
+ * key strings can never type-check. The selector is the same expression
+ * the compiler validates at an inline call site, kept in the table.
+ */
+type LogisticsLabel = ($: typeof enLogistics) => string;
+
 const CONFIG: Record<
   LicenseStatus,
-  { labelKey: string; className: string; Icon: typeof BadgeCheck }
+  { labelKey: LogisticsLabel; className: string; Icon: typeof BadgeCheck }
 > = {
   valid: {
-    labelKey: 'drivers.license.status.valid',
+    labelKey: ($) => $.drivers.license.status.valid,
     className: 'bg-emerald-600 hover:bg-emerald-600 text-white',
     Icon: BadgeCheck,
   },
   expiring_soon: {
-    labelKey: 'drivers.license.status.expiringSoon',
+    labelKey: ($) => $.drivers.license.status.expiringSoon,
     className: 'bg-amber-500 hover:bg-amber-500 text-white',
     Icon: AlertTriangle,
   },
   expired: {
-    labelKey: 'drivers.license.status.expired',
+    labelKey: ($) => $.drivers.license.status.expired,
     className: 'bg-destructive hover:bg-destructive text-destructive-foreground',
     Icon: ShieldAlert,
   },
   missing: {
-    labelKey: 'drivers.license.status.missing',
+    labelKey: ($) => $.drivers.license.status.missing,
     className: 'bg-muted text-muted-foreground hover:bg-muted',
     Icon: CircleSlash,
   },

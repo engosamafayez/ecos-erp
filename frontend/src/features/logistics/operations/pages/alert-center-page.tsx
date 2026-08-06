@@ -11,6 +11,17 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+import type enLogistics from '@/i18n/locales/en/logistics.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of
+ * key strings can never type-check. The selector is the same expression
+ * the compiler validates at an inline call site, kept in the table.
+ */
+type LogisticsLabel = ($: typeof enLogistics) => string;
+
 import {
   useAcknowledgeException,
   useAlerts,
@@ -21,11 +32,11 @@ import type { ExceptionSeverity, ExceptionStatus, OperationalAlert } from '../ty
 import { ExceptionStatusBadge, SeverityIcon, SourceBadge } from '../components/operations-badges';
 import { ExceptionDrawer } from '../components/exception-drawer';
 
-const SEVERITY_FILTERS: Array<{ key: ExceptionSeverity | 'all'; labelKey: string }> = [
-  { key: 'all', labelKey: 'common.all' },
-  { key: 'critical', labelKey: 'common.critical' },
-  { key: 'warning', labelKey: 'operations.alertCenter.severity.warning' },
-  { key: 'info', labelKey: 'operations.alertCenter.severity.info' },
+const SEVERITY_FILTERS: Array<{ key: ExceptionSeverity | 'all'; labelKey: LogisticsLabel }> = [
+  { key: 'all', labelKey: ($) => $.common.all },
+  { key: 'critical', labelKey: ($) => $.common.critical },
+  { key: 'warning', labelKey: ($) => $.operations.alertCenter.severity.warning },
+  { key: 'info', labelKey: ($) => $.operations.alertCenter.severity.info },
 ];
 
 /**
@@ -146,10 +157,10 @@ function LiveTab({ onOpen }: { onOpen: (id: string) => void }) {
   );
 }
 
-const HISTORY_STATUSES: Array<{ key: ExceptionStatus; labelKey: string }> = [
-  { key: 'resolved', labelKey: 'operations.alertCenter.historyStatus.resolved' },
-  { key: 'auto_resolved', labelKey: 'operations.alertCenter.historyStatus.autoResolved' },
-  { key: 'suppressed', labelKey: 'operations.alertCenter.historyStatus.suppressed' },
+const HISTORY_STATUSES: Array<{ key: ExceptionStatus; labelKey: LogisticsLabel }> = [
+  { key: 'resolved', labelKey: ($) => $.operations.alertCenter.historyStatus.resolved },
+  { key: 'auto_resolved', labelKey: ($) => $.operations.alertCenter.historyStatus.autoResolved },
+  { key: 'suppressed', labelKey: ($) => $.operations.alertCenter.historyStatus.suppressed },
 ];
 
 function HistoryTab({ onOpen }: { onOpen: (id: string) => void }) {

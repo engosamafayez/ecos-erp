@@ -8,6 +8,17 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+import type enLogistics from '@/i18n/locales/en/logistics.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of
+ * key strings can never type-check. The selector is the same expression
+ * the compiler validates at an inline call site, kept in the table.
+ */
+type LogisticsLabel = ($: typeof enLogistics) => string;
+
 import {
   useDiagnostics,
   useExecutiveSummary,
@@ -21,17 +32,17 @@ import type { ChecklistItem, ModuleStatus } from '../types/readiness';
 
 // ── Status vocabulary ────────────────────────────────────────────────────────
 
-const STATUS: Record<ModuleStatus, { labelKey: string; className: string }> = {
+const STATUS: Record<ModuleStatus, { labelKey: LogisticsLabel; className: string }> = {
   ready: {
-    labelKey: 'operations.readiness.status.ready',
+    labelKey: ($) => $.operations.readiness.status.ready,
     className: 'bg-emerald-600 hover:bg-emerald-600 text-white',
   },
   degraded: {
-    labelKey: 'operations.readiness.status.degraded',
+    labelKey: ($) => $.operations.readiness.status.degraded,
     className: 'bg-amber-500 hover:bg-amber-500 text-white',
   },
   not_ready: {
-    labelKey: 'operations.readiness.status.notReady',
+    labelKey: ($) => $.operations.readiness.status.notReady,
     className: 'bg-destructive hover:bg-destructive text-destructive-foreground',
   },
 };

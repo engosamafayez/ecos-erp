@@ -11,6 +11,17 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+import type enLogistics from '@/i18n/locales/en/logistics.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of
+ * key strings can never type-check. The selector is the same expression
+ * the compiler validates at an inline call site, kept in the table.
+ */
+type LogisticsLabel = ($: typeof enLogistics) => string;
+
 import {
   useActivityTimeline,
   useAssignmentHistory,
@@ -72,12 +83,12 @@ function ActivityList({ items }: { items: ActivityItem[] }) {
   );
 }
 
-const SOURCE_FILTERS: Array<{ key: ActivitySource | 'all'; labelKey: string }> = [
-  { key: 'all', labelKey: 'common.all' },
-  { key: 'dispatch_timeline', labelKey: 'operations.activityCenter.source.dispatchTimeline' },
-  { key: 'capacity_audit', labelKey: 'operations.activityCenter.source.capacityAudit' },
-  { key: 'escalation', labelKey: 'operations.activityCenter.filter.escalations' },
-  { key: 'note', labelKey: 'operations.activityCenter.filter.notes' },
+const SOURCE_FILTERS: Array<{ key: ActivitySource | 'all'; labelKey: LogisticsLabel }> = [
+  { key: 'all', labelKey: ($) => $.common.all },
+  { key: 'dispatch_timeline', labelKey: ($) => $.operations.activityCenter.source.dispatchTimeline },
+  { key: 'capacity_audit', labelKey: ($) => $.operations.activityCenter.source.capacityAudit },
+  { key: 'escalation', labelKey: ($) => $.operations.activityCenter.filter.escalations },
+  { key: 'note', labelKey: ($) => $.operations.activityCenter.filter.notes },
 ];
 
 function TimelineTab() {

@@ -1,5 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+
+import type enLogistics from '@/i18n/locales/en/logistics.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of
+ * key strings can never type-check. The selector is the same expression
+ * the compiler validates at an inline call site, kept in the table.
+ */
+type LogisticsLabel = ($: typeof enLogistics) => string;
 import {
   AlertTriangle,
   Archive,
@@ -94,12 +105,12 @@ function formatDate(value: string | null | undefined): string {
   });
 }
 
-const DOCUMENT_TYPES: { value: DriverDocumentType; labelKey: string }[] = [
-  { value: 'license', labelKey: 'drivers.documents.types.license' },
-  { value: 'national_id', labelKey: 'drivers.documents.types.nationalId' },
-  { value: 'employment_contract', labelKey: 'drivers.documents.types.employmentContract' },
-  { value: 'medical_certificate', labelKey: 'drivers.documents.types.medicalCertificate' },
-  { value: 'other', labelKey: 'drivers.documents.types.other' },
+const DOCUMENT_TYPES: { value: DriverDocumentType; labelKey: LogisticsLabel }[] = [
+  { value: 'license', labelKey: ($) => $.drivers.documents.types.license },
+  { value: 'national_id', labelKey: ($) => $.drivers.documents.types.nationalId },
+  { value: 'employment_contract', labelKey: ($) => $.drivers.documents.types.employmentContract },
+  { value: 'medical_certificate', labelKey: ($) => $.drivers.documents.types.medicalCertificate },
+  { value: 'other', labelKey: ($) => $.drivers.documents.types.other },
 ];
 
 const DOCUMENT_TYPE_LABEL_KEY = Object.fromEntries(
