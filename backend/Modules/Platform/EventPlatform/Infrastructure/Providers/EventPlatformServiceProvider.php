@@ -6,6 +6,8 @@ namespace Modules\Platform\EventPlatform\Infrastructure\Providers;
 
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use Modules\Crm\Loyalty\Domain\Events\LoyaltyPointsEarned;
+use Modules\Crm\Loyalty\Domain\Events\LoyaltyPointsRedeemed;
 use Modules\Inventory\DomainEvents\Events\InventoryCountApproved;
 use Modules\Inventory\DomainEvents\Events\InventoryStockAdjusted;
 use Modules\Inventory\DomainEvents\Events\InventoryStockReceived;
@@ -159,6 +161,13 @@ final class EventPlatformServiceProvider extends ServiceProvider
         // The Finance side is ready — inventory.warehouse_transfer has a rule, a
         // mapped role, a complete payload and a catalog entry. Registering the
         // listener is a Phase B work item, not a Finance one.
+
+        // CRM loyalty. Bridged the same way as the inventory events above, so
+        // Finance's crm.loyalty_earn and crm.loyalty_redeem rules — which have
+        // existed with nothing to fire them — finally receive an operational
+        // event (EPIC-CRM-EVENTS-001).
+        Event::listen(LoyaltyPointsEarned::class, fn (LoyaltyPointsEarned $e) => $bus->publish($e));
+        Event::listen(LoyaltyPointsRedeemed::class, fn (LoyaltyPointsRedeemed $e) => $bus->publish($e));
 
         // ManufacturingJobCompletedEvent does not implement DomainEvent — keep legacy listener for now.
         // TODO: Convert ManufacturingJobCompletedEvent to a proper EnterpriseEvent when Manufacturing OS is migrated.

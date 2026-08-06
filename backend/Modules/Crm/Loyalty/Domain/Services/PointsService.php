@@ -7,10 +7,13 @@ namespace Modules\Crm\Loyalty\Domain\Services;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Crm\Loyalty\Domain\Enums\LoyaltyTransactionType;
+use Modules\Crm\Loyalty\Domain\Events\LoyaltyPointsEarned;
+use Modules\Crm\Loyalty\Domain\Events\LoyaltyPointsRedeemed;
 use Modules\Crm\Loyalty\Domain\Exceptions\LoyaltyException;
 use Modules\Crm\Loyalty\Domain\Models\LoyaltyAccount;
 use Modules\Crm\Loyalty\Domain\Models\LoyaltyTier;
 use Modules\Crm\Loyalty\Domain\Models\LoyaltyTransaction;
+use Modules\Crm\Shared\Domain\Events\CrmDomainEvent;
 
 /**
  * The points engine — the append-only writer of the loyalty ledger.
@@ -97,8 +100,77 @@ final class PointsService
 
             $this->recomputeTier($account);
 
+            // ── Enterprise event (EPIC-CRM-EVENTS-001) ──────────────────────
+            // Published from here because record() is the ONLY writer of the
+            // loyalty ledger: earn, earnForSpend, redeem, spendOnReward and
+            // adjust all pass through it. Publishing at each public entry point
+            // instead would be five call sites to keep in step, and the first
+            // one anybody forgot would be a silently missing event.
+            //
+            // Deferred to after commit so a rolled-back transaction publishes
+            // nothing — no consumer may see points that were not kept.
+            $event = $this->eventFor($account, $txn, $signedPoints, $sourceType, $sourceReference, $rewardId, $actorId);
+
+            if ($event !== null) {
+                DB::afterCommit(static fn () => event($event));
+            }
+
             return $txn;
         });
+    }
+
+    /**
+     * The event a ledger movement represents, or null when it represents none.
+     *
+     * Earning and redeeming are different business facts with different
+     * accounting treatment, so they are separate events rather than one movement
+     * event every consumer would have to interpret. A zero-point row is a
+     * bookkeeping artefact and is announced as neither.
+     */
+    private function eventFor(
+        LoyaltyAccount $account,
+        LoyaltyTransaction $txn,
+        int $signedPoints,
+        ?string $sourceType,
+        ?string $sourceReference,
+        ?string $rewardId,
+        ?int $actorId,
+    ): ?CrmDomainEvent {
+        if ($signedPoints === 0) {
+            return null;
+        }
+
+        $companyId = (string) $account->company_id;
+        $accountId = (string) $account->id;
+        $customerId = $account->customer_id !== null ? (string) $account->customer_id : null;
+        $txnId = (string) $txn->id;
+
+        // The ledger signs redemptions negative; the events report the magnitude
+        // so no consumer needs to know that convention.
+        if ($signedPoints > 0) {
+            return new LoyaltyPointsEarned(
+                companyId: $companyId,
+                accountId: $accountId,
+                customerId: $customerId,
+                loyaltyTransactionId: $txnId,
+                points: $signedPoints,
+                sourceType: $sourceType,
+                sourceReference: $sourceReference,
+                actorId: $actorId,
+            );
+        }
+
+        return new LoyaltyPointsRedeemed(
+            companyId: $companyId,
+            accountId: $accountId,
+            customerId: $customerId,
+            loyaltyTransactionId: $txnId,
+            points: abs($signedPoints),
+            sourceType: $sourceType,
+            sourceReference: $sourceReference,
+            rewardId: $rewardId,
+            actorId: $actorId,
+        );
     }
 
     public function recomputeTier(LoyaltyAccount $account): void
