@@ -369,3 +369,27 @@ export function useCreateAlertRule() {
     operationsService.createAlertRule(payload),
   );
 }
+
+// ── Exception maintenance ────────────────────────────────────────────────────
+
+/**
+ * Both sweeps change exception state, so the whole operations prefix is
+ * invalidated: summaries, alert counts and the exception list all move.
+ */
+export function useEscalateOverdueExceptions() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => operationsService.escalateOverdueExceptions(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
+  });
+}
+
+export function useReconcileResolvedConflicts() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => operationsService.reconcileResolvedConflicts(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [KEY] }),
+  });
+}

@@ -379,6 +379,25 @@ export const operationsService = {
     return data.data;
   },
 
+  /**
+   * Housekeeping, both idempotent and both reporting a count rather than a
+   * record: escalate every exception past its escalation deadline, and close
+   * conflict records whose underlying conflict is already resolved.
+   */
+  async escalateOverdueExceptions(): Promise<number> {
+    const { data } = await api.post<{ escalated: number }>(
+      `${BASE}/exceptions/maintenance/escalate-overdue`,
+    );
+    return data.escalated;
+  },
+
+  async reconcileResolvedConflicts(): Promise<number> {
+    const { data } = await api.post<{ closed: number }>(
+      `${BASE}/exceptions/maintenance/reconcile`,
+    );
+    return data.closed;
+  },
+
   async alerts(): Promise<OperationalAlert[]> {
     const { data } = await api.get<{ data: OperationalAlert[] }>(`${BASE}/exceptions/alerts`);
     return data.data;

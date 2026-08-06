@@ -1093,6 +1093,16 @@
       "severity": {
         "info": "Info",
         "warning": "Warning"
+      },
+      "maintenance": {
+        "title": "Maintenance",
+        "note": "Both sweeps are idempotent and report how many records they touched.",
+        "escalateOverdue": "Escalate Overdue",
+        "escalateOverdueDone": "{{count}} exception(s) escalated.",
+        "escalateFailed": "The overdue exceptions could not be escalated.",
+        "reconcile": "Reconcile Resolved Conflicts",
+        "reconcileDone": "{{count}} conflict record(s) closed.",
+        "reconcileFailed": "The conflict records could not be reconciled."
       }
     },
     "readiness": {
@@ -1146,6 +1156,47 @@
         "degraded": "Degraded",
         "notReady": "Not Ready",
         "ready": "Ready"
+      },
+      "modules": {
+        "tab": "Modules",
+        "title": "Module Readiness",
+        "empty": "No module readiness data.",
+        "module": "Module",
+        "status": "Status",
+        "checks": "Checks",
+        "headline": "Headline",
+        "weight": "Weight",
+        "overall": "Overall",
+        "generatedAt": "Generated",
+        "summaries": {
+          "capacity": "Capacity Summary",
+          "dispatch": "Dispatch Summary",
+          "exceptions": "Exceptions Summary",
+          "date": "Date",
+          "slots": "Slots",
+          "avgUtilisation": "Average Utilisation",
+          "nearCapacity": "Near Capacity",
+          "exhausted": "Exhausted",
+          "currentlyHolding": "Currently Holding",
+          "refused": "Refused",
+          "refusalRate": "Refusal Rate",
+          "sessionsActive": "Active Sessions",
+          "sessionsAbandoned": "Abandoned Sessions",
+          "allocationsConfirmed": "Allocations Confirmed",
+          "allocationsFailed": "Allocations Failed",
+          "confirmationRate": "Confirmation Rate",
+          "automaticShare": "Automatic Share",
+          "avgSessionMinutes": "Average Session (min)",
+          "outstanding": "Outstanding",
+          "needsAttention": "Needs Attention",
+          "critical": "Critical",
+          "escalated": "Escalated",
+          "recurring": "Recurring",
+          "overdue": "Overdue for Escalation",
+          "bySource": "By Source",
+          "byCategory": "By Category"
+        },
+        "diagnosticsNote": "The diagnostics centre returns every section in one call. The six per-section endpoints recompute the same validation report and re-emit its event, so they are deliberately not called."
       }
     },
     "badges": {

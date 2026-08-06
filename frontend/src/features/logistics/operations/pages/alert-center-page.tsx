@@ -6,10 +6,12 @@ import { WorkspaceHeader } from '@/components/workspace/header/workspace-header'
 import { WorkspacePage } from '@/components/page/layout/workspace-page';
 import { SmartToolbar } from '@/components/data-grid/smart-toolbar';
 import { useToast } from '@/components/ds/use-toast';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { usePermission } from '@/features/authorization';
 
 import type enLogistics from '@/i18n/locales/en/logistics.json';
 
@@ -26,6 +28,8 @@ import {
   useAcknowledgeException,
   useAlerts,
   useAlertSummary,
+  useEscalateOverdueExceptions,
+  useReconcileResolvedConflicts,
   useExceptions,
 } from '../hooks/use-operations';
 import type { ExceptionSeverity, ExceptionStatus, OperationalAlert } from '../types/operations';
@@ -231,6 +235,95 @@ function HistoryTab({ onOpen }: { onOpen: (id: string) => void }) {
  * prioritisation and history are all views over ops_exceptions. No second alert
  * engine exists.
  */
+/**
+ * Exception maintenance.
+ *
+ * Two idempotent sweeps that the API exposes and nothing else surfaced: escalate
+ * everything past its escalation deadline, and close conflict records whose
+ * conflict is already resolved. Each reports a count, which is shown — a sweep
+ * that silently did nothing is indistinguishable from one that failed.
+ */
+function MaintenancePanel() {
+  const { t } = useTranslation('logistics');
+  const { can } = usePermission();
+  const escalate = useEscalateOverdueExceptions();
+  const reconcile = useReconcileResolvedConflicts();
+
+  const [result, setResult] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Two distinct permissions, deliberately so on the backend: escalating
+  // commits somebody else's time, reconciling only closes stale records. Each
+  // button is gated on its own, and the panel appears if either is granted.
+  const canEscalate = can('operations.exception.escalate');
+  const canReconcile = can('operations.exception.manage');
+
+  if (!canEscalate && !canReconcile) return null;
+
+  async function runEscalate() {
+    setError(null);
+    setResult(null);
+    try {
+      const count = await escalate.mutateAsync();
+      setResult(t(($) => $.operations.alertCenter.maintenance.escalateOverdueDone, { count }));
+    } catch {
+      setError(t(($) => $.operations.alertCenter.maintenance.escalateFailed));
+    }
+  }
+
+  async function runReconcile() {
+    setError(null);
+    setResult(null);
+    try {
+      const count = await reconcile.mutateAsync();
+      setResult(t(($) => $.operations.alertCenter.maintenance.reconcileDone, { count }));
+    } catch {
+      setError(t(($) => $.operations.alertCenter.maintenance.reconcileFailed));
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border bg-card p-4">
+      <h3 className="text-sm font-medium">
+        {t(($) => $.operations.alertCenter.maintenance.title)}
+      </h3>
+      <p className="text-[11px] text-muted-foreground">
+        {t(($) => $.operations.alertCenter.maintenance.note)}
+      </p>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      {result && <p className="text-xs text-muted-foreground">{result}</p>}
+
+      <div className="flex flex-wrap gap-2">
+        {canEscalate && (
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled={escalate.isPending}
+          onClick={() => void runEscalate()}
+        >
+          {t(($) => $.operations.alertCenter.maintenance.escalateOverdue)}
+        </Button>
+        )}
+        {canReconcile && (
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={reconcile.isPending}
+          onClick={() => void runReconcile()}
+        >
+          {t(($) => $.operations.alertCenter.maintenance.reconcile)}
+        </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function AlertCenterPage() {
   const { t } = useTranslation('logistics');
   const { data: summary, refetch, isFetching } = useAlertSummary();
@@ -268,7 +361,9 @@ export function AlertCenterPage() {
           </div>
         }
       >
-        <div className="px-4 pb-6 sm:px-6">
+        <div className="flex flex-col gap-4 px-4 pb-6 sm:px-6">
+          <MaintenancePanel />
+
           <Tabs defaultValue="live" className="w-full">
             <TabsList>
               <TabsTrigger value="live">

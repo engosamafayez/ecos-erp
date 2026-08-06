@@ -1,5 +1,8 @@
 import { api } from '@/lib/axios';
 import type {
+  CapacitySummary,
+  DispatchSummary,
+  ExceptionsSummary,
   Checklist,
   DiagnosticsCenter,
   ExecutiveSummary,
@@ -9,6 +12,7 @@ import type {
   ReadinessDashboard,
   TodaySummary,
   ValidationReport,
+  ReadinessModuleSummary,
 } from '../types/readiness';
 
 const BASE = '/logistics/operations';
@@ -53,6 +57,27 @@ export const readinessService = {
   },
 
   // ── D. Summaries ───────────────────────────────────────────────────────────
+
+  /** The per-module readiness breakdown. */
+  async modules(): Promise<ReadinessModuleSummary> {
+    const { data } = await api.get<{ data: ReadinessModuleSummary }>(`${BASE}/readiness/modules`);
+    return data.data;
+  },
+
+  async capacitySummary(): Promise<CapacitySummary> {
+    const { data } = await api.get<{ data: CapacitySummary }>(`${BASE}/summary/capacity`);
+    return data.data;
+  },
+
+  async dispatchSummary(): Promise<DispatchSummary> {
+    const { data } = await api.get<{ data: DispatchSummary }>(`${BASE}/summary/dispatch`);
+    return data.data;
+  },
+
+  async exceptionsSummary(): Promise<ExceptionsSummary> {
+    const { data } = await api.get<{ data: ExceptionsSummary }>(`${BASE}/summary/exceptions`);
+    return data.data;
+  },
 
   async executive(): Promise<ExecutiveSummary> {
     const { data } = await api.get<{ data: ExecutiveSummary }>(`${BASE}/summary/executive`);

@@ -26,6 +26,10 @@ import {
   useHealthScore,
   useReadinessChecklist,
   useReadinessDashboard,
+  useReadinessModules,
+  useCapacitySummary,
+  useDispatchSummary,
+  useExceptionsSummary,
   useTodaySummary,
 } from '../hooks/use-readiness';
 import type { ChecklistItem, ModuleStatus } from '../types/readiness';
@@ -286,6 +290,9 @@ function SummaryTab() {
   const { data: exec } = useExecutiveSummary();
   const { data: today } = useTodaySummary();
   const { data: fleet } = useFleetSummary();
+  const { data: capacity } = useCapacitySummary();
+  const { data: dispatchSummary } = useDispatchSummary();
+  const { data: exceptions } = useExceptionsSummary();
 
   if (!exec || !today || !fleet) return <Skeleton className="h-96 w-full" />;
 
@@ -349,6 +356,93 @@ function SummaryTab() {
           />
         </div>
       </Panel>
+      <Panel title={t(($) => $.operations.readiness.modules.summaries.capacity)}>
+        <div className="grid gap-4 md:grid-cols-3">
+          <SummaryStat
+            label={t(($) => $.operations.readiness.modules.summaries.slots)}
+            value={capacity?.slots ?? '—'}
+          />
+          <SummaryStat
+            label={t(($) => $.operations.readiness.modules.summaries.avgUtilisation)}
+            value={capacity?.avg_utilisation ?? '—'}
+          />
+          <SummaryStat
+            label={t(($) => $.operations.readiness.modules.summaries.exhausted)}
+            value={capacity?.exhausted ?? '—'}
+          />
+          <SummaryStat
+            label={t(($) => $.operations.readiness.modules.summaries.currentlyHolding)}
+            value={capacity?.currently_holding ?? '—'}
+          />
+          <SummaryStat
+            label={t(($) => $.operations.readiness.modules.summaries.refused)}
+            value={capacity?.refused ?? '—'}
+          />
+          <SummaryStat
+            label={t(($) => $.operations.readiness.modules.summaries.refusalRate)}
+            value={capacity?.refusal_rate ?? '—'}
+          />
+        </div>
+      </Panel>
+
+      <Panel title={t(($) => $.operations.readiness.modules.summaries.dispatch)}>
+        <div className="grid gap-4 md:grid-cols-3">
+          <SummaryStat
+            label={t(($) => $.operations.readiness.modules.summaries.sessionsActive)}
+            value={dispatchSummary?.sessions_active ?? '—'}
+          />
+          <SummaryStat
+            label={t(($) => $.operations.readiness.modules.summaries.allocationsConfirmed)}
+            value={dispatchSummary?.allocations_confirmed ?? '—'}
+          />
+          <SummaryStat
+            label={t(($) => $.operations.readiness.modules.summaries.allocationsFailed)}
+            value={dispatchSummary?.allocations_failed ?? '—'}
+          />
+          <SummaryStat
+            label={t(($) => $.operations.readiness.modules.summaries.confirmationRate)}
+            value={dispatchSummary?.confirmation_rate ?? '—'}
+          />
+          <SummaryStat
+            label={t(($) => $.operations.readiness.modules.summaries.automaticShare)}
+            value={dispatchSummary?.automatic_share ?? '—'}
+          />
+          <SummaryStat
+            label={t(($) => $.operations.readiness.modules.summaries.avgSessionMinutes)}
+            value={dispatchSummary?.avg_session_minutes ?? '—'}
+          />
+        </div>
+      </Panel>
+
+      <Panel title={t(($) => $.operations.readiness.modules.summaries.exceptions)}>
+        <div className="grid gap-4 md:grid-cols-3">
+          <SummaryStat
+            label={t(($) => $.operations.readiness.modules.summaries.outstanding)}
+            value={exceptions?.outstanding ?? '—'}
+          />
+          <SummaryStat
+            label={t(($) => $.operations.readiness.modules.summaries.needsAttention)}
+            value={exceptions?.needs_attention ?? '—'}
+          />
+          <SummaryStat
+            label={t(($) => $.operations.readiness.modules.summaries.critical)}
+            value={exceptions?.critical ?? '—'}
+          />
+          <SummaryStat
+            label={t(($) => $.operations.readiness.modules.summaries.escalated)}
+            value={exceptions?.escalated ?? '—'}
+          />
+          <SummaryStat
+            label={t(($) => $.operations.readiness.modules.summaries.recurring)}
+            value={exceptions?.recurring ?? '—'}
+          />
+          <SummaryStat
+            label={t(($) => $.operations.readiness.modules.summaries.overdue)}
+            value={exceptions?.overdue_for_escalation ?? '—'}
+          />
+        </div>
+      </Panel>
+
     </div>
   );
 }
@@ -362,6 +456,67 @@ function SummaryTab() {
  * executive digest. Every number belongs to Fleet, Network, Dispatch or
  * Operations — reported and interpreted here, never recomputed.
  */
+/**
+ * Per-module readiness.
+ *
+ * The diagnostics centre reports how many modules are ready, degraded or not
+ * ready; this is the only endpoint that says which ones, and why.
+ */
+function ModulesTab() {
+  const { t } = useTranslation('logistics');
+  const { data, isLoading } = useReadinessModules();
+
+  if (isLoading) return <Skeleton className="h-64 w-full" />;
+  if (!data || data.modules.length === 0) {
+    return (
+      <p className="py-6 text-sm text-muted-foreground">
+        {t(($) => $.operations.readiness.modules.empty)}
+      </p>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="overflow-x-auto rounded-lg border bg-card">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b bg-muted/60 text-xs uppercase tracking-wide text-muted-foreground">
+              <th className="px-3 py-2 text-start font-medium">
+                {t(($) => $.operations.readiness.modules.module)}
+              </th>
+              <th className="px-3 py-2 text-start font-medium">
+                {t(($) => $.operations.readiness.modules.status)}
+              </th>
+              <th className="px-3 py-2 text-start font-medium">
+                {t(($) => $.operations.readiness.modules.checks)}
+              </th>
+              <th className="px-3 py-2 text-start font-medium">
+                {t(($) => $.operations.readiness.modules.headline)}
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y">
+            {data.modules.map((row) => (
+              <tr key={row.module}>
+                <td className="px-3 py-2 font-medium">{row.label}</td>
+                <td className="px-3 py-2">{row.status}</td>
+                <td className="px-3 py-2 tabular-nums">
+                  {row.passed_checks} / {row.total_checks}
+                </td>
+                <td className="px-3 py-2 text-muted-foreground">{row.headline}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <p className="text-[11px] text-muted-foreground">
+        {t(($) => $.operations.readiness.modules.diagnosticsNote)}
+      </p>
+    </div>
+  );
+}
+
 export function EnterpriseReadinessPage() {
   const { t } = useTranslation('logistics');
   const { data: score, refetch, isFetching } = useHealthScore();
@@ -416,6 +571,9 @@ export function EnterpriseReadinessPage() {
               <TabsTrigger value="readiness">Readiness</TabsTrigger>
               <TabsTrigger value="diagnostics">Diagnostics</TabsTrigger>
               <TabsTrigger value="summary">Summary</TabsTrigger>
+              <TabsTrigger value="modules">
+                {t(($) => $.operations.readiness.modules.tab)}
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="readiness" className="pt-4">
@@ -426,6 +584,9 @@ export function EnterpriseReadinessPage() {
             </TabsContent>
             <TabsContent value="summary" className="pt-4">
               <SummaryTab />
+            </TabsContent>
+            <TabsContent value="modules" className="pt-4">
+              <ModulesTab />
             </TabsContent>
           </Tabs>
         </div>

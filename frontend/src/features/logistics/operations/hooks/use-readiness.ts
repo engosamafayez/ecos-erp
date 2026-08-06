@@ -71,3 +71,44 @@ export function useFleetSummary() {
     staleTime: 30_000,
   });
 }
+
+/**
+ * The six granular diagnostics endpoints are deliberately not called.
+ *
+ * `GET /diagnostics` returns all six sections and computes the validation
+ * report once; the standalone system/dependency endpoints each recompute it,
+ * and the backend notes that doing so fires ReadinessValidated a second time.
+ * Six extra calls would mean duplicate domain events on a read-only screen for
+ * data the centre already returns.
+ */
+export function useReadinessModules() {
+  return useQuery({
+    queryKey: [KEY, 'modules'],
+    queryFn: () => readinessService.modules(),
+    refetchInterval: 60_000,
+  });
+}
+
+export function useCapacitySummary() {
+  return useQuery({
+    queryKey: [KEY, 'summary', 'capacity'],
+    queryFn: () => readinessService.capacitySummary(),
+    refetchInterval: 60_000,
+  });
+}
+
+export function useDispatchSummary() {
+  return useQuery({
+    queryKey: [KEY, 'summary', 'dispatch'],
+    queryFn: () => readinessService.dispatchSummary(),
+    refetchInterval: 60_000,
+  });
+}
+
+export function useExceptionsSummary() {
+  return useQuery({
+    queryKey: [KEY, 'summary', 'exceptions'],
+    queryFn: () => readinessService.exceptionsSummary(),
+    refetchInterval: 60_000,
+  });
+}

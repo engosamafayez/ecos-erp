@@ -161,3 +161,58 @@ export interface FleetSummary {
   };
   fieldable_units: number;
 }
+
+/**
+ * Per-module readiness, one row per module with its check tally.
+ *
+ * This shares the same validation report the diagnostics centre uses. It is a
+ * separate read because it is the only endpoint that returns the per-module
+ * breakdown; the centre returns the counts only.
+ */
+export type ReadinessModuleRow = {
+  module: string;
+  label: string;
+  status: string;
+  passed_checks: number;
+  total_checks: number;
+  headline: string;
+  weight: number;
+};
+
+export type ReadinessModuleSummary = {
+  generated_at: string;
+  overall_status: string;
+  modules: ReadinessModuleRow[];
+};
+
+export type CapacitySummary = {
+  date: string;
+  slots: number;
+  avg_utilisation: number;
+  near_capacity: number;
+  exhausted: number;
+  currently_holding: number;
+  refused: number;
+  refusal_rate: number;
+};
+
+export type DispatchSummary = {
+  sessions_active: number;
+  sessions_abandoned: number;
+  allocations_confirmed: number;
+  allocations_failed: number;
+  confirmation_rate: number;
+  automatic_share: number;
+  avg_session_minutes: number;
+};
+
+export type ExceptionsSummary = {
+  outstanding: number;
+  needs_attention: number;
+  critical: number;
+  escalated: number;
+  recurring: number;
+  overdue_for_escalation: number;
+  by_source: Record<string, number>;
+  by_category: Record<string, number>;
+};

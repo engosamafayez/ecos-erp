@@ -1093,6 +1093,16 @@
       "severity": {
         "info": "معلومة",
         "warning": "تحذير"
+      },
+      "maintenance": {
+        "title": "الصيانة",
+        "note": "كلا العمليتين متكررتا التنفيذ وتُبلّغان عدد السجلات التي تمت معالجتها.",
+        "escalateOverdue": "تصعيد المتأخر",
+        "escalateOverdueDone": "تم تصعيد {{count}} استثناء.",
+        "escalateFailed": "تعذّر تصعيد الاستثناءات المتأخرة.",
+        "reconcile": "مطابقة التعارضات المُعالَجة",
+        "reconcileDone": "تم إغلاق {{count}} سجل تعارض.",
+        "reconcileFailed": "تعذّرت مطابقة سجلات التعارض."
       }
     },
     "readiness": {
@@ -1146,6 +1156,47 @@
         "degraded": "متدهورة",
         "notReady": "غير جاهزة",
         "ready": "جاهزة"
+      },
+      "modules": {
+        "tab": "الوحدات",
+        "title": "جاهزية الوحدات",
+        "empty": "لا توجد بيانات جاهزية للوحدات.",
+        "module": "الوحدة",
+        "status": "الحالة",
+        "checks": "الفحوص",
+        "headline": "العنوان",
+        "weight": "الوزن",
+        "overall": "الإجمالي",
+        "generatedAt": "وقت التوليد",
+        "summaries": {
+          "capacity": "ملخص السعة",
+          "dispatch": "ملخص الإرسال",
+          "exceptions": "ملخص الاستثناءات",
+          "date": "التاريخ",
+          "slots": "الفترات",
+          "avgUtilisation": "متوسط الاستخدام",
+          "nearCapacity": "قرب الامتلاء",
+          "exhausted": "مستنفدة",
+          "currentlyHolding": "المحجوز حاليًا",
+          "refused": "مرفوض",
+          "refusalRate": "معدل الرفض",
+          "sessionsActive": "جلسات نشطة",
+          "sessionsAbandoned": "جلسات متروكة",
+          "allocationsConfirmed": "تخصيصات مؤكّدة",
+          "allocationsFailed": "تخصيصات فاشلة",
+          "confirmationRate": "معدل التأكيد",
+          "automaticShare": "الحصة التلقائية",
+          "avgSessionMinutes": "متوسط الجلسة (دقيقة)",
+          "outstanding": "معلّقة",
+          "needsAttention": "تحتاج انتباهًا",
+          "critical": "حرجة",
+          "escalated": "مُصعّدة",
+          "recurring": "متكررة",
+          "overdue": "متأخرة عن التصعيد",
+          "bySource": "حسب المصدر",
+          "byCategory": "حسب الفئة"
+        },
+        "diagnosticsNote": "يعيد مركز التشخيص كل الأقسام في طلب واحد، وتعيد المسارات الستة حساب نفس التقرير وتُطلق حدثه مرة أخرى، لذا لا تُستدعى عمدًا."
       }
     },
     "badges": {
