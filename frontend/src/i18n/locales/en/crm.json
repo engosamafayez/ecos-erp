@@ -112,5 +112,68 @@
       "email": "Enter a valid email address.",
       "tooLong": "This value is too long."
     }
+  },
+  "drawer": {
+    "detailsTitle": "Customer",
+    "tabs": {
+      "overview": "Overview",
+      "contact": "Contact",
+      "addresses": "Addresses",
+      "notes": "Notes",
+      "documents": "Documents",
+      "timeline": "Timeline",
+      "activity": "Activity"
+    },
+    "overview": {
+      "code": "Code",
+      "type": "Type",
+      "status": "Status",
+      "group": "Group",
+      "language": "Language",
+      "contactMethod": "Preferred contact",
+      "tags": "Tags",
+      "noTags": "No tags",
+      "noGroup": "No group",
+      "preferences": "Preferences",
+      "noPreferences": "No preferences recorded"
+    },
+    "contact": {
+      "phones": "Phones",
+      "emails": "Emails",
+      "primary": "Primary",
+      "verified": "Verified",
+      "noPhones": "No phone numbers recorded",
+      "noEmails": "No email addresses recorded"
+    },
+    "addresses": {
+      "default": "Default",
+      "none": "No addresses recorded",
+      "separator": ", "
+    },
+    "notes": {
+      "pinned": "Pinned",
+      "none": "No notes yet"
+    },
+    "documents": {
+      "none": "No documents uploaded",
+      "size": "{{size}} KB"
+    },
+    "timeline": {
+      "none": "Nothing on the timeline yet",
+      "loading": "Loading timeline…"
+    },
+    "activity": {
+      "none": "No activity recorded",
+      "loading": "Loading activity…"
+    },
+    "unavailable": {
+      "title": "Not available yet",
+      "orders": "Customer orders have no CRM endpoint. This tab appears once one exists.",
+      "loyalty": "Loyalty is addressed by account, and no customer-to-account lookup is exposed.",
+      "analytics": "Customer intelligence is exposed separately and is not wired into this drawer yet.",
+      "permissions": "Record-level permissions are not modelled for customers."
+    },
+    "edit": "Edit",
+    "close": "Close"
   }
 }

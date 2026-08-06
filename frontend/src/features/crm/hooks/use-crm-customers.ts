@@ -2,6 +2,10 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 
 import { crmCustomersService } from '@/features/crm/services/crm-customers-service';
 import type { CrmCustomersQuery } from '@/features/crm/types/crm-customer';
+import type {
+  CrmCustomerCreateValues,
+  CrmCustomerUpdateValues,
+} from '@/features/crm/components/crm-customer-form-schema';
 import { useOrganizationContext } from '@/features/organization/context/organization-context';
 
 export const CRM_CUSTOMERS_KEY = 'crm-customers';
@@ -53,6 +57,67 @@ export function useArchiveCrmCustomer() {
 
   return useMutation({
     mutationFn: (id: string) => crmCustomersService.archive(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ['company', companyId, CRM_CUSTOMERS_KEY],
+      });
+    },
+  });
+}
+
+export function useCrmCustomerProfileQuery(id: string | null) {
+  const companyId = useCompanyScope();
+
+  return useQuery({
+    queryKey: ['company', companyId, CRM_CUSTOMERS_KEY, id, 'profile'],
+    queryFn: () => crmCustomersService.profile(id as string),
+    enabled: Boolean(id),
+  });
+}
+
+export function useCrmCustomerTimelineQuery(id: string | null, enabled: boolean) {
+  const companyId = useCompanyScope();
+
+  return useQuery({
+    queryKey: ['company', companyId, CRM_CUSTOMERS_KEY, id, 'timeline'],
+    queryFn: () => crmCustomersService.timeline(id as string),
+    // Only fetched once its tab is opened: the drawer would otherwise issue
+    // every tab's request on open, for tabs the user may never look at.
+    enabled: Boolean(id) && enabled,
+  });
+}
+
+export function useCrmCustomerActivitiesQuery(id: string | null, enabled: boolean) {
+  const companyId = useCompanyScope();
+
+  return useQuery({
+    queryKey: ['company', companyId, CRM_CUSTOMERS_KEY, id, 'activities'],
+    queryFn: () => crmCustomersService.activities(id as string),
+    enabled: Boolean(id) && enabled,
+  });
+}
+
+export function useCreateCrmCustomer() {
+  const companyId = useCompanyScope();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (values: CrmCustomerCreateValues) => crmCustomersService.create(values),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ['company', companyId, CRM_CUSTOMERS_KEY],
+      });
+    },
+  });
+}
+
+export function useUpdateCrmCustomer() {
+  const companyId = useCompanyScope();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, values }: { id: string; values: CrmCustomerUpdateValues }) =>
+      crmCustomersService.update(id, values),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: ['company', companyId, CRM_CUSTOMERS_KEY],

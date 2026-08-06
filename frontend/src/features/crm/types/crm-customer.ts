@@ -62,3 +62,81 @@ export type CrmCustomerGroup = {
   name: string;
   code?: string | null;
 };
+
+// ── Customer 360 profile ─────────────────────────────────────────────────────
+// Mirrors Customer360Service::profile(). Phones, emails, addresses, notes,
+// documents and tags have POST endpoints but NO list endpoint of their own —
+// this profile call is the only way to read them.
+
+export type CrmPhone = {
+  id: string;
+  label: string | null;
+  phone: string;
+  is_primary: boolean;
+  is_verified: boolean;
+};
+
+export type CrmEmail = {
+  id: string;
+  label: string | null;
+  email: string;
+  is_primary: boolean;
+  is_verified: boolean;
+};
+
+export type CrmAddress = {
+  id: string;
+  label: string | null;
+  governorate: string | null;
+  city: string | null;
+  area: string | null;
+  address_line: string | null;
+  is_default: boolean;
+};
+
+export type CrmTag = { id: string; name: string; color: string | null };
+
+export type CrmNote = {
+  id: string;
+  body: string;
+  is_pinned: boolean;
+  author_id: number | null;
+  created_at: string | null;
+};
+
+export type CrmDocument = {
+  id: string;
+  name: string;
+  doc_type: string | null;
+  mime_type: string | null;
+  size_bytes: number | null;
+};
+
+export type CrmCustomerProfile = {
+  identity: CrmCustomer;
+  group: { id: string; name: string } | null;
+  phones: CrmPhone[];
+  emails: CrmEmail[];
+  addresses: CrmAddress[];
+  tags: CrmTag[];
+  notes: CrmNote[];
+  documents: CrmDocument[];
+  preferences: Record<string, string>;
+};
+
+// ── Timeline ─────────────────────────────────────────────────────────────────
+// Mirrors TimelineEntry::toArray(). Entries carry no id of their own, so the
+// list is keyed by source + type + timestamp.
+
+export type CrmTimelineEntry = {
+  source: string;
+  type: string;
+  title: string;
+  channel: string | null;
+  direction: string | null;
+  body: string | null;
+  occurred_at: string;
+  ref: { type: string; id: string | null } | null;
+  actor_id: number | null;
+  meta: Record<string, unknown>;
+};

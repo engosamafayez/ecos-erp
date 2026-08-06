@@ -9,6 +9,8 @@ import { StatusBadge } from '@/components/crud/status-badge';
 import type { StatusVariant } from '@/components/crud/types';
 import { Badge } from '@/components/ui/badge';
 import { usePermission } from '@/features/authorization';
+import { CrmCustomerDrawer } from '@/features/crm/components/crm-customer-drawer';
+import { CrmCustomerFormDrawer } from '@/features/crm/components/crm-customer-form-drawer';
 import { useCrmCustomersQuery } from '@/features/crm/hooks/use-crm-customers';
 import type {
   CrmCustomer,
@@ -76,6 +78,24 @@ export function CrmCustomersWorkspacePage() {
   const [status, setStatus] = useState<CrmCustomerStatus | 'all'>('all');
   const [type, setType] = useState<CrmCustomerType | 'all'>('all');
   const [page, setPage] = useState(1);
+
+  // The drawer is the module's interaction surface: the grid selects, the
+  // drawer does. Details and the create/edit form are separate panels so that
+  // opening a form never discards the record you were reading.
+  const [detailsId, setDetailsId] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<CrmCustomer | undefined>(undefined);
+
+  function openCreate() {
+    setEditing(undefined);
+    setFormOpen(true);
+  }
+
+  function openEdit(customer: CrmCustomer) {
+    setDetailsId(null);
+    setEditing(customer);
+    setFormOpen(true);
+  }
 
   const params: CrmCustomersQuery = useMemo(
     () => ({
@@ -181,7 +201,7 @@ export function CrmCustomersWorkspacePage() {
           can('crm.customers.create')
             ? {
                 label: t(($) => $.toolbar.newCustomer),
-                onClick: () => undefined,
+                onClick: openCreate,
                 icon: Plus,
               }
             : undefined
@@ -242,6 +262,7 @@ export function CrmCustomersWorkspacePage() {
         data={rows}
         columns={columns}
         rowId={(row) => row.id}
+        onRowClick={(row) => setDetailsId(row.id)}
         loading={isLoading}
         error={isError}
         pagination={
@@ -271,6 +292,20 @@ export function CrmCustomersWorkspacePage() {
             <p className="mt-1 text-sm text-muted-foreground">{t(($) => $.error.body)}</p>
           </div>
         }
+      />
+
+      <CrmCustomerDrawer
+        customerId={detailsId}
+        open={detailsId !== null}
+        onOpenChange={(next) => !next && setDetailsId(null)}
+        onEdit={(profile) => openEdit(profile.identity)}
+      />
+
+      <CrmCustomerFormDrawer
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        customer={editing}
+        onSaved={() => void refetch()}
       />
     </div>
   );

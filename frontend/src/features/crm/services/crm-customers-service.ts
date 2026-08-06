@@ -2,10 +2,16 @@ import { api } from '@/lib/axios';
 import type {
   CrmCustomer,
   CrmCustomerGroup,
+  CrmCustomerProfile,
   CrmCustomersMeta,
   CrmCustomersQuery,
   CrmCustomersResult,
+  CrmTimelineEntry,
 } from '@/features/crm/types/crm-customer';
+import type {
+  CrmCustomerCreateValues,
+  CrmCustomerUpdateValues,
+} from '@/features/crm/components/crm-customer-form-schema';
 import type { ApiResponse } from '@/types';
 
 /**
@@ -33,6 +39,38 @@ export const crmCustomersService = {
 
   async groups(): Promise<CrmCustomerGroup[]> {
     const { data } = await api.get<ApiResponse<CrmCustomerGroup[]>>('/crm/customers/groups');
+    return data.data;
+  },
+
+  async create(payload: CrmCustomerCreateValues): Promise<CrmCustomer> {
+    const { data } = await api.post<ApiResponse<CrmCustomer>>('/crm/customers', payload);
+    return data.data;
+  },
+
+  /** PATCH accepts profile fields only — see the form schema for why. */
+  async update(id: string, payload: CrmCustomerUpdateValues): Promise<CrmCustomer> {
+    const { data } = await api.patch<ApiResponse<CrmCustomer>>(`/crm/customers/${id}`, payload);
+    return data.data;
+  },
+
+  /**
+   * The Customer 360 payload. Phones, emails, addresses, tags, notes and
+   * documents have no list endpoints of their own — this is the only read.
+   */
+  async profile(id: string): Promise<CrmCustomerProfile> {
+    const { data } = await api.get<ApiResponse<CrmCustomerProfile>>(`/crm/customers/${id}/profile`);
+    return data.data;
+  },
+
+  async timeline(id: string): Promise<CrmTimelineEntry[]> {
+    const { data } = await api.get<ApiResponse<CrmTimelineEntry[]>>(`/crm/customers/${id}/timeline`);
+    return data.data;
+  },
+
+  async activities(id: string): Promise<CrmTimelineEntry[]> {
+    const { data } = await api.get<ApiResponse<CrmTimelineEntry[]>>(
+      `/crm/customers/${id}/activities`,
+    );
     return data.data;
   },
 
