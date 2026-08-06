@@ -34,26 +34,37 @@ import {
 import type { ExceptionResolution, NoteType } from '../types/operations';
 import { ExceptionStatusBadge, SeverityIcon, SourceBadge } from './operations-badges';
 
+import type enLogistics from '@/i18n/locales/en/logistics.json';
+
+/**
+ * Wording held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of key
+ * strings can never type-check. Indexing this table by a runtime note type is
+ * still fine — the lookup yields a selector, which is what t() expects.
+ */
+type LogisticsLabel = ($: typeof enLogistics) => string;
+
 /** Wording for each note type; the stored value itself never changes. */
-const NOTE_TYPE_KEYS: Record<NoteType, string> = {
-  note: 'operations.exceptionDrawer.notes.type.note',
-  action_taken: 'operations.exceptionDrawer.notes.type.actionTaken',
-  handover: 'operations.exceptionDrawer.notes.type.handover',
+const NOTE_TYPE_KEYS: Record<NoteType, LogisticsLabel> = {
+  note: ($) => $.operations.exceptionDrawer.notes.type.note,
+  action_taken: ($) => $.operations.exceptionDrawer.notes.type.actionTaken,
+  handover: ($) => $.operations.exceptionDrawer.notes.type.handover,
 };
 
 /** Wording for each resolution; the stored value itself never changes. */
-const RESOLUTION_KEYS: Record<ExceptionResolution, string> = {
-  fixed: 'operations.exceptionDrawer.resolutions.fixed',
-  handled_elsewhere: 'operations.exceptionDrawer.resolutions.handledElsewhere',
-  not_a_problem: 'operations.exceptionDrawer.resolutions.notAProblem',
-  accepted: 'operations.exceptionDrawer.resolutions.accepted',
+const RESOLUTION_KEYS: Record<ExceptionResolution, LogisticsLabel> = {
+  fixed: ($) => $.operations.exceptionDrawer.resolutions.fixed,
+  handled_elsewhere: ($) => $.operations.exceptionDrawer.resolutions.handledElsewhere,
+  not_a_problem: ($) => $.operations.exceptionDrawer.resolutions.notAProblem,
+  accepted: ($) => $.operations.exceptionDrawer.resolutions.accepted,
 };
 
 /** The API sends the resolution as a plain string; unknown values fall back. */
-function resolutionKey(value: string | null): string {
+function resolutionKey(value: string | null): LogisticsLabel {
   return value !== null && value in RESOLUTION_KEYS
     ? RESOLUTION_KEYS[value as ExceptionResolution]
-    : 'operations.exceptionDrawer.resolutions.resolved';
+    : ($) => $.operations.exceptionDrawer.resolutions.resolved;
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {

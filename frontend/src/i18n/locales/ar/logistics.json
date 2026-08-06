@@ -918,7 +918,12 @@
         },
         "add": "إضافة ملاحظة",
         "pinsToTop": "يُثبَّت في الأعلى",
-        "empty": "لا توجد ملاحظات"
+        "empty": "لا توجد ملاحظات",
+        "type": {
+          "note": "ملاحظة",
+          "actionTaken": "إجراء متخذ",
+          "handover": "تسليم"
+        }
       },
       "escalations": {
         "reasonPlaceholder": "سبب التصعيد",
@@ -964,7 +969,14 @@
       "closeException": "إغلاق الاستثناء",
       "suppress": "كتم",
       "closedAsBy": "أُغلق بواسطة",
-      "closedAs": "أُغلق باعتباره"
+      "closedAs": "أُغلق باعتباره",
+      "resolutions": {
+        "fixed": "تم الإصلاح",
+        "handledElsewhere": "عولج في مكان آخر",
+        "notAProblem": "ليست مشكلة",
+        "accepted": "مقبولة",
+        "resolved": "محلولة"
+      }
     },
     "exceptions": {
       "alertsLive": "التنبيهات الحية",

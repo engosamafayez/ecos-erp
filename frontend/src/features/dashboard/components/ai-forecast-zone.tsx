@@ -1,15 +1,36 @@
 import { Brain, FlaskConical, TrendingUp, Zap } from 'lucide-react';
+import type { ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
+import type enDashboard from '@/i18n/locales/en/dashboard.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of key
+ * strings can never type-check. The selector is the same expression the
+ * compiler validates at an inline call site, kept in the table. The array is
+ * annotated rather than `as const` so each selector gets its contextual type —
+ * a const assertion cannot wrap a function.
+ */
+type DashboardLabel = ($: typeof enDashboard) => string;
+
+type PlannedFeature = {
+  /** Stable identity for React reconciliation — the label is a function now. */
+  id: string;
+  icon: ComponentType<{ className?: string }>;
+  labelKey: DashboardLabel;
+  descKey: DashboardLabel;
+};
 
 // ── Planned features ───────────────────────────────────────────────────────
 
-const FEATURES = [
-  { icon: TrendingUp,   labelKey: 'aiForecast.features.demandForecast'      as const, descKey: 'aiForecast.features.demandForecastDesc'      as const },
-  { icon: Zap,          labelKey: 'aiForecast.features.purchaseSuggestions' as const, descKey: 'aiForecast.features.purchaseSuggestionsDesc' as const },
-  { icon: Brain,        labelKey: 'aiForecast.features.inventoryOpt'        as const, descKey: 'aiForecast.features.inventoryOptDesc'        as const },
-  { icon: FlaskConical, labelKey: 'aiForecast.features.campaignRec'         as const, descKey: 'aiForecast.features.campaignRecDesc'         as const },
-  { icon: TrendingUp,   labelKey: 'aiForecast.features.cashFlow'            as const, descKey: 'aiForecast.features.cashFlowDesc'            as const },
+const FEATURES: PlannedFeature[] = [
+  { id: 'demand-forecast', icon: TrendingUp,   labelKey: ($) => $.aiForecast.features.demandForecast, descKey: ($) => $.aiForecast.features.demandForecastDesc },
+  { id: 'purchase-suggestions', icon: Zap,          labelKey: ($) => $.aiForecast.features.purchaseSuggestions, descKey: ($) => $.aiForecast.features.purchaseSuggestionsDesc },
+  { id: 'inventory-optimisation', icon: Brain,        labelKey: ($) => $.aiForecast.features.inventoryOpt, descKey: ($) => $.aiForecast.features.inventoryOptDesc },
+  { id: 'campaign-recommendations', icon: FlaskConical, labelKey: ($) => $.aiForecast.features.campaignRec, descKey: ($) => $.aiForecast.features.campaignRecDesc },
+  { id: 'cash-flow', icon: TrendingUp,   labelKey: ($) => $.aiForecast.features.cashFlow, descKey: ($) => $.aiForecast.features.cashFlowDesc },
 ];
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -41,7 +62,7 @@ export function AiForecastZone() {
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5">
         {FEATURES.map((f) => (
           <div
-            key={f.labelKey}
+            key={f.id}
             className="flex items-start gap-2.5 rounded-lg border border-dashed border-violet-500/10 bg-background/40 p-3"
           >
             <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded bg-violet-500/10">

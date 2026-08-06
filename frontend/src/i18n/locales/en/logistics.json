@@ -918,7 +918,12 @@
         },
         "add": "Add Note",
         "pinsToTop": "Pins to top",
-        "empty": "No notes"
+        "empty": "No notes",
+        "type": {
+          "note": "Note",
+          "actionTaken": "Action Taken",
+          "handover": "Handover"
+        }
       },
       "escalations": {
         "reasonPlaceholder": "Reason for escalation",
@@ -964,7 +969,14 @@
       "closeException": "Close Exception",
       "suppress": "Suppress",
       "closedAsBy": "Closed by",
-      "closedAs": "Closed as"
+      "closedAs": "Closed as",
+      "resolutions": {
+        "fixed": "Fixed",
+        "handledElsewhere": "Handled Elsewhere",
+        "notAProblem": "Not a Problem",
+        "accepted": "Accepted",
+        "resolved": "Resolved"
+      }
     },
     "exceptions": {
       "alertsLive": "Live Alerts",
