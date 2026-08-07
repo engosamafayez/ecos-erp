@@ -13,6 +13,12 @@
   },
   "nav": {
     "items": {
+      "finance-executive": "لوحة التحكم التنفيذية",
+      "finance-coa": "دليل الحسابات",
+      "finance-journals": "قيود اليومية",
+      "finance-statements": "القوائم المالية",
+      "finance-ar": "الذمم المدينة",
+      "finance-ap": "الذمم الدائنة",
       "orders": "الطلبات",
       "fulfillments": "الشحنات",
       "customers": "العملاء",

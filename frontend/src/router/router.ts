@@ -12,6 +12,15 @@ import { CategoriesPage } from '@/features/categories/pages/categories-page';
 import { ChannelsPage } from '@/features/channels/pages/channels-page';
 import { CompaniesPage } from '@/features/companies/pages/companies-page';
 import { DashboardPage } from '@/features/dashboard/pages/dashboard-page';
+// Executive Platform (EPIC-EXECUTIVE-UI-001) — aliased; Marketing also exports ExecutiveDashboardPage.
+import { ExecutiveDashboardPage as ExecutivePlatformPage } from '@/features/executive/pages/executive-dashboard-page';
+// Finance workspace (EPIC-FINANCE-UI-001)
+import { FinanceExecutivePage } from '@/features/finance/pages/finance-executive-page';
+import { ChartOfAccountsPage } from '@/features/finance/pages/chart-of-accounts-page';
+import { JournalsPage } from '@/features/finance/pages/journals-page';
+import { FinancialStatementsPage } from '@/features/finance/pages/financial-statements-page';
+import { AccountsReceivablePage } from '@/features/finance/pages/accounts-receivable-page';
+import { AccountsPayablePage } from '@/features/finance/pages/accounts-payable-page';
 import { HomePage } from '@/features/home/pages/home-page';
 import { PackagingMaterialsPage } from '@/features/inventory/pages/packaging-materials-page';
 import { ConsumablesPage } from '@/features/inventory/pages/consumables-page';
@@ -194,7 +203,6 @@ import { ROUTES } from '@/router/routes';
 // link competing with it in the same menu (UAT BUG-04). It redirects instead.
 const moduleRoutes = [
   ROUTES.sales,
-  ROUTES.accounting,
   ROUTES.crm,
   ROUTES.reports,
   ROUTES.users,
@@ -222,6 +230,15 @@ export const router = createBrowserRouter(
           Component: AppShell,
           children: [
             { path: ROUTES.dashboard, Component: DashboardPage },
+            // Executive Platform (EPIC-EXECUTIVE-UI-001)
+            { path: ROUTES.executiveDashboard, Component: ExecutivePlatformPage },
+            // Finance workspace (EPIC-FINANCE-UI-001). /accounting = Executive Finance.
+            { path: ROUTES.accounting, Component: FinanceExecutivePage },
+            { path: ROUTES.financeChartOfAccounts, Component: ChartOfAccountsPage },
+            { path: ROUTES.financeJournals, Component: JournalsPage },
+            { path: ROUTES.financeStatements, Component: FinancialStatementsPage },
+            { path: ROUTES.financeReceivables, Component: AccountsReceivablePage },
+            { path: ROUTES.financePayables, Component: AccountsPayablePage },
             // Organization workspace + sub-pages
             { path: ROUTES.organization, Component: OrganizationWorkspace },
             { path: ROUTES.orgSearch, Component: OrgSearchPage },
