@@ -97,13 +97,13 @@ export type ModuleId =
 /**
  * A regular navigation link inside a module sidebar.
  *
- * `label` is deliberately absent: display text comes from `common.nav.items`,
- * keyed by `key`. It survives as an optional field only so that a consumer
- * outside this repository can still pass one; nothing here reads it.
+ * There is no label field, optional or otherwise. Display text comes from
+ * `common.nav.items`, keyed by `key`, and `NavItemKey` is derived from that
+ * namespace — so a key without a translation is a compile error, not a label
+ * quietly falling back to English.
  */
 export type ModuleNavLink = {
   key: NavItemKey;
-  label?: string;
   path: string;
   icon: LucideIcon;
   isSection?: false;
@@ -112,7 +112,6 @@ export type ModuleNavLink = {
 /** A section header divider (not a clickable link). */
 export type ModuleNavSection = {
   key: NavItemKey;
-  label?: string;
   isSection: true;
 };
 
@@ -121,13 +120,12 @@ export type ModuleNavItem = ModuleNavLink | ModuleNavSection;
 /**
  * A module in the rail.
  *
- * Display text comes from `common.nav.groups`, keyed by `id`. `label` and
- * `railLabel` remain optional for backward compatibility and are not read.
+ * Display text comes from `common.nav.groups`, keyed by `id`. No label or
+ * railLabel field exists: the rail and the sidebar both resolve the same group
+ * key, so a second source of text could only ever disagree with the first.
  */
 export type AppModule = {
   id: ModuleId;
-  label?: string;
-  railLabel?: string;
   icon: LucideIcon;
   defaultPath: string;
   items: ModuleNavItem[];
