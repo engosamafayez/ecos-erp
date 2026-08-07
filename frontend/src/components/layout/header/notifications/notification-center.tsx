@@ -1,48 +1,83 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Bell,
   Boxes,
-  CircleDollarSign,
+  CircleAlert,
+  CircleCheck,
+  Info,
+  Megaphone,
+  Monitor,
   Settings,
-  ShoppingBag,
-  PlugZap,
+  Truck,
+  TriangleAlert,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { useFormatter } from '@/hooks/use-formatter';
 import {
-  Sheet,
-  SheetContent,
-  SheetTitle,
-} from '@/components/ui/sheet';
-
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+  useNotifications,
+} from '@/features/notifications/hooks/use-notifications';
 import {
-  ALL_CATEGORIES,
-  CATEGORY_LABELS,
-  MOCK_NOTIFICATIONS,
-} from './notifications-mock-data';
-import type { Notification, NotificationCategory } from './notifications-mock-data';
+  toUiNotification,
+  type NotificationSeverity,
+  type NotificationSource,
+  type UiNotification,
+} from '@/features/notifications/types/notification';
 
-// ── Category icon map ─────────────────────────────────────────────────────────
+/**
+ * The notification centre in the top bar.
+ *
+ * Reads GET /api/notifications — the authenticated user's own feed, scoped
+ * server-side by ownership. It shows what producers actually wrote and nothing
+ * else: the message text is the producer's, the timestamp is the record's, and
+ * a feed with no rows says so rather than filling the drawer.
+ *
+ * Filter tabs are derived from the sources present in the feed, not from a
+ * fixed taxonomy. A notification from a module nobody has categorised still
+ * appears, under `other`, instead of being dropped because no tab claimed it.
+ */
 
-const CATEGORY_ICONS: Record<NotificationCategory, typeof Bell> = {
-  orders: ShoppingBag,
-  inventory: Boxes,
-  finance: CircleDollarSign,
+const SOURCE_ICONS: Record<NotificationSource, LucideIcon> = {
+  operations: Boxes,
+  logistics: Truck,
+  marketing: Megaphone,
+  pos: Monitor,
   system: Settings,
-  integrations: PlugZap,
+  other: Bell,
 };
 
-// ── Notification item ─────────────────────────────────────────────────────────
+const SEVERITY_ICONS: Record<NotificationSeverity, LucideIcon> = {
+  info: Info,
+  success: CircleCheck,
+  warning: TriangleAlert,
+  error: CircleAlert,
+};
 
-function NotificationItem({
+const SEVERITY_TONE: Record<NotificationSeverity, string> = {
+  info: 'text-muted-foreground',
+  success: 'text-emerald-600',
+  warning: 'text-amber-600',
+  error: 'text-red-600',
+};
+
+function NotificationRow({
   notification,
   onMarkRead,
 }: {
-  notification: Notification;
+  notification: UiNotification;
   onMarkRead: (id: string) => void;
 }) {
-  const Icon = CATEGORY_ICONS[notification.category];
+  const { t } = useTranslation('common');
+  const fmt = useFormatter();
+
+  const SourceIcon = SOURCE_ICONS[notification.source];
+  const SeverityIcon = SEVERITY_ICONS[notification.severity];
 
   return (
     <div
@@ -51,223 +86,221 @@ function NotificationItem({
         !notification.read && 'bg-primary/3',
       )}
     >
-      {/* Category icon */}
       <span
         className={cn(
           'mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg',
-          !notification.read
-            ? 'bg-primary/10 text-primary'
-            : 'bg-muted text-muted-foreground',
+          notification.read ? 'bg-muted text-muted-foreground' : 'bg-primary/10 text-primary',
         )}
         aria-hidden
       >
-        <Icon className="size-4" />
+        <SourceIcon className="size-4" />
       </span>
 
-      {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
           <p
             className={cn(
-              'text-sm leading-tight',
-              !notification.read ? 'font-semibold' : 'font-medium',
+              'flex items-center gap-1.5 text-sm leading-tight',
+              notification.read ? 'font-medium' : 'font-semibold',
             )}
           >
-            {notification.title}
+            <SeverityIcon
+              className={cn('size-3.5 shrink-0', SEVERITY_TONE[notification.severity])}
+              aria-hidden
+            />
+            {t(($) => $.notifications.source[notification.source])}
           </p>
-          {/* Unread dot */}
-          {!notification.read ? (
+
+          {!notification.read && (
             <span
               className="mt-1 size-2 shrink-0 rounded-full bg-primary"
-              aria-label="Unread"
+              aria-label={t(($) => $.notifications.unread)}
             />
-          ) : null}
+          )}
         </div>
-        <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">
-          {notification.body}
+
+        <p className="mt-0.5 line-clamp-3 text-xs text-muted-foreground">
+          {notification.message === '' ? t(($) => $.notifications.noMessage) : notification.message}
         </p>
+
         <div className="mt-1.5 flex items-center gap-3">
-          <span className="text-[10px] text-muted-foreground/70">{notification.time}</span>
-          {!notification.read ? (
+          <span className="text-[10px] text-muted-foreground/70">
+            {notification.createdAt ? fmt.dateTime(notification.createdAt) : ''}
+          </span>
+          {!notification.read && (
             <button
               type="button"
               onClick={() => onMarkRead(notification.id)}
-              className="text-[10px] font-medium text-primary opacity-0 transition-opacity hover:text-primary/80 group-hover:opacity-100"
+              className="text-[10px] font-medium text-primary opacity-0 transition-opacity hover:text-primary/80 group-hover:opacity-100 focus-visible:opacity-100"
             >
-              Mark read
+              {t(($) => $.notifications.markRead)}
             </button>
-          ) : null}
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-// ── Main component ────────────────────────────────────────────────────────────
-
-type Filter = 'all' | NotificationCategory;
-
-const FILTER_TABS: { value: Filter; label: string }[] = [
-  { value: 'all', label: 'All' },
-  ...ALL_CATEGORIES.map((c) => ({ value: c as Filter, label: CATEGORY_LABELS[c] })),
-];
-
 export function NotificationCenter() {
+  const { t } = useTranslation('common');
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
-  const [activeFilter, setActiveFilter] = useState<Filter>('all');
+  const [activeSource, setActiveSource] = useState<NotificationSource | 'all'>('all');
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const feed = useNotifications();
+  const markRead = useMarkNotificationRead();
+  const markAllRead = useMarkAllNotificationsRead();
 
-  const filtered =
-    activeFilter === 'all'
-      ? notifications
-      : notifications.filter((n) => n.category === activeFilter);
+  const notifications = useMemo(() => (feed.data?.data ?? []).map(toUiNotification), [feed.data]);
 
-  function markRead(id: string) {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
-    );
-  }
+  const unreadCount = feed.data?.unread_count ?? 0;
 
-  function markAllRead() {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-  }
+  // Only sources actually present get a tab — an empty tab would advertise a
+  // category the platform never produces.
+  const sources = useMemo(() => {
+    const seen = new Set<NotificationSource>();
+    notifications.forEach((n) => seen.add(n.source));
+    return [...seen];
+  }, [notifications]);
+
+  const visible =
+    activeSource === 'all' ? notifications : notifications.filter((n) => n.source === activeSource);
 
   return (
     <>
-      {/* ── Trigger button ── */}
       <Button
         variant="ghost"
         size="icon"
         onClick={() => setOpen(true)}
         aria-label={
           unreadCount > 0
-            ? `Notifications — ${unreadCount} unread`
-            : 'Notifications'
+            ? t(($) => $.notifications.bellWithUnread, { count: unreadCount })
+            : t(($) => $.notifications.bell)
         }
         className="relative"
       >
         <Bell className="size-5" aria-hidden />
-        {unreadCount > 0 ? (
+        {unreadCount > 0 && (
           <span
             aria-hidden
-            className="absolute -right-0.5 -top-0.5 flex min-w-[1rem] items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-bold leading-4 text-primary-foreground"
+            className="absolute -top-0.5 flex min-w-[1rem] items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-bold leading-4 text-primary-foreground end-[-0.125rem]"
           >
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
-        ) : null}
+        )}
       </Button>
 
-      {/* ── Notification drawer ── */}
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent
-          side="right"
-          className="w-3/4 sm:max-w-sm flex w-full flex-col gap-0 p-0 sm:max-w-sm"
-        >
-          {/* Header */}
+        <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-sm">
           <div className="flex shrink-0 items-center justify-between border-b px-4 py-3 pe-12">
             <div>
-              <SheetTitle className="text-base font-semibold">Notifications</SheetTitle>
-              {unreadCount > 0 ? (
-                <p className="text-xs text-muted-foreground">{unreadCount} unread</p>
-              ) : (
-                <p className="text-xs text-muted-foreground">All caught up</p>
-              )}
+              <SheetTitle className="text-base font-semibold">
+                {t(($) => $.notifications.title)}
+              </SheetTitle>
+              <p className="text-xs text-muted-foreground">
+                {unreadCount > 0
+                  ? t(($) => $.notifications.unreadCount, { count: unreadCount })
+                  : t(($) => $.notifications.allCaughtUp)}
+              </p>
             </div>
             <Button
               variant="ghost"
               size="sm"
-              onClick={markAllRead}
-              disabled={unreadCount === 0}
+              onClick={() => markAllRead.mutate()}
+              disabled={unreadCount === 0 || markAllRead.isPending}
               className="h-7 text-xs"
             >
-              Mark all read
+              {t(($) => $.notifications.markAllRead)}
             </Button>
           </div>
 
-          {/* Category filter tabs */}
-          <div className="flex shrink-0 gap-1 overflow-x-auto border-b px-3 py-2">
-            {FILTER_TABS.map((tab) => {
-              const catCount =
-                tab.value === 'all'
-                  ? notifications.filter((n) => !n.read).length
-                  : notifications.filter(
-                      (n) => n.category === tab.value && !n.read,
-                    ).length;
-              return (
-                <button
-                  key={tab.value}
-                  type="button"
-                  onClick={() => setActiveFilter(tab.value)}
-                  aria-pressed={activeFilter === tab.value}
-                  className={cn(
-                    'flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
-                    activeFilter === tab.value
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-accent hover:text-foreground',
-                  )}
-                >
-                  {tab.label}
-                  {catCount > 0 ? (
-                    <span
-                      className={cn(
-                        'rounded-full px-1 py-0.5 text-[9px] font-bold leading-none',
-                        activeFilter === tab.value
-                          ? 'bg-primary-foreground/20 text-primary-foreground'
-                          : 'bg-primary/10 text-primary',
-                      )}
-                    >
-                      {catCount}
-                    </span>
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
+          {sources.length > 1 && (
+            <div className="flex shrink-0 gap-1 overflow-x-auto border-b px-3 py-2">
+              {(['all', ...sources] as const).map((source) => {
+                const count =
+                  source === 'all'
+                    ? notifications.filter((n) => !n.read).length
+                    : notifications.filter((n) => n.source === source && !n.read).length;
 
-          {/* Notification list */}
+                return (
+                  <button
+                    key={source}
+                    type="button"
+                    onClick={() => setActiveSource(source)}
+                    aria-pressed={activeSource === source}
+                    className={cn(
+                      'flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
+                      activeSource === source
+                        ? 'bg-primary text-primary-foreground'
+                        : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                    )}
+                  >
+                    {source === 'all'
+                      ? t(($) => $.notifications.all)
+                      : t(($) => $.notifications.source[source])}
+                    {count > 0 && (
+                      <span
+                        className={cn(
+                          'rounded-full px-1 py-0.5 text-[9px] font-bold leading-none',
+                          activeSource === source
+                            ? 'bg-primary-foreground/20 text-primary-foreground'
+                            : 'bg-primary/10 text-primary',
+                        )}
+                      >
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           <div className="flex-1 overflow-y-auto">
-            {filtered.length === 0 ? (
+            {feed.isLoading ? (
+              <p className="py-16 text-center text-sm text-muted-foreground">
+                {t(($) => $.loading)}
+              </p>
+            ) : feed.isError ? (
+              <p className="py-16 text-center text-sm text-destructive">
+                {t(($) => $.notifications.loadFailed)}
+              </p>
+            ) : visible.length === 0 ? (
               <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
                 <Bell className="size-10 text-muted-foreground/20" aria-hidden />
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
-                    No notifications
+                    {t(($) => $.notifications.empty)}
                   </p>
                   <p className="mt-0.5 text-xs text-muted-foreground/60">
-                    {activeFilter === 'all'
-                      ? "You're all caught up!"
-                      : `No ${CATEGORY_LABELS[activeFilter as NotificationCategory]} notifications`}
+                    {t(($) => $.notifications.emptyHint)}
                   </p>
                 </div>
               </div>
             ) : (
               <div className="divide-y">
-                {filtered.map((notification) => (
-                  <NotificationItem
+                {visible.map((notification) => (
+                  <NotificationRow
                     key={notification.id}
                     notification={notification}
-                    onMarkRead={markRead}
+                    onMarkRead={(id) => markRead.mutate(id)}
                   />
                 ))}
               </div>
             )}
           </div>
 
-          {/* Footer */}
-          <div className="shrink-0 border-t px-4 py-3">
-            <button
-              type="button"
-              disabled
-              className="flex w-full cursor-not-allowed items-center justify-center gap-1 text-sm font-medium text-primary/50"
-            >
-              View all notifications
-              <span className="rounded-full border border-primary/30 bg-primary/5 px-1.5 py-0.5 text-[9px] font-medium text-primary/70">
-                Soon
-              </span>
-            </button>
-          </div>
+          {/* The feed endpoint paginates; the drawer shows the most recent page.
+              There is no standalone notifications page, so nothing is linked to
+              rather than linking to a route that does not exist. */}
+          {(feed.data?.meta.total ?? 0) > notifications.length && (
+            <div className="shrink-0 border-t px-4 py-3 text-center text-xs text-muted-foreground">
+              {t(($) => $.notifications.showingRecent, {
+                shown: notifications.length,
+                total: feed.data?.meta.total ?? 0,
+              })}
+            </div>
+          )}
         </SheetContent>
       </Sheet>
     </>

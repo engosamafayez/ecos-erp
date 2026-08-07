@@ -161,7 +161,12 @@
       "crm-customers": "Customers",
       "crm-executive": "Executive Overview",
       "cep-section": "Customer Engagement",
-      "bae-section-group": "Business Accounts"
+      "bae-section-group": "Business Accounts",
+      "executive-board": "Executive Board",
+      "finance-treasury": "Cash & Banking",
+      "finance-fiscal": "Fiscal Calendar & Closing",
+      "finance-budgets": "Budgets",
+      "finance-tax": "Tax & VAT"
     },
     "groups": {
       "overview": "Overview",
@@ -187,7 +192,8 @@
       "hr": "HR & Workforce",
       "reports": "Reports",
       "administration": "Administration",
-      "engineering": "Engineering Platform"
+      "engineering": "Engineering Platform",
+      "executive": "Executive"
     },
     "navigation": "Navigation",
     "expandSidebar": "Expand sidebar",
@@ -344,5 +350,29 @@
     "withQuery": "No results match your search",
     "withoutQuery": "No results",
     "title": "No results"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "bell": "Notifications",
+    "bellWithUnread": "Notifications — {{count}} unread",
+    "unread": "Unread",
+    "unreadCount": "{{count}} unread",
+    "allCaughtUp": "All caught up",
+    "markRead": "Mark read",
+    "markAllRead": "Mark all read",
+    "all": "All",
+    "empty": "No notifications",
+    "emptyHint": "Notifications addressed to you appear here.",
+    "noMessage": "This notification carries no message.",
+    "loadFailed": "Notifications could not be loaded.",
+    "showingRecent": "Showing the {{shown}} most recent of {{total}}.",
+    "source": {
+      "operations": "Operations",
+      "logistics": "Logistics",
+      "marketing": "Marketing",
+      "pos": "Point of Sale",
+      "system": "System",
+      "other": "Other"
+    }
   }
 }

@@ -161,7 +161,12 @@
       "crm-customers": "العملاء",
       "crm-executive": "نظرة تنفيذية",
       "cep-section": "تفاعل العملاء",
-      "bae-section-group": "الحسابات التجارية"
+      "bae-section-group": "الحسابات التجارية",
+      "executive-board": "اللوحة التنفيذية",
+      "finance-treasury": "النقدية والبنوك",
+      "finance-fiscal": "التقويم المالي والإقفال",
+      "finance-budgets": "الموازنات",
+      "finance-tax": "الضرائب والقيمة المضافة"
     },
     "groups": {
       "overview": "نظرة عامة",
@@ -187,7 +192,8 @@
       "hr": "الموارد البشرية والقوى العاملة",
       "reports": "التقارير",
       "administration": "الإدارة",
-      "engineering": "منصة الهندسة"
+      "engineering": "منصة الهندسة",
+      "executive": "الإدارة التنفيذية"
     },
     "navigation": "التنقل",
     "expandSidebar": "توسيع الشريط الجانبي",
@@ -344,5 +350,29 @@
     "withQuery": "لا توجد نتائج مطابقة لبحثك",
     "withoutQuery": "لا توجد نتائج",
     "title": "لا توجد نتائج"
+  },
+  "notifications": {
+    "title": "الإشعارات",
+    "bell": "الإشعارات",
+    "bellWithUnread": "الإشعارات — {{count}} غير مقروء",
+    "unread": "غير مقروء",
+    "unreadCount": "{{count}} غير مقروء",
+    "allCaughtUp": "لا يوجد جديد",
+    "markRead": "تحديد كمقروء",
+    "markAllRead": "تحديد الكل كمقروء",
+    "all": "الكل",
+    "empty": "لا توجد إشعارات",
+    "emptyHint": "تظهر هنا الإشعارات الموجهة إليك.",
+    "noMessage": "هذا الإشعار لا يحمل نصًا.",
+    "loadFailed": "تعذّر تحميل الإشعارات.",
+    "showingRecent": "يتم عرض أحدث {{shown}} من أصل {{total}}.",
+    "source": {
+      "operations": "العمليات",
+      "logistics": "اللوجستيات",
+      "marketing": "التسويق",
+      "pos": "نقاط البيع",
+      "system": "النظام",
+      "other": "أخرى"
+    }
   }
 }

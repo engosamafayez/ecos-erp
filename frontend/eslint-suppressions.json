@@ -74,16 +74,6 @@
       "count": 1
     }
   },
-  "src/components/layout/header/notifications/notification-center.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 10
-    }
-  },
-  "src/components/layout/header/notifications/notifications-mock-data.ts": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 9
-    }
-  },
   "src/components/layout/header/search/global-search.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
       "count": 4

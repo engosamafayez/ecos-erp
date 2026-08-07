@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\CompanyContextController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ExecutiveDashboardController;
 use App\Http\Controllers\Infrastructure\HealthController;
 use App\Http\Controllers\MediaController;
@@ -298,6 +299,16 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('admin/dashboard', AdminDashboardController::class);
     Route::get('admin/executive-dashboard', ExecutiveDashboardController::class);
     Route::get('context/company', CompanyContextController::class);
+
+    // The caller's own notification feed — the read side of Laravel's
+    // `notifications` table, which producers have been writing to since
+    // 2026-07 with nothing to read it back. Gated by ownership, not a
+    // permission: every query is scoped to the authenticated notifiable, so a
+    // permission could only ever widen it past the one boundary that must hold.
+    Route::get('notifications', [NotificationController::class, 'index']);
+    Route::patch('notifications/{id}/read', [NotificationController::class, 'markRead']);
+    Route::post('notifications/mark-all-read', [NotificationController::class, 'markAllRead']);
+
     // AUTHZ: reuses permissions that were already seeded and already assigned to
     // roles — nothing invented. Reads stay open to any authenticated user, as
     // before; only the mutating verbs are gated. Roles flagged is_system bypass

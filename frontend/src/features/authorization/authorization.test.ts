@@ -2,9 +2,17 @@ import { describe, expect, it } from 'vitest';
 
 import { grants } from './use-authorization';
 import { isModuleVisible } from './use-navigation';
-import { EMPTY_CONTEXT, normalizeContext, normalizePermission, type AuthorizationContext } from './types';
+import {
+  EMPTY_CONTEXT,
+  normalizeContext,
+  normalizePermission,
+  type AuthorizationContext,
+} from './types';
 
-const ctx = (over: Partial<AuthorizationContext>): AuthorizationContext => ({ ...EMPTY_CONTEXT, ...over });
+const ctx = (over: Partial<AuthorizationContext>): AuthorizationContext => ({
+  ...EMPTY_CONTEXT,
+  ...over,
+});
 
 describe('normalizePermission', () => {
   it('lowercases and snake-cases PascalCase segments', () => {
@@ -60,7 +68,12 @@ describe('isModuleVisible (dynamic sidebar)', () => {
     expect(isModuleVisible('inventory', c)).toBe(true);
     expect(isModuleVisible('operations', c)).toBe(true);
     // Not in the whitelist → hidden, even with a matching permission.
-    expect(isModuleVisible('finance', ctx({ navigation: ['inventory'], permissions: ['finance.periods.view'] }))).toBe(false);
+    expect(
+      isModuleVisible(
+        'finance',
+        ctx({ navigation: ['inventory'], permissions: ['finance.periods.view'] }),
+      ),
+    ).toBe(false);
   });
 
   it('falls back to permission-domain matching when no whitelist', () => {
@@ -74,10 +87,30 @@ describe('isModuleVisible (dynamic sidebar)', () => {
     expect(isModuleVisible('finance', c)).toBe(false);
   });
 
+  it('the executive board follows the whitelist, not the permissions behind it', () => {
+    // The C-level templates carry `executive`; no other template does. A user
+    // holding every domain permission the board reads still cannot see it
+    // unless their template lists it — the whitelist is authoritative.
+    const cLevel = ctx({ navigation: ['dashboard', 'executive', 'finance'] });
+    expect(isModuleVisible('executive', cLevel)).toBe(true);
+
+    const director = ctx({
+      navigation: ['dashboard', 'finance', 'reports'],
+      permissions: ['finance.reports.view', 'crm.executive.view'],
+    });
+    expect(isModuleVisible('executive', director)).toBe(false);
+  });
+
+  it('without a whitelist the executive board needs a domain it actually reads', () => {
+    expect(isModuleVisible('executive', ctx({ permissions: ['finance.reports.view'] }))).toBe(true);
+    expect(isModuleVisible('executive', ctx({ permissions: ['hr.employees.view'] }))).toBe(false);
+  });
+
   it('a restricted user sees strictly fewer modules than a system user', () => {
     const restricted = ctx({ navigation: ['inventory', 'operations'] });
-    const visible = ['dashboard', 'inventory', 'operations', 'finance', 'marketing', 'crm']
-      .filter((m) => isModuleVisible(m, restricted));
+    const visible = ['dashboard', 'inventory', 'operations', 'finance', 'marketing', 'crm'].filter(
+      (m) => isModuleVisible(m, restricted),
+    );
     expect(visible.sort()).toEqual(['dashboard', 'inventory', 'operations']);
   });
 });

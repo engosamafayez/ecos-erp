@@ -20,10 +20,18 @@ use Modules\IAM\Domain\Enums\RoleCategory;
  */
 final class RoleTemplateCatalog
 {
-    /** Every navigable module id (full access). */
+    /**
+     * Every navigable module id (full access).
+     *
+     * `executive` is the cross-domain executive board. It appears here and in no
+     * other template's list, which is the gate: the four C-level templates below
+     * are the only ones that carry it, because a navigation whitelist is
+     * authoritative in the UI — a module absent from a template's list is
+     * invisible to that role regardless of the permissions it holds.
+     */
     private const NAV_ALL = [
-        'dashboard', 'commerce', 'shipping', 'pos', 'inventory', 'purchasing', 'finance',
-        'crm', 'customerEngagement', 'omnichannel', 'manufacturing', 'operations',
+        'dashboard', 'executive', 'commerce', 'shipping', 'pos', 'inventory', 'purchasing',
+        'finance', 'crm', 'customerEngagement', 'omnichannel', 'manufacturing', 'operations',
         'marketing', 'core', 'logistics', 'hr', 'reports', 'administration', 'engineering',
     ];
 

@@ -43,6 +43,12 @@ const MODULE_DOMAINS: Record<string, string[]> = {
   engineering: ['engineering', 'claude_bridge', 'bae'],
   reports: ['reports'],
   core: ['organization'],
+  // The executive board draws one panel per domain and gates each panel on that
+  // domain's own permission, so the fallback gate is the union of what it reads:
+  // a user with none of these would open an empty board. Templated users never
+  // reach this branch — their navigation whitelist decides, and only the C-level
+  // templates carry `executive`.
+  executive: ['finance', 'crm', 'operations', 'inventory', 'purchasing'],
 };
 
 /** Always-visible modules (the home surface). */
