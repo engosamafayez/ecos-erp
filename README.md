@@ -123,13 +123,19 @@ ECOS-ERP/
 
 ## Development Workflow
 
+> **Branch policy (effective 2026-08-07).** `develop` is the **only active
+> development branch** — all work (features, fixes, chores, docs) targets
+> `develop`. `platform-foundation` is **archived**: it was merged into `develop`
+> via TASK-PLATFORM-INTEGRATION-001 and takes **no new commits**. Full policy:
+> [docs/BRANCHING.md](docs/BRANCHING.md).
+
 1. **Start the stack**
    ```bash
    docker compose up -d        # or ./scripts/setup.ps1  (Windows)
    ```
    App → http://localhost:8080 · Mailpit → http://localhost:8025
 
-2. **Branch** off `main` using a conventional prefix:
+2. **Branch** off `develop` using a conventional prefix:
    `feat/…`, `fix/…`, `chore/…`, `docs/…`, `refactor/…`.
 
 3. **Develop**
