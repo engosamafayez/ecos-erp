@@ -21,6 +21,7 @@ import { JournalsPage } from '@/features/finance/pages/journals-page';
 import { FinancialStatementsPage } from '@/features/finance/pages/financial-statements-page';
 import { AccountsReceivablePage } from '@/features/finance/pages/accounts-receivable-page';
 import { AccountsPayablePage } from '@/features/finance/pages/accounts-payable-page';
+import { CashBankingPage } from '@/features/finance/pages/cash-banking-page';
 import { HomePage } from '@/features/home/pages/home-page';
 import { PackagingMaterialsPage } from '@/features/inventory/pages/packaging-materials-page';
 import { ConsumablesPage } from '@/features/inventory/pages/consumables-page';
@@ -239,6 +240,7 @@ export const router = createBrowserRouter(
             { path: ROUTES.financeStatements, Component: FinancialStatementsPage },
             { path: ROUTES.financeReceivables, Component: AccountsReceivablePage },
             { path: ROUTES.financePayables, Component: AccountsPayablePage },
+            { path: ROUTES.financeCashBanking, Component: CashBankingPage },
             // Organization workspace + sub-pages
             { path: ROUTES.organization, Component: OrganizationWorkspace },
             { path: ROUTES.orgSearch, Component: OrgSearchPage },

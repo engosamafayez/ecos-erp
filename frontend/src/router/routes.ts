@@ -66,6 +66,7 @@ export const ROUTES = {
   financeStatements: '/accounting/statements',
   financeReceivables: '/accounting/receivables',
   financePayables: '/accounting/payables',
+  financeCashBanking: '/accounting/cash-banking',
   // Executive Platform (EPIC-EXECUTIVE-UI-001)
   executiveDashboard: '/executive',
   crm: '/crm',

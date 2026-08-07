@@ -1,14 +1,29 @@
 {
-  "breadcrumb": { "finance": "المالية" },
+  "breadcrumb": {
+    "finance": "المالية"
+  },
   "loading": "جارٍ التحميل…",
   "empty": "لا توجد بيانات لهذه الفترة.",
   "error": "تعذّر تحميل البيانات.",
   "noAccess": "ليس لديك صلاحية الوصول إلى مساحة المالية.",
-  "kpi": { "revenue": "الإيرادات", "profit": "صافي الربح", "cash": "المركز النقدي", "workingCapital": "رأس المال العامل" },
-  "exec": { "title": "المالية التنفيذية", "subtitle": "الصحة المالية والنقد والأداء والمركز المالي في لمحة." },
+  "kpi": {
+    "revenue": "الإيرادات",
+    "profit": "صافي الربح",
+    "cash": "المركز النقدي",
+    "workingCapital": "رأس المال العامل"
+  },
+  "exec": {
+    "title": "المالية التنفيذية",
+    "subtitle": "الصحة المالية والنقد والأداء والمركز المالي في لمحة."
+  },
   "health": {
     "title": "الصحة المالية",
-    "rating": { "strong": "قوية", "healthy": "جيدة", "watch": "تحت المراقبة", "at_risk": "معرّضة للخطر" },
+    "rating": {
+      "strong": "قوية",
+      "healthy": "جيدة",
+      "watch": "تحت المراقبة",
+      "at_risk": "معرّضة للخطر"
+    },
     "component": {
       "net_margin": "هامش صافي الربح",
       "current_ratio": "النسبة الجارية",
@@ -16,8 +31,16 @@
       "cash_position": "المركز النقدي"
     }
   },
-  "position": { "title": "المركز المالي", "assets": "إجمالي الأصول", "liabilities": "إجمالي الالتزامات", "equity": "حقوق الملكية" },
-  "performance": { "title": "الأداء", "expenses": "المصروفات" },
+  "position": {
+    "title": "المركز المالي",
+    "assets": "إجمالي الأصول",
+    "liabilities": "إجمالي الالتزامات",
+    "equity": "حقوق الملكية"
+  },
+  "performance": {
+    "title": "الأداء",
+    "expenses": "المصروفات"
+  },
   "kpis": {
     "title": "النسب الرئيسية",
     "grossMargin": "الهامش الإجمالي",
@@ -27,9 +50,19 @@
     "receivables": "الذمم المدينة",
     "payables": "الذمم الدائنة"
   },
-  "alerts": { "title": "التنبيهات المالية", "empty": "لا توجد تنبيهات نشطة." },
-  "insights": { "title": "رؤى تنفيذية", "empty": "لا توجد توصيات." },
-  "activity": { "title": "النشاط الأخير", "empty": "لا يوجد نشاط قيود حديث.", "journal": "قيد يومية" },
+  "alerts": {
+    "title": "التنبيهات المالية",
+    "empty": "لا توجد تنبيهات نشطة."
+  },
+  "insights": {
+    "title": "رؤى تنفيذية",
+    "empty": "لا توجد توصيات."
+  },
+  "activity": {
+    "title": "النشاط الأخير",
+    "empty": "لا يوجد نشاط قيود حديث.",
+    "journal": "قيد يومية"
+  },
   "nav": {
     "executive": "لوحة التحكم التنفيذية",
     "chartOfAccounts": "دليل الحسابات",
@@ -57,8 +90,15 @@
       "new": "حساب جديد",
       "empty": "لا توجد حسابات.",
       "searchPlaceholder": "ابحث بالرمز أو الاسم…",
-      "kpi": { "total": "إجمالي الحسابات", "postable": "قابلة للترحيل", "control": "حسابات مراقبة", "active": "نشطة" },
-      "filter": { "allTypes": "كل الأنواع" },
+      "kpi": {
+        "total": "إجمالي الحسابات",
+        "postable": "قابلة للترحيل",
+        "control": "حسابات مراقبة",
+        "active": "نشطة"
+      },
+      "filter": {
+        "allTypes": "كل الأنواع"
+      },
       "field": {
         "code": "الرمز",
         "name": "الاسم",
@@ -75,11 +115,29 @@
         "status": "الحالة",
         "subledger": "الأستاذ المساعد"
       },
-      "type": { "asset": "أصول", "liability": "التزامات", "equity": "حقوق ملكية", "revenue": "إيرادات", "expense": "مصروفات" },
-      "balance": { "debit": "مدين", "credit": "دائن" },
-      "statement": { "balance_sheet": "الميزانية العمومية", "income_statement": "قائمة الدخل" },
-      "detail": { "title": "تفاصيل الحساب" },
-      "form": { "title": "حساب جديد", "subtitle": "إنشاء حساب في الأستاذ العام.", "error": "تعذّر إنشاء الحساب. تحقق من الحقول وحاول مجددًا." }
+      "type": {
+        "asset": "أصول",
+        "liability": "التزامات",
+        "equity": "حقوق ملكية",
+        "revenue": "إيرادات",
+        "expense": "مصروفات"
+      },
+      "balance": {
+        "debit": "مدين",
+        "credit": "دائن"
+      },
+      "statement": {
+        "balance_sheet": "الميزانية العمومية",
+        "income_statement": "قائمة الدخل"
+      },
+      "detail": {
+        "title": "تفاصيل الحساب"
+      },
+      "form": {
+        "title": "حساب جديد",
+        "subtitle": "إنشاء حساب في الأستاذ العام.",
+        "error": "تعذّر إنشاء الحساب. تحقق من الحقول وحاول مجددًا."
+      }
     },
     "journal": {
       "title": "قيود اليومية",
@@ -110,18 +168,47 @@
       "reverses": "يعكس",
       "reversedBy": "عُكس بواسطة",
       "reverseReason": "سبب العكس (مطلوب)",
-      "detail": { "title": "تفاصيل القيد" },
-      "kpi": { "total": "الإجمالي", "draft": "مسودة", "posted": "مُرحّل", "reversed": "معكوس" },
-      "filter": { "all": "كل الحالات" },
-      "status": { "draft": "مسودة", "approved": "معتمد", "posted": "مُرحّل", "locked": "مقفل", "cancelled": "ملغى", "reversed": "معكوس" },
-      "form": { "title": "قيد يومية جديد", "subtitle": "يجب أن يتوازن المدين والدائن.", "error": "تعذّر إنشاء القيد. تحقق من البنود وحاول مجددًا.", "unbalanced": "غير متوازن" }
+      "detail": {
+        "title": "تفاصيل القيد"
+      },
+      "kpi": {
+        "total": "الإجمالي",
+        "draft": "مسودة",
+        "posted": "مُرحّل",
+        "reversed": "معكوس"
+      },
+      "filter": {
+        "all": "كل الحالات"
+      },
+      "status": {
+        "draft": "مسودة",
+        "approved": "معتمد",
+        "posted": "مُرحّل",
+        "locked": "مقفل",
+        "cancelled": "ملغى",
+        "reversed": "معكوس"
+      },
+      "form": {
+        "title": "قيد يومية جديد",
+        "subtitle": "يجب أن يتوازن المدين والدائن.",
+        "error": "تعذّر إنشاء القيد. تحقق من البنود وحاول مجددًا.",
+        "unbalanced": "غير متوازن"
+      }
     },
     "statements": {
       "title": "القوائم المالية",
       "subtitle": "ميزان المراجعة والميزانية العمومية وقائمة الدخل.",
       "noAccess": "ليس لديك صلاحية الوصول إلى هذه القائمة.",
-      "tab": { "trialBalance": "ميزان المراجعة", "balanceSheet": "الميزانية العمومية", "incomeStatement": "قائمة الدخل" },
-      "tb": { "balance": "الرصيد", "balanced": "متوازن", "unbalanced": "غير متوازن" },
+      "tab": {
+        "trialBalance": "ميزان المراجعة",
+        "balanceSheet": "الميزانية العمومية",
+        "incomeStatement": "قائمة الدخل"
+      },
+      "tb": {
+        "balance": "الرصيد",
+        "balanced": "متوازن",
+        "unbalanced": "غير متوازن"
+      },
       "bs": {
         "assets": "الأصول",
         "currentAssets": "الأصول المتداولة",
@@ -160,32 +247,282 @@
     "title": "الذمم المدينة",
     "subtitle": "الأعمار والفواتير المستحقة والمقبوضات.",
     "customerNote": "تُعرض هوية العميل بالمعرّف — واجهة الذمم المدينة المالية لا تتضمّن أسماء العملاء (راجع حدود المالية ↔ إدارة العملاء).",
-    "tab": { "aging": "الأعمار", "invoices": "الفواتير", "receipts": "المقبوضات" },
-    "kpi": { "totalOutstanding": "إجمالي المستحق", "current": "جارية", "over90": "أكثر من ٩٠ يومًا", "customers": "العملاء" },
-    "bucket": { "current": "جارية", "1_30": "١–٣٠", "31_60": "٣١–٦٠", "61_90": "٦١–٩٠", "90_plus": "٩٠+" },
-    "aging": { "customer": "العميل", "total": "الإجمالي" },
-    "recon": { "title": "تسوية الحساب الرقابي", "gl": "رصيد الأستاذ العام", "subledger": "الأستاذ المساعد", "difference": "الفرق", "reconciled": "مطابق", "unreconciled": "غير متطابق" },
-    "invoice": { "number": "الرقم", "customer": "العميل", "type": "النوع", "invoiceDate": "تاريخ الفاتورة", "dueDate": "تاريخ الاستحقاق", "total": "الإجمالي", "outstanding": "المستحق", "status": "الحالة", "empty": "لا توجد فواتير." },
-    "receipt": { "number": "الرقم", "customer": "العميل", "date": "التاريخ", "amount": "المبلغ", "unallocated": "غير مخصّص", "status": "الحالة", "empty": "لا توجد مقبوضات." },
-    "ledger": { "title": "أستاذ العميل (ذمم مدينة)", "opening": "الرصيد الافتتاحي", "closing": "الرصيد الختامي", "date": "التاريخ", "type": "النوع", "runningBalance": "الرصيد الجاري" },
-    "docType": { "invoice": "فاتورة", "credit_note": "إشعار دائن", "debit_note": "إشعار مدين" },
-    "docStatus": { "draft": "مسودة", "posted": "مُرحّل", "void": "ملغى" },
-    "entryType": { "invoice": "فاتورة", "credit_note": "إشعار دائن", "debit_note": "إشعار مدين", "receipt": "مقبوض", "write_off": "إعدام دين" }
+    "tab": {
+      "aging": "الأعمار",
+      "invoices": "الفواتير",
+      "receipts": "المقبوضات"
+    },
+    "kpi": {
+      "totalOutstanding": "إجمالي المستحق",
+      "current": "جارية",
+      "over90": "أكثر من ٩٠ يومًا",
+      "customers": "العملاء"
+    },
+    "bucket": {
+      "current": "جارية",
+      "1_30": "١–٣٠",
+      "31_60": "٣١–٦٠",
+      "61_90": "٦١–٩٠",
+      "90_plus": "٩٠+"
+    },
+    "aging": {
+      "customer": "العميل",
+      "total": "الإجمالي"
+    },
+    "recon": {
+      "title": "تسوية الحساب الرقابي",
+      "gl": "رصيد الأستاذ العام",
+      "subledger": "الأستاذ المساعد",
+      "difference": "الفرق",
+      "reconciled": "مطابق",
+      "unreconciled": "غير متطابق"
+    },
+    "invoice": {
+      "number": "الرقم",
+      "customer": "العميل",
+      "type": "النوع",
+      "invoiceDate": "تاريخ الفاتورة",
+      "dueDate": "تاريخ الاستحقاق",
+      "total": "الإجمالي",
+      "outstanding": "المستحق",
+      "status": "الحالة",
+      "empty": "لا توجد فواتير."
+    },
+    "receipt": {
+      "number": "الرقم",
+      "customer": "العميل",
+      "date": "التاريخ",
+      "amount": "المبلغ",
+      "unallocated": "غير مخصّص",
+      "status": "الحالة",
+      "empty": "لا توجد مقبوضات."
+    },
+    "ledger": {
+      "title": "أستاذ العميل (ذمم مدينة)",
+      "opening": "الرصيد الافتتاحي",
+      "closing": "الرصيد الختامي",
+      "date": "التاريخ",
+      "type": "النوع",
+      "runningBalance": "الرصيد الجاري"
+    },
+    "docType": {
+      "invoice": "فاتورة",
+      "credit_note": "إشعار دائن",
+      "debit_note": "إشعار مدين"
+    },
+    "docStatus": {
+      "draft": "مسودة",
+      "posted": "مُرحّل",
+      "void": "ملغى"
+    },
+    "entryType": {
+      "invoice": "فاتورة",
+      "credit_note": "إشعار دائن",
+      "debit_note": "إشعار مدين",
+      "receipt": "مقبوض",
+      "write_off": "إعدام دين"
+    }
   },
   "ap": {
     "title": "الذمم الدائنة",
     "subtitle": "الأعمار والفواتير المستحقة والمدفوعات.",
     "supplierNote": "تُعرض هوية المورّد بالمعرّف — واجهة الذمم الدائنة المالية لا تتضمّن أسماء المورّدين (راجع حدود المالية ↔ المورّدين).",
-    "tab": { "aging": "الأعمار", "bills": "الفواتير", "payments": "المدفوعات" },
-    "kpi": { "totalOutstanding": "إجمالي المستحق", "current": "جارية", "over90": "أكثر من ٩٠ يومًا", "suppliers": "المورّدون" },
-    "bucket": { "current": "جارية", "1_30": "١–٣٠", "31_60": "٣١–٦٠", "61_90": "٦١–٩٠", "90_plus": "٩٠+" },
-    "aging": { "supplier": "المورّد", "total": "الإجمالي" },
-    "bill": { "number": "الرقم", "supplier": "المورّد", "type": "النوع", "billDate": "تاريخ الفاتورة", "dueDate": "تاريخ الاستحقاق", "total": "الإجمالي", "outstanding": "المستحق", "status": "الحالة", "empty": "لا توجد فواتير." },
-    "payment": { "number": "الرقم", "supplier": "المورّد", "date": "التاريخ", "amount": "المبلغ", "unallocated": "غير مخصّص", "status": "الحالة", "empty": "لا توجد مدفوعات." },
-    "ledger": { "title": "أستاذ المورّد (ذمم دائنة)", "opening": "الرصيد الافتتاحي", "closing": "الرصيد الختامي", "date": "التاريخ", "type": "النوع", "runningBalance": "الرصيد الجاري" },
-    "docType": { "bill": "فاتورة", "credit_note": "إشعار دائن", "debit_note": "إشعار مدين" },
-    "docStatus": { "draft": "مسودة", "posted": "مُرحّل", "void": "ملغى" },
-    "paymentStatus": { "draft": "مسودة", "approved": "معتمد", "posted": "مُرحّل", "void": "ملغى" },
-    "entryType": { "bill": "فاتورة", "credit_note": "إشعار دائن", "debit_note": "إشعار مدين", "payment": "دفعة" }
+    "tab": {
+      "aging": "الأعمار",
+      "bills": "الفواتير",
+      "payments": "المدفوعات"
+    },
+    "kpi": {
+      "totalOutstanding": "إجمالي المستحق",
+      "current": "جارية",
+      "over90": "أكثر من ٩٠ يومًا",
+      "suppliers": "المورّدون"
+    },
+    "bucket": {
+      "current": "جارية",
+      "1_30": "١–٣٠",
+      "31_60": "٣١–٦٠",
+      "61_90": "٦١–٩٠",
+      "90_plus": "٩٠+"
+    },
+    "aging": {
+      "supplier": "المورّد",
+      "total": "الإجمالي"
+    },
+    "bill": {
+      "number": "الرقم",
+      "supplier": "المورّد",
+      "type": "النوع",
+      "billDate": "تاريخ الفاتورة",
+      "dueDate": "تاريخ الاستحقاق",
+      "total": "الإجمالي",
+      "outstanding": "المستحق",
+      "status": "الحالة",
+      "empty": "لا توجد فواتير."
+    },
+    "payment": {
+      "number": "الرقم",
+      "supplier": "المورّد",
+      "date": "التاريخ",
+      "amount": "المبلغ",
+      "unallocated": "غير مخصّص",
+      "status": "الحالة",
+      "empty": "لا توجد مدفوعات."
+    },
+    "ledger": {
+      "title": "أستاذ المورّد (ذمم دائنة)",
+      "opening": "الرصيد الافتتاحي",
+      "closing": "الرصيد الختامي",
+      "date": "التاريخ",
+      "type": "النوع",
+      "runningBalance": "الرصيد الجاري"
+    },
+    "docType": {
+      "bill": "فاتورة",
+      "credit_note": "إشعار دائن",
+      "debit_note": "إشعار مدين"
+    },
+    "docStatus": {
+      "draft": "مسودة",
+      "posted": "مُرحّل",
+      "void": "ملغى"
+    },
+    "paymentStatus": {
+      "draft": "مسودة",
+      "approved": "معتمد",
+      "posted": "مُرحّل",
+      "void": "ملغى"
+    },
+    "entryType": {
+      "bill": "فاتورة",
+      "credit_note": "إشعار دائن",
+      "debit_note": "إشعار مدين",
+      "payment": "دفعة"
+    }
+  },
+  "treasury": {
+    "title": "النقدية والبنوك",
+    "subtitle": "حسابات النقدية والحسابات البنكية والمطابقة",
+    "tab": {
+      "cash": "النقدية",
+      "bank": "البنوك",
+      "reconciliation": "المطابقة"
+    },
+    "kpi": {
+      "cashAccounts": "حسابات النقدية",
+      "bankAccounts": "الحسابات البنكية",
+      "activeCash": "حسابات نقدية نشطة",
+      "activeBank": "حسابات بنكية نشطة"
+    },
+    "cash": {
+      "empty": "لا توجد حسابات نقدية.",
+      "code": "الكود",
+      "name": "الاسم",
+      "currency": "العملة",
+      "status": "الحالة",
+      "active": "نشط",
+      "inactive": "غير نشط",
+      "new": "حساب نقدي جديد",
+      "newTitle": "إنشاء حساب نقدي",
+      "newDescription": "يُرحّل الحساب إلى حساب الأستاذ المختار.",
+      "codeLabel": "الكود",
+      "nameLabel": "الاسم",
+      "glAccount": "حساب الأستاذ",
+      "glAccountPlaceholder": "معرّف حساب الأستاذ",
+      "createFailed": "تعذّر إنشاء الحساب النقدي."
+    },
+    "session": {
+      "title": "جلسة النقدية",
+      "open": "فتح جلسة",
+      "openDescription": "يفتح جلسة جرد برصيد البداية في الدرج.",
+      "openingFloat": "رصيد البداية",
+      "close": "إغلاق الجلسة",
+      "closeDescription": "أدخل المبلغ المعدود. يحتسب الخادم الرصيد المتوقّع والفرق من حركات الجلسة.",
+      "sessionId": "معرّف الجلسة",
+      "countedAmount": "المبلغ المعدود",
+      "expected": "المتوقّع",
+      "variance": "الفرق",
+      "status": "الحالة",
+      "openFailed": "تعذّر فتح الجلسة.",
+      "closeFailed": "تعذّر إغلاق الجلسة."
+    },
+    "transaction": {
+      "title": "تسجيل معاملة",
+      "description": "المقبوضات والمدفوعات تحرّك النقدية، والتسوية تصحّح فرق الجرد.",
+      "type": "النوع",
+      "receipt": "مقبوضات",
+      "payment": "مدفوعات",
+      "adjustment": "تسوية",
+      "amount": "المبلغ",
+      "counterparty": "حساب الطرف المقابل",
+      "counterpartyPlaceholder": "معرّف حساب الأستاذ",
+      "record": "تسجيل",
+      "recorded": "تم التسجيل. قيد اليومية: {{journal}}",
+      "recordedUnposted": "تم التسجيل دون ترحيل بعد.",
+      "failed": "تعذّر تسجيل المعاملة.",
+      "noListNote": "لا توفر الواجهة مسارًا لقائمة معاملات النقدية، لذا تُسجّل المعاملات دون عرض سجلّ."
+    },
+    "transfer": {
+      "title": "تحويل",
+      "description": "ينقل النقدية بين حسابين ويرحّل الطرفين.",
+      "from": "من حساب",
+      "to": "إلى حساب",
+      "amount": "المبلغ",
+      "submit": "تحويل",
+      "failed": "تعذّر إتمام التحويل.",
+      "sameAccount": "يجب أن يختلف المصدر عن الوجهة."
+    },
+    "bank": {
+      "empty": "لا توجد حسابات بنكية.",
+      "name": "الاسم",
+      "bankName": "البنك",
+      "iban": "الآيبان",
+      "currency": "العملة",
+      "status": "الحالة",
+      "new": "حساب بنكي جديد",
+      "newTitle": "إنشاء حساب بنكي",
+      "newDescription": "يُرحّل الحساب إلى حساب الأستاذ المختار.",
+      "nameLabel": "الاسم",
+      "bankNameLabel": "اسم البنك",
+      "ibanLabel": "الآيبان",
+      "glAccount": "حساب الأستاذ",
+      "createFailed": "تعذّر إنشاء الحساب البنكي."
+    },
+    "reconciliation": {
+      "title": "المطابقة البنكية",
+      "description": "تبدأ المطابقة من كشف مستورد. أدخل معرّف المطابقة للعمل عليها.",
+      "reconciliationId": "معرّف المطابقة",
+      "idNote": "لا يوجد مسار لقائمة المطابقات، لذا يُحدَّد المعرّف مباشرة.",
+      "load": "تحميل",
+      "bookBalance": "رصيد الدفاتر",
+      "statementBalance": "رصيد الكشف",
+      "difference": "الفرق",
+      "status": "الحالة",
+      "completedAt": "وقت الإتمام",
+      "autoMatch": "مطابقة تلقائية",
+      "complete": "إتمام",
+      "outstanding": "البنود المعلّقة",
+      "outstandingCount": "البنود",
+      "outstandingTotal": "الإجمالي",
+      "noOutstanding": "لا توجد بنود معلّقة.",
+      "valueDate": "تاريخ الاستحقاق",
+      "itemDescription": "الوصف",
+      "amount": "المبلغ",
+      "autoMatchFailed": "تعذّر تشغيل المطابقة التلقائية.",
+      "completeFailed": "تعذّر إتمام المطابقة.",
+      "loadFailed": "تعذّر تحميل المطابقة."
+    },
+    "toast": {
+      "accountCreated": "تم إنشاء الحساب.",
+      "sessionOpened": "تم فتح الوردية.",
+      "sessionClosed": "تم إغلاق الوردية.",
+      "transferPosted": "تم ترحيل التحويل.",
+      "autoMatched": "اكتملت المطابقة التلقائية.",
+      "reconciliationCompleted": "اكتملت التسوية."
+    },
+    "common": {
+      "saving": "جارٍ الحفظ...",
+      "none": "—"
+    }
   }
 }
