@@ -6,7 +6,7 @@
  *
  * Actual key bindings live in the components themselves:
  *   - Ctrl+K        → GlobalSearch / GlobalCommandPalette
- *   - Arrow keys    → SearchCommandDialog, list pages, switchers, tabs
+ *   - Arrow keys    → the command palette, list pages, switchers, tabs
  *   - Ctrl+S        → form drawers
  *
  * Future uses:

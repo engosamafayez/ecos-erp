@@ -1,4 +1,6 @@
 import type { ComponentType } from 'react';
+
+import type enCommon from '@/i18n/locales/en/common.json';
 import {
   Boxes,
   Building2,
@@ -10,6 +12,8 @@ import {
   Users,
   Warehouse,
 } from 'lucide-react';
+
+import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -23,10 +27,17 @@ import {
 
 // ── Action definitions ────────────────────────────────────────────────────────
 
+/**
+ * Display text lives in `common.create`, keyed by `key` and `groupKey`, the same
+ * contract module navigation uses. The structure here carries keys, icons and
+ * behaviour — no copy — so an action whose key has no translation is a build
+ * error rather than a label falling back to English (BUG-GL-003).
+ */
+type CreateActionKey = keyof (typeof enCommon)['create']['actions'];
+type CreateGroupKey = keyof (typeof enCommon)['create']['groups'];
+
 type CreateAction = {
-  key: string;
-  label: string;
-  description: string;
+  key: CreateActionKey;
   icon: ComponentType<{ className?: string }>;
   shortcut?: string;
   disabled?: boolean;
@@ -34,79 +45,36 @@ type CreateAction = {
 };
 
 type CreateGroup = {
-  label: string;
+  groupKey: CreateGroupKey;
   iconClass: string;
   actions: CreateAction[];
 };
 
 const CREATE_GROUPS: CreateGroup[] = [
   {
-    label: 'Commerce',
+    groupKey: 'commerce',
     iconClass: 'bg-primary/10 text-primary',
     actions: [
-      {
-        key: 'order',
-        label: 'New Order',
-        description: 'Create a sales order',
-        icon: ShoppingBag,
-        shortcut: '⌘N',
-      },
-      {
-        key: 'customer',
-        label: 'New Customer',
-        description: 'Add a customer record',
-        icon: Users,
-      },
-      {
-        key: 'product',
-        label: 'New Product',
-        description: 'Add a product to catalog',
-        icon: Package,
-      },
+      { key: 'order', icon: ShoppingBag, shortcut: '⌘N' },
+      { key: 'customer', icon: Users },
+      { key: 'product', icon: Package },
     ],
   },
   {
-    label: 'Inventory',
+    groupKey: 'inventory',
     iconClass: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
     actions: [
-      {
-        key: 'purchase-order',
-        label: 'New Purchase Order',
-        description: 'Create a procurement order',
-        icon: ClipboardList,
-      },
-      {
-        key: 'supplier',
-        label: 'New Supplier',
-        description: 'Register a supplier or vendor',
-        icon: Truck,
-      },
-      {
-        key: 'stock-adjustment',
-        label: 'Stock Adjustment',
-        description: 'Adjust inventory levels',
-        icon: Boxes,
-        disabled: true,
-        soon: true,
-      },
+      { key: 'purchase-order', icon: ClipboardList },
+      { key: 'supplier', icon: Truck },
+      { key: 'stock-adjustment', icon: Boxes, disabled: true, soon: true },
     ],
   },
   {
-    label: 'Administration',
+    groupKey: 'administration',
     iconClass: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
     actions: [
-      {
-        key: 'warehouse',
-        label: 'New Warehouse',
-        description: 'Register a storage location',
-        icon: Warehouse,
-      },
-      {
-        key: 'company',
-        label: 'New Company',
-        description: 'Add a company entity',
-        icon: Building2,
-      },
+      { key: 'warehouse', icon: Warehouse },
+      { key: 'company', icon: Building2 },
     ],
   },
 ];
@@ -114,6 +82,8 @@ const CREATE_GROUPS: CreateGroup[] = [
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function SmartCreate() {
+  const { t } = useTranslation('common');
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -121,20 +91,20 @@ export function SmartCreate() {
           variant="default"
           size="sm"
           className="h-9 gap-1.5 px-3"
-          aria-label="Quick create"
+          aria-label={t(($) => $.create.ariaLabel)}
         >
           <Plus className="size-4" aria-hidden />
-          <span className="hidden lg:inline">New</span>
+          <span className="hidden lg:inline">{t(($) => $.create.new)}</span>
         </Button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-72 p-2">
         {CREATE_GROUPS.map((group, gi) => (
-          <div key={group.label}>
+          <div key={group.groupKey}>
             {gi > 0 ? <DropdownMenuSeparator className="my-1.5" /> : null}
 
             <DropdownMenuLabel className="px-1 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {group.label}
+              {t(($) => $.create.groups[group.groupKey])}
             </DropdownMenuLabel>
 
             <div className="space-y-0.5">
@@ -151,9 +121,7 @@ export function SmartCreate() {
                     }}
                     className={cn(
                       'flex w-full items-center gap-3 rounded-md px-2 py-2 text-start transition-colors',
-                      action.disabled
-                        ? 'cursor-not-allowed opacity-50'
-                        : 'hover:bg-accent',
+                      action.disabled ? 'cursor-not-allowed opacity-50' : 'hover:bg-accent',
                     )}
                   >
                     {/* Icon badge */}
@@ -170,21 +138,21 @@ export function SmartCreate() {
                     {/* Label + description */}
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-medium leading-tight">
-                        {action.label}
+                        {t(($) => $.create.actions[action.key].label)}
                       </span>
                       <span className="block truncate text-xs text-muted-foreground">
-                        {action.description}
+                        {t(($) => $.create.actions[action.key].description)}
                       </span>
                     </span>
 
                     {/* Shortcut or Soon badge */}
                     {action.soon ? (
                       <span className="shrink-0 rounded-full border border-primary/30 bg-primary/5 px-1.5 py-0.5 text-[9px] font-medium text-primary/70">
-                        Soon
+                        {t(($) => $.create.soon)}
                       </span>
                     ) : action.shortcut ? (
                       <kbd
-                        aria-label={`Shortcut: ${action.shortcut}`}
+                        aria-label={t(($) => $.create.shortcut, { keys: action.shortcut })}
                         className="shrink-0 select-none rounded border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground"
                       >
                         {action.shortcut}

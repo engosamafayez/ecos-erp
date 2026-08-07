@@ -418,6 +418,8 @@
       "empty": "No cash accounts.",
       "code": "Code",
       "name": "Name",
+      "accountLabel": "Cash Account",
+      "accountPlaceholder": "Select a cash account",
       "currency": "Currency",
       "status": "Status",
       "active": "Active",

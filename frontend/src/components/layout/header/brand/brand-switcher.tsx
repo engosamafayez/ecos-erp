@@ -54,10 +54,10 @@ export function BrandSwitcher({ className }: { className?: string }) {
   });
   const brands = data?.items ?? [];
 
-  const activeBrand = activeBrandId ? brands.find((b) => b.id === activeBrandId) ?? null : null;
+  const activeBrand = activeBrandId ? (brands.find((b) => b.id === activeBrandId) ?? null) : null;
 
   // "All Brands" is index 0, real brands start at index 1
-  const allItems = [null, ...brands] as (null | typeof brands[number])[];
+  const allItems = [null, ...brands] as (null | (typeof brands)[number])[];
 
   const filtered: typeof allItems = search.trim()
     ? [
@@ -116,140 +116,158 @@ export function BrandSwitcher({ className }: { className?: string }) {
   }
 
   return (
-  <>
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          aria-label={
-            activeBrand
-              ? t($ => $.switcher.currentBrand, { name: activeBrand.name })
-              : t($ => $.switcher.filterByBrand)
-          }
-          aria-expanded={open}
-          className={cn('h-9 gap-2 px-2 sm:px-3', className)}
-        >
-          <Layers className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-          <span className="hidden flex-col items-start sm:flex">
-            <span className="max-w-[6rem] truncate text-xs font-semibold leading-tight lg:max-w-[8rem]">
-              {activeBrand?.name ?? t($ => $.switcher.allBrands)}
-            </span>
-            <span className="max-w-[6rem] truncate text-[10px] leading-tight text-muted-foreground lg:max-w-[8rem]">
-              {activeBrand?.code ?? t($ => $.switcher.noFilter)}
-            </span>
-          </span>
-          <ChevronsUpDown className="size-3.5 shrink-0 opacity-40" aria-hidden />
-        </Button>
-      </DropdownMenuTrigger>
-
-      <DropdownMenuContent align="start" className="w-72 p-0" onCloseAutoFocus={(e) => e.preventDefault()}>
-        {/* ── Search ── */}
-        <div className="flex items-center gap-2 border-b px-3 py-2.5">
-          <Search className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-          <input
-            ref={inputRef}
-            type="text"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setFocusIdx(0); }}
-            onKeyDown={handleInputKeyDown}
-            placeholder={t($ => $.switcher.searchBrands)}
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-            aria-label={t($ => $.switcher.searchBrands)}
-            autoComplete="off"
-          />
-        </div>
-
-        {/* ── Section label ── */}
-        <div className="px-3 pb-1 pt-2.5">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {t($ => $.switcher.brands)}
-          </p>
-        </div>
-
-        {/* ── List ── */}
-        <div className="px-1 pb-1" role="listbox" aria-label={t($ => $.switcher.availableBrands)}>
-          {filtered.length <= 1 && search.trim() ? (
-            <div className="flex flex-col items-center gap-1 py-8 text-center">
-              <p className="text-sm font-medium text-muted-foreground">{t($ => $.switcher.noBrandsFound)}</p>
-              <p className="text-xs text-muted-foreground/60">{t($ => $.switcher.tryDifferentName)}</p>
-            </div>
-          ) : (
-            filtered.map((brand, idx) => {
-              const isAllBrands = brand === null;
-              const isActive = isAllBrands ? activeBrandId === null : brand.id === activeBrandId;
-              const isFocused = idx === focusIdx;
-
-              return (
-                <button
-                  key={isAllBrands ? '__all__' : brand.id}
-                  type="button"
-                  role="option"
-                  aria-selected={isActive}
-                  onClick={() => selectBrand(isAllBrands ? null : brand.id)}
-                  onMouseEnter={() => setFocusIdx(idx)}
-                  className={cn(
-                    'flex w-full items-center gap-3 rounded-md px-2 py-2.5 text-start transition-colors',
-                    isFocused
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-foreground hover:bg-accent/60',
-                  )}
-                >
-                  {isAllBrands ? (
-                    /* All Brands row */
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                      <Layers className="size-4" aria-hidden />
-                    </span>
-                  ) : (
-                    /* Brand initials badge */
-                    <span
-                      className={cn(
-                        'flex size-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold ring-1',
-                        brandColorClass(brand.id),
-                      )}
-                      aria-hidden
-                    >
-                      {brandInitials(brand.name)}
-                    </span>
-                  )}
-
-                  {/* Info */}
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold">
-                      {isAllBrands ? t($ => $.switcher.allBrands) : brand.name}
-                    </span>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {isAllBrands ? t($ => $.switcher.noFilterApplied) : brand.code}
-                    </span>
-                  </span>
-
-                  {/* Active check */}
-                  {isActive ? (
-                    <Check className="size-4 shrink-0 text-primary" aria-hidden />
-                  ) : null}
-                </button>
-              );
-            })
-          )}
-        </div>
-
-        {/* ── Footer ── */}
-        <div className="border-t px-1 py-1">
-          <button
-            type="button"
-            onClick={() => { setOpen(false); setFormOpen(true); }}
-            className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-start transition-colors hover:bg-accent/60"
+    <>
+      <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label={
+              activeBrand
+                ? t(($) => $.switcher.currentBrand, { name: activeBrand.name })
+                : t(($) => $.switcher.filterByBrand)
+            }
+            aria-expanded={open}
+            className={cn('h-9 gap-2 px-2 sm:px-3', className)}
           >
-            <span className="flex size-6 shrink-0 items-center justify-center rounded-md border border-primary/40 bg-primary/5 text-primary">
-              <Plus className="size-3.5" aria-hidden />
+            <Layers className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+            <span className="hidden flex-col items-start sm:flex">
+              <span className="max-w-[6rem] truncate text-xs font-semibold leading-tight lg:max-w-[8rem]">
+                {activeBrand?.name ?? t(($) => $.switcher.allBrands)}
+              </span>
+              <span className="max-w-[6rem] truncate text-[10px] leading-tight text-muted-foreground lg:max-w-[8rem]">
+                {activeBrand?.code ?? t(($) => $.switcher.noFilter)}
+              </span>
             </span>
-            <span className="text-xs font-medium">{t($ => $.switcher.newBrand)}</span>
-          </button>
-        </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
+            <ChevronsUpDown className="size-3.5 shrink-0 opacity-40" aria-hidden />
+          </Button>
+        </DropdownMenuTrigger>
 
-    <BrandFormDrawer open={formOpen} onOpenChange={setFormOpen} />
-  </>
+        <DropdownMenuContent
+          align="start"
+          className="w-72 p-0"
+          onCloseAutoFocus={(e) => e.preventDefault()}
+        >
+          {/* ── Search ── */}
+          <div className="flex items-center gap-2 border-b px-3 py-2.5">
+            <Search className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+            <input
+              ref={inputRef}
+              type="text"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setFocusIdx(0);
+              }}
+              onKeyDown={handleInputKeyDown}
+              placeholder={t(($) => $.switcher.searchBrands)}
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              aria-label={t(($) => $.switcher.searchBrands)}
+              autoComplete="off"
+            />
+          </div>
+
+          {/* ── Section label ── */}
+          <div className="px-3 pb-1 pt-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {t(($) => $.switcher.brands)}
+            </p>
+          </div>
+
+          {/* ── List ── */}
+          <div
+            className="px-1 pb-1"
+            role="listbox"
+            aria-label={t(($) => $.switcher.availableBrands)}
+          >
+            {filtered.length <= 1 && search.trim() ? (
+              <div className="flex flex-col items-center gap-1 py-8 text-center">
+                <p className="text-sm font-medium text-muted-foreground">
+                  {t(($) => $.switcher.noBrandsFound)}
+                </p>
+                <p className="text-xs text-muted-foreground/60">
+                  {t(($) => $.switcher.tryDifferentName)}
+                </p>
+              </div>
+            ) : (
+              filtered.map((brand, idx) => {
+                const isAllBrands = brand === null;
+                const isActive = isAllBrands ? activeBrandId === null : brand.id === activeBrandId;
+                const isFocused = idx === focusIdx;
+
+                return (
+                  <button
+                    key={isAllBrands ? '__all__' : brand.id}
+                    type="button"
+                    role="option"
+                    aria-selected={isActive}
+                    onClick={() => selectBrand(isAllBrands ? null : brand.id)}
+                    onMouseEnter={() => setFocusIdx(idx)}
+                    className={cn(
+                      'flex w-full items-center gap-3 rounded-md px-2 py-2.5 text-start transition-colors',
+                      isFocused
+                        ? 'bg-accent text-accent-foreground'
+                        : 'text-foreground hover:bg-accent/60',
+                    )}
+                  >
+                    {isAllBrands ? (
+                      /* All Brands row */
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+                        <Layers className="size-4" aria-hidden />
+                      </span>
+                    ) : (
+                      /* Brand initials badge */
+                      <span
+                        className={cn(
+                          'flex size-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold ring-1',
+                          brandColorClass(brand.id),
+                        )}
+                        aria-hidden
+                      >
+                        {brandInitials(brand.name)}
+                      </span>
+                    )}
+
+                    {/* Info */}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold">
+                        {isAllBrands ? t(($) => $.switcher.allBrands) : brand.name}
+                      </span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {isAllBrands ? t(($) => $.switcher.noFilterApplied) : brand.code}
+                      </span>
+                    </span>
+
+                    {/* Active check */}
+                    {isActive ? (
+                      <Check className="size-4 shrink-0 text-primary" aria-hidden />
+                    ) : null}
+                  </button>
+                );
+              })
+            )}
+          </div>
+
+          {/* ── Footer ── */}
+          <div className="border-t px-1 py-1">
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                setFormOpen(true);
+              }}
+              className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-start transition-colors hover:bg-accent/60"
+            >
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-md border border-primary/40 bg-primary/5 text-primary">
+                <Plus className="size-3.5" aria-hidden />
+              </span>
+              <span className="text-xs font-medium">{t(($) => $.switcher.newBrand)}</span>
+            </button>
+          </div>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <BrandFormDrawer open={formOpen} onOpenChange={setFormOpen} />
+    </>
   );
 }

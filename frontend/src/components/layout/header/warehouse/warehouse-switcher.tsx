@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronsUpDown, MapPin, Search, Warehouse } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { useOrganizationContext } from '@/features/organization/context/organiza
 import { useWarehousesQuery } from '@/features/warehouses/hooks/use-warehouses';
 
 export function WarehouseSwitcher({ className }: { className?: string }) {
+  const { t } = useTranslation('common');
   const { activeCompanyId, activeWarehouseId, setActiveWarehouseId } = useOrganizationContext();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -84,7 +86,9 @@ export function WarehouseSwitcher({ className }: { className?: string }) {
         <Button
           variant="outline"
           size="sm"
-          aria-label={active ? `Current warehouse: ${active.name}. Click to switch.` : 'Select warehouse'}
+          aria-label={
+            active ? `Current warehouse: ${active.name}. Click to switch.` : 'Select warehouse'
+          }
           aria-expanded={open}
           className={cn('h-9 gap-2 px-2 sm:px-3', className)}
         >
@@ -101,7 +105,11 @@ export function WarehouseSwitcher({ className }: { className?: string }) {
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="start" className="w-72 p-0" onCloseAutoFocus={(e) => e.preventDefault()}>
+      <DropdownMenuContent
+        align="start"
+        className="w-72 p-0"
+        onCloseAutoFocus={(e) => e.preventDefault()}
+      >
         {/* ── Search ── */}
         <div className="flex items-center gap-2 border-b px-3 py-2.5">
           <Search className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
@@ -109,11 +117,14 @@ export function WarehouseSwitcher({ className }: { className?: string }) {
             ref={inputRef}
             type="text"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setFocusIdx(0); }}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setFocusIdx(0);
+            }}
             onKeyDown={handleInputKeyDown}
-            placeholder="Search warehouses..."
+            placeholder={t(($) => $.warehouseSwitcher.searchPlaceholder)}
             className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-            aria-label="Search warehouses"
+            aria-label={t(($) => $.warehouseSwitcher.searchLabel)}
             autoComplete="off"
           />
         </div>
@@ -121,16 +132,24 @@ export function WarehouseSwitcher({ className }: { className?: string }) {
         {/* ── Section label ── */}
         <div className="px-3 pb-1 pt-2.5">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Warehouses
+            {t(($) => $.warehouseSwitcher.title)}
           </p>
         </div>
 
         {/* ── List ── */}
-        <div className="px-1 pb-1" role="listbox" aria-label="Available warehouses">
+        <div
+          className="px-1 pb-1"
+          role="listbox"
+          aria-label={t(($) => $.warehouseSwitcher.listLabel)}
+        >
           {filtered.length === 0 ? (
             <div className="flex flex-col items-center gap-1 py-8 text-center">
-              <p className="text-sm font-medium text-muted-foreground">No warehouses found</p>
-              <p className="text-xs text-muted-foreground/60">Try a different name or location</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                {t(($) => $.warehouseSwitcher.empty)}
+              </p>
+              <p className="text-xs text-muted-foreground/60">
+                {t(($) => $.warehouseSwitcher.emptyHint)}
+              </p>
             </div>
           ) : (
             filtered.map((wh, idx) => {
@@ -168,9 +187,7 @@ export function WarehouseSwitcher({ className }: { className?: string }) {
                       )}
                     </span>
                   </span>
-                  {isActive ? (
-                    <Check className="size-4 shrink-0 text-primary" aria-hidden />
-                  ) : null}
+                  {isActive ? <Check className="size-4 shrink-0 text-primary" aria-hidden /> : null}
                 </button>
               );
             })

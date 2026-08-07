@@ -151,23 +151,23 @@ import { UnifiedInboxPage } from '@/features/customer-engagement/pages/unified-i
 import { CepDashboardPage } from '@/features/customer-engagement/pages/cep-dashboard-page';
 import { CepLeadsPage } from '@/features/customer-engagement/pages/cep-leads-page';
 import { NotFoundPage } from '@/features/core/pages/not-found-page';
-import { BridgeDashboardPage }   from '@/features/claude-bridge/pages/bridge-dashboard-page';
-import { BridgeTasksPage }       from '@/features/claude-bridge/pages/bridge-tasks-page';
-import { BridgeCreateTaskPage }  from '@/features/claude-bridge/pages/bridge-create-task-page';
-import { BridgeTaskDetailPage }  from '@/features/claude-bridge/pages/bridge-task-detail-page';
-import { BridgeSettingsPage }    from '@/features/claude-bridge/pages/bridge-settings-page';
-import { EngineeringDashboardPage }        from '@/features/engineering/pages/engineering-dashboard-page';
-import { EngineeringRunsPage }             from '@/features/engineering/pages/engineering-runs-page';
-import { EngineeringFindingsPage }         from '@/features/engineering/pages/engineering-findings-page';
-import { EngineeringPipelinePage }         from '@/features/engineering/pages/engineering-pipeline-page';
-import { EngineeringPipelineHistoryPage }  from '@/features/engineering/pages/engineering-pipeline-history-page';
-import { EngineeringNotificationsPage }    from '@/features/engineering/pages/engineering-notifications-page';
-import { EngineeringAnalyticsPage }        from '@/features/engineering/pages/engineering-analytics-page';
-import ClusterDashboardPage                from '@/features/engineering/pages/ClusterDashboardPage';
-import ReleaseDashboardPage               from '@/features/engineering/pages/ReleaseDashboardPage';
-import AIEngineeringWorkspacePage         from '@/features/engineering/pages/AIEngineeringWorkspacePage';
-import RepairSessionsPage                 from '@/features/engineering/pages/RepairSessionsPage';
-import EnterpriseWorkspacePage            from '@/features/engineering/pages/EnterpriseWorkspacePage';
+import { BridgeDashboardPage } from '@/features/claude-bridge/pages/bridge-dashboard-page';
+import { BridgeTasksPage } from '@/features/claude-bridge/pages/bridge-tasks-page';
+import { BridgeCreateTaskPage } from '@/features/claude-bridge/pages/bridge-create-task-page';
+import { BridgeTaskDetailPage } from '@/features/claude-bridge/pages/bridge-task-detail-page';
+import { BridgeSettingsPage } from '@/features/claude-bridge/pages/bridge-settings-page';
+import { EngineeringDashboardPage } from '@/features/engineering/pages/engineering-dashboard-page';
+import { EngineeringRunsPage } from '@/features/engineering/pages/engineering-runs-page';
+import { EngineeringFindingsPage } from '@/features/engineering/pages/engineering-findings-page';
+import { EngineeringPipelinePage } from '@/features/engineering/pages/engineering-pipeline-page';
+import { EngineeringPipelineHistoryPage } from '@/features/engineering/pages/engineering-pipeline-history-page';
+import { EngineeringNotificationsPage } from '@/features/engineering/pages/engineering-notifications-page';
+import { EngineeringAnalyticsPage } from '@/features/engineering/pages/engineering-analytics-page';
+import ClusterDashboardPage from '@/features/engineering/pages/ClusterDashboardPage';
+import ReleaseDashboardPage from '@/features/engineering/pages/ReleaseDashboardPage';
+import AIEngineeringWorkspacePage from '@/features/engineering/pages/AIEngineeringWorkspacePage';
+import RepairSessionsPage from '@/features/engineering/pages/RepairSessionsPage';
+import EnterpriseWorkspacePage from '@/features/engineering/pages/EnterpriseWorkspacePage';
 import { OmnichannelInboxPage } from '@/features/conversational-commerce/pages/omnichannel-inbox-page';
 import { MacrosPage } from '@/features/conversational-commerce/pages/macros-page';
 import { RoutingRulesPage } from '@/features/conversational-commerce/pages/routing-rules-page';
@@ -205,13 +205,14 @@ import { ROUTES } from '@/router/routes';
 // ROUTES.settings is deliberately absent: the real settings workspace already
 // exists at ROUTES.configurationOs, so a Coming Soon placeholder here was a dead
 // link competing with it in the same menu (UAT BUG-04). It redirects instead.
-const moduleRoutes = [
-  ROUTES.sales,
-  ROUTES.crm,
-  ROUTES.reports,
-  ROUTES.users,
-  ROUTES.roles,
-].map((path) => ({ path, Component: ComingSoonPage }));
+// ROUTES.crm is deliberately absent too: CRM is complete and its rail entry
+// resolves to /crm/customers, but the bare /crm URL still rendered a Coming Soon
+// placeholder for anyone arriving by bookmark, deep link or typed address
+// (BUG-GL-004). It redirects instead.
+const moduleRoutes = [ROUTES.sales, ROUTES.reports, ROUTES.users, ROUTES.roles].map((path) => ({
+  path,
+  Component: ComingSoonPage,
+}));
 
 export const router = createBrowserRouter(
   [
@@ -278,7 +279,10 @@ export const router = createBrowserRouter(
             { path: ROUTES.hrApplicantTags, Component: ApplicantTagsPage },
             { path: ROUTES.hrOffers, Component: OffersWorkspacePage },
             { path: ROUTES.hrExits, Component: ExitManagementPage },
-            { path: ROUTES.hrCompensationExplainability, Component: CompensationExplainabilityPage },
+            {
+              path: ROUTES.hrCompensationExplainability,
+              Component: CompensationExplainabilityPage,
+            },
             { path: ROUTES.hrRecruitment, Component: RecruitmentWorkspacePage },
             { path: ROUTES.hrApplication, Component: ApplicationDetailPage },
             { path: ROUTES.hrExecutive, Component: HrExecutivePage },
@@ -295,8 +299,14 @@ export const router = createBrowserRouter(
             { path: ROUTES.categories, loader: () => redirect(ROUTES.inventoryCategories) },
             { path: ROUTES.units, loader: () => redirect(ROUTES.inventoryUnits) },
             // Old scoped routes redirect to unified categories with scope query param
-            { path: ROUTES.inventoryProductCategories, loader: () => redirect(`${ROUTES.inventoryCategories}?scope=product`) },
-            { path: ROUTES.inventoryMaterialCategories, loader: () => redirect(`${ROUTES.inventoryCategories}?scope=material`) },
+            {
+              path: ROUTES.inventoryProductCategories,
+              loader: () => redirect(`${ROUTES.inventoryCategories}?scope=product`),
+            },
+            {
+              path: ROUTES.inventoryMaterialCategories,
+              loader: () => redirect(`${ROUTES.inventoryCategories}?scope=material`),
+            },
             // Inventory Master Data — unified categories workspace
             { path: ROUTES.inventoryCategories, Component: CategoriesPage },
             { path: ROUTES.inventoryUnits, Component: UnitsPage },
@@ -340,85 +350,86 @@ export const router = createBrowserRouter(
             { path: ROUTES.fulfillmentsNew, Component: CreateFulfillmentPage },
             { path: `${ROUTES.fulfillments}/:id`, Component: ViewFulfillmentPage },
             { path: ROUTES.customers, Component: CustomersPage },
+            { path: ROUTES.crm, loader: () => redirect(ROUTES.crmCustomers) },
             { path: ROUTES.crmCustomers, Component: CrmCustomersWorkspacePage },
             { path: ROUTES.crmExecutive, Component: CrmExecutiveWorkspacePage },
             { path: ROUTES.customerDetail, Component: CustomerProfilePage },
             // Configuration OS
-            { path: ROUTES.configurationOs,      Component: ConfigurationOsPage },
-            { path: ROUTES.configurationBrand,   Component: BrandConfigurationPage },
+            { path: ROUTES.configurationOs, Component: ConfigurationOsPage },
+            { path: ROUTES.configurationBrand, Component: BrandConfigurationPage },
             // Distribution OS
-            { path: ROUTES.distributionBoard,                       Component: DistributionBoardPage },
-            { path: `${ROUTES.loadingWorkspace}/:tripId/loading`,   Component: LoadingWorkspacePage },
+            { path: ROUTES.distributionBoard, Component: DistributionBoardPage },
+            { path: `${ROUTES.loadingWorkspace}/:tripId/loading`, Component: LoadingWorkspacePage },
             // Loading OS
-            { path: ROUTES.loadingOsDashboard,                      Component: LoadingDashboardPage },
+            { path: ROUTES.loadingOsDashboard, Component: LoadingDashboardPage },
             // Dispatch Gate OS
-            { path: ROUTES.dispatchGate,                            Component: DispatchGatePage },
-            { path: `${ROUTES.dispatchGate}/:tripId`,               Component: DispatchGateWorkspacePage },
+            { path: ROUTES.dispatchGate, Component: DispatchGatePage },
+            { path: `${ROUTES.dispatchGate}/:tripId`, Component: DispatchGateWorkspacePage },
             // Logistics OS
-            { path: ROUTES.logisticsGeography,            Component: EgyptGeographyPage },
-            { path: ROUTES.logisticsDistributionZones,    Component: DistributionZonesPage },
+            { path: ROUTES.logisticsGeography, Component: EgyptGeographyPage },
+            { path: ROUTES.logisticsDistributionZones, Component: DistributionZonesPage },
             { path: ROUTES.logisticsDistributionPlanning, Component: DistributionPlanningPage },
-            { path: ROUTES.logisticsTrips,                Component: TripsWorkspacePage },
-            { path: ROUTES.logisticsCarrierAccounts,      Component: CarrierAccountsPage },
-            { path: ROUTES.logisticsAutomation,           Component: AutomationMonitoringPage },
-            { path: ROUTES.logisticsIntelligence,         Component: LogisticsIntelligencePage },
-            { path: ROUTES.logisticsFuelReview,           Component: FuelReviewPage },
-            { path: ROUTES.logisticsDispatchBoard,        Component: DispatchBoardPage },
-            { path: ROUTES.logisticsShippingCompanies,    Component: ShippingCompaniesPage },
-            { path: ROUTES.logisticsDrivers,              Component: DriversPage },
-            { path: ROUTES.logisticsVehicles,             Component: VehiclesPage },
-            { path: ROUTES.logisticsDelivery,             Component: DeliveryPage },
-            { path: ROUTES.logisticsFleet,                Component: FleetDashboardPage },
-            { path: ROUTES.logisticsNetwork,              Component: ServiceAreasPage },
-            { path: ROUTES.logisticsDispatch,             Component: DispatchCommandCenterPage },
-            { path: ROUTES.logisticsOperations,           Component: OperationsCenterPage },
-            { path: ROUTES.logisticsDispatchExecution,    Component: DispatchExecutionPage },
-            { path: ROUTES.logisticsOpsDashboards,        Component: OperationalDashboardsPage },
-            { path: ROUTES.logisticsOpsAlerts,            Component: AlertCenterPage },
-            { path: ROUTES.logisticsOpsActivity,          Component: ActivityCenterPage },
-            { path: ROUTES.logisticsOpsReadiness,         Component: EnterpriseReadinessPage },
-            { path: ROUTES.logisticsEnterprise,           Component: LogisticsEnterpriseWorkspacePage },
+            { path: ROUTES.logisticsTrips, Component: TripsWorkspacePage },
+            { path: ROUTES.logisticsCarrierAccounts, Component: CarrierAccountsPage },
+            { path: ROUTES.logisticsAutomation, Component: AutomationMonitoringPage },
+            { path: ROUTES.logisticsIntelligence, Component: LogisticsIntelligencePage },
+            { path: ROUTES.logisticsFuelReview, Component: FuelReviewPage },
+            { path: ROUTES.logisticsDispatchBoard, Component: DispatchBoardPage },
+            { path: ROUTES.logisticsShippingCompanies, Component: ShippingCompaniesPage },
+            { path: ROUTES.logisticsDrivers, Component: DriversPage },
+            { path: ROUTES.logisticsVehicles, Component: VehiclesPage },
+            { path: ROUTES.logisticsDelivery, Component: DeliveryPage },
+            { path: ROUTES.logisticsFleet, Component: FleetDashboardPage },
+            { path: ROUTES.logisticsNetwork, Component: ServiceAreasPage },
+            { path: ROUTES.logisticsDispatch, Component: DispatchCommandCenterPage },
+            { path: ROUTES.logisticsOperations, Component: OperationsCenterPage },
+            { path: ROUTES.logisticsDispatchExecution, Component: DispatchExecutionPage },
+            { path: ROUTES.logisticsOpsDashboards, Component: OperationalDashboardsPage },
+            { path: ROUTES.logisticsOpsAlerts, Component: AlertCenterPage },
+            { path: ROUTES.logisticsOpsActivity, Component: ActivityCenterPage },
+            { path: ROUTES.logisticsOpsReadiness, Component: EnterpriseReadinessPage },
+            { path: ROUTES.logisticsEnterprise, Component: LogisticsEnterpriseWorkspacePage },
             // Marketing OS
-            { path: ROUTES.marketing,               Component: MarketingDashboardPage },
-            { path: ROUTES.marketingAssets,         Component: MarketingAssetsPage },
-            { path: ROUTES.marketingConnectMeta,    Component: MetaConnectPage },
+            { path: ROUTES.marketing, Component: MarketingDashboardPage },
+            { path: ROUTES.marketingAssets, Component: MarketingAssetsPage },
+            { path: ROUTES.marketingConnectMeta, Component: MetaConnectPage },
             { path: ROUTES.marketingMetaConnection, Component: MetaConnectionPage },
-            { path: ROUTES.marketingCampaigns,      Component: CampaignsWorkspacePage },
-            { path: ROUTES.marketingCampaignDash,    Component: CampaignExecutiveDashboardPage },
-            { path: ROUTES.marketingInitiatives,    Component: InitiativesWorkspacePage },
+            { path: ROUTES.marketingCampaigns, Component: CampaignsWorkspacePage },
+            { path: ROUTES.marketingCampaignDash, Component: CampaignExecutiveDashboardPage },
+            { path: ROUTES.marketingInitiatives, Component: InitiativesWorkspacePage },
             { path: ROUTES.marketingInitiativeDash, Component: InitiativeExecutiveViewPage },
             // Marketing Intelligence
-            { path: ROUTES.marketingIntelligence,      Component: ExecutiveDashboardPage },
+            { path: ROUTES.marketingIntelligence, Component: ExecutiveDashboardPage },
             { path: ROUTES.marketingCampaignAnalytics, Component: CampaignAnalyticsPage },
-            { path: ROUTES.marketingAdAnalytics,       Component: AdAnalyticsPage },
+            { path: ROUTES.marketingAdAnalytics, Component: AdAnalyticsPage },
             { path: ROUTES.marketingCreativeAnalytics, Component: CreativeAnalyticsPage },
-            { path: ROUTES.marketingTrends,            Component: PerformanceTrendsPage },
-            { path: ROUTES.marketingBudget,            Component: BudgetAnalysisPage },
-            { path: ROUTES.marketingReports,           Component: ReportsPage },
+            { path: ROUTES.marketingTrends, Component: PerformanceTrendsPage },
+            { path: ROUTES.marketingBudget, Component: BudgetAnalysisPage },
+            { path: ROUTES.marketingReports, Component: ReportsPage },
             // Marketing Settings
-            { path: ROUTES.marketingSettings,          Component: MarketingSettingsPage },
+            { path: ROUTES.marketingSettings, Component: MarketingSettingsPage },
             // Campaign Studio
-            { path: ROUTES.campaignStudio,          Component: CampaignStudioPage },
-            { path: ROUTES.campaignGovernance,      Component: CampaignGovernancePage },
+            { path: ROUTES.campaignStudio, Component: CampaignStudioPage },
+            { path: ROUTES.campaignGovernance, Component: CampaignGovernancePage },
             { path: ROUTES.campaignStudioDashboard, Component: StudioExecutiveDashboardPage },
             // Core Platform — Business Attribution Engine
             { path: ROUTES.businessAttribution, Component: JourneyExplorerPage },
-            { path: ROUTES.baeTimeline,          Component: BaeTimelinePage },
+            { path: ROUTES.baeTimeline, Component: BaeTimelinePage },
             // Customer Engagement Platform
-            { path: ROUTES.customerEngagement,  Component: UnifiedInboxPage },
-            { path: ROUTES.cepDashboard,        Component: CepDashboardPage },
-            { path: ROUTES.cepLeads,            Component: CepLeadsPage },
+            { path: ROUTES.customerEngagement, Component: UnifiedInboxPage },
+            { path: ROUTES.cepDashboard, Component: CepDashboardPage },
+            { path: ROUTES.cepLeads, Component: CepLeadsPage },
             // Omnichannel Commerce (MKT-007)
-            { path: ROUTES.omnichannelInbox,      Component: OmnichannelInboxPage },
-            { path: ROUTES.omnichannelDashboard,  Component: ConversationsDashboardPage },
-            { path: ROUTES.omnichannelMacros,     Component: MacrosPage },
-            { path: ROUTES.omnichannelRouting,    Component: RoutingRulesPage },
-            { path: ROUTES.omnichannelProviders,  Component: ChannelProvidersPage },
+            { path: ROUTES.omnichannelInbox, Component: OmnichannelInboxPage },
+            { path: ROUTES.omnichannelDashboard, Component: ConversationsDashboardPage },
+            { path: ROUTES.omnichannelMacros, Component: MacrosPage },
+            { path: ROUTES.omnichannelRouting, Component: RoutingRulesPage },
+            { path: ROUTES.omnichannelProviders, Component: ChannelProvidersPage },
             // Marketing Automation Platform
-            { path: ROUTES.automationWorkspace,  Component: AutomationWorkspacePage },
-            { path: ROUTES.workflowBuilder,      Component: WorkflowBuilderPage },
-            { path: ROUTES.audienceSegments,     Component: AudienceSegmentsPage },
-            { path: ROUTES.automationDashboard,  Component: AutomationDashboardPage },
+            { path: ROUTES.automationWorkspace, Component: AutomationWorkspacePage },
+            { path: ROUTES.workflowBuilder, Component: WorkflowBuilderPage },
+            { path: ROUTES.audienceSegments, Component: AudienceSegmentsPage },
+            { path: ROUTES.automationDashboard, Component: AutomationDashboardPage },
             { path: ROUTES.automationGovernance, Component: AutomationGovernancePage },
             // Commerce
             { path: ROUTES.productMappings, Component: ProductMappingsPage },
@@ -446,45 +457,45 @@ export const router = createBrowserRouter(
               path: ROUTES.waveWorkspace,
               Component: WaveWorkspaceLayout,
               children: [
-                { index: true,             Component: FulfillmentWaveWorkspacePage },
-                { path: 'products',        Component: WaveProductDemandPage },
-                { path: 'materials',       Component: WaveRawMaterialsPage },
-                { path: 'missing',         Component: WaveMissingMaterialsPage },
-                { path: 'wave-orders',     Component: WaveOrdersPage },
-                { path: 'settings',        Component: WaveSettingsPage },
+                { index: true, Component: FulfillmentWaveWorkspacePage },
+                { path: 'products', Component: WaveProductDemandPage },
+                { path: 'materials', Component: WaveRawMaterialsPage },
+                { path: 'missing', Component: WaveMissingMaterialsPage },
+                { path: 'wave-orders', Component: WaveOrdersPage },
+                { path: 'settings', Component: WaveSettingsPage },
               ],
             },
             // Claude Bridge
-            { path: ROUTES.claudeBridge,           Component: BridgeDashboardPage },
-            { path: ROUTES.claudeBridgeTasks,      Component: BridgeTasksPage },
-            { path: ROUTES.claudeBridgeTasksNew,   Component: BridgeCreateTaskPage },
+            { path: ROUTES.claudeBridge, Component: BridgeDashboardPage },
+            { path: ROUTES.claudeBridgeTasks, Component: BridgeTasksPage },
+            { path: ROUTES.claudeBridgeTasksNew, Component: BridgeCreateTaskPage },
             { path: ROUTES.claudeBridgeTaskDetail, Component: BridgeTaskDetailPage },
-            { path: ROUTES.claudeBridgeSettings,   Component: BridgeSettingsPage },
+            { path: ROUTES.claudeBridgeSettings, Component: BridgeSettingsPage },
             // Engineering OS (TASK-ENG-005 / TASK-ENG-006)
-            { path: ROUTES.engineeringDashboard,       Component: EngineeringDashboardPage },
-            { path: ROUTES.engineeringRuns,            Component: EngineeringRunsPage },
-            { path: ROUTES.engineeringFindings,        Component: EngineeringFindingsPage },
-            { path: ROUTES.engineeringPipeline,        Component: EngineeringPipelinePage },
+            { path: ROUTES.engineeringDashboard, Component: EngineeringDashboardPage },
+            { path: ROUTES.engineeringRuns, Component: EngineeringRunsPage },
+            { path: ROUTES.engineeringFindings, Component: EngineeringFindingsPage },
+            { path: ROUTES.engineeringPipeline, Component: EngineeringPipelinePage },
             { path: ROUTES.engineeringPipelineHistory, Component: EngineeringPipelineHistoryPage },
-            { path: ROUTES.engineeringNotifications,   Component: EngineeringNotificationsPage },
-            { path: ROUTES.engineeringAnalytics,       Component: EngineeringAnalyticsPage },
-            { path: ROUTES.engineeringCluster,         Component: ClusterDashboardPage },
-            { path: ROUTES.engineeringReleases,        Component: ReleaseDashboardPage },
-            { path: ROUTES.engineeringAiSupervisor,    Component: AIEngineeringWorkspacePage },
-            { path: ROUTES.engineeringRepair,          Component: RepairSessionsPage },
-            { path: ROUTES.engineeringWorkspace,       Component: EnterpriseWorkspacePage },
+            { path: ROUTES.engineeringNotifications, Component: EngineeringNotificationsPage },
+            { path: ROUTES.engineeringAnalytics, Component: EngineeringAnalyticsPage },
+            { path: ROUTES.engineeringCluster, Component: ClusterDashboardPage },
+            { path: ROUTES.engineeringReleases, Component: ReleaseDashboardPage },
+            { path: ROUTES.engineeringAiSupervisor, Component: AIEngineeringWorkspacePage },
+            { path: ROUTES.engineeringRepair, Component: RepairSessionsPage },
+            { path: ROUTES.engineeringWorkspace, Component: EnterpriseWorkspacePage },
             // Driver Mobile OS (TASK-DIST-005)
-            { path: ROUTES.driverHome,            Component: DriverHomePage },
-            { path: ROUTES.driverTrip,            Component: DriverTripDashboardPage },
-            { path: ROUTES.driverTripStops,       Component: DriverStopListPage },
-            { path: ROUTES.driverTripStop,        Component: DriverStopDetailPage },
+            { path: ROUTES.driverHome, Component: DriverHomePage },
+            { path: ROUTES.driverTrip, Component: DriverTripDashboardPage },
+            { path: ROUTES.driverTripStops, Component: DriverStopListPage },
+            { path: ROUTES.driverTripStop, Component: DriverStopDetailPage },
             { path: ROUTES.driverTripCollections, Component: DriverCollectionsPage },
-            { path: ROUTES.driverTripExceptions,  Component: DriverExceptionsPage },
-            { path: ROUTES.driverTripReturns,     Component: DriverReturnsPage },
-            { path: ROUTES.driverTripSettlement,  Component: DriverSettlementPage },
-            { path: ROUTES.driverTripCustody,     Component: DriverCustodyReturnPage },
-            { path: ROUTES.driverTripTimeline,    Component: DriverTripTimelinePage },
-            { path: ROUTES.driverTripMap,         Component: DriverMapPage },
+            { path: ROUTES.driverTripExceptions, Component: DriverExceptionsPage },
+            { path: ROUTES.driverTripReturns, Component: DriverReturnsPage },
+            { path: ROUTES.driverTripSettlement, Component: DriverSettlementPage },
+            { path: ROUTES.driverTripCustody, Component: DriverCustodyReturnPage },
+            { path: ROUTES.driverTripTimeline, Component: DriverTripTimelinePage },
+            { path: ROUTES.driverTripMap, Component: DriverMapPage },
             ...moduleRoutes,
             // UAT BUG-04 — the menu's "Settings" entry pointed at a Coming Soon
             // placeholder while the real workspace lived elsewhere. Redirect so

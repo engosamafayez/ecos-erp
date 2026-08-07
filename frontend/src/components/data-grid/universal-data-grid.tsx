@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { CSSProperties, ReactNode } from 'react';
 import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -99,9 +99,10 @@ function Td({
       className={cn(
         'px-3 py-2.5 text-sm first:ps-4 last:pe-4 align-top',
         pinned && 'sticky z-[5] transition-colors',
-        pinned && (selected
-          ? 'bg-primary/5 group-hover:bg-primary/10'
-          : 'bg-card group-hover:bg-accent/40'),
+        pinned &&
+          (selected
+            ? 'bg-primary/5 group-hover:bg-primary/10'
+            : 'bg-card group-hover:bg-accent/40'),
         className,
       )}
     >
@@ -178,7 +179,7 @@ export function UniversalDataGrid<T>({
     () =>
       columns.filter((col) => {
         if (col.alwaysVisible) return true;
-        if (columnVisibility) return columnVisibility[col.key] ?? (col.defaultVisible !== false);
+        if (columnVisibility) return columnVisibility[col.key] ?? col.defaultVisible !== false;
         return col.defaultVisible !== false;
       }),
     [columns, columnVisibility],
@@ -193,7 +194,7 @@ export function UniversalDataGrid<T>({
     [visibleCols, hasSelection],
   );
 
-  const defaultEmpty = emptyState ?? <EmptyState title={t($ => $.table.noRecords)} />;
+  const defaultEmpty = emptyState ?? <EmptyState title={t(($) => $.table.noRecords)} />;
   const defaultError = errorState ?? <ErrorState />;
 
   // ── Scroll interactions ───────────────────────────────────────────────────
@@ -289,7 +290,14 @@ export function UniversalDataGrid<T>({
           defaultEmpty
         ) : renderMobileCard ? (
           <div role="list">
-            {data.map((row) => renderMobileCard(row, selection))}
+            {/* Keyed by the caller's own row id, the same identity the desktop
+                table uses. Without it React warned on every grid in the app —
+                this branch renders even on desktop, where CSS hides it. Keying
+                by array index would silence the warning while still remapping
+                state onto the wrong row after a sort or filter. */}
+            {data.map((row) => (
+              <Fragment key={rowId(row)}>{renderMobileCard(row, selection)}</Fragment>
+            ))}
           </div>
         ) : null}
       </div>
@@ -297,10 +305,7 @@ export function UniversalDataGrid<T>({
       {/* ── Desktop (lg+) ── */}
       <div className="hidden lg:block overflow-hidden rounded-lg border bg-card">
         {/* scrollbar-none hides the native scrollbar; grab-to-scroll + Shift+Wheel handle horizontal navigation */}
-        <div
-          ref={tableScrollRef}
-          className="overflow-x-auto scrollbar-none cursor-grab"
-        >
+        <div ref={tableScrollRef} className="overflow-x-auto scrollbar-none cursor-grab">
           <table className="w-full caption-bottom text-sm">
             {/* Sticky header */}
             <thead className="sticky top-0 z-30 border-b bg-muted/60 backdrop-blur-sm">
@@ -309,9 +314,11 @@ export function UniversalDataGrid<T>({
                   <Th pinned style={{ left: 0 }} className="w-10">
                     <input
                       type="checkbox"
-                      aria-label={t($ => $.selection.selectAllRows)}
+                      aria-label={t(($) => $.selection.selectAllRows)}
                       checked={selection.allSelected}
-                      ref={(el) => { if (el) el.indeterminate = selection.someSelected; }}
+                      ref={(el) => {
+                        if (el) el.indeterminate = selection.someSelected;
+                      }}
                       onChange={(e) => selection.selectAll(e.target.checked)}
                       className="size-4 cursor-pointer rounded accent-primary"
                     />
@@ -320,15 +327,18 @@ export function UniversalDataGrid<T>({
 
                 {visibleCols.map((col) => {
                   const isPinned = !!col.pin;
-                  const style: CSSProperties = col.pin === 'left'
-                    ? { left: leftOf.get(col.key) }
-                    : col.pin === 'right'
-                    ? { right: rightOf.get(col.key) }
-                    : {};
+                  const style: CSSProperties =
+                    col.pin === 'left'
+                      ? { left: leftOf.get(col.key) }
+                      : col.pin === 'right'
+                        ? { right: rightOf.get(col.key) }
+                        : {};
 
                   const isSorted = sort?.field === col.key;
                   const SortIcon = isSorted
-                    ? sort?.direction === 'asc' ? ArrowUp : ArrowDown
+                    ? sort?.direction === 'asc'
+                      ? ArrowUp
+                      : ArrowDown
                     : ChevronsUpDown;
 
                   return (
@@ -353,7 +363,7 @@ export function UniversalDataGrid<T>({
                           <SortIcon className="size-3" />
                         </button>
                       ) : (
-                        col.header ?? col.label
+                        (col.header ?? col.label)
                       )}
                     </Th>
                   );
@@ -379,11 +389,15 @@ export function UniversalDataGrid<T>({
                 ))
               ) : error ? (
                 <tr>
-                  <td colSpan={colCount} className="p-0">{defaultError}</td>
+                  <td colSpan={colCount} className="p-0">
+                    {defaultError}
+                  </td>
                 </tr>
               ) : data.length === 0 ? (
                 <tr>
-                  <td colSpan={colCount} className="p-0">{defaultEmpty}</td>
+                  <td colSpan={colCount} className="p-0">
+                    {defaultEmpty}
+                  </td>
                 </tr>
               ) : (
                 data.map((row) => {
@@ -400,14 +414,15 @@ export function UniversalDataGrid<T>({
                         'group transition-colors hover:bg-accent/40',
                         onRowClick && 'cursor-pointer',
                         isSelected && 'bg-primary/5',
-                        isFocused && 'outline outline-1 -outline-offset-1 outline-primary/50 bg-accent/30',
+                        isFocused &&
+                          'outline outline-1 -outline-offset-1 outline-primary/50 bg-accent/30',
                       )}
                     >
                       {hasSelection && (
                         <Td pinned selected={isSelected} style={{ left: 0 }} className="w-10">
                           <input
                             type="checkbox"
-                            aria-label={t($ => $.selection.selectRow)}
+                            aria-label={t(($) => $.selection.selectRow)}
                             checked={isSelected}
                             onClick={(e) => e.stopPropagation()}
                             onChange={(e) => selection.selectRow(id, e.target.checked)}
@@ -418,11 +433,12 @@ export function UniversalDataGrid<T>({
 
                       {visibleCols.map((col) => {
                         const isPinned = !!col.pin;
-                        const style: CSSProperties = col.pin === 'left'
-                          ? { left: leftOf.get(col.key) }
-                          : col.pin === 'right'
-                          ? { right: rightOf.get(col.key) }
-                          : {};
+                        const style: CSSProperties =
+                          col.pin === 'left'
+                            ? { left: leftOf.get(col.key) }
+                            : col.pin === 'right'
+                              ? { right: rightOf.get(col.key) }
+                              : {};
 
                         return (
                           <Td

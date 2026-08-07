@@ -208,7 +208,6 @@ function CalendarTab({
   selectedPeriodId: string | null;
   onSelectPeriod: (id: string) => void;
 }) {
-  const { t } = useTranslation('finance');
   const { can } = usePermission();
   const [yearId, setYearId] = useState<string | null>(null);
 
@@ -220,16 +219,15 @@ function CalendarTab({
 
       {can('finance.period.manage') && <CreateYearPanel />}
 
+      {/* The grid above already states "no fiscal years" in its own empty
+          state; a second copy here said the same thing twice on a fresh
+          tenant. The period grid simply does not render until a year exists. */}
       {activeYear && (
         <PeriodGrid
           year={activeYear}
           selectedPeriodId={selectedPeriodId}
           onSelectPeriod={onSelectPeriod}
         />
-      )}
-
-      {!activeYear && !isLoading && (
-        <p className="text-sm text-muted-foreground">{t(($) => $.fiscal.year.empty)}</p>
       )}
     </div>
   );

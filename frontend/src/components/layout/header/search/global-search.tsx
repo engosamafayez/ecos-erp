@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search } from 'lucide-react';
 
 import { GlobalCommandPalette } from '@/components/command-center';
@@ -7,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useHeaderContext } from '../header-context';
 
 export function GlobalSearch() {
+  const { t } = useTranslation('common');
   const { searchOpen, openSearch, closeSearch } = useHeaderContext();
 
   // Register Ctrl/Cmd + K shortcut globally
@@ -27,7 +29,7 @@ export function GlobalSearch() {
       <button
         type="button"
         onClick={openSearch}
-        aria-label="Open global search (Ctrl+K)"
+        aria-label={t(($) => $.globalSearch.open)}
         aria-keyshortcuts="Control+K Meta+K"
         className={[
           'relative hidden sm:flex items-center gap-2',
@@ -40,8 +42,8 @@ export function GlobalSearch() {
       >
         <Search className="size-4 shrink-0" aria-hidden />
         <span className="flex-1 truncate text-start">
-          <span className="hidden lg:inline">Search anything...</span>
-          <span className="lg:hidden">Search...</span>
+          <span className="hidden lg:inline">{t(($) => $.globalSearch.trigger)}</span>
+          <span className="lg:hidden">{t(($) => $.globalSearch.triggerShort)}</span>
         </span>
         <kbd
           aria-hidden
@@ -56,7 +58,7 @@ export function GlobalSearch() {
         variant="ghost"
         size="icon"
         onClick={openSearch}
-        aria-label="Open search"
+        aria-label={t(($) => $.globalSearch.openShort)}
         className="sm:hidden"
       >
         <Search className="size-5" aria-hidden />

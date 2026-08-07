@@ -1,4 +1,5 @@
 import { Activity, ChevronDown, Keyboard, LogOut, Settings2, User } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
 import { Avatar, AvatarFallback, getInitials } from '@/components/ui/avatar';
@@ -17,13 +18,15 @@ import { useAuthStore } from '@/features/auth/store/auth-store';
 import { ROUTES } from '@/router/routes';
 
 export function UserMenu() {
+  const { t } = useTranslation('common');
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
 
-  const name = user?.name ?? 'User';
+  const name = user?.name ?? t(($) => $.userMenu.fallbackName);
   const email = user?.email ?? '';
-  const role = 'Administrator'; // Extension point: derive from user.roles when RBAC is wired
+  // Extension point: derive from user.roles when RBAC is wired.
+  const role = t(($) => $.userMenu.role);
 
   const handleLogout = async () => {
     await logout();
@@ -35,7 +38,7 @@ export function UserMenu() {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          aria-label={`User menu — ${name}`}
+          aria-label={t(($) => $.userMenu.ariaLabel, { name })}
           className="h-9 gap-2 rounded-full px-1.5 sm:rounded-lg sm:px-2"
         >
           <Avatar className="size-7">
@@ -80,32 +83,38 @@ export function UserMenu() {
         {/* ── Menu items ── */}
         <DropdownMenuItem disabled>
           <User className="size-4" aria-hidden />
-          Profile
-          <span className="ms-auto text-[10px] text-muted-foreground/60">Soon</span>
+          {t(($) => $.userMenu.profile)}
+          <span className="ms-auto text-[10px] text-muted-foreground/60">
+            {t(($) => $.userMenu.soon)}
+          </span>
         </DropdownMenuItem>
 
         <DropdownMenuItem onClick={() => navigate(ROUTES.settings)}>
           <Settings2 className="size-4" aria-hidden />
-          Preferences
+          {t(($) => $.userMenu.preferences)}
         </DropdownMenuItem>
 
         <DropdownMenuItem disabled>
           <Keyboard className="size-4" aria-hidden />
-          Keyboard Shortcuts
-          <span className="ms-auto text-[10px] text-muted-foreground/60">Soon</span>
+          {t(($) => $.userMenu.shortcuts)}
+          <span className="ms-auto text-[10px] text-muted-foreground/60">
+            {t(($) => $.userMenu.soon)}
+          </span>
         </DropdownMenuItem>
 
         <DropdownMenuItem disabled>
           <Activity className="size-4" aria-hidden />
-          Activity Log
-          <span className="ms-auto text-[10px] text-muted-foreground/60">Soon</span>
+          {t(($) => $.userMenu.activityLog)}
+          <span className="ms-auto text-[10px] text-muted-foreground/60">
+            {t(($) => $.userMenu.soon)}
+          </span>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />
 
         {/* ── Language + Theme ── */}
         <div className="flex items-center justify-between px-2 py-2">
-          <span className="text-xs text-muted-foreground">Appearance</span>
+          <span className="text-xs text-muted-foreground">{t(($) => $.userMenu.appearance)}</span>
           <div className="flex items-center gap-1">
             <LanguageSwitcher />
             <ThemeToggle />
@@ -117,7 +126,7 @@ export function UserMenu() {
         {/* ── Logout ── */}
         <DropdownMenuItem variant="destructive" onClick={handleLogout}>
           <LogOut className="size-4" aria-hidden />
-          Logout
+          {t(($) => $.userMenu.logout)}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

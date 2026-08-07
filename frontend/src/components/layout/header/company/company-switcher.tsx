@@ -107,143 +107,161 @@ export function CompanySwitcher({ className }: { className?: string }) {
   const activeColor = active ? companyColorClass(active.id) : BADGE_COLORS[0];
 
   return (
-  <>
-    <DropdownMenu open={open} onOpenChange={setOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          aria-label={
-            active
-              ? t($ => $.switcher.currentCompany, { name: active.name })
-              : t($ => $.switcher.selectCompany)
-          }
-          aria-expanded={open}
-          className={cn('h-9 gap-2 px-2 sm:px-3', className)}
+    <>
+      <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label={
+              active
+                ? t(($) => $.switcher.currentCompany, { name: active.name })
+                : t(($) => $.switcher.selectCompany)
+            }
+            aria-expanded={open}
+            className={cn('h-9 gap-2 px-2 sm:px-3', className)}
+          >
+            {/* Company initials badge */}
+            <span
+              className={cn(
+                'flex size-6 shrink-0 items-center justify-center rounded-md text-[10px] font-bold leading-none ring-1',
+                activeColor,
+              )}
+              aria-hidden
+            >
+              {activeInitials}
+            </span>
+
+            {/* Name + code — hidden on xs, visible sm+ */}
+            <span className="hidden flex-col items-start sm:flex">
+              <span className="max-w-[7rem] truncate text-xs font-semibold leading-tight lg:max-w-[9rem]">
+                {active?.name ?? t(($) => $.loading)}
+              </span>
+              <span className="max-w-[7rem] truncate text-[10px] leading-tight text-muted-foreground lg:max-w-[9rem]">
+                {active?.code ?? ''}
+              </span>
+            </span>
+
+            <ChevronsUpDown className="size-3.5 shrink-0 opacity-40" aria-hidden />
+          </Button>
+        </DropdownMenuTrigger>
+
+        <DropdownMenuContent
+          align="start"
+          className="w-72 p-0"
+          onCloseAutoFocus={(e) => e.preventDefault()}
         >
-          {/* Company initials badge */}
-          <span
-            className={cn(
-              'flex size-6 shrink-0 items-center justify-center rounded-md text-[10px] font-bold leading-none ring-1',
-              activeColor,
-            )}
-            aria-hidden
+          {/* ── Search ── */}
+          <div className="flex items-center gap-2 border-b px-3 py-2.5">
+            <Search className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+            <input
+              ref={inputRef}
+              type="text"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setFocusIdx(0);
+              }}
+              onKeyDown={handleInputKeyDown}
+              placeholder={t(($) => $.switcher.searchCompanies)}
+              className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              aria-label={t(($) => $.switcher.searchCompanies)}
+              autoComplete="off"
+            />
+          </div>
+
+          {/* ── Section label ── */}
+          <div className="px-3 pb-1 pt-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {t(($) => $.switcher.companies)}
+            </p>
+          </div>
+
+          {/* ── List ── */}
+          <div
+            className="px-1 pb-1"
+            role="listbox"
+            aria-label={t(($) => $.switcher.availableCompanies)}
           >
-            {activeInitials}
-          </span>
-
-          {/* Name + code — hidden on xs, visible sm+ */}
-          <span className="hidden flex-col items-start sm:flex">
-            <span className="max-w-[7rem] truncate text-xs font-semibold leading-tight lg:max-w-[9rem]">
-              {active?.name ?? t($ => $.loading)}
-            </span>
-            <span className="max-w-[7rem] truncate text-[10px] leading-tight text-muted-foreground lg:max-w-[9rem]">
-              {active?.code ?? ''}
-            </span>
-          </span>
-
-          <ChevronsUpDown className="size-3.5 shrink-0 opacity-40" aria-hidden />
-        </Button>
-      </DropdownMenuTrigger>
-
-      <DropdownMenuContent align="start" className="w-72 p-0" onCloseAutoFocus={(e) => e.preventDefault()}>
-        {/* ── Search ── */}
-        <div className="flex items-center gap-2 border-b px-3 py-2.5">
-          <Search className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-          <input
-            ref={inputRef}
-            type="text"
-            value={search}
-            onChange={(e) => { setSearch(e.target.value); setFocusIdx(0); }}
-            onKeyDown={handleInputKeyDown}
-            placeholder={t($ => $.switcher.searchCompanies)}
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-            aria-label={t($ => $.switcher.searchCompanies)}
-            autoComplete="off"
-          />
-        </div>
-
-        {/* ── Section label ── */}
-        <div className="px-3 pb-1 pt-2.5">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {t($ => $.switcher.companies)}
-          </p>
-        </div>
-
-        {/* ── List ── */}
-        <div className="px-1 pb-1" role="listbox" aria-label={t($ => $.switcher.availableCompanies)}>
-          {filtered.length === 0 ? (
-            <div className="flex flex-col items-center gap-1 py-8 text-center">
-              <p className="text-sm font-medium text-muted-foreground">{t($ => $.switcher.noCompaniesFound)}</p>
-              <p className="text-xs text-muted-foreground/60">{t($ => $.switcher.tryDifferentName)}</p>
-            </div>
-          ) : (
-            filtered.map((company, idx) => {
-              const isActive = company.id === activeId;
-              const isFocused = idx === focusIdx;
-              const initials = companyInitials(company.name);
-              const colorClass = companyColorClass(company.id);
-              return (
-                <button
-                  key={company.id}
-                  type="button"
-                  role="option"
-                  aria-selected={isActive}
-                  onClick={() => selectCompany(company.id)}
-                  onMouseEnter={() => setFocusIdx(idx)}
-                  className={cn(
-                    'flex w-full items-center gap-3 rounded-md px-2 py-2.5 text-start transition-colors',
-                    isFocused
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-foreground hover:bg-accent/60',
-                  )}
-                >
-                  {/* Initials badge */}
-                  <span
+            {filtered.length === 0 ? (
+              <div className="flex flex-col items-center gap-1 py-8 text-center">
+                <p className="text-sm font-medium text-muted-foreground">
+                  {t(($) => $.switcher.noCompaniesFound)}
+                </p>
+                <p className="text-xs text-muted-foreground/60">
+                  {t(($) => $.switcher.tryDifferentName)}
+                </p>
+              </div>
+            ) : (
+              filtered.map((company, idx) => {
+                const isActive = company.id === activeId;
+                const isFocused = idx === focusIdx;
+                const initials = companyInitials(company.name);
+                const colorClass = companyColorClass(company.id);
+                return (
+                  <button
+                    key={company.id}
+                    type="button"
+                    role="option"
+                    aria-selected={isActive}
+                    onClick={() => selectCompany(company.id)}
+                    onMouseEnter={() => setFocusIdx(idx)}
                     className={cn(
-                      'flex size-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold ring-1',
-                      colorClass,
+                      'flex w-full items-center gap-3 rounded-md px-2 py-2.5 text-start transition-colors',
+                      isFocused
+                        ? 'bg-accent text-accent-foreground'
+                        : 'text-foreground hover:bg-accent/60',
                     )}
-                    aria-hidden
                   >
-                    {initials}
-                  </span>
-
-                  {/* Info */}
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold">{company.name}</span>
-                    <span className="block truncate text-xs text-muted-foreground">
-                      {company.code}
+                    {/* Initials badge */}
+                    <span
+                      className={cn(
+                        'flex size-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold ring-1',
+                        colorClass,
+                      )}
+                      aria-hidden
+                    >
+                      {initials}
                     </span>
-                  </span>
 
-                  {/* Active check */}
-                  {isActive ? (
-                    <Check className="size-4 shrink-0 text-primary" aria-hidden />
-                  ) : null}
-                </button>
-              );
-            })
-          )}
-        </div>
+                    {/* Info */}
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold">{company.name}</span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {company.code}
+                      </span>
+                    </span>
 
-        {/* ── Footer ── */}
-        <div className="border-t px-1 py-1">
-          <button
-            type="button"
-            onClick={() => { setOpen(false); setFormOpen(true); }}
-            className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-start transition-colors hover:bg-accent/60"
-          >
-            <span className="flex size-6 shrink-0 items-center justify-center rounded-md border border-primary/40 bg-primary/5 text-primary">
-              <Plus className="size-3.5" aria-hidden />
-            </span>
-            <span className="text-xs font-medium">{t($ => $.switcher.newCompany)}</span>
-          </button>
-        </div>
-      </DropdownMenuContent>
-    </DropdownMenu>
+                    {/* Active check */}
+                    {isActive ? (
+                      <Check className="size-4 shrink-0 text-primary" aria-hidden />
+                    ) : null}
+                  </button>
+                );
+              })
+            )}
+          </div>
 
-    <CompanyFormDrawer open={formOpen} onOpenChange={setFormOpen} />
-  </>
+          {/* ── Footer ── */}
+          <div className="border-t px-1 py-1">
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                setFormOpen(true);
+              }}
+              className="flex w-full items-center gap-2.5 rounded-md px-2 py-2 text-start transition-colors hover:bg-accent/60"
+            >
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-md border border-primary/40 bg-primary/5 text-primary">
+                <Plus className="size-3.5" aria-hidden />
+              </span>
+              <span className="text-xs font-medium">{t(($) => $.switcher.newCompany)}</span>
+            </button>
+          </div>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <CompanyFormDrawer open={formOpen} onOpenChange={setFormOpen} />
+    </>
   );
 }

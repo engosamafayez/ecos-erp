@@ -3,7 +3,6 @@ export { HeaderProvider, useHeaderContext } from './header-context';
 
 // Search
 export { GlobalSearch } from './search/global-search';
-export { SearchCommandDialog } from './search/search-command-dialog';
 
 // Context switchers
 export { CompanySwitcher } from './company/company-switcher';

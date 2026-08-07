@@ -374,5 +374,77 @@
       "system": "System",
       "other": "Other"
     }
+  },
+  "breadcrumb": "Breadcrumb",
+  "userMenu": {
+    "ariaLabel": "User menu — {{name}}",
+    "profile": "Profile",
+    "preferences": "Preferences",
+    "shortcuts": "Keyboard Shortcuts",
+    "activityLog": "Activity Log",
+    "appearance": "Appearance",
+    "logout": "Log out",
+    "soon": "Soon",
+    "fallbackName": "User",
+    "role": "Administrator"
+  },
+  "create": {
+    "new": "New",
+    "ariaLabel": "Quick create",
+    "soon": "Soon",
+    "groups": {
+      "commerce": "Commerce",
+      "inventory": "Inventory",
+      "administration": "Administration"
+    },
+    "actions": {
+      "order": {
+        "label": "New Order",
+        "description": "Create a sales order"
+      },
+      "customer": {
+        "label": "New Customer",
+        "description": "Add a customer record"
+      },
+      "product": {
+        "label": "New Product",
+        "description": "Add a product to the catalog"
+      },
+      "purchase-order": {
+        "label": "New Purchase Order",
+        "description": "Create a procurement order"
+      },
+      "supplier": {
+        "label": "New Supplier",
+        "description": "Register a supplier or vendor"
+      },
+      "stock-adjustment": {
+        "label": "Stock Adjustment",
+        "description": "Adjust inventory levels"
+      },
+      "warehouse": {
+        "label": "New Warehouse",
+        "description": "Register a storage location"
+      },
+      "company": {
+        "label": "New Company",
+        "description": "Add a company entity"
+      }
+    },
+    "shortcut": "Shortcut: {{keys}}"
+  },
+  "globalSearch": {
+    "open": "Open global search (Ctrl+K)",
+    "openShort": "Open search",
+    "trigger": "Search anything…",
+    "triggerShort": "Search…"
+  },
+  "warehouseSwitcher": {
+    "title": "Warehouses",
+    "searchPlaceholder": "Search warehouses…",
+    "searchLabel": "Search warehouses",
+    "listLabel": "Available warehouses",
+    "empty": "No warehouses found",
+    "emptyHint": "Try a different name or location"
   }
 }

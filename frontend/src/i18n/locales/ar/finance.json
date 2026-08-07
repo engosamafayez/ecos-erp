@@ -418,6 +418,8 @@
       "empty": "لا توجد حسابات نقدية.",
       "code": "الكود",
       "name": "الاسم",
+      "accountLabel": "الحساب النقدي",
+      "accountPlaceholder": "اختر حسابًا نقديًا",
       "currency": "العملة",
       "status": "الحالة",
       "active": "نشط",

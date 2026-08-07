@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
-import { ChevronRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 import type { BreadcrumbItem } from '@/components/crud/types';
+import { WorkspaceBreadcrumbs } from '@/components/workspace/breadcrumbs/workspace-breadcrumbs';
 
 type PageHeaderProps = {
   title: string;
@@ -14,31 +13,18 @@ type PageHeaderProps = {
 
 /**
  * Reusable page header: breadcrumbs, title, subtitle and primary actions.
+ *
+ * Breadcrumbs are delegated to WorkspaceBreadcrumbs rather than drawn here.
+ * This header used to render its own `<nav>` with its own separators, its own
+ * truncation rules and no collapsing, while WorkspaceHeader rendered a
+ * different one — so the same trail looked and behaved differently depending on
+ * which header a page happened to use, and the home crumb was translated in one
+ * and hardcoded English in the other (BUG-GL-006). There is now one renderer.
  */
 export function PageHeader({ title, subtitle, breadcrumbs, actions }: PageHeaderProps) {
   return (
     <div className="flex flex-col gap-3">
-      {breadcrumbs && breadcrumbs.length > 0 ? (
-        <nav className="text-muted-foreground flex items-center gap-1.5 text-sm">
-          {breadcrumbs.map((crumb, index) => {
-            const isLast = index === breadcrumbs.length - 1;
-            return (
-              <span key={`${crumb.label}-${index}`} className="flex items-center gap-1.5">
-                {index > 0 ? <ChevronRight className="size-3.5" data-flip-rtl /> : null}
-                {crumb.to && !isLast ? (
-                  <Link to={crumb.to} className="hover:text-foreground transition-colors">
-                    {crumb.label}
-                  </Link>
-                ) : (
-                  <span className={isLast ? 'text-foreground font-medium' : undefined}>
-                    {crumb.label}
-                  </span>
-                )}
-              </span>
-            );
-          })}
-        </nav>
-      ) : null}
+      {breadcrumbs && breadcrumbs.length > 0 ? <WorkspaceBreadcrumbs crumbs={breadcrumbs} /> : null}
 
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>

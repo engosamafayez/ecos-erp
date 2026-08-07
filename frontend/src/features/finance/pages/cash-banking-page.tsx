@@ -293,7 +293,7 @@ function SessionPanel({ accounts }: { accounts: CashAccount[] }) {
   return (
     <Panel title={t(($) => $.treasury.session.title)}>
       <div className="grid gap-3 md:grid-cols-2">
-        <Field id="session-account" label={t(($) => $.treasury.cash.name)}>
+        <Field id="session-account" label={t(($) => $.treasury.cash.accountLabel)}>
           <AccountSelect
             id="session-account"
             value={accountId}
@@ -449,7 +449,7 @@ function TransactionPanel({ accounts }: { accounts: CashAccount[] }) {
       hint={t(($) => $.treasury.transaction.description)}
     >
       <div className="grid gap-3 md:grid-cols-2">
-        <Field id="txn-account" label={t(($) => $.treasury.cash.name)}>
+        <Field id="txn-account" label={t(($) => $.treasury.cash.accountLabel)}>
           <AccountSelect
             id="txn-account"
             value={accountId}
@@ -948,7 +948,7 @@ function AccountSelect({
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger id={id} className="h-9 text-sm">
-        <SelectValue placeholder={t(($) => $.treasury.cash.name)} />
+        <SelectValue placeholder={t(($) => $.treasury.cash.accountPlaceholder)} />
       </SelectTrigger>
       <SelectContent>
         {accounts.map((account) => (

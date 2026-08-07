@@ -374,5 +374,77 @@
       "system": "النظام",
       "other": "أخرى"
     }
+  },
+  "breadcrumb": "مسار التنقل",
+  "userMenu": {
+    "ariaLabel": "قائمة المستخدم — {{name}}",
+    "profile": "الملف الشخصي",
+    "preferences": "التفضيلات",
+    "shortcuts": "اختصارات لوحة المفاتيح",
+    "activityLog": "سجل النشاط",
+    "appearance": "المظهر",
+    "logout": "تسجيل الخروج",
+    "soon": "قريبًا",
+    "fallbackName": "مستخدم",
+    "role": "مسؤول"
+  },
+  "create": {
+    "new": "جديد",
+    "ariaLabel": "إنشاء سريع",
+    "soon": "قريبًا",
+    "groups": {
+      "commerce": "التجارة",
+      "inventory": "المخزون",
+      "administration": "الإدارة"
+    },
+    "actions": {
+      "order": {
+        "label": "طلب جديد",
+        "description": "إنشاء طلب بيع"
+      },
+      "customer": {
+        "label": "عميل جديد",
+        "description": "إضافة سجل عميل"
+      },
+      "product": {
+        "label": "منتج جديد",
+        "description": "إضافة منتج إلى الكتالوج"
+      },
+      "purchase-order": {
+        "label": "أمر شراء جديد",
+        "description": "إنشاء أمر توريد"
+      },
+      "supplier": {
+        "label": "مورّد جديد",
+        "description": "تسجيل مورّد أو بائع"
+      },
+      "stock-adjustment": {
+        "label": "تسوية مخزون",
+        "description": "تعديل مستويات المخزون"
+      },
+      "warehouse": {
+        "label": "مستودع جديد",
+        "description": "تسجيل موقع تخزين"
+      },
+      "company": {
+        "label": "شركة جديدة",
+        "description": "إضافة كيان شركة"
+      }
+    },
+    "shortcut": "اختصار: {{keys}}"
+  },
+  "globalSearch": {
+    "open": "فتح البحث الشامل (Ctrl+K)",
+    "openShort": "فتح البحث",
+    "trigger": "ابحث عن أي شيء…",
+    "triggerShort": "بحث…"
+  },
+  "warehouseSwitcher": {
+    "title": "المستودعات",
+    "searchPlaceholder": "ابحث في المستودعات…",
+    "searchLabel": "البحث في المستودعات",
+    "listLabel": "المستودعات المتاحة",
+    "empty": "لا توجد مستودعات",
+    "emptyHint": "جرّب اسمًا أو موقعًا مختلفًا"
   }
 }
