@@ -36,23 +36,19 @@ export const recipesService = {
     return data.data;
   },
 
-  async toggleStatus(recipe: Recipe): Promise<Recipe> {
-    const payload: RecipePayload = {
-      product_id:              recipe.product_id,
-      version:                 recipe.version,
-      is_active:               !recipe.is_active,
-      notes:                   recipe.notes,
-      yield_quantity:          recipe.yield_quantity ?? 1,
-      manufacturing_cost:      recipe.manufacturing_cost ?? 0,
-      other_costs:             recipe.other_costs ?? 0,
-      execution_instructions:  recipe.execution_instructions,
-      lines: (recipe.lines ?? []).map((l) => ({
-        raw_material_id:  l.raw_material_id,
-        quantity:         l.quantity,
-        waste_percentage: l.waste_percentage ?? 0,
-      })),
-    };
-    const { data } = await api.put<ApiResponse<Recipe>>(`/boms/${recipe.id}`, payload);
+  /**
+   * Activate or deactivate a recipe.
+   *
+   * Calls the dedicated status endpoint with the single field it accepts. It
+   * MUST NOT rebuild a full RecipePayload: a list row carries no `lines`, so
+   * the old implementation sent `lines: []` and the backend replaced the
+   * recipe's components with nothing (BUG-BOM-DATA-LOSS-001). Accepting only
+   * the id and the target state is what makes that unreachable from here.
+   */
+  async setStatus(id: string, isActive: boolean): Promise<Recipe> {
+    const { data } = await api.patch<ApiResponse<Recipe>>(`/boms/${id}/status`, {
+      is_active: isActive,
+    });
     return data.data;
   },
 };

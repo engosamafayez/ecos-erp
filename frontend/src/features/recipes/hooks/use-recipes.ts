@@ -1,7 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { recipesService } from '@/features/recipes/services/recipes-service';
-import type { Recipe, RecipePayload, RecipesQuery } from '@/features/recipes/types/recipe';
+import type { RecipePayload, RecipesQuery } from '@/features/recipes/types/recipe';
 import { useOrganizationContext } from '@/features/organization/context/organization-context';
 
 const RECIPES_KEY = 'recipes';
@@ -59,15 +59,24 @@ export function useDeleteRecipe() {
   });
 }
 
-export function useToggleRecipeStatus() {
+/**
+ * Activate or deactivate a recipe.
+ *
+ * Takes the id and the target state only. It deliberately does NOT accept a
+ * Recipe: passing a whole row was what let a partial list DTO become a full
+ * update payload and delete the recipe's components (BUG-BOM-DATA-LOSS-001).
+ */
+export function useSetRecipeStatus() {
   const { activeCompanyId } = useOrganizationContext();
   const companyId = activeCompanyId ?? 'global';
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (recipe: Recipe) => recipesService.toggleStatus(recipe),
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) =>
+      recipesService.setStatus(id, isActive),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['company', companyId, RECIPES_KEY] }),
   });
 }
+
 
 export function useRecipeCostHistoryQuery(id: string, page = 1) {
   const { activeCompanyId } = useOrganizationContext();

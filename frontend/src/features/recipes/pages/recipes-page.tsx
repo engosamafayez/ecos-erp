@@ -59,7 +59,7 @@ import {
   useDeleteRecipe,
   useRecipeQuery,
   useRecipesQuery,
-  useToggleRecipeStatus,
+  useSetRecipeStatus,
 } from '@/features/recipes/hooks/use-recipes';
 import {
   ALL_RECIPE_COLUMNS,
@@ -904,7 +904,7 @@ export function RecipesPage() {
 
   // ── Mutations ─────────────────────────────────────────────────────────────
   const deleteRecipe = useDeleteRecipe();
-  const toggleStatus = useToggleRecipeStatus();
+  const setRecipeStatus = useSetRecipeStatus();
 
   // ── CSV columns — depends on t(), must be inside component body ───────────
   type CsvCol = { key: RecipeColumnKey; header: string; value: (r: Recipe) => string };
@@ -1075,7 +1075,7 @@ export function RecipesPage() {
           onRowClick={openDetail}
           onEdit={handleEdit}
           onCreateFrom={handleCreateFrom}
-          onToggle={(r) => toggleStatus.mutate(r)}
+          onToggle={(r) => setRecipeStatus.mutate({ id: r.id, isActive: !r.is_active })}
           onDelete={(r) => setDeleting(r)}
           onViewMaterials={handleViewMaterials}
         />
