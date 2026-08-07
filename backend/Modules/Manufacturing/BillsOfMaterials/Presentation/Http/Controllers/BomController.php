@@ -13,10 +13,12 @@ use Modules\Manufacturing\BillsOfMaterials\Application\Actions\CreateBomAction;
 use Modules\Manufacturing\BillsOfMaterials\Application\Actions\DeleteBomAction;
 use Modules\Manufacturing\BillsOfMaterials\Application\Actions\GetBomAction;
 use Modules\Manufacturing\BillsOfMaterials\Application\Actions\ListBomsAction;
+use Modules\Manufacturing\BillsOfMaterials\Application\Actions\SetBomStatusAction;
 use Modules\Manufacturing\BillsOfMaterials\Application\Actions\UpdateBomAction;
 use Modules\Manufacturing\BillsOfMaterials\Application\DTO\BomDTO;
 use Modules\Manufacturing\BillsOfMaterials\Domain\Exceptions\BomNotFoundException;
 use Modules\Manufacturing\BillsOfMaterials\Domain\Models\BillOfMaterial;
+use Modules\Manufacturing\BillsOfMaterials\Presentation\Http\Requests\SetBomStatusRequest;
 use Modules\Manufacturing\BillsOfMaterials\Presentation\Http\Requests\StoreBomRequest;
 use Modules\Manufacturing\BillsOfMaterials\Presentation\Http\Requests\UpdateBomRequest;
 use Modules\Manufacturing\BillsOfMaterials\Presentation\Http\Resources\BomResource;
@@ -75,6 +77,22 @@ final class BomController extends Controller
         $result = $action->execute(BomDTO::fromArray($request->validated()));
 
         return $this->created(new BomResource($result->data()), $result->message());
+    }
+
+    /**
+     * Activate or deactivate a recipe without touching its structure.
+     *
+     * Deliberately separate from update(): the status payload has no `lines`
+     * field, so BUG-BOM-DATA-LOSS-001 cannot recur through this path.
+     */
+    public function setStatus(
+        SetBomStatusRequest $request,
+        BillOfMaterial $bom,
+        SetBomStatusAction $action,
+    ): JsonResponse {
+        $result = $action->execute($bom, $request->boolean('is_active'));
+
+        return $this->updated(new BomResource($result->data()), $result->message());
     }
 
     public function update(

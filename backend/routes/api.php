@@ -649,6 +649,8 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
         ->middlewareFor('store', 'permission:inventory.recipes.create')
         ->middlewareFor('update', 'permission:inventory.recipes.update')
         ->middlewareFor('destroy', 'permission:inventory.recipes.delete');
+    Route::patch('boms/{bom}/status', [BomController::class, 'setStatus'])
+        ->middleware('permission:inventory.recipes.update');
     Route::get('boms/{bom}/cost-history', [BomController::class, 'costHistory']);
 });
 
