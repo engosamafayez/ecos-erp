@@ -46,6 +46,8 @@ import type enCrm from '@/i18n/locales/en/crm.json';
 import type enCustomers from '@/i18n/locales/en/customers.json';
 import type enDashboard from '@/i18n/locales/en/dashboard.json';
 import type enEngineering from '@/i18n/locales/en/engineering.json';
+import type enExecutive from '@/i18n/locales/en/executive.json';
+import type enFinance from '@/i18n/locales/en/finance.json';
 import type enFulfillments from '@/i18n/locales/en/fulfillments.json';
 import type enGoodsReceipts from '@/i18n/locales/en/goods-receipts.json';
 import type enHome from '@/i18n/locales/en/home.json';
@@ -104,6 +106,8 @@ declare module 'i18next' {
       customers: typeof enCustomers;
       dashboard: typeof enDashboard;
       engineering: typeof enEngineering;
+      executive: typeof enExecutive;
+      finance: typeof enFinance;
       fulfillments: typeof enFulfillments;
       'goods-receipts': typeof enGoodsReceipts;
       home: typeof enHome;

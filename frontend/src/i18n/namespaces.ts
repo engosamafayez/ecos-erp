@@ -73,6 +73,8 @@ export const NAMESPACES = [
   // ── Finance & Reporting ───────────────────────────────────────────────────
   'cost-management',
   'dashboard',
+  'finance',
+  'executive',
 
   // ── Platform / Integrations ───────────────────────────────────────────────
   'sync-logs',

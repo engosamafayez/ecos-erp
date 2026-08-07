@@ -238,7 +238,14 @@ const ALL_MODULES: AppModule[] = [
     id: 'finance',
     icon: DollarSign,
     defaultPath: ROUTES.accounting,
-    items: [],
+    items: [
+      { key: 'finance-executive',  path: ROUTES.accounting,             icon: LayoutDashboard },
+      { key: 'finance-coa',        path: ROUTES.financeChartOfAccounts, icon: ListTree },
+      { key: 'finance-journals',   path: ROUTES.financeJournals,        icon: BookOpen },
+      { key: 'finance-statements', path: ROUTES.financeStatements,      icon: BarChart3 },
+      { key: 'finance-ar',         path: ROUTES.financeReceivables,     icon: DollarSign },
+      { key: 'finance-ap',         path: ROUTES.financePayables,        icon: ShoppingCart },
+    ],
   },
   {
     id: 'marketing',
@@ -431,7 +438,6 @@ const HIDDEN_MODULE_IDS: ReadonlySet<ModuleId> = new Set<ModuleId>([
   'engineering',
   'logistics',
   'reports',
-  'finance',
 ]);
 
 /** Navigation-visible modules (hidden ids filtered out for go-live scope). */

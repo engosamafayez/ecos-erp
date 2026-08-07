@@ -60,6 +60,14 @@ export const ROUTES = {
   supplierReturns: '/purchasing/supplier-returns',
   sales: '/sales',
   accounting: '/accounting',
+  // Finance workspace (EPIC-FINANCE-UI-001)
+  financeChartOfAccounts: '/accounting/chart-of-accounts',
+  financeJournals: '/accounting/journals',
+  financeStatements: '/accounting/statements',
+  financeReceivables: '/accounting/receivables',
+  financePayables: '/accounting/payables',
+  // Executive Platform (EPIC-EXECUTIVE-UI-001)
+  executiveDashboard: '/executive',
   crm: '/crm',
   // HR & Workforce OS — EPIC H1 + H2
   hr: '/hr',

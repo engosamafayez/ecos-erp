@@ -13,6 +13,12 @@
   },
   "nav": {
     "items": {
+      "finance-executive": "Executive Dashboard",
+      "finance-coa": "Chart of Accounts",
+      "finance-journals": "Journal Entries",
+      "finance-statements": "Financial Statements",
+      "finance-ar": "Accounts Receivable",
+      "finance-ap": "Accounts Payable",
       "orders": "Orders",
       "fulfillments": "Fulfillments",
       "customers": "Customers",
