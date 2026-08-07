@@ -75,7 +75,18 @@ export type RecipeCostSummary = {
   missing_material_count: number;
 };
 
-export type Recipe = {
+/**
+ * A recipe as the LIST endpoint returns it.
+ *
+ * There is no `lines` field, because `GET /boms` deliberately does not load
+ * them — it sends `lines_count` only. Declaring lines on this type is what let
+ * BUG-BOM-DATA-LOSS-001 type-check: a list row was passed where a full recipe
+ * was expected, `recipe.lines` read as undefined, and the resulting payload
+ * deleted every component.
+ *
+ * Anything that needs components must fetch the detail and use `Recipe`.
+ */
+export type RecipeListRow = {
   id: string;
   bom_number: string;
   product_id: string;
@@ -97,9 +108,19 @@ export type Recipe = {
   total_waste_pct: number;
   execution_instructions: string | null;
   lines_count: number;
-  lines: RecipeLine[];
   created_at: string | null;
   updated_at: string | null;
+};
+
+/**
+ * A recipe as the DETAIL endpoint returns it: a list row plus its components.
+ *
+ * Only this type may be used to build a full update payload. The two are
+ * structurally distinct, so a list row can no longer reach a contract that
+ * expects components.
+ */
+export type Recipe = RecipeListRow & {
+  lines: RecipeLine[];
 };
 
 export type RecipeLinePayload = {
@@ -155,7 +176,7 @@ export type PaginationMeta = {
 };
 
 export type RecipesResult = {
-  items: Recipe[];
+  items: RecipeListRow[];
   meta: PaginationMeta;
 };
 

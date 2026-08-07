@@ -27,7 +27,7 @@ import { formatMoney } from '@/lib/format';
 import { calcRecipeCost } from '@/lib/recipe-cost-calculator';
 import { LiveCostBadge } from '@/components/ui/live-cost-badge';
 import { getMediaUrl } from '@/lib/media';
-import type { CostSource, Recipe, RecipeCostHistoryEntry, RecipeLine } from '@/features/recipes/types/recipe';
+import type { CostSource, Recipe, RecipeCostHistoryEntry, RecipeLine, RecipeListRow } from '@/features/recipes/types/recipe';
 import { ROUTES } from '@/router/routes';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -475,10 +475,14 @@ function MetricPill({ label, value, dot = true, warn = false }: { label: string;
 // ─── Drawer ───────────────────────────────────────────────────────────────────
 
 type RecipeDetailDrawerProps = {
-  recipe:        Recipe | null;
+  /**
+   * The row the drawer was opened from. It is a LIST row: it carries no
+   * components. The drawer fetches the full recipe itself — see `fullRecipe`.
+   */
+  recipe:        RecipeListRow | null;
   open:          boolean;
   onOpenChange:  (open: boolean) => void;
-  onEdit:        (r: Recipe) => void;
+  onEdit:        (r: RecipeListRow) => void;
   initialTab?:   string;
 };
 
@@ -495,12 +499,18 @@ export function RecipeDetailDrawer({
   }, [open, initialTab]);
 
   const { data: fullRecipe, isFetching: isDetailFetching } = useRecipeQuery(recipe?.id ?? '');
-  const display = fullRecipe ?? recipe;
+
+  // `header` may fall back to the list row: it only reads list fields.
+  // Tabs may NOT — they read `lines`, which a list row does not carry. Falling
+  // back there made the cost tabs compute from an empty component list while
+  // the detail was still loading, silently showing wrong figures.
+  const header = fullRecipe ?? recipe;
+  const display = fullRecipe;
 
   // Derive total cost for the header metric pill
-  const headerCost = display
-    ? (display.cost_summary?.recipe_cost
-        ?? ((display.recipe_cost ?? 0) + (display.manufacturing_cost ?? 0) + (display.other_costs ?? 0)))
+  const headerCost = header
+    ? (header.cost_summary?.recipe_cost
+        ?? ((header.recipe_cost ?? 0) + (header.manufacturing_cost ?? 0) + (header.other_costs ?? 0)))
     : 0;
 
   function handleCreateFrom() {
@@ -513,7 +523,7 @@ export function RecipeDetailDrawer({
   const tabs: TabItem[] = display
     ? [
         { key: 'overview',           label: t($ => $.drawer.tabs.overview),           content: <OverviewTab recipe={display} /> },
-        { key: 'materials',          label: t($ => $.drawer.tabs.materials),          content: <MaterialsTab recipe={display} />, badge: display.lines?.length ?? display.lines_count },
+        { key: 'materials',          label: t($ => $.drawer.tabs.materials),          content: <MaterialsTab recipe={display} />, badge: display.lines.length },
         { key: 'cost-history',       label: t($ => $.drawer.tabs.costHistory),        content: <CostHistoryTab recipeId={display.id} /> },
       ]
     : [];
@@ -531,10 +541,10 @@ export function RecipeDetailDrawer({
           <div className="flex items-start justify-between gap-3 mb-2.5">
             <div className="flex items-center gap-3 min-w-0">
               <div className="size-11 rounded-lg border bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-                {getMediaUrl(display?.product?.image_url) ? (
+                {getMediaUrl(header?.product?.image_url) ? (
                   <img
-                    src={getMediaUrl(display!.product!.image_url)!}
-                    alt={display!.product!.name}
+                    src={getMediaUrl(header!.product!.image_url)!}
+                    alt={header!.product!.name}
                     className="size-full object-cover"
                   />
                 ) : (
@@ -543,7 +553,7 @@ export function RecipeDetailDrawer({
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-                  {display?.is_active ? (
+                  {header?.is_active ? (
                     <Badge className="text-[10px] px-1.5 py-0 h-4 leading-none bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800">
                       {t($ => $.status.active)}
                     </Badge>
@@ -552,7 +562,7 @@ export function RecipeDetailDrawer({
                       {t($ => $.status.draft)}
                     </Badge>
                   )}
-                  <span className="text-[10px] text-muted-foreground font-mono">{display?.bom_number}</span>
+                  <span className="text-[10px] text-muted-foreground font-mono">{header?.bom_number}</span>
                 </div>
                 <p className="font-semibold text-sm leading-tight truncate">{display?.product?.name ?? '—'}</p>
                 {display?.product?.category && (
@@ -571,7 +581,7 @@ export function RecipeDetailDrawer({
                   variant="outline"
                   className="h-7 gap-1 px-2 text-xs"
                   onClick={handleCreateFrom}
-                  aria-label={`Clone recipe ${display?.bom_number ?? ''}`}
+                  aria-label={`Clone recipe ${header?.bom_number ?? ''}`}
                 >
                   <Copy className="size-3" aria-hidden />
                   {t($ => $.drawer.clone)}
@@ -581,7 +591,7 @@ export function RecipeDetailDrawer({
                   variant="outline"
                   className="h-7 gap-1 px-2 text-xs"
                   onClick={() => onEdit(recipe)}
-                  aria-label={`Edit recipe ${display?.bom_number ?? ''}`}
+                  aria-label={`Edit recipe ${header?.bom_number ?? ''}`}
                 >
                   <Pencil className="size-3" aria-hidden />
                   {t($ => $.drawer.edit)}

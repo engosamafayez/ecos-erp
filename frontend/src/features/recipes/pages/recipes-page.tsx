@@ -66,7 +66,7 @@ import {
   useRecipeColumnPreferences,
 } from '@/features/recipes/hooks/use-recipe-column-preferences';
 import type { RecipeColumnKey } from '@/features/recipes/hooks/use-recipe-column-preferences';
-import type { Recipe, RecipeSortField, RecipesQuery } from '@/features/recipes/types/recipe';
+import type { RecipeListRow, RecipeSortField, RecipesQuery } from '@/features/recipes/types/recipe';
 import { recipesService } from '@/features/recipes/services/recipes-service';
 import { useCompany } from '@/features/organization/context/company-context';
 import { formatMoney, formatMoneyCompact } from '@/lib/format';
@@ -89,7 +89,7 @@ function fmtAbbrev(n: number, currency: string, locale = 'en-EG'): string {
 
 // ADR-RECIPE-001: stored recipe_cost = material costs only (updated by CostCascadeService).
 // For list views, total = stored materials + overhead (valid per ADR for aggregations).
-function computeRecipeCost(recipe: Recipe): number {
+function computeRecipeCost(recipe: RecipeListRow): number {
   return calcTotalFromStored(recipe.recipe_cost ?? 0, recipe.manufacturing_cost ?? 0, recipe.other_costs ?? 0);
 }
 
@@ -433,8 +433,13 @@ function SortableHead({
 
 // ─── Recipe Table ─────────────────────────────────────────────────────────────
 
+/**
+ * The table renders list rows. Callbacks hand back a RecipeListRow, so a
+ * consumer that needs components has to fetch the detail rather than assume
+ * the row carries them — see BUG-BOM-DATA-LOSS-001.
+ */
 type RecipeTableProps = {
-  data:            Recipe[];
+  data:            RecipeListRow[];
   isLoading:       boolean;
   isError:         boolean;
   sort?:           SortState;
@@ -442,12 +447,12 @@ type RecipeTableProps = {
   visibleColumns:  Set<RecipeColumnKey>;
   selectedIds:     Set<string>;
   onSelectionChange: (ids: Set<string>) => void;
-  onRowClick:      (r: Recipe) => void;
-  onEdit:          (r: Recipe) => void;
-  onCreateFrom:    (r: Recipe) => void;
-  onToggle:        (r: Recipe) => void;
-  onDelete:        (r: Recipe) => void;
-  onViewMaterials: (r: Recipe) => void;
+  onRowClick:      (r: RecipeListRow) => void;
+  onEdit:          (r: RecipeListRow) => void;
+  onCreateFrom:    (r: RecipeListRow) => void;
+  onToggle:        (r: RecipeListRow) => void;
+  onDelete:        (r: RecipeListRow) => void;
+  onViewMaterials: (r: RecipeListRow) => void;
 };
 
 function RecipeTable({
@@ -767,13 +772,13 @@ function MaterialsPreviewPopover({
   recipe,
   onViewMaterials,
 }: {
-  recipe: Recipe;
-  onViewMaterials: (recipe: Recipe) => void;
+  recipe: RecipeListRow;
+  onViewMaterials: (recipe: RecipeListRow) => void;
 }) {
   const { t } = useTranslation('recipes');
   const [open, setOpen]       = useState(false);
   const closeTimer             = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const materialsCount         = recipe.lines_count ?? recipe.lines?.length ?? 0;
+  const materialsCount         = recipe.lines_count ?? 0;
 
   const { data: fullRecipe, isFetching } = useRecipeQuery(open ? recipe.id : '');
 
@@ -898,23 +903,23 @@ export function RecipesPage() {
 
   // ── Drawers / dialogs ─────────────────────────────────────────────────────
   const [detailOpen,       setDetailOpen]       = useState(false);
-  const [detailRecipe,     setDetailRecipe]     = useState<Recipe | null>(null);
+  const [detailRecipe,     setDetailRecipe]     = useState<RecipeListRow | null>(null);
   const [detailInitialTab, setDetailInitialTab] = useState<string>('overview');
-  const [deleting,         setDeleting]         = useState<Recipe | null>(null);
+  const [deleting,         setDeleting]         = useState<RecipeListRow | null>(null);
 
   // ── Mutations ─────────────────────────────────────────────────────────────
   const deleteRecipe = useDeleteRecipe();
   const setRecipeStatus = useSetRecipeStatus();
 
   // ── CSV columns — depends on t(), must be inside component body ───────────
-  type CsvCol = { key: RecipeColumnKey; header: string; value: (r: Recipe) => string };
+  type CsvCol = { key: RecipeColumnKey; header: string; value: (r: RecipeListRow) => string };
   const csvColumns = useMemo<CsvCol[]>(() => [
     { key: 'image',           header: t($ => $.csv.headers.image),          value: (r) => r.product?.image_url ?? '' },
     { key: 'product',         header: t($ => $.csv.headers.product),        value: (r) => `${r.product?.name ?? ''} (${r.product?.sku ?? ''})` },
     { key: 'category',        header: t($ => $.csv.headers.category),       value: (r) => r.product?.category?.name ?? '' },
     { key: 'recipe_cost',     header: t($ => $.csv.headers.recipeCost),     value: (r) => computeRecipeCost(r).toFixed(2) },
     { key: 'waste_pct',       header: t($ => $.csv.headers.wastePct),       value: (r) => `${(r.total_waste_pct ?? 0).toFixed(2)}%` },
-    { key: 'total_materials', header: t($ => $.csv.headers.totalMaterials), value: (r) => String(r.lines_count ?? r.lines?.length ?? 0) },
+    { key: 'total_materials', header: t($ => $.csv.headers.totalMaterials), value: (r) => String(r.lines_count ?? 0) },
     { key: 'channel',         header: t($ => $.csv.headers.channel),        value: (r) => r.product?.channels?.map((c) => c.name).join(', ') ?? '' },
     { key: 'company',         header: t($ => $.csv.headers.company),        value: (r) => r.product?.channels?.[0]?.company_name ?? '' },
     { key: 'updated',         header: t($ => $.csv.headers.updated),        value: (r) => (r.updated_at ?? r.created_at ?? '').slice(0, 10) },
@@ -974,21 +979,21 @@ export function RecipesPage() {
     resetPage();
   }
 
-  function openDetail(r: Recipe, tab = 'overview') {
+  function openDetail(r: RecipeListRow, tab = 'overview') {
     setDetailInitialTab(tab);
     setDetailRecipe(r);
     setDetailOpen(true);
   }
 
-  function handleViewMaterials(r: Recipe) {
+  function handleViewMaterials(r: RecipeListRow) {
     openDetail(r, 'materials');
   }
 
-  function handleEdit(r: Recipe)       { navigate(`${ROUTES.recipes}/${r.id}/edit`); }
-  function handleCreateFrom(r: Recipe) { navigate(ROUTES.recipesNew, { state: { sourceRecipeId: r.id } }); }
+  function handleEdit(r: RecipeListRow)       { navigate(`${ROUTES.recipes}/${r.id}/edit`); }
+  function handleCreateFrom(r: RecipeListRow) { navigate(ROUTES.recipesNew, { state: { sourceRecipeId: r.id } }); }
 
   // ── Export ────────────────────────────────────────────────────────────────
-  function triggerCsvDownload(csvItems: Recipe[], cols: CsvCol[]) {
+  function triggerCsvDownload(csvItems: RecipeListRow[], cols: CsvCol[]) {
     const visibleCols = cols.filter((c) => visibleColumns.has(c.key));
     const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
     const header = visibleCols.map((c) => escape(c.header)).join(',');
