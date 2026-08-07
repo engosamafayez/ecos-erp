@@ -151,7 +151,11 @@
       "logistics-automation": "Automation",
       "logistics-intelligence": "Intelligence",
       "logistics-fuel-review": "Fuel Review",
-      "logistics-dispatch-board": "Dispatch Board"
+      "logistics-dispatch-board": "Dispatch Board",
+      "crm-customers": "Customers",
+      "crm-executive": "Executive Overview",
+      "cep-section": "Customer Engagement",
+      "bae-section-group": "Business Accounts"
     },
     "groups": {
       "overview": "Overview",

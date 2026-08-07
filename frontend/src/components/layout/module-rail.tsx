@@ -55,7 +55,7 @@ export function ModuleRail({ activeModule, className }: ModuleRailProps) {
               >
                 <Icon className="size-[18px]" aria-hidden />
               </span>
-              <span className="w-full truncate text-center text-[10px] font-medium leading-tight">
+              <span className="line-clamp-2 w-full break-words text-center text-[10px] font-medium leading-tight">
                 {navLabel.group(mod.id)}
               </span>
             </Link>

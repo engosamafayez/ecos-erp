@@ -151,7 +151,11 @@
       "logistics-automation": "الأتمتة",
       "logistics-intelligence": "الذكاء",
       "logistics-fuel-review": "مراجعة الوقود",
-      "logistics-dispatch-board": "لوحة الإرسال"
+      "logistics-dispatch-board": "لوحة الإرسال",
+      "crm-customers": "العملاء",
+      "crm-executive": "نظرة تنفيذية",
+      "cep-section": "تفاعل العملاء",
+      "bae-section-group": "الحسابات التجارية"
     },
     "groups": {
       "overview": "نظرة عامة",

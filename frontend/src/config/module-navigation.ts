@@ -260,13 +260,24 @@ const ALL_MODULES: AppModule[] = [
       { key: 'automation-segs',    path: ROUTES.audienceSegments,         icon: UsersIcon },
       { key: 'automation-dash', path: ROUTES.automationDashboard,      icon: Activity },
       { key: 'automation-gov',      path: ROUTES.automationGovernance,     icon: Shield },
+      { key: 'cep-section', isSection: true },
+      { key: 'cep-inbox',  path: ROUTES.customerEngagement, icon: MessageSquare },
+      { key: 'cep-dashboard',      path: ROUTES.cepDashboard,       icon: LayoutDashboard },
+      { key: 'cep-leads',          path: ROUTES.cepLeads,           icon: UserPlus },
+      { key: 'bae-section-group', isSection: true },
+      { key: 'bae-section', isSection: true },
+      { key: 'bae-journey',     path: ROUTES.businessAttribution, icon: Activity },
+      { key: 'bae-timeline',    path: ROUTES.baeTimeline,         icon: BarChart3 },
     ],
   },
   {
     id: 'crm',
     icon: UsersIcon,
-    defaultPath: ROUTES.crm,
-    items: [],
+    defaultPath: ROUTES.crmCustomers,
+    items: [
+      { key: 'crm-customers',  path: ROUTES.crmCustomers,  icon: UsersIcon },
+      { key: 'crm-executive',  path: ROUTES.crmExecutive,  icon: BarChart3 },
+    ],
   },
   {
     id: 'manufacturing',
@@ -274,16 +285,6 @@ const ALL_MODULES: AppModule[] = [
     defaultPath: ROUTES.recipes,
     items: [
       { key: 'production-orders', path: ROUTES.recipes, icon: ClipboardList },
-    ],
-  },
-  {
-    id: 'customerEngagement',
-    icon: MessageSquare,
-    defaultPath: ROUTES.customerEngagement,
-    items: [
-      { key: 'cep-inbox',  path: ROUTES.customerEngagement, icon: MessageSquare },
-      { key: 'cep-dashboard',      path: ROUTES.cepDashboard,       icon: LayoutDashboard },
-      { key: 'cep-leads',          path: ROUTES.cepLeads,           icon: UserPlus },
     ],
   },
   {
@@ -297,16 +298,6 @@ const ALL_MODULES: AppModule[] = [
       { key: 'omni-providers', path: ROUTES.omnichannelProviders, icon: Wifi },
       { key: 'omni-macros',           path: ROUTES.omnichannelMacros,     icon: Zap },
       { key: 'omni-routing',    path: ROUTES.omnichannelRouting,    icon: GitBranch },
-    ],
-  },
-  {
-    id: 'core',
-    icon: Cpu,
-    defaultPath: ROUTES.businessAttribution,
-    items: [
-      { key: 'bae-section', isSection: true },
-      { key: 'bae-journey',     path: ROUTES.businessAttribution, icon: Activity },
-      { key: 'bae-timeline',    path: ROUTES.baeTimeline,         icon: BarChart3 },
     ],
   },
   {
@@ -413,10 +404,34 @@ const ALL_MODULES: AppModule[] = [
  *   • engineering  — AI Platform experimental (no LLM logic wired)
  * (Stock Transfers was already removed from the Inventory sidebar.)
  */
+/**
+ * Modules hidden from navigation for the go-live shell.
+ *
+ * Hiding is navigation-only: routes still resolve by direct URL, so nothing is
+ * deleted and nothing needs re-registering when a module is brought back.
+ *
+ *   • pos            — not in the go-live scope
+ *   • manufacturing  — not in the go-live scope
+ *   • engineering    — internal platform tooling, temporarily withheld
+ *   • logistics      — the empty rail entry. Every Logistics workspace lives
+ *                      under Shipping; this module carried no items, so it
+ *                      rendered as a module with an empty sidebar
+ *   • reports        — carries no items and no distinct destination
+ *   • finance        — the module exists here with no items and its UI lives on
+ *                      `platform-foundation`. Unhiding it on this branch would
+ *                      surface an empty module, which is the orphan this EPIC
+ *                      exists to remove. It is unhidden by the integration task,
+ *                      not by this one.
+ *
+ * CRM is deliberately absent: it is now visible and carries its two workspaces.
+ */
 const HIDDEN_MODULE_IDS: ReadonlySet<ModuleId> = new Set<ModuleId>([
-  'finance',
-  'crm',
+  'pos',
+  'manufacturing',
   'engineering',
+  'logistics',
+  'reports',
+  'finance',
 ]);
 
 /** Navigation-visible modules (hidden ids filtered out for go-live scope). */

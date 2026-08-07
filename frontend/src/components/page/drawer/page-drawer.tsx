@@ -4,11 +4,19 @@ import { EntityDrawer } from '@/components/crud/entity-drawer';
 import type { PageDrawerSize } from '../types';
 
 const SIZE_CLASS: Record<PageDrawerSize, string> = {
-  sm:   'sm:max-w-sm',
-  md:   'sm:max-w-md',
-  lg:   'sm:max-w-lg',
-  xl:   'sm:max-w-xl',
-  '2xl': 'w-full sm:w-[80vw] lg:w-[70vw] sm:max-w-none',
+  // One workspace drawer width: 60% of the viewport from `sm` up, full-width
+  // below it. The presets are kept as a stable vocabulary so no call site has to
+  // change, but they no longer disagree with one another — a drawer's width is a
+  // property of the shell, not of whichever page happened to open it.
+  //
+  // `full` is the one deliberate exception: it exists for surfaces that genuinely
+  // need the whole viewport, and collapsing it into 60% would remove a capability
+  // rather than standardise one.
+  sm:   'w-full sm:w-[60vw] sm:max-w-none',
+  md:   'w-full sm:w-[60vw] sm:max-w-none',
+  lg:   'w-full sm:w-[60vw] sm:max-w-none',
+  xl:   'w-full sm:w-[60vw] sm:max-w-none',
+  '2xl': 'w-full sm:w-[60vw] sm:max-w-none',
   full: 'sm:max-w-none sm:w-full',
 };
 
