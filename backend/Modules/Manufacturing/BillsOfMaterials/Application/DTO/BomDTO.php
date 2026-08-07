@@ -9,7 +9,12 @@ use App\Core\DTO\BaseDTO;
 final class BomDTO extends BaseDTO
 {
     /**
-     * @param  list<BomLineDTO>  $lines
+     * @param  list<BomLineDTO>|null  $lines  NULL means "leave the existing lines
+     *                                        alone"; an empty array means "delete
+     *                                        every line". Conflating the two is
+     *                                        what allowed BUG-BOM-DATA-LOSS-001:
+     *                                        a caller that simply omitted `lines`
+     *                                        silently wiped the recipe.
      */
     public function __construct(
         public readonly string $product_id,
@@ -20,7 +25,7 @@ final class BomDTO extends BaseDTO
         public readonly float $other_costs,
         public readonly float $yield_quantity,
         public readonly ?string $execution_instructions,
-        public readonly array $lines,
+        public readonly ?array $lines,
     ) {}
 
     /**
@@ -28,12 +33,14 @@ final class BomDTO extends BaseDTO
      */
     public static function fromArray(array $data): self
     {
-        $rawLines = is_array($data['lines'] ?? null) ? $data['lines'] : [];
-
-        $lines = array_map(
-            fn (mixed $line): BomLineDTO => BomLineDTO::fromArray((array) $line),
-            $rawLines,
-        );
+        // Absent key -> null (leave lines untouched). Present -> map it, so an
+        // explicit [] still means "delete every line".
+        $lines = array_key_exists('lines', $data) && is_array($data['lines'])
+            ? array_values(array_map(
+                fn (mixed $line): BomLineDTO => BomLineDTO::fromArray((array) $line),
+                $data['lines'],
+            ))
+            : null;
 
         return new self(
             product_id: (string) $data['product_id'],
@@ -46,7 +53,7 @@ final class BomDTO extends BaseDTO
             execution_instructions: isset($data['execution_instructions']) && $data['execution_instructions'] !== ''
                 ? (string) $data['execution_instructions']
                 : null,
-            lines: array_values($lines),
+            lines: $lines,
         );
     }
 }

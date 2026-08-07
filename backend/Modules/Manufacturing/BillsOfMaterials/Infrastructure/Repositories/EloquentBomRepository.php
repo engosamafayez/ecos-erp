@@ -154,15 +154,21 @@ final class EloquentBomRepository implements BomRepositoryInterface
         return $bom->load($this->getWithDetail());
     }
 
-    public function update(BillOfMaterial $bom, array $attributes, array $lines): BillOfMaterial
+    public function update(BillOfMaterial $bom, array $attributes, ?array $lines): BillOfMaterial
     {
         if ($attributes['is_active'] ?? false) {
             $this->deactivateOthers((string) $attributes['product_id'], $bom->id);
         }
 
         $bom->update($attributes);
-        $bom->lines()->delete();
-        $bom->lines()->createMany($lines);
+
+        // Only touch the lines when the caller actually supplied them. A status
+        // change sends no `lines` key, and must never destroy the recipe.
+        if ($lines !== null) {
+            $bom->lines()->delete();
+            $bom->lines()->createMany($lines);
+        }
+
         $this->recomputeRecipeCost($bom);
 
         return $bom->load($this->getWithDetail());

@@ -38,7 +38,10 @@ final class UpdateBomAction extends BaseAction
             'execution_instructions' => $dto->execution_instructions,
         ];
 
-        $lines = array_map(
+        // NULL propagates: the caller omitted `lines`, so the recipe's existing
+        // components are left untouched. Only an explicit list (including an
+        // explicit empty one) reaches the repository as a replacement.
+        $lines = $dto->lines === null ? null : array_map(
             fn (mixed $line): array => [
                 'raw_material_id' => $line->raw_material_id,
                 'quantity' => $line->quantity,

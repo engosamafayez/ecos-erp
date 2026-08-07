@@ -30,7 +30,10 @@ final class UpdateBomRequest extends FormRequest
             'other_costs' => ['nullable', 'numeric', 'min:0'],
             'yield_quantity' => ['nullable', 'numeric', 'min:0.0001'],
             'execution_instructions' => ['nullable', 'string', 'max:5000'],
-            'lines' => ['required', 'array', 'min:1'],
+            // Optional on update: omitting `lines` means "leave the recipe's
+            // components alone" (see BomDTO). `min:1` still applies when they
+            // ARE sent, so this endpoint can never empty a recipe.
+            'lines' => ['sometimes', 'array', 'min:1'],
             'lines.*.raw_material_id' => [
                 'required',
                 'uuid',

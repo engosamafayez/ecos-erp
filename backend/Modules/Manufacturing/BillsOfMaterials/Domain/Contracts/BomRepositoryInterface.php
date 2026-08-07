@@ -26,7 +26,7 @@ interface BomRepositoryInterface
      * @param  array<string, mixed>  $attributes
      * @param  list<array<string, mixed>>  $lines
      */
-    public function update(BillOfMaterial $bom, array $attributes, array $lines): BillOfMaterial;
+    public function update(BillOfMaterial $bom, array $attributes, ?array $lines): BillOfMaterial;
 
     public function delete(BillOfMaterial $bom): void;
 

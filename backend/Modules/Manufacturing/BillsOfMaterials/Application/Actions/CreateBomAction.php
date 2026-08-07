@@ -44,7 +44,9 @@ final class CreateBomAction extends BaseAction
                 'quantity' => $line->quantity,
                 'waste_percentage' => $line->waste_percentage,
             ],
-            $dto->lines,
+            // Creation has no existing lines to preserve, so a null here is
+            // simply "no components supplied" rather than "leave them alone".
+            $dto->lines ?? [],
         );
 
         $bom = $this->boms->create($attributes, $lines);
