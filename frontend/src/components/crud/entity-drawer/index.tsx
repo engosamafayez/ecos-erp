@@ -38,7 +38,7 @@ export function EntityDrawer({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side={side}
-        className={cn('flex w-full flex-col gap-0 p-0 sm:w-[60vw] sm:max-w-none', className)}
+        className={cn('flex w-full flex-col gap-0 p-0 md:w-[80vw] lg:w-[60vw] sm:max-w-none', className)}
       >
         <SheetHeader className="border-b px-4 py-3">
           <SheetTitle>{title}</SheetTitle>

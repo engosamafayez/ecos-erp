@@ -12,11 +12,11 @@ const SIZE_CLASS: Record<PageDrawerSize, string> = {
   // `full` is the one deliberate exception: it exists for surfaces that genuinely
   // need the whole viewport, and collapsing it into 60% would remove a capability
   // rather than standardise one.
-  sm:   'w-full sm:w-[60vw] sm:max-w-none',
-  md:   'w-full sm:w-[60vw] sm:max-w-none',
-  lg:   'w-full sm:w-[60vw] sm:max-w-none',
-  xl:   'w-full sm:w-[60vw] sm:max-w-none',
-  '2xl': 'w-full sm:w-[60vw] sm:max-w-none',
+  sm:   'w-full md:w-[80vw] lg:w-[60vw] sm:max-w-none',
+  md:   'w-full md:w-[80vw] lg:w-[60vw] sm:max-w-none',
+  lg:   'w-full md:w-[80vw] lg:w-[60vw] sm:max-w-none',
+  xl:   'w-full md:w-[80vw] lg:w-[60vw] sm:max-w-none',
+  '2xl': 'w-full md:w-[80vw] lg:w-[60vw] sm:max-w-none',
   full: 'sm:max-w-none sm:w-full',
 };
 

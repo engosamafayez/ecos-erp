@@ -1073,7 +1073,6 @@ export function Supplier360Drawer({ supplier, open, onOpenChange, onEdit, initia
     <PageDrawer
       open={open}
       onOpenChange={onOpenChange}
-      size="full"
       title={supplier.name}
       description={supplier.code}
       footer={
