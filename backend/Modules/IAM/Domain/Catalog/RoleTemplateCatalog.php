@@ -101,7 +101,7 @@ final class RoleTemplateCatalog
                 'dashboard' => ['profile' => 'warehouse'], 'landing' => 'inventoryDashboard',
             ]),
             self::make('finance-director', 'Finance Director', $M, 'Directs finance and accounting.', [
-                'permissions' => ['finance.*', 'accounting.*', 'purchasing.invoices.*'],
+                'permissions' => ['finance.*', 'purchasing.supplier_invoices.*'],
                 'nav' => ['dashboard', 'finance', 'purchasing', 'reports'],
                 'dashboard' => ['profile' => 'finance'], 'landing' => 'accounting',
                 'policies' => ['close-period', 'approve-journals'],
@@ -233,7 +233,7 @@ final class RoleTemplateCatalog
             self::make('sales-representative', 'Sales Representative', $S, 'Owns their own orders and customers — no cost visibility.', [
                 'permissions' => [
                     'sales.orders.view', 'sales.orders.create', 'sales.orders.update',
-                    'sales.customers.view', 'sales.customers.create', 'crm.leads.view', 'crm.leads.create',
+                    'sales.customers.view', 'sales.customers.create', 'crm.sales.view', 'crm.leads.create',
                     'inventory.products.view',
                 ],
                 'nav' => ['dashboard', 'commerce', 'crm'],
@@ -251,7 +251,7 @@ final class RoleTemplateCatalog
 
             // ── Customer Service ─────────────────────────────────────────────────
             self::make('customer-service-agent', 'Customer Service Agent', $CS, 'Handles tickets, conversations and RMAs.', [
-                'permissions' => ['crm.tickets.view', 'crm.tickets.create', 'crm.tickets.update', 'omnichannel.inbox.view', 'omnichannel.inbox.operate', 'crm.customers.view'],
+                'permissions' => ['crm.service.view', 'crm.tickets.create', 'crm.tickets.update', 'omnichannel.inbox.view', 'omnichannel.inbox.manage', 'crm.customers.view'],
                 'nav' => ['dashboard', 'crm', 'customerEngagement', 'omnichannel'],
                 'dashboard' => ['profile' => 'crm', 'hidden' => ['marketing-perf']],
                 'landing' => 'crm', 'hidden' => self::HIDE_SALES,
@@ -272,18 +272,18 @@ final class RoleTemplateCatalog
 
             // ── Accounting / Finance ─────────────────────────────────────────────
             self::make('accountant', 'Accountant', $ACC, 'Records and reconciles transactions.', [
-                'permissions' => ['accounting.journals.view', 'accounting.journals.create', 'accounting.ledgers.view', 'purchasing.invoices.view'],
+                'permissions' => ['finance.gl.view', 'finance.journal.create', 'accounting.ledgers.view', 'purchasing.supplier_invoices.view'],
                 'nav' => ['dashboard', 'finance', 'purchasing', 'reports'],
                 'dashboard' => ['profile' => 'finance'], 'landing' => 'accounting',
             ]),
             self::make('senior-accountant', 'Senior Accountant', $ACC, 'Reviews and posts journals, manages subledgers.', [
-                'permissions' => ['accounting.*', 'purchasing.invoices.*'],
+                'permissions' => ['finance.*', 'purchasing.supplier_invoices.*'],
                 'nav' => ['dashboard', 'finance', 'purchasing', 'reports'],
                 'dashboard' => ['profile' => 'finance'], 'landing' => 'accounting',
                 'policies' => ['approve-journals'],
             ]),
             self::make('financial-controller', 'Financial Controller', $FIN, 'Owns the close, budgets and controls.', [
-                'permissions' => ['finance.*', 'accounting.*'],
+                'permissions' => ['finance.*'],
                 'nav' => ['dashboard', 'finance', 'reports'],
                 'dashboard' => ['profile' => 'finance'], 'landing' => 'accounting',
                 'policies' => ['close-period', 'approve-journals', 'approve-budget'],
@@ -297,7 +297,7 @@ final class RoleTemplateCatalog
                 'policies' => ['payroll-approval', 'hiring-approval'],
             ]),
             self::make('hr-officer', 'HR Officer', $HR, 'Handles employee records and attendance.', [
-                'permissions' => ['hr.employees.view', 'hr.employees.create', 'hr.employees.update', 'hr.attendance.view', 'hr.attendance.operate', 'hr.leave.view'],
+                'permissions' => ['hr.employees.view', 'hr.employees.create', 'hr.employees.update', 'hr.attendance.view', 'hr.attendance.register', 'hr.leave.view'],
                 'nav' => ['dashboard', 'hr'],
                 'dashboard' => ['profile' => 'executive', 'hidden' => ['sales-revenue', 'marketing-perf']],
                 'landing' => 'hr',

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\IAM\Application\Services;
 
 use Illuminate\Support\Facades\DB;
+use Modules\IAM\Domain\Exceptions\UnknownTemplatePermissionException;
 use Modules\IAM\Domain\Models\Permission;
 use Modules\IAM\Domain\Models\Role;
 use Modules\IAM\Domain\Models\RoleTemplate;
@@ -26,14 +27,25 @@ class RoleTemplateCompiler
         $role = $this->resolveRole($template);
         $profile = $this->composition->composeProfiles([$template->profile()]);
 
+        // Resolve every referenced permission against the catalog FIRST, and collect
+        // all failures before throwing. Reporting one unknown token per run would
+        // make correcting a template an exercise in repeated trial (BUG-GL-011).
+        $names = array_values(array_filter(
+            $profile->permissions,
+            static fn (string $name): bool => substr_count($name, '.') >= 1,
+        ));
+
+        $resolved = Permission::query()->whereIn('name', $names)->get()->keyBy('name');
+        $unknown = array_values(array_diff($names, $resolved->keys()->all()));
+
+        if ($unknown !== []) {
+            throw UnknownTemplatePermissionException::forTemplate($template->key, $unknown);
+        }
+
         $pivot = [];
-        foreach ($profile->permissions as $name) {
-            $permission = $this->ensurePermission($name);
-            if ($permission === null) {
-                continue;
-            }
+        foreach ($names as $name) {
             $resource = $this->resourceOf($name);
-            $pivot[$permission->id] = [
+            $pivot[$resolved[$name]->id] = [
                 'effect' => 'allow',
                 'data_scope' => $profile->scopeFor($resource),
             ];
@@ -64,29 +76,6 @@ class RoleTemplateCompiler
         $template->setAttribute('role_id', $role->id);
 
         return $role;
-    }
-
-    /** firstOrCreate a permission row for a concrete name (module.resource.action or module.action). */
-    private function ensurePermission(string $name): ?Permission
-    {
-        $parts = explode('.', $name);
-        if (count($parts) < 2) {
-            return null; // not a valid permission token
-        }
-
-        if (count($parts) === 2) {
-            [$module, $action] = $parts;
-            $resource = null;
-        } else {
-            $module = $parts[0];
-            $action = $parts[count($parts) - 1];
-            $resource = implode('.', array_slice($parts, 1, -1));
-        }
-
-        return Permission::firstOrCreate(
-            ['name' => $name],
-            ['module' => $module, 'resource' => $resource, 'action' => $action],
-        );
     }
 
     /** "sales.orders.view" → "sales.orders" (the scope key). */
