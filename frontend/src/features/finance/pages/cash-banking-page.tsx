@@ -1,13 +1,11 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Banknote, Landmark, Scale, Wallet } from 'lucide-react';
 
 import { UniversalDataGrid, type DataGridColumnDef } from '@/components/data-grid';
 import { useToast } from '@/components/ds/use-toast';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -21,6 +19,7 @@ import { WorkspaceHeader, type WorkspaceMetric } from '@/components/workspace';
 import { usePermission } from '@/features/authorization';
 import { useFormatter } from '@/hooks/use-formatter';
 
+import { Field, NoAccess, Panel, Stat } from '../components/finance-panels';
 import {
   useAutoMatchReconciliation,
   useBankAccounts,
@@ -42,6 +41,7 @@ import {
   type CashSessionClose,
   type CashTransactionType,
 } from '../types/finance-treasury';
+import { backendMessage } from '../utils/backend-message';
 
 /**
  * EPIC-FINANCE-UI-001 · Phase 6 — Cash & Banking.
@@ -105,7 +105,10 @@ export function CashBankingPage() {
 
   const header = (
     <WorkspaceHeader
-      breadcrumbs={[{ label: t(($) => $.breadcrumb.finance) }, { label: t(($) => $.treasury.title) }]}
+      breadcrumbs={[
+        { label: t(($) => $.breadcrumb.finance) },
+        { label: t(($) => $.treasury.title) },
+      ]}
       title={t(($) => $.treasury.title)}
       description={t(($) => $.treasury.subtitle)}
       metrics={canCash || canBank ? metrics : undefined}
@@ -157,11 +160,6 @@ export function CashBankingPage() {
       </WorkspacePage>
     </>
   );
-}
-
-/** Surfaces the backend's own refusal message rather than a generic string. */
-function backendMessage(error: unknown): string | undefined {
-  return (error as { response?: { data?: { message?: string } } }).response?.data?.message;
 }
 
 // ── Cash ─────────────────────────────────────────────────────────────────────
@@ -229,7 +227,10 @@ function CreateCashAccountPanel() {
   const ready = code.trim() !== '' && name.trim() !== '' && glAccount.trim() !== '';
 
   return (
-    <Panel title={t(($) => $.treasury.cash.newTitle)} hint={t(($) => $.treasury.cash.newDescription)}>
+    <Panel
+      title={t(($) => $.treasury.cash.newTitle)}
+      hint={t(($) => $.treasury.cash.newDescription)}
+    >
       <div className="grid gap-3 md:grid-cols-3">
         <Field id="cash-code" label={t(($) => $.treasury.cash.codeLabel)}>
           <Input id="cash-code" value={code} onChange={(e) => setCode(e.target.value)} />
@@ -312,7 +313,9 @@ function SessionPanel({ accounts }: { accounts: CashAccount[] }) {
         </Field>
       </div>
 
-      <p className="text-xs text-muted-foreground">{t(($) => $.treasury.session.openDescription)}</p>
+      <p className="text-xs text-muted-foreground">
+        {t(($) => $.treasury.session.openDescription)}
+      </p>
 
       <Button
         size="sm"
@@ -669,7 +672,10 @@ function CreateBankAccountPanel() {
   const ready = name.trim() !== '' && glAccount.trim() !== '';
 
   return (
-    <Panel title={t(($) => $.treasury.bank.newTitle)} hint={t(($) => $.treasury.bank.newDescription)}>
+    <Panel
+      title={t(($) => $.treasury.bank.newTitle)}
+      hint={t(($) => $.treasury.bank.newDescription)}
+    >
       <div className="grid gap-3 md:grid-cols-2">
         <Field id="bank-name" label={t(($) => $.treasury.bank.nameLabel)}>
           <Input id="bank-name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -757,7 +763,9 @@ function ReconciliationTab() {
             onChange={(e) => setInputId(e.target.value)}
           />
         </Field>
-        <p className="text-xs text-muted-foreground">{t(($) => $.treasury.reconciliation.idNote)}</p>
+        <p className="text-xs text-muted-foreground">
+          {t(($) => $.treasury.reconciliation.idNote)}
+        </p>
 
         <Button
           size="sm"
@@ -864,9 +872,7 @@ function OutstandingItemsPanel({ reconciliationId }: { reconciliationId: string 
       {outstanding.isLoading ? (
         <p className="text-sm text-muted-foreground">{t(($) => $.loading)}</p>
       ) : outstanding.isError ? (
-        <p className="text-sm text-destructive">
-          {t(($) => $.treasury.reconciliation.loadFailed)}
-        </p>
+        <p className="text-sm text-destructive">{t(($) => $.treasury.reconciliation.loadFailed)}</p>
       ) : !data || data.items.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           {t(($) => $.treasury.reconciliation.noOutstanding)}
@@ -907,7 +913,9 @@ function OutstandingItemsPanel({ reconciliationId }: { reconciliationId: string 
                 {data.items.map((item) => (
                   <tr key={item.id}>
                     <td className="whitespace-nowrap p-2">
-                      {item.value_date ? fmt.date(item.value_date) : t(($) => $.treasury.common.none)}
+                      {item.value_date
+                        ? fmt.date(item.value_date)
+                        : t(($) => $.treasury.common.none)}
                     </td>
                     <td className="p-2 text-muted-foreground">
                       {item.description ?? t(($) => $.treasury.common.none)}
@@ -921,29 +929,6 @@ function OutstandingItemsPanel({ reconciliationId }: { reconciliationId: string 
         </>
       )}
     </section>
-  );
-}
-
-// ── Local presentation helpers ───────────────────────────────────────────────
-
-function Panel({ title, hint, children }: { title: string; hint?: string; children: ReactNode }) {
-  return (
-    <section className="flex flex-col gap-3 rounded-lg border bg-card p-4">
-      <div>
-        <h3 className="text-sm font-medium">{title}</h3>
-        {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function Field({ id, label, children }: { id: string; label: string; children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <Label htmlFor={id}>{label}</Label>
-      {children}
-    </div>
   );
 }
 
@@ -973,26 +958,6 @@ function AccountSelect({
         ))}
       </SelectContent>
     </Select>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: ReactNode }) {
-  return (
-    <div className="rounded-lg border bg-card p-4">
-      <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className="mt-1 text-sm font-medium tabular-nums">{value}</p>
-    </div>
-  );
-}
-
-function NoAccess() {
-  const { t } = useTranslation('finance');
-  return (
-    <Card>
-      <CardContent className="py-10 text-center text-sm text-muted-foreground">
-        {t(($) => $.noAccess)}
-      </CardContent>
-    </Card>
   );
 }
 
