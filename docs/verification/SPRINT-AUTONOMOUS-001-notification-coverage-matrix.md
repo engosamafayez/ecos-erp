@@ -42,6 +42,44 @@ and no existing route.
 
 ---
 
+## 2a. Implementation verification — no parallel notification system
+
+Verified 2026-08-07 at CTO request, before Phase 4 certification.
+
+**Finding: the endpoints are a presentation layer over Laravel's existing Notification
+infrastructure. No parallel system was introduced.**
+
+Evidence:
+
+| Question | Answer |
+| --- | --- |
+| What relation does the feed read? | `$user->notifications()` and `$user->unreadNotifications()` — the framework's `HasDatabaseNotifications` trait, reached through `Notifiable` on `App\Models\User`. |
+| What model? | `Illuminate\Notifications\DatabaseNotification`. No subclass, no model of ours. |
+| What table? | `notifications`, created by `2026_07_05_200400_create_notifications_table.php` with Laravel's standard schema. |
+| How is a notification marked read? | `DatabaseNotification::markAsRead()` — the framework's method. |
+| Did Phase 4 add a table, model or migration? | No. Commit `30ea7a12` touches four backend files: `NotificationController.php` (new), `routes/api.php` (+11 lines), `RoleTemplateCatalog.php` (the unrelated `executive` nav id) and one test. |
+| Do the existing producers reach this feed unchanged? | Yes. All five Preparation notification classes still declare `via() => ['database']` and were not modified. Nothing about the producer side changed. |
+| Does the frontend hold a second source of notifications? | No. `notifications-mock-data.ts` is deleted, and the only data source in `features/notifications/` is the three endpoints above. |
+
+Two nuances, stated rather than glossed:
+
+1. **`mark-all-read` issues one bulk `update(['read_at' => now()])` on the framework's
+   `unreadNotifications()` relation** instead of iterating `markAsRead()` per record. Same
+   relation, same column, same semantics — one query instead of N. It bypasses the
+   `markAsRead()` method but not the infrastructure.
+2. **`DB::table('notifications')->insert(...)` appears in `NotificationFeedTest`.** That is
+   a test fixture arranging a row in the shape Laravel writes, so the test does not depend
+   on a producer. No production code writes to the table directly.
+
+**One parallel system does exist, and it pre-dates this sprint.** Engineering has its own
+`engineering_notifications` table (migration `2026_07_21_200002`), its own
+`EngineeringNotification` model, its own `EngineeringNotificationController` and its own
+page. Phase 4 did not touch it and deliberately did not merge it into the user feed — see
+§3.5 for why. It is recorded here so the divergence is a documented decision rather than an
+undiscovered surprise.
+
+---
+
 ## 3. The matrix
 
 Classification:
