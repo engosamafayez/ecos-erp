@@ -9,6 +9,7 @@ import { useBranchesQuery } from '@/features/branches/hooks/use-branches';
 import { useCompaniesQuery } from '@/features/companies/hooks/use-companies';
 import { useFormatter } from '@/hooks/use-formatter';
 import { ExecutiveFilterBar } from '../components/executive-filters';
+import { ExecutiveUnavailableCard } from '../components/executive-unavailable-card';
 import { ExecutiveKpiCard } from '../components/executive-kpi-card';
 import { ExecutiveTrendPanel } from '../components/executive-trend-panel';
 import {
@@ -292,11 +293,11 @@ export function ExecutiveDashboardPage() {
                 </CardContent>
               </Card>
             ) : group.q.isError ? (
-              <Card>
-                <CardContent className="text-muted-foreground pt-6 text-sm">
-                  {t(($) => $.unavailable)}
-                </CardContent>
-              </Card>
+              <ExecutiveUnavailableCard
+                message={t(($) => $.unavailable)}
+                retryLabel={t(($) => $.retry)}
+                onRetry={() => void group.q.refetch()}
+              />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {group.kpis.map((k: ExecutiveKpi) => (

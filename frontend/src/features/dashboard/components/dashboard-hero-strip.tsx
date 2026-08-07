@@ -3,6 +3,7 @@ import { useFormatter } from '@/hooks/use-formatter';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { cn } from '@/lib/utils';
+import { ExecutiveUnavailableCard } from '@/features/executive/components/executive-unavailable-card';
 import type { ExecutiveDashboardData } from '../services/executive-dashboard.service';
 import type { DashboardProfile } from '../registry/widget-definitions';
 
@@ -167,13 +168,32 @@ interface Props {
   data:    ExecutiveDashboardData | undefined;
   loading: boolean;
   profile: DashboardProfile;
+  /** TASK-GL-HOTFIX-001: without this the strip skeletons forever on failure. */
+  error?:   boolean;
+  onRetry?: () => void;
 }
 
-export function DashboardHeroStrip({ data, loading, profile }: Props) {
+export function DashboardHeroStrip({ data, loading, profile, error, onRetry }: Props) {
   const { t } = useTranslation('dashboard');
   const { moneyCompact } = useFormatter();
   const metrics = data ? buildMetrics(data, profile, t, moneyCompact) : null;
-  const cells   = loading || !metrics ? Array.from({ length: 6 }) : metrics;
+
+  // A failed fetch leaves `loading` false and `data` undefined. Falling through
+  // to the skeleton branch in that state is what made this strip pulse
+  // indefinitely instead of ever telling the user the request had failed.
+  if (error && !metrics) {
+    return (
+      <div className="-mx-4 border-y bg-card/60 px-4 py-4 sm:-mx-6 sm:px-6">
+        <ExecutiveUnavailableCard
+          message={t($ => $.errors.unavailable)}
+          retryLabel={t($ => $.errors.retry)}
+          onRetry={onRetry}
+        />
+      </div>
+    );
+  }
+
+  const cells = loading || !metrics ? Array.from({ length: 6 }) : metrics;
 
   return (
     <div className="-mx-4 border-y bg-card/60 sm:-mx-6">

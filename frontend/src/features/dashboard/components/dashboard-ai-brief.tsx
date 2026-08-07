@@ -3,6 +3,7 @@ import { useFormatter } from '@/hooks/use-formatter';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { cn } from '@/lib/utils';
+import { ExecutiveUnavailableCard } from '@/features/executive/components/executive-unavailable-card';
 import type { ExecutiveDashboardData } from '../services/executive-dashboard.service';
 
 type DashboardT = TFunction<'dashboard'>;
@@ -79,9 +80,11 @@ const LEVEL_CONFIG: Record<InsightLevel, {
 interface Props {
   data?:    ExecutiveDashboardData;
   loading?: boolean;
+  error?:   boolean;
+  onRetry?: () => void;
 }
 
-export function DashboardAiBrief({ data, loading }: Props) {
+export function DashboardAiBrief({ data, loading, error, onRetry }: Props) {
   const { t } = useTranslation('dashboard');
   const { money } = useFormatter();
   const insights = data ? deriveInsights(data, t, money) : null;
@@ -108,7 +111,15 @@ export function DashboardAiBrief({ data, loading }: Props) {
         </div>
 
         {/* Insights */}
-        {loading || !insights ? (
+        {error && !insights ? (
+          // TASK-GL-HOTFIX-001: a failed fetch used to land in the skeleton
+          // branch below and animate forever.
+          <ExecutiveUnavailableCard
+            message={t($ => $.errors.unavailable)}
+            retryLabel={t($ => $.errors.retry)}
+            onRetry={onRetry}
+          />
+        ) : loading || !insights ? (
           <div className="animate-pulse space-y-2.5">
             {[160, 200, 140, 180].map((w, i) => (
               <div key={i} className="flex items-start gap-2.5">

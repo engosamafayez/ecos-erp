@@ -74,5 +74,6 @@
     "expense": "Expense",
     "profit": "Profit",
     "margin": "Margin"
-  }
+  },
+  "retry": "Retry"
 }

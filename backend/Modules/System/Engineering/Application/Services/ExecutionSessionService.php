@@ -178,10 +178,12 @@ final class ExecutionSessionService
         $agentStats = DB::table('engineering_agents')
             ->where('company_id', $companyId)
             ->whereNull('deleted_at')
+            // TASK-GL-HOTFIX-001: `FILTER (WHERE …)` is PostgreSQL-only and raises
+            // SQLSTATE 42000 on the MySQL 8.4 this platform deploys.
             ->selectRaw("
-                COUNT(*) FILTER (WHERE status IN ('idle', 'busy')) AS connected_agents,
-                COUNT(*) FILTER (WHERE status = 'busy')            AS busy_agents,
-                COUNT(*) FILTER (WHERE status = 'offline')         AS offline_agents
+                COUNT(CASE WHEN status IN ('idle', 'busy') THEN 1 END) AS connected_agents,
+                COUNT(CASE WHEN status = 'busy'            THEN 1 END) AS busy_agents,
+                COUNT(CASE WHEN status = 'offline'         THEN 1 END) AS offline_agents
             ")
             ->first();
 
@@ -202,7 +204,9 @@ final class ExecutionSessionService
             ->where('status', ExecutionSessionStatus::Completed->value)
             ->whereNotNull('started_at')
             ->whereNotNull('completed_at')
-            ->selectRaw("AVG(EXTRACT(EPOCH FROM (completed_at - started_at))) AS avg_seconds")
+            // EXTRACT(EPOCH FROM interval) is PostgreSQL-only. TIMESTAMPDIFF is the
+            // MySQL equivalent; there is no ANSI form for interval-to-scalar.
+            ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, started_at, completed_at)) AS avg_seconds')
             ->value('avg_seconds');
 
         $latestActivity = DB::table('engineering_execution_sessions as s')

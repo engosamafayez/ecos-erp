@@ -89,8 +89,12 @@ export function DashboardPage() {
     saveProfile(p);
   }, []);
 
-  const { data, isLoading } = useExecutiveDashboard();
+  // `isError` and `refetch` were never read, so a failed request was
+  // indistinguishable from a slow one and the page skeletoned forever
+  // (TASK-GL-HOTFIX-001).
+  const { data, isLoading, isError, refetch } = useExecutiveDashboard();
   const loading = isLoading;
+  const retry = () => void refetch();
 
   const alertCount = data
     ? (data.sales.cancelled_today > 0 ? 1 : 0) + (data.shipping.failed_today > 0 ? 1 : 0)
@@ -180,7 +184,7 @@ export function DashboardPage() {
       </div>
 
       {/* ── Section 2: Hero KPI Strip ─────────────────────────────────── */}
-      <DashboardHeroStrip data={data} loading={loading} profile={profile} />
+      <DashboardHeroStrip data={data} loading={loading} profile={profile} error={isError} onRetry={retry} />
 
       {/* ── Workspace body ─────────────────────────────────────────────── */}
       <div className="mt-8 flex flex-col gap-10">
@@ -196,7 +200,7 @@ export function DashboardPage() {
           >
             {t($ => $.page.aiBriefSection)}
           </SectionLabel>
-          <DashboardAiBrief data={data} loading={loading} />
+          <DashboardAiBrief data={data} loading={loading} error={isError} onRetry={retry} />
         </section>
 
         {/* Divider */}
