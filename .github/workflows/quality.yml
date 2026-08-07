@@ -296,3 +296,73 @@ jobs:
           path: backend/public/app
           retention-days: 7
           if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Docker Image Build — the artifact that actually ships.
+  #
+  # Added by TASK-DEPLOY-HOTFIX-001. The Production Build job above proves the
+  # SPA bundles; it does not prove an image can be produced. Nothing in CI did.
+  #
+  # The consequence was BUG-GL-009: docker/php/Dockerfile ran `npm run build`
+  # (= `tsc -b && vite build`) while CI ran `npx vite build`. tsc -b exits
+  # non-zero on the diagnostics the TypeScript ratchet owns, so every image
+  # build failed at that line and `scripts/deploy.sh` failed at
+  # `docker compose build` — on the server, at deploy time, with all five
+  # analysis gates green and a three-week-stale image in production.
+  #
+  # This job closes that gap: from here on, a commit that cannot be built into
+  # the deployable image cannot be green. It builds the two production targets
+  # only — `engineering-dev` (Stage 3.5) is a tooling image and is not shipped.
+  # ---------------------------------------------------------------------------
+  image:
+    name: Docker Image Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      # Build only; nothing is pushed. `--load` is deliberately omitted — the
+      # question is whether the image can be produced, and loading a ~1 GB
+      # image into the runner daemon adds minutes without adding an answer.
+      #
+      # GIT_SHA / APP_VERSION / BUILD_TIME mirror what scripts/deploy.sh passes,
+      # so this exercises the same build args the server does. COMPOSER_AUTH
+      # defaults to '{}' in the Dockerfile, which is correct for public deps.
+      - name: Build app image (Stage 3)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/php/Dockerfile
+          target: app
+          push: false
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            APP_VERSION=ci-${{ github.run_number }}
+          cache-from: type=gha,scope=ecos-app
+          cache-to: type=gha,mode=max,scope=ecos-app
+
+      - name: Build nginx image (Stage 4)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/php/Dockerfile
+          target: nginx
+          push: false
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+            APP_VERSION=ci-${{ github.run_number }}
+          cache-from: type=gha,scope=ecos-nginx
+          cache-to: type=gha,mode=max,scope=ecos-nginx
+
+      # A build that silently stopped running tsc would still be a regression if
+      # someone reinstated `npm run build`. Assert the deploy path calls neither
+      # `npm run build` nor `tsc` — the ratchet is the only owner of type safety.
+      - name: Assert no second TypeScript build in the deploy path
+        run: |
+          if grep -nE '(npm run build|tsc -b|tsc --)' docker/php/Dockerfile | grep -v '^\s*[0-9]*:#'; then
+            echo "::error::docker/php/Dockerfile runs a TypeScript build. The ratchet owns type safety; a tsc call here makes the image unbuildable on accepted debt (BUG-GL-009)."
+            exit 1
+          fi
+          echo "Dockerfile deploy path is free of a second TypeScript build."

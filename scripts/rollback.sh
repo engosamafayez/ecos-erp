@@ -94,7 +94,7 @@ ok "HEAD is now: $(git rev-parse HEAD)"
 #     (from $PROJECT_ROOT/backend/ inside the build context)
 #
 #   Stage 2 (node:22-bookworm-slim)
-#     npm ci && npm run build
+#     npm ci && npx vite build
 #     (from $PROJECT_ROOT/frontend/ → output to public/app/)
 #
 #   Stage 3 (php:8.4-fpm)

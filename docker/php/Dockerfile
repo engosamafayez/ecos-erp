@@ -84,7 +84,20 @@ RUN npm ci --prefer-offline
 
 # Layer 2: build (invalidated when any source file changes)
 COPY frontend/ ./
-RUN mkdir -p /backend/public/app && npm run build
+# `vite build`, NOT `npm run build` — the same call CI's Production build gate
+# makes, and for the same reason. The npm script is `tsc -b && vite build`, and
+# `tsc -b` exits non-zero on the diagnostics the TypeScript ratchet owns as
+# accepted debt. This image therefore could not be built at all: every attempt
+# died on this line with exit code 2, `scripts/deploy.sh` failed at
+# `docker compose build`, and the deployed image sat three weeks stale while
+# every analysis gate stayed green (TASK-DEPLOY-HOTFIX-001, BUG-GL-009).
+#
+# This weakens no gate. Type safety is enforced by the TypeScript ratchet in
+# .github/workflows/quality.yml, which owns those diagnostics and fails when
+# they get worse. Running tsc here as well only duplicated that check inside
+# the image build, where it is red on day one — the exact failure mode the CI
+# comment records as having killed three earlier gates.
+RUN mkdir -p /backend/public/app && npx vite build
 
 
 # -----------------------------------------------------------------------------

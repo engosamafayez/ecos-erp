@@ -1,0 +1,36 @@
+# Line-ending policy.
+#
+# TASK-DEPLOY-HOTFIX-001. The repository had no .gitattributes, and the Windows
+# development checkouts run with core.autocrlf=true — so every file, including
+# the Dockerfile and every shell script, landed on disk with CRLF.
+#
+# That is invisible on the Linux deploy server (its checkout is LF) but it makes
+# the image unbuildable on Windows: `/bin/sh` reads the trailing CR as part of
+# the token and a multi-line RUN script dies with
+#     syntax error: unexpected word (expecting "do")   → exit code 2
+# which is indistinguishable, in a build log, from a real failure of the step.
+#
+# Anything the container executes, or that is executed to build it, is pinned to
+# LF here so it is byte-identical on every developer machine and on the server.
+
+*               text=auto
+
+# Shell and container tooling — must be LF wherever they are checked out.
+*.sh            text eol=lf
+Dockerfile      text eol=lf
+*.Dockerfile    text eol=lf
+docker-compose*.yml  text eol=lf
+.github/**/*.yml     text eol=lf
+docker/**/*.conf     text eol=lf
+docker/**/*.ini      text eol=lf
+
+# Binary assets — never touched.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary

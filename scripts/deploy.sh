@@ -17,7 +17,7 @@
 #   3.  Verify source (confirm HEAD matches the requested commit)
 #   4.  docker compose build   ← frontend + backend compiled inside Dockerfile:
 #                                  Stage 1 (composer:2):    composer install --no-dev
-#                                  Stage 2 (node:22):       cd frontend && npm ci && npm run build
+#                                  Stage 2 (node:22):       cd frontend && npm ci && npx vite build
 #                                  Stage 3 (php:8.4-fpm):  bakes vendor + public/app + bootstrap/cache
 #                                  Stage 4 (nginx:alpine):  bakes public/app + build-info
 #   5.  Image self-test
@@ -167,7 +167,10 @@ log "    Built   : $BUILD_TIME"
 #   Stage 2 (node:22-bookworm-slim)
 #     WORKDIR /app  (= $PROJECT_ROOT/frontend inside the build context)
 #     npm ci
-#     npm run build   → output: /backend/public/app  (baked into Stage 3+4)
+#     npx vite build  → output: /backend/public/app  (baked into Stage 3+4)
+#     NOT `npm run build` — that script is `tsc -b && vite build`, and tsc -b
+#     exits non-zero on the ratchet's accepted diagnostics, which made every
+#     image build fail here (BUG-GL-009). Types are gated by the ratchet in CI.
 #
 #   Stage 3 (php:8.4-fpm)
 #     Copies vendor from Stage 1, public/app from Stage 2.
