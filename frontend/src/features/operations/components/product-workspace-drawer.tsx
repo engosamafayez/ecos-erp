@@ -100,7 +100,7 @@ export function ProductWorkspaceDrawer({ waveId, itemId, onClose }: Props) {
 
   return (
     <Sheet open={!!itemId} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent side="right" className="w-full sm:max-w-2xl p-0 flex flex-col">
+      <SheetContent side="right" className="p-0 flex flex-col">
         <SheetHeader className="px-6 pt-6 pb-0 shrink-0">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">

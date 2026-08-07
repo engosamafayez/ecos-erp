@@ -220,7 +220,7 @@ export function TaskDrawer({ task, open, onClose, onTransition, onRefresh }: Tas
     <Sheet open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <SheetContent
         side="right"
-        className="flex flex-col p-0 w-full sm:!max-w-[640px]"
+        className="flex flex-col p-0 sm:!max-w-[640px]"
       >
         {/* Header */}
         <SheetHeader className="shrink-0 border-b px-5 py-4 gap-2">

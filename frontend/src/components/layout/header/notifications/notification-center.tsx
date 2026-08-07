@@ -163,7 +163,7 @@ export function NotificationCenter() {
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent
           side="right"
-          className="flex w-full flex-col gap-0 p-0 sm:max-w-sm"
+          className="w-3/4 sm:max-w-sm flex w-full flex-col gap-0 p-0 sm:max-w-sm"
         >
           {/* Header */}
           <div className="flex shrink-0 items-center justify-between border-b px-4 py-3 pe-12">

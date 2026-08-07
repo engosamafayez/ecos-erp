@@ -1057,7 +1057,7 @@ export function RawMaterialDetailDrawer({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="right"
-          className="flex flex-col gap-0 overflow-hidden p-0 sm:max-w-none w-full sm:w-[90vw] lg:w-[70vw]"
+          className="flex flex-col gap-0 overflow-hidden p-0 sm:w-[90vw] lg:w-[70vw]"
           style={{ maxWidth: 1400 }}
         >
           <SheetTitle className="sr-only">

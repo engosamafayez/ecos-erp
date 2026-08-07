@@ -330,7 +330,7 @@ export function DeliveryShippingWorkspace({ brandId }: { brandId: string }) {
 
       {/* Zone Drawer */}
       <Sheet open={drawer.mode !== 'closed'} onOpenChange={(open) => { if (!open) closeDrawer(); }}>
-        <SheetContent className="w-full sm:max-w-md">
+        <SheetContent className="">
           <SheetHeader>
             <SheetTitle>
               {drawer.mode === 'create' ? t($ => $.deliveryShipping.addTitle) : t($ => $.deliveryShipping.editTitle)}

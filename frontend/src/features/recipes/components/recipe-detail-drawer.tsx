@@ -520,7 +520,7 @@ export function RecipeDetailDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-xl p-0 flex flex-col gap-0">
+      <SheetContent side="right" className="p-0 flex flex-col gap-0">
         <SheetTitle className="sr-only">
           {recipe ? t($ => $.drawer.title, { name: recipe.product?.name ?? recipe.bom_number }) : t($ => $.drawer.titleFallback)}
         </SheetTitle>

@@ -473,7 +473,7 @@ export function ProductCostDrawer({ review, open, onOpenChange }: ProductCostDra
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="flex flex-col gap-0 overflow-hidden p-0 sm:max-w-none w-full sm:w-[90vw] lg:w-[60vw]"
+        className="flex flex-col gap-0 overflow-hidden p-0 sm:w-[90vw] lg:w-[60vw]"
         style={{ maxWidth: 1100 }}
       >
         <SheetHeader className="shrink-0 border-b px-6 py-4">

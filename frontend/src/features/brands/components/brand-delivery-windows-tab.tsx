@@ -103,7 +103,7 @@ function SlotDrawer({ brandId, slot, open, onOpenChange }: SlotDrawerProps) {
 
   return (
     <Sheet open={open} onOpenChange={handleOpen}>
-      <SheetContent className="w-full sm:max-w-sm flex flex-col">
+      <SheetContent className="flex flex-col">
         <SheetHeader>
           <SheetTitle>{isEdit ? 'Edit Time Slot' : 'New Time Slot'}</SheetTitle>
           <SheetDescription>

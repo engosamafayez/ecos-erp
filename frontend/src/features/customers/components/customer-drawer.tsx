@@ -486,7 +486,7 @@ export function CustomerDrawer({ customer, open, onOpenChange, onEdit, defaultTa
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-lg">
+      <SheetContent side="right" className="flex flex-col gap-0 p-0">
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <SheetHeader className="border-b px-4 py-3">
           <div className="flex items-start justify-between gap-2">

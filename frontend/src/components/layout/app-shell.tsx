@@ -58,7 +58,7 @@ export function AppShell() {
 
         {/* Tablet sidebar overlay — md to lg */}
         <Sheet open={tabletSidebarOpen} onOpenChange={setTabletSidebarOpen}>
-          <SheetContent side="left" className="w-64 p-0 bg-sidebar flex flex-col lg:hidden">
+          <SheetContent side="left" className="w-3/4 sm:max-w-sm w-64 p-0 bg-sidebar flex flex-col lg:hidden">
             <SheetTitle className="sr-only">{t($ => $.nav.navigation)}</SheetTitle>
             <AppSidebar
               activeModule={activeModule}

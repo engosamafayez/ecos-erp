@@ -70,7 +70,7 @@ export function CampaignDraftDrawer({ open, onClose, draft, creating = false }: 
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
-      <SheetContent className="w-[700px] max-w-full flex flex-col p-0">
+      <SheetContent className="w-[700px] flex flex-col p-0">
         <SheetHeader className="px-6 py-4 border-b shrink-0">
           <div className="flex items-center gap-3">
             <SheetTitle className="flex-1 truncate">{title}</SheetTitle>

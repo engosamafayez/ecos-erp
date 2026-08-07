@@ -11,10 +11,12 @@ import { cn } from '@/lib/utils';
 import type { FormDrawerSize } from '../types';
 
 const SIZE_CLASS: Record<FormDrawerSize, string> = {
-  sm:   'sm:max-w-sm',
-  md:   'sm:max-w-md',
-  lg:   'sm:max-w-lg',
-  xl:   'sm:max-w-xl',
+  // Same single width as PageDrawer: the preset name is a stable vocabulary,
+  // not a different geometry. See page-drawer.tsx.
+  sm:   'w-full sm:w-[60vw] sm:max-w-none',
+  md:   'w-full sm:w-[60vw] sm:max-w-none',
+  lg:   'w-full sm:w-[60vw] sm:max-w-none',
+  xl:   'w-full sm:w-[60vw] sm:max-w-none',
   full: 'sm:max-w-none sm:w-full',
 };
 

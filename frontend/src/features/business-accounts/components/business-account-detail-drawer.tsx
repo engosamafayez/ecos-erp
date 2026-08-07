@@ -218,7 +218,7 @@ export function BusinessAccountDetailDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex flex-col overflow-hidden p-0 w-full sm:max-w-xl">
+      <SheetContent className="flex flex-col overflow-hidden p-0">
         <SheetTitle className="sr-only">{account.name} — Integration Account Details</SheetTitle>
 
         {/* ── Header ── */}

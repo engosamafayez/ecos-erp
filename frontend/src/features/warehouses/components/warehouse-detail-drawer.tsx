@@ -100,7 +100,7 @@ export function WarehouseDetailDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex flex-col overflow-hidden p-0 w-full sm:max-w-xl">
+      <SheetContent className="flex flex-col overflow-hidden p-0">
         <SheetTitle className="sr-only">{warehouse.name} — Warehouse Details</SheetTitle>
 
         {/* Header */}

@@ -147,7 +147,7 @@ export function SupplierInvoiceEditor({ open, onOpenChange }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-3xl overflow-y-auto">
+      <SheetContent className="overflow-y-auto">
         <SheetHeader className="pb-4">
           <SheetTitle className="flex items-center gap-2">
             <Zap className="w-4 h-4 text-amber-500" />

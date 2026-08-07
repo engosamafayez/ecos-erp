@@ -76,7 +76,7 @@ function InvoiceDetailDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+      <SheetContent className="overflow-y-auto">
         {isLoading || !invoice ? (
           <div className="flex items-center justify-center h-48">
             <Loader2 className="w-5 h-5 animate-spin text-gray-400" />

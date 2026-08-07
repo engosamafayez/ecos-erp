@@ -267,7 +267,23 @@ export function SuppliersPage() {
         key: 'phone',
         label: t($ => $.columns.phone),
         skeletonClassName: 'w-28 h-4',
-        cell: (s) => <span className="text-sm text-muted-foreground tabular-nums">{s.phone ?? '—'}</span>,
+        // A phone number in an operations grid exists to be dialled. `dir="ltr"`
+        // keeps the number itself left-to-right inside an RTL layout, where a
+        // bare number would otherwise render with its punctuation reordered.
+        // stopPropagation so dialling does not also open the row drawer.
+        cell: (s) =>
+          s.phone ? (
+            <a
+              href={`tel:${s.phone.replace(/[^\d+]/g, '')}`}
+              dir="ltr"
+              className="text-sm tabular-nums text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {s.phone}
+            </a>
+          ) : (
+            <span className="text-sm text-muted-foreground">—</span>
+          ),
       },
       // 3 — Opening Balance (onboarding balance)
       {

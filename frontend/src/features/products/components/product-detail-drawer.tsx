@@ -1258,7 +1258,7 @@ export function ProductDetailDrawer({
     <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col gap-0 p-0 sm:max-w-none"
+        className="flex flex-col gap-0 p-0"
         style={{ width: '48%', minWidth: 520, maxWidth: 900 }}
       >
         {/* Header */}

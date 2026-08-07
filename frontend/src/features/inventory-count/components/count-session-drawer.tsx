@@ -608,7 +608,7 @@ export function CountSessionDrawer({ sessionId, open, onOpenChange }: Props) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-4xl flex flex-col p-0 gap-0 overflow-hidden">
+      <SheetContent className="flex flex-col p-0 gap-0 overflow-hidden">
         {isLoading ? (
           <div className="flex-1 flex items-center justify-center"><LoadingState /></div>
         ) : isError || !session ? (

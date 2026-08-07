@@ -149,7 +149,7 @@ export function TeamDetailDrawer({ team, open, onOpenChange }: TeamDetailDrawerP
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+      <SheetContent className="overflow-y-auto">
         <SheetHeader className="pb-4">
           <div className="flex items-center gap-3">
             <div className="bg-primary/10 flex size-10 items-center justify-center rounded-lg">

@@ -2264,7 +2264,7 @@ export function OrderDetailDrawer({ order, open, onOpenChange, onEdit }: OrderDe
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col gap-0 p-0 sm:max-w-none sm:w-[48vw] sm:min-w-[480px] sm:max-w-[820px]"
+        className="flex flex-col gap-0 p-0 sm:w-[48vw] sm:min-w-[480px] sm:max-w-[820px]"
       >
         {/* ── Header ── */}
         <SheetHeader className="border-b px-4 py-3">

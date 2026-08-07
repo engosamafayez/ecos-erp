@@ -72,7 +72,7 @@ export function SupplierReturnDrawer({ id, open, onOpenChange, mode = 'view' }: 
   if (mode === 'create') {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+        <SheetContent className="overflow-y-auto">
           <SheetHeader>
             <SheetTitle>{t($ => $.returnDrawer.createTitle)}</SheetTitle>
           </SheetHeader>
@@ -86,7 +86,7 @@ export function SupplierReturnDrawer({ id, open, onOpenChange, mode = 'view' }: 
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+      <SheetContent className="overflow-y-auto">
         {isLoading || !returnRecord ? (
           <div className="flex items-center justify-center h-48">
             <p className="text-sm text-gray-400">{t($ => $.returnDrawer.loading)}</p>

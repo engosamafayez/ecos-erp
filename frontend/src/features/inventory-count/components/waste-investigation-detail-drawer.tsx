@@ -11,6 +11,8 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+import type enInventoryCount from '@/i18n/locales/en/inventory-count.json';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,6 +38,34 @@ import type {
 
 const fmt = (n: number | null | undefined, decimals = 2) =>
   n == null ? '—' : n.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+
+/**
+ * Timeline event types.
+ *
+ * The API types `event_type` as an open string, while the locale carries a
+ * closed set. The union is derived from the locale so the two cannot drift, and
+ * the runtime list is checked against it by `satisfies` — adding an event to one
+ * without the other is a compile error. Unknown values still fall back to the
+ * raw type, which is what the previous `defaultValue` did.
+ */
+type TimelineEventKey =
+  keyof (typeof enInventoryCount)['waste']['detail']['timeline']['events'];
+
+const TIMELINE_EVENT_KEYS = [
+  'created',
+  'resolved',
+  'attachment_added',
+  'attachment_removed',
+  'notes_edited',
+  'damage_reason_changed',
+  'outcome_decided',
+  'liability_created',
+  'value_changed',
+] as const satisfies readonly TimelineEventKey[];
+
+function isTimelineEventKey(value: string): value is TimelineEventKey {
+  return (TIMELINE_EVENT_KEYS as readonly string[]).includes(value);
+}
 
 const EVENT_COLORS: Record<string, string> = {
   created:          'text-sky-600',
@@ -195,7 +225,9 @@ function TimelineTab({ events }: { events: WasteInvestigationEvent[] }) {
               </span>
               <div className="text-sm">
                 <p className={`font-medium ${color}`}>
-                  {t($ => $.waste.detail.timeline.events[ev.event_type], { defaultValue: ev.event_type })}
+                  {isTimelineEventKey(ev.event_type)
+                    ? t($ => $.waste.detail.timeline.events[ev.event_type as TimelineEventKey])
+                    : ev.event_type}
                 </p>
                 {ev.description && (
                   <p className="text-muted-foreground text-xs mt-0.5">{ev.description}</p>
@@ -351,7 +383,7 @@ export function WasteInvestigationDetailDrawer({ investigationId, open, onOpenCh
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-xl flex flex-col p-0 gap-0 overflow-hidden">
+      <SheetContent className="flex flex-col p-0 gap-0 overflow-hidden">
         {isLoading || !data ? (
           <div className="flex-1 flex items-center justify-center">
             <Loader2 className="size-6 animate-spin text-muted-foreground" />
