@@ -125,8 +125,66 @@ JSON
   echo "No TypeScript diagnostics in the staged file(s)."
   exit 0
 else
-  # ── Full-repository type-check — unchanged for pre-push / ci / full ─────────
-  # Clean, whole-repo project-reference build. `|| exit 1` remaps tsc's exit
-  # code 2 (DiagnosticsPresent) to 1 so the guardian treats it as FAIL.
-  "$TSC" -b --force 2>&1 || exit 1
+  # ── Full-repository type-check, ratcheted ──────────────────────────────────
+  #
+  # The build itself is unchanged: a clean, whole-repo project-reference
+  # `tsc -b --force`. Nothing is skipped, no compiler option is relaxed and no
+  # diagnostic is suppressed — the SCAN is identical to before.
+  #
+  # What changed is the pass/fail rule. This previously demanded zero errors
+  # repo-wide while the project had formally certified a non-zero baseline
+  # (325 diagnostics in engineering/baselines/), so every push failed on
+  # historical debt the commits never touched — 24 errors across 14 files, none
+  # of them modified by the last three commits, which touched 0 TypeScript files
+  # at all (TASK-GUARDIAN-PREPUSH-RCA-001).
+  #
+  # HOW THE RATCHET IS MEASURED — two rules, both must hold:
+  #
+  #   1. TOTAL      current_total must be <= baseline.total
+  #   2. PER FILE   for every file, current_errors[file] <= baseline.byFile[file]
+  #
+  # Rule 2 exists because rule 1 alone is forgeable: fixing one error while
+  # introducing another leaves the total unchanged, so a new error would ride in
+  # free. Per-file counts make that impossible — the file that gained an error
+  # blocks even when the total fell.
+  #
+  # Diagnostics are counted by matching tsc's standard form
+  #     path(line,col): error TSxxxx: message
+  # one error per matched line, keyed by file path with backslashes normalised.
+  # The baseline stores { total, byCode, byFile } and may only ever shrink;
+  # lib/ratchet.js refuses to record growth without --allow-growth.
+  BASELINE="$PROJECT_ROOT/engineering/baselines/typescript-diagnostics.json"
+  GUARDIAN="$PROJECT_ROOT/engineering/quality-guardian"
+
+  if [[ ! -f "$BASELINE" ]]; then
+    echo "TypeScript baseline missing: $BASELINE"
+    echo "Record it with: engineering/quality-guardian/bin/record-baselines.sh typescript"
+    exit 2
+  fi
+
+  TMP_OUT="$(mktemp)"
+  TMP_CHANGED="$(mktemp)"
+  trap 'rm -f "$TMP_OUT" "$TMP_CHANGED"' EXIT
+
+  # tsc exits 2 when diagnostics exist. That is expected input to the ratchet,
+  # so its status is deliberately not propagated here.
+  "$TSC" -b --force > "$TMP_OUT" 2>&1 || true
+
+  # Files in this push — annotation only, never gates the result.
+  UPSTREAM=""
+  if git -C "$PROJECT_ROOT" rev-parse --abbrev-ref '@{upstream}' &>/dev/null; then
+    UPSTREAM="$(git -C "$PROJECT_ROOT" rev-parse --abbrev-ref '@{upstream}')"
+  elif git -C "$PROJECT_ROOT" rev-parse --verify origin/HEAD &>/dev/null; then
+    UPSTREAM="origin/HEAD"
+  fi
+
+  if [[ -n "$UPSTREAM" ]]; then
+    git -C "$PROJECT_ROOT" diff --name-only "${UPSTREAM}...HEAD" -- '*.ts' '*.tsx' \
+      > "$TMP_CHANGED" 2>/dev/null || : > "$TMP_CHANGED"
+  else
+    : > "$TMP_CHANGED"
+  fi
+
+  node "$GUARDIAN/lib/ratchet.js" compare-tsc "$BASELINE" "$TMP_OUT" "$TMP_CHANGED"
+  exit $?
 fi

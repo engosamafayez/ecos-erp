@@ -59,6 +59,78 @@ if [[ "$MODE" == "pre-commit" ]]; then
   # Same config, same rules. eslint exits non-zero on any error → commit blocked.
   "$ESLINT" "${FILES[@]}"
 else
-  # ── Full-repository lint — unchanged for pre-push / ci / full ───────────────
-  npm run lint 2>&1
+  # ── Full-repository lint, ratcheted ────────────────────────────────────────
+  #
+  # The lint itself is unchanged: the whole repository, the same eslint.config.js,
+  # every rule at its configured severity. Nothing is disabled or ignored.
+  #
+  # Two things changed, and they pull in opposite directions on purpose.
+  #
+  # 1. STALE SUPPRESSIONS NO LONGER FAIL THE BUILD.
+  #    ESLint's bulk-suppression ratchet treats *unused* entries in
+  #    eslint-suppressions.json as a failure. That meant the gate failed with
+  #    "0 errors, 6 warnings" — exit 2 — purely because violations had been
+  #    FIXED and their suppressions left behind. A ratchet that punishes an
+  #    improvement is backwards, so --pass-on-unpruned-suppressions is now
+  #    passed and staleness is reported instead of blocking.
+  #
+  # 2. NEW SUPPRESSIONS DO FAIL THE BUILD.
+  #    Ignoring staleness on its own would let the file grow unchecked, so the
+  #    total suppression count is ratcheted against
+  #    engineering/baselines/eslint-suppressions-baseline.json. The count may
+  #    shrink freely; any growth blocks, because adding a suppression is a
+  #    deliberate act that needs approval, not a side effect of a push.
+  #
+  # Net effect: strictly stricter than before for new debt, and no longer
+  # blocking on debt that was removed. See TASK-GUARDIAN-PREPUSH-RCA-001.
+  #
+  # NOTE ON AUTOMATIC PRUNING: pruning rewrites frontend/eslint-suppressions.json,
+  # a tracked file. Doing that inside a pre-push hook would leave the working tree
+  # dirty and push a commit that does not contain the prune it just performed, so
+  # it is deliberately NOT done here. Pruning is a one-command maintenance step:
+  #     engineering/quality-guardian/bin/record-baselines.sh eslint --prune
+  SUPPRESSIONS="$FRONTEND/eslint-suppressions.json"
+  BASELINE="$PROJECT_ROOT/engineering/baselines/eslint-suppressions-baseline.json"
+  GUARDIAN="$PROJECT_ROOT/engineering/quality-guardian"
+
+  set +e
+  OUT="$("$ESLINT" . --pass-on-unpruned-suppressions 2>&1)"
+  LINT_EC=$?
+  set -e
+
+  printf '%s\n' "$OUT"
+
+  # A real lint error (or an unsuppressed violation) still fails outright.
+  if [[ $LINT_EC -ne 0 ]]; then
+    echo ""
+    echo "ESLint reported violations that are not suppressed — fix them before pushing."
+    exit 1
+  fi
+
+  # Ratchet the suppression inventory.
+  if [[ ! -f "$BASELINE" ]]; then
+    echo "ESLint suppression baseline missing: $BASELINE"
+    echo "Record it with: engineering/quality-guardian/bin/record-baselines.sh eslint"
+    exit 2
+  fi
+
+  CURRENT_COUNT="$(
+    node -e '
+      const fs = require("fs");
+      let total = 0;
+      try {
+        const s = JSON.parse(fs.readFileSync(process.argv[1], "utf8"));
+        for (const file of Object.keys(s)) {
+          for (const rule of Object.keys(s[file])) {
+            total += Number(s[file][rule].count ?? s[file][rule] ?? 0);
+          }
+        }
+      } catch { total = -1; }
+      console.log(total);
+    ' "$SUPPRESSIONS"
+  )"
+
+  echo ""
+  node "$GUARDIAN/lib/ratchet.js" compare-count "$BASELINE" "$CURRENT_COUNT" "suppressions"
+  exit $?
 fi

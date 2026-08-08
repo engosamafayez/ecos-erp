@@ -16,6 +16,19 @@ if [[ ! -d "$FRONTEND/node_modules" ]]; then
 fi
 
 cd "$FRONTEND"
-# npm run build runs: tsc -b && vite build
-# tsc -b catches type errors; vite build catches import/bundle errors.
-npm run build 2>&1
+# `vite build`, NOT `npm run build`.
+#
+# The npm script is `tsc -b && vite build`, so calling it here would run a second,
+# UNRATCHETED whole-repo type-check and fail on the certified TypeScript baseline —
+# silently undoing validator 07's ratchet no matter how 07 is configured. Type
+# safety is 07's job and is fully enforced there, against the baseline and
+# per-file so a new error cannot hide behind a fixed one.
+#
+# This validator's job is the one thing tsc cannot tell us: does the bundler
+# resolve every import and produce a build? That is what `vite build` checks.
+#
+# The same split already exists in docker/php/Dockerfile (`npx vite build`) and in
+# CI, for the same reason — running `npm run build` in the image is what made the
+# platform unbuildable in BUG-GL-009. The Guardian now matches them, so all three
+# paths build the application the same way.
+npx vite build 2>&1
