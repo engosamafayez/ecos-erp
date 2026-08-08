@@ -36,7 +36,17 @@ GUARDIAN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || true)"
 [[ -n "$PROJECT_ROOT" && -d "$PROJECT_ROOT" ]] || PROJECT_ROOT="$(cd "$GUARDIAN_DIR/../.." && pwd)"
 
-VALIDATOR_DIR="$GUARDIAN_DIR/validators"
+# Load the validators belonging to the tree being validated, for the same reason
+# PROJECT_ROOT is resolved above. GUARDIAN_DIR always points at the MAIN checkout
+# (shared .git/hooks), so binding VALIDATOR_DIR to it meant a worktree's files
+# were checked with whatever validator revision the main checkout happened to
+# have on disk — correct data, wrong rules. Measured: pre-push ran the
+# pre-ratchet validators from platform-foundation f4b427ed against develop
+# d5f2b7e5, and none of the baselines were even reachable
+# (TASK-GUARDIAN-RATCHET-002). Falls back to GUARDIAN_DIR when the tree carries
+# no validators of its own, so CI checkouts and standalone runs are unchanged.
+VALIDATOR_DIR="$PROJECT_ROOT/engineering/quality-guardian/validators"
+[[ -d "$VALIDATOR_DIR" ]] || VALIDATOR_DIR="$GUARDIAN_DIR/validators"
 
 source "$GUARDIAN_DIR/lib/colors.sh"
 source "$GUARDIAN_DIR/lib/report.sh"
