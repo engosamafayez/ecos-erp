@@ -81,19 +81,44 @@ for container in "${!REQUIRED_CONTAINERS[@]}"; do
   esac
 done
 
-# ── Check queue worker is running inside app container ───────────────────────
+# ── Check queue workers and scheduler are running inside app container ───────
+#
+# These read /proc rather than calling pgrep. pgrep lives in procps, which is
+# not installed in the runtime image, so the previous checks reported both
+# processes as absent on every run (TASK-CUTOVER-001, finding C-4). A queue
+# worker check that always fails is a check nobody reads.
+_proc_count() {
+  docker exec ecos-app sh -c '
+    n=0
+    for f in /proc/[0-9]*/cmdline; do
+      [ -r "$f" ] || continue
+      if tr "\0" " " < "$f" 2>/dev/null | grep -q -- "'"$1"'"; then n=$((n+1)); fi
+    done
+    echo "$n"
+  ' 2>/dev/null || echo "0"
+}
+
 if [[ $all_running -eq 1 ]]; then
-  queue_running=$(docker exec ecos-app pgrep -cf "artisan queue:work" 2>/dev/null || echo "0")
+  queue_running=$(_proc_count "artisan queue:work")
   if [[ "$queue_running" -gt 0 ]]; then
-    ok "Queue worker is running (pgrep count: $queue_running)"
+    ok "Queue workers are running (process count: $queue_running)"
   else
-    fail "Queue worker is NOT running inside ecos-app — check Supervisor config"
+    fail "Queue workers are NOT running inside ecos-app — check Supervisor config"
   fi
 
-  # Check scheduler is running
-  scheduler_running=$(docker exec ecos-app pgrep -cf "artisan schedule" 2>/dev/null || echo "0")
+  # Every queue the application dispatches to must have a consumer. A queue with
+  # no worker fails silently: the job sits in Redis with no error anywhere.
+  for q in finance-posting engineering health default; do
+    if [[ "$(_proc_count "--queue=[^ ]*${q}")" -gt 0 ]]; then
+      ok "Queue '${q}' has a consumer"
+    else
+      fail "Queue '${q}' has NO consumer — jobs dispatched to it will never run"
+    fi
+  done
+
+  scheduler_running=$(_proc_count "artisan schedule")
   if [[ "$scheduler_running" -gt 0 ]]; then
-    ok "Scheduler is running (pgrep count: $scheduler_running)"
+    ok "Scheduler is running (process count: $scheduler_running)"
   else
     degraded "Scheduler is NOT running inside ecos-app — check Supervisor config"
   fi

@@ -67,16 +67,19 @@ class HealthController
         }
 
         // 5. Scheduler — check whether artisan schedule:work is in the process list.
-        //    Supervisor starts it as a child of supervisord; pgrep finds it by
-        //    command string. shell_exec may be disabled on hardened configs;
-        //    failure returns false rather than influencing the status code.
-        try {
-            if (function_exists('shell_exec')) {
-                $count = (int) trim(shell_exec('pgrep -cf "artisan schedule" 2>/dev/null') ?? '0');
-                $scheduler = $count > 0;
-            }
-        } catch (Throwable) {
-        }
+        //
+        //    This reads /proc directly rather than shelling out to pgrep.
+        //    pgrep lives in procps, which is not installed in the runtime image,
+        //    so the previous implementation reported scheduler=false permanently
+        //    even while Supervisor had schedule:work RUNNING (TASK-CUTOVER-001,
+        //    finding C-4). A permanently-false health field is worse than no
+        //    field: operators learn to ignore it, and a real outage goes unseen.
+        //
+        //    /proc is provided by the kernel, needs no package, and does not
+        //    depend on shell_exec being enabled. Each /proc/<pid>/cmdline holds
+        //    the argv vector NUL-separated. A process that has exited between
+        //    glob() and read simply yields false and is skipped.
+        $scheduler = $this->processMatching('artisan schedule');
 
         // 6. Build metadata — missing file is non-fatal
         $buildInfo = [];
@@ -118,9 +121,48 @@ class HealthController
             'queue' => $queue,
             'storage' => $storage,
             'scheduler' => $scheduler,
+            'queue_workers' => $this->countProcessesMatching('artisan queue:work'),
             'disk_free' => $diskFree,
             'memory' => $memoryUsage,
             'timestamp' => now()->toIso8601String(),
         ], $healthy ? 200 : 503);
+    }
+
+    /**
+     * Count running processes whose command line contains $needle.
+     *
+     * Reads /proc directly. No external binary (procps is not installed in the
+     * runtime image) and no dependency on shell_exec. Returns 0 on any platform
+     * without /proc, which is the correct conservative answer.
+     */
+    private function countProcessesMatching(string $needle): int
+    {
+        $count = 0;
+
+        try {
+            foreach (glob('/proc/[0-9]*/cmdline') ?: [] as $path) {
+                // A process may exit between glob() and read; that yields false.
+                $cmdline = @file_get_contents($path);
+
+                if ($cmdline === false || $cmdline === '') {
+                    continue;
+                }
+
+                // argv is NUL-separated in /proc/<pid>/cmdline.
+                if (str_contains(str_replace("\0", ' ', $cmdline), $needle)) {
+                    $count++;
+                }
+            }
+        } catch (Throwable) {
+            return 0;
+        }
+
+        return $count;
+    }
+
+    /** Whether at least one running process matches $needle. */
+    private function processMatching(string $needle): bool
+    {
+        return $this->countProcessesMatching($needle) > 0;
     }
 }
