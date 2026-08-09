@@ -467,6 +467,8 @@
       "currentStatus": "Current Status",
       "availableActions": "Available Actions",
       "noActions": "No actions available for this status.",
+      "refusalTitle": "Transition refused",
+      "refusalFallback": "The transition was refused. Please try again.",
       "newDeliveryDate": "New Delivery Date",
       "confirmReschedule": "Confirm Reschedule",
       "cancel": "Cancel",

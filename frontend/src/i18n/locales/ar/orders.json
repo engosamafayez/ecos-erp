@@ -467,6 +467,8 @@
       "currentStatus": "الحالة الحالية",
       "availableActions": "الإجراءات المتاحة",
       "noActions": "لا توجد إجراءات متاحة لهذه الحالة.",
+      "refusalTitle": "تم رفض الانتقال",
+      "refusalFallback": "تم رفض الانتقال. يرجى المحاولة مرة أخرى.",
       "newDeliveryDate": "تاريخ التسليم الجديد",
       "confirmReschedule": "تأكيد إعادة الجدولة",
       "cancel": "إلغاء",

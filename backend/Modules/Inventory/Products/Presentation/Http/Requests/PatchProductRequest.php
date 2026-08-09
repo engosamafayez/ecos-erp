@@ -25,7 +25,8 @@ final class PatchProductRequest extends FormRequest
         return [
             'allow_negative_stock' => ['sometimes', 'boolean'],
             'is_active' => ['sometimes', 'boolean'],
-            'stock_status' => ['sometimes', 'string', 'in:instock,outofstock,onbackorder'],
+            // PD-5 / Phase 3 Step 8 — channel attribute; not human-writable.
+            // See StoreProductRequest for the full rationale.
             'manual_cost' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'regular_price' => ['sometimes', 'nullable', 'numeric', 'min:0'],
             'sale_price' => ['sometimes', 'nullable', 'numeric', 'min:0'],

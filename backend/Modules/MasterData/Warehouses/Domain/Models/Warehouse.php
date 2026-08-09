@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\MasterData\Warehouses\Domain\Models;
 
+use App\Core\Company\TenantOwnershipResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Auth;
 use Modules\MasterData\Warehouses\Infrastructure\Database\Factories\WarehouseFactory;
 use Modules\Organization\Companies\Domain\Models\Company;
 
@@ -58,13 +58,28 @@ class Warehouse extends Model
     protected static function booted(): void
     {
         static::addGlobalScope('tenant', static function (Builder $query): void {
-            if (! Auth::check()) {
+            $tenant = app(TenantOwnershipResolver::class);
+
+            // Console, queue workers, seeders and migrations run with no actor.
+            if (! $tenant->appliesTo()) {
                 return;
             }
-            $companyId = Auth::user()?->company_id;
-            if ($companyId === null) {
-                return; // super-admin sees all warehouses
+
+            // Cross-company access is granted by an is_system role, never by the
+            // mere absence of a company. See TenantOwnershipResolver.
+            if ($tenant->isUnrestricted()) {
+                return;
             }
+
+            $companyId = $tenant->companyId();
+
+            // RC-6: a null company must close the query, not remove the filter.
+            if ($companyId === null) {
+                $query->whereRaw('1 = 0');
+
+                return;
+            }
+
             $query->where('company_id', $companyId);
         });
     }

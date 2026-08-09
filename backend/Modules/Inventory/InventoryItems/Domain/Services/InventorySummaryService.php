@@ -7,6 +7,7 @@ namespace Modules\Inventory\InventoryItems\Domain\Services;
 use Modules\CostManagement\Domain\Enums\CostStrategy;
 use Modules\CostManagement\Domain\Services\EnterpriseCostEngine;
 use Modules\Inventory\InventoryItems\Domain\DTO\InventorySummary;
+use Modules\Inventory\InventoryItems\Domain\Enums\AvailabilityState;
 use Modules\Inventory\InventoryItems\Domain\Models\InventoryItem;
 
 /**
@@ -73,14 +74,19 @@ final class InventorySummaryService
         }
 
         $value = $this->costEngine->inventoryValue($productId, $companyId, CostStrategy::canonical());
+        $available = round($available, 4);
 
         return new InventorySummary(
             productId: $productId,
             onHand: round($onHand, 4),
             reserved: round($reserved, 4),
-            available: round($available, 4),
+            available: $available,
             inventoryValue: $value,
             warehouses: $warehouses,
+            // Projection only — the rule lives in the enum so list rows and this
+            // summary can never disagree. No inventory row at all is Untracked,
+            // which is distinct from a tracked zero.
+            availabilityState: AvailabilityState::fromAvailable($items->isEmpty() ? null : $available),
         );
     }
 }

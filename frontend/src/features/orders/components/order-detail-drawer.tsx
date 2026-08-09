@@ -1,3 +1,4 @@
+import axios from 'axios';
 import {
   Activity,
   ArrowDown,
@@ -1373,7 +1374,22 @@ const WORKFLOW_TARGET_ICON: Record<string, React.ComponentType<{ className?: str
   returned:         RotateCcw,
 };
 
-function WorkflowTab({ order, onClose }: { order: Order; onClose: () => void }) {
+/**
+ * The backend's structured refusal message.
+ *
+ * Both refusal shapes carry it on `message`: the routing table's 422
+ * ("Transition from [x] to [y] is not allowed.") and a workflow guard failure
+ * rendered through ApiResponse::error(). Matches the house pattern used by the
+ * warehouse, branch and supplier form drawers.
+ */
+function serverRefusalMessage(error: unknown): string | null {
+  return axios.isAxiosError(error) && typeof error.response?.data?.message === 'string'
+    ? error.response.data.message
+    : null;
+}
+
+/** Exported for RC-10 certification tests. Behaviour is unchanged. */
+export function WorkflowTab({ order, onClose }: { order: Order; onClose: () => void }) {
   const { t } = useTranslation('orders');
   const transition = useOrderWorkflowTransition();
   const reschedule = useOrderWorkflowReschedule();
@@ -1383,6 +1399,9 @@ function WorkflowTab({ order, onClose }: { order: Order; onClose: () => void }) 
   const [rescheduleDate, setRescheduleDate]         = useState(today);
   const [activeReason, setActiveReason]             = useState<string | null>(null);
   const [reasonText, setReasonText]                 = useState('');
+  // RC-10: the backend is authoritative for WHY a transition is refused. This
+  // holds its reason verbatim; the UI never decides validity itself.
+  const [refusal, setRefusal]                       = useState<string | null>(null);
 
   const transitions = order.allowed_status_transitions ?? [];
   const isPending   = transition.isPending || reschedule.isPending;
@@ -1400,7 +1419,13 @@ function WorkflowTab({ order, onClose }: { order: Order; onClose: () => void }) 
     }
     const reason = reasonText.trim() || undefined;
     const done   = () => { setActiveReason(null); setReasonText(''); onClose(); };
-    transition.mutate({ id: order.id, targetStatus, reason }, { onSuccess: done });
+    setRefusal(null);
+    transition.mutate({ id: order.id, targetStatus, reason }, {
+      onSuccess: done,
+      // Never swallow the refusal and never close on failure: the drawer stays
+      // open showing the unchanged order, and the action remains available.
+      onError: (error) => setRefusal(serverRefusalMessage(error) ?? t($ => $.drawer.workflow.refusalFallback)),
+    });
   }
 
   function handleRescheduleConfirm() {
@@ -1417,6 +1442,17 @@ function WorkflowTab({ order, onClose }: { order: Order; onClose: () => void }) 
         <SectionTitle>{t($ => $.drawer.workflow.currentStatus)}</SectionTitle>
         <OrderStatusBadge status={order.status} />
       </div>
+      {refusal !== null ? (
+        // The backend's reason, verbatim. Logical properties only, so it mirrors
+        // correctly under RTL.
+        <div
+          role="alert"
+          className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive"
+        >
+          <p className="font-medium">{t($ => $.drawer.workflow.refusalTitle)}</p>
+          <p className="mt-1">{refusal}</p>
+        </div>
+      ) : null}
       {transitions.length > 0 ? (
         <div>
           <SectionTitle>{t($ => $.drawer.workflow.availableActions)}</SectionTitle>

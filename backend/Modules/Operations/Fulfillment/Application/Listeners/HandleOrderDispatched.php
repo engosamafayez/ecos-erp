@@ -28,7 +28,9 @@ final class HandleOrderDispatched
             OrderEvent::log(
                 orderId: $event->orderId,
                 type: 'order_dispatched',
-                description: "Order #{$event->orderNumber} dispatched. Vehicle assignment #{$event->vehicleAssignmentId}.",
+                description: $event->vehicleAssignmentId !== null
+                    ? "Order #{$event->orderNumber} dispatched. Vehicle assignment #{$event->vehicleAssignmentId}."
+                    : "Order #{$event->orderNumber} dispatched without vehicle loading.",
                 payload: [
                     'vehicle_assignment_id' => $event->vehicleAssignmentId,
                     'vehicle_id' => $event->vehicleId,

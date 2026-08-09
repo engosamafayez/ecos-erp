@@ -277,7 +277,7 @@ export function RawMaterialTable({
           ) : (
             data.map((m) => {
               const isSelected  = selectedIds.has(m.id);
-              const stockStatus = resolveMaterialStockStatus(m.available_qty, m.allow_negative_stock);
+              const stockStatus = resolveMaterialStockStatus(m.availability_state);
 
               return (
                 <TableRow

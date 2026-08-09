@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Products\Presentation\Http\Controllers;
 
+use App\Core\Company\TenantOwnershipResolver;
 use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
 use BackedEnum;
@@ -219,11 +220,27 @@ final class ProductController extends Controller
 
     public function stats(Request $request): JsonResponse
     {
-        $companyId = $request->user()?->company_id;
+        // GD-1 / Phase 3 Step 3 — the SAME population resolver the list uses, so
+        // the KPI and the table can never describe different sets. Privilege via
+        // the certified RC-6 is_system path; a null company fails closed.
+        $tenant = app(TenantOwnershipResolver::class);
+        $companyId = $tenant->companyId();
 
-        $query = Product::query()
-            ->whereNull('deleted_at')
-            ->whereHas('brand', fn ($q) => $q->where('company_id', $companyId));
+        $query = Product::query()->whereNull('deleted_at');
+
+        if ($tenant->appliesTo() && ! $tenant->isUnrestricted()) {
+            if ($companyId === null) {
+                $query->whereRaw('1 = 0');
+            } else {
+                $query->whereHas('brand', fn ($q) => $q->where('company_id', $companyId));
+            }
+        }
+
+        // The caller's own company filter narrows within the authoritative scope.
+        $requestedCompanyId = trim((string) ($request->query('company_id') ?? ''));
+        if ($requestedCompanyId !== '') {
+            $query->whereHas('brand', fn ($q) => $q->where('company_id', $requestedCompanyId));
+        }
 
         // ── Product type scope ────────────────────────────────────────────────
         $productTypes = trim((string) ($request->query('product_types') ?? ''));

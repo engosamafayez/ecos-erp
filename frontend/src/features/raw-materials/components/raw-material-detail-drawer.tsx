@@ -35,7 +35,7 @@ import {
   useRawMaterialPurchaseHistory,
   useRawMaterialWarehouseDistribution,
 } from '@/features/raw-materials/hooks/use-raw-materials';
-import type { RawMaterial, PurchaseLayer, SupplierHistoryRow } from '@/features/raw-materials/types';
+import type { AvailabilityState, RawMaterial, PurchaseLayer, SupplierHistoryRow } from '@/features/raw-materials/types';
 import type { MaterialCostHistoryEntry } from '@/features/cost-management/types/pricing-review';
 import type { MovementType } from '@/features/stock-ledger/types/stock-movement';
 import { PagePagination } from '@/components/page/pagination/page-pagination';
@@ -58,8 +58,8 @@ type RawMaterialDetailDrawerProps = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function stockStatusConfig(availableQty: number | null | undefined, allowNegativeStock: boolean | null | undefined) {
-  const status = resolveMaterialStockStatus(availableQty, allowNegativeStock);
+function stockStatusConfig(availabilityState: AvailabilityState | null | undefined) {
+  const status = resolveMaterialStockStatus(availabilityState);
   if (status === 'in_stock') {
     return {
       status: 'in_stock' as const,
@@ -396,7 +396,7 @@ function InventoryTab({ material }: { material: RawMaterial }) {
   const { t } = useTranslation('raw-materials');
   const { currency, locale } = useCompany();
   const { data: distribution } = useRawMaterialWarehouseDistribution(material.id);
-  const avail    = stockStatusConfig(material.available_qty, material.allow_negative_stock);
+  const avail    = stockStatusConfig(material.availability_state);
   const statusLabel = avail.status === 'in_stock'
     ? t($ => $.detail.status.inStock)
     : t($ => $.detail.status.outOfStock);
@@ -1000,7 +1000,7 @@ export function RawMaterialDetailDrawer({
 
   if (!material) return null;
 
-  const avail = stockStatusConfig(material.available_qty, material.allow_negative_stock);
+  const avail = stockStatusConfig(material.availability_state);
   const statusLabel = avail.status === 'in_stock'
     ? t($ => $.detail.status.inStock)
     : t($ => $.detail.status.outOfStock);

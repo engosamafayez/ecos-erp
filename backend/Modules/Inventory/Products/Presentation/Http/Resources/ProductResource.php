@@ -7,6 +7,7 @@ namespace Modules\Inventory\Products\Presentation\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
+use Modules\Inventory\InventoryItems\Domain\Enums\AvailabilityState;
 use Modules\Inventory\Products\Domain\Models\Product;
 
 /**
@@ -154,6 +155,13 @@ final class ProductResource extends JsonResource
             'on_hand_qty' => isset($this->on_hand_qty) ? (float) $this->on_hand_qty : null,
             'reserved_qty' => isset($this->reserved_qty) ? (float) $this->reserved_qty : null,
             'available_qty' => isset($this->agg_available_qty) ? (float) $this->agg_available_qty : null,
+            // PD-5 / Phase 3 Step 2 — the ERP's own availability answer, projected
+            // from the canonical available quantity by the single shared rule.
+            // Distinct from `stock_status` above, which is the WooCommerce channel
+            // attribute (inbound-only, never published outbound — E-3).
+            'availability_state' => AvailabilityState::fromAvailable(
+                isset($this->agg_available_qty) ? (float) $this->agg_available_qty : null,
+            )->value,
             'inventory_value' => isset($this->inventory_value) ? (float) $this->inventory_value : null,
             'has_recipe' => $this->relationLoaded('activeRecipe') ? ($this->activeRecipe !== null) : ($this->has_recipe ?? null),
             'pending_review' => isset($this->has_pending_review) ? (bool) $this->has_pending_review : null,

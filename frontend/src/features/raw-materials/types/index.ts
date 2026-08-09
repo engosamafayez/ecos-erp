@@ -43,7 +43,16 @@ export type RawMaterial = Product & {
 
   // Notes
   internal_notes?: string | null;
+
+  /** Canonical ERP availability, derived server-side from clamped available qty. */
+  availability_state?: AvailabilityState | null;
 };
+
+/**
+ * Canonical ERP availability, mirroring the backend `AvailabilityState` enum.
+ * `untracked` means no inventory record exists — distinct from a tracked zero.
+ */
+export type AvailabilityState = 'in_stock' | 'out_of_stock' | 'untracked';
 
 // ─── Write payload ────────────────────────────────────────────────────────────
 
@@ -56,7 +65,10 @@ export type RawMaterialPayload = {
   product_type: 'raw_material' | 'packaging_material';
   is_active?:   boolean;
   description?: string;
+  /** WooCommerce channel attribute (inbound-only). NOT the ERP availability answer. */
   stock_status?: 'instock' | 'outofstock' | null;
+  /** Canonical ERP availability, derived server-side from clamped available qty. */
+  availability_state?: AvailabilityState | null;
   sale_price?:  null;
   image_url?:   string | null;
   regular_price?: number | null;

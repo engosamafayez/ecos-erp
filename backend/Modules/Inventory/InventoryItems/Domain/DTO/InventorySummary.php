@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\InventoryItems\Domain\DTO;
 
+use Modules\Inventory\InventoryItems\Domain\Enums\AvailabilityState;
+
 /**
  * Canonical inventory summary for a single product.
  *
@@ -22,6 +24,11 @@ final class InventorySummary
         public readonly float $available,
         public readonly float $inventoryValue,
         public readonly array $warehouses,
+        /**
+         * Derived projection of {@see $available}. Defaulted so every existing
+         * construction site stays valid — this parameter is additive.
+         */
+        public readonly AvailabilityState $availabilityState = AvailabilityState::Untracked,
     ) {}
 
     /** @return array<string, mixed> */
@@ -32,6 +39,7 @@ final class InventorySummary
             'on_hand_qty' => $this->onHand,
             'reserved_qty' => $this->reserved,
             'available_qty' => $this->available,
+            'availability_state' => $this->availabilityState->value,
             'inventory_value' => $this->inventoryValue,
             'warehouses' => $this->warehouses,
             'total_on_hand' => $this->onHand,

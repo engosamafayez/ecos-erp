@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Operations\Fulfillment\Application\FulfillmentEngine;
 use Modules\Operations\Fulfillment\Application\Workflows\ApprovePartialReservationWorkflow;
@@ -384,13 +385,27 @@ final class FulfillmentController extends Controller
     }
 
     /**
-     * V2 transition routing table — the ONLY place that maps (current, target) → workflow.
+     * V3 transition routing table — the ONLY place that maps (current, target) → workflow.
      *
-     * Architecture rules (TASK-ORDER-WORKFLOW-V2-001):
+     * TASK-PHASE3-RC10-IMPLEMENT-CERTIFY-001 (Steps 4–7). This table previously
+     * spoke V2 vocabulary (`pending`, `confirmed`, `processing`, `preparing`,
+     * `review`, `rescheduled`, `completed`) — none of which are `OrderStatus`
+     * cases — so every V3 order was refused with a 422 and the generic endpoint
+     * was effectively dead. Every branch now reads its state from the enum, so a
+     * future rename is a compile-time concern rather than a silent 422.
+     *
+     * This resolves ROUTING ONLY. Every business precondition continues to live
+     * in `$workflow->guard()`, executed by FulfillmentEngine outside the
+     * transaction — no guard is duplicated or bypassed here.
+     *
+     * Architecture rules (carried forward, restated in V3):
      *   - Cancelled is not terminal; orders may be reopened from cancelled.
-     *   - Processing and Confirmed both reserve inventory and lock products.
-     *   - Delivering from Preparing → OutForDelivery → Delivered → Completed.
-     *   - Returning to Pending or Payment releases inventory (products become editable).
+     *   - InProgress is the single reserved state (PD-2 collapses V2's
+     *     `confirmed` + `processing`).
+     *   - Execution chain: InProgress → ReadyForDispatch → OutForDelivery → Delivered.
+     *   - Delivered is terminal (PD-2). There is no Completed edge; financial
+     *     completion remains the dedicated /complete route.
+     *   - Returning to New or AwaitingPayment releases inventory.
      *   - Moving between other early states keeps any existing reservation.
      */
     private function resolveTransitionWorkflow(string $current, string $target): ?FulfillmentWorkflowInterface
@@ -404,93 +419,95 @@ final class FulfillmentController extends Controller
         // Early states: no inventory held (or inventory was released).
         // 'scheduled' is a pre-activation early state; guard in ProcessOrderWorkflow
         // enforces the delivery-date constraint before allowing activation.
-        $earlyStates = ['scheduled', 'pending', 'awaiting_payment', 'awaiting_stock', 'rescheduled', 'review', 'cancelled'];
-        // Reserved states: inventory is held and products are locked
-        $reservedStates = ['processing', 'confirmed'];
+        $earlyStates = [
+            OrderStatus::Scheduled->value,
+            OrderStatus::NewOrder->value,
+            OrderStatus::AwaitingPayment->value,
+            OrderStatus::AwaitingStock->value,
+            OrderStatus::OnHold->value,
+            OrderStatus::Cancelled->value,
+        ];
+        // Reserved states: inventory is held and products are locked.
+        // V2's `processing` and `confirmed` both map here (PD-2).
+        $reservedStates = [OrderStatus::InProgress->value];
 
         // ── 1. Execution chain ────────────────────────────────────────────────────
-        if ($current === 'processing' && $target === 'preparing') {
+        if ($current === OrderStatus::InProgress->value && $target === OrderStatus::ReadyForDispatch->value) {
             return $this->prepWorkflow;
         }
-        if ($current === 'preparing' && $target === 'out_for_delivery') {
+        if ($current === OrderStatus::ReadyForDispatch->value && $target === OrderStatus::OutForDelivery->value) {
             return $this->dispatchWorkflow;
         }
-        if ($current === 'out_for_delivery' && $target === 'delivered') {
+        if ($current === OrderStatus::OutForDelivery->value && $target === OrderStatus::Delivered->value) {
             return $this->deliveryWorkflow;
         }
-        if ($current === 'delivered' && $target === 'completed') {
-            return $this->completeWorkflow;
-        }
-        if (in_array($current, ['out_for_delivery', 'delivered'], true) && $target === 'returned') {
+        // No `delivered → completed` edge: V3 has no Completed state (PD-2).
+        // Financial completion stays on the dedicated /complete route.
+        if (in_array($current, [OrderStatus::OutForDelivery->value, OrderStatus::Delivered->value], true)
+            && $target === OrderStatus::Returned->value
+        ) {
             return $this->returnWorkflow;
         }
 
         // ── 2. Block locked states from using this endpoint ───────────────────────
-        $locked = ['preparing', 'out_for_delivery', 'delivered', 'returned', 'completed'];
+        $locked = [
+            OrderStatus::ReadyForDispatch->value,
+            OrderStatus::OutForDelivery->value,
+            OrderStatus::Delivered->value,
+            OrderStatus::Returned->value,
+        ];
         if (in_array($current, $locked, true)) {
             return null;
         }
 
         // ── 3. Cancel → always CancelOrderWorkflow (handles inventory release) ────
-        if ($target === 'cancelled') {
+        if ($target === OrderStatus::Cancelled->value) {
             return $this->cancelWorkflow;
         }
 
-        // ── 4. TO confirmed ───────────────────────────────────────────────────────
-        // processing → confirmed: both reserved, just a status label change
-        if ($current === 'processing' && $target === 'confirmed') {
-            return $this->setEarlyStatusWorkflow;
-        }
-        // early → confirmed: idempotent reservation (reserves if not already held)
-        if (in_array($current, $earlyStates, true) && $target === 'confirmed') {
-            return $this->confirmWorkflow;
-        }
+        $anySource = array_merge($earlyStates, $reservedStates);
 
-        // ── 5. TO processing ──────────────────────────────────────────────────────
-        // confirmed → processing: both reserved, just a status label change
-        if ($current === 'confirmed' && $target === 'processing') {
-            return $this->setEarlyStatusWorkflow;
-        }
-        // early → processing: idempotent reservation (reserves if not already held)
-        if (in_array($current, $earlyStates, true) && $target === 'processing') {
+        // ── 4. TO in_progress ─────────────────────────────────────────────────────
+        // V2's `confirmed` and `processing` both collapse here (PD-2). Idempotent
+        // reservation: ProcessOrderWorkflow reserves if not already held, and its
+        // guard enforces the scheduled-delivery-date constraint.
+        if (in_array($current, $earlyStates, true) && $target === OrderStatus::InProgress->value) {
             return $this->processWorkflow;
         }
 
-        // ── 6. TO pending ─────────────────────────────────────────────────────────
-        // reserved → pending: release inventory (products become editable)
-        if (in_array($current, $reservedStates, true) && $target === 'pending') {
+        // ── 5. TO new (V2 `pending`) ──────────────────────────────────────────────
+        // reserved → new: release inventory (products become editable)
+        if (in_array($current, $reservedStates, true) && $target === OrderStatus::NewOrder->value) {
             return $this->returnToPendingWorkflow;
         }
-        // early → pending: simple status change, no inventory
-        if (in_array($current, $earlyStates, true) && $target === 'pending') {
+        // early → new: simple status change, no inventory
+        if (in_array($current, $earlyStates, true) && $target === OrderStatus::NewOrder->value) {
             return $this->setEarlyStatusWorkflow;
         }
 
-        // ── 7. TO awaiting_payment (Payment) ──────────────────────────────────────
+        // ── 6. TO awaiting_payment ────────────────────────────────────────────────
         // reserved → payment: release inventory (products become editable)
-        if (in_array($current, $reservedStates, true) && $target === 'awaiting_payment') {
+        if (in_array($current, $reservedStates, true) && $target === OrderStatus::AwaitingPayment->value) {
             return $this->returnToPaymentWorkflow;
         }
         // early → payment: simple status change, no inventory
-        if (in_array($current, $earlyStates, true) && $target === 'awaiting_payment') {
+        if (in_array($current, $earlyStates, true) && $target === OrderStatus::AwaitingPayment->value) {
             return $this->setEarlyStatusWorkflow;
         }
 
-        // ── 8. TO awaiting_stock ──────────────────────────────────────────────────
-        // All allowed sources: keep any existing reservation, just change status
-        if (in_array($current, array_merge($earlyStates, $reservedStates), true) && $target === 'awaiting_stock') {
+        // ── 7. TO awaiting_stock ──────────────────────────────────────────────────
+        if (in_array($current, $anySource, true) && $target === OrderStatus::AwaitingStock->value) {
             return $this->awaitingStockWorkflow;
         }
 
-        // ── 9. TO review ──────────────────────────────────────────────────────────
-        // All allowed sources: keep any existing reservation, just change status
-        if (in_array($current, array_merge($earlyStates, $reservedStates), true) && $target === 'review') {
+        // ── 8. TO on_hold (V2 `review`) ───────────────────────────────────────────
+        // MoveToReviewWorkflow sets OnHold — functionally correct, stale name (PD-2).
+        if (in_array($current, $anySource, true) && $target === OrderStatus::OnHold->value) {
             return $this->reviewWorkflow;
         }
 
-        // ── 10. TO rescheduled ────────────────────────────────────────────────────
-        // All allowed sources: keep any existing reservation, just change status
-        if (in_array($current, array_merge($earlyStates, $reservedStates), true) && $target === 'rescheduled') {
+        // ── 9. TO scheduled (V2 `rescheduled`) ────────────────────────────────────
+        if (in_array($current, $anySource, true) && $target === OrderStatus::Scheduled->value) {
             return $this->markRescheduledWorkflow;
         }
 

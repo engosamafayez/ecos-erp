@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Commerce\Orders\Domain\Models;
 
+use App\Core\Company\TenantOwnershipResolver;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\Auth;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Commerce\Orders\Domain\Enums\ReservationStatus;
@@ -113,14 +113,30 @@ class Order extends Model
 
     protected static function booted(): void
     {
+        // TASK-GOLIVE-RC6-REPAIR-001 — same tenant-isolation contract as Warehouse.
         static::addGlobalScope('tenant', static function (Builder $query): void {
-            if (! Auth::check()) {
+            $tenant = app(TenantOwnershipResolver::class);
+
+            // Console, queue workers, seeders and migrations run with no actor.
+            if (! $tenant->appliesTo()) {
                 return;
             }
-            $companyId = Auth::user()?->company_id;
-            if ($companyId === null) {
-                return; // super-admin sees all orders
+
+            // Cross-company access is granted by an is_system role, never by the
+            // mere absence of a company. See TenantOwnershipResolver.
+            if ($tenant->isUnrestricted()) {
+                return;
             }
+
+            $companyId = $tenant->companyId();
+
+            // A null company must close the query, not remove the filter.
+            if ($companyId === null) {
+                $query->whereRaw('1 = 0');
+
+                return;
+            }
+
             $query->where('company_id', $companyId);
         });
 

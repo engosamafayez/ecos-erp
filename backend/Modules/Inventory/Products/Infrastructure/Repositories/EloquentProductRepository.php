@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Products\Infrastructure\Repositories;
 
+use App\Core\Company\TenantOwnershipResolver;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -41,6 +42,34 @@ final class EloquentProductRepository implements ProductRepositoryInterface
         $query = Product::query()
             ->with(['category', 'unit', 'activeRecipe', 'channelMappings.channel.brand.company', 'brand.company'])
             ->select('products.*')
+            ->tap(function (Builder $q): void {
+                // GD-1 / Phase 3 Step 3 — authoritative company population.
+                //
+                // `stats()` has always scoped to the authenticated company; this
+                // list did not, so with no caller-supplied filter the KPI counted
+                // one company while the table showed several ("All Materials = 0"
+                // above 2 rows). The population is now resolved the same way for
+                // both, and the caller's own `company_id` filter (applied further
+                // down) can only NARROW within it — never widen.
+                //
+                // Privilege reuses the certified RC-6 path: an is_system role, not
+                // a null company_id. No new permission is introduced.
+                $tenant = app(TenantOwnershipResolver::class);
+
+                if (! $tenant->appliesTo() || $tenant->isUnrestricted()) {
+                    return;
+                }
+
+                $companyId = $tenant->companyId();
+
+                if ($companyId === null) {
+                    $q->whereRaw('1 = 0'); // fail closed, as RC-6 established
+
+                    return;
+                }
+
+                $q->whereHas('brand', fn ($b) => $b->where('company_id', $companyId));
+            })
             ->leftJoinSub(
                 DB::table('inventory_items')
                     ->whereNull('deleted_at')

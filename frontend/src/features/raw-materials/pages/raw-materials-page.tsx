@@ -56,7 +56,7 @@ const CSV_COL_DEFS: CsvColDef[] = [
   { key: 'material_type',   value: (m, t) => m.product_type === 'packaging_material' ? t($ => $.csv.packagingMaterial) : t($ => $.csv.rawMaterial) },
   { key: 'category',        value: (m)    => m.category?.name ?? '' },
   { key: 'unit',            value: (m)    => m.unit?.name ?? '' },
-  { key: 'stock_status',    value: (m, t) => resolveMaterialStockStatus(m.available_qty, m.allow_negative_stock) === 'in_stock' ? t($ => $.csv.inStock) : t($ => $.csv.outOfStock) },
+  { key: 'stock_status',    value: (m, t) => resolveMaterialStockStatus(m.availability_state) === 'in_stock' ? t($ => $.csv.inStock) : t($ => $.csv.outOfStock) },
   { key: 'on_hand',         value: (m)    => String(m.on_hand_qty ?? '') },
   { key: 'reserved',        value: (m)    => String(m.reserved_qty ?? '') },
   { key: 'available',       value: (m)    => String(m.available_qty ?? '') },

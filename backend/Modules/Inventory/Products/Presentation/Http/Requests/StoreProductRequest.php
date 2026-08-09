@@ -72,7 +72,11 @@ final class StoreProductRequest extends FormRequest
             'sale_price' => ['nullable', 'numeric', 'min:0'],
             'short_description' => ['nullable', 'string', 'max:500'],
             'long_description' => ['nullable', 'string'],
-            'stock_status' => ['nullable', Rule::in(['instock', 'outofstock', 'onbackorder'])],
+            // PD-5 / Phase 3 Step 8 — `stock_status` is a WooCommerce channel
+            // attribute owned by the inbound importer (E-3: never published
+            // outbound). It is deliberately not accepted from a human: editing it
+            // would make the column neither an ERP fact nor a faithful channel
+            // mirror. ERP availability is derived — see AvailabilityState.
             'channel_ids' => ['sometimes', 'nullable', 'array'],
             'channel_ids.*' => ['uuid', 'exists:channels,id'],
             'pricing_mode' => ['nullable', 'string', Rule::in(['brand_policy', 'custom'])],
