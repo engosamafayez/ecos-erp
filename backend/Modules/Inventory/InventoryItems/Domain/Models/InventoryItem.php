@@ -59,9 +59,28 @@ class InventoryItem extends Model
         ];
     }
 
+    /**
+     * SIGNED availability — `on_hand − reserved`, never clamped.
+     *
+     * A negative result is meaningful, not an error: it says commitment exceeds
+     * physical stock. Clamping it to zero destroyed that fact and is the reason a
+     * material with Allow Negative ON still rendered as "Out of Stock".
+     *
+     * Two consequences worth stating, because both were previously hidden:
+     *
+     *  - Signed subtraction is ASSOCIATIVE, clamping is not. `Σ(on_hand − reserved)`
+     *    now equals `Σon_hand − Σreserved`, so the multi-warehouse summary and the
+     *    list query can no longer disagree (they did — see the report).
+     *  - This is AVAILABLE, not SHORTAGE. Shortage stays clamped at zero wherever
+     *    it is computed (`max(0, required − available)`); negative shortage is
+     *    meaningless. Do not "fix" those call sites to match this one.
+     *
+     * Whether a negative availability may be COMMITTED is a separate question,
+     * answered by `allow_negative_stock` — never by this arithmetic.
+     */
     public function availableQty(): float
     {
-        return max(0.0, (float) $this->on_hand_qty - (float) $this->reserved_qty);
+        return (float) $this->on_hand_qty - (float) $this->reserved_qty;
     }
 
     /** @return BelongsTo<Warehouse, $this> */

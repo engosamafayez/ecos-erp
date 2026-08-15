@@ -55,17 +55,32 @@ final class ManufacturingAvailabilityService
         // Canonical availability rule flag (EPIC-DATA-CONSOLIDATION-001, Phase B/D).
         // OFF (default): legacy sum-then-clamp. ON: clamp-per-warehouse-then-sum.
         $availExpr = (bool) config('inventory_ledger.canonical_summary')
-            ? 'SUM(GREATEST(on_hand_qty - reserved_qty, 0.0))'
-            : 'GREATEST(SUM(on_hand_qty) - SUM(reserved_qty), 0.0)';
+            ? 'SUM(on_hand_qty - reserved_qty)'
+            : 'SUM(on_hand_qty) - SUM(reserved_qty)';
 
-        $inventoryTotals = DB::table('inventory_items')
-            ->whereNull('deleted_at')
-            ->whereIn('product_id', $componentIds)
-            ->selectRaw("product_id, {$availExpr} as avail")
-            ->groupBy('product_id')
-            ->pluck('avail', 'product_id')
-            ->map(fn ($v) => (float) $v)
-            ->all();
+        // F4 (TASK-GOLIVE-RECIPE-GATE-TENANT-REPAIR-001): component availability is
+        // COMPANY-scoped. Ownership is ADR-013: Product -> Brand -> Company.
+        //
+        // The boundary is deliberately the COMPANY, never the Brand: one Raw Material
+        // is legitimately shared by recipes of several Brands inside the same Company
+        // (runtime-certified by RecipeCrossBrandReuseTest). Scoping by brand_id would
+        // break that and is forbidden.
+        //
+        // A finished good with no derivable company FAILS CLOSED — it sees no
+        // inventory at all rather than falling back to the global pool.
+        $companyId = $product->brand?->company_id;
+
+        $inventoryTotals = $companyId === null
+            ? []
+            : DB::table('inventory_items')
+                ->whereNull('deleted_at')
+                ->where('company_id', $companyId)
+                ->whereIn('product_id', $componentIds)
+                ->selectRaw("product_id, {$availExpr} as avail")
+                ->groupBy('product_id')
+                ->pluck('avail', 'product_id')
+                ->map(fn ($v) => (float) $v)
+                ->all();
 
         $blocking = [];
         $components = [];

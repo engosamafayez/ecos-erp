@@ -15,6 +15,7 @@ use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInt
 use Modules\Inventory\InventoryItems\Domain\Enums\LedgerMovementType;
 use Modules\Inventory\InventoryItems\Domain\Exceptions\InsufficientStockException;
 use Modules\Inventory\InventoryItems\Domain\Exceptions\InvalidInventoryMovementException;
+use Modules\Inventory\Products\Domain\Models\Product;
 
 /**
  * Allocates stock for an unfulfilled order.
@@ -62,7 +63,26 @@ final class ReserveStockAction extends BaseAction
             $reservedBefore = (float) $locked->reserved_qty;
             $available = $locked->availableQty();
 
-            if ($available < $dto->quantity) {
+            // Allow Negative Stock is an EXECUTION PERMISSION, and this is the single
+            // place the reservation domain enforces it.
+            //
+            // It does not change the arithmetic: `reserved` still rises by exactly the
+            // requested quantity and `available` remains `on_hand − reserved`, which is
+            // now free to go negative. What it changes is whether the commitment is
+            // ALLOWED when physical stock cannot cover it.
+            //
+            // Without this the flag was unreachable from reservation: every attempt to
+            // reserve beyond available threw, so `reserved_qty` stayed 0 and `available`
+            // could never become negative — the reported symptom.
+            //
+            // Same shape and same source as DirectIssueStockAction, which already
+            // consults the flag at issuance (ADR-027 v1.1 P07); this closes the
+            // equivalent gap on the reservation side.
+            $allowNegative = (bool) Product::query()
+                ->where('id', $dto->product_id)
+                ->value('allow_negative_stock');
+
+            if (! $allowNegative && $available < $dto->quantity) {
                 throw new InsufficientStockException(
                     $dto->product_id,
                     $dto->warehouse_id,

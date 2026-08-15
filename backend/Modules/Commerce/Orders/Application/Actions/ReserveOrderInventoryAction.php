@@ -15,6 +15,9 @@ use Modules\Inventory\InventoryItems\Application\Actions\ReserveStockAction;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
 use Modules\Inventory\InventoryItems\Domain\Exceptions\InsufficientStockException;
 use Modules\Inventory\InventoryItems\Domain\Models\InventoryItem;
+use Modules\Inventory\Products\Domain\Models\Product;
+use Modules\Manufacturing\BillsOfMaterials\Domain\Services\ManufacturingAvailabilityService;
+use Throwable;
 
 /**
  * TASK-INV-RESERVATION-LIFECYCLE-001 — Part 2, 3, 4
@@ -24,39 +27,71 @@ use Modules\Inventory\InventoryItems\Domain\Models\InventoryItem;
  *
  * Returns the resulting ReservationStatus so callers can branch without catching.
  *
- * Outcomes:
- *   reserved         — every line fully satisfied (physically or via manufacturing eligibility)
- *   partial_reserved — some lines satisfied, some not
- *   awaiting_stock   — no lines could be satisfied
+ * Outcomes (ADR-027 §8; the denominator is lines with quantity > 0):
+ *   reserved         — every reservable line fully satisfied (physically or via
+ *                      manufacturing eligibility), or there is no reservable line
+ *   partial_reserved — at least one reservable line satisfied, at least one short
+ *   awaiting_stock   — no reservable line could be satisfied at all
  *
  * Does NOT throw InsufficientStockException for insufficient stock — that
  * concern has moved to the returned status.
  *
- * Policy (Cases 1–3): Reservation decides from the Finished Product only.
- * can_manufacture=true commits reservation unconditionally — Manufacturing evaluates
- * RM availability in PrepareOrderManufacturingAction after the order enters Preparing.
- * No Raw Material condition may move an order to Awaiting Stock.
+ * Policy — TASK-GOLIVE-RECIPE-GATE-TENANT-REPAIR-001 (Option B, owner-approved),
+ * superseding the previous "can_manufacture reserves unconditionally" rule:
+ *
+ *   Physical Finished Product stock is reserved first and is NEVER gated by the
+ *   recipe (Case 1) — an order that can ship from stock always ships from stock.
+ *
+ *   Only when FG stock is insufficient and the product is manufacture-backed does
+ *   the recipe matter: manufacturing may be committed only if the recipe is
+ *   actually executable. An unexecutable recipe falls through to the existing
+ *   shortage path, which lets the V3 workflow produce Awaiting Stock itself.
+ *
+ * ManufacturingAvailabilityService remains the single authority for recipe
+ * availability (ADR-027) — the material-level allow_negative_stock rule is read
+ * from it, never recomputed here.
  */
 final class ReserveOrderInventoryAction
 {
+    /**
+     * Reservation states in which execution is finished and must not be repeated.
+     *
+     * Checked twice: once unlocked as a cheap exit, and once inside the row lock so a
+     * concurrent attempt cannot act on a status that has since changed.
+     *
+     * @var list<ReservationStatus>
+     */
+    private const SKIP_STATES = [
+        ReservationStatus::Reserved,
+        ReservationStatus::Transferred,
+        ReservationStatus::Consumed,
+        ReservationStatus::Released,
+    ];
+
     public function __construct(
         private readonly ReserveStockAction $reserveStock,
+        private readonly ManufacturingAvailabilityService $manufacturingAvailability,
+        private readonly ReconcileOrderMaterialReservationsAction $reconcileMaterials,
     ) {}
+
+    /**
+     * Is manufacturing actually able to cover this finished good right now?
+     *
+     * 'recipe_missing' does NOT block: a product with no active recipe keeps its
+     * prior behaviour. Only an explicitly unexecutable recipe withholds the
+     * manufacturing commitment.
+     */
+    private function manufacturingIsExecutable(Product $product): bool
+    {
+        return $this->manufacturingAvailability->evaluate($product)['status'] !== 'outofstock';
+    }
 
     public function execute(Order $order): ReservationStatus
     {
         // Idempotency: already in a terminal-for-reservation state → skip
         $currentStatus = $order->reservation_status;
-        if ($currentStatus !== null) {
-            $skipStates = [
-                ReservationStatus::Reserved,
-                ReservationStatus::Transferred,
-                ReservationStatus::Consumed,
-                ReservationStatus::Released,
-            ];
-            if (in_array($currentStatus, $skipStates, true)) {
-                return $currentStatus;
-            }
+        if ($currentStatus !== null && in_array($currentStatus, self::SKIP_STATES, true)) {
+            return $currentStatus;
         }
 
         if ($order->assigned_warehouse_id === null) {
@@ -76,16 +111,36 @@ final class ReserveOrderInventoryAction
         return DB::transaction(function () use (
             $order, $companyId, $warehouseId, $totalLines,
         ): ReservationStatus {
+            // Serialise concurrent reservation attempts for the SAME order. Two
+            // availability events can select one order in the same instant — a receipt
+            // and a release, say — and the unlocked pre-check above would wave both
+            // through to reserve the same quantity twice.
+            //
+            // Re-reading the status INSIDE the lock is what makes that pre-check safe:
+            // whichever transaction arrives second blocks here, then observes the
+            // first one's committed outcome and returns it untouched.
+            $locked = Order::whereKey($order->id)->lockForUpdate()->first();
+
+            if ($locked?->reservation_status !== null
+                && in_array($locked->reservation_status, self::SKIP_STATES, true)
+            ) {
+                return $locked->reservation_status;
+            }
+
             $reservedLines = 0;
             $partialLines = 0;
-            $skippedLines = 0;
+            // A line that carries real demand but could not be reserved at all.
+            $blockedLines = 0;
+            // A line with quantity <= 0 — no demand, therefore neither satisfiable
+            // nor short. Counted separately so it can tilt the outcome neither way.
+            $zeroQtyLines = 0;
             $failReason = null;
             $metaLines = [];
 
             foreach ($order->lines as $line) {
                 $requested = (float) $line->quantity;
                 if ($requested <= 0) {
-                    $skippedLines++;
+                    $zeroQtyLines++;
 
                     continue;
                 }
@@ -94,7 +149,9 @@ final class ReserveOrderInventoryAction
                 $item = InventoryItem::where('warehouse_id', $warehouseId)
                     ->where('product_id', $line->product_id)
                     ->first();
-                $available = $item ? max(0.0, $item->availableQty()) : 0.0;
+                // Signed. availableQty() is already `on_hand − reserved`; the outer
+                // max() clamped it a SECOND time and hid every negative balance.
+                $available = $item ? $item->availableQty() : 0.0;
 
                 // CASE 1: Sufficient FG stock — reserve physically, done
                 if ($available >= $requested) {
@@ -111,7 +168,7 @@ final class ReserveOrderInventoryAction
                     } catch (InsufficientStockException) {
                         // BUG-36/M-4 fix: stock dropped between the unlocked pre-check
                         // and the lockForUpdate inside ReserveStockAction — treat as partial.
-                        $skippedLines++;
+                        $blockedLines++;
                         $failReason ??= 'Insufficient Inventory';
                         $metaLines[] = ['product_id' => $line->product_id, 'requested' => $requested, 'reserved' => 0.0, 'outcome' => 'none'];
 
@@ -127,11 +184,11 @@ final class ReserveOrderInventoryAction
                 // FG stock is insufficient — check manufacturing eligibility first
                 $product = $line->product;
 
-                if ($product?->can_manufacture) {
-                    // TASK-ORDER-RESERVATION-ARCH-FIX-001: Policy (Case 3).
-                    // can_manufacture=true → Reserve Finished Product commitment unconditionally.
-                    // Manufacturing owns all Raw Material decisions; no RM condition gates reservation.
-                    // PrepareOrderManufacturingAction evaluates RM after the order enters Preparing.
+                // Option B gate: manufacturing may only be committed when the recipe is
+                // executable. When it is not, this branch is skipped entirely and the
+                // existing shortage path below decides the outcome — no status is written
+                // by hand here.
+                if ($product?->can_manufacture && $this->manufacturingIsExecutable($product)) {
                     if ($available > 0.0) {
                         try {
                             $this->reserveStock->execute(new StockOperationDTO(
@@ -160,20 +217,34 @@ final class ReserveOrderInventoryAction
                 // remainder is a logical commitment that drives inventory negative at
                 // shipment time (DirectIssue path).
                 if ($product?->allow_negative_stock) {
-                    if ($available > 0.0) {
-                        try {
-                            $this->reserveStock->execute(new StockOperationDTO(
-                                warehouse_id: $warehouseId,
-                                product_id: $line->product_id,
-                                company_id: $companyId,
-                                quantity: $available,
-                                reference_type: 'sales_order',
-                                reference_id: $order->id,
-                                notes: "Reserved for order #{$order->order_number} (partial physical; remainder via negative stock)",
-                            ));
-                        } catch (InsufficientStockException) {
-                            // TOCTOU race — stock dropped between pre-check and lock.
-                        }
+                    // Reserve the FULL requested quantity, not just the physically
+                    // available slice.
+                    //
+                    // This previously reserved only `$available` and recorded the
+                    // remainder as a "logical commitment" that existed nowhere but on
+                    // the order line. With on_hand = 0 the guard `$available > 0.0` was
+                    // false, so NOTHING was written to inventory_items: reserved_qty
+                    // stayed 0 and available never went negative — precisely the
+                    // reported symptom, and a commitment invisible to every other
+                    // warehouse consumer.
+                    //
+                    // ReserveStockAction now honours allow_negative_stock, so the whole
+                    // quantity is recorded and `available` becomes on_hand − reserved,
+                    // negative when commitment exceeds stock. That negative IS the
+                    // shortage signal Preparation and Manufacturing need to see.
+                    try {
+                        $this->reserveStock->execute(new StockOperationDTO(
+                            warehouse_id: $warehouseId,
+                            product_id: $line->product_id,
+                            company_id: $companyId,
+                            quantity: $requested,
+                            reference_type: 'sales_order',
+                            reference_id: $order->id,
+                            notes: "Reserved for order #{$order->order_number} (negative stock policy)",
+                        ));
+                    } catch (InsufficientStockException) {
+                        // Should be unreachable while the flag is on; kept so a policy
+                        // change can never turn a rejected reservation into a crash.
                     }
                     $line->update(['reserved_qty' => $requested]);
                     $reservedLines++;
@@ -184,7 +255,7 @@ final class ReserveOrderInventoryAction
 
                 // Non-manufactured product with insufficient stock
                 if ($available <= 0.0) {
-                    $skippedLines++;
+                    $blockedLines++;
                     $failReason ??= 'Insufficient Inventory';
                     $metaLines[] = ['product_id' => $line->product_id, 'requested' => $requested, 'reserved' => 0.0, 'outcome' => 'none'];
 
@@ -209,20 +280,63 @@ final class ReserveOrderInventoryAction
                     $partialLines++;
                     $metaLines[] = ['product_id' => $line->product_id, 'requested' => $requested, 'reserved' => $available, 'outcome' => 'partial'];
                 } catch (InsufficientStockException) {
-                    $skippedLines++;
+                    $blockedLines++;
                     $metaLines[] = ['product_id' => $line->product_id, 'requested' => $requested, 'reserved' => 0.0, 'outcome' => 'none'];
                 }
                 $failReason ??= 'Insufficient Inventory';
             }
 
-            // ── Determine new status ─────────────────────────────────────────────
-            $fulfilledLines = $reservedLines + $partialLines;
+            // ── ADR-027 §17 — order-driven Raw Material commitment ───────────────
+            // Runs after the finished-goods decision so §16.2 still holds: FG stock is
+            // reserved first and is never gated by a recipe. Reconciles (never
+            // accumulates), so re-processing this order converges rather than doubling.
+            //
+            // Deliberately non-fatal: a material blocked by allow_negative_stock = OFF
+            // is reported in the result, and the FG reservation status below is decided
+            // by the finished-goods outcome exactly as before. Letting a material
+            // failure throw here would rewrite order status from inside inventory code,
+            // which ADR-027 §4 forbids.
+            try {
+                $this->reconcileMaterials->execute($order);
+            } catch (Throwable $e) {
+                report($e);
+            }
+
+            // ── Determine new status — ADR-027 §8 ────────────────────────────────
+            //
+            // The denominator is RESERVABLE lines (quantity > 0), never the raw line
+            // count. A zero-quantity line carries no demand, so it can be neither
+            // satisfied nor short, and it must tilt the outcome in neither direction.
+            //
+            // One counter previously stood for two unrelated facts — "nothing to
+            // reserve" and "could not reserve" — and that conflation produced two
+            // opposite defects out of a single expression:
+            //
+            //   `$reservedLines === $totalLines - $skippedLines` was TRUE for a
+            //   two-line order whose first line reserved in full and whose second was
+            //   entirely unavailable, stamping it fully Reserved and erasing the
+            //   shortage. §8 admits Reserved only when EVERY line reaches
+            //   `reserved_qty = quantity`, and calls ≥1 short line Partial Reserved.
+            //
+            //   An order with no reservable line at all fulfilled nothing and fell
+            //   through to AwaitingStock. §2 forbids that: awaiting_stock asserts an
+            //   inventory block, and nothing is blocked when nothing was requested.
+            //   Such an order carries no shortage, so it must not be held out of the
+            //   canonical lifecycle — it is vacuously Reserved.
+            $reservableLines = $reservedLines + $partialLines + $blockedLines;
 
             $newStatus = match (true) {
-                $fulfilledLines === 0 => ReservationStatus::AwaitingStock,
-                $reservedLines === $totalLines - $skippedLines => ReservationStatus::Reserved,
+                $reservableLines === 0 => ReservationStatus::Reserved,
+                $reservedLines === $reservableLines => ReservationStatus::Reserved,
+                $reservedLines + $partialLines === 0 => ReservationStatus::AwaitingStock,
                 default => ReservationStatus::PartialReserved,
             };
+
+            // A vacuous reservation states no shortage; carrying a failure reason into
+            // it would surface an inventory block the order does not have.
+            if ($newStatus === ReservationStatus::Reserved) {
+                $failReason = null;
+            }
 
             // ── Persist + audit ──────────────────────────────────────────────────
             $previousStatus = $order->reservation_status?->value;
@@ -241,7 +355,15 @@ final class ReserveOrderInventoryAction
                 toStatus: $newStatus->value,
                 reason: $failReason,
                 warehouseId: $order->assigned_warehouse_id,
-                meta: ['lines' => $metaLines, 'total_lines' => $totalLines, 'reserved_lines' => $reservedLines, 'partial_lines' => $partialLines],
+                meta: [
+                    'lines' => $metaLines,
+                    'total_lines' => $totalLines,
+                    'reservable_lines' => $reservableLines,
+                    'reserved_lines' => $reservedLines,
+                    'partial_lines' => $partialLines,
+                    'blocked_lines' => $blockedLines,
+                    'zero_qty_lines' => $zeroQtyLines,
+                ],
                 actorId: Auth::id(),
                 actorType: Auth::check() ? 'user' : 'system',
             );
@@ -250,8 +372,10 @@ final class ReserveOrderInventoryAction
                 orderId: $order->id,
                 type: 'reservation_'.$newStatus->value,
                 description: match ($newStatus) {
-                    ReservationStatus::Reserved => "Inventory fully reserved for order #{$order->order_number}.",
-                    ReservationStatus::PartialReserved => "Inventory partially reserved for order #{$order->order_number}: {$reservedLines} full, {$partialLines} partial, {$skippedLines} pending.",
+                    ReservationStatus::Reserved => $reservableLines === 0
+                        ? "Order #{$order->order_number} has no reservable line; no inventory commitment required."
+                        : "Inventory fully reserved for order #{$order->order_number}.",
+                    ReservationStatus::PartialReserved => "Inventory partially reserved for order #{$order->order_number}: {$reservedLines} full, {$partialLines} partial, {$blockedLines} pending.",
                     ReservationStatus::AwaitingStock => "No inventory available for order #{$order->order_number}. Awaiting stock.",
                     default => "Reservation status updated to {$newStatus->value}.",
                 },

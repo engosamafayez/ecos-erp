@@ -1,4 +1,4 @@
-# ADR-027: Reservation Ownership Policy — v1.1
+# ADR-027: Reservation Ownership Policy — v1.3
 
 **Status:** Approved  
 **Version:** v1.1  
@@ -6,6 +6,28 @@
 **Author:** Engineering Architecture Review  
 **Inputs:** TASK-RESERVATION-POLICY-AUDIT-001, TASK-RESERVATION-RUNTIME-TRACE-002, CTO Review  
 **Supersedes:** ADR-027 v1.0 (2026-07-21)
+
+---
+
+## Revisions from v1.2 to v1.3
+
+| Section | Change |
+|---|---|
+| Section 3 | Raw-material clause SUPERSEDED — reservation now derives RM requirements from the active BOM (see Section 17) |
+| Section 11 | SUPERSEDED — order-driven Raw Material reservations now exist (see Section 17) |
+| Section 13 | P04 superseded by P04-v1.3 (see Section 17.7) |
+| Section 14 | P04 compliance row inverted (see Section 17.7) |
+| Section 16.2 | **UNCHANGED and still in force** — see Section 17.6 |
+| Section 17 | **NEW** — Order-Driven Raw Material Reservation |
+
+---
+
+## Revisions from v1.1 to v1.2
+
+| Section | Change |
+|---|---|
+| Section 3 | Case 2 amended — pointer to Section 16 added; table otherwise unchanged |
+| Section 16 | **NEW** — Option B recipe gate, F4 company scoping, cross-brand Raw Material reuse |
 
 ---
 
@@ -141,6 +163,10 @@ Reservation is **non-blocking**. It never prevents order progression. If stock i
 
 **Decision: Reservation depends ONLY on Finished Good (FG) availability. Raw material availability is irrelevant at reservation time.**
 
+> ⚠️ **The raw-material clause of this decision is SUPERSEDED by Section 17 (v1.3).**
+> Reservation now derives raw-material requirements from the active Recipe/BOM and reserves
+> them. The FG decision tree below is otherwise unchanged, and Case 1 still evaluates first.
+
 Reservation is a commercial commitment. Manufacturing is the operational mechanism that delivers on it. These are separate concerns.
 
 **FG Availability Formula (universal, non-negotiable):**
@@ -157,6 +183,11 @@ available = on_hand_qty − reserved_qty
 | `can_manufacture = true` | Case 2 — Manufacturing | Logical commit — full qty reserved, zero physical lock | NO |
 | `allow_negative_stock = true` AND `available = 0` | Case 3 — Negative Stock | Logical commit — OH will go negative at shipment | NO |
 | None of the above | Case 4 — Awaiting | `reservation_status = awaiting_stock` | NO |
+
+> ⚠️ **Case 2 is amended by Section 16** (v1.2, Option B, owner-approved 2026-08-09).
+> `can_manufacture = true` no longer commits *unconditionally* — it commits only when the
+> recipe is actually executable. Cases 1, 3 and 4 are unchanged, and Case 1 still evaluates
+> first, so physical FG stock is never gated by the recipe. See Section 16.
 
 ---
 
@@ -333,6 +364,11 @@ stateDiagram-v2
 
 **Decision: Raw Material reservations do not exist in the ECOS Orders reservation system.**
 
+> ⚠️ **SUPERSEDED by Section 17 (v1.3).** The premise below — *"Multiple BOMs may apply;
+> Orders cannot know"* — no longer holds: `Product::activeRecipe()` resolves exactly one
+> recipe deterministically. This section is retained as the historical record of why the
+> FG-only rule was correct when written.
+
 | Question | Answer | Rationale |
 |---|---|---|
 | Should RM reservations exist in Orders system? | **NO** | Multiple BOMs may apply; production scheduler selects. Orders cannot know. |
@@ -475,6 +511,106 @@ Principle: P11
 
 ---
 
+## Section 16 — Recipe Gate and Company Ownership (v1.2)
+
+**Added 2026-08-09 · TASK-GOLIVE-RECIPE-GATE-TENANT-REPAIR-001 · Owner-approved (Option B).
+Additive: this section amends Section 3 Case 2 only. Sections 1–15 otherwise stand.**
+
+### 16.1 — Option B: an unexecutable Recipe withholds the manufacturing commitment
+
+The business chain is now:
+
+```
+Raw Materials executable → Recipe executable → Finished Product manufacturable
+    → Reservation allowed → Order continues
+```
+
+and its negative:
+
+```
+Required Raw Material unavailable AND allow_negative_stock = false
+    → Recipe = outofstock → no manufacturing commitment → Order = Awaiting Stock
+```
+
+**Amendment to Section 3, Case 2.** `can_manufacture = true` previously committed the full
+ordered quantity unconditionally. It now commits **only when the recipe is executable**. When
+the recipe is `outofstock`, the manufacturing branch is skipped and the pre-existing shortage
+path decides the outcome — the Awaiting Stock state is produced by the existing V3 workflow,
+never written by hand in the reservation action.
+
+**`recipe_missing` does not block.** A finished good with no active recipe retains its prior
+behaviour. Only an explicitly unexecutable recipe withholds the commitment.
+
+### 16.2 — Direct Finished Product stock remains independently reservable
+
+Section 3 Case 1 is **unchanged and still evaluated first**. When physical FG stock covers the
+requested quantity, the line is reserved from that stock and the recipe is never consulted.
+The recipe gate applies solely to the manufacturing commitment that covers a shortfall.
+
+This is a hard requirement: an order that can be fulfilled from finished-goods stock must never
+be blocked because a recipe for that product happens to be unexecutable.
+
+### 16.3 — Single authority
+
+`ManufacturingAvailabilityService` is the **only** engine that decides recipe availability.
+`ReserveOrderInventoryAction` consumes it and must never recompute the material-level rule.
+That rule is unchanged and stated in Section 6: a material passes when
+`available > 0 OR allow_negative_stock = true`; a recipe is executable only if **every**
+required material passes.
+
+### 16.4 — F4: recipe availability is COMPANY-scoped
+
+Component availability is scoped to the company that owns the finished good. Ownership is
+ADR-013 and nothing else:
+
+```
+Finished Product → Brand → Company
+```
+
+`InventoryItem` rows are matched on `product_id` **and** `company_id`. Another company's stock
+can no longer satisfy this company's recipe, in either direction.
+
+**Fail closed.** When the finished good has no derivable company, the engine exposes **no**
+inventory. A null company is never interpreted as unrestricted and never falls back to the
+global pool. (The material-level `allow_negative_stock` rule of §16.3 still applies on top of
+that zero — fail-closed governs *inventory visibility*, it does not override negative-stock policy.)
+
+### 16.5 — Raw Materials are a COMPANY resource, not a Brand resource
+
+**The boundary is the Company. It is explicitly NOT the Brand.**
+
+One Raw Material may be referenced by the recipes of many Brands inside the same Company:
+
+```
+Company A
+├── Brand A → Product A → Recipe → Raw Material X
+├── Brand B → Product B → Recipe → Raw Material X   ← same product row
+└── Brand C → Product C → Recipe → Raw Material X
+```
+
+All three recipes must evaluate identically from Company A's inventory. The Raw Material need
+not belong to the same Brand as the finished good.
+
+Scoping component availability by `brand_id` is **forbidden** — it would break legitimate
+multi-brand catalogues. Runtime-certified by
+`TASK-GOLIVE-RECIPE-CROSS-BRAND-REUSE-CERTIFICATION-001`; guarded permanently by
+`RecipeCrossBrandReuseTest` and `RecipeGateTenantRepairTest`.
+
+No `Product.company_id` and no `BOM.company_id` column is introduced. No new ownership system
+exists. No schema change was required.
+
+### 16.6 — Implementation
+
+| Concern | Location |
+|---|---|
+| Recipe availability, company-scoped | `ManufacturingAvailabilityService::evaluate()` |
+| Same boundary for the product list | `EloquentProductRepository` — `inv_comp` join |
+| Recipe gate on the manufacturing branch | `ReserveOrderInventoryAction` |
+
+The service and the repository express one rule in two languages and **must not diverge**.
+
+---
+
 ## Decision
 
 This ADR v1.1 is **Approved**. It supersedes ADR-027 v1.0 and all prior informal understandings of reservation behaviour in ECOS ERP.
@@ -487,3 +623,108 @@ Implementation of roadmap items in Section 15 is required. Priority: Critical �
 
 *ADR-027 v1.1 — Reservation Ownership Policy — ECOS ERP*  
 *Approved 2026-07-21 | Inputs: AUDIT-001, TRACE-002, CTO Review | No code changes. Architecture only.*
+
+---
+
+## Section 17 — Order-Driven Raw Material Reservation (v1.3)
+
+**Status:** Approved · **Date:** 2026-08-13
+**Supersedes:** Section 3's "raw material availability is irrelevant at reservation time",
+Section 11's "Raw Material reservations do not exist in the ECOS Orders reservation system",
+and principle **P04** ("FG only — manufacturing responds").
+**Does NOT supersede:** Section 16.2, which remains in force (see §17.6).
+**Input:** TASK-INVENTORY-NEGATIVE-STOCK-ADR-027-AMENDMENT-001, owner-approved business contract.
+
+### 17.1 Why the original decision is being changed
+
+Sections 3 and 11 were not wrong when written. They rested on a specific technical premise,
+stated verbatim in Section 11:
+
+> *"Multiple BOMs may apply; production scheduler selects. Orders cannot know."*
+
+**That premise no longer holds.** `Product::activeRecipe()` resolves exactly one recipe
+deterministically — `->where('is_active', true)->ofMany('bom_version_number', 'max')` — and
+`ManufacturingAvailabilityService` has been the single authority over it since v1.2 §16.3.
+The order side *can* now derive its raw-material requirement without guessing, because the
+platform already picks the BOM for it.
+
+The business consequence of the old rule became visible in production: a raw material
+carrying a real commitment from confirmed orders reported `Reserved = 0`, and therefore a
+non-negative `Available`, because nothing in the reservation system was permitted to record
+it. The commitment existed commercially and was invisible operationally.
+
+### 17.2 The amended decision
+
+**Reservation is order-driven and covers both tiers.**
+
+| Tier | Reserved when | Authority |
+|---|---|---|
+| Finished Good | an order line commits it (Section 3 Cases 1–4, unchanged) | Orders |
+| **Raw Material** | **an order's FG commitment requires it via the active Recipe/BOM** | **Orders (new)** |
+
+Raw-material reservation is **canonical domain state** written through the same
+`ReserveStockAction` as every other reservation. It is never UI arithmetic and never a
+derived display figure.
+
+### 17.3 What did NOT change
+
+- `available = on_hand − reserved` remains the universal formula (Section 3), now **signed**.
+- `on_hand` remains physical stock. Allow Negative never makes it negative; only an actual
+  issue does (Section 6).
+- Shortage remains non-negative. `available` may be negative; `max(0, required − available)`
+  stays clamped.
+- Manufacturing still consumes raw materials and still never writes
+  `orders.reservation_status` (Section 4).
+- Preparation still evaluates raw-material availability for wave planning (Section 5) — it
+  now reads a `reserved_qty` that already includes order-driven commitments, which is the
+  point.
+
+### 17.4 Allow Negative governs the commitment, not the arithmetic
+
+| `allow_negative_stock` | Reservation beyond available | Recipe | Finished Product | Order |
+|---|---|---|---|---|
+| **ON** | permitted; `available` goes negative | available | available | may reserve |
+| **OFF** | rejected | unavailable | unavailable | cannot reserve → Awaiting Stock |
+
+Enforced in exactly one place — `ReserveStockAction` — mirroring `DirectIssueStockAction`,
+which has consulted the same flag at issuance since v1.1 P07.
+
+### 17.5 Reconciliation, not accumulation
+
+Order-driven raw-material reservation **must be idempotent**. Re-processing an order must
+converge on the same reserved quantity, never add to it. A quantity change reconciles by
+delta (increase reserves the difference, decrease releases it), and cancellation or release
+returns the commitment exactly once.
+
+This is a hard requirement, not an optimisation: a reservation that accumulates on retry
+would silently manufacture demand that no customer placed.
+
+### 17.6 Section 16.2 survives unchanged
+
+Section 16.2 — *"Direct Finished Product stock remains independently reservable"* — is
+**not** superseded and remains a hard requirement. An order that can ship from finished-goods
+stock must never be blocked because a recipe happens to be unexecutable. Section 3 Case 1
+still evaluates first.
+
+This is recorded explicitly because §16.2 was mis-cited as the blocker for this amendment
+during TASK-INVENTORY-NEGATIVE-STOCK-FULFILLMENT-CONTRACT-REPAIR-003. It was not; §3 and §11
+were.
+
+### 17.7 Superseded principle
+
+**P04** — *"FG only — manufacturing responds. Reservation never inspects BOM, raw material
+inventory, or production schedules."*
+
+Replaced by **P04-v1.3**: *Reservation inspects the active BOM to derive raw-material
+requirements and reserves them. It still does not inspect production schedules — scheduling
+remains Manufacturing's concern.*
+
+The Section 14 compliance row for P04 ("No RM query in `ReserveOrderInventoryAction` ✅ PASS")
+is **inverted** by this amendment: the presence of that query is now the compliant state.
+
+### 17.8 Historical record
+
+Sections 3, 11, 13 and 14 are **left in place unedited**. They record what was decided in
+July 2026 and why. This section supersedes their raw-material clauses; it does not erase
+them. A future reader must be able to see that the FG-only rule was deliberate, correctly
+reasoned for its time, and changed only when its premise expired.
