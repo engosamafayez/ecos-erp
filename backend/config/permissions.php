@@ -204,6 +204,21 @@ return [
             'logistics.vehicles' => ['view', 'create', 'update', 'delete'],
             'logistics.geography' => ['view', 'create', 'update', 'delete'],
             'logistics.distribution' => ['view', 'create', 'update', 'delete'],
+            // ── Logistics two-segment permissions ────────────────────────────
+            // TASK-LOGISTICS-PERMISSIONS-ENVIRONMENT-PARITY-REPAIR-001.
+            // These 17 are registered by five Logistics module migrations, not by
+            // `permissions.modules` above, so they are granted — never created —
+            // here. RbacSeeder resolves them through its "adopt permissions
+            // registered outside this catalogue" step, and skips silently if a row
+            // is absent, so listing them is safe in every environment.
+            // Company Admin holds the full set, per the authorised RBAC decision.
+            'operations' => ['view'],
+            'fleet' => ['view', 'manage'],
+            'delivery' => ['view', 'execute', 'retry', 'cancel'],
+            'network' => ['view', 'manage'],
+            'dispatch' => ['view', 'propose', 'release', 'manage'],
+            'routing' => ['view', 'optimize'],
+            'carrier' => ['view', 'manage'],
             'operations.preparation' => ['view', 'create', 'update', 'delete'],
             'operations.fulfillment' => ['view', 'manage'],
             'marketing.workspace' => ['view', 'manage'],
@@ -290,6 +305,18 @@ return [
             'sales.channels' => ['view'],
             'sales.orders' => ['view'],
             'sales.fulfillments' => ['view'],
+            // ── Logistics two-segment permissions ────────────────────────────
+            // TASK-LOGISTICS-PERMISSIONS-ENVIRONMENT-PARITY-REPAIR-001.
+            // Viewer receives the `.view` subset only — never `.manage`,
+            // `.execute`, `.propose`, `.release`, `.optimize`, `.retry` or
+            // `.cancel` — per the authorised RBAC decision.
+            'operations' => ['view'],
+            'fleet' => ['view'],
+            'delivery' => ['view'],
+            'network' => ['view'],
+            'dispatch' => ['view'],
+            'routing' => ['view'],
+            'carrier' => ['view'],
         ],
 
         // ── Operator role grants (TASK-OPERATOR-ROLES-001) — existing permissions only ──
