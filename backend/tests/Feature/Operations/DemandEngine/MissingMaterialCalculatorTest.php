@@ -7,6 +7,7 @@ namespace Tests\Feature\Operations\DemandEngine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Modules\Manufacturing\BillsOfMaterials\Domain\Services\ActiveRecipeResolver;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Operations\DemandAnalysis\Application\Services\MissingMaterialCalculator;
 use Modules\Operations\DemandAnalysis\Domain\Enums\MaterialPriority;
@@ -31,7 +32,7 @@ class MissingMaterialCalculatorTest extends TestCase
 
         $this->company = Company::factory()->create();
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $this->calculator = new MissingMaterialCalculator;
+        $this->calculator = new MissingMaterialCalculator(new ActiveRecipeResolver);
     }
 
     // ── Missing qty calculation ───────────────────────────────────────────────

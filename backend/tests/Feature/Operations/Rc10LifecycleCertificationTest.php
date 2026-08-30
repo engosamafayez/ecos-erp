@@ -436,16 +436,20 @@ final class Rc10LifecycleCertificationTest extends TestCase
         self::assertSame(OrderStatus::InProgress, $order->refresh()->status);
     }
 
-    public function test_dedicated_return_to_pending_route_returns_to_new(): void
+    /**
+     * ADR-042 §5.4 — the former `return to new` edge is now UNLOCK:
+     * confirmed -> in_progress. The route name is unchanged for API compatibility.
+     */
+    public function test_dedicated_return_to_pending_route_unlocks_a_confirmed_order(): void
     {
-        $order = $this->order(warehouseId: $this->warehouse->id);
+        $order = $this->order(status: 'confirmed', warehouseId: $this->warehouse->id);
         $this->stockedLine($order, onHand: 10);
 
         $this->actingAs($this->operator());
 
         $this->postJson("/api/fulfillment/orders/{$order->id}/return-to-pending")->assertOk();
 
-        self::assertSame(OrderStatus::NewOrder, $order->refresh()->status);
+        self::assertSame(OrderStatus::InProgress, $order->refresh()->status);
     }
 
     // Audit ------------------------------------------------------------------

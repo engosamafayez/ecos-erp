@@ -7,6 +7,7 @@ namespace Tests\Feature\Operations\DemandEngine;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Modules\Manufacturing\BillsOfMaterials\Domain\Services\ActiveRecipeResolver;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Operations\DemandAnalysis\Application\Services\MaterialDemandCalculator;
 use Modules\Operations\Preparation\Domain\Enums\WaveStatus;
@@ -45,7 +46,7 @@ class MaterialDemandCalculatorTest extends TestCase
         $this->categoryId = (string) \Modules\MasterData\Categories\Domain\Models\Category::factory()->create()->id;
         $this->unitId = (string) \Modules\MasterData\Units\Domain\Models\Unit::factory()->create()->id;
 
-        $this->calculator = new MaterialDemandCalculator;
+        $this->calculator = new MaterialDemandCalculator(new ActiveRecipeResolver);
     }
 
     // ── Recipe explosion ──────────────────────────────────────────────────────

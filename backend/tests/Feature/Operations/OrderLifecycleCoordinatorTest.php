@@ -141,7 +141,7 @@ class OrderLifecycleCoordinatorTest extends TestCase
     private function makeRequest(
         Product $output,
         float $qty = 1.0,
-        string $status = 'pending',
+        string $status = 'in_progress',
         bool $canManufacture = true,
         bool $hasRecipe = true,
         bool $inventoryManaged = true,
@@ -167,7 +167,7 @@ class OrderLifecycleCoordinatorTest extends TestCase
 
     // ── Eligible order → ManufacturingTriggered ───────────────────────────────
 
-    public function test_returns_manufacturing_triggered_for_eligible_pending_order(): void
+    public function test_returns_manufacturing_triggered_for_eligible_in_progress_order(): void
     {
         $output = $this->makeOutput();
         $component = $this->makeComponent();
@@ -175,7 +175,9 @@ class OrderLifecycleCoordinatorTest extends TestCase
         $this->addLine($recipe, $component, 2.0);
         $this->seedInventory($component, 10.0);
 
-        $result = $this->coordinator->handle($this->makeRequest($output, 1.0, 'pending'));
+        // ADR-042 V3: `in_progress` is a fulfilment-eligible entry state at which the
+        // trigger may be invoked before the Ready-for-Dispatch flip.
+        $result = $this->coordinator->handle($this->makeRequest($output, 1.0, 'in_progress'));
 
         $this->assertInstanceOf(OrderLifecycleResult::class, $result);
         $this->assertTrue($result->handled);
@@ -186,7 +188,7 @@ class OrderLifecycleCoordinatorTest extends TestCase
         $this->assertFalse($result->manufacturing_result->is_blocked);
     }
 
-    public function test_returns_manufacturing_triggered_for_eligible_processing_order(): void
+    public function test_returns_manufacturing_triggered_for_eligible_ready_for_dispatch_order(): void
     {
         $output = $this->makeOutput();
         $component = $this->makeComponent();
@@ -194,7 +196,10 @@ class OrderLifecycleCoordinatorTest extends TestCase
         $this->addLine($recipe, $component, 1.0);
         $this->seedInventory($component, 5.0);
 
-        $result = $this->coordinator->handle($this->makeRequest($output, 1.0, 'processing'));
+        // ADR-042 V3: `ready_for_dispatch` is the status the order actually HOLDS when
+        // both the manual and wave paths call the trigger (MoveToPreparationWorkflow
+        // flips to it first). This is the load-bearing case for the BREAK A fix.
+        $result = $this->coordinator->handle($this->makeRequest($output, 1.0, 'ready_for_dispatch'));
 
         $this->assertTrue($result->handled);
         $this->assertEquals(LifecycleAction::ManufacturingTriggered, $result->action);
@@ -218,18 +223,27 @@ class OrderLifecycleCoordinatorTest extends TestCase
 
     // ── Policy rejected ───────────────────────────────────────────────────────
 
-    public function test_returns_policy_rejected_when_product_cannot_manufacture(): void
+    public function test_can_manufacture_false_is_not_rejected_for_that_reason(): void
     {
+        // ADR-027 §16 v1.5 (TASK-ORDER-PREPARATION-FULFILLABILITY-CONTRACT-001) removed the
+        // former Rule 3 that gated on the can_manufacture capability flag. A product with
+        // can_manufacture=false is therefore NEVER PolicyRejected for that reason — if it is
+        // rejected at all it is by a different rule. Here the only remaining blocker is the
+        // absent recipe, so the code is RecipeNotFound, never ProductCannotManufacture.
+        // (This test previously asserted the removed behaviour and pre-dated the V3 status
+        // vocabulary; updated alongside the BREAK A status alignment that touches the same
+        // call site.)
         $output = $this->makeOutput();
 
         $result = $this->coordinator->handle(
-            $this->makeRequest($output, 1.0, 'pending', canManufacture: false),
+            $this->makeRequest($output, 1.0, 'in_progress', canManufacture: false, hasRecipe: false),
         );
 
         $this->assertFalse($result->handled);
         $this->assertEquals(LifecycleAction::PolicyRejected, $result->action);
         $this->assertNotNull($result->policy_result);
-        $this->assertEquals(PolicyCode::ProductCannotManufacture, $result->policy_result->policy_code);
+        $this->assertNotEquals(PolicyCode::ProductCannotManufacture, $result->policy_result->policy_code);
+        $this->assertEquals(PolicyCode::RecipeNotFound, $result->policy_result->policy_code);
         $this->assertNull($result->manufacturing_result);
         $this->assertDatabaseCount('manufacturing_transactions', 0);
     }
@@ -239,7 +253,7 @@ class OrderLifecycleCoordinatorTest extends TestCase
         $output = $this->makeOutput();
 
         $result = $this->coordinator->handle(
-            $this->makeRequest($output, 1.0, 'pending', hasRecipe: false),
+            $this->makeRequest($output, 1.0, 'in_progress', hasRecipe: false),
         );
 
         $this->assertFalse($result->handled);
@@ -252,7 +266,7 @@ class OrderLifecycleCoordinatorTest extends TestCase
         $output = $this->makeOutput();
 
         $result = $this->coordinator->handle(
-            $this->makeRequest($output, 1.0, 'pending', inventoryManaged: false),
+            $this->makeRequest($output, 1.0, 'in_progress', inventoryManaged: false),
         );
 
         $this->assertFalse($result->handled);
@@ -265,7 +279,7 @@ class OrderLifecycleCoordinatorTest extends TestCase
         $output = $this->makeOutput();
 
         $result = $this->coordinator->handle(
-            $this->makeRequest($output, 1.0, 'pending', alreadyManufactured: true),
+            $this->makeRequest($output, 1.0, 'in_progress', alreadyManufactured: true),
         );
 
         $this->assertFalse($result->handled);
@@ -279,10 +293,13 @@ class OrderLifecycleCoordinatorTest extends TestCase
     {
         $output = $this->makeOutput();
 
+        // A still-valid policy rejection (missing recipe, Rule 4). The former
+        // can_manufacture rejection this used was removed by ADR-027 §16 v1.5.
         $result = $this->coordinator->handle(
-            $this->makeRequest($output, 1.0, 'pending', canManufacture: false),
+            $this->makeRequest($output, 1.0, 'in_progress', hasRecipe: false),
         );
 
+        $this->assertEquals(LifecycleAction::PolicyRejected, $result->action);
         $this->assertNotEmpty($result->reason);
         $this->assertEquals($result->policy_result->reason, $result->reason);
     }
@@ -440,8 +457,10 @@ class OrderLifecycleCoordinatorTest extends TestCase
 
     public function test_policy_rejected_result_is_not_handled(): void
     {
+        // Rejection via the still-valid missing-recipe rule (Rule 4); the can_manufacture
+        // rule this used was removed by ADR-027 §16 v1.5.
         $result = $this->coordinator->handle(
-            $this->makeRequest($this->makeOutput(), 1.0, 'pending', canManufacture: false),
+            $this->makeRequest($this->makeOutput(), 1.0, 'in_progress', hasRecipe: false),
         );
         $this->assertFalse($result->handled);
     }

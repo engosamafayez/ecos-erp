@@ -8,6 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
+use Modules\Manufacturing\BillsOfMaterials\Domain\Services\ActiveRecipeResolver;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Operations\DemandAnalysis\Application\Services\DemandCalculationService;
 use Modules\Operations\DemandAnalysis\Application\Services\DemandProjectionBuilder;
@@ -60,8 +61,8 @@ class DemandProjectionBuilderTest extends TestCase
         $repository = new DemandReadRepository;
         $builder = new DemandProjectionBuilder(
             $productCalc,
-            new MaterialDemandCalculator,
-            new MissingMaterialCalculator,
+            new MaterialDemandCalculator(new ActiveRecipeResolver),
+            new MissingMaterialCalculator(new ActiveRecipeResolver),
             new WaveKpiCalculator,
             $repository,
         );
