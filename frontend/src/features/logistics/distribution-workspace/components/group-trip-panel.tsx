@@ -91,7 +91,16 @@ export function GroupTripPanel({
 
   const trips = query.data?.trips ?? [];
   const readiness = query.data?.readiness ?? [];
-  const finalized = trips.length > 0;
+  // §5 FINALIZED AUTHORITY — finalized is the canonical `finalized_at` stamp, NEVER the
+  // mere existence of a Trip. A Trip is materialised at vehicle assignment, BEFORE
+  // Finalize (GroupVehicleAssignmentService::resolveTrip), so `trips.length > 0` is true
+  // for a group that was assigned but never finalized — its Trip is a "bare" one with an
+  // empty manifest and `finalized_at IS NULL`. GroupFinalizationService keys its OWN
+  // idempotency on exactly this predicate (`finalized_at !== null`, adopting that bare
+  // Trip on Finalize), so the UI must read finalized the same way the write path decides
+  // it — otherwise an assigned-but-unfinalized group reads as "finalized" and its Finalize
+  // action disappears.
+  const finalized = trips.some((trip) => trip.finalized_at !== null);
 
   function onFinalize() {
     finalize.mutate(

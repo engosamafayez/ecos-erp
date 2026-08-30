@@ -49,7 +49,11 @@ export function GroupLoadingExecution({
   // The Trip is read from the SAME canonical source the Trip panel uses, rather
   // than being threaded down as a prop — so the two can never disagree about
   // which trip a group is executing.
-  const { data: tripsResult } = useGroupTrips(windowId, group.slot_id);
+  // A read FAILURE is not "no trip". `isError` is destructured so the panel can tell a
+  // failed read (an HTTP 500 on the trips endpoint) apart from a successful empty read (a
+  // group genuinely without a trip). Collapsing the two — the defect this closes — turns a
+  // technical error into the false business claim "this group has no trip yet".
+  const { data: tripsResult, isError: tripsError } = useGroupTrips(windowId, group.slot_id);
   const trips = tripsResult?.trips ?? [];
   const tripId = trips.length > 0 ? trips[0].trip_id : null;
 
@@ -116,7 +120,7 @@ export function GroupLoadingExecution({
           size="sm"
           variant="outline"
           data-testid="group-open-loading"
-          disabled={!canPlan || !windowId || tripId === null || open.isPending}
+          disabled={!canPlan || !windowId || tripId === null || tripsError || open.isPending}
           onClick={() => {
             if (!windowId || tripId === null) return;
             open.mutate({ windowId, slotId: group.slot_id, tripId });
@@ -127,9 +131,17 @@ export function GroupLoadingExecution({
         </Button>
       </div>
 
-      {/* A Group with no Trip has not been given a vehicle yet — said plainly,
-          because an empty panel would read as "nothing to load". */}
-      {tripId === null ? (
+      {/* ERROR vs EMPTY, kept distinct. A failed trips read must NEVER render as
+          "no trip": a technical failure is shown as a could-not-load message (and the
+          Open Loading CTA above stays disabled, since tripId is null AND tripsError is
+          set), while a genuine empty read keeps the existing no-trip guidance. A Group
+          with no Trip has not been given a vehicle yet — said plainly, because an empty
+          panel would otherwise read as "nothing to load". */}
+      {tripsError ? (
+        <p className="text-sm text-destructive" data-testid="group-loading-trips-error">
+          {t(($) => $.distributionWorkspace.trip.loadFailed)}
+        </p>
+      ) : tripId === null ? (
         <p className="text-sm text-muted-foreground" data-testid="group-loading-no-trip">
           {t(($) => $.distributionWorkspace.loadingExecution.noTrip)}
         </p>
