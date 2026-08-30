@@ -7,6 +7,7 @@ namespace Modules\Finance\Integration\Application\Bridge;
 use Illuminate\Support\Carbon;
 use Modules\Finance\Integration\Domain\Enums\BusinessEventType;
 use Modules\Finance\Integration\Domain\ValueObjects\FinancialEvent;
+use Modules\Inventory\InventoryItems\Domain\Services\InboundPostingGuard;
 
 /**
  * The anti-corruption catalog: it translates a concrete operational domain event
@@ -91,6 +92,27 @@ final class EventPostingCatalog
 
             // ── Inventory (valued only when the event carries a cost/value) ───────
             'inventory.stock.received' => function (string $id, array $p): ?FinancialEvent {
+                // D-A2 MODE 3 — the supplier invoice IS the inbound authority, so it owns the
+                // Inventory recognition and this bridge must stand down.
+                //
+                // The `inventory.goods_receipt` rule posts `Dr inventory / Cr grni`. Under Mode 3
+                // no Goods Receipt ever accrued GRNI, so that credit has nothing to relieve — and
+                // PostSupplierInvoiceService::postMode3Payable() already debits Inventory itself.
+                // Letting both run produced the runtime defect: Inventory debited TWICE
+                // (20,000 expected, 40,000 actual) plus a GRNI credit the Mode 3 contract forbids.
+                //
+                // The discriminator is the canonical one the event already carries.
+                // InboundPostingGuard::referenceForInvoice() stamps `supplier_invoice` when the
+                // invoice IS its own inbound (Mode 3) and `goods_receipt` when it is linked to a
+                // receipt (Mode 1). So Mode 1 is untouched: its receipts still post
+                // Dr Inventory / Cr GRNI exactly as the V-5 contract requires.
+                //
+                // Only the FINANCIAL leg is suppressed. ReceiveStockAction still runs in full —
+                // quantities, stock ledger and FIFO layers are unaffected.
+                if ($this->str($p, ['reference_type', 'referenceType']) === InboundPostingGuard::REF_SUPPLIER_INVOICE) {
+                    return null;
+                }
+
                 $company = $this->str($p, ['companyId', 'company_id']);
                 // extended_cost is the figure the event itself derived from the
                 // quantity that actually moved (EPIC-FIN-INTEGRATION-003). The

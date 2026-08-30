@@ -304,11 +304,33 @@ final class AccountsPayableService
         $taxByAccount = [];
         foreach ($bill->lines as $line) {
             $net = round((float) $line->net_amount, 4);
-            if ($net > 0.0) {
+
+            // A line whose net is NEGATIVE posts |net| to the SAME account in the OPPOSITE
+            // direction. Previously such a line was silently skipped, which unbalanced the
+            // journal — the control account is credited with `total` (which already includes the
+            // negative), so dropping the line left debits ≠ credits and the engine refused the
+            // posting outright.
+            //
+            // This is what lets one supplier document carry a favourable Purchase Price Variance:
+            // GRNI is debited at the physical receipt valuation, the payable is credited at the
+            // lower approved invoice value, and the difference posts as a CREDIT to the variance
+            // account — one document, one journal, one supplier-ledger entry.
+            //
+            // Document-level direction is unchanged: `payableSign()` still decides whether a
+            // document increases or decreases the payable, and a positive net behaves exactly as
+            // before. No existing caller produces a negative net (credit notes express their
+            // reversal through `payableSign()`, not through negative lines), so this is additive.
+            if ($net !== 0.0) {
+                $debit = $sign >= 0; // expense is debited on a bill
+
+                if ($net < 0.0) {
+                    $debit = ! $debit;
+                }
+
                 $lines[] = $this->directional(
                     (int) $line->expense_account_id,
-                    $net,
-                    $sign >= 0, // expense is debited on a bill
+                    abs($net),
+                    $debit,
                     $companyId,
                     [
                         'costCenterId' => $line->cost_center_id !== null ? (int) $line->cost_center_id : null,
