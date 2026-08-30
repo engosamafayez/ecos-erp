@@ -6,6 +6,7 @@ namespace Tests\Feature\Purchasing;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\IAM\Domain\Models\Permission;
 use Modules\IAM\Domain\Models\Role;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Modules\Purchasing\Suppliers\Domain\Models\Supplier;
@@ -18,9 +19,11 @@ use Tests\TestCase;
  * against `Warehouse`: a null `company_id` returned early, so an actor with no
  * company affiliation was served every company's suppliers.
  *
- * It is reachable with no permission at all — `GET /api/suppliers` and
- * `GET /api/suppliers/{id}` carry only `auth:sanctum` (routes/api.php:558-563
- * gates store/update/destroy only).
+ * Supplier reads are now gated by `purchasing.suppliers.view`
+ * (TASK-PROCUREMENT-SUPPLIER-ACCOUNTING-CLOSURE-001 closed that read-authorization
+ * gap; the route previously carried only `auth:sanctum`). The operator below is
+ * therefore granted exactly that one permission — and nothing else — so these tests
+ * keep exercising TENANT ISOLATION rather than stopping at the permission gate.
  *
  * `$grantsBaselineAuthorization = false`: TestCase::actingAs() grants an
  * is_system role to a role-less user, and is_system is exactly the flag that
@@ -41,6 +44,14 @@ final class SupplierTenantIsolationTest extends TestCase
             ['slug' => 'test-supplier-operator'],
             ['name' => 'Test Supplier Operator', 'is_system' => false],
         );
+
+        // The read gate only: enough to reach the endpoint, never enough to cross a tenant.
+        $permission = Permission::firstOrCreate(
+            ['name' => 'purchasing.suppliers.view'],
+            ['module' => 'purchasing', 'resource' => 'suppliers', 'action' => 'view'],
+        );
+        $role->permissions()->syncWithoutDetaching([$permission->id]);
+
         $user->roles()->attach($role->id);
         $user->unsetRelation('roles');
 
@@ -62,6 +73,15 @@ final class SupplierTenantIsolationTest extends TestCase
             ['slug' => 'test-supplier-companyless'],
             ['name' => 'Test Supplier Companyless', 'is_system' => false],
         );
+
+        // Same as operatorFor(): the read gate only, so the assertion below still measures the
+        // fail-closed TENANT scope (a null company must return nothing) and not the permission.
+        $permission = Permission::firstOrCreate(
+            ['name' => 'purchasing.suppliers.view'],
+            ['module' => 'purchasing', 'resource' => 'suppliers', 'action' => 'view'],
+        );
+        $role->permissions()->syncWithoutDetaching([$permission->id]);
+
         $user->roles()->attach($role->id);
         $user->unsetRelation('roles');
 
