@@ -182,9 +182,6 @@
     }
   },
   "src/features/brands/components/brand-detail-drawer.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 31
-    },
     "react-hooks/rules-of-hooks": {
       "count": 3
     }
@@ -840,7 +837,7 @@
       "count": 1
     },
     "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 38
+      "count": 36
     }
   },
   "src/features/logistics/drivers/components/driver-drawer.tsx": {
@@ -1191,24 +1188,9 @@
       "count": 39
     }
   },
-  "src/features/operations/driver-mobile/components/bank-transfer-form.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 8
-    }
-  },
   "src/features/operations/driver-mobile/components/custody-return-list.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
       "count": 6
-    }
-  },
-  "src/features/operations/driver-mobile/components/delivery-action-form.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 11
-    }
-  },
-  "src/features/operations/driver-mobile/components/driver-trip-card.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 2
     }
   },
   "src/features/operations/driver-mobile/components/driver-trip-timeline.tsx": {
@@ -1221,19 +1203,9 @@
       "count": 6
     }
   },
-  "src/features/operations/driver-mobile/components/payment-collection-form.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 7
-    }
-  },
   "src/features/operations/driver-mobile/components/proof-of-delivery-form.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
       "count": 6
-    }
-  },
-  "src/features/operations/driver-mobile/components/return-form.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 11
     }
   },
   "src/features/operations/driver-mobile/components/settlement-summary.tsx": {
@@ -1248,12 +1220,7 @@
   },
   "src/features/operations/driver-mobile/hooks/use-driver-mobile.ts": {
     "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 22
-    }
-  },
-  "src/features/operations/driver-mobile/pages/driver-collections-page.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 6
+      "count": 18
     }
   },
   "src/features/operations/driver-mobile/pages/driver-custody-return-page.tsx": {
@@ -1266,39 +1233,9 @@
       "count": 8
     }
   },
-  "src/features/operations/driver-mobile/pages/driver-home-page.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 5
-    }
-  },
-  "src/features/operations/driver-mobile/pages/driver-map-page.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 6
-    }
-  },
-  "src/features/operations/driver-mobile/pages/driver-returns-page.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 7
-    }
-  },
   "src/features/operations/driver-mobile/pages/driver-settlement-page.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
       "count": 7
-    }
-  },
-  "src/features/operations/driver-mobile/pages/driver-stop-detail-page.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 22
-    }
-  },
-  "src/features/operations/driver-mobile/pages/driver-stop-list-page.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 4
-    }
-  },
-  "src/features/operations/driver-mobile/pages/driver-trip-dashboard-page.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 14
     }
   },
   "src/features/operations/driver-mobile/pages/driver-trip-timeline-page.tsx": {
@@ -1357,7 +1294,7 @@
   },
   "src/features/orders/components/order-detail-drawer.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 5
+      "count": 4
     }
   },
   "src/features/orders/components/order-distribution-stage-banner.tsx": {
@@ -1737,11 +1674,6 @@
   "src/features/stock-transfers/pages/stock-transfers-page.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
       "count": 11
-    }
-  },
-  "src/features/supplier-invoices/components/supplier-invoice-editor.tsx": {
-    "react-hooks/set-state-in-effect": {
-      "count": 1
     }
   },
   "src/features/supplier-invoices/hooks/use-supplier-invoices.ts": {
