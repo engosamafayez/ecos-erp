@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { z } from 'zod';
 
 import { useAuthStore } from '@/features/auth/store/auth-store';
-import { ROUTES } from '@/router/routes';
+import { resolvePostLoginPath } from '@/features/auth/post-login-landing';
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
@@ -98,7 +98,10 @@ export function LoginForm({ isRTL = false }: { isRTL?: boolean }) {
     setFormError(null);
     try {
       await login(values);
-      navigate(ROUTES.dashboard, { replace: true });
+      // A driver-only account lands on the Driver App; everyone else on the enterprise
+      // dashboard. Permission-driven, not a security boundary — the APIs still enforce.
+      // The store now holds the freshly authenticated user.
+      navigate(resolvePostLoginPath(useAuthStore.getState().user), { replace: true });
     } catch (error) {
       if (!axios.isAxiosError(error)) {
         setFormError(t($ => $.login.error.message));

@@ -41,6 +41,9 @@ const MODULE_DOMAINS: Record<string, string[]> = {
   hr: ['hr'],
   administration: ['iam', 'organization', 'configuration'],
   engineering: ['engineering', 'claude_bridge', 'bae'],
+  // The Driver Experience module — visible to holders of the driver runtime permission
+  // (loading.driver.operate). Permission-driven fallback only; no permission is changed.
+  driver: ['loading'],
   reports: ['reports'],
   core: ['organization'],
   // The executive board draws one panel per domain and gates each panel on that
