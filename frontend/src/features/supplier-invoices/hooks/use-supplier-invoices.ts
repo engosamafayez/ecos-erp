@@ -130,3 +130,32 @@ export function useCancelSupplierInvoice() {
     onError: () => toast.error('Failed to cancel invoice'),
   });
 }
+
+// ── Attachment (§3) — toast-free; the attachment UI owns the i18n feedback ──
+export function useInvoiceDocuments(invoiceId: string | null) {
+  const KEYS = useKeys();
+  return useQuery({
+    queryKey: [...KEYS.detail(invoiceId ?? ''), 'documents'],
+    queryFn: () => supplierInvoicesService.listDocuments(invoiceId as string),
+    enabled: invoiceId !== null,
+  });
+}
+
+export function useUploadInvoiceDocument(invoiceId: string) {
+  const KEYS = useKeys();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ file, notes }: { file: File; notes?: string }) =>
+      supplierInvoicesService.uploadDocument(invoiceId, file, notes),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [...KEYS.detail(invoiceId), 'documents'] }),
+  });
+}
+
+export function useDeleteInvoiceDocument(invoiceId: string) {
+  const KEYS = useKeys();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (documentId: string) => supplierInvoicesService.deleteDocument(invoiceId, documentId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [...KEYS.detail(invoiceId), 'documents'] }),
+  });
+}

@@ -9,6 +9,10 @@ export type SupplierInvoiceStatus =
 export type SupplierInvoiceLine = {
   id: string;
   product_id: string;
+  // V-5 settlement anchor — the receipt line this invoice line settles, if any (§15).
+  goods_receipt_line_id: string | null;
+  // 'finished_good' | 'raw_material' | 'packaging_material' — for edit-mode line entity typing.
+  product_type: string | null;
   product: { id: string; name: string; sku: string } | null;
   description: string | null;
   quantity: number;
@@ -20,6 +24,54 @@ export type SupplierInvoiceLine = {
   landed_unit_cost: number | null;
   uom_name_snapshot: string | null;
   uom_symbol_snapshot: string | null;
+};
+
+/** Payment read-model — DERIVED from canonical AP allocations; never editable on the invoice (§9–§12). */
+export type SupplierInvoicePaymentStatus = 'unpaid' | 'partially_paid' | 'paid';
+
+/**
+ * One posted supplier payment applied to this invoice's payable through the canonical AP allocation
+ * authority (TASK-...-AP-PAYMENT-INTEGRATION-001). Read-only history — never written from this UI.
+ */
+export type SupplierInvoicePaymentHistoryEntry = {
+  payment_number: string | null;
+  payment_date: string | null;
+  amount: number;
+  payment_status: string | null;
+};
+
+export type SupplierInvoicePayment = {
+  total: number;
+  paid: number;
+  remaining: number;
+  payment_status: SupplierInvoicePaymentStatus;
+  billed: boolean;
+  bill_number: string | null;
+  due_date: string | null;
+  history: SupplierInvoicePaymentHistoryEntry[];
+};
+
+/** Read-only ordered → received → invoiced linkage for an anchored line (§15–§17). */
+export type SupplierInvoiceReceiptLink = {
+  line_id: string;
+  product: string | null;
+  goods_receipt_line_id: string;
+  receipt_number: string | null;
+  po_number: string | null;
+  ordered_qty: number | null;
+  received_qty: number | null;
+  invoiced_qty: number;
+};
+
+/** An invoice attachment record (the canonical documents table; §3). */
+export type SupplierInvoiceDocument = {
+  id: string;
+  name: string;
+  mime_type: string | null;
+  file_size: number | null;
+  notes: string | null;
+  uploaded_by: number | null;
+  created_at: string | null;
 };
 
 export type SupplierInvoice = {
@@ -52,6 +104,9 @@ export type SupplierInvoice = {
   supplier: { id: string; name: string } | null;
   warehouse: { id: string; name: string; code: string } | null;
   lines: SupplierInvoiceLine[];
+  // Present on the detail (show) payload only — derived read-models (§9–§17).
+  payment?: SupplierInvoicePayment;
+  receipt_links?: SupplierInvoiceReceiptLink[];
   created_at: string | null;
   updated_at: string | null;
 };

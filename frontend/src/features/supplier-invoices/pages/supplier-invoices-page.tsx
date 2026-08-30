@@ -6,7 +6,9 @@ import {
   CheckCircle2,
   DollarSign,
   FileText,
+  Link2,
   Loader2,
+  Pencil,
   Plus,
   Trash2,
   XCircle,
@@ -42,6 +44,8 @@ import {
   useValidateSupplierInvoice,
 } from '@/features/supplier-invoices/hooks/use-supplier-invoices';
 import { SupplierInvoiceEditor } from '@/features/supplier-invoices/components/supplier-invoice-editor';
+import { InvoiceAttachments } from '@/features/supplier-invoices/components/invoice-attachments';
+import { PaymentSummaryCard } from '@/features/supplier-invoices/components/payment-summary-card';
 import type {
   SupplierInvoice,
   SupplierInvoiceStatus,
@@ -62,10 +66,12 @@ function InvoiceDetailDrawer({
   id,
   open,
   onOpenChange,
+  onEdit,
 }: {
   id: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onEdit: (id: string) => void;
 }) {
   const { data: invoice, isLoading } = useSupplierInvoice(id);
   const validateMutation = useValidateSupplierInvoice();
@@ -100,6 +106,17 @@ function InvoiceDetailDrawer({
               </div>
 
               <div className="flex gap-2 pt-2 flex-wrap">
+                {(invoice.status === 'draft' || invoice.status === 'failed') && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5"
+                    onClick={() => { onEdit(invoice.id); onOpenChange(false); }}
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    {t($ => $.detail.edit)}
+                  </Button>
+                )}
                 {invoice.status === 'draft' && (
                   <Button
                     size="sm"
@@ -182,6 +199,8 @@ function InvoiceDetailDrawer({
                 </div>
               </div>
 
+              {invoice.payment && <PaymentSummaryCard payment={invoice.payment} />}
+
               <div>
                 <p className="text-xs font-medium text-gray-500 mb-2 uppercase">
                   {t($ => $.detail.itemsTitle)} ({invoice.lines.length})
@@ -208,6 +227,34 @@ function InvoiceDetailDrawer({
                   ))}
                 </div>
               </div>
+
+              {invoice.receipt_links && invoice.receipt_links.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-gray-500 mb-2 uppercase flex items-center gap-1.5">
+                    <Link2 className="w-3.5 h-3.5" />
+                    {t($ => $.detail.receiptLinks.title)}
+                  </p>
+                  <div className="space-y-2">
+                    {invoice.receipt_links.map((link) => (
+                      <div key={link.line_id} className="p-3 border rounded-lg text-xs space-y-1.5">
+                        <div className="flex justify-between gap-2">
+                          <span className="font-medium truncate">{link.product ?? '—'}</span>
+                          <span className="font-mono text-gray-400 shrink-0">
+                            {link.receipt_number ?? '—'}{link.po_number ? ` · ${link.po_number}` : ''}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 tabular-nums">
+                          <div><span className="text-gray-400">{t($ => $.detail.receiptLinks.ordered)}: </span>{link.ordered_qty ?? '—'}</div>
+                          <div><span className="text-gray-400">{t($ => $.detail.receiptLinks.received)}: </span>{link.received_qty ?? '—'}</div>
+                          <div><span className="text-gray-400">{t($ => $.detail.receiptLinks.invoiced)}: </span>{link.invoiced_qty}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <InvoiceAttachments invoiceId={invoice.id} />
 
               {(invoice.auto_purchase_id || invoice.auto_receipt_id) && (
                 <div>
@@ -263,8 +310,9 @@ export function SupplierInvoicesPage() {
     field: 'created_at', direction: 'desc',
   });
   const [selectedId, setSelectedId]   = useState<string | null>(null);
-  const [creatingNew, setCreatingNew] = useState(false);
+  const [editor, setEditor]           = useState<{ open: boolean; invoiceId: string | null }>({ open: false, invoiceId: null });
   const [deleting, setDeleting]       = useState<SupplierInvoice | null>(null);
+  const openEditor = (invoiceId: string | null) => setEditor({ open: true, invoiceId });
 
   const params = useMemo(() => ({
     search:   search || undefined,
@@ -382,7 +430,7 @@ export function SupplierInvoicesPage() {
             title={t($ => $.page.title)}
             subtitle={t($ => $.page.subtitle)}
           />
-          <Button onClick={() => setCreatingNew(true)} size="sm" className="gap-1.5">
+          <Button onClick={() => openEditor(null)} size="sm" className="gap-1.5">
             <Plus className="w-3.5 h-3.5" />
             {t($ => $.page.newInvoice)}
           </Button>
@@ -465,6 +513,14 @@ export function SupplierInvoicesPage() {
                       icon: FileText,
                       onSelect: () => setSelectedId(inv.id),
                     },
+                    ...(inv.status === 'draft' || inv.status === 'failed' ? [
+                      {
+                        key: 'edit',
+                        label: t($ => $.page.actions.edit) as string,
+                        icon: Pencil,
+                        onSelect: () => openEditor(inv.id),
+                      },
+                    ] : []),
                     ...(inv.status === 'draft' ? [
                       {
                         key: 'validate',
@@ -519,12 +575,14 @@ export function SupplierInvoicesPage() {
           id={selectedId}
           open={true}
           onOpenChange={(open) => { if (!open) setSelectedId(null); }}
+          onEdit={openEditor}
         />
       )}
 
       <SupplierInvoiceEditor
-        open={creatingNew}
-        onOpenChange={(open) => { if (!open) setCreatingNew(false); }}
+        open={editor.open}
+        invoiceId={editor.invoiceId}
+        onOpenChange={(open) => { if (!open) setEditor((e) => ({ ...e, open: false })); }}
       />
 
       <ConfirmDialog

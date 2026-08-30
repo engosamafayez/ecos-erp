@@ -3,6 +3,7 @@ import type { ApiResponse } from '@/types';
 import type {
   CreateSupplierInvoicePayload,
   SupplierInvoice,
+  SupplierInvoiceDocument,
   SupplierInvoicesQuery,
   SupplierInvoicesResult,
 } from '@/features/supplier-invoices/types/supplier-invoice';
@@ -60,5 +61,37 @@ export const supplierInvoicesService = {
   async stats(): Promise<InvoiceStats> {
     const { data } = await api.get<ApiResponse<InvoiceStats>>('/supplier-invoices/stats');
     return data.data;
+  },
+
+  // ── Attachment (§3) — canonical DocumentService, private disk, auth+tenant gated ──
+  async listDocuments(invoiceId: string): Promise<SupplierInvoiceDocument[]> {
+    const { data } = await api.get<ApiResponse<SupplierInvoiceDocument[]>>(
+      `/supplier-invoices/${invoiceId}/documents`,
+    );
+    return data.data;
+  },
+
+  async uploadDocument(invoiceId: string, file: File, notes?: string): Promise<SupplierInvoiceDocument> {
+    const form = new FormData();
+    form.append('file', file);
+    if (notes) form.append('notes', notes);
+    const { data } = await api.post<ApiResponse<SupplierInvoiceDocument>>(
+      `/supplier-invoices/${invoiceId}/documents`,
+      form,
+    );
+    return data.data;
+  },
+
+  /** The private file is streamed behind auth — fetch it as a blob (bearer token via the shared axios). */
+  async downloadDocument(invoiceId: string, documentId: string): Promise<Blob> {
+    const res = await api.get<Blob>(
+      `/supplier-invoices/${invoiceId}/documents/${documentId}/download`,
+      { responseType: 'blob' },
+    );
+    return res.data;
+  },
+
+  async deleteDocument(invoiceId: string, documentId: string): Promise<void> {
+    await api.delete(`/supplier-invoices/${invoiceId}/documents/${documentId}`);
   },
 };

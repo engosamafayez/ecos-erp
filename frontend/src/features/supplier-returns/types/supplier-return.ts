@@ -65,7 +65,13 @@ export type SupplierReturn = {
 
 export type SupplierReturnLinePayload = {
   product_id: string;
-  goods_receipt_line_id?: string | null;
+  /**
+   * SR-2 anchor — required by the API. `StoreSupplierReturnRequest` validates it as
+   * `required|uuid|exists`, on create and on update alike, so an omitted value is a 422 and
+   * not a nullable field. Typed as required so a future create form fails to compile rather
+   * than failing at runtime.
+   */
+  goods_receipt_line_id: string;
   return_quantity: number;
   unit_cost: number;
   reason?: string | null;
