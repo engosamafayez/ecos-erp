@@ -228,17 +228,20 @@ describe('DriverHomePage (operational)', () => {
   });
 
   /*
-   * END OF DAY — Part 4 STATE E. `settlement_pending` used to collapse into
-   * `completed`, which told the driver the day was over while a settlement was still
-   * owed. These two pin the split: one still carries a primary action, the other
-   * deliberately carries none.
+   * END OF DAY — `settlement_pending` is a distinct state from `completed`, but per
+   * TASK-DRIVER-APP-FINAL-GAPS-CLOSURE-001 (CTO decision D2) the driver is NOT authorized to
+   * settle/close their own account. It is shown informationally with the read-only closing view
+   * (Wallet, via the day summary) and carries NO self-settlement mutation CTA.
    */
-  it('settlement pending → day summary with a settlement action, not "completed"', () => {
+  it('settlement pending → informational day summary + read-only wallet, NO self-settlement action', () => {
     setup({ trips: [trip({ status: 'settlement_pending' })], manifest: manifest([item()], true), stops: [] });
     render(<DriverHomePage />);
     expect(screen.getByText('home.currentWork.settlementPending')).toBeInTheDocument();
-    expect(screen.getByText('home.nextAction.startSettlement')).toBeInTheDocument();
     expect(screen.getByText('home.daySummary.title')).toBeInTheDocument();
+    // The read-only closing surface — the day summary offers Wallet, not a self-settle mutation.
+    expect(screen.getByText('home.daySummary.viewWallet')).toBeInTheDocument();
+    // D2: no settlement mutation CTA is presented, and it is not mislabelled as "completed".
+    expect(screen.queryByText('home.nextAction.startSettlement')).not.toBeInTheDocument();
     expect(screen.queryByText('home.currentWork.completed')).not.toBeInTheDocument();
   });
 

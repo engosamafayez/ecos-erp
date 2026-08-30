@@ -1,7 +1,7 @@
 import { createBrowserRouter, redirect } from 'react-router-dom';
 
 import { ComingSoonPage } from '@/components/common/coming-soon-page';
-import { AppShell } from '@/components/layout/app-shell';
+import { DriverShell } from '@/components/layout/driver-shell';
 import { LoginPage } from '@/features/auth/pages/login-page';
 import { BrandsPage } from '@/features/brands/pages/brands-page';
 import { BusinessAccountsPage } from '@/features/business-accounts/pages/business-accounts-page';
@@ -138,13 +138,24 @@ import { DriverHomePage } from '@/features/operations/driver-mobile/pages/driver
 import { DriverTripDashboardPage } from '@/features/operations/driver-mobile/pages/driver-trip-dashboard-page';
 import { DriverStopListPage } from '@/features/operations/driver-mobile/pages/driver-stop-list-page';
 import { DriverStopDetailPage } from '@/features/operations/driver-mobile/pages/driver-stop-detail-page';
-import { DriverCollectionsPage } from '@/features/operations/driver-mobile/pages/driver-collections-page';
 import { DriverExceptionsPage } from '@/features/operations/driver-mobile/pages/driver-exceptions-page';
 import { DriverReturnsPage } from '@/features/operations/driver-mobile/pages/driver-returns-page';
-import { DriverSettlementPage } from '@/features/operations/driver-mobile/pages/driver-settlement-page';
-import { DriverCustodyReturnPage } from '@/features/operations/driver-mobile/pages/driver-custody-return-page';
-import { DriverTripTimelinePage } from '@/features/operations/driver-mobile/pages/driver-trip-timeline-page';
+// DriverCollectionsPage / DriverSettlementPage / DriverCustodyReturnPage / DriverTripTimelinePage
+// are no longer routed (TASK-DRIVER-APP-FINAL-GAPS-CLOSURE-001, CTO D2/D3): their trip-scoped
+// destinations are aliased to canonical read-only/working surfaces or retired — see the driver
+// route block below. The page files remain in the tree, unreferenced (retired dead code).
 import { DriverMapPage } from '@/features/operations/driver-mobile/pages/driver-map-page';
+// Operational-flow driver pages (committed in feat 3f0b7e00; route-key constants committed in
+// 1111f43b "required by committed pages"). These were committed WITHOUT their router
+// registration — the flat driver journey below closes that source-level wiring gap.
+import { DriverLoadingPage } from '@/features/operations/driver-mobile/pages/driver-loading-page';
+import { DriverOrdersPage } from '@/features/operations/driver-mobile/pages/driver-orders-page';
+import { DriverOrdersMapPage } from '@/features/operations/driver-mobile/pages/driver-orders-map-page';
+import { DriverVehicleInventoryPage } from '@/features/operations/driver-mobile/pages/driver-vehicle-inventory-page';
+import { DriverWalletPage } from '@/features/operations/driver-mobile/pages/driver-wallet-page';
+import { DriverReportsPage } from '@/features/operations/driver-mobile/pages/driver-reports-page';
+import { DriverStatementPage } from '@/features/operations/driver-mobile/pages/driver-statement-page';
+import { DriverTripExpensesPage } from '@/features/operations/driver-mobile/pages/driver-trip-expenses-page';
 import { JourneyExplorerPage } from '@/features/core/business-attribution/pages/journey-explorer-page';
 import { BaeTimelinePage } from '@/features/core/business-attribution/pages/bae-timeline-page';
 import { UnifiedInboxPage } from '@/features/customer-engagement/pages/unified-inbox-page';
@@ -201,6 +212,7 @@ import { CompensationExplainabilityPage } from '@/features/hr/pages/compensation
 import { AuthLayout } from '@/layouts/auth-layout';
 import { GuestRoute } from '@/router/guards/guest-route';
 import { ProtectedRoute } from '@/router/guards/protected-route';
+import { EnterpriseAppShell } from '@/components/layout/enterprise-app-shell';
 import { ROUTES } from '@/router/routes';
 // ROUTES.settings is deliberately absent: the real settings workspace already
 // exists at ROUTES.configurationOs, so a Coming Soon placeholder here was a dead
@@ -231,8 +243,56 @@ export const router = createBrowserRouter(
       children: [
         // POS is full-screen — outside AppShell
         { path: ROUTES.pos, Component: PosPage },
+        // Driver application — a SIBLING shell to AppShell (TASK-DRIVER-SHELL-FINAL-CLOSURE-001,
+        // CTO decision D1). /driver/* resolves through DriverShell, which imports NO ERP chrome,
+        // so a driver never receives enterprise navigation. Routes moved here unchanged — no
+        // business destination altered. Trip-scoped screens are reached by navigating into a
+        // trip from these pages, so only the flat destinations appear in the shell's own nav.
         {
-          Component: AppShell,
+          Component: DriverShell,
+          children: [
+            // Trip-scoped execution screens (TASK-DIST-005)
+            { path: ROUTES.driverHome, Component: DriverHomePage },
+            { path: ROUTES.driverTrip, Component: DriverTripDashboardPage },
+            { path: ROUTES.driverTripStops, Component: DriverStopListPage },
+            { path: ROUTES.driverTripStop, Component: DriverStopDetailPage },
+            // TASK-DRIVER-APP-FINAL-GAPS-CLOSURE-001 (CTO D2/D3): the driver is not the settlement
+            // authority, and the custody/timeline driver backends never existed. The frozen (403)
+            // and absent (404) trip-scoped destinations are aliased to canonical read-only/working
+            // surfaces — or retired — so no visible driver route leads to an actionable 403/404.
+            // D2: self-settlement retired; /settlement submit + /collections read → read-only Wallet.
+            { path: ROUTES.driverTripCollections, loader: () => redirect(ROUTES.driverWallet) },
+            { path: ROUTES.driverTripExceptions, Component: DriverExceptionsPage },
+            { path: ROUTES.driverTripReturns, Component: DriverReturnsPage },
+            { path: ROUTES.driverTripSettlement, loader: () => redirect(ROUTES.driverWallet) },
+            // D3A: custody-returns' backend never existed (404); its capability is the canonical
+            // Driver Returns / Vehicle Reconciliation surface — alias to it (no new authority).
+            {
+              path: ROUTES.driverTripCustody,
+              loader: ({ params }) =>
+                redirect(ROUTES.driverTripReturns.replace(':tripId', params.tripId ?? '')),
+            },
+            // D3B: driverTripTimeline retired — no canonical driver timeline read authority (404).
+            { path: ROUTES.driverTripMap, Component: DriverMapPage },
+            // Flat operational-flow destinations (pages/constants: feat 3f0b7e00, chore 1111f43b;
+            // registered in FINAL-FUNCTIONAL-CLOSURE-001). /driver/map → DriverOrdersMapPage is
+            // the canonical GPS-gated map; the driverTripMap→DriverMapPage placeholder stays.
+            { path: ROUTES.driverLoading, Component: DriverLoadingPage },
+            { path: ROUTES.driverOrders, Component: DriverOrdersPage },
+            { path: ROUTES.driverMap, Component: DriverOrdersMapPage },
+            { path: ROUTES.driverVehicleInventory, Component: DriverVehicleInventoryPage },
+            { path: ROUTES.driverWallet, Component: DriverWalletPage },
+            { path: ROUTES.driverReports, Component: DriverReportsPage },
+            { path: ROUTES.driverStatement, Component: DriverStatementPage },
+            { path: ROUTES.driverTripExpenses, Component: DriverTripExpensesPage },
+          ],
+        },
+        // Enterprise shell — EnterpriseAppShell guards AppShell so a driver-only user who
+        // deep-links here is redirected to /driver/home (the same isDriverOnly predicate as
+        // post-login); enterprise & mixed users pass through. UX boundary only; every API route
+        // stays independently permission-gated.
+        {
+          Component: EnterpriseAppShell,
           children: [
             { path: ROUTES.dashboard, Component: DashboardPage },
             // Executive Platform (EPIC-EXECUTIVE-UI-001)
@@ -484,18 +544,7 @@ export const router = createBrowserRouter(
             { path: ROUTES.engineeringAiSupervisor, Component: AIEngineeringWorkspacePage },
             { path: ROUTES.engineeringRepair, Component: RepairSessionsPage },
             { path: ROUTES.engineeringWorkspace, Component: EnterpriseWorkspacePage },
-            // Driver Mobile OS (TASK-DIST-005)
-            { path: ROUTES.driverHome, Component: DriverHomePage },
-            { path: ROUTES.driverTrip, Component: DriverTripDashboardPage },
-            { path: ROUTES.driverTripStops, Component: DriverStopListPage },
-            { path: ROUTES.driverTripStop, Component: DriverStopDetailPage },
-            { path: ROUTES.driverTripCollections, Component: DriverCollectionsPage },
-            { path: ROUTES.driverTripExceptions, Component: DriverExceptionsPage },
-            { path: ROUTES.driverTripReturns, Component: DriverReturnsPage },
-            { path: ROUTES.driverTripSettlement, Component: DriverSettlementPage },
-            { path: ROUTES.driverTripCustody, Component: DriverCustodyReturnPage },
-            { path: ROUTES.driverTripTimeline, Component: DriverTripTimelinePage },
-            { path: ROUTES.driverTripMap, Component: DriverMapPage },
+            // Driver routes moved to the DriverShell sibling above (TASK-DRIVER-SHELL-FINAL-CLOSURE-001).
             ...moduleRoutes,
             // UAT BUG-04 — the menu's "Settings" entry pointed at a Coming Soon
             // placeholder while the real workspace lived elsewhere. Redirect so

@@ -1,0 +1,179 @@
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Link, Outlet, useLocation } from 'react-router-dom';
+import {
+  BarChart3,
+  ClipboardList,
+  Home,
+  Map as MapIcon,
+  Menu,
+  Package,
+  Receipt,
+  Truck,
+  Wallet,
+  type LucideIcon,
+} from 'lucide-react';
+
+import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
+import { ROUTES } from '@/router/routes';
+import type enDriverMobile from '@/i18n/locales/en/driver-mobile.json';
+
+/**
+ * DriverShell — the Driver application's shared layout/navigation boundary for `/driver/*`.
+ *
+ * It is a SIBLING of the enterprise `AppShell`, not a child: `/driver/*` routes resolve
+ * through this shell instead, so a driver never receives the ERP chrome. By construction this
+ * file imports NO enterprise navigation — no `APP_MODULES`, `ModuleRail`, `AppSidebar`,
+ * `MobileMenu`, `AppTopbar`, `MobileBottomNav`, company/warehouse switchers or global search —
+ * so it *cannot* render an enterprise module. The security boundary is unchanged and lives on
+ * the API (`permission:loading.driver.operate` + per-request ownership); this is the UX
+ * boundary that keeps the two shells apart (post-login routing sends driver-only users here;
+ * `EnterpriseOnlyRoute` keeps them out of the ERP shell).
+ *
+ * Navigation is a FIXED driver nav, not a permission-filtered module list: within the driver
+ * app every destination belongs to the single `loading.driver.operate` capability, so there is
+ * no per-item RBAC to apply and no second navigation authority is introduced. Labels come from
+ * the existing `driver-mobile` › `shell` i18n contract. The four thumb-reach destinations sit
+ * on the bottom bar; the remaining canonical destinations live in the "More" sheet. Trip-scoped
+ * execution screens (stop detail, returns, settlement, custody, timeline) are reached by
+ * navigating INTO a trip from these pages, not from the shell, so they are intentionally not
+ * listed here.
+ */
+
+type DriverNavLabel = ($: typeof enDriverMobile) => string;
+
+type DriverNavItem = {
+  key: string;
+  label: DriverNavLabel;
+  icon: LucideIcon;
+  path: string;
+};
+
+/** Bottom bar — the four thumb-reach destinations. */
+const PRIMARY_NAV: DriverNavItem[] = [
+  { key: 'home', label: ($) => $.shell.nav.home, icon: Home, path: ROUTES.driverHome },
+  { key: 'loading', label: ($) => $.shell.nav.loading, icon: Package, path: ROUTES.driverLoading },
+  {
+    key: 'orders',
+    label: ($) => $.shell.nav.orders,
+    icon: ClipboardList,
+    path: ROUTES.driverOrders,
+  },
+  {
+    key: 'vehicle',
+    label: ($) => $.shell.nav.vehicle,
+    icon: Truck,
+    path: ROUTES.driverVehicleInventory,
+  },
+];
+
+/** "More" sheet — the remaining canonical flat destinations. */
+const SECONDARY_NAV: DriverNavItem[] = [
+  { key: 'map', label: ($) => $.shell.nav.map, icon: MapIcon, path: ROUTES.driverMap },
+  { key: 'wallet', label: ($) => $.shell.nav.wallet, icon: Wallet, path: ROUTES.driverWallet },
+  {
+    key: 'reports',
+    label: ($) => $.shell.nav.reports,
+    icon: BarChart3,
+    path: ROUTES.driverReports,
+  },
+  {
+    key: 'tripExpenses',
+    label: ($) => $.shell.nav.tripExpenses,
+    icon: Receipt,
+    path: ROUTES.driverTripExpenses,
+  },
+];
+
+function isActivePath(pathname: string, path: string): boolean {
+  return pathname === path || pathname.startsWith(`${path}/`);
+}
+
+export function DriverShell() {
+  const { t } = useTranslation('driver-mobile');
+  const { pathname } = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const moreActive = SECONDARY_NAV.some((item) => isActivePath(pathname, item.path));
+
+  return (
+    <div className="flex min-h-svh flex-col bg-background">
+      {/* Driver page content owns its own header; the shell adds only the bottom nav.
+          `pb-16` clears the fixed bottom bar (h-16) so no page content hides beneath it. */}
+      <main className="flex-1 pb-16">
+        <Outlet />
+      </main>
+
+      {/* Fixed driver bottom bar — the ONLY persistent shell chrome. */}
+      <nav
+        aria-label={t(($) => $.shell.primaryNav)}
+        className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-stretch border-t bg-background"
+      >
+        {PRIMARY_NAV.map(({ key, label, icon: Icon, path }) => {
+          const active = isActivePath(pathname, path);
+          const text = t(label);
+          return (
+            <Link
+              key={key}
+              to={path}
+              aria-label={text}
+              aria-current={active ? 'page' : undefined}
+              className={cn(
+                'flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors',
+                active ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              <Icon className="size-5" aria-hidden />
+              <span>{text}</span>
+            </Link>
+          );
+        })}
+
+        <button
+          type="button"
+          onClick={() => setMenuOpen(true)}
+          aria-label={t(($) => $.shell.openMenu)}
+          aria-current={moreActive ? 'page' : undefined}
+          className={cn(
+            'flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors',
+            moreActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          <Menu className="size-5" aria-hidden />
+          <span>{t(($) => $.nav.more)}</span>
+        </button>
+      </nav>
+
+      {/* "More" sheet — the remaining canonical destinations. */}
+      <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
+        <SheetContent side="bottom" className="rounded-t-2xl pb-8">
+          <SheetTitle>{t(($) => $.shell.menuTitle)}</SheetTitle>
+          <div className="mt-4 grid grid-cols-2 gap-2">
+            {SECONDARY_NAV.map(({ key, label, icon: Icon, path }) => {
+              const active = isActivePath(pathname, path);
+              const text = t(label);
+              return (
+                <Link
+                  key={key}
+                  to={path}
+                  onClick={() => setMenuOpen(false)}
+                  aria-current={active ? 'page' : undefined}
+                  className={cn(
+                    'flex items-center gap-3 rounded-xl border p-4 text-sm font-medium transition-colors',
+                    active
+                      ? 'border-primary/40 bg-primary/5 text-primary'
+                      : 'bg-card text-foreground hover:bg-accent/40',
+                  )}
+                >
+                  <Icon className="size-5 shrink-0" aria-hidden />
+                  <span>{text}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </SheetContent>
+      </Sheet>
+    </div>
+  );
+}

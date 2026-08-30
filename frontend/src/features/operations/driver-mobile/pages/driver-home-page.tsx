@@ -68,7 +68,6 @@ interface DerivedState {
     | 'viewOrders'
     | 'nextStop'
     | 'tripSummary'
-    | 'startSettlement'
     | 'readyToStartDelivery'
     | null;
   actionRoute: string | null;
@@ -484,21 +483,21 @@ function deriveState(trip: DriverTrip | null, manifest: DriverLoadingManifest | 
     return { workKey: 'blocked', tone: 'blocked', detail: null, actionKey: null, actionRoute: null };
   }
   /*
-   * END OF DAY — TASK-DRIVER-APP-SHELL-HOME-NAVIGATION-FINAL-001 Part 4 (STATE E).
-   *
-   * `settlement_pending` is NOT "finished": the driving is done but the day is not,
-   * and the driver still owes a settlement. Collapsing it into `completed` (as this
-   * did) told the driver they were done while work remained. The two are now
-   * separate states with different answers to "هل انتهى يومي؟" — one still carries a
-   * primary action, the other deliberately carries none.
+   * END OF DAY — `settlement_pending` is NOT "finished": the driving is done but the day is not.
+   * TASK-DRIVER-APP-FINAL-GAPS-CLOSURE-001 (CTO decision D2): the driver is NOT authorized to
+   * settle/close their own operational account — Operations is the settlement authority. So this
+   * state carries NO settlement mutation CTA; it is presented informationally, and the day-summary
+   * card below offers the canonical READ-ONLY closing view (Wallet) instead of a forbidden
+   * self-settle action. (Previously this routed to the frozen /driver/trips/:id/settlement submit
+   * page — a 403 workflow presented as actionable.)
    */
   if (status === 'settlement_pending') {
     return {
       workKey: 'settlementPending',
       tone: 'done',
       detail: null,
-      actionKey: 'startSettlement',
-      actionRoute: ROUTES.driverTripSettlement.replace(':tripId', trip.id),
+      actionKey: null,
+      actionRoute: null,
     };
   }
   if (COMPLETED_STATES.includes(status)) {

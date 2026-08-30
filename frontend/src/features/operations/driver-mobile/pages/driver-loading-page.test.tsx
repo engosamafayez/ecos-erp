@@ -372,7 +372,7 @@ describe('DriverLoadingPage', () => {
     expect(completeMutate).not.toHaveBeenCalled();
   });
 
-  it('CASE B: enables Loading Complete once every loaded item is confirmed', () => {
+  it('CASE B: enables Loading Complete once every loaded item is confirmed', async () => {
     setup({
       manifest: {
         shipment: SHIPMENT,
@@ -388,8 +388,11 @@ describe('DriverLoadingPage', () => {
     expect(button).toBeEnabled();
     expect(screen.queryByTestId('driver-loading-pending-reason')).toBeNull();
 
+    // "Ready to Start Delivery" chains the canonical authorities via mutateAsync (complete →
+    // startTrip), after awaiting a geolocation fix — so the completion write lands on a later
+    // microtask. Assert on the async mutation (completeAsync), and wait for it.
     fireEvent.click(button);
-    expect(completeMutate).toHaveBeenCalled();
+    await waitFor(() => expect(completeAsync).toHaveBeenCalled());
   });
 
   it('CASE C: an item with nothing loaded does not block completion', () => {

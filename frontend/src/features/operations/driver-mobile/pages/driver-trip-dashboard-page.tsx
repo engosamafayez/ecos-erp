@@ -6,7 +6,6 @@ import {
   DollarSign,
   AlertTriangle,
   RotateCcw,
-  Clock,
   CheckCircle,
   CheckCircle2,
   Circle,
@@ -276,15 +275,15 @@ export function DriverTripDashboardPage() {
             >
               {t(($) => $.dashboard.viewStops)}
             </Button>
-            <div className="grid grid-cols-3 gap-2">
+            {/* Trip Timeline retired (TASK-DRIVER-APP-FINAL-GAPS-CLOSURE-001 D3B — no canonical
+                driver timeline read authority). Collections is a read-only closing view (aliased
+                to Wallet at the route). */}
+            <div className="grid grid-cols-2 gap-2">
               <Button variant="outline" onClick={() => go(ROUTES.driverTripCollections.replace(':tripId', tripId))}>
                 <DollarSign className="h-4 w-4" />
               </Button>
               <Button variant="outline" onClick={() => go(ROUTES.driverTripExceptions.replace(':tripId', tripId))}>
                 <AlertTriangle className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" onClick={() => go(ROUTES.driverTripTimeline.replace(':tripId', tripId))}>
-                <Clock className="h-4 w-4" />
               </Button>
             </div>
             {/* Finish only from a state the lifecycle can complete (out_for_delivery / in_progress).
