@@ -32,9 +32,11 @@ final class RecalculateWaveAction
             // P1C — Order Exclusivity: check any newly-added orders aren't already in another wave.
             if (! empty($dto->addOrderLines)) {
                 $newOrderIds = array_column($dto->addOrderLines, 'order_id');
+                // Active membership only (PART 15) — a released row is history, not a conflict.
                 $conflicts = PreparationWaveOrder::where('company_id', $wave->company_id)
                     ->where('preparation_wave_id', '!=', $wave->id)
                     ->whereIn('order_id', $newOrderIds)
+                    ->activeMembership()
                     ->pluck('order_id')
                     ->all();
 

@@ -12,6 +12,7 @@ use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Operations\Preparation\Application\Actions\AnalyzeMaterialsAction;
 use Modules\Operations\Preparation\Application\Actions\ApproveWaveAction;
 use Modules\Operations\Preparation\Application\Actions\AssignWorkerAction;
@@ -29,8 +30,11 @@ use Modules\Operations\Preparation\Application\DTOs\CreateWaveDTO;
 use Modules\Operations\Preparation\Application\DTOs\RecalculateWaveDTO;
 use Modules\Operations\Preparation\Application\DTOs\ReportIssueDTO;
 use Modules\Operations\Preparation\Application\DTOs\StartPreparationDTO;
+use Modules\Operations\Preparation\Application\Services\PreparationReleaseEngine;
+use Modules\Operations\Preparation\Application\Services\WaveEngine\WaveMembershipService;
 use Modules\Operations\Preparation\Application\Services\WaveEngine\WavePreparationService;
 use Modules\Operations\Preparation\Domain\Enums\PreparationIssueType;
+use Modules\Operations\Preparation\Domain\Enums\WaveStatus;
 use Modules\Operations\Preparation\Domain\Exceptions\WaveItemNotFoundException;
 use Modules\Operations\Preparation\Domain\Exceptions\WaveNotFoundException;
 use Modules\Operations\Preparation\Domain\Models\PreparationWave;
@@ -51,7 +55,10 @@ final class PreparationWaveController extends Controller
 {
     use HasApiResponse;
 
-    public function __construct(private readonly FeatureFlagService $flags) {}
+    public function __construct(
+        private readonly FeatureFlagService $flags,
+        private readonly PreparationReleaseEngine $releaseEngine,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -66,16 +73,20 @@ final class PreparationWaveController extends Controller
             'page' => ['nullable', 'integer', 'min:1'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
             'sort' => ['nullable', 'string'],
+            'lifecycle' => ['nullable', 'in:active,archived,all'],
         ]);
 
         $companyId = $request->user()->company_id;
         $perPage = (int) ($request->query('per_page', 25));
 
         $sortable = ['wave_number', 'planning_date', 'status', 'orders_count', 'created_at'];
-        $sortRaw = $request->query('sort', '-created_at');
+        // planning_date is the OPERATIONAL ordering field. Sorting the workspace by
+        // created_at surfaced stale waves as current, because a wave created earlier
+        // can be planned for a later day.
+        $sortRaw = $request->query('sort', '-planning_date');
         $desc = str_starts_with((string) $sortRaw, '-');
         $sortCol = ltrim((string) $sortRaw, '-');
-        $sortCol = in_array($sortCol, $sortable, true) ? $sortCol : 'created_at';
+        $sortCol = in_array($sortCol, $sortable, true) ? $sortCol : 'planning_date';
 
         $query = PreparationWave::with(['workers' => fn ($q) => $q->whereNull('released_at')])
             ->where('company_id', $companyId)
@@ -83,6 +94,15 @@ final class PreparationWaveController extends Controller
             ->when($request->query('warehouse_id'), fn ($q, $v) => $q->where('warehouse_id', $v))
             ->when($request->query('planning_date'), fn ($q, $v) => $q->whereDate('planning_date', $v))
             ->when($request->query('search'), fn ($q, $v) => $q->where('wave_number', 'like', "%{$v}%"))
+            // Active vs archived is a READ/FILTER concern only. No wave record is
+            // modified and nothing is deleted; the split reuses the existing
+            // WaveStatus lifecycle contract rather than introducing a new flag.
+            ->when(
+                $request->query('lifecycle', 'all') !== 'all',
+                fn ($q) => $request->query('lifecycle') === 'active'
+                    ? $q->whereIn('status', WaveStatus::activeValues())
+                    : $q->whereIn('status', WaveStatus::terminalValues()),
+            )
             ->orderBy($sortCol, $desc ? 'desc' : 'asc');
 
         $paginator = $query->paginate($perPage);
@@ -98,6 +118,52 @@ final class PreparationWaveController extends Controller
         ]);
     }
 
+    /**
+     * The canonical CURRENT active preparation wave for the operator's company
+     * (TASK-PREPARATION-WORKSPACE-MOBILE-UX-ACTIVE-WAVE-001 §3-§6).
+     *
+     * "Active" reuses the existing WaveStatus lifecycle (non-terminal) exactly as the list's
+     * `lifecycle=active` filter does — this is a READ over the same contract, it opens/closes
+     * no wave and introduces no new status. The three operational cases are returned
+     * explicitly so the client never has to guess and never silently picks one of several:
+     *
+     *   active_count = 0  → no current wave  (client shows "No Active Preparation Wave")
+     *   active_count = 1  → wave populated    (client auto-opens it)
+     *   active_count > 1  → wave = null       (client shows a safe multiple-active state and
+     *                                           lists the conflicting waves — §6, no silent pick)
+     *
+     * Read-only; tenant-scoped to the acting company like every other wave read.
+     */
+    public function current(Request $request): JsonResponse
+    {
+        $this->guardModuleEnabled($request->user()?->company_id);
+        $this->authorize('viewAny', PreparationWave::class);
+
+        $active = PreparationWave::query()
+            ->where('company_id', $request->user()->company_id)
+            ->whereIn('status', WaveStatus::activeValues())
+            // Same operational ordering the workspace list uses: a wave created earlier can
+            // be planned for a later day, so planning_date decides "most current".
+            ->orderByDesc('planning_date')
+            ->orderByDesc('created_at')
+            ->get();
+
+        $count = $active->count();
+
+        return $this->success([
+            'active_count' => $count,
+            // Populated ONLY when exactly one wave is active — the unambiguous current wave.
+            'wave' => $count === 1 ? new PreparationWaveResource($active->first()) : null,
+            // Lightweight identifiers for the picker and the multiple-active diagnostics (§6).
+            'waves' => $active->map(fn (PreparationWave $w): array => [
+                'id' => $w->id,
+                'wave_number' => $w->wave_number,
+                'planning_date' => $w->planning_date?->toDateString(),
+                'status' => $w->status?->value,
+            ])->values()->all(),
+        ]);
+    }
+
     public function store(CreateWaveRequest $request, CreateWaveAction $action): JsonResponse
     {
         $this->guardModuleEnabled($request->user()?->company_id);
@@ -110,7 +176,11 @@ final class PreparationWaveController extends Controller
 
         $this->guardOrdersReservable($companyId, $orderIds);
 
+        // Company-scoped even though guardOrdersReservable() has already refused any
+        // foreign order: the snapshot below copies customer name, delivery zone and
+        // shipping cost into the wave, so this query must not be permissive on its own.
         $orderLines = DB::table('orders')
+            ->where('company_id', $companyId)
             ->whereIn('id', $orderIds)
             ->get(['id', 'order_number', 'confirmed_at', 'customer_name', 'delivery_zone',
                 'governorate', 'shipping_cost', 'payment_status'])
@@ -299,6 +369,35 @@ final class PreparationWaveController extends Controller
         ]);
     }
 
+    /**
+     * Postpone an order out of the CURRENT preparation cycle.
+     *
+     * Not a delete. The `preparation_wave_orders` row is retained with `postponed_at`
+     * stamped, which both preserves the membership as history and keeps the collector's
+     * `whereNotExists` satisfied so the every-minute scheduler cannot re-attach it. The
+     * order, its lines, its customer and its status are untouched.
+     *
+     * Idempotent: postponing twice returns 200 with `postponed = false` and mutates nothing.
+     */
+    public function postponeOrder(
+        Request $request,
+        string $waveId,
+        string $orderId,
+        WaveMembershipService $membership,
+    ): JsonResponse {
+        $this->guardModuleEnabled($request->user()?->company_id);
+        $wave = $this->findWave($waveId, $request->user()->company_id);
+        $this->authorize('postponeOrder', $wave);
+
+        $postponed = $membership->postponeOrder($wave, $orderId, (string) $request->user()->id);
+
+        return $this->success([
+            'order_id' => $orderId,
+            'wave_id' => $wave->id,
+            'postponed' => $postponed,
+        ], $postponed ? 'Order postponed from the current preparation cycle.' : 'Order was already postponed.');
+    }
+
     public function recalculate(RecalculateWaveRequest $request, string $waveId, RecalculateWaveAction $action): JsonResponse
     {
         $this->guardModuleEnabled($request->user()?->company_id);
@@ -310,7 +409,13 @@ final class PreparationWaveController extends Controller
 
         $addOrderLines = [];
         if (! empty($validated['add_order_ids'])) {
+            // Same entry gate as store(). Runtime certification proved this route
+            // also attached an awaiting_stock order (HTTP 200, 1 row) because it
+            // performed no eligibility or company check at all.
+            $this->guardOrdersReservable($wave->company_id, $validated['add_order_ids']);
+
             $addOrderLines = DB::table('orders')
+                ->where('company_id', $wave->company_id)
                 ->whereIn('id', $validated['add_order_ids'])
                 ->get(['id', 'order_number', 'confirmed_at', 'customer_name', 'delivery_zone'])
                 ->map(fn ($o) => [
@@ -667,13 +772,88 @@ final class PreparationWaveController extends Controller
         return $wave;
     }
 
-    /** @param list<string> $orderIds */
+    /**
+     * The Preparation entry gate for the wave routes.
+     *
+     * TASK-GOLIVE-PREPARATION-ENTRY-GATE-REPAIR-002.
+     *
+     * Runtime certification proved that BOTH wave entry routes accepted orders the
+     * rest of the module refuses: an order persisted as `awaiting_stock` with
+     * `reserved_qty = 0` was attached to a wave (HTTP 201), and so was an order
+     * belonging to another company — stamped with the ACTOR's company_id.
+     *
+     * The cause was that this method only ever checked wave membership, and the
+     * orders were loaded with no company predicate. Meanwhile
+     * OrderPreparationObserver, DailyPreparationSessionManager and
+     * WarehouseAssignedListener all already delegate to PreparationReleaseEngine,
+     * which documents itself as "the ONLY authority that decides whether an order
+     * may enter (or remain in) a Preparation Session". The wave routes were the
+     * sole paths bypassing it.
+     *
+     * This method now enforces, IN ORDER and strictly BEFORE any mutation:
+     *   1. Existence + company ownership — an id that is not this company's order
+     *      is refused. Absence is treated as refusal, never as unrestricted access.
+     *   2. The authoritative status policy, via PreparationReleaseEngine — no
+     *      status check is duplicated here.
+     *   3. Wave exclusivity — the pre-existing rule, unchanged.
+     *
+     * Reservation state is deliberately NOT consulted: eligibility is a function of
+     * order status, not of reserved quantity. A reserved order in a post-Preparation
+     * state is still refused.
+     *
+     * @param  list<string>  $orderIds
+     */
     private function guardOrdersReservable(string $companyId, array $orderIds): void
     {
+        // 1 — Existence and tenant ownership. Company-scoped lookup: an order id
+        //     belonging to another company simply does not resolve here.
+        $orders = Order::query()
+            ->where('company_id', $companyId)
+            ->whereIn('id', $orderIds)
+            ->get()
+            ->keyBy('id');
+
+        $unknown = array_values(array_diff($orderIds, $orders->keys()->all()));
+
+        if (! empty($unknown)) {
+            abort(422, 'One or more orders do not exist or do not belong to this company.', [
+                'code' => 'order_not_in_company',
+                'order_ids' => $unknown,
+            ]);
+        }
+
+        // 2 — Authoritative status policy. Reused, never reimplemented.
+        $ineligible = [];
+
+        foreach ($orders as $order) {
+            $policy = $this->releaseEngine->resolvePolicy($companyId, $order->assigned_warehouse_id);
+            $reason = $this->releaseEngine->ineligibilityReason($order, $policy);
+
+            if ($reason !== null) {
+                $ineligible[$order->id] = $reason;
+            }
+        }
+
+        if (! empty($ineligible)) {
+            abort(422, 'One or more orders are not eligible for Preparation.', [
+                'code' => 'order_not_eligible_for_preparation',
+                'orders' => $ineligible,
+            ]);
+        }
+
+        // 3 — Wave exclusivity: ACTIVE membership only (PART 15).
+        //
+        // `released_at IS NULL` replaces the wave-status test as the authority. The old
+        // status list also had a hole: `closed` was absent from it, so an order whose
+        // wave had been closed by the engine was still reported as "already in an active
+        // wave" and could never be added to another one. Membership state answers that
+        // question directly and does not depend on a wave status that the audit proved
+        // unreliable.
         $alreadyInWave = DB::table('preparation_wave_orders as pwo')
             ->join('preparation_waves as pw', 'pw.id', '=', 'pwo.preparation_wave_id')
             ->where('pw.company_id', $companyId)
             ->whereIn('pwo.order_id', $orderIds)
+            ->whereNull('pwo.released_at')
             ->whereNotIn('pw.status', ['completed', 'cancelled'])
             ->pluck('pwo.order_id')
             ->toArray();

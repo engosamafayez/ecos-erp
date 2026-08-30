@@ -4,27 +4,58 @@ declare(strict_types=1);
 
 namespace Modules\Operations\Preparation\Infrastructure\Console\Commands;
 
-use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
+use Modules\Operations\Preparation\Application\Services\WaveEngine\CompanyTimezoneResolver;
 use Modules\Operations\Preparation\Application\Services\WaveEngine\WaveLifecycleService;
 use Modules\Operations\Preparation\Application\Services\WaveEngine\WaveManager;
 use Modules\Operations\Preparation\Application\Services\WaveEngine\WaveMembershipService;
 use Modules\Operations\Preparation\Application\Services\WaveEngine\WavePreparationService;
+use Modules\Operations\Preparation\Application\Services\WaveEngine\WaveScheduleResolver;
 use Modules\Operations\Preparation\Domain\Enums\WaveStatus;
+use Modules\Operations\Preparation\Domain\Models\PreparationWave;
 use Modules\Operations\Preparation\Domain\Models\WaveEngineConfiguration;
 use Throwable;
 
+/**
+ * Drives the Preparation Wave operational cycle — TASK-…-CROSS-DAY-TRANSITION-002.
+ *
+ * A wave is an OPERATIONAL CYCLE, not a calendar day. It may open on one date and end on
+ * the next (18:00 → 08:00 → 15:00), and between the end of one cycle and the start of the
+ * next there is a deliberate gap with no intake at all.
+ *
+ * Each tick, per warehouse:
+ *
+ *   RECONCILE  every open wave OF ANY DATE against its own stored boundaries
+ *              ends_at reached          → Closed  (this is the stale-wave sweep, G-3)
+ *              intake_closes_at reached → Preparing (intake cutoff; preparation goes on)
+ *   OPEN       no wave open and a cycle is currently running → create exactly one
+ *   COLLECT    the open wave, only while it is Collecting → attach eligible orders
+ *
+ * The ordering matters. Reconcile runs FIRST so that a cycle which ended overnight is
+ * closed before the current one is opened — otherwise the stale wave would still count as
+ * "a wave is open" and block creation for as long as it survived, which is precisely the
+ * deadlock the previous implementation suffered.
+ *
+ * WHAT CHANGED, AND WHY: every step used to be scoped to `planning_date = today`, and the
+ * command returned early when today had no wave. A wave left behind by a missed tick, a
+ * restart, or a late manual start therefore became permanently unreachable — it could
+ * never be advanced and never be closed. Reconciliation is now driven by the wave's own
+ * `ends_at` / `intake_closes_at`, so no wave can fall out of scope by ageing.
+ */
 final class RunWaveSchedulerCommand extends Command
 {
     protected $signature = 'wave:run-scheduler';
 
-    protected $description = 'Process wave lifecycle transitions (collection open, preparation start, wave close+rotate) based on per-warehouse schedule configuration.';
+    protected $description = 'Drive preparation wave operational cycles: reconcile open waves (intake cutoff, end), open the current cycle, collect eligible orders.';
 
     public function __construct(
         private readonly WaveManager $waveManager,
         private readonly WaveLifecycleService $lifecycle,
         private readonly WaveMembershipService $membership,
         private readonly WavePreparationService $preparation,
+        private readonly WaveScheduleResolver $schedule,
+        private readonly CompanyTimezoneResolver $timezones,
     ) {
         parent::__construct();
     }
@@ -39,9 +70,11 @@ final class RunWaveSchedulerCommand extends Command
             return Command::SUCCESS;
         }
 
+        $now = CarbonImmutable::now();
+
         foreach ($configs as $config) {
             try {
-                $this->processWarehouse($config);
+                $this->processWarehouse($config, $now);
             } catch (Throwable $e) {
                 // Log and continue — one bad warehouse must not block others
                 $this->error(
@@ -54,64 +87,116 @@ final class RunWaveSchedulerCommand extends Command
         return Command::SUCCESS;
     }
 
-    private function processWarehouse(WaveEngineConfiguration $config): void
+    private function processWarehouse(WaveEngineConfiguration $config, CarbonImmutable $now): void
     {
-        $now = Carbon::now()->setTimezone($config->timezone);
-        $today = $now->toDateString();
-        $time = $now->format('H:i');
+        // G-2 — companies.timezone is the authority. Fail closed: a company with no
+        // usable timezone is skipped loudly rather than silently scheduled against UTC,
+        // which is how the operational day drifted two to three hours in the first place.
+        $timezone = $this->timezones->resolve($config->company_id);
 
-        // ── Step 1: Open collection window ───────────────────────────────────────
-        if (
-            $config->auto_create
-            && $time >= substr($config->collection_start_time, 0, 5)
-            && ! $this->waveManager->hasActiveWave($config->company_id, $config->warehouse_id)
-        ) {
-            $wave = $this->lifecycle->createCollectingWave(
-                $config->company_id,
-                $config->warehouse_id,
-                $today,
+        if ($timezone === null) {
+            $this->warn(
+                "  [Wave Engine] Skipped company {$config->company_id}: no valid companies.timezone. ".
+                'Set it before the wave engine can resolve an operational cycle.',
             );
-            $this->line("  [Wave Engine] Created collecting wave {$wave->wave_number} for warehouse {$config->warehouse_id}");
-        }
 
-        // ── Step 2: Sync eligible orders into the active wave ─────────────────────
-        $activeWave = $this->waveManager->getActiveWave($config->company_id, $config->warehouse_id);
-
-        if ($activeWave === null) {
             return;
         }
 
-        if (
-            $config->auto_assign_orders
-            && in_array($activeWave->status, [WaveStatus::Collecting, WaveStatus::Preparing], true)
-        ) {
-            $count = $this->membership->attachEligibleOrders($activeWave, $config);
+        $this->reconcileOpenWaves($config, $now);
+
+        // Re-read AFTER reconciliation: a cycle that ended overnight has just been closed,
+        // so it must no longer count as an open wave when deciding whether to open today's.
+        $open = $this->waveManager->openWaves($config->company_id, $config->warehouse_id);
+
+        $cycle = $this->schedule->resolveCycleAt($config, $timezone, $now);
+
+        // ── Open the current cycle ───────────────────────────────────────────────
+        //
+        // $cycle === null means now sits in the gap between cycles: the previous one has
+        // ended and the next has not started. No wave is created, so nothing is collected
+        // and orders simply wait — the intended quiet window.
+        if ($config->auto_create && $cycle !== null && $open->isEmpty()) {
+            $wave = $this->lifecycle->createCollectingWave(
+                $config->company_id,
+                $config->warehouse_id,
+                $cycle->planningDate,
+                'system',
+                $cycle,
+            );
+
+            $open = collect([$wave]);
+
+            $this->line(
+                "  [Wave Engine] Opened wave {$wave->wave_number} for warehouse {$config->warehouse_id} ".
+                "({$cycle->startsAt->toIso8601String()} → intake closes {$cycle->intakeClosesAt->toIso8601String()} → ends {$cycle->endsAt->toIso8601String()})",
+            );
+        }
+
+        // ── Collect ──────────────────────────────────────────────────────────────
+        //
+        // The newest open cycle is the current one; intake is open only while it is
+        // Collecting.
+        $openWave = $open->last();
+
+        if ($openWave === null) {
+            return;
+        }
+
+        if ($config->auto_assign_orders && $openWave->status === WaveStatus::Collecting) {
+            $count = $this->membership->attachEligibleOrders($openWave, $config);
 
             if ($count > 0) {
-                $this->line("  [Wave Engine] Attached {$count} order(s) to wave {$activeWave->wave_number}");
+                $this->line("  [Wave Engine] Attached {$count} order(s) to wave {$openWave->wave_number}");
             }
         }
+    }
 
-        // Re-fetch after potential membership changes
-        $activeWave = $activeWave->refresh();
+    /**
+     * Advance or close every open wave against its OWN boundaries — regardless of date.
+     *
+     * End is evaluated before cutoff: a wave discovered long after both boundaries passed
+     * (a stale wave, the case this sweep exists for) must close, not first transition to
+     * Preparing and wait another tick to close.
+     */
+    private function reconcileOpenWaves(WaveEngineConfiguration $config, CarbonImmutable $now): void
+    {
+        foreach ($this->waveManager->openWaves($config->company_id, $config->warehouse_id) as $wave) {
+            if ($wave->hasReachedEnd($now)) {
+                $this->closeEndedWave($wave);
 
-        // ── Step 3: Start preparation window ─────────────────────────────────────
-        if (
-            $config->auto_move_to_preparing
-            && $activeWave->status === WaveStatus::Collecting
-            && $time >= substr($config->preparation_start_time, 0, 5)
-        ) {
-            $this->preparation->startPreparation($activeWave);
-            $this->line("  [Wave Engine] Started preparation for wave {$activeWave->wave_number}");
+                continue;
+            }
+
+            if (
+                $wave->status === WaveStatus::Collecting
+                && $config->auto_move_to_preparing
+                && $wave->hasReachedIntakeCutoff($now)
+            ) {
+                $this->preparation->startPreparation($wave);
+                $this->line(
+                    "  [Wave Engine] Intake closed for wave {$wave->wave_number} — preparation continues",
+                );
+            }
         }
+    }
 
-        // ── Step 4: Close wave and rotate at end time ─────────────────────────────
-        if (
-            $activeWave->status === WaveStatus::Preparing
-            && $time >= substr($config->wave_end_time, 0, 5)
-        ) {
-            $newWave = $this->lifecycle->rotateWave($activeWave);
-            $this->line("  [Wave Engine] Rotated wave {$activeWave->wave_number} → {$newWave->wave_number} for warehouse {$config->warehouse_id}");
-        }
+    /**
+     * Close a wave whose cycle has ended.
+     *
+     * Deliberately closeWave() and NOT rotateWave(): opening the next cycle is the start
+     * boundary's job, not closure's. Rotating here would re-open intake the instant the
+     * previous cycle ended and erase the gap between cycles.
+     *
+     * Closure releases every membership and publishes WaveClosed, which is what triggers
+     * the order-side carry-over decision (HandlePreparationWaveClosed).
+     */
+    private function closeEndedWave(PreparationWave $wave): void
+    {
+        $this->lifecycle->closeWave($wave, 'system', 'ends_at_reached');
+
+        $this->line(
+            "  [Wave Engine] Ended wave {$wave->wave_number} (ends_at {$wave->ends_at?->toIso8601String()})",
+        );
     }
 }

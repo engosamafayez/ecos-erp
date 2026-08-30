@@ -65,6 +65,8 @@ class PreparationWaveOrder extends Model
         'is_paid',
         'added_at',
         'added_by',
+        'postponed_at',
+        'released_at',
     ];
 
     /** @return array<string, string> */
@@ -76,7 +78,64 @@ class PreparationWaveOrder extends Model
             'shipping_cost_snapshot' => 'decimal:2',
             'preparation_priority' => 'integer',
             'is_paid' => 'boolean',
+            'postponed_at' => 'datetime',
+            'released_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Membership rows still counted by the current preparation cycle.
+     *
+     * A postponed row is deliberately RETAINED rather than deleted, so the collector's
+     * `whereNotExists` keeps excluding the order and the scheduler cannot re-attach it
+     * (see the 2026_08_13_100000 migration). Every consumer that means "orders being
+     * prepared now" therefore has to say so explicitly — this scope is that statement.
+     * No global scope is used: five consumers query this table through the raw query
+     * builder, which would silently bypass one and make the filter unreliable.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<$this>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<$this>
+     */
+    public function scopeActive($query)
+    {
+        return $query->whereNull('postponed_at');
+    }
+
+    /**
+     * Memberships that still bind the order to a wave — the ACTIVE-membership predicate.
+     *
+     * Deliberately distinct from {@see scopeActive()}, and the distinction is the whole
+     * of the carry-over design:
+     *
+     *   scopeActive()           postponed_at IS NULL — "counts toward THIS cycle's work".
+     *                           Demand, missing materials and loading allocation use it.
+     *   scopeActiveMembership() released_at  IS NULL — "this order belongs to this wave".
+     *                           Exclusivity and re-collection use it.
+     *
+     * A postponed member is still a MEMBER: it holds the order's one active membership
+     * until the wave ends. That is what stops `attachEligibleOrders` re-attaching a
+     * postponed order to the very same wave on the next tick — the guarantee
+     * REFINEMENT-002 installed — while still letting the order carry over once the wave
+     * closes and every membership is released.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<$this>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<$this>
+     */
+    public function scopeActiveMembership($query)
+    {
+        return $query->whereNull('released_at');
+    }
+
+    /** True once the order has been postponed out of the current cycle. */
+    public function isPostponed(): bool
+    {
+        return $this->postponed_at !== null;
+    }
+
+    /** True once this membership has been closed out — the wave it belonged to ended. */
+    public function isReleased(): bool
+    {
+        return $this->released_at !== null;
     }
 
     /** @return BelongsTo<PreparationWave, $this> */

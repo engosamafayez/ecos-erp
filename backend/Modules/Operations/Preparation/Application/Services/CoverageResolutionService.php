@@ -33,18 +33,46 @@ final class CoverageResolutionService
      * @param  string|null $zone         Free-text zone / area name (optional)
      * @return Collection<int, BranchCoverageArea>  Ordered: zone-specific first, then governorate-wide
      */
-    public function resolve(string $governorate, ?string $zone): Collection
+    public function resolve(string $governorate, ?string $zone, ?string $canonicalZoneId = null): Collection
     {
-        $masterGovernorate = MasterGovernorate::whereRaw('LOWER(name) = LOWER(?)', [trim($governorate)])
+        // D1 — CANONICAL GEOGRAPHY.
+        //
+        // `master_governorates` is the canonical governorate authority and carries
+        // its own bilingual identity: `name` (English) and `name_ar` (Arabic).
+        // Matching only `name` meant an Arabic-addressed order — which is every
+        // order in an Arabic-business ERP — resolved to nothing, so no branch, no
+        // warehouse, and a fulfilment blocker three hops from the real cause.
+        //
+        // Both columns of the canonical row are consulted. This is not a parallel
+        // geography layer: it is the canonical table answering in the language the
+        // order was written in. `code` is deliberately not matched — it is an
+        // operational shorthand, not a customer-facing address value.
+        $needle = trim($governorate);
+
+        $masterGovernorate = MasterGovernorate::query()
             ->where('is_active', true)
+            ->where(fn ($q) => $q
+                ->whereRaw('LOWER(name) = LOWER(?)', [$needle])
+                ->orWhereRaw('LOWER(name_ar) = LOWER(?)', [$needle]))
             ->first();
 
         if ($masterGovernorate === null) {
             return collect();
         }
 
+        // Zone resolution is ID-FIRST. When the order already carries a canonical
+        // zone reference there is nothing to match — the identity is known. Falling
+        // back to the name only serves legacy orders captured as free text.
         $masterZoneId = null;
-        if ($zone !== null && $zone !== '') {
+
+        if ($canonicalZoneId !== null && $canonicalZoneId !== '') {
+            $masterZoneId = MasterZone::where('id', $canonicalZoneId)
+                ->where('master_governorate_id', $masterGovernorate->id)
+                ->where('is_active', true)
+                ->value('id');
+        }
+
+        if ($masterZoneId === null && $zone !== null && $zone !== '') {
             $masterZoneId = MasterZone::whereRaw('LOWER(name) = LOWER(?)', [trim($zone)])
                 ->where('master_governorate_id', $masterGovernorate->id)
                 ->where('is_active', true)

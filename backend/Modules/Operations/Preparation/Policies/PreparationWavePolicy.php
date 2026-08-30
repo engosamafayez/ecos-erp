@@ -87,6 +87,18 @@ final class PreparationWavePolicy
                 || $this->permissions->userHasSystemRole($user));
     }
 
+    /**
+     * Postponing an order out of the current cycle is a wave-membership edit, so it reuses
+     * the wave-update permission and the same company boundary. No new permission is
+     * introduced — the operation changes no order and no lifecycle state.
+     */
+    public function postponeOrder(User $user, PreparationWave $wave): bool
+    {
+        return $this->sameCompany($user, $wave)
+            && ($this->permissions->userHasPermission($user, 'preparation.wave.update')
+                || $this->permissions->userHasSystemRole($user));
+    }
+
     public function resolveShortage(User $user, PreparationWave $wave): bool
     {
         return $this->sameCompany($user, $wave)

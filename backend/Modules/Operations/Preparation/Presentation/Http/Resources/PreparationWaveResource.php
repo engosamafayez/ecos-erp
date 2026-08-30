@@ -13,6 +13,33 @@ use Modules\Operations\Preparation\Domain\Models\PreparationWave;
  */
 final class PreparationWaveResource extends JsonResource
 {
+    /**
+     * Where this wave sits in its operational cycle.
+     *
+     * Terminal status wins: a wave closed early (cancelled, completed by hand) is ended
+     * whatever its clock says. Otherwise the stored boundaries decide. A wave with no
+     * boundaries — created manually, never through the engine — reports null rather than
+     * inventing a phase it does not have.
+     */
+    private function cyclePhase(): ?string
+    {
+        if ($this->status?->isTerminal()) {
+            return 'ended';
+        }
+
+        if ($this->ends_at === null || $this->intake_closes_at === null) {
+            return null;
+        }
+
+        $now = now();
+
+        return match (true) {
+            $now->greaterThanOrEqualTo($this->ends_at) => 'ended',
+            $now->greaterThanOrEqualTo($this->intake_closes_at) => 'intake_closed',
+            default => 'intake_open',
+        };
+    }
+
     /** @return array<string, mixed> */
     public function toArray(Request $request): array
     {
@@ -52,6 +79,15 @@ final class PreparationWaveResource extends JsonResource
             'wave_number' => $this->wave_number,
             'status' => $this->status?->value,
             'planning_date' => $this->planning_date?->toDateString(),
+            // The operational cycle (PART 29). Absolute instants: the client renders them
+            // in whatever zone it likes, but the business boundaries were resolved through
+            // companies.timezone when the wave opened and never move afterwards.
+            'starts_at' => $this->starts_at?->toIso8601String(),
+            'intake_closes_at' => $this->intake_closes_at?->toIso8601String(),
+            'ends_at' => $this->ends_at?->toIso8601String(),
+            // Where the wave is in its cycle right now, derived so the UI never has to
+            // re-implement the comparison: intake_open | intake_closed | ended.
+            'cycle_phase' => $this->cyclePhase(),
             'warehouse_id' => $this->warehouse_id,
             // Phase 1 — brand + channel context
             'brand_id' => $this->brand_id,

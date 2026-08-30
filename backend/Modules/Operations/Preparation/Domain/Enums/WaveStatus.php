@@ -41,4 +41,33 @@ enum WaveStatus: string
             default => false,
         };
     }
+
+    /**
+     * Backing values of the active statuses, for query filters.
+     *
+     * DERIVED from isActive() rather than re-listing the cases, so the workspace
+     * filter and the domain predicate can never drift apart.
+     *
+     * @return list<string>
+     */
+    public static function activeValues(): array
+    {
+        return array_values(array_map(
+            fn (self $case) => $case->value,
+            array_filter(self::cases(), fn (self $case) => $case->isActive()),
+        ));
+    }
+
+    /**
+     * Backing values of the terminal statuses — the archive population.
+     *
+     * @return list<string>
+     */
+    public static function terminalValues(): array
+    {
+        return array_values(array_map(
+            fn (self $case) => $case->value,
+            array_filter(self::cases(), fn (self $case) => $case->isTerminal()),
+        ));
+    }
 }

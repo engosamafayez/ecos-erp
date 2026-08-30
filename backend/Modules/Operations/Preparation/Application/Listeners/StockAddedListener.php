@@ -38,12 +38,24 @@ final class StockAddedListener
                 ->select('pmr.id', 'pmr.preparation_wave_id', 'pmr.quantity_required', 'pw.wave_number')
                 ->get();
 
-            foreach ($unresolved as $req) {
-                $currentStock = DB::table('inventory_items')
-                    ->where('product_id', $event->productId)
-                    ->where('warehouse_id', $event->warehouseId)
-                    ->sum('on_hand_quantity');
+            if ($unresolved->isEmpty()) {
+                return;
+            }
 
+            // One read per event, not per requirement: every row in $unresolved shares
+            // the same (product_id, warehouse_id) pair, so the figure is identical.
+            //
+            // Column is `on_hand_qty`. It was previously spelled `on_hand_quantity`,
+            // which does not exist on `inventory_items` — every dispatch raised a
+            // QueryException that the catch below turned into a log line, so this
+            // recovery path had never once executed.
+            $currentStock = (float) DB::table('inventory_items')
+                ->whereNull('deleted_at')
+                ->where('product_id', $event->productId)
+                ->where('warehouse_id', $event->warehouseId)
+                ->sum('on_hand_qty');
+
+            foreach ($unresolved as $req) {
                 if ($currentStock >= $req->quantity_required) {
                     DB::table('preparation_material_requirements')
                         ->where('id', $req->id)
@@ -60,9 +72,18 @@ final class StockAddedListener
                 }
             }
         } catch (Throwable $e) {
+            // Stock receipt must not fail because a downstream projection did, so the
+            // exception is still contained here — but it is no longer swallowed.
+            // report() routes it to the configured error handler, which is what makes
+            // a programming error (a bad column, a renamed table) visible instead of
+            // decaying into a log line nobody reads. ENTERPRISE-FULFILLMENT-PLATFORM:
+            // "Exceptions are first-class — none are swallowed silently."
+            report($e);
+
             Log::channel('daily')->error('[Preparation] StockAddedListener failed', [
                 'product_id' => $event->productId,
                 'warehouse_id' => $event->warehouseId,
+                'exception' => $e::class,
                 'error' => $e->getMessage(),
             ]);
         }

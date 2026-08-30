@@ -31,10 +31,16 @@ final class CreateWaveAction
         $this->guardWorkflowStage($dto->companyId);
 
         return DB::transaction(function () use ($dto): PreparationWave {
-            // P1C — Order Exclusivity: one order must belong to ONE wave only within a company.
+            // P1C — Order Exclusivity: one order may be ACTIVE in only one wave per company.
+            //
+            // `activeMembership()` is the change (PART 15): historical membership is no
+            // longer exclusivity. Without it, an order that had ever been in any wave —
+            // including one closed weeks ago — was rejected from every future wave
+            // forever, which made carry-over impossible through this path too.
             $orderIds = array_column($dto->orderLines, 'order_id');
             $conflicts = PreparationWaveOrder::where('company_id', $dto->companyId)
                 ->whereIn('order_id', $orderIds)
+                ->activeMembership()
                 ->pluck('order_id')
                 ->all();
 

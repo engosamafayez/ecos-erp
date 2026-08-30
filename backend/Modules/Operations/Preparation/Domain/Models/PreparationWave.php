@@ -18,6 +18,9 @@ use Modules\Operations\Preparation\Domain\Enums\WaveStatus;
  * @property string|null $preparation_session_id
  * @property string $wave_number
  * @property \Carbon\Carbon $planning_date
+ * @property \Carbon\Carbon|null $starts_at
+ * @property \Carbon\Carbon|null $intake_closes_at
+ * @property \Carbon\Carbon|null $ends_at
  * @property WaveStatus $status
  * @property int $orders_count
  * @property int $products_count
@@ -67,6 +70,11 @@ class PreparationWave extends Model
         'preparation_session_id',
         'wave_number',
         'planning_date',
+        // The operational cycle (TASK-…-CROSS-DAY-TRANSITION-002). Absolute instants,
+        // resolved through the company timezone at creation — see WaveScheduleResolver.
+        'starts_at',
+        'intake_closes_at',
+        'ends_at',
         'status',
         'orders_count',
         'products_count',
@@ -103,6 +111,9 @@ class PreparationWave extends Model
     {
         return [
             'planning_date' => 'date:Y-m-d',
+            'starts_at' => 'immutable_datetime',
+            'intake_closes_at' => 'immutable_datetime',
+            'ends_at' => 'immutable_datetime',
             'status' => WaveStatus::class,
             'shortage_detected' => 'boolean',
             'orders_count' => 'integer',
@@ -118,6 +129,28 @@ class PreparationWave extends Model
             'policy_snapshot' => 'array',
             'priority_score' => 'integer',
         ];
+    }
+
+    /**
+     * Has this wave's operational cycle ended? — G-3.
+     *
+     * `ends_at` is the ONLY authority. Not `planning_date == today`, not the server
+     * calendar day, not "is this today's wave". A wave from a previous calendar day whose
+     * ends_at has passed is ended, and the scheduler closes it wherever it finds it.
+     *
+     * A wave with no ends_at (pre-migration, or a manually created `standard` wave that
+     * never went through the engine) is never auto-ended: the sweep must not guess a
+     * boundary that was never resolved.
+     */
+    public function hasReachedEnd(\Carbon\CarbonInterface $now): bool
+    {
+        return $this->ends_at !== null && $now->greaterThanOrEqualTo($this->ends_at);
+    }
+
+    /** Has intake closed? Collecting → Preparing is driven by this and nothing else. */
+    public function hasReachedIntakeCutoff(\Carbon\CarbonInterface $now): bool
+    {
+        return $this->intake_closes_at !== null && $now->greaterThanOrEqualTo($this->intake_closes_at);
     }
 
     public function completionPct(): float

@@ -37,8 +37,11 @@ final class GenerateDemandAction
                 ->join('products as p', 'p.id', '=', 'ol.product_id')
                 ->join(
                     'preparation_wave_orders as pwo',
+                    // Postponed memberships are retained as history but have left the
+                    // current cycle, so they contribute no demand (REFINEMENT-002 §22).
                     fn ($j) => $j->on('pwo.order_id', '=', 'ol.order_id')
-                        ->where('pwo.preparation_wave_id', '=', $wave->id),
+                        ->where('pwo.preparation_wave_id', '=', $wave->id)
+                        ->whereNull('pwo.postponed_at'),
                 )
                 ->selectRaw('
                     ol.product_id,
@@ -53,8 +56,11 @@ final class GenerateDemandAction
             $linesCount = DB::table('order_lines as ol')
                 ->join(
                     'preparation_wave_orders as pwo',
+                    // Postponed memberships are retained as history but have left the
+                    // current cycle, so they contribute no demand (REFINEMENT-002 §22).
                     fn ($j) => $j->on('pwo.order_id', '=', 'ol.order_id')
-                        ->where('pwo.preparation_wave_id', '=', $wave->id),
+                        ->where('pwo.preparation_wave_id', '=', $wave->id)
+                        ->whereNull('pwo.postponed_at'),
                 )
                 ->count();
 

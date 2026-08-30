@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Modules\Operations\Preparation\Application\Services;
 
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Organization\Branches\Domain\Models\Branch;
 use Modules\Organization\Branches\Domain\Models\BranchCoverageArea;
 use Modules\Operations\Preparation\Domain\Enums\WarehouseAssignmentSource;
 use Modules\Operations\Preparation\Domain\Events\BranchAssigned;
+use Modules\Operations\Preparation\Domain\Events\WarehouseAssigned;
 
 /**
  * TASK-BRANCH-ASSIGNMENT-ENGINE-001 — Branch Assignment Engine.
@@ -63,7 +65,9 @@ final class BranchAssignmentEngine
             return;
         }
 
-        $candidates = $this->coverage->resolve($governorate, $zone ?: null);
+        // D1: the order's canonical zone reference is passed through when present,
+        // so resolution is by identity rather than by name wherever possible.
+        $candidates = $this->coverage->resolve($governorate, $zone ?: null, $order->delivery_zone_id);
 
         // Filter to branches that belong to this company and are active.
         $candidates = $candidates->filter(
@@ -78,6 +82,45 @@ final class BranchAssignmentEngine
             return;
         }
 
+        // ── Brand eligibility ────────────────────────────────────────────────────
+        //
+        // Applied BEFORE ranking, never after: a warehouse that cannot serve the
+        // order's brands is not a lower-ranked candidate, it is not a candidate.
+        // Ranking the geography first and checking brands afterwards would let the
+        // nearest branch win and then fail, which is the regression the negative
+        // test guards against.
+        //
+        // Geography and brand are independent AND-conditions. Neither may stand in
+        // for the other, and brand compatibility never overrides geography.
+        $order->loadMissing('lines.product');
+
+        // A line whose brand cannot be derived makes coverage UNVERIFIABLE — fail
+        // closed. This is different from an order with no lines at all, which
+        // requires no brand and so cannot leave one unserved.
+        if ($order->lines->isNotEmpty()
+            && $order->lines->contains(fn ($line) => $line->product?->brand_id === null)
+        ) {
+            $this->markNoCoverage($order, 'Order line has no resolvable product brand');
+
+            return;
+        }
+
+        $requiredBrands = $this->requiredBrandIds($order);
+
+        if ($requiredBrands !== []) {
+            $candidates = $this->filterByBrandCoverage($candidates, $requiredBrands, $companyId);
+
+            if ($candidates->isEmpty()) {
+                // Geography matched; brands did not. A distinct reason, so Operations
+                // can tell "we do not deliver there" from "we deliver there, but no
+                // warehouse there carries this brand".
+                $this->markNoCoverage($order, 'No Warehouse Serves Order Brands');
+
+                return;
+            }
+        }
+
+        // Existing priority selection, unchanged, over the brand-eligible survivors.
         $branch = $candidates->count() === 1
             ? $candidates->first()->branch
             : $this->selectNearest($order, $candidates);
@@ -108,6 +151,13 @@ final class BranchAssignmentEngine
             previousBranchId: $previousBranchId,
             previousWarehouseId: $previousWarehouseId,
             occurredAt: now()->toIso8601String(),
+        );
+
+        $this->announceWarehouseAssignment(
+            $order,
+            $warehouseId,
+            $previousWarehouseId,
+            WarehouseAssignmentSource::BranchCoverage,
         );
     }
 
@@ -144,9 +194,131 @@ final class BranchAssignmentEngine
             previousWarehouseId: $previousWarehouseId,
             occurredAt: now()->toIso8601String(),
         );
+
+        $this->announceWarehouseAssignment(
+            $order,
+            $warehouseId,
+            $previousWarehouseId,
+            WarehouseAssignmentSource::ManualOverride,
+        );
     }
 
     // ── Private helpers ──────────────────────────────────────────────────────
+
+    /**
+     * Every distinct brand the order requires, via Product → Brand (ADR-013).
+     *
+     * A multi-brand order returns several ids and ALL of them must be served by a
+     * single warehouse — the order is never split here (that is a separate
+     * authorised capability).
+     *
+     * @return list<string>
+     */
+    private function requiredBrandIds(Order $order): array
+    {
+        return $order->lines
+            ->map(fn ($line) => $line->product?->brand_id)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Keep only candidates whose warehouse serves EVERY required brand.
+     *
+     * NO ROWS = SERVES NO BRANDS. An unconfigured warehouse is filtered out, never
+     * waved through — absence of permission is not permission.
+     *
+     * Coverage rows are matched on company_id as well as warehouse_id: defence in
+     * depth behind the branch-level company filter, so a mis-set row can never leak
+     * one tenant's warehouse into another tenant's order.
+     *
+     * @param  Collection<int, BranchCoverageArea>  $candidates
+     * @param  list<string>  $requiredBrands
+     * @return Collection<int, BranchCoverageArea>
+     */
+    private function filterByBrandCoverage(
+        Collection $candidates,
+        array $requiredBrands,
+        string $companyId,
+    ): Collection {
+        // Resolve each candidate branch to its warehouse once.
+        $warehouseByBranch = [];
+        foreach ($candidates as $candidate) {
+            $branch = $candidate->branch;
+            if ($branch === null || isset($warehouseByBranch[$branch->id])) {
+                continue;
+            }
+            $warehouseByBranch[$branch->id] = $this->warehouseResolver->resolve($branch);
+        }
+
+        $warehouseIds = array_values(array_filter($warehouseByBranch));
+
+        if ($warehouseIds === []) {
+            return collect();
+        }
+
+        // One query for the whole candidate set.
+        $served = DB::table('warehouse_brand_coverage')
+            ->where('company_id', $companyId)
+            ->where('is_active', true)
+            ->whereIn('warehouse_id', $warehouseIds)
+            ->whereIn('brand_id', $requiredBrands)
+            ->get(['warehouse_id', 'brand_id'])
+            ->groupBy('warehouse_id')
+            ->map(fn ($rows) => $rows->pluck('brand_id')->unique()->all())
+            ->all();
+
+        $requiredCount = count($requiredBrands);
+
+        return $candidates->filter(function (BranchCoverageArea $c) use ($warehouseByBranch, $served, $requiredCount): bool {
+            $branch = $c->branch;
+            if ($branch === null) {
+                return false;
+            }
+
+            $warehouseId = $warehouseByBranch[$branch->id] ?? null;
+            if ($warehouseId === null) {
+                return false;
+            }
+
+            // Every required brand must be present — a warehouse serving a subset
+            // of a multi-brand order is not eligible.
+            return count($served[$warehouseId] ?? []) === $requiredCount;
+        })->values();
+    }
+
+    /**
+     * Emit the CANONICAL warehouse-assignment event.
+     *
+     * ADR-027 §2 names `WarehouseAssigned` as the trigger that resumes a postponed
+     * reservation, and §15 H3 builds its retry listener on it. Preparation's
+     * auto-attach (`WarehouseAssignedListener`) subscribes to it too.
+     *
+     * `BranchAssigned` above stays as the branch-specific detail event for consumers
+     * that need the branch transition. It is deliberately NOT the assignment trigger:
+     * one canonical event per fact (ADR-024), so a consumer never has to subscribe
+     * twice to learn that an order gained a warehouse.
+     *
+     * This is the seam that broke when BranchAssignmentEngine replaced
+     * WarehouseAssignmentEngine — the dispatch moved, the subscribers did not.
+     */
+    private function announceWarehouseAssignment(
+        Order $order,
+        string $warehouseId,
+        ?string $previousWarehouseId,
+        WarehouseAssignmentSource $source,
+    ): void {
+        WarehouseAssigned::dispatch(
+            orderId: $order->id,
+            warehouseId: $warehouseId,
+            previousWarehouseId: $previousWarehouseId,
+            source: $source,
+            policyId: null,
+            occurredAt: now()->toIso8601String(),
+        );
+    }
 
     /**
      * Select the nearest branch to the order's delivery coordinates.
