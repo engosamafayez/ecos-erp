@@ -108,6 +108,10 @@ import { EnterpriseWorkspacePage as LogisticsEnterpriseWorkspacePage } from '@/f
 import { DistributionBoardPage } from '@/features/operations/distribution-board/pages/distribution-board-page';
 import { LoadingDashboardPage } from '@/features/operations/distribution-board/pages/loading-dashboard-page';
 import { LoadingWorkspacePage } from '@/features/operations/distribution-board/pages/loading-workspace-page';
+// Canonical GROUP-grain Loading Execution workspace (Stack B, /api/loading/groups).
+// TASK-1-D-LOADING-EXECUTION-001: the page and its route constant already existed but
+// were orphaned; wiring makes the approved warehouse Loading surface reachable.
+import { LoadingOsWorkspacePage } from '@/features/operations/loading-os/pages/loading-os-workspace-page';
 import { DispatchGatePage } from '@/features/operations/distribution-board/pages/dispatch-gate-page';
 import { DispatchGateWorkspacePage } from '@/features/operations/distribution-board/pages/dispatch-gate-workspace-page';
 import { MarketingDashboardPage } from '@/features/marketing/pages/marketing-dashboard-page';
@@ -422,6 +426,8 @@ export const router = createBrowserRouter(
             { path: `${ROUTES.loadingWorkspace}/:tripId/loading`, Component: LoadingWorkspacePage },
             // Loading OS
             { path: ROUTES.loadingOsDashboard, Component: LoadingDashboardPage },
+            // Canonical GROUP-grain Loading Execution workspace (approved Stack B backend).
+            { path: ROUTES.loadingOsWorkspace, Component: LoadingOsWorkspacePage },
             // Dispatch Gate OS
             { path: ROUTES.dispatchGate, Component: DispatchGatePage },
             { path: `${ROUTES.dispatchGate}/:tripId`, Component: DispatchGateWorkspacePage },
