@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Validation\Rule;
+use Modules\Commerce\Orders\Domain\Services\CustomerOrderMetricsService;
 use Modules\Crm\Customers\Domain\Enums\CustomerStatus;
 use Modules\Crm\Customers\Domain\Enums\CustomerType;
 use Modules\Crm\Customers\Domain\Models\Customer;
@@ -28,14 +29,28 @@ class CustomerController extends Controller
         private readonly CustomerService $customers,
         private readonly Customer360Service $profiles,
         private readonly CustomerSearchService $search,
+        // Composed here, not inside Customer360Service: that service documents that
+        // it imports no operational module and that the dependency never inverts.
+        private readonly CustomerOrderMetricsService $orderMetrics,
     ) {}
 
     public function index(Request $request): JsonResponse
     {
-        $page = $this->search->search($this->companyId($request), $request->only(['q', 'status', 'type', 'group_id', 'tag_id', 'per_page']));
+        $companyId = $this->companyId($request);
+        $page = $this->search->search($companyId, $request->only(['q', 'status', 'type', 'group_id', 'tag_id', 'per_page']));
+
+        // ONE aggregate query for the whole page — not one per row.
+        $customers = collect($page->items());
+        $metrics = $this->orderMetrics->forCustomers(
+            $customers->pluck('id')->map(fn ($id) => (string) $id)->all(),
+            $companyId,
+        );
 
         return response()->json([
-            'data' => collect($page->items())->map(fn (Customer $c) => $this->profiles->identity($c)),
+            'data' => $customers->map(fn (Customer $c) => [
+                ...$this->profiles->identity($c),
+                ...($metrics[(string) $c->id] ?? CustomerOrderMetricsService::emptyMetrics()),
+            ]),
             'meta' => ['page' => $page->currentPage(), 'per_page' => $page->perPage(), 'total' => $page->total(), 'last_page' => $page->lastPage()],
         ]);
     }
@@ -47,7 +62,18 @@ class CustomerController extends Controller
 
     public function profile(Request $request, string $id): JsonResponse
     {
-        return response()->json(['data' => $this->profiles->profile($this->customer($request, $id))]);
+        $companyId = $this->companyId($request);
+        $customer = $this->customer($request, $id);
+
+        return response()->json([
+            'data' => [
+                ...$this->profiles->profile($customer),
+                // Order-derived KPIs and purchased products come from canonical
+                // `orders`, never from the customer-intelligence profile.
+                'order_metrics' => $this->orderMetrics->forCustomer((string) $customer->id, $companyId),
+                'purchased_products' => $this->orderMetrics->purchasedProducts((string) $customer->id, $companyId),
+            ],
+        ]);
     }
 
     public function store(Request $request): JsonResponse
