@@ -25,9 +25,12 @@ function buildParams(query: RawMaterialsQuery): Record<string, unknown> {
     params.product_types = 'raw_material,packaging_material';
   }
 
-  // Map availability to backend stock_status
-  if (availability === 'available')    { params.stock_status = 'instock'; }
-  if (availability === 'out_of_stock') { params.stock_status = 'outofstock'; }
+  // Canonical ERP availability — evaluated server-side by the same rule the table
+  // renders (signed available + allow_negative_stock). Previously this mapped onto
+  // `stock_status`, the inbound WooCommerce attribute, which is NULL on every
+  // ERP-created product: the filter matched almost nothing and disagreed with the
+  // badge beside it.
+  if (availability) { params.availability = availability; }
 
   if (allow_negative === undefined) { delete params.allow_negative; }
 

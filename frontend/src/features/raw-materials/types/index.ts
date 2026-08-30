@@ -46,13 +46,19 @@ export type RawMaterial = Product & {
 
   /** Canonical ERP availability, derived server-side from clamped available qty. */
   availability_state?: AvailabilityState | null;
+  /** Backend projection: AvailabilityState::canCommit(signed available, allow_negative_stock). */
+  can_commit?: boolean | null;
 };
 
 /**
- * Canonical ERP availability, mirroring the backend `AvailabilityState` enum.
- * `untracked` means no inventory record exists — distinct from a tracked zero.
+ * Canonical BUSINESS availability, mirroring the backend `ProductAvailability` enum (T-1).
+ *
+ * Three states, policy already folded in server-side. `untracked` is deliberately absent:
+ * it belongs to the DATA PLATFORM enum (`AvailabilityState`) and is not a business-facing
+ * state — a material with no inventory row has nothing available and is classified by the
+ * same rule as one holding zero.
  */
-export type AvailabilityState = 'in_stock' | 'out_of_stock' | 'untracked';
+export type AvailabilityState = 'in_stock' | 'negative_allowed' | 'out_of_stock';
 
 // ─── Write payload ────────────────────────────────────────────────────────────
 
@@ -69,6 +75,8 @@ export type RawMaterialPayload = {
   stock_status?: 'instock' | 'outofstock' | null;
   /** Canonical ERP availability, derived server-side from clamped available qty. */
   availability_state?: AvailabilityState | null;
+  /** Backend projection: AvailabilityState::canCommit(signed available, allow_negative_stock). */
+  can_commit?: boolean | null;
   sale_price?:  null;
   image_url?:   string | null;
   regular_price?: number | null;
@@ -172,7 +180,15 @@ export type RawMaterialsQuery = {
   sort_by?:       'name' | 'sku' | 'material_cost' | 'on_hand_qty' | 'created_at';
   sort_dir?:      'asc' | 'desc';
   status?:        'all' | 'active' | 'inactive';
-  availability?:  'available' | 'out_of_stock';
+  /**
+   * The three approved business states (T-1) — the same values the backend
+   * `ProductAvailability` filter accepts and the filter bar has always emitted.
+   *
+   * This previously read `'available' | 'out_of_stock'`: `available` is a value no UI
+   * option produces and no backend branch matches, and `negative_allowed` — which the
+   * filter bar does offer — was missing entirely. The type described neither end.
+   */
+  availability?:  AvailabilityState;
   allow_negative?: boolean;
 };
 

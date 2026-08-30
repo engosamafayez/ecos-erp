@@ -96,7 +96,33 @@ export type Product = {
   // Inventory fields (from join)
   on_hand_qty?: number | null;
   reserved_qty?: number | null;
+  /** SIGNED canonical availability (on_hand − reserved). MAY be negative. Never clamp. */
   available_qty?: number | null;
+  /**
+   * The ERP's orderability answer, decided server-side from
+   * availability_state + allow_negative_stock (+ manufacturing_availability for
+   * finished goods). Never recompute this on the client, and never substitute
+   * `stock_status` — that is a WooCommerce channel attribute, not ERP truth.
+   */
+  can_commit?: boolean | null;
+  /**
+   * BUSINESS availability, decided by ECOS — the approved three-state contract (T-1).
+   *
+   * Projected server-side by `ProductAvailability::project(available, allow_negative)`,
+   * so the policy is already folded in and NOTHING is composed on the client:
+   *
+   *   available >  0                     → in_stock
+   *   available <= 0  and allow_negative → negative_allowed
+   *   available <= 0  and !allow_negative → out_of_stock
+   *
+   * There is no fourth business state. `untracked` was removed from this union: it is the
+   * DATA PLATFORM answer (AvailabilityState), still served by the inventory-layer
+   * endpoint, and it must not reach a product business surface.
+   *
+   * This is the ERP's own answer and is NOT `stock_status`, which is the inbound
+   * WooCommerce channel attribute written only by the product importer.
+   */
+  availability_state?: 'in_stock' | 'negative_allowed' | 'out_of_stock' | null;
   inventory_value?: number | null;
   // Manufacturing flags
   can_manufacture?: boolean;

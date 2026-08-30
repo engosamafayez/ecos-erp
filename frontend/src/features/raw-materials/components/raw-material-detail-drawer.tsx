@@ -35,7 +35,7 @@ import {
   useRawMaterialPurchaseHistory,
   useRawMaterialWarehouseDistribution,
 } from '@/features/raw-materials/hooks/use-raw-materials';
-import type { AvailabilityState, RawMaterial, PurchaseLayer, SupplierHistoryRow } from '@/features/raw-materials/types';
+import type { RawMaterial, PurchaseLayer, SupplierHistoryRow } from '@/features/raw-materials/types';
 import type { MaterialCostHistoryEntry } from '@/features/cost-management/types/pricing-review';
 import type { MovementType } from '@/features/stock-ledger/types/stock-movement';
 import { PagePagination } from '@/components/page/pagination/page-pagination';
@@ -44,7 +44,7 @@ import { formatMoney } from '@/lib/format';
 import { AddStockWizard } from './add-stock-wizard';
 import { getMediaUrl } from '@/lib/media';
 import { cn } from '@/lib/utils';
-import { resolveMaterialStockStatus } from '@/features/raw-materials/utils/material-stock-status';
+import { resolveMaterialStockStatus, type MaterialStockStatus } from '@/features/raw-materials/utils/material-stock-status';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -58,8 +58,13 @@ type RawMaterialDetailDrawerProps = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function stockStatusConfig(availabilityState: AvailabilityState | null | undefined) {
-  const status = resolveMaterialStockStatus(availabilityState);
+function stockStatusConfig(
+  availableQty: number | null | undefined,
+  allowNegativeStock?: boolean | null,
+  // T-1 — the server's own three-state projection, preferred over re-deriving here.
+  serverState?: MaterialStockStatus | null,
+) {
+  const status = resolveMaterialStockStatus(availableQty, allowNegativeStock, serverState);
   if (status === 'in_stock') {
     return {
       status: 'in_stock' as const,
@@ -68,6 +73,15 @@ function stockStatusConfig(availabilityState: AvailabilityState | null | undefin
       badge:  'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800',
     };
   }
+  if (status === 'negative_allowed') {
+    return {
+      status: 'negative_allowed' as const,
+      dot:    'bg-amber-500',
+      text:   'text-amber-700 dark:text-amber-400',
+      badge:  'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800',
+    };
+  }
+
   return {
     status: 'out_of_stock' as const,
     dot:    'bg-red-500',
@@ -396,7 +410,7 @@ function InventoryTab({ material }: { material: RawMaterial }) {
   const { t } = useTranslation('raw-materials');
   const { currency, locale } = useCompany();
   const { data: distribution } = useRawMaterialWarehouseDistribution(material.id);
-  const avail    = stockStatusConfig(material.availability_state);
+  const avail    = stockStatusConfig(material.available_qty, material.allow_negative_stock, material.availability_state);
   const statusLabel = avail.status === 'in_stock'
     ? t($ => $.detail.status.inStock)
     : t($ => $.detail.status.outOfStock);
@@ -1000,7 +1014,7 @@ export function RawMaterialDetailDrawer({
 
   if (!material) return null;
 
-  const avail = stockStatusConfig(material.availability_state);
+  const avail = stockStatusConfig(material.available_qty, material.allow_negative_stock, material.availability_state);
   const statusLabel = avail.status === 'in_stock'
     ? t($ => $.detail.status.inStock)
     : t($ => $.detail.status.outOfStock);

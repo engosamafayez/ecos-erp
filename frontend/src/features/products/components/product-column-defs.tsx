@@ -53,18 +53,26 @@ function StockStatusCell({ product }: { product: Product }) {
   const { t } = useTranslation('products');
   if (!product) return <span className="text-muted-foreground text-xs">—</span>;
   if (product.product_type === 'finished_good') {
+    // ADR-027 §19 (order-driven preparation): a finished product is Fulfillable when it
+    // has PHYSICAL stock (Case 1) OR its preparation RECIPE is executable (Case 2). These
+    // are distinct concepts and must not both read as "In Stock". Physical stock is shown
+    // first (it ships without touching the recipe); a zero-stock product with an executable
+    // recipe is "Fulfillable (Recipe)", never "In Stock".
     const mav = product.manufacturing_availability;
-    if (mav === 'instock') {
+    const physicallyInStock = product.availability_state === 'in_stock';
+
+    if (physicallyInStock) {
       return (
         <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">
           {t($ => $.colDefs.mfgInStock)}
         </Badge>
       );
     }
-    if (mav === 'outofstock') {
+    if (mav === 'instock') {
+      // FG physical stock = 0, but the recipe is executable → fulfillable via preparation.
       return (
-        <Badge className="bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800">
-          {t($ => $.colDefs.mfgOutOfStock)}
+        <Badge className="bg-sky-100 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-800">
+          {t($ => $.colDefs.mfgFulfillable)}
         </Badge>
       );
     }
@@ -75,22 +83,47 @@ function StockStatusCell({ product }: { product: Product }) {
         </Badge>
       );
     }
+    // No physical stock and the recipe is blocked or absent → not fulfillable.
+    if (mav === 'outofstock') {
+      return (
+        <Badge className="bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800">
+          {t($ => $.colDefs.mfgOutOfStock)}
+        </Badge>
+      );
+    }
     return <span className="text-muted-foreground text-xs">—</span>;
   }
 
-  const status = product.stock_status;
-  if (status === 'instock') {
-    return (
-      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">
-        {t($ => $.stockStatus.instock)}
-      </Badge>
-    );
+  // The ERP's own BUSINESS availability (T-1), rendered straight from the server
+  // projection — the same value the drawer shows and the same rule the availability
+  // filter selects on, so table, drawer and filter cannot disagree.
+  //
+  // This previously read `products.stock_status`, the inbound WooCommerce channel
+  // attribute. It is written only by the product importer and is NULL on every
+  // ERP-created product, so the else-branch rendered "Out of Stock" for the entire
+  // ERP-created catalogue regardless of what was actually in the warehouse.
+  switch (product.availability_state) {
+    case 'in_stock':
+      return (
+        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800">
+          {t($ => $.stockStatus.instock)}
+        </Badge>
+      );
+    case 'negative_allowed':
+      return (
+        <Badge className="bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800">
+          {t($ => $.stockStatus.negativeAllowed)}
+        </Badge>
+      );
+    case 'out_of_stock':
+      return (
+        <Badge className="bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800">
+          {t($ => $.stockStatus.outofstock)}
+        </Badge>
+      );
+    default:
+      return <span className="text-muted-foreground text-xs">—</span>;
   }
-  return (
-    <Badge className="bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800">
-      {t($ => $.stockStatus.outofstock)}
-    </Badge>
-  );
 }
 
 // ── Inline Edit ───────────────────────────────────────────────────────────────

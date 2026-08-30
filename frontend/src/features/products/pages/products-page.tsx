@@ -79,30 +79,16 @@ function applyStatFilter(stat: StatFilter | null): Partial<ProductFilters> {
 function useProductStats(): ProductStatsData {
   const base = { product_type: 'finished_good' as const, per_page: 1, page: 1 };
   const { data: totalData }            = useQuery({ queryKey: ['ps', 'total'],            queryFn: () => productsService.list(base),                                      staleTime: 30_000 });
-  const { data: publishedData }        = useQuery({ queryKey: ['ps', 'published'],        queryFn: () => productsService.list({ ...base, is_published: true }),            staleTime: 30_000 });
-  const { data: lowStockData }         = useQuery({ queryKey: ['ps', 'lowStock'],         queryFn: () => productsService.list({ ...base, low_stock: true }),               staleTime: 30_000 });
-  const { data: inactiveData }         = useQuery({ queryKey: ['ps', 'inactive'],         queryFn: () => productsService.list({ ...base, status: 'inactive' }),            staleTime: 30_000 });
   const { data: notSyncedData }        = useQuery({ queryKey: ['ps', 'notSynced'],        queryFn: () => productsService.list({ ...base, not_synced: true }),              staleTime: 30_000 });
-  const { data: mfgReadyData }         = useQuery({ queryKey: ['ps', 'mfgReady'],         queryFn: () => productsService.list({ ...base, manufacturing_ready: true }),     staleTime: 30_000 });
-  const { data: missingRecipeData }    = useQuery({ queryKey: ['ps', 'missingRecipe'],    queryFn: () => productsService.list({ ...base, has_recipe: 'false' }),           staleTime: 30_000 });
   const { data: pendingReviewData }    = useQuery({ queryKey: ['ps', 'pendingReview'],    queryFn: () => productsService.list({ ...base, needs_pricing_review: true }),    staleTime: 30_000 });
-  const { data: lowMarginData }        = useQuery({ queryKey: ['ps', 'lowMargin'],        queryFn: () => productsService.list({ ...base, low_margin: true }),                                  staleTime: 30_000 });
   const { data: mfgInStockData }       = useQuery({ queryKey: ['ps', 'mfgInStock'],       queryFn: () => productsService.list({ ...base, manufacturing_availability: 'instock' }),       staleTime: 30_000 });
   const { data: mfgOutOfStockData }    = useQuery({ queryKey: ['ps', 'mfgOutOfStock'],    queryFn: () => productsService.list({ ...base, manufacturing_availability: 'outofstock' }),    staleTime: 30_000 });
-  const { data: mfgRecipeMissingData } = useQuery({ queryKey: ['ps', 'mfgRecipeMissing'], queryFn: () => productsService.list({ ...base, manufacturing_availability: 'recipe_missing' }), staleTime: 30_000 });
   return {
     total:               totalData?.meta.total             ?? 0,
-    published:           publishedData?.meta.total         ?? 0,
-    lowStock:            lowStockData?.meta.total          ?? 0,
     notSynced:           notSyncedData?.meta.total         ?? 0,
-    inactive:            inactiveData?.meta.total          ?? 0,
-    manufacturingReady:  mfgReadyData?.meta.total          ?? 0,
-    missingRecipe:       missingRecipeData?.meta.total     ?? 0,
     needsPricingReview:  pendingReviewData?.meta.total     ?? 0,
-    lowMargin:           lowMarginData?.meta.total         ?? 0,
     mfgInStock:          mfgInStockData?.meta.total        ?? 0,
     mfgOutOfStock:       mfgOutOfStockData?.meta.total     ?? 0,
-    mfgRecipeMissing:    mfgRecipeMissingData?.meta.total  ?? 0,
   };
 }
 

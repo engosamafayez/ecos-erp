@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ImageUploadField } from '@/components/ui/image-upload-field';
 import { ProductCategorySelect } from '@/features/products/components/product-category-select';
+import { UnitSelect } from '@/features/products/components/unit-select';
 import { BrandSelect } from '@/features/brands/components/brand-select';
 import { ProductPricingSection } from '@/features/products/components/product-pricing-section';
 import { channelsService } from '@/features/channels/services/channels-service';
@@ -271,6 +272,18 @@ export function ProductFormFields({ isEdit = false, existingProduct = null, onIm
             name="category_id"
             render={({ field }) => (
               <ProductCategorySelect value={field.value || null} onChange={field.onChange} />
+            )}
+          />
+        </FormField>
+
+        {/* D-5 — unit is mandatory. Reuses the existing UnitSelect rather than adding a
+            second unit picker. */}
+        <FormField name="unit_id" label={t($ => $.form.unit.label)} required>
+          <Controller
+            control={control}
+            name="unit_id"
+            render={({ field }) => (
+              <UnitSelect value={field.value || null} onChange={field.onChange} />
             )}
           />
         </FormField>

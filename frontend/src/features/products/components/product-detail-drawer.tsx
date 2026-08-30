@@ -38,7 +38,6 @@ import {
 import { useCreateProduct, useUpdateProduct } from '@/features/products/hooks/use-products';
 import { productsService } from '@/features/products/services/products-service';
 import type { Product, ProductType } from '@/features/products/types/product';
-import { usePricingReviews } from '@/features/cost-management/hooks/use-pricing-reviews';
 import { calcTotalFromStored } from '@/lib/recipe-cost-calculator';
 import { getMediaUrl } from '@/lib/media';
 import { uploadMaterialImage } from '@/lib/media-upload';
@@ -486,144 +485,6 @@ function PricingTab({ product }: { product: Product }) {
   );
 }
 
-// ── Tab: Cost ─────────────────────────────────────────────────────────────────
-
-function CostTab({ product }: { product: Product }) {
-  const { t } = useTranslation('products');
-  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
-  const navigate = useNavigate();
-  const { data: reviewsData } = usePricingReviews({
-    product_id: product.id,
-    status: 'pending',
-    per_page: 5,
-  });
-  const pendingCount = reviewsData?.summary?.pending ?? 0;
-  const margin = computeMargin(product.regular_price, product.product_cost);
-
-  // PART 4/5: Markup % calculator — initialize from actual prices if available
-  const [markupPct, setMarkupPct] = useState<number>(() => {
-    if (product.product_cost && product.product_cost > 0 && product.regular_price) {
-      return Math.round(((product.regular_price - product.product_cost) / product.product_cost) * 100);
-    }
-    return 30;
-  });
-  const suggestedPrice = product.product_cost != null
-    ? product.product_cost * (1 + markupPct / 100)
-    : null;
-
-  return (
-    <div className="flex flex-col gap-4 p-4">
-      {/* PART 3: Product Cost Card with Live from Recipe / Manual badge */}
-      <div className="rounded-lg border p-4 bg-primary/5 border-primary/20">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-xs text-muted-foreground">{t($ => $.detailDrawer.costProductCost)}</p>
-          {product.has_recipe ? (
-            <span className="inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 border-emerald-200 bg-emerald-50 text-[10px] font-medium text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400">
-              <span className="size-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400" aria-hidden />
-              {t($ => $.detailDrawer.costLiveFromRecipe)}
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 border-slate-200 bg-slate-50 text-[10px] font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800/30 dark:text-slate-400">
-              {t($ => $.detailDrawer.costManual)}
-            </span>
-          )}
-        </div>
-        <p className="text-2xl font-semibold tabular-nums">{fmtCurrency(product.product_cost)}</p>
-      </div>
-
-      {/* Secondary cost stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <StatCard label={t($ => $.detailDrawer.costSellingPrice)} value={fmtCurrency(product.regular_price)} />
-        <StatCard
-          label={t($ => $.detailDrawer.costRecipeCost)}
-          value={fmtCurrency(
-            product.active_recipe
-              ? calcTotalFromStored(
-                  product.active_recipe.recipe_cost ?? 0,
-                  product.active_recipe.manufacturing_cost ?? 0,
-                  product.active_recipe.other_costs ?? 0,
-                )
-              : null,
-          )}
-        />
-        <StatCard label={t($ => $.detailDrawer.costMaterialCost)} value={fmtCurrency(product.material_cost)} />
-      </div>
-
-      {margin !== null ? (
-        <div className="flex items-center justify-between rounded-lg border bg-card px-4 py-3">
-          <span className="text-sm font-medium">{t($ => $.detailDrawer.costMargin)}</span>
-          <MarginBadge pct={margin} />
-        </div>
-      ) : null}
-
-      {/* PARTS 4/5: Markup % → Suggested Selling Price calculator */}
-      {product.product_cost != null && (
-        <>
-          <Separator />
-          <div className="rounded-lg border bg-card p-4">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">{t($ => $.detailDrawer.costCalculator)}</p>
-            <div className="grid grid-cols-3 gap-4 items-end">
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">{t($ => $.detailDrawer.costProductCost)}</p>
-                <p className="text-sm font-semibold tabular-nums">{fmtCurrency(product.product_cost)}</p>
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block" htmlFor="cost-markup-pct">
-                  {t($ => $.detailDrawer.costMarkupPct)}
-                </label>
-                <Input
-                  id="cost-markup-pct"
-                  type="number"
-                  min="0"
-                  step="1"
-                  value={markupPct}
-                  onChange={(e) => setMarkupPct(Number(e.target.value) || 0)}
-                  className="h-8 text-sm"
-                />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">{t($ => $.detailDrawer.costSuggestedPrice)}</p>
-                <p className="text-base font-semibold tabular-nums text-primary">{fmtCurrency(suggestedPrice)}</p>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      <Separator />
-
-      <DetailGrid>
-        <DetailRow label={t($ => $.detailDrawer.costAverageCost)}>{fmtCurrency(product.average_cost)}</DetailRow>
-        <DetailRow label={t($ => $.detailDrawer.costFifoCost)}>{fmtCurrency(product.current_fifo_cost)}</DetailRow>
-        <DetailRow label={t($ => $.detailDrawer.costLastPurchase)}>{fmtCurrency(product.last_purchase_cost)}</DetailRow>
-      </DetailGrid>
-
-      {pendingCount > 0 ? (
-        <>
-          <Separator />
-          <div className="flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/40">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="size-4 shrink-0 text-amber-600 dark:text-amber-400" />
-              <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
-                {tAny('detailDrawer.costPendingReview', { count: pendingCount })}
-              </span>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="shrink-0 gap-1"
-              onClick={() => navigate(ROUTES.costManagementPriceReview)}
-            >
-              <ArrowUpRight className="size-3.5" />
-              {t($ => $.detailDrawer.costOpenReview)}
-            </Button>
-          </div>
-        </>
-      ) : null}
-    </div>
-  );
-}
-
 // ── Tab: Recipe (PART 9) ──────────────────────────────────────────────────────
 
 function RecipeTab({ product }: { product: Product }) {
@@ -780,12 +641,31 @@ function InventoryTab({ product }: { product: Product }) {
   const { t } = useTranslation('products');
   const hasLiveQty = product.on_hand_qty != null;
 
+  /*
+   * SYSTEM availability, not the channel attribute.
+   *
+   * This badge previously read `products.stock_status` — the inbound WooCommerce
+   * value, written only by WooCommerceProductImporter and NULL on every
+   * ERP-created product, so the badge rendered "—" for most of the catalogue and
+   * let the storefront describe what the ERP holds.
+   *
+   * `availability_state` is the ERP's BUSINESS answer — one of exactly three states,
+   * with allow_negative_stock ALREADY folded in server-side by ProductAvailability.
+   *
+   * T-1: this badge used to compose "Backorder Allowed" here, on the client, from
+   * `availability_state === 'out_of_stock'` AND `can_commit`. That was a second
+   * classification rule living in the UI, and the Raw Materials surface composed the same
+   * condition differently — so one product could read Backorder Allowed on one screen and
+   * Out of Stock on another. The rule now exists once, in the backend enum; this renders
+   * the value and nothing more. `can_commit` remains a separate ORDERABILITY answer
+   * (it also accounts for manufacturability) and is deliberately not consulted here.
+   */
   let stockBadge: React.ReactNode;
-  if (product.stock_status === 'instock')
+  if (product.availability_state === 'in_stock')
     stockBadge = <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400">{t($ => $.detailDrawer.invInStock)}</Badge>;
-  else if (product.stock_status === 'onbackorder')
-    stockBadge = <Badge className="bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400">{t($ => $.detailDrawer.invBackorderAllowed)}</Badge>;
-  else if (product.stock_status === 'outofstock')
+  else if (product.availability_state === 'negative_allowed')
+    stockBadge = <Badge className="bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400">{t($ => $.detailDrawer.invNegativeAllowed)}</Badge>;
+  else if (product.availability_state === 'out_of_stock')
     stockBadge = <Badge className="bg-red-100 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400">{t($ => $.detailDrawer.invOutOfStock)}</Badge>;
   else
     stockBadge = <span className="text-muted-foreground">—</span>;
@@ -801,10 +681,18 @@ function InventoryTab({ product }: { product: Product }) {
           <>
             <DetailRow label={t($ => $.detailDrawer.invOnHand)}>{fmtQty(product.on_hand_qty)}</DetailRow>
             <DetailRow label={t($ => $.detailDrawer.invReserved)}>{fmtQty(product.reserved_qty)}</DetailRow>
+            {/*
+              Inventory Value removed (TASK-PRODUCTS-DRAWER-CLEANUP-...-001).
+              A product is not a warehouse or a ledger; a single money figure here
+              invited it to be read as the product's worth while it is actually a
+              company-wide valuation that belongs to the Inventory module. The
+              quantities below stay because they answer a question a product page
+              legitimately asks — "can this be sold right now" — and they are read
+              straight from the canonical API, never recomputed here.
+
+              `available_qty` is SIGNED (may be negative). Do not clamp it.
+            */}
             <DetailRow label={t($ => $.detailDrawer.invAvailable)}>{fmtQty(product.available_qty)}</DetailRow>
-            <DetailRow label={t($ => $.detailDrawer.invInventoryValue)} className="col-span-2">
-              {fmtCurrency(product.inventory_value)}
-            </DetailRow>
           </>
         ) : null}
       </DetailGrid>
@@ -1173,7 +1061,6 @@ export function ProductDetailDrawer({
     { key: 'general',     label: t($ => $.detailDrawer.tabGeneral),     content: <GeneralTab product={p} /> },
     { key: 'pricing',     label: t($ => $.detailDrawer.tabPricing),     content: <PricingTab product={p} /> },
     { key: 'margin',      label: t($ => $.detailDrawer.tabMargin),      content: <MarginTab product={p} /> },
-    { key: 'cost',        label: t($ => $.detailDrawer.tabCost),        content: <CostTab product={p} /> },
     { key: 'inventory',   label: t($ => $.detailDrawer.tabInventory),   content: <InventoryTab product={p} /> },
     { key: 'recipe',      label: t($ => $.detailDrawer.tabRecipe),      content: <RecipeTab product={p} /> },
     { key: 'woocommerce', label: t($ => $.detailDrawer.tabChannels),    content: <WooCommerceTab product={p} /> },

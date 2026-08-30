@@ -7,6 +7,9 @@ export const productSchema = z.object({
   name:             z.string().min(1, 'Name is required.').max(255),
   description:      z.string().max(1000).optional(),
   category_id:      z.string().min(1, 'Category is required.'),
+  // D-5 — EVERY PRODUCT MUST HAVE A UNIT. The form previously had no unit field at
+  // all, which is why every UI-created product was stored with unit_id = NULL.
+  unit_id:          z.string().min(1, 'Unit is required.'),
   brand_id:         z.string().min(1, 'Brand is required.'),
   channel_ids:      z.array(z.string()),
   product_type:     z.enum(['finished_good', 'raw_material', 'packaging_material']),
@@ -34,6 +37,7 @@ export function toFormValues(
     name:              product?.name ?? '',
     description:       product?.description ?? '',
     category_id:       product?.category_id ?? '',
+    unit_id:           product?.unit_id ?? '',
     brand_id:          product?.brand_id ?? '',
     channel_ids:       product?.channels?.map((c) => c.id) ?? [],
     product_type:      product?.product_type ?? defaultType,
@@ -65,6 +69,11 @@ export function toPayload(values: ProductFormValues): ProductPayload {
     description:          values.description === '' ? null : (values.description ?? null),
     brand_id:             values.brand_id || null,
     category_id:          values.category_id,
+    // D-5 — unit_id is mandatory (Zod-validated above, NOT NULL in DB). It was
+    // collected by the form and seeded into defaults but never forwarded here,
+    // so every UI-created product hit a NOT-NULL violation. Reuses the existing
+    // unit relationship and the ProductPayload.unit_id contract.
+    unit_id:              values.unit_id,
     product_type:         values.product_type,
     is_active:            values.is_active,
     image_url:            values.image_url || null,

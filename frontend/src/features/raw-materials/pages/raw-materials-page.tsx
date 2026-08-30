@@ -56,7 +56,7 @@ const CSV_COL_DEFS: CsvColDef[] = [
   { key: 'material_type',   value: (m, t) => m.product_type === 'packaging_material' ? t($ => $.csv.packagingMaterial) : t($ => $.csv.rawMaterial) },
   { key: 'category',        value: (m)    => m.category?.name ?? '' },
   { key: 'unit',            value: (m)    => m.unit?.name ?? '' },
-  { key: 'stock_status',    value: (m, t) => resolveMaterialStockStatus(m.availability_state) === 'in_stock' ? t($ => $.csv.inStock) : t($ => $.csv.outOfStock) },
+  { key: 'stock_status',    value: (m, t) => resolveMaterialStockStatus(m.available_qty, m.allow_negative_stock) === 'in_stock' ? t($ => $.csv.inStock) : t($ => $.csv.outOfStock) },
   { key: 'on_hand',         value: (m)    => String(m.on_hand_qty ?? '') },
   { key: 'reserved',        value: (m)    => String(m.reserved_qty ?? '') },
   { key: 'available',       value: (m)    => String(m.available_qty ?? '') },
@@ -228,7 +228,11 @@ export function RawMaterialsPage() {
 
   const queryParams = {
     ...sharedFilter,
-    availability:   availability as 'available' | 'out_of_stock' | undefined || undefined,
+    // T-1 — the three approved business states. The filter bar has always offered
+    // `in_stock` / `out_of_stock` / `negative_allowed`, but this cast claimed `available`,
+    // a value no option emits and no backend branch matches, while omitting
+    // `negative_allowed` entirely — so the type described neither the UI nor the API.
+    availability:   availability as 'in_stock' | 'negative_allowed' | 'out_of_stock' | undefined || undefined,
     allow_negative: allowNegative === 'allowed' ? true : allowNegative === 'blocked' ? false : undefined,
     page,
     per_page: PER_PAGE,

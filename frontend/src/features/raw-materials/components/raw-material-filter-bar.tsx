@@ -189,8 +189,9 @@ export function RawMaterialFilterBar({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="_all">{t($ => $.filters.allStock)}</SelectItem>
-          <SelectItem value="available">{t($ => $.filters.inStock)}</SelectItem>
+          <SelectItem value="in_stock">{t($ => $.filters.inStock)}</SelectItem>
           <SelectItem value="out_of_stock">{t($ => $.filters.outOfStock)}</SelectItem>
+          <SelectItem value="negative_allowed">{t($ => $.table.negativeAllowed)}</SelectItem>
         </SelectContent>
       </Select>
 

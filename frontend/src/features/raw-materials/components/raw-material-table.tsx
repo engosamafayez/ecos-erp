@@ -277,7 +277,9 @@ export function RawMaterialTable({
           ) : (
             data.map((m) => {
               const isSelected  = selectedIds.has(m.id);
-              const stockStatus = resolveMaterialStockStatus(m.availability_state);
+              // Server projection first (T-1) — the same value the availability filter
+              // selects on, so the rendered badge and the filtered population agree.
+              const stockStatus = resolveMaterialStockStatus(m.available_qty, m.allow_negative_stock, m.availability_state);
 
               return (
                 <TableRow
@@ -365,6 +367,12 @@ export function RawMaterialTable({
                       {stockStatus === 'in_stock' ? (
                         <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800 text-xs">
                           {t($ => $.table.inStock)}
+                        </Badge>
+                      ) : stockStatus === 'negative_allowed' ? (
+                        /* Available < 0 but Allow Negative is ON - deliberately oversold,
+                           not a shortage. */
+                        <Badge className="bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800 text-xs">
+                          {t($ => $.table.negativeAllowed)}
                         </Badge>
                       ) : (
                         <Badge className="bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800 text-xs">
