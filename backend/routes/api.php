@@ -98,6 +98,7 @@ use Modules\Finance\Presentation\Http\Controllers\PostingRuleController as Finan
 use Modules\Finance\Presentation\Http\Controllers\ProfitabilityController as FinanceProfitabilityController;
 use Modules\Finance\Presentation\Http\Controllers\ScenarioController as FinanceScenarioController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierBillController as FinanceSupplierBillController;
+use Modules\Finance\Presentation\Http\Controllers\SupplierInvoicePaymentController as FinanceSupplierInvoicePaymentController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierLedgerController as FinanceSupplierLedgerController;
 use Modules\Finance\Presentation\Http\Controllers\SupplierPaymentController as FinanceSupplierPaymentController;
 use Modules\Finance\Presentation\Http\Controllers\TaxController as FinanceTaxController;
@@ -2726,6 +2727,19 @@ Route::middleware('auth:sanctum')->prefix('finance')->group(function (): void {
             Route::post('/{uuid}/allocate', [FinanceSupplierPaymentController::class, 'allocate'])
                 ->middleware('permission:finance.allocation.manage');
             Route::post('/{uuid}/auto-allocate', [FinanceSupplierPaymentController::class, 'autoAllocate'])
+                ->middleware('permission:finance.allocation.manage');
+        });
+
+        // Invoice-anchored "Pay Supplier Invoice" — the canonical Finance use case
+        // a Procurement surface deep-links into. It resolves the invoice's payable
+        // ('SI-'.<invoice id>) and drives the existing AP authorities. Approve and
+        // post stay on the generic /payments endpoints above: initiating a payment
+        // here (finance.ap.payment.create) can never approve or post it, so the
+        // maker/checker identity gate is preserved by construction.
+        Route::prefix('supplier-invoices')->group(function (): void {
+            Route::post('/{invoiceId}/payments', [FinanceSupplierInvoicePaymentController::class, 'initiate'])
+                ->middleware('permission:finance.ap.payment.create');
+            Route::post('/{invoiceId}/payments/{uuid}/settle', [FinanceSupplierInvoicePaymentController::class, 'settle'])
                 ->middleware('permission:finance.allocation.manage');
         });
 

@@ -20,6 +20,7 @@ use Modules\Finance\Payables\Domain\Models\SupplierPayment;
 use Modules\Finance\Posting\Domain\Services\PostingCoordinator;
 use Modules\Finance\Shared\Domain\Enums\DocumentStatus;
 use Modules\Finance\Shared\Domain\Services\ControlAccountResolver;
+use Modules\Finance\Shared\Domain\Services\FundingAccountPolicy;
 use Modules\Finance\Tax\Domain\Models\TaxCode;
 
 /**
@@ -37,6 +38,7 @@ final class AccountsPayableService
     public function __construct(
         private readonly PostingCoordinator $coordinator,
         private readonly ControlAccountResolver $controlAccounts,
+        private readonly FundingAccountPolicy $fundingAccounts,
     ) {}
 
     /**
@@ -167,6 +169,13 @@ final class AccountsPayableService
         ?string $description = null,
         ?int $createdBy = null,
     ): SupplierPayment {
+        // Money leaves from the funding account, so it must be a real source of
+        // funds this company holds — a cash or bank account, not an arbitrary GL
+        // node (revenue, expense, inventory, a receivable/payable control, …).
+        // This is the single canonical funding-eligibility gate; every supplier
+        // payment is created here, so every path inherits it before any posting.
+        $this->fundingAccounts->assertEligible($companyId, $fundingAccountId);
+
         return SupplierPayment::create([
             'company_id' => $companyId,
             'supplier_id' => $supplierId,

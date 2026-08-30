@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Finance;
 
-use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -21,7 +20,6 @@ use Modules\Finance\Ledger\Domain\Services\ChartOfAccountsService;
 use Modules\Finance\Payables\Domain\Enums\PaymentStatus;
 use Modules\Finance\Payables\Domain\Enums\SupplierDocumentType;
 use Modules\Finance\Payables\Domain\Services\AccountsPayableService;
-use Modules\Finance\Payables\Domain\Services\ApAgingService;
 use Modules\Finance\Payables\Domain\Services\SupplierLedgerService;
 use Modules\Finance\Receivables\Domain\Enums\CustomerDocumentType;
 use Modules\Finance\Receivables\Domain\Services\AccountsReceivableService;
@@ -235,7 +233,7 @@ class SubledgersTest extends TestCase
     {
         $supplier = (string) Str::uuid();
         $this->controlAccount('ap', AccountType::Liability);
-        $bank = $this->account(AccountType::Asset);
+        $bank = $this->fundingAccount();
 
         $maker = 101;
         $payment = app(AccountsPayableService::class)->createPayment(
@@ -272,7 +270,7 @@ class SubledgersTest extends TestCase
         $supplier = (string) Str::uuid();
         $this->controlAccount('ap', AccountType::Liability);
         $expense = $this->account(AccountType::Expense);
-        $bank = $this->account(AccountType::Asset);
+        $bank = $this->fundingAccount();
 
         $bill = $this->postedBill($supplier, $expense, 200.0);
         $payment = app(AccountsPayableService::class)->createPayment(
@@ -487,6 +485,19 @@ class SubledgersTest extends TestCase
             'account_type' => $type,
             'is_postable' => $postable,
         ]);
+    }
+
+    /**
+     * A GL asset account designated as a legitimate source of funds — i.e. backed
+     * by a bank account, which is what FundingAccountPolicy requires of a supplier
+     * payment's funding account. A bare asset GL node is deliberately NOT eligible.
+     */
+    private function fundingAccount(): Account
+    {
+        $gl = $this->account(AccountType::Asset);
+        app(BankingService::class)->createAccount($this->companyId, 'Bank-'.$this->suffix(), (int) $gl->id);
+
+        return $gl;
     }
 
     private function controlAccount(string $subledger, AccountType $type): Account

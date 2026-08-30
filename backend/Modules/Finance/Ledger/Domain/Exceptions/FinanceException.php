@@ -26,7 +26,7 @@ class FinanceException extends RuntimeException
     public static function unbalanced(string $debits, string $credits): self
     {
         return new self(
-            "The journal does not balance: debits {$debits} ≠ credits {$credits}. Every entry must have equal debits and credits."
+            "The journal does not balance: debits {$debits} ≠ credits {$credits}. Every entry must have equal debits and credits.",
         );
     }
 
@@ -60,6 +60,13 @@ class FinanceException extends RuntimeException
     public static function accountNotFound(string $ref): self
     {
         return new self("Account {$ref} does not exist.");
+    }
+
+    public static function fundingAccountNotEligible(string $code): self
+    {
+        return new self(
+            "Account {$code} is not an eligible funding source. A payment must draw on a company cash or bank account.",
+        );
     }
 
     public static function controlAccountManual(string $code): self
@@ -130,7 +137,7 @@ class FinanceException extends RuntimeException
     public static function controlAccountNotConfigured(string $subledger): self
     {
         return new self(
-            "No {$subledger} control account is configured. Mark a chart-of-accounts node as the {$subledger} control before posting subledger documents."
+            "No {$subledger} control account is configured. Mark a chart-of-accounts node as the {$subledger} control before posting subledger documents.",
         );
     }
 
@@ -147,6 +154,14 @@ class FinanceException extends RuntimeException
     public static function documentNotPosted(string $kind, string $number): self
     {
         return new self("{$kind} {$number} must be posted before it can be allocated or settled.");
+    }
+
+    public static function noPayableForSupplierInvoice(string $reference): self
+    {
+        return new self(
+            "No canonical payable ({$reference}) exists for this supplier invoice. Post the invoice first; "
+            .'a commercial invoice with no receipt-anchored lines establishes no payable, so there is nothing to pay.',
+        );
     }
 
     public static function documentHasNoLines(string $kind): self
@@ -235,7 +250,7 @@ class FinanceException extends RuntimeException
     {
         return new self(
             "Event '{$eventCode}' posts to an inventory account chosen by inventory class, but carried none. "
-            .'The publishing module must state the class on the event; Finance will not assume one.'
+            .'The publishing module must state the class on the event; Finance will not assume one.',
         );
     }
 
@@ -243,7 +258,7 @@ class FinanceException extends RuntimeException
     {
         return new self(
             "Event '{$eventCode}' declared inventory class '{$class}', which maps to no account role. "
-            .'Add the mapping deliberately — an unrecognised class never falls back to a default account.'
+            .'Add the mapping deliberately — an unrecognised class never falls back to a default account.',
         );
     }
 
