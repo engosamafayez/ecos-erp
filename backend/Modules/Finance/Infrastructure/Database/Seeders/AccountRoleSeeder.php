@@ -93,6 +93,10 @@ class AccountRoleSeeder extends Seeder
             'scrap_expense' => ['5150', 'Scrap & Rework'],
             'inventory_writeoff_expense' => ['5160', 'Inventory Write-Off'],
             'inventory_adjustment_loss' => ['5170', 'Inventory Loss'],
+            // V-2. Where an approved supplier invoice prices goods differently from the
+            // valuation the physical receipt already committed to Inventory/FIFO, the
+            // difference lands here rather than rewriting a historical FIFO layer.
+            'purchase_price_variance' => ['5180', 'Purchase Price Variance'],
 
             // ── Operating expenses ───────────────────────────────────────────
             'shipping_expense' => ['5550', 'Shipping & Delivery'],

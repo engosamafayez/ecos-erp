@@ -72,7 +72,11 @@ class ChartOfAccountsSeeder extends Seeder
 
             ['1300', 'Accounts Receivable', 'حسابات العملاء', $A, 'current_asset', $D, false, null],
             // CONTROL: moved only by the AR subledger.
-            ['1310', 'Trade Receivables', 'ذمم العملاء', $A, 'current_asset', $D, true, 'receivables'],
+            // Key is 'ar', not 'receivables': ControlAccountResolver::receivable() resolves
+            // control_subledger = 'ar', and the accounts table documents the vocabulary as
+            // `ar | ap | inventory | ...`. The previous value silently broke every AR
+            // subledger posting — the resolver found nothing and threw. See D-1.
+            ['1310', 'Trade Receivables', 'ذمم العملاء', $A, 'current_asset', $D, true, 'ar'],
             ['1320', 'Employee Receivables', 'ذمم الموظفين', $A, 'current_asset', $D, true, null],
             ['1330', 'Allowance for Doubtful Debts', 'مخصص الديون المشكوك فيها', $A, 'current_asset', $C, true, null],
 
@@ -100,7 +104,9 @@ class ChartOfAccountsSeeder extends Seeder
 
             ['2100', 'Accounts Payable', 'حسابات الموردين', $L, 'current_liability', $C, false, null],
             // CONTROL: moved only by the AP subledger.
-            ['2110', 'Trade Payables', 'ذمم الموردين', $L, 'current_liability', $C, true, 'payables'],
+            // Key is 'ap', not 'payables' — same reason as 1310 above. This is the account
+            // AccountsPayableService posts every supplier bill against. See D-1.
+            ['2110', 'Trade Payables', 'ذمم الموردين', $L, 'current_liability', $C, true, 'ap'],
             ['2120', 'Goods Received Not Invoiced', 'بضاعة مستلمة غير مفوترة', $L, 'current_liability', $C, true, null],
             ['2130', 'Shipping Payables', 'ذمم شركات الشحن', $L, 'current_liability', $C, true, null],
 
@@ -136,6 +142,10 @@ class ChartOfAccountsSeeder extends Seeder
             ['3300', 'Retained Earnings', 'أرباح مرحلة', $E, 'equity', $C, true, null],
             ['3400', 'Current Year Result', 'نتيجة العام الحالي', $E, 'equity', $C, true, null],
             ['3500', 'Owner Drawings', 'مسحوبات الملاك', $E, 'equity', $D, true, null],
+            // TASK-PROC-SUPPLIER-OPENING-BALANCE-001 — the dedicated cut-over offset for
+            // onboarding opening balances (supplier payable & advance). The counter leg of
+            // every opening entry credits/debits here instead of repurposing Retained Earnings.
+            ['3600', 'Opening Balance Equity', 'حقوق ملكية — أرصدة افتتاحية', $E, 'equity', $C, true, null],
 
             // ── 4 REVENUE ───────────────────────────────────────────────────
             ['4000', 'Revenue', 'الإيرادات', $R, 'operating_revenue', $C, false, null],
