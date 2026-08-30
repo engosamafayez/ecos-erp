@@ -48,13 +48,26 @@ final class AllocationEngine
         }
 
         return DB::transaction(function () use ($receipt, $invoice, $amount, $actorId): ReceiptAllocation {
-            // Re-derive availability inside the transaction to defeat races.
-            $available = $receipt->fresh()->unallocatedAmount();
+            // CONCURRENCY: re-derive availability under a PESSIMISTIC lock, not a plain
+            // ->fresh(). A non-locking re-read only re-reads this transaction's snapshot,
+            // so two receipts could each read outstanding = 500 and both allocate 400 —
+            // 800 against a 500 receivable (write skew). Locking the two aggregate rows the
+            // constraints derive from — the receipt (its unallocated balance) and the
+            // invoice (its outstanding) — FOR UPDATE makes a second allocator touching the
+            // same receipt or invoice block until the first commits, then observe its
+            // allocation. Both sums are read AFTER the locks are held, so they reflect
+            // committed state. The receipt is locked before the invoice on every path, so
+            // the order is consistent and cannot deadlock against itself. (Mirrors the
+            // approved AP allocatePayment fix — the source is locked before the document.)
+            $receipt = CustomerReceipt::query()->whereKey($receipt->id)->lockForUpdate()->firstOrFail();
+            $invoice = CustomerInvoice::query()->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
+
+            $available = $receipt->unallocatedAmount();
             if ($amount > $available) {
                 throw FinanceException::allocationExceedsSource('receipt', (string) $available);
             }
 
-            $outstanding = $invoice->fresh()->outstanding();
+            $outstanding = $invoice->outstanding();
             if ($amount > $outstanding) {
                 throw FinanceException::allocationExceedsDocument($invoice->document_type->label().' '.$invoice->number, (string) $outstanding);
             }
