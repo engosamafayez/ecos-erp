@@ -134,12 +134,25 @@ final class AllocationEngine
         }
 
         return DB::transaction(function () use ($payment, $bill, $amount, $actorId): PaymentAllocation {
-            $available = $payment->fresh()->unallocatedAmount();
+            // CONCURRENCY: re-derive availability under a PESSIMISTIC lock, not a plain
+            // ->fresh(). A non-locking re-read only re-reads this transaction's snapshot,
+            // so two payments could each read outstanding = 500 and both allocate 400 —
+            // 800 against a 500 payable (write skew). Locking the two aggregate rows the
+            // constraints derive from — the payment (its unallocated balance) and the bill
+            // (its outstanding) — FOR UPDATE makes a second allocator touching the same
+            // payment or bill block until the first commits, then observe its allocation.
+            // Both sums are read AFTER the locks are held, so they reflect committed state.
+            // The payment is locked before the bill on every path, so the order is
+            // consistent and cannot deadlock against itself.
+            $payment = SupplierPayment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
+            $bill = SupplierBill::query()->whereKey($bill->id)->lockForUpdate()->firstOrFail();
+
+            $available = $payment->unallocatedAmount();
             if ($amount > $available) {
                 throw FinanceException::allocationExceedsSource('payment', (string) $available);
             }
 
-            $outstanding = $bill->fresh()->outstanding();
+            $outstanding = $bill->outstanding();
             if ($amount > $outstanding) {
                 throw FinanceException::allocationExceedsDocument($bill->document_type->label().' '.$bill->number, (string) $outstanding);
             }
