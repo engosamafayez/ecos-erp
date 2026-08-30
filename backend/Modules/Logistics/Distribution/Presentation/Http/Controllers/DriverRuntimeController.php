@@ -32,6 +32,7 @@ use Modules\Operations\Loading\Domain\Models\VehicleAssignment;
 use Modules\Operations\Loading\Domain\Models\VehicleInventoryItem;
 use Modules\Operations\Loading\Domain\Services\LoadingCustodyService;
 use Modules\Operations\Loading\Presentation\Http\Resources\VehicleInventoryItemResource;
+use RuntimeException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -432,7 +433,7 @@ final class DriverRuntimeController extends Controller
                 // with any remaining quantity is NOT auto-completed (§10).
                 $this->settleStopIfFullyDelivered($stop, $actor);
             });
-        } catch (\RuntimeException $e) {
+        } catch (RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
 
@@ -956,7 +957,7 @@ final class DriverRuntimeController extends Controller
         //   C  this stop's delivery started (canonical stop state)          → + phone/contact/notes.
         $stage = $this->driverPrivacyStage($stop);
         $showIdentity = $stage !== 'A';   // customer name, address, geographic location
-        $showContact  = $stage === 'C';   // direct-contact + free-text notes (may carry contact)
+        $showContact = $stage === 'C';   // direct-contact + free-text notes (may carry contact)
 
         $payload = [
             'id' => $order->id,

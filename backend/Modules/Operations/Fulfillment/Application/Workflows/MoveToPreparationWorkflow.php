@@ -140,11 +140,11 @@ final class MoveToPreparationWorkflow implements FulfillmentWorkflowInterface
                         ? "Order #{$order->order_number} cannot become Ready for Dispatch — insufficient stock. Moved to Awaiting Stock."
                         : "Order #{$order->order_number} cannot become Ready for Dispatch — insufficient stock. Status [{$order->status->value}] preserved.",
                     [
-                        'actor_id'            => $ctx->actorId,
+                        'actor_id' => $ctx->actorId,
                         'reservation_created' => true,
-                        'reservation_status'  => $order->reservation_status?->value,
-                        'status_preserved'    => ! $statusChanged,
-                        'started_at'          => now()->toIso8601String(),
+                        'reservation_status' => $order->reservation_status?->value,
+                        'status_preserved' => ! $statusChanged,
+                        'started_at' => now()->toIso8601String(),
                     ],
                 );
             }
@@ -162,11 +162,11 @@ final class MoveToPreparationWorkflow implements FulfillmentWorkflowInterface
             $order,
             $message,
             [
-                'actor_id'            => $ctx->actorId,
+                'actor_id' => $ctx->actorId,
                 'reservation_created' => $reservationCreated,
-                'warehouse_id'        => $order->assigned_warehouse_id,
-                'reservation_status'  => $order->reservation_status?->value,
-                'started_at'          => now()->toIso8601String(),
+                'warehouse_id' => $order->assigned_warehouse_id,
+                'reservation_status' => $order->reservation_status?->value,
+                'started_at' => now()->toIso8601String(),
             ],
         );
     }

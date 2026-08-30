@@ -110,7 +110,7 @@ final class GoogleMapsUrlResolver
      * Priority mirrors the frontend parser (google-maps-parser.ts) exactly so client
      * and server agree on which coordinate a URL yields.
      *
-     * @return array{0: float|null, 1: float|null}  [lat, lng]
+     * @return array{0: float|null, 1: float|null} [lat, lng]
      */
     private function extractCoordinates(string $url): array
     {

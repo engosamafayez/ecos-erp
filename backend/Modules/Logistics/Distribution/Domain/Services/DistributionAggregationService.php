@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Logistics\Distribution\Domain\Services;
 
+use BackedEnum;
 use DateTimeInterface;
 use Illuminate\Support\Facades\DB;
 use Modules\Commerce\Orders\Domain\Enums\PaymentState;
-use Modules\Operations\Preparation\Application\Services\WaveEngine\WaveManager;
 use Modules\Logistics\Distribution\Domain\Enums\DistributionAssignmentSource;
 use Modules\Logistics\Distribution\Domain\Models\DistributionWindow;
 use Modules\Logistics\Distribution\Domain\Models\VirtualCapacitySlot;
+use Modules\Operations\Preparation\Application\Services\WaveEngine\WaveManager;
 
 /**
  * The Distribution Workspace read model.
@@ -89,10 +90,10 @@ final class DistributionAggregationService
     {
         $rows = $this->preparation->constrainToEligible(
             $this->scopeWarehouse(
-            DB::table('distribution_window_orders as dwo')
-                ->leftJoin('distribution_zones as dz', 'dz.id', '=', 'dwo.distribution_zone_id')
-                ->leftJoin('orders as o', 'o.id', '=', 'dwo.order_id')
-                ->where('dwo.distribution_window_id', $windowId),
+                DB::table('distribution_window_orders as dwo')
+                    ->leftJoin('distribution_zones as dz', 'dz.id', '=', 'dwo.distribution_zone_id')
+                    ->leftJoin('orders as o', 'o.id', '=', 'dwo.order_id')
+                    ->where('dwo.distribution_window_id', $windowId),
                 $warehouseId,
             ),
             'o',
@@ -194,8 +195,7 @@ final class DistributionAggregationService
         string $windowId,
         ?string $warehouseId = null,
         ?string $waveId = null,
-    ): array
-    {
+    ): array {
         // The GROUP LIST is filtered by OWNERSHIP, not merely by the orders it
         // reports. Part 5A scoped the totals, which hid the symptom; a group owned
         // by another warehouse must not appear at all.
@@ -248,7 +248,7 @@ final class DistributionAggregationService
                 // Names travel with the ids so a group can be described without a
                 // second round trip and without the client joining anything.
                 'zone_names' => array_values(array_map(
-                    static fn (int $id): string => $zoneNames[$id] ?? ('Zone ' . $id),
+                    static fn (int $id): string => $zoneNames[$id] ?? ('Zone '.$id),
                     $zoneIds,
                 )),
                 'zones_count' => count($zoneIds),
@@ -406,13 +406,13 @@ final class DistributionAggregationService
         return [
             'wave_id' => $wave->id,
             'wave_number' => $wave->wave_number,
-            'planning_date' => $wave->planning_date instanceof \DateTimeInterface
+            'planning_date' => $wave->planning_date instanceof DateTimeInterface
                 ? $wave->planning_date->format('Y-m-d')
                 : $wave->planning_date,
             'starts_at' => (string) $wave->starts_at,
             'cutoff_at' => (string) $wave->intake_closes_at,
             'ends_at' => (string) $wave->ends_at,
-            'status' => $wave->status instanceof \BackedEnum ? $wave->status->value : $wave->status,
+            'status' => $wave->status instanceof BackedEnum ? $wave->status->value : $wave->status,
             'warehouse_id' => $wave->warehouse_id,
             // The operational timezone is the COMPANY's - the certified authority.
             'timezone' => DB::table('companies')->where('id', $companyId)->value('timezone'),

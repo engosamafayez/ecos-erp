@@ -62,13 +62,13 @@ final class ReturnToPendingWorkflow implements FulfillmentWorkflowInterface
         // DRIFT-009 fix: clear reservation_status so it does not stay stale as 'Released'.
         // H-4 fix: also clear partial_reservation_approved_at — shortage profile may change.
         $order->update([
-            'status'                         => OrderStatus::InProgress,
+            'status' => OrderStatus::InProgress,
             // Unlocking undoes the confirmation, so the stamp must not survive it.
-            'confirmed_at'                   => null,
-            'inventory_reserved_at'          => null,
-            'inventory_released_at'          => null,
-            'reservation_status'             => null,
-            'reservation_failure_reason'     => null,
+            'confirmed_at' => null,
+            'inventory_reserved_at' => null,
+            'inventory_released_at' => null,
+            'reservation_status' => null,
+            'reservation_failure_reason' => null,
             'partial_reservation_approved_at' => null,
         ]);
         $order->refresh();
@@ -78,7 +78,7 @@ final class ReturnToPendingWorkflow implements FulfillmentWorkflowInterface
             "Order #{$order->order_number} returned to In Progress.".($released ? ' Inventory reservation released.' : ''),
             [
                 'inventory_released' => $released,
-                'actor_id'           => $ctx->actorId,
+                'actor_id' => $ctx->actorId,
             ],
         );
     }

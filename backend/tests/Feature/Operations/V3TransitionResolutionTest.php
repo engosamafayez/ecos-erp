@@ -52,21 +52,21 @@ final class V3TransitionResolutionTest extends TestCase
     public static function routedEdges(): array
     {
         return [
-            'activation'        => [OrderStatus::Scheduled->value,         OrderStatus::InProgress->value,       'ProcessOrderWorkflow'],
-            'confirm'           => [OrderStatus::InProgress->value,        OrderStatus::Confirmed->value,        'ConfirmOrderWorkflow'],
+            'activation' => [OrderStatus::Scheduled->value,         OrderStatus::InProgress->value,       'ProcessOrderWorkflow'],
+            'confirm' => [OrderStatus::InProgress->value,        OrderStatus::Confirmed->value,        'ConfirmOrderWorkflow'],
             'ready from confirmed' => [OrderStatus::Confirmed->value,      OrderStatus::ReadyForDispatch->value, 'MoveToPreparationWorkflow'],
-            'activate from hold'=> [OrderStatus::OnHold->value,            OrderStatus::InProgress->value,       'ProcessOrderWorkflow'],
-            'ready for dispatch'=> [OrderStatus::InProgress->value,        OrderStatus::ReadyForDispatch->value, 'MoveToPreparationWorkflow'],
-            'dispatch'          => [OrderStatus::ReadyForDispatch->value,  OrderStatus::OutForDelivery->value,   'DispatchOrderWorkflow'],
-            'deliver'           => [OrderStatus::OutForDelivery->value,    OrderStatus::Delivered->value,        'CompleteDeliveryWorkflow'],
-            'return delivered'  => [OrderStatus::Delivered->value,         OrderStatus::Returned->value,         'ReturnOrderWorkflow'],
-            'cancel'            => [OrderStatus::InProgress->value,        OrderStatus::Cancelled->value,        'CancelOrderWorkflow'],
-            'unlock for edit'   => [OrderStatus::Confirmed->value,         OrderStatus::InProgress->value,       'ReturnToPendingWorkflow'],
-            'release to payment'=> [OrderStatus::InProgress->value,        OrderStatus::AwaitingPayment->value,  'ReturnToPaymentWorkflow'],
-            'awaiting stock'    => [OrderStatus::InProgress->value,        OrderStatus::AwaitingStock->value,    'MarkAwaitingStockWorkflow'],
-            'on hold'           => [OrderStatus::InProgress->value,        OrderStatus::OnHold->value,           'MoveToReviewWorkflow'],
-            'reschedule'        => [OrderStatus::InProgress->value,        OrderStatus::Scheduled->value,        'MarkRescheduledWorkflow'],
-            'early to scheduled'=> [OrderStatus::AwaitingPayment->value,   OrderStatus::Scheduled->value,        'MarkRescheduledWorkflow'],
+            'activate from hold' => [OrderStatus::OnHold->value,            OrderStatus::InProgress->value,       'ProcessOrderWorkflow'],
+            'ready for dispatch' => [OrderStatus::InProgress->value,        OrderStatus::ReadyForDispatch->value, 'MoveToPreparationWorkflow'],
+            'dispatch' => [OrderStatus::ReadyForDispatch->value,  OrderStatus::OutForDelivery->value,   'DispatchOrderWorkflow'],
+            'deliver' => [OrderStatus::OutForDelivery->value,    OrderStatus::Delivered->value,        'CompleteDeliveryWorkflow'],
+            'return delivered' => [OrderStatus::Delivered->value,         OrderStatus::Returned->value,         'ReturnOrderWorkflow'],
+            'cancel' => [OrderStatus::InProgress->value,        OrderStatus::Cancelled->value,        'CancelOrderWorkflow'],
+            'unlock for edit' => [OrderStatus::Confirmed->value,         OrderStatus::InProgress->value,       'ReturnToPendingWorkflow'],
+            'release to payment' => [OrderStatus::InProgress->value,        OrderStatus::AwaitingPayment->value,  'ReturnToPaymentWorkflow'],
+            'awaiting stock' => [OrderStatus::InProgress->value,        OrderStatus::AwaitingStock->value,    'MarkAwaitingStockWorkflow'],
+            'on hold' => [OrderStatus::InProgress->value,        OrderStatus::OnHold->value,           'MoveToReviewWorkflow'],
+            'reschedule' => [OrderStatus::InProgress->value,        OrderStatus::Scheduled->value,        'MarkRescheduledWorkflow'],
+            'early to scheduled' => [OrderStatus::AwaitingPayment->value,   OrderStatus::Scheduled->value,        'MarkRescheduledWorkflow'],
         ];
     }
 
@@ -82,12 +82,12 @@ final class V3TransitionResolutionTest extends TestCase
     public static function refusedEdges(): array
     {
         return [
-            'self transition'          => [OrderStatus::InProgress->value,       OrderStatus::InProgress->value],
-            'skip dispatch'            => [OrderStatus::InProgress->value,       OrderStatus::Delivered->value],
-            'reverse from delivered'   => [OrderStatus::Delivered->value,        OrderStatus::InProgress->value],
-            'locked ready to confirmed'=> [OrderStatus::ReadyForDispatch->value, OrderStatus::Confirmed->value],
-            'locked out for delivery'  => [OrderStatus::OutForDelivery->value,   OrderStatus::OnHold->value],
-            'returned is locked'       => [OrderStatus::Returned->value,         OrderStatus::InProgress->value],
+            'self transition' => [OrderStatus::InProgress->value,       OrderStatus::InProgress->value],
+            'skip dispatch' => [OrderStatus::InProgress->value,       OrderStatus::Delivered->value],
+            'reverse from delivered' => [OrderStatus::Delivered->value,        OrderStatus::InProgress->value],
+            'locked ready to confirmed' => [OrderStatus::ReadyForDispatch->value, OrderStatus::Confirmed->value],
+            'locked out for delivery' => [OrderStatus::OutForDelivery->value,   OrderStatus::OnHold->value],
+            'returned is locked' => [OrderStatus::Returned->value,         OrderStatus::InProgress->value],
             'skip to out for delivery' => [OrderStatus::InProgress->value,       OrderStatus::OutForDelivery->value],
         ];
     }

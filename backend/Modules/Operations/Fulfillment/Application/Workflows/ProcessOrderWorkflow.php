@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Operations\Fulfillment\Application\Workflows;
 
+use DateTimeInterface;
 use Modules\Commerce\Orders\Application\Actions\ReserveOrderInventoryAction;
 use Modules\Commerce\Orders\Application\Actions\UpdateReservationStatusAction;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
@@ -99,7 +100,7 @@ final class ProcessOrderWorkflow implements FulfillmentWorkflowInterface
             // rejected even an order whose window had already opened, and scheduled
             // activation never once succeeded. Normalise to a day before comparing.
             $rawDeliveryDate = $order->requested_delivery_date;
-            $deliveryDate = $rawDeliveryDate instanceof \DateTimeInterface
+            $deliveryDate = $rawDeliveryDate instanceof DateTimeInterface
                 ? $rawDeliveryDate->format('Y-m-d')
                 : (string) ($rawDeliveryDate ?? '');
             $activationDate = now()->addDay()->toDateString();
@@ -120,10 +121,10 @@ final class ProcessOrderWorkflow implements FulfillmentWorkflowInterface
         // Clear on_hold / cancel metadata on re-activation
         if (in_array($order->status, [OrderStatus::OnHold, OrderStatus::Cancelled], true)) {
             $order->update([
-                'rescheduled_at'     => null,
+                'rescheduled_at' => null,
                 'next_delivery_date' => null,
                 'resume_from_status' => null,
-                'reschedule_reason'  => null,
+                'reschedule_reason' => null,
             ]);
             $order->refresh();
         }
@@ -212,7 +213,7 @@ final class ProcessOrderWorkflow implements FulfillmentWorkflowInterface
         }
 
         // Idempotent: inventory already held — go straight to InProgress
-        $activeStates    = [ReservationStatus::Reserved, ReservationStatus::PartialReserved];
+        $activeStates = [ReservationStatus::Reserved, ReservationStatus::PartialReserved];
         $alreadyReserved = in_array($order->reservation_status, $activeStates, true);
 
         if (! $alreadyReserved) {
@@ -306,12 +307,12 @@ final class ProcessOrderWorkflow implements FulfillmentWorkflowInterface
                         ? "Order #{$order->order_number} awaiting stock — insufficient inventory."
                         : "Order #{$order->order_number} has an inventory shortage; status [{$order->status->value}] preserved.",
                     [
-                        'actor_id'               => $ctx->actorId,
-                        'reservation_failed'     => true,
-                        'status_preserved'       => ! $statusChanged,
-                        'transfer_requested'     => $transferShortageLines !== null,
+                        'actor_id' => $ctx->actorId,
+                        'reservation_failed' => true,
+                        'status_preserved' => ! $statusChanged,
+                        'transfer_requested' => $transferShortageLines !== null,
                         'transfer_shortage_lines' => $transferShortageLines,
-                        'transfer_requested_at'  => $transferShortageLines !== null ? now()->toIso8601String() : null,
+                        'transfer_requested_at' => $transferShortageLines !== null ? now()->toIso8601String() : null,
                     ],
                 );
             }
@@ -417,7 +418,7 @@ final class ProcessOrderWorkflow implements FulfillmentWorkflowInterface
                 continue;
             }
 
-            $productId   = $line['product_id'];
+            $productId = $line['product_id'];
             $requiredQty = (float) $line['requested'] - (float) ($line['reserved'] ?? 0);
             $alternatives = $alternativeItems->get($productId, collect());
 
@@ -426,12 +427,12 @@ final class ProcessOrderWorkflow implements FulfillmentWorkflowInterface
             }
 
             $shortageLines[] = [
-                'product_id'          => $productId,
-                'sku'                 => null,
-                'required_qty'        => $requiredQty,
+                'product_id' => $productId,
+                'sku' => null,
+                'required_qty' => $requiredQty,
                 'available_warehouses' => $alternatives
                     ->map(fn ($item) => [
-                        'warehouse_id'  => $item->warehouse_id,
+                        'warehouse_id' => $item->warehouse_id,
                         'available_qty' => max(0.0, (float) $item->on_hand_qty - (float) $item->reserved_qty),
                     ])
                     ->values()

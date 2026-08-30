@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Logistics\Distribution\Presentation\Http\Controllers;
 
+use BackedEnum;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -256,7 +257,7 @@ final class GroupLoadingWorkspaceController extends Controller
                     ->whereIn('trip_id', $trips->pluck('id')->all())
                     ->get(['trip_id', 'status'])
                     ->mapWithKeys(static fn ($a): array => [
-                        (string) $a->trip_id => (string) ($a->status instanceof \BackedEnum
+                        (string) $a->trip_id => (string) ($a->status instanceof BackedEnum
                             ? $a->status->value
                             : $a->status),
                     ])
@@ -307,7 +308,7 @@ final class GroupLoadingWorkspaceController extends Controller
             'trip' => $trip === null ? null : [
                 'trip_id' => (string) $trip->uuid,
                 'trip_number' => (string) $trip->trip_number,
-                'status' => (string) ($trip->status instanceof \BackedEnum
+                'status' => (string) ($trip->status instanceof BackedEnum
                     ? $trip->status->value
                     : $trip->status),
             ],
@@ -470,7 +471,7 @@ final class GroupLoadingWorkspaceController extends Controller
                 // exists yet, which is a different fact.
                 'loading_status' => $task === null
                     ? null
-                    : (string) ($task->status instanceof \BackedEnum ? $task->status->value : $task->status),
+                    : (string) ($task->status instanceof BackedEnum ? $task->status->value : $task->status),
 
                 'loading_task_id' => $task?->id,
 
@@ -520,7 +521,7 @@ final class GroupLoadingWorkspaceController extends Controller
                 ],
                 'transport' => $this->presentTransport(
                     $trip,
-                    $assignment === null ? null : (string) ($assignment->status instanceof \BackedEnum
+                    $assignment === null ? null : (string) ($assignment->status instanceof BackedEnum
                         ? $assignment->status->value
                         : $assignment->status),
                 ),

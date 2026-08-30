@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Logistics\Distribution\Domain\Services;
 
+use DateTimeInterface;
 use Illuminate\Support\Collection;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Orders\Domain\Models\PaymentProof;
@@ -1049,7 +1050,7 @@ class DriverDaySettlementReadService
         $events = [];
         $push = static function (string $code, $at) use (&$events): void {
             if ($at !== null) {
-                $events[] = ['code' => $code, 'at' => $at instanceof \DateTimeInterface ? $at->format('c') : (string) $at];
+                $events[] = ['code' => $code, 'at' => $at instanceof DateTimeInterface ? $at->format('c') : (string) $at];
             }
         };
 

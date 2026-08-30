@@ -24,7 +24,7 @@ final class OrderStatusV3ContractTest extends TestCase
      * other case is locked. `isLocked()` is the exact negation of `entryStatuses()`; this
      * asserts both halves so a case added to one list without the other is caught.
      */
-    public function test_isLocked_is_false_only_for_the_three_entry_statuses(): void
+    public function test_is_locked_is_false_only_for_the_three_entry_statuses(): void
     {
         $unlocked = [
             OrderStatus::InProgress,
@@ -74,12 +74,12 @@ final class OrderStatusV3ContractTest extends TestCase
     {
         return [
             'new (removed §2.1)' => ['new'],
-            'pending'            => ['pending'],
-            'processing'         => ['processing'],
-            'preparing'          => ['preparing'],
-            'completed'          => ['completed'],
-            'review'             => ['review'],
-            'rescheduled'        => ['rescheduled'],
+            'pending' => ['pending'],
+            'processing' => ['processing'],
+            'preparing' => ['preparing'],
+            'completed' => ['completed'],
+            'review' => ['review'],
+            'rescheduled' => ['rescheduled'],
         ];
     }
 

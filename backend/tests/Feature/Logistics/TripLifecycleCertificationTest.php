@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Logistics;
 
 use App\Models\User;
+use BackedEnum;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -137,7 +138,7 @@ final class TripLifecycleCertificationTest extends TestCase
         self::assertCount(
             1,
             app(LoadingCustodyService::class)->unresolvedLoadedTasks((string) $assignment->id),
-            'a warehouse-loaded item awaits the driver'
+            'a warehouse-loaded item awaits the driver',
         );
 
         $this->driverConfirms($this->honey, 6.0)->assertOk();
@@ -145,7 +146,7 @@ final class TripLifecycleCertificationTest extends TestCase
         self::assertSame(
             [],
             app(LoadingCustodyService::class)->unresolvedLoadedTasks((string) $assignment->id),
-            'once confirmed, nothing is outstanding'
+            'once confirmed, nothing is outstanding',
         );
     }
 
@@ -197,7 +198,7 @@ final class TripLifecycleCertificationTest extends TestCase
         self::assertSame(
             0,
             DB::table('distribution_trip_orders')->where('trip_id', '!=', $trip->id)->count(),
-            'no other trip received these orders'
+            'no other trip received these orders',
         );
     }
 
@@ -218,7 +219,7 @@ final class TripLifecycleCertificationTest extends TestCase
         self::assertSame(
             0,
             DB::table('distribution_delivery_stops')->where('trip_id', '!=', $trip->id)->count(),
-            'no stop was written against another trip'
+            'no stop was written against another trip',
         );
     }
 
@@ -308,7 +309,7 @@ final class TripLifecycleCertificationTest extends TestCase
     {
         self::assertFalse(
             TripStatus::LoadingCompleted->canTransitionTo(TripStatus::InProgress),
-            'the illegal shortcut stays illegal'
+            'the illegal shortcut stays illegal',
         );
         self::assertTrue(TripStatus::LoadingCompleted->canTransitionTo(TripStatus::DriverAccepted));
         self::assertTrue(TripStatus::DriverAccepted->canTransitionTo(TripStatus::ReadyForDispatch));
@@ -409,12 +410,12 @@ final class TripLifecycleCertificationTest extends TestCase
         self::assertSame(
             $groupOrders,
             DB::table('distribution_trip_orders')->where('trip_id', $trip->id)->count(),
-            '15: no duplicate trip_orders'
+            '15: no duplicate trip_orders',
         );
         self::assertSame(
             $groupOrders,
             DB::table('distribution_delivery_stops')->where('trip_id', $trip->id)->count(),
-            '15: no duplicate delivery stops'
+            '15: no duplicate delivery stops',
         );
     }
 
@@ -572,7 +573,7 @@ final class TripLifecycleCertificationTest extends TestCase
         self::assertSame(
             [],
             app(LoadingCustodyService::class)->unresolvedLoadedTasks((string) $assignment->id),
-            'the manifest is fully confirmed before completion'
+            'the manifest is fully confirmed before completion',
         );
     }
 
@@ -698,6 +699,6 @@ final class TripLifecycleCertificationTest extends TestCase
 
     private function statusValue(mixed $status): string
     {
-        return $status instanceof \BackedEnum ? (string) $status->value : (string) $status;
+        return $status instanceof BackedEnum ? (string) $status->value : (string) $status;
     }
 }

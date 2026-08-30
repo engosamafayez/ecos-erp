@@ -339,10 +339,10 @@ final class OrderResource extends JsonResource
     private function resolveAllowedTransitions(): array
     {
         $t = static fn (string $target, string $label, bool $reason = false, string $action = ''): array => [
-            'target_status'   => $target,
-            'label'           => $label,
+            'target_status' => $target,
+            'label' => $label,
             'requires_reason' => $reason,
-            'action'          => $action,
+            'action' => $action,
         ];
 
         return match ($this->status) {
@@ -351,66 +351,66 @@ final class OrderResource extends JsonResource
             // stay until Confirm. It is fulfilment-eligible (§7), so Mark Ready
             // remains available without confirming first.
             OrderStatus::InProgress => [
-                $t('confirmed',          'Confirm',          false, 'confirm_order'),
-                $t('ready_for_dispatch', 'Mark Ready',       false, 'ready_for_dispatch'),
-                $t('awaiting_payment',   'Awaiting Payment', false, 'set_early_status'),
-                $t('scheduled',          'Schedule',         false, 'set_early_status'),
-                $t('awaiting_stock',     'Awaiting Stock',   false, 'mark_awaiting_stock'),
-                $t('on_hold',            'Put On Hold',      true,  'put_on_hold'),
-                $t('cancelled',          'Cancel',           true,  'cancel_order'),
+                $t('confirmed', 'Confirm', false, 'confirm_order'),
+                $t('ready_for_dispatch', 'Mark Ready', false, 'ready_for_dispatch'),
+                $t('awaiting_payment', 'Awaiting Payment', false, 'set_early_status'),
+                $t('scheduled', 'Schedule', false, 'set_early_status'),
+                $t('awaiting_stock', 'Awaiting Stock', false, 'mark_awaiting_stock'),
+                $t('on_hold', 'Put On Hold', true, 'put_on_hold'),
+                $t('cancelled', 'Cancel', true, 'cancel_order'),
             ],
             // ── Confirmed: committed — structurally locked (ADR-042 §2.2) ─────────
             // `in_progress` here is the UNLOCK edge: it releases the lock and the
             // reservation so the order can be edited again.
             OrderStatus::Confirmed => [
-                $t('ready_for_dispatch', 'Mark Ready',        false, 'ready_for_dispatch'),
-                $t('in_progress',        'Unlock for Edit',   false, 'return_to_in_progress'),
-                $t('awaiting_stock',     'Awaiting Stock',    false, 'mark_awaiting_stock'),
-                $t('on_hold',            'Put On Hold',       true,  'put_on_hold'),
-                $t('cancelled',          'Cancel',            true,  'cancel_order'),
+                $t('ready_for_dispatch', 'Mark Ready', false, 'ready_for_dispatch'),
+                $t('in_progress', 'Unlock for Edit', false, 'return_to_in_progress'),
+                $t('awaiting_stock', 'Awaiting Stock', false, 'mark_awaiting_stock'),
+                $t('on_hold', 'Put On Hold', true, 'put_on_hold'),
+                $t('cancelled', 'Cancel', true, 'cancel_order'),
             ],
             // ── Scheduled: future-dated — activate when date arrives ──────────────
             OrderStatus::Scheduled => [
-                $t('in_progress',     'Activate Now',       false, 'initiate_order'),
-                $t('on_hold',         'Put On Hold',        true,  'put_on_hold'),
-                $t('cancelled',       'Cancel',             true,  'cancel_order'),
+                $t('in_progress', 'Activate Now', false, 'initiate_order'),
+                $t('on_hold', 'Put On Hold', true, 'put_on_hold'),
+                $t('cancelled', 'Cancel', true, 'cancel_order'),
             ],
             // ── Awaiting Payment: pending payment verification ────────────────────
             OrderStatus::AwaitingPayment => [
-                $t('in_progress',     'Start Processing',   false, 'initiate_order'),
-                $t('awaiting_stock',  'Awaiting Stock',     false, 'mark_awaiting_stock'),
-                $t('on_hold',         'Put On Hold',        true,  'put_on_hold'),
-                $t('cancelled',       'Cancel',             true,  'cancel_order'),
+                $t('in_progress', 'Start Processing', false, 'initiate_order'),
+                $t('awaiting_stock', 'Awaiting Stock', false, 'mark_awaiting_stock'),
+                $t('on_hold', 'Put On Hold', true, 'put_on_hold'),
+                $t('cancelled', 'Cancel', true, 'cancel_order'),
             ],
             // ── Awaiting Stock: waiting for inventory ─────────────────────────────
             OrderStatus::AwaitingStock => [
-                $t('in_progress',  'Resume',          false, 'initiate_order'),
-                $t('on_hold',      'Put On Hold',     true,  'put_on_hold'),
-                $t('cancelled',    'Cancel',          true,  'cancel_order'),
+                $t('in_progress', 'Resume', false, 'initiate_order'),
+                $t('on_hold', 'Put On Hold', true, 'put_on_hold'),
+                $t('cancelled', 'Cancel', true, 'cancel_order'),
             ],
             // ── Ready for Dispatch: all preparation complete ──────────────────────
             OrderStatus::ReadyForDispatch => [
-                $t('out_for_delivery', 'Dispatch',         false, 'dispatch'),
-                $t('in_progress',      'Return to Queue',  false, 'return_to_processing'),
-                $t('on_hold',          'Put On Hold',      true,  'put_on_hold'),
-                $t('cancelled',        'Cancel',           true,  'cancel_order'),
+                $t('out_for_delivery', 'Dispatch', false, 'dispatch'),
+                $t('in_progress', 'Return to Queue', false, 'return_to_processing'),
+                $t('on_hold', 'Put On Hold', true, 'put_on_hold'),
+                $t('cancelled', 'Cancel', true, 'cancel_order'),
             ],
             // ── On Hold: manual intervention ──────────────────────────────────────
             OrderStatus::OnHold => [
-                $t('in_progress',     'Resume',          false, 'initiate_order'),
+                $t('in_progress', 'Resume', false, 'initiate_order'),
                 $t('awaiting_payment', 'Awaiting Payment', false, 'set_early_status'),
-                $t('awaiting_stock',  'Awaiting Stock',  false, 'mark_awaiting_stock'),
-                $t('cancelled',       'Cancel',          true,  'cancel_order'),
+                $t('awaiting_stock', 'Awaiting Stock', false, 'mark_awaiting_stock'),
+                $t('cancelled', 'Cancel', true, 'cancel_order'),
             ],
             // ── Cancelled: recoverable ────────────────────────────────────────────
             OrderStatus::Cancelled => [
-                $t('in_progress',      'Reactivate',       false, 'initiate_order'),
+                $t('in_progress', 'Reactivate', false, 'initiate_order'),
                 $t('awaiting_payment', 'Awaiting Payment', false, 'set_early_status'),
             ],
             // ── Execution chain ───────────────────────────────────────────────────
             OrderStatus::OutForDelivery => [
                 $t('delivered', 'Mark Delivered', false, 'complete_delivery'),
-                $t('returned',  'Return',         true,  'return_order'),
+                $t('returned', 'Return', true, 'return_order'),
             ],
             // ── Terminal ──────────────────────────────────────────────────────────
             OrderStatus::Delivered,

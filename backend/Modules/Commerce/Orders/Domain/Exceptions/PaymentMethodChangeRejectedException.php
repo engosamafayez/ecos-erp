@@ -21,7 +21,7 @@ final class PaymentMethodChangeRejectedException extends UnprocessableEntityHttp
     {
         parent::__construct(
             $message
-            ?? 'This order is already in fulfilment and the selected payment method requires verified payment proof, so it cannot be changed to it now.'
+            ?? 'This order is already in fulfilment and the selected payment method requires verified payment proof, so it cannot be changed to it now.',
         );
     }
 }

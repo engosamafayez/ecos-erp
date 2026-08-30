@@ -50,13 +50,13 @@ return new class extends Migration
      * non-canonical row after the V3 migration ran.
      */
     private const STATUS_MAP = [
-        'new'         => 'in_progress',
-        'pending'     => 'in_progress',
-        'processing'  => 'in_progress',
-        'preparing'   => 'in_progress',
-        'review'      => 'on_hold',
+        'new' => 'in_progress',
+        'pending' => 'in_progress',
+        'processing' => 'in_progress',
+        'preparing' => 'in_progress',
+        'review' => 'on_hold',
         'rescheduled' => 'on_hold',
-        'completed'   => 'delivered',
+        'completed' => 'delivered',
     ];
 
     /** Canonical fulfilment-eligible statuses (ADR-042 §7). */
@@ -70,14 +70,14 @@ return new class extends Migration
      * accidentally valid with the wrong meaning.
      */
     private const ENTRY_MAP = [
-        'new'         => 'in_progress',
-        'pending'     => 'in_progress',
-        'processing'  => 'in_progress',
-        'preparing'   => 'in_progress',
-        'confirmed'   => null,
-        'review'      => 'on_hold',
+        'new' => 'in_progress',
+        'pending' => 'in_progress',
+        'processing' => 'in_progress',
+        'preparing' => 'in_progress',
+        'confirmed' => null,
+        'review' => 'on_hold',
         'rescheduled' => 'on_hold',
-        'completed'   => 'delivered',
+        'completed' => 'delivered',
     ];
 
     public function up(): void
