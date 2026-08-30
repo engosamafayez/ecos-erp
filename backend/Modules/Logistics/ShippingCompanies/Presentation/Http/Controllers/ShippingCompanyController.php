@@ -75,6 +75,23 @@ class ShippingCompanyController extends Controller
             $query->where('status', '!=', ShippingCompany::STATUS_ARCHIVED);
         }
 
+        // Assignment surfaces (the Vehicle form) must only offer carriers the tenant
+        // can actually assign — i.e. mapped to the operator's company — so the list
+        // matches the fail-closed carrier validation on Vehicle create/update, which
+        // requires a `logistics_shipping_company_mappings` row for the actor's company.
+        // Without this the dropdown showed carriers that then failed with "The selected
+        // shipping company id is invalid." A global user (no company) sees all carriers,
+        // mirroring that rule's own fallback. The management screen omits the flag and is
+        // unaffected.
+        if ($request->boolean('assignable_only')) {
+            $companyId = $request->user()?->company_id;
+            if ($companyId !== null) {
+                $query->whereHas('mappings', function ($q) use ($companyId): void {
+                    $q->where('company_id', $companyId);
+                });
+            }
+        }
+
         $perPage = min((int) $request->input('per_page', 20), 100);
 
         return ShippingCompanyResource::collection($query->paginate($perPage));
@@ -139,7 +156,7 @@ class ShippingCompanyController extends Controller
         $company->update($validated);
 
         return new ShippingCompanyResource(
-            $company->loadCount(['contracts', 'mappings'])->load('activeContract')
+            $company->loadCount(['contracts', 'mappings'])->load('activeContract'),
         );
     }
 
@@ -158,7 +175,7 @@ class ShippingCompanyController extends Controller
         $company->update(['status' => $validated['status']]);
 
         return new ShippingCompanyResource(
-            $company->loadCount(['contracts', 'mappings'])->load('activeContract')
+            $company->loadCount(['contracts', 'mappings'])->load('activeContract'),
         );
     }
 
@@ -261,7 +278,7 @@ class ShippingCompanyController extends Controller
         $company = ShippingCompany::findOrFail($id);
 
         return ShippingCompanyMappingResource::collection(
-            $company->mappings()->with('company')->get()
+            $company->mappings()->with('company')->get(),
         );
     }
 

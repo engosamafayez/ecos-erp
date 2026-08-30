@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Logistics\Vehicles\Domain\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Modules\Logistics\Drivers\Domain\Models\DriverVehicleAssignment;
 use Modules\Logistics\ShippingCompanies\Domain\Models\ShippingCompany;
@@ -80,10 +82,41 @@ class Vehicle extends Model
 
     protected static function booted(): void
     {
+        // TENANT ISOLATION (fail closed). An authenticated operator may only ever see
+        // vehicles owned by their own company, plus the shared/unowned fleet
+        // (company_id IS NULL). This is enforced on every read path — index, by-id
+        // show/update, documents, and eager-loaded relations — closing the by-id IDOR
+        // where fetching another company's vehicle returned it verbatim. It is a NO-OP
+        // when unauthenticated (console/seeders/queue) or for a global user with no
+        // company (super-admin), so those flows are unaffected. Uniqueness checks run
+        // on the raw builder (Rule::unique) and are intentionally NOT scoped, so
+        // plate/code stay globally unique.
+        static::addGlobalScope('tenant', function (Builder $query): void {
+            $user = Auth::user();
+            if ($user === null) {
+                return;
+            }
+            $companyId = $user->company_id ?? null;
+            if ($companyId === null) {
+                return;
+            }
+            $query->where(function (Builder $q) use ($companyId): void {
+                $q->whereNull($q->getModel()->getTable().'.company_id')
+                    ->orWhere($q->getModel()->getTable().'.company_id', $companyId);
+            });
+        });
+
         // UUID-ready: every row carries a stable external identifier from birth.
         static::creating(function (self $vehicle): void {
             if ($vehicle->uuid === null) {
                 $vehicle->uuid = (string) Str::uuid();
+            }
+
+            // Default ownership to the creating operator's company so a new vehicle is
+            // never born unscoped. An explicit company_id already set on the model
+            // (e.g. a deliberate global-fleet row created by a super-admin) is kept.
+            if ($vehicle->company_id === null) {
+                $vehicle->company_id = Auth::user()?->company_id;
             }
         });
     }

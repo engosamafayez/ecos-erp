@@ -67,7 +67,7 @@ class VehicleController extends Controller
         $perPage = min((int) $request->input('per_page', 20), 100);
 
         return VehicleResource::collection(
-            $this->vehicles->paginate($request->all(), $perPage)
+            $this->vehicles->paginate($request->all(), $perPage),
         );
     }
 
@@ -78,7 +78,7 @@ class VehicleController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate($this->rules());
+        $validated = $request->validate($this->rules(companyId: $request->user()?->company_id));
 
         $vehicle = $this->service->create($validated, $this->actor($request));
 
@@ -91,7 +91,9 @@ class VehicleController extends Controller
     {
         $vehicle = $this->vehicles->findByIdOrFail($id);
 
-        $validated = $request->validate($this->rules($vehicle->id, partial: true));
+        $validated = $request->validate(
+            $this->rules($vehicle->id, partial: true, companyId: $request->user()?->company_id),
+        );
 
         $this->service->update($vehicle, $validated, $this->actor($request));
 
@@ -204,9 +206,20 @@ class VehicleController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function rules(?int $ignoreId = null, bool $partial = false): array
+    private function rules(?int $ignoreId = null, bool $partial = false, ?string $companyId = null): array
     {
         $required = $partial ? 'sometimes' : 'required';
+
+        // TENANT-SCOPED carrier assignment (Section 4 fail-closed). A vehicle may only
+        // be assigned to a shipping company mapped to the actor's tenant. A cross-company
+        // shipping_company_id therefore fails validation (422) rather than silently
+        // binding a foreign carrier. A global user (no company) falls back to the plain
+        // existence check. company_id itself is intentionally NOT client-settable — it is
+        // stamped from the creating operator's company by the model, so a request can
+        // never mint or re-home a vehicle into another tenant.
+        $shippingCompanyRule = $companyId !== null
+            ? Rule::exists('logistics_shipping_company_mappings', 'shipping_company_id')->where('company_id', $companyId)
+            : Rule::exists('logistics_shipping_companies', 'id');
 
         return [
             'vehicle_code' => [
@@ -219,8 +232,7 @@ class VehicleController extends Controller
             ],
             'name' => ['nullable', 'string', 'max:150'],
             'type' => [$required, Rule::in(VehicleType::values())],
-            'shipping_company_id' => ['nullable', 'integer', 'exists:logistics_shipping_companies,id'],
-            'company_id' => ['nullable', 'uuid', 'exists:companies,id'],
+            'shipping_company_id' => ['nullable', 'integer', $shippingCompanyRule],
             'branch_id' => ['nullable', 'uuid', 'exists:branches,id'],
             // BR-6 — capacities must be greater than zero when supplied.
             'capacity_orders' => [$required, 'integer', 'min:1', 'max:10000'],

@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Logistics\Drivers\Domain\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Modules\Logistics\ShippingCompanies\Domain\Models\ShippingCompany;
 
 /**
@@ -56,6 +59,12 @@ class Driver extends Model
 
     protected $fillable = [
         'driver_code',
+        // company_id is deliberately ABSENT from $fillable: ownership is stamped
+        // from the acting operator in booted(), never accepted from a client.
+        // Letting it be mass-assigned would hand the caller the ability to file a
+        // driver under another tenant — the exact hole D2 closes.
+        'uuid',
+        'user_id',
         'full_name',
         'mobile',
         'national_id',
@@ -82,7 +91,68 @@ class Driver extends Model
         ];
     }
 
+    /**
+     * VP-1 / D2 — tenant isolation and cross-module identity.
+     *
+     * Deliberately identical in shape to Vehicle::booted() (LOG-003), because the
+     * two halves of a driver↔vehicle pairing must agree about what "my company"
+     * means. Any divergence here would let one half of a pairing be visible while
+     * the other is not.
+     */
+    protected static function booted(): void
+    {
+        // TENANT ISOLATION. An authenticated operator sees only their own
+        // company's drivers, plus the shared/unowned pool (company_id IS NULL).
+        // It is a NO-OP when unauthenticated (console/seeders/queue) and for a
+        // global user with no company (super-admin), so those flows are
+        // unaffected. Uniqueness checks (driver_code, mobile, national_id) run on
+        // the raw builder via Rule::unique and are intentionally NOT scoped, so
+        // those identifiers stay globally unique as BR-1..BR-3 require.
+        static::addGlobalScope('tenant', function (Builder $query): void {
+            $user = Auth::user();
+            if ($user === null) {
+                return;
+            }
+
+            $companyId = $user->company_id ?? null;
+            if ($companyId === null) {
+                return;
+            }
+
+            $query->where(function (Builder $q) use ($companyId): void {
+                $q->whereNull($q->getModel()->getTable().'.company_id')
+                    ->orWhere($q->getModel()->getTable().'.company_id', $companyId);
+            });
+        });
+
+        static::creating(function (self $driver): void {
+            // Every row carries a stable external identifier from birth, so the
+            // char(36) driver_id contract in Operations/Loading is satisfiable
+            // without a second identity source.
+            if ($driver->uuid === null) {
+                $driver->uuid = (string) Str::uuid();
+            }
+
+            // Ownership is stamped from the creating operator so a driver is
+            // never born unscoped. An explicit company_id set on the model (a
+            // deliberate shared-pool row created by a super-admin) is kept.
+            if ($driver->company_id === null) {
+                $driver->company_id = Auth::user()?->company_id;
+            }
+        });
+    }
+
     // ── Relations ─────────────────────────────────────────────────────────────
+
+    /**
+     * The auth user this driver logs in as, if any (G10). The driver runtime
+     * resolves the current driver through the inverse of this relation
+     * (User::driver) and scopes every trip read/write to it.
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'user_id');
+    }
 
     public function shippingCompany(): BelongsTo
     {

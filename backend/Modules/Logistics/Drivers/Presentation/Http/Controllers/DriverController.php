@@ -11,11 +11,12 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Modules\Logistics\Drivers\Domain\Exceptions\FleetAssignmentException;
 use Modules\Logistics\Drivers\Domain\Exceptions\VehicleAssignmentException;
 use Modules\Logistics\Drivers\Domain\Models\Driver;
 use Modules\Logistics\Drivers\Domain\Models\DriverDocument;
 use Modules\Logistics\Drivers\Domain\Services\DriverVehicleAssignmentService;
-use Modules\Logistics\Vehicles\Domain\Models\Vehicle;
+use Modules\Logistics\Drivers\Domain\Services\FleetIdentityResolver;
 use Modules\Logistics\Drivers\Presentation\Http\Resources\DriverDocumentResource;
 use Modules\Logistics\Drivers\Presentation\Http\Resources\DriverResource;
 use Modules\Logistics\Drivers\Presentation\Http\Resources\DriverVehicleAssignmentResource;
@@ -27,6 +28,7 @@ class DriverController extends Controller
 
     public function __construct(
         private readonly DriverVehicleAssignmentService $assignments,
+        private readonly FleetIdentityResolver $fleet,
     ) {}
 
     // ── Dashboard ────────────────────────────────────────────────────────────
@@ -278,14 +280,31 @@ class DriverController extends Controller
      */
     public function assignVehicle(Request $request, int $id): JsonResponse
     {
+        // VP-1 / S-2: Driver::findOrFail is now tenant-scoped by the model's
+        // `tenant` global scope, so a foreign-company driver 404s here instead of
+        // being paired. Before D2 this line was an open cross-tenant write: the
+        // route's permission middleware is a CAPABILITY check, and a capability
+        // is not a tenant predicate.
         $driver = Driver::findOrFail($id);
 
         $validated = $request->validate([
+            // `exists:` is kept for SHAPE and existence only. It runs on the query
+            // builder and therefore bypasses the tenant scope — it is deliberately
+            // not the guard. The resolver below is.
             'vehicle_id' => ['required', 'integer', 'exists:logistics_vehicles,id'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $vehicle = Vehicle::findOrFail($validated['vehicle_id']);
+        // S-1 / S-4: resolve through the model so the vehicle's own tenant scope
+        // applies. A foreign vehicle is reported as not-found, never as forbidden,
+        // so this endpoint cannot be used to probe for other companies' ids.
+        try {
+            $vehicle = $this->fleet->vehicle((string) $validated['vehicle_id']);
+            // S-3: neither half may belong to another company than the other.
+            $this->fleet->assertSameCompany($vehicle, $driver);
+        } catch (FleetAssignmentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
 
         try {
             $assignment = $this->assignments->assign(
