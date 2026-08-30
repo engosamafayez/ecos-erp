@@ -25,7 +25,8 @@ import {
 } from '@/components/ui/sheet';
 import { Tabs } from '@/components/ds/tabs';
 import { OrderStatusBadge } from '@/features/orders/components/order-status-badge';
-import { useOrdersQuery, useCustomerOrderStats } from '@/features/orders/hooks/use-orders';
+import { useOrdersQuery } from '@/features/orders/hooks/use-orders';
+import { useCustomerQuery } from '../hooks/use-customers';
 import type { Customer } from '@/features/customers/types/customer';
 ;
 
@@ -88,7 +89,6 @@ function PhoneRow({
 
 function SummaryTab({ customer }: { customer: Customer }) {
   const { t } = useTranslation('customers');
-  const { data: stats, isLoading } = useCustomerOrderStats(customer.id);
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -104,39 +104,55 @@ function SummaryTab({ customer }: { customer: Customer }) {
         <StatusBadge status={customer.is_active ? 'active' : 'inactive'} className="ms-auto shrink-0" />
       </div>
 
-      {/* Order stats */}
+      {/* Order KPIs — every figure computed by CustomerOrderMetricsService and rendered
+          as-is. Previously this fetched up to 200 orders and summed them in the browser,
+          which silently truncated any customer past that page size. */}
       <div className="grid grid-cols-3 gap-2 rounded-lg border p-3">
-        {isLoading ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex flex-col items-center gap-1">
-              <Skeleton className="h-5 w-10" />
-              <Skeleton className="h-3 w-16" />
-            </div>
-          ))
-        ) : (
-          <>
-            <div className="flex flex-col items-center gap-0.5 text-center">
-              <span className="text-lg font-semibold tabular-nums">{stats?.total ?? '—'}</span>
-              <span className="text-[11px] text-muted-foreground">{t($ => $.drawer.summary.totalOrders)}</span>
-            </div>
-            <div className="flex flex-col items-center gap-0.5 border-x text-center">
-              <span className="text-base font-semibold tabular-nums">
-                {stats?.lastOrderDate
-                  ? new Date(stats.lastOrderDate).toLocaleDateString()
-                  : '—'}
-              </span>
-              <span className="text-[11px] text-muted-foreground">{t($ => $.drawer.summary.lastOrder)}</span>
-            </div>
-            <div className="flex flex-col items-center gap-0.5 text-center">
-              <span className="text-base font-semibold tabular-nums">
-                {stats?.totalSpend != null
-                  ? stats.totalSpend.toLocaleString(undefined, { maximumFractionDigits: 0 })
-                  : '—'}
-              </span>
-              <span className="text-[11px] text-muted-foreground">{t($ => $.drawer.summary.totalSpend)}</span>
-            </div>
-          </>
-        )}
+        <Kpi label={t($ => $.drawer.summary.totalOrders)} value={String(customer.orders_count)} />
+        <Kpi label={t($ => $.drawer.summary.totalSpend)} value={fmtNum(customer.total_order_value, 2)} />
+        <Kpi label={t($ => $.columns.receivingRate)}
+             value={customer.receiving_rate === null ? '—' : `${customer.receiving_rate}%`} />
+        <Kpi label={t($ => $.drawer.summary.delivered)} value={String(customer.delivered_count)} />
+        <Kpi label={t($ => $.drawer.summary.avgOrderValue)} value={fmtNum(customer.average_order_value, 2)} />
+        <Kpi
+          label={t($ => $.drawer.summary.lastOrder)}
+          value={customer.last_order_at ? new Date(customer.last_order_at).toLocaleDateString() : '—'}
+        />
+      </div>
+
+      {/* Address + Location */}
+      <div className="flex flex-col gap-2 rounded-lg border p-3 text-sm">
+        <div className="flex items-start gap-2">
+          <span className="w-28 shrink-0 text-xs text-muted-foreground">
+            {t($ => $.columns.fullAddress)}
+          </span>
+          <span className="text-sm">{customer.full_address ?? '—'}</span>
+        </div>
+        <div className="flex items-start gap-2">
+          <span className="w-28 shrink-0 text-xs text-muted-foreground">
+            {t($ => $.drawer.summary.preferredGovernorate)}
+          </span>
+          {/* Most frequent orders.governorate — computed server-side, never ranked here. */}
+          <span className="text-sm">{customer.preferred_governorate ?? '—'}</span>
+        </div>
+        <div className="flex items-start gap-2">
+          <span className="w-28 shrink-0 text-xs text-muted-foreground">
+            {t($ => $.columns.location)}
+          </span>
+          {customer.location_url ? (
+            <a
+              href={customer.location_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+            >
+              <MapPin className="size-3.5" />
+              {t($ => $.drawer.summary.openInMaps)}
+            </a>
+          ) : (
+            <span className="text-sm text-muted-foreground">—</span>
+          )}
+        </div>
       </div>
 
       {/* Info rows */}
@@ -426,6 +442,68 @@ function MemoryTab({
 
 // ── Helper ────────────────────────────────────────────────────────────────────
 
+function ProductsTab({ customer }: { customer: Customer }) {
+  const { t } = useTranslation('customers');
+  // GET /customers/{id} — grouped and summed by the database, one query.
+  const { data: full, isLoading } = useCustomerQuery(customer.id);
+  const rows = full?.purchased_products ?? [];
+
+  if (isLoading) {
+    return <div className="p-4"><Skeleton className="h-24 w-full" /></div>;
+  }
+
+  if (rows.length === 0) {
+    return (
+      <div className="p-4 text-sm text-muted-foreground">
+        {t($ => $.drawer.products.empty)}
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto p-4">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b text-start text-[11px] uppercase tracking-wide text-muted-foreground">
+            <th className="py-2 pe-3 text-start font-medium">{t($ => $.drawer.products.product)}</th>
+            <th className="py-2 pe-3 text-end font-medium">{t($ => $.drawer.products.quantity)}</th>
+            <th className="py-2 pe-3 text-end font-medium">{t($ => $.drawer.products.orders)}</th>
+            <th className="py-2 text-start font-medium">{t($ => $.drawer.products.lastOrdered)}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.product_id ?? r.product_name} className="border-b last:border-0">
+              <td className="py-2 pe-3">{r.product_name ?? '—'}</td>
+              <td className="py-2 pe-3 text-end tabular-nums">{fmtNum(r.total_quantity, 2)}</td>
+              <td className="py-2 pe-3 text-end tabular-nums">{r.orders_count}</td>
+              <td className="py-2">
+                {r.last_ordered_at ? new Date(r.last_ordered_at).toLocaleDateString() : '—'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function Kpi({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col items-center gap-0.5 text-center">
+      <span className="text-base font-semibold tabular-nums">{value}</span>
+      <span className="text-[11px] text-muted-foreground">{label}</span>
+    </div>
+  );
+}
+
+/** Presentation only — never a recomputation. */
+function fmtNum(n: number | null | undefined, digits = 0) {
+  return typeof n === 'number'
+    ? n.toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits })
+    : '—';
+}
+
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-start gap-2">
@@ -445,9 +523,6 @@ export function CustomerDrawer({ customer, open, onOpenChange, onEdit, defaultTa
   useEffect(() => {
     setActiveTab(defaultTab ?? 'summary');
   }, [customer?.id, defaultTab]);
-
-  // Must call all hooks before any conditional return
-  // (useCustomerOrderStats is called inside SummaryTab which is only rendered when active)
 
   if (!customer) return null;
 
@@ -474,6 +549,11 @@ export function CustomerDrawer({ customer, open, onOpenChange, onEdit, defaultTa
       key: 'orders',
       label: t($ => $.drawer.tabs.orders),
       content: <OrdersTab customer={customer} />,
+    },
+    {
+      key: 'products',
+      label: t($ => $.drawer.tabs.products),
+      content: <ProductsTab customer={customer} />,
     },
     {
       key: 'memory',

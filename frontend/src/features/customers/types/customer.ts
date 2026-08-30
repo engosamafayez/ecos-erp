@@ -12,6 +12,21 @@ export type CustomerBrand = {
   created_at: string | null;
 };
 
+export type CustomerTopProduct = {
+  product_id: string | null;
+  product_name: string | null;
+  total_quantity: number;
+};
+
+export type CustomerPurchasedProduct = {
+  product_id: string | null;
+  product_name: string | null;
+  product_sku: string | null;
+  total_quantity: number;
+  orders_count: number;
+  last_ordered_at: string | null;
+};
+
 export type Customer = {
   id: string;
   company_id: string | null;
@@ -27,6 +42,27 @@ export type Customer = {
   notes: string | null;
   is_active: boolean;
   brands: CustomerBrand[];
+
+  // ── Order-derived facts ────────────────────────────────────────────────────
+  // All computed server-side by CustomerOrderMetricsService — the SAME service and the
+  // SAME definitions the CRM workspace uses. Never recomputed in the client.
+  orders_count: number;
+  total_order_value: number;
+  delivered_count: number;
+  /** delivered / ALL orders × 100. NULL when the customer has never ordered. */
+  receiving_rate: number | null;
+  average_order_value: number | null;
+  last_order_at: string | null;
+  /** Number of DISTINCT products ordered, not units. */
+  top_products_count: number;
+  top_products: CustomerTopProduct[];
+  /** Canonical `orders.google_maps_url` from the most recent order carrying one. */
+  location_url: string | null;
+  full_address: string | null;
+  /** Most frequent orders.governorate, computed server-side. NULL when no order carries one. */
+  preferred_governorate: string | null;
+  /** Returned by GET /customers/{id} only — the list omits it by design (heavier query). */
+  purchased_products?: CustomerPurchasedProduct[];
   created_at: string | null;
   updated_at: string | null;
 };

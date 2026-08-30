@@ -5,6 +5,11 @@ import { useTranslation } from 'react-i18next';
 import { UniversalDataGrid } from '@/components/data-grid/universal-data-grid';
 import { SmartToolbar } from '@/components/data-grid/smart-toolbar';
 import type { DataGridColumnDef } from '@/components/data-grid/types';
+
+/** Presentation only — the figure itself is computed server-side and never re-derived. */
+function fmtMoney(n: number | null | undefined) {
+  return typeof n === 'number' ? n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
+}
 import { StatusBadge } from '@/components/crud/status-badge';
 import type { StatusVariant } from '@/components/crud/types';
 import { Badge } from '@/components/ui/badge';
@@ -166,6 +171,59 @@ export function CrmCustomersWorkspacePage() {
           row.primary_email ?? (
             <span className="text-muted-foreground">{t(($) => $.row.noEmail)}</span>
           ),
+      },
+      {
+        key: 'location',
+        label: t(($) => $.columns.location),
+        // Server-composed. No client-side joining of city/governorate.
+        cell: (row) => (
+          row.location
+            ? <span className="text-xs">{row.location}</span>
+            : <span className="text-muted-foreground">&mdash;</span>
+        ),
+      },
+      {
+        key: 'full_address',
+        label: t(($) => $.columns.fullAddress),
+        cell: (row) => (
+          row.full_address
+            ? <span className="block max-w-[22rem] truncate text-xs" title={row.full_address}>{row.full_address}</span>
+            : <span className="text-muted-foreground">&mdash;</span>
+        ),
+      },
+      {
+        key: 'orders_count',
+        label: t(($) => $.columns.ordersCount),
+        align: 'end',
+        cell: (row) => <span className="tabular-nums">{row.orders_count}</span>,
+      },
+      {
+        key: 'total_order_value',
+        label: t(($) => $.columns.totalOrderValue),
+        align: 'end',
+        // SUM(orders.total) — cancelled and returned ARE included, by canonical definition.
+        cell: (row) => <span className="tabular-nums">{fmtMoney(row.total_order_value)}</span>,
+      },
+      {
+        key: 'receiving_rate',
+        label: t(($) => $.columns.receivingRate),
+        align: 'end',
+        // delivered / ALL orders × 100, computed server-side. NULL when the customer has
+        // never ordered — rendered as an em-dash, never as 0%, which would read as failure.
+        cell: (row) => (
+          row.receiving_rate === null
+            ? <span className="text-muted-foreground">&mdash;</span>
+            : <span className="tabular-nums">{row.receiving_rate}%</span>
+        ),
+      },
+      {
+        key: 'last_order_at',
+        label: t(($) => $.columns.lastOrder),
+        cell: (row) => (
+          row.last_order_at
+            ? <span className="text-xs tabular-nums">{new Date(row.last_order_at).toLocaleDateString()}</span>
+            : <span className="text-muted-foreground">&mdash;</span>
+        ),
       },
     ],
     [t],

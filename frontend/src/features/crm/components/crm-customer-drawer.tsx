@@ -94,6 +94,25 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+/**
+ * One order-derived KPI. Every figure is computed server-side by
+ * CustomerOrderMetricsService — this renders it and nothing more.
+ */
+function Kpi({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="rounded-md border p-3">
+      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-1 text-lg font-semibold tabular-nums">{value}</p>
+    </div>
+  );
+}
+
+function num(n: number | null | undefined, digits = 0) {
+  return typeof n === 'number'
+    ? n.toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits })
+    : '—';
+}
+
 function Empty({ message }: { message: string }) {
   return <p className="py-6 text-center text-sm text-muted-foreground">{message}</p>;
 }
@@ -143,6 +162,10 @@ export function CrmCustomerDrawer({ customerId, open, onOpenChange, onEdit }: Pr
   );
 
   const identity = profile?.identity;
+  // Order-derived KPIs and purchased products come from canonical `orders`, not from
+  // the customer-intelligence pipeline (`crm_customer_purchase_facts`, still unpopulated).
+  const metrics = profile?.order_metrics;
+  const purchased = profile?.purchased_products ?? [];
 
   const tabs: TabItem[] = [
     {
@@ -150,6 +173,26 @@ export function CrmCustomerDrawer({ customerId, open, onOpenChange, onEdit }: Pr
       label: t(($) => $.drawer.tabs.overview),
       content: profile ? (
         <div className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <Kpi label={t(($) => $.drawer.kpis.ordersCount)} value={num(metrics?.orders_count)} />
+            <Kpi label={t(($) => $.drawer.kpis.totalValue)} value={num(metrics?.total_order_value, 2)} />
+            <Kpi label={t(($) => $.drawer.kpis.delivered)} value={num(metrics?.delivered_count)} />
+            <Kpi
+              label={t(($) => $.drawer.kpis.receivingRate)}
+              /* NULL when the customer never ordered — shown as an em-dash, not 0%. */
+              value={metrics?.receiving_rate == null ? '—' : `${metrics.receiving_rate}%`}
+            />
+            <Kpi label={t(($) => $.drawer.kpis.avgOrderValue)} value={num(metrics?.average_order_value, 2)} />
+            <Kpi
+              label={t(($) => $.drawer.kpis.lastOrder)}
+              value={
+                metrics?.last_order_at
+                  ? new Date(metrics.last_order_at).toLocaleDateString()
+                  : '—'
+              }
+            />
+          </div>
+
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label={t(($) => $.drawer.overview.code)} value={identity?.code ?? '—'} />
             <Field
@@ -345,6 +388,42 @@ export function CrmCustomerDrawer({ customerId, open, onOpenChange, onEdit }: Pr
     // Named, with the exact contract each needs. A disabled tab that says what
     // is missing is honest; an empty one implies the data exists and failed to
     // load.
+    {
+      key: 'products',
+      label: t(($) => $.drawer.tabs.products),
+      badge: purchased.length || undefined,
+      content: purchased.length === 0 ? (
+        <Empty message={t(($) => $.drawer.products.empty)} />
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                <th className="py-2 pe-3 font-medium">{t(($) => $.drawer.products.product)}</th>
+                <th className="py-2 pe-3 font-medium">{t(($) => $.drawer.products.sku)}</th>
+                <th className="py-2 pe-3 text-end font-medium">{t(($) => $.drawer.products.quantity)}</th>
+                <th className="py-2 pe-3 text-end font-medium">{t(($) => $.drawer.products.orders)}</th>
+                <th className="py-2 font-medium">{t(($) => $.drawer.products.lastOrdered)}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {/* Already grouped and summed server-side — one row per distinct product. */}
+              {purchased.map((row) => (
+                <tr key={row.product_id} className="border-b last:border-0">
+                  <td className="py-2 pe-3">{row.product_name ?? '—'}</td>
+                  <td className="py-2 pe-3 text-muted-foreground">{row.product_sku ?? '—'}</td>
+                  <td className="py-2 pe-3 text-end tabular-nums">{num(row.total_quantity, 2)}</td>
+                  <td className="py-2 pe-3 text-end tabular-nums">{row.orders_count}</td>
+                  <td className="py-2">
+                    {row.last_ordered_at ? new Date(row.last_ordered_at).toLocaleDateString() : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ),
+    },
     ...BACKEND_REQUIRED.map((item) => ({
       key: item.key,
       label: t(item.label),

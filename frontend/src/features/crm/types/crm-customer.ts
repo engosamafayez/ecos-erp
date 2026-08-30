@@ -13,6 +13,38 @@ export type CrmCustomerType = 'individual' | 'business';
 export type CrmCustomerStatus = 'prospect' | 'active' | 'inactive' | 'blocked' | 'archived';
 
 /** One row of the CRM customer list — the backend's `identity` projection. */
+
+/**
+ * Order-derived KPIs, computed server-side by CustomerOrderMetricsService in ONE
+ * aggregate query per page. Never recomputed in the client.
+ *
+ * Canonical definitions (do not re-derive):
+ *   orders_count        COUNT(orders) scoped by customer + company, deleted_at IS NULL
+ *   total_order_value   SUM(orders.total) — cancelled and returned ARE included
+ *   delivered_count     OrderStatus::Delivered only
+ *   receiving_rate      delivered / ALL orders × 100 — NULL (not 0) when never ordered
+ *   average_order_value total / count — NULL when never ordered
+ */
+export type CrmCustomerOrderMetrics = {
+  orders_count: number;
+  total_order_value: number;
+  delivered_count: number;
+  /** NULL when the customer has no orders — 0% would read as a failure. */
+  receiving_rate: number | null;
+  average_order_value: number | null;
+  last_order_at: string | null;
+};
+
+/** One distinct product the customer has ordered, aggregated across all their orders. */
+export type CrmPurchasedProduct = {
+  product_id: string;
+  product_name: string;
+  product_sku: string | null;
+  total_quantity: number;
+  orders_count: number;
+  last_ordered_at: string | null;
+};
+
 export type CrmCustomer = {
   id: string;
   code: string | null;
@@ -32,7 +64,11 @@ export type CrmCustomer = {
   /** Set when this record was folded into another during a merge. */
   merged_into_id: string | null;
   archived_at: string | null;
-};
+  /** Composed server-side from the default address; NULL when the customer has none. */
+  full_address: string | null;
+  /** City / governorate only. NULL when unknown — rendered as an em-dash, never guessed. */
+  location: string | null;
+} & CrmCustomerOrderMetrics;
 
 /** Query accepted by GET /crm/customers. Mirrors the controller's `only()` list. */
 export type CrmCustomersQuery = {
@@ -122,6 +158,10 @@ export type CrmCustomerProfile = {
   notes: CrmNote[];
   documents: CrmDocument[];
   preferences: Record<string, string>;
+  /** Order KPIs from canonical `orders` — never from customer-intelligence facts. */
+  order_metrics: CrmCustomerOrderMetrics;
+  /** Aggregated server-side: Customer → Orders → Order Lines → Products. */
+  purchased_products: CrmPurchasedProduct[];
 };
 
 // ── Timeline ─────────────────────────────────────────────────────────────────

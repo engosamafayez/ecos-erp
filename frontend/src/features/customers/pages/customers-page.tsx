@@ -1,15 +1,16 @@
 import {
   Copy,
   FileText,
-  MessageCircle,
+  MapPin,
   Pencil,
-  Phone,
   Plus,
-  ShoppingBag,
   Trash2,
   Users,
 } from 'lucide-react';
 import { useEffect, useRef, useState, useMemo} from 'react';
+
+import { PhoneCell } from '@/components/ecos/phone-cell';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -93,6 +94,13 @@ function CustomerRowSkeleton() {
 }
 
 // ── Main page ─────────────────────────────────────────────────────────────────
+
+/** Presentation only — the figure is computed server-side and never re-derived here. */
+function fmtMoney(n: number | null | undefined) {
+  return typeof n === 'number'
+    ? n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : '—';
+}
 
 export function CustomersPage() {
   const { t } = useTranslation('customers');
@@ -385,11 +393,23 @@ export function CustomersPage() {
                 <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
                   {t($ => $.columns.phones)}
                 </th>
-                <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                  {t($ => $.columns.defaultAddress)}
+                <th className="px-4 py-3 text-end text-xs font-medium text-muted-foreground">
+                  {t($ => $.columns.ordersCount)}
+                </th>
+                <th className="px-4 py-3 text-end text-xs font-medium text-muted-foreground">
+                  {t($ => $.columns.totalOrderValue)}
+                </th>
+                <th className="px-4 py-3 text-end text-xs font-medium text-muted-foreground">
+                  {t($ => $.columns.receivingRate)}
                 </th>
                 <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                  {t($ => $.columns.previousOrders)}
+                  {t($ => $.columns.lastOrder)}
+                </th>
+                <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
+                  {t($ => $.columns.fullAddress)}
+                </th>
+                <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
+                  {t($ => $.columns.topProducts)}
                 </th>
                 <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
                   {t($ => $.columns.intelligence)}
@@ -515,8 +535,6 @@ function CustomerRow({
 
   const primaryPhone   = customer.phone;
   const secondaryPhone = customer.mobile;
-  const cityCountry    = [customer.city, customer.country].filter(Boolean).join(', ');
-  const hasAddress     = Boolean(customer.address || cityCountry);
 
   return (
     <tr
@@ -551,68 +569,133 @@ function CustomerRow({
         </div>
       </td>
 
-      {/* Phones */}
+      {/* Phone — the NUMBER itself is the control: Call (tel:) / WhatsApp / Copy.
+          stopPropagation keeps it from opening the drawer. Reuses the shared PhoneCell. */}
       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-        <div className="flex flex-col gap-0.5">
-          {primaryPhone ? (
-            <div className="flex items-center gap-1.5">
-              <span className="font-mono text-xs">{primaryPhone}</span>
-              <Badge variant="secondary" className="h-4 px-1 text-[9px]">
-                {t($ => $.phone.primary)}
-              </Badge>
-              <Button size="icon" variant="ghost" className="size-5" asChild title={t($ => $.phone.call)}>
-                <a href={`tel:${primaryPhone.replace(/\D/g, '')}`}>
-                  <Phone className="size-3" />
-                </a>
-              </Button>
-              <Button size="icon" variant="ghost" className="size-5" asChild title={t($ => $.phone.whatsapp)}>
-                <a
-                  href={`https://wa.me/${primaryPhone.replace(/\D/g, '')}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <MessageCircle className="size-3" />
-                </a>
-              </Button>
-            </div>
-          ) : (
-            <span className="text-xs text-muted-foreground">—</span>
-          )}
+        <div className="flex flex-col gap-1">
+          <PhoneCell
+            phone={primaryPhone}
+            labels={{
+              call: t($ => $.phone.call),
+              whatsapp: t($ => $.phone.whatsapp),
+              copy: tCommon($ => $.common.copy),
+            }}
+          />
           {secondaryPhone ? (
-            <span className="font-mono text-xs text-muted-foreground">{secondaryPhone}</span>
+            <PhoneCell
+              phone={secondaryPhone}
+              labels={{
+                call: t($ => $.phone.call),
+                whatsapp: t($ => $.phone.whatsapp),
+                copy: tCommon($ => $.common.copy),
+              }}
+            />
           ) : null}
         </div>
       </td>
 
-      {/* Default Address */}
+      {/* Orders Count — clicking the number opens this customer's orders. */}
+      <td
+        className="px-4 py-3 text-end"
+        onClick={(e) => { e.stopPropagation(); onViewOrders(customer); }}
+      >
+        <button
+          type="button"
+          className="tabular-nums text-sm underline-offset-2 hover:text-primary hover:underline"
+          title={t($ => $.table.viewOrders)}
+        >
+          {customer.orders_count}
+        </button>
+      </td>
+
+      {/* Total Order Value — SUM(orders.total), server-computed. */}
+      <td className="px-4 py-3 text-end tabular-nums text-xs">
+        {fmtMoney(customer.total_order_value)}
+      </td>
+
+      {/* Receiving Rate — delivered / ALL orders. Em-dash when never ordered, never 0%. */}
+      <td className="px-4 py-3 text-end tabular-nums text-xs">
+        {customer.receiving_rate === null
+          ? <span className="text-muted-foreground">—</span>
+          : `${customer.receiving_rate}%`}
+      </td>
+
+      {/* Last Order — MAX(orders.created_at), server-computed. */}
+      <td className="px-4 py-3 text-xs tabular-nums">
+        {customer.last_order_at
+          ? new Date(customer.last_order_at).toLocaleDateString()
+          : <span className="text-muted-foreground">—</span>}
+      </td>
+
+      {/* Full Address + Location. The Location is the canonical `orders.google_maps_url`
+          from the customer's most recent order carrying one — never derived from city. */}
       <td className="px-4 py-3">
-        {hasAddress ? (
-          <div className="flex flex-col gap-0.5 max-w-[180px]">
-            {customer.address ? (
-              <p className="truncate text-xs">{customer.address}</p>
-            ) : null}
-            {cityCountry ? (
-              <p className="text-xs text-muted-foreground">{cityCountry}</p>
-            ) : null}
-          </div>
+        <div className="flex max-w-[240px] items-start gap-1.5">
+          {customer.full_address ? (
+            <p className="truncate text-xs" title={customer.full_address}>{customer.full_address}</p>
+          ) : (
+            <span className="text-xs text-muted-foreground">—</span>
+          )}
+          {customer.location_url ? (
+            <a
+              href={customer.location_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="shrink-0 text-muted-foreground hover:text-primary"
+              title={t($ => $.columns.location)}
+            >
+              <MapPin className="size-3.5" />
+            </a>
+          ) : (
+            <span className="shrink-0 text-xs text-muted-foreground" title={t($ => $.columns.location)}>—</span>
+          )}
+        </div>
+      </td>
+
+      {/* Top Products — count of DISTINCT products; hover/click reveals the top few,
+          already grouped and sorted by the database. No aggregation here. */}
+      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+        {customer.top_products_count > 0 ? (
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="text-xs underline-offset-2 hover:text-primary hover:underline"
+                /* The number is DISTINCT products ordered — not units. The popover then
+                   ranks those products by quantity. Spelled out so the two cannot be
+                   read as the same thing. */
+                title={t($ => $.table.distinctProductsHint, { count: customer.top_products_count })}
+              >
+                {customer.top_products_count}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-60 p-2">
+              <p className="mb-1.5 px-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                {t($ => $.table.topProductsByQuantity)}
+              </p>
+              <ul className="flex flex-col gap-0.5">
+                {customer.top_products.map((p) => (
+                  <li key={p.product_id ?? p.product_name} className="flex items-center justify-between gap-2 px-1 text-xs">
+                    <span className="truncate">{p.product_name ?? '—'}</span>
+                    <span className="shrink-0 tabular-nums text-muted-foreground">{p.total_quantity}</span>
+                  </li>
+                ))}
+              </ul>
+              {customer.top_products_count > customer.top_products.length ? (
+                <button
+                  type="button"
+                  onClick={() => onViewOrders(customer)}
+                  className="mt-1.5 w-full px-1 text-start text-[11px] text-primary hover:underline"
+                >
+                  {t($ => $.table.viewAllProducts, { count: customer.top_products_count })}
+                </button>
+              ) : null}
+            </PopoverContent>
+          </Popover>
         ) : (
           <span className="text-xs text-muted-foreground">—</span>
         )}
-      </td>
-
-      {/* Previous Orders */}
-      <td
-        className="px-4 py-3"
-        onClick={(e) => { e.stopPropagation(); onViewOrders(customer); }}
-      >
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 gap-1.5 px-2 text-[11px] text-muted-foreground hover:text-foreground"
-        >
-          <ShoppingBag className="size-3.5" />
-          {t($ => $.table.viewOrders)}
-        </Button>
       </td>
 
       {/* Customer Intelligence */}
