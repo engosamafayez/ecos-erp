@@ -66,63 +66,69 @@
   },
   "page": {
     "title": "Receiving Center",
-    "subtitle": "Inspect and process incoming goods from suppliers.",
+    "subtitle": "Receive goods against approved purchase orders.",
+    "tabs": {
+      "active": "Active",
+      "history": "History"
+    },
     "kpis": {
-      "totalReceipts": "Total Receipts",
-      "draft": "Draft",
-      "posted": "Posted"
+      "awaiting": "Awaiting Receipt",
+      "partial": "Partially Received",
+      "received": "Received"
     },
     "columns": {
-      "receiptNo": "Receipt #",
-      "date": "Date",
+      "po": "Purchase Order",
       "supplier": "Supplier",
       "warehouse": "Warehouse",
+      "products": "Products",
+      "expected": "Expected",
+      "received": "Received",
+      "remaining": "Remaining",
       "status": "Status",
-      "payment": "Payment",
-      "invoiceTotal": "Invoice Total"
+      "action": "Action"
+    },
+    "status": {
+      "awaiting": "Awaiting Receipt",
+      "partial": "Partially Received",
+      "received": "Fully Received"
     },
     "filters": {
-      "search": "Search receipts…",
-      "allStatuses": "All Statuses"
+      "search": "Search PO number…",
+      "supplier": "Supplier",
+      "allSuppliers": "All suppliers",
+      "warehouse": "Warehouse",
+      "allWarehouses": "All warehouses",
+      "dateFrom": "From",
+      "dateTo": "To"
     },
-    "empty": "No receipts found.",
     "actions": {
-      "view": "View Details",
-      "post": "Post to Inventory",
-      "cancel": "Cancel",
-      "delete": "Delete",
-      "edit": "Edit",
-      "newReceipt": "New Receipt",
-      "receiveGoods": "Receive Goods"
+      "receive": "Receive"
     },
-    "confirmPost": {
-      "title": "Post Receipt",
-      "description": "Post this goods receipt to inventory?",
-      "confirm": "Post"
+    "empty": {
+      "active": "No purchase orders awaiting receipt.",
+      "history": "No completed receipts in this view."
     },
-    "confirmCancel": {
-      "title": "Cancel Receipt",
-      "description": "Are you sure you want to cancel this receipt?",
-      "confirm": "Cancel Receipt"
+    "loading": "Loading purchase orders…",
+    "loadError": "Couldn't load the receiving queue.",
+    "retry": "Retry"
+  },
+  "receive": {
+    "title": "Receive Goods",
+    "receiveAll": "Receive all remaining",
+    "columns": {
+      "product": "Product",
+      "ordered": "Ordered",
+      "previouslyReceived": "Previously Received",
+      "receiveNow": "Receive Now",
+      "remainingAfter": "Remaining After"
     },
-    "confirmDelete": {
-      "title": "Delete Receipt",
-      "description": "Are you sure you want to delete this receipt?",
-      "confirm": "Delete"
-    },
-    "toast": {
-      "posted": "Receipt posted to inventory.",
-      "postFailed": "Failed to post receipt.",
-      "cancelled": "Receipt cancelled.",
-      "cancelFailed": "Failed to cancel receipt.",
-      "deleted": "Receipt deleted.",
-      "deleteFailed": "Failed to delete receipt."
-    },
-    "pagination": {
-      "total": "{{count}} receipts",
-      "previous": "Previous",
-      "next": "Next",
-      "page": "Page {{current}} of {{last}}"
-    }
+    "noReceivable": "All lines are fully received.",
+    "notReceivable": "This purchase order is not in a receivable state.",
+    "loading": "Loading purchase order…",
+    "loadError": "Couldn't load the purchase order.",
+    "cancel": "Cancel",
+    "submit": "Confirm Receipt",
+    "success": "Goods received. Inventory updated.",
+    "error": "Couldn't record the receipt."
   }
 }

@@ -78,7 +78,8 @@
       "receiving": "Receiving",
       "goodsToReceive": "Goods to receive",
       "returns": "Returns",
-      "waitingApproval": "Waiting approval"
+      "waitingApproval": "Waiting approval",
+      "purchasesInReview": "Purchases in Review"
     },
     "financialOverview": "Financial Overview",
     "kpis": {

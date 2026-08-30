@@ -62,7 +62,8 @@
   "stockStatus": {
     "instock": "In Stock",
     "outofstock": "Out of Stock",
-    "onbackorder": "On Backorder"
+    "onbackorder": "On Backorder",
+    "negativeAllowed": "Negative Allowed"
   },
   "types": {
     "finished_good": "Finished Good",
@@ -285,6 +286,7 @@
     "priceReview": "Price Review",
     "pendingCost": "Pending Cost",
     "mfgInStock": "🟢 In Stock",
+    "mfgFulfillable": "🔵 Fulfillable (Recipe)",
     "mfgOutOfStock": "🔴 Out of Stock",
     "mfgRecipeMissing": "⚪ Recipe Missing",
     "recipeAvailable": "🟢 Recipe Available",
@@ -525,7 +527,9 @@
     "newProductTitle": "New Product",
     "editProductTitle": "Edit Product",
     "opsRecipeAvailableBadge": "✅ Available",
-    "opsRecipeMissingBadge": "⚠ Missing"
+    "opsRecipeMissingBadge": "⚠ Missing",
+    "invUntracked": "Not tracked",
+    "invNegativeAllowed": "Negative Allowed"
   },
   "viewTabs": {
     "stockHistory": "Stock History",

@@ -69,7 +69,13 @@
     "email": "البريد الإلكتروني",
     "phone": "الهاتف",
     "country": "الدولة",
-    "city": "المدينة"
+    "city": "المدينة",
+    "ordersCount": "الطلبات",
+    "totalOrderValue": "إجمالي القيمة",
+    "receivingRate": "معدل الاستلام",
+    "fullAddress": "العنوان",
+    "location": "الموقع",
+    "topProducts": "أكثر المنتجات"
   },
   "intelligence": {
     "hasNotes": "ملاحظات",
@@ -79,7 +85,10 @@
     "empty": "لا يوجد عملاء.",
     "error": "فشل تحميل العملاء. يرجى المحاولة مجدداً.",
     "selectAll": "تحديد الكل",
-    "viewOrders": "عرض الطلبات"
+    "viewOrders": "عرض الطلبات",
+    "viewAllProducts": "عرض كل المنتجات ({{count}})",
+    "distinctProductsHint": "عدد المنتجات المختلفة التي طلبها العميل: {{count}} — مرّر لعرض الأعلى كميةً",
+    "topProductsByQuantity": "أكثر المنتجات كميةً"
   },
   "phone": {
     "call": "اتصال",
@@ -156,7 +165,8 @@
       "orders": "الطلبات",
       "activity": "النشاط",
       "memory": "الذاكرة",
-      "audit": "السجل"
+      "audit": "السجل",
+      "products": "المنتجات"
     },
     "summary": {
       "code": "كود العميل",
@@ -170,7 +180,11 @@
       "totalSpend": "إجمالي الإنفاق",
       "noOrders": "لا توجد طلبات بعد.",
       "brands": "العلامات التجارية",
-      "brandOrders": "الطلبات حسب العلامة التجارية"
+      "brandOrders": "الطلبات حسب العلامة التجارية",
+      "delivered": "تم التسليم",
+      "avgOrderValue": "متوسط قيمة الطلب",
+      "openInMaps": "فتح في الخرائط",
+      "preferredGovernorate": "المحافظة الأكثر تكرارًا"
     },
     "phonesTab": {
       "title": "أرقام الهاتف",
@@ -201,6 +215,13 @@
     "orders": {
       "empty": "لا توجد طلبات لهذا العميل.",
       "more": "+{{count}} أكثر"
+    },
+    "products": {
+      "empty": "لم يطلب هذا العميل أي منتجات بعد.",
+      "product": "المنتج",
+      "quantity": "الكمية",
+      "orders": "الطلبات",
+      "lastOrdered": "آخر طلب"
     }
   },
   "detail": {

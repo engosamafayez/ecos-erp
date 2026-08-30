@@ -293,7 +293,21 @@
       "rejected": "Rejected",
       "rejectedDesc": "{{count}} reviews rejected",
       "published": "Published",
-      "publishedDesc": "{{name}} is now active."
+      "publishedDesc": "{{name}} is now active.",
+      "approveFailed": "Approval failed",
+      "keepFailed": "Keeping the current price failed",
+      "customPriceFailed": "Setting the custom price failed",
+      "rejectFailed": "Rejecting the review failed",
+      "snoozeFailed": "Snoozing the review failed",
+      "assignFailed": "Assigning the reviewer failed",
+      "publishFailed": "Publishing failed",
+      "bulkApproveFailed": "Bulk approval failed",
+      "bulkKeepFailed": "Bulk keep failed",
+      "bulkRejectFailed": "Bulk rejection failed",
+      "brandPolicyFailed": "Applying the brand policy failed",
+      "targetMarginFailed": "Setting the target margin failed",
+      "markupFailed": "Setting the markup failed",
+      "bulkSnoozeFailed": "Bulk snooze failed"
     },
     "exportHeaders": {
       "product": "Product",
@@ -312,6 +326,13 @@
       "grossProfitPct": "Gross Profit%",
       "finalMarginPct": "Final Margin%",
       "status": "Status"
+    },
+    "decision": {
+      "current": "Current",
+      "suggested": "Suggested",
+      "final": "Final",
+      "old": "Old",
+      "finalSale": "Final Sale"
     }
   },
   "drawer": {

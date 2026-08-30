@@ -164,7 +164,9 @@
     "actionPriceHistory": "سجل الأسعار",
     "actionStockHistory": "سجل المخزون",
     "actionAddStock": "إضافة مخزون",
-    "actionDelete": "حذف"
+    "actionDelete": "حذف",
+    "untracked": "غير متتبع",
+    "negativeAllowed": "مسموح بالسالب"
   },
   "stats": {
     "labelRaw": "المواد الخام",

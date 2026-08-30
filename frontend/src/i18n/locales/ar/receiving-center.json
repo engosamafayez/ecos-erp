@@ -66,63 +66,69 @@
   },
   "page": {
     "title": "مركز الاستلام",
-    "subtitle": "فحص ومعالجة البضائع الواردة من الموردين.",
+    "subtitle": "استلام البضائع مقابل أوامر الشراء المعتمدة.",
+    "tabs": {
+      "active": "النشطة",
+      "history": "السجل"
+    },
     "kpis": {
-      "totalReceipts": "إجمالي الإيصالات",
-      "draft": "مسودة",
-      "posted": "مرحَّل"
+      "awaiting": "بانتظار الاستلام",
+      "partial": "مستلمة جزئياً",
+      "received": "مستلمة"
     },
     "columns": {
-      "receiptNo": "رقم الإيصال",
-      "date": "التاريخ",
+      "po": "أمر الشراء",
       "supplier": "المورد",
       "warehouse": "المستودع",
+      "products": "المنتجات",
+      "expected": "المتوقعة",
+      "received": "المستلمة",
+      "remaining": "المتبقية",
       "status": "الحالة",
-      "payment": "الدفع",
-      "invoiceTotal": "إجمالي الفاتورة"
+      "action": "إجراء"
+    },
+    "status": {
+      "awaiting": "بانتظار الاستلام",
+      "partial": "مستلمة جزئياً",
+      "received": "مستلمة بالكامل"
     },
     "filters": {
-      "search": "بحث في الإيصالات…",
-      "allStatuses": "جميع الحالات"
+      "search": "بحث برقم أمر الشراء…",
+      "supplier": "المورد",
+      "allSuppliers": "جميع الموردين",
+      "warehouse": "المستودع",
+      "allWarehouses": "جميع المستودعات",
+      "dateFrom": "من",
+      "dateTo": "إلى"
     },
-    "empty": "لم يُعثر على إيصالات.",
     "actions": {
-      "view": "عرض التفاصيل",
-      "post": "ترحيل للمخزون",
-      "cancel": "إلغاء",
-      "delete": "حذف",
-      "edit": "تعديل",
-      "newReceipt": "إيصال جديد",
-      "receiveGoods": "استلام بضائع"
+      "receive": "استلام"
     },
-    "confirmPost": {
-      "title": "ترحيل الإيصال",
-      "description": "ترحيل إيصال الاستلام للمخزون؟",
-      "confirm": "ترحيل"
+    "empty": {
+      "active": "لا توجد أوامر شراء بانتظار الاستلام.",
+      "history": "لا توجد عمليات استلام مكتملة في هذا العرض."
     },
-    "confirmCancel": {
-      "title": "إلغاء الإيصال",
-      "description": "هل أنت متأكد من إلغاء هذا الإيصال؟",
-      "confirm": "إلغاء الإيصال"
+    "loading": "جارٍ تحميل أوامر الشراء…",
+    "loadError": "تعذّر تحميل قائمة الاستلام.",
+    "retry": "إعادة المحاولة"
+  },
+  "receive": {
+    "title": "استلام البضائع",
+    "receiveAll": "استلام كل المتبقي",
+    "columns": {
+      "product": "المنتج",
+      "ordered": "المطلوبة",
+      "previouslyReceived": "المستلمة سابقاً",
+      "receiveNow": "استلام الآن",
+      "remainingAfter": "المتبقي بعد"
     },
-    "confirmDelete": {
-      "title": "حذف الإيصال",
-      "description": "هل أنت متأكد من حذف هذا الإيصال؟",
-      "confirm": "حذف"
-    },
-    "toast": {
-      "posted": "تم ترحيل الإيصال للمخزون.",
-      "postFailed": "فشل ترحيل الإيصال.",
-      "cancelled": "تم إلغاء الإيصال.",
-      "cancelFailed": "فشل إلغاء الإيصال.",
-      "deleted": "تم حذف الإيصال.",
-      "deleteFailed": "فشل حذف الإيصال."
-    },
-    "pagination": {
-      "total": "{{count}} إيصالات",
-      "previous": "السابق",
-      "next": "التالي",
-      "page": "صفحة {{current}} من {{last}}"
-    }
+    "noReceivable": "تم استلام جميع البنود بالكامل.",
+    "notReceivable": "أمر الشراء هذا ليس في حالة قابلة للاستلام.",
+    "loading": "جارٍ تحميل أمر الشراء…",
+    "loadError": "تعذّر تحميل أمر الشراء.",
+    "cancel": "إلغاء",
+    "submit": "تأكيد الاستلام",
+    "success": "تم استلام البضائع وتحديث المخزون.",
+    "error": "تعذّر تسجيل الاستلام."
   }
 }

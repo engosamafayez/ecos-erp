@@ -28,12 +28,24 @@
     "cancelled": "ملغاة"
   },
   "form": {
-    "supplier": { "label": "المورد", "placeholder": "اختر مورداً…" },
-    "purchaseOrder": { "label": "أمر الشراء (اختياري)", "placeholder": "اختر أمر شراء…" },
-    "invoiceNumber": { "label": "رقم فاتورة المورد", "placeholder": "INV-2026-001" },
+    "supplier": {
+      "label": "المورد",
+      "placeholder": "اختر مورداً…"
+    },
+    "purchaseOrder": {
+      "label": "أمر الشراء (اختياري)",
+      "placeholder": "اختر أمر شراء…"
+    },
+    "invoiceNumber": {
+      "label": "رقم فاتورة المورد",
+      "placeholder": "INV-2026-001"
+    },
     "invoiceDate": "تاريخ الفاتورة",
     "dueDate": "تاريخ الاستحقاق",
-    "notes": { "label": "ملاحظات", "placeholder": "ملاحظات اختيارية…" }
+    "notes": {
+      "label": "ملاحظات",
+      "placeholder": "ملاحظات اختيارية…"
+    }
   },
   "payment": {
     "title": "تسجيل دفعة",
@@ -67,7 +79,7 @@
   },
   "page": {
     "title": "فواتير الموردين",
-    "subtitle": "شراء النمط 3 — فواتير الموردين تُرحَّل مباشرة للمخزون",
+    "subtitle": "فواتير الموردين التجارية مرتبطة بالمشتريات والاستلام. يُحدَّث المخزون عبر إيصال الاستلام.",
     "newInvoice": "فاتورة جديدة",
     "stats": {
       "draft": "مسودة",
@@ -96,9 +108,10 @@
     "empty": "لا توجد فواتير.",
     "actions": {
       "view": "عرض التفاصيل",
+      "edit": "تعديل",
       "validate": "تحقق",
-      "post": "ترحيل للمخزون",
-      "postShort": "ترحيل",
+      "post": "ترحيل الفاتورة",
+      "postShort": "ترحيل الفاتورة",
       "actionsFor": "إجراءات {{invoiceNumber}}",
       "cancel": "إلغاء",
       "delete": "حذف"
@@ -116,7 +129,7 @@
     "toast": {
       "validated": "تم التحقق من الفاتورة.",
       "validateFailed": "فشل التحقق من الفاتورة.",
-      "posted": "تم ترحيل الفاتورة للمخزون.",
+      "posted": "تم ترحيل الفاتورة.",
       "postFailed": "فشل ترحيل الفاتورة.",
       "cancelled": "تم إلغاء الفاتورة.",
       "cancelFailed": "فشل إلغاء الفاتورة.",
@@ -131,10 +144,34 @@
     }
   },
   "detail": {
+    "edit": "تعديل",
     "validate": "تحقق",
-    "postToInventory": "ترحيل للمخزون",
+    "postToInventory": "ترحيل الفاتورة",
     "cancel": "إلغاء",
     "postingError": "خطأ في الترحيل",
+    "payment": {
+      "title": "الدفع",
+      "total": "إجمالي الفاتورة",
+      "paid": "المدفوع",
+      "remaining": "الرصيد المتبقي",
+      "due": "تاريخ الاستحقاق",
+      "status": "حالة الدفع",
+      "statuses": {
+        "unpaid": "غير مدفوعة",
+        "partially_paid": "مدفوعة جزئياً",
+        "paid": "مدفوعة"
+      },
+      "historyTitle": "سجل الدفعات",
+      "noHistory": "لا توجد دفعات مسجلة في الحسابات الدائنة بعد.",
+      "derivedNote": "مشتق من دفعات المورد المسجلة — غير قابل للتعديل هنا.",
+      "apNote": "تُسجَّل الدفعات وتُدار في الحسابات الدائنة."
+    },
+    "receiptLinks": {
+      "title": "مستلَمة مقابل",
+      "ordered": "المطلوبة",
+      "received": "المستلَمة",
+      "invoiced": "المفوترة"
+    },
     "landedCostFormat": "التكلفة الشاملة: {{value}}/وحدة",
     "purchaseRecordCreated": "تم إنشاء سجل الشراء",
     "goodsReceiptCreated": "تم إنشاء إيصال البضاعة",
@@ -158,8 +195,27 @@
   },
   "editor": {
     "title": "فاتورة مورد جديدة",
-    "subtitle": "فاتورة مورد مباشرة — تُرحَّل للمخزون عند التأكيد",
+    "subtitle": "فاتورة مورد تجارية.",
+    "commercialSubtitle": "سجّل الفاتورة التجارية للمورد. الاعتماد لا يستلم المخزون.",
+    "boundaryNote": "يُحدَّث المخزون عبر إيصال الاستلام، وليس باعتماد فاتورة المورد.",
+    "attachmentCreateHint": "احفظ الفاتورة أولاً لإرفاق مستند.",
+    "companyContext": "الشركة الحالية",
+    "close": "إغلاق",
+    "attachment": {
+      "select": "إرفاق الفاتورة",
+      "stagedNote": "يُرفع الملف تلقائياً عند إنشاء الفاتورة.",
+      "failedTitle": "تم إنشاء الفاتورة. فشل رفع المرفق — أعد المحاولة أدناه.",
+      "retry": "إعادة رفع المرفق"
+    },
+    "sections": {
+      "generalInfo": "المعلومات العامة",
+      "items": "الأصناف",
+      "invoiceTotals": "إجماليات الفاتورة",
+      "paymentSummary": "ملخص الدفع",
+      "linkage": "ربط المشتريات"
+    },
     "fields": {
+      "company": "الشركة",
       "supplier": "المورد *",
       "warehouse": "المستودع *",
       "invoiceDate": "تاريخ الفاتورة *",
@@ -172,11 +228,19 @@
       "selectSupplier": "اختر مورداً…",
       "selectWarehouse": "اختر مستودعاً…",
       "selectProduct": "اختر منتجاً…",
+      "selectRawMaterial": "اختر مادة خام…",
+      "searchProduct": "ابحث عن المنتجات بالاسم أو SKU…",
+      "searchRawMaterial": "ابحث عن المواد الخام بالاسم أو الرمز…",
       "supplierRef": "مثل: SUP-2026-001"
     },
     "items": {
       "title": "الأصناف",
       "addItem": "إضافة صنف",
+      "addProduct": "إضافة منتج",
+      "addRawMaterial": "إضافة مادة خام",
+      "product": "منتج",
+      "rawMaterial": "مادة خام",
+      "emptyHint": "أضف منتجاً أو مادة خام للبدء.",
       "columns": {
         "product": "المنتج",
         "qty": "الكمية",
@@ -194,7 +258,25 @@
       "tax": "الضريبة",
       "freight": "الشحن",
       "additionalCosts": "تكاليف إضافية",
-      "grandTotal": "الإجمالي الكلي"
+      "grandTotal": "الإجمالي الكلي",
+      "itemsTotal": "إجمالي الأصناف",
+      "invoiceTotal": "إجمالي الفاتورة"
+    },
+    "payment": {
+      "title": "الدفع",
+      "method": "طريقة الدفع",
+      "methodNone": "غير محدد",
+      "methodHelper": "اختيار طريقة الدفع لا يسجّل دفعة — الدفعات الفعلية تُسجَّل في الحسابات الدائنة.",
+      "notYetAvailable": "متاح بعد حفظ الفاتورة.",
+      "paid": "المدفوع",
+      "remaining": "الرصيد المتبقي",
+      "status": "حالة الدفع",
+      "statuses": {
+        "unpaid": "غير مدفوعة",
+        "partially_paid": "مدفوعة جزئياً",
+        "paid": "مدفوعة"
+      },
+      "derivedNote": "المدفوع والمتبقي مشتقان من دفعات المورد المسجلة ولا يمكن تعديلهما هنا."
     },
     "buttons": {
       "cancel": "إلغاء",
@@ -209,5 +291,18 @@
       "created": "تم إنشاء الفاتورة.",
       "failed": "فشل إنشاء الفاتورة."
     }
+  },
+  "attachments": {
+    "title": "مرفق",
+    "upload": "رفع",
+    "uploaded": "تم رفع المرفق.",
+    "uploadFailed": "فشل رفع المرفق.",
+    "loading": "جارٍ تحميل المرفقات…",
+    "empty": "لا توجد مرفقات بعد.",
+    "download": "تنزيل",
+    "downloadFailed": "فشل تنزيل المرفق.",
+    "delete": "حذف",
+    "deleted": "تم حذف المرفق.",
+    "deleteFailed": "فشل حذف المرفق."
   }
 }

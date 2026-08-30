@@ -78,7 +78,8 @@
       "receiving": "الاستلام",
       "goodsToReceive": "بضائع للاستلام",
       "returns": "المرتجعات",
-      "waitingApproval": "في انتظار الاعتماد"
+      "waitingApproval": "في انتظار الاعتماد",
+      "purchasesInReview": "مشتريات قيد المراجعة"
     },
     "financialOverview": "النظرة المالية العامة",
     "kpis": {

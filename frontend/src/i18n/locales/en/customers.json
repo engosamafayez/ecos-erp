@@ -69,7 +69,13 @@
     "email": "Email",
     "phone": "Phone",
     "country": "Country",
-    "city": "City"
+    "city": "City",
+    "ordersCount": "Orders",
+    "totalOrderValue": "Total Value",
+    "receivingRate": "Receiving Rate",
+    "fullAddress": "Address",
+    "location": "Location",
+    "topProducts": "Top Products"
   },
   "intelligence": {
     "hasNotes": "Notes",
@@ -79,7 +85,10 @@
     "empty": "No customers found.",
     "error": "Failed to load customers. Please try again.",
     "selectAll": "Select all",
-    "viewOrders": "View Orders"
+    "viewOrders": "View Orders",
+    "viewAllProducts": "View all {{count}} products",
+    "distinctProductsHint": "{{count}} distinct products ordered — hover to see the top ones by quantity",
+    "topProductsByQuantity": "Top products by quantity"
   },
   "phone": {
     "call": "Call",
@@ -156,7 +165,8 @@
       "orders": "Orders",
       "activity": "Activity",
       "memory": "Memory",
-      "audit": "Audit"
+      "audit": "Audit",
+      "products": "Products"
     },
     "summary": {
       "code": "Customer Code",
@@ -170,7 +180,11 @@
       "totalSpend": "Total Spend",
       "noOrders": "No orders yet.",
       "brands": "Brands",
-      "brandOrders": "Orders by Brand"
+      "brandOrders": "Orders by Brand",
+      "delivered": "Delivered",
+      "avgOrderValue": "Avg. Order Value",
+      "openInMaps": "Open in Maps",
+      "preferredGovernorate": "Preferred Governorate"
     },
     "phonesTab": {
       "title": "Phone Numbers",
@@ -201,6 +215,13 @@
     "orders": {
       "empty": "No orders found for this customer.",
       "more": "+{{count}} more"
+    },
+    "products": {
+      "empty": "This customer has not ordered any products yet.",
+      "product": "Product",
+      "quantity": "Quantity",
+      "orders": "Orders",
+      "lastOrdered": "Last Ordered"
     }
   },
   "detail": {

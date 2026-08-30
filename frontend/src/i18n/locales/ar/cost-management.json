@@ -293,7 +293,21 @@
       "rejected": "مرفوض",
       "rejectedDesc": "تم رفض {{count}} مراجعات",
       "published": "تم النشر",
-      "publishedDesc": "{{name}} نشط الآن."
+      "publishedDesc": "{{name}} نشط الآن.",
+      "approveFailed": "فشلت الموافقة",
+      "keepFailed": "فشل الإبقاء على السعر الحالي",
+      "customPriceFailed": "فشل تعيين السعر المخصص",
+      "rejectFailed": "فشل رفض المراجعة",
+      "snoozeFailed": "فشل تأجيل المراجعة",
+      "assignFailed": "فشل تعيين المراجع",
+      "publishFailed": "فشل النشر",
+      "bulkApproveFailed": "فشلت الموافقة الجماعية",
+      "bulkKeepFailed": "فشل الإبقاء الجماعي على الأسعار",
+      "bulkRejectFailed": "فشل الرفض الجماعي",
+      "brandPolicyFailed": "فشل تطبيق سياسة العلامة التجارية",
+      "targetMarginFailed": "فشل تعيين هامش الربح المستهدف",
+      "markupFailed": "فشل تعيين نسبة الزيادة",
+      "bulkSnoozeFailed": "فشل التأجيل الجماعي"
     },
     "exportHeaders": {
       "product": "المنتج",
@@ -312,6 +326,13 @@
       "grossProfitPct": "الربح الإجمالي%",
       "finalMarginPct": "الهامش النهائي%",
       "status": "الحالة"
+    },
+    "decision": {
+      "current": "الحالي",
+      "suggested": "المقترح",
+      "final": "النهائي",
+      "old": "السابق",
+      "finalSale": "سعر العرض النهائي"
     }
   },
   "drawer": {

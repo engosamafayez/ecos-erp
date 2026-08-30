@@ -63,7 +63,8 @@
       "label": "Notes",
       "placeholder": "Optional notes…"
     },
-    "active": "Active"
+    "active": "Active",
+    "openingBalanceMovedHint": "Opening balance is a Finance operation — post it from Supplier 360 → Opening Balance so it reaches the supplier ledger."
   },
   "drawer": {
     "createTitle": "Create Supplier",
@@ -252,7 +253,8 @@
       "performance": "Performance",
       "documents": "Documents",
       "timeline": "Timeline",
-      "ai": "AI Ready"
+      "ai": "AI Ready",
+      "invoices": "Invoices"
     },
     "smartInsights": "Smart Insights",
     "overview": {
@@ -300,7 +302,29 @@
         "receipts": "Receipts",
         "salePrice": "Sale Price",
         "grossProfit": "Gross Profit",
-        "oldestReceipt": "Oldest Receipt"
+        "oldestReceipt": "Oldest Receipt",
+        "supplierPrice": "Supplier Price",
+        "lastPurchase": "Last Purchase",
+        "lastQty": "Last Qty",
+        "qty7d": "7D Qty",
+        "qty30d": "30D Qty",
+        "qty90d": "90D Qty",
+        "avgWeekly": "Avg Weekly",
+        "avgMonthly": "Avg Monthly",
+        "priceTrend": "Price Trend"
+      },
+      "demandTitle": "Purchase Demand",
+      "demandSubtitle": "How much of each product is normally purchased from this supplier. Windows are rolling; averages are computed over the last {{days}} days.",
+      "demandEmpty": "No products are linked to this supplier yet.",
+      "demandExport": "Export demand",
+      "stockTitle": "Current Stock from this Supplier",
+      "noHistory": "No purchase history",
+      "perWeek": "/ week",
+      "perMonth": "/ month",
+      "trend": {
+        "rising": "Rising",
+        "falling": "Falling",
+        "stable": "Stable"
       }
     },
     "purchaseOrders": {
@@ -392,7 +416,9 @@
         "activePOs": "Active POs",
         "pendingGRs": "Pending GRs",
         "productsSupplied": "Products Supplied"
-      }
+      },
+      "noData": "No performance data yet",
+      "noDataHint": "Scores appear once this supplier has posted receipts and invoices."
     },
     "documents": {
       "empty": "No documents uploaded yet.",
@@ -452,6 +478,15 @@
           "label": "Purchase Recommendation",
           "desc": "Suggest reorder quantities based on consumption rate."
         }
+      }
+    },
+    "invoices": {
+      "empty": "No invoices for this supplier yet.",
+      "columns": {
+        "invoiceNo": "Invoice #",
+        "date": "Date",
+        "status": "Status",
+        "total": "Total"
       }
     }
   }

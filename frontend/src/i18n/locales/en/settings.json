@@ -773,6 +773,28 @@
     "editZoneTitle": "Edit zone",
     "deleteZoneTitle": "Delete zone"
   },
+  "waveEngine": {
+    "title": "Wave Engine",
+    "subtitle": "Operational cycle per warehouse — Start, Intake Cutoff and End, in company-local time.",
+    "timezone": "Operational timezone",
+    "timezoneReadonly": "Read-only — set under Company settings (companies.timezone is the single authority).",
+    "noTimezone": "No usable company timezone — the engine stays idle until one is set in Company settings.",
+    "start": "Wave Start",
+    "cutoff": "Intake Cutoff",
+    "end": "Wave End",
+    "currentCycle": "Current cycle",
+    "crossesMidnight": "Crosses midnight",
+    "inactive": "Inactive",
+    "autoCreate": "Auto-create waves",
+    "autoAssign": "Auto-assign orders",
+    "autoMove": "Auto-move to preparing",
+    "active": "Engine active",
+    "save": "Save",
+    "saved": "Wave engine configuration saved.",
+    "saveError": "Could not save wave engine configuration.",
+    "empty": "No wave engine configuration for this company.",
+    "loading": "Loading wave engine settings…"
+  },
   "wave": {
     "tabs": {
       "general": "General",
@@ -1255,5 +1277,31 @@
       "noZones": "No zones found",
       "zonesCount": "Zones"
     }
+  },
+  "companyConfig": {
+    "title": "Company Configuration",
+    "subtitle": "Settings that apply to the whole company, across every brand.",
+    "back": "Back to Configuration",
+    "procurementSection": "Procurement"
+  },
+  "goodsInward": {
+    "title": "Goods Inward Mode",
+    "description": "Choose the official source of purchase entries into inventory for this company.",
+    "defaultBadge": "Default",
+    "optionGoodsReceipt": "Goods Receipt",
+    "optionGoodsReceiptDesc": "Goods are received into stock through a Goods Receipt.",
+    "optionSupplierInvoice": "Supplier Invoice — Mode 3",
+    "optionSupplierInvoiceDesc": "Goods enter stock through the Supplier Invoice.",
+    "reasonLabel": "Reason (optional)",
+    "reasonPlaceholder": "Why is this being changed?",
+    "confirmTitle": "Change the goods inward source",
+    "confirmDescription": "This setting affects how purchases are recorded into inventory for this company.",
+    "confirmAction": "Confirm change",
+    "saving": "Saving…",
+    "saved": "Goods inward mode updated.",
+    "saveFailed": "Could not update the goods inward mode.",
+    "loadError": "Could not load the goods inward setting.",
+    "retry": "Retry",
+    "permissionDenied": "You do not have permission to change this setting."
   }
 }

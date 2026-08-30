@@ -164,7 +164,9 @@
     "actionPriceHistory": "Price History",
     "actionStockHistory": "Stock History",
     "actionAddStock": "Add Stock",
-    "actionDelete": "Delete"
+    "actionDelete": "Delete",
+    "untracked": "Untracked",
+    "negativeAllowed": "Negative Allowed"
   },
   "stats": {
     "labelRaw": "Raw Materials",

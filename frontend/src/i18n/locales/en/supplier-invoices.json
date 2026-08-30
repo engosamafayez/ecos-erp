@@ -28,12 +28,24 @@
     "cancelled": "Cancelled"
   },
   "form": {
-    "supplier": { "label": "Supplier", "placeholder": "Select supplier…" },
-    "purchaseOrder": { "label": "Purchase Order (optional)", "placeholder": "Select PO…" },
-    "invoiceNumber": { "label": "Supplier Invoice Number", "placeholder": "INV-2026-001" },
+    "supplier": {
+      "label": "Supplier",
+      "placeholder": "Select supplier…"
+    },
+    "purchaseOrder": {
+      "label": "Purchase Order (optional)",
+      "placeholder": "Select PO…"
+    },
+    "invoiceNumber": {
+      "label": "Supplier Invoice Number",
+      "placeholder": "INV-2026-001"
+    },
     "invoiceDate": "Invoice Date",
     "dueDate": "Due Date",
-    "notes": { "label": "Notes", "placeholder": "Optional notes…" }
+    "notes": {
+      "label": "Notes",
+      "placeholder": "Optional notes…"
+    }
   },
   "payment": {
     "title": "Record Payment",
@@ -67,7 +79,7 @@
   },
   "page": {
     "title": "Supplier Invoices",
-    "subtitle": "Mode 3 Purchasing — supplier invoices post directly to inventory",
+    "subtitle": "Supplier commercial invoices linked to procurement and receiving. Inventory is updated through Goods Receipt.",
     "newInvoice": "New Invoice",
     "stats": {
       "draft": "Draft",
@@ -96,9 +108,10 @@
     "empty": "No invoices found.",
     "actions": {
       "view": "View Details",
+      "edit": "Edit",
       "validate": "Validate",
-      "post": "Post to Inventory",
-      "postShort": "Post",
+      "post": "Post Invoice",
+      "postShort": "Post Invoice",
       "actionsFor": "Actions for {{invoiceNumber}}",
       "cancel": "Cancel",
       "delete": "Delete"
@@ -116,7 +129,7 @@
     "toast": {
       "validated": "Invoice validated.",
       "validateFailed": "Failed to validate invoice.",
-      "posted": "Invoice posted to inventory.",
+      "posted": "Invoice posted.",
       "postFailed": "Failed to post invoice.",
       "cancelled": "Invoice cancelled.",
       "cancelFailed": "Failed to cancel invoice.",
@@ -131,10 +144,34 @@
     }
   },
   "detail": {
+    "edit": "Edit",
     "validate": "Validate",
-    "postToInventory": "Post to Inventory",
+    "postToInventory": "Post Invoice",
     "cancel": "Cancel",
     "postingError": "Posting Error",
+    "payment": {
+      "title": "Payment",
+      "total": "Invoice Total",
+      "paid": "Paid",
+      "remaining": "Remaining Balance",
+      "due": "Due Date",
+      "status": "Payment Status",
+      "statuses": {
+        "unpaid": "Unpaid",
+        "partially_paid": "Partially Paid",
+        "paid": "Paid"
+      },
+      "historyTitle": "Payment History",
+      "noHistory": "No payments recorded in Accounts Payable yet.",
+      "derivedNote": "Derived from recorded supplier payments — not editable here.",
+      "apNote": "Payments are recorded and managed in Accounts Payable."
+    },
+    "receiptLinks": {
+      "title": "Received Against",
+      "ordered": "Ordered",
+      "received": "Received",
+      "invoiced": "Invoiced"
+    },
     "landedCostFormat": "Landed cost: {{value}}/unit",
     "purchaseRecordCreated": "Purchase record created",
     "goodsReceiptCreated": "Goods receipt created",
@@ -158,8 +195,27 @@
   },
   "editor": {
     "title": "New Supplier Invoice",
-    "subtitle": "Direct supplier invoice — posts to inventory on confirmation",
+    "subtitle": "Supplier commercial invoice.",
+    "commercialSubtitle": "Record the supplier's commercial invoice. Approval does not receive stock.",
+    "boundaryNote": "Inventory is updated through Goods Receipt, not by Supplier Invoice approval.",
+    "attachmentCreateHint": "Save the invoice first to attach a document.",
+    "companyContext": "Current company",
+    "close": "Close",
+    "attachment": {
+      "select": "Attach Invoice",
+      "stagedNote": "The file uploads automatically when you create the invoice.",
+      "failedTitle": "Invoice created. Attachment upload failed — retry below.",
+      "retry": "Retry Attachment"
+    },
+    "sections": {
+      "generalInfo": "General Information",
+      "items": "Items",
+      "invoiceTotals": "Invoice Totals",
+      "paymentSummary": "Payment Summary",
+      "linkage": "Procurement Linkage"
+    },
     "fields": {
+      "company": "Company",
       "supplier": "Supplier *",
       "warehouse": "Warehouse *",
       "invoiceDate": "Invoice Date *",
@@ -172,11 +228,19 @@
       "selectSupplier": "Select supplier…",
       "selectWarehouse": "Select warehouse…",
       "selectProduct": "Select product…",
+      "selectRawMaterial": "Select raw material…",
+      "searchProduct": "Search products by name or SKU…",
+      "searchRawMaterial": "Search raw materials by name or code…",
       "supplierRef": "e.g. SUP-2026-001"
     },
     "items": {
       "title": "Items",
       "addItem": "Add Item",
+      "addProduct": "Add Product",
+      "addRawMaterial": "Add Raw Material",
+      "product": "Product",
+      "rawMaterial": "Raw Material",
+      "emptyHint": "Add a product or raw material to begin.",
       "columns": {
         "product": "Product",
         "qty": "Qty",
@@ -194,7 +258,25 @@
       "tax": "Tax",
       "freight": "Freight",
       "additionalCosts": "Additional Costs",
-      "grandTotal": "Grand Total"
+      "grandTotal": "Grand Total",
+      "itemsTotal": "Items Total",
+      "invoiceTotal": "Invoice Total"
+    },
+    "payment": {
+      "title": "Payment",
+      "method": "Payment Method",
+      "methodNone": "Not specified",
+      "methodHelper": "Selecting a method does not record a payment — actual payments are recorded in Accounts Payable.",
+      "notYetAvailable": "Available after the invoice is saved.",
+      "paid": "Paid",
+      "remaining": "Remaining Balance",
+      "status": "Payment Status",
+      "statuses": {
+        "unpaid": "Unpaid",
+        "partially_paid": "Partially Paid",
+        "paid": "Paid"
+      },
+      "derivedNote": "Paid and Remaining are derived from recorded supplier payments and cannot be edited here."
     },
     "buttons": {
       "cancel": "Cancel",
@@ -209,5 +291,18 @@
       "created": "Invoice created.",
       "failed": "Failed to create invoice."
     }
+  },
+  "attachments": {
+    "title": "Attachment",
+    "upload": "Upload",
+    "uploaded": "Attachment uploaded.",
+    "uploadFailed": "Failed to upload attachment.",
+    "loading": "Loading attachments…",
+    "empty": "No attachments yet.",
+    "download": "Download",
+    "downloadFailed": "Failed to download attachment.",
+    "delete": "Delete",
+    "deleted": "Attachment deleted.",
+    "deleteFailed": "Failed to delete attachment."
   }
 }

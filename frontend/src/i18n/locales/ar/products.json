@@ -62,7 +62,8 @@
   "stockStatus": {
     "instock": "متوفر",
     "outofstock": "غير متوفر",
-    "onbackorder": "طلب مسبق"
+    "onbackorder": "طلب مسبق",
+    "negativeAllowed": "يسمح بالسالب"
   },
   "types": {
     "finished_good": "سلعة جاهزة",
@@ -285,6 +286,7 @@
     "priceReview": "مراجعة السعر",
     "pendingCost": "تكلفة معلقة",
     "mfgInStock": "🟢 في المخزن",
+    "mfgFulfillable": "🔵 قابل للتحضير (وصفة)",
     "mfgOutOfStock": "🔴 نفاد المخزون",
     "mfgRecipeMissing": "⚪ وصفة مفقودة",
     "recipeAvailable": "🟢 الوصفة متوفرة",
@@ -525,7 +527,9 @@
     "newProductTitle": "منتج جديد",
     "editProductTitle": "تعديل المنتج",
     "opsRecipeAvailableBadge": "✅ متوفر",
-    "opsRecipeMissingBadge": "⚠ مفقود"
+    "opsRecipeMissingBadge": "⚠ مفقود",
+    "invUntracked": "غير متتبع",
+    "invNegativeAllowed": "يسمح بالسالب"
   },
   "viewTabs": {
     "stockHistory": "سجل المخزون",

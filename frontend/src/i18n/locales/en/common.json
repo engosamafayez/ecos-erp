@@ -6,7 +6,8 @@
     "edit": "Edit",
     "delete": "Delete",
     "search": "Search",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "copy": "Copy"
   },
   "topbar": {
     "search": "Search…"
@@ -43,7 +44,10 @@
       "supplier-invoices": "Supplier Invoices",
       "receiving-center": "Receiving Center",
       "supplier-returns": "Supplier Returns",
-      "wave-workspace": "Fulfillment Wave Workspace",
+      "preparation-workspace": "Preparation Workspace",
+      "wave-workspace": "Today's Preparation",
+      "wave-archive": "Archive",
+      "wave-engine": "Settings",
       "production-orders": "Production Orders",
       "mkt-dashboard": "Dashboard",
       "mkt-initiatives": "Initiatives",
@@ -76,6 +80,14 @@
       "dist-section": "Distribution",
       "logistics-distribution-zones": "Distribution Zones",
       "logistics-distribution-plan": "Distribution Planning",
+      "distributor-orders": "Distributor Orders",
+      "loading-drivers": "Loading Drivers",
+      "driver-day-settlement": "Day Settlement",
+      "driver-section": "Driver",
+      "driver-home": "Home",
+      "driver-loading": "Loading",
+      "driver-orders": "Orders",
+      "driver-vehicle-inventory": "Vehicle",
       "org-section": "Organization",
       "organization": "Overview",
       "companies": "Companies",
@@ -101,6 +113,7 @@
       "eng-pipeline-h": "Pipeline History",
       "eng-analytics": "Pipeline Analytics",
       "eng-notify": "Notifications",
+      "shipping-settings-section": "Settings",
       "carriers-section": "Carriers",
       "logistics-shipping-companies": "Shipping Companies",
       "logistics-drivers": "Drivers",
@@ -193,7 +206,8 @@
       "reports": "Reports",
       "administration": "Administration",
       "engineering": "Engineering Platform",
-      "executive": "Executive"
+      "executive": "Executive",
+      "driver": "Driver"
     },
     "navigation": "Navigation",
     "expandSidebar": "Expand sidebar",

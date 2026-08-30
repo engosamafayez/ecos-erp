@@ -38,7 +38,13 @@
     "phone": "الهاتف",
     "email": "البريد الإلكتروني",
     "language": "اللغة",
-    "actions": "الإجراءات"
+    "actions": "الإجراءات",
+    "ordersCount": "الطلبات",
+    "totalOrderValue": "إجمالي القيمة",
+    "receivingRate": "معدل الاستلام",
+    "lastOrder": "آخر طلب",
+    "fullAddress": "العنوان",
+    "location": "الموقع"
   },
   "row": {
     "merged": "مدمج",
@@ -125,7 +131,8 @@
       "activity": "النشاط",
       "orders": "الطلبات",
       "loyalty": "الولاء",
-      "permissions": "الصلاحيات"
+      "permissions": "الصلاحيات",
+      "products": "المنتجات المشتراة"
     },
     "overview": {
       "code": "الكود",
@@ -177,7 +184,23 @@
       "permissions": "الصلاحيات على مستوى السجل غير مطبقة للعملاء."
     },
     "edit": "تعديل",
-    "close": "إغلاق"
+    "close": "إغلاق",
+    "kpis": {
+      "ordersCount": "الطلبات",
+      "totalValue": "إجمالي قيمة الطلبات",
+      "delivered": "تم التسليم",
+      "receivingRate": "معدل الاستلام",
+      "avgOrderValue": "متوسط قيمة الطلب",
+      "lastOrder": "آخر طلب"
+    },
+    "products": {
+      "empty": "لم يطلب هذا العميل أي منتجات بعد.",
+      "product": "المنتج",
+      "sku": "SKU",
+      "quantity": "إجمالي الكمية",
+      "orders": "الطلبات",
+      "lastOrdered": "آخر طلب"
+    }
   },
   "analytics": {
     "tab": "التحليلات",

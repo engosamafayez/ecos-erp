@@ -38,7 +38,13 @@
     "phone": "Phone",
     "email": "Email",
     "language": "Language",
-    "actions": "Actions"
+    "actions": "Actions",
+    "ordersCount": "Orders",
+    "totalOrderValue": "Total Value",
+    "receivingRate": "Receiving Rate",
+    "lastOrder": "Last Order",
+    "fullAddress": "Address",
+    "location": "Location"
   },
   "row": {
     "merged": "Merged",
@@ -125,7 +131,8 @@
       "activity": "Activity",
       "orders": "Orders",
       "loyalty": "Loyalty",
-      "permissions": "Permissions"
+      "permissions": "Permissions",
+      "products": "Products Purchased"
     },
     "overview": {
       "code": "Code",
@@ -177,7 +184,23 @@
       "permissions": "Record-level permissions are not modelled for customers."
     },
     "edit": "Edit",
-    "close": "Close"
+    "close": "Close",
+    "kpis": {
+      "ordersCount": "Orders",
+      "totalValue": "Total Order Value",
+      "delivered": "Delivered",
+      "receivingRate": "Receiving Rate",
+      "avgOrderValue": "Avg. Order Value",
+      "lastOrder": "Last Order"
+    },
+    "products": {
+      "empty": "This customer has not ordered any products yet.",
+      "product": "Product",
+      "sku": "SKU",
+      "quantity": "Total Quantity",
+      "orders": "Orders",
+      "lastOrdered": "Last Ordered"
+    }
   },
   "analytics": {
     "tab": "Analytics",
