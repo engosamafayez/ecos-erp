@@ -339,3 +339,68 @@ html[dir='rtl'] {
   --space-start: var(--spacing-4, 1rem);
   --space-end:   var(--spacing-4, 1rem);
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Print
+   TASK — PREPARATION WORKSPACE. The app had no print stylesheet at all, so the
+   three existing window.print() callers printed the whole chrome — module rail,
+   sidebar, toolbars. A printed operational sheet must carry only its own
+   content, so the shell is hidden and the page is allowed to flow.
+   Opt out of hiding with .print-keep; force-hide anything else with .no-print.
+   ───────────────────────────────────────────────────────────────────────────── */
+@media print {
+  /* App shell chrome never belongs on paper. */
+  aside,
+  nav,
+  [data-app-rail],
+  [data-app-sidebar],
+  [data-slot='sidebar'],
+  .no-print {
+    display: none !important;
+  }
+
+  /* Let content flow across pages instead of scrolling inside a fixed viewport. */
+  html,
+  body,
+  #root {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  main,
+  [role='main'] {
+    overflow: visible !important;
+  }
+
+  /* Tables must not fracture mid-row. */
+  tr,
+  img {
+    break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group; /* repeat headers on every page */
+  }
+
+  a[href]::after {
+    content: ''; /* suppress URL expansion */
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   .no-spinner — a number input without the Up/Down stepper.
+   Opt-in utility, deliberately NOT a global `input[type=number]` rule: other
+   screens may legitimately want the stepper. Used by the Prepared editor, where
+   the operator types a quantity directly and the arrows only get in the way.
+   ───────────────────────────────────────────────────────────────────────────── */
+.no-spinner::-webkit-outer-spin-button,
+.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.no-spinner {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
