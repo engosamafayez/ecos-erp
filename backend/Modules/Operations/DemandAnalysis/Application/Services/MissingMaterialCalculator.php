@@ -6,6 +6,7 @@ namespace Modules\Operations\DemandAnalysis\Application\Services;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Modules\Manufacturing\BillsOfMaterials\Domain\Services\ActiveRecipeResolver;
 use Modules\Operations\DemandAnalysis\Domain\Enums\MaterialPriority;
 use Modules\Operations\Preparation\Domain\Models\PreparationWave;
 
@@ -17,6 +18,8 @@ use Modules\Operations\Preparation\Domain\Models\PreparationWave;
  */
 final class MissingMaterialCalculator
 {
+    public function __construct(private readonly ActiveRecipeResolver $activeRecipes) {}
+
     /**
      * @param  list<string>|null  $affectedMaterialIds  Null = all materials for wave.
      * @return list<array<string, mixed>>
@@ -77,20 +80,43 @@ final class MissingMaterialCalculator
     /**
      * Return a map of material_id → affected_order_count for the given wave.
      *
+     * Recipe selection goes through ActiveRecipeResolver, like every other explosion in
+     * the module. This previously joined `bills_of_materials WHERE is_active = true`
+     * directly, so a product carrying two active versions counted its orders once per
+     * version and inflated affected_orders_count — the same duplication already repaired
+     * in MaterialDemandCalculator and the material drill-down, left behind here.
+     *
      * @param  list<string>  $materialIds
      * @return array<string, int>
      */
     private function countAffectedOrders(string $waveId, array $materialIds): array
     {
-        // material → finished products (via BOM) → orders in this wave
+        $productIds = DB::table('preparation_wave_orders as pwo')
+            ->join('order_lines as ol', 'ol.order_id', '=', 'pwo.order_id')
+            ->where('pwo.preparation_wave_id', $waveId)
+            ->whereNull('pwo.postponed_at')
+            ->distinct()
+            ->pluck('ol.product_id')
+            ->all();
+
+        $bomIds = array_values($this->activeRecipes->bomIdsByProduct($productIds));
+
+        if ($bomIds === []) {
+            return [];
+        }
+
+        // material → finished products (via the ONE active recipe) → orders in this wave
         $rows = DB::table('bill_of_material_lines as boml')
             ->join('bills_of_materials as bom', 'bom.id', '=', 'boml.bom_id')
             ->join('order_lines as ol', 'ol.product_id', '=', 'bom.product_id')
             ->join('preparation_wave_orders as pwo', function ($join) use ($waveId) {
                 $join->on('pwo.order_id', '=', 'ol.order_id')
-                    ->where('pwo.preparation_wave_id', $waveId);
+                    ->where('pwo.preparation_wave_id', $waveId)
+                    // Postponed memberships are retained as history but have left the
+                    // current cycle (REFINEMENT-002 §22).
+                    ->whereNull('pwo.postponed_at');
             })
-            ->where('bom.is_active', true)
+            ->whereIn('bom.id', $bomIds)
             ->whereIn('boml.raw_material_id', $materialIds)
             ->selectRaw('boml.raw_material_id AS material_id, COUNT(DISTINCT pwo.order_id) AS order_count')
             ->groupBy('boml.raw_material_id')

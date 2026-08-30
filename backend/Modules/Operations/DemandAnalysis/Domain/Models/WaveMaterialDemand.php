@@ -52,6 +52,10 @@ final class WaveMaterialDemand extends Model
         'in_transit_qty',
         'missing_qty',
         'coverage_pct',
+        // Whether this material is drawable on open credit. It does NOT reduce missing_qty
+        // (that is always the real physical shortage) — it decides whether the shortage
+        // blocks preparation. See ProductReadinessCalculator.
+        'allow_negative',
         'data_hash',
         'last_calculated_at',
     ];
@@ -64,6 +68,7 @@ final class WaveMaterialDemand extends Model
         'in_transit_qty' => 'float',
         'missing_qty' => 'float',
         'coverage_pct' => 'float',
+        'allow_negative' => 'boolean',
         'last_calculated_at' => 'datetime',
     ];
 

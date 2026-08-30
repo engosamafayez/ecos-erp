@@ -29,12 +29,14 @@ final class ProductDemandCalculator
             ->join('order_lines as ol', 'ol.order_id', '=', 'pwo.order_id')
             ->join('products as p', 'p.id', '=', 'ol.product_id')
             ->where('pwo.preparation_wave_id', $wave->id)
+            // A postponed membership is retained as history but has left the current cycle,
+            // so its lines must not be counted here (REFINEMENT-002 §22).
+            ->whereNull('pwo.postponed_at')
             ->selectRaw('
                 ol.product_id,
                 p.name       AS product_name,
                 p.sku        AS product_sku,
                 SUM(ol.quantity)                       AS required_qty,
-                SUM(COALESCE(ol.prepared_qty, 0))      AS prepared_qty,
                 COUNT(DISTINCT ol.order_id)            AS orders_count
             ')
             ->groupBy('ol.product_id', 'p.name', 'p.sku');
@@ -47,11 +49,23 @@ final class ProductDemandCalculator
 
         return $query->get()->map(function (object $row) use ($wave, $now): array {
             $required = round((float) $row->required_qty, 4);
-            $prepared = round((float) $row->prepared_qty, 4);
-            $remaining = max(0.0, round($required - $prepared, 4));
-            $completionPct = $required > 0.0
-                ? round(($prepared / $required) * 100.0, 2)
-                : 0.0;
+
+            // PREPARED IS PRODUCT-LEVEL AND OPERATOR-OWNED (Option A).
+            //
+            // It used to be SUM(order_lines.prepared_qty) — a column nothing in the
+            // codebase ever writes, so Prepared was permanently 0 and Remaining always
+            // equalled Required. Prepared now lives on wave_product_demand.prepared_qty,
+            // written only by the operator through the demand endpoint, and this value
+            // is used ONLY when the row is first inserted. `prepared_qty` is excluded
+            // from the upsert's update list (see DemandReadRepository), so a rebuild
+            // triggered by a postponement or a cost change never clobbers it.
+            //
+            // remaining_qty / completion_pct are stored for a fresh row but are always
+            // DERIVED at read time from required - prepared, so they cannot drift when
+            // Required moves under a preserved Prepared.
+            $prepared = 0.0;
+            $remaining = $required;
+            $completionPct = 0.0;
 
             return [
                 'id' => Str::uuid()->toString(),

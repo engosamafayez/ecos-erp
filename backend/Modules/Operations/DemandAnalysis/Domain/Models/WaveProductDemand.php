@@ -44,9 +44,17 @@ final class WaveProductDemand extends Model
         'product_sku',
         'required_qty',
         'prepared_qty',
+        'preparation_completed_at',
         'remaining_qty',
         'orders_count',
         'completion_pct',
+        // Per-product preparation readiness — 'ready' | 'waiting_material'.
+        // Distinct from missing_qty, which is always the real physical shortage.
+        'material_status',
+        'blocking_materials_count',
+        'shortage_decision',
+        'shortage_decided_by',
+        'shortage_decided_at',
         'data_hash',
         'last_calculated_at',
     ];
@@ -57,6 +65,9 @@ final class WaveProductDemand extends Model
         'remaining_qty' => 'float',
         'orders_count' => 'integer',
         'completion_pct' => 'float',
+        'blocking_materials_count' => 'integer',
+        'shortage_decided_at' => 'datetime',
+        'preparation_completed_at' => 'datetime',
         'last_calculated_at' => 'datetime',
     ];
 

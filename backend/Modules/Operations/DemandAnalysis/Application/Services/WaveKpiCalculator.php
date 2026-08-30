@@ -19,13 +19,22 @@ final class WaveKpiCalculator
      */
     public function calculate(PreparationWave $wave): array
     {
-        // Product stats
+        // Product stats.
+        //
+        // Prepared/Remaining are counted from (required_qty - prepared_qty), NOT from the
+        // stored remaining_qty column. `remaining_qty` is deliberately excluded from the
+        // demand upsert's update list (it is derived from operator-owned prepared_qty), so
+        // after any rebuild that moves Required — postponing an order, adding one, editing
+        // a quantity — the stored column still holds the pre-rebuild figure. The header
+        // then reported a different Prepared/Remaining split than the Product Demand table,
+        // which derives the same subtraction at read time in
+        // WaveDemandController::presentProductDemand(). One expression, one answer.
         $productStats = DB::table('wave_product_demand')
             ->where('preparation_wave_id', $wave->id)
             ->selectRaw('
                 COUNT(*)                                     AS products_count,
-                SUM(CASE WHEN remaining_qty <= 0 THEN 1 ELSE 0 END) AS prepared_count,
-                SUM(CASE WHEN remaining_qty  > 0 THEN 1 ELSE 0 END) AS remaining_count,
+                SUM(CASE WHEN (required_qty - prepared_qty) <= 0 THEN 1 ELSE 0 END) AS prepared_count,
+                SUM(CASE WHEN (required_qty - prepared_qty)  > 0 THEN 1 ELSE 0 END) AS remaining_count,
                 COALESCE(SUM(required_qty), 0)              AS total_required,
                 COALESCE(SUM(prepared_qty), 0)              AS total_prepared
             ')
