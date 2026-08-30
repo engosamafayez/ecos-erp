@@ -193,6 +193,60 @@ class InventoryReservationTest extends TestCase
         app(ShipStockAction::class)->execute($this->dto(20.0));
     }
 
+    /**
+     * TASK-DRIVER-CUSTODY-INVENTORY-TRANSFER-001. A product that permits negative stock
+     * may ship below on_hand — the balance goes negative and a later receipt offsets it.
+     * This makes ShipStock symmetric with ReserveStockAction and DirectIssueStockAction,
+     * which already honour the flag (ADR-027 v1.1 P07).
+     */
+    public function test_ship_stock_overdrafts_on_hand_when_the_product_permits_negative_stock(): void
+    {
+        // The product carries the execution permission; nothing is physically on hand.
+        Product::query()->whereKey($this->product->id)->update(['allow_negative_stock' => true]);
+
+        // Reserve the commitment (permitted because the product allows negative stock),
+        // then ship it — the reservation is consumed and on_hand goes negative.
+        app(ReserveStockAction::class)->execute($this->dto(10.0));
+
+        $result = app(ShipStockAction::class)->execute($this->dto(10.0));
+
+        $this->assertTrue($result->isSuccess());
+
+        $item = InventoryItem::query()
+            ->where('warehouse_id', $this->warehouse->id)
+            ->where('product_id', $this->product->id)
+            ->firstOrFail();
+
+        $this->assertEquals('-10.0000', $item->on_hand_qty, 'on_hand went negative, to be offset by a later receipt');
+        $this->assertEquals('0.0000', $item->reserved_qty, 'the reservation was consumed');
+
+        $entry = StockLedgerEntry::query()
+            ->where('inventory_item_id', $item->id)
+            ->where('movement_type', LedgerMovementType::SalesIssue->value)
+            ->firstOrFail();
+
+        $this->assertEquals('10.0000', $entry->quantity);
+        $this->assertEquals('0.0000', $entry->on_hand_before);
+        $this->assertEquals('-10.0000', $entry->on_hand_after);
+    }
+
+    /**
+     * The negative-stock permission is the PRODUCT's `allow_negative_stock` and nothing
+     * else. A reservation committed via `permit_negative_commitment` does NOT license the
+     * ship to overdraft — a product that forbids negative stock is still refused when the
+     * stock is not physically there (requirement 6; the existing rule, unchanged).
+     */
+    public function test_ship_stock_still_refuses_an_overdraft_when_the_product_forbids_negative_stock(): void
+    {
+        // allow_negative_stock stays false (factory default). The commitment is permitted
+        // only because it is explicitly a negative commitment at reserve time.
+        app(ReserveStockAction::class)->execute($this->dto(10.0, ['permit_negative_commitment' => true]));
+
+        $this->expectException(InsufficientStockException::class);
+
+        app(ShipStockAction::class)->execute($this->dto(10.0));
+    }
+
     // -------------------------------------------------------------------------
     // Direct Issue (no reservation required)
     // -------------------------------------------------------------------------

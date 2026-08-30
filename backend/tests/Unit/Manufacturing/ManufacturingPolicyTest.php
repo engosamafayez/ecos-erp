@@ -48,7 +48,7 @@ class ManufacturingPolicyTest extends TestCase
         );
     }
 
-    private function validOrder(string $status = 'pending', bool $alreadyManufactured = false): OrderContext
+    private function validOrder(string $status = 'in_progress', bool $alreadyManufactured = false): OrderContext
     {
         return new OrderContext(
             order_id: 'order-uuid',
@@ -96,15 +96,18 @@ class ManufacturingPolicyTest extends TestCase
         $this->assertNotEmpty($result->reason);
     }
 
-    public function test_eligible_when_order_status_is_pending(): void
+    public function test_eligible_when_order_status_is_in_progress(): void
     {
-        $result = $this->evaluate(order: $this->validOrder(status: 'pending'));
+        // ADR-042 V3 fulfilment-eligible entry state.
+        $result = $this->evaluate(order: $this->validOrder(status: 'in_progress'));
         $this->assertTrue($result->eligible);
     }
 
-    public function test_eligible_when_order_status_is_processing(): void
+    public function test_eligible_when_order_status_is_ready_for_dispatch(): void
     {
-        $result = $this->evaluate(order: $this->validOrder(status: 'processing'));
+        // ADR-042 V3: the status the order HOLDS when the trigger runs (MoveToPreparation
+        // flips to it before manufacturing is invoked) — the load-bearing case.
+        $result = $this->evaluate(order: $this->validOrder(status: 'ready_for_dispatch'));
         $this->assertTrue($result->eligible);
     }
 
@@ -178,15 +181,17 @@ class ManufacturingPolicyTest extends TestCase
         $this->assertEquals(PolicyCode::OrderStatusNotAllowed, $result->policy_code);
     }
 
-    // ── Rule 3: Product can manufacture ──────────────────────────────────────
+    // ── Rule 3 REMOVED — can_manufacture no longer gates order preparation ──────
+    // TASK-ORDER-PREPARATION-FULFILLABILITY-CONTRACT-001 / ADR-027 §16 v1.5.
 
-    public function test_ineligible_when_product_cannot_manufacture(): void
+    public function test_can_manufacture_false_is_now_eligible_when_other_rules_pass(): void
     {
+        // Previously this returned ProductCannotManufacture (Rule 3). ECOS is now
+        // order-driven preparation: a valid, recipe-backed order line is eligible for
+        // preparation regardless of the can_manufacture capability flag.
         $result = $this->evaluate(product: $this->validProduct(canManufacture: false));
 
-        $this->assertFalse($result->eligible);
-        $this->assertEquals(PolicyCode::ProductCannotManufacture, $result->policy_code);
-        $this->assertStringContainsString('can_manufacture', $result->reason);
+        $this->assertTrue($result->eligible, 'can_manufacture=false must no longer block preparation');
     }
 
     public function test_product_check_occurs_after_order_status_check(): void
@@ -212,12 +217,13 @@ class ManufacturingPolicyTest extends TestCase
         $this->assertStringContainsString('recipe', strtolower($result->reason));
     }
 
-    public function test_recipe_check_occurs_after_can_manufacture_check(): void
+    public function test_missing_recipe_now_fires_even_when_can_manufacture_is_false(): void
     {
-        // can_manufacture=false AND no recipe → rule 3 fires first
+        // With Rule 3 removed, can_manufacture is not consulted; a missing recipe is
+        // now surfaced directly by Rule 4 (previously masked by Rule 3).
         $result = $this->evaluate(product: $this->validProduct(canManufacture: false, hasRecipe: false));
 
-        $this->assertEquals(PolicyCode::ProductCannotManufacture, $result->policy_code);
+        $this->assertEquals(PolicyCode::RecipeNotFound, $result->policy_code);
     }
 
     // ── Rule 5: Product is inventory-managed ─────────────────────────────────

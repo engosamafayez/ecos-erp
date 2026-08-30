@@ -9,7 +9,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Inventory\InventoryItems\Domain\Models\InventoryItem;
 use Modules\Inventory\InventoryItems\Domain\Models\StockLedgerEntry;
 use Modules\Inventory\Products\Domain\Models\Product;
+use Modules\Manufacturing\BillsOfMaterials\Application\Actions\CreateRecipeCostSnapshotAction;
+use Modules\Manufacturing\BillsOfMaterials\Domain\Models\BillOfMaterial;
 use Modules\Manufacturing\BillsOfMaterials\Domain\Models\Recipe;
+use Modules\Manufacturing\BillsOfMaterials\Domain\Models\RecipeCostSnapshot;
 use Modules\Manufacturing\Disassembly\Application\Services\DisassemblyExecutor;
 use Modules\Manufacturing\Disassembly\Domain\Contracts\DisassemblyTransactionRepositoryInterface;
 use Modules\Manufacturing\Disassembly\Domain\Enums\DisassemblyPolicyCode;
@@ -84,9 +87,11 @@ class DisassemblyTest extends TestCase
         ]);
     }
 
-    private function makeComponent(): Product
+    private function makeComponent(float $materialCost = 1.0): Product
     {
-        return Product::factory()->rawMaterial()->create();
+        // A material cost is mandatory now: a recipe whose components are unpriced
+        // cannot be approved, and an unapproved recipe cannot be disassembled.
+        return Product::factory()->rawMaterial()->create(['material_cost' => $materialCost]);
     }
 
     private function makeRecipe(Product $finishedGood, int $version = 1): Recipe
@@ -106,6 +111,27 @@ class DisassemblyTest extends TestCase
             'raw_material_id' => $component->id,
             'quantity' => $qty,
         ]);
+
+        $this->approveRecipe($recipe);
+    }
+
+    /**
+     * Freeze the recipe's component costs, as activating it through
+     * SetBomStatusAction would.
+     *
+     * These fixtures build recipes directly with `is_active => true`, which skips
+     * the approval path entirely — so nothing records what the components cost, and
+     * disassembly refuses to run without that record. The snapshot is re-taken after
+     * every line because it must describe the whole recipe, not the first component
+     * that happened to be added.
+     */
+    private function approveRecipe(Recipe $recipe): void
+    {
+        RecipeCostSnapshot::query()->where('bom_id', $recipe->id)->delete();
+
+        app(CreateRecipeCostSnapshotAction::class)->execute(
+            BillOfMaterial::query()->findOrFail($recipe->id),
+        );
     }
 
     private function seedInventory(Product $product, float $onHand, float $reserved = 0.0): InventoryItem

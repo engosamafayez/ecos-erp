@@ -354,6 +354,40 @@ final class RecipeToOrderAvailabilityE2ETest extends TestCase
         self::assertSame(0.0, $r['reserved'], 'The manufacturing commitment must be withheld.');
     }
 
+    // == TEST F - NEW CONTRACT: can_manufacture is no longer a fulfillability gate ==
+    // TASK-ORDER-PREPARATION-FULFILLABILITY-CONTRACT-001 / ADR-027 §16 v1.5.
+    // The suite's other scenarios build the FG with ->manufacturable() (can_manufacture
+    // = true). This one inverts the premise: a NON-manufacturable finished good with an
+    // executable recipe must now reserve, because ECOS is order-driven preparation and
+    // the capability flag no longer gates order fulfilment.
+
+    public function test_f_can_manufacture_false_with_executable_recipe_reserves(): void
+    {
+        $fg = Product::factory()->finishedGood()->create(['brand_id' => $this->brand->id]);
+        self::assertFalse((bool) $fg->can_manufacture, 'fixture guard: FG is not manufacturable');
+
+        $rm = $this->rawMaterial(allowNegative: false);
+        $recipe = $this->recipeFor($fg);
+        $this->addComponent($recipe, $rm, 2.0);
+
+        $this->stock($rm, 10.0);   // recipe fully suppliable
+        $this->stock($fg, 0.0);    // no finished-good stock
+
+        $recipeStatus = $this->recipeStatus($fg);
+        self::assertSame('instock', $recipeStatus);
+
+        $this->actingAs($this->operator());
+        $r = $this->runOrderPath($this->orderFor($fg));
+        $this->record('F', $recipeStatus, $r);
+
+        self::assertSame(
+            OrderStatus::ReadyForDispatch->value,
+            $r['status'],
+            'An executable recipe makes the order fulfillable even when can_manufacture=false.',
+        );
+        self::assertSame(1.0, $r['reserved'], 'The finished product is fulfillable via its preparation recipe.');
+    }
+
     // == Tenant isolation =====================================================
 
     public function test_tenant_isolation_other_company_stock_does_not_satisfy_recipe(): void

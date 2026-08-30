@@ -95,18 +95,27 @@ final class AvailabilityStateDerivationTest extends TestCase
      * warehouse must not lend negative availability to a healthy one — under the
      * legacy sum-then-clamp shape this product would read 0 and be OutOfStock.
      */
-    public function test_over_reserved_warehouse_does_not_drag_state_out_of_stock(): void
+    /**
+     * Formerly `test_over_reserved_warehouse_does_not_drag_state_out_of_stock`, which
+     * pinned the clamp-per-warehouse-then-sum shape.
+     *
+     * ADR-027 §17.3 / P08 supersede it: availability is `on_hand − reserved`, summed and
+     * signed. Clamping each warehouse to zero first concealed over-commitment — a
+     * warehouse that had promised 10 units against 2 on hand reported a healthy 0, so the
+     * 8-unit deficit never reached the summary. The negative IS the signal.
+     */
+    public function test_over_reserved_warehouse_drags_the_signed_sum_negative(): void
     {
         $product = Product::factory()->create();
         $second = Warehouse::factory()->create(['company_id' => $this->company->id]);
 
-        $this->stock($product, onHand: 2, reserved: 10);              // clamps to 0
-        $this->stock($product, onHand: 7, reserved: 1, warehouse: $second); // 6
+        $this->stock($product, onHand: 2, reserved: 10);                    // −8, reported as-is
+        $this->stock($product, onHand: 7, reserved: 1, warehouse: $second); // +6
 
         $summary = $this->service()->summarize($product->id, $this->company->id);
 
-        self::assertSame(6.0, $summary->available);
-        self::assertSame(AvailabilityState::InStock, $summary->availabilityState);
+        self::assertSame(-2.0, $summary->available, '(2−10) + (7−1) = −2, not 6');
+        self::assertSame(AvailabilityState::OutOfStock, $summary->availabilityState);
     }
 
     // ── 4. Company scope ──────────────────────────────────────────────────────
