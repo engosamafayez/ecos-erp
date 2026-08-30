@@ -51,8 +51,22 @@ final class ReleaseStockAction extends BaseAction
                 $dto->company_id,
             );
 
+            // TASK-ORDERS-PREPARATION-PAYMENT-FINAL-FIX-001 (D3) — releasing what was
+            // never physically held is a NO-OP, not an error.
+            //
+            // This used to throw, which is how a customer/address-only edit of a
+            // made-to-order order surfaced as HTTP 422 "No inventory record found for the
+            // given warehouse and product". Reserve is now symmetric so new orders always
+            // have a row, but orders committed before that fix — and any product whose
+            // inventory row was never materialised — must still be releasable.
+            //
+            // No row means nothing is reserved at this warehouse for this product, so the
+            // post-condition the caller wants ("this reservation is no longer held") is
+            // already true. Nothing is written and no event is published, because nothing
+            // moved. A genuine reservation always has a row, so this cannot silently
+            // swallow a real release.
             if ($item === null) {
-                throw new InvalidInventoryMovementException('No inventory record found for the given warehouse and product');
+                return null;
             }
 
             $locked = $this->inventory->lockForUpdate($item->id);
@@ -105,6 +119,11 @@ final class ReleaseStockAction extends BaseAction
 
             return $locked;
         });
+
+        // Nothing was held, so nothing moved: no ledger entry, no event, no failure.
+        if ($result === null) {
+            return OperationResult::success(null, 'No reservation held for this warehouse and product; nothing to release.');
+        }
 
         // ── Guarantee publish fires only after the outermost transaction commits ─
         DB::connection()->afterCommit(function () use ($event): void {

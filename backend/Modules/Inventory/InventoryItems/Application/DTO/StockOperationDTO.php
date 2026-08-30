@@ -42,6 +42,24 @@ final class StockOperationDTO extends BaseDTO
          * arithmetic, not a guess.
          */
         public readonly ?float $total_value = null,
+        /**
+         * The caller has ALREADY established that this commitment is legitimate even
+         * though physical stock cannot cover it (TASK-ORDERS-PREPARATION-PAYMENT-FINAL-FIX-001, D3).
+         *
+         * The reservation domain treats Allow Negative Stock as an EXECUTION PERMISSION
+         * (see ReserveStockAction). For a made-to-order finished good that permission
+         * does not come from the product flag — it comes from the RECIPE EXECUTABILITY
+         * decision taken upstream by ManufacturingAvailabilityService (ADR-027 §16.3/§19).
+         * Without a way to express that, reserve recorded the commitment on the order
+         * line while the inventory write was silently rejected, so release could not
+         * find what reserve claimed to have taken.
+         *
+         * This never decides anything itself: it only carries a decision already made.
+         * It must never be set by a general adjustment, shipment or import path.
+         *
+         * Placed last so every existing caller is unaffected.
+         */
+        public readonly bool $permit_negative_commitment = false,
     ) {}
 
     /**
@@ -83,6 +101,7 @@ final class StockOperationDTO extends BaseDTO
                                     ? (float) $data['unit_cost'] : null,
             total_value: isset($data['total_value']) && is_numeric($data['total_value'])
                                     ? (float) $data['total_value'] : null,
+            permit_negative_commitment: (bool) ($data['permit_negative_commitment'] ?? false),
         );
     }
 }

@@ -45,9 +45,10 @@ enum AvailabilityState: string
      * second place where the rule is written, so a grid can never disagree with
      * a detail panel.
      *
-     * @param  float|null  $available  Canonical clamp-per-warehouse-then-sum quantity.
-     *                                 Null means no inventory record exists at all,
-     *                                 which is distinct from a tracked zero.
+     * @param  float|null  $available  Canonical SIGNED quantity (`Σon_hand − Σreserved`,
+     *                                 never clamped). Null means no inventory record
+     *                                 exists at all, which is distinct from a tracked
+     *                                 zero and must not be coalesced to 0 upstream.
      */
     public static function fromAvailable(?float $available): self
     {
@@ -56,5 +57,36 @@ enum AvailabilityState: string
             $available <= 0.0 => self::OutOfStock,
             default => self::InStock,
         };
+    }
+
+    /**
+     * May this quantity be COMMITTED (reserved / ordered / fulfilled)?
+     *
+     * This is a second PROJECTION over the same canonical inputs — deliberately
+     * not a second availability engine. It performs no inventory arithmetic and
+     * reads no table; it answers a policy question that `fromAvailable()` cannot,
+     * because that method sees only a quantity and never the negative-stock flag.
+     *
+     * That blind spot was a root cause: turning Allow Negative ON could not change
+     * anything a screen rendered, by construction.
+     *
+     * The rule, matching the approved contract:
+     *
+     *   allow_negative = ON   → always committable. The policy exists precisely to
+     *                           permit commitment beyond physical stock, so an
+     *                           untracked or negative balance is no obstacle.
+     *   allow_negative = OFF  → committable only while a positive balance remains.
+     *                           Untracked (null) is NOT committable: absence of a
+     *                           record is not evidence of stock.
+     *
+     * @param  float|null  $available  Canonical signed availability; null = untracked.
+     */
+    public static function canCommit(?float $available, bool $allowNegative): bool
+    {
+        if ($allowNegative) {
+            return true;
+        }
+
+        return ($available ?? 0.0) > 0.0;
     }
 }

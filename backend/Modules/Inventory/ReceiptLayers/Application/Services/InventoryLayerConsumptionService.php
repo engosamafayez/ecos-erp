@@ -26,6 +26,9 @@ final class InventoryLayerConsumptionService
     ) {}
 
     /**
+     * @param  string|null  $goodsReceiptLineId  when set, restricts eligible layers to that
+     *                                           receipt line (SR-1 receipt-scoped valuation)
+     *
      * @throws InsufficientStockException when open layers cannot cover the quantity
      */
     public function consume(
@@ -36,6 +39,7 @@ final class InventoryLayerConsumptionService
         float $quantity,
         ?string $orderId = null,
         ?string $orderLineId = null,
+        ?string $goodsReceiptLineId = null,
     ): ConsumptionResult {
         // Load open layers for this product+warehouse+company in FIFO order (oldest first).
         // BUG-08 fix: company_id filter enforces tenant isolation — without it, a layer
@@ -44,6 +48,16 @@ final class InventoryLayerConsumptionService
             ->where('product_id', $productId)
             ->where('warehouse_id', $warehouseId)
             ->where('company_id', $companyId)
+            // SR-1 — receipt-scoped consumption for Supplier Returns.
+            //
+            // Optional and null by default, so every existing caller (shipping, waste,
+            // liability, disassembly) keeps byte-identical behaviour. When supplied, only
+            // layers created by THAT goods receipt line are eligible, which is what stops a
+            // return to Supplier A consuming Supplier B's cost layers: a layer's
+            // goods_receipt_line_id transitively identifies its supplier.
+            //
+            // FIFO ordering is unchanged — oldest-first WITHIN the eligible set.
+            ->when($goodsReceiptLineId !== null, fn ($q) => $q->where('goods_receipt_line_id', $goodsReceiptLineId))
             ->where('remaining_qty', '>', 0)
             ->lockForUpdate()
             ->orderBy('created_at')

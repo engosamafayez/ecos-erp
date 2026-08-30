@@ -127,7 +127,16 @@ final class UpdateProductRequest extends FormRequest
             // brand_id is accepted but overridden by the controller (immutable after creation)
             'brand_id' => ['sometimes', 'nullable', 'uuid'],
             'category_id' => ['required', 'uuid', 'exists:categories,id'],
-            'unit_id' => ['sometimes', 'nullable', 'uuid', 'exists:units,id'],
+            // D-5 — a valid Product must not be edited back into having no Unit.
+            //
+            // `sometimes` keeps partial updates working: a payload that never mentions
+            // `unit_id` is untouched, which is what lets the legacy NULL-unit products still be
+            // edited for other fields while their remediation is pending. But once the key IS
+            // present, `required` rejects null and empty — so the unit can be CHANGED and never
+            // CLEARED. Replacing `sometimes` with a bare `required` would have made every
+            // partial update carry a unit, and would have locked the legacy rows out of editing
+            // entirely.
+            'unit_id' => ['sometimes', 'required', 'uuid', 'exists:units,id'],
             'product_type' => ['required', Rule::in(Product::TYPES)],
             'cost_source' => ['sometimes', 'nullable', Rule::enum(CostSource::class)],
             'is_active' => ['boolean'],

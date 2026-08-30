@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Storage;
 use Modules\Inventory\InventoryItems\Domain\Enums\AvailabilityState;
+use Modules\Inventory\Products\Domain\Enums\ProductAvailability;
 use Modules\Inventory\Products\Domain\Models\Product;
 
 /**
@@ -41,6 +42,32 @@ final class ProductResource extends JsonResource
     }
 
     /** Gross Profit % = (regular_price − cost) / regular_price × 100 */
+    /**
+     * May this product be committed to an order?
+     *
+     * A projection over values already computed upstream — it runs no query and
+     * repeats no inventory arithmetic, so it is not a second availability engine.
+     *
+     *  - Stock path: `AvailabilityState::canCommit(signed available, allow_negative)`.
+     *  - Manufacturing path (finished goods only): `manufacturing_availability`,
+     *    which the repository derives with each component's own
+     *    `allow_negative_stock` already taken into account.
+     *
+     * Either path suffices — a finished good with no stock is still orderable when
+     * its recipe can be executed.
+     */
+    private function resolveCanCommit(): bool
+    {
+        $available = isset($this->agg_available_qty) ? (float) $this->agg_available_qty : null;
+
+        if (AvailabilityState::canCommit($available, (bool) $this->allow_negative_stock)) {
+            return true;
+        }
+
+        return $this->product_type === Product::TYPE_FINISHED_GOOD
+            && ($this->manufacturing_availability ?? null) === 'instock';
+    }
+
     private function computeGrossProfitPct(): ?float
     {
         $cost = $this->computeEffectiveCost();
@@ -159,9 +186,34 @@ final class ProductResource extends JsonResource
             // from the canonical available quantity by the single shared rule.
             // Distinct from `stock_status` above, which is the WooCommerce channel
             // attribute (inbound-only, never published outbound — E-3).
-            'availability_state' => AvailabilityState::fromAvailable(
+            // T-1 — the BUSINESS three-state contract: in_stock | negative_allowed |
+            // out_of_stock. Policy is folded in here, at the Product/API boundary, so no
+            // client has to compose it and no two clients can compose it differently.
+            //
+            // This used to be AvailabilityState::fromAvailable(), which is the DATA
+            // PLATFORM answer and could emit `untracked` — a fourth state that the
+            // availability filter beside it explicitly refused to recognise. A product
+            // with no inventory row and Allow Negative ON was therefore returned by the
+            // `negative_allowed` filter while its own row read `untracked`.
+            //
+            // AvailabilityState is untouched and still serves InventorySummaryService and
+            // the inventory-layer endpoint, where `untracked` is a real distinction.
+            'availability_state' => ProductAvailability::project(
                 isset($this->agg_available_qty) ? (float) $this->agg_available_qty : null,
+                (bool) $this->allow_negative_stock,
             )->value,
+            // The ERP's orderability answer, so no client has to compose one.
+            //
+            // `availability_state` describes the QUANTITY; this describes the POLICY.
+            // They are deliberately separate: a material at available = −5 is
+            // `out_of_stock` and still `can_commit = true` when Allow Negative is ON.
+            // Collapsing the two is what made the negative-stock policy invisible.
+            //
+            // A finished good is committable when its own stock permits it OR it can
+            // be manufactured — `manufacturing_availability` already consults each
+            // component's allow_negative_stock (see EloquentProductRepository), so
+            // recipe policy is honoured without recomputing it here.
+            'can_commit' => $this->resolveCanCommit(),
             'inventory_value' => isset($this->inventory_value) ? (float) $this->inventory_value : null,
             'has_recipe' => $this->relationLoaded('activeRecipe') ? ($this->activeRecipe !== null) : ($this->has_recipe ?? null),
             'pending_review' => isset($this->has_pending_review) ? (bool) $this->has_pending_review : null,

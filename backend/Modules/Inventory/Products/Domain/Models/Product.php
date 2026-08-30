@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Products\Domain\Models;
 
+use App\Core\Company\TenantOwnershipResolver;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +13,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
+use Modules\Inventory\DomainEvents\Contracts\DomainEventBus;
+use Modules\Inventory\DomainEvents\Events\ProductNegativeStockEnabled;
 use Modules\Inventory\InventoryItems\Domain\Models\InventoryItem;
 use Modules\Inventory\Products\Domain\Enums\CostSource;
 use Modules\Inventory\Products\Domain\Enums\ProductStockStatus;
@@ -71,9 +76,73 @@ class Product extends Model
     protected $keyType = 'string';
 
     /**
+     * Fail-closed tenant isolation (Decision 2). Reuses the certified Supplier
+     * pattern verbatim (App\Core\Company\TenantOwnershipResolver) — the SAME
+     * mechanism, not a second one — so Products (and their raw-material subtype)
+     * are company-scoped on every Eloquent query, including by-id show/update/
+     * delete. Console/queue/seeder/migration contexts and is_system roles bypass;
+     * a null company closes the query rather than removing the filter.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('tenant', static function (Builder $query): void {
+            $tenant = app(TenantOwnershipResolver::class);
+
+            if (! $tenant->appliesTo()) {
+                return;
+            }
+
+            if ($tenant->isUnrestricted()) {
+                return;
+            }
+
+            $companyId = $tenant->companyId();
+
+            if ($companyId === null) {
+                $query->whereRaw('1 = 0');
+
+                return;
+            }
+
+            $query->where($query->getModel()->getTable().'.company_id', $companyId);
+        });
+
+        // TASK-ORDER-PREPARATION-FULFILLABILITY-CONTRACT-001 §6B — publish a domain
+        // event when Allow Negative Stock is turned ON (false → true). Turning the
+        // policy on can make a previously-blocked recipe executable, so the existing
+        // reservation-retry recovery must re-open the affected Awaiting Stock orders.
+        // Only false → true is published; turning it OFF unblocks nothing. Fires
+        // afterCommit so listeners read committed state, and fails closed when no
+        // tenant is derivable.
+        static::updated(static function (self $product): void {
+            if (! $product->wasChanged('allow_negative_stock')) {
+                return;
+            }
+
+            if (! (bool) $product->allow_negative_stock || (bool) $product->getOriginal('allow_negative_stock')) {
+                return;
+            }
+
+            $companyId = $product->company_id;
+
+            if ($companyId === null || $companyId === '') {
+                return;
+            }
+
+            $productId = (string) $product->id;
+            $companyId = (string) $companyId;
+
+            DB::connection()->afterCommit(static function () use ($productId, $companyId): void {
+                app(DomainEventBus::class)->publish(new ProductNegativeStockEnabled($productId, $companyId));
+            });
+        });
+    }
+
+    /**
      * @var list<string>
      */
     protected $fillable = [
+        'company_id',
         'brand_id',
         'sku',
         'barcode',

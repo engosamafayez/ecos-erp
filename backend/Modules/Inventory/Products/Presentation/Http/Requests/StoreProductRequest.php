@@ -51,7 +51,10 @@ final class StoreProductRequest extends FormRequest
         $isMaterial = in_array($this->input('product_type'), ['raw_material', 'packaging_material'], true);
 
         return [
-            'sku' => ['required', 'string', 'max:100', 'unique:products,sku'],
+            // Optional: omit it and the server generates an authoritative,
+            // company-scoped, globally-unique SKU (Decision 1). A supplied SKU is
+            // still validated for global uniqueness (the constraint is preserved).
+            'sku' => ['nullable', 'string', 'max:100', 'unique:products,sku'],
             'barcode' => ['nullable', 'string', 'max:100'],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
@@ -59,7 +62,18 @@ final class StoreProductRequest extends FormRequest
                 ? ['nullable', 'uuid', 'exists:brands,id']
                 : ['required', 'uuid', 'exists:brands,id'],
             'category_id' => ['required', 'uuid', 'exists:categories,id'],
-            'unit_id' => ['sometimes', 'nullable', 'uuid', 'exists:units,id'],
+            // D-5 — EVERY PRODUCT MUST HAVE A UNIT.
+            //
+            // This was `sometimes|nullable`, and the Products workspace form never collected a
+            // unit at all, so every product created through the UI was stored with
+            // `unit_id = NULL`. That is the origin of the legacy NULL rows: they are all
+            // UI-created finished goods, while WooCommerce-imported products (which resolve a
+            // unit at import) all carry one.
+            //
+            // Units are GLOBAL, not company-scoped (`units` has no `company_id`), so
+            // `exists:units,id` is the complete integrity rule — no tenant predicate is added
+            // here, because inventing one would contradict the existing architecture.
+            'unit_id' => ['required', 'uuid', 'exists:units,id'],
             'product_type' => ['required', Rule::in(Product::TYPES)],
             'cost_source' => ['sometimes', 'nullable', Rule::enum(CostSource::class)],
             'is_active' => ['boolean'],

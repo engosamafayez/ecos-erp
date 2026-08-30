@@ -67,7 +67,22 @@ final class ShipStockAction extends BaseAction
             $onHandBefore = (float) $locked->on_hand_qty;
             $reservedBefore = (float) $locked->reserved_qty;
 
-            if ($onHandBefore < $dto->quantity) {
+            // P07 (ADR-027 v1.1): allow_negative_stock is an EXECUTION PERMISSION. A
+            // product that carries it may be issued below on_hand — the balance goes
+            // negative and a later receipt offsets it naturally (−10 + 20 = +10). This
+            // makes ShipStock symmetric with the rest of the family: ReserveStockAction
+            // already lets the commitment go negative on the way IN, and
+            // DirectIssueStockAction already honours the same flag at issuance (C1).
+            // ShipStock was the missing member, so an overdraft that could be RESERVED
+            // could never be SHIPPED. The product flag is the SINGLE authority — there
+            // is no ship-specific negative-stock override, and the arithmetic below is
+            // unchanged. When on_hand already covers the quantity this lookup changes
+            // nothing: the guard only ever fired for on_hand < quantity.
+            $allowNegative = (bool) Product::query()
+                ->where('id', $dto->product_id)
+                ->value('allow_negative_stock');
+
+            if (! $allowNegative && $onHandBefore < $dto->quantity) {
                 throw new InsufficientStockException(
                     $dto->product_id,
                     $dto->warehouse_id,
@@ -76,6 +91,11 @@ final class ShipStockAction extends BaseAction
                 );
             }
 
+            // Consume-reservation semantics are deliberately UNCHANGED: a shipment
+            // consumes an existing reservation, so it must not exceed what is reserved.
+            // This guard governs the COMMITMENT, not physical stock, so allow_negative
+            // does not relax it — a negative-stock product still ships only what was
+            // reserved for it.
             if ($reservedBefore < $dto->quantity) {
                 throw new InvalidInventoryMovementException(
                     'Cannot ship stock that is not reserved',

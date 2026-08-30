@@ -23,6 +23,7 @@ use Modules\Inventory\Products\Application\Actions\ListProductsAction;
 use Modules\Inventory\Products\Application\Actions\UpdateProductAction;
 use Modules\Inventory\Products\Application\DTO\ProductDTO;
 use Modules\Inventory\Products\Domain\Models\Product;
+use Modules\Inventory\Products\Domain\Services\SkuGenerator;
 use Modules\Inventory\Products\Presentation\Http\Requests\PatchProductRequest;
 use Modules\Inventory\Products\Presentation\Http\Requests\StoreProductRequest;
 use Modules\Inventory\Products\Presentation\Http\Requests\UpdateProductRequest;
@@ -49,6 +50,9 @@ final class ProductController extends Controller
             'product_types' => $request->query('product_types'),
             'status' => $request->query('status', 'all'),
             'stock_status' => $request->query('stock_status'),
+            // Canonical ERP availability: in_stock | out_of_stock | negative_allowed.
+            // Distinct from `stock_status`, which is the WooCommerce channel attribute.
+            'availability' => $request->query('availability'),
             'allow_negative' => $request->query('allow_negative'),
             'warehouse_id' => $request->query('warehouse_id'),
             'sort_by' => $request->query('sort_by', 'created_at'),
@@ -192,7 +196,29 @@ final class ProductController extends Controller
         string $product,
         MaterialCostService $costService,
     ): JsonResponse {
-        $model = Product::findOrFail($product);
+        // RC-6 / GD-1 fail-closed company scope — the SAME resolver and predicate the
+        // list and the KPI already use (EloquentProductRepository::paginate, and
+        // stats() below), so this endpoint can never reach a product those two hide.
+        // Ownership runs Product -> Brand -> Company (ADR-013); privilege flows only
+        // through the documented is_system path. A brand-less product is therefore
+        // unreachable for a company-scoped actor — fail closed, never a fallback to
+        // the global product pool. Reaching this action at all is new: it was dead
+        // code until the PATCH route shadow was removed, so the scope is applied here
+        // rather than inherited from a lookup that never ran.
+        $tenant = app(TenantOwnershipResolver::class);
+        $query = Product::query();
+
+        if ($tenant->appliesTo() && ! $tenant->isUnrestricted()) {
+            $companyId = $tenant->companyId();
+
+            if ($companyId === null) {
+                $query->whereRaw('1 = 0');
+            } else {
+                $query->whereHas('brand', fn ($q) => $q->where('company_id', $companyId));
+            }
+        }
+
+        $model = $query->findOrFail($product);
         $validated = $request->validated();
 
         if (isset($validated['manual_cost'])) {
@@ -272,7 +298,7 @@ final class ProductController extends Controller
 
         $inventorySubquery = DB::table('inventory_items')
             ->whereNull('deleted_at')
-            ->selectRaw('product_id, SUM(on_hand_qty) as inv_on_hand, SUM(reserved_qty) as inv_reserved, SUM(GREATEST(on_hand_qty - reserved_qty, 0)) as inv_available')
+            ->selectRaw('product_id, SUM(on_hand_qty) as inv_on_hand, SUM(reserved_qty) as inv_reserved, SUM(on_hand_qty - reserved_qty) as inv_available')
             ->groupBy('product_id');
 
         if ($warehouseId !== '') {
@@ -281,7 +307,7 @@ final class ProductController extends Controller
 
         $totalAvailableExpr = $canonicalSummary
             ? 'COALESCE(SUM(inv_agg.inv_available), 0)'
-            : 'GREATEST(COALESCE(SUM(inv_agg.inv_on_hand), 0) - COALESCE(SUM(inv_agg.inv_reserved), 0), 0)';
+            : 'COALESCE(SUM(inv_agg.inv_on_hand), 0) - COALESCE(SUM(inv_agg.inv_reserved), 0)';
 
         $totalValueExpr = $canonicalSummary
             ? 'COALESCE(SUM(COALESCE(fifo_agg.fifo_value, 0)), 0)'
@@ -316,24 +342,30 @@ final class ProductController extends Controller
         ]);
     }
 
-    public function nextSku(Request $request): JsonResponse
+    public function nextSku(Request $request, SkuGenerator $skuGenerator): JsonResponse
     {
-        $prefix = strtoupper(trim((string) $request->query('prefix', 'RM')));
         $companyId = $request->user()?->company_id;
 
-        $last = Product::query()
-            ->whereHas('brand', fn ($q) => $q->where('company_id', $companyId))
-            ->where('sku', 'like', "{$prefix}-%")
-            ->orderByRaw('CAST(SUBSTRING(sku, '.(strlen($prefix) + 2).') AS UNSIGNED) DESC')
-            ->value('sku');
-
-        $nextNum = 1;
-        if ($last !== null) {
-            $numPart = (int) substr($last, strlen($prefix) + 1);
-            $nextNum = $numPart + 1;
+        // No company → no company-scoped sequence to preview.
+        if ($companyId === null) {
+            return $this->success(['sku' => null]);
         }
 
-        return $this->success(['sku' => $prefix.'-'.str_pad((string) $nextNum, 6, '0', STR_PAD_LEFT)]);
+        // Resolve the product type — preferred `product_type`, or inferred from the
+        // legacy `prefix` param (FG/RM/PM) for backward compatibility.
+        $typeParam = (string) $request->query('product_type', '');
+        $prefixParam = strtoupper(trim((string) $request->query('prefix', '')));
+        $productType = match (true) {
+            in_array($typeParam, Product::TYPES, true) => $typeParam,
+            $prefixParam === 'FG' => Product::TYPE_FINISHED_GOOD,
+            $prefixParam === 'PM' => Product::TYPE_PACKAGING_MATERIAL,
+            default => Product::TYPE_RAW_MATERIAL,
+        };
+
+        // PREVIEW ONLY — the authoritative, collision-safe number is assigned at
+        // create time by the same generator (Decision 1). This uses the identical
+        // company-code format, so the preview matches what will be stored.
+        return $this->success(['sku' => $skuGenerator->generate((string) $companyId, $productType)]);
     }
 
     /**

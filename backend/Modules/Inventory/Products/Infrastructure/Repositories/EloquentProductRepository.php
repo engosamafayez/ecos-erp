@@ -9,6 +9,7 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Modules\Inventory\Products\Domain\Contracts\ProductRepositoryInterface;
+use Modules\Inventory\Products\Domain\Enums\ProductAvailability;
 use Modules\Inventory\Products\Domain\Models\Product;
 
 /**
@@ -27,17 +28,44 @@ final class EloquentProductRepository implements ProductRepositoryInterface
         // + FIFO value, matching InventorySummaryService / EnterpriseCostEngine.
         $canonicalSummary = (bool) config('inventory_ledger.canonical_summary');
 
-        $availableExpr = $canonicalSummary
-            ? 'COALESCE(inv_agg.inv_available, 0)'
-            : 'GREATEST(COALESCE(inv_agg.inv_on_hand, 0) - COALESCE(inv_agg.inv_reserved, 0), 0)';
+        // SIGNED availability, and the untracked NULL is preserved.
+        //
+        // Both former branches coalesced the LEFT JOIN's NULL to 0, which made
+        // AvailabilityState::Untracked unreachable dead code: every product with no
+        // inventory row arrived at the resource as `0` and projected as OutOfStock.
+        // `NULL` must survive to the resource, where it means "not tracked".
+        //
+        // The flag no longer selects between two different ANSWERS. Signed
+        // subtraction is associative, so sum-then-subtract and subtract-then-sum
+        // agree; only the VALUE expression still differs (FIFO vs material_cost).
+        $availableExpr = 'inv_agg.inv_available';
 
         $valueExpr = $canonicalSummary
             ? '(SELECT COALESCE(SUM(irl.remaining_qty * irl.landed_unit_cost), 0) FROM inventory_receipt_layers irl WHERE irl.product_id = products.id AND irl.remaining_qty > 0)'
             : 'COALESCE(inv_agg.inv_on_hand, 0) * COALESCE(products.material_cost, 0)';
 
-        $compAvailExpr = $canonicalSummary
-            ? 'SUM(GREATEST(ii_c.on_hand_qty - ii_c.reserved_qty, 0.0))'
-            : 'GREATEST(SUM(ii_c.on_hand_qty) - SUM(ii_c.reserved_qty), 0.0)';
+        // Signed and associative — the two former branches are now the same answer.
+        $compAvailExpr = 'SUM(ii_c.on_hand_qty - ii_c.reserved_qty)';
+
+        // F-INV-10 / T-1 P12 — tenant scope for the inventory aggregate.
+        //
+        // The `inv_agg` subquery summed `inventory_items` across EVERY company, so another
+        // company's rows contributed to this product's Available. The product LIST has been
+        // company-scoped since GD-1, but the NUMBER attached to each row was not.
+        //
+        // Resolved once, here, using the SAME contract as the population scope below, so
+        // the two can never disagree:
+        //   not applicable (console/queue/migration) → no scoping, as before
+        //   unrestricted (is_system role)            → no scoping, as before
+        //   otherwise                                → the actor's own company
+        //
+        // Scoping is by ACTOR company, not product company, because `products` carries no
+        // `company_id` — its tenancy runs through `brand_id → brands.company_id`. Joining
+        // the aggregate through brands would be a redesign of the aggregation; this is not.
+        $tenantScope = app(TenantOwnershipResolver::class);
+        $scopedCompanyId = (! $tenantScope->appliesTo() || $tenantScope->isUnrestricted())
+            ? null
+            : $tenantScope->companyId();
 
         $query = Product::query()
             ->with(['category', 'unit', 'activeRecipe', 'channelMappings.channel.brand.company', 'brand.company'])
@@ -73,7 +101,13 @@ final class EloquentProductRepository implements ProductRepositoryInterface
             ->leftJoinSub(
                 DB::table('inventory_items')
                     ->whereNull('deleted_at')
-                    ->selectRaw('product_id, SUM(on_hand_qty) as inv_on_hand, SUM(reserved_qty) as inv_reserved, SUM(GREATEST(on_hand_qty - reserved_qty, 0)) as inv_available')
+                    // F-INV-10 — the only change to this aggregate: rows outside the
+                    // actor's company are excluded before summing. Quantities, the signed
+                    // subtraction and the grouping are untouched, so for same-company data
+                    // — every real case, since a product's inventory belongs to its own
+                    // company — the result is byte-identical to before.
+                    ->when($scopedCompanyId !== null, fn ($q) => $q->where('company_id', $scopedCompanyId))
+                    ->selectRaw('product_id, SUM(on_hand_qty) as inv_on_hand, SUM(reserved_qty) as inv_reserved, SUM(on_hand_qty - reserved_qty) as inv_available')
                     ->groupBy('product_id'),
                 'inv_agg',
                 'products.id',
@@ -81,11 +115,23 @@ final class EloquentProductRepository implements ProductRepositoryInterface
                 'inv_agg.product_id',
             )
             ->addSelect(
-                DB::raw('COALESCE(inv_agg.inv_on_hand, 0) as on_hand_qty'),
-                DB::raw('COALESCE(inv_agg.inv_reserved, 0) as reserved_qty'),
-                DB::raw($availableExpr . ' as agg_available_qty'),
-                DB::raw($valueExpr . ' as inventory_value'),
+                // NOT coalesced to 0. A product with no inventory_items row is
+                // UNTRACKED, and NULL is how that fact travels: available stays NULL so
+                // AvailabilityState::fromAvailable() can tell "untracked" from a tracked
+                // zero. Coalescing on_hand/reserved rendered the same fact as
+                // `0 / 0 / —`, which reads as a tracked material that happens to be empty.
+                DB::raw('inv_agg.inv_on_hand as on_hand_qty'),
+                DB::raw('inv_agg.inv_reserved as reserved_qty'),
+                DB::raw($availableExpr.' as agg_available_qty'),
+                DB::raw($valueExpr.' as inventory_value'),
                 DB::raw("EXISTS(SELECT 1 FROM pricing_reviews WHERE pricing_reviews.product_id = products.id AND pricing_reviews.status = 'pending') as has_pending_review"),
+                // F4 (TASK-GOLIVE-RECIPE-GATE-TENANT-REPAIR-001): the `inv_comp` join is
+                // COMPANY-scoped so this list agrees exactly with ManufacturingAvailabilityService.
+                // The boundary is the COMPANY (ADR-013: Product -> Brand -> Company), never the
+                // Brand — one Raw Material is legitimately shared across Brands of one Company.
+                // When products.brand_id (or the brand's company_id) is NULL the correlated
+                // subselect yields NULL, which never matches, so the component reads as zero:
+                // fail closed, never a fallback to the global inventory pool.
                 DB::raw("(CASE
                     WHEN products.product_type != 'finished_good' THEN NULL
                     WHEN NOT EXISTS (
@@ -105,11 +151,17 @@ final class EloquentProductRepository implements ProductRepositoryInterface
                          AND comp_chk.deleted_at IS NULL
                         LEFT JOIN (
                             SELECT ii_c.product_id,
+                                   ii_c.company_id,
                                    {$compAvailExpr} AS avail
                             FROM inventory_items ii_c
                             WHERE ii_c.deleted_at IS NULL
-                            GROUP BY ii_c.product_id
+                            GROUP BY ii_c.product_id, ii_c.company_id
                         ) inv_comp ON inv_comp.product_id = comp_chk.id
+                                  AND inv_comp.company_id = (
+                                      SELECT b_own.company_id
+                                      FROM brands b_own
+                                      WHERE b_own.id = products.brand_id
+                                  )
                         WHERE bom_chk2.product_id = products.id
                           AND COALESCE(inv_comp.avail, 0) <= 0
                           AND (comp_chk.allow_negative_stock IS NULL OR comp_chk.allow_negative_stock = FALSE)
@@ -148,6 +200,35 @@ final class EloquentProductRepository implements ProductRepositoryInterface
         $stockStatus = trim((string) ($filters['stock_status'] ?? ''));
         if ($stockStatus !== '') {
             $query->where('products.stock_status', $stockStatus);
+        }
+
+        // Canonical BUSINESS availability filter (T-1).
+        //
+        // The rule itself lives in ProductAvailability and NOWHERE ELSE. This used to
+        // restate it as a local `match`, while ProductResource projected the state with a
+        // different rule — so the filter and the badge could, and did, disagree about
+        // products with no inventory row. Deriving both from one enum makes that class of
+        // drift unrepresentable rather than merely fixed.
+        //
+        // A product with no inventory row LEFT JOINs to NULL; COALESCE(...,0) reads that
+        // as a quantity of nothing, so an unstocked material is Out of Stock (or Negative
+        // Allowed). Presence of an inventory record is deliberately NOT an input — there
+        // is no fourth business state.
+        //
+        // This replaces filtering on `products.stock_status` for this surface. That column
+        // is the inbound WooCommerce attribute — written only by the product importer and
+        // NULL on every ERP-created product — so it both disagreed with the table and
+        // matched almost nothing.
+        $availability = trim((string) ($filters['availability'] ?? ''));
+        if ($availability !== '') {
+            $state = ProductAvailability::tryFrom($availability);
+
+            if ($state !== null) {
+                $query->whereRaw($state->sqlPredicate(
+                    'COALESCE(inv_agg.inv_available, 0)',
+                    'COALESCE(products.allow_negative_stock, FALSE)',
+                ));
+            }
         }
 
         $allowNegative = $filters['allow_negative'] ?? null;
@@ -234,7 +315,7 @@ final class EloquentProductRepository implements ProductRepositoryInterface
                     ->leftJoinSub(
                         DB::table('inventory_items')
                             ->whereNull('deleted_at')
-                            ->selectRaw('product_id, GREATEST(SUM(on_hand_qty) - SUM(reserved_qty), 0.0) as avail')
+                            ->selectRaw('product_id, SUM(on_hand_qty) - SUM(reserved_qty) as avail')
                             ->groupBy('product_id'),
                         'inv_f',
                         'inv_f.product_id',

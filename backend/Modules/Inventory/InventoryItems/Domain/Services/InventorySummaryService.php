@@ -57,7 +57,7 @@ final class InventorySummaryService
         foreach ($items as $item) {
             $itemOnHand = (float) $item->on_hand_qty;
             $itemReserved = (float) $item->reserved_qty;
-            $itemAvailable = $item->availableQty(); // max(on_hand − reserved, 0) — clamp per warehouse
+            $itemAvailable = $item->availableQty(); // signed on_hand − reserved (no clamp)
 
             $onHand += $itemOnHand;
             $reserved += $itemReserved;

@@ -26,22 +26,124 @@ final class CreateReceiptLayersAction
     ) {}
 
     /**
+     * Goods Receipt entry point — signature unchanged.
+     *
+     * Adapts the receipt to the document-agnostic {@see executeForLines()} below, so the
+     * Goods Receipt path and the Mode 3 Supplier Invoice path share ONE layer-creation and
+     * cost-propagation implementation rather than each carrying its own. Per the P-7 ruling:
+     * neither document may implement its own FIFO algorithm, and no second inventory engine
+     * may be created.
+     *
      * @param  array<string, float>  $preReceiptQtys  Map of product_id → on_hand_qty BEFORE this receipt
      */
     public function execute(GoodsReceipt $receipt, array $preReceiptQtys): void
     {
+        // Null for a Purchase-anchored receipt (TASK-PROC-PURCHASING-PHASE2-PART1).
         $po = $receipt->purchaseOrder;
-        $supplierId = $po->supplier_id;
-        $companyId = $po->company_id ?? $receipt->warehouse?->company_id;
-        $receiptDate = $receipt->receipt_date->toDateString();
 
-        // M-02 fix: include zero-cost lines so every received quantity has a FIFO layer.
-        // Filtering by landed_unit_cost > 0 left on_hand_qty inflated with no backing
-        // layer, causing subsequent FIFO consumption to fail with InsufficientStockException.
-        // Zero-cost stock (free samples, internal allocations) is valid inventory.
-        $activeLines = $receipt->lines->filter(
-            fn (GoodsReceiptLine $l) => $l->effectiveReceivedQty() > 0,
+        $lines = $receipt->lines
+            ->filter(fn (GoodsReceiptLine $l) => $l->effectiveReceivedQty() > 0)
+            ->map(fn (GoodsReceiptLine $l) => [
+                'product_id' => $l->product_id,
+                'quantity' => $l->effectiveReceivedQty(),
+                'landed_unit_cost' => (float) ($l->landed_unit_cost ?? 0),
+                'goods_receipt_line_id' => $l->id,
+            ])
+            ->values()
+            ->all();
+
+        $this->executeForLines(
+            lines: $lines,
+            warehouseId: $receipt->warehouse_id,
+            companyId: $receipt->company_id ?? $po?->company_id ?? $receipt->warehouse?->company_id,
+            // RD-1 — supplier identity for a Purchase-anchored receipt comes from the
+            // purchase material line, never from a purchase order. The layer's supplier is
+            // not decorative: supplier returns and supplier cost analytics attribute through
+            // it, so it must be the same supplier the Purchase committed to.
+            supplierId: $po?->supplier_id ?? $this->purchaseMaterialSupplierId($receipt),
+            receiptDate: $receipt->receipt_date->toDateString(),
+            preReceiptQtys: $preReceiptQtys,
+            goodsReceiptId: $receipt->id,
+            costMeta: ['goods_receipt_id' => $receipt->id],
         );
+    }
+
+    /**
+     * Supplier of a Purchase-anchored receipt, read from the purchase material line.
+     *
+     * Queried through the query builder rather than the model so that resolving supplier
+     * identity for a posting never depends on the actor's tenant scope — the receipt has
+     * already been authorised by the time we get here.
+     */
+    private function purchaseMaterialSupplierId(GoodsReceipt $receipt): ?string
+    {
+        $lineIds = $receipt->lines
+            ->pluck('purchase_material_line_id')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($lineIds === []) {
+            return null;
+        }
+
+        $supplierId = \Illuminate\Support\Facades\DB::table('purchase_material_lines')
+            ->whereIn('id', $lineIds)
+            ->whereNotNull('supplier_id')
+            ->value('supplier_id');
+
+        return $supplierId === null ? null : (string) $supplierId;
+    }
+
+    /**
+     * The canonical, document-agnostic inbound layer + cost propagation.
+     *
+     * Owns exactly what the P-7 ruling assigns to canonical inbound posting: FIFO receipt
+     * layer creation and landed-cost propagation. Inventory quantity mutation and stock
+     * ledger posting belong to `ReceiveStockAction` and are NOT duplicated here.
+     *
+     * @param  list<array{product_id: string, quantity: float, landed_unit_cost: float, goods_receipt_line_id?: string|null}>  $lines
+     * @param  array<string, float>  $preReceiptQtys  product_id → on_hand_qty BEFORE this inbound
+     * @param  array<string, mixed>  $costMeta  provenance recorded on the cost update
+     */
+    public function executeForLines(
+        array $lines,
+        string $warehouseId,
+        ?string $companyId,
+        ?string $supplierId,
+        string $receiptDate,
+        array $preReceiptQtys,
+        ?string $goodsReceiptId = null,
+        array $costMeta = [],
+    ): void {
+        $this->postLayers($lines, $warehouseId, $companyId, $supplierId, $receiptDate, $preReceiptQtys, $goodsReceiptId, $costMeta);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $lines
+     * @param  array<string, float>  $preReceiptQtys
+     * @param  array<string, mixed>  $costMeta
+     */
+    private function postLayers(
+        array $lines,
+        string $warehouseId,
+        ?string $companyId,
+        ?string $supplierId,
+        string $receiptDate,
+        array $preReceiptQtys,
+        ?string $goodsReceiptId,
+        array $costMeta,
+    ): void {
+        if ($lines === []) {
+            return;
+        }
+
+        // M-02 fix: zero-cost lines still get a FIFO layer. Filtering by
+        // landed_unit_cost > 0 left on_hand_qty inflated with no backing layer, causing
+        // later FIFO consumption to fail with InsufficientStockException. Zero-cost stock
+        // (free samples, internal allocations) is valid inventory.
+        $activeLines = collect($lines)->filter(fn (array $l) => (float) $l['quantity'] > 0)->values();
 
         if ($activeLines->isEmpty()) {
             return;
@@ -65,10 +167,9 @@ final class CreateReceiptLayersAction
             ->map(fn ($layers) => $layers->first());
 
         foreach ($activeLines as $line) {
-            /** @var GoodsReceiptLine $line */
-            $netQty = $line->effectiveReceivedQty();
-            $landedUnitCost = (float) ($line->landed_unit_cost ?? 0);
-            $product = $products->get($line->product_id);
+            $netQty = (float) $line['quantity'];
+            $landedUnitCost = (float) $line['landed_unit_cost'];
+            $product = $products->get($line['product_id']);
 
             $salePriceSnapshot = $product ? (float) ($product->sale_price ?? 0) : null;
 
@@ -76,10 +177,10 @@ final class CreateReceiptLayersAction
             InventoryReceiptLayer::query()->create([
                 'company_id' => $companyId,
                 'supplier_id' => $supplierId,
-                'product_id' => $line->product_id,
-                'goods_receipt_id' => $receipt->id,
-                'goods_receipt_line_id' => $line->id,
-                'warehouse_id' => $receipt->warehouse_id,
+                'product_id' => $line['product_id'],
+                'goods_receipt_id' => $goodsReceiptId,
+                'goods_receipt_line_id' => $line['goods_receipt_line_id'] ?? null,
+                'warehouse_id' => $warehouseId,
                 'received_qty' => $netQty,
                 'remaining_qty' => $netQty,
                 'landed_unit_cost' => $landedUnitCost,
@@ -92,12 +193,12 @@ final class CreateReceiptLayersAction
             }
 
             // ── Update product cost intelligence ─────────────────────────────
-            $oldQty = $preReceiptQtys[$line->product_id] ?? 0.0;
+            $oldQty = $preReceiptQtys[$line['product_id']] ?? 0.0;
             $oldAvg = (float) ($product->average_cost ?? $landedUnitCost);
             // Canonical weighted-average — single definition on EnterpriseCostEngine.
             $newAvgCost = EnterpriseCostEngine::weightedAverageCost($oldQty, $oldAvg, $netQty, $landedUnitCost);
 
-            $oldestLayer = $oldestLayers->get($line->product_id);
+            $oldestLayer = $oldestLayers->get($line['product_id']);
 
             $product->update([
                 'last_purchase_cost' => $landedUnitCost,
@@ -112,10 +213,7 @@ final class CreateReceiptLayersAction
                 material: $product,
                 newCost: $landedUnitCost,
                 source: CostUpdateSource::PurchaseInvoice,
-                meta: [
-                    'goods_receipt_id' => $receipt->id,
-                    'company_id' => $companyId,
-                ],
+                meta: $costMeta + ['company_id' => $companyId],
             );
         }
     }

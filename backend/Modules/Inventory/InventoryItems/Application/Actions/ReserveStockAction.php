@@ -82,7 +82,15 @@ final class ReserveStockAction extends BaseAction
                 ->where('id', $dto->product_id)
                 ->value('allow_negative_stock');
 
-            if (! $allowNegative && $available < $dto->quantity) {
+            // TASK-ORDERS-PREPARATION-PAYMENT-FINAL-FIX-001 (D3) — a made-to-order
+            // finished good carries its permission from the RECIPE EXECUTABILITY
+            // decision (ADR-027 §16.3/§19), not from its own allow_negative_stock flag.
+            // The caller states that decision explicitly; this action still owns the
+            // arithmetic and the ledger. Reserve and release are now symmetric: whatever
+            // reserve records here is a real row the release path can find.
+            $permitted = $allowNegative || $dto->permit_negative_commitment;
+
+            if (! $permitted && $available < $dto->quantity) {
                 throw new InsufficientStockException(
                     $dto->product_id,
                     $dto->warehouse_id,

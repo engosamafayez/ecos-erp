@@ -13,7 +13,9 @@ use App\Core\DTO\BaseDTO;
 final class ProductDTO extends BaseDTO
 {
     public function __construct(
-        public readonly string $sku,
+        // Nullable: when omitted, an authoritative company-scoped SKU is generated
+        // server-side at create time (Decision 1). A supplied SKU is still honoured.
+        public readonly ?string $sku,
         public readonly string $name,
         public readonly string $category_id,
         public readonly string $product_type,
@@ -35,7 +37,7 @@ final class ProductDTO extends BaseDTO
     public static function fromArray(array $data): self
     {
         return new self(
-            sku: (string) $data['sku'],
+            sku: self::nullableString($data, 'sku'),
             name: (string) $data['name'],
             category_id: (string) $data['category_id'],
             product_type: (string) $data['product_type'],
