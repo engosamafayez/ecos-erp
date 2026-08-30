@@ -62,7 +62,6 @@ const VEHICLE_B = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
  * API RESPONSE FIXTURES — they reproduce the server payload, not UI copy. The
  * component renders driver names from this data, exactly as it does in production.
  */
-/* eslint-disable ecos-i18n/no-hardcoded-ui-strings */
 const OPTIONS: GroupFleetOptions = {
   group_orders: 2,
   vehicles: [
@@ -92,7 +91,6 @@ const OPTIONS: GroupFleetOptions = {
     { id: OTHER_DRIVER, full_name: 'ahmed', driver_code: 'DRV-002', mobile: null },
   ],
 };
-/* eslint-enable ecos-i18n/no-hardcoded-ui-strings */
 
 function renderComponent() {
   const client = new QueryClient({
