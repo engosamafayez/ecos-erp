@@ -42,4 +42,13 @@ return [
         'redirect_uri' => env('META_REDIRECT_URI'),
     ],
 
+    // Google Maps — server-side ONLY. The key resolves an order's complete delivery
+    // address to coordinates (Geocoding) when no lat/lng was captured. It is read from
+    // the environment (never hardcoded, never sent to the frontend). Absent key =>
+    // geocoding is reported "not configured" and fails gracefully. The canonical ECOS
+    // contract is `services.google_maps.key` ← env `GOOGLE_MAPS_API_KEY`.
+    'google_maps' => [
+        'key' => env('GOOGLE_MAPS_API_KEY'),
+    ],
+
 ];
