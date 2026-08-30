@@ -114,12 +114,21 @@ export const ROUTES = {
   distributionBoard:      '/operations/distribution/board',
   loadingWorkspace:       '/operations/distribution/loading',
   loadingOsDashboard:     '/operations/loading/dashboard',
+  // T-04/T-05 convergence: Stack B operator workspace (approved Operations\Loading backend)
+  loadingOsWorkspace:     '/operations/loading/workspace',
   dispatchGate:           '/operations/dispatch-gate',
+  // Preparation Workspace shell (TASK-PREPARATION-WORKSPACE-FIX-003 §3) — the single
+  // Operations sidebar destination; Today's Preparation / Archive / Settings are its tabs.
+  preparationWorkspace: '/operations/preparation',
   // Fulfillment Wave Workspace (TASK-PREP-UI-003)
   waveWorkspace:        '/operations/preparation/wave-workspace',
+  waveArchive:          '/operations/preparation/wave-archive',
+  waveEngine:           '/operations/preparation/wave-engine',
   waveProductDemand:    '/operations/preparation/wave-workspace/products',
+  waveOverview:         '/operations/preparation/wave-workspace/overview',
   waveRawMaterials:     '/operations/preparation/wave-workspace/materials',
   waveMissingMaterials: '/operations/preparation/wave-workspace/missing',
+  waveDeficitDecisions: '/operations/preparation/wave-workspace/deficit-decisions',
   waveOrders:           '/operations/preparation/wave-workspace/wave-orders',
   waveSettings:         '/operations/preparation/wave-workspace/settings',
   pos: '/pos',
@@ -149,8 +158,14 @@ export const ROUTES = {
   configurationBrand:   '/admin/configuration/brands/:brandId',
   // Logistics OS
   logisticsGeography:            '/logistics/geography',
-  logisticsDistributionZones:    '/logistics/distribution/zones',
+  // Distribution Zones is a Shipping → Geography capability (TASK-DISTRIBUTION-DAILY-
+  // TEMPLATE-GROUP-LIFECYCLE-AND-NAV-001 Part 1A). Its canonical path now lives under
+  // /logistics/geography so the Shipping module owns it cleanly; the old
+  // /logistics/distribution/zones path redirects here so existing deep links resolve.
+  logisticsDistributionZones:       '/logistics/geography/distribution-zones',
+  logisticsDistributionZonesLegacy: '/logistics/distribution/zones',
   logisticsDistributionPlanning: '/logistics/distribution/planning',
+  logisticsDistributionWorkspace: '/logistics/distribution/workspace',
   logisticsTrips: '/logistics/distribution/trips',
   logisticsCarrierAccounts: '/logistics/carriers',
   logisticsAutomation: '/logistics/automation',
@@ -170,6 +185,9 @@ export const ROUTES = {
   logisticsOpsAlerts:            '/logistics/operations/alerts',
   logisticsOpsActivity:          '/logistics/operations/activity',
   logisticsOpsReadiness:         '/logistics/operations/readiness',
+  // Driver Day Settlement / تقفيل اليوم (TASK-OPERATIONS-DRIVER-DAY-SETTLEMENT-UI-001)
+  logisticsDriverSettlement:       '/logistics/operations/driver-settlement',
+  logisticsDriverSettlementDetail: '/logistics/operations/driver-settlement/:assignmentId',
   logisticsEnterprise:           '/logistics/enterprise',
   // Marketing OS
   marketing:              '/marketing',
@@ -215,6 +233,14 @@ export const ROUTES = {
   automationGovernance:   '/marketing/automation/governance',
   // Driver Mobile OS (TASK-DIST-005)
   driverHome:             '/driver/home',
+  driverLoading:          '/driver/loading',
+  driverOrders:           '/driver/orders',
+  driverMap:              '/driver/map',
+  driverVehicleInventory: '/driver/vehicle-inventory',
+  driverWallet:           '/driver/wallet',
+  driverReports:          '/driver/reports',
+  driverStatement:        '/driver/statement',
+  driverTripExpenses:     '/driver/trip-expenses',
   driverTrip:             '/driver/trips/:tripId',
   driverTripStops:        '/driver/trips/:tripId/stops',
   driverTripStop:         '/driver/trips/:tripId/stops/:stopId',
