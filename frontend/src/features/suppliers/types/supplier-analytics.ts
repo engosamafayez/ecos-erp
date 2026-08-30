@@ -40,6 +40,48 @@ export type SupplierInventoryProduct = {
   receipt_count: number;
 };
 
+// ── Product Demand / Purchase Rate ────────────────────────────────────────────
+
+/**
+ * Product-level purchasing rate for one supplier — "how much of this product do
+ * we normally need to buy from them again?".
+ *
+ * Distinct from SupplierPriceHistoryEntry (the chronological per-line purchase
+ * log) and from SupplierInventoryProduct (what is still in stock). Every value
+ * is a backend aggregate; nothing here is derived on the client.
+ *
+ * When `has_purchase_history` is false the pair exists (an open PO line, or a
+ * supplier selected on a purchase material) but has never been received, and
+ * every metric is null — it is NOT zero.
+ */
+export type SupplierProductDemand = {
+  product_id: string;
+  product_sku: string;
+  product_name: string;
+  unit_symbol: string | null;
+  unit_name: string | null;
+  has_purchase_history: boolean;
+  /** Window the weekly/monthly averages are derived from. */
+  average_basis_days: number;
+  average_weekly_denominator_weeks: number;
+  average_monthly_denominator_months: number;
+  /** Most recent price actually paid to this supplier for this product. */
+  supplier_price: number | null;
+  last_purchase_date: string | null;
+  last_purchase_quantity: number | null;
+  first_purchase_date: string | null;
+  total_quantity: number | null;
+  purchase_line_count: number;
+  quantity_7d: number | null;
+  quantity_30d: number | null;
+  quantity_90d: number | null;
+  average_daily_quantity: number | null;
+  average_weekly_quantity: number | null;
+  average_monthly_quantity: number | null;
+  price_trend: 'rising' | 'falling' | 'stable' | null;
+  price_change_percent: number | null;
+};
+
 // ── Global KPI Stats ─────────────────────────────────────────────────────────
 
 export type SupplierSummaryStats = {
@@ -55,21 +97,28 @@ export type SupplierSummaryStats = {
 
 // ── Procurement Health Score ──────────────────────────────────────────────────
 
+// REALIGNMENT-001 §15 — a component is null when the supplier has no real data for it.
+// The backend no longer substitutes a fabricated midpoint (50/75/100/30), so every consumer
+// must render "No data" rather than a number it cannot justify.
 export type ProcurementHealthComponents = {
-  delivery_performance: number;
-  fill_rate: number;
-  price_stability: number;
-  activity: number;
-  financial_standing: number;
-  inventory_impact: number;
+  delivery_performance: number | null;
+  fill_rate: number | null;
+  price_stability: number | null;
+  activity: number | null;
+  financial_standing: number | null;
+  inventory_impact: number | null;
 };
 
 export type ProcurementHealthResult = {
   supplier_id: string;
-  score: number;
-  tier: ProcurementHealth;
+  /** False when the supplier has no procurement history at all — show an empty state. */
+  has_history: boolean;
+  /** Null when nothing can be scored honestly. */
+  score: number | null;
+  tier: ProcurementHealth | 'no_data';
   color: string;
-  trend: 'up' | 'down' | 'stable';
+  /** Null until a real prior-period series exists (was hard-coded 'stable'). */
+  trend: 'up' | 'down' | 'stable' | null;
   components: ProcurementHealthComponents;
   weights: Record<string, number>;
 };

@@ -22,6 +22,7 @@ import {
   Trash2,
   Truck,
   Upload,
+  DollarSign,
 } from 'lucide-react';
 
 import { ErrorState, LoadingState } from '@/components/crud';
@@ -34,6 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/components/ds/use-toast';
 import { api } from '@/lib/axios';
 import { useGoodsReceiptsQuery } from '@/features/goods-receipts/hooks/use-goods-receipts';
+import { useSupplierInvoicesQuery } from '@/features/supplier-invoices/hooks/use-supplier-invoices';
 import { usePurchaseOrdersQuery } from '@/features/purchase-orders/hooks/use-purchase-orders';
 import {
   useDeleteSupplierDocument,
@@ -42,12 +44,13 @@ import {
   useSupplierHealth,
   useSupplierInventoryBreakdown,
   useSupplierPriceHistory,
+  useSupplierProductDemand,
   useSupplierTimeline,
   useUploadSupplierDocument,
 } from '@/features/suppliers/hooks/use-supplier-analytics';
 import { ProcurementHealthBadge } from '@/features/suppliers/components/procurement-health-badge';
 import { useFormatter } from '@/hooks/use-formatter';
-import type { SupplierAnalytics, SupplierDocument, SupplierPriceHistoryEntry, ProcurementHealthResult } from '@/features/suppliers/types/supplier-analytics';
+import type { SupplierAnalytics, SupplierDocument, SupplierPriceHistoryEntry, SupplierProductDemand, ProcurementHealthResult } from '@/features/suppliers/types/supplier-analytics';
 import type { Supplier } from '@/features/suppliers/types/supplier';
 
 type Props = {
@@ -270,11 +273,21 @@ function OverviewTab({ supplier, supplierId }: { supplier: Supplier; supplierId:
           <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t($ => $.drawer360.overview.procurementHealth)}</h3>
           <Card>
             <CardContent className="flex items-center gap-4 pt-4 pb-4">
-              <div className="text-3xl font-bold tabular-nums">{health.score.toFixed(0)}</div>
-              <div>
-                <ProcurementHealthBadge score={health.tier} />
-                <p className="text-xs text-muted-foreground mt-1">{t($ => $.drawer360.overview.outOf100)}</p>
-              </div>
+              {/* REALIGNMENT-001 §15 — a supplier with no history shows "No data", never a score. */}
+              {health.has_history && health.score !== null ? (
+                <>
+                  <div className="text-3xl font-bold tabular-nums">{health.score.toFixed(0)}</div>
+                  <div>
+                    <ProcurementHealthBadge score={health.tier} />
+                    <p className="text-xs text-muted-foreground mt-1">{t($ => $.drawer360.overview.outOf100)}</p>
+                  </div>
+                </>
+              ) : (
+                <div>
+                  <div className="text-sm font-medium">{t($ => $.drawer360.performance.noData)}</div>
+                  <p className="text-xs text-muted-foreground mt-1">{t($ => $.drawer360.performance.noDataHint)}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -292,7 +305,163 @@ function OverviewTab({ supplier, supplierId }: { supplier: Supplier; supplierId:
 
 // ── Products Tab ─────────────────────────────────────────────────────────────
 
+/**
+ * Quantity with its unit, e.g. "120 KG". Returns the dash for a null, which is
+ * how a supplier/product pair with no purchase history reads — never "0".
+ */
+function qtyText(value: number | null | undefined, unit: string | null): string {
+  if (value === null || value === undefined) return '—';
+  const n = fmt(value, 2).replace(/\.00$/, '');
+  return unit ? `${n} ${unit}` : n;
+}
+
+function PriceTrendCell({ row }: { row: SupplierProductDemand }) {
+  const { t } = useTranslation('suppliers');
+
+  if (row.price_trend === null) return <span className="text-muted-foreground text-xs">—</span>;
+
+  const pct = row.price_change_percent;
+  const suffix = pct !== null ? ` ${pct > 0 ? '+' : ''}${pct.toFixed(1)}%` : '';
+
+  if (row.price_trend === 'rising') {
+    return (
+      <span className="flex items-center justify-end gap-0.5 text-xs font-medium text-destructive">
+        <ArrowUpRight className="size-3" />{t($ => $.drawer360.products.trend.rising)}{suffix}
+      </span>
+    );
+  }
+  if (row.price_trend === 'falling') {
+    return (
+      <span className="flex items-center justify-end gap-0.5 text-xs font-medium text-emerald-600">
+        <ArrowDownRight className="size-3" />{t($ => $.drawer360.products.trend.falling)}{suffix}
+      </span>
+    );
+  }
+  return (
+    <span className="flex items-center justify-end gap-0.5 text-xs text-muted-foreground">
+      <Minus className="size-3" />{t($ => $.drawer360.products.trend.stable)}
+    </span>
+  );
+}
+
+/**
+ * Product-level purchase rate: how much of each product is normally bought from
+ * this supplier. Every figure is a backend aggregate — nothing is summed here.
+ */
+function ProductDemandTable({ supplierId }: { supplierId: string }) {
+  const { t } = useTranslation('suppliers');
+  const { money } = useFormatter();
+  const { data, isLoading, isError } = useSupplierProductDemand(supplierId);
+
+  if (isLoading) return <div className="p-6"><LoadingState /></div>;
+  if (isError) return <div className="p-6"><ErrorState /></div>;
+
+  const rows = data ?? [];
+  const basisDays = rows[0]?.average_basis_days ?? 90;
+
+  function handleExport() {
+    exportCsv(
+      `supplier-product-demand-${new Date().toISOString().slice(0, 10)}.csv`,
+      ['SKU', 'Product', 'Unit', 'Supplier Price', 'Last Purchase', 'Last Qty',
+        '7D Qty', '30D Qty', '90D Qty', 'Avg Weekly', 'Avg Monthly', 'Price Trend'],
+      rows.map((r) => [r.product_sku, r.product_name, r.unit_symbol ?? '',
+        r.supplier_price ?? '', r.last_purchase_date?.slice(0, 10) ?? '', r.last_purchase_quantity ?? '',
+        r.quantity_7d ?? '', r.quantity_30d ?? '', r.quantity_90d ?? '',
+        r.average_weekly_quantity ?? '', r.average_monthly_quantity ?? '', r.price_trend ?? '']),
+    );
+  }
+
+  const columnHeaders = [
+    t($ => $.drawer360.products.columns.product),
+    t($ => $.drawer360.products.columns.supplierPrice),
+    t($ => $.drawer360.products.columns.lastPurchase),
+    t($ => $.drawer360.products.columns.lastQty),
+    t($ => $.drawer360.products.columns.qty7d),
+    t($ => $.drawer360.products.columns.qty30d),
+    t($ => $.drawer360.products.columns.qty90d),
+    t($ => $.drawer360.products.columns.avgWeekly),
+    t($ => $.drawer360.products.columns.avgMonthly),
+    t($ => $.drawer360.products.columns.priceTrend),
+  ];
+
+  return (
+    <div>
+      <div className="flex items-start justify-between gap-4 px-4 py-3 border-b">
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-wide">{t($ => $.drawer360.products.demandTitle)}</h3>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            {t($ => $.drawer360.products.demandSubtitle, { days: basisDays })}
+          </p>
+        </div>
+        {rows.length > 0 && (
+          <Button variant="ghost" size="sm" className="h-7 shrink-0 gap-1.5 text-xs" onClick={handleExport}>
+            <Download className="size-3.5" />{t($ => $.drawer360.products.demandExport)}
+          </Button>
+        )}
+      </div>
+
+      {rows.length === 0 ? (
+        <p className="text-muted-foreground text-sm text-center py-16">{t($ => $.drawer360.products.demandEmpty)}</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[920px]">
+            <thead>
+              <tr className="border-b bg-muted/40">
+                {columnHeaders.map((h) => (
+                  <th key={h} className="px-3 py-2.5 text-xs font-medium text-muted-foreground text-end first:text-start">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.product_id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                  <td className="px-3 py-2.5">
+                    <p className="font-medium text-xs">{r.product_name}</p>
+                    <p className="text-[10px] text-muted-foreground font-mono">{r.product_sku}</p>
+                  </td>
+                  {r.has_purchase_history ? (
+                    <>
+                      <td className="px-3 py-2.5 text-end tabular-nums text-xs">
+                        {r.supplier_price !== null ? money(r.supplier_price, undefined, 4) : '—'}
+                      </td>
+                      <td className="px-3 py-2.5 text-end text-xs text-muted-foreground tabular-nums">
+                        {r.last_purchase_date?.slice(0, 10) ?? '—'}
+                      </td>
+                      <td className="px-3 py-2.5 text-end tabular-nums text-xs">{qtyText(r.last_purchase_quantity, r.unit_symbol)}</td>
+                      <td className="px-3 py-2.5 text-end tabular-nums text-xs">{qtyText(r.quantity_7d, r.unit_symbol)}</td>
+                      <td className="px-3 py-2.5 text-end tabular-nums text-xs">{qtyText(r.quantity_30d, r.unit_symbol)}</td>
+                      <td className="px-3 py-2.5 text-end tabular-nums text-xs">{qtyText(r.quantity_90d, r.unit_symbol)}</td>
+                      <td className="px-3 py-2.5 text-end tabular-nums text-sm font-medium">{qtyText(r.average_weekly_quantity, r.unit_symbol)}</td>
+                      <td className="px-3 py-2.5 text-end tabular-nums text-sm font-medium">{qtyText(r.average_monthly_quantity, r.unit_symbol)}</td>
+                      <td className="px-3 py-2.5 text-end"><PriceTrendCell row={r} /></td>
+                    </>
+                  ) : (
+                    // Part 12.6 — a pair that was never purchased says so; it never shows 0.
+                    <td className="px-3 py-2.5 text-xs text-muted-foreground italic" colSpan={columnHeaders.length - 1}>
+                      {t($ => $.drawer360.products.noHistory)}
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ProductsTab({ supplierId }: { supplierId: string }) {
+  return (
+    <div className="flex flex-col">
+      <ProductDemandTable supplierId={supplierId} />
+      <SupplierStockTable supplierId={supplierId} />
+    </div>
+  );
+}
+
+/** Current stock still held from this supplier — a stock position, not a purchase rate. */
+function SupplierStockTable({ supplierId }: { supplierId: string }) {
   const { t } = useTranslation('suppliers');
   const { money } = useFormatter();
   const { data: products, isLoading, isError } = useSupplierInventoryBreakdown(supplierId);
@@ -325,16 +494,19 @@ function ProductsTab({ supplierId }: { supplierId: string }) {
   ];
 
   return (
-    <div className="p-0">
+    <div className="border-t">
+      <div className="flex items-center justify-between gap-4 px-4 py-3 border-b">
+        <h3 className="text-xs font-semibold uppercase tracking-wide">{t($ => $.drawer360.products.stockTitle)}</h3>
+        {items.length > 0 && (
+          <Button variant="ghost" size="sm" className="h-7 shrink-0 gap-1.5 text-xs" onClick={handleExport}>
+            <Download className="size-3.5" />{t($ => $.drawer360.products.export)}
+          </Button>
+        )}
+      </div>
       {items.length === 0 ? (
         <p className="text-muted-foreground text-sm text-center py-16">{t($ => $.drawer360.products.empty)}</p>
       ) : (
         <>
-          <div className="flex items-center justify-end px-4 py-2 border-b">
-            <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs" onClick={handleExport}>
-              <Download className="size-3.5" />{t($ => $.drawer360.products.export)}
-            </Button>
-          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[760px]">
               <thead>
@@ -424,6 +596,60 @@ function PurchaseOrdersTab({ supplierId }: { supplierId: string }) {
 }
 
 // ── Goods Receipts Tab ────────────────────────────────────────────────────────
+
+/**
+ * Supplier Invoices — REALIGNMENT-001 §5/§13. Supplier 360 is where the final history of the
+ * relationship lives, so the supplier's invoices belong here rather than only on the standalone
+ * Supplier Invoices screen. Reuses the existing list endpoint (it already accepts supplier_id);
+ * no new endpoint, no duplicate screen.
+ */
+function SupplierInvoicesTab({ supplierId }: { supplierId: string }) {
+  const { t } = useTranslation('suppliers');
+  const { money } = useFormatter();
+  const { data, isLoading, isError } = useSupplierInvoicesQuery({ supplier_id: supplierId, per_page: 50 });
+
+  if (isLoading) return <div className="p-6"><LoadingState /></div>;
+  if (isError) return <div className="p-6"><ErrorState /></div>;
+
+  const items = data?.items ?? [];
+
+  const columnHeaders = [
+    t($ => $.drawer360.invoices.columns.invoiceNo),
+    t($ => $.drawer360.invoices.columns.date),
+    t($ => $.drawer360.invoices.columns.status),
+    t($ => $.drawer360.invoices.columns.total),
+  ];
+
+  return (
+    <div className="p-0">
+      {items.length === 0 ? (
+        <p className="text-muted-foreground text-sm text-center py-16">{t($ => $.drawer360.invoices.empty)}</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[520px]">
+            <thead>
+              <tr className="border-b bg-muted/40">
+                {columnHeaders.map((h, i) => (
+                  <th key={h} className={`px-4 py-2.5 text-xs font-medium text-muted-foreground ${i >= 3 ? 'text-end' : 'text-start'}`}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((inv) => (
+                <tr key={inv.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                  <td className="px-4 py-2.5 font-mono text-xs">{inv.invoice_number}</td>
+                  <td className="px-4 py-2.5 text-xs text-muted-foreground">{inv.invoice_date}</td>
+                  <td className="px-4 py-2.5"><Badge variant="outline" className="text-xs">{inv.status_label}</Badge></td>
+                  <td className="px-4 py-2.5 text-end tabular-nums">{money(inv.grand_total)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function GoodsReceiptsTab({ supplierId }: { supplierId: string }) {
   const { t } = useTranslation('suppliers');
@@ -724,7 +950,17 @@ const COMPONENT_LABELS: Record<string, string> = {
   inventory_impact:     'Inventory Impact',
 };
 
-function ScoreBar({ score, weight }: { score: number; weight: number }) {
+function ScoreBar({ score, weight }: { score: number | null; weight: number }) {
+  // REALIGNMENT-001 §15 — no data means no bar and no number, not a default-coloured 50.
+  if (score === null) {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="h-2 flex-1 rounded-full bg-muted" />
+        <span className="text-xs text-muted-foreground w-10 text-end">—</span>
+      </div>
+    );
+  }
+
   const color = score >= 80 ? 'bg-emerald-500' : score >= 65 ? 'bg-blue-500' : score >= 50 ? 'bg-amber-500' : score >= 30 ? 'bg-orange-500' : 'bg-destructive';
   return (
     <div className="flex items-center gap-3">
@@ -757,12 +993,21 @@ function PerformanceTab({ supplierId }: { supplierId: string }) {
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      {health && (
+      {health && !health.has_history && (
+        <Card>
+          <CardContent className="py-8 text-center">
+            <p className="text-sm font-medium">{t($ => $.drawer360.performance.noData)}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t($ => $.drawer360.performance.noDataHint)}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {health && health.has_history && (
         <>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="flex size-16 items-center justify-center rounded-full border-4 border-primary/20">
-                <span className="text-2xl font-bold">{health.score.toFixed(0)}</span>
+                <span className="text-2xl font-bold">{health.score !== null ? health.score.toFixed(0) : '—'}</span>
               </div>
               <div>
                 <ProcurementHealthBadge score={health.tier} />
@@ -1025,7 +1270,7 @@ function TimelineTab({ supplierId }: { supplierId: string }) {
 // ── Main Drawer ───────────────────────────────────────────────────────────────
 
 type TabId =
-  | 'overview' | 'products' | 'purchase-orders' | 'goods-receipts'
+  | 'overview' | 'products' | 'purchase-orders' | 'invoices' | 'goods-receipts'
   | 'financial' | 'inventory' | 'price-history' | 'performance'
   | 'documents' | 'timeline';
 
@@ -1058,6 +1303,7 @@ export function Supplier360Drawer({ supplier, open, onOpenChange, onEdit, initia
     { id: 'overview',        label: t($ => $.drawer360.tabs.overview),        icon: Building2 },
     { id: 'products',        label: t($ => $.drawer360.tabs.products),        icon: Package },
     { id: 'purchase-orders', label: t($ => $.drawer360.tabs.purchaseOrders),  icon: ShoppingCart },
+    { id: 'invoices',        label: t($ => $.drawer360.tabs.invoices),        icon: DollarSign },
     { id: 'goods-receipts',  label: t($ => $.drawer360.tabs.goodsReceipts),   icon: Truck },
     { id: 'financial',       label: t($ => $.drawer360.tabs.financial),       icon: CreditCard },
     { id: 'inventory',       label: t($ => $.drawer360.tabs.inventory),       icon: Archive },
@@ -1102,6 +1348,7 @@ export function Supplier360Drawer({ supplier, open, onOpenChange, onEdit, initia
           <TabsContent value="overview"        className="m-0"><OverviewTab supplier={supplier} supplierId={supplier.id} /></TabsContent>
           <TabsContent value="products"        className="m-0"><ProductsTab supplierId={supplier.id} /></TabsContent>
           <TabsContent value="purchase-orders" className="m-0"><PurchaseOrdersTab supplierId={supplier.id} /></TabsContent>
+          <TabsContent value="invoices"        className="m-0"><SupplierInvoicesTab supplierId={supplier.id} /></TabsContent>
           <TabsContent value="goods-receipts"  className="m-0"><GoodsReceiptsTab supplierId={supplier.id} /></TabsContent>
           <TabsContent value="financial"       className="m-0"><FinancialTab supplierId={supplier.id} /></TabsContent>
           <TabsContent value="inventory"       className="m-0"><InventoryTab supplierId={supplier.id} /></TabsContent>

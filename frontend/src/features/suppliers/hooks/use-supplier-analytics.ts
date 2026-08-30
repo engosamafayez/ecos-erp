@@ -53,6 +53,16 @@ export function useSupplierPriceHistory(supplierId: string) {
   });
 }
 
+export function useSupplierProductDemand(supplierId: string) {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
+  return useQuery({
+    queryKey: ['company', companyId, 'supplier-product-demand', supplierId],
+    queryFn: () => supplierAnalyticsService.getProductDemand(supplierId),
+    enabled: Boolean(supplierId),
+  });
+}
+
 export function useSupplierTimeline(supplierId: string) {
   const { activeCompanyId } = useOrganizationContext();
   const companyId = activeCompanyId ?? 'global';

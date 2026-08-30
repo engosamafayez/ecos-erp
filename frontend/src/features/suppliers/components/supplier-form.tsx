@@ -63,33 +63,19 @@ export function SupplierFormFields() {
         </div>
       </div>
 
-      {/* Opening balance (Part 2) */}
+      {/* Opening balance — REALIGNMENT-001 §7 / §18.
+          These inputs are GONE from supplier CRUD. They were the real cause of the "my edit
+          didn't save" report: the form posted opening_balance_amount/type, the request validated
+          them, and SupplierDTO silently dropped them — so the user got a success toast and no
+          change. They are not re-added here, because writing them onto the supplier row would
+          create a SECOND opening balance that double-counts against the certified ledger
+          (TASK-PROC-SUPPLIER-OPENING-BALANCE-001). Opening balance is a Finance posting and is
+          entered from Supplier 360, which routes it through SupplierOpeningBalanceService. */}
       <div className="border-border/60 border-t pt-4">
         <h4 className="text-muted-foreground mb-1 text-xs font-semibold uppercase tracking-wide">
           {t($ => $.form.sectionFinancial)}
         </h4>
-        <p className="text-muted-foreground mb-3 text-xs">{t($ => $.form.sectionFinancialHint)}</p>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <FormField name="opening_balance_amount" label={t($ => $.form.openingBalanceAmount)}>
-            <Input
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              {...register('opening_balance_amount')}
-            />
-          </FormField>
-          <FormField name="opening_balance_type" label={t($ => $.form.openingBalanceType)}>
-            <select
-              className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
-              {...register('opening_balance_type')}
-            >
-              <option value="credit">{t($ => $.form.openingBalanceCredit)}</option>
-              <option value="debit">{t($ => $.form.openingBalanceDebit)}</option>
-            </select>
-          </FormField>
-        </div>
+        <p className="text-muted-foreground text-xs">{t($ => $.form.openingBalanceMovedHint)}</p>
       </div>
 
       <div className="border-border/60 border-t pt-4">

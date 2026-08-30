@@ -200,17 +200,20 @@ export function ProcurementHubPage() {
           </Button>
         </div>
 
-        {/* Work Queue — top strip */}
+        {/* Work Queue — top strip.
+            REALIGNMENT-001 §19: Material Requests is no longer an entry point in the purchasing
+            journey, so the first card now opens the purchases awaiting review (the same
+            under_review stat it already showed). The MR page/route itself is untouched. */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <button
-            onClick={() => navigate(`${ROUTES.materialRequests}?status=submitted`)}
+            onClick={() => navigate(`${ROUTES.purchases}?status=under_review`)}
             className="p-4 bg-white rounded-lg border border-gray-200 text-start hover:border-blue-300 hover:shadow-sm transition-all"
           >
             <div className="flex items-center justify-between mb-1">
               <ClipboardList className="w-4 h-4 text-blue-500" />
               <Badge variant="secondary" className="text-xs">{pmLoading ? '…' : (pmStats?.operational?.under_review ?? 0)}</Badge>
             </div>
-            <p className="text-sm font-medium text-gray-900">{t($ => $.hub.workQueue.materialRequests)}</p>
+            <p className="text-sm font-medium text-gray-900">{t($ => $.hub.workQueue.purchasesInReview)}</p>
             <p className="text-xs text-gray-400">{t($ => $.hub.workQueue.awaitingAction)}</p>
           </button>
 
@@ -404,13 +407,6 @@ export function ProcurementHubPage() {
                   icon={Zap}
                   shortcut="I"
                   onClick={() => navigate(ROUTES.supplierInvoices)}
-                />
-                <QuickAction
-                  label={t($ => $.hub.actions2.newMaterialRequest)}
-                  description={t($ => $.hub.actions2.newMaterialRequestDesc)}
-                  icon={ClipboardList}
-                  shortcut="M"
-                  onClick={() => navigate(ROUTES.materialRequests)}
                 />
                 <QuickAction
                   label={t($ => $.hub.actions2.newPurchase)}

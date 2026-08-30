@@ -15,8 +15,9 @@ export const supplierSchema = z.object({
   district: z.string().max(100).optional(),
   address: z.string().max(255).optional(),
   google_maps_url: z.string().max(1000).optional(),
-  opening_balance_amount: z.string().optional(),
-  opening_balance_type: z.enum(['debit', 'credit']),
+  // opening_balance_* deliberately NOT part of supplier CRUD — REALIGNMENT-001 §7/§18.
+  // Opening balance is a Finance posting (SupplierOpeningBalanceService); writing it here
+  // would create a second, unposted balance that double-counts against the ledger.
   notes: z.string().max(1000).optional(),
   is_active: z.boolean(),
 });
@@ -38,21 +39,15 @@ export function toFormValues(supplier?: Supplier | null): SupplierFormValues {
     district: supplier?.district ?? '',
     address: supplier?.address ?? '',
     google_maps_url: supplier?.google_maps_url ?? '',
-    opening_balance_amount:
-      supplier?.opening_balance_amount != null ? String(supplier.opening_balance_amount) : '',
-    opening_balance_type: supplier?.opening_balance_type ?? 'credit',
     notes: supplier?.notes ?? '',
     is_active: supplier?.is_active ?? true,
   };
 }
 
+/**
+ * The supplier CRUD payload carries profile data only. Opening balance is never sent from
+ * here — it is posted through the certified Finance endpoint from Supplier 360.
+ */
 export function toPayload(values: SupplierFormValues): SupplierPayload {
-  const { opening_balance_amount, ...rest } = values;
-  return {
-    ...rest,
-    opening_balance_amount:
-      opening_balance_amount != null && opening_balance_amount.trim() !== ''
-        ? Number(opening_balance_amount)
-        : 0,
-  };
+  return { ...values };
 }

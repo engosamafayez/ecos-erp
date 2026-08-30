@@ -6,6 +6,7 @@ import type {
   SupplierDocument,
   SupplierInventoryProduct,
   SupplierPriceHistoryEntry,
+  SupplierProductDemand,
   SupplierSummaryStats,
   SupplierTimelineEvent,
 } from '@/features/suppliers/types/supplier-analytics';
@@ -40,6 +41,13 @@ export const supplierAnalyticsService = {
   async getPriceHistory(supplierId: string): Promise<SupplierPriceHistoryEntry[]> {
     const { data } = await api.get<ApiResponse<SupplierPriceHistoryEntry[]>>(
       `/suppliers/${supplierId}/price-history`,
+    );
+    return data.data;
+  },
+
+  async getProductDemand(supplierId: string): Promise<SupplierProductDemand[]> {
+    const { data } = await api.get<ApiResponse<SupplierProductDemand[]>>(
+      `/suppliers/${supplierId}/product-demand`,
     );
     return data.data;
   },

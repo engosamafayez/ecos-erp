@@ -8,10 +8,12 @@ const CONFIG: Record<ProcurementHealth, { label: string; className: string }> = 
   critical:  { label: 'Critical',  className: 'bg-red-50 text-red-700 border-red-200' },
 };
 
-type Props = { score?: ProcurementHealth | null };
+// 'no_data' is the honest tier for a supplier with no procurement history — it renders as a
+// dash, never as a scored badge (REALIGNMENT-001 §15).
+type Props = { score?: ProcurementHealth | 'no_data' | null };
 
 export function ProcurementHealthBadge({ score }: Props) {
-  if (!score) return <span className="text-xs text-muted-foreground">—</span>;
+  if (!score || score === 'no_data') return <span className="text-xs text-muted-foreground">—</span>;
   const { label, className } = CONFIG[score];
   return (
     <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium ${className}`}>

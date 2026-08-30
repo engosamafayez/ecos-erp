@@ -128,7 +128,7 @@ export function SupplierWizard({ open, onOpenChange, onCreated }: Props) {
 
   async function goNext() {
     const step1Fields: (keyof SupplierFormValues)[] = ['code', 'name', 'is_active'];
-    const step2Fields: (keyof SupplierFormValues)[] = ['contact_person', 'phone', 'email', 'mobile', 'country', 'state', 'city', 'district', 'address', 'google_maps_url', 'opening_balance_amount', 'opening_balance_type'];
+    const step2Fields: (keyof SupplierFormValues)[] = ['contact_person', 'phone', 'email', 'mobile', 'country', 'state', 'city', 'district', 'address', 'google_maps_url'];
 
     const valid = await trigger(step === 1 ? step1Fields : step2Fields);
     if (valid) setStep((s) => Math.min(s + 1, 3) as Step);
@@ -237,30 +237,11 @@ export function SupplierWizard({ open, onOpenChange, onCreated }: Props) {
               <Input type="url" {...register('google_maps_url')} placeholder="https://maps.google.com/…" />
             </Field>
 
-            {/* Opening balance (Part 2) */}
+            {/* Opening balance — REALIGNMENT-001 §7. Not captured during supplier creation:
+                it is a Finance posting (see supplier-form.tsx for the full rationale) and is
+                entered from Supplier 360 so it reaches the certified supplier ledger. */}
             <div className="border-border/60 border-t pt-4">
-              <p className="text-muted-foreground mb-3 text-xs">{t($ => $.form.sectionFinancialHint)}</p>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label={t($ => $.form.openingBalanceAmount)} error={errors.opening_balance_amount?.message}>
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    {...register('opening_balance_amount')}
-                  />
-                </Field>
-                <Field label={t($ => $.form.openingBalanceType)} error={errors.opening_balance_type?.message}>
-                  <select
-                    className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
-                    {...register('opening_balance_type')}
-                  >
-                    <option value="credit">{t($ => $.form.openingBalanceCredit)}</option>
-                    <option value="debit">{t($ => $.form.openingBalanceDebit)}</option>
-                  </select>
-                </Field>
-              </div>
+              <p className="text-muted-foreground text-xs">{t($ => $.form.openingBalanceMovedHint)}</p>
             </div>
           </div>
         )}
