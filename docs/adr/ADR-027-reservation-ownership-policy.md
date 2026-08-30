@@ -1,4 +1,4 @@
-# ADR-027: Reservation Ownership Policy — v1.3
+# ADR-027: Reservation Ownership Policy — v1.6
 
 **Status:** Approved  
 **Version:** v1.1  
@@ -6,6 +6,25 @@
 **Author:** Engineering Architecture Review  
 **Inputs:** TASK-RESERVATION-POLICY-AUDIT-001, TASK-RESERVATION-RUNTIME-TRACE-002, CTO Review  
 **Supersedes:** ADR-027 v1.0 (2026-07-21)
+
+---
+
+## Revisions from v1.5 to v1.6
+
+| Section | Change |
+|---|---|
+| Section 18.4 | Allow-negative soft-shortage suppression (`missing_qty = 0`) SUPERSEDED — `missing_qty` is always the real physical shortage |
+| Section 18.6 | **NEW** — Missing Material vs Preparation Eligibility; per-product `material_status`; `InventoryStockReceived` recovery; wave never blocked globally |
+
+---
+
+## Revisions from v1.4 to v1.5
+
+| Section | Change |
+|---|---|
+| Section 3 Case 2 | `can_manufacture` precondition REMOVED — pointer to Section 19 added |
+| Section 16.1 | Case 2 `can_manufacture` gate SUPERSEDED by Section 19 |
+| Section 19 | **NEW** — Order-Driven Preparation Fulfillability; recipe executability alone gates fulfilment; `ManufacturingPolicy` Rule 3 removed; `allow_negative_stock` recovery added; no `can_manufacture` recovery |
 
 ---
 
@@ -188,6 +207,10 @@ available = on_hand_qty − reserved_qty
 > `can_manufacture = true` no longer commits *unconditionally* — it commits only when the
 > recipe is actually executable. Cases 1, 3 and 4 are unchanged, and Case 1 still evaluates
 > first, so physical FG stock is never gated by the recipe. See Section 16.
+>
+> ⚠️ **Case 2's `can_manufacture` condition is REMOVED by Section 19** (v1.5, owner-approved
+> 2026-08-20). The trigger for Case 2 is now the executable recipe ALONE; the capability flag
+> is not consulted. Read `can_manufacture = true` in this table as `recipe executable`.
 
 ---
 
@@ -538,8 +561,18 @@ the recipe is `outofstock`, the manufacturing branch is skipped and the pre-exis
 path decides the outcome — the Awaiting Stock state is produced by the existing V3 workflow,
 never written by hand in the reservation action.
 
+> ⚠️ **The `can_manufacture` precondition of Case 2 is SUPERSEDED by Section 19 (v1.5,
+> owner-approved 2026-08-20).** ECOS is order-driven preparation / made-to-order: order
+> fulfillability is now `physical FG stock` **OR** `executable recipe` — the `can_manufacture`
+> capability flag is no longer consulted at reservation. See Section 19.
+
 **`recipe_missing` does not block.** A finished good with no active recipe retains its prior
 behaviour. Only an explicitly unexecutable recipe withholds the commitment.
+
+> ⚠️ **Amended by Section 19 (v1.5).** `recipe_missing` now means "no preparation path": a
+> zero-stock finished good with no recipe is NOT fulfillable via preparation (it can still be
+> fulfilled from physical FG stock or its own `allow_negative_stock`). `manufacturingIsExecutable`
+> is a positive test (`status === 'instock'`).
 
 ### 16.2 — Direct Finished Product stock remains independently reservable
 
@@ -728,3 +761,254 @@ Sections 3, 11, 13 and 14 are **left in place unedited**. They record what was d
 July 2026 and why. This section supersedes their raw-material clauses; it does not erase
 them. A future reader must be able to see that the FG-only rule was deliberate, correctly
 reasoned for its time, and changed only when its premise expired.
+
+---
+
+## Section 18 — Preparation Wave Material Availability (v1.4)
+
+**Status:** Approved · **Date:** 2026-08-19
+**Amends:** §17.3's "universal, signed" availability formula — **for the Preparation Wave
+demand projection only**.
+**Does NOT supersede:** §17.3 for inventory-wide availability, §17.4 (Allow Negative governs
+the commitment, not the arithmetic), §17.5 (reconciliation, not accumulation), or §16.2.
+**Input:** TASK-PREPARATION-MANUAL-REMEDIATION-001 manual operational test — owner-approved
+business contract.
+
+### 18.1 Why §17.3 is being amended for Preparation only
+
+§17.3 made availability **signed** so that a genuine over-commitment stays visible to every
+consumer. That is correct for the inventory-wide figure (`InventoryItem::availableQty`) and
+for Manufacturing, and both are **left signed and unchanged**.
+
+It proved wrong for the **operator-facing Preparation Wave view**. Two symptoms surfaced in
+the manual test:
+
+- **`Missing > Required`.** A signed-negative availability makes
+  `missing = required − available` exceed Required (e.g. Required = 5, Missing = 7). To the
+  planner picking a wave this reads as a data error, not as "the warehouse is over-committed
+  by 2".
+- **Deferring an order raised Missing.** Postponing an order dropped its Required but stranded
+  its still-live reservation as competing demand against the orders left in the wave, so
+  Missing rose while Required fell — the opposite of what a deferral is meant to do.
+
+Neither is a defect in §17.3; both are the cost of exposing the raw signed figure in a
+planning surface that only means to ask "can the orders in front of me be prepared now?".
+
+### 18.2 The amended Preparation-scoped formula
+
+For the Preparation Wave material demand projection (`MaterialDemandCalculator` →
+`wave_material_demand`) **only**:
+
+```
+effective_reserved = reserved − own_active_member − postponed_member
+available          = max(0, on_hand − effective_reserved)     ← floored
+missing            = max(0, required − available)             ← unchanged, still clamped ≥ 0
+```
+
+- `reserved` and `on_hand` are read unchanged from `inventory_items`. **No inventory state is
+  written, faked, or released.** Only the wave-local *projection* of availability changes.
+- `own_active_member` — reservations this wave's own **active** members already hold, netted
+  so a commitment is not charged once as Required and again as its own reservation. Unchanged
+  from §17 (`postponed_at IS NULL`, clamped `min(reserved_ledger, required, reserved)`).
+- `available` is **floored at 0**: over-commitment can no longer drive the Preparation figure
+  negative, so **Missing never exceeds Required** in the wave view. The raw signed deficit
+  remains available to Inventory and Manufacturing through the unchanged §17.3 `availableQty`.
+
+### 18.3 Postponed-member reservations leave the active-wave projection
+
+A wave member that is **postponed** (`postponed_at` set) but **not released** (`released_at`
+NULL) still holds its `sales_order_material` reservation — postponement **releases nothing**,
+by the existing lifecycle (§17 reconciliation; `WaveMembershipService::postponeOrder`). Its
+Required has already left the projection (`ProductDemandCalculator` filters `postponed_at IS
+NULL`). Its reservation is therefore **excluded from `effective_reserved`** for the active
+wave, so a deferral no longer inflates Missing for the orders that remain.
+
+This uses only the **existing** two-predicate membership model — no new release mechanism, no
+`orders` or `inventory_items` write:
+
+- `postponed_at IS NULL` — "counts toward this cycle's work" (Required, own-member netting).
+- `released_at IS NULL` — "still bound to this wave" (the reservation is parked here until the
+  wave ends and the membership is released, at which point the order carries over and the
+  reservation becomes ordinary competing demand for whichever wave collects it next).
+
+The commitment is **not double-counted and not lost**: it stays in `inventory_items.reserved_qty`
+for the order's next eligible wave, exactly as carry-over requires.
+
+### 18.4 What does NOT change
+
+- **Over-commitment between active members keeps its meaning.** A genuine shortage among the
+  orders actually being prepared still surfaces as Missing; the floor only caps the
+  operator-facing figure at Required instead of letting it run negative. No active order's
+  competing demand is hidden.
+- **§17.4 stands: Allow Negative governs the commitment, not the availability figure.** A raw
+  material flagged `allow_negative_stock` is drawable on open credit — its reservation is
+  permitted at `ReserveStockAction`.
+
+  > ⚠️ **SUPERSEDED by §18.6 (v1.6, owner-approved 2026-08-20).** The paragraph below made an
+  > `allow_negative` shortfall report `missing_qty = 0` / coverage 100% "so it never enters the
+  > missing-materials / procurement queue." That is now **rejected**: it hid a real shortage
+  > from Procurement. `missing_qty` is ALWAYS the real physical shortage; `allow_negative_stock`
+  > decides *preparation eligibility per product* (§18.6), never the Missing figure.
+
+  ~~so in the Preparation demand view a physical shortfall
+  is a **soft** shortage: its `missing_qty` is reported as **0** and coverage as 100%, so it
+  never blocks preparation and never enters the missing-materials / procurement queue.~~ The
+  `available_qty` *figure* is left exactly as the arithmetic computes it (on_hand and reserved
+  are never faked), preserving visibility of the real physical position.
+- **Inventory-wide and Manufacturing availability remain signed** under §17.3. This amendment
+  is scoped strictly to the Preparation Wave projection.
+
+### 18.5 Enforcing tests
+
+`MaterialAvailabilityContractTest` (the Preparation-scoped enforcer) is updated from the signed
+expectation to the floored one, and gains postponed-member cases. The inventory-wide and
+Manufacturing signed-availability tests are **not** touched — they continue to enforce §17.3.
+
+---
+
+## Section 19 — Order-Driven Preparation Fulfillability (v1.5)
+
+**Status:** Approved · **Date:** 2026-08-20 · **Task:** TASK-ORDER-PREPARATION-FULFILLABILITY-CONTRACT-001
+**Amends:** Section 3 Case 2 and Section 16.1 — removes the `can_manufacture` capability flag
+from the order-fulfillability decision.
+**Does NOT change:** Section 16.2 (physical FG stock reserved first), §16.3 (`ManufacturingAvailabilityService`
+is the single recipe-executability authority), §16.4 (company scope), §17 (order-driven RM
+reservation), §18 (Preparation wave projection), reservation ownership/lifecycle, tenant
+isolation, FIFO, or Allow-Negative-Stock semantics.
+
+### 19.1 Why the previous contract is amended
+
+Section 16 (v1.2, "Option B") made the manufacturing commitment require **both**
+`can_manufacture = true` **and** an executable recipe. The confirmed ECOS business model is
+**order-driven preparation / made-to-order**: the customer buys the finished product first, and
+if there is no finished-good stock the product is prepared/assembled to order from its recipe.
+There is no manufacture-into-stock workflow for these sellable products (audit
+TASK-ORDERS-BUSINESS-MODEL-AUDIT-001). Requiring the `can_manufacture` opt-in as a fulfillability
+gate contradicted that model: it forced every recipe-backed finished good with a zero-stock
+balance to Awaiting Stock unless a per-product flag (default `false`, absent from the product
+form) was set. The owner has revised the contract accordingly.
+
+### 19.2 The new authoritative fulfillability rule
+
+For an order line, **Product Fulfillability** is:
+
+```
+Finished Product physically available (Case 1)
+    OR
+Preparation Recipe executable (Case 2)   ← every required material available OR allow_negative
+```
+
+- **Case 1** (physical FG stock ≥ requested) is unchanged and still evaluated first.
+- **Case 2** now triggers on **recipe executability alone**. `can_manufacture` is **not** read.
+  A finished good with `FG stock = 0` and an executable recipe is **Fulfillable → Reservable →
+  In Progress → Preparation eligible**.
+- **Case 3** (finished good's own `allow_negative_stock`) and **Case 4** (Awaiting Stock) are
+  unchanged.
+- Recipe executability remains defined by `ManufacturingAvailabilityService` (§16.3), unchanged:
+  a material passes when `available > 0 OR allow_negative_stock = true`; the recipe is executable
+  iff every required material passes. A **missing** recipe is not executable (there is no
+  preparation path), so `manufacturingIsExecutable` is the positive test `status === 'instock'`.
+
+These concepts are distinct and must not be conflated: *Finished-Product physical stock*, *Raw-Material
+availability*, *Recipe executability*, *Product fulfillability*, *Order reservability*, *Preparation
+eligibility*.
+
+### 19.3 Reservation and Preparation use the SAME contract
+
+`can_manufacture` also gated the production/preparation path at `ManufacturingPolicy` Rule 3.
+That rule is **removed** so that the same recipe-executability decision which let the order
+reserve also lets its preparation/assembly path execute. This eliminates the broken half-state
+(reserved, but never prepared because the capability flag was false). Recipe presence is still
+enforced by `ManufacturingPolicy` Rule 4; executability is the reservation-time authority and is
+not recomputed there.
+
+### 19.4 Automatic recovery
+
+An Awaiting Stock order becomes fulfillable again — automatically, with no manual status change —
+through the existing `RetryReservationOnStockAvailableListener`:
+
+- **(A) Raw material stock becomes available** — the existing `InventoryStockReceived/Released/Adjusted`
+  subscriptions re-evaluate the affected orders (the reverse recipe lookup maps a raw material to
+  the finished goods whose recipe consumes it). Unchanged.
+- **(B) `allow_negative_stock` flips false → true** — a new additive domain event,
+  `ProductNegativeStockEnabled`, is published by the `Product` model on that transition and drives
+  the **same** listener (a company-scoped re-evaluation across warehouses; the policy is not
+  warehouse-scoped). No second recovery engine.
+- **(C) `can_manufacture` changes** — **no** recovery is implemented; the flag is no longer a
+  fulfillability gate.
+
+Recovery is idempotent, tenant-safe (company predicate), affected-orders-only, uses no polling,
+and never writes `orders.status` directly — it re-runs `ProcessOrderWorkflow` through the
+existing lifecycle.
+
+### 19.5 `can_manufacture` is retained, with a narrowed meaning
+
+The flag is **not** deleted or repurposed. It no longer participates in order fulfillability or
+order preparation eligibility. `PolicyCode::ProductCannotManufacture` is retained for backward
+compatibility but is no longer emitted.
+
+### 19.6 Enforcing tests
+
+- `OrderPreparationFulfillabilityContractTest` — the new positive/negative matrix: zero-FG-stock +
+  executable recipe reserves without `can_manufacture`; allow-negative material reserves; blocked
+  material → Awaiting Stock; raw-material-arrival and allow-negative-flip auto-recovery; the
+  policy-change observer publishes only on false → true; `can_manufacture` drives no recovery.
+- `RecipeToOrderAvailabilityE2ETest::test_f_can_manufacture_false_with_executable_recipe_reserves`
+  inverts the suite's former `manufacturable()` premise.
+- `ManufacturingPolicyTest` — Rule 3 assertions replaced: `can_manufacture = false` is now eligible;
+  a missing recipe surfaces as `RecipeNotFound`.
+- The §16 recipe-executability, §17 RM-reservation, §18 wave-projection, tenant-isolation and
+  recovery regression suites are unchanged and continue to pass.
+
+---
+
+## Section 18.6 — Missing Material vs Preparation Eligibility (v1.6)
+
+**Status:** Approved · **Date:** 2026-08-20 · **Task:** TASK-ORDERS-PREPARATION-PAYMENT-FINAL-FIX-001
+**Amends:** §18.4 — a credit-covered shortfall is no longer suppressed to `missing_qty = 0`.
+**Does NOT change:** §18.2 clamps, §18.3 netting, reservation, order lifecycle, `ManufacturingAvailabilityService`, or the certified P-03 behaviour (allow_negative → preparation is allowed).
+
+### 18.6.1 Two different concepts
+
+- **`missing_qty` — the REAL physical shortage, always.** Procurement must see the true
+  quantity that has to be supplied, even when preparation is allowed to proceed. It is never
+  zeroed by `allow_negative_stock`. This is the real business case where a material has been
+  bought but its stock receipt has not yet been entered into the ERP.
+- **Preparation eligibility — decided PER PRODUCT.** Whether a physically short material blocks
+  a product is answered by `ProductReadinessCalculator`, not by the Missing figure.
+
+### 18.6.2 The rule
+
+```
+missing_qty > 0  AND allow_negative_stock = true   → material_status READY
+missing_qty > 0  AND allow_negative_stock = false  → material_status WAITING_MATERIAL
+missing_qty = 0                                     → material_status READY
+```
+
+A product is `WAITING_MATERIAL` if ANY material its active recipe consumes is physically short
+AND not drawable on credit; otherwise `READY`. Readiness is stamped on `wave_product_demand`
+(`material_status`, `blocking_materials_count`).
+
+### 18.6.3 Scope guarantees
+
+- **The wave is never blocked globally.** `preparation_waves.shortage_detected` and
+  `StartPreparationAction` are untouched. A short product holds only itself; sibling products
+  with available materials stay preparable.
+- **No order or reservation is read or written** by readiness. Fulfillment (reservation, order
+  lifecycle) already proceeded per ADR-027 §19; this is a downstream operational classification.
+- **Enforcement is per product**, at `WaveDemandController::updatePrepared` / `completePreparation`.
+- **No second engine.** Readiness reuses the product→material edge `MaterialDemandCalculator`
+  already derives and the `missing_qty` the material layer already persists.
+
+### 18.6.4 Recovery
+
+Material arrival re-projects the affected waves via the existing `InventoryStockReceived`
+domain event (`RefreshDemandOnStockReceivedListener`), so a `WAITING_MATERIAL` product returns
+to `READY` with no polling and no operator action. Scoped by company + warehouse + material;
+idempotent; the recoverable wave states include `planning` / `shortage_blocked` (the states a
+waiting wave actually sits in), which the never-wired predecessor wrongly excluded.
+
+### 18.6.5 Enforcing tests
+`ProductReadinessContractTest` (both owner worked-examples, per-product independence, recovery,
+idempotency) and `MaterialAvailabilityContractTest` (updated: an allow_negative material now
+reports its real shortage).
