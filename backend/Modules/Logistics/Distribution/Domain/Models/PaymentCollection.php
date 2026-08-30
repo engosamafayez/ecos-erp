@@ -63,6 +63,40 @@ class PaymentCollection extends Model
         return $this->status === self::STATUS_REJECTED;
     }
 
+    /**
+     * Would `$actorId` reviewing this collection be a self-review?
+     *
+     * THE separation-of-duties rule for the cash ledger, in one place. Both review
+     * outcomes consult it — `SettlementService::verifyPayment()` and `rejectPayment()` —
+     * because verify and reject are the two halves of one reviewer act, and a rule
+     * covering only one half would let the collector pick the half they control.
+     *
+     * DELIBERATELY THE SAME SHAPE AS `PaymentProof::isSelfReviewBy()`, and for the same
+     * reason recorded there: the role catalogue is a configuration fact, not a control.
+     * Until TASK-DRIVER-02 both halves took the identical permission and the collector
+     * could verify their own cash. The permission split is now real, but a permission
+     * split alone can never establish that two different PEOPLE were involved — a single
+     * user assigned both roles, or any `is_system` role, would still pass the middleware.
+     * This check lives in the domain, after the middleware has let the actor through, so
+     * it binds every actor including Super Admin.
+     *
+     * The comparison needs two identities to mean anything, so an unattributed collection
+     * (`collected_by IS NULL`) is not a self-review. That is not a loophole: the record
+     * route sits behind `auth:sanctum` and always stamps `collected_by` from the actor, so
+     * a NULL collector can only originate from a console or test path where there is no
+     * submitter identity to be independent of.
+     */
+    public function isSelfReviewBy(?int $actorId): bool
+    {
+        $collector = $this->collected_by;
+
+        if ($actorId === null || $collector === null) {
+            return false;
+        }
+
+        return (int) $collector === $actorId;
+    }
+
     /** Only non-rejected physical cash is reconciled against the driver's hand-back. */
     public function countsTowardCashExpected(): bool
     {
