@@ -69,6 +69,70 @@ final class Customer360Service
             'preferred_contact_method' => $customer->preferred_contact_method,
             'merged_into_id' => $customer->merged_into_id,
             'archived_at' => $customer->archived_at?->toIso8601String(),
+            'full_address' => $this->fullAddress($customer),
+            'location' => $this->location($customer),
         ];
+    }
+
+    /**
+     * The customer's address as one display string.
+     *
+     * SOURCE PRECEDENCE — the structured `customer_addresses` default row wins over the
+     * denormalised `customers.*` columns. Both exist and they can DISAGREE: the two are
+     * written by different paths (the CRM address book vs. the order-intake/Woo sync),
+     * and the master columns are the legacy pair. Reading them in this order means the
+     * list shows the same address the 360° profile's `addresses[]` shows, rather than a
+     * second, quietly different answer.
+     *
+     * NOTE: the precedence itself is an engineering choice, not a ratified business rule.
+     * If the business considers `customers.address` authoritative, only this method and
+     * {@see self::location()} change.
+     */
+    private function fullAddress(Customer $customer): ?string
+    {
+        $default = $this->defaultAddress($customer);
+
+        $parts = $default !== null
+            ? [$default->address_line, $default->area, $default->city, $default->governorate]
+            : [$customer->address, $customer->area, $customer->city, $customer->governorate];
+
+        $parts = array_values(array_filter(
+            array_map(static fn ($p) => is_string($p) ? trim($p) : null, $parts),
+            static fn (?string $p) => $p !== null && $p !== '',
+        ));
+
+        return $parts === [] ? null : implode('، ', $parts);
+    }
+
+    /**
+     * The default address row, resolving it if the caller did not eager-load it.
+     *
+     * The list eager-loads it once for the whole page, so this never fires there. On the
+     * single-record paths (`show`, `profile`) it costs one query — the alternative is the
+     * same field answering differently per endpoint, which is worse than one query.
+     */
+    private function defaultAddress(Customer $customer): ?object
+    {
+        if (! $customer->relationLoaded('addresses')) {
+            $customer->load(['addresses' => fn ($a) => $a->where('is_default', true)]);
+        }
+
+        return $customer->addresses->firstWhere('is_default', true);
+    }
+
+    /** City / governorate only — the coarse "where is this customer" column. */
+    private function location(Customer $customer): ?string
+    {
+        $default = $this->defaultAddress($customer);
+
+        $city = $default !== null ? $default->city : $customer->city;
+        $governorate = $default !== null ? $default->governorate : $customer->governorate;
+
+        $parts = array_values(array_filter(
+            array_map(static fn ($p) => is_string($p) ? trim($p) : null, [$city, $governorate]),
+            static fn (?string $p) => $p !== null && $p !== '',
+        ));
+
+        return $parts === [] ? null : implode('، ', $parts);
     }
 }

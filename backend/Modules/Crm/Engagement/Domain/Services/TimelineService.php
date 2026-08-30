@@ -95,7 +95,11 @@ final class TimelineService
             }
         }
 
-        usort($entries, static fn (TimelineEntry $a, TimelineEntry $b) => $b->occurredAt->getTimestamp() <=> $a->occurredAt->getTimestamp());
+        // Newest first, with refId as the stable tiebreak. Entries arrive from several
+        // sources, so equal timestamps would otherwise order by whichever source happened
+        // to be iterated first — the same `[occurred_at, id]` convention ActivityTimelineService
+        // already documents.
+        usort($entries, static fn (TimelineEntry $a, TimelineEntry $b) => [$b->occurredAt->getTimestamp(), $b->refId] <=> [$a->occurredAt->getTimestamp(), $a->refId]);
 
         return $entries;
     }

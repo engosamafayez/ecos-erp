@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Sales\Customers\Presentation\Http\Controllers;
 
+use App\Core\Company\CurrentCompanyService;
 use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -14,9 +15,27 @@ final class CustomerAddressController extends Controller
 {
     use HasApiResponse;
 
+    public function __construct(private readonly CurrentCompanyService $currentCompany) {}
+
+    /**
+     * Resolve a customer inside the caller's tenant.
+     *
+     * Every method here previously used a bare `Customer::findOrFail()`, which let one
+     * company read AND WRITE another company's addresses. 404 (not 403) so the response
+     * does not confirm that the record exists.
+     */
+    private function customer(string $id): Customer
+    {
+        $companyId = $this->currentCompany->id();
+
+        return Customer::query()
+            ->when($companyId !== null, fn ($q) => $q->where('company_id', $companyId))
+            ->findOrFail($id);
+    }
+
     public function index(string $customer): JsonResponse
     {
-        $model = Customer::findOrFail($customer);
+        $model = $this->customer($customer);
         $addresses = $model->addresses()->orderByDesc('is_default')->orderBy('created_at')->get();
 
         return $this->success($addresses);
@@ -24,7 +43,7 @@ final class CustomerAddressController extends Controller
 
     public function store(Request $request, string $customer): JsonResponse
     {
-        $model = Customer::findOrFail($customer);
+        $model = $this->customer($customer);
 
         $validated = $request->validate([
             'label' => 'sometimes|string|max:100',
@@ -48,7 +67,7 @@ final class CustomerAddressController extends Controller
 
     public function update(Request $request, string $customer, string $address): JsonResponse
     {
-        $model = Customer::findOrFail($customer);
+        $model = $this->customer($customer);
         $addressModel = $model->addresses()->findOrFail($address);
 
         $validated = $request->validate([
@@ -73,7 +92,7 @@ final class CustomerAddressController extends Controller
 
     public function destroy(string $customer, string $address): JsonResponse
     {
-        $model = Customer::findOrFail($customer);
+        $model = $this->customer($customer);
         $addressModel = $model->addresses()->findOrFail($address);
         $addressModel->delete();
 

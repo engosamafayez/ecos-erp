@@ -22,7 +22,9 @@ final class CustomerSearchService
     {
         $query = Customer::query()
             ->where('company_id', $companyId)
-            ->with('group');
+            // The default address only — ONE extra query for the whole page, never one
+            // per row. Feeds the list's Full Address / Location columns.
+            ->with(['group', 'addresses' => fn ($a) => $a->where('is_default', true)]);
 
         if (! empty($filters['q'])) {
             $term = (string) $filters['q'];

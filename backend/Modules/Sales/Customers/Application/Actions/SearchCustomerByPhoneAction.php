@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Sales\Customers\Application\Actions;
 
 use App\Core\Actions\BaseAction;
+use App\Core\Company\CurrentCompanyService;
 use App\Core\Responses\OperationResult;
 use Modules\Sales\Customers\Domain\Models\Customer;
 
@@ -14,14 +15,22 @@ use Modules\Sales\Customers\Domain\Models\Customer;
  */
 final class SearchCustomerByPhoneAction extends BaseAction
 {
+    public function __construct(private readonly CurrentCompanyService $currentCompany) {}
+
     public function execute(mixed ...$arguments): OperationResult
     {
         /** @var string $phone */
         $phone = $arguments[0];
 
+        $companyId = $this->currentCompany->id();
+
         $customer = Customer::where(function ($query) use ($phone): void {
             $query->where('phone', $phone)->orWhere('mobile', $phone);
         })
+            // Without this a phone lookup returns ANY company's customer along with their
+            // addresses and order stats. Null stays unrestricted (super-admin), matching
+            // the documented CurrentCompanyService contract.
+            ->when($companyId !== null, fn ($q) => $q->where('company_id', $companyId))
             ->where('is_active', true)
             ->with('addresses')
             ->first();

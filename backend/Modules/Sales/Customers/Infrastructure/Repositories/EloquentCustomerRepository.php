@@ -66,12 +66,21 @@ final class EloquentCustomerRepository implements CustomerRepositoryInterface
         $sortDir = strtolower((string) ($filters['sort_dir'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
         $perPage = max(1, min((int) ($filters['per_page'] ?? 10), 100));
 
-        return $query->with('customerBrands.brand')->orderBy($sortBy, $sortDir)->paginate($perPage);
+        // Default address only — ONE extra query for the whole page, never one per row.
+        return $query
+            ->with(['customerBrands.brand', 'addresses' => fn ($a) => $a->where('is_default', true)])
+            ->orderBy($sortBy, $sortDir)
+            ->paginate($perPage);
     }
 
-    public function findById(string $id): ?Customer
+    public function findById(string $id, ?string $companyId): ?Customer
     {
-        return Customer::query()->with('customerBrands.brand')->find($id);
+        return Customer::query()
+            ->with(['customerBrands.brand', 'addresses' => fn ($a) => $a->where('is_default', true)])
+            // Scoped whenever there IS a company context. Null is the documented
+            // unrestricted case and matches how paginate() already behaves.
+            ->when($companyId !== null && $companyId !== '', fn ($q) => $q->where('company_id', $companyId))
+            ->find($id);
     }
 
     public function create(array $attributes): Customer

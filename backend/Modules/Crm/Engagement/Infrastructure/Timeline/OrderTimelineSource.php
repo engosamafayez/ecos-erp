@@ -32,9 +32,17 @@ final class OrderTimelineSource implements TimelineSource
         try {
             $rows = DB::table('orders')
                 ->where('customer_id', $customerId)
+                // $companyId was accepted by this method but never applied — the tenant
+                // boundary the signature promises was not being enforced. Soft-deleted
+                // orders were also surfacing on the customer timeline.
+                ->where('company_id', $companyId)
+                ->whereNull('deleted_at')
                 ->when($from !== null, fn ($q) => $q->where('order_date', '>=', $from))
                 ->when($to !== null, fn ($q) => $q->where('order_date', '<=', $to))
+                // order_date is the canonical business date (see CustomerOrderMetricsService);
+                // id is the stable tiebreak, per the platform ordering convention.
                 ->orderByDesc('order_date')
+                ->orderByDesc('id')
                 ->limit(500)
                 ->get();
         } catch (Throwable) {
