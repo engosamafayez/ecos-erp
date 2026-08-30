@@ -469,6 +469,18 @@ const HIDDEN_MODULE_IDS: ReadonlySet<ModuleId> = new Set<ModuleId>([
 /** Navigation-visible modules (hidden ids filtered out for go-live scope). */
 export const APP_MODULES: AppModule[] = ALL_MODULES.filter((m) => !HIDDEN_MODULE_IDS.has(m.id));
 
+/**
+ * Every navigable link in a module's sidebar. Section headers are dividers, not
+ * destinations, so they are excluded. Recovered (TASK-ECOS-MOBILE-UX-CORE-CLOSURE-001)
+ * for the mobile menu accordion so it lists a module's authorized child routes from
+ * the SAME canonical metadata the desktop sidebar renders — no hardcoded child arrays.
+ * Adapted to the current `ModuleNavItem` model (link | section); the preserved
+ * pre-reconcile helper assumed an obsolete group/subtree model that no longer exists.
+ */
+export function moduleNavLinks(items: ModuleNavItem[]): ModuleNavLink[] {
+  return items.filter((item): item is ModuleNavLink => !item.isSection);
+}
+
 /** Find the module that owns a given pathname. */
 export function findModuleByPath(pathname: string): AppModule | undefined {
   return APP_MODULES.find((m) => {

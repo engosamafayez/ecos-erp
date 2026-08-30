@@ -95,6 +95,7 @@
     "addPhoto": "Add photo",
     "photoAdded": "Photo added",
     "viewPhoto": "View photo",
+    "removePhoto": "Remove photo",
     "notesPlaceholder": "Line notes…"
   },
   "detail": {
