@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Purchasing\GoodsReceipts\Infrastructure\Database\Factories;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Facades\DB;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Purchasing\GoodsReceipts\Domain\Enums\GoodsReceiptStatus;
 use Modules\Purchasing\GoodsReceipts\Domain\Models\GoodsReceipt;

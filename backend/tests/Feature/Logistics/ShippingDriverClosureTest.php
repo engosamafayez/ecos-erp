@@ -6,10 +6,10 @@ namespace Tests\Feature\Logistics;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Str;
 use Modules\Logistics\Drivers\Domain\Models\Driver;
 use Modules\Logistics\ShippingCompanies\Domain\Models\ShippingCompany;
 use Modules\Logistics\ShippingCompanies\Domain\Models\ShippingCompanyMapping;
-use Illuminate\Support\Str;
 use Modules\Logistics\Vehicles\Domain\Models\Vehicle;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Tests\TestCase;
@@ -214,7 +214,7 @@ final class ShippingDriverClosureTest extends TestCase
 
         // Financial Settlement is frozen (Section 17): the endpoint is reachable but refused.
         $this->actingAs($user)
-            ->getJson('/api/driver/trips/'.\Illuminate\Support\Str::uuid().'/settlement')
+            ->getJson('/api/driver/trips/'.Str::uuid().'/settlement')
             ->assertForbidden()
             ->assertJsonPath('message', fn (string $m) => str_contains($m, 'frozen'));
     }

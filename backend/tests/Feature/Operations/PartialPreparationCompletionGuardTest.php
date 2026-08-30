@@ -50,7 +50,7 @@ final class PartialPreparationCompletionGuardTest extends TestCase
         [$waveId, $productId] = $this->seedProductDemand(required: 5.0, prepared: 4.0);
 
         $response = $this->postJson(
-            "/api/preparation/waves/{$waveId}/product-demand/{$productId}/complete"
+            "/api/preparation/waves/{$waveId}/product-demand/{$productId}/complete",
         );
 
         $response->assertStatus(422);
@@ -68,7 +68,7 @@ final class PartialPreparationCompletionGuardTest extends TestCase
         [$waveId, $productId] = $this->seedProductDemand(required: 5.0, prepared: 5.0);
 
         $response = $this->postJson(
-            "/api/preparation/waves/{$waveId}/product-demand/{$productId}/complete"
+            "/api/preparation/waves/{$waveId}/product-demand/{$productId}/complete",
         );
 
         $response->assertOk();

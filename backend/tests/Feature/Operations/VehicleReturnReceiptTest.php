@@ -10,6 +10,7 @@ use Modules\Inventory\InventoryItems\Domain\Models\InventoryItem;
 use Modules\Inventory\InventoryItems\Domain\Models\StockLedgerEntry;
 use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\Inventory\ReceiptLayers\Domain\Models\InventoryReceiptLayer;
+use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Operations\Loading\Application\Actions\LoadProductAction;
 use Modules\Operations\Loading\Application\Actions\ReceiveVehicleReturnAction;
 use Modules\Operations\Loading\Application\Actions\RecordProductDeliveryAction;
@@ -26,12 +27,11 @@ use Modules\Operations\Loading\Domain\Models\VehicleAssignment;
 use Modules\Operations\Loading\Domain\Models\VehicleInventoryItem;
 use Modules\Operations\Loading\Domain\Models\VehicleInventoryMovement;
 use Modules\Operations\Loading\Domain\Models\VehicleShiftReconciliation;
-use Modules\Operations\Loading\Domain\Models\VehicleShiftReconciliationLine;
 use Modules\Operations\Loading\Domain\Services\VehicleShiftReconciliationService;
-use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Organization\Companies\Domain\Models\Company;
 use RuntimeException;
 use Tests\TestCase;
+use Throwable;
 
 /**
  * TASK-OPERATIONAL-FULFILLMENT-RETURNS-RECONCILIATION-001 — Warehouse Return Receipt.
@@ -231,7 +231,7 @@ class VehicleReturnReceiptTest extends TestCase
         $threw = false;
         try {
             app(ReceiveVehicleReturnAction::class)->execute($line, 4.0, 0.0, null, $this->actorId);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $threw = true;
         }
 

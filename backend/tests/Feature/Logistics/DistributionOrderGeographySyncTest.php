@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Feature\Logistics;
 
 use App\Models\User;
-use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;

@@ -86,8 +86,8 @@ final class StartWaveDistributionGroupsListener
      * The one reaction both wave-start paths share: ensure this Wave's Groups exist.
      *
      * @param  string  $planningDate  the Wave's OWN planning date (Y-m-d), never "today":
-     *                                 a Wave started late, replayed, or spanning midnight
-     *                                 must plan into the day it belongs to.
+     *                                a Wave started late, replayed, or spanning midnight
+     *                                must plan into the day it belongs to.
      */
     private function sweepForWave(
         string $companyId,

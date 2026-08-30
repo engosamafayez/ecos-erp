@@ -8,8 +8,8 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\IAM\Domain\Models\Role;
 use Modules\Inventory\Products\Domain\Models\Product;
-use Modules\Organization\Companies\Domain\Models\Company;
 use Modules\Organization\Brands\Domain\Models\Brand;
+use Modules\Organization\Companies\Domain\Models\Company;
 use Tests\TestCase;
 
 /**

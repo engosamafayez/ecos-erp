@@ -496,7 +496,7 @@ class GroupTripLoadingIntegrationTest extends TestCase
      * │ Vehicle + Driver -> Loading. Built in that order, Finalize manifests.      │
      * └──────────────────────────────────────────────────────────────────────────┘
      *
-     * @return array{0: array<string, mixed>, 1: object}  [group, trip]
+     * @return array{0: array<string, mixed>, 1: object} [group, trip]
      */
     private function finalizedGroup(string $code, int $orders, int $capacity = 10): array
     {

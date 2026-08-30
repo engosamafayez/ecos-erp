@@ -65,20 +65,20 @@ return new class extends Migration
         // migration — the same pattern the reconciliation-lines migration uses).
         try {
             DB::statement("ALTER TABLE driver_trip_movements ADD CONSTRAINT chk_driver_trip_movement_category CHECK (category IN ('fuel','road_toll','advance','other'))");
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // constraint already present / engine unsupported
         }
         try {
             DB::statement("ALTER TABLE driver_trip_movements ADD CONSTRAINT chk_driver_trip_movement_direction CHECK (direction IN ('cash_out','cash_in'))");
-        } catch (\Throwable) {
+        } catch (Throwable) {
         }
         try {
             DB::statement("ALTER TABLE driver_trip_movements ADD CONSTRAINT chk_driver_trip_movement_status CHECK (status IN ('pending','approved','rejected','settled'))");
-        } catch (\Throwable) {
+        } catch (Throwable) {
         }
         try {
             DB::statement('ALTER TABLE driver_trip_movements ADD CONSTRAINT chk_driver_trip_movement_amount CHECK (amount >= 0)');
-        } catch (\Throwable) {
+        } catch (Throwable) {
         }
     }
 

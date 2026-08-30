@@ -71,7 +71,7 @@ class PurchaseMaterialNumberGenerationTest extends TestCase
         $this->assertSame(
             'mysql',
             DB::connection()->getDriverName(),
-            'These tests only prove the MySQL cast repair when run against MySQL.'
+            'These tests only prove the MySQL cast repair when run against MySQL.',
         );
     }
 

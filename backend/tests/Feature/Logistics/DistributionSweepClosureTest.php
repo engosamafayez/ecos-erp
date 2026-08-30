@@ -19,6 +19,7 @@ use Modules\Operations\Preparation\Domain\Events\WavePreparationStarted;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Modules\Sales\Customers\Domain\Models\Customer;
 use Tests\TestCase;
+use Throwable;
 
 /**
  * TASK-DISTRIBUTION-WAVE-GROUP-SWEEP-CLOSURE-FIX-001
@@ -215,7 +216,7 @@ final class DistributionSweepClosureTest extends TestCase
 
         try {
             $this->startWaveViaEngine($waveId, $this->day());
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $thrown = $e;
         }
 

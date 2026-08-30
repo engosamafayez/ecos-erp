@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Logistics\Distribution\Presentation\Http\Controllers;
 
 use App\Core\Company\TenantOwnershipResolver;
+use DateTimeImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -89,8 +90,8 @@ final class DriverTripExpenseController extends Controller
         abort_if($trip === null, 422, 'You have no active trip custody to record an expense against.');
 
         $occurredAt = isset($data['occurred_at']) && $data['occurred_at'] !== null
-            ? new \DateTimeImmutable((string) $data['occurred_at'])
-            : new \DateTimeImmutable('now');
+            ? new DateTimeImmutable((string) $data['occurred_at'])
+            : new DateTimeImmutable('now');
 
         $movement = $this->record->execute(
             companyId: (string) $companyId,

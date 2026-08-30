@@ -30,6 +30,7 @@ final class PurchaseMaterialApprovalWorkflowTest extends TestCase
     protected bool $grantsBaselineAuthorization = false;
 
     private Company $company;
+
     private Warehouse $warehouse;
 
     protected function setUp(): void

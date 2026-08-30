@@ -167,5 +167,4 @@ class DistributionWarehouseBoundaryTest extends TestCase
         return $this->slotWarehouses[$companyId] ??= Warehouse::factory()
             ->create(['company_id' => $companyId])->id;
     }
-
 }

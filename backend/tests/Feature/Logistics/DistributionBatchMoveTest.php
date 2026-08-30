@@ -459,7 +459,7 @@ final class DistributionBatchMoveTest extends TestCase
      * destination Group with `$capacity`, optionally pre-seeded with Orders in Helwan.
      *
      * @return array{0: string, 1: string, 2: string, 3: list<string>}
-     *               [windowId, sourceSlotId, destinationSlotId, sourceAssignmentIds]
+     *                                                                 [windowId, sourceSlotId, destinationSlotId, sourceAssignmentIds]
      */
     private function twoGroups(int $orders, int $capacity, int $seedDestination = 0): array
     {

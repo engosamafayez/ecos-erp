@@ -7,8 +7,8 @@ namespace Modules\Operations\DemandAnalysis\Presentation\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Manufacturing\BillsOfMaterials\Domain\Services\ActiveRecipeResolver;
 use Modules\Operations\DemandAnalysis\Application\Services\DemandProjectionBuilder;
@@ -19,8 +19,8 @@ use Modules\Operations\DemandAnalysis\Application\Services\WaveKpiCalculator;
 use Modules\Operations\DemandAnalysis\Domain\Models\WaveExpectedIncoming;
 use Modules\Operations\DemandAnalysis\Domain\Models\WaveMaterialDemand;
 use Modules\Operations\DemandAnalysis\Domain\Models\WaveProductDemand;
-use Modules\Operations\Preparation\Domain\Models\PreparationWave;
 use Modules\Operations\Preparation\Application\Services\WaveEngine\WaveMembershipService;
+use Modules\Operations\Preparation\Domain\Models\PreparationWave;
 use Modules\Operations\Preparation\Domain\Models\WaveEngineConfiguration;
 use Modules\Purchasing\PurchaseOrders\Application\Queries\ExpectedIncomingQuery;
 
@@ -156,7 +156,7 @@ final class WaveDemandController extends Controller
             'shortage_decision' => $i->shortage_decision ?? null,
             'shortage_decided_by' => $i->shortage_decided_by ?? null,
             'shortage_decided_at' => isset($i->shortage_decided_at) && $i->shortage_decided_at
-                ? \Illuminate\Support\Carbon::parse($i->shortage_decided_at)->toIso8601String()
+                ? Carbon::parse($i->shortage_decided_at)->toIso8601String()
                 : null,
             'preparation_completed_at' => $i->preparation_completed_at?->toIso8601String(),
             'last_calculated_at' => $i->last_calculated_at?->toIso8601String(),

@@ -19,6 +19,7 @@ use Modules\Finance\Payables\Domain\Services\SupplierLedgerService;
 use Modules\Finance\Payables\Domain\Services\SupplierOpeningBalanceService;
 use Modules\Finance\Shared\Domain\Services\CompanyFinanceProvisioner;
 use Modules\Organization\Companies\Domain\Models\Company;
+use RuntimeException;
 use Tests\TestCase;
 
 /**
@@ -174,13 +175,13 @@ class SupplierOpeningBalanceTest extends TestCase
         );
         app(AccountsPayableService::class)->postDocument($bill);
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->service()->applyAdvanceToBill($bill->fresh(), 6000.0, 1); // > 5000 available
     }
 
     public function test_opening_amount_must_be_positive(): void
     {
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->service()->postOpeningPayable($this->companyId, (string) Str::uuid(), 'SUP-Z', 0.0, Carbon::today(), null, null, 1);
     }
 

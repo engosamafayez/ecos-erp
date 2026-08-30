@@ -63,8 +63,7 @@ final class ManualAssignmentService
         int $zoneId,
         VirtualCapacitySlot $slot,
         bool $enforceCapacity = true,
-    ): void
-    {
+    ): void {
         $this->assertManualAllowed($window);
 
         if ($slot->distribution_window_id !== $window->id) {

@@ -32,7 +32,6 @@ use Modules\Logistics\Distribution\Domain\Models\VirtualCapacitySlot;
  */
 final class DailyGroupLifecycleService
 {
-
     /**
      * The one reason the existing sweep logic can decline a Template: no eligible work
      * in any Zone it covers. Named so the log and any future reader agree on it.
@@ -55,6 +54,7 @@ final class DailyGroupLifecycleService
      * codebase does not have — see the report.
      */
     public const ZONES_ALREADY_OWNED = 'all_template_zones_owned_by_another_group';
+
     /** Why a Group stopped being operational. Stored on `closed_reason`. */
     public const CLOSED_WAVE_ENDED = 'wave_ended';
 

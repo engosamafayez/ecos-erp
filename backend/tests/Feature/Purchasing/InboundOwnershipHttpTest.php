@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Purchasing;
 
-use Modules\Inventory\InventoryItems\Domain\Enums\GoodsInwardMode;
-use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Modules\IAM\Domain\Models\Permission;
 use Modules\IAM\Domain\Models\Role;
+use Modules\Inventory\InventoryItems\Domain\Enums\GoodsInwardMode;
 use Modules\Inventory\InventoryItems\Domain\Enums\LedgerMovementType;
 use Modules\Inventory\InventoryItems\Domain\Models\InventoryItem;
 use Modules\Inventory\InventoryItems\Domain\Models\StockLedgerEntry;

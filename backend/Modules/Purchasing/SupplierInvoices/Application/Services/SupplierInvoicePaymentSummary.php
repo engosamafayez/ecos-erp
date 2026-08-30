@@ -13,9 +13,9 @@ use Modules\Purchasing\SupplierInvoices\Domain\Models\SupplierInvoice;
  *
  * Paid / Remaining / Payment-Status are DERIVED from the canonical AP settlement authority, never
  * stored on the invoice. The one AP bill for an invoice is resolved by the same convention its
- * writer uses ({@see \Modules\Purchasing\SupplierInvoices\Application\Services\PostSupplierInvoiceService}
+ * writer uses ({@see PostSupplierInvoiceService}
  * sets the bill `number` to `'SI-'.$invoice->id`). "Paid" is the sum of immutable
- * {@see \Modules\Finance\Payables\Domain\Models\PaymentAllocation} rows via
+ * {@see PaymentAllocation} rows via
  * `SupplierBill::allocatedAmount()`; "Remaining" is `SupplierBill::outstanding()`. This deliberately
  * does NOT reproduce the legacy `goods_receipts.paid_amount` anti-pattern (a hand-entered, cash-unlinked
  * figure the AP subledger was built to replace) — there is no editable paid/remaining column here.
@@ -24,7 +24,7 @@ use Modules\Purchasing\SupplierInvoices\Domain\Models\SupplierInvoice;
  *
  * TASK-PROCUREMENT-SUPPLIER-INVOICE-AP-PAYMENT-INTEGRATION-001 — the read model additionally surfaces
  * the invoice Total, its Due date, and the canonical payment HISTORY: each posted payment applied to
- * this invoice's bill through the AP {@see \Modules\Finance\Payables\Domain\Models\PaymentAllocation}
+ * this invoice's bill through the AP {@see PaymentAllocation}
  * authority (append-only, immutable). This is the READ half of the AP integration — it makes a payment
  * recorded through the canonical Finance/AP flow visible on the invoice. It is NOT a payment writer:
  * nothing here creates, approves, posts, or allocates a payment, and no paid/remaining figure is stored.

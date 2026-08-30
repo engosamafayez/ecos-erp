@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Logistics\Distribution\Domain\Services;
 
+use BackedEnum;
 use Illuminate\Support\Facades\DB;
 use Modules\Logistics\Distribution\Domain\Exceptions\DistributionException;
 use Modules\Logistics\Distribution\Domain\Models\Trip;
@@ -14,6 +15,7 @@ use Modules\Operations\Loading\Application\Actions\CreateLoadingSessionAction;
 use Modules\Operations\Loading\Domain\Models\LoadingSession;
 use Modules\Operations\Loading\Domain\Models\VehicleAssignment;
 use RuntimeException;
+use Throwable;
 
 /**
  * Group → Trip → Vehicle/Driver → Loading.
@@ -124,7 +126,7 @@ class GroupLoadingContextService
             try {
                 $guard();
                 $checks[] = ['key' => $key, 'ok' => true];
-            } catch (\Throwable $e) {
+            } catch (Throwable $e) {
                 $checks[] = ['key' => $key, 'ok' => false];
 
                 // The FIRST failure is the one reported: it is the one the operator has
@@ -267,7 +269,7 @@ class GroupLoadingContextService
      */
     private function vehicleTypeValue(mixed $type): string
     {
-        if ($type instanceof \BackedEnum) {
+        if ($type instanceof BackedEnum) {
             return (string) $type->value;
         }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Logistics\Distribution\Domain\Services;
 
+use BackedEnum;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -20,6 +21,7 @@ use Modules\Logistics\Drivers\Domain\Models\Driver;
 use Modules\Operations\Loading\Domain\Models\VehicleAssignment;
 use Modules\Operations\Loading\Domain\Models\VehicleInventoryItem;
 use Modules\Operations\Loading\Domain\Models\VehicleShiftReconciliationLine;
+use Throwable;
 
 /**
  * READ-ONLY driver-scoped operational reporting — TASK-DRIVER-APP-PHASE-6-WALLET-REPORTS-CLOSURE-001.
@@ -96,7 +98,7 @@ class DriverReportsReadService
         }
         try {
             return CarbonImmutable::createFromFormat('Y-m-d', $value)->startOfDay();
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return null;
         }
     }
@@ -364,7 +366,7 @@ class DriverReportsReadService
     {
         try {
             return CarbonImmutable::createFromFormat('Y-m', trim($month))->startOfMonth();
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return CarbonImmutable::now()->startOfMonth();
         }
     }
@@ -391,7 +393,7 @@ class DriverReportsReadService
 
     /**
      * @param  list<int>  $tripIds
-     * @return array<string, int>  status value → count, for every DeliveryStopStatus
+     * @return array<string, int> status value → count, for every DeliveryStopStatus
      */
     private function stopStatusHistogram(array $tripIds): array
     {
@@ -459,7 +461,7 @@ class DriverReportsReadService
                 'customer_name' => $order?->customer_name,
                 'area' => $order?->city,
                 'governorate' => $order?->governorate,
-                'outcome' => $stop->status instanceof \BackedEnum ? $stop->status->value : (string) $stop->status,
+                'outcome' => $stop->status instanceof BackedEnum ? $stop->status->value : (string) $stop->status,
                 'order_value' => $order !== null ? round((float) $order->total, 2) : null,
             ];
         });

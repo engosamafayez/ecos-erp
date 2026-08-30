@@ -41,7 +41,9 @@ final class OrderCityResolver
 {
     /** Why a city could not be determined. `null` reason = resolved. */
     public const REASON_ADDRESS_INCOMPLETE = 'address_incomplete';
+
     public const REASON_CITY_NOT_RESOLVED = 'city_not_resolved';
+
     public const REASON_CITY_AMBIGUOUS = 'city_ambiguous';
 
     /**

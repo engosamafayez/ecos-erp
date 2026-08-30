@@ -156,7 +156,7 @@ class TripService
             if ($existing !== null) {
                 $otherTrip = Trip::find($existing->trip_id);
                 throw DistributionException::orderAlreadyOnAnotherTrip(
-                    $otherTrip?->trip_number ?? (string) $existing->trip_id
+                    $otherTrip?->trip_number ?? (string) $existing->trip_id,
                 );
             }
 
@@ -354,7 +354,7 @@ class TripService
      * it two concurrent assigns to different groups could both read "not engaged".
      *
      * @param  list<int>  $assignmentIds
-     * @return list<int>  the engaged subset, deduplicated
+     * @return list<int> the engaged subset, deduplicated
      */
     public function assignmentsEngagedElsewhere(
         array $assignmentIds,
