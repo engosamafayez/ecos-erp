@@ -1,0 +1,812 @@
+{
+  "app": {
+    "title": "السائق",
+    "role": "سائق"
+  },
+  "loading": "جارٍ التحميل…",
+  "home": {
+    "refresh": "تحديث",
+    "kpis": {
+      "activeTrips": "الرحلات النشطة",
+      "assignedOrders": "الطلبات المسندة",
+      "ordersToday": "طلبات اليوم"
+    },
+    "empty": {
+      "title": "لم يتم تعيين رحلة لك بعد",
+      "subtitle": "ستظهر هنا الشحنة عند تعيينها لك."
+    },
+    "assignedSummary": "{{count}} طلب مخصص لك",
+    "startLoading": "ابدأ التحميل",
+    "greeting": "مرحبًا، {{name}}",
+    "tripToday": "رحلتك اليوم",
+    "ordersCount": "{{count}} طلب",
+    "blocked": "لا يمكن بدء التحميل حاليًا",
+    "identity": {
+      "driver": "السائق",
+      "vehicle": "المركبة",
+      "trip": "الرحلة",
+      "noVehicle": "لا توجد مركبة",
+      "noTrip": "لا توجد رحلة"
+    },
+    "currentWork": {
+      "title": "العمل الحالي",
+      "none": "لا توجد رحلة نشطة",
+      "noneHint": "ستظهر شحنتك هنا بمجرد تعيينها لك.",
+      "loading": "جارٍ التحميل",
+      "readyForDelivery": "جاهزة للتسليم",
+      "inDelivery": "قيد التسليم",
+      "completed": "اكتملت الرحلة",
+      "blocked": "التحميل متوقف",
+      "productsCount": "{{count}} منتج",
+      "awaitingConfirmation": "{{count}} بانتظار تأكيدك",
+      "stopsRemaining": "{{count}} محطة متبقية",
+      "settlementPending": "التسوية مطلوبة"
+    },
+    "nextAction": {
+      "title": "الخطوة التالية",
+      "startLoading": "ابدأ التحميل",
+      "continueLoading": "أكمل التحميل",
+      "confirmReceived": "أكّد الكميات المستلمة",
+      "loadingComplete": "إتمام التحميل",
+      "viewOrders": "عرض الطلبات",
+      "nextStop": "المحطة التالية",
+      "tripSummary": "ملخص الرحلة",
+      "none": "لا يوجد إجراء مطلوب حاليًا",
+      "startSettlement": "بدء التسوية",
+      "startTrip": "بدء الرحلة",
+      "readyToStartDelivery": "جاهز لبدء التوصيل"
+    },
+    "stats": {
+      "orders": "الطلبات",
+      "pending": "قيد الانتظار",
+      "delivered": "تم التسليم",
+      "failed": "فشل",
+      "returned": "مرتجع",
+      "stops": "المحطات",
+      "remaining": "المتبقي",
+      "vehicleStock": "مخزون المركبة",
+      "onHand": "المتوفر",
+      "loaded": "المُحمّل"
+    },
+    "daySummary": {
+      "title": "ملخص اليوم",
+      "vehicleStock": "مخزن السيارة",
+      "needsReturn": "{{count}} للإرجاع",
+      "clear": "لا يوجد",
+      "settlement": "التسوية",
+      "settlementPending": "قيد الانتظار",
+      "settlementDone": "مكتملة",
+      "viewWallet": "المحفظة والإغلاق"
+    },
+    "journey": {
+      "title": "رحلة اليوم",
+      "deliveredOf": "{{delivered}} / {{total}}",
+      "stages": {
+        "loading": "التحميل",
+        "custody": "تم قبول العهدة",
+        "tripStarted": "بدأت الرحلة",
+        "deliveries": "التسليمات",
+        "returnLeg": "العودة",
+        "closing": "الإغلاق"
+      }
+    },
+    "orders": {
+      "title": "الطلبات",
+      "received_zero": "لا طلبات مستلمة",
+      "received_one": "طلب واحد مستلم",
+      "received_two": "طلبان مستلمان",
+      "received_few": "{{count}} طلبات مستلمة",
+      "received_many": "{{count}} طلبًا مستلمًا",
+      "received_other": "{{count}} طلب مستلم",
+      "received": "{{count}} طلب مستلم",
+      "partial": "جزئي",
+      "deliveryRate": "نسبة التسليم: {{pct}}%"
+    },
+    "next": {
+      "title": "التالي",
+      "cod": "تحصيل {{amount}}",
+      "stop": "محطة {{sequence}}"
+    },
+    "custody": {
+      "delivered": "تم التسليم"
+    },
+    "collections": {
+      "title": "التحصيلات",
+      "expected": "المتوقع",
+      "collected": "المُحصّل",
+      "difference": "فرق {{amount}}"
+    },
+    "attention": {
+      "title": "يحتاج انتباهك",
+      "items": {
+        "pendingLoading_zero": "لا أصناف بانتظار تأكيد التحميل",
+        "pendingLoading_one": "صنف واحد بانتظار تأكيد التحميل",
+        "pendingLoading_two": "صنفان بانتظار تأكيد التحميل",
+        "pendingLoading_few": "{{count}} أصناف بانتظار تأكيد التحميل",
+        "pendingLoading_many": "{{count}} صنفًا بانتظار تأكيد التحميل",
+        "pendingLoading_other": "{{count}} صنف بانتظار تأكيد التحميل",
+        "pendingLoading": "{{count}} صنف بانتظار تأكيد التحميل",
+        "ordersRemaining_zero": "لا طلبات متبقية",
+        "ordersRemaining_one": "طلب واحد متبقٍ",
+        "ordersRemaining_two": "طلبان متبقيان",
+        "ordersRemaining_few": "{{count}} طلبات متبقية",
+        "ordersRemaining_many": "{{count}} طلبًا متبقيًا",
+        "ordersRemaining_other": "{{count}} طلب متبقٍ",
+        "ordersRemaining": "{{count}} طلب متبقٍ",
+        "expectedReturn_zero": "لا وحدات متوقعة للعودة",
+        "expectedReturn_one": "وحدة واحدة متوقعة للعودة",
+        "expectedReturn_two": "وحدتان متوقعتان للعودة",
+        "expectedReturn_few": "{{count}} وحدات متوقعة للعودة",
+        "expectedReturn_many": "{{count}} وحدة متوقعة للعودة",
+        "expectedReturn_other": "{{count}} وحدة متوقعة للعودة",
+        "expectedReturn": "{{count}} وحدة متوقعة للعودة",
+        "failedOrders_zero": "لا طلبات فاشلة",
+        "failedOrders_one": "طلب فاشل واحد يحتاج مراجعة",
+        "failedOrders_two": "طلبان فاشلان يحتاجان مراجعة",
+        "failedOrders_few": "{{count}} طلبات فاشلة تحتاج مراجعة",
+        "failedOrders_many": "{{count}} طلبًا فاشلًا يحتاج مراجعة",
+        "failedOrders_other": "{{count}} طلب فاشل يحتاج مراجعة",
+        "failedOrders": "{{count}} طلب فاشل يحتاج مراجعة",
+        "settlementDifference": "فرق التسوية: {{count}}"
+      }
+    }
+  },
+  "loadingScreen": {
+    "title": "الشحنة الحالية",
+    "ordersLabel": "الطلبات",
+    "noProducts": {
+      "title": "لا توجد بضاعة جاهزة للتحميل حاليًا",
+      "subtitle": "لم يتم تجهيز أي منتجات لشحنتك بعد."
+    },
+    "col": {
+      "required": "المطلوب",
+      "prepared": "جاهز",
+      "loaded": "تم التحميل",
+      "remaining": "المتبقي"
+    },
+    "loadedInput": "الكمية المحمّلة",
+    "confirm": "تأكيد",
+    "back": "رجوع",
+    "error": "تعذّر تحميل بيان الشحنة.",
+    "retry": "إعادة المحاولة",
+    "blocked": {
+      "title": "لا يمكن بدء التحميل حاليًا",
+      "reason": "هذه الرحلة غير جاهزة للتحميل بعد."
+    },
+    "completedTitle": "تم التحميل بنجاح",
+    "summary": {
+      "items": "عدد الأصناف",
+      "totalLoaded": "إجمالي الكمية المحملة"
+    },
+    "next": "الطلبات",
+    "complete": "تم التحميل",
+    "completing": "جارٍ الإنهاء…",
+    "completedBanner": "تم إكمال تحميل هذه الشحنة.",
+    "readyToStartDelivery": "جاهز لبدء التوصيل",
+    "departing": "جارٍ بدء التوصيل…",
+    "departedTitle": "انطلقت الرحلة — أنت الآن على الطريق",
+    "awaitingDispatch": "اكتمل التحميل، لكن لم يتم الإفراج عن هذه الرحلة للإرسال بعد.",
+    "confirmNotAvailable": "تأكيد — غير متاح",
+    "status": {
+      "pending": "قيد الانتظار",
+      "partial": "جزئي",
+      "loaded": "مكتمل"
+    },
+    "toasts": {
+      "loadFailed": "تعذّر تسجيل التحميل",
+      "completed": "اكتمل التحميل",
+      "completeFailed": "تعذّر إكمال التحميل"
+    },
+    "loadedByWarehouse": "حمّله المخزن",
+    "received": "المستلم",
+    "receivedInput": "الكمية المستلمة",
+    "difference": "الفرق",
+    "notCounted": "لم تُعد",
+    "confirmReceived": "تأكيد الاستلام",
+    "requestAdjustment": "طلب تعديل",
+    "adjustmentPending": "تم طلب التعديل — بانتظار مراجعة المخزن",
+    "awaitingWarehouse": "بانتظار تأكيد المخزن لهذا المنتج.",
+    "reasonPlaceholder": "السبب (اختياري)",
+    "quantityChanged": "غيّر المخزن هذه الكمية. حدّث الصفحة لعرض الأحدث.",
+    "reconfirmNeeded": "تم تحديث الكمية — يرجى التأكيد مرة أخرى.",
+    "driverState": {
+      "pending_loading": "بانتظار المخزن",
+      "awaiting_driver_confirmation": "بانتظار تأكيدك",
+      "adjustment_requested": "تم طلب تعديل",
+      "awaiting_driver_reconfirmation": "تم التحديث — أكّد مرة أخرى",
+      "driver_confirmed": "تم التأكيد"
+    },
+    "pendingConfirmations_zero": "لا توجد أصناف في انتظار تأكيد السائق.",
+    "pendingConfirmations_one": "يوجد صنف واحد في انتظار تأكيد السائق.",
+    "pendingConfirmations_two": "يوجد صنفان في انتظار تأكيد السائق.",
+    "pendingConfirmations_few": "يوجد {{count}} أصناف في انتظار تأكيد السائق.",
+    "pendingConfirmations_many": "يوجد {{count}} صنفًا في انتظار تأكيد السائق.",
+    "pendingConfirmations_other": "يوجد {{count}} صنف في انتظار تأكيد السائق.",
+    "completeBlocked": "أكِّد جميع الأصناف المحمَّلة قبل إنهاء التحميل.",
+    "pendingConfirmations": "يوجد {{count}} صنف في انتظار تأكيد السائق.",
+    "headerTitle": "تحميل الرحلة",
+    "progress": "{{done}} من {{total}} صنف تم تأكيدها",
+    "confirmedAt": "تم التأكيد {{time}}",
+    "confirmedState": "تم الاستلام",
+    "reportDifferent": "استلمت كمية مختلفة؟",
+    "cancel": "إلغاء",
+    "reportInputLabel": "الكمية التي استلمتها",
+    "completeReady": "جاهز لإنهاء التحميل",
+    "completeCount": "{{count}} صنف مؤكد",
+    "handover": {
+      "products": "الأصناف",
+      "confirmed": "مؤكدة",
+      "awaiting": "بانتظار التأكيد"
+    }
+  },
+  "labels": {
+    "delivered": "تم التسليم",
+    "inProgress": "قيد التنفيذ",
+    "failedDelivery": "فشل التسليم"
+  },
+  "availability": {
+    "available": "متاح",
+    "unavailable": "غير متاح",
+    "vacation": "إجازة"
+  },
+  "status": {
+    "planning": "قيد التخطيط",
+    "loading": "جارٍ التحميل",
+    "loading_completed": "اكتمل التحميل",
+    "driver_accepted": "تم استلام العهدة",
+    "ready_for_dispatch": "جاهزة للإرسال",
+    "dispatched": "تم الإرسال",
+    "out_for_delivery": "خارج للتوصيل",
+    "in_progress": "قيد التنفيذ",
+    "completed": "مكتملة",
+    "settlement_pending": "بانتظار التسوية",
+    "closed": "مغلقة",
+    "dispatch_blocked": "الإرسال متوقف",
+    "cancelled": "ملغاة"
+  },
+  "actions": {
+    "completed": "تم التسليم",
+    "partial": "تسليم جزئي",
+    "refused": "رفض العميل",
+    "not_available": "غير متاح",
+    "delay": "طلب تأجيل",
+    "wrong_address": "عنوان خاطئ",
+    "unreachable": "تعذّر الوصول"
+  },
+  "actionForm": {
+    "newDate": "تاريخ التسليم الجديد",
+    "notes": "ملاحظات",
+    "notesPlaceholder": "ملاحظات اختيارية…",
+    "cancel": "إلغاء",
+    "confirm": "تأكيد",
+    "saving": "جارٍ الحفظ…"
+  },
+  "card": {
+    "orders": "{{count}} طلب",
+    "startLoading": "بدء التحميل"
+  },
+  "stop": {
+    "sequence": "المحطة #{{sequence}}",
+    "notFound": "المحطة غير موجودة.",
+    "noName": "بدون اسم",
+    "products": "المنتجات ({{count}})",
+    "recordedAction": "الإجراء المُسجَّل",
+    "recordDelivery": "تسجيل التسليم",
+    "reportOutcome": "الإبلاغ عن مشكلة",
+    "delivery": {
+      "required": "المطلوب",
+      "delivered": "المُسلَّم",
+      "remaining": "المتبقّي",
+      "deliveredInput": "المُسلَّم",
+      "deliverAll": "تسليم الكل",
+      "record": "تسجيل التسليم",
+      "recording": "جارٍ التسجيل…",
+      "recorded": "تم تسجيل التسليم",
+      "complete": "مكتمل",
+      "partial": "جزئي",
+      "maxHint": "يجب أن يكون إجمالي المُسلَّم بين الكمية المُسلَّمة بالفعل والكمية المطلوبة.",
+      "failed": "تعذّر تسجيل التسليم"
+    },
+    "deliveryAction": "إجراء التسليم",
+    "payment": {
+      "title": "الدفع",
+      "method": "طريقة الدفع",
+      "total": "الإجمالي",
+      "deposit": "العربون المدفوع",
+      "balance": "المبلغ المستحق",
+      "methods": {
+        "cash": "الدفع عند الاستلام",
+        "cod": "الدفع عند الاستلام",
+        "instapay": "انستا باي",
+        "bank_transfer": "تحويل بنكي",
+        "card": "بطاقة",
+        "already_paid": "مدفوع مسبقًا",
+        "wallet": "محفظة",
+        "mobile_wallet": "محفظة إلكترونية",
+        "credit_card": "بطاقة ائتمان"
+      }
+    },
+    "startDelivery": "بدء التوصيل",
+    "starting": "جارٍ البدء…",
+    "startFailed": "تعذّر بدء التوصيل",
+    "startBlockedTripNotOnRoad": "يُتاح بدء التوصيل بعد انطلاق الرحلة على الطريق. ابدأ الرحلة من شاشة رحلتك أولاً.",
+    "failureReason": {
+      "label": "السبب *",
+      "placeholder": "اختر سببًا"
+    },
+    "paymentProof": {
+      "button": "رفع إثبات الدفع",
+      "title": "رفع إثبات الدفع",
+      "hint": "أرفق إيصال التحويل البنكي (صورة أو PDF). يمكنك الرفع فقط — تتم مراجعته من قبل المكتب.",
+      "fileLabel": "ملف الإثبات",
+      "cancel": "إلغاء",
+      "submit": "رفع",
+      "uploading": "جارٍ الرفع…",
+      "uploaded": "تم رفع إثبات الدفع",
+      "uploadFailed": "تعذّر رفع إثبات الدفع"
+    },
+    "deliveryProof": {
+      "button": "إضافة إثبات التسليم",
+      "title": "إثبات التسليم",
+      "hint": "أرفق توقيعًا و/أو صورًا من موقع التسليم. يحفظ النظام الملفات بشكل آمن.",
+      "signatureLabel": "التوقيع (JPG أو PNG أو PDF)",
+      "photosLabel": "الصور (JPG أو PNG، حتى 10)",
+      "photosSelected_zero": "لم يتم اختيار صور",
+      "photosSelected_one": "صورة واحدة مختارة",
+      "photosSelected_two": "صورتان مختارتان",
+      "photosSelected_few": "{{count}} صور مختارة",
+      "photosSelected_many": "{{count}} صورة مختارة",
+      "photosSelected_other": "{{count}} صورة مختارة",
+      "photosSelected": "{{count}} صورة مختارة",
+      "notesLabel": "ملاحظات (اختياري)",
+      "cancel": "إلغاء",
+      "submit": "رفع الإثبات",
+      "uploading": "جارٍ الرفع…",
+      "uploaded": "تم رفع إثبات التسليم",
+      "uploadFailed": "تعذر رفع إثبات التسليم"
+    },
+    "contactAfterStart": "يتاح التواصل بعد بدء التسليم",
+    "whatsapp": "واتساب",
+    "changeMethod": {
+      "button": "تغيير",
+      "title": "تغيير طريقة الدفع",
+      "hint": "اختر كيف سيدفع العميل. الطريقة التي تحتاج إثبات تحويل ستطلب منك رفعه.",
+      "proofRequired": "تتطلب هذه الطريقة إثبات دفع.",
+      "cancel": "إلغاء",
+      "submit": "تحديث الطريقة",
+      "updating": "جارٍ التحديث…",
+      "updated": "تم تحديث طريقة الدفع",
+      "failed": "تعذّر تغيير طريقة الدفع"
+    }
+  },
+  "map": {
+    "title": "خريطة المسار",
+    "yourLocation": "موقعك: {{lat}}، {{lng}}",
+    "placeholder": "تتطلب الخريطة التفاعلية دمج نظام تحديد المواقع",
+    "stops": "محطات التسليم",
+    "googleMaps": "خرائط Google",
+    "waze": "Waze",
+    "empty": "لا توجد محطات."
+  },
+  "ordersMap": {
+    "title": "خريطة الطلبات",
+    "pin": "المحطة {{sequence}} · {{order}}",
+    "current": "المحطة الحالية",
+    "unzoned": "أخرى",
+    "recenter": "عرض كل المحطات",
+    "locate": "موقعي",
+    "view": {
+      "map": "خريطة",
+      "list": "قائمة"
+    },
+    "quality": {
+      "summary": "{{mapped}} على الخريطة · {{missing}} بدون موقع"
+    },
+    "missingSection": {
+      "title": "الموقع غير متاح ({{count}})",
+      "hint": "هذه الطلبات ليس لها إحداثيات على الخريطة بعد. افتح الطلب لعرض التفاصيل."
+    },
+    "preview": {
+      "title": "معاينة المحطة",
+      "openOrder": "فتح الطلب",
+      "amountToCollect": "المبلغ المطلوب تحصيله",
+      "googleMaps": "خرائط Google",
+      "waze": "Waze"
+    },
+    "states": {
+      "error": {
+        "title": "تعذّر تحميل الخريطة",
+        "subtitle": "حدثت مشكلة أثناء قراءة محطات التسليم الخاصة بك.",
+        "retry": "إعادة المحاولة"
+      },
+      "noTrip": {
+        "title": "لا توجد رحلة حالية",
+        "subtitle": "ستظهر محطات التسليم هنا بمجرد إسناد شحنة إليك."
+      },
+      "noStops": {
+        "title": "لا توجد محطات مُسندة",
+        "subtitle": "لا تحتوي هذه الرحلة على أي محطات تسليم بعد."
+      },
+      "preDeparture": {
+        "title": "تظهر المواقع عند الخروج للتسليم",
+        "subtitle": "تظهر مواقع التسليم على الخريطة عندما تكون رحلتك على الطريق. محطاتك مدرجة بالأسفل."
+      },
+      "noCoordinates": {
+        "title": "لا توجد مواقع على الخريطة",
+        "subtitle": "لا تحتوي أي من محطات هذه الرحلة على إحداثيات بعد. وهي مدرجة بالأسفل ويمكن فتحها."
+      }
+    }
+  },
+  "collections": {
+    "title": "التحصيلات",
+    "unavailable": {
+      "title": "تحصيل الأموال غير متاح",
+      "subtitle": "تحصيل النقد والتحويلات غير متاح من تطبيق السائق."
+    }
+  },
+  "dashboard": {
+    "notFound": "الرحلة غير موجودة.",
+    "error": "تعذّر تحميل الرحلة.",
+    "retry": "إعادة المحاولة",
+    "viewStops": "عرض المحطات",
+    "startTrip": "بدء الرحلة",
+    "starting": "جارٍ البدء…",
+    "startFailed": "تعذّر بدء الرحلة.",
+    "finishTrip": "إنهاء الرحلة",
+    "finishing": "جارٍ الإنهاء…",
+    "startNow": "ابدأ الآن",
+    "cancel": "إلغاء",
+    "settlement": "التسوية",
+    "settlementPendingHint": "انتهى التوصيل — لا تزال هناك تسوية مطلوبة لإغلاق اليوم.",
+    "returns": "المرتجعات",
+    "custody": "العهدة",
+    "goToLoading": "الذهاب إلى التحميل",
+    "goToDeparture": "المتابعة إلى التوصيل",
+    "readiness": {
+      "title": "الجاهزية",
+      "loading": "التحميل",
+      "confirmed": "{{confirmed}}/{{loaded}} مؤكَّد",
+      "notStarted": "لم يبدأ",
+      "awaiting": "{{count}} بانتظار تأكيدك",
+      "orders": "الطلبات",
+      "vehicle": "المركبة"
+    },
+    "ready": {
+      "hint": "تم تحميل جميع الأصناف وتأكيدها. تابع إلى شاشة التحميل لبدء التوصيل."
+    },
+    "blocker": {
+      "title": "الرحلة غير جاهزة",
+      "awaiting": "{{count}} صنف مُحمَّل ما زال بانتظار تأكيدك.",
+      "awaitingDispatch": "اكتمل التحميل، لكن لم يتم الإفراج عن هذه الرحلة للإرسال بعد.",
+      "finishLoading": "أكمِل التحميل وأكِّد كل صنف لبدء الرحلة.",
+      "startLoading": "ابدأ تحميل هذه الشحنة للانطلاق."
+    },
+    "closed": {
+      "title": "الرحلة مغلقة",
+      "hint": "هذه الرحلة مكتملة ومغلقة."
+    },
+    "blocked": {
+      "title": "الرحلة متوقفة",
+      "dispatchBlocked": "تحتاج هذه الرحلة إلى مراجعة الإرسال قبل أن تتمكن من المتابعة.",
+      "cancelled": "تم إلغاء هذه الرحلة."
+    },
+    "startDialog": {
+      "title": "بدء الرحلة؟",
+      "description": "سيؤدي هذا إلى تحديث حالة الرحلة إلى قيد التنفيذ وتسجيل موقعك الحالي."
+    },
+    "finishDialog": {
+      "title": "إنهاء الرحلة؟",
+      "description": "يجب معالجة جميع المحطات قبل الإنهاء. يسجّل هذا الإجراء موقع نهاية الرحلة."
+    }
+  },
+  "failureReasons": {
+    "customer_unavailable": "العميل غير متواجد",
+    "customer_refused": "العميل رفض الاستلام",
+    "customer_rescheduled": "العميل طلب إعادة الجدولة",
+    "no_answer": "لا يوجد رد",
+    "address_not_found": "العنوان غير موجود",
+    "address_inaccessible": "يتعذّر الوصول إلى العنوان",
+    "wrong_area": "منطقة خاطئة",
+    "product_damaged": "المنتج تالف",
+    "wrong_item": "صنف خاطئ",
+    "item_missing": "صنف مفقود",
+    "cannot_pay": "العميل غير قادر على الدفع",
+    "amount_disputed": "خلاف على المبلغ",
+    "vehicle_breakdown": "عطل في المركبة",
+    "time_exhausted": "نفاد الوقت",
+    "weather": "أحوال جوية"
+  },
+  "nav": {
+    "home": "الرئيسية",
+    "loading": "التحميل",
+    "orders": "الطلبات",
+    "stops": "المحطات",
+    "vehicleInventory": "المركبة",
+    "more": "المزيد",
+    "tripSummary": "ملخص الرحلة",
+    "notifications": "الإشعارات",
+    "profile": "الملف الشخصي",
+    "section": {
+      "work": "اليوم",
+      "more": "المزيد"
+    }
+  },
+  "vehicleInventory": {
+    "title": "مخزون المركبة",
+    "subtitle": "ما تحمله مركبتك الآن",
+    "readOnly": "للعرض فقط",
+    "summary": {
+      "loaded": "المُحمّل",
+      "delivered": "المُسلّم",
+      "returned": "المرتجع",
+      "onHand": "المتوفر"
+    },
+    "col": {
+      "product": "المنتج",
+      "onHand": "المتوفر"
+    },
+    "perProduct": {
+      "loaded": "المُحمّل",
+      "delivered": "المُسلّم",
+      "expectedReturn": "المتوقع",
+      "returned": "المرتجع",
+      "onHand": "المتوفر"
+    },
+    "empty": {
+      "title": "لا يوجد مخزون بعد",
+      "subtitle": "سيظهر مخزون مركبتك هنا بعد التحميل."
+    },
+    "error": "تعذّر تحميل مخزون المركبة.",
+    "retry": "إعادة المحاولة",
+    "recon": {
+      "expectedReturn": "الإرجاع المتوقع",
+      "receivedBack": "المُستلَم عائدًا",
+      "stillOnVehicle": "ما زال بالمركبة",
+      "warehouseNote": "يقوم المخزن بعدّ وتأكيد ما يعود — المقبول والتالف وأي عجز تُسجَّل هناك وليس هنا.",
+      "shortage_zero": "لا يوجد عجز",
+      "shortage_one": "عجز: وحدة واحدة لم تُرجَع بعد",
+      "shortage_two": "عجز: وحدتان لم تُرجَعا بعد",
+      "shortage_few": "عجز: {{count}} وحدات لم تُرجَع بعد",
+      "shortage_many": "عجز: {{count}} وحدة لم تُرجَع بعد",
+      "shortage_other": "عجز: {{count}} وحدة لم تُرجَع بعد",
+      "shortage": "عجز: {{count}} وحدة لم تُرجَع بعد",
+      "status": {
+        "fullyDelivered": "تم التسليم بالكامل",
+        "awaitingReturn": "بانتظار الإرجاع",
+        "reconciled": "تمت التسوية",
+        "partialReturn": "إرجاع جزئي"
+      }
+    }
+  },
+  "orders": {
+    "title": "الطلبات",
+    "empty": {
+      "title": "لا توجد طلبات بعد",
+      "subtitle": "تظهر الطلبات هنا بعد اكتمال التحميل."
+    },
+    "noShipment": {
+      "title": "لا توجد شحنة نشطة",
+      "subtitle": "لا توجد شحنة مُسنَدة إليك حاليًا."
+    },
+    "error": "تعذّر تحميل طلباتك.",
+    "retry": "إعادة المحاولة",
+    "search": "ابحث برقم الطلب أو اسم العميل…",
+    "filter": {
+      "all": "الكل",
+      "pending": "قيد الانتظار",
+      "delivered": "تم التسليم",
+      "failed": "فشل",
+      "partial": "جزئي"
+    },
+    "noMatch": "لا توجد طلبات مطابقة.",
+    "count": "{{count}} طلب",
+    "unzoned": "منطقة أخرى",
+    "allAreas": "كل المناطق"
+  },
+  "returns": {
+    "title": "المرتجعات",
+    "add": "إضافة",
+    "intro": "أعلن عن الأصناف العائدة إلى المخزن. يقوم المخزن بعدّ وتأكيد ما يُستلَم — أنت لا تسجّل الاستلام.",
+    "empty": "لم يتم الإعلان عن مرتجعات بعد.",
+    "qty": "الكمية {{qty}}",
+    "type": {
+      "full": "إرجاع كامل",
+      "partial": "إرجاع جزئي"
+    },
+    "confirmed": "تم الاستلام",
+    "awaitingReceipt": "بانتظار استلام المخزن",
+    "warehouseReceived": "استلم المخزن: {{qty}}",
+    "discrepancy": "فرق {{qty}}",
+    "recordTitle": "الإعلان عن مرتجع"
+  },
+  "returnForm": {
+    "productId": "معرّف المنتج *",
+    "productIdPlaceholder": "معرّف المنتج…",
+    "productName": "اسم المنتج *",
+    "productNamePlaceholder": "اسم المنتج…",
+    "returnType": "نوع الإرجاع *",
+    "full": "إرجاع كامل",
+    "partial": "إرجاع جزئي",
+    "quantity": "الكمية *",
+    "quantityPlaceholder": "0",
+    "reason": "السبب",
+    "reasonPlaceholder": "سبب الإرجاع…",
+    "cancel": "إلغاء",
+    "submit": "تسجيل المرتجع",
+    "saving": "جارٍ الحفظ…"
+  },
+  "wallet": {
+    "title": "المحفظة",
+    "trips_zero": "لا رحلات",
+    "trips_one": "رحلة واحدة",
+    "trips_two": "رحلتان",
+    "trips_few": "{{count}} رحلات",
+    "trips_many": "{{count}} رحلة",
+    "trips_other": "{{count}} رحلة",
+    "trips": "{{count}} رحلة",
+    "collections": "التحصيلات",
+    "total": "إجمالي المحصّل",
+    "cash": "نقدي",
+    "transfer": "تحويل",
+    "card": "بطاقة",
+    "alreadyPaid": "مدفوع مسبقًا",
+    "cashTitle": "تسوية النقد",
+    "expected": "النقد المتوقع",
+    "submitted": "النقد المُسلّم",
+    "notSubmitted": "لم يُسلّم بعد",
+    "difference": "الفرق",
+    "closing": "التسوية والإغلاق",
+    "closingFlags": {
+      "custodyReconciled": "تمت تسوية العهدة",
+      "deliveries": "اكتملت كل التسليمات",
+      "tripsClosed": "أُغلقت كل الرحلات",
+      "settlementComplete": "اكتملت التسوية"
+    },
+    "settlementStatus": {
+      "needs_review": "بحاجة لمراجعة",
+      "under_review": "قيد المراجعة",
+      "disputed": "متنازع عليه",
+      "settled": "تمت التسوية"
+    },
+    "advancesUnavailable": "السُلف: لا سجل في النظام",
+    "expensesUnavailable": "المصروفات: لا سجل للسائق في النظام",
+    "statementLink": "كشف الحساب الشهري",
+    "error": "تعذّر تحميل المحفظة.",
+    "retry": "إعادة المحاولة"
+  },
+  "reports": {
+    "title": "التقارير",
+    "error": "تعذّر تحميل التقرير.",
+    "retry": "إعادة المحاولة",
+    "customFrom": "من",
+    "customTo": "إلى",
+    "customToLabel": "إلى",
+    "period": {
+      "today": "اليوم",
+      "this_week": "هذا الأسبوع",
+      "this_month": "هذا الشهر",
+      "previous_month": "الشهر الماضي",
+      "this_year": "هذه السنة",
+      "ytd": "منذ بداية السنة",
+      "previous_year": "السنة الماضية",
+      "custom": "مخصص"
+    },
+    "tabs": {
+      "orders": "الطلبات",
+      "goods": "البضائع",
+      "shortage": "العجز",
+      "advances": "السُلف"
+    },
+    "orders": {
+      "received": "المستلمة",
+      "delivered": "المُسلّمة",
+      "partial": "جزئي",
+      "failed": "فشل",
+      "deferred": "مؤجل",
+      "deliveryRate": "نسبة التسليم",
+      "empty": "لا طلبات في هذه الفترة."
+    },
+    "goods": {
+      "empty": "لا حركة بضائع في هذه الفترة.",
+      "received": "المستلم",
+      "delivered": "المُسلّم",
+      "returned": "المرتجع",
+      "damaged": "التالف",
+      "shortage": "العجز",
+      "remaining": "المتبقي",
+      "note": "المرتجع والتالف والعجز يسجّلها المخزن."
+    },
+    "shortage": {
+      "empty": "لا عجز في هذه الفترة.",
+      "underInvestigation": "قيد التحقيق",
+      "reviewed": "تمت المراجعة",
+      "shortageQty": "العجز",
+      "noAutoDebt": "العجز لا يُحمّل عليك تلقائيًا.",
+      "valueUnavailable": "القيمة المالية والمسؤولية تحددها العمليات، ولا تُعرض هنا."
+    },
+    "advances": {
+      "unavailable": "السُلف غير متاحة",
+      "unavailableHint": "لا يوجد سجل سُلف للسائق في النظام بعد."
+    }
+  },
+  "statement": {
+    "title": "كشف الحساب الشهري",
+    "month": "الشهر",
+    "orders": "الطلبات",
+    "shortages_zero": "لا عجز",
+    "shortages_one": "عجز واحد",
+    "shortages_two": "عجزان",
+    "shortages_few": "{{count}} حالات عجز",
+    "shortages_many": "{{count}} حالة عجز",
+    "shortages_other": "{{count}} حالة عجز",
+    "shortages": "{{count}} حالة عجز",
+    "error": "تعذّر تحميل كشف الحساب.",
+    "retry": "إعادة المحاولة"
+  },
+  "shell": {
+    "title": "عمليات السائق",
+    "menuTitle": "قائمة السائق",
+    "openMenu": "فتح القائمة",
+    "closeMenu": "إغلاق القائمة",
+    "primaryNav": "تنقل السائق",
+    "fromCurrentTrip": "من الرحلة الحالية",
+    "nav": {
+      "home": "الرئيسية",
+      "loading": "التحميل",
+      "orders": "الطلبات",
+      "vehicle": "مخزن السيارة",
+      "reports": "التقارير",
+      "returns": "المرتجعات",
+      "wallet": "المحفظة",
+      "tripExpenses": "مصاريف الرحلة",
+      "map": "الخريطة"
+    }
+  },
+  "tripExpenses": {
+    "title": "مصاريف الرحلة",
+    "error": "تعذّر تحميل مصاريف الرحلة.",
+    "retry": "إعادة المحاولة",
+    "noCustody": {
+      "title": "لا توجد رحلة نشطة",
+      "subtitle": "يمكنك تسجيل مصاريف الرحلة بمجرد وجود رحلة نشطة في عهدتك."
+    },
+    "totals": {
+      "expenses": "المصاريف (المعتمدة)",
+      "advances": "السلف (المعتمدة)",
+      "pending": "{{count}} بانتظار الاعتماد",
+      "approvedOnly": "تُحتسب الحركات المعتمدة فقط."
+    },
+    "add": "إضافة مصروف",
+    "empty": "لا توجد مصاريف مسجّلة بعد.",
+    "hasReceipt": "يوجد إيصال مرفق",
+    "created": "تم تسجيل المصروف",
+    "createFailed": "تعذّر تسجيل المصروف.",
+    "category": {
+      "fuel": "بنزين",
+      "road_toll": "كارتة / رسوم طريق",
+      "advance": "سلفة",
+      "other": "أخرى"
+    },
+    "direction": {
+      "cash_out": "نقد صادر",
+      "cash_in": "نقد وارد"
+    },
+    "status": {
+      "pending": "قيد الانتظار",
+      "approved": "معتمد",
+      "rejected": "مرفوض",
+      "settled": "تمت التسوية"
+    },
+    "form": {
+      "category": "الفئة",
+      "amount": "المبلغ",
+      "note": "ملاحظة",
+      "notePlaceholder": "ملاحظة اختيارية…",
+      "receipt": "الإيصال",
+      "captureReceipt": "التقط أو أرفق إيصالاً",
+      "cancel": "إلغاء",
+      "submit": "حفظ المصروف",
+      "saving": "جارٍ الحفظ…"
+    }
+  }
+}

@@ -45,6 +45,7 @@ import type enCustomerEngagement from '@/i18n/locales/en/customer-engagement.jso
 import type enCrm from '@/i18n/locales/en/crm.json';
 import type enCustomers from '@/i18n/locales/en/customers.json';
 import type enDashboard from '@/i18n/locales/en/dashboard.json';
+import type enDriverMobile from '@/i18n/locales/en/driver-mobile.json';
 import type enEngineering from '@/i18n/locales/en/engineering.json';
 import type enExecutive from '@/i18n/locales/en/executive.json';
 import type enFinance from '@/i18n/locales/en/finance.json';
@@ -105,6 +106,7 @@ declare module 'i18next' {
       crm: typeof enCrm;
       customers: typeof enCustomers;
       dashboard: typeof enDashboard;
+      'driver-mobile': typeof enDriverMobile;
       engineering: typeof enEngineering;
       executive: typeof enExecutive;
       finance: typeof enFinance;

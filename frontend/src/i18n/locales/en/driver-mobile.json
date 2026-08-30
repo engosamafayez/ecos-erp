@@ -1,0 +1,772 @@
+{
+  "app": {
+    "title": "Driver",
+    "role": "Driver"
+  },
+  "loading": "Loading…",
+  "home": {
+    "refresh": "Refresh",
+    "kpis": {
+      "activeTrips": "Active Trips",
+      "assignedOrders": "Assigned Orders",
+      "ordersToday": "Orders today"
+    },
+    "empty": {
+      "title": "No shipment assigned yet",
+      "subtitle": "Your assigned shipment will appear here."
+    },
+    "assignedSummary": "{{count}} orders assigned to you",
+    "startLoading": "Start Loading",
+    "greeting": "Hello, {{name}}",
+    "tripToday": "Your trip today",
+    "ordersCount": "{{count}} orders",
+    "blocked": "Loading can't be started right now",
+    "identity": {
+      "driver": "Driver",
+      "vehicle": "Vehicle",
+      "trip": "Trip",
+      "noVehicle": "No vehicle",
+      "noTrip": "No trip"
+    },
+    "currentWork": {
+      "title": "Current work",
+      "none": "No active trip",
+      "noneHint": "Your shipment will appear here once it's assigned to you.",
+      "loading": "Loading",
+      "readyForDelivery": "Ready for delivery",
+      "inDelivery": "Out for delivery",
+      "completed": "Trip completed",
+      "blocked": "Loading blocked",
+      "productsCount": "{{count}} products",
+      "awaitingConfirmation": "{{count}} awaiting your confirmation",
+      "stopsRemaining": "{{count}} stops remaining",
+      "settlementPending": "Settlement due"
+    },
+    "nextAction": {
+      "title": "Next action",
+      "startLoading": "Start loading",
+      "continueLoading": "Continue loading",
+      "confirmReceived": "Confirm received quantities",
+      "loadingComplete": "Complete loading",
+      "viewOrders": "View orders",
+      "nextStop": "Go to next stop",
+      "tripSummary": "Trip summary",
+      "none": "Nothing to do right now",
+      "startSettlement": "Start settlement",
+      "startTrip": "Start trip",
+      "readyToStartDelivery": "Ready to start delivery"
+    },
+    "stats": {
+      "orders": "Orders",
+      "pending": "Pending",
+      "delivered": "Delivered",
+      "failed": "Failed",
+      "returned": "Returned",
+      "stops": "Stops",
+      "remaining": "Remaining",
+      "vehicleStock": "Vehicle stock",
+      "onHand": "On hand",
+      "loaded": "Loaded"
+    },
+    "daySummary": {
+      "title": "Day summary",
+      "vehicleStock": "Vehicle stock",
+      "needsReturn": "{{count}} to return",
+      "clear": "Clear",
+      "settlement": "Settlement",
+      "settlementPending": "Pending",
+      "settlementDone": "Complete",
+      "viewWallet": "View wallet & closing"
+    },
+    "journey": {
+      "title": "Today's journey",
+      "deliveredOf": "{{delivered}} / {{total}}",
+      "stages": {
+        "loading": "Loading",
+        "custody": "Custody accepted",
+        "tripStarted": "Trip started",
+        "deliveries": "Deliveries",
+        "returnLeg": "Return",
+        "closing": "Closing"
+      }
+    },
+    "orders": {
+      "title": "Orders",
+      "received_one": "{{count}} received",
+      "received_other": "{{count}} received",
+      "received": "{{count}} received",
+      "partial": "Partial",
+      "deliveryRate": "Delivery rate: {{pct}}%"
+    },
+    "next": {
+      "title": "Next",
+      "cod": "COD {{amount}}",
+      "stop": "Stop {{sequence}}"
+    },
+    "custody": {
+      "delivered": "Delivered"
+    },
+    "collections": {
+      "title": "Collections",
+      "expected": "Expected",
+      "collected": "Collected",
+      "difference": "{{amount}} difference"
+    },
+    "attention": {
+      "title": "Needs attention",
+      "items": {
+        "pendingLoading_one": "{{count}} item awaiting loading confirmation",
+        "pendingLoading_other": "{{count}} items awaiting loading confirmation",
+        "pendingLoading": "{{count}} items awaiting loading confirmation",
+        "ordersRemaining_one": "{{count}} order remaining",
+        "ordersRemaining_other": "{{count}} orders remaining",
+        "ordersRemaining": "{{count}} orders remaining",
+        "expectedReturn_one": "{{count}} unit expected to return",
+        "expectedReturn_other": "{{count}} units expected to return",
+        "expectedReturn": "{{count}} units expected to return",
+        "failedOrders_one": "{{count}} failed order needs review",
+        "failedOrders_other": "{{count}} failed orders need review",
+        "failedOrders": "{{count}} failed orders need review",
+        "settlementDifference": "Settlement difference: {{count}}"
+      }
+    }
+  },
+  "loadingScreen": {
+    "title": "Current Shipment",
+    "ordersLabel": "Orders",
+    "noProducts": {
+      "title": "No products ready to load",
+      "subtitle": "There is nothing prepared for your shipment yet."
+    },
+    "col": {
+      "required": "Required",
+      "prepared": "Prepared",
+      "loaded": "Loaded",
+      "remaining": "Remaining"
+    },
+    "loadedInput": "Loaded quantity",
+    "confirm": "Confirm",
+    "back": "Back",
+    "error": "Couldn't load the shipment manifest.",
+    "retry": "Retry",
+    "blocked": {
+      "title": "Loading can't be started right now",
+      "reason": "This trip is not ready for loading yet."
+    },
+    "completedTitle": "Loading completed successfully",
+    "summary": {
+      "items": "Items",
+      "totalLoaded": "Total quantity loaded"
+    },
+    "next": "Orders",
+    "complete": "Loading Complete",
+    "completing": "Completing…",
+    "completedBanner": "Loading completed for this shipment.",
+    "readyToStartDelivery": "Ready to Start Delivery",
+    "departing": "Starting delivery…",
+    "departedTitle": "Trip started — you're on the road",
+    "awaitingDispatch": "Loading is complete, but this trip is awaiting dispatch release.",
+    "confirmNotAvailable": "Confirm — Not Available",
+    "status": {
+      "pending": "Pending",
+      "partial": "Partial",
+      "loaded": "Loaded"
+    },
+    "toasts": {
+      "loadFailed": "Failed to record load",
+      "completed": "Loading complete",
+      "completeFailed": "Cannot complete loading"
+    },
+    "loadedByWarehouse": "Loaded by warehouse",
+    "received": "Received",
+    "receivedInput": "Received quantity",
+    "difference": "Difference",
+    "notCounted": "Not counted",
+    "confirmReceived": "Confirm received",
+    "requestAdjustment": "Request adjustment",
+    "adjustmentPending": "Adjustment requested — waiting for warehouse review",
+    "awaitingWarehouse": "Waiting for the warehouse to confirm this product.",
+    "reasonPlaceholder": "Reason (optional)",
+    "quantityChanged": "The warehouse changed this quantity. Refresh to see the latest.",
+    "reconfirmNeeded": "The quantity was updated — please confirm again.",
+    "driverState": {
+      "pending_loading": "Awaiting warehouse",
+      "awaiting_driver_confirmation": "Awaiting your confirmation",
+      "adjustment_requested": "Adjustment requested",
+      "awaiting_driver_reconfirmation": "Updated — confirm again",
+      "driver_confirmed": "Confirmed"
+    },
+    "pendingConfirmations_one": "1 item is awaiting driver confirmation.",
+    "pendingConfirmations_other": "{{count}} items are awaiting driver confirmation.",
+    "completeBlocked": "Confirm every loaded item before completing loading.",
+    "pendingConfirmations": "{{count}} items are awaiting driver confirmation.",
+    "headerTitle": "Loading the trip",
+    "progress": "{{done}} of {{total}} items confirmed",
+    "confirmedAt": "Confirmed {{time}}",
+    "confirmedState": "Received",
+    "reportDifferent": "Received a different quantity?",
+    "cancel": "Cancel",
+    "reportInputLabel": "Quantity you received",
+    "completeReady": "Ready to complete loading",
+    "completeCount": "{{count}} products confirmed",
+    "handover": {
+      "products": "Products",
+      "confirmed": "Confirmed",
+      "awaiting": "Awaiting"
+    }
+  },
+  "labels": {
+    "delivered": "Delivered",
+    "inProgress": "In Progress",
+    "failedDelivery": "Failed delivery"
+  },
+  "availability": {
+    "available": "Available",
+    "unavailable": "Unavailable",
+    "vacation": "Vacation"
+  },
+  "status": {
+    "planning": "Planning",
+    "loading": "Loading",
+    "loading_completed": "Loading Complete",
+    "driver_accepted": "Custody Accepted",
+    "ready_for_dispatch": "Ready for Dispatch",
+    "dispatched": "Dispatched",
+    "out_for_delivery": "Out for Delivery",
+    "in_progress": "In Progress",
+    "completed": "Completed",
+    "settlement_pending": "Settlement Pending",
+    "closed": "Closed",
+    "dispatch_blocked": "Dispatch Blocked",
+    "cancelled": "Cancelled"
+  },
+  "actions": {
+    "completed": "Delivered",
+    "partial": "Partial",
+    "refused": "Refused",
+    "not_available": "Not Available",
+    "delay": "Delay Requested",
+    "wrong_address": "Wrong Address",
+    "unreachable": "Unreachable"
+  },
+  "actionForm": {
+    "newDate": "New delivery date",
+    "notes": "Notes",
+    "notesPlaceholder": "Optional notes…",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "saving": "Saving…"
+  },
+  "card": {
+    "orders": "{{count}} orders",
+    "startLoading": "Start Loading"
+  },
+  "stop": {
+    "sequence": "Stop #{{sequence}}",
+    "notFound": "Stop not found.",
+    "noName": "No Name",
+    "products": "Products ({{count}})",
+    "recordedAction": "Recorded Action",
+    "recordDelivery": "Record Delivery",
+    "reportOutcome": "Report an issue",
+    "delivery": {
+      "required": "Required",
+      "delivered": "Delivered",
+      "remaining": "Remaining",
+      "deliveredInput": "Delivered",
+      "deliverAll": "Deliver all",
+      "record": "Record delivery",
+      "recording": "Recording…",
+      "recorded": "Delivery recorded",
+      "complete": "Complete",
+      "partial": "Partial",
+      "maxHint": "A delivered total must be between the amount already delivered and the required quantity.",
+      "failed": "Couldn't record delivery"
+    },
+    "deliveryAction": "Delivery Action",
+    "payment": {
+      "title": "Payment",
+      "method": "Payment Method",
+      "total": "Total",
+      "deposit": "Deposit Paid",
+      "balance": "Balance Due",
+      "methods": {
+        "cash": "Cash on Delivery",
+        "cod": "Cash on Delivery",
+        "instapay": "InstaPay",
+        "bank_transfer": "Bank Transfer",
+        "card": "Card",
+        "already_paid": "Already Paid",
+        "wallet": "Wallet",
+        "mobile_wallet": "Mobile Wallet",
+        "credit_card": "Credit Card"
+      }
+    },
+    "startDelivery": "Start Delivery",
+    "starting": "Starting…",
+    "startFailed": "Couldn't start delivery",
+    "startBlockedTripNotOnRoad": "Start Delivery unlocks once the trip is on the road. Start the trip from your trip screen first.",
+    "failureReason": {
+      "label": "Reason *",
+      "placeholder": "Select a reason"
+    },
+    "paymentProof": {
+      "button": "Upload payment proof",
+      "title": "Upload Payment Proof",
+      "hint": "Attach a bank-transfer receipt (image or PDF). You can only upload it — verification is done by the office.",
+      "fileLabel": "Proof file",
+      "cancel": "Cancel",
+      "submit": "Upload",
+      "uploading": "Uploading…",
+      "uploaded": "Payment proof uploaded",
+      "uploadFailed": "Couldn't upload payment proof"
+    },
+    "deliveryProof": {
+      "button": "Add proof of delivery",
+      "title": "Proof of Delivery",
+      "hint": "Attach a signature and/or photos taken at the stop. Files are stored securely by the system — you can upload, but never browse storage.",
+      "signatureLabel": "Signature (JPG, PNG or PDF)",
+      "photosLabel": "Photos (JPG or PNG, up to 10)",
+      "photosSelected_one": "{{count}} photo selected",
+      "photosSelected_other": "{{count}} photos selected",
+      "photosSelected": "{{count}} photos selected",
+      "notesLabel": "Notes (optional)",
+      "cancel": "Cancel",
+      "submit": "Upload proof",
+      "uploading": "Uploading…",
+      "uploaded": "Proof of delivery uploaded",
+      "uploadFailed": "Couldn't upload proof of delivery"
+    },
+    "contactAfterStart": "Contact available after starting delivery",
+    "whatsapp": "WhatsApp",
+    "changeMethod": {
+      "button": "Change",
+      "title": "Change Payment Method",
+      "hint": "Choose how the customer will pay. A method that needs a transfer proof will ask you to upload one.",
+      "proofRequired": "This method requires a payment proof.",
+      "cancel": "Cancel",
+      "submit": "Update method",
+      "updating": "Updating…",
+      "updated": "Payment method updated",
+      "failed": "Couldn't change the payment method"
+    }
+  },
+  "map": {
+    "title": "Route Map",
+    "yourLocation": "Your location: {{lat}}, {{lng}}",
+    "placeholder": "Interactive map requires GPS integration",
+    "stops": "Delivery Stops",
+    "googleMaps": "Google Maps",
+    "waze": "Waze",
+    "empty": "No stops found."
+  },
+  "ordersMap": {
+    "title": "Orders Map",
+    "pin": "Stop {{sequence}} · {{order}}",
+    "current": "Current stop",
+    "unzoned": "Other",
+    "recenter": "Fit all stops",
+    "locate": "My location",
+    "view": {
+      "map": "Map",
+      "list": "List"
+    },
+    "quality": {
+      "summary": "{{mapped}} mapped · {{missing}} missing"
+    },
+    "missingSection": {
+      "title": "Location unavailable ({{count}})",
+      "hint": "These orders have no map coordinates yet. Open the order to see its details."
+    },
+    "preview": {
+      "title": "Stop preview",
+      "openOrder": "Open Order",
+      "amountToCollect": "To collect",
+      "googleMaps": "Google Maps",
+      "waze": "Waze"
+    },
+    "states": {
+      "error": {
+        "title": "Couldn't load the map",
+        "subtitle": "There was a problem reading your delivery stops.",
+        "retry": "Retry"
+      },
+      "noTrip": {
+        "title": "No current trip",
+        "subtitle": "Your delivery stops will appear here once a shipment is assigned to you."
+      },
+      "noStops": {
+        "title": "No stops assigned",
+        "subtitle": "This trip doesn't have any delivery stops yet."
+      },
+      "preDeparture": {
+        "title": "Locations available once out for delivery",
+        "subtitle": "Delivery locations show on the map when your trip is on the road. Your stops are listed below."
+      },
+      "noCoordinates": {
+        "title": "No mapped locations",
+        "subtitle": "None of this trip's stops have map coordinates yet. They're listed below and can still be opened."
+      }
+    }
+  },
+  "collections": {
+    "title": "Collections",
+    "unavailable": {
+      "title": "Money collection unavailable",
+      "subtitle": "Cash and transfer collection is not available from the driver app."
+    }
+  },
+  "dashboard": {
+    "notFound": "Trip not found.",
+    "error": "Couldn't load the trip.",
+    "retry": "Retry",
+    "viewStops": "View Stops",
+    "startTrip": "Start Trip",
+    "starting": "Starting…",
+    "startFailed": "Couldn't start the trip.",
+    "finishTrip": "Finish Trip",
+    "finishing": "Finishing…",
+    "startNow": "Start Now",
+    "cancel": "Cancel",
+    "settlement": "Settlement",
+    "settlementPendingHint": "Driving is done — a settlement is still owed to close the day.",
+    "returns": "Returns",
+    "custody": "Custody",
+    "goToLoading": "Go to Loading",
+    "goToDeparture": "Continue to Delivery",
+    "readiness": {
+      "title": "Readiness",
+      "loading": "Loading",
+      "confirmed": "{{confirmed}}/{{loaded}} confirmed",
+      "notStarted": "Not started",
+      "awaiting": "{{count}} awaiting your confirmation",
+      "orders": "Orders",
+      "vehicle": "Vehicle"
+    },
+    "ready": {
+      "hint": "All items are loaded and confirmed. Continue to the Loading screen to start delivery."
+    },
+    "blocker": {
+      "title": "Trip not ready",
+      "awaiting": "{{count}} loaded item(s) still awaiting your confirmation.",
+      "awaitingDispatch": "Loading is complete, but this trip has not been released for dispatch yet.",
+      "finishLoading": "Finish loading and confirm every item to start the trip.",
+      "startLoading": "Start loading this shipment to begin."
+    },
+    "closed": {
+      "title": "Trip closed",
+      "hint": "This trip is complete and closed."
+    },
+    "blocked": {
+      "title": "Trip blocked",
+      "dispatchBlocked": "This trip needs dispatch attention before it can continue.",
+      "cancelled": "This trip has been cancelled."
+    },
+    "startDialog": {
+      "title": "Start Trip?",
+      "description": "This will update the trip to in-progress and log your current GPS location."
+    },
+    "finishDialog": {
+      "title": "Finish Trip?",
+      "description": "All stops must be processed before finishing. This action logs the trip end location."
+    }
+  },
+  "failureReasons": {
+    "customer_unavailable": "Customer unavailable",
+    "customer_refused": "Customer refused delivery",
+    "customer_rescheduled": "Customer rescheduled",
+    "no_answer": "No answer",
+    "address_not_found": "Address not found",
+    "address_inaccessible": "Address inaccessible",
+    "wrong_area": "Wrong area",
+    "product_damaged": "Product damaged",
+    "wrong_item": "Wrong item",
+    "item_missing": "Item missing",
+    "cannot_pay": "Customer cannot pay",
+    "amount_disputed": "Amount disputed",
+    "vehicle_breakdown": "Vehicle breakdown",
+    "time_exhausted": "Out of time",
+    "weather": "Weather conditions"
+  },
+  "nav": {
+    "home": "Home",
+    "loading": "Loading",
+    "orders": "Orders",
+    "stops": "Stops",
+    "vehicleInventory": "Vehicle",
+    "more": "More",
+    "tripSummary": "Trip Summary",
+    "notifications": "Notifications",
+    "profile": "Profile",
+    "section": {
+      "work": "Today",
+      "more": "More"
+    }
+  },
+  "vehicleInventory": {
+    "title": "Vehicle Inventory",
+    "subtitle": "What your vehicle is carrying now",
+    "readOnly": "View only",
+    "summary": {
+      "loaded": "Loaded",
+      "delivered": "Delivered",
+      "returned": "Returned",
+      "onHand": "On hand"
+    },
+    "col": {
+      "product": "Product",
+      "onHand": "On hand"
+    },
+    "perProduct": {
+      "loaded": "Loaded",
+      "delivered": "Delivered",
+      "expectedReturn": "Expected",
+      "returned": "Returned",
+      "onHand": "On hand"
+    },
+    "empty": {
+      "title": "No inventory yet",
+      "subtitle": "Your vehicle stock will appear here after loading."
+    },
+    "error": "Couldn't load vehicle inventory.",
+    "retry": "Retry",
+    "recon": {
+      "expectedReturn": "Expected return",
+      "receivedBack": "Received back",
+      "stillOnVehicle": "Still on vehicle",
+      "warehouseNote": "The warehouse counts and confirms what comes back — accepted, damaged and any shortage are recorded there, not here.",
+      "shortage_one": "Shortage: {{count}} unit not yet returned",
+      "shortage_other": "Shortage: {{count}} units not yet returned",
+      "shortage": "Shortage: {{count}} units not yet returned",
+      "status": {
+        "fullyDelivered": "Fully delivered",
+        "awaitingReturn": "Awaiting return",
+        "reconciled": "Reconciled",
+        "partialReturn": "Partial return"
+      }
+    }
+  },
+  "orders": {
+    "title": "Orders",
+    "empty": {
+      "title": "No orders yet",
+      "subtitle": "Orders appear here after loading is complete."
+    },
+    "noShipment": {
+      "title": "No active shipment",
+      "subtitle": "You have no shipment assigned right now."
+    },
+    "error": "Couldn't load your orders.",
+    "retry": "Retry",
+    "search": "Search by order number or customer…",
+    "filter": {
+      "all": "All",
+      "pending": "Pending",
+      "delivered": "Delivered",
+      "failed": "Failed",
+      "partial": "Partial"
+    },
+    "noMatch": "No orders match this filter.",
+    "count": "{{count}} orders",
+    "unzoned": "Other area",
+    "allAreas": "All areas"
+  },
+  "returns": {
+    "title": "Returns",
+    "add": "Add",
+    "intro": "Declare the items coming back to the warehouse. The warehouse counts and confirms what is received — you don't record the receipt.",
+    "empty": "No returns declared yet.",
+    "qty": "Qty {{qty}}",
+    "type": {
+      "full": "Full return",
+      "partial": "Partial return"
+    },
+    "confirmed": "Received",
+    "awaitingReceipt": "Awaiting warehouse receipt",
+    "warehouseReceived": "Warehouse received: {{qty}}",
+    "discrepancy": "Diff {{qty}}",
+    "recordTitle": "Declare Return"
+  },
+  "returnForm": {
+    "productId": "Product ID *",
+    "productIdPlaceholder": "Product ID…",
+    "productName": "Product name *",
+    "productNamePlaceholder": "Product name…",
+    "returnType": "Return type *",
+    "full": "Full return",
+    "partial": "Partial return",
+    "quantity": "Quantity *",
+    "quantityPlaceholder": "0",
+    "reason": "Reason",
+    "reasonPlaceholder": "Return reason…",
+    "cancel": "Cancel",
+    "submit": "Record return",
+    "saving": "Saving…"
+  },
+  "wallet": {
+    "title": "Wallet",
+    "trips_one": "{{count}} trip",
+    "trips_other": "{{count}} trips",
+    "trips": "{{count}} trips",
+    "collections": "Collections",
+    "total": "Total collected",
+    "cash": "Cash",
+    "transfer": "Transfer",
+    "card": "Card",
+    "alreadyPaid": "Already paid",
+    "cashTitle": "Cash reconciliation",
+    "expected": "Expected cash",
+    "submitted": "Cash submitted",
+    "notSubmitted": "Not submitted yet",
+    "difference": "Difference",
+    "closing": "Settlement & closing",
+    "closingFlags": {
+      "custodyReconciled": "Custody reconciled",
+      "deliveries": "All deliveries resolved",
+      "tripsClosed": "All trips closed",
+      "settlementComplete": "Settlement complete"
+    },
+    "settlementStatus": {
+      "needs_review": "Needs review",
+      "under_review": "Under review",
+      "disputed": "Disputed",
+      "settled": "Settled"
+    },
+    "advancesUnavailable": "Advances: no record in the system",
+    "expensesUnavailable": "Expenses: no driver record in the system",
+    "statementLink": "Monthly statement",
+    "error": "Couldn't load the wallet.",
+    "retry": "Retry"
+  },
+  "reports": {
+    "title": "Reports",
+    "error": "Couldn't load the report.",
+    "retry": "Retry",
+    "customFrom": "From",
+    "customTo": "to",
+    "customToLabel": "To",
+    "period": {
+      "today": "Today",
+      "this_week": "This Week",
+      "this_month": "This Month",
+      "previous_month": "Previous Month",
+      "this_year": "This Year",
+      "ytd": "Year to Date",
+      "previous_year": "Previous Year",
+      "custom": "Custom"
+    },
+    "tabs": {
+      "orders": "Orders",
+      "goods": "Goods",
+      "shortage": "Shortage",
+      "advances": "Advances"
+    },
+    "orders": {
+      "received": "Received",
+      "delivered": "Delivered",
+      "partial": "Partial",
+      "failed": "Failed",
+      "deferred": "Deferred",
+      "deliveryRate": "Delivery rate",
+      "empty": "No orders in this period."
+    },
+    "goods": {
+      "empty": "No goods movement in this period.",
+      "received": "Received",
+      "delivered": "Delivered",
+      "returned": "Returned",
+      "damaged": "Damaged",
+      "shortage": "Shortage",
+      "remaining": "Remaining",
+      "note": "Returned, damaged and shortage are recorded by the warehouse."
+    },
+    "shortage": {
+      "empty": "No shortages in this period.",
+      "underInvestigation": "Under investigation",
+      "reviewed": "Reviewed",
+      "shortageQty": "Shortage",
+      "noAutoDebt": "A shortage is not automatically a charge against you.",
+      "valueUnavailable": "Monetary value and liability are decided by Operations, not shown here."
+    },
+    "advances": {
+      "unavailable": "Advances aren't available",
+      "unavailableHint": "There is no driver advances record in the system yet."
+    }
+  },
+  "statement": {
+    "title": "Monthly Statement",
+    "month": "Month",
+    "orders": "Orders",
+    "shortages_one": "{{count}} shortage",
+    "shortages_other": "{{count}} shortages",
+    "shortages": "{{count}} shortages",
+    "error": "Couldn't load the statement.",
+    "retry": "Retry"
+  },
+  "shell": {
+    "title": "Driver Operations",
+    "menuTitle": "Driver menu",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "primaryNav": "Driver navigation",
+    "fromCurrentTrip": "From current trip",
+    "nav": {
+      "home": "Home",
+      "loading": "Loading",
+      "orders": "Orders",
+      "vehicle": "Vehicle stock",
+      "reports": "Reports",
+      "returns": "Returns",
+      "wallet": "Wallet",
+      "tripExpenses": "Trip expenses",
+      "map": "Map"
+    }
+  },
+  "tripExpenses": {
+    "title": "Trip Expenses",
+    "error": "Couldn't load your trip expenses.",
+    "retry": "Retry",
+    "noCustody": {
+      "title": "No active trip",
+      "subtitle": "You can record trip expenses once you have an active trip in your custody."
+    },
+    "totals": {
+      "expenses": "Expenses (approved)",
+      "advances": "Advances (approved)",
+      "pending": "{{count}} awaiting approval",
+      "approvedOnly": "Only approved movements are counted."
+    },
+    "add": "Add Expense",
+    "empty": "No expenses recorded yet.",
+    "hasReceipt": "Receipt attached",
+    "created": "Expense recorded",
+    "createFailed": "Couldn't record the expense.",
+    "category": {
+      "fuel": "Fuel",
+      "road_toll": "Road toll",
+      "advance": "Advance",
+      "other": "Other"
+    },
+    "direction": {
+      "cash_out": "Cash out",
+      "cash_in": "Cash in"
+    },
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "settled": "Settled"
+    },
+    "form": {
+      "category": "Category",
+      "amount": "Amount",
+      "note": "Note",
+      "notePlaceholder": "Optional note…",
+      "receipt": "Receipt",
+      "captureReceipt": "Capture or attach a receipt",
+      "cancel": "Cancel",
+      "submit": "Save expense",
+      "saving": "Saving…"
+    }
+  }
+}

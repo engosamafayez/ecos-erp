@@ -69,6 +69,7 @@ export const NAMESPACES = [
   // ── Operations & Logistics ────────────────────────────────────────────────
   'operations',
   'logistics',
+  'driver-mobile',
 
   // ── Finance & Reporting ───────────────────────────────────────────────────
   'cost-management',
