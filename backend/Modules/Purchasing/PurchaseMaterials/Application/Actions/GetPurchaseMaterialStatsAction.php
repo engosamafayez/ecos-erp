@@ -9,7 +9,7 @@ use Modules\Purchasing\PurchaseMaterials\Domain\Models\PurchaseMaterial;
 
 final class GetPurchaseMaterialStatsAction
 {
-    public function execute(?string $companyId = null, ?string $warehouseId = null): array
+    public function execute(?string $companyId = null, ?string $warehouseId = null, ?string $recordType = null): array
     {
         $query = PurchaseMaterial::query();
 
@@ -18,6 +18,15 @@ final class GetPurchaseMaterialStatsAction
         }
         if ($warehouseId !== null && $warehouseId !== '') {
             $query->where('warehouse_id', $warehouseId);
+        }
+        // Scope the KPI aggregation by record_type — mirrors the LIST repository filter
+        // (EloquentPurchaseMaterialRepository). Without this the Purchases screen's KPI
+        // cards summed material_request rows together with purchase rows, so Material
+        // Requests "appeared" on the Purchases screen through its stats even though the
+        // table below was filtered. Skip empty / 'all' so an unscoped caller is unchanged.
+        $recordType = $recordType !== null ? trim($recordType) : null;
+        if ($recordType !== null && $recordType !== '' && $recordType !== 'all') {
+            $query->where('record_type', $recordType);
         }
 
         // Status counts

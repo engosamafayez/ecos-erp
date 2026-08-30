@@ -32,6 +32,14 @@ final class EloquentPurchaseMaterialRepository implements PurchaseMaterialReposi
             });
         }
 
+        // Material Requests and Purchases are the same table split by record_type;
+        // honouring the filter is what keeps the two workspaces from showing an
+        // identical list. TASK-PROCUREMENT-MANUAL-REMEDIATION-001.
+        $recordType = trim((string) ($filters['record_type'] ?? ''));
+        if ($recordType !== '' && $recordType !== 'all') {
+            $query->where('record_type', $recordType);
+        }
+
         $status = trim((string) ($filters['status'] ?? ''));
         if ($status !== '' && $status !== 'all') {
             $query->where('status', $status);
@@ -118,9 +126,14 @@ final class EloquentPurchaseMaterialRepository implements PurchaseMaterialReposi
 
     public function nextRequestNumber(): string
     {
+        // Numbering is GLOBAL across tenants — the DB enforces a unique index on
+        // request_number alone. The tenant global scope must be lifted here or a
+        // company-restricted actor would only scan their own rows and restart the
+        // sequence, colliding across companies. See PurchaseMaterialNumberGenerationTest.
         $last = PurchaseMaterial::query()
+            ->withoutGlobalScope('tenant')
             ->withTrashed()
-            ->orderByRaw("CAST(REPLACE(request_number, 'PM-', '') AS BIGINT) DESC")
+            ->orderByRaw("CAST(REPLACE(request_number, 'PM-', '') AS UNSIGNED) DESC")
             ->value('request_number');
 
         if ($last === null) {

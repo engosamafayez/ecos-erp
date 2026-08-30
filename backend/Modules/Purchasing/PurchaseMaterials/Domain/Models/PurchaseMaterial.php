@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Purchasing\PurchaseMaterials\Domain\Models;
 
+use App\Core\Company\TenantOwnershipResolver;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -83,6 +85,43 @@ class PurchaseMaterial extends Model
         'updated_by',
         'notes',
     ];
+
+    /**
+     * Fail-closed tenant isolation.
+     *
+     * TASK-PROCUREMENT-MANUAL-REMEDIATION-001. PurchaseMaterial was the only
+     * inbound aggregate without a tenant global scope — its list path filtered
+     * by company only when the client happened to pass `?company_id=`, so any
+     * `purchasing.materials.view` holder could read every company's requests.
+     * This mirrors the certified scope on Supplier / GoodsReceipt /
+     * SupplierInvoice: a null company closes the query (D-8), cross-company
+     * access is an is_system privilege, and console/queue/seeder actors are
+     * never silently filtered.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('tenant', static function (Builder $query): void {
+            $tenant = app(TenantOwnershipResolver::class);
+
+            if (! $tenant->appliesTo()) {
+                return;
+            }
+
+            if ($tenant->isUnrestricted()) {
+                return;
+            }
+
+            $companyId = $tenant->companyId();
+
+            if ($companyId === null) {
+                $query->whereRaw('1 = 0');
+
+                return;
+            }
+
+            $query->where('company_id', $companyId);
+        });
+    }
 
     /** @return array<string, string> */
     protected function casts(): array

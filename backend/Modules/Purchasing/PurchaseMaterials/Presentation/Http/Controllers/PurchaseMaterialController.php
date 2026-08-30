@@ -36,6 +36,7 @@ final class PurchaseMaterialController extends Controller
     {
         $filters = [
             'search' => $request->query('search'),
+            'record_type' => $request->query('record_type'),
             'status' => $request->query('status', 'all'),
             'priority' => $request->query('priority', 'all'),
             'warehouse_id' => $request->query('warehouse_id'),
@@ -137,6 +138,7 @@ final class PurchaseMaterialController extends Controller
         $stats = $action->execute(
             $request->query('company_id'),
             $request->query('warehouse_id'),
+            $request->query('record_type'),
         );
 
         return $this->success($stats);

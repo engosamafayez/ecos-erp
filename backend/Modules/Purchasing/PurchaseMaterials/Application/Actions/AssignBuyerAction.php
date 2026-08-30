@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\Purchasing\PurchaseMaterials\Application\Actions;
 
+use App\Core\Responses\OperationResult;
 use Illuminate\Http\Request;
 use Modules\Purchasing\PurchaseMaterials\Domain\Contracts\PurchaseMaterialRepositoryInterface;
 use Modules\Purchasing\PurchaseMaterials\Domain\Exceptions\PurchaseMaterialNotFoundException;
-use Modules\Shared\Application\OperationResult;
 
 final class AssignBuyerAction
 {
