@@ -54,8 +54,11 @@ class PricingReview extends Model
         'previous_product_cost',
         'cost_difference',
         'selling_price',
+        'current_sale_price',
         'suggested_selling_price',
         'suggested_sale_price',
+        'manual_regular_price',
+        'manual_sale_price',
         'target_margin',
         'current_margin',
         'impacts',
@@ -84,6 +87,9 @@ class PricingReview extends Model
             'selling_price' => 'float',
             'suggested_selling_price' => 'float',
             'suggested_sale_price' => 'float',
+            'current_sale_price' => 'float',
+            'manual_regular_price' => 'float',
+            'manual_sale_price' => 'float',
             'target_margin' => 'float',
             'current_margin' => 'float',
             'impacts' => 'array',
@@ -120,5 +126,53 @@ class PricingReview extends Model
         $this->status = $status;
         $this->resolved_at = now();
         $this->save();
+    }
+
+    /**
+     * THE single authoritative final-price resolution (Current / Suggested / Manual).
+     *
+     *   CURRENT    selling_price · current_sale_price    immutable snapshot
+     *   SUGGESTED  suggested_*                           engine output, may be NULL
+     *   MANUAL     manual_*                              the operator's decision
+     *
+     * Final = manual ?? suggested. A NULL manual column means "not decided", so the
+     * suggestion stands — the suggested figure is never copied into manual_*, which
+     * would make the same number exist twice and let the two drift.
+     *
+     * Returns null only when the engine produced no suggestion AND the operator
+     * entered nothing. That is an un-approvable review, not a zero price.
+     */
+    public function finalSellingPrice(): ?float
+    {
+        $final = $this->manual_regular_price ?? $this->suggested_selling_price;
+
+        return $final !== null ? (float) $final : null;
+    }
+
+    /**
+     * The sale price an Approve applies.
+     *
+     * A manual sale price wins outright. Otherwise the sale price is derived from
+     * the FINAL regular price through the canonical discount relationship — never
+     * from `suggested_sale_price` directly, because that figure was derived from
+     * the suggested regular price, which the operator may have replaced. Deriving
+     * keeps the two consistent: when no manual regular exists the derivation
+     * reproduces the suggestion exactly.
+     */
+    public function finalSalePrice(float $discountPct): ?float
+    {
+        if ($this->manual_sale_price !== null) {
+            return (float) $this->manual_sale_price > 0.0 ? (float) $this->manual_sale_price : null;
+        }
+
+        $finalRegular = $this->finalSellingPrice();
+
+        if ($finalRegular === null) {
+            return null;
+        }
+
+        $derived = round($finalRegular * (1 - $discountPct / 100), 4);
+
+        return $derived > 0.0 ? $derived : null;
     }
 }

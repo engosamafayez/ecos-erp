@@ -27,26 +27,38 @@ class PricingReviewResource extends JsonResource
         return round($suggestedRegular * (1 - $discountPct / 100), 4);
     }
 
-    /** Gross profit % on selling price */
-    private function grossProfitPct(float $cost, float $price): ?float
+    /** Gross profit % on a price. Null price (no suggestion) stays null. */
+    private function grossProfitPct(float $cost, ?float $price): ?float
     {
-        if ($price <= 0.0) {
+        if ($price === null || $price <= 0.0) {
             return null;
         }
 
         return round(($price - $cost) / $price * 100, 2);
     }
 
-    /** Final margin % — uses sale_price if > 0, otherwise selling_price */
-    private function finalMarginPct(float $cost, float $sellingPrice, ?float $salePrice): ?float
+    /**
+     * Net Margin % — profit measured against the SALE price.
+     *
+     * This is the canonical definition this screen has always used: the effective
+     * price a customer pays is the sale price when one is set, otherwise the
+     * regular price. Gross Profit % (above) measures against the REGULAR price.
+     * The two are deliberately different metrics and are never interchangeable.
+     */
+    private function netMarginPct(float $cost, ?float $sale, ?float $regular): ?float
     {
-        $effectivePrice = ($salePrice !== null && $salePrice > 0.0) ? $salePrice : $sellingPrice;
-        if ($effectivePrice <= 0.0) {
+        $effective = ($sale !== null && $sale > 0.0) ? $sale : $regular;
+
+        if ($effective === null || $effective <= 0.0) {
             return null;
         }
 
-        return round(($effectivePrice - $cost) / $effectivePrice * 100, 2);
+        return round(($effective - $cost) / $effective * 100, 2);
     }
+
+    // Profitability is presentation: the same two formulas are applied to each of
+    // the three price tiers. The FINAL PRICE itself still comes from the single
+    // resolver on PricingReview, so the API and Approve cannot disagree.
 
     public function toArray(Request $request): array
     {
@@ -54,12 +66,26 @@ class PricingReviewResource extends JsonResource
         $product = $this->product;
         $brand = $product?->relationLoaded('brand') ? $product->brand : null;
         $unit = $product?->unit;
-        $salePrice = $product?->sale_price;
-
         $cost = $this->product_cost;
         $targetMargin = $this->target_margin;
         $markup = $this->derivedMarkup($targetMargin);
         $discountPct = $product?->effectiveDiscountPct() ?? 0.0;
+
+        // CURRENT sale is the review's own snapshot. It used to be read live from
+        // the product, so approving a review retroactively rewrote its own history.
+        // Older rows predating the snapshot column fall back to the product.
+        $currentSalePrice = $this->current_sale_price ?? $product?->sale_price;
+
+        // A missing suggestion stays NULL — never fabricated as 0.
+        $suggestedRegular = $this->suggested_selling_price !== null
+            ? (float) $this->suggested_selling_price
+            : null;
+        $suggestedSale = $this->suggested_sale_price !== null
+            ? (float) $this->suggested_sale_price
+            : ($suggestedRegular !== null ? $this->suggestedSalePrice($suggestedRegular, $discountPct) : null);
+
+        $finalRegular = $this->finalSellingPrice();
+        $finalSale = $this->finalSalePrice($discountPct);
 
         return [
             'id' => $this->id,
@@ -97,17 +123,33 @@ class PricingReviewResource extends JsonResource
             'cost_change_pct' => $this->previous_product_cost > 0
                 ? round(($this->cost_difference / $this->previous_product_cost) * 100, 2)
                 : null,
+            // ── LAYER 1 — CURRENT (immutable snapshot taken when the review opened)
             'selling_price' => $this->selling_price,
-            'sale_price' => $salePrice,
-            'suggested_selling_price' => $this->suggested_selling_price,
-            'suggested_sale_price' => $this->suggested_sale_price
-                ?? $this->suggestedSalePrice($this->suggested_selling_price, $discountPct),
+            'sale_price' => $currentSalePrice,
+            // Gross Profit % is measured on REGULAR; Net Margin % on SALE.
+            'old_gross_profit_pct' => $this->grossProfitPct($cost, $this->selling_price),
+            'old_margin_pct' => $this->netMarginPct($cost, $currentSalePrice, $this->selling_price),
+
+            // ── LAYER 2 — SUGGESTED (pricing engine; NULL when it produced none)
+            'suggested_selling_price' => $suggestedRegular,
+            'suggested_sale_price' => $suggestedSale,
+            'suggested_gross_profit_pct' => $this->grossProfitPct($cost, $suggestedRegular),
+            'suggested_margin_pct' => $this->netMarginPct($cost, $suggestedSale, $suggestedRegular),
+
+            // ── LAYER 3 — MANUAL / FINAL DECISION (what Approve applies)
+            'manual_regular_price' => $this->manual_regular_price,
+            'manual_sale_price' => $this->manual_sale_price,
+            'final_regular_price' => $finalRegular,
+            'final_sale_price' => $finalSale,
+            'final_gross_profit_pct' => $this->grossProfitPct($cost, $finalRegular),
+            'final_margin_pct' => $this->netMarginPct($cost, $finalSale, $finalRegular),
+
             'discount_pct' => $discountPct,
             'target_margin' => $targetMargin,
             'markup' => $markup,
             'current_margin' => $this->current_margin,
+            // Legacy alias retained for existing consumers: gross profit % on CURRENT regular.
             'gross_profit_pct' => $this->grossProfitPct($cost, $this->selling_price),
-            'final_margin_pct' => $this->finalMarginPct($cost, $this->selling_price, $salePrice),
 
             'impacts' => $this->impacts ?? [],
             'status' => $this->status->value,

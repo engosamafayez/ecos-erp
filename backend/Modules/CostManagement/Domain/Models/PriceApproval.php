@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\CostManagement\Domain\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,6 +24,7 @@ use Modules\Inventory\Products\Domain\Models\Product;
  * @property float|null $custom_price
  * @property string|null $reason
  * @property string|null $manager_name
+ * @property int|null $approved_by users.id (bigint) — see 2026_08_13_120000 migration
  * @property array<string> $approved_channels
  * @property \Carbon\Carbon $approved_at
  * @property \Carbon\Carbon $created_at
@@ -69,6 +71,7 @@ class PriceApproval extends Model
             'new_sale_price' => 'float',
             'margin_pct' => 'float',
             'discount_pct' => 'float',
+            'approved_by' => 'integer',
             'approved_at' => 'datetime',
             'created_at' => 'datetime',
         ];
@@ -84,5 +87,18 @@ class PriceApproval extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * The user who made the pricing decision.
+     *
+     * `approved_by` holds a `users.id` (bigint), matching the platform identity
+     * contract — see the 2026_08_13_120000 migration for why it is not a UUID.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }

@@ -13,7 +13,8 @@ class ApprovePricingReviewRequest extends FormRequest
     {
         return [
             'action' => ['required', Rule::in(['approve_suggested', 'keep_current', 'custom_price', 'reject'])],
-            'custom_price' => ['required_if:action,custom_price', 'nullable', 'numeric', 'min:0'],
+            // A custom price is published directly to the catalogue, so it must be > 0.
+            'custom_price' => ['required_if:action,custom_price', 'nullable', 'numeric', 'min:0.01'],
             'reason' => ['nullable', 'string', 'max:1000'],
             'manager_name' => ['nullable', 'string', 'max:255'],
             'channels' => ['nullable', 'array'],

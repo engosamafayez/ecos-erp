@@ -6,7 +6,6 @@ namespace Modules\CostManagement\Providers;
 
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
-use Modules\Admin\Configuration\Domain\Services\ConfigurationManager;
 use Modules\CostManagement\Application\Services\CostCalculationEngine;
 use Modules\CostManagement\Application\Services\CostImpactEngine;
 use Modules\CostManagement\Domain\Events\FinishedProductCostChanged;
@@ -23,9 +22,9 @@ class CostManagementServiceProvider extends ServiceProvider
 
         // TASK-COST-ARCH-002 — Enterprise Cost Intelligence Platform
         $this->app->singleton(CostCalculationEngine::class);
-        $this->app->singleton(PricingReviewService::class, fn ($app) => new PricingReviewService(
-            $app->make(ConfigurationManager::class),
-        ));
+        // No collaborators: the brand publishing-strategy lookup was removed when
+        // Approve became apply-on-approve (TASK-PRICE-REVIEW-ACTION-REPAIR-001).
+        $this->app->singleton(PricingReviewService::class);
         $this->app->singleton(CostImpactEngine::class, fn ($app) => new CostImpactEngine(
             $app->make(PricingReviewService::class),
         ));
