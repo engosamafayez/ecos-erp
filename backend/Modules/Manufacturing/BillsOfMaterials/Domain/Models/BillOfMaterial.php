@@ -23,6 +23,8 @@ final class BillOfMaterial extends Model
         'version',
         'bom_version_number',
         'is_active',
+        'approved_at',
+        'approved_by',
         'notes',
         'manufacturing_cost',
         'other_costs',
@@ -38,6 +40,7 @@ final class BillOfMaterial extends Model
     {
         return [
             'is_active' => 'boolean',
+            'approved_at' => 'datetime',
             'bom_version_number' => 'integer',
             'manufacturing_cost' => 'float',
             'other_costs' => 'float',
@@ -57,5 +60,11 @@ final class BillOfMaterial extends Model
     public function lines(): HasMany
     {
         return $this->hasMany(BillOfMaterialLine::class, 'bom_id');
+    }
+
+    /** Every approved cost snapshot ever taken of this recipe, newest first. */
+    public function costSnapshots(): HasMany
+    {
+        return $this->hasMany(RecipeCostSnapshot::class, 'bom_id')->orderByDesc('approved_at');
     }
 }

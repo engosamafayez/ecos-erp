@@ -90,7 +90,14 @@ final class BomController extends Controller
         BillOfMaterial $bom,
         SetBomStatusAction $action,
     ): JsonResponse {
-        $result = $action->execute($bom, $request->boolean('is_active'));
+        // The acting user is recorded as the approver: activation is the moment a
+        // recipe's component costs are frozen, and a frozen cost with no author is
+        // not auditable.
+        $result = $action->execute(
+            $bom,
+            $request->boolean('is_active'),
+            $request->user()?->id !== null ? (string) $request->user()->id : null,
+        );
 
         return $this->updated(new BomResource($result->data()), $result->message());
     }

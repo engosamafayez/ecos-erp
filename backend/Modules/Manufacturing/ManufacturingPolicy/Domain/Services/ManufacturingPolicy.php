@@ -29,8 +29,10 @@ use Modules\Manufacturing\ManufacturingPolicy\Domain\ValueObjects\ProductContext
  *
  * Rule evaluation order (highest-priority first):
  *   1. Order not cancelled            — order-level hard stop
- *   2. Order status allows mfg        — pending | processing only
- *   3. Product can manufacture        — product.can_manufacture flag
+ *   2. Order status allows mfg        — in_progress | confirmed | ready_for_dispatch (ADR-042 V3)
+ *   3. (REMOVED) Product can manufacture — the can_manufacture flag no longer gates
+ *      order preparation; ADR-027 §16 v1.5 made recipe executability the sole
+ *      fulfillability authority (TASK-ORDER-PREPARATION-FULFILLABILITY-CONTRACT-001).
  *   4. Recipe exists                  — product has an active recipe
  *   5. Product is inventory-managed   — physical trackable good
  *   6. Manufacturing required         — required_qty > 0
@@ -41,20 +43,31 @@ final class ManufacturingPolicy
     /**
      * Order statuses that permit manufacturing to proceed.
      *
-     * Derived from OrderStatus enum in the Commerce module:
-     *   pending    → order placed, awaiting fulfilment
-     *   processing → order accepted, manufacturing may begin
+     * ADR-042 (Order FSM V3 Canonical) vocabulary. This is the SECOND status gate in
+     * the trigger chain: ManufacturingLifecycleHandler::supports() admits the request,
+     * then this Rule 2 re-checks the status. The prior set
+     * ['pending','processing','preparing'] pre-dated V3 and matched NONE of the canonical
+     * statuses, so even after the handler was aligned this rule rejected every real order
+     * with OrderStatusNotAllowed — the second half of BREAK A
+     * (TASK-MTO-MANUFACTURING-TRIGGER-GAP). Both gates must carry the same V3 set.
+     *
+     *   in_progress        → fulfilment-eligible entry state (ADR-042 §7)
+     *   confirmed          → fulfilment-eligible after operator confirm (ADR-042 §7)
+     *   ready_for_dispatch → the status the order HOLDS when the trigger runs, because
+     *                        MoveToPreparationWorkflow flips to it before both the manual
+     *                        and wave paths invoke manufacturing
      *
      * NOT allowed:
-     *   completed  → order already fulfilled; manufacturing is unnecessary
-     *   cancelled  → caught by Rule 1 (is_cancelled) before reaching here
+     *   awaiting_payment / awaiting_stock / scheduled / on_hold → not fulfilment-eligible
+     *   delivered / returned                                    → already past fulfilment
+     *   cancelled                                               → caught by Rule 1 first
      *
      * @var list<string>
      */
     private const MANUFACTURING_ALLOWED_STATUSES = [
-        'pending',
-        'processing',
-        'preparing', // PKG-07: order is in the process of being prepared for manufacturing
+        'in_progress',
+        'confirmed',
+        'ready_for_dispatch',
     ];
 
     /**
@@ -94,14 +107,16 @@ final class ManufacturingPolicy
             );
         }
 
-        // ── Rule 3: Product can manufacture ──────────────────────────────────
-        if (! $product->can_manufacture) {
-            return ManufacturingPolicyResult::ineligible(
-                code: PolicyCode::ProductCannotManufacture,
-                reason: 'Product is not flagged as manufacturable (can_manufacture = false).',
-                metadata: $context,
-            );
-        }
+        // ── Rule 3 REMOVED (TASK-ORDER-PREPARATION-FULFILLABILITY-CONTRACT-001, ADR-027 §16 v1.5) ──
+        // The former `can_manufacture` precondition no longer gates order preparation.
+        // ECOS is order-driven / made-to-order: the SAME recipe-executability contract
+        // that let the order reserve (ReserveOrderInventoryAction, via
+        // ManufacturingAvailabilityService) must let its preparation/assembly path run.
+        // Gating preparation on the capability flag reintroduced the broken half-state
+        // (reserved, but never prepared). Recipe presence is still enforced by Rule 4;
+        // recipe executability is the reservation-time authority and is not recomputed
+        // here. PolicyCode::ProductCannotManufacture is retained for backward compat but
+        // is no longer emitted by this policy.
 
         // ── Rule 4: Recipe exists ─────────────────────────────────────────────
         if (! $product->has_active_recipe) {

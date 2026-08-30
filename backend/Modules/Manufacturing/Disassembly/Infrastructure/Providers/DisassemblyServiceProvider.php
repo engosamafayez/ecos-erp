@@ -9,6 +9,7 @@ use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInt
 use Modules\Inventory\ReceiptLayers\Application\Services\InventoryLayerConsumptionService;
 use Modules\Manufacturing\AvailabilityEngine\Domain\Contracts\InventoryReadInterface;
 use Modules\Manufacturing\BillsOfMaterials\Domain\Contracts\RecipeResolverInterface;
+use Modules\Manufacturing\BillsOfMaterials\Domain\Services\RecipeCostSnapshotResolver;
 use Modules\Manufacturing\Disassembly\Application\Services\DisassemblyExecutor;
 use Modules\Manufacturing\Disassembly\Domain\Contracts\DisassemblyTransactionRepositoryInterface;
 use Modules\Manufacturing\Disassembly\Domain\Services\DisassemblyPolicy;
@@ -37,6 +38,7 @@ final class DisassemblyServiceProvider extends ServiceProvider
             fn ($app): DisassemblyWorkflow => new DisassemblyWorkflow(
                 resolver: $app->make(RecipeResolverInterface::class),
                 inventoryReader: $app->make(InventoryReadInterface::class),
+                costSnapshots: $app->make(RecipeCostSnapshotResolver::class),
             ),
         );
 

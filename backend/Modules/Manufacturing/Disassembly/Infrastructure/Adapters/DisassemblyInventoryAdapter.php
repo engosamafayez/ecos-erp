@@ -25,9 +25,11 @@ use Modules\Manufacturing\Disassembly\Domain\ValueObjects\ComponentProductionRec
  * Manufactured FG typically has no FIFO layers (production_output doesn't create them),
  * so the layer consumption is gracefully skipped in those cases.
  *
- * FIFO on component production: Components produced by disassembly do not create
- * new FIFO receipt layers in PKG-08. Cost assignment for disassembly outputs is
- * reserved for PKG-12 (Cost Engine).
+ * FIFO on component production: components produced by disassembly DO create receipt
+ * layers, valued at the cost frozen when the recipe was approved. Until this was
+ * implemented, disassembly added quantity to inventory with no cost basis at all —
+ * those components would later be consumed against whatever unrelated layers
+ * happened to exist, or none, silently corrupting valuation.
  */
 final class DisassemblyInventoryAdapter
 {
@@ -117,6 +119,8 @@ final class DisassemblyInventoryAdapter
             'notes' => "Component produced by disassembly {$executionUuid}",
         ]);
 
+        $this->createReceiptLayer($component, $warehouseId, $companyId);
+
         return new ComponentProductionRecord(
             component_id: $component->component_id,
             sku: $component->sku,
@@ -127,6 +131,47 @@ final class DisassemblyInventoryAdapter
             on_hand_after: $onHandAfter,
             ledger_entry_id: $entry->id,
         );
+    }
+
+    /**
+     * Open a FIFO receipt layer for a component returned to stock by disassembly.
+     *
+     * The layer's cost is the recipe's approved cost for that material — never the
+     * finished product's cost and never a share of its FIFO layers. Taking a
+     * product apart does not tell you what its parts are worth; the recipe that
+     * defined those parts does.
+     *
+     * `supplier_id` and `goods_receipt_id` stay null: this stock came from a
+     * disassembly, not a purchase, and inventing a receipt to fill them would make
+     * the layer indistinguishable from real procurement.
+     *
+     * A zero unit cost is not written. DisassemblyWorkflow already blocks any plan
+     * whose components are unpriced, so reaching here without a cost means the plan
+     * was constructed by some path that skipped that gate — recording a zero-cost
+     * layer would bake the error permanently into inventory valuation, whereas
+     * skipping it leaves the quantity visibly uncosted and recoverable.
+     */
+    private function createReceiptLayer(
+        ComponentProductionPlan $component,
+        string $warehouseId,
+        string $companyId,
+    ): void {
+        if ($component->unit_cost <= 0.0 || $component->qty_to_produce <= 0.0) {
+            return;
+        }
+
+        InventoryReceiptLayer::query()->create([
+            'company_id' => $companyId,
+            'warehouse_id' => $warehouseId,
+            'product_id' => $component->component_id,
+            'supplier_id' => null,
+            'goods_receipt_id' => null,
+            'goods_receipt_line_id' => null,
+            'received_qty' => $component->qty_to_produce,
+            'remaining_qty' => $component->qty_to_produce,
+            'landed_unit_cost' => $component->unit_cost,
+            'receipt_date' => now(),
+        ]);
     }
 
     /**

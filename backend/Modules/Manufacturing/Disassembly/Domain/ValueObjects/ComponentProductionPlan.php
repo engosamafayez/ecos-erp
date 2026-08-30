@@ -24,8 +24,23 @@ final readonly class ComponentProductionPlan
         public float $qty_to_produce,
         /** Quantity per finished-good unit from the recipe. */
         public float $required_per_unit,
+        /**
+         * Cost per unit of this material, frozen when the recipe was approved.
+         *
+         * The authoritative cost basis for the inventory this disassembly creates.
+         * It is NOT derived from the finished product's cost or its FIFO layers:
+         * what a component is worth is what the approved recipe said it cost, not a
+         * share of what the assembled product was acquired for.
+         */
+        public float $unit_cost = 0.0,
         public array $metadata = [],
     ) {}
+
+    /** Total value of the inventory this component adds. */
+    public function extendedCost(): float
+    {
+        return round($this->qty_to_produce * $this->unit_cost, 4);
+    }
 
     /** @return array<string, mixed> */
     public function toArray(): array
@@ -37,6 +52,8 @@ final readonly class ComponentProductionPlan
             'unit_symbol' => $this->unit_symbol,
             'qty_to_produce' => $this->qty_to_produce,
             'required_per_unit' => $this->required_per_unit,
+            'unit_cost' => $this->unit_cost,
+            'extended_cost' => $this->extendedCost(),
         ];
     }
 }
