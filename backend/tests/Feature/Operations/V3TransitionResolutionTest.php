@@ -52,19 +52,21 @@ final class V3TransitionResolutionTest extends TestCase
     public static function routedEdges(): array
     {
         return [
-            'activation' => [OrderStatus::NewOrder->value,          OrderStatus::InProgress->value,       'ProcessOrderWorkflow'],
-            'activate from hold' => [OrderStatus::OnHold->value,            OrderStatus::InProgress->value,       'ProcessOrderWorkflow'],
-            'ready for dispatch' => [OrderStatus::InProgress->value,        OrderStatus::ReadyForDispatch->value, 'MoveToPreparationWorkflow'],
-            'dispatch' => [OrderStatus::ReadyForDispatch->value,  OrderStatus::OutForDelivery->value,   'DispatchOrderWorkflow'],
-            'deliver' => [OrderStatus::OutForDelivery->value,    OrderStatus::Delivered->value,        'CompleteDeliveryWorkflow'],
-            'return delivered' => [OrderStatus::Delivered->value,         OrderStatus::Returned->value,         'ReturnOrderWorkflow'],
-            'cancel' => [OrderStatus::InProgress->value,        OrderStatus::Cancelled->value,        'CancelOrderWorkflow'],
-            'release to new' => [OrderStatus::InProgress->value,        OrderStatus::NewOrder->value,         'ReturnToPendingWorkflow'],
-            'release to payment' => [OrderStatus::InProgress->value,        OrderStatus::AwaitingPayment->value,  'ReturnToPaymentWorkflow'],
-            'awaiting stock' => [OrderStatus::InProgress->value,        OrderStatus::AwaitingStock->value,    'MarkAwaitingStockWorkflow'],
-            'on hold' => [OrderStatus::InProgress->value,        OrderStatus::OnHold->value,           'MoveToReviewWorkflow'],
-            'reschedule' => [OrderStatus::InProgress->value,        OrderStatus::Scheduled->value,        'MarkRescheduledWorkflow'],
-            'early to new' => [OrderStatus::AwaitingPayment->value,   OrderStatus::NewOrder->value,         'SetEarlyStatusWorkflow'],
+            'activation'        => [OrderStatus::Scheduled->value,         OrderStatus::InProgress->value,       'ProcessOrderWorkflow'],
+            'confirm'           => [OrderStatus::InProgress->value,        OrderStatus::Confirmed->value,        'ConfirmOrderWorkflow'],
+            'ready from confirmed' => [OrderStatus::Confirmed->value,      OrderStatus::ReadyForDispatch->value, 'MoveToPreparationWorkflow'],
+            'activate from hold'=> [OrderStatus::OnHold->value,            OrderStatus::InProgress->value,       'ProcessOrderWorkflow'],
+            'ready for dispatch'=> [OrderStatus::InProgress->value,        OrderStatus::ReadyForDispatch->value, 'MoveToPreparationWorkflow'],
+            'dispatch'          => [OrderStatus::ReadyForDispatch->value,  OrderStatus::OutForDelivery->value,   'DispatchOrderWorkflow'],
+            'deliver'           => [OrderStatus::OutForDelivery->value,    OrderStatus::Delivered->value,        'CompleteDeliveryWorkflow'],
+            'return delivered'  => [OrderStatus::Delivered->value,         OrderStatus::Returned->value,         'ReturnOrderWorkflow'],
+            'cancel'            => [OrderStatus::InProgress->value,        OrderStatus::Cancelled->value,        'CancelOrderWorkflow'],
+            'unlock for edit'   => [OrderStatus::Confirmed->value,         OrderStatus::InProgress->value,       'ReturnToPendingWorkflow'],
+            'release to payment'=> [OrderStatus::InProgress->value,        OrderStatus::AwaitingPayment->value,  'ReturnToPaymentWorkflow'],
+            'awaiting stock'    => [OrderStatus::InProgress->value,        OrderStatus::AwaitingStock->value,    'MarkAwaitingStockWorkflow'],
+            'on hold'           => [OrderStatus::InProgress->value,        OrderStatus::OnHold->value,           'MoveToReviewWorkflow'],
+            'reschedule'        => [OrderStatus::InProgress->value,        OrderStatus::Scheduled->value,        'MarkRescheduledWorkflow'],
+            'early to scheduled'=> [OrderStatus::AwaitingPayment->value,   OrderStatus::Scheduled->value,        'MarkRescheduledWorkflow'],
         ];
     }
 
@@ -80,13 +82,13 @@ final class V3TransitionResolutionTest extends TestCase
     public static function refusedEdges(): array
     {
         return [
-            'self transition' => [OrderStatus::InProgress->value,       OrderStatus::InProgress->value],
-            'skip dispatch' => [OrderStatus::InProgress->value,       OrderStatus::Delivered->value],
-            'reverse from delivered' => [OrderStatus::Delivered->value,        OrderStatus::InProgress->value],
-            'locked ready to new' => [OrderStatus::ReadyForDispatch->value, OrderStatus::NewOrder->value],
-            'locked out for delivery' => [OrderStatus::OutForDelivery->value,   OrderStatus::OnHold->value],
-            'returned is locked' => [OrderStatus::Returned->value,         OrderStatus::InProgress->value],
-            'new straight to dispatch' => [OrderStatus::NewOrder->value,         OrderStatus::OutForDelivery->value],
+            'self transition'          => [OrderStatus::InProgress->value,       OrderStatus::InProgress->value],
+            'skip dispatch'            => [OrderStatus::InProgress->value,       OrderStatus::Delivered->value],
+            'reverse from delivered'   => [OrderStatus::Delivered->value,        OrderStatus::InProgress->value],
+            'locked ready to confirmed'=> [OrderStatus::ReadyForDispatch->value, OrderStatus::Confirmed->value],
+            'locked out for delivery'  => [OrderStatus::OutForDelivery->value,   OrderStatus::OnHold->value],
+            'returned is locked'       => [OrderStatus::Returned->value,         OrderStatus::InProgress->value],
+            'skip to out for delivery' => [OrderStatus::InProgress->value,       OrderStatus::OutForDelivery->value],
         ];
     }
 
@@ -104,9 +106,17 @@ final class V3TransitionResolutionTest extends TestCase
         self::assertNull($this->resolve(OrderStatus::Delivered->value, 'completed'));
     }
 
+    /**
+     * `confirmed` was removed from this list by ADR-042, which restores it as a
+     * canonical state. That is a contract change, not a relaxed assertion: the
+     * remaining five tokens are still asserted to be unroutable, and `confirmed`
+     * is now asserted POSITIVELY in routedEdges() as `in_progress → confirmed`
+     * resolving to ConfirmOrderWorkflow. It moved from one assertion to a
+     * stronger one rather than being dropped.
+     */
     public function test_retired_v2_vocabulary_no_longer_resolves(): void
     {
-        foreach (['pending', 'confirmed', 'processing', 'preparing', 'review', 'rescheduled'] as $legacy) {
+        foreach (['pending', 'processing', 'preparing', 'review', 'rescheduled'] as $legacy) {
             self::assertNull(
                 $this->resolve(OrderStatus::InProgress->value, $legacy),
                 "Retired V2 token [{$legacy}] must not be a valid target.",

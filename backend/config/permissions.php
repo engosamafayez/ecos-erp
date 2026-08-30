@@ -54,10 +54,18 @@ return [
             'supplier_returns' => ['view', 'create', 'edit', 'submit', 'approve', 'reject', 'cancel', 'complete', 'mark_sent', 'credit_pending'],
             'supplier_invoices' => ['view', 'create', 'edit', 'validate', 'post', 'cancel'],
             'receiving' => ['view', 'create', 'post', 'cancel'],
+            // Procurement's planning estimate of what will arrive for a preparation wave.
+            // Planning only — it grants no inventory, goods-receipt or purchase-order write.
+            'expected_incoming' => ['update'],
         ],
 
         'sales' => [
-            'orders' => ['view', 'create', 'update', 'delete', 'fulfill', 'override_price'],
+            // proof_view is the READ half of the payment-proof lifecycle: listing an order's
+            // proofs and downloading the evidence file itself. It is separate from
+            // `orders.view` because Finance deliberately holds no order verb at all yet must
+            // read the evidence it is asked to verify, and because the file is sensitive
+            // financial evidence that order visibility alone should not carry.
+            'orders' => ['view', 'create', 'update', 'delete', 'fulfill', 'override_price', 'proof_view', 'proof_upload', 'proof_verify', 'proof_reject'],
             'channels' => ['view', 'create', 'update', 'delete', 'sync'],
             'fulfillments' => ['view', 'create', 'update', 'delete'],
         ],
@@ -78,6 +86,19 @@ return [
         'operations' => [
             'preparation' => ['view', 'create', 'update', 'delete'],
             'fulfillment' => ['view', 'manage'],
+        ],
+
+        // Loading OS (Modules/Operations/Loading). These names are checked by
+        // LoadingSessionPolicy / AllocationRecordPolicy / VehicleAssignmentPolicy but
+        // were previously defined nowhere, so the whole module was super-admin-only.
+        // A companion migration seeds + grants them idempotently for environments
+        // whose roles already exist; this catalogue entry keeps them across a fresh
+        // db:seed. `loading.driver.operate` gates the driver runtime (Section 5).
+        'loading' => [
+            'session' => ['view', 'create', 'operate', 'cancel', 'dispatch'],
+            'vehicle' => ['assign'],
+            'allocation' => ['view', 'manage', 'override'],
+            'driver' => ['operate'],
         ],
 
         'engineering' => [
@@ -112,6 +133,13 @@ return [
 
         'configuration' => [
             'settings' => ['view', 'manage'],
+        ],
+
+        // TASK-PROC-SUPPLIER-OPENING-BALANCE-001 — a dedicated posting permission for supplier
+        // opening balances (NOT finance.ap.bill.post). Seeded via this catalogue (no migration);
+        // the 'ap.opening' resource yields the 4-segment name finance.ap.opening.post.
+        'finance' => [
+            'ap.opening' => ['post'],
         ],
 
     ],
@@ -196,7 +224,11 @@ return [
             'purchasing.supplier_returns' => ['view', 'create', 'edit', 'submit', 'approve', 'reject', 'cancel', 'complete', 'mark_sent', 'credit_pending'],
             'crm.customers' => ['view', 'create', 'update', 'delete'],
             'sales.channels' => ['view', 'create', 'update', 'delete', 'sync'],
-            'sales.orders' => ['view', 'create', 'update', 'delete', 'fulfill', 'override_price'],
+            // proof_verify / proof_reject: separation of duties for the payment gate
+            // (TASK-ORDERS-PAYMENT-CONFIRMATION-FULFILLMENT-IMPLEMENTATION-001, Decision 2).
+            // Deliberately NOT proof_upload -- the tenant administrator reviews evidence,
+            // it does not submit it. Both rows already exist in the catalogue above.
+            'sales.orders' => ['view', 'create', 'update', 'delete', 'fulfill', 'override_price', 'proof_view', 'proof_verify', 'proof_reject'],
             'sales.fulfillments' => ['view', 'create', 'update', 'delete'],
             'logistics.shipping' => ['view', 'quote'],
             'logistics.carriers' => ['view', 'create', 'update', 'delete'],
@@ -221,6 +253,12 @@ return [
             'carrier' => ['view', 'manage'],
             'operations.preparation' => ['view', 'create', 'update', 'delete'],
             'operations.fulfillment' => ['view', 'manage'],
+            // Loading OS — company-admin holds the full operational set, per the same
+            // authorised RBAC decision that grants it the two-segment logistics set.
+            'loading.session' => ['view', 'create', 'operate', 'cancel', 'dispatch'],
+            'loading.vehicle' => ['assign'],
+            'loading.allocation' => ['view', 'manage', 'override'],
+            'loading.driver' => ['operate'],
             'marketing.workspace' => ['view', 'manage'],
             'cep.inbox' => ['view', 'manage'],
             'omnichannel.inbox' => ['view', 'manage'],
@@ -264,7 +302,7 @@ return [
             'inventory.products' => ['view'],
             'crm.customers' => ['view', 'create', 'update', 'delete'],
             'sales.channels' => ['view'],
-            'sales.orders' => ['view', 'create', 'update', 'fulfill', 'override_price'],
+            'sales.orders' => ['view', 'create', 'update', 'fulfill', 'override_price', 'proof_view', 'proof_upload'],
             'sales.fulfillments' => ['view', 'create', 'update'],
             'operations.fulfillment' => ['view', 'manage'],
             'pos.terminal' => ['view', 'operate'],
@@ -317,6 +355,9 @@ return [
             'dispatch' => ['view'],
             'routing' => ['view'],
             'carrier' => ['view'],
+            // Loading OS — viewer receives the read-only `.view` subset only.
+            'loading.session' => ['view'],
+            'loading.allocation' => ['view'],
         ],
 
         // ── Operator role grants (TASK-OPERATOR-ROLES-001) — existing permissions only ──
@@ -361,6 +402,7 @@ return [
             'purchasing.supplier_invoices' => ['view', 'create', 'edit', 'validate', 'post', 'cancel'],
             'purchasing.supplier_returns' => ['view', 'create', 'edit', 'submit', 'approve', 'reject', 'cancel', 'complete', 'mark_sent', 'credit_pending'],
             'purchasing.receiving' => ['view', 'create', 'post', 'cancel'],
+            'purchasing.expected_incoming' => ['update'],
         ],
 
         'purchasing-officer' => [
@@ -376,6 +418,7 @@ return [
             'purchasing.supplier_invoices' => ['view', 'create', 'edit'],
             'purchasing.supplier_returns' => ['view', 'create', 'edit', 'submit'],
             'purchasing.receiving' => ['view', 'create'],
+            'purchasing.expected_incoming' => ['update'],
         ],
 
         'sales-manager' => [
@@ -383,7 +426,7 @@ return [
             'inventory.categories' => ['view'],
             'crm.customers' => ['view', 'create', 'update', 'delete'],
             'sales.channels' => ['view', 'create', 'update', 'delete', 'sync'],
-            'sales.orders' => ['view', 'create', 'update', 'delete', 'fulfill', 'override_price'],
+            'sales.orders' => ['view', 'create', 'update', 'delete', 'fulfill', 'override_price', 'proof_view', 'proof_upload'],
             'sales.fulfillments' => ['view', 'create', 'update', 'delete'],
             'operations.fulfillment' => ['view', 'manage'],
             'cep.inbox' => ['view', 'manage'],
@@ -395,7 +438,7 @@ return [
             'inventory.categories' => ['view'],
             'crm.customers' => ['view', 'create', 'update'],
             'sales.channels' => ['view'],
-            'sales.orders' => ['view', 'create', 'update', 'fulfill'],
+            'sales.orders' => ['view', 'create', 'update', 'fulfill', 'proof_view', 'proof_upload'],
             'sales.fulfillments' => ['view', 'create'],
             'cep.inbox' => ['view'],
         ],
@@ -437,9 +480,32 @@ return [
             'logistics.shipping' => ['view'],
         ],
 
+        // TASK-DRIVER-02 — the driver's grant is now the driver runtime, and only that.
+        //
+        // ADDED `loading.driver.operate`. It gates exactly ONE thing — the `/api/driver/*`
+        // group (routes/api.php) — and nothing else: no policy references it, and it appears
+        // at no other route. Its own registered description is "Operate the driver runtime
+        // (own assigned trips only)". The route group is additionally fail-closed inside
+        // `DriverRuntimeController`, which resolves the driver from `logistics_drivers.user_id`
+        // and admits only trips that are BOTH the actor's company AND that driver's own. This
+        // is therefore the minimum grant that makes the driver app usable, not a widening.
+        //
+        // This REVERSES the note in 2026_08_20_100000_seed_loading_os_permissions.php, which
+        // withheld it on the grounds that "the driver identity is resolved per-request in the
+        // driver runtime, not via a role". That reasoning conflates identity with
+        // authorization: identity is indeed resolved per request, but the `permission:`
+        // middleware still runs first, so the permission named "Operate the driver runtime"
+        // was held by nobody who operates the driver runtime and every driver got 403.
+        //
+        // REMOVED `logistics.distribution` view+update. That is the DISPATCHER surface
+        // (`/api/logistics/distribution/*`), and granting it to drivers is what allowed a
+        // driver to reach the cash ledger: record a payment and verify it, on any company's
+        // trip. TASK-SHIPPING-DRIVER-CLOSURE-001 §158-161 recorded this risk and recommended
+        // exactly this revocation. Nothing driver-facing needs it — the driver frontend calls
+        // only `/driver/*`, and the driver runtime authorises on `loading.driver.operate`.
         'driver' => [
             'logistics.shipping' => ['view'],
-            'logistics.distribution' => ['view', 'update'],
+            'loading.driver' => ['operate'],
         ],
 
         'cashier' => [
@@ -519,7 +585,13 @@ return [
             'purchasing.supplier_returns' => ['view'],
             'crm.customers' => ['view'],
             'sales.channels' => ['view'],
-            'sales.orders' => ['view'],
+            // proof_view added 2026-08-23 (TASK-ORDERS-PAYMENT-PROOF-RBAC-TEMPLATE-ALIGNMENT-001).
+            // Gating the proof list/download endpoints on a dedicated read right would otherwise
+            // have blinded the one role whose entire purpose is inspection — it holds `view` on
+            // every other domain and a write verb on none. READ ONLY: no proof_upload (that is a
+            // Sales capability) and no proof_verify/proof_reject (auditing a control and
+            // exercising it are different jobs), so the maker-checker split is untouched.
+            'sales.orders' => ['view', 'proof_view'],
             'sales.fulfillments' => ['view'],
             'logistics.shipping' => ['view'],
             'logistics.carriers' => ['view'],
@@ -537,6 +609,13 @@ return [
         // role at all — Finance was reachable only via the super-admin bypass.
         // Names below are the exact rows in the permissions table; none is new.
         'finance-manager' => [
+            // The ONLY sales.* grant Finance holds, and deliberately so
+            // (TASK-ORDERS-PAYMENT-CONFIRMATION-FULFILLMENT-IMPLEMENTATION-001, Decision 2).
+            // Payment evidence is reviewed by the money owner, never by the role that
+            // raised the order: no Sales role holds proof_verify/proof_reject, and Finance
+            // holds neither proof_upload nor any order write verb. Verifying a proof still
+            // cannot move an order by itself -- ConfirmOrderWorkflow re-applies every gate.
+            'sales.orders' => ['proof_view', 'proof_verify', 'proof_reject'],
             'finance.gl' => ['view'],
             'finance.coa' => ['manage'],
             'finance.journal' => ['create', 'post', 'approve', 'reverse'],
@@ -549,6 +628,7 @@ return [
             'finance.ap' => ['view'],
             'finance.ap.bill' => ['create', 'post'],
             'finance.ap.payment' => ['create', 'approve'],
+            'finance.ap.opening' => ['post'], // supplier opening-balance posting (dedicated)
             'finance.cash' => ['view', 'manage'],
             'finance.cash.session' => ['manage'],
             'finance.bank' => ['view', 'manage', 'reconcile'],

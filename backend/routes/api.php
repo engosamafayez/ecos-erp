@@ -11,9 +11,11 @@ use App\Http\Controllers\MediaController;
 use Illuminate\Support\Facades\Route;
 use Modules\Admin\Configuration\Presentation\Http\Controllers\BrandConfigurationController;
 use Modules\Admin\Configuration\Presentation\Http\Controllers\CompanyConfigurationController;
+use Modules\Admin\Configuration\Presentation\Http\Controllers\GoodsInwardModeController;
 use Modules\Admin\Configuration\Presentation\Http\Controllers\MasterGeographyController;
 use Modules\Admin\Configuration\Presentation\Http\Controllers\MasterZoneController;
 use Modules\Admin\Configuration\Presentation\Http\Controllers\PreparationPolicyController;
+use Modules\Admin\Configuration\Presentation\Http\Controllers\WaveEngineConfigurationController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\ArtifactController as CbArtifactController;
 use Modules\System\Engineering\Presentation\Http\Controllers\EngineeringDashboardController;
 use Modules\System\Engineering\Presentation\Http\Controllers\PipelineController;
@@ -59,6 +61,7 @@ use Modules\Commerce\Connectors\Presentation\Http\Controllers\ConnectorControlle
 use Modules\Commerce\Fulfillments\Presentation\Http\Controllers\FulfillmentController;
 use Modules\Commerce\OrderImport\Presentation\Http\Controllers\OrderImportController;
 use Modules\Commerce\Orders\Presentation\Http\Controllers\OrderController;
+use Modules\Commerce\Orders\Presentation\Http\Controllers\PaymentProofController;
 use Modules\Commerce\ProductImport\Presentation\Http\Controllers\ProductImportController;
 use Modules\Commerce\ProductMappings\Presentation\Http\Controllers\ProductMappingController;
 use Modules\Commerce\Shipping\Presentation\Http\Controllers\ShippingQuoteController;
@@ -83,12 +86,19 @@ use Modules\Inventory\StockLedger\Presentation\Http\Controllers\StockMovementCon
 use Modules\Inventory\WarehouseLiabilities\Presentation\Http\Controllers\WarehouseLiabilityController;
 use Modules\Inventory\WasteInvestigations\Presentation\Http\Controllers\WasteInvestigationController;
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\DistributionPlanningController;
+use Modules\Logistics\Distribution\Presentation\Http\Controllers\DistributionWindowController;
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\DistributionZoneController;
+use Modules\Logistics\Distribution\Presentation\Http\Controllers\GroupTemplateController;
 use Modules\Logistics\Geography\Presentation\Http\Controllers\CityAliasController;
 use Modules\Logistics\Geography\Presentation\Http\Controllers\CityController;
 use Modules\Logistics\Geography\Presentation\Http\Controllers\GovernorateController;
-use Modules\Logistics\Distribution\Presentation\Http\Controllers\DeliveryController as LogisticsDeliveryController;
-use Modules\Logistics\Distribution\Presentation\Http\Controllers\SettlementController as LogisticsSettlementController;
+use Modules\Logistics\Distribution\Presentation\Http\Controllers\DriverReportsController;
+use Modules\Logistics\Distribution\Presentation\Http\Controllers\DriverTripExpenseController;
+use Modules\Logistics\Distribution\Presentation\Http\Controllers\DriverTripMovementReviewController;
+use Modules\Logistics\Distribution\Presentation\Http\Controllers\DriverRuntimeController;
+use Modules\Logistics\Distribution\Presentation\Http\Controllers\DriverDaySettlementController;
+use Modules\Logistics\Distribution\Presentation\Http\Controllers\DriverLoadingController;
+use Modules\Logistics\Distribution\Presentation\Http\Controllers\GroupLoadingWorkspaceController;
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\TripController as LogisticsTripController;
 use Modules\Logistics\Delivery\Presentation\Http\Controllers\DeliveryAttemptController;
 use Modules\Logistics\Delivery\Presentation\Http\Controllers\DeliveryCodController;
@@ -224,8 +234,10 @@ use Modules\Operations\Loading\Presentation\Http\Controllers\DriverAssignmentCon
 use Modules\Operations\Loading\Presentation\Http\Controllers\LoadingDashboardController;
 use Modules\Operations\Loading\Presentation\Http\Controllers\LoadingExceptionController;
 use Modules\Operations\Loading\Presentation\Http\Controllers\LoadingSessionController;
+use Modules\Operations\Loading\Presentation\Http\Controllers\ShipmentGroupController;
 use Modules\Operations\Loading\Presentation\Http\Controllers\VehicleAssignmentController;
 use Modules\Operations\Loading\Presentation\Http\Controllers\VehicleInventoryController;
+use Modules\Operations\Loading\Presentation\Http\Controllers\VehicleShiftReconciliationController;
 use Modules\Operations\Preparation\Presentation\Http\Controllers\PreparationAnalyticsController;
 use Modules\Operations\Preparation\Presentation\Http\Controllers\PreparationDashboardController;
 use Modules\Operations\Preparation\Presentation\Http\Controllers\PreparationEnterpriseController;
@@ -241,6 +253,7 @@ use Modules\Organization\Brands\Presentation\Http\Controllers\BrandController;
 use Modules\Organization\Brands\Presentation\Http\Controllers\BrandDeliveryController;
 use Modules\Organization\Brands\Presentation\Http\Controllers\BrandDeliveryTimeSlotController;
 use Modules\Organization\Brands\Presentation\Http\Controllers\BrandShippingController;
+use Modules\Organization\Brands\Presentation\Http\Controllers\BrandWarehouseCoverageController;
 use Modules\Organization\BusinessAccounts\Presentation\Http\Controllers\BusinessAccountController;
 use Modules\Organization\Companies\Presentation\Http\Controllers\CompanyController;
 use Modules\Organization\Teams\Presentation\Http\Controllers\TeamController;
@@ -254,12 +267,15 @@ use Modules\POS\Presentation\Http\Controllers\SessionController as PosSessionCon
 use Modules\POS\Presentation\Http\Controllers\ShiftController as PosShiftController;
 use Modules\POS\Presentation\Http\Controllers\TerminalController as PosTerminalController;
 use Modules\Purchasing\GoodsReceipts\Presentation\Http\Controllers\GoodsReceiptController;
+use Modules\Purchasing\GoodsReceipts\Presentation\Http\Controllers\ReceivingCenterController;
 use Modules\Purchasing\PurchaseMaterials\Presentation\Http\Controllers\PurchaseMaterialController;
 use Modules\Purchasing\PurchaseOrders\Presentation\Http\Controllers\PurchaseOrderController;
 use Modules\Purchasing\SupplierInvoices\Presentation\Http\Controllers\SupplierInvoiceController;
+use Modules\Purchasing\SupplierInvoices\Presentation\Http\Controllers\SupplierInvoiceDocumentController;
 use Modules\Purchasing\SupplierReturns\Presentation\Http\Controllers\SupplierReturnController;
 use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierAnalyticsController;
 use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierController;
+use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierOpeningBalanceController;
 use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierDocumentController;
 use Modules\Sales\Customers\Presentation\Http\Controllers\CustomerAddressController;
 use Modules\Sales\Customers\Presentation\Http\Controllers\CustomerController;
@@ -354,6 +370,11 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
         Route::get('shipping/cities', [BrandShippingController::class, 'listCities']);
         Route::put('shipping/cities/{city}', [BrandShippingController::class, 'updateCity'])->middleware('permission:organization.brands.update');
         Route::get('shipping/calculate', [BrandShippingController::class, 'calculatePrice']);
+
+        // Brand → Warehouses coverage (which warehouses serve this brand).
+        // Reuses the certified warehouse_brand_coverage relation; semantics unchanged.
+        Route::get('warehouse-coverage', [BrandWarehouseCoverageController::class, 'index']);
+        Route::put('warehouse-coverage', [BrandWarehouseCoverageController::class, 'update'])->middleware('permission:organization.brands.update');
     });
     Route::apiResource('business-accounts', BusinessAccountController::class)
         ->middlewareFor('store', 'permission:organization.business_accounts.create')
@@ -414,11 +435,24 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::middleware(['throttle:10,1'])->group(function (): void {
         Route::post('products/import', [ProductController::class, 'import'])->middleware('permission:inventory.products.create');
     });
+    // PUT and PATCH are split deliberately. `apiResource` registers `update` as
+    // PUT|PATCH, and Laravel returns the FIRST matching route, so the resource
+    // shadowed the dedicated PATCH below: every partial payload was dispatched to
+    // update() -> UpdateProductRequest, whose sku/name/category_id/product_type are
+    // all `required`, so the inventory-policy toggle could only ever return 422 and
+    // ProductController::patch() was unreachable from the day it shipped
+    // (TASK-INV-RAW-MATERIALS-REGRESSION-DIAGNOSTIC-001). Declaring each verb
+    // explicitly makes the two contracts distinct and immune to registration order.
     Route::apiResource('products', ProductController::class)
+        ->except(['update'])
         ->middlewareFor('store', 'permission:inventory.products.create')
-        ->middlewareFor('update', 'permission:inventory.products.update')
         ->middlewareFor('destroy', 'permission:inventory.products.delete');
-    Route::patch('products/{product}', [ProductController::class, 'patch'])->middleware('permission:inventory.products.update');
+    Route::put('products/{product}', [ProductController::class, 'update'])
+        ->name('products.update')
+        ->middleware('permission:inventory.products.update');
+    Route::patch('products/{product}', [ProductController::class, 'patch'])
+        ->name('products.patch')
+        ->middleware('permission:inventory.products.update');
     Route::get('products/{product}/cost-history', [InventoryLayerController::class, 'costHistory']);
     Route::get('products/{product}/warehouse-distribution', [InventoryLayerController::class, 'warehouseDistribution']);
     Route::get('stock-movements', [StockMovementController::class, 'index']);
@@ -524,6 +558,10 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('orders/pricing/product/{productId}', [OrderController::class, 'productPricing']);
     Route::patch('orders/{order}/quick-update', [OrderController::class, 'quickUpdate'])->middleware('permission:sales.orders.update');
     Route::patch('orders/{order}/zone', [OrderController::class, 'updateZone'])->middleware('permission:sales.orders.update');
+    // Resolve the order's map point: captured coords, else server-side geocode of the
+    // COMPLETE delivery address. Writes google_maps_lat/lng (location_source='geocoded')
+    // on success, so it carries the update permission like the other order writes.
+    Route::post('orders/{order}/resolve-location', [OrderController::class, 'resolveLocation'])->middleware('permission:sales.orders.update');
     Route::post('orders/{order}/confirm-customer', [OrderController::class, 'confirmCustomer'])->middleware('permission:sales.orders.update');
     Route::get('orders/{order}/activities', [OrderController::class, 'activities']);
     Route::post('orders/{order}/notes', [OrderController::class, 'addNote'])->middleware('permission:sales.orders.update');
@@ -536,6 +574,20 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
         ->middlewareFor('destroy', 'permission:sales.orders.delete');
     Route::post('orders/{order}/prepare', [OrderController::class, 'prepare'])->middleware('permission:sales.orders.update');
     Route::post('orders/{order}/verify-payment', [OrderController::class, 'verifyPayment'])->middleware('permission:sales.orders.update');
+    Route::post('orders/{order}/record-payment', [OrderController::class, 'recordPayment'])->middleware('permission:sales.orders.update');
+
+    // Payment proof lifecycle (TASK-PAYMENT-PROOF-LIFECYCLE-001). Proof is evidence,
+    // not payment truth and not an Order status; upload/verify/reject are distinct perms.
+    // READ is a distinct right, not a by-product of order visibility: `download` streams the
+    // evidence file itself. Both were previously auth-only, so every authenticated user in the
+    // tenant could list and download payment evidence — including roles holding no sales.orders
+    // grant at all. Gated on the dedicated `proof_view` rather than `orders.view`, because
+    // Finance holds no order verb and must still read what it is asked to verify.
+    Route::get('orders/{order}/payment-proofs', [PaymentProofController::class, 'index'])->middleware('permission:sales.orders.proof_view');
+    Route::post('orders/{order}/payment-proofs', [PaymentProofController::class, 'upload'])->middleware('permission:sales.orders.proof_upload');
+    Route::get('orders/{order}/payment-proofs/{proof}/download', [PaymentProofController::class, 'download'])->middleware('permission:sales.orders.proof_view');
+    Route::post('payment-proofs/{proof}/verify', [PaymentProofController::class, 'verify'])->middleware('permission:sales.orders.proof_verify');
+    Route::post('payment-proofs/{proof}/reject', [PaymentProofController::class, 'reject'])->middleware('permission:sales.orders.proof_reject');
     // CR-PREP-001: Warehouse assignment
     Route::post('orders/{order}/assign-warehouse', [WarehouseAssignmentController::class, 'assignWarehouse'])->middleware('permission:sales.orders.update');
     Route::post('orders/{order}/override-warehouse', [WarehouseAssignmentController::class, 'overrideWarehouse'])->middleware('permission:sales.orders.update');
@@ -558,6 +610,11 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('suppliers/stats', [SupplierAnalyticsController::class, 'summaryStats']);
     Route::apiResource('suppliers', SupplierController::class)
+        // Read-authorization was open: purchasing.suppliers.view is granted to roles but
+        // was attached to no route, so any authenticated company user read suppliers. Gate
+        // the reads with the existing permission (no new permission invented).
+        ->middlewareFor('index', 'permission:purchasing.suppliers.view')
+        ->middlewareFor('show', 'permission:purchasing.suppliers.view')
         ->middlewareFor('store', 'permission:purchasing.suppliers.create')
         ->middlewareFor('update', 'permission:purchasing.suppliers.update')
         ->middlewareFor('destroy', 'permission:purchasing.suppliers.delete');
@@ -565,7 +622,14 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('suppliers/{supplier}/inventory-breakdown', [SupplierAnalyticsController::class, 'inventoryBreakdown']);
     Route::get('suppliers/{supplier}/health', [SupplierAnalyticsController::class, 'health']);
     Route::get('suppliers/{supplier}/price-history', [SupplierAnalyticsController::class, 'priceHistory']);
+    Route::get('suppliers/{supplier}/product-demand', [SupplierAnalyticsController::class, 'productDemand']);
     Route::get('suppliers/{supplier}/timeline', [SupplierAnalyticsController::class, 'timeline']);
+    // TASK-PROC-SUPPLIER-OPENING-BALANCE-001 — ledger-derived financial summary (Payable vs
+    // Advance) + Post Opening Balance (dedicated finance.ap.opening.post permission).
+    Route::get('suppliers/{supplier}/financial-summary', [SupplierOpeningBalanceController::class, 'summary'])
+        ->middleware('permission:purchasing.suppliers.view');
+    Route::post('suppliers/{supplier}/opening-balance', [SupplierOpeningBalanceController::class, 'store'])
+        ->middleware('permission:finance.ap.opening.post');
     Route::get('suppliers/{supplier}/documents', [SupplierDocumentController::class, 'index']);
     Route::post('suppliers/{supplier}/documents', [SupplierDocumentController::class, 'store'])->middleware('permission:purchasing.suppliers.update');
     Route::delete('suppliers/{supplier}/documents/{document}', [SupplierDocumentController::class, 'destroy'])->middleware('permission:purchasing.suppliers.update');
@@ -582,6 +646,16 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
         ->middlewareFor('update', 'permission:purchasing.goods_receipts.update')
         ->middlewareFor('destroy', 'permission:purchasing.goods_receipts.delete');
     Route::post('goods-receipts/{goodsReceipt}/post', [GoodsReceiptController::class, 'post'])->middleware('permission:purchasing.goods_receipts.update');
+
+    // Receiving Center — Purchase-Order-driven receiving queue
+    // (TASK-PROCUREMENT-PO-DRIVEN-RECEIVING-CENTER-001). Reads receivable POs and delegates the
+    // physical receipt to the certified Create+Post actions; no new inventory authority, no new
+    // inbound mode, goods_inward_mode untouched. The receive write carries the existing warehouse
+    // receipt permission — distinct from PO/invoice authority (§18).
+    Route::get('receiving/queue', [ReceivingCenterController::class, 'queue']);
+    Route::get('receiving/purchase-orders/{purchaseOrder}', [ReceivingCenterController::class, 'show']);
+    Route::post('receiving/purchase-orders/{purchaseOrder}/receive', [ReceivingCenterController::class, 'receive'])
+        ->middleware('permission:purchasing.goods_receipts.create');
 
     // Purchase Materials
     Route::middleware('permission:purchasing.materials.view')
@@ -648,6 +722,11 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::post('supplier-invoices/{supplierInvoice}/validate', [SupplierInvoiceController::class, 'validate'])->middleware('permission:purchasing.supplier_invoices.validate');
     Route::post('supplier-invoices/{supplierInvoice}/post', [SupplierInvoiceController::class, 'post'])->middleware('permission:purchasing.supplier_invoices.post');
     Route::post('supplier-invoices/{supplierInvoice}/cancel', [SupplierInvoiceController::class, 'cancel'])->middleware('permission:purchasing.supplier_invoices.cancel');
+    // Supplier Invoice attachment (§3) — canonical DocumentService, private disk, auth+tenant gated.
+    Route::get('supplier-invoices/{supplierInvoice}/documents', [SupplierInvoiceDocumentController::class, 'index'])->middleware('permission:purchasing.supplier_invoices.view');
+    Route::post('supplier-invoices/{supplierInvoice}/documents', [SupplierInvoiceDocumentController::class, 'store'])->middleware('permission:purchasing.supplier_invoices.edit');
+    Route::get('supplier-invoices/{supplierInvoice}/documents/{document}/download', [SupplierInvoiceDocumentController::class, 'download'])->middleware('permission:purchasing.supplier_invoices.view');
+    Route::delete('supplier-invoices/{supplierInvoice}/documents/{document}', [SupplierInvoiceDocumentController::class, 'destroy'])->middleware('permission:purchasing.supplier_invoices.edit');
 });
 
 /*
@@ -806,6 +885,9 @@ Route::middleware('auth:sanctum')->prefix('preparation')->group(function (): voi
     Route::get('analytics', [PreparationAnalyticsController::class, 'index']);
 
     Route::get('waves', [PreparationWaveController::class, 'index']);
+    // Canonical current active wave (auto-open). MUST precede waves/{waveId} so "current"
+    // is not captured as a wave id (TASK-PREPARATION-WORKSPACE-MOBILE-UX-ACTIVE-WAVE-001 §3).
+    Route::get('waves/current', [PreparationWaveController::class, 'current']);
     Route::post('waves', [PreparationWaveController::class, 'store'])->middleware('permission:operations.preparation.create');
     Route::get('waves/{waveId}', [PreparationWaveController::class, 'show']);
     Route::post('waves/{waveId}/generate-demand', [PreparationWaveController::class, 'generateDemand'])->middleware('permission:operations.preparation.update');
@@ -816,6 +898,28 @@ Route::middleware('auth:sanctum')->prefix('preparation')->group(function (): voi
     Route::post('waves/{waveId}/complete', [PreparationWaveController::class, 'complete'])->middleware('permission:operations.preparation.update');
     Route::post('waves/{waveId}/cancel', [PreparationWaveController::class, 'cancel'])->middleware('permission:operations.preparation.update');
     Route::post('waves/{waveId}/recalculate', [PreparationWaveController::class, 'recalculate'])->middleware('permission:operations.preparation.update');
+    // Postpone an order out of the current preparation cycle. Retains the membership row
+    // with `postponed_at` stamped — it is not a delete and changes no order state.
+    Route::post('waves/{waveId}/orders/{orderId}/postpone', [PreparationWaveController::class, 'postponeOrder'])->middleware('permission:operations.preparation.update');
+    // The inverse of postpone: clears `postponed_at` on the RETAINED membership row once the
+    // material that caused the postponement is available again. An UPDATE, never an insert —
+    // and refused when the wave has left Collecting, so the existing carry-over handles it.
+    Route::post('waves/{waveId}/orders/{orderId}/return-to-preparation', [WaveDemandController::class, 'returnOrderToPreparation'])->middleware('permission:operations.preparation.update');
+
+    // Product-level Prepared (Option A) + drill-downs. Reads carry no permission
+    // middleware, matching the sibling demand GETs; writes require preparation.update.
+    Route::patch('waves/{waveId}/product-demand/{productId}/prepared', [WaveDemandController::class, 'updatePrepared'])->middleware('permission:operations.preparation.update');
+    Route::post('waves/{waveId}/product-demand/{productId}/complete', [WaveDemandController::class, 'completePreparation'])->middleware('permission:operations.preparation.update');
+    // Withdraw the completion declaration. Same permission as declaring it — the two are
+    // one reversible operator decision, not a privileged override.
+    Route::post('waves/{waveId}/product-demand/{productId}/uncomplete', [WaveDemandController::class, 'uncompletePreparation'])->middleware('permission:operations.preparation.update');
+    // "استمرار العملية رغم العجز" — continue this product despite a material shortage. Records
+    // the operator decision on the product-demand row; never deletes the order line/product.
+    Route::post('waves/{waveId}/product-demand/{productId}/continue-despite-shortage', [WaveDemandController::class, 'continueDespiteShortage'])->middleware('permission:operations.preparation.update');
+    // "قرارات العجز" — the deficit-decision workspace list (read-only).
+    Route::get('waves/{waveId}/deficit-decisions', [WaveDemandController::class, 'deficitDecisions']);
+    Route::get('waves/{waveId}/product-demand/{productId}/orders', [WaveDemandController::class, 'productRelatedOrders']);
+    Route::get('waves/{waveId}/missing-materials/{materialId}/orders', [WaveDemandController::class, 'materialRelatedOrders']);
     Route::get('waves/{waveId}/product-queue', [PreparationWaveController::class, 'productQueue']);
     Route::get('waves/{waveId}/items/{itemId}/workspace', [PreparationWaveController::class, 'productWorkspace']);
     Route::post('waves/{waveId}/issues', [PreparationWaveController::class, 'reportIssue'])->middleware('permission:operations.preparation.update');
@@ -831,6 +935,10 @@ Route::middleware('auth:sanctum')->prefix('preparation')->group(function (): voi
     Route::get('waves/{waveId}/product-demand', [WaveDemandController::class, 'productDemand']);
     Route::get('waves/{waveId}/material-demand', [WaveDemandController::class, 'materialDemand']);
     Route::get('waves/{waveId}/missing-materials', [WaveDemandController::class, 'missingMaterials']);
+    // Procurement's planning estimate for a missing material. Planning only: it writes one
+    // number and never inventory, a goods receipt, a reservation, or the real missing_qty.
+    Route::put('waves/{waveId}/missing-materials/{materialId}/expected-incoming', [WaveDemandController::class, 'updateExpectedIncoming'])
+        ->middleware('permission:purchasing.expected_incoming.update');
     Route::get('waves/{waveId}/manufacturing-demand', [WaveDemandController::class, 'manufacturingDemand']);
     Route::get('waves/{waveId}/orders', [WaveDemandController::class, 'waveOrders']);
 
@@ -883,6 +991,48 @@ Route::middleware('auth:sanctum')->prefix('loading')->group(function (): void {
     // Dashboard
     Route::get('dashboard', [LoadingDashboardController::class, 'index']);
 
+    /*
+     * Group-grain Loading READ — TASK-LOADING-GROUP-GRAIN-READ-AND-EXECUTION-UX-002.
+     *
+     * The SAME canonical Group manifest the Distribution route already serves, exposed
+     * under the permission the warehouse actually holds. The live role matrix shows
+     * `logistics.distribution.view` is held by Dispatcher, Driver, Fleet Manager and
+     * Branch Manager but NOT by Warehouse Operator, Warehouse Manager or Preparation
+     * Supervisor — the roles that physically load. Gating the Loading workspace on the
+     * Distribution permission would lock out every role that performs the work, and
+     * granting them that permission would hand them Distribution planning rights they
+     * must not have.
+     *
+     * `operations.preparation.view` is an EXISTING permission already held by Warehouse
+     * Manager, Warehouse Operator, Preparation Supervisor and Production Manager. No new
+     * permission is created. Gating by ACTOR rather than by owning module is the
+     * precedent already set by `PUT /windows/{window}/slots/{slot}/preparation/{product}`
+     * (`operations.preparation.update`), for exactly this reason.
+     *
+     * Both are READS. They create no session, no trip, no assignment and no task.
+     */
+    Route::get('groups', [GroupLoadingWorkspaceController::class, 'groups'])
+        ->middleware('permission:operations.preparation.view');
+    Route::get('groups/{slot}', [GroupLoadingWorkspaceController::class, 'group'])
+        ->middleware('permission:operations.preparation.view');
+
+    /*
+     * Warehouse custody WRITES — TASK-...-CUSTODY-IMPLEMENTATION-001.
+     *
+     * `loading.session.operate` is the existing capability for operating a loading
+     * session (its own description: "load products, record deliveries"). No new
+     * permission is created; a companion migration grants it to the warehouse roles it
+     * was always meant to cover.
+     *
+     * The READS above stay on `operations.preparation.view`: seeing what must be loaded
+     * is a strictly weaker act than changing what was loaded, and collapsing the two
+     * would hand every reader a writer's capability.
+     */
+    Route::post('groups/{slot}/products/{product}/confirm', [GroupLoadingWorkspaceController::class, 'confirmProduct'])
+        ->middleware('permission:loading.session.operate');
+    Route::post('groups/{slot}/adjustments/{adjustment}/resolve', [GroupLoadingWorkspaceController::class, 'resolveAdjustment'])
+        ->middleware('permission:loading.session.operate');
+
     // Loading Sessions
     Route::get('sessions', [LoadingSessionController::class, 'index']);
     Route::post('sessions', [LoadingSessionController::class, 'store']);
@@ -906,12 +1056,30 @@ Route::middleware('auth:sanctum')->prefix('loading')->group(function (): void {
 
     // Allocation
     Route::get('sessions/{sessionId}/assignments/{assignmentId}/allocation', [AllocationController::class, 'index']);
+    // Session-wide allocation read for the operator workspace (G3). Optional ?order_id.
+    Route::get('sessions/{sessionId}/allocation', [AllocationController::class, 'sessionIndex']);
     Route::post('sessions/{sessionId}/start-allocation', [AllocationController::class, 'startAllocation']);
     Route::post('sessions/{sessionId}/complete-allocation', [AllocationController::class, 'completeAllocation']);
     Route::post('sessions/{sessionId}/assignments/{assignmentId}/allocation/override', [AllocationController::class, 'override']);
+    // T-09 (ADR-015 §6.4): record the actual delivered quantity for one allocation
+    // line. Reaches RecordProductDeliveryAction, the sole delivered-quantity writer.
+    Route::post('sessions/{sessionId}/assignments/{assignmentId}/allocation/deliver', [AllocationController::class, 'recordDelivery']);
+
+    // Shipment groups (per-carrier grouping) — read-only carrier visibility (G4).
+    Route::get('sessions/{sessionId}/shipment-groups', [ShipmentGroupController::class, 'index']);
 
     // Vehicle Inventory
     Route::get('sessions/{sessionId}/assignments/{assignmentId}/inventory', [VehicleInventoryController::class, 'show']);
+
+    // T-04/T-05 convergence (ADR-015 §6.4): expose the existing vehicle-shift
+    // reconciliation domain over HTTP. loaded − delivered − returned = variance.
+    // Read model + open/refresh + record the operator-counted returned quantity.
+    Route::get('sessions/{sessionId}/assignments/{assignmentId}/reconciliation', [VehicleShiftReconciliationController::class, 'show']);
+    Route::post('sessions/{sessionId}/assignments/{assignmentId}/reconciliation/open', [VehicleShiftReconciliationController::class, 'open']);
+    Route::post('sessions/{sessionId}/assignments/{assignmentId}/reconciliation/lines/{lineId}/return', [VehicleShiftReconciliationController::class, 'recordReturn']);
+    // Warehouse return receipt (RETURNS-RECONCILIATION-001, §11): accepted → warehouse
+    // stock (canonical AdjustmentIn), damaged kept out of good stock, shortage = variance.
+    Route::post('sessions/{sessionId}/assignments/{assignmentId}/reconciliation/lines/{lineId}/receive', [VehicleShiftReconciliationController::class, 'receiveReturn']);
 
     // Exceptions
     Route::get('sessions/{sessionId}/exceptions', [LoadingExceptionController::class, 'index']);
@@ -938,6 +1106,13 @@ Route::middleware('auth:sanctum')->prefix('configuration')->group(function (): v
     Route::get('company/{group}', [CompanyConfigurationController::class, 'showGroup']);
     Route::put('company/{group}', [CompanyConfigurationController::class, 'updateGroup'])->middleware('permission:configuration.settings.manage');
 
+    // Procurement — the company's authoritative goods-inward document (G-1).
+    // Company is taken from the authenticated actor by the controller, never from the route,
+    // so an actor can only ever address its own company's setting.
+    Route::get('procurement/goods-inward-mode', [GoodsInwardModeController::class, 'show']);
+    Route::put('procurement/goods-inward-mode', [GoodsInwardModeController::class, 'update'])
+        ->middleware('permission:configuration.settings.manage');
+
     // Brand-level policy groups
     Route::get('brands/{brandId}/policies', [BrandConfigurationController::class, 'index']);
     Route::get('brands/{brandId}/policies/{group}', [BrandConfigurationController::class, 'show']);
@@ -950,6 +1125,12 @@ Route::middleware('auth:sanctum')->prefix('configuration')->group(function (): v
     Route::get('brands/{brandId}/preparation-policies', [PreparationPolicyController::class, 'index']);
     Route::post('brands/{brandId}/preparation-policies', [PreparationPolicyController::class, 'store'])->middleware('permission:configuration.settings.manage');
     Route::put('brands/{brandId}/preparation-policies/{id}', [PreparationPolicyController::class, 'update'])->middleware('permission:configuration.settings.manage');
+
+    // Preparation Wave engine — the operational cycle (start / intake cutoff / end).
+    // Company-scoped rather than brand-scoped: a wave belongs to a warehouse, and the
+    // operational timezone that resolves its boundaries belongs to the company.
+    Route::get('wave-engine', [WaveEngineConfigurationController::class, 'index']);
+    Route::put('wave-engine/{id}', [WaveEngineConfigurationController::class, 'update'])->middleware('permission:configuration.settings.manage');
 
     // Master Geography — governorates
     Route::prefix('master-geography')->group(function (): void {
@@ -1563,6 +1744,160 @@ Route::middleware('auth:sanctum')->prefix('logistics/distribution')->group(funct
     Route::patch('/zones/{id}/status', [DistributionZoneController::class, 'toggleStatus'])->middleware('permission:logistics.distribution.update');
 });
 
+// ── Shipping Distribution Core — Windows / Zones / Virtual Capacity Slots ────
+// TASK-SHIPPING-DISTRIBUTION-CORE-001. Planning only: no Vehicle is created or
+// referenced here, and no inventory is read, reserved or moved. Paths are
+// `/windows` and `/assignments`, which cannot shadow the `/zones/{id}` routes
+// declared above.
+Route::middleware('auth:sanctum')->prefix('logistics/distribution')->group(function (): void {
+    // Read model — the live Distribution Workspace.
+    Route::get('/windows/current', [DistributionWindowController::class, 'current'])
+        ->middleware('permission:logistics.distribution.view');
+    Route::get('/windows/{window}/zones', [DistributionWindowController::class, 'zones'])
+        ->middleware('permission:logistics.distribution.view');
+    // Map tab — read-only geographic projection of the same window. Reuses the
+    // existing view permission: it exposes no fact the zone and slot reads above do
+    // not already expose, only the coordinates the Orders module already stores.
+    Route::get('/windows/{window}/map', [DistributionWindowController::class, 'map'])
+        ->middleware('permission:logistics.distribution.view');
+    Route::get('/windows/{window}/slots', [DistributionWindowController::class, 'slots'])
+        ->middleware('permission:logistics.distribution.view');
+    Route::get('/windows/{window}/orders', [DistributionWindowController::class, 'orders'])
+        ->middleware('permission:logistics.distribution.view');
+    Route::get('/windows/{window}/products', [DistributionWindowController::class, 'products'])
+        ->middleware('permission:logistics.distribution.view');
+    Route::get('/windows/{window}/overflows', [DistributionWindowController::class, 'overflows'])
+        ->middleware('permission:logistics.distribution.view');
+    // Late-order triage list — read-only. The POST below remains the only mutation.
+    Route::get('/windows/{window}/late-orders', [DistributionWindowController::class, 'lateOrders'])
+        ->middleware('permission:logistics.distribution.view');
+
+    // Group Loading Preparation — set how much of one Product this Group has prepared.
+    //
+    // PUT, not PATCH: the body IS the new value, so replaying it writes the same
+    // number. That absolute-set semantic is what makes the operation idempotent
+    // without an idempotency key.
+    //
+    // The permission is `operations.preparation.update`, NOT
+    // `logistics.distribution.update`, and that is deliberate. The live role matrix
+    // shows Warehouse Operator / Warehouse Manager / Preparation Supervisor /
+    // Branch Manager hold it while NOT holding the Distribution one — and Driver and
+    // Dispatcher hold the Distribution one. Gating this on Distribution would lock
+    // out every role that performs the work and admit two that do not. Gating by
+    // ACTOR rather than by owning module already has a precedent here:
+    // `PUT preparation/waves/{w}/missing-materials/{m}/expected-incoming` carries
+    // `purchasing.expected_incoming.update`. No new permission is created.
+    Route::put('/windows/{window}/slots/{slot}/preparation/{product}', [DistributionWindowController::class, 'setGroupPreparation'])
+        ->middleware('permission:operations.preparation.update');
+
+    // Group → Trip. Finalize hands the planned Group over to transport execution:
+    // it creates (or returns) the Group's canonical Trip(s), assigns its eligible
+    // orders, and moves each Trip Planning → Loading. Idempotent — a second call
+    // returns the same Trips rather than creating more.
+    //
+    // `logistics.distribution.update` is the permission every existing Trip mutation
+    // already carries (PATCH /trips/{id}/status, /trips/{id}/assignment). Finalize is
+    // where planning becomes transport, so it belongs to the logistics actor. No new
+    // permission is created.
+    Route::post('/windows/{window}/slots/{slot}/finalize', [DistributionWindowController::class, 'finalizeGroup'])
+        ->middleware('permission:logistics.distribution.update');
+    Route::get('/windows/{window}/slots/{slot}/trips', [DistributionWindowController::class, 'groupTrips'])
+        ->middleware('permission:logistics.distribution.view');
+    // Group ↔ Trip reconciliation — a READ that makes the difference between the
+    // Group's planning membership and its Trips' execution manifest visible. It
+    // mutates nothing and synchronises nothing: the approved contract keeps the two
+    // deliberately independent, so this reports the two set differences rather than
+    // closing them. Same view permission as the sibling read above; no new
+    // permission, because it is the same actor asking about the same Group.
+    Route::get('/windows/{window}/slots/{slot}/reconciliation', [DistributionWindowController::class, 'groupReconciliation'])
+        ->middleware('permission:logistics.distribution.view');
+    // Orders no Group covers, with the root blocker for each. A READ: it classifies and
+    // returns, and mutates nothing — it assigns no warehouse, no zone and no group.
+    // Same view permission as the sibling reads; no new permission, because it is the
+    // same actor asking about the same Window.
+    Route::get('/windows/{window}/awaiting-group', [DistributionWindowController::class, 'ordersAwaitingGroup'])
+        ->middleware('permission:logistics.distribution.view');
+
+    // VP-1 — Vehicle + Driver assignment for a Group. Reuses the SAME two
+    // permissions every other Group/Trip verb carries; no new permission is
+    // created, because assigning a vehicle is the same actor doing the same job.
+    // Tenant isolation is enforced by the fleet models' global scopes at
+    // resolution time, not by these middlewares — a capability is not a tenant
+    // predicate.
+    Route::get('/windows/{window}/slots/{slot}/fleet-options', [DistributionWindowController::class, 'groupFleetOptions'])
+        ->middleware('permission:logistics.distribution.view');
+    Route::post('/windows/{window}/slots/{slot}/assign-vehicle', [DistributionWindowController::class, 'assignGroupVehicle'])
+        ->middleware('permission:logistics.distribution.update');
+
+    // Group -> Trip -> Vehicle/Driver -> LOADING. Opens (or re-opens, idempotently)
+    // the canonical Loading execution context for a Group's Trip and returns it.
+    //
+    // Carries `operations.preparation.update` -- the approved actor precedent for
+    // warehouse/preparation staff, who are the people who physically load. The
+    // Distribution planner's permission is deliberately NOT used: the roles that
+    // perform loading do not hold it. No new permission is created.
+    Route::post('/windows/{window}/slots/{slot}/trips/{trip}/loading', [DistributionWindowController::class, 'openGroupLoading'])
+        ->middleware('permission:operations.preparation.update');
+
+    // Automatic collection — idempotent, safe to invoke repeatedly.
+    Route::post('/windows/collect', [DistributionWindowController::class, 'collect'])
+        ->middleware('permission:logistics.distribution.update');
+
+    // Slot planning.
+    Route::post('/windows/{window}/slots', [DistributionWindowController::class, 'storeSlot'])
+        ->middleware('permission:logistics.distribution.create');
+    // Edit a Group's configuration: its name and its maximum order count. Reuses
+    // the existing update permission — editing a Group's capacity is the same class
+    // of planning edit as attaching a Zone to it. No new permission is introduced.
+    Route::patch('/windows/{window}/slots/{slot}', [DistributionWindowController::class, 'updateSlot'])
+        ->middleware('permission:logistics.distribution.update');
+    Route::post('/windows/{window}/slots/{slot}/zones', [DistributionWindowController::class, 'assignZoneToSlot'])
+        ->middleware('permission:logistics.distribution.update');
+    // Group management (PART-5C). Both reuse the existing update permission: they
+    // are planning edits inside a Distribution Group, the same class of action as
+    // attaching a Zone. No new permission was introduced.
+    Route::post('/windows/{window}/slots/{slot}/zones/move', [DistributionWindowController::class, 'moveZoneBetweenSlots'])
+        ->middleware('permission:logistics.distribution.update');
+    Route::delete('/windows/{window}/slots/{slot}/zones/{zone}', [DistributionWindowController::class, 'detachZoneFromSlot'])
+        ->middleware('permission:logistics.distribution.update');
+
+    // Manager overrides — permitted AFTER cutoff by design.
+    Route::patch('/assignments/{assignment}/zone', [DistributionWindowController::class, 'changeZone'])
+        ->middleware('permission:logistics.distribution.update');
+    Route::patch('/assignments/{assignment}/slot', [DistributionWindowController::class, 'changeSlot'])
+        ->middleware('permission:logistics.distribution.update');
+    // Atomic multi-order move. Two segments, so it can never be read as
+    // `/assignments/{assignment}/slot` with an assignment literally named "batch".
+    Route::patch('/assignments/batch-slot', [DistributionWindowController::class, 'changeSlotBatch'])
+        ->middleware('permission:logistics.distribution.update');
+
+    // Manual Late-Order Assignment — the Order stays inside Distribution.
+    Route::post('/windows/{window}/late-orders', [DistributionWindowController::class, 'assignLateOrder'])
+        ->middleware('permission:logistics.distribution.update');
+
+    // ── Distribution Group Templates — reusable Group CONFIGURATION ──────────
+    //
+    // A template holds a name, a maximum order count and a set of Zones. It holds
+    // no Orders, no Vehicle, no Driver, no Trip, no loading state and no prepared
+    // quantity, and applying one copies configuration only.
+    //
+    // NO NEW PERMISSION. A template is Distribution configuration, so it reuses the
+    // four permissions that already exist, mapped the same way a Zone maps them:
+    // list = view, create = create, edit = update, archive = delete. Applying a
+    // template CREATES a Group, so it takes `create` — the same permission
+    // `storeSlot` takes, because it is the same act by another route.
+    Route::get('/group-templates', [GroupTemplateController::class, 'index'])
+        ->middleware('permission:logistics.distribution.view');
+    Route::post('/group-templates', [GroupTemplateController::class, 'store'])
+        ->middleware('permission:logistics.distribution.create');
+    Route::patch('/group-templates/{template}', [GroupTemplateController::class, 'update'])
+        ->middleware('permission:logistics.distribution.update');
+    Route::delete('/group-templates/{template}', [GroupTemplateController::class, 'destroy'])
+        ->middleware('permission:logistics.distribution.delete');
+    Route::post('/windows/{window}/group-templates/{template}/apply', [GroupTemplateController::class, 'apply'])
+        ->middleware('permission:logistics.distribution.create');
+});
+
 // ── Logistics OS — Distribution: Trips / Delivery / Settlement (TASK-LOG-004B) ──
 // Trip is the aggregate root. Carriers, drivers and vehicles are consumed by
 // reference from LOG-001/002/003 — this module owns none of them.
@@ -1571,8 +1906,6 @@ Route::middleware('auth:sanctum')->prefix('logistics/distribution')->group(funct
     Route::get('/trips/options', [LogisticsTripController::class, 'options']);
     Route::get('/trips/stats', [LogisticsTripController::class, 'stats']);
     Route::get('/trips/next-number', [LogisticsTripController::class, 'nextNumber']);
-    Route::get('/delivery/options', [LogisticsDeliveryController::class, 'options']);
-    Route::get('/settlement/options', [LogisticsSettlementController::class, 'options']);
 
     // Trips
     Route::get('/trips', [LogisticsTripController::class, 'index']);
@@ -1597,36 +1930,30 @@ Route::middleware('auth:sanctum')->prefix('logistics/distribution')->group(funct
     Route::delete('/trips/{id}/custody/{custodyId}', [LogisticsTripController::class, 'removeCustody'])->middleware('permission:logistics.distribution.update');
 
     // Delivery execution
-    Route::get('/trips/{tripId}/stops', [LogisticsDeliveryController::class, 'stops']);
-    Route::post('/trips/{tripId}/stops/generate', [LogisticsDeliveryController::class, 'generateStops'])->middleware('permission:logistics.distribution.update');
-    Route::get('/trips/{tripId}/stops/{stopId}', [LogisticsDeliveryController::class, 'showStop']);
-    Route::patch('/trips/{tripId}/stops/{stopId}/start', [LogisticsDeliveryController::class, 'startStop'])->middleware('permission:logistics.distribution.update');
-    Route::patch('/trips/{tripId}/stops/{stopId}/complete', [LogisticsDeliveryController::class, 'completeStop'])->middleware('permission:logistics.distribution.update');
-    Route::post('/trips/{tripId}/stops/{stopId}/actions', [LogisticsDeliveryController::class, 'recordAction'])->middleware('permission:logistics.distribution.update');
-    Route::post('/trips/{tripId}/stops/{stopId}/proof', [LogisticsDeliveryController::class, 'captureProof'])->middleware('permission:logistics.distribution.update');
+    // TASK-DRIVER-02 — these seven reads were bare `auth:sanctum`. Every one of them is
+    // trip-scoped operational or FINANCIAL data (the payment ledger, the cash position,
+    // the settlement), and any authenticated user could read it with a uuid alone. Gated
+    // on the existing `logistics.distribution.view` — the read verb the rest of this group
+    // already uses. No new permission. The `driver` role no longer holds it (config/permissions.php).
 
     // Exceptions
-    Route::get('/trips/{tripId}/exceptions', [LogisticsDeliveryController::class, 'exceptions']);
-    Route::post('/trips/{tripId}/exceptions', [LogisticsDeliveryController::class, 'raiseException'])->middleware('permission:logistics.distribution.update');
-    Route::patch('/trips/{tripId}/exceptions/{exceptionId}/resolve', [LogisticsDeliveryController::class, 'resolveException'])->middleware('permission:logistics.distribution.update');
 
     // Returns (product + custody, unified)
-    Route::get('/trips/{tripId}/returns', [LogisticsDeliveryController::class, 'returns']);
-    Route::post('/trips/{tripId}/returns', [LogisticsDeliveryController::class, 'recordReturn'])->middleware('permission:logistics.distribution.update');
-    Route::patch('/trips/{tripId}/returns/{returnId}/confirm', [LogisticsDeliveryController::class, 'confirmReturn'])->middleware('permission:logistics.distribution.update');
 
     // Settlement
-    Route::get('/trips/{tripId}/payments', [LogisticsSettlementController::class, 'payments']);
-    Route::post('/trips/{tripId}/stops/{stopId}/payments', [LogisticsSettlementController::class, 'recordPayment'])->middleware('permission:logistics.distribution.update');
-    Route::patch('/trips/{tripId}/payments/{paymentId}/verify', [LogisticsSettlementController::class, 'verifyPayment'])->middleware('permission:logistics.distribution.update');
-    Route::patch('/trips/{tripId}/payments/{paymentId}/reject', [LogisticsSettlementController::class, 'rejectPayment'])->middleware('permission:logistics.distribution.update');
-    Route::get('/trips/{tripId}/settlement', [LogisticsSettlementController::class, 'show']);
-    Route::post('/trips/{tripId}/settlement', [LogisticsSettlementController::class, 'open'])->middleware('permission:logistics.distribution.update');
-    Route::patch('/trips/{tripId}/settlement/submit-cash', [LogisticsSettlementController::class, 'submitCash'])->middleware('permission:logistics.distribution.update');
-    Route::patch('/trips/{tripId}/settlement/reconcile', [LogisticsSettlementController::class, 'reconcile'])->middleware('permission:logistics.distribution.update');
-    Route::patch('/trips/{tripId}/settlement/dispute', [LogisticsSettlementController::class, 'dispute'])->middleware('permission:logistics.distribution.update');
-    Route::patch('/trips/{tripId}/settlement/finalize', [LogisticsSettlementController::class, 'finalize'])->middleware('permission:logistics.distribution.update');
-    Route::get('/trips/{tripId}/financial-summary', [LogisticsSettlementController::class, 'summary']);
+
+    // Per-driver / per-day settlement rollup (read-only aggregation over the trip
+    // settlement engine — TASK-OPERATIONS-DRIVER-DAY-SETTLEMENT-UI-001). No new engine,
+    // no writes; same operator read permission as the trip settlement reads above.
+    Route::get('/driver-settlement', [DriverDaySettlementController::class, 'index'])->middleware('permission:logistics.distribution.view');
+    Route::get('/driver-settlement/{assignmentId}', [DriverDaySettlementController::class, 'show'])->middleware('permission:logistics.distribution.view');
+
+    // TASK-OPERATIONS-DRIVER-TRIP-MOVEMENT-APPROVAL-001 — Operations review of driver trip movements.
+    // Approve/Reject are WRITE actions gated by the operator update permission (the Driver role does
+    // NOT hold it — §20); the secure receipt view is a read. All company-scoped in the controller.
+    Route::patch('/driver-movements/{movementId}/approve', [DriverTripMovementReviewController::class, 'approve'])->middleware('permission:logistics.distribution.update');
+    Route::patch('/driver-movements/{movementId}/reject', [DriverTripMovementReviewController::class, 'reject'])->middleware('permission:logistics.distribution.update');
+    Route::get('/driver-movements/{movementId}/receipt', [DriverTripMovementReviewController::class, 'receipt'])->middleware('permission:logistics.distribution.view');
 });
 
 // ── Logistics OS — Delivery & Tracking (TASK-LOG-005) ─────────────────────────
@@ -2862,7 +3189,107 @@ Route::middleware(['auth:sanctum', 'permission:engineering.platform.manage'])->p
 |--------------------------------------------------------------------------
 | Driver Mobile OS — ADR-DIST-009
 |--------------------------------------------------------------------------
+|
+| TASK-SHIPPING-DRIVER-CLOSURE-001 §G10 — the driver runtime. A thin wrapper
+| that resolves the logged-in driver (logistics_drivers.user_id) and delegates
+| to the canonical DeliveryService / TripService, scoped fail-closed to that
+| driver's own trips. Gated by loading.driver.operate (NOT the dispatcher's
+| logistics.distribution.update). Financial endpoints return 403 (frozen).
 */
+Route::middleware(['auth:sanctum', 'permission:loading.driver.operate'])
+    ->prefix('driver')
+    ->group(function (): void {
+        // Trips
+        Route::get('/trips', [DriverRuntimeController::class, 'trips']);
+        Route::get('/trips/{tripId}', [DriverRuntimeController::class, 'trip']);
+        Route::post('/trips/{tripId}/start', [DriverRuntimeController::class, 'startTrip']);
+        Route::post('/trips/{tripId}/finish', [DriverRuntimeController::class, 'finishTrip']);
+        Route::post('/trips/{tripId}/close', [DriverRuntimeController::class, 'closeTrip']);
+        Route::post('/trips/{tripId}/gps', [DriverRuntimeController::class, 'gps']);
+
+        // Vehicle inventory (read-only) — the driver's OWN current vehicle stock. Reuses the
+        // canonical VehicleInventoryItem read model; same loading.driver.operate gate.
+        Route::get('/vehicle-inventory', [DriverRuntimeController::class, 'vehicleInventory']);
+
+        // TASK-DRIVER-APP-PHASE-6-WALLET-REPORTS-CLOSURE-001 — READ-ONLY driver-scoped Wallet +
+        // Reports. Every figure is derived server-side from the canonical SettlementService /
+        // payment-collection ledger across the authenticated driver's OWN trips (no React
+        // aggregation, no Finance entry). Self-scoped via Driver::user_id = Auth::id().
+        Route::get('/wallet', [DriverReportsController::class, 'wallet']);
+        Route::get('/statement', [DriverReportsController::class, 'statement']);
+        Route::get('/reports/orders', [DriverReportsController::class, 'orders']);
+        Route::get('/reports/goods-movement', [DriverReportsController::class, 'goodsMovement']);
+        Route::get('/reports/shortages', [DriverReportsController::class, 'shortages']);
+        Route::get('/reports/advances', [DriverReportsController::class, 'advances']);
+
+        // TASK-DRIVER-APP-OPERATIONAL-FLOW-VNEXT-001 §30–§43 — Driver Trip Expenses (operational
+        // cash movements: fuel/toll/other = cash out, advance = cash in). READ + CREATE only,
+        // scoped to the driver's own current active custody; approval/settlement is an operator
+        // authority (Operations approval UI is a documented follow-up, §40). Self-scoped via
+        // Driver::user_id = Auth::id().
+        Route::get('/trip-expenses', [DriverTripExpenseController::class, 'index']);
+        Route::post('/trip-expenses', [DriverTripExpenseController::class, 'store']);
+        Route::get('/trip-expenses/{movementId}/receipt', [DriverTripExpenseController::class, 'downloadReceipt']);
+
+        // Stops
+        Route::get('/trips/{tripId}/stops', [DriverRuntimeController::class, 'stops']);
+        Route::get('/trips/{tripId}/stops/{stopId}', [DriverRuntimeController::class, 'stop']);
+        Route::post('/stops/{stopId}/start', [DriverRuntimeController::class, 'startDelivery']);
+        Route::post('/stops/{stopId}/action', [DriverRuntimeController::class, 'stopAction']);
+        // TASK-DRIVER-DELIVERY-ALLOCATION-BRIDGE-001 — record the ACTUAL delivered quantity
+        // (full/partial, cumulative) through the canonical writer. Bridges the driver stop to
+        // allocation_records → RecordProductDeliveryAction → order_lines.delivered_qty projection
+        // → vehicle-custody delivered movement. No second delivery writer; no warehouse deduction.
+        Route::post('/stops/{stopId}/deliver', [DriverRuntimeController::class, 'deliver']);
+
+        // Wave-2 Phase-1: canonical failure vocabulary (read) + payment-transfer proof
+        // UPLOAD ONLY (canonical payment_proofs; the driver never verifies).
+        Route::get('/failure-reasons', [DriverRuntimeController::class, 'failureReasons']);
+        Route::post('/stops/{stopId}/payment-proof', [DriverRuntimeController::class, 'uploadPaymentProof']);
+        // TASK-DRIVER-APP-PHASE-4-PAYMENT-METHOD-CLOSURE-001 — change the order's payment method
+        // during an active delivery. Bridges into the canonical order authority
+        // (ChangeOrderPaymentMethodAction → ReevaluateOrderFulfillmentAction); no Order.status write.
+        Route::patch('/stops/{stopId}/payment-method', [DriverRuntimeController::class, 'changePaymentMethod']);
+        // LEGACY string-path proof — kept only for the shared dispatcher contract; NOT
+        // used by the driver UI. Systemic follow-up (see uploadDeliveryProof docblock).
+        Route::post('/stops/{stopId}/proof', [DriverRuntimeController::class, 'proof']);
+        // TASK-DELIVERY-POD-SECURE-UPLOAD-001 — SECURE delivery proof-of-delivery:
+        // real multipart upload (signature/photos, validated, private disk, server path)
+        // + tenant-scoped retrieval of only server-recorded artifacts.
+        Route::post('/stops/{stopId}/delivery-proof', [DriverRuntimeController::class, 'uploadDeliveryProof']);
+        Route::get('/stops/{stopId}/delivery-proof/{kind}/{index?}', [DriverRuntimeController::class, 'downloadDeliveryProof'])
+            ->where('kind', 'signature|photo');
+        Route::post('/stops/{stopId}/exception', [DriverRuntimeController::class, 'raiseException']);
+
+        // Exceptions / returns (operational)
+        Route::get('/trips/{tripId}/exceptions', [DriverRuntimeController::class, 'exceptions']);
+        Route::get('/trips/{tripId}/returns', [DriverRuntimeController::class, 'returns']);
+        Route::post('/trips/{tripId}/returns', [DriverRuntimeController::class, 'addReturn']);
+
+        // Group loading (TASK-DRIVER-WAVE-1 Option 1) — Group-as-Shipment.
+        // Same driver permission; delegates to the existing GroupLoadingContextService
+        // + LoadProductAction (Group grain, no pool provenance, no second engine).
+        Route::get('/loading', [DriverLoadingController::class, 'show']);
+        Route::post('/loading/products/{productId}', [DriverLoadingController::class, 'loadProduct']);
+        Route::post('/loading/complete', [DriverLoadingController::class, 'complete']);
+
+        /*
+         * Driver custody confirmation — TASK-...-CUSTODY-IMPLEMENTATION-001.
+         *
+         * The driver acknowledges what they physically received, or asks the warehouse
+         * to review a discrepancy. NEITHER route can move `quantity_loaded`: that is
+         * reachable only under `loading.session.operate`, which driver roles do not
+         * hold. The separation is structural, not a convention these handlers observe.
+         */
+        Route::post('/loading/products/{productId}/confirm', [DriverLoadingController::class, 'confirmReceived']);
+        Route::post('/loading/products/{productId}/adjustment', [DriverLoadingController::class, 'requestAdjustment']);
+
+        // FROZEN — Financial Settlement (Section 17). Registered, refused with 403.
+        Route::post('/stops/{stopId}/payment', [DriverRuntimeController::class, 'frozen']);
+        Route::get('/trips/{tripId}/collections', [DriverRuntimeController::class, 'frozen']);
+        Route::get('/trips/{tripId}/settlement', [DriverRuntimeController::class, 'frozen']);
+        Route::post('/trips/{tripId}/settlement/submit', [DriverRuntimeController::class, 'frozen']);
+    });
 
 /*
 |--------------------------------------------------------------------------

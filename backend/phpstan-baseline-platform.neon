@@ -1,12 +1,6 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Access to undefined constant Modules\\Commerce\\Orders\\Domain\\Enums\\OrderStatus\:\:NeedsShippingReview\.$#'
-			identifier: classConstant.notFound
-			count: 1
-			path: Modules/Commerce/OrderImport/Application/Services/WooCommerceOrderImporter.php
-
-		-
 			message: '#^Call to static method table\(\) on an unknown class DB\.$#'
 			identifier: class.notFound
 			count: 1
