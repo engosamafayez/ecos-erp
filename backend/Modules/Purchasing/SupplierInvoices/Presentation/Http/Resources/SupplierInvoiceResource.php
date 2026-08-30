@@ -54,6 +54,10 @@ class SupplierInvoiceResource extends JsonResource
             'lines' => $this->whenLoaded('lines', fn () => $this->lines->map(fn ($line) => [
                 'id' => $line->id,
                 'product_id' => $line->product_id,
+                // V-5 settlement anchor (§15) — the receipt line this invoice line settles, if any.
+                'goods_receipt_line_id' => $line->goods_receipt_line_id,
+                // Product vs raw-material kind — lets the editor prefill the correct line entity type.
+                'product_type' => $line->product?->product_type,
                 'product' => $line->product ? [
                     'id' => $line->product->id,
                     'name' => $line->product->name,

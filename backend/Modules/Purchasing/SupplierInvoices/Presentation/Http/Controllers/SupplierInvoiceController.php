@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Purchasing\SupplierInvoices\Application\Services\PostSupplierInvoiceService;
+use Modules\Purchasing\SupplierInvoices\Application\Services\SupplierInvoicePaymentSummary;
 use Modules\Purchasing\SupplierInvoices\Domain\Enums\SupplierInvoiceStatus;
 use Modules\Purchasing\SupplierInvoices\Domain\Models\SupplierInvoice;
 use Modules\Purchasing\SupplierInvoices\Domain\Models\SupplierInvoiceLine;
@@ -78,18 +79,23 @@ final class SupplierInvoiceController extends Controller
 
     public function store(StoreSupplierInvoiceRequest $request): JsonResponse
     {
+        // The receiving warehouse is now needed unconditionally — it is the ownership source
+        // for `company_id` as well as the currency fallback — so it is resolved once here
+        // rather than only inside the currency branch.
+        $warehouse = Warehouse::query()
+            ->with('company:id,currency')
+            ->find($request->input('warehouse_id'));
+
         // Resolve currency from company settings; fall back to null (DB stores null when not configured)
-        $currency = $request->input('currency');
-        if ($currency === null) {
-            $warehouse = Warehouse::query()
-                ->with('company:id,currency')
-                ->find($request->input('warehouse_id'));
-            $currency = $warehouse?->company?->currency;
-        }
+        $currency = $request->input('currency') ?? $warehouse?->company?->currency;
 
         $invoice = SupplierInvoice::query()->create(
             array_merge($request->safe()->except('lines'), [
                 'invoice_number' => (new SupplierInvoice)->generateInvoiceNumber(),
+                // B-2. Nullable, backfilled once, never written since — so every invoice
+                // created through the API carried NULL and the column could not scope access.
+                // Derived from the warehouse, exactly as the backfill migration defines it.
+                'company_id' => $warehouse?->company_id,
                 'status' => SupplierInvoiceStatus::Draft,
                 'created_by' => auth()->id(),
                 'currency' => $currency,
@@ -100,7 +106,7 @@ final class SupplierInvoiceController extends Controller
             ]),
         );
 
-        $this->syncLines($invoice, $request->input('lines'));
+        $this->syncLines($invoice, $request->validated('lines'));
         $invoice->recalculateTotals();
         $invoice->save();
 
@@ -109,11 +115,51 @@ final class SupplierInvoiceController extends Controller
         return $this->success(new SupplierInvoiceResource($invoice), 'Supplier invoice created', 201);
     }
 
-    public function show(SupplierInvoice $supplierInvoice): JsonResponse
+    public function show(SupplierInvoice $supplierInvoice, SupplierInvoicePaymentSummary $payments): JsonResponse
     {
-        $supplierInvoice->load(['supplier', 'warehouse', 'lines.product']);
+        $supplierInvoice->load([
+            'supplier', 'warehouse', 'lines.product',
+            'lines.goodsReceiptLine.goodsReceipt.purchaseOrder',
+        ]);
 
-        return $this->success(new SupplierInvoiceResource($supplierInvoice));
+        $data = (new SupplierInvoiceResource($supplierInvoice))->toArray(request());
+        // §9–§12 — payment read-model DERIVED from the canonical AP allocations (never a stored column).
+        $data['payment'] = $payments->for($supplierInvoice);
+        // §15–§17 — read-only ordered → received → invoiced linkage where the V-5 anchor exists.
+        $data['receipt_links'] = $this->receiptLinks($supplierInvoice);
+
+        return $this->success($data);
+    }
+
+    /**
+     * §15–§17 — each anchored invoice line's link to its physical receipt and purchase order, with
+     * Ordered / Received / Invoiced as DISTINCT facts. Read-only: a quantity mismatch is surfaced,
+     * never silently reconciled, and neither document is rewritten.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function receiptLinks(SupplierInvoice $supplierInvoice): array
+    {
+        return $supplierInvoice->lines
+            ->filter(fn (SupplierInvoiceLine $line): bool => $line->goods_receipt_line_id !== null)
+            ->map(function (SupplierInvoiceLine $line): array {
+                $receiptLine = $line->goodsReceiptLine;
+                $receipt = $receiptLine?->goodsReceipt;
+                $purchaseOrder = $receipt?->purchaseOrder;
+
+                return [
+                    'line_id' => $line->id,
+                    'product' => $line->product?->name,
+                    'goods_receipt_line_id' => $line->goods_receipt_line_id,
+                    'receipt_number' => $receipt?->receipt_number,
+                    'po_number' => $purchaseOrder?->po_number,
+                    'ordered_qty' => $receiptLine !== null ? (float) $receiptLine->ordered_quantity : null,
+                    'received_qty' => $receiptLine?->effectiveReceivedQty(),
+                    'invoiced_qty' => (float) $line->quantity,
+                ];
+            })
+            ->values()
+            ->all();
     }
 
     public function update(StoreSupplierInvoiceRequest $request, SupplierInvoice $supplierInvoice): JsonResponse
@@ -123,7 +169,7 @@ final class SupplierInvoiceController extends Controller
         }
 
         $supplierInvoice->update($request->safe()->except('lines'));
-        $this->syncLines($supplierInvoice, $request->input('lines'));
+        $this->syncLines($supplierInvoice, $request->validated('lines'));
         $supplierInvoice->recalculateTotals();
         $supplierInvoice->save();
 
@@ -205,7 +251,17 @@ final class SupplierInvoiceController extends Controller
         return $this->success($stats);
     }
 
-    /** @param array<int, array<string, mixed>> $lines */
+    /**
+     * Callers pass VALIDATED lines, never `$request->input('lines')`.
+     *
+     * The raw input was mass-assigned straight into a fillable model, so any fillable key a
+     * client chose to send was persisted without ever being validated — including the V-5
+     * anchor `goods_receipt_line_id`, which would have been stored with no existence check and
+     * no tenant scope. Taking the validated set means a key must be declared in the request
+     * rules before it can ever reach a column.
+     *
+     * @param  array<int, array<string, mixed>>  $lines
+     */
     private function syncLines(SupplierInvoice $invoice, array $lines): void
     {
         $invoice->lines()->delete();
