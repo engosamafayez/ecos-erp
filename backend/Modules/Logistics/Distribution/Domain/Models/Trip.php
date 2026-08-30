@@ -39,6 +39,10 @@ class Trip extends Model
     protected $fillable = [
         'uuid',
         'company_id',
+        // The owning Distribution Group. Single-valued BY DESIGN: a Trip belongs to
+        // at most one Group, and a Group may own several Trips when Trip.capacity
+        // forces a split. Nullable — a Trip may exist without a Group.
+        'virtual_slot_id',
         'preparation_wave_id',
         'distribution_zone_id',
         'trip_number',
@@ -111,6 +115,32 @@ class Trip extends Model
     public function driverVehicleAssignment(): BelongsTo
     {
         return $this->belongsTo(DriverVehicleAssignment::class, 'driver_vehicle_assignment_id');
+    }
+
+    /**
+     * The Distribution Group this Trip executes for.
+     *
+     * The Group is the PLANNING source of truth — warehouse, zones, order
+     * membership, Required and Prepared all stay there. This relation exists so a
+     * Trip can be traced back to the plan that produced it, and so the Trip's
+     * operational warehouse can be DERIVED rather than copied.
+     */
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(VirtualCapacitySlot::class, 'virtual_slot_id');
+    }
+
+    /**
+     * The warehouse this Trip executes from — DERIVED, never stored.
+     *
+     * `distribution_trips` deliberately has no warehouse column. Copying the
+     * Group's warehouse onto the Trip would create a second place for warehouse
+     * ownership to disagree with itself, which is the defect Part 5B closed. A
+     * Trip with no Group has no operational warehouse, and says so with null.
+     */
+    public function operationalWarehouseId(): ?string
+    {
+        return $this->group?->warehouse_id;
     }
 
     // ── Owned entities ────────────────────────────────────────────────────────

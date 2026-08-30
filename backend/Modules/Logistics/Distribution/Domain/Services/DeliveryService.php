@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Logistics\Distribution\Domain\Services;
 
 use Illuminate\Support\Facades\DB;
+use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Logistics\Distribution\Domain\Enums\DeliveryStopStatus;
 use Modules\Logistics\Distribution\Domain\Events\DeliveryStopCompleted;
 use Modules\Logistics\Distribution\Domain\Exceptions\DistributionException;
@@ -37,7 +38,17 @@ class DeliveryService
             $sequence = (int) $trip->stops()->max('sequence');
             $created = 0;
 
-            foreach ($trip->tripOrders()->get() as $tripOrder) {
+            $tripOrders = $trip->tripOrders()->get();
+
+            // Snapshot, per order, the amount still collectible from the customer at THIS handoff
+            // moment (order total minus what was already paid). Captured once, immutably — later
+            // payment/delivery events never rewrite it; they move Actual Collections instead.
+            $orders = Order::query()
+                ->whereIn('id', $tripOrders->pluck('order_id')->all())
+                ->get(['id', 'total', 'deposit_amount', 'date_paid'])
+                ->keyBy('id');
+
+            foreach ($tripOrders as $tripOrder) {
                 if (in_array($tripOrder->order_id, $existing, true)) {
                     continue;
                 }
@@ -46,12 +57,32 @@ class DeliveryService
                     'order_id' => $tripOrder->order_id,
                     'sequence' => ++$sequence,
                     'status' => DeliveryStopStatus::Pending->value,
+                    'expected_collection_at_handoff' => $this->expectedCollectionAtHandoff($orders->get($tripOrder->order_id)),
                 ]);
                 $created++;
             }
 
             return $created;
         });
+    }
+
+    /**
+     * The canonical amount still collectible from the customer at custody handoff: order total
+     * minus what was already paid. A fully-paid order (date_paid set) contributes zero; a partial
+     * deposit reduces it; an unpaid COD order contributes its full total. Null when the order
+     * cannot be read — surfaced downstream as "Not available", never fabricated.
+     */
+    private function expectedCollectionAtHandoff(?Order $order): ?float
+    {
+        if ($order === null) {
+            return null;
+        }
+
+        if ($order->date_paid !== null) {
+            return 0.0;
+        }
+
+        return round(max(0.0, (float) $order->total - (float) $order->deposit_amount), 2);
     }
 
     public function startStop(DeliveryStop $stop, ?string $actor = null): DeliveryStop

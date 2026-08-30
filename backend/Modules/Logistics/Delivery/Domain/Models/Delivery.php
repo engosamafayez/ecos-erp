@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace Modules\Logistics\Delivery\Domain\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Logistics\Delivery\Domain\Enums\AttemptStatus;
 use Modules\Logistics\Delivery\Domain\Enums\DeliveryStatus;
-use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Logistics\Distribution\Domain\Models\DeliveryStop;
 
 /**
@@ -69,6 +71,30 @@ class Delivery extends Model
 
     protected static function booted(): void
     {
+        // TENANT ISOLATION (fail closed). Every read of the Delivery aggregate — the
+        // repository finders, the paginated Exception Center, and crucially the POD
+        // sub-resource lookups in DeliveryPodController (which resolve an attempt via
+        // whereHas('delivery', …), and so inherit this scope on the existence subquery)
+        // — is restricted to the actor's own company plus the shared/unowned rows
+        // (company_id IS NULL). This closes the by-uuid IDOR on deliveries, delivery
+        // GPS (attempts), and POD. NO-OP when unauthenticated (console/queue) or for a
+        // global user with no company.
+        static::addGlobalScope('tenant', function (Builder $query): void {
+            $user = Auth::user();
+            if ($user === null) {
+                return;
+            }
+            $companyId = $user->company_id ?? null;
+            if ($companyId === null) {
+                return;
+            }
+            $table = $query->getModel()->getTable();
+            $query->where(function (Builder $q) use ($companyId, $table): void {
+                $q->whereNull($table.'.company_id')
+                    ->orWhere($table.'.company_id', $companyId);
+            });
+        });
+
         static::creating(function (self $delivery): void {
             if ($delivery->uuid === null) {
                 $delivery->uuid = (string) Str::uuid();

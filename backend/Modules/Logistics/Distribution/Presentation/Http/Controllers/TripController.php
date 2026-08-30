@@ -38,8 +38,10 @@ class TripController extends Controller
 
     public function stats(Request $request): JsonResponse
     {
-        $base = fn () => Trip::query()
-            ->when($request->filled('company_id'), fn ($q) => $q->where('company_id', $request->input('company_id')));
+        // Tenant fix (Part 21): scoped to the ACTING company, never to an optional
+        // request parameter. The previous `->when($request->filled('company_id'), …)`
+        // counted every tenant's trips when the caller simply omitted the filter.
+        $base = fn () => Trip::query()->where('company_id', $this->companyId());
 
         $byStatus = $base()->selectRaw('status, COUNT(*) AS total')->groupBy('status')->pluck('total', 'status');
         $count = static fn (TripStatus $s): int => (int) ($byStatus[$s->value] ?? 0);
@@ -62,8 +64,11 @@ class TripController extends Controller
 
     public function nextNumber(Request $request): JsonResponse
     {
+        // Tenant fix (Part 21): the acting company, not a request parameter. Trip
+        // numbers are unique per (company_id, trip_number), so generating from a
+        // foreign company_id would hand back a number from another tenant's series.
         return response()->json([
-            'trip_number' => $this->trips->nextTripNumber($request->input('company_id')),
+            'trip_number' => $this->trips->nextTripNumber($this->companyId()),
         ]);
     }
 
@@ -72,6 +77,9 @@ class TripController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $query = Trip::query()
+            // Tenant fix (Part 21). company_id remains an accepted FILTER below, but
+            // it can now only narrow within the acting company — never widen beyond it.
+            ->where('company_id', $this->companyId())
             ->withCount(['tripOrders', 'stops', 'custodyItems', 'exceptions'])
             ->with(['shippingCompany', 'driverVehicleAssignment.driver', 'driverVehicleAssignment.vehicle'])
             ->latest('id');
@@ -114,6 +122,11 @@ class TripController extends Controller
     {
         $validated = $request->validate($this->rules());
         $validated['created_by'] = $request->user()?->id;
+
+        // Tenant fix (Part 21): the acting company OVERRIDES whatever company_id the
+        // request supplied. Without this a user could create a trip inside another
+        // company simply by naming it.
+        $validated['company_id'] = $this->companyId();
 
         $trip = $this->trips->create($validated, $this->actor($request));
 
@@ -334,15 +347,52 @@ class TripController extends Controller
                 'settlement',
             ])
             ->where('uuid', $id)
+            // Same tenant fix as resolveTrip() — this is the read path behind show(),
+            // and it was equally unscoped.
+            ->where('company_id', $this->companyId())
             ->firstOrFail();
     }
 
     /**
-     * Resolve a trip by its public UUID identifier.
+     * Resolve a trip by its public UUID identifier, WITHIN THE ACTING COMPANY.
+     *
+     * ┌─ SECURITY FIX — TASK-…-GROUP-TRIP-…-IMPLEMENTATION-001 Part 21 ─────────┐
+     * │ This was `Trip::where('uuid', $id)->firstOrFail()` with no company scope, │
+     * │ so ANY authenticated user could read, update, re-status, re-assign,       │
+     * │ dispatch or add orders to ANY company's trip by uuid. `Trip` has no       │
+     * │ global tenant scope, and the route carries only `auth:sanctum`.           │
+     * │                                                                          │
+     * │ Fixed here rather than deferred because this workstream makes Group work  │
+     * │ flow through Trip — leaving it would expose the new surface too.          │
+     * │                                                                          │
+     * │ FAIL-CLOSED and NOT-FOUND, never 403: a foreign trip must read as         │
+     * │ non-existent so the endpoint cannot be used to probe which uuids are real.│
+     * └──────────────────────────────────────────────────────────────────────────┘
      */
     private function resolveTrip(string $id): Trip
     {
-        return Trip::where('uuid', $id)->firstOrFail();
+        return Trip::where('uuid', $id)
+            ->where('company_id', $this->companyId())
+            ->firstOrFail();
+    }
+
+    /**
+     * The acting company, or a hard failure.
+     *
+     * Never returns null. The `->when($companyId, …)` idiom used elsewhere in
+     * Logistics silently DROPS the filter when the company is null and therefore
+     * returns every tenant's rows — the sibling Distribution controller documents
+     * that pattern as deliberately not copied, and it is not copied here either.
+     */
+    private function companyId(): string
+    {
+        $companyId = request()->user()?->company_id;
+
+        if ($companyId === null || $companyId === '') {
+            abort(403, 'No company scope for the acting user.');
+        }
+
+        return (string) $companyId;
     }
 
     /** @return array<string, mixed> */

@@ -39,7 +39,7 @@ class SettlementController extends Controller
     public function payments(string $tripId): AnonymousResourceCollection
     {
         return PaymentCollectionResource::collection(
-            $this->resolveTrip($tripId)->paymentCollections()->get()
+            $this->resolveTrip($tripId)->paymentCollections()->get(),
         );
     }
 
@@ -49,7 +49,19 @@ class SettlementController extends Controller
             'payment_type' => ['required', Rule::in(PaymentType::values())],
             'amount' => ['required', 'numeric', 'min:0'],
             'reference_number' => ['nullable', 'string', 'max:100'],
-            'image_path' => ['nullable', 'string', 'max:500'],
+            // TASK-DRIVER-02 — `image_path` is a CLIENT-SUPPLIED string, not an upload, and
+            // it is NOT a payment proof. Nothing verifies it, nothing stored the file it
+            // names, and it can never satisfy `PaymentFulfillmentGate` — the canonical
+            // `payment_proofs` lifecycle remains the only proof source.
+            //
+            // Reconciling this field with that lifecycle is a redesign and is STOPPED for an
+            // owner decision (see the D-02 report §12). What is fixed here is the part that
+            // needs no decision: the value is constrained to a plain relative storage path,
+            // so it cannot carry a URL scheme (`javascript:`, `data:`, `http:` → stored XSS
+            // / external fetch when rendered as an image source), an absolute path, a UNC
+            // path, or `..` traversal. This is validation hardening ONLY — it does not make
+            // the field trustworthy and must not be read as proof of anything.
+            'image_path' => ['nullable', 'string', 'max:500', 'regex:/^(?!\/|\\\\|[A-Za-z]+:)(?!.*\.\.)[\w\-.\/]+$/'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
@@ -69,7 +81,7 @@ class SettlementController extends Controller
         $payment = PaymentCollection::where('trip_id', $this->resolveTrip($tripId)->id)->findOrFail($paymentId);
 
         return new PaymentCollectionResource(
-            $this->settlements->verifyPayment($payment, $request->user()?->id)
+            $this->settlements->verifyPayment($payment, $request->user()?->id),
         );
     }
 
@@ -80,7 +92,7 @@ class SettlementController extends Controller
         $payment = PaymentCollection::where('trip_id', $this->resolveTrip($tripId)->id)->findOrFail($paymentId);
 
         return new PaymentCollectionResource(
-            $this->settlements->rejectPayment($payment, $validated['notes'] ?? null, $request->user()?->id)
+            $this->settlements->rejectPayment($payment, $validated['notes'] ?? null, $request->user()?->id),
         );
     }
 
@@ -174,15 +186,54 @@ class SettlementController extends Controller
     public function summary(string $tripId): JsonResponse
     {
         return response()->json(
-            $this->settlements->financialSummary($this->resolveTrip($tripId))
+            $this->settlements->financialSummary($this->resolveTrip($tripId)),
         );
     }
 
-
-    /** Resolve a trip by its public UUID identifier. */
+    /**
+     * Resolve a trip by its public UUID identifier, WITHIN THE ACTING COMPANY.
+     *
+     * ┌─ SECURITY FIX — TASK-DRIVER-02 ─────────────────────────────────────────┐
+     * │ This was `Trip::where('uuid', $tripId)->firstOrFail()` with no company    │
+     * │ scope. `Trip` has no global tenant scope, so a uuid was a bearer token:   │
+     * │ every method on this controller flows through here, which meant ANY       │
+     * │ authenticated holder of `logistics.distribution.*` could read another     │
+     * │ company's payment ledger and cash position, record a payment against it,  │
+     * │ verify it, and finalize its settlement.                                   │
+     * │                                                                          │
+     * │ NOT A NEW MECHANISM. This is the identical fix already applied to the     │
+     * │ sibling `TripController::resolveTrip()`, copied verbatim so the two       │
+     * │ cannot drift. `DeliveryController::resolveTrip()` carried the same defect │
+     * │ and is fixed in the same pass — the audit found three call sites, not one.│
+     * │                                                                          │
+     * │ FAIL-CLOSED and NOT-FOUND, never 403: a foreign trip must read as         │
+     * │ non-existent so the endpoint cannot be used to probe which uuids are real.│
+     * └──────────────────────────────────────────────────────────────────────────┘
+     */
     private function resolveTrip(string $tripId): Trip
     {
-        return Trip::where('uuid', $tripId)->firstOrFail();
+        return Trip::where('uuid', $tripId)
+            ->where('company_id', $this->companyId())
+            ->firstOrFail();
+    }
+
+    /**
+     * The acting company, or a hard failure.
+     *
+     * Never returns null. The `->when($companyId, …)` idiom used elsewhere in Logistics
+     * silently DROPS the filter when the company is null and therefore returns every
+     * tenant's rows; `TripController` documents that pattern as deliberately not copied,
+     * and it is not copied here either.
+     */
+    private function companyId(): string
+    {
+        $companyId = request()->user()?->company_id;
+
+        if ($companyId === null || $companyId === '') {
+            abort(403, 'No company scope for the acting user.');
+        }
+
+        return (string) $companyId;
     }
 
     private function findSettlement(string $tripId): TripSettlement

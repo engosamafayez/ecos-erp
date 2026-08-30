@@ -47,8 +47,26 @@ class SettlementService
         });
     }
 
+    /**
+     * Verify a recorded collection.
+     *
+     * SEPARATION OF DUTIES — `collected_by != verified_by`, enforced BY IDENTITY
+     * (TASK-DRIVER-02). Before this, record and verify took the same permission, the
+     * `driver` role held it, and this method performed no check — so a driver could
+     * record cash and immediately verify their own cash, on any company's trip, through
+     * a uuid alone. The permission split and the tenant scope close the other two halves;
+     * this closes the one they cannot: that two different people were actually involved.
+     *
+     * Mirrors the certified `VerifyPaymentProofAction` control exactly, and for the same
+     * stated reason — it sits in the domain rather than the route, so an `is_system` role
+     * is subject to it like every other actor.
+     */
     public function verifyPayment(PaymentCollection $payment, ?int $actorId = null): PaymentCollection
     {
+        if ($payment->isSelfReviewBy($actorId)) {
+            abort(403, 'Separation of duties: the user who recorded a payment collection may not verify it. Verification must be performed by a different authorised reviewer.');
+        }
+
         $payment->update([
             'status' => PaymentCollection::STATUS_VERIFIED,
             'verified_at' => now(),
@@ -58,8 +76,21 @@ class SettlementService
         return $payment->refresh();
     }
 
+    /**
+     * Reject a recorded collection.
+     *
+     * Same identity rule as {@see verifyPayment()}. Reject is the other half of one
+     * reviewer act — both routes carry the same reviewer permission — so exempting it
+     * would leave the collector in control of half the outcome space and make the
+     * contract asymmetric for no reason. The rule itself lives on the model,
+     * `PaymentCollection::isSelfReviewBy()`, so there is one implementation, not two.
+     */
     public function rejectPayment(PaymentCollection $payment, ?string $notes = null, ?int $actorId = null): PaymentCollection
     {
+        if ($payment->isSelfReviewBy($actorId)) {
+            abort(403, 'Separation of duties: the user who recorded a payment collection may not reject it. Review must be performed by a different authorised reviewer.');
+        }
+
         return DB::transaction(function () use ($payment, $notes, $actorId) {
             $payment->update([
                 'status' => PaymentCollection::STATUS_REJECTED,

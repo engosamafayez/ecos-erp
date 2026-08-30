@@ -44,7 +44,7 @@ class DeliveryController extends Controller
         $trip = $this->resolveTrip($tripId);
 
         return DeliveryStopResource::collection(
-            $trip->stops()->with(['actions', 'proof', 'payments'])->get()
+            $trip->stops()->with(['actions', 'proof', 'payments'])->get(),
         );
     }
 
@@ -180,7 +180,7 @@ class DeliveryController extends Controller
         $exception = DeliveryException::where('trip_id', $this->resolveTrip($tripId)->id)->findOrFail($exceptionId);
 
         return new DeliveryExceptionResource(
-            $this->delivery->resolveException($exception, $validated['resolution_notes'] ?? null, $request->user()?->id)
+            $this->delivery->resolveException($exception, $validated['resolution_notes'] ?? null, $request->user()?->id),
         );
     }
 
@@ -239,11 +239,36 @@ class DeliveryController extends Controller
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
-
-    /** Resolve a trip by its public UUID identifier. */
+    /**
+     * Resolve a trip by its public UUID identifier, WITHIN THE ACTING COMPANY.
+     *
+     * SECURITY FIX — TASK-DRIVER-02. This was unscoped, and `Trip` has no global tenant
+     * scope, so a uuid alone reached another company's stops, exceptions, returns and
+     * delivery proofs — and `completeStop()` accepts `collected_amount`, making it a
+     * cross-company money write. Every method here funnels through `resolveTrip()` or
+     * `findStop()`, so this one line closes all of them.
+     *
+     * Identical to `TripController::resolveTrip()` and `SettlementController::resolveTrip()`
+     * — one pattern, three call sites, deliberately not three variations. Fail-closed and
+     * NOT-FOUND rather than 403, so the endpoint cannot be used to probe real uuids.
+     */
     private function resolveTrip(string $tripId): Trip
     {
-        return Trip::where('uuid', $tripId)->firstOrFail();
+        return Trip::where('uuid', $tripId)
+            ->where('company_id', $this->companyId())
+            ->firstOrFail();
+    }
+
+    /** The acting company, or a hard failure. Never returns null — see SettlementController. */
+    private function companyId(): string
+    {
+        $companyId = request()->user()?->company_id;
+
+        if ($companyId === null || $companyId === '') {
+            abort(403, 'No company scope for the acting user.');
+        }
+
+        return (string) $companyId;
     }
 
     private function findStop(string $tripId, int $stopId): DeliveryStop

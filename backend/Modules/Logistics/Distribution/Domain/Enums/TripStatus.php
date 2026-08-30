@@ -81,10 +81,54 @@ enum TripStatus: string
         return in_array($this, [self::Closed, self::Cancelled], true);
     }
 
+    /**
+     * The status VALUES a trip can hold while it still CONSUMES its driver and
+     * vehicle — i.e. every state that is not terminal.
+     *
+     * Derived from isTerminal() rather than hand-listed, so this can never drift
+     * from the single terminal definition above. It exists for query builders,
+     * which need the raw strings the enum casts to.
+     *
+     * @return list<string>
+     */
+    public static function nonTerminalValues(): array
+    {
+        return array_values(array_map(
+            static fn (self $c): string => $c->value,
+            array_filter(self::cases(), static fn (self $c): bool => ! $c->isTerminal()),
+        ));
+    }
+
     /** Orders and custody may only be edited while the trip is still being built. */
     public function isEditable(): bool
     {
         return in_array($this, [self::Planning, self::Loading], true);
+    }
+
+    /**
+     * True once REAL goods custody has been handed to the Driver/Vehicle — i.e. loading is
+     * complete (all loaded products driver-confirmed) and the operational custody cycle is open,
+     * up to and including settlement-pending. This is the single canonical "operationally active
+     * custody" gate for Driver Closing (TASK-...-SINGLE-ACTIVE-CUSTODY-CLOSURE-001): planning /
+     * loading shells (isEditable) and terminal trips (isTerminal) are NOT custody. Derived from
+     * the two, so it can never drift.
+     */
+    public function isCustodyEligible(): bool
+    {
+        return ! $this->isEditable() && ! $this->isTerminal();
+    }
+
+    /**
+     * The status VALUES that represent an OPEN operational custody (for query builders).
+     *
+     * @return list<string>
+     */
+    public static function custodyEligibleValues(): array
+    {
+        return array_values(array_map(
+            static fn (self $c): string => $c->value,
+            array_filter(self::cases(), static fn (self $c): bool => $c->isCustodyEligible()),
+        ));
     }
 
     /** True once the trip has physically left the warehouse. */

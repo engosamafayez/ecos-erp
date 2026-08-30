@@ -69,7 +69,15 @@ class TripService
             }
         }
 
-        $updated = DB::transaction(function () use ($trip, $target) {
+        // A trip crossing from a planning/loading shell into an OPEN operational custody is the
+        // single-active-custody boundary — enforce that the driver has no other open custody.
+        $isCustodyStart = ! $current->isCustodyEligible() && $target->isCustodyEligible();
+
+        $updated = DB::transaction(function () use ($trip, $target, $isCustodyStart) {
+            if ($isCustodyStart) {
+                $this->assertDriverHasNoOtherOpenCustody($trip);
+            }
+
             $payload = ['status' => $target->value];
 
             if ($target === TripStatus::Dispatched) {
@@ -88,6 +96,39 @@ class TripService
         }
 
         return $updated;
+    }
+
+    /**
+     * Single-active-custody invariant (TASK-...-SINGLE-ACTIVE-CUSTODY-CLOSURE-001): a driver may
+     * hold at most ONE open operational custody. Called only at the custody-start transition (a
+     * trip crossing from a planning/loading shell into a custody-eligible status).
+     *
+     * Concurrency-safe: it takes a pessimistic lock on the driver's pairing rows, so two
+     * simultaneous handoffs for the same driver serialize — whichever commits first makes its trip
+     * an open custody, which the second then observes and is rejected. A partial-unique DB index
+     * cannot represent "one open custody across several live trip statuses" in MySQL, so the guard
+     * is a driver lock over the status-derived open-custody set rather than a misleading uniqueness
+     * constraint. Runs inside the caller's status-change transaction.
+     */
+    private function assertDriverHasNoOtherOpenCustody(Trip $trip): void
+    {
+        $driverId = $trip->driverVehicleAssignment?->driver_id;
+        if ($driverId === null) {
+            return; // no driver on the pairing ⇒ no per-driver custody to guard
+        }
+
+        // Serialize concurrent custody-starts for this driver.
+        DriverVehicleAssignment::query()->where('driver_id', $driverId)->lockForUpdate()->get();
+
+        $otherOpen = Trip::query()
+            ->where('id', '!=', $trip->id)
+            ->whereIn('status', TripStatus::custodyEligibleValues())
+            ->whereHas('driverVehicleAssignment', fn ($a) => $a->where('driver_id', $driverId))
+            ->exists();
+
+        if ($otherOpen) {
+            throw DistributionException::driverAlreadyHasOpenCustody();
+        }
     }
 
     // ── Order assignment ──────────────────────────────────────────────────────
@@ -117,6 +158,31 @@ class TripService
                 throw DistributionException::orderAlreadyOnAnotherTrip(
                     $otherTrip?->trip_number ?? (string) $existing->trip_id
                 );
+            }
+
+            // ── A GROUP-OWNED TRIP CARRIES ONLY ITS OWN GROUP'S ORDERS ──────────
+            //
+            // Additive, and deliberately conditional on the Trip HAVING a Group:
+            // every Trip that existed before the Group relation — and every ad-hoc
+            // or externally-sourced Trip after it — keeps behaving exactly as before.
+            //
+            // Without this, a Trip could silently mix two Groups' work, and because
+            // `assignOrder` never reads the order's warehouse, that would mean two
+            // warehouses' orders on one vehicle with nothing recording it. The Group
+            // is where warehouse ownership lives, so the Group link is what makes
+            // that check possible at all.
+            if ($trip->virtual_slot_id !== null) {
+                $belongsToThisGroup = DB::table('distribution_window_orders')
+                    ->where('order_id', $orderId)
+                    ->where('virtual_slot_id', $trip->virtual_slot_id)
+                    ->exists();
+
+                if (! $belongsToThisGroup) {
+                    throw new DistributionException(
+                        'That order does not belong to this trip\'s distribution group. '
+                        .'A trip may only carry the orders of the group that produced it.',
+                    );
+                }
             }
 
             if ($trip->isAtCapacity()) {
@@ -260,6 +326,68 @@ class TripService
         $trip->update(['driver_vehicle_assignment_id' => $assignment->id]);
 
         return $trip->refresh();
+    }
+
+    /**
+     * THE canonical driver/vehicle availability predicate.
+     *
+     * Given a set of pairing ids (`driver_vehicle_assignment_id`), returns the
+     * subset that is ENGAGED — attached to a non-terminal Distribution trip that
+     * belongs to a Group OTHER than $currentGroupId.
+     *
+     * Both callers share this one implementation so the selector and the write
+     * guard can never disagree about what "engaged" means:
+     *   - the fleet-options READ hides an engaged pairing from the drawer;
+     *   - the assign WRITE refuses one, fail-closed, even if the drawer is bypassed.
+     *
+     * Definitions, each deliberate:
+     *   - "non-terminal" is TripStatus::nonTerminalValues(), derived from
+     *     TripStatus::isTerminal() — never a second status list;
+     *   - "another Group" is a trip whose virtual_slot_id is set and differs from
+     *     the current group. A trip on THIS group is the idempotent re-entry case
+     *     (re-opening or re-saving the same group's own assignment) and MUST stay
+     *     available; a group-less ad-hoc trip is outside this rule by definition.
+     *
+     * $lock makes it a locking read. The write path passes true so that, while it
+     * holds the pairing row lock, this observes a sibling transaction's already
+     * committed trip even though its own snapshot predates that commit — without
+     * it two concurrent assigns to different groups could both read "not engaged".
+     *
+     * @param  list<int>  $assignmentIds
+     * @return list<int>  the engaged subset, deduplicated
+     */
+    public function assignmentsEngagedElsewhere(
+        array $assignmentIds,
+        ?string $currentGroupId,
+        bool $lock = false,
+    ): array {
+        $assignmentIds = array_values(array_unique(array_filter(
+            array_map('intval', $assignmentIds),
+            static fn (int $id): bool => $id > 0,
+        )));
+
+        if ($assignmentIds === []) {
+            return [];
+        }
+
+        $query = Trip::query()
+            ->whereIn('driver_vehicle_assignment_id', $assignmentIds)
+            ->whereNotNull('virtual_slot_id')
+            ->whereIn('status', TripStatus::nonTerminalValues());
+
+        if ($currentGroupId !== null) {
+            $query->where('virtual_slot_id', '!=', $currentGroupId);
+        }
+
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        return $query->pluck('driver_vehicle_assignment_id')
+            ->map(static fn ($id): int => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
     }
 
     // ── Internals ─────────────────────────────────────────────────────────────
