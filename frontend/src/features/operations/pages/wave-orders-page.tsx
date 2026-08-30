@@ -1,17 +1,32 @@
 import { useMemo, useState } from 'react';
-import { Loader2, ShoppingCart, Waves } from 'lucide-react';
+import { CalendarClock, Loader2, ShoppingCart, Waves } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { toast } from '@/components/ds/use-toast';
 
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SmartToolbar } from '@/components/data-grid/smart-toolbar';
 import { UniversalDataGrid } from '@/components/data-grid/universal-data-grid';
 import { ColumnVisibilityMenu } from '@/components/data-grid/column-visibility-menu';
 import { useColumnVisibility } from '@/components/data-grid/use-column-visibility';
 import type { DataGridColumnDef } from '@/components/data-grid/types';
-import { useWaveOrders, useWaveKpis } from '../hooks/use-preparation';
+import { useWaveOrders, usePostponeWaveOrder } from '../hooks/use-preparation';
 import { useSelectedWaveId } from '../components/wave-picker';
-import type { WaveOrderEntry } from '../types/preparation';
+import type { WaveOrderEntry, WaveOrderProduct } from '../types/preparation';
+
+const INLINE_PRODUCTS = 2;
 
 // ── Zone filter tabs ───────────────────────────────────────────────────────────
 
@@ -31,7 +46,7 @@ function ZoneTabs({
   const counts: Record<string, number> = {};
   let total = 0;
   for (const o of orders) {
-    const z = o.delivery_zone_snapshot ?? unzonedLabel;
+    const z = o.delivery_zone ?? unzonedLabel;
     counts[z] = (counts[z] ?? 0) + 1;
     total += 1;
   }
@@ -76,6 +91,47 @@ function ZoneTabs({
   );
 }
 
+// ── Order products cell ────────────────────────────────────────────────────────
+
+function ProductLine({ p }: { p: WaveOrderProduct }) {
+  return (
+    <div className="flex items-baseline gap-1.5 whitespace-nowrap">
+      <span className="truncate">{p.name}</span>
+      <span className="tabular-nums text-muted-foreground">&times; {p.quantity}</span>
+    </div>
+  );
+}
+
+/** Shows the first few line items inline; the rest open in a popover. */
+function OrderProducts({ products, moreLabel }: { products: WaveOrderProduct[]; moreLabel: (n: number) => string }) {
+  if (products.length === 0) {
+    return <span className="text-muted-foreground">&mdash;</span>;
+  }
+
+  const inline = products.slice(0, INLINE_PRODUCTS);
+  const rest = products.length - inline.length;
+
+  return (
+    <div className="flex flex-col gap-0.5 text-xs">
+      {inline.map((p) => <ProductLine key={p.product_id} p={p} />)}
+      {rest > 0 && (
+        <Popover>
+          <PopoverTrigger asChild>
+            <button className="self-start text-[11px] font-medium text-primary hover:underline">
+              {moreLabel(rest)}
+            </button>
+          </PopoverTrigger>
+          <PopoverContent align="start" className="w-64 max-h-72 overflow-y-auto">
+            <div className="flex flex-col gap-1 text-xs">
+              {products.map((p) => <ProductLine key={p.product_id} p={p} />)}
+            </div>
+          </PopoverContent>
+        </Popover>
+      )}
+    </div>
+  );
+}
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export function WaveOrdersPage() {
@@ -84,11 +140,31 @@ export function WaveOrdersPage() {
 
   const waveId = useSelectedWaveId();
   const { data: orders, isLoading, isFetching, refetch } = useWaveOrders(waveId);
-  const { data: kpis } = useWaveKpis(waveId);
+  const postpone = usePostponeWaveOrder();
 
   const [search, setSearch]         = useState('');
   const [zoneFilter, setZoneFilter] = useState<string | null>(null);
+  const [pending, setPending]       = useState<WaveOrderEntry | null>(null);
 
+  const unassignedZone = t($ => $.wave.orders.unassignedZone);
+  const moreLabel = (n: number) => tAny('wave.orders.productsMore', { count: n });
+
+  function confirmPostpone() {
+    if (!pending || !waveId) return;
+    const order = pending;
+    setPending(null);
+    postpone.mutate(
+      { waveId, orderId: order.order_id },
+      {
+        onSuccess: () => toast.success(t($ => $.wave.orders.postpone.success)),
+        onError: () => toast.error(t($ => $.wave.orders.postpone.error)),
+      },
+    );
+  }
+
+  // Order # · Customer · Delivery Zone · Products · Actions — nothing else.
+  // Payment, Governorate and Added At are deliberately absent: preparation does not act
+  // on them, and Delivery Zone is the operational geography level.
   const columns: DataGridColumnDef<WaveOrderEntry>[] = useMemo(() => [
     {
       key: 'order_number',
@@ -104,7 +180,7 @@ export function WaveOrdersPage() {
       defaultVisible: true,
       cell: (o) => (
         <span className="text-sm">
-          {o.customer_name_snapshot ?? <span className="text-muted-foreground">—</span>}
+          {o.customer_name ?? <span className="text-muted-foreground">&mdash;</span>}
         </span>
       ),
     },
@@ -113,53 +189,38 @@ export function WaveOrdersPage() {
       label: t($ => $.wave.orders.columns.deliveryZone),
       defaultVisible: true,
       cell: (o) => (
-        <span className="text-sm text-muted-foreground">{o.delivery_zone_snapshot ?? '—'}</span>
+        o.delivery_zone
+          ? <span className="text-sm">{o.delivery_zone}</span>
+          : <Badge variant="outline" className="text-[11px] font-normal text-muted-foreground">{unassignedZone}</Badge>
       ),
     },
     {
-      key: 'governorate',
-      label: t($ => $.wave.orders.columns.governorate),
+      key: 'products',
+      label: t($ => $.wave.orders.columns.products),
       defaultVisible: true,
-      cell: (o) => (
-        <span className="text-sm text-muted-foreground">{o.governorate_snapshot ?? '—'}</span>
-      ),
+      cell: (o) => <OrderProducts products={o.products} moreLabel={moreLabel} />,
     },
     {
-      key: 'is_paid',
-      label: t($ => $.wave.orders.columns.payment),
-      defaultVisible: true,
-      cell: (o) => (
-        o.is_paid
-          ? <Badge className="text-xs bg-emerald-100 text-emerald-700">{t($ => $.wave.orders.payment.paid)}</Badge>
-          : <Badge className="text-xs bg-gray-100 text-gray-600">{t($ => $.wave.orders.payment.unpaid)}</Badge>
-      ),
-    },
-    {
-      key: 'priority',
-      label: t($ => $.wave.orders.columns.priority),
-      defaultVisible: false,
+      key: 'actions',
+      label: t($ => $.wave.orders.columns.actions),
+      alwaysVisible: true,
       align: 'end',
       cell: (o) => (
-        <span className="text-xs tabular-nums text-muted-foreground">{o.preparation_priority}</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 gap-1.5 text-xs"
+          title={t($ => $.wave.orders.postpone.tooltip)}
+          disabled={postpone.isPending}
+          onClick={() => setPending(o)}
+        >
+          <CalendarClock className="h-3.5 w-3.5" />
+          {t($ => $.wave.orders.postpone.action)}
+        </Button>
       ),
     },
-    {
-      key: 'added_at',
-      label: t($ => $.wave.orders.columns.addedAt),
-      defaultVisible: true,
-      cell: (o) => (
-        <span className="text-xs text-muted-foreground">
-          {new Date(o.added_at).toLocaleString(undefined, {
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </span>
-      ),
-    },
-   
-  ], [t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  ], [t, unassignedZone, postpone.isPending]);
 
   const colMetas = useMemo(() => columns.map((c) => ({
     key: c.key,
@@ -168,34 +229,26 @@ export function WaveOrdersPage() {
     defaultVisible: c.defaultVisible,
   })), [columns]);
 
-  const colVis = useColumnVisibility('wave-orders-cols', colMetas);
+  const colVis = useColumnVisibility('wave-orders-cols-v2', colMetas);
 
   const allOrders = orders ?? [];
 
-  const unzonedLabel = t($ => $.wave.unzoned);
-
   const filtered = allOrders.filter((o) => {
     if (zoneFilter !== null) {
-      const oZone = o.delivery_zone_snapshot ?? unzonedLabel;
+      const oZone = o.delivery_zone ?? unassignedZone;
       if (oZone !== zoneFilter) return false;
     }
     if (search) {
       const q = search.toLowerCase();
       return (
         o.order_number.toLowerCase().includes(q) ||
-        (o.customer_name_snapshot ?? '').toLowerCase().includes(q) ||
-        (o.delivery_zone_snapshot ?? '').toLowerCase().includes(q) ||
-        (o.governorate_snapshot ?? '').toLowerCase().includes(q)
+        (o.customer_name ?? '').toLowerCase().includes(q) ||
+        (o.delivery_zone ?? '').toLowerCase().includes(q) ||
+        o.products.some((p) => p.name.toLowerCase().includes(q))
       );
     }
     return true;
   });
-
-  const ordersCount  = kpis?.orders_count ?? allOrders.length;
-  const preparedPct  = kpis?.completion_pct ?? 0;
-  const missingCount = kpis?.missing_materials_count ?? 0;
-  const uniqueZones  = new Set(allOrders.map((o) => o.delivery_zone_snapshot ?? unzonedLabel)).size;
-  const paidCount    = allOrders.filter((o) => o.is_paid).length;
 
   return (
     <div className="flex flex-col h-full">
@@ -203,35 +256,17 @@ export function WaveOrdersPage() {
         onRefresh={() => void refetch()}
         isFetching={isFetching}
         viewControls={
-          <ColumnVisibilityMenu
-            columns={colMetas}
-            visibility={colVis.visibility}
-            onToggle={colVis.toggle}
-            onReset={colVis.reset}
-          />
+          // Column visibility applies to the desktop table only; mobile renders cards.
+          <span className="hidden lg:flex">
+            <ColumnVisibilityMenu
+              columns={colMetas}
+              visibility={colVis.visibility}
+              onToggle={colVis.toggle}
+              onReset={colVis.reset}
+            />
+          </span>
         }
       />
-
-      {/* KPI row */}
-      {allOrders.length > 0 && (
-        <div className="flex items-center gap-2 px-4 py-2 border-b bg-background overflow-x-auto shrink-0">
-          {[
-            { label: t($ => $.wave.orders.kpis.totalOrders),      value: ordersCount,                  cls: '' },
-            { label: t($ => $.wave.orders.kpis.deliveryZones),    value: uniqueZones,                  cls: '' },
-            { label: t($ => $.wave.orders.kpis.paid),             value: paidCount,                    cls: paidCount > 0 ? 'text-emerald-700' : '' },
-            { label: t($ => $.wave.orders.kpis.completion),       value: `${preparedPct.toFixed(1)}%`, cls: preparedPct >= 100 ? 'text-emerald-700' : '' },
-            { label: t($ => $.wave.orders.kpis.missingMaterials), value: missingCount,                 cls: missingCount > 0 ? 'text-red-700' : '' },
-          ].map((kpi) => (
-            <div
-              key={kpi.label}
-              className="flex items-center gap-1.5 rounded-md bg-muted/50 border border-border/50 px-2.5 py-1.5 text-xs shrink-0"
-            >
-              <span className={`font-semibold tabular-nums ${kpi.cls}`}>{kpi.value}</span>
-              <span className="text-muted-foreground">{kpi.label}</span>
-            </div>
-          ))}
-        </div>
-      )}
 
       <div className="flex items-center justify-between gap-3 px-4 py-2 border-b bg-muted/30 flex-wrap">
         <ZoneTabs
@@ -239,7 +274,7 @@ export function WaveOrdersPage() {
           zone={zoneFilter}
           onZone={setZoneFilter}
           allZonesLabel={t($ => $.wave.orders.allZones)}
-          unzonedLabel={unzonedLabel}
+          unzonedLabel={unassignedZone}
         />
         <div className="flex items-center gap-2 shrink-0">
           <Input
@@ -269,6 +304,40 @@ export function WaveOrdersPage() {
             rowId={(o) => o.id}
             loading={false}
             columnVisibility={colVis.visibility}
+            renderMobileCard={(o) => (
+              // Same fields and the SAME postpone action as the desktop row — no separate
+              // mobile mutation or eligibility (§14/§18). Wave membership rules are untouched.
+              <div role="listitem" className="border-b p-3.5 last:border-0 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-mono text-sm font-medium">{o.order_number}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {o.customer_name ?? '—'}
+                    </p>
+                  </div>
+                  {o.delivery_zone ? (
+                    <span className="shrink-0 text-xs text-muted-foreground">{o.delivery_zone}</span>
+                  ) : (
+                    <Badge variant="outline" className="shrink-0 text-[10px] font-normal text-muted-foreground">
+                      {unassignedZone}
+                    </Badge>
+                  )}
+                </div>
+                <OrderProducts products={o.products} moreLabel={moreLabel} />
+                <div className="flex justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1.5 text-xs"
+                    disabled={postpone.isPending}
+                    onClick={() => setPending(o)}
+                  >
+                    <CalendarClock className="h-3.5 w-3.5" />
+                    {t($ => $.wave.orders.postpone.action)}
+                  </Button>
+                </div>
+              </div>
+            )}
             emptyState={
               <div className="flex flex-col items-center justify-center py-16 gap-2 text-muted-foreground">
                 <ShoppingCart className="w-8 h-8" />
@@ -282,6 +351,24 @@ export function WaveOrdersPage() {
           />
         )}
       </div>
+
+      <AlertDialog open={pending !== null} onOpenChange={(open) => { if (!open) setPending(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t($ => $.wave.orders.postpone.title)}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t($ => $.wave.orders.postpone.body)}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            {/* Cancel closes the dialog and changes nothing — no request is sent. */}
+            <AlertDialogCancel>{t($ => $.wave.orders.postpone.cancel)}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmPostpone}>
+              {t($ => $.wave.orders.postpone.confirm)}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

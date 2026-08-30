@@ -25,7 +25,15 @@ export function WavePicker({ className, showBadge = true }: Props) {
   const waveId = searchParams.get('wave_id') ?? '';
   const { waveStatusLabel } = useWaveStatusLabels();
 
-  const { data, isLoading } = usePreparationWaves({ per_page: 50 });
+  // Only the 3 most recent ACTIVE waves belong in the operational selector.
+  // Ordered by planning_date, not created_at: a wave created earlier can be
+  // planned for a later day, which previously surfaced stale waves as current.
+  // Older and terminal waves are not deleted - they live in the Archive.
+  const { data, isLoading } = usePreparationWaves({
+    lifecycle: 'active',
+    sort: '-planning_date',
+    per_page: 3,
+  });
   const waves = data?.data ?? [];
 
   const selected = waves.find((w) => w.id === waveId);

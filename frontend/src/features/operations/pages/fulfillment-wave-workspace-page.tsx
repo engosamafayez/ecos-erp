@@ -113,7 +113,6 @@ export function FulfillmentWaveWorkspacePage() {
   const orderList      = orders ?? [];
   const recentOrders   = orderList.slice(0, 8);
 
-  const ordersCount    = kpis?.orders_count ?? wave?.orders_count ?? 0;
   const productsCount  = kpis?.products_count ?? 0;
   const materialsCount = kpis?.materials_count ?? 0;
   const missingCount   = kpis?.missing_materials_count ?? 0;
@@ -143,13 +142,18 @@ export function FulfillmentWaveWorkspacePage() {
       ) : (
         <div className="flex-1 overflow-auto p-5 space-y-6">
 
-          {/* ── KPI Row ────────────────────────────────────────────────────── */}
+          {/* ── KPI Row ────────────────────────────────────────────────────────
+              TASK-PREPARATION-OPERATIONS-UX-003 §2 — Orders, Products, Completion and
+              Missing Materials were removed from this row because the workspace header
+              now renders those same four figures as compact chips, from the same
+              sources (wave.orders_count / products_count / completion_pct and the
+              missing-materials KPI). Raw Materials stays: it is the count of DISTINCT
+              materials, which no header chip carries (the header's "Required" is
+              total_units_required, a different quantity). No table or business section
+              was touched — only proven duplicates were dropped.
+          */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            <KpiCard icon={<ShoppingCart className="h-4 w-4" />} label={t($ => $.wave.dashboard.kpis.orders)}           value={ordersCount} />
-            <KpiCard icon={<Package className="h-4 w-4" />}      label={t($ => $.wave.dashboard.kpis.products)}         value={productsCount} />
-            <KpiCard icon={<CheckCircle2 className="h-4 w-4" />} label={t($ => $.wave.dashboard.kpis.completion)}       value={`${completionPct.toFixed(1)}%`} accent={completionPct >= 100 ? 'success' : undefined} />
             <KpiCard icon={<FlaskConical className="h-4 w-4" />} label={t($ => $.wave.dashboard.kpis.rawMaterials)}     value={materialsCount} />
-            <KpiCard icon={<PackageX className="h-4 w-4" />}     label={t($ => $.wave.dashboard.kpis.missingMaterials)} value={missingCount} accent={missingCount > 0 ? 'danger' : undefined} />
           </div>
 
           {/* ── Wave Completion progress ───────────────────────────────────── */}
@@ -352,7 +356,6 @@ export function FulfillmentWaveWorkspacePage() {
                       <tr className="border-b border-red-200 bg-red-50/60">
                         <th className="px-3 py-2 text-start font-medium text-red-700">{t($ => $.wave.dashboard.missingTable.material)}</th>
                         <th className="px-3 py-2 text-end font-medium text-red-700">{t($ => $.wave.dashboard.missingTable.missing)}</th>
-                        <th className="px-3 py-2 text-end font-medium text-red-700">{t($ => $.wave.dashboard.missingTable.priority)}</th>
                         <th className="px-3 py-2 text-end font-medium text-red-700">{t($ => $.wave.dashboard.missingTable.orders)}</th>
                       </tr>
                     </thead>
@@ -363,15 +366,6 @@ export function FulfillmentWaveWorkspacePage() {
                             <div className="truncate">{mat.material_name}</div>
                           </td>
                           <td className="px-3 py-2 text-end tabular-nums text-red-700 font-semibold">{fmt(mat.missing_qty)}</td>
-                          <td className="px-3 py-2 text-end">
-                            <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                              mat.priority === 'critical' ? 'bg-red-200 text-red-800' :
-                              mat.priority === 'high'     ? 'bg-amber-100 text-amber-700' :
-                              'bg-yellow-100 text-yellow-700'
-                            }`}>
-                              {tAny(`wave.missingMaterials.priority.${mat.priority}`)}
-                            </span>
-                          </td>
                           <td className="px-3 py-2 text-end tabular-nums text-red-800">{mat.affected_orders_count}</td>
                         </tr>
                       ))}

@@ -12,6 +12,7 @@ import type {
   PoolQuery,
   PoolResult,
   CreateWavePayload,
+  CurrentWaveResponse,
   StartPreparationPayload,
   CompleteProductPayload,
   CancelWavePayload,
@@ -46,7 +47,13 @@ import type {
   WaveMaterialDemandItem,
   WaveMissingMaterialItem,
   WaveManufacturingDemandItem,
+  DeficitDecisionsResponse,
   WaveOrderEntry,
+  ProductRelatedOrder,
+  MaterialRelatedOrder,
+  WaveEngineConfigResponse,
+  WaveEngineConfig,
+  WaveEngineConfigPayload,
 } from '../types/preparation';
 
 const BASE = '/preparation';
@@ -81,6 +88,28 @@ export const preparationService = {
 
   async getWave(id: string): Promise<PreparationWave> {
     const { data } = await api.get<ApiResponse<PreparationWave>>(`${BASE}/waves/${id}`);
+    return data.data;
+  },
+
+  /**
+   * The canonical current active wave for Today's Preparation (§3-§6). Read-only; resolves
+   * the ONE open operational wave from server state, or reports the none/multiple cases so
+   * the client never relies on a stale wave id or silently picks among several.
+   */
+  async getCurrentWave(): Promise<CurrentWaveResponse> {
+    const { data } = await api.get<ApiResponse<CurrentWaveResponse>>(`${BASE}/waves/current`);
+    return data.data;
+  },
+
+  // ── Wave Engine configuration (operational cycle) ─────────────────────────────
+  // Lives under the Configuration OS facade, not the /preparation prefix.
+  async getWaveEngineConfig(): Promise<WaveEngineConfigResponse> {
+    const { data } = await api.get<ApiResponse<WaveEngineConfigResponse>>('/configuration/wave-engine');
+    return data.data;
+  },
+
+  async updateWaveEngineConfig(id: string, payload: WaveEngineConfigPayload): Promise<WaveEngineConfig> {
+    const { data } = await api.put<ApiResponse<WaveEngineConfig>>(`/configuration/wave-engine/${id}`, payload);
     return data.data;
   },
 
@@ -311,8 +340,22 @@ export const preparationService = {
     await api.delete(`${BASE}/assignment-policies/${id}`);
   },
 
+  /**
+   * Manually assign (or re-assign) an Order's warehouse.
+   *
+   * PATH IS DELIBERATELY OUTSIDE `BASE`. The route is registered at
+   * `api/orders/{order}/override-warehouse` — the root authenticated group, next to the
+   * other order verbs — not under the `preparation` prefix. Built from BASE it resolved
+   * to `/preparation/orders/...`, which is not a registered URI, so every call 404'd.
+   * The method had no caller, so nothing regressed; it is corrected here rather than
+   * duplicated, keeping ONE client for this endpoint.
+   *
+   * The server is the authority on all of it: `sales.orders.update`, the Order tenant
+   * scope, and an explicit same-company check on the target warehouse. `reason` is
+   * required (min 10 chars) because the engine writes it to the audit trail.
+   */
   async overrideWarehouse(orderId: string, payload: OverrideWarehousePayload): Promise<void> {
-    await api.post(`${BASE}/orders/${orderId}/override-warehouse`, payload);
+    await api.post(`/orders/${orderId}/override-warehouse`, payload);
   },
 
   // ── Enterprise (Phases 6, 8, 9, 13) ─────────────────────────────────────────
@@ -359,13 +402,102 @@ export const preparationService = {
     return data.data;
   },
 
+  /**
+   * Procurement's Expected Incoming for one missing material.
+   *
+   * PLANNING ONLY — it saves a single number. It does not receive stock, create a goods
+   * receipt or a stock movement, touch reservations, or change the real missing_qty.
+   */
+  async updateExpectedIncoming(waveId: string, materialId: string, expectedQty: number): Promise<void> {
+    await api.put(`${BASE}/waves/${waveId}/missing-materials/${materialId}/expected-incoming`, {
+      expected_qty: expectedQty,
+    });
+  },
+
+  /** Clears `postponed_at` on the retained membership row. UPDATE only — never an insert. */
+  async returnOrderToPreparation(waveId: string, orderId: string): Promise<void> {
+    await api.post(`${BASE}/waves/${waveId}/orders/${orderId}/return-to-preparation`);
+  },
+
   async getWaveManufacturingDemand(waveId: string): Promise<WaveManufacturingDemandItem[]> {
     const { data } = await api.get<ApiResponse<WaveManufacturingDemandItem[]>>(`${BASE}/waves/${waveId}/manufacturing-demand`);
     return data.data;
   },
 
+  /** "قرارات العجز" — orders/products whose material shortage is not covered by open POs. */
+  async getDeficitDecisions(waveId: string): Promise<DeficitDecisionsResponse> {
+    const { data } = await api.get<ApiResponse<DeficitDecisionsResponse>>(`${BASE}/waves/${waveId}/deficit-decisions`);
+    return data.data;
+  },
+
+  /**
+   * "استمرار العملية رغم العجز" — continue this product despite the shortage.
+   * Records the operator decision on the product-demand row; never deletes the order line.
+   */
+  async continueDespiteShortage(waveId: string, productId: string): Promise<void> {
+    await api.post(`${BASE}/waves/${waveId}/product-demand/${productId}/continue-despite-shortage`);
+  },
+
   async getWaveOrders(waveId: string): Promise<WaveOrderEntry[]> {
     const { data } = await api.get<ApiResponse<WaveOrderEntry[]>>(`${BASE}/waves/${waveId}/orders`);
+    return data.data;
+  },
+
+  /**
+   * Postpone an order out of the current preparation cycle.
+   *
+   * Not a delete: the backend retains the membership row with `postponed_at` stamped, so
+   * the order leaves today's aggregation while its history — and the order itself — remain.
+   */
+  async postponeWaveOrder(waveId: string, orderId: string): Promise<void> {
+    await api.post(`${BASE}/waves/${waveId}/orders/${orderId}/postpone`);
+  },
+
+  /**
+   * Product-level Prepared. The operator states ONE number per product; it is never
+   * distributed across order lines and `order_lines.prepared_qty` is not touched.
+   */
+  async updateProductPrepared(waveId: string, productId: string, preparedQty: number): Promise<WaveProductDemandItem> {
+    const { data } = await api.patch<ApiResponse<WaveProductDemandItem>>(
+      `${BASE}/waves/${waveId}/product-demand/${productId}/prepared`,
+      { prepared_qty: preparedQty },
+    );
+    return data.data;
+  },
+
+  /**
+   * Explicit "preparation finished" declaration. Deliberately separate from editing
+   * Prepared — reaching Required is not the same as the operator declaring it done.
+   */
+  async completeProductPreparation(waveId: string, productId: string): Promise<WaveProductDemandItem> {
+    const { data } = await api.post<ApiResponse<WaveProductDemandItem>>(
+      `${BASE}/waves/${waveId}/product-demand/${productId}/complete`,
+    );
+    return data.data;
+  },
+
+  /**
+   * Withdraw the completion declaration. Prepared is untouched — only the claim is
+   * withdrawn, so the floor's number survives.
+   */
+  async uncompleteProductPreparation(waveId: string, productId: string): Promise<WaveProductDemandItem> {
+    const { data } = await api.post<ApiResponse<WaveProductDemandItem>>(
+      `${BASE}/waves/${waveId}/product-demand/${productId}/uncomplete`,
+    );
+    return data.data;
+  },
+
+  async getProductRelatedOrders(waveId: string, productId: string): Promise<ProductRelatedOrder[]> {
+    const { data } = await api.get<ApiResponse<ProductRelatedOrder[]>>(
+      `${BASE}/waves/${waveId}/product-demand/${productId}/orders`,
+    );
+    return data.data;
+  },
+
+  async getMaterialRelatedOrders(waveId: string, materialId: string): Promise<MaterialRelatedOrder[]> {
+    const { data } = await api.get<ApiResponse<MaterialRelatedOrder[]>>(
+      `${BASE}/waves/${waveId}/missing-materials/${materialId}/orders`,
+    );
     return data.data;
   },
 };
