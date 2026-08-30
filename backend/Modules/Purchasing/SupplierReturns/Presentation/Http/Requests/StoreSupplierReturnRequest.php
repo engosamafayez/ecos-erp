@@ -30,7 +30,11 @@ class StoreSupplierReturnRequest extends FormRequest
             'credit_method' => ['nullable', 'string', 'in:credit_note,refund,replacement'],
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.product_id' => ['required', 'uuid', 'exists:products,id'],
-            'lines.*.goods_receipt_line_id' => ['nullable', 'uuid'],
+            // SR-2 — the canonical return-ceiling identity. Required on creation because a
+            // return with no receipt line has no basis for a returnable quantity, and
+            // inventing one is forbidden. Existing rows are left untouched; they are refused
+            // at approval instead of being backfilled from a guess.
+            'lines.*.goods_receipt_line_id' => ['required', 'uuid', 'exists:goods_receipt_lines,id'],
             'lines.*.return_quantity' => ['required', 'numeric', 'min:0.0001'],
             'lines.*.unit_cost' => ['required', 'numeric', 'min:0'],
             'lines.*.reason' => ['nullable', 'string', 'max:100'],

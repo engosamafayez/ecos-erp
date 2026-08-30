@@ -9,8 +9,9 @@ use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Modules\Purchasing\SupplierReturns\Application\Actions\ReverseSupplierReturnInventoryAction;
+use Modules\Purchasing\SupplierReturns\Application\Actions\ApproveSupplierReturnAction;
 use Modules\Purchasing\SupplierReturns\Domain\Enums\SupplierReturnStatus;
+use Modules\Purchasing\SupplierReturns\Domain\Exceptions\SupplierReturnValidationException;
 use Modules\Purchasing\SupplierReturns\Domain\Models\SupplierReturn;
 use Modules\Purchasing\SupplierReturns\Presentation\Http\Requests\StoreSupplierReturnRequest;
 use Modules\Purchasing\SupplierReturns\Presentation\Http\Resources\SupplierReturnResource;
@@ -21,7 +22,7 @@ final class SupplierReturnController extends Controller
 
     public function __construct(
         private readonly CurrentCompanyService $currentCompany,
-        private readonly ReverseSupplierReturnInventoryAction $reverseInventory,
+        private readonly ApproveSupplierReturnAction $approveReturn,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -138,21 +139,16 @@ final class SupplierReturnController extends Controller
 
     public function approve(SupplierReturn $supplierReturn): JsonResponse
     {
-        if (! $supplierReturn->status->canTransitionTo(SupplierReturnStatus::Approved)) {
-            return $this->error('Return cannot be approved in its current state', 422);
+        // One atomic operation (SR-3): validate ceiling -> consume FIFO -> reduce inventory
+        // -> write ledger -> mark Approved -> commit. Status is no longer written here and
+        // then reconciled afterwards; a failure anywhere rolls everything back.
+        try {
+            $approved = $this->approveReturn->execute($supplierReturn, (string) auth()->id());
+        } catch (SupplierReturnValidationException $e) {
+            return $this->error($e->getMessage(), 422);
         }
 
-        $supplierReturn->update([
-            'status' => SupplierReturnStatus::Approved,
-            'approved_by' => auth()->id(),
-            'approved_at' => now(),
-        ]);
-
-        // Reverse inventory: decrement on_hand_qty for each returned line
-        $supplierReturn->load('lines.product', 'warehouse');
-        $this->reverseInventory->execute($supplierReturn);
-
-        return $this->success(new SupplierReturnResource($supplierReturn->fresh(['supplier', 'warehouse'])));
+        return $this->success(new SupplierReturnResource($approved->fresh(['supplier', 'warehouse'])));
     }
 
     public function reject(Request $request, SupplierReturn $supplierReturn): JsonResponse

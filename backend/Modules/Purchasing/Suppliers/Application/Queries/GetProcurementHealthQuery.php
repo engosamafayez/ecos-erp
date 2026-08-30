@@ -36,20 +36,29 @@ final class GetProcurementHealthQuery
 
         $components = $this->computeComponents($supplierId);
         $score = $this->computeWeightedScore($components);
-        $tier = $this->tier($score);
+
+        // REALIGNMENT-001 §15 — a supplier with no procurement history gets NO score. Every
+        // component that lacks a real data source now returns null instead of a hard-coded
+        // midpoint (50/75/100/30), so the UI can honestly render "No data" instead of an
+        // invented performance figure. `has_history` is the single flag the UI switches on.
+        $hasHistory = $score !== null;
+        $tier = $hasHistory ? $this->tier($score) : 'no_data';
 
         return [
             'supplier_id' => $supplierId,
-            'score' => round($score, 1),
+            'has_history' => $hasHistory,
+            'score' => $hasHistory ? round($score, 1) : null,
             'tier' => $tier,
-            'color' => $this->tierColor($tier),
-            'trend' => 'stable',
+            'color' => $hasHistory ? $this->tierColor($tier) : 'gray',
+            // Trend needs a prior-period comparison that is not computed anywhere; reporting
+            // a hard-coded 'stable' was fabrication, so it is null until a real series exists.
+            'trend' => null,
             'components' => $components,
             'weights' => self::WEIGHTS,
         ];
     }
 
-    /** @return array<string, float> */
+    /** @return array<string, float|null> */
     private function computeComponents(string $supplierId): array
     {
         return [
@@ -62,7 +71,7 @@ final class GetProcurementHealthQuery
         ];
     }
 
-    private function deliveryPerformance(string $supplierId): float
+    private function deliveryPerformance(string $supplierId): ?float
     {
         $row = DB::table('purchase_orders as po')
             ->join('goods_receipts as gr', 'gr.purchase_order_id', '=', 'po.id')
@@ -78,13 +87,13 @@ final class GetProcurementHealthQuery
             ->first();
 
         if ($row === null || (int) $row->total === 0) {
-            return 50.0;
+            return null; // no posted receipts — no delivery signal
         }
 
         return min(100.0, round((float) $row->on_time / (float) $row->total * 100, 1));
     }
 
-    private function fillRate(string $supplierId): float
+    private function fillRate(string $supplierId): ?float
     {
         $row = DB::table('goods_receipt_lines as grl')
             ->join('goods_receipts as gr', 'grl.goods_receipt_id', '=', 'gr.id')
@@ -93,19 +102,19 @@ final class GetProcurementHealthQuery
             ->where('gr.status', GoodsReceiptStatus::Posted->value)
             ->whereNull('gr.deleted_at')
             ->selectRaw('
-                COALESCE(SUM(COALESCE(grl.net_received_quantity, grl.received_quantity)::float), 0) as total_received,
-                COALESCE(SUM(grl.ordered_quantity::float), 0) as total_ordered
+                COALESCE(SUM(COALESCE(grl.net_received_quantity, grl.received_quantity)), 0) as total_received,
+                COALESCE(SUM(grl.ordered_quantity), 0) as total_ordered
             ')
             ->first();
 
         if ($row === null || (float) $row->total_ordered <= 0) {
-            return 50.0;
+            return null; // nothing ordered — no fill signal
         }
 
         return min(100.0, round((float) $row->total_received / (float) $row->total_ordered * 100, 1));
     }
 
-    private function priceStability(string $supplierId): float
+    private function priceStability(string $supplierId): ?float
     {
         $rows = DB::table('goods_receipt_lines as grl')
             ->join('goods_receipts as gr', 'grl.goods_receipt_id', '=', 'gr.id')
@@ -115,8 +124,8 @@ final class GetProcurementHealthQuery
             ->whereNull('gr.deleted_at')
             ->selectRaw('
                 grl.product_id,
-                STDDEV_SAMP(grl.unit_price::float) as price_stddev,
-                AVG(grl.unit_price::float)          as price_avg,
+                STDDEV_SAMP(grl.unit_price) as price_stddev,
+                AVG(grl.unit_price)         as price_avg,
                 COUNT(*)                            as cnt
             ')
             ->groupBy('grl.product_id')
@@ -124,7 +133,7 @@ final class GetProcurementHealthQuery
             ->get();
 
         if ($rows->isEmpty()) {
-            return 75.0;
+            return null; // fewer than the minimum price points — no stability signal
         }
 
         $cvSum = $rows->sum(function ($r): float {
@@ -140,7 +149,7 @@ final class GetProcurementHealthQuery
         return min(100.0, max(0.0, round(100.0 - ($avgCv * 200), 1)));
     }
 
-    private function activity(string $supplierId): float
+    private function activity(string $supplierId): ?float
     {
         $lastDate = DB::table('goods_receipts as gr')
             ->join('purchase_orders as po', 'gr.purchase_order_id', '=', 'po.id')
@@ -150,7 +159,7 @@ final class GetProcurementHealthQuery
             ->max('gr.receipt_date');
 
         if ($lastDate === null) {
-            return 30.0;
+            return null; // never received from — no activity signal
         }
 
         $days = (int) now()->diffInDays($lastDate);
@@ -164,7 +173,7 @@ final class GetProcurementHealthQuery
         };
     }
 
-    private function financialStanding(string $supplierId): float
+    private function financialStanding(string $supplierId): ?float
     {
         $row = DB::table('goods_receipts as gr')
             ->join('purchase_orders as po', 'gr.purchase_order_id', '=', 'po.id')
@@ -178,7 +187,7 @@ final class GetProcurementHealthQuery
             ->first();
 
         if ($row === null || (float) $row->total_invoiced <= 0) {
-            return 100.0;
+            return null; // nothing invoiced — a perfect 100 here was pure fabrication
         }
 
         $outstanding = max(0.0, (float) $row->total_invoiced - (float) $row->total_paid);
@@ -187,25 +196,45 @@ final class GetProcurementHealthQuery
         return min(100.0, max(0.0, round(100.0 - ($ratio * 100), 1)));
     }
 
-    private function inventoryImpact(string $supplierId): float
+    private function inventoryImpact(string $supplierId): ?float
     {
         $hasStock = DB::table('inventory_receipt_layers')
             ->where('supplier_id', $supplierId)
             ->where('remaining_qty', '>', 0)
             ->exists();
 
-        return $hasStock ? 80.0 : 50.0;
+        return $hasStock ? 80.0 : null; // no stock from this supplier — no impact signal
     }
 
-    /** @param array<string, float> $components */
-    private function computeWeightedScore(array $components): float
+    /**
+     * Weighted score over the components that ACTUALLY have data.
+     *
+     * The previous implementation substituted 50.0 for every missing component, so a supplier
+     * with no transactions at all still rendered a confident score. Missing components are now
+     * excluded and the remaining weights are re-normalised; when nothing has data the score is
+     * null and the caller renders "No data" rather than a fabricated number.
+     *
+     * @param  array<string, float|null>  $components
+     */
+    private function computeWeightedScore(array $components): ?float
     {
         $score = 0.0;
+        $weightWithData = 0.0;
+
         foreach (self::WEIGHTS as $key => $weight) {
-            $score += ($components[$key] ?? 50.0) * $weight;
+            $value = $components[$key] ?? null;
+            if ($value === null) {
+                continue;
+            }
+            $score += $value * $weight;
+            $weightWithData += $weight;
         }
 
-        return $score;
+        if ($weightWithData <= 0.0) {
+            return null;
+        }
+
+        return $score / $weightWithData;
     }
 
     private function tier(float $score): string

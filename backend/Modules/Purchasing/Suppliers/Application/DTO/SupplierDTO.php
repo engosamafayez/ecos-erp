@@ -21,7 +21,10 @@ final class SupplierDTO extends BaseDTO
         public readonly ?string $mobile = null,
         public readonly ?string $country = null,
         public readonly ?string $city = null,
+        public readonly ?string $state = null,
+        public readonly ?string $district = null,
         public readonly ?string $address = null,
+        public readonly ?string $google_maps_url = null,
         public readonly ?string $notes = null,
         public readonly bool $is_active = true,
     ) {}
@@ -40,7 +43,10 @@ final class SupplierDTO extends BaseDTO
             mobile: self::nullableString($data, 'mobile'),
             country: self::nullableString($data, 'country'),
             city: self::nullableString($data, 'city'),
+            state: self::nullableString($data, 'state'),
+            district: self::nullableString($data, 'district'),
             address: self::nullableString($data, 'address'),
+            google_maps_url: self::nullableString($data, 'google_maps_url'),
             notes: self::nullableString($data, 'notes'),
             is_active: (bool) ($data['is_active'] ?? true),
         );

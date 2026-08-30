@@ -7,6 +7,7 @@ namespace Modules\Purchasing\Suppliers\Infrastructure\Repositories;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Modules\Purchasing\Suppliers\Domain\Contracts\SupplierRepositoryInterface;
 use Modules\Purchasing\Suppliers\Domain\Models\Supplier;
 
@@ -64,6 +65,32 @@ final class EloquentSupplierRepository implements SupplierRepositoryInterface
             DB::raw('COALESCE(po_agg.active_pos_count, 0)                        AS active_pos_count'),
             DB::raw('COALESCE(inv_agg.inventory_cost_value, 0)                   AS inventory_cost_value'),
         ]);
+
+        // ── Ledger-derived balances (REALIGNMENT-001 §16) ─────────────────────
+        // The grid's money columns used to come from hand-entered goods-receipt scalars
+        // (invoice_total_amount − paid_amount), which diverged from Supplier 360 and from
+        // Finance. These aggregates mirror SupplierLedgerService::outstandingPayable() and
+        // ::availableAdvance() EXACTLY — the AP subledger is the single source of truth —
+        // batched here so the list does not issue a query per row. Advance is kept in its own
+        // bucket and is never folded into the payable (the certified opening-balance contract).
+        if (Schema::hasTable('finance_supplier_ledger_entries')) {
+            $ledgerStats = DB::table('finance_supplier_ledger_entries')
+                ->selectRaw("
+                    supplier_id,
+                    COALESCE(SUM(CASE WHEN entry_type <> 'advance' THEN amount ELSE 0 END), 0)        AS ledger_outstanding_payable,
+                    COALESCE(-SUM(CASE WHEN entry_type = 'advance' THEN amount ELSE 0 END), 0)        AS ledger_available_advance,
+                    COALESCE(SUM(CASE WHEN entry_type = 'opening_payable' THEN amount ELSE 0 END), 0) AS ledger_opening_payable
+                ")
+                ->groupBy('supplier_id');
+
+            $query->leftJoinSub($ledgerStats, 'led_agg', fn ($j) => $j->on('suppliers.id', '=', 'led_agg.supplier_id'));
+
+            $query->addSelect([
+                DB::raw('COALESCE(led_agg.ledger_outstanding_payable, 0) AS ledger_outstanding_payable'),
+                DB::raw('COALESCE(led_agg.ledger_available_advance, 0)   AS ledger_available_advance'),
+                DB::raw('COALESCE(led_agg.ledger_opening_payable, 0)     AS ledger_opening_payable'),
+            ]);
+        }
 
         // ── Filters ───────────────────────────────────────────────────────────
 

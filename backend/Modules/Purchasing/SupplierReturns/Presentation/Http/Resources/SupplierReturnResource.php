@@ -44,6 +44,11 @@ class SupplierReturnResource extends JsonResource
             'lines' => $this->whenLoaded('lines', fn () => $this->lines->map(fn ($line) => [
                 'id' => $line->id,
                 'product_id' => $line->product_id,
+                // The SR-2 anchor. Required on create AND on update (update reuses
+                // StoreSupplierReturnRequest and replaces every line), so a client that
+                // fetches a return to edit it must be able to read the value back — it
+                // cannot re-send a field it was never shown.
+                'goods_receipt_line_id' => $line->goods_receipt_line_id,
                 'product' => $line->product ? [
                     'id' => $line->product->id,
                     'name' => $line->product->name,

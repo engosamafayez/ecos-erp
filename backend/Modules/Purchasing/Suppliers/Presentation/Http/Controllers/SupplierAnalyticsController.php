@@ -11,6 +11,7 @@ use Modules\Purchasing\Suppliers\Application\Queries\GetProcurementHealthQuery;
 use Modules\Purchasing\Suppliers\Application\Queries\GetSupplierAnalyticsQuery;
 use Modules\Purchasing\Suppliers\Application\Queries\GetSupplierInventoryBreakdownQuery;
 use Modules\Purchasing\Suppliers\Application\Queries\GetSupplierPriceHistoryQuery;
+use Modules\Purchasing\Suppliers\Application\Queries\GetSupplierProductDemandQuery;
 use Modules\Purchasing\Suppliers\Application\Queries\GetSupplierSummaryStatsQuery;
 use Modules\Purchasing\Suppliers\Application\Queries\GetSupplierTimelineQuery;
 use Modules\Purchasing\Suppliers\Presentation\Http\Resources\SupplierAnalyticsResource;
@@ -55,6 +56,18 @@ final class SupplierAnalyticsController extends Controller
     public function priceHistory(
         string $supplier,
         GetSupplierPriceHistoryQuery $query,
+    ): JsonResponse {
+        return $this->success($query->execute($supplier)->values());
+    }
+
+    /**
+     * Product-level purchasing rate for this supplier — how much of each product
+     * is normally bought, per rolling period. Distinct from priceHistory(), which
+     * is the chronological per-line purchase log.
+     */
+    public function productDemand(
+        string $supplier,
+        GetSupplierProductDemandQuery $query,
     ): JsonResponse {
         return $this->success($query->execute($supplier)->values());
     }

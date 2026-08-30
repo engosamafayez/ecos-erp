@@ -12,7 +12,13 @@ use Modules\Purchasing\Suppliers\Domain\Models\Supplier;
 
 /**
  * Per-line purchasing price history for a supplier, ordered by most recent first.
- * Uses a PostgreSQL LAG window function to compute previous price per product.
+ * Uses a LAG window function to compute the previous price per product.
+ *
+ * Numeric columns are returned as the driver's native decimal representation and
+ * cast to float in PHP — the convention GetSupplierAnalyticsQuery and
+ * GetSupplierInventoryBreakdownQuery already follow. An earlier revision cast in
+ * SQL with the PostgreSQL-only double-colon operator, which cannot parse on the
+ * MySQL 8.4 runtime. The values and rounding are unchanged.
  */
 final class GetSupplierPriceHistoryQuery
 {
@@ -34,10 +40,10 @@ final class GetSupplierPriceHistoryQuery
                 p.name                                               AS product_name,
                 p.sku                                                AS product_sku,
                 grl.product_id,
-                COALESCE(grl.net_received_quantity, grl.received_quantity)::float AS quantity,
-                grl.unit_price::float                                              AS unit_cost,
-                grl.landed_unit_cost::float                                        AS landed_unit_cost,
-                LAG(grl.unit_price::float) OVER (
+                COALESCE(grl.net_received_quantity, grl.received_quantity) AS quantity,
+                grl.unit_price                                             AS unit_cost,
+                grl.landed_unit_cost                                       AS landed_unit_cost,
+                LAG(grl.unit_price) OVER (
                     PARTITION BY grl.product_id
                     ORDER BY gr.receipt_date, grl.id
                 )                                                    AS previous_price
