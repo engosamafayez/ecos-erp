@@ -91,8 +91,14 @@ export type GoodsReceipt = {
   updated_at: string | null;
 };
 
+/**
+ * A receipt line names EITHER a purchase-order line (legacy) OR a purchase-material line
+ * (TASK-PROC-PURCHASING-PHASE2-PART1). The backend enforces the XOR with
+ * `required_without`, so both are optional here and exactly one must be supplied.
+ */
 export type GoodsReceiptLinePayload = {
-  purchase_order_line_id: string;
+  purchase_order_line_id?: string;
+  purchase_material_line_id?: string;
   product_id: string;
   ordered_quantity: number;
   gross_received_quantity: number;
@@ -103,7 +109,8 @@ export type GoodsReceiptLinePayload = {
 };
 
 export type GoodsReceiptPayload = {
-  purchase_order_id: string;
+  /** Omitted for purchase-material-anchored receipts — see GoodsReceiptLinePayload. */
+  purchase_order_id?: string;
   warehouse_id: string;
   receipt_date: string;
   notes?: string | null;

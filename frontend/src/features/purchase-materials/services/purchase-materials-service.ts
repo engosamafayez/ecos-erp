@@ -85,7 +85,7 @@ export const purchaseMaterialsService = {
     return data.data;
   },
 
-  async getStats(params: { company_id?: string; warehouse_id?: string } = {}): Promise<PurchaseMaterialStats> {
+  async getStats(params: { company_id?: string; warehouse_id?: string; record_type?: string } = {}): Promise<PurchaseMaterialStats> {
     const filtered = Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined && v !== ''));
     const { data } = await api.get<ApiResponse<PurchaseMaterialStats>>('/purchase-materials/stats', { params: filtered });
     return data.data;

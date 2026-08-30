@@ -1,11 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, FileText, GitMerge, Plus, ShoppingCart, Truck } from 'lucide-react';
+import { Plus, Truck } from 'lucide-react';
 
 import { PageHeader } from '@/components/crud';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ds/use-toast';
 import { useWarehouseOptions } from '@/features/products/hooks/use-warehouse-options';
@@ -52,73 +51,12 @@ function SourceBadge({ source }: { source: PurchaseSourceType | null }) {
 
 // ── Source selector dialog ────────────────────────────────────────────────────
 
-type SourceOption = {
-  sourceType: PurchaseSourceType;
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-};
-
-function SourceSelectorDialog({
-  open,
-  onOpenChange,
-  onSelect,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onSelect: (sourceType: PurchaseSourceType) => void;
-}) {
-  const { t } = useTranslation('purchase-materials');
-
-  const SOURCE_OPTIONS: SourceOption[] = [
-    {
-      sourceType: 'material_request',
-      icon: <FileText className="h-5 w-5" />,
-      title: t($ => $.purchasesPage.sourceSelector.sources.material_request.title),
-      description: t($ => $.purchasesPage.sourceSelector.sources.material_request.description),
-    },
-    {
-      sourceType: 'direct',
-      icon: <ShoppingCart className="h-5 w-5" />,
-      title: t($ => $.purchasesPage.sourceSelector.sources.direct.title),
-      description: t($ => $.purchasesPage.sourceSelector.sources.direct.description),
-    },
-    {
-      sourceType: 'reorder',
-      icon: <GitMerge className="h-5 w-5" />,
-      title: t($ => $.purchasesPage.sourceSelector.sources.reorder.title),
-      description: t($ => $.purchasesPage.sourceSelector.sources.reorder.description),
-    },
-  ];
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{t($ => $.purchasesPage.sourceSelector.title)}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-2 pt-1">
-          {SOURCE_OPTIONS.map((opt) => (
-            <button
-              key={opt.sourceType}
-              onClick={() => onSelect(opt.sourceType)}
-              className="flex w-full items-center gap-4 rounded-lg border bg-background p-4 text-start transition-colors hover:border-primary/50 hover:bg-accent"
-            >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                {opt.icon}
-              </span>
-              <div className="flex-1">
-                <div className="font-medium text-sm">{opt.title}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">{opt.description}</div>
-              </div>
-              <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-            </button>
-          ))}
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
+// TASK-PROC-PURCHASING-WORKFLOW-REALIGNMENT-001 §2/§3 — the "Select Purchase Source" dialog is
+// GONE. It offered three entry points (From Material Request / Direct Purchase / Reorder) that all
+// opened the SAME wizard and differed only by a cosmetic source_type string: the labels promised
+// conversion / reorder-point behaviour that does not exist in the backend. "New Purchase" now
+// starts the one operational purchase directly. The legacy source values are still accepted by the
+// backend and still rendered as badges on historic rows (SourceBadge) — nothing is deleted.
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -150,9 +88,7 @@ export function PurchasesPage() {
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [sourceSelectorOpen, setSourceSelectorOpen] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
-  const [pendingSourceType, setPendingSourceType] = useState<PurchaseSourceType>('direct');
 
   const STATUS_CHIPS: Array<{ value: PurchaseMaterialStatus | 'all'; label: string }> = [
     { value: 'all', label: t($ => $.purchasesPage.statusChips.all) },
@@ -191,6 +127,9 @@ export function PurchasesPage() {
   const { data: stats } = usePurchaseMaterialStats({
     company_id: companyFilter || undefined,
     warehouse_id: warehouseFilter || undefined,
+    // Scope the KPI cards to purchases only — without this they summed Material
+    // Requests too, so MRs "appeared" on the Purchases screen via its stats.
+    record_type: 'purchase',
   });
   const deleteMutation = useDeletePurchaseMaterial();
 
@@ -225,12 +164,6 @@ export function PurchasesPage() {
     }
   }
 
-  function handleSourceSelected(sourceType: PurchaseSourceType) {
-    setSourceSelectorOpen(false);
-    setPendingSourceType(sourceType);
-    setWizardOpen(true);
-  }
-
   const op = stats?.operational;
   const fin = stats?.financial;
 
@@ -256,7 +189,7 @@ export function PurchasesPage() {
         title={t($ => $.purchasesPage.title)}
         subtitle={t($ => $.purchasesPage.subtitle)}
         actions={
-          <Button onClick={() => setSourceSelectorOpen(true)} className="gap-1.5">
+          <Button onClick={() => setWizardOpen(true)} className="gap-1.5">
             <Plus className="h-4 w-4" />
             {t($ => $.purchasesPage.newPurchase)}
           </Button>
@@ -506,19 +439,12 @@ export function PurchasesPage() {
         )}
       </div>
 
-      {/* Source selector dialog */}
-      <SourceSelectorDialog
-        open={sourceSelectorOpen}
-        onOpenChange={setSourceSelectorOpen}
-        onSelect={handleSourceSelected}
-      />
-
-      {/* Wizard */}
+      {/* Wizard — one operational purchase, opened directly (no source selection). */}
       <CreatePurchaseMaterialWizard
         open={wizardOpen}
         onOpenChange={setWizardOpen}
         recordType="purchase"
-        sourceType={pendingSourceType}
+        sourceType="direct"
       />
 
       {/* Detail drawer */}

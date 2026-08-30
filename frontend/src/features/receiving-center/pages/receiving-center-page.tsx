@@ -1,282 +1,348 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Eye, PackageOpen, Pencil, Plus, Send, Trash2 } from 'lucide-react';
-
-import {
-  ActionMenu,
-  ConfirmDialog,
-  EntityTable,
-  EntityToolbar,
-  PageHeader,
-  Pagination,
-} from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { GrPaymentStatusBadge } from '@/features/goods-receipts/components/gr-payment-status-badge';
-import { GrStatusBadge } from '@/features/goods-receipts/components/gr-status-badge';
-import {
-  useDeleteGoodsReceipt,
-  useGoodsReceiptsQuery,
-  usePostGoodsReceipt,
-} from '@/features/goods-receipts/hooks/use-goods-receipts';
-import type {
-  GoodsReceipt,
-  GoodsReceiptSortField,
-  GoodsReceiptStatus,
-} from '@/features/goods-receipts/types/goods-receipt';
-import { ROUTES } from '@/router/routes';
 import { useTranslation } from 'react-i18next';
-import { useFormatter } from '@/hooks/use-formatter';
+import { AlertTriangle, ClipboardList, Loader2, PackageCheck, PackageOpen, Truck } from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { EntityToolbar, PageHeader, Pagination } from '@/components/crud';
+import { UniversalDataGrid } from '@/components/data-grid/universal-data-grid';
+import type { DataGridColumnDef } from '@/components/data-grid/types';
+import { useWarehouseOptions } from '@/features/goods-receipts/hooks/use-warehouse-options';
+import { useSupplierOptions } from '@/features/purchase-orders/hooks/use-supplier-options';
+import { useReceivingQueue } from '../hooks/use-receiving';
+import type { ReceivingQueueRow, ReceivingScope } from '../types/receiving';
+import { ReceiveDrawer } from '../components/receive-drawer';
 
 const PER_PAGE = 15;
 
-type KpiProps = { label: string; value: string | number; color?: string };
+function fmt(n: number) {
+  return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+}
 
-function KpiChip({ label, value, color = 'gray' }: KpiProps) {
-  const colors: Record<string, string> = {
-    gray:   'bg-gray-100 text-gray-700',
-    blue:   'bg-blue-50 text-blue-700',
-    green:  'bg-green-50 text-green-700',
-    yellow: 'bg-yellow-50 text-yellow-700',
+type ReceiptStage = 'awaiting' | 'partial' | 'received';
+
+function stageOf(row: ReceivingQueueRow): ReceiptStage {
+  if (row.remaining_qty <= 0) return 'received';
+  return row.received_qty > 0 ? 'partial' : 'awaiting';
+}
+
+function StageBadge({ row }: { row: ReceivingQueueRow }) {
+  const { t } = useTranslation('receiving-center');
+  const stage = stageOf(row);
+  const cls: Record<ReceiptStage, string> = {
+    awaiting: 'bg-muted text-muted-foreground',
+    partial: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
+    received: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
   };
+  return <Badge className={`${cls[stage]} hover:${cls[stage]}`}>{t($ => $.page.status[stage])}</Badge>;
+}
 
+function KpiChip({ icon: Icon, label, value, tone }: { icon: typeof Truck; label: string; value: number; tone: string }) {
   return (
-    <div className={`flex flex-col items-center px-5 py-3 rounded-lg ${colors[color] ?? colors.gray}`}>
-      <span className="text-xl font-semibold">{value}</span>
-      <span className="text-xs mt-0.5 opacity-80">{label}</span>
+    <div className="rounded-lg border bg-card p-3 flex items-center gap-3 min-w-0">
+      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${tone}`}>
+        <Icon className="h-5 w-5" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-[11px] uppercase tracking-wide text-muted-foreground truncate">{label}</p>
+        <p className="text-xl font-semibold tabular-nums leading-tight">{value}</p>
+      </div>
     </div>
   );
 }
 
 export function ReceivingCenterPage() {
-  const navigate = useNavigate();
   const { t } = useTranslation('receiving-center');
-  const fmt = useFormatter();
-  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
-  const [search, setSearch]               = useState('');
-  const [statusFilter, setStatusFilter]   = useState<GoodsReceiptStatus | 'all'>('all');
-  const [page, setPage]                   = useState(1);
-  const [sort, setSort]                   = useState<{ field: GoodsReceiptSortField; direction: 'asc' | 'desc' }>({
-    field: 'created_at', direction: 'desc',
-  });
-  const [deleting, setDeleting] = useState<GoodsReceipt | null>(null);
-  const [posting, setPosting]   = useState<GoodsReceipt | null>(null);
+  const { data: warehouseOptions } = useWarehouseOptions();
+  const { data: supplierOptions } = useSupplierOptions();
 
-  const params = useMemo(() => ({
-    search:   search || undefined,
-    status:   statusFilter,
-    page,
-    per_page: PER_PAGE,
-    sort_by:  sort.field,
-    sort_dir: sort.direction,
-  }), [search, statusFilter, page, sort]);
+  const [scope, setScope] = useState<ReceivingScope>('active');
+  const [search, setSearch] = useState('');
+  const [supplierId, setSupplierId] = useState('');
+  const [warehouseId, setWarehouseId] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [page, setPage] = useState(1);
+  const [receivePo, setReceivePo] = useState<ReceivingQueueRow | null>(null);
 
-  const { data, isLoading, isError, isFetching, refetch } = useGoodsReceiptsQuery(params);
-  const deleteGR = useDeleteGoodsReceipt();
-  const postGR   = usePostGoodsReceipt();
+  // Empty string = "all" — every filter narrows the SERVER-SIDE queue (see ReceivingCenterController::queue).
+  const params = useMemo(
+    () => ({
+      scope,
+      search: search || undefined,
+      supplier_id: supplierId || undefined,
+      warehouse_id: warehouseId || undefined,
+      date_from: dateFrom || undefined,
+      date_to: dateTo || undefined,
+      page,
+      per_page: PER_PAGE,
+    }),
+    [scope, search, supplierId, warehouseId, dateFrom, dateTo, page],
+  );
 
+  const { data, isLoading, isFetching, isError, refetch } = useReceivingQueue(params);
   const items = data?.items ?? [];
-  const meta  = data?.meta;
+  const meta = data?.meta;
+  const kpis = data?.kpis;
 
-  const draftCount  = items.filter(i => i.status === 'draft').length;
-  const postedCount = items.filter(i => i.status === 'posted').length;
-
-  const handleSort = (field: string) => {
-    setSort(curr =>
-      curr.field === field
-        ? { field: field as GoodsReceiptSortField, direction: curr.direction === 'asc' ? 'desc' : 'asc' }
-        : { field: field as GoodsReceiptSortField, direction: 'asc' }
-    );
+  function changeScope(next: ReceivingScope) {
+    setScope(next);
     setPage(1);
-  };
+  }
 
-  const handleClearFilters = () => {
-    setStatusFilter('all');
+  // Clears the advanced filters (search keeps its own inline clear button, per the ECOS toolbar idiom).
+  function clearFilters() {
+    setSupplierId('');
+    setWarehouseId('');
+    setDateFrom('');
+    setDateTo('');
     setPage(1);
-  };
+  }
 
-  const columns: ColumnDef<GoodsReceipt>[] = [
-    {
-      key: 'receipt_number',
-      header: t($ => $.page.columns.receiptNo),
-      sortable: true,
-      cell: (gr) => <span className="font-mono text-sm font-medium">{gr.receipt_number}</span>,
-    },
-    {
-      key: 'receipt_date',
-      header: t($ => $.page.columns.date),
-      sortable: true,
-      cell: (gr) => <span className="text-sm text-gray-600">{gr.receipt_date}</span>,
-    },
-    {
-      key: 'supplier',
-      header: t($ => $.page.columns.supplier),
-      cell: (gr) => <span className="text-sm">{gr.purchase_order?.supplier?.name ?? '—'}</span>,
-    },
-    {
-      key: 'warehouse',
-      header: t($ => $.page.columns.warehouse),
-      cell: (gr) => (
-        <span className="text-sm text-gray-600">
-          {gr.warehouse ? `${gr.warehouse.code} — ${gr.warehouse.name}` : '—'}
-        </span>
-      ),
-    },
-    {
-      key: 'status',
-      header: t($ => $.page.columns.status),
-      sortable: true,
-      cell: (gr) => <GrStatusBadge status={gr.status} />,
-    },
-    {
-      key: 'payment_status',
-      header: t($ => $.page.columns.payment),
-      cell: (gr) => <GrPaymentStatusBadge status={gr.payment_status} />,
-    },
-    {
-      key: 'invoice_total_amount',
-      header: t($ => $.page.columns.invoiceTotal),
-      cell: (gr) => (
-        <span className="text-sm font-medium">
-          {gr.invoice_total_amount > 0 ? fmt.money(gr.invoice_total_amount) : '—'}
-        </span>
-      ),
-    },
-  ];
+  const columns: DataGridColumnDef<ReceivingQueueRow>[] = useMemo(
+    () => [
+      {
+        key: 'po_number',
+        label: t($ => $.page.columns.po),
+        alwaysVisible: true,
+        cell: (r) => (
+          <div className="min-w-0">
+            <span className="font-mono text-sm font-medium block">{r.po_number}</span>
+            <span className="text-[11px] text-muted-foreground">{r.order_date ?? '—'}</span>
+          </div>
+        ),
+      },
+      {
+        key: 'supplier',
+        label: t($ => $.page.columns.supplier),
+        defaultVisible: true,
+        cell: (r) => <span className="text-sm">{r.supplier?.name ?? '—'}</span>,
+      },
+      {
+        key: 'warehouse',
+        label: t($ => $.page.columns.warehouse),
+        defaultVisible: true,
+        cell: (r) => <span className="text-sm text-muted-foreground">{r.warehouse ? `${r.warehouse.code} — ${r.warehouse.name}` : '—'}</span>,
+      },
+      {
+        key: 'products',
+        label: t($ => $.page.columns.products),
+        defaultVisible: true,
+        align: 'end',
+        cell: (r) => <span className="tabular-nums text-sm">{r.product_count}</span>,
+      },
+      {
+        key: 'expected',
+        label: t($ => $.page.columns.expected),
+        defaultVisible: true,
+        align: 'end',
+        cell: (r) => <span className="tabular-nums text-sm">{fmt(r.expected_qty)}</span>,
+      },
+      {
+        key: 'received',
+        label: t($ => $.page.columns.received),
+        defaultVisible: true,
+        align: 'end',
+        cell: (r) => <span className="tabular-nums text-sm text-emerald-700 dark:text-emerald-400">{fmt(r.received_qty)}</span>,
+      },
+      {
+        key: 'remaining',
+        label: t($ => $.page.columns.remaining),
+        defaultVisible: true,
+        align: 'end',
+        cell: (r) => (
+          <span className={`tabular-nums text-sm font-medium ${r.remaining_qty > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}`}>
+            {r.remaining_qty > 0 ? fmt(r.remaining_qty) : '—'}
+          </span>
+        ),
+      },
+      {
+        key: 'status',
+        label: t($ => $.page.columns.status),
+        alwaysVisible: true,
+        cell: (r) => <StageBadge row={r} />,
+      },
+      {
+        key: 'action',
+        label: t($ => $.page.columns.action),
+        alwaysVisible: true,
+        align: 'end',
+        cell: (r) =>
+          r.remaining_qty > 0 ? (
+            <Button variant="ghost" size="sm" className="h-7 gap-1.5 text-xs" onClick={() => setReceivePo(r)}>
+              <PackageCheck className="h-3.5 w-3.5" />
+              {t($ => $.page.actions.receive)}
+            </Button>
+          ) : (
+            <span className="text-xs text-muted-foreground">—</span>
+          ),
+      },
+    ],
+    [t],
+  );
 
   return (
-    <div className="flex-1 flex flex-col min-h-0">
-      <div className="px-6 py-4 border-b border-gray-200 bg-white">
-        <div className="flex items-center justify-between mb-4">
-          <PageHeader
-            title={t($ => $.page.title)}
-            subtitle={t($ => $.page.subtitle)}
-          />
-          <Button onClick={() => navigate(ROUTES.goodsReceiptsNew)} size="sm" className="gap-1.5">
-            <Plus className="w-3.5 h-3.5" />
-            {t($ => $.page.actions.newReceipt)}
-          </Button>
-        </div>
+    <div className="flex flex-col h-full min-h-0">
+      {/* Header — NO "New Receipt": receiving is driven by eligible Purchase Orders (§3). */}
+      <div className="px-4 py-3 border-b bg-card flex items-start justify-between gap-3 flex-wrap">
+        <PageHeader title={t($ => $.page.title)} subtitle={t($ => $.page.subtitle)} />
+        <Tabs value={scope} onValueChange={(v) => changeScope(v as ReceivingScope)}>
+          <TabsList>
+            <TabsTrigger value="active">{t($ => $.page.tabs.active)}</TabsTrigger>
+            <TabsTrigger value="history">{t($ => $.page.tabs.history)}</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
-        <div className="flex gap-3 flex-wrap">
-          <KpiChip label={t($ => $.page.kpis.totalReceipts)} value={meta?.total ?? '—'} color="gray" />
-          <KpiChip label={t($ => $.page.kpis.draft)} value={draftCount} color="yellow" />
-          <KpiChip label={t($ => $.page.kpis.posted)} value={postedCount} color="green" />
-          <button
-            className="flex flex-col items-center px-5 py-3 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
-            onClick={() => navigate(ROUTES.goodsReceiptsNew)}
-          >
-            <PackageOpen className="w-4 h-4 mb-0.5" />
-            <span className="text-xs">{t($ => $.page.actions.receiveGoods)}</span>
-          </button>
+      {/* KPIs */}
+      <div className="px-4 pt-3">
+        <div className="grid grid-cols-3 gap-3">
+          <KpiChip icon={ClipboardList} tone="bg-muted text-muted-foreground" label={t($ => $.page.kpis.awaiting)} value={kpis?.awaiting ?? 0} />
+          <KpiChip icon={PackageOpen} tone="bg-amber-500/10 text-amber-600 dark:text-amber-400" label={t($ => $.page.kpis.partial)} value={kpis?.partial ?? 0} />
+          <KpiChip icon={PackageCheck} tone="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" label={t($ => $.page.kpis.received)} value={kpis?.received ?? 0} />
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-6">
-        <Card className="shadow-none border-gray-200">
-          <CardContent className="flex flex-col gap-4 pt-6">
-            <EntityToolbar
-              searchPlaceholder={t($ => $.page.filters.search)}
-              onSearchChange={(v) => { setSearch(v); setPage(1); }}
-              onRefresh={() => void refetch()}
-              isRefreshing={isFetching}
-              onClearFilters={handleClearFilters}
-              filterPanel={
-                <div className="flex flex-col gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <span className="text-sm font-medium">{t($ => $.page.columns.status)}</span>
-                    <select
-                      value={statusFilter}
-                      onChange={(e) => { setStatusFilter(e.target.value as GoodsReceiptStatus | 'all'); setPage(1); }}
-                      className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
-                    >
-                      <option value="all">{tAny('page.filters.allStatuses')}</option>
-                      <option value="draft">{tAny('page.kpis.draft')}</option>
-                      <option value="posted">{tAny('page.kpis.posted')}</option>
-                    </select>
+      {/* Search + collapsible Filters — approved ECOS responsive pattern (Search inline, Supplier/
+          Warehouse/Date behind the Filters toggle); no wide filter toolbar on mobile (§3). */}
+      <div className="px-4 py-3">
+        <EntityToolbar
+          searchPlaceholder={t($ => $.page.filters.search)}
+          onSearchChange={(v) => { setSearch(v); setPage(1); }}
+          onRefresh={() => void refetch()}
+          isRefreshing={isFetching}
+          onClearFilters={clearFilters}
+          filterPanel={
+            <>
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium">{t($ => $.page.filters.supplier)}</span>
+                <select
+                  value={supplierId}
+                  onChange={(e) => { setSupplierId(e.target.value); setPage(1); }}
+                  aria-label={t($ => $.page.filters.supplier)}
+                  className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
+                >
+                  <option value="">{t($ => $.page.filters.allSuppliers)}</option>
+                  {(supplierOptions ?? []).map((opt) => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium">{t($ => $.page.filters.warehouse)}</span>
+                <select
+                  value={warehouseId}
+                  onChange={(e) => { setWarehouseId(e.target.value); setPage(1); }}
+                  aria-label={t($ => $.page.filters.warehouse)}
+                  className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
+                >
+                  <option value="">{t($ => $.page.filters.allWarehouses)}</option>
+                  {(warehouseOptions ?? []).map((w) => (
+                    <option key={w.value} value={w.value}>{w.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium">{t($ => $.page.filters.dateFrom)}</span>
+                <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} className="h-9" />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <span className="text-sm font-medium">{t($ => $.page.filters.dateTo)}</span>
+                <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} className="h-9" />
+              </div>
+            </>
+          }
+        />
+      </div>
+
+      {/* Queue */}
+      <div className="flex-1 overflow-hidden px-4 pb-4 flex flex-col">
+        {isError ? (
+          <div className="flex flex-col items-center justify-center h-64 gap-3 text-muted-foreground">
+            <AlertTriangle className="h-8 w-8 text-destructive/70" />
+            <p className="text-sm">{t($ => $.page.loadError)}</p>
+            <Button variant="outline" size="sm" onClick={() => void refetch()}>{t($ => $.page.retry)}</Button>
+          </div>
+        ) : isLoading ? (
+          <div className="flex items-center justify-center h-64 gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">{t($ => $.page.loading)}</span>
+          </div>
+        ) : (
+          <>
+            <div className="flex-1 overflow-hidden">
+              <UniversalDataGrid<ReceivingQueueRow>
+                columns={columns}
+                data={items}
+                rowId={(r) => r.id}
+                loading={false}
+                renderMobileCard={(r) => (
+                  <div role="listitem" className="border-b p-3.5 last:border-0 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-mono text-sm font-medium">{r.po_number}</p>
+                        <p className="text-xs text-muted-foreground truncate">{r.supplier?.name ?? '—'}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">{r.warehouse ? `${r.warehouse.code} — ${r.warehouse.name}` : '—'}</p>
+                      </div>
+                      <StageBadge row={r} />
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 text-sm">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{t($ => $.page.columns.expected)}</p>
+                        <p className="tabular-nums font-medium">{fmt(r.expected_qty)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{t($ => $.page.columns.received)}</p>
+                        <p className="tabular-nums font-medium text-emerald-700 dark:text-emerald-400">{fmt(r.received_qty)}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{t($ => $.page.columns.remaining)}</p>
+                        <p className={`tabular-nums font-medium ${r.remaining_qty > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground'}`}>
+                          {r.remaining_qty > 0 ? fmt(r.remaining_qty) : '—'}
+                        </p>
+                      </div>
+                    </div>
+                    {r.remaining_qty > 0 && (
+                      <div className="flex justify-end">
+                        <Button size="sm" className="h-8 gap-1.5 text-xs" onClick={() => setReceivePo(r)}>
+                          <PackageCheck className="h-3.5 w-3.5" />
+                          {t($ => $.page.actions.receive)}
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                </div>
-              }
-            />
-
-            <EntityTable<GoodsReceipt>
-              columns={columns}
-              data={items}
-              getRowId={(gr) => gr.id}
-              isLoading={isLoading}
-              isError={isError}
-              sort={sort}
-              onSortChange={handleSort}
-              rowActions={(gr) => (
-                <ActionMenu
-                  label={`Actions for ${gr.receipt_number}`}
-                  items={[
-                    {
-                      key: 'view',
-                      label: t($ => $.page.actions.view),
-                      icon: Eye,
-                      onSelect: () => navigate(`${ROUTES.goodsReceipts}/${gr.id}`),
-                    },
-                    ...(gr.status === 'draft' ? [
-                      {
-                        key: 'edit',
-                        label: t($ => $.page.actions.edit),
-                        icon: Pencil,
-                        onSelect: () => navigate(`${ROUTES.goodsReceipts}/${gr.id}/edit`),
-                      },
-                      {
-                        key: 'post',
-                        label: t($ => $.page.actions.post),
-                        icon: Send,
-                        onSelect: () => setPosting(gr),
-                      },
-                      {
-                        key: 'delete',
-                        label: t($ => $.page.actions.delete),
-                        icon: Trash2,
-                        variant: 'destructive' as const,
-                        onSelect: () => setDeleting(gr),
-                      },
-                    ] : []),
-                  ]}
-                />
-              )}
-            />
-
-            {meta ? (
-              <Pagination
-                meta={{ page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page }}
-                onPageChange={setPage}
+                )}
+                emptyState={
+                  <div className="flex flex-col items-center justify-center py-16 gap-2 text-muted-foreground">
+                    <Truck className="w-8 h-8 opacity-30" />
+                    <p className="text-sm">{scope === 'history' ? t($ => $.page.empty.history) : t($ => $.page.empty.active)}</p>
+                  </div>
+                }
               />
+            </div>
+
+            {meta && meta.total > 0 ? (
+              <div className="pt-3">
+                <Pagination
+                  meta={{ page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page }}
+                  onPageChange={setPage}
+                />
+              </div>
             ) : null}
-          </CardContent>
-        </Card>
+          </>
+        )}
       </div>
 
-      <ConfirmDialog
-        open={deleting !== null}
-        onOpenChange={(open) => { if (!open) setDeleting(null); }}
-        title={t($ => $.page.confirmDelete.title)}
-        description={t($ => $.page.confirmDelete.description)}
-        confirmLabel={t($ => $.page.confirmDelete.confirm)}
-        variant="destructive"
-        loading={deleteGR.isPending}
-        onConfirm={() => {
-          if (deleting) deleteGR.mutate(deleting.id, { onSuccess: () => setDeleting(null) });
-        }}
-      />
-
-      <ConfirmDialog
-        open={posting !== null}
-        onOpenChange={(open) => { if (!open) setPosting(null); }}
-        title={t($ => $.page.confirmPost.title)}
-        description={t($ => $.page.confirmPost.description)}
-        confirmLabel={t($ => $.page.confirmPost.confirm)}
-        loading={postGR.isPending}
-        onConfirm={() => {
-          if (posting) postGR.mutate(posting.id, { onSuccess: () => setPosting(null) });
-        }}
+      <ReceiveDrawer
+        poId={receivePo?.id ?? null}
+        poNumber={receivePo?.po_number}
+        open={receivePo !== null}
+        onOpenChange={(open) => { if (!open) setReceivePo(null); }}
       />
     </div>
   );

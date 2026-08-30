@@ -11,7 +11,8 @@ import {
   XCircle,
 } from 'lucide-react';
 
-import { ErrorState, LoadingState } from '@/components/crud';
+import { Combobox, ErrorState, LoadingState } from '@/components/crud';
+import { useSupplierOptions } from '@/features/purchase-orders/hooks/use-supplier-options';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -37,6 +38,7 @@ import {
 import type { PurchaseMaterial, PurchaseMaterialLine } from '../types/purchase-material';
 import { PurchaseMaterialStatusBadge } from './purchase-material-status-badge';
 import { PurchaseMaterialPriorityBadge } from './purchase-material-priority-badge';
+import { PurchaseMaterialReceivingTab } from './purchase-material-receiving-tab';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -343,6 +345,15 @@ function SupplierSelectionLineRow({ line, materialId }: { line: PurchaseMaterial
   const selectSupplier = useSelectLineSupplier(materialId);
 
   const { data: panel } = useProductProcurementPanel(line.product_id);
+  const { data: supplierOptions = [], isLoading: suppliersLoading } = useSupplierOptions();
+
+  // Clicking a known supplier fills the picker and pre-populates that supplier's
+  // last-known price and lead time — the buyer no longer copies a raw UUID.
+  function applySuggestion(s: { supplier_id: string; last_price: number | null; lead_time_days: number | null }) {
+    setSupplierId(s.supplier_id);
+    if (s.last_price != null) setAgreedPrice(s.last_price.toString());
+    if (s.lead_time_days != null) setLeadTime(s.lead_time_days.toString());
+  }
 
   async function handleSelect() {
     if (!supplierId.trim()) return;
@@ -385,28 +396,45 @@ function SupplierSelectionLineRow({ line, materialId }: { line: PurchaseMaterial
             {t($ => $.purchaseDrawer.supplierSelection.refKnownSuppliers)}
           </p>
           <div className="flex flex-col gap-1">
-            {panel.alternative_suppliers.slice(0, 3).map((s) => (
-              <div key={s.supplier_id} className="flex items-center justify-between rounded bg-muted/30 px-2 py-1 text-xs">
-                <span className="font-medium">{s.supplier_name}</span>
-                <span className="text-muted-foreground font-mono">
-                  {s.last_price != null ? fmtNum(s.last_price, 2) : '—'}
-                  {s.lead_time_days != null ? ` · ${s.lead_time_days}d` : ''}
-                </span>
-              </div>
-            ))}
+            {panel.alternative_suppliers.slice(0, 3).map((s) => {
+              const active = s.supplier_id === supplierId;
+              return (
+                <button
+                  key={s.supplier_id}
+                  type="button"
+                  onClick={() => applySuggestion(s)}
+                  className={`flex items-center justify-between rounded px-2 py-1 text-xs text-start transition-colors ${
+                    active
+                      ? 'bg-primary/10 border border-primary/40'
+                      : 'bg-muted/30 border border-transparent hover:bg-muted/60'
+                  }`}
+                >
+                  <span className="font-medium">{s.supplier_name}</span>
+                  <span className="text-muted-foreground font-mono">
+                    {s.last_price != null ? fmtNum(s.last_price, 2) : '—'}
+                    {s.lead_time_days != null ? ` · ${s.lead_time_days}d` : ''}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
 
       <div className="grid grid-cols-2 gap-2">
         <div className="col-span-2">
-          <label className="text-xs text-muted-foreground">{t($ => $.purchaseDrawer.supplierSelection.supplierId)}</label>
-          <input
-            className="w-full mt-0.5 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            placeholder={t($ => $.purchaseDrawer.supplierSelection.supplierUuidPlaceholder)}
-            value={supplierId}
-            onChange={(e) => setSupplierId(e.target.value)}
-          />
+          <label className="text-xs text-muted-foreground">{t($ => $.purchaseDrawer.supplierSelection.supplier)}</label>
+          <div className="mt-0.5">
+            <Combobox
+              options={supplierOptions}
+              value={supplierId || null}
+              onChange={setSupplierId}
+              loading={suppliersLoading}
+              placeholder={t($ => $.purchaseDrawer.supplierSelection.supplierPickerPlaceholder)}
+              searchPlaceholder={t($ => $.purchaseDrawer.supplierSelection.supplierSearchPlaceholder)}
+              emptyText={t($ => $.purchaseDrawer.supplierSelection.supplierEmpty)}
+            />
+          </div>
         </div>
         <div>
           <label className="text-xs text-muted-foreground">{t($ => $.purchaseDrawer.supplierSelection.agreedPrice)}</label>
@@ -592,7 +620,10 @@ function TimelineTab({ material }: { material: PurchaseMaterial }) {
 
 // ── Main drawer ────────────────────────────────────────────────────────────────
 
-type Tab = 'overview' | 'items' | 'demand' | 'review' | 'supplier' | 'financial' | 'timeline';
+type Tab = 'overview' | 'items' | 'demand' | 'review' | 'supplier' | 'receiving' | 'financial' | 'timeline';
+
+/** Statuses where goods can actually arrive against the Purchase. */
+const RECEIVING_STATUSES = ['approved', 'purchasing', 'receiving'];
 
 type Props = {
   id: string | null;
@@ -621,6 +652,10 @@ export function PurchaseMaterialDrawer({ id, open, onOpenChange }: Props) {
     { id: 'demand', label: t($ => $.purchaseDrawer.tabs.demand) },
     { id: 'review', label: t($ => $.purchaseDrawer.tabs.review) },
     { id: 'supplier', label: t($ => $.purchaseDrawer.tabs.supplier) },
+    // Receiving only surfaces once goods can actually arrive against this Purchase.
+    ...(material && RECEIVING_STATUSES.includes(material.status)
+      ? [{ id: 'receiving' as Tab, label: t($ => $.purchaseDrawer.tabs.receipt) }]
+      : []),
     { id: 'financial', label: t($ => $.purchaseDrawer.tabs.financial) },
     { id: 'timeline', label: t($ => $.purchaseDrawer.tabs.timeline) },
   ];
@@ -780,6 +815,7 @@ export function PurchaseMaterialDrawer({ id, open, onOpenChange }: Props) {
               {tab === 'demand' && <DemandAnalysisTab material={material} />}
               {tab === 'review' && <ProcurementReviewTab material={material} />}
               {tab === 'supplier' && <SupplierSelectionTab material={material} />}
+              {tab === 'receiving' && <PurchaseMaterialReceivingTab material={material} />}
               {tab === 'financial' && <FinancialSummaryTab material={material} />}
               {tab === 'timeline' && <TimelineTab material={material} />}
             </div>

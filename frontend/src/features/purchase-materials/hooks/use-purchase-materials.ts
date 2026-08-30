@@ -133,7 +133,7 @@ export function useSelectLineSupplier(materialId: string) {
   });
 }
 
-export function usePurchaseMaterialStats(params: { company_id?: string; warehouse_id?: string } = {}) {
+export function usePurchaseMaterialStats(params: { company_id?: string; warehouse_id?: string; record_type?: string } = {}) {
   const { activeCompanyId } = useOrganizationContext();
   const companyId = activeCompanyId ?? 'global';
   return useQuery({

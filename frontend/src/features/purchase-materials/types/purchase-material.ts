@@ -39,6 +39,17 @@ export type PurchaseMaterialLine = {
   lead_time_days: number | null;
   supplier_selected_at: string | null;
   supplier_selected_by: string | null;
+
+  // ── Receiving position (TASK-PROC-PURCHASING-PHASE2-PART1) ────────────────────
+  // Computed server-side by PurchaseMaterialReceivingService and sent by
+  // PurchaseMaterialLineResource. The UI MUST render these rather than deriving its
+  // own arithmetic, so no screen can disagree with the certified definitions:
+  //   required_qty  = COALESCE(agreed_qty, requested_qty)            (RD-2)
+  //   received_qty  = Σ posted receipt lines, gross of returns       (RD-3)
+  //   remaining_qty = max(0, required − received)
+  required_qty: number;
+  received_qty: number;
+  remaining_qty: number;
 };
 
 export type PurchaseMaterial = {

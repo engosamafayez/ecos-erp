@@ -9,6 +9,8 @@ import type {
   CloneConfigOptions,
   CloneConfigResult,
   CompanySettings,
+  GoodsInwardModeSetting,
+  GoodsInwardModePayload,
   ConfigAuditEntry,
   ConfigHealthScore,
   CoverageGovernorate,
@@ -50,6 +52,22 @@ export const configurationService = {
 
   async getCompanyAudit(limit = 50): Promise<ConfigAuditEntry[]> {
     const { data } = await api.get<ApiResponse<ConfigAuditEntry[]>>(`${BASE}/company/audit`, { params: { limit } });
+    return data.data;
+  },
+
+  // ── Goods Inward Mode (company-level, G-1) ──────────────────────────────────
+  //
+  // A dedicated endpoint, NOT the company/{group} key-value store: the certified inbound
+  // authority reads `companies.goods_inward_mode`, and routing this through the generic
+  // settings group would write the value to a different home than the authority reads.
+
+  async getGoodsInwardMode(): Promise<GoodsInwardModeSetting> {
+    const { data } = await api.get<ApiResponse<GoodsInwardModeSetting>>(`${BASE}/procurement/goods-inward-mode`);
+    return data.data;
+  },
+
+  async updateGoodsInwardMode(payload: GoodsInwardModePayload): Promise<GoodsInwardModeSetting> {
+    const { data } = await api.put<ApiResponse<GoodsInwardModeSetting>>(`${BASE}/procurement/goods-inward-mode`, payload);
     return data.data;
   },
 

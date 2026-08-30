@@ -312,3 +312,33 @@ export type ConfigAuditEntry = {
   reason: string | null;
   occurred_at: string;
 };
+
+// ── Goods Inward Mode (company-level, G-1) ───────────────────────────────────
+
+/**
+ * Which document is this company's authoritative goods-inward path.
+ *
+ * The backend owns this decision entirely — `GoodsInwardAuthority` decides which document
+ * posts inventory. Nothing in the frontend may re-derive that; this type exists only so the
+ * setting can be read and written.
+ */
+export type GoodsInwardModeValue = 'goods_receipt' | 'supplier_invoice';
+
+export type GoodsInwardModeOption = {
+  value: GoodsInwardModeValue;
+  label: string;
+};
+
+export type GoodsInwardModeSetting = {
+  mode: GoodsInwardModeValue;
+  label: string;
+  /** True when nothing is stored and the platform default is in force. Backend-owned. */
+  is_default: boolean;
+  default_mode: GoodsInwardModeValue;
+  options: GoodsInwardModeOption[];
+};
+
+export type GoodsInwardModePayload = {
+  mode: GoodsInwardModeValue;
+  reason?: string;
+};

@@ -9,6 +9,7 @@ import type {
   DeliveryZonePayload,
   MasterGovPayload,
   MasterZonePayload,
+  GoodsInwardModePayload,
   PolicyGroup,
   PreparationPolicyPayload,
 } from '../types/configuration';
@@ -22,6 +23,7 @@ const DELIVERY_GEO_KEY        = 'config-delivery-geographies';
 const SHIPPING_RULES_KEY      = 'config-shipping-rules';
 const PREP_POLICIES_KEY       = 'config-preparation-policies';
 const CONFIG_AUDIT_KEY        = 'config-audit';
+const GOODS_INWARD_MODE_KEY   = 'config-goods-inward-mode';
 const BRAND_COVERAGE_KEY      = 'brand-coverage';
 const COVERAGE_STATS_KEY_EARLY = 'config-coverage-stats';
 
@@ -35,6 +37,32 @@ function invalidateDeliveryData(qc: ReturnType<typeof useQueryClient>, brandId: 
   qc.invalidateQueries({ queryKey: [BRAND_COVERAGE_KEY, brandId] });
   qc.invalidateQueries({ queryKey: [COVERAGE_STATS_KEY_EARLY, brandId] });
   qc.invalidateQueries({ queryKey: [ORDER_DELIVERY_GEO_KEY, brandId] });
+}
+
+// ── Goods Inward Mode (company-level, G-1) ────────────────────────────────────
+
+/**
+ * The company's authoritative goods-inward document.
+ *
+ * `staleTime: 0` on purpose, unlike the other company reads: this value decides which
+ * document posts inventory, so a stale render could show an operator the wrong authority.
+ */
+export function useGoodsInwardMode() {
+  return useQuery({
+    queryKey: [GOODS_INWARD_MODE_KEY],
+    queryFn:  () => configurationService.getGoodsInwardMode(),
+    staleTime: 0,
+  });
+}
+
+export function useUpdateGoodsInwardMode() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: GoodsInwardModePayload) => configurationService.updateGoodsInwardMode(payload),
+    // Invalidate rather than write the response into the cache: the server is the source of
+    // truth for the effective mode and its is_default marker, so the UI refetches it.
+    onSuccess: () => qc.invalidateQueries({ queryKey: [GOODS_INWARD_MODE_KEY] }),
+  });
 }
 
 // ── Company Settings ──────────────────────────────────────────────────────────
