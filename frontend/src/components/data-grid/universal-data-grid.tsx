@@ -4,6 +4,8 @@ import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { EmptyState, ErrorState, Pagination } from '@/components/crud';
+import { AutoDataCard } from '@/components/mobile';
+import type { AutoCardColumn } from '@/components/mobile';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
@@ -188,6 +190,22 @@ export function UniversalDataGrid<T>({
   const hasSelection = !!selection;
   const colCount = visibleCols.length + (hasSelection ? 1 : 0);
 
+  // ── Auto-card columns (mobile fallback when no renderMobileCard) ────────────
+  // Maps the visible column defs onto the shared card renderer. Uses the
+  // columns' existing labels + cells only — no value is recomputed, no label
+  // fabricated, no status inferred.
+  const autoCardColumns = useMemo<AutoCardColumn<T>[]>(
+    () =>
+      visibleCols.map((col) => ({
+        key: col.key,
+        label: col.label,
+        render: col.cell,
+        cardRole: col.cardRole,
+        align: col.align,
+      })),
+    [visibleCols],
+  );
+
   // ── Sticky offsets ─────────────────────────────────────────────────────────
   const { left: leftOf, right: rightOf } = useMemo(
     () => computePinnedOffsets(visibleCols, hasSelection),
@@ -299,7 +317,28 @@ export function UniversalDataGrid<T>({
               <Fragment key={rowId(row)}>{renderMobileCard(row, selection)}</Fragment>
             ))}
           </div>
-        ) : null}
+        ) : (
+          /* Conservative automatic fallback: pages that don't supply a bespoke
+             card still get a legible card list instead of an empty box. */
+          <div role="list">
+            {data.map((row) => {
+              const id = rowId(row);
+              return (
+                <AutoDataCard
+                  key={id}
+                  row={row}
+                  columns={autoCardColumns}
+                  selected={selection?.isSelected(id) ?? false}
+                  onSelect={
+                    selection ? (checked) => selection.selectRow(id, checked) : undefined
+                  }
+                  focused={focusedRowId === id}
+                  onOpen={onRowClick ? () => onRowClick(row) : undefined}
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ── Desktop (lg+) ── */}

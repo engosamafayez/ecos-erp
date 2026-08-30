@@ -288,6 +288,14 @@
     "actions": "Actions",
     "noRecords": "No records found"
   },
+  "mobile": {
+    "openDetails": "Open details",
+    "sortBy": "Sort by",
+    "apply": "Apply",
+    "applyWithCount": "Apply ({{count}})",
+    "clearAll": "Clear all",
+    "selectedCount": "{{count}} selected"
+  },
   "error": {
     "title": "Something went wrong",
     "description": "We could not load the data. Please try again.",

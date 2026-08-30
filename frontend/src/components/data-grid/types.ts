@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 
+import type { CardFieldRole } from '@/components/mobile/types';
+
 // ── Legacy type (kept for backward compat with useColumnVisibility) ──────────
 export type ColumnMeta = {
   key: string;
@@ -55,6 +57,16 @@ export type DataGridColumnDef<T> = {
   // ── Sizing (used for sticky offset computation and future resizing) ──
   width?: number;
   minWidth?: number;
+
+  // ── Mobile auto-card (optional, additive) ──
+  /**
+   * Placement hint for the automatic mobile fallback card (§9/§10). Optional
+   * and opt-in: with no hint the column becomes a label/value field (or the
+   * title if it is the first column). Never infers business meaning — it only
+   * positions this column's existing cell inside the card. Ignored when the
+   * page supplies its own `renderMobileCard`.
+   */
+  cardRole?: CardFieldRole;
 
   // ── Skeleton ──
   /** Tailwind className for the skeleton shape shown during loading. */

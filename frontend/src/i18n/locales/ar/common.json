@@ -288,6 +288,14 @@
     "actions": "الإجراءات",
     "noRecords": "لا توجد سجلات"
   },
+  "mobile": {
+    "openDetails": "عرض التفاصيل",
+    "sortBy": "ترتيب حسب",
+    "apply": "تطبيق",
+    "applyWithCount": "تطبيق ({{count}})",
+    "clearAll": "مسح الكل",
+    "selectedCount": "{{count}} محدد"
+  },
   "error": {
     "title": "حدث خطأ",
     "description": "تعذّر تحميل البيانات. يرجى المحاولة مرة أخرى.",
