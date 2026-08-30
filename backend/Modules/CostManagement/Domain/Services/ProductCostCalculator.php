@@ -26,7 +26,13 @@ final class ProductCostCalculator
      */
     public function recalculate(Product $product): ?array
     {
-        $recipe = $product->activeRecipe;
+        // Relation METHOD, not the cached property. CostCascadeService eager-loads
+        // `product.activeRecipe` BEFORE CostCalculationEngine rewrites that row, and
+        // BillOfMaterial / Recipe are two PHP classes over the same
+        // `bills_of_materials` row — so the engine's saveQuietly() is invisible to a
+        // cached relation and product_cost was always one cost-cycle stale. Re-running
+        // the canonical Product::activeRecipe() query reads the just-persisted values.
+        $recipe = $product->activeRecipe()->first();
 
         if ($recipe === null) {
             return null;

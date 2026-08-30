@@ -23,6 +23,80 @@ use Modules\Manufacturing\BillsOfMaterials\Domain\Models\BillOfMaterial;
 final class CostCalculationEngine
 {
     /**
+     * Per-component cost breakdown — the single place the line formula lives.
+     *
+     *     effectiveQty  = quantity × (1 + waste% / 100)
+     *     extendedCost  = effectiveQty × material_cost
+     *
+     * {@see calculate()} sums these rows rather than repeating the arithmetic, and
+     * the approved-recipe cost snapshot freezes them. That shared origin is the
+     * point: a snapshot whose lines add up to something other than the recipe cost
+     * shown beside it would be indefensible, and here it is impossible.
+     *
+     * A component with no `material_cost` is returned with `has_cost = false` and a
+     * zero cost rather than being dropped. The caller must decide what an unpriced
+     * component means — the aggregate counts it as a missing cost, and the snapshot
+     * refuses to freeze at all.
+     *
+     * @return list<array{
+     *   line_id: string,
+     *   material_id: string,
+     *   sku: string|null,
+     *   name: string|null,
+     *   unit_symbol: string|null,
+     *   quantity: float,
+     *   waste_percentage: float,
+     *   effective_quantity: float,
+     *   unit_cost: float,
+     *   extended_cost: float,
+     *   is_packaging: bool,
+     *   has_cost: bool,
+     * }>
+     */
+    public function calculateLines(BillOfMaterial $bom): array
+    {
+        // `unit` is eager-loaded because the snapshot denormalises the symbol, and
+        // resolving it lazily inside the loop would issue one query per component.
+        $bom->loadMissing(['lines.rawMaterial.unit']);
+
+        $rows = [];
+
+        foreach ($bom->lines as $line) {
+            $material = $line->rawMaterial;
+
+            // A line pointing at a material that no longer exists is not a zero-cost
+            // component — it is a broken recipe, and skipping it here keeps the
+            // aggregate honest. The snapshot detects the same gap by line count.
+            if ($material === null) {
+                continue;
+            }
+
+            $hasCost = $material->material_cost !== null;
+            $unitCost = (float) ($material->material_cost ?? 0.0);
+            $qty = (float) $line->quantity;
+            $waste = (float) ($line->waste_percentage ?? 0.0);
+            $effectiveQty = $qty * (1.0 + $waste / 100.0);
+
+            $rows[] = [
+                'line_id' => (string) $line->id,
+                'material_id' => (string) $material->id,
+                'sku' => $material->sku,
+                'name' => $material->name,
+                'unit_symbol' => $material->unit?->symbol,
+                'quantity' => $qty,
+                'waste_percentage' => $waste,
+                'effective_quantity' => round($effectiveQty, 4),
+                'unit_cost' => round($unitCost, 4),
+                'extended_cost' => $hasCost ? round($effectiveQty * $unitCost, 4) : 0.0,
+                'is_packaging' => $material->product_type === 'packaging_material',
+                'has_cost' => $hasCost,
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
      * Calculate the full cost breakdown for a BOM without persisting anything.
      */
     public function calculate(BillOfMaterial $bom): RecipeCostSummaryDTO
@@ -33,28 +107,17 @@ final class CostCalculationEngine
         $packagingCost = 0.0;
         $missingMaterialCount = 0;
 
-        foreach ($bom->lines as $line) {
-            $material = $line->rawMaterial;
-            if ($material === null) {
-                continue;
-            }
-
-            if ($material->material_cost === null) {
+        foreach ($this->calculateLines($bom) as $breakdown) {
+            if ($breakdown['has_cost'] === false) {
                 $missingMaterialCount++;
 
                 continue;
             }
 
-            $unitCost = (float) $material->material_cost;
-            $qty = (float) $line->quantity;
-            $waste = (float) ($line->waste_percentage ?? 0.0);
-            $effectiveQty = $qty * (1.0 + $waste / 100.0);
-            $lineTotal = $effectiveQty * $unitCost;
-
-            if ($material->product_type === 'packaging_material') {
-                $packagingCost += $lineTotal;
+            if ($breakdown['is_packaging']) {
+                $packagingCost += $breakdown['extended_cost'];
             } else {
-                $rawMaterialCost += $lineTotal;
+                $rawMaterialCost += $breakdown['extended_cost'];
             }
         }
 

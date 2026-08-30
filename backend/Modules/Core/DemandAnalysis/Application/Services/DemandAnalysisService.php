@@ -65,7 +65,7 @@ final class DemandAnalysisService
 
         $onHand = (float) ($row?->on_hand ?? 0);
         $reserved = (float) ($row?->reserved ?? 0);
-        $available = max(0.0, $onHand - $reserved);
+        $available = $onHand - $reserved; // signed — see InventoryItem::availableQty()
 
         // Incoming: approved/purchasing purchase material lines for this product
         $incoming = $this->incomingQty($productId, $warehouseId);
@@ -562,7 +562,11 @@ final class DemandAnalysisService
             ->whereNotNull('gr.receipt_date')
             ->select(
                 's.name as supplier_name',
-                'grl.received_qty as quantity',
+                // `grl.received_qty` does not exist on goods_receipt_lines — the
+                // column of that name lives on purchase_order_lines. This is the
+                // canonical received quantity, the SQL form of
+                // GoodsReceiptLine::effectiveReceivedQty().
+                DB::raw('COALESCE(grl.net_received_quantity, grl.received_quantity) as quantity'),
                 'grl.unit_price as price',
                 'gr.receipt_date as date',
             )
