@@ -42,12 +42,25 @@ final class ManufacturingLifecycleHandler implements LifecycleHandlerInterface
     /**
      * Order statuses that trigger manufacturing evaluation.
      *
+     * ADR-042 (Order FSM V3 Canonical) vocabulary. The prior set
+     * ['pending','processing','preparing'] pre-dated V3 and matched NONE of the
+     * canonical statuses, so `supports()` returned false for every real order and
+     * the coordinator answered StatusIgnored → the manufacturing chain never ran
+     * (BREAK A — TASK-MTO-MANUFACTURING-TRIGGER-GAP-DIAGNOSIS-001).
+     *
+     * The set must include the status the order actually HOLDS when manufacturing
+     * is invoked. `MoveToPreparationWorkflow` flips the order to `ready_for_dispatch`
+     * BEFORE both the manual (`PrepareOrderAction`) and wave paths call the trigger,
+     * so `ready_for_dispatch` is the operative status and must be here. `in_progress`
+     * and `confirmed` are the two fulfilment-eligible entry states (ADR-042 §7), kept
+     * so a caller invoking the trigger before the dispatch-ready flip is still served.
+     *
      * @var list<string>
      */
     private const SUPPORTED_STATUSES = [
-        'pending',
-        'processing',
-        'preparing',
+        'in_progress',
+        'confirmed',
+        'ready_for_dispatch',
     ];
 
     public function __construct(
