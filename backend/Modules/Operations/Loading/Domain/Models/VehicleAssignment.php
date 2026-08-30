@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Operations\Loading\Domain\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,20 +28,20 @@ use Modules\Operations\Loading\Domain\Enums\VehicleAssignmentStatus;
  * @property int $orders_count
  * @property float $loading_weight_kg
  * @property float $loading_volume_m3
- * @property \Carbon\Carbon|null $loading_started_at
- * @property \Carbon\Carbon|null $loading_completed_at
- * @property \Carbon\Carbon|null $dispatched_at
+ * @property Carbon|null $loading_started_at
+ * @property Carbon|null $loading_completed_at
+ * @property Carbon|null $dispatched_at
  * @property string|null $dispatched_by
- * @property \Carbon\Carbon|null $returned_at
- * @property \Carbon\Carbon|null $reconciled_at
- * @property \Carbon\Carbon|null $cancelled_at
+ * @property Carbon|null $returned_at
+ * @property Carbon|null $reconciled_at
+ * @property Carbon|null $cancelled_at
  * @property string|null $cancelled_by
  * @property string|null $cancellation_reason
  * @property string|null $notes
  * @property string $created_by
  * @property string $updated_by
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class VehicleAssignment extends Model
 {
@@ -56,6 +57,12 @@ class VehicleAssignment extends Model
     protected $fillable = [
         'company_id',
         'loading_session_id',
+        // The canonical execution link (Group → Trip → this assignment). It MUST
+        // be fillable: AssignVehicleToSessionAction mass-assigns, and a column
+        // absent from $fillable is dropped SILENTLY — the row is created with a
+        // null trip_id and the idempotency lookup then finds nothing, producing a
+        // second assignment on every retry.
+        'trip_id',
         'vehicle_plan_slot_id',
         'vehicle_id',
         'vehicle_registration_snapshot',

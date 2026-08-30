@@ -19,6 +19,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property float $quantity_delivered
  * @property float $quantity_returned_expected
  * @property float $quantity_returned_actual
+ * @property float $quantity_accepted
+ * @property float $quantity_damaged
+ * @property string|null $damage_reason
+ * @property \Carbon\Carbon|null $warehouse_receipt_at
  * @property float $variance
  * @property string|null $variance_resolution
  * @property string|null $resolution_notes
@@ -50,6 +54,10 @@ class VehicleShiftReconciliationLine extends Model
         'quantity_delivered',
         'quantity_returned_expected',
         'quantity_returned_actual',
+        'quantity_accepted',
+        'quantity_damaged',
+        'damage_reason',
+        'warehouse_receipt_at',
         'variance',
         'variance_resolution',
         'resolution_notes',
@@ -67,8 +75,11 @@ class VehicleShiftReconciliationLine extends Model
             'quantity_delivered' => 'float',
             'quantity_returned_expected' => 'float',
             'quantity_returned_actual' => 'float',
+            'quantity_accepted' => 'float',
+            'quantity_damaged' => 'float',
             'variance' => 'float',
             'resolved_at' => 'datetime',
+            'warehouse_receipt_at' => 'datetime',
         ];
     }
 

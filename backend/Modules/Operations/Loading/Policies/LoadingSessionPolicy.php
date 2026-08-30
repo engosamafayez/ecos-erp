@@ -58,4 +58,18 @@ final class LoadingSessionPolicy
             && ($this->permissions->userHasPermission($user, 'loading.allocation.manage')
                 || $this->permissions->userHasSystemRole($user));
     }
+
+    /**
+     * Read-only visibility of a session's allocation records. Gated by the new
+     * `loading.allocation.view`, with `loading.allocation.manage` accepted as a
+     * superset so an operator who can run allocation can always read it. Separating
+     * read from manage lets a viewer watch loading without the authority to allocate.
+     */
+    public function viewAllocations(User $user, LoadingSession $session): bool
+    {
+        return $user->company_id === $session->company_id
+            && ($this->permissions->userHasPermission($user, 'loading.allocation.view')
+                || $this->permissions->userHasPermission($user, 'loading.allocation.manage')
+                || $this->permissions->userHasSystemRole($user));
+    }
 }

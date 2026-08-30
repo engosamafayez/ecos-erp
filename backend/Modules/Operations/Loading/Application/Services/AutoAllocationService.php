@@ -261,6 +261,10 @@ final class AutoAllocationService
 
         return PreparationWaveOrder::whereIn('preparation_wave_id', $waveIds->all())
             ->where('company_id', $companyId)
+            // A postponed order has left the current preparation cycle, so it must not be
+            // allocated into today's loading/shipping aggregation (REFINEMENT-002 §16).
+            // The membership row is retained as history and is not deleted.
+            ->active()
             ->get()
             ->map(fn ($row) => [
                 'order_id' => $row->order_id,

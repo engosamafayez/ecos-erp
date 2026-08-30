@@ -7,6 +7,7 @@ namespace Modules\Operations\Loading\Presentation\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
 use BackedEnum;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Operations\Loading\Application\Actions\AssignVehicleToSessionAction;
@@ -19,6 +20,7 @@ use Modules\Operations\Loading\Presentation\Http\Requests\AssignVehicleRequest;
 use Modules\Operations\Loading\Presentation\Http\Requests\DispatchVehicleRequest;
 use Modules\Operations\Loading\Presentation\Http\Requests\LoadProductRequest;
 use Modules\Operations\Loading\Presentation\Http\Resources\VehicleAssignmentResource;
+use RuntimeException;
 
 final class VehicleAssignmentController extends Controller
 {
@@ -50,10 +52,16 @@ final class VehicleAssignmentController extends Controller
             vehicleId: $validated['vehicle_id'],
             vehicleRegistration: $validated['vehicle_registration'],
             vehicleType: $validated['vehicle_type'],
-            capacityWeightKg: (float) $validated['capacity_weight_kg'],
-            capacityVolumeM3: (float) $validated['capacity_volume_m3'],
-            refrigerated: (bool) ($validated['refrigerated'] ?? false),
             actorId: (string) $request->user()->id,
+            // Passed through unchanged when supplied, and left NULL when not.
+            // Never cast an absent value to 0 — see AssignVehicleRequest.
+            capacityWeightKg: isset($validated['capacity_weight_kg'])
+                ? (float) $validated['capacity_weight_kg']
+                : null,
+            capacityVolumeM3: isset($validated['capacity_volume_m3'])
+                ? (float) $validated['capacity_volume_m3']
+                : null,
+            refrigerated: (bool) ($validated['refrigerated'] ?? false),
             vehiclePlanSlotId: $validated['vehicle_plan_slot_id'] ?? null,
             notes: $validated['notes'] ?? null,
         );
@@ -96,20 +104,36 @@ final class VehicleAssignmentController extends Controller
         }
 
         $validated = $request->validated();
-        $task = $action->execute(
-            assignment: $assignment,
-            poolEntryId: $validated['pool_entry_id'],
-            productId: $validated['product_id'],
-            skuSnapshot: $validated['sku_snapshot'],
-            nameSnapshot: $validated['name_snapshot'],
-            preparationWaveId: $validated['preparation_wave_id'],
-            quantityPlanned: (float) $validated['quantity_planned'],
-            quantityLoaded: (float) $validated['quantity_loaded'],
-            loadedBy: (string) $request->user()->id,
-            requiresRefrigeration: (bool) ($validated['requires_refrigeration'] ?? false),
-            shortReason: $validated['short_reason'] ?? null,
-            notes: $validated['notes'] ?? null,
-        );
+
+        try {
+            $task = $action->execute(
+                assignment: $assignment,
+                poolEntryId: $validated['pool_entry_id'],
+                productId: $validated['product_id'],
+                skuSnapshot: $validated['sku_snapshot'],
+                nameSnapshot: $validated['name_snapshot'],
+                preparationWaveId: $validated['preparation_wave_id'],
+                quantityPlanned: (float) $validated['quantity_planned'],
+                quantityLoaded: (float) $validated['quantity_loaded'],
+                loadedBy: (string) $request->user()->id,
+                requiresRefrigeration: (bool) ($validated['requires_refrigeration'] ?? false),
+                shortReason: $validated['short_reason'] ?? null,
+                notes: $validated['notes'] ?? null,
+            );
+        } catch (QueryException $e) {
+            // A DATABASE fault is not a domain refusal. `QueryException` extends
+            // `PDOException` extends `RuntimeException`, so the catch below would
+            // otherwise swallow it, answer 422, and echo the raw SQL — table, column and
+            // constraint names — to the client (TASK-DRIVER-02, same defect fixed in the
+            // driver-side DriverLoadingController). This endpoint calls the very same
+            // LoadProductAction, so it carried the identical exposure.
+            throw $e;
+        } catch (RuntimeException $e) {
+            // Faithfully surface the domain refusal (over-load has no approved contract
+            // and fails closed) as a client error rather than a 500 — mirroring the
+            // delivery path in AllocationController. No new policy is introduced here.
+            abort(422, $e->getMessage());
+        }
 
         return $this->created([
             'id' => $task->id,

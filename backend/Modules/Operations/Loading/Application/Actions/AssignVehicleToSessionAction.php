@@ -17,15 +17,35 @@ final class AssignVehicleToSessionAction
         private readonly VehicleAssignmentNumberGenerator $numberGen,
     ) {}
 
+    /**
+     * ECOS CAPACITY CONTRACT — capacity is an ORDER COUNT and nothing else.
+     *
+     * `$capacityWeightKg`, `$capacityVolumeM3` and `$refrigerated` are now
+     * OPTIONAL and default to null/false. They are retained as parameters so the
+     * pre-existing standalone Loading callers keep compiling, but they are no
+     * longer requirements: weight, volume and refrigeration are not business
+     * constraints in this platform, and nothing reads these values to make a
+     * decision.
+     *
+     * Null is passed through as null rather than coerced to 0. A zero is a real
+     * measurement meaning "carries nothing"; a null means "not measured". Only
+     * the second is true here, and writing the first would quietly become a
+     * ceiling the moment anything consumed it.
+     *
+     * `$tripId` is the canonical execution link. It lets Loading reach its Group
+     * through Trip → virtual_slot_id without Loading storing a group id of its
+     * own, and without a second Vehicle or Driver source of truth.
+     */
     public function execute(
         LoadingSession $session,
         string $vehicleId,
         string $vehicleRegistration,
         string $vehicleType,
-        float $capacityWeightKg,
-        float $capacityVolumeM3,
-        bool $refrigerated,
         string $actorId,
+        ?float $capacityWeightKg = null,
+        ?float $capacityVolumeM3 = null,
+        bool $refrigerated = false,
+        ?int $tripId = null,
         ?string $vehiclePlanSlotId = null,
         ?string $notes = null,
     ): VehicleAssignment {
@@ -37,6 +57,7 @@ final class AssignVehicleToSessionAction
             $capacityWeightKg,
             $capacityVolumeM3,
             $refrigerated,
+            $tripId,
             $actorId,
             $vehiclePlanSlotId,
             $notes,
@@ -47,6 +68,9 @@ final class AssignVehicleToSessionAction
                 'company_id' => $session->company_id,
                 'loading_session_id' => $session->id,
                 'vehicle_plan_slot_id' => $vehiclePlanSlotId,
+                // The canonical execution link. Group provenance is REACHED
+                // through this, never copied onto the assignment.
+                'trip_id' => $tripId,
                 'vehicle_id' => $vehicleId,
                 'vehicle_registration_snapshot' => $vehicleRegistration,
                 'vehicle_type_snapshot' => $vehicleType,
