@@ -17,11 +17,15 @@ export type { BulkActionKey };
 // no hardcoded per-status matrix.
 
 function resolveTargetToBulkKey(sourceStatus: string, targetStatus: string): BulkActionKey | null {
+  // ADR-042 §5.3 — Confirm has its own target state; it is no longer an alias
+  // for a transition into in_progress.
+  if (targetStatus === 'confirmed') return 'confirm';
+
   // 'in_progress' maps to different bulk keys depending on source
   if (targetStatus === 'in_progress') {
-    if (sourceStatus === 'new')               return 'confirm';
+    if (sourceStatus === 'confirmed')          return 'unlock_for_edit'; // ADR-042 §5.4
     if (sourceStatus === 'ready_for_dispatch') return 'return_to_preparation';
-    return 'resume'; // from on_hold, awaiting_stock, awaiting_payment, cancelled
+    return 'resume'; // from on_hold, awaiting_stock, awaiting_payment, scheduled, cancelled
   }
   const map: Partial<Record<string, BulkActionKey>> = {
     ready_for_dispatch: 'move_to_preparation',
@@ -46,6 +50,7 @@ const BULK_ACTION_DISPLAY: Partial<Record<BulkActionKey, { destructive?: boolean
 // Canonical order for rendering — ensures stable, predictable button order.
 const BULK_ACTION_ORDER: BulkActionKey[] = [
   'confirm',
+  'unlock_for_edit',
   'move_to_awaiting_payment',
   'verify_payment',
   'move_to_preparation',
@@ -75,7 +80,8 @@ export const IRREVERSIBLE_BULK_ACTIONS = new Set<BulkActionKey>(['cancel', 'comp
 
 // Human-readable target outcome for each action (used in confirmation dialog).
 export const BULK_ACTION_TARGET_LABEL: Partial<Record<BulkActionKey, string>> = {
-  confirm:                  'In Progress',
+  confirm:                  'Confirmed',
+  unlock_for_edit:          'In Progress',
   move_to_awaiting_payment: 'Awaiting Payment',
   verify_payment:           'In Progress',
   move_to_preparation:      'Ready for Dispatch',

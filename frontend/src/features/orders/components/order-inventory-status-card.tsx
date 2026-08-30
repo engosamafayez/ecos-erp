@@ -47,10 +47,28 @@ function deriveScenario(
     return entryStatuses.length > 0 ? 'auto_reserve' : 'manual';
   }
 
-  const outOfStock = selectedProducts.filter((p) => p.stock_status === 'outofstock');
-  if (outOfStock.length > 0) {
-    const allNegativeAllowed = outOfStock.every((p) => p.allow_negative_stock === true);
-    return allNegativeAllowed ? 'negative' : 'shortage';
+  // Orderability comes from the ERP contract, never from `stock_status` — that is a
+  // WooCommerce channel attribute (and it is NULL on every ERP-created product, so the
+  // old guard silently never fired). `can_commit` is decided server-side from signed
+  // availability + allow_negative_stock and, for a finished good, from whether its RECIPE
+  // can be executed — so a finished good with zero FG stock is still committable when its
+  // raw materials permit it. This mirrors product-browser.tsx, which already does this.
+  //
+  // `allow_negative_stock` on the finished good is deliberately NOT consulted: for a
+  // recipe-backed product the overdraw permission belongs to the RAW MATERIALS, and
+  // `can_commit` has already folded that in.
+  const blocked = selectedProducts.filter((p) => p.can_commit === false);
+  if (blocked.length > 0) {
+    return 'shortage';
+  }
+
+  // Committable, but only because overdraw is permitted somewhere: measured availability
+  // is at or below zero while the ERP still allows the commit.
+  const onNegative = selectedProducts.filter(
+    (p) => p.can_commit !== false && typeof p.available_qty === 'number' && p.available_qty <= 0,
+  );
+  if (onNegative.length > 0) {
+    return 'negative';
   }
 
   if (!orderPolicy.auto_reserve_inventory) return 'manual';
@@ -147,8 +165,10 @@ export function OrderInventoryStatusCard({
 
   const entryStatuses = resolveEntryStatuses(orderPolicy);
 
+  // Same authority as the scenario decision above — the ERP's `can_commit`, never the
+  // WooCommerce `stock_status` and never the finished good's own allow_negative_stock.
   const shortageItems = scenario === 'shortage'
-    ? selectedProducts.filter((p) => p.stock_status === 'outofstock' && !p.allow_negative_stock)
+    ? selectedProducts.filter((p) => p.can_commit === false)
     : [];
 
   return (

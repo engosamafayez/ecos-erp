@@ -9,8 +9,8 @@ export function useOrderStatusLabels() {
   const { t } = useTranslation('orders');
 
   const statusLabel: Record<OrderStatus, string> = {
-    new:               t($ => $.status.new),
     in_progress:       t($ => $.status.in_progress),
+    confirmed:         t($ => $.status.confirmed),
     ready_for_dispatch: t($ => $.status.ready_for_dispatch),
     out_for_delivery:  t($ => $.status.out_for_delivery),
     delivered:         t($ => $.status.delivered),
@@ -24,8 +24,8 @@ export function useOrderStatusLabels() {
 
   const statusTabLabel: Record<OrderStatus | 'all', string> = {
     all:               t($ => $.statusTabs.all),
-    new:               t($ => $.statusTabs.new),
     in_progress:       t($ => $.statusTabs.in_progress),
+    confirmed:         t($ => $.statusTabs.confirmed),
     ready_for_dispatch: t($ => $.statusTabs.ready_for_dispatch),
     out_for_delivery:  t($ => $.statusTabs.out_for_delivery),
     delivered:         t($ => $.statusTabs.delivered),
@@ -48,6 +48,7 @@ export function useOrderBulkLabels() {
 
   const bulkLabel: Record<BulkActionKey, string> = {
     confirm:                  t($ => $.bulk.confirm),
+    unlock_for_edit:          t($ => $.bulk.unlock_for_edit),
     move_to_awaiting_payment: t($ => $.bulk.move_to_awaiting_payment),
     verify_payment:           t($ => $.bulk.verify_payment),
     move_to_preparation:      t($ => $.bulk.move_to_preparation),

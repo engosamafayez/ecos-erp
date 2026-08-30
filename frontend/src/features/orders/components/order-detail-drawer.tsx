@@ -42,6 +42,7 @@ import {
   User,
   UserCheck,
   UserPlus,
+  Wallet,
   X,
   XCircle,
 } from 'lucide-react';
@@ -61,6 +62,9 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Tabs } from '@/components/ds/tabs';
+import { OrderInventoryExecutionCell } from '@/features/orders/components/order-inventory-execution-cell';
+import { PaymentProofSection } from '@/features/orders/components/payment-proof-section';
+import { RecordPaymentDialog } from '@/features/orders/components/record-payment-dialog';
 import { OrderStatusBadge } from '@/features/orders/components/order-status-badge';
 import { OrderNotesTab } from '@/features/orders/components/notes-tab';
 import { OrderDistributionStageBanner } from '@/features/orders/components/order-distribution-stage-banner';
@@ -70,6 +74,7 @@ import {
   useOrderQuery,
   useOrderWorkflowReschedule,
   useOrderWorkflowTransition,
+  useResolveOrderLocation,
 } from '@/features/orders/hooks/use-orders';
 import { getMediaUrl } from '@/lib/media';
 import { cn } from '@/lib/utils';
@@ -816,9 +821,15 @@ function ProductsTab({ order, t }: { order: Order; t: OrdersT }) {
 function PaymentTab({ order, t }: { order: Order; t: OrdersT }) {
   const fmtCur = useOrderMoney();
   const paymentLabel = resolvePaymentLabel(order);
+  const [recordPaymentOpen, setRecordPaymentOpen] = useState(false);
 
-  // Derive payment status
-  const isPaid     = Boolean(order.date_paid);
+  // Derive payment status from the ERP's own payment authority.
+  //
+  // This used to read `date_paid`, which is written ONLY by the WooCommerce importer and
+  // is null on every manual order — so a fully-paid manual order rendered "Paid" and
+  // "Awaiting Verification" side by side. `payment_state` is the canonical projection
+  // (PaymentState::fromAmounts on deposit vs total) that the API already exposes.
+  const isPaid     = order.payment_state === 'paid' || Boolean(order.date_paid);
   const hasDeposit = order.deposit_paid > 0;
   const hasRemaining = order.remaining_balance > 0;
   const isPartial  = !isPaid && hasDeposit;
@@ -925,31 +936,60 @@ function PaymentTab({ order, t }: { order: Order; t: OrdersT }) {
               </span>
             </div>
           )}
+          {/* A4 — record a payment through the canonical RecordOrderPaymentAction. Shown while
+              anything is outstanding; a deposit is a partial payment, only full payment = Paid. */}
+          {order.remaining_balance > 0.005 && (
+            <Button variant="outline" size="sm" className="mt-1 self-end gap-1.5" onClick={() => setRecordPaymentOpen(true)}>
+              <Wallet className="size-3.5" />
+              {t($ => $.orderDetail.recordPaymentBtn)}
+            </Button>
+          )}
         </div>
       </div>
 
+      <RecordPaymentDialog
+        open={recordPaymentOpen}
+        onOpenChange={setRecordPaymentOpen}
+        orderId={order.id}
+        total={order.grand_total ?? order.total}
+        paid={order.deposit_paid ?? order.deposit_amount ?? 0}
+      />
+
       <Separator />
 
-      {/* ── Payment Proof ── */}
+      {/* ── Payment Proof ──
+          The full lifecycle (upload → preview → verify / reject-with-reason → replace,
+          plus history) rendered from the canonical `payment_proofs` system — the same
+          component the detail page uses, so the two surfaces cannot drift.
+
+          This drawer previously showed only a legacy `payment_proof_path` link through
+          MediaViewer, which no new proof ever populates and which cannot resolve a file
+          on the private disk. That is why the list's "Verify Payment" action — which
+          opens this drawer — offered no way to actually verify anything. */}
       <div>
-        <SectionTitle>{t($ => $.drawer.payment.proofSection)}</SectionTitle>
+        <PaymentProofSection
+          orderId={order.id}
+          paymentMethod={order.payment_method_manual ?? order.payment_method ?? null}
+        />
+
+        {/* Legacy attachment, only for orders proofed before the lifecycle existed. */}
         {order.payment_proof_path ? (
-          <MediaViewer
-            path={order.payment_proof_path}
-            title={t($ => $.drawer.payment.proofSection)}
-            trigger={
-              <button
-                type="button"
-                className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
-              >
-                <Paperclip className="size-3.5" />
-                {t($ => $.drawer.payment.proofSection)}
-              </button>
-            }
-          />
-        ) : (
-          <p className="text-sm text-muted-foreground">{t($ => $.drawer.payment.noProof)}</p>
-        )}
+          <div className="mt-3">
+            <MediaViewer
+              path={order.payment_proof_path}
+              title={t($ => $.drawer.payment.proofSection)}
+              trigger={
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline"
+                >
+                  <Paperclip className="size-3.5" />
+                  {t($ => $.drawer.payment.proofSection)}
+                </button>
+              }
+            />
+          </div>
+        ) : null}
       </div>
 
       {/* ── Legacy reference (WooCommerce orders) ── */}
@@ -1284,23 +1324,93 @@ function ShippingTab({ order, t }: { order: Order; t: OrdersT }) {
 /**
  * DD-016 — Single location tab. Shows an interactive map frame when coordinates exist.
  */
-function LocationTab({ order, t }: { order: Order; t: OrdersT }) {
-  const loc = order.location;
+function LocationTab({
+  order,
+  t,
+  autoResolve = true,
+}: {
+  order: Order;
+  t: OrdersT;
+  /**
+   * When false, geocoding runs ONLY after the operator clicks "Resolve location" —
+   * opening the tab resolves nothing. When true (Orders workspace), it resolves
+   * automatically as before.
+   */
+  autoResolve?: boolean;
+}) {
+  // The COMPLETE delivery address — always shown on this surface (§9/§11), composed
+  // from the order's own fields and never abbreviated to just a city or governorate.
+  const addressLines = [
+    order.shipping_address,
+    order.building  ? `Bldg. ${order.building}` : null,
+    order.floor     ? `Floor ${order.floor}` : null,
+    order.apartment ? `Apt. ${order.apartment}` : null,
+    [order.area, order.city, order.governorate].filter(Boolean).join(' · ') || null,
+    order.landmark  ? `${t($ => $.drawer.location.landmark, { value: order.landmark })}` : null,
+  ].filter(Boolean) as string[];
+
+  // Mirrors the server's rule (§5): a specific street/building line PLUS a locality.
+  // A locality alone is a centroid, not a delivery point, so it is not resolvable.
+  const hasSpecific = !!(order.shipping_address || order.building || order.apartment);
+  const hasLocality = !!(order.area || order.city || order.governorate);
+  const isResolvable = hasSpecific && hasLocality;
+
+  // Geocoding is gated on an explicit request unless auto-resolve is on. In auto mode
+  // (Orders workspace) it starts requested, so behaviour is unchanged; in gated mode
+  // (Distribution map) it stays false until the operator clicks "Resolve location", so
+  // opening the tab never triggers a geocode or a persist.
+  const [resolveRequested, setResolveRequested] = useState(autoResolve);
+
+  // Runs only when requested AND there is no captured point AND a usable address.
+  const locQuery = useResolveOrderLocation(
+    order.id,
+    resolveRequested && !order.location && isResolvable,
+  );
+
+  // The point to plot: a captured/persisted coordinate, or one just resolved from the
+  // address. Never a city/zone substitute.
+  const point = order.location
+    ? { lat: order.location.lat, lng: order.location.lng }
+    : locQuery.data?.status === 'resolved_from_address' && locQuery.data.latitude !== null
+      ? { lat: locQuery.data.latitude, lng: locQuery.data.longitude as number }
+      : null;
+
+  const sourceLabel = order.location
+    ? (order.location_source ?? order.location.set_by ?? null)
+    : locQuery.data?.source ?? null;
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      {loc?.lat && loc?.lng ? (
+      {/* ── Complete delivery address (always visible) ── */}
+      <div className="rounded-lg border bg-muted/20 px-4 py-3">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          {t($ => $.drawer.location.deliveryAddress)}
+        </p>
+        {addressLines.length > 0 ? (
+          <div className="mt-1 space-y-0.5 text-sm">
+            {addressLines.map((line, i) => (
+              <p key={i} className={i === 0 ? 'font-medium' : 'text-muted-foreground'}>{line}</p>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-1 text-sm text-muted-foreground">{t($ => $.drawer.location.noAddress)}</p>
+        )}
+      </div>
+
+      {point ? (
         <>
           {/* GPS coordinates card */}
           <div className="flex items-start gap-3 overflow-hidden rounded-lg border bg-muted/20 px-4 py-3">
             <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">GPS Location</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {t($ => $.drawer.location.available)}
+              </p>
               <p className="font-mono text-sm font-medium tabular-nums">
-                {Number(loc.lat).toFixed(6)}, {Number(loc.lng).toFixed(6)}
+                {Number(point.lat).toFixed(6)}, {Number(point.lng).toFixed(6)}
               </p>
               <a
-                href={`https://www.google.com/maps?q=${loc.lat},${loc.lng}`}
+                href={`https://www.google.com/maps?q=${point.lat},${point.lng}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[10px] text-primary hover:underline"
@@ -1312,21 +1422,13 @@ function LocationTab({ order, t }: { order: Order; t: OrdersT }) {
           {/* Location actions */}
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" asChild>
-              <a
-                href={`https://www.google.com/maps?q=${loc.lat},${loc.lng}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a href={`https://www.google.com/maps?q=${point.lat},${point.lng}`} target="_blank" rel="noopener noreferrer">
                 <Navigation className="size-3.5" />
                 {t($ => $.address.openMaps)}
               </a>
             </Button>
             <Button variant="outline" size="sm" asChild>
-              <a
-                href={`https://www.waze.com/ul?ll=${loc.lat}%2C${loc.lng}&navigate=yes`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
+              <a href={`https://www.waze.com/ul?ll=${point.lat}%2C${point.lng}&navigate=yes`} target="_blank" rel="noopener noreferrer">
                 <Navigation className="size-3.5" />
                 Waze
               </a>
@@ -1334,26 +1436,77 @@ function LocationTab({ order, t }: { order: Order; t: OrdersT }) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => void navigator.clipboard.writeText(`https://www.google.com/maps?q=${loc.lat},${loc.lng}`)}
+              onClick={() => void navigator.clipboard.writeText(`https://www.google.com/maps?q=${point.lat},${point.lng}`)}
             >
               <MapPin className="size-3.5" />
               {t($ => $.address.copyLink)}
             </Button>
           </div>
-          {loc.set_by ? (
+          {sourceLabel ? (
             <p className="text-xs text-muted-foreground">
-              {t($ => $.drawer.locationSetBy, { by: loc.set_by })}
+              {t($ => $.drawer.location.source, { source: sourceLabel })}
             </p>
           ) : null}
         </>
       ) : (
-        <div className="flex flex-col items-center gap-3 py-12 text-center">
-          <MapPin className="size-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">{t($ => $.drawer.noLocation)}</p>
+        <div className="flex flex-col items-center gap-3 py-10 text-center" data-testid="location-status">
+          {!resolveRequested && isResolvable ? (
+            // Gated mode, not yet requested: the ONLY trigger for geocoding is this click.
+            <>
+              <MapPin className="size-8 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">{t($ => $.drawer.location.notResolved)}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setResolveRequested(true)}
+                data-testid="location-resolve"
+              >
+                {t($ => $.drawer.location.resolve)}
+              </Button>
+            </>
+          ) : locQuery.isLoading ? (
+            <>
+              <Loader2 className="size-6 animate-spin text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">{t($ => $.drawer.location.resolving)}</p>
+            </>
+          ) : (
+            <>
+              <MapPin className="size-8 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                {locationStateMessage(
+                  locQuery.isError ? 'geocoding_failed' : locQuery.data?.status,
+                  isResolvable,
+                  t,
+                )}
+              </p>
+            </>
+          )}
         </div>
       )}
     </div>
   );
+}
+
+/** The one honest sentence for the current no-point state (§12). */
+function locationStateMessage(
+  status: import('@/features/orders/types/order').OrderLocationStatus | undefined,
+  isResolvable: boolean,
+  t: OrdersT,
+): string {
+  switch (status) {
+    case 'not_configured':
+      return t($ => $.drawer.location.notConfigured);
+    case 'geocoding_failed':
+      return t($ => $.drawer.location.geocodingFailed);
+    case 'address_unavailable':
+      return t($ => $.drawer.location.addressUnavailable);
+    default:
+      // No result yet: an unresolvable address is stated as such; anything else is
+      // still awaiting the resolve call rather than a settled "no location".
+      return isResolvable
+        ? t($ => $.drawer.location.resolving)
+        : t($ => $.drawer.location.addressUnavailable);
+  }
 }
 
 // ── Workflow Tab ──────────────────────────────────────────────────────────────
@@ -1564,18 +1717,34 @@ function InventoryTab({ order }: { order: Order }) {
     inventory_shipped_at?: string | null;
   };
   const lines = order.lines ?? [];
-  // Resolve the assigned warehouse from the line data the backend already supplies,
-  // rather than exposing the raw assigned_warehouse_id UUID (W2-A).
-  const warehouseName = lines.map((l) => l.warehouse_name).find(Boolean) ?? null;
+  // The canonical fulfillment warehouse, resolved by the API from
+  // `orders.assigned_warehouse_id` (ADR-027 SSOT). `line.warehouse_name` has no writer
+  // anywhere in the backend and is null on every row — relying on it is why a reserved
+  // order showed "Assigned Warehouse: —". Kept only as a fallback for older payloads.
+  const warehouseName = order.assigned_warehouse?.name
+    ?? lines.map((l) => l.warehouse_name).find(Boolean)
+    ?? null;
 
   return (
     <div className="flex flex-col gap-6 p-4">
       <div>
         <SectionTitle>{t($ => $.drawer.inventory_tab.reservationStatus)}</SectionTitle>
         <DetailGrid>
+          {/* The section was titled "Reservation Status" but never showed one: it showed
+              `inventory_reserved_at`, falling back to a "Not Reserved" label. That
+              timestamp is stamped on every reservation attempt — a total shortage
+              included — so an order holding no inventory rendered a date and read as
+              reserved. `reservation_status` is the authority, shown through the same
+              component as the Orders list column. */}
+          <DetailRow label={t($ => $.drawer.inventory_tab.reservationStatus)}>
+            <OrderInventoryExecutionCell
+              reservationStatus={order.reservation_status}
+              failureReason={order.reservation_failure_reason}
+            />
+          </DetailRow>
           <DetailRow label={t($ => $.drawer.inventory_tab.reservedAt)}>
             {inv.inventory_reserved_at ? formatDate(inv.inventory_reserved_at) : (
-              <span className="text-amber-600 text-sm font-medium">{t($ => $.drawer.inventory_tab.notReserved)}</span>
+              <span className="text-muted-foreground text-sm">—</span>
             )}
           </DetailRow>
           <DetailRow label={t($ => $.drawer.inventory_tab.shippedAt)}>
@@ -2222,7 +2391,7 @@ function WorkflowHistoryTab({ order }: { order: Order }) {
         <SectionTitle>{t($ => $.drawer.history_tab.keyDates)}</SectionTitle>
         <DetailGrid>
           <DetailRow label={t($ => $.drawer.history_tab.createdAt)}>
-            {formatDate(order.created_at)}
+            {formatDateTime(order.created_at)}
           </DetailRow>
           {order.date_paid ? (
             <DetailRow label={t($ => $.drawer.history_tab.paymentConfirmed)}>
@@ -2267,9 +2436,23 @@ type OrderDetailDrawerProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit?: (order: Order) => void;
+  /**
+   * Whether the Location tab may geocode automatically when it has no captured point.
+   * Default `true` preserves the Orders workspace behaviour. The Distribution map opens
+   * this drawer with `false` so opening an order NEVER triggers a geocode/persist —
+   * resolution there is an explicit "Resolve location" click only
+   * (TASK-DISTRIBUTION-MAP-EXPLICIT-GEOCODING-GATE-001).
+   */
+  autoResolveLocation?: boolean;
 };
 
-export function OrderDetailDrawer({ order, open, onOpenChange, onEdit }: OrderDetailDrawerProps) {
+export function OrderDetailDrawer({
+  order,
+  open,
+  onOpenChange,
+  onEdit,
+  autoResolveLocation = true,
+}: OrderDetailDrawerProps) {
   const { t } = useTranslation('orders');
   const [activeTab, setActiveTab] = useState('summary');
 
@@ -2293,7 +2476,7 @@ export function OrderDetailDrawer({ order, open, onOpenChange, onEdit }: OrderDe
     { key: 'payment',   label: t($ => $.drawer.tabs.payment),    content: <PaymentTab order={displayOrder} t={t} /> },
     { key: 'shipping',  label: t($ => $.drawer.tabs.shipping),   content: <ShippingTab order={displayOrder} t={t} /> },
     { key: 'notes',     label: t($ => $.drawer.tabs.notes),      content: <OrderNotesTab order={displayOrder} /> },
-    { key: 'location',  label: t($ => $.drawer.tabs.location),   content: <LocationTab order={displayOrder} t={t} /> },
+    { key: 'location',  label: t($ => $.drawer.tabs.location),   content: <LocationTab order={displayOrder} t={t} autoResolve={autoResolveLocation} /> },
   ];
 
   return (

@@ -1,6 +1,7 @@
 ﻿import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { ordersService } from '@/features/orders/services/orders-service';
+import { customersService } from '@/features/customers/services/customers-service';
 import type {
   BrandOrderPolicy,
   CustomerLookupResult,
@@ -185,6 +186,38 @@ export function usePatchOrder() {
   });
 }
 
+/**
+ * Resolve an order's map point (captured coords, else a server-side geocode of the
+ * complete delivery address). Modelled as a QUERY, not a mutation-in-effect: it is
+ * idempotent (returns the existing point if present, geocodes+persists once otherwise),
+ * so keying it by order id makes it cached, StrictMode-safe, and cheap to read for its
+ * `isLoading` / `data` / `isError` states. Runs only when `enabled` (no captured point
+ * and a resolvable address). A *new* point (resolved_from_address) invalidates the order
+ * caches so the drawer re-reads the persisted coordinates.
+ */
+export function useResolveOrderLocation(orderId: string, enabled: boolean) {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
+  const queryClient = useQueryClient();
+  return useQuery({
+    queryKey: ['order-location-resolve', orderId],
+    queryFn: async () => {
+      const result = await ordersService.resolveLocation(orderId);
+      if (result.status === 'resolved_from_address') {
+        void queryClient.invalidateQueries({ queryKey: ['company', companyId, ORDERS_KEY, orderId] });
+        // The Distribution adapter fetches under this key (distribution-order-detail.tsx).
+        void queryClient.invalidateQueries({ queryKey: ['orders', 'detail', orderId] });
+      }
+      return result;
+    },
+    enabled: enabled && Boolean(orderId),
+    staleTime: Infinity,
+    gcTime: Infinity,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+}
+
 export function useAllShippingRules() {
   return useQuery<ShippingPricingRule[]>({
     queryKey: ['shipping-rules-all'],
@@ -258,6 +291,12 @@ export function useOrderWorkflowReturn() {
 export function useOrderWorkflowVerifyPayment() {
   return useWorkflowMutation(({ id, proofPath }: { id: string; proofPath: string }) =>
     ordersService.workflowVerifyPayment(id, proofPath));
+}
+
+/** Record a payment through the domain action (guards + audit event). See D6. */
+export function useRecordOrderPayment() {
+  return useWorkflowMutation(({ id, amount }: { id: string; amount: number }) =>
+    ordersService.recordPayment(id, amount));
 }
 
 export function useOrderWorkflowReschedule() {
@@ -490,12 +529,17 @@ export function useCustomerOrderStats(customerId: string | null) {
       const result = await ordersService.list({ customer_id: customerId, per_page: 200 });
       const items = result.items;
       const totalSpend = items.reduce((sum, o) => sum + o.total, 0);
-      // Preferred governorate = the one appearing most often
-      const govCounts: Record<string, number> = {};
-      for (const o of items) {
-        if (o.governorate) govCounts[o.governorate] = (govCounts[o.governorate] ?? 0) + 1;
-      }
-      const preferredGovernorate = Object.entries(govCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+
+      // Preferred governorate is computed SERVER-SIDE by CustomerOrderMetricsService and
+      // read from the existing customer endpoint — no new endpoint, and no frequency
+      // counting, grouping or ranking here. Unlike the loop this replaces, it sees every
+      // order rather than the first 200, excludes orders with no governorate, and breaks
+      // ties deterministically instead of by object insertion order.
+      const preferredGovernorate = await customersService
+        .get(customerId)
+        .then((c) => c.preferred_governorate ?? null)
+        .catch(() => null);
+
       return {
         total: result.meta.total,
         completed: items.filter((o) => o.status === 'delivered').length,

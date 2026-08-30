@@ -4,8 +4,8 @@ import { cn } from '@/lib/utils';
 
 const STATUS_CLASS: Record<OrderStatus, string> = {
   // ── Primary Flow ──────────────────────────────────────────────────────────
-  new:               'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-  in_progress:       'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  in_progress:       'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+  confirmed:         'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
   ready_for_dispatch: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400',
   out_for_delivery:  'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400',
   delivered:         'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
@@ -27,7 +27,7 @@ type OrderStatusBadgeProps = {
 
 export function OrderStatusBadge({ status, onClick }: OrderStatusBadgeProps) {
   const { statusLabel } = useOrderStatusLabels();
-  const cls = STATUS_CLASS[status] ?? STATUS_CLASS.new;
+  const cls = STATUS_CLASS[status] ?? STATUS_CLASS.in_progress;
   const label = statusLabel[status];
 
   if (onClick) {

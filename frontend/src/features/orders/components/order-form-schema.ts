@@ -2,10 +2,10 @@ import { z } from 'zod';
 
 import type { ManualOrderPayload, Order, OrderPayload, OrderStatus } from '@/features/orders/types/order';
 
-// V3 official status list — must match STATUS_TAB_ORDER in order.ts
+// Canonical status list (ADR-042) — must match STATUS_TAB_ORDER in order.ts
 const ORDER_STATUSES: [OrderStatus, ...OrderStatus[]] = [
-  'new',
   'in_progress',
+  'confirmed',
   'ready_for_dispatch',
   'out_for_delivery',
   'delivered',
@@ -48,7 +48,7 @@ export function toFormValues(order?: Order | null): OrderFormValues {
     customer_id: order?.customer_id ?? '',
     external_order_id: order?.external_order_id ?? '',
     order_date: order?.order_date ?? new Date().toISOString().slice(0, 10),
-    status: order?.status ?? 'new',
+    status: order?.status ?? 'in_progress',
     notes: order?.notes ?? '',
     lines:
       order?.lines.map((l) => ({
@@ -153,7 +153,7 @@ export function toManualPayload(values: ManualOrderFormValues): ManualOrderPaylo
   return {
     company_id:               values.company_id || null,
     channel_id:               values.channel_id || null,
-    status:                   values.status || 'new',
+    status:                   values.status || 'in_progress',
     order_date:               values.order_date || null,
     requested_delivery_date:  values.requested_delivery_date || null,
     delivery_window_id:       values.delivery_window_id || null,
@@ -201,7 +201,7 @@ export function toEditPayload(values: ManualOrderFormValues): OrderPayload {
     channel_id:  values.channel_id || null,
     customer_id: values.customer_id ?? '',
     order_date:  values.order_date ?? new Date().toISOString().slice(0, 10),
-    status:      (values.status ?? 'new') as OrderStatus,
+    status:      (values.status ?? 'in_progress') as OrderStatus,
     notes:       values.notes || null,
     lines: values.lines
       .filter((l) => Boolean(l.product_id))

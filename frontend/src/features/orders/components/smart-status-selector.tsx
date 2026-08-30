@@ -44,19 +44,15 @@ type StatusTransition = Order['allowed_status_transitions'][number];
 
 // ── Status colour map (display-only; never drives business logic) ─────────────
 
+// ADR-042 §8: pre-V3 vocabulary (pending/processing/preparing/completed/review/rescheduled)
+// removed. Canonical statuses not listed fall back to the neutral default at the call sites.
 const STATUS_COLOR: Record<string, string> = {
-  pending:          'text-slate-600 dark:text-slate-400',
   awaiting_payment: 'text-yellow-600 dark:text-yellow-400',
-  processing:       'text-blue-600 dark:text-blue-400',
   awaiting_stock:   'text-orange-600 dark:text-orange-400',
   confirmed:        'text-emerald-600 dark:text-emerald-400',
-  preparing:        'text-violet-600 dark:text-violet-400',
   out_for_delivery: 'text-cyan-600 dark:text-cyan-400',
   delivered:        'text-teal-600 dark:text-teal-400',
-  completed:        'text-green-600 dark:text-green-400',
   cancelled:        'text-red-600 dark:text-red-400',
-  review:           'text-amber-600 dark:text-amber-400',
-  rescheduled:      'text-indigo-600 dark:text-indigo-400',
   returned:         'text-rose-600 dark:text-rose-400',
 };
 

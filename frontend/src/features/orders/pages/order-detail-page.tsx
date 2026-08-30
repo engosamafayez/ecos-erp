@@ -50,7 +50,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { OrderConfirmCustomerDialog } from '@/features/orders/components/order-confirm-customer-dialog';
 import { OrderConfirmationBadge } from '@/features/orders/components/order-confirmation-badge';
+import { PaymentProofSection } from '@/features/orders/components/payment-proof-section';
 import { OrderPaymentBadge } from '@/features/orders/components/order-payment-badge';
+import { OrderInventoryExecutionCell } from '@/features/orders/components/order-inventory-execution-cell';
 import { OrderStatusBadge } from '@/features/orders/components/order-status-badge';
 import {
   useCustomerOrderStats,
@@ -208,7 +210,10 @@ function KpiRow({ order }: { order: Order }) {
   const { t } = useTranslation('orders');
   const totalQty = order.lines.reduce((s, l) => s + l.quantity, 0);
   const remaining = order.remaining_balance;
-  const reservedCount = order.inventory_reserved_at ? order.lines.length : 0;
+  // Counted from what each line ACTUALLY holds. `inventory_reserved_at` is stamped on
+  // every reservation attempt including a total shortage, so deriving the count from it
+  // reported every line reserved for an order holding nothing at all.
+  const reservedCount = order.lines.filter((l) => l.quantity > 0 && l.reserved_qty >= l.quantity).length;
 
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
@@ -246,9 +251,13 @@ function OrderHeader({
 }) {
   const navigate = useNavigate();
   const { t } = useTranslation('orders');
-  // Resolve the assigned warehouse name from line data the backend already supplies,
-  // instead of rendering the raw assigned_warehouse_id UUID (W2 FIX-1).
-  const warehouseName = (order.lines ?? []).map((l) => l.warehouse_name).find(Boolean) ?? null;
+  // The canonical fulfillment warehouse, resolved by the API from
+  // `orders.assigned_warehouse_id` (ADR-027 SSOT). `line.warehouse_name` is kept only as
+  // a fallback for older payloads — it has no writer and is null on every row, which is
+  // why this used to render a dash on reserved orders.
+  const warehouseName = order.assigned_warehouse?.name
+    ?? (order.lines ?? []).map((l) => l.warehouse_name).find(Boolean)
+    ?? null;
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border bg-card px-5 py-4">
@@ -308,15 +317,20 @@ function OrderHeader({
             {warehouseName}
           </span>
         ) : null}
-        {order.inventory_reserved_at ? (
+        {/* The reservation OUTCOME comes from `reservation_status` — the same authority
+            the Orders list column reads — never from the `inventory_reserved_at`
+            timestamp, which is stamped even when nothing could be reserved. The date is
+            still shown, but only where the outcome says there is something to date. */}
+        {order.reservation_status === 'reserved' && order.inventory_reserved_at ? (
           <Badge variant="outline" className="text-[10px] text-emerald-600 border-emerald-300 dark:border-emerald-800 dark:text-emerald-400">
             <CheckCircle2 className="size-2.5 mr-0.5" />
             {t($ => $.orderDetail.headerReserved, { date: fmtDate(order.inventory_reserved_at) })}
           </Badge>
         ) : (
-          <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300 dark:border-amber-800 dark:text-amber-400">
-            {t($ => $.orderDetail.headerNotReserved)}
-          </Badge>
+          <OrderInventoryExecutionCell
+            reservationStatus={order.reservation_status}
+            failureReason={order.reservation_failure_reason}
+          />
         )}
         {order.tracking_number ? (
           <Badge variant="outline" className="text-[10px]">
@@ -676,24 +690,26 @@ function ShippingCard({ order }: { order: Order }) {
 
 function InventoryCard({ order }: { order: Order }) {
   const { t } = useTranslation('orders');
-  const isReserved = Boolean(order.inventory_reserved_at);
   const isShipped = Boolean(order.inventory_shipped_at);
-  // Reuse the warehouse name the backend already ships on order lines (W2 FIX-1).
-  const warehouseName = (order.lines ?? []).map((l) => l.warehouse_name).find(Boolean) ?? null;
+  // Canonical fulfillment warehouse resolved by the API (ADR-027 SSOT); line fallback only.
+  const warehouseName = order.assigned_warehouse?.name
+    ?? (order.lines ?? []).map((l) => l.warehouse_name).find(Boolean)
+    ?? null;
 
   return (
     <InfoCard title={t($ => $.orderDetail.inventoryTitle)} icon={Warehouse}>
       <div className="flex flex-col gap-4">
         <FieldGrid cols={2}>
+          {/* The canonical reservation state, with its shortage reason on hover — the
+              same component and the same field the Orders list column uses, so the two
+              surfaces cannot disagree. It replaces a two-way Reserved/Not-Reserved
+              derived from `inventory_reserved_at`, which collapsed pending (no warehouse
+              yet), awaiting_stock (a real shortage) and partial into one green tick. */}
           <Field label={t($ => $.orderDetail.reservationStatus)}>
-            {isReserved ? (
-              <span className="inline-flex items-center gap-1 text-sm font-medium text-emerald-600 dark:text-emerald-400">
-                <CheckCircle2 className="size-3.5" />
-                {t($ => $.orderDetail.reservedStatus)}
-              </span>
-            ) : (
-              <span className="text-sm font-medium text-amber-600 dark:text-amber-400">{t($ => $.orderDetail.notReservedStatus)}</span>
-            )}
+            <OrderInventoryExecutionCell
+              reservationStatus={order.reservation_status}
+              failureReason={order.reservation_failure_reason}
+            />
           </Field>
           <Field label={t($ => $.orderDetail.reservedAt)}>{fmtDateTime(order.inventory_reserved_at)}</Field>
           <Field label={t($ => $.orderDetail.warehouse)}>{warehouseName ?? '—'}</Field>
@@ -837,19 +853,24 @@ function PaymentCard({ order }: { order: Order }) {
             <span className="text-sm font-medium text-amber-600 dark:text-amber-400">{t($ => $.orderDetail.paymentPendingStatus)}</span>
           )}
         </Field>
-        {order.payment_proof_path ? (
-          <Field label={t($ => $.orderDetail.proofUploaded)}>
-            <a
-              href={getMediaUrl(order.payment_proof_path) ?? '#'}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-            >
-              <ExternalLink className="size-3" />
-              {t($ => $.orderDetail.viewProof)}
-            </a>
-          </Field>
-        ) : null}
+        <Field label={t($ => $.orderDetail.paymentStateField)}>
+          {(() => {
+            const ps = order.payment_state ?? 'unpaid';
+            const label =
+              ps === 'paid'
+                ? t($ => $.orderDetail.paymentStatePaid)
+                : ps === 'partially_paid'
+                  ? t($ => $.orderDetail.paymentStatePartial)
+                  : t($ => $.orderDetail.paymentStateUnpaid);
+            const cls =
+              ps === 'paid'
+                ? 'text-emerald-600 dark:text-emerald-400'
+                : ps === 'partially_paid'
+                  ? 'text-amber-600 dark:text-amber-400'
+                  : 'text-muted-foreground';
+            return <span className={cn('text-sm font-semibold', cls)}>{label}</span>;
+          })()}
+        </Field>
         {order.deposit_amount ? (
           <Field label={t($ => $.orderDetail.depositPaidField)}>
             <span className="font-semibold text-emerald-600 dark:text-emerald-400">
@@ -863,6 +884,9 @@ function PaymentCard({ order }: { order: Order }) {
           </span>
         </Field>
       </FieldGrid>
+      <div className="mt-4 border-t pt-4">
+        <PaymentProofSection orderId={order.id} paymentMethod={method} />
+      </div>
     </InfoCard>
   );
 }
@@ -1265,8 +1289,10 @@ function WorkflowHistoryCard({ order }: { order: Order }) {
 
 function RelatedRecordsCard({ order }: { order: Order }) {
   const { t } = useTranslation('orders');
-  // Reuse the warehouse name from line data instead of the raw UUID (W2 FIX-1).
-  const warehouseName = (order.lines ?? []).map((l) => l.warehouse_name).find(Boolean) ?? null;
+  // Canonical fulfillment warehouse resolved by the API (ADR-027 SSOT); line fallback only.
+  const warehouseName = order.assigned_warehouse?.name
+    ?? (order.lines ?? []).map((l) => l.warehouse_name).find(Boolean)
+    ?? null;
   const records: Array<{ label: string; value: string | null | undefined; href?: string; icon: React.ComponentType<{ className?: string }> }> = [
     { label: t($ => $.orderDetail.relatedCustomer), value: order.customer?.name, href: order.customer ? `/app/customers/${order.customer.id}` : undefined, icon: UserCheck },
     { label: t($ => $.orderDetail.relatedChannel), value: order.channel?.name, icon: Store },

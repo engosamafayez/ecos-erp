@@ -20,12 +20,13 @@ export type ReservationStatus =
   | 'failed';
 
 // ── Status ────────────────────────────────────────────────────────────────────
-// V3 lifecycle (TASK-ORDERS-LIFECYCLE-ARCH-002).
-// Primary flow: new → in_progress → ready_for_dispatch → out_for_delivery → delivered
+// Canonical lifecycle - ADR-042 (Order FSM V3 Canonical).
+// Primary flow: in_progress → confirmed → ready_for_dispatch → out_for_delivery → delivered
+// Entry states: in_progress (normal) | scheduled (future-dated) | awaiting_payment
 // Terminal: delivered, cancelled, returned
 export type OrderStatus =
-  | 'new'
   | 'in_progress'
+  | 'confirmed'
   | 'ready_for_dispatch'
   | 'out_for_delivery'
   | 'delivered'
@@ -43,10 +44,14 @@ export type OrderStatus =
  */
 export const STATUS_TAB_ORDER: Array<OrderStatus | 'all'> = [
   'all',
-  'new',
-  'scheduled',
   'awaiting_payment',
   'in_progress',
+  'confirmed',
+  // Schedule sits immediately after Confirm so the tab strip reads in the order
+  // operators actually work: enter → confirm → schedule the confirmed order.
+  // Display order only — the OrderStatus enum, lifecycle transitions, counts and
+  // filtering are untouched.
+  'scheduled',
   'awaiting_stock',
   'ready_for_dispatch',
   'out_for_delivery',
@@ -60,6 +65,7 @@ export const STATUS_TAB_ORDER: Array<OrderStatus | 'all'> = [
 // Canonical definition — shared by order-list-toolbar, use-order-labels, and orders-page.
 export type BulkActionKey =
   | 'confirm'
+  | 'unlock_for_edit'
   | 'move_to_awaiting_payment'
   | 'verify_payment'
   | 'move_to_preparation'
@@ -163,6 +169,27 @@ export type OrderLocation = {
   set_by?: 'customer' | 'employee' | null;
 };
 
+/**
+ * The honest outcome of resolving an order's map point
+ * (`POST /orders/{id}/resolve-location`). Coordinates win outright; otherwise the
+ * complete delivery address is geocoded server-side, and every non-success is a
+ * truthful state — never a substitute point.
+ */
+export type OrderLocationStatus =
+  | 'available'
+  | 'resolved_from_address'
+  | 'geocoding_failed'
+  | 'address_unavailable'
+  | 'not_configured';
+
+export type ResolvedOrderLocation = {
+  status: OrderLocationStatus;
+  latitude: number | null;
+  longitude: number | null;
+  source: string | null;
+  address: string | null;
+};
+
 // ── Order ─────────────────────────────────────────────────────────────────────
 export type Order = {
   id: string;
@@ -177,6 +204,15 @@ export type Order = {
   status_label: string;
   source: string | null;
   assigned_warehouse_id: string | null;
+  /**
+   * The resolved canonical fulfillment warehouse (ADR-027: `orders.assigned_warehouse_id`
+   * is the single source of truth). Present whenever the relation is loaded.
+   *
+   * The UI previously derived the warehouse name from `line.warehouse_name`, a column
+   * with no writer anywhere in the backend — it is null on every row, which is why a
+   * demonstrably reserved order rendered "Assigned Warehouse: —".
+   */
+  assigned_warehouse?: { id: string; name: string; code: string | null } | null;
   inventory_reserved_at: string | null;
   inventory_released_at: string | null;
   inventory_shipped_at: string | null;
@@ -263,6 +299,10 @@ export type Order = {
   discount_type: string | null;
   deposit_amount: number;
   remaining_balance: number;
+  /** Derived payment state (deposit vs total). A deposit is PARTIALLY PAID, never PAID. */
+  payment_state?: 'unpaid' | 'partially_paid' | 'paid';
+  paid_amount?: number;
+  outstanding_amount?: number;
 
   // Delivery scheduling
   requested_delivery_date: string | null;

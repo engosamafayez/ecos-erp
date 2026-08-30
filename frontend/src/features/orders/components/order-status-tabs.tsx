@@ -13,58 +13,42 @@ type StatusTab = OrderStatus | 'all';
 
 // ── Status accent colours (background tint for active card) ──────────────────
 
+// ADR-042 §8: pre-V3 vocabulary (pending/processing/preparing/completed/rescheduled/review)
+// removed. Canonical statuses not listed fall back to the neutral default below.
 const STATUS_ACCENT: Partial<Record<string, string>> = {
   all:              'border-primary/60 bg-primary/5',
   scheduled:        'border-indigo-400/60 bg-indigo-50 dark:border-indigo-600/40 dark:bg-indigo-950/20',
-  pending:          'border-yellow-400/60 bg-yellow-50 dark:border-yellow-600/40 dark:bg-yellow-950/20',
   awaiting_payment: 'border-amber-400/60 bg-amber-50 dark:border-amber-600/40 dark:bg-amber-950/20',
-  processing:       'border-blue-400/60 bg-blue-50 dark:border-blue-600/40 dark:bg-blue-950/20',
   confirmed:        'border-violet-400/60 bg-violet-50 dark:border-violet-600/40 dark:bg-violet-950/20',
-  preparing:        'border-teal-400/60 bg-teal-50 dark:border-teal-600/40 dark:bg-teal-950/20',
   out_for_delivery: 'border-cyan-400/60 bg-cyan-50 dark:border-cyan-600/40 dark:bg-cyan-950/20',
   delivered:        'border-green-400/60 bg-green-50 dark:border-green-600/40 dark:bg-green-950/20',
-  completed:        'border-emerald-500/60 bg-emerald-50 dark:border-emerald-600/40 dark:bg-emerald-950/20',
   cancelled:        'border-rose-400/60 bg-rose-50 dark:border-rose-600/40 dark:bg-rose-950/20',
   returned:         'border-orange-400/60 bg-orange-50 dark:border-orange-600/40 dark:bg-orange-950/20',
   awaiting_stock:   'border-orange-300/60 bg-orange-50 dark:border-orange-600/40 dark:bg-orange-950/20',
-  rescheduled:      'border-sky-400/60 bg-sky-50 dark:border-sky-600/40 dark:bg-sky-950/20',
-  review:           'border-red-400/60 bg-red-50 dark:border-red-600/40 dark:bg-red-950/20',
 };
 
 const STATUS_DOT: Partial<Record<string, string>> = {
   all:              'bg-primary',
   scheduled:        'bg-indigo-400 dark:bg-indigo-500',
-  pending:          'bg-yellow-400 dark:bg-yellow-500',
   awaiting_payment: 'bg-amber-400 dark:bg-amber-500',
-  processing:       'bg-blue-400 dark:bg-blue-500',
   confirmed:        'bg-violet-400 dark:bg-violet-500',
-  preparing:        'bg-teal-400 dark:bg-teal-500',
   out_for_delivery: 'bg-cyan-400 dark:bg-cyan-500',
   delivered:        'bg-green-400 dark:bg-green-500',
-  completed:        'bg-emerald-500 dark:bg-emerald-500',
   cancelled:        'bg-rose-400 dark:bg-rose-500',
   returned:         'bg-orange-400 dark:bg-orange-500',
   awaiting_stock:   'bg-orange-300 dark:bg-orange-500',
-  rescheduled:      'bg-sky-400 dark:bg-sky-500',
-  review:           'bg-red-400 dark:bg-red-500',
 };
 
 const STATUS_COUNT_COLOR: Partial<Record<string, string>> = {
   all:              'text-primary',
   scheduled:        'text-indigo-700 dark:text-indigo-400',
-  pending:          'text-yellow-700 dark:text-yellow-400',
   awaiting_payment: 'text-amber-700 dark:text-amber-400',
-  processing:       'text-blue-700 dark:text-blue-400',
   confirmed:        'text-violet-700 dark:text-violet-400',
-  preparing:        'text-teal-700 dark:text-teal-400',
   out_for_delivery: 'text-cyan-700 dark:text-cyan-400',
   delivered:        'text-green-700 dark:text-green-400',
-  completed:        'text-emerald-700 dark:text-emerald-400',
   cancelled:        'text-rose-700 dark:text-rose-400',
   returned:         'text-orange-700 dark:text-orange-400',
   awaiting_stock:   'text-orange-600 dark:text-orange-400',
-  rescheduled:      'text-sky-700 dark:text-sky-400',
-  review:           'text-red-700 dark:text-red-400',
 };
 
 function fmtCount(n: number): string {

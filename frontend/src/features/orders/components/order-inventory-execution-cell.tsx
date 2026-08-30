@@ -16,10 +16,20 @@ interface StatusConfig {
 }
 
 const STATUS_CONFIG: Record<ReservationStatus, StatusConfig> = {
+  // `pending` is NOT a reservation outcome and is never the answer to "is this product
+  // available" — the three business outcomes below are (Reserved / Partial / Awaiting
+  // Stock). It survives in the backend enum for exactly one situation: reservation
+  // EXECUTION postponed because no warehouse is assigned yet (ADR-027 §2/§10, RC-10),
+  // which is a geography blocker, not a stock one.
+  //
+  // So it is deliberately not labelled "Pending" — that word described the system's
+  // internal wait rather than any business fact, and it read as "not reserved", which
+  // made a missing warehouse indistinguishable from a real shortage. The label now names
+  // the actual blocker, and the reason (`Warehouse Not Assigned`) shows on hover.
   pending: {
     variant: 'outline',
-    className: 'text-muted-foreground border-muted-foreground/30',
-    dot: 'bg-muted-foreground/50',
+    className: 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-600',
+    dot: 'bg-slate-400',
   },
   reserved: {
     variant: 'default',
@@ -60,11 +70,21 @@ const STATUS_CONFIG: Record<ReservationStatus, StatusConfig> = {
 
 export function OrderInventoryExecutionCell({ reservationStatus, failureReason }: Props) {
   const { t } = useTranslation('orders');
-  const status = reservationStatus ?? 'pending'
+
+  // No reservation state at all is NOT a state — it means no availability decision has
+  // been taken yet, which today is only a Scheduled order awaiting its D-1 activation
+  // (or a legacy row predating the column). Defaulting this to `pending` was how the word
+  // "Pending" reached the screen for orders that had simply never been evaluated, so a
+  // null renders as an explicit absence instead of a fabricated state.
+  if (!reservationStatus) {
+    return <span className="text-[10px] text-muted-foreground">—</span>
+  }
+
+  const status = reservationStatus
   const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending
   const label = t($ => $.reservationBadge[status] as `reservationBadge.${ReservationStatus}`)
 
-  const showTooltip = (status === 'awaiting_stock' || status === 'partial_reserved' || status === 'failed') && failureReason
+  const showTooltip = (status === 'awaiting_stock' || status === 'partial_reserved' || status === 'failed' || status === 'pending') && failureReason
 
   const badge = (
     <Badge

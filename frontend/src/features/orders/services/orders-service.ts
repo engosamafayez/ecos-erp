@@ -10,6 +10,7 @@ import type {
   OrdersQuery,
   OrdersResult,
   ProductPricingResult,
+  ResolvedOrderLocation,
   ShippingCalcResult,
   ShippingPricingRule,
   ShippingQuotePayload,
@@ -61,6 +62,19 @@ export const ordersService = {
 
   async patchOrder(id: string, payload: Record<string, unknown>): Promise<Order> {
     const { data } = await api.patch<ApiResponse<Order>>(`/orders/${id}/quick-update`, payload);
+    return data.data;
+  },
+
+  /**
+   * Resolve the order's map point — captured coordinates, else a SERVER-SIDE geocode
+   * of the complete delivery address (Google key stays on the backend). Returns an
+   * honest status; a successful geocode is persisted server-side with
+   * location_source='geocoded'. See ResolveOrderLocationAction.
+   */
+  async resolveLocation(id: string): Promise<ResolvedOrderLocation> {
+    const { data } = await api.post<ApiResponse<ResolvedOrderLocation>>(
+      `/orders/${id}/resolve-location`,
+    );
     return data.data;
   },
 
@@ -142,6 +156,21 @@ export const ordersService = {
 
   async workflowVerifyPayment(id: string, proofPath: string): Promise<Order> {
     const { data } = await api.post<ApiResponse<Order>>(`/orders/${id}/verify-payment`, { payment_proof_path: proofPath });
+    return data.data;
+  },
+
+  /**
+   * Record a payment against the order.
+   *
+   * This is the ONLY supported way to move money onto an order. `deposit_amount` used to
+   * be mass-assignable through the order update, which bypassed RecordOrderPaymentAction's
+   * overpayment guard, its idempotency check and the `payment_recorded` audit event — and,
+   * because the confirmation gate treats `deposit_amount >= total` as paid, it silently
+   * cleared that gate with no audit trail. That field is no longer accepted on update
+   * (TASK-ORDERS-PREPARATION-PAYMENT-FINAL-FIX-001, D6), so payments come through here.
+   */
+  async recordPayment(id: string, amount: number): Promise<Order> {
+    const { data } = await api.post<ApiResponse<Order>>(`/orders/${id}/record-payment`, { amount });
     return data.data;
   },
 

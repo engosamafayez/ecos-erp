@@ -111,7 +111,15 @@ function ProductCard({ product, onAdd }: { product: Product; onAdd: (p: Product)
   const { t } = useTranslation('orders');
   const price = resolvedPrice(product);
   const imgUrl = getMediaUrl(product.image_url);
-  const isOutOfStock = product.stock_status === 'outofstock';
+  // Orderability comes from the ERP contract, never from `stock_status` — that is
+  // a WooCommerce channel attribute (`outofstock`), and reading it here meant the
+  // storefront decided what the ERP would accept. It was doubly wrong: the column
+  // is NULL on every ERP-created product, so the guard silently never fired.
+  //
+  // `can_commit` already folds in signed availability, allow_negative_stock and
+  // (for finished goods) recipe/manufacturing capability. Undefined means an older
+  // payload — fall back to permissive rather than blocking a legitimate order.
+  const isOutOfStock = product.can_commit === false;
   const hasPendingReview = Boolean(product.pending_review);
   const isPriceLocked = price !== null;
 

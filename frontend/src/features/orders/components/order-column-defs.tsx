@@ -1,6 +1,6 @@
 // @refresh reset
 import type { TFunction } from 'i18next';
-import { Clock, ExternalLink, FileCheck, MessageCircle, MoreVertical, Printer, User } from 'lucide-react';
+import { Clock, ExternalLink, FileCheck, MessageCircle, MoreVertical, Printer, User, Wallet } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -42,6 +42,12 @@ function formatMoney(n: number): string {
 function formatDate(d: string | null): string {
   if (!d) return '–';
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(d));
+}
+
+/** Time-of-day only, e.g. for the clock part of created_at on a second line (B1). */
+function formatTime(d: string | null): string {
+  if (!d) return '';
+  return new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(new Date(d));
 }
 
 // ── Payment Proof cell ───────────────────────────────────────────────────────
@@ -150,6 +156,15 @@ function OrderActionsMenu({ order, callbacks }: { order: Order; callbacks: Order
           </DropdownMenuItem>
         ) : null}
         <DropdownMenuSeparator />
+        {/* A5/A6 — Payment & Proof reachable from the grid. Opens the order drawer, whose
+            Payment tab hosts the canonical PaymentProofSection (upload/verify/reject/replace)
+            and the Record Payment action. Revives the already-threaded onVerifyPayment. */}
+        {callbacks.onVerifyPayment ? (
+          <DropdownMenuItem onClick={() => callbacks.onVerifyPayment!(order)}>
+            <Wallet className="size-3.5" />
+            {t($ => $.actions.paymentAndProof)}
+          </DropdownMenuItem>
+        ) : null}
         {callbacks.onPrint ? (
           <DropdownMenuItem onClick={() => callbacks.onPrint!(order)}>
             <Printer className="size-3.5" />
@@ -454,7 +469,10 @@ export function createOrderColumns(
       },
     },
 
-    // ── Created ───────────────────────────────────────────────────────────────
+    // ── Created (date + time) ────────────────────────────────────────────────
+    // B1/B4 — created_at is the canonical order timestamp (no duplicate order_time column);
+    // surface the TIME as well as the date. The date is the order date; the clock is the
+    // order time.
     {
       key: 'created_at',
       label: t($ => $.columns.createdAt),
@@ -462,7 +480,10 @@ export function createOrderColumns(
       sortable: true,
       skeletonClassName: 'h-4 w-20',
       cell: (order) => (
-        <span className="text-xs text-muted-foreground tabular-nums">{formatDate(order.created_at)}</span>
+        <div className="flex flex-col leading-tight">
+          <span className="text-xs text-muted-foreground tabular-nums">{formatDate(order.created_at)}</span>
+          <span className="text-[11px] text-muted-foreground/70 tabular-nums">{formatTime(order.created_at)}</span>
+        </div>
       ),
     },
 
@@ -562,11 +583,15 @@ export function createOrderColumns(
       ),
     },
 
-    // ── Delivery Window (hidden) ──────────────────────────────────────────────
+    // ── Requested Delivery (date + time) ──────────────────────────────────────
+    // B2/B3 — the canonical requested-delivery contract: requested_delivery_date plus
+    // delivery_window (concrete slot) or preferred_delivery_time (morning/afternoon/evening).
+    // Now visible by default so the operator sees delivery date AND time distinct from the
+    // order's own created_at.
     {
       key: 'delivery_window',
       label: t($ => $.columns.deliveryWindow),
-      defaultVisible: false,
+      defaultVisible: true,
       skeletonClassName: 'h-4 w-28',
       cell: (order) => {
         const date   = order.requested_delivery_date;

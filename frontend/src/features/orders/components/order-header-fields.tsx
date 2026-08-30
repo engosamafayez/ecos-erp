@@ -14,11 +14,12 @@ export function OrderHeaderFields() {
   const { data: customerOptions = [], isLoading: loadingCustomers } = useCustomerOptions();
   const { data: channelOptions = [], isLoading: loadingChannels } = useChannelOptions();
 
+  // ADR-042 §3 — canonical creation entry states. `confirmed` is NOT offered:
+  // it is reachable only through the Confirm action.
   const statusOptions = [
-    { value: 'new', label: t($ => $.status.new) },
     { value: 'in_progress', label: t($ => $.status.in_progress) },
-    { value: 'delivered', label: t($ => $.status.delivered) },
-    { value: 'cancelled', label: t($ => $.status.cancelled) },
+    { value: 'scheduled', label: t($ => $.status.scheduled) },
+    { value: 'awaiting_payment', label: t($ => $.status.awaiting_payment) },
   ];
 
   return (
