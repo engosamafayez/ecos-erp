@@ -400,12 +400,14 @@ final class FulfillmentController extends Controller
      *
      * Architecture rules (carried forward, restated in V3):
      *   - Cancelled is not terminal; orders may be reopened from cancelled.
-     *   - InProgress is the single reserved state (PD-2 collapses V2's
-     *     `confirmed` + `processing`).
-     *   - Execution chain: InProgress → ReadyForDispatch → OutForDelivery → Delivered.
+     *   - InProgress and Confirmed both hold inventory (ADR-042 §6: reservation is
+     *     made at creation and is not moved by Confirm).
+     *   - Execution chain: InProgress/Confirmed → ReadyForDispatch → OutForDelivery
+     *     → Delivered.
      *   - Delivered is terminal (PD-2). There is no Completed edge; financial
      *     completion remains the dedicated /complete route.
-     *   - Returning to New or AwaitingPayment releases inventory.
+     *   - Unlocking (Confirmed → InProgress) or returning to AwaitingPayment
+     *     releases inventory.
      *   - Moving between other early states keeps any existing reservation.
      */
     private function resolveTransitionWorkflow(string $current, string $target): ?FulfillmentWorkflowInterface
@@ -421,18 +423,25 @@ final class FulfillmentController extends Controller
         // enforces the delivery-date constraint before allowing activation.
         $earlyStates = [
             OrderStatus::Scheduled->value,
-            OrderStatus::NewOrder->value,
             OrderStatus::AwaitingPayment->value,
             OrderStatus::AwaitingStock->value,
             OrderStatus::OnHold->value,
             OrderStatus::Cancelled->value,
         ];
-        // Reserved states: inventory is held and products are locked.
-        // V2's `processing` and `confirmed` both map here (PD-2).
-        $reservedStates = [OrderStatus::InProgress->value];
+        // Reserved states: inventory is held.
+        // ADR-042: `in_progress` holds a reservation (made at creation) but is NOT
+        // structurally locked; `confirmed` holds one and IS locked. Both belong here
+        // because this set is about inventory, not about the edit lock.
+        $reservedStates = [
+            OrderStatus::InProgress->value,
+            OrderStatus::Confirmed->value,
+        ];
 
         // ── 1. Execution chain ────────────────────────────────────────────────────
-        if ($current === OrderStatus::InProgress->value && $target === OrderStatus::ReadyForDispatch->value) {
+        // Both fulfilment-eligible states may be marked ready (ADR-042 §7).
+        if (in_array($current, [OrderStatus::InProgress->value, OrderStatus::Confirmed->value], true)
+            && $target === OrderStatus::ReadyForDispatch->value
+        ) {
             return $this->prepWorkflow;
         }
         if ($current === OrderStatus::ReadyForDispatch->value && $target === OrderStatus::OutForDelivery->value) {
@@ -475,14 +484,16 @@ final class FulfillmentController extends Controller
             return $this->processWorkflow;
         }
 
-        // ── 5. TO new (V2 `pending`) ──────────────────────────────────────────────
-        // reserved → new: release inventory (products become editable)
-        if (in_array($current, $reservedStates, true) && $target === OrderStatus::NewOrder->value) {
-            return $this->returnToPendingWorkflow;
+        // ── 5. TO confirmed — the explicit Confirm action (ADR-042 §5.3) ──────────
+        if ($target === OrderStatus::Confirmed->value) {
+            return $this->confirmWorkflow;
         }
-        // early → new: simple status change, no inventory
-        if (in_array($current, $earlyStates, true) && $target === OrderStatus::NewOrder->value) {
-            return $this->setEarlyStatusWorkflow;
+
+        // ── 5b. UNLOCK: confirmed → in_progress (ADR-042 §5.4) ────────────────────
+        // Releases the structural lock and the reservation so the order is editable
+        // again. This replaces the V3 `→ new` edge.
+        if ($current === OrderStatus::Confirmed->value && $target === OrderStatus::InProgress->value) {
+            return $this->returnToPendingWorkflow;
         }
 
         // ── 6. TO awaiting_payment ────────────────────────────────────────────────

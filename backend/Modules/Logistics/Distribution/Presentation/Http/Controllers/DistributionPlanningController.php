@@ -14,7 +14,21 @@ use Modules\Logistics\Distribution\Domain\Models\DistributionZonePlan;
 
 class DistributionPlanningController extends Controller
 {
-    private const READY_STATUSES = ['confirmed', 'preparing'];
+    /**
+     * D2 REMEDIATION (ADR-042 §2/§7/§12). The fulfilment-eligible statuses for this
+     * planning/KPI surface, derived from the ONE canonical Distribution eligibility contract
+     * (`config('distribution.eligible_order_statuses')`, itself sourced from
+     * `OrderStatus::fulfilmentEligible()` = ['in_progress', 'confirmed']). This replaces the
+     * hardcoded ['confirmed', 'preparing'] which carried pre-V3 'preparing' (invalid under
+     * ADR-042) and omitted 'in_progress'. Not a new predicate — the same list the Distribution
+     * subsystem already owns.
+     *
+     * @return list<string>
+     */
+    private function readyStatuses(): array
+    {
+        return array_values((array) config('distribution.eligible_order_statuses', []));
+    }
 
     // ── Stats (KPI header) ────────────────────────────────────────────────────
 
@@ -23,7 +37,7 @@ class DistributionPlanningController extends Controller
         $date = $request->input('date');
 
         $ordersQuery = DB::table('orders')
-            ->whereIn('status', self::READY_STATUSES)
+            ->whereIn('status', $this->readyStatuses())
             ->whereNull('deleted_at');
 
         if ($date) {
@@ -53,7 +67,7 @@ class DistributionPlanningController extends Controller
         // Distinct products across all ready orders
         $productQuery = DB::table('order_lines as ol')
             ->join('orders as o', 'o.id', '=', 'ol.order_id')
-            ->whereIn('o.status', self::READY_STATUSES)
+            ->whereIn('o.status', $this->readyStatuses())
             ->whereNull('o.deleted_at');
 
         if ($date) {
@@ -81,7 +95,7 @@ class DistributionPlanningController extends Controller
         $showEmpty = filter_var($request->input('show_empty', false), FILTER_VALIDATE_BOOLEAN);
 
         $ordersQuery = DB::table('orders')
-            ->whereIn('status', self::READY_STATUSES)
+            ->whereIn('status', $this->readyStatuses())
             ->whereNull('deleted_at');
 
         if ($date) {
@@ -211,7 +225,7 @@ class DistributionPlanningController extends Controller
         $search = $request->input('search');
 
         $ordersQuery = DB::table('orders as o')
-            ->whereIn('o.status', self::READY_STATUSES)
+            ->whereIn('o.status', $this->readyStatuses())
             ->whereNull('o.deleted_at');
 
         if ($date) {
@@ -476,7 +490,7 @@ class DistributionPlanningController extends Controller
         [$zoneMap, $nameMap] = $this->buildCityZoneMaps();
 
         $query = DB::table('orders')
-            ->whereIn('status', self::READY_STATUSES)
+            ->whereIn('status', $this->readyStatuses())
             ->whereNull('deleted_at');
 
         if ($date) {

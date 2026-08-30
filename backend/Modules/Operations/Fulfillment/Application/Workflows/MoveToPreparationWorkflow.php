@@ -36,9 +36,12 @@ final class MoveToPreparationWorkflow implements FulfillmentWorkflowInterface
     {
         $order = $ctx->order;
 
-        if ($order->status !== OrderStatus::InProgress) {
+        // ADR-042 §7 — both fulfilment-eligible states may enter Preparation.
+        // B3 makes `confirmed` operationally eligible, so gating on InProgress alone
+        // would leave every confirmed order unable to reach Ready for Dispatch.
+        if (! in_array($order->status, OrderStatus::fulfilmentEligible(), true)) {
             throw new WorkflowPreconditionException(
-                "Order [{$order->id}] must be In Progress to become Ready for Dispatch. Current: [{$order->status->value}].",
+                "Order [{$order->id}] must be In Progress or Confirmed to become Ready for Dispatch. Current: [{$order->status->value}].",
             );
         }
 
@@ -65,6 +68,39 @@ final class MoveToPreparationWorkflow implements FulfillmentWorkflowInterface
                 'Use the approve-partial-reservation endpoint to grant approval.',
             );
         }
+
+        // A missing warehouse is a PRECONDITION FAILURE for this workflow, not a success.
+        //
+        // This is an operator explicitly asserting "this order is ready for dispatch". It is
+        // not, and it cannot be: with no warehouse there is nowhere to reserve from, so the
+        // order will not reach ready_for_dispatch no matter what this method returns.
+        //
+        // It belongs in guard() with the three preconditions above, for four reasons:
+        //   1. RC-10 certification (committed) asserts 422 for exactly this request.
+        //   2. `FulfillmentResult` cannot express a refusal — the only channel the API has
+        //      for refusing an operator-requested transition is WorkflowPreconditionException.
+        //   3. The dispatch path already returns 422 on this same condition, so returning
+        //      200 here made the tree internally inconsistent.
+        //   4. FulfillmentEngine writes its audit OrderEvent AFTER execute(); returning
+        //      success recorded a `ready_for_dispatch` event for an order that never became
+        //      ready. guard() runs before the transaction, so refusing here writes no event.
+        //
+        // ADR-027 §2/§10 are untouched by this: they govern the DOMAIN state (decision stays
+        // active, execution postponed, reservation_status `pending`, no lifecycle change, and
+        // never `awaiting_stock`) and say nothing about the HTTP outcome. The reservation
+        // decision is stamped at order entry by ProcessOrderWorkflow / ConfirmOrderWorkflow,
+        // not here. The automatic path stays a success; only this operator-initiated one refuses.
+        if ($order->assigned_warehouse_id === null) {
+            $activeReservationStates = [ReservationStatus::Reserved, ReservationStatus::PartialReserved];
+
+            if (! in_array($order->reservation_status, $activeReservationStates, true)) {
+                throw new WorkflowPreconditionException(
+                    "Order [{$order->id}] has no assigned warehouse and cannot become Ready for Dispatch. ".
+                    'Reservation execution is postponed until a warehouse is assigned; '.
+                    'the order remains recoverable and its status is unchanged.',
+                );
+            }
+        }
     }
 
     public function execute(FulfillmentContext $ctx): FulfillmentResult
@@ -75,21 +111,39 @@ final class MoveToPreparationWorkflow implements FulfillmentWorkflowInterface
         // Automatic Reservation Guard — create reservation on-the-fly when not yet reserved.
         $activeStates = [ReservationStatus::Reserved, ReservationStatus::PartialReserved];
         if (! in_array($order->reservation_status, $activeStates, true)) {
+            // The null-warehouse case never reaches here — guard() refuses it with a 422
+            // before the transaction opens. See the precondition block above.
             $reservationResult = $this->reserveInventory->execute($order);
             $order->refresh();
             $reservationCreated = true;
 
             if ($reservationResult === ReservationStatus::AwaitingStock) {
-                $order->update(['status' => OrderStatus::AwaitingStock]);
-                $order->refresh();
+                // Same rule as ProcessOrderWorkflow: the shortage is recorded on
+                // `reservation_status`, and only a status that yields to a stock block
+                // is rewritten. This guard admits InProgress and Confirmed
+                // (OrderStatus::fulfilmentEligible), so the unconditional write here
+                // used to silently un-confirm a Confirmed order — the very thing
+                // ADR-042 §6 forbids and which this workflow's sibling already avoided.
+                //
+                // Either way the order does NOT become Ready for Dispatch: it cannot,
+                // with nothing reserved.
+                $statusChanged = $order->status->yieldsToStockBlock();
+
+                if ($statusChanged) {
+                    $order->update(['status' => OrderStatus::AwaitingStock]);
+                    $order->refresh();
+                }
 
                 return FulfillmentResult::success(
                     $order,
-                    "Order #{$order->order_number} cannot become Ready for Dispatch — insufficient stock. Moved to Awaiting Stock.",
+                    $statusChanged
+                        ? "Order #{$order->order_number} cannot become Ready for Dispatch — insufficient stock. Moved to Awaiting Stock."
+                        : "Order #{$order->order_number} cannot become Ready for Dispatch — insufficient stock. Status [{$order->status->value}] preserved.",
                     [
                         'actor_id'            => $ctx->actorId,
                         'reservation_created' => true,
                         'reservation_status'  => $order->reservation_status?->value,
+                        'status_preserved'    => ! $statusChanged,
                         'started_at'          => now()->toIso8601String(),
                     ],
                 );

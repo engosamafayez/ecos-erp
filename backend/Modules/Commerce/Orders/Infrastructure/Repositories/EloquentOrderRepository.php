@@ -13,9 +13,12 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
 {
     private const SORTABLE = ['order_number', 'order_date', 'status', 'total', 'created_at'];
 
-    private const WITH = ['channel', 'customer', 'lines.product.unit'];
+    // `assignedWarehouse` is eager-loaded on BOTH surfaces so OrderResource can resolve
+    // the canonical fulfillment warehouse to a name without an N+1
+    // (TASK-ORDERS-PREPARATION-PAYMENT-FINAL-FIX-001, D4).
+    private const WITH = ['channel', 'customer', 'lines.product.unit', 'assignedWarehouse'];
 
-    private const WITH_DETAIL = ['channel', 'customer', 'lines.product.unit', 'fees', 'coupons', 'orderNotes'];
+    private const WITH_DETAIL = ['channel', 'customer', 'lines.product.unit', 'fees', 'coupons', 'orderNotes', 'assignedWarehouse'];
 
     public function paginate(array $filters): LengthAwarePaginator
     {

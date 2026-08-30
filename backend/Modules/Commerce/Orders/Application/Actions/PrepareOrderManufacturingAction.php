@@ -69,6 +69,52 @@ final class PrepareOrderManufacturingAction
         }
     }
 
+    /**
+     * Line-scoped variant of {@see execute()}: manufacture ONLY the explicitly
+     * authorized order lines, leaving every other line completely untouched.
+     *
+     * WHY (TASK-MTO-GATE1-PRECONDITION-CLOSURE-001, Blocker B): a mixed order may
+     * contain a line that must be manufactured now (e.g. one driver-confirmed line
+     * being reconciled) alongside a sibling line that must NOT be. The order-scoped
+     * execute() cannot express that. This seam reuses the SAME canonical per-line path
+     * ({@see processLine()} → OrderLifecycleCoordinator → ManufacturingLifecycleHandler
+     * → ManufacturingApplicationService → executor), so it introduces NO second
+     * manufacturing engine, recipe resolver, stock consumer, or production-transaction
+     * authority — it only narrows which lines the existing pipeline is invoked for.
+     *
+     * A line id that is not on the order is ignored (it matches nothing); the
+     * Executed-line idempotency guard in {@see processLine()} still applies.
+     *
+     * @param  list<string>  $orderLineIds  the exact lines authorized for manufacturing
+     *
+     * @throws OrderWarehouseNotAssignedException when no warehouse is assigned
+     */
+    public function executeForLines(Order $order, array $orderLineIds): void
+    {
+        if ($order->assigned_warehouse_id === null) {
+            throw new OrderWarehouseNotAssignedException($order->id);
+        }
+
+        // Empty scope is a no-op — never fall back to "all lines".
+        $authorized = array_values(array_unique(array_map('strval', $orderLineIds)));
+        if ($authorized === []) {
+            return;
+        }
+
+        $order->loadMissing('lines.product', 'assignedWarehouse');
+
+        $warehouseId = (string) $order->assigned_warehouse_id;
+        $companyId = (string) $order->assignedWarehouse->company_id;
+
+        foreach ($order->lines as $line) {
+            if (! in_array((string) $line->id, $authorized, strict: true)) {
+                continue; // sibling line NOT authorized — never processed, never manufactured
+            }
+
+            $this->processLine($line, $order, $warehouseId, $companyId);
+        }
+    }
+
     // ── Private helpers ────────────────────────────────────────────────────────
 
     private function processLine(

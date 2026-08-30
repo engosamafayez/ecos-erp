@@ -13,12 +13,15 @@ use Modules\Commerce\Orders\Application\Actions\ReserveOrderInventoryAction;
 use Modules\Commerce\Orders\Domain\Contracts\OrderRepositoryInterface;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Commerce\Orders\Domain\Models\Order;
+use Modules\Commerce\Orders\Domain\Services\PaymentFulfillmentGate;
 use Modules\Commerce\Shipping\Domain\Services\ShippingValidationService;
 use Modules\Commerce\Synchronization\Application\Services\WooCommerceOrderStatusTranslator;
 use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\Logistics\Geography\Domain\Models\City;
 use Modules\Logistics\Geography\Domain\Models\Governorate;
+use Modules\Organization\Brands\Domain\Models\Brand;
 use Modules\Sales\Customers\Domain\Models\Customer;
+use RuntimeException;
 use Throwable;
 
 final class WooCommerceOrderImporter
@@ -36,6 +39,9 @@ final class WooCommerceOrderImporter
         private readonly ConfigurationManager $config,
         private readonly ShippingValidationService $shippingEngine,
         private readonly WooCommerceOrderStatusTranslator $statusTranslator,
+        // The SAME gate the manual and standard creation paths consult. Import is a third
+        // creation path, so it is subject to the same financial control — see buildOrder().
+        private readonly PaymentFulfillmentGate $paymentGate,
     ) {}
 
     /**
@@ -335,7 +341,11 @@ final class WooCommerceOrderImporter
         $wooNumber = (string) ($wooOrder['number'] ?? $externalId);
         $wooStatus = (string) ($wooOrder['status'] ?? 'pending');
         // P5 fix: use the canonical WooCommerce → ECOS status translator (single source of truth).
-        $status = $this->statusTranslator->translate($wooStatus)?->value ?? 'pending';
+        // The fallback is the canonical entry state, not 'pending': an untranslatable
+        // WC status (trash, plugin-custom) previously fell through to a value no enum
+        // case accepts, so OrderStatus::from() below would throw and abort the import.
+        $status = $this->statusTranslator->translate($wooStatus)?->value
+            ?? OrderStatus::InProgress->value;
 
         $dateCreated = (string) ($wooOrder['date_created'] ?? '');
         $orderDate = $dateCreated !== '' ? substr($dateCreated, 0, 10) : now()->toDateString();
@@ -358,8 +368,15 @@ final class WooCommerceOrderImporter
         $billingLastName = trim((string) ($billing['last_name'] ?? ''));
         $billingFullName = trim("{$billingFirstName} {$billingLastName}");
 
+        $companyId = $this->resolveCompanyId($channel);
+
         $orderAttributes = [
             'channel_id' => (string) $channel->id,
+            // TENANT OWNERSHIP. Previously absent, so every imported order was written with
+            // `company_id = NULL` — invisible to Order's tenant read scope and outside every
+            // company-scoped control. Resolved deterministically from the integration context
+            // (see resolveCompanyId), never from Auth and never from a "first company" guess.
+            'company_id' => $companyId,
             'assigned_warehouse_id' => null,
             'customer_id' => (string) $customer->id,
             // Customer snapshot — name as provided by WooCommerce at import time
@@ -464,7 +481,7 @@ final class WooCommerceOrderImporter
             }
         }
 
-        // Shipping Engine validation — soft (never blocks import; sets to pending on rejection)
+        // Shipping Engine validation — soft (never blocks import; parks on `on_hold` on rejection)
         if ($channel->brand_id !== null) {
             $statusOverride = $this->evaluateWooShipping(
                 (string) $channel->brand_id,
@@ -477,15 +494,109 @@ final class WooCommerceOrderImporter
             }
         }
 
+        // ── ADR-042 §3.1 (as amended; owner decision D1-A) ────────────────────────────
+        // Import is a THIRD creation path and was the only one not subject to the payment
+        // control: it wrote `status` straight from the WooCommerce status map — `pending` and
+        // `processing` both land on `in_progress`, and so does the fallback for any status
+        // nobody mapped — so a proof-required method could reach a fulfilment-eligible status
+        // with zero payment and zero proof, and nothing downstream ever re-read it (the
+        // re-evaluation triggers all fire on order edit, payment, or proof, none of which an
+        // import performs).
+        //
+        // The check is the same `permitsAtCreation()` CreateOrderAction and
+        // CreateManualOrderAction call, on the same gate, resolving through the same policy
+        // chain. Condition 2 of the control is unsatisfiable at creation time on every path
+        // for the same reason — a `payment_proofs` row needs an order that already exists — so
+        // a proof-required method parks at `awaiting_payment` here exactly as it does there.
+        //
+        // PLACED LAST, DELIBERATELY. §3.1 gives the payment block precedence over every other
+        // creation-time status decision, naming the shipping-review override specifically.
+        //
+        // NO GATEWAY MAPPING IS INVENTED HERE, and this is the limit of what the change can
+        // claim. `payment_method` is a raw WooCommerce gateway id; the gate resolves an
+        // unrecognised key to 'none' (its certified key-miss behaviour), so the control binds
+        // only where the gateway id happens to equal an ECOS policy key — `instapay`,
+        // `bank_transfer`, `mobile_wallet`, `credit_card`, `cod`. A store whose instapay
+        // gateway is called `paymob` is still unguarded. Closing that needs a Woo-gateway
+        // vocabulary that does not exist anywhere in this codebase; inventing one would be a
+        // guess, and it is reported as an owner decision rather than made here.
+        if (! $this->paymentGate->permitsAtCreation(
+            $orderAttributes['payment_method'] ?? null,
+            (string) $channel->id,
+            $companyId,
+        )) {
+            $orderAttributes['status'] = OrderStatus::AwaitingPayment->value;
+        }
+
         return [$orderAttributes, $lines, $fees, $coupons, $failedLines, $lineErrors];
+    }
+
+    /**
+     * The company that owns an imported order, resolved from the integration context alone.
+     *
+     * CHAIN: `channel.brand_id → brands.company_id`. This is the platform's existing convention
+     * for deriving tenancy from a channel (`EloquentChannelRepository::paginate()` filters
+     * `whereHas('brand', …)`, and the channel factory itself reads the brand's company), and it
+     * is the only chain available here: the webhook path is unauthenticated and runs on a queue
+     * worker, so `Auth::user()` is null by construction.
+     *
+     * `brands.company_id` is NOT NULL with an enforced foreign key, so the chain has exactly one
+     * link that can break — `channels.brand_id`, which is nullable at the database layer only
+     * because the migration that was meant to tighten it returns early on an inverted guard. It
+     * is `required` in both the create and update channel requests, so no HTTP path can produce
+     * such a row.
+     *
+     * If it breaks anyway, this THROWS rather than importing an untenanted order. Both callers
+     * already treat a per-order throw as a recorded skip, so one misconfigured channel is
+     * reported and no cross-tenant row is written. Failing closed is the point: an order with no
+     * owner is not a lesser version of an order, it is a row no tenant control can see.
+     */
+    private function resolveCompanyId(Channel $channel): string
+    {
+        $brandId = $channel->brand_id;
+
+        $companyId = $brandId !== null
+            ? Brand::query()->whereKey($brandId)->value('company_id')
+            : null;
+
+        if ($companyId === null || (string) $companyId === '') {
+            throw new RuntimeException(
+                "Channel [{$channel->id}] resolves to no owning company (brand_id is null or its brand is missing). "
+                .'Refusing to import an order with no tenant.',
+            );
+        }
+
+        return (string) $companyId;
     }
 
     /**
      * Attempt to resolve Egypt governorate/city from free-text WooCommerce fields,
      * then run the Shipping Engine. Returns a status override string or null.
      *
-     * Import is NEVER blocked — on 'reject' we log and set the order to 'pending'
-     * for human review. WooCommerce orders already exist; we must ingest them.
+     * Import is NEVER blocked — a rejected or review-flagged destination parks the order for
+     * human triage instead. WooCommerce orders already exist; we must ingest them.
+     *
+     * The parking status is `on_hold`, and that is not a choice made here — it is the one this
+     * branch has always been trying to reach:
+     *
+     *   - `CreateManualOrderAction::…` performs the IDENTICAL `requiresReview()` decision on the
+     *     same engine and writes `OrderStatus::OnHold->value`. That is the certified sibling of
+     *     this branch, and the `status_override` ADR-042 §3.1 names by that phrase.
+     *   - the legacy value this branch was written against, `needs_shipping_review`, was migrated
+     *     to `review` (2026_07_13_000001) and `review` to `on_hold` (2026_07_22_100000, re-applied
+     *     by 2026_08_13_100000). ADR-042 §8's normalisation table records `review → on_hold`.
+     *   - `PatchOrderAction` routes a transition INTO `on_hold` through the review workflow, and
+     *     `on_hold` is absent from `OrderStatus::fulfilmentEligible()`, so a parked order is
+     *     correctly withheld from Preparation, Distribution and the Wave engine until triaged.
+     *
+     * PREVIOUSLY: this returned `OrderStatus::NeedsShippingReview->value` — an enum case that has
+     * never existed in any revision of `OrderStatus`. It was a fatal `Error`, not a wrong status,
+     * from the day the call site was written (2026-07-16); PHPStan caught it and it was frozen in
+     * `phpstan-baseline-platform.neon`. That baseline entry is removed with this fix.
+     *
+     * The old docblock claimed the target was `pending`. That is doubly wrong — `pending` is not
+     * a canonical case, and ADR-015 explicitly forbids collapsing shipping review into a generic
+     * holding state. It is not evidence of intent and was not followed.
      */
     private function evaluateWooShipping(
         string $brandId,
@@ -534,7 +645,9 @@ final class WooCommerceOrderImporter
             return null; // No override needed
         }
 
-        // pending_review or reject → downgrade to pending for human triage
+        // pending_review or reject → park on `on_hold` for human triage. Both outcomes share one
+        // status deliberately: import must never be blocked, so a rejected destination is held
+        // for a human rather than refused (unlike the manual path, which hard-fails on reject).
         Log::channel('daily')->info('[WooImport] Shipping validation issue', [
             'external_id' => $externalId,
             'brand_id' => $brandId,
@@ -544,7 +657,7 @@ final class WooCommerceOrderImporter
             'reason' => $result->reason,
         ]);
 
-        return OrderStatus::NeedsShippingReview->value;
+        return OrderStatus::OnHold->value;
     }
 
     private function nextCustomerCode(): string

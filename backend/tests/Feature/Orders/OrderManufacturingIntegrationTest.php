@@ -25,6 +25,7 @@ use Modules\Manufacturing\ManufacturingService\Application\Services\Manufacturin
 use Modules\Manufacturing\ManufacturingWorkflow\Domain\Services\ManufacturingWorkflow;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Operations\OrderLifecycle\Application\Services\OrderLifecycleCoordinator;
+use Modules\Organization\Brands\Domain\Models\Brand;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Modules\Sales\Customers\Domain\Models\Customer;
 use Tests\TestCase;
@@ -53,6 +54,18 @@ class OrderManufacturingIntegrationTest extends TestCase
 
     private Company $company;
 
+    /**
+     * Every product in this suite must hang off THIS brand.
+     *
+     * ADR-027 §16.4 scopes recipe-component availability to the company that owns the
+     * finished good, resolved as Product → Brand → Company (ADR-013), and fails closed:
+     * "when the finished good has no derivable company, the engine exposes no inventory."
+     * `ProductFactory` gives each product its own `Brand::factory()`, and each of those
+     * makes its own Company — so without this the finished good, its components and the
+     * warehouse all sat in different tenants and the recipe read zero stock.
+     */
+    private Brand $brand;
+
     private Warehouse $warehouse;
 
     private Customer $customer;
@@ -65,6 +78,7 @@ class OrderManufacturingIntegrationTest extends TestCase
         $this->registerRule(DecisionType::Approve);
 
         $this->company = Company::factory()->create();
+        $this->brand = Brand::factory()->create(['company_id' => $this->company->id]);
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
         $this->customer = Customer::factory()->create();
 
@@ -108,7 +122,7 @@ class OrderManufacturingIntegrationTest extends TestCase
 
     private function makeOutput(bool $canManufacture = true): Product
     {
-        $product = Product::factory()->finishedGood()->create();
+        $product = Product::factory()->finishedGood()->create(['brand_id' => $this->brand->id]);
         if ($canManufacture) {
             $product->update(['can_manufacture' => true]);
         }
@@ -118,12 +132,15 @@ class OrderManufacturingIntegrationTest extends TestCase
 
     private function makePurchasedProduct(): Product
     {
-        return Product::factory()->finishedGood()->create(['can_manufacture' => false]);
+        return Product::factory()->finishedGood()->create([
+            'brand_id' => $this->brand->id,
+            'can_manufacture' => false,
+        ]);
     }
 
     private function makeComponent(): Product
     {
-        return Product::factory()->rawMaterial()->create();
+        return Product::factory()->rawMaterial()->create(['brand_id' => $this->brand->id]);
     }
 
     private function makeRecipe(Product $output): Recipe
@@ -200,7 +217,10 @@ class OrderManufacturingIntegrationTest extends TestCase
         $this->action->execute($order->id);
 
         $order->refresh();
-        $this->assertEquals(OrderStatus::InProgress, $order->status);
+        // ADR-042 V3: MoveToPreparationWorkflow flips the order to Ready for Dispatch
+        // (the workflow's own name() and the manual PrepareOrderAction success gate).
+        // The prior assertion expected InProgress and pre-dated that V3 change.
+        $this->assertEquals(OrderStatus::ReadyForDispatch, $order->status);
 
         $line = $this->freshLine($order->lines->first());
         $this->assertEquals(OrderLineManufacturingState::Executed, $line->manufacturing_state);
@@ -215,7 +235,7 @@ class OrderManufacturingIntegrationTest extends TestCase
         ]);
     }
 
-    public function test_preparing_sets_order_status_to_preparing(): void
+    public function test_preparing_sets_order_status_to_ready_for_dispatch(): void
     {
         $output = $this->makeOutput();
         $component = $this->makeComponent();
@@ -227,9 +247,11 @@ class OrderManufacturingIntegrationTest extends TestCase
 
         $this->action->execute($order->id);
 
+        // ADR-042 V3: prepare drives the order to ready_for_dispatch (was in_progress
+        // under the pre-V3 "invisible preparing" vocabulary this assertion pre-dated).
         $this->assertDatabaseHas('orders', [
             'id' => $order->id,
-            'status' => 'in_progress',
+            'status' => 'ready_for_dispatch',
         ]);
     }
 
@@ -315,8 +337,19 @@ class OrderManufacturingIntegrationTest extends TestCase
 
     public function test_product_without_recipe_is_skipped(): void
     {
-        // Product is flagged can_manufacture=true but has no active recipe
-        $output = Product::factory()->finishedGood()->create(['can_manufacture' => true]);
+        // Product is flagged can_manufacture=true but has no active recipe.
+        // Under ADR-027 v1.5 order-driven fulfilment, a zero-stock finished good with no
+        // executable recipe routes to Awaiting Stock at RESERVATION — before it can reach
+        // preparation at all — so the manual prepare returns early and the manufacturing
+        // policy is never consulted. To exercise the intent of THIS test (a product with no
+        // recipe is skipped BY THE MANUFACTURING POLICY, not manufactured), the product must
+        // first be able to reach Ready for Dispatch: seeding physical FG stock lets
+        // reservation succeed (Case 1), after which the policy skips it for the missing recipe.
+        $output = Product::factory()->finishedGood()->create([
+            'brand_id' => $this->brand->id,
+            'can_manufacture' => true,
+        ]);
+        $this->seedInventory($output, 5.0);
 
         $order = $this->makeOrder([['product_id' => $output->id, 'quantity' => 1.0]]);
 
@@ -404,8 +437,10 @@ class OrderManufacturingIntegrationTest extends TestCase
         $this->assertEquals(OrderLineManufacturingState::Failed, $line->manufacturing_state);
         $this->assertNotNull($line->manufacturing_result);
 
-        // Order must NOT be corrupted — status still set to preparing
-        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'in_progress']);
+        // Order must NOT be corrupted — the fulfilment workflow committed ready_for_dispatch
+        // (ADR-042 V3) BEFORE the per-line manufacturing failure, and a Failed line does not
+        // roll the order status back. The prior assertion expected the pre-V3 'in_progress'.
+        $this->assertDatabaseHas('orders', ['id' => $order->id, 'status' => 'ready_for_dispatch']);
         $this->assertDatabaseCount('manufacturing_transactions', 0);
     }
 

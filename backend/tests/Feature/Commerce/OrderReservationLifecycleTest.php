@@ -221,7 +221,7 @@ class OrderReservationLifecycleTest extends TestCase
     {
         $product = Product::factory()->create();
         $item = $this->seedStock($product, onHand: 10.0);
-        $order = $this->makeOrder(status: 'new');
+        $order = $this->makeOrder(status: 'in_progress');
         $this->addLine($order, $product);
 
         // Order was never reserved — release is a no-op for stock.

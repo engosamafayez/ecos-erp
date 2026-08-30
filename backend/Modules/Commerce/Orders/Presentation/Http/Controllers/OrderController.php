@@ -18,9 +18,11 @@ use Modules\Commerce\Orders\Application\Actions\DeleteOrderAction;
 use Modules\Commerce\Orders\Application\Actions\GetOrderAction;
 use Modules\Commerce\Orders\Application\Actions\ListOrdersAction;
 use Modules\Commerce\Orders\Application\Actions\PatchOrderAction;
+use Modules\Commerce\Orders\Application\Actions\ResolveOrderLocationAction;
 use Modules\Commerce\Orders\Application\Actions\PrepareOrderAction;
 use Modules\Commerce\Orders\Application\Actions\ResolveProductPricingAction;
 use Modules\Commerce\Orders\Application\Actions\UpdateOrderAction;
+use Modules\Commerce\Orders\Application\Actions\RecordOrderPaymentAction;
 use Modules\Commerce\Orders\Application\Actions\VerifyPaymentAction;
 use Modules\Commerce\Orders\Application\DTO\OrderDTO;
 use Modules\Commerce\Orders\Application\Services\CreateOrderSnapshotService;
@@ -153,6 +155,26 @@ final class OrderController extends Controller
         return $this->success(new OrderResource($result->data()), $result->message());
     }
 
+    /**
+     * Resolve the order's map point (DISTRIBUTION MAP / ORDER LOCATION correction).
+     *
+     * Priority: captured coordinates, else geocode the COMPLETE delivery address
+     * server-side (Google key from config, never exposed to the browser). Returns an
+     * honest status — available / resolved_from_address / geocoding_failed /
+     * address_unavailable / not_configured — and never a city/zone substitute. A
+     * successful geocode persists the point with `location_source='geocoded'`.
+     */
+    public function resolveLocation(
+        string $order,
+        ResolveOrderLocationAction $action,
+    ): JsonResponse {
+        $model = Order::where('id', $order)
+            ->where('company_id', $this->currentCompany->id())
+            ->firstOrFail();
+
+        return $this->success($action->execute($model));
+    }
+
     public function destroy(string $order, DeleteOrderAction $action): JsonResponse
     {
         $result = $action->execute($order);
@@ -217,11 +239,12 @@ final class OrderController extends Controller
             OrderStatus::cases(),
         );
 
-        $manualValues = [
-            OrderStatus::NewOrder->value,
-            OrderStatus::AwaitingPayment->value,
-            OrderStatus::InProgress->value,
-        ];
+        // ADR-042 §3 — the three canonical creation entry states. `confirmed` is
+        // deliberately NOT offered: it is reachable only through the Confirm action.
+        $manualValues = array_map(
+            static fn (OrderStatus $s): string => $s->value,
+            OrderStatus::entryStatuses(),
+        );
 
         $posValues = [
             OrderStatus::InProgress->value,
@@ -270,6 +293,27 @@ final class OrderController extends Controller
             ->firstOrFail();
 
         $result = $action->execute($model, $validated['payment_proof_path'] ?? null);
+
+        return $this->success(new OrderResource($result->data()), $result->message());
+    }
+
+    /**
+     * Records a payment received against an order (partial or full). Payment state
+     * (unpaid / partially_paid / paid) is DERIVED from the amount received vs the
+     * order total — a deposit is never "paid". Does not write Order status.
+     * POST /orders/{order}/record-payment.
+     */
+    public function recordPayment(Request $request, string $order, RecordOrderPaymentAction $action): JsonResponse
+    {
+        $validated = $request->validate([
+            'amount' => 'required|numeric|gt:0',
+        ]);
+
+        $model = Order::where('id', $order)
+            ->where('company_id', $this->currentCompany->id())
+            ->firstOrFail();
+
+        $result = $action->execute($model, (float) $validated['amount']);
 
         return $this->success(new OrderResource($result->data()), $result->message());
     }
@@ -339,7 +383,7 @@ final class OrderController extends Controller
 
         // Pre-execution states where customer confirmation triggers automatic order status transition
         $preExecutionStatuses = [
-            OrderStatus::NewOrder,
+            OrderStatus::InProgress,
             OrderStatus::AwaitingPayment,
             OrderStatus::OnHold,
             OrderStatus::Scheduled,

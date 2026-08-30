@@ -10,13 +10,13 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Commerce\Orders\Domain\Models\Order;
-use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Operations\Preparation\Application\Services\WaveEngine\WaveMembershipService;
 use Modules\Operations\Preparation\Domain\Events\DemandRefreshRequested;
 use Modules\Operations\Preparation\Domain\Events\OrderRemovedFromWave;
 use Modules\Operations\Preparation\Domain\Models\PreparationWave;
 use Modules\Operations\Preparation\Domain\Models\PreparationWaveOrder;
 use Modules\Operations\Preparation\Domain\Models\WaveEngineConfiguration;
+use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Modules\Sales\Customers\Domain\Models\Customer;
 use Tests\TestCase;
@@ -402,7 +402,7 @@ final class WavePostponeOrderTest extends TestCase
             'auto_create' => true,
             'auto_assign_orders' => true,
             'auto_move_to_preparing' => false,
-            'eligible_order_statuses' => ['new', 'in_progress'],
+            'eligible_order_statuses' => ['in_progress', 'confirmed'], // ADR-042 §7 fulfilment-eligible (was pre-V3 ['new','in_progress'])
             'timezone' => 'UTC',
             'is_active' => true,
             'created_by' => 1,

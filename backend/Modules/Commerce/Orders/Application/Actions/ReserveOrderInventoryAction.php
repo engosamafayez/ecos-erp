@@ -36,20 +36,25 @@ use Throwable;
  * Does NOT throw InsufficientStockException for insufficient stock — that
  * concern has moved to the returned status.
  *
- * Policy — TASK-GOLIVE-RECIPE-GATE-TENANT-REPAIR-001 (Option B, owner-approved),
- * superseding the previous "can_manufacture reserves unconditionally" rule:
+ * Policy — TASK-ORDER-PREPARATION-FULFILLABILITY-CONTRACT-001 (owner-approved,
+ * ADR-027 §16 v1.5). ECOS is order-driven preparation / made-to-order, so a
+ * finished product's fulfillability is: PHYSICAL FG STOCK **or** an EXECUTABLE
+ * PREPARATION RECIPE. This supersedes the previous Option B rule that additionally
+ * required the `can_manufacture` capability flag — that flag no longer gates order
+ * fulfilment (see ADR-027 §16 v1.5 and §19).
  *
  *   Physical Finished Product stock is reserved first and is NEVER gated by the
  *   recipe (Case 1) — an order that can ship from stock always ships from stock.
  *
- *   Only when FG stock is insufficient and the product is manufacture-backed does
- *   the recipe matter: manufacturing may be committed only if the recipe is
- *   actually executable. An unexecutable recipe falls through to the existing
- *   shortage path, which lets the V3 workflow produce Awaiting Stock itself.
+ *   When FG stock is insufficient, the recipe decides: the commitment is made only
+ *   if the preparation recipe is actually executable (every required material
+ *   available OR allow_negative). An unexecutable recipe — or no recipe at all —
+ *   falls through to the shortage path, which lets the V3 workflow produce Awaiting
+ *   Stock itself. Recipe-backed finished goods with zero FG stock are fulfillable.
  *
  * ManufacturingAvailabilityService remains the single authority for recipe
- * availability (ADR-027) — the material-level allow_negative_stock rule is read
- * from it, never recomputed here.
+ * executability (ADR-027 §16.3) — the material-level allow_negative_stock rule is
+ * read from it, never recomputed here.
  */
 final class ReserveOrderInventoryAction
 {
@@ -75,15 +80,26 @@ final class ReserveOrderInventoryAction
     ) {}
 
     /**
-     * Is manufacturing actually able to cover this finished good right now?
+     * Is this finished good's PREPARATION RECIPE executable right now?
      *
-     * 'recipe_missing' does NOT block: a product with no active recipe keeps its
-     * prior behaviour. Only an explicitly unexecutable recipe withholds the
-     * manufacturing commitment.
+     * TASK-ORDER-PREPARATION-FULFILLABILITY-CONTRACT-001: order fulfilment is now
+     * gated on recipe executability ALONE (the `can_manufacture` capability flag was
+     * removed from the fulfillability decision — ADR-027 §16 v1.5). So this must be a
+     * POSITIVE test: only an actually-present, actually-executable recipe makes the
+     * finished product fulfillable via preparation.
+     *
+     *   'instock'        → every required material is available OR allow_negative → executable
+     *   'outofstock'     → a required material is blocked → NOT executable
+     *   'recipe_missing' → no active recipe exists → there is no preparation path, so the
+     *                      finished good can only be fulfilled from physical FG stock
+     *                      (Case 1) or its own allow_negative policy (Case 3); NOT here.
+     *
+     * `ManufacturingAvailabilityService` remains the single authority (ADR-027 §16.3);
+     * this never recomputes the material rule.
      */
     private function manufacturingIsExecutable(Product $product): bool
     {
-        return $this->manufacturingAvailability->evaluate($product)['status'] !== 'outofstock';
+        return $this->manufacturingAvailability->evaluate($product)['status'] === 'instock';
     }
 
     public function execute(Order $order): ReservationStatus
@@ -184,29 +200,53 @@ final class ReserveOrderInventoryAction
                 // FG stock is insufficient — check manufacturing eligibility first
                 $product = $line->product;
 
-                // Option B gate: manufacturing may only be committed when the recipe is
-                // executable. When it is not, this branch is skipped entirely and the
-                // existing shortage path below decides the outcome — no status is written
-                // by hand here.
-                if ($product?->can_manufacture && $this->manufacturingIsExecutable($product)) {
-                    if ($available > 0.0) {
-                        try {
-                            $this->reserveStock->execute(new StockOperationDTO(
-                                warehouse_id: $warehouseId,
-                                product_id: $line->product_id,
-                                company_id: $companyId,
-                                quantity: $available,
-                                reference_type: 'sales_order',
-                                reference_id: $order->id,
-                                notes: "Reserved for order #{$order->order_number} (partial FG; remainder via manufacturing)",
-                            ));
-                        } catch (InsufficientStockException) {
-                            // TOCTOU race — treat as zero FG available; manufacturing covers the full quantity.
-                        }
+                // Order-driven preparation gate (ADR-027 §16 v1.5,
+                // TASK-ORDER-PREPARATION-FULFILLABILITY-CONTRACT-001): when physical FG
+                // stock is short, the finished product is fulfillable iff its PREPARATION
+                // RECIPE is executable — every required raw material available OR
+                // allow_negative. The `can_manufacture` capability flag no longer gates
+                // this: ECOS is made-to-order, so a zero-FG-stock product with an
+                // executable recipe is fulfillable and must reserve. When the recipe is
+                // not executable this branch is skipped and the shortage path below
+                // decides the outcome — no status is written by hand here.
+                if ($product !== null && $this->manufacturingIsExecutable($product)) {
+                    // TASK-ORDERS-PREPARATION-PAYMENT-FINAL-FIX-001 (D3) — RESERVE MUST BE
+                    // SYMMETRIC WITH RELEASE.
+                    //
+                    // This previously locked only the physically available slice, guarded by
+                    // `if ($available > 0.0)`, while still writing the FULL requested quantity
+                    // to `order_lines.reserved_qty` OUTSIDE that guard. With on_hand = 0 —
+                    // the normal made-to-order case — nothing was written to inventory_items
+                    // at all, so the order claimed a commitment that inventory had no record
+                    // of, and ReleaseStockAction later threw "No inventory record found for
+                    // the given warehouse and product" on any edit of that order.
+                    //
+                    // This is the identical defect already fixed in the allow_negative branch
+                    // below (see its comment); the fix is the same shape. The permission to
+                    // commit beyond physical stock comes from the recipe-executability
+                    // decision taken immediately above, and is stated explicitly rather than
+                    // borrowed from the product's own allow_negative_stock flag.
+                    //
+                    // The resulting negative `available` on the finished good is not a bug:
+                    // it is the physical truth that these units must still be prepared.
+                    try {
+                        $this->reserveStock->execute(new StockOperationDTO(
+                            warehouse_id: $warehouseId,
+                            product_id: $line->product_id,
+                            company_id: $companyId,
+                            quantity: $requested,
+                            reference_type: 'sales_order',
+                            reference_id: $order->id,
+                            notes: "Reserved for order #{$order->order_number} (made-to-order; executable recipe)",
+                            permit_negative_commitment: true,
+                        ));
+                    } catch (InsufficientStockException) {
+                        // Unreachable while the commitment is permitted; kept so a policy
+                        // change can never turn a rejected reservation into a crash.
                     }
                     $line->update(['reserved_qty' => $requested]);
                     $reservedLines++;
-                    $metaLines[] = ['product_id' => $line->product_id, 'requested' => $requested, 'reserved' => $available, 'outcome' => 'manufacturing_committed'];
+                    $metaLines[] = ['product_id' => $line->product_id, 'requested' => $requested, 'reserved' => $requested, 'outcome' => 'manufacturing_committed'];
 
                     continue;
                 }

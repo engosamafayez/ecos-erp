@@ -12,9 +12,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Modules\Admin\Configuration\Domain\Services\ConfigurationManager;
 use Modules\Commerce\Channels\Domain\Models\Channel;
+use Modules\Commerce\Orders\Application\Services\GoogleMapsUrlResolver;
 use Modules\Commerce\Orders\Domain\Contracts\OrderRepositoryInterface;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Commerce\Orders\Domain\Models\OrderEvent;
+use Modules\Commerce\Orders\Domain\Services\PaymentFulfillmentGate;
 use Modules\Commerce\Shipping\Domain\Services\ShippingValidationService;
 use Modules\Commerce\Shipping\Domain\ValueObjects\ShippingValidationResult;
 use Modules\IAM\Domain\Contracts\PermissionServiceInterface;
@@ -24,7 +26,6 @@ use Modules\Operations\Preparation\Application\Services\BranchAssignmentEngine;
 use Modules\Sales\Customers\Domain\Models\Customer;
 use Modules\Sales\Customers\Domain\Models\CustomerAddress;
 use Throwable;
-use ValueError;
 
 /**
  * Creates a manual order with optional inline customer creation.
@@ -45,6 +46,8 @@ final class CreateManualOrderAction extends BaseAction
         private readonly ShippingValidationService $shippingEngine,
         private readonly FulfillmentEngine $fulfillmentEngine,
         private readonly ProcessOrderWorkflow $initiateWorkflow,
+        private readonly GoogleMapsUrlResolver $mapsResolver,
+        private readonly PaymentFulfillmentGate $paymentGate,
     ) {}
 
     /**
@@ -54,6 +57,11 @@ final class CreateManualOrderAction extends BaseAction
     {
         /** @var array<string, mixed> $data */
         $data = $arguments[0];
+
+        // Resolve a short Google Maps link to coordinates server-side (Finding 05),
+        // so an order created from a pasted short link persists lat/lng rather than
+        // a URL that the grid reports as "No GPS". No-op when coords are already set.
+        $data = $this->mapsResolver->backfillCoordinates($data);
 
         // Resolve brand and order policy once — reused throughout this action.
         $brandId = $this->resolveBrandId($data['channel_id'] ?? null);
@@ -81,7 +89,23 @@ final class CreateManualOrderAction extends BaseAction
         $monetaryDiscount = 0.0;
         $grandTotal = 0.0;
         $remaining = 0.0;
-        $order = DB::transaction(function () use ($data, $orderPolicy, $shippingResult, &$customerWasReused, &$subtotal, &$monetaryDiscount, &$grandTotal, &$remaining) {
+
+        // ADR-042 §3 — Entry Status is PICK-AND-STAY. Resolved BEFORE the
+        // transaction so its audit trail (§3.1) is still in scope after commit,
+        // where the OrderEvent is written.
+        //
+        // The company is derived from the authenticated actor — the same value the
+        // order row is stamped with below — because it is the second scope in the
+        // payment-policy chain (D2-B) and must never be taken from the request body.
+        $actorCompanyId = Auth::user()?->company_id;
+        $statusResolution = $this->resolveManualOrderStatus(
+            $data,
+            $orderPolicy,
+            isset($data['channel_id']) ? (string) $data['channel_id'] : null,
+            $actorCompanyId !== null ? (string) $actorCompanyId : null,
+        );
+
+        $order = DB::transaction(function () use ($data, $orderPolicy, $shippingResult, $statusResolution, &$customerWasReused, &$subtotal, &$monetaryDiscount, &$grandTotal, &$remaining) {
             [$customerId, $customerWasReused] = $this->resolveCustomer($data, $orderPolicy);
 
             // Keep the customer's default delivery address in sync with the order data.
@@ -124,7 +148,16 @@ final class CreateManualOrderAction extends BaseAction
                 'customer_id' => $customerId,
                 'order_number' => $this->orders->nextOrderNumber(),
                 'order_date' => $data['order_date'] ?? now()->toDateString(),
-                'status' => $shippingResult['status_override'] ?? $this->resolveManualOrderStatus($data, $orderPolicy),
+                // ADR-042 §3.1 (as amended) — PRECEDENCE. The payment control outranks the
+                // shipping-review override. Before this, a proof-required order that also
+                // needed shipping review was stored `on_hold` — a status the payment gate
+                // never evaluates (it fires only from `awaiting_payment`), so the order could
+                // be confirmed straight out of `on_hold` with no payment and no proof. Worse,
+                // the §3.1 audit event was still written and still reported
+                // `stored_status: awaiting_payment`, which the row contradicted.
+                'status' => $statusResolution['payment_blocked']
+                    ? $statusResolution['status']
+                    : ($shippingResult['status_override'] ?? $statusResolution['status']),
                 'subtotal' => $subtotal,
                 'total' => $grandTotal,
                 'notes' => $data['notes'] ?? null,
@@ -182,22 +215,65 @@ final class CreateManualOrderAction extends BaseAction
         // TASK-BRANCH-ASSIGNMENT-ENGINE-001: Resolve branch → warehouse via coverage rules.
         $this->branchAssignment->assign($order, Auth::user()?->company_id ?? $order->channel?->brand?->company_id);
 
-        // V3 auto-trigger: immediately initiate the FulfillmentEngine for all New orders.
-        // Scheduled orders wait for their delivery date; AwaitingPayment orders wait for payment.
-        // The engine attempts reservation and moves the order to InProgress (or AwaitingStock).
-        if ($order->status === OrderStatus::NewOrder) {
+        // ADR-042 §3.1 — record the one sanctioned entry-status override. Written
+        // before the fulfilment trigger so the audit trail reflects creation order.
+        if ($statusResolution['override_reason'] !== null) {
+            OrderEvent::log(
+                orderId: $order->id,
+                type: 'entry_status_overridden_by_payment_proof_policy',
+                description: "Entry status [{$statusResolution['submitted']}] was overridden to [{$order->status->value}]: the payment method requires verified payment proof, which cannot exist before the order does.",
+                payload: [
+                    'submitted_status' => $statusResolution['submitted'],
+                    // The status ACTUALLY stored, read back from the row — never the intended
+                    // one. The previous version reported the resolution's own value, which the
+                    // shipping override could silently contradict.
+                    'stored_status' => $order->status->value,
+                    'reason' => $statusResolution['override_reason'],
+                    'payment_method' => $data['payment_method_manual'] ?? null,
+                ],
+                module: 'orders',
+            );
+        }
+
+        // ADR-042 §6 — the reservation trigger is UNCHANGED in timing: reservation
+        // still happens at creation, for orders that enter the operational queue.
+        // Only the name of the triggering state changed (`new` → `in_progress`),
+        // because normal orders are now created directly at In Progress.
+        //
+        // This is not a status rewrite: ProcessOrderWorkflow writes InProgress, so
+        // for an order already at InProgress the write is a no-op and PICK-AND-STAY
+        // is preserved.
+        //
+        // CLOSURE-001 PART 1/23-B — the gate is now the canonical
+        // OrderStatus::decidesAvailabilityAtCreation(), which also admits
+        // `awaiting_payment`. Gating on InProgress alone meant an unpaid order took NO
+        // availability decision whatsoever and rested at `reservation_status = NULL` —
+        // rendered by the Orders UI as "Pending", a state PART 5 removes from the
+        // business vocabulary. Deciding availability does not touch the payment block:
+        // ProcessOrderWorkflow preserves the lifecycle status for AwaitingPayment in
+        // both directions (yieldsToStockBlock and advancesToInProgressOnReservation are
+        // both false for it), so the order stays Awaiting Payment and merely learns
+        // whether the goods exist.
+        //
+        // `scheduled` remains excluded — PART 12 owns its activation (D-1), and
+        // ActivateScheduledOrdersCommand is what decides its availability later.
+        if (in_array($order->status, OrderStatus::decidesAvailabilityAtCreation(), true)) {
             try {
                 $actorId = Auth::id() !== null ? (string) Auth::id() : null;
                 $this->fulfillmentEngine->run(
                     $this->initiateWorkflow,
                     $order->fresh(),
-                    [],
+                    // Declares WHICH invocation this is, so the workflow's payment advance
+                    // (ADR-042 §7.1) does not fire inside the creation request and undo the
+                    // entry status the operator just chose. The invariant this preserves is
+                    // the one the comment above states.
+                    ['creation_availability_decision' => true],
                     $actorId,
                 );
             } catch (Throwable $e) {
                 Log::channel('daily')->warning('[Order] Auto-initiate fulfillment failed after creation', [
                     'order_id' => $order->id,
-                    'error'    => $e->getMessage(),
+                    'error' => $e->getMessage(),
                 ]);
             }
         }
@@ -223,104 +299,112 @@ final class CreateManualOrderAction extends BaseAction
     }
 
     /**
-     * Status migration map for legacy config values (pre-V3).
-     * Brand policy JSON may still reference old status strings — map to current values.
-     */
-    private const LEGACY_STATUS_MAP = [
-        'pending'    => 'new',
-        'processing' => 'in_progress',
-        'confirmed'  => 'in_progress',
-        'preparing'  => 'in_progress',
-        'review'     => 'on_hold',
-        'rescheduled' => 'on_hold',
-        'completed'  => 'delivered',
-    ];
-
-    /**
-     * Statuses preferred when payment is confirmed — ordered by business priority.
-     * Payment-clear orders prefer In Progress to enter the operational queue directly.
-     */
-    private const PAYMENT_CLEAR_STATUS_PREFERENCE = ['in_progress', 'new'];
-
-    /**
-     * Determines the entry status for a manually created order.
+     * Determines the entry status for a manually created order — ADR-042 §3.
      *
-     * Priority:
-     *   1. Proof required but not supplied → AwaitingPayment
-     *   2. Frontend-submitted status is within the policy-allowed set → use it
-     *   3. Payment method present + multi-select policy → prefer highest-confidence
-     *      enabled status (processing > confirmed > preparing > first valid)
-     *   4. No payment method + multi-select policy → first valid enabled status
-     *   5. Single-string policy → that status
-     *   6. Default → Pending
+     * PICK-AND-STAY: an explicitly submitted canonical entry status is stored
+     * verbatim. Nothing below that check may displace it — not the payment method,
+     * not the delivery date, not the brand policy's ordering.
+     *
+     * Two mechanisms were REMOVED here and are prohibited from returning
+     * (ADR-042 §4, §8):
+     *
+     *   - `PAYMENT_CLEAR_STATUS_PREFERENCE` — preferred `in_progress`/`new` whenever
+     *     a payment method was present, silently displacing the operator's choice.
+     *     Payment method is not an input to the lifecycle state machine.
+     *
+     *   - `LEGACY_STATUS_MAP` — repaired pre-V3 configuration values on every read,
+     *     which made stale configuration look canonical and hid the drift for weeks.
+     *     Configuration is normalised once, by migration
+     *     2026_08_13_100000_supersede_order_lifecycle_v3_canonical; anything still
+     *     non-canonical afterwards is ignored rather than guessed at.
+     *
+     * The brand policy now governs which options are OFFERED (via GET /orders/statuses
+     * and the Config OS matrix) and which fallback applies when nothing was submitted.
+     * It no longer silently substitutes a status the operator did not choose.
+     *
+     * @return array{status: string, submitted: string|null, override_reason: string|null, payment_blocked: bool}
      */
-    private function resolveManualOrderStatus(array $data, array $orderPolicy): string
-    {
+    private function resolveManualOrderStatus(
+        array $data,
+        array $orderPolicy,
+        ?string $channelId,
+        ?string $companyId,
+    ): array {
         $method = (string) ($data['payment_method_manual'] ?? '');
         $submittedStatus = (string) ($data['status'] ?? '');
 
-        // Proof required but not supplied → AwaitingPayment regardless of selection.
-        if ($method !== '') {
-            $proofPolicy = $orderPolicy['payment_proof_policy'] ?? [];
-            $requirement = (string) ($proofPolicy[$method] ?? 'none');
-            if ($requirement === 'required' && empty($data['payment_proof_path'])) {
-                return OrderStatus::AwaitingPayment->value;
-            }
+        // ── ADR-042 §3.1 (as amended) — the single sanctioned override ────────
+        // Owner decision D1-A: `payment_proof_policy: required` is a MANDATORY FINANCIAL
+        // CONTROL. Fulfilment eligibility needs sufficient payment AND an active VERIFIED
+        // `payment_proofs` record. A `payment_proofs` row can only be written by
+        // POST /orders/{order}/payment-proofs, which needs an order that already exists, so
+        // the second condition is UNSATISFIABLE here — a proof-required method is therefore
+        // always created `awaiting_payment`.
+        //
+        // Two things this deliberately no longer does:
+        //
+        //   - it no longer reads `$data['payment_proof_path']`. That column is unvalidated
+        //     free text (`nullable|string|max:500`) and was declared superseded by
+        //     TASK-PAYMENT-PROOF-LIFECYCLE-001; any non-empty value used to skip
+        //     `awaiting_payment` entirely, which meant the hardened confirmation gate — the
+        //     only place the payment control is evaluated — never ran for that order at all.
+        //     The path is still persisted and still audited; it simply has no lifecycle
+        //     authority.
+        //
+        //   - it no longer resolves the policy from `$orderPolicy` (brand-only). Resolution
+        //     goes through PaymentFulfillmentGate, the single implementation shared with
+        //     ConfirmOrderWorkflow, which continues down the documented chain when the order
+        //     has no channel instead of hardcoding `'none'` (D2-B).
+        //
+        // `$orderPolicy` is still used below for `source_entry_policies`, which is a genuinely
+        // brand-scoped concern and is unchanged.
+        if (! $this->paymentGate->permitsAtCreation($method, $channelId, $companyId)) {
+            return [
+                'status' => OrderStatus::AwaitingPayment->value,
+                'submitted' => $submittedStatus !== '' ? $submittedStatus : null,
+                'override_reason' => $submittedStatus !== '' && $submittedStatus !== OrderStatus::AwaitingPayment->value
+                    ? 'payment_proof_required_and_unverified_at_creation'
+                    : null,
+                'payment_blocked' => true,
+            ];
         }
+
+        // ── PICK-AND-STAY ─────────────────────────────────────────────────────
+        if ($submittedStatus !== '' && self::isEntryStatus($submittedStatus)) {
+            return ['status' => $submittedStatus, 'submitted' => $submittedStatus, 'override_reason' => null, 'payment_blocked' => false];
+        }
+
+        // ── Fallbacks — reached only when no usable status was submitted ───────
 
         // Future delivery date → Scheduled so the order waits until its date arrives.
         $deliveryDate = (string) ($data['requested_delivery_date'] ?? '');
         if ($deliveryDate !== '' && $deliveryDate > now()->toDateString()) {
-            return OrderStatus::Scheduled->value;
+            return ['status' => OrderStatus::Scheduled->value, 'submitted' => null, 'override_reason' => null, 'payment_blocked' => false];
         }
 
         $configured = $orderPolicy['source_entry_policies']['manual'] ?? null;
 
         if (is_array($configured)) {
-            // Build the set of enabled, valid statuses (preserving config order).
-            // Legacy pre-V3 values (pending, processing, confirmed) are migrated on read.
-            $enabled = [];
             foreach ($configured as $status) {
-                try {
-                    $migrated = self::LEGACY_STATUS_MAP[(string) $status] ?? (string) $status;
-                    $enabled[] = OrderStatus::from($migrated)->value;
-                } catch (ValueError) { /* skip invalid */
+                if (self::isEntryStatus((string) $status)) {
+                    return ['status' => (string) $status, 'submitted' => null, 'override_reason' => null, 'payment_blocked' => false];
                 }
-            }
-            $enabled = array_values(array_unique($enabled));
-
-            if (empty($enabled)) {
-                return OrderStatus::NewOrder->value;
-            }
-
-            // Honor explicit frontend selection when it is within the allowed set.
-            if ($submittedStatus !== '' && in_array($submittedStatus, $enabled, true)) {
-                return $submittedStatus;
-            }
-
-            // Auto-selection fallback: prefer higher-confidence for payment-clear orders.
-            if ($method !== '') {
-                $enabledSet = array_flip($enabled);
-                foreach (self::PAYMENT_CLEAR_STATUS_PREFERENCE as $preferred) {
-                    if (isset($enabledSet[$preferred])) {
-                        return $preferred;
-                    }
-                }
-            }
-
-            return $enabled[0];
-        }
-
-        // Single string (legacy) — only one valid status exists.
-        if (is_string($configured) && $configured !== '') {
-            try {
-                $migrated = self::LEGACY_STATUS_MAP[$configured] ?? $configured;
-                return OrderStatus::from($migrated)->value;
-            } catch (ValueError) { /* fall through */
             }
         }
 
-        return OrderStatus::NewOrder->value;
+        if (is_string($configured) && self::isEntryStatus($configured)) {
+            return ['status' => $configured, 'submitted' => null, 'override_reason' => null, 'payment_blocked' => false];
+        }
+
+        return ['status' => OrderStatus::InProgress->value, 'submitted' => null, 'override_reason' => null, 'payment_blocked' => false];
+    }
+
+    /** True when the value is one of the three canonical creation entry states (ADR-042 §3). */
+    private static function isEntryStatus(string $value): bool
+    {
+        $candidate = OrderStatus::tryFrom($value);
+
+        return $candidate !== null && in_array($candidate, OrderStatus::entryStatuses(), true);
     }
 
     /**
@@ -609,9 +693,20 @@ final class CreateManualOrderAction extends BaseAction
         $phone = (string) ($data['customer_phone'] ?? '');
         $policy = (string) ($orderPolicy['customer_matching_policy'] ?? 'reuse_existing');
 
+        // Same tenant source the order itself uses (see the `company_id` assignment on the
+        // Order below) — resolved here because resolveCustomer() runs before that point.
+        $companyId = Auth::user()?->company_id;
+
         // Phone-based matching applies for all policies except always_create_new.
         if ($policy !== 'always_create_new' && $phone !== '') {
-            $existing = Customer::where('phone', $phone)->orWhere('mobile', $phone)->first();
+            // Scoped to the acting company, and the phone/mobile alternation is GROUPED.
+            // Without the closure the `orWhere` would escape the company predicate and a
+            // phone belonging to another tenant would be attached to this order.
+            $existing = Customer::query()
+                ->where('company_id', $companyId)
+                ->where(fn ($q) => $q->where('phone', $phone)->orWhere('mobile', $phone))
+                ->first();
+
             if ($existing !== null) {
                 return [$existing->id, true];
             }
@@ -625,6 +720,11 @@ final class CreateManualOrderAction extends BaseAction
         $code = 'CUS-'.str_pad((string) ($maxNum + 1), 5, '0', STR_PAD_LEFT);
 
         $customer = Customer::create([
+            // Without this the customer is created with a NULL company and is therefore
+            // invisible to every company-scoped read — the Customers workspace showed one
+            // record while five orders each carried a correctly-linked customer, because
+            // only that one record had a company_id.
+            'company_id' => $companyId,
             'code' => $code,
             'name' => (string) $data['customer_name'],
             'phone' => $data['customer_phone'] ?? null,

@@ -56,12 +56,30 @@ final class UpdateOrderRequest extends FormRequest
             'google_maps_url' => ['nullable', 'string', 'max:2000'],
             'location_source' => ['nullable', 'string', 'max:50'],
             // Enterprise payment/financial fields
-            'payment_method_manual' => ['nullable', 'string', 'max:100'],
+            //
+            // The method catalogue is CONSTRAINED to the same five values the creation
+            // gate enforces (StoreManualOrderRequest). It was previously any string up to
+            // 100 chars, while ConfirmOrderWorkflow resolves an unrecognised method to the
+            // non-blocking 'none' — so an edit could set "instapayy" and silently strip a
+            // REQUIRED payment-proof gate off an unpaid order
+            // (TASK-ORDERS-PREPARATION-PAYMENT-FINAL-FIX-001).
+            // O1 (owner decision Q3) — NOT nullable. Blanking the method used to satisfy
+            // `PaymentFulfillmentGate` unconditionally (its empty-method branch returned
+            // true), so an operator could clear one field and walk an unpaid order past a
+            // financial control. `sometimes` keeps the field optional in the PAYLOAD — an
+            // edit that does not mention it is unaffected — but a payload that DOES mention
+            // it must name one of the five methods. `filled` rejects null and ''.
+            //
+            // Measured impact before the change: 19/19 live orders carry an effective
+            // method, 0 blank. No legacy row is invalidated by this rule.
+            'payment_method_manual' => ['sometimes', 'filled', 'in:cod,instapay,mobile_wallet,credit_card,bank_transfer'],
             'shipping_cost' => ['nullable', 'numeric', 'min:0'],
             'shipping_cost_source' => ['nullable', 'string', 'max:50'],
             'discount_amount' => ['nullable', 'numeric', 'min:0'],
             'discount_type' => ['nullable', 'string', 'in:percentage,fixed'],
-            'deposit_amount' => ['nullable', 'numeric', 'min:0'],
+            // `deposit_amount` intentionally NOT accepted here (D6) — recording a payment
+            // is a domain action with guards and an audit event, not a field edit:
+            // POST /api/orders/{order}/record-payment.
             // Delivery scheduling
             'requested_delivery_date' => ['nullable', 'date'],
             'delivery_window_id' => ['nullable', 'string', 'max:255'],

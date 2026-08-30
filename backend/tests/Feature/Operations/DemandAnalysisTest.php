@@ -77,7 +77,7 @@ class DemandAnalysisTest extends TestCase
     }
 
     private function makeOrder(
-        OrderStatus $status = OrderStatus::NewOrder,
+        OrderStatus $status = OrderStatus::InProgress,
         ?Channel $channel = null,
     ): Order {
         return Order::query()->create([
@@ -127,7 +127,7 @@ class DemandAnalysisTest extends TestCase
     {
         $product = $this->makeProduct('HON-1KG');
         $this->seedStock($product, 380.0, 380.0);
-        $order = $this->makeOrder(OrderStatus::NewOrder);
+        $order = $this->makeOrder(OrderStatus::InProgress);
         $this->addLine($order, $product, 420.0);
 
         $this->actingAs($this->user)
@@ -192,7 +192,7 @@ class DemandAnalysisTest extends TestCase
     {
         $product = $this->makeProduct('HON-1KG');
         $this->seedStock($product, 380.0, 380.0);
-        $order = $this->makeOrder(OrderStatus::NewOrder);
+        $order = $this->makeOrder(OrderStatus::InProgress);
         $this->addLine($order, $product, 420.0);
 
         $result = $this->service()->analyze();
@@ -212,7 +212,7 @@ class DemandAnalysisTest extends TestCase
     {
         $product = $this->makeProduct('GIFT-BOX');
         $this->seedStock($product, 0.0, 0.0); // inventory exists, but empty
-        $order = $this->makeOrder(OrderStatus::NewOrder);
+        $order = $this->makeOrder(OrderStatus::InProgress);
         $this->addLine($order, $product, 80.0);
 
         $result = $this->service()->analyze();
@@ -230,7 +230,7 @@ class DemandAnalysisTest extends TestCase
     {
         $product = $this->makeProduct('NEW-PROD');
         // deliberately NO seedStock call
-        $order = $this->makeOrder(OrderStatus::NewOrder);
+        $order = $this->makeOrder(OrderStatus::InProgress);
         $this->addLine($order, $product, 10.0);
 
         $result = $this->service()->analyze();
@@ -264,7 +264,7 @@ class DemandAnalysisTest extends TestCase
     {
         $product = $this->makeProduct('SPICE-MIX');
         $this->seedStock($product, 100.0);
-        $pending = $this->makeOrder(OrderStatus::NewOrder);
+        $pending = $this->makeOrder(OrderStatus::InProgress);
         $processing = $this->makeOrder(OrderStatus::InProgress);
         $this->addLine($pending, $product, 30.0);
         $this->addLine($processing, $product, 20.0);
@@ -284,8 +284,8 @@ class DemandAnalysisTest extends TestCase
         $product = $this->makeProduct('TEA-500G');
         $this->seedStock($product, 200.0);
 
-        $o1 = $this->makeOrder(OrderStatus::NewOrder);
-        $o2 = $this->makeOrder(OrderStatus::NewOrder);
+        $o1 = $this->makeOrder(OrderStatus::InProgress);
+        $o2 = $this->makeOrder(OrderStatus::InProgress);
         $o3 = $this->makeOrder(OrderStatus::InProgress);
         $this->addLine($o1, $product, 50.0);
         $this->addLine($o2, $product, 70.0);
@@ -306,24 +306,24 @@ class DemandAnalysisTest extends TestCase
         // READY
         $ready = $this->makeProduct('READY-P');
         $this->seedStock($ready, 100.0);
-        $oR = $this->makeOrder(OrderStatus::NewOrder);
+        $oR = $this->makeOrder(OrderStatus::InProgress);
         $this->addLine($oR, $ready, 50.0);
 
         // SHORTAGE
         $shortage = $this->makeProduct('SHORT-P');
         $this->seedStock($shortage, 30.0);
-        $oS = $this->makeOrder(OrderStatus::NewOrder);
+        $oS = $this->makeOrder(OrderStatus::InProgress);
         $this->addLine($oS, $shortage, 60.0);
 
         // OUT_OF_STOCK
         $oos = $this->makeProduct('OOS-P');
         $this->seedStock($oos, 0.0);
-        $oO = $this->makeOrder(OrderStatus::NewOrder);
+        $oO = $this->makeOrder(OrderStatus::InProgress);
         $this->addLine($oO, $oos, 20.0);
 
         // UNKNOWN (no inventory record)
         $unknown = $this->makeProduct('UNK-P');
-        $oU = $this->makeOrder(OrderStatus::NewOrder);
+        $oU = $this->makeOrder(OrderStatus::InProgress);
         $this->addLine($oU, $unknown, 5.0);
 
         $result = $this->service()->analyze();
@@ -342,7 +342,7 @@ class DemandAnalysisTest extends TestCase
     {
         $product = $this->makeProduct('CHOC-250G');
         $this->seedStock($product, 100.0, 60.0); // 60 already reserved
-        $order = $this->makeOrder(OrderStatus::NewOrder);
+        $order = $this->makeOrder(OrderStatus::InProgress);
         $this->addLine($order, $product, 100.0);
 
         $result = $this->service()->analyze();
@@ -361,8 +361,8 @@ class DemandAnalysisTest extends TestCase
         $this->seedStock($p1, 1000.0);
         $this->seedStock($p2, 1000.0);
 
-        $o1 = $this->makeOrder(OrderStatus::NewOrder);
-        $o2 = $this->makeOrder(OrderStatus::NewOrder);
+        $o1 = $this->makeOrder(OrderStatus::InProgress);
+        $o2 = $this->makeOrder(OrderStatus::InProgress);
         $this->addLine($o1, $p1, 10.0);  // smaller
         $this->addLine($o2, $p2, 500.0); // larger
 
@@ -408,7 +408,7 @@ class DemandAnalysisTest extends TestCase
             'reserved_qty' => 0,
         ]);
 
-        $order = $this->makeOrder(OrderStatus::NewOrder);
+        $order = $this->makeOrder(OrderStatus::InProgress);
         $this->addLine($order, $product, 200.0);
 
         $result = $this->service()->analyze();

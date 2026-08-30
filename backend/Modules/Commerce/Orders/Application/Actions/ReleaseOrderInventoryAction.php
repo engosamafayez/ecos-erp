@@ -14,6 +14,8 @@ use Modules\Commerce\Orders\Domain\Models\OrderEvent;
 use Modules\Commerce\Orders\Domain\Models\OrderReservationAudit;
 use Modules\Inventory\InventoryItems\Application\Actions\ReleaseStockAction;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
+use Modules\Inventory\InventoryItems\Domain\Enums\LedgerMovementType;
+use Modules\Inventory\InventoryItems\Domain\Models\StockLedgerEntry;
 
 final class ReleaseOrderInventoryAction
 {
@@ -79,8 +81,28 @@ final class ReleaseOrderInventoryAction
                     continue;
                 }
 
+                // A-2 — RELEASE AGAINST THE WAREHOUSE THE RESERVATION ITSELF RECORDED.
+                //
+                // `assigned_warehouse_id` is the order's CURRENT warehouse, and it moves:
+                // WarehouseAssignmentEngine::override() rewrites it with no guard requiring
+                // the order to be un-reserved first. Releasing against it after a
+                // reassignment targets a warehouse where this order never reserved
+                // anything, which does not merely release the wrong row — it makes
+                // cancellation IMPOSSIBLE. ReleaseStockAction throws NegativeInventoryException
+                // when reserved_qty would go below zero, or InvalidInventoryMovementException
+                // when the destination has no inventory row for the product at all. Either
+                // way the units held in the ORIGINAL warehouse are stranded with no path back.
+                //
+                // The stock ledger already records the true warehouse on every reservation
+                // movement, and it is the same source ReconcileOrderMaterialReservationsAction
+                // trusts to derive what an order holds. Reusing it introduces no second
+                // source of truth; the current warehouse remains the fallback for rows
+                // written before the ledger carried the movement.
+                $releaseWarehouseId = $this->reservationWarehouseFor($order->id, $line->product_id)
+                    ?? $order->assigned_warehouse_id;
+
                 $this->releaseStock->execute(new StockOperationDTO(
-                    warehouse_id: $order->assigned_warehouse_id,
+                    warehouse_id: $releaseWarehouseId,
                     product_id: $line->product_id,
                     company_id: $companyId,
                     quantity: $qtyToRelease,
@@ -114,5 +136,32 @@ final class ReleaseOrderInventoryAction
                 module: 'orders',
             );
         });
+    }
+
+    /**
+     * The warehouse this order's finished-goods reservation was actually taken in.
+     *
+     * Read from the canonical stock ledger — the same record
+     * `ReconcileOrderMaterialReservationsAction::heldByThisOrder()` already trusts to decide
+     * what an order holds — so no second source of truth is introduced (A-4).
+     *
+     * The LATEST reservation movement wins: if an order were ever re-reserved into a new
+     * warehouse, that is the warehouse currently holding the units.
+     *
+     * Returns null when the ledger carries no reservation movement for this line, in which
+     * case the caller falls back to the order's current warehouse — the pre-existing
+     * behaviour, preserved for rows written before the movement was recorded.
+     */
+    private function reservationWarehouseFor(string $orderId, string $productId): ?string
+    {
+        $warehouseId = StockLedgerEntry::query()
+            ->where('reference_type', 'sales_order')
+            ->where('reference_id', $orderId)
+            ->where('product_id', $productId)
+            ->where('movement_type', LedgerMovementType::Reservation->value)
+            ->latest('created_at')
+            ->value('warehouse_id');
+
+        return $warehouseId !== null ? (string) $warehouseId : null;
     }
 }

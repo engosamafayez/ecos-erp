@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\Commerce\Orders\Presentation\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 
 final class StoreManualOrderRequest extends FormRequest
 {
@@ -18,6 +20,13 @@ final class StoreManualOrderRequest extends FormRequest
      */
     public function rules(): array
     {
+        // Canonical V3 status vocabulary, derived from the enum — the same
+        // convention StoreOrderRequest, UpdateOrderRequest and PatchOrderRequest
+        // already use. A hardcoded list here had drifted to the pre-V3 vocabulary
+        // and rejected `new`, the actual initial status, which is what broke
+        // manual order creation with "The selected status is invalid."
+        $statuses = array_column(OrderStatus::cases(), 'value');
+
         return [
             // ── Customer resolution (one of these two blocks required) ──────
             'customer_id' => 'nullable|uuid|exists:customers,id',
@@ -68,7 +77,10 @@ final class StoreManualOrderRequest extends FormRequest
             'company_id' => 'nullable|uuid|exists:companies,id',
             'channel_id' => 'nullable|uuid|exists:channels,id',
             'order_date' => 'nullable|date',
-            'status' => 'nullable|string|in:pending,scheduled,processing,awaiting_payment,completed,cancelled',
+            // `nullable` is a deliberate, pre-existing difference from
+            // StoreOrderRequest's `required`: the manual path allows the status to
+            // be omitted and defaulted downstream. Only the value list changes here.
+            'status' => ['nullable', 'string', Rule::in($statuses)],
             'notes' => 'nullable|string|max:2000',
 
             // ── Lines ────────────────────────────────────────────────────────

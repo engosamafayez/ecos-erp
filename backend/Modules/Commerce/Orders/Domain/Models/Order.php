@@ -216,6 +216,13 @@ class Order extends Model
         'payment_proof_path',
         'governorate',
         'city',
+        // Canonical delivery city FK (logistics_cities). Distribution resolves an
+        // Order's Zone through it — logistics_cities.distribution_zone_id — so an
+        // Order that cannot mass-assign it can never be zoned, and therefore never
+        // slotted or aggregated. The column and its backfill have existed since
+        // 2026_07_16_000004_add_logistics_city_id_to_orders; only this declaration
+        // was missing, which silently dropped the value on every create/update.
+        'logistics_city_id',
         'shipping_address',
         'building',
         'floor',
@@ -246,6 +253,12 @@ class Order extends Model
         'tracking_number',
         // GPS provenance
         'location_set_by',
+        // Operator confirmation (ADR-042 §5.3) — stamped by ConfirmOrderWorkflow.
+        // The column has existed since 2026-07-10 but was never fillable, so nothing
+        // could write it; V3 nonetheless documented confirmation as being "carried by
+        // the confirmed_at timestamp". ADR-042 makes `confirmed` a real state and this
+        // timestamp its audit companion.
+        'confirmed_at',
         // Customer confirmation
         'customer_confirmed_at',
         'customer_confirmed_by',
@@ -297,6 +310,7 @@ class Order extends Model
             'preparation_completed_at' => 'datetime',
             'rescheduled_at' => 'datetime',
             'next_delivery_date' => 'date:Y-m-d',
+            'confirmed_at' => 'datetime',
             'customer_confirmed_at' => 'datetime',
             'shipping_attempts' => 'integer',
             'status_entered_at' => 'datetime',

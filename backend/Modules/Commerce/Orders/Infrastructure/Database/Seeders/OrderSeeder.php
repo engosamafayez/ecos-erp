@@ -41,7 +41,7 @@ final class OrderSeeder extends Seeder
             'customer_id' => $customer->id,
             'external_order_id' => null,
             'order_date' => now()->toDateString(),
-            'status' => OrderStatus::NewOrder->value,
+            'status' => OrderStatus::InProgress->value,
             'subtotal' => $lineTotal,
             'total' => $lineTotal,
             'notes' => 'Sample order created by seeder.',

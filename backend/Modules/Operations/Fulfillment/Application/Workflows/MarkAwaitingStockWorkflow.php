@@ -30,9 +30,9 @@ final class MarkAwaitingStockWorkflow implements FulfillmentWorkflowInterface
         $order = $ctx->order;
 
         $allowed = [
-            OrderStatus::NewOrder,
             OrderStatus::AwaitingPayment,
             OrderStatus::InProgress,
+            OrderStatus::Confirmed,
             OrderStatus::OnHold,
             OrderStatus::Scheduled,
             OrderStatus::Cancelled,

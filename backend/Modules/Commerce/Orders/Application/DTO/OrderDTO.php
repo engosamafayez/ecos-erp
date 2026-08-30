@@ -42,7 +42,7 @@ final class OrderDTO extends BaseDTO
         return new self(
             customer_id: (string) $data['customer_id'],
             order_date: (string) $data['order_date'],
-            status: OrderStatus::from((string) ($data['status'] ?? OrderStatus::NewOrder->value)),
+            status: OrderStatus::from((string) ($data['status'] ?? OrderStatus::InProgress->value)),
             lines: $lines,
             channel_id: self::nullableString($data, 'channel_id'),
             external_order_id: self::nullableString($data, 'external_order_id'),

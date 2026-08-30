@@ -117,6 +117,11 @@ final class OrderResource extends JsonResource
             'tax_amount' => $taxAmt,
             'grand_total' => $grandTotal,
             'deposit_paid' => $depositPaid,
+            // Payment state — DERIVED (deposit_amount vs total), the same authority the
+            // confirm gate uses. A deposit is PARTIALLY PAID, never PAID.
+            'payment_state' => \Modules\Commerce\Orders\Domain\Enums\PaymentState::fromAmounts($depositPaid, (float) $this->total)->value,
+            'paid_amount' => $depositPaid,
+            'outstanding_amount' => round((float) $this->total - $depositPaid, 2),
             'notes' => $this->notes,
             'customer_note' => $this->customer_note,
             'internal_notes' => $this->internal_notes,
@@ -251,6 +256,17 @@ final class OrderResource extends JsonResource
             // Channel type (derived)
             'source' => $this->whenLoaded('channel', fn () => $this->channel?->channel_type),
             'assigned_warehouse_id' => $this->assigned_warehouse_id,
+            // TASK-ORDERS-PREPARATION-PAYMENT-FINAL-FIX-001 (D4) — the canonical
+            // fulfillment warehouse, resolved. `orders.assigned_warehouse_id` is the
+            // single source of truth (ADR-027); the UI previously received only this raw
+            // UUID and had no name to render, which is why "Assigned Warehouse" showed a
+            // dash on a demonstrably reserved order. `order_lines.warehouse_name` is NOT
+            // used for this: it has no writer anywhere and is null on every row.
+            'assigned_warehouse' => $this->whenLoaded('assignedWarehouse', fn () => $this->assignedWarehouse === null ? null : [
+                'id' => $this->assignedWarehouse->id,
+                'name' => $this->assignedWarehouse->name,
+                'code' => $this->assignedWarehouse->code,
+            ]),
             // Customer confirmation
             'customer_confirmed_at' => $this->customer_confirmed_at?->toIso8601String(),
             'customer_confirmed_by' => $this->customer_confirmed_by,
@@ -311,9 +327,12 @@ final class OrderResource extends JsonResource
      *   - requires_reason: UX prompts for reason before confirming
      *   - action         : opaque workflow key — for audit/transparency only; frontend must NOT route on this
      *
-     * Canonical status order:
-     * V3 lifecycle (TASK-ORDERS-LIFECYCLE-ARCH-002):
-     *   New → In Progress → Ready for Dispatch → Out for Delivery → Delivered
+     * Canonical status order — ADR-042 (Order FSM V3 Canonical):
+     *   In Progress → Confirmed → Ready for Dispatch → Out for Delivery → Delivered
+     *
+     * `new` no longer exists; `confirmed` is a real state reached by an explicit
+     * Confirm action. The former `return_to_new` edge is now `return_to_in_progress`
+     * and means "unlock for edit".
      *
      * @return list<array{target_status: string, label: string, requires_reason: bool, action: string}>
      */
@@ -327,42 +346,45 @@ final class OrderResource extends JsonResource
         ];
 
         return match ($this->status) {
-            // ── New: pre-activation — FulfillmentEngine auto-triggers on creation ─
-            OrderStatus::NewOrder => [
-                $t('in_progress',      'Start Processing',   false, 'initiate_order'),
-                $t('awaiting_payment', 'Awaiting Payment',   false, 'set_early_status'),
-                $t('scheduled',        'Schedule',           false, 'set_early_status'),
-                $t('on_hold',          'Put On Hold',        true,  'put_on_hold'),
-                $t('cancelled',        'Cancel',             true,  'cancel_order'),
+            // ── In Progress: entry state — editable, reserved, not yet committed ──
+            // ADR-042 §2.2: this is where normal orders are created and where they
+            // stay until Confirm. It is fulfilment-eligible (§7), so Mark Ready
+            // remains available without confirming first.
+            OrderStatus::InProgress => [
+                $t('confirmed',          'Confirm',          false, 'confirm_order'),
+                $t('ready_for_dispatch', 'Mark Ready',       false, 'ready_for_dispatch'),
+                $t('awaiting_payment',   'Awaiting Payment', false, 'set_early_status'),
+                $t('scheduled',          'Schedule',         false, 'set_early_status'),
+                $t('awaiting_stock',     'Awaiting Stock',   false, 'mark_awaiting_stock'),
+                $t('on_hold',            'Put On Hold',      true,  'put_on_hold'),
+                $t('cancelled',          'Cancel',           true,  'cancel_order'),
+            ],
+            // ── Confirmed: committed — structurally locked (ADR-042 §2.2) ─────────
+            // `in_progress` here is the UNLOCK edge: it releases the lock and the
+            // reservation so the order can be edited again.
+            OrderStatus::Confirmed => [
+                $t('ready_for_dispatch', 'Mark Ready',        false, 'ready_for_dispatch'),
+                $t('in_progress',        'Unlock for Edit',   false, 'return_to_in_progress'),
+                $t('awaiting_stock',     'Awaiting Stock',    false, 'mark_awaiting_stock'),
+                $t('on_hold',            'Put On Hold',       true,  'put_on_hold'),
+                $t('cancelled',          'Cancel',            true,  'cancel_order'),
             ],
             // ── Scheduled: future-dated — activate when date arrives ──────────────
             OrderStatus::Scheduled => [
-                $t('new',             'Reset to New',       false, 'return_to_new'),
                 $t('in_progress',     'Activate Now',       false, 'initiate_order'),
                 $t('on_hold',         'Put On Hold',        true,  'put_on_hold'),
                 $t('cancelled',       'Cancel',             true,  'cancel_order'),
             ],
             // ── Awaiting Payment: pending payment verification ────────────────────
             OrderStatus::AwaitingPayment => [
-                $t('new',             'Reset to New',       false, 'return_to_new'),
                 $t('in_progress',     'Start Processing',   false, 'initiate_order'),
                 $t('awaiting_stock',  'Awaiting Stock',     false, 'mark_awaiting_stock'),
                 $t('on_hold',         'Put On Hold',        true,  'put_on_hold'),
                 $t('cancelled',       'Cancel',             true,  'cancel_order'),
             ],
-            // ── In Progress: operational — engines running ────────────────────────
-            OrderStatus::InProgress => [
-                $t('ready_for_dispatch', 'Mark Ready',      false, 'ready_for_dispatch'),
-                $t('new',                'Return to New',   false, 'return_to_new'),
-                $t('awaiting_payment',   'Awaiting Payment', false, 'set_early_status'),
-                $t('awaiting_stock',     'Awaiting Stock',  false, 'mark_awaiting_stock'),
-                $t('on_hold',            'Put On Hold',     true,  'put_on_hold'),
-                $t('cancelled',          'Cancel',          true,  'cancel_order'),
-            ],
             // ── Awaiting Stock: waiting for inventory ─────────────────────────────
             OrderStatus::AwaitingStock => [
                 $t('in_progress',  'Resume',          false, 'initiate_order'),
-                $t('new',          'Return to New',   false, 'return_to_new'),
                 $t('on_hold',      'Put On Hold',     true,  'put_on_hold'),
                 $t('cancelled',    'Cancel',          true,  'cancel_order'),
             ],
@@ -376,14 +398,13 @@ final class OrderResource extends JsonResource
             // ── On Hold: manual intervention ──────────────────────────────────────
             OrderStatus::OnHold => [
                 $t('in_progress',     'Resume',          false, 'initiate_order'),
-                $t('new',             'Reset to New',    false, 'return_to_new'),
                 $t('awaiting_payment', 'Awaiting Payment', false, 'set_early_status'),
                 $t('awaiting_stock',  'Awaiting Stock',  false, 'mark_awaiting_stock'),
                 $t('cancelled',       'Cancel',          true,  'cancel_order'),
             ],
             // ── Cancelled: recoverable ────────────────────────────────────────────
             OrderStatus::Cancelled => [
-                $t('new',             'Reactivate',      false, 'return_to_new'),
+                $t('in_progress',      'Reactivate',       false, 'initiate_order'),
                 $t('awaiting_payment', 'Awaiting Payment', false, 'set_early_status'),
             ],
             // ── Execution chain ───────────────────────────────────────────────────

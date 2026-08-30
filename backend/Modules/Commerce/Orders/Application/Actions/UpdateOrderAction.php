@@ -10,8 +10,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Modules\Commerce\Orders\Application\DTO\OrderDTO;
+use Modules\Commerce\Orders\Application\Services\GoogleMapsUrlResolver;
 use Modules\Commerce\Orders\Domain\Contracts\OrderRepositoryInterface;
 use Modules\Commerce\Orders\Domain\Enums\ReservationStatus;
+use Modules\Commerce\Orders\Domain\Events\OrderGeographyChanged;
 use Modules\Commerce\Orders\Domain\Exceptions\OrderAlreadyReleasedException;
 use Modules\Commerce\Orders\Domain\Exceptions\OrderNotFoundException;
 use Modules\Commerce\Orders\Domain\Models\OrderEvent;
@@ -34,7 +36,16 @@ final class UpdateOrderAction extends BaseAction
         'google_maps_lat', 'google_maps_lng', 'google_maps_url', 'location_source',
         'payment_method_manual',
         'requested_delivery_date', 'delivery_window_id', 'delivery_window',
-        'deposit_amount',
+        // `deposit_amount` REMOVED — TASK-ORDERS-PREPARATION-PAYMENT-FINAL-FIX-001 (D6).
+        //
+        // Mass-assigning it here wrote money straight to the column, bypassing
+        // RecordOrderPaymentAction's overpayment guard, its idempotency check and the
+        // `payment_recorded` OrderEvent — and, because ConfirmOrderWorkflow treats
+        // `deposit_amount >= total` as paid, it was the only reachable way to clear the
+        // payment gate, silently and with no audit trail.
+        //
+        // Recording a payment is a domain action, not a field edit:
+        // POST /api/orders/{order}/record-payment.
         'notes',
     ];
 
@@ -52,6 +63,9 @@ final class UpdateOrderAction extends BaseAction
         private readonly ReleaseOrderInventoryAction $releaseInventory,
         private readonly ReserveOrderInventoryAction $reserveInventory,
         private readonly UpdateReservationStatusAction $updateReservationStatus,
+        private readonly GoogleMapsUrlResolver $mapsResolver,
+        // Payment-method changes re-open the payment gate — see the trigger below.
+        private readonly ReevaluateOrderFulfillmentAction $reevaluateFulfillment,
     ) {}
 
     public function execute(mixed ...$arguments): OperationResult
@@ -63,6 +77,11 @@ final class UpdateOrderAction extends BaseAction
 
         /** @var array<string, mixed> $extraData  Enterprise fields from UpdateOrderRequest */
         $extraData = (array) ($arguments[2] ?? []);
+
+        // Resolve a short Google Maps link to coordinates server-side (Finding 05)
+        // before the location fields propagate to the order and the customer's
+        // default address. No-op when coordinates are already present.
+        $extraData = $this->mapsResolver->backfillCoordinates($extraData);
 
         $order = $this->orders->findById($id);
 
@@ -76,6 +95,18 @@ final class UpdateOrderAction extends BaseAction
         }
 
         $isLocked = $order->status->isLocked();
+
+        // Captured BEFORE any write — `payment_method_manual` is a SOFT field, so it is
+        // editable even on a structurally locked order, and the payment gate must be
+        // re-asked when it moves. See the re-evaluation trigger at the end of this method.
+        $previousPaymentMethod = (string) ($order->payment_method_manual ?? '');
+
+        // Also captured before any write. The proof requirement is resolved per order from
+        // channels.brand_id -> config_brand_policies (PaymentFulfillmentGate::orderPolicyFor),
+        // so moving an order to a different channel can change the requirement for an unchanged
+        // payment method — in either direction. Watching only the method would leave that half
+        // of the same control unevaluated.
+        $previousChannelId = (string) ($order->channel_id ?? '');
 
         // Start with core attributes (channel, customer, order_date, notes).
         // Status is intentionally excluded — status changes only via workflow actions.
@@ -189,13 +220,17 @@ final class UpdateOrderAction extends BaseAction
                             'order_id' => $updated->id,
                             'error' => $e->getMessage(),
                         ]);
-                        // Mark the order as awaiting stock so it is not left with a null
-                        // reservation_status while still appearing active. The operator will
-                        // see it in the AwaitingStock queue and can retry when stock is ready.
+                        // Record a POSTPONED execution, not a stock shortage. Reaching
+                        // here means reservation threw — today only for a missing
+                        // warehouse — and `awaiting_stock` asserts something specific
+                        // and false about that: that inventory is short. It is also the
+                        // wrong recovery path, because the retry that resumes a
+                        // postponed reservation keys on `pending`, so an order parked
+                        // here as awaiting_stock was picked up by nothing.
                         $this->updateReservationStatus->execute(
                             $updated,
-                            ReservationStatus::AwaitingStock,
-                            'Re-reservation failed after structural order edit: '.$e->getMessage(),
+                            ReservationStatus::Pending,
+                            'Re-reservation postponed after structural order edit: '.$e->getMessage(),
                         );
                         $updated->refresh();
                     }
@@ -253,6 +288,49 @@ final class UpdateOrderAction extends BaseAction
             null,
             $actorRole,
         );
+
+        // ── A change to either INPUT of the payment gate re-opens it (D1-A) ───────────
+        // The gate's answer is a function of two order fields: the payment method, and the
+        // channel that selects which brand policy resolves that method. An edit that moves
+        // either one has changed the question, so the answer is re-asked — in both directions,
+        // since the same edit can make a blocked order eligible or an eligible order blocked.
+        //
+        // Same canonical entry point as record-payment, proof-verification, proof supersession
+        // and the inline quick-update path. Runs AFTER the update has persisted and after the
+        // audit event, so a transition it causes is attributed to its own workflow rather than
+        // to this edit. A blocked or inapplicable gate is a no-op — the field edit stays
+        // committed either way.
+        $paymentMethodChanged = (string) ($updated->payment_method_manual ?? '') !== $previousPaymentMethod;
+        $channelChanged = (string) ($updated->channel_id ?? '') !== $previousChannelId;
+
+        if ($paymentMethodChanged || $channelChanged) {
+            $this->reevaluateFulfillment->execute($updated);
+            $updated->refresh();
+        }
+
+        // ── A CITY / GOVERNORATE change re-resolves everything derived from it ────────
+        // `logistics_city_id` is derived from these two fields and nothing else, and the
+        // Distribution zone is derived from that id and nothing else. So an edit here has
+        // invalidated both, and both are recomputed — by the modules that own them.
+        //
+        // Reuses the audit diff already computed above, so the trigger is exactly the set
+        // of fields this edit genuinely changed; an update that merely re-sent the same
+        // city raises nothing. Announced only — this action references no Geography and no
+        // Distribution service. Raised after the update has persisted and after the audit
+        // event, for the same reason the payment reaction is.
+        if (array_key_exists('city', $changedPrev) || array_key_exists('governorate', $changedPrev)) {
+            event(new OrderGeographyChanged(
+                orderId: (string) $updated->id,
+                companyId: (string) $updated->company_id,
+                city: $updated->city,
+                governorate: $updated->governorate,
+                previousCity: isset($changedPrev['city']) ? (string) $changedPrev['city'] : null,
+                previousGovernorate: isset($changedPrev['governorate'])
+                    ? (string) $changedPrev['governorate']
+                    : null,
+                actorId: $actorId === null ? null : (int) $actorId,
+            ));
+        }
 
         return OperationResult::success($updated, 'Order updated successfully.');
     }

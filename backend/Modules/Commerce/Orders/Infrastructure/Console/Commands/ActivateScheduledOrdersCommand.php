@@ -14,21 +14,27 @@ use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionExcepti
 use Throwable;
 
 /**
- * ARCH-003 — Activate Scheduled orders whose delivery date has arrived.
+ * ARCH-003 — Activate Scheduled orders one day before their delivery date.
  *
- * Runs daily at 00:05 via the Laravel scheduler. For each order in Scheduled
- * status whose requested_delivery_date <= today, the command calls
- * ProcessOrderWorkflow via the FulfillmentEngine. The workflow:
+ * Runs daily at 00:05 via the Laravel scheduler. For each order in Scheduled status
+ * whose requested_delivery_date <= tomorrow, the command calls ProcessOrderWorkflow
+ * via the FulfillmentEngine. An order due on the 20th therefore activates on the
+ * 19th, giving the operation a full day to reserve, prepare and stage it.
+ *
+ * Scheduling and availability stay independent: a Scheduled order is never moved
+ * early because its stock ran short, and it is never held back because stock is
+ * short at its activation point — it activates, and availability is then judged by
+ * the normal reservation path. The workflow:
  *
  *   - Attempts inventory reservation
- *   - Routes to AwaitingStock if warehouse unassigned or stock insufficient
+ *   - Routes to AwaitingStock when stock is insufficient (and only then)
  *   - Stamps full audit trail (who, when, previous status)
  *   - Emits domain events for downstream listeners
  *
  * Design decisions:
  *   - Uses chunkById(50) to cap memory footprint for large order volumes.
  *   - ProcessOrderWorkflow.guard() enforces the delivery-date gate; the command
- *     query filter (delivery_date <= today) means the guard never rejects unless
+ *     query filter (delivery_date <= tomorrow) means the guard never rejects unless
  *     --force overrides both the date filter and the guard simultaneously.
  *   - actorId = null → audit trail records "system" as the actor.
  *   - Per-order exceptions are caught, logged, and counted — one failure does
@@ -56,15 +62,15 @@ final class ActivateScheduledOrdersCommand extends Command
         FulfillmentEngine $engine,
         ProcessOrderWorkflow $workflow,
     ): int {
-        $today = now()->toDateString();
+        $activationHorizon = now()->addDay()->toDateString();
         $dryRun = (bool) $this->option('dry-run');
         $force = (bool) $this->option('force');
         $companyId = $this->option('company');
 
         $this->info(sprintf(
-            '[%s] Activating Scheduled orders due on or before %s%s%s',
+            '[%s] Activating Scheduled orders due on or before %s (D-1 horizon)%s%s',
             now()->toDateTimeString(),
-            $today,
+            $activationHorizon,
             $dryRun ? ' (dry-run)' : '',
             $force ? ' (FORCE)' : '',
         ));
@@ -72,10 +78,19 @@ final class ActivateScheduledOrdersCommand extends Command
         $query = Order::query()
             ->where('status', OrderStatus::Scheduled->value);
 
-        // Without --force only pick up orders whose delivery window has opened.
+        // Without --force only pick up orders whose activation window has opened.
+        //
+        // The window opens ONE DAY BEFORE the delivery date, not on it: an order due
+        // tomorrow must be reserved, prepared and staged today. Selecting on the
+        // delivery date itself left zero operational lead time, and the order entered
+        // the queue on the morning it was already due.
+        //
+        // ProcessOrderWorkflow::guard() enforces the same D-1 boundary, so the two
+        // cannot drift into a state where this command selects an order the guard then
+        // rejects.
         if (! $force) {
-            $query->where(function ($q) use ($today): void {
-                $q->whereDate('requested_delivery_date', '<=', $today)
+            $query->where(function ($q) use ($activationHorizon): void {
+                $q->whereDate('requested_delivery_date', '<=', $activationHorizon)
                     ->orWhereNull('requested_delivery_date');
             });
         }

@@ -38,7 +38,7 @@ final class ApprovePartialReservationWorkflow implements FulfillmentWorkflowInte
             );
         }
 
-        $approvableStatuses = [OrderStatus::InProgress, OrderStatus::AwaitingStock, OrderStatus::NewOrder];
+        $approvableStatuses = [OrderStatus::InProgress, OrderStatus::Confirmed, OrderStatus::AwaitingStock];
         if (! in_array($order->status, $approvableStatuses, true)) {
             throw new WorkflowPreconditionException(
                 "Order [{$order->id}] cannot receive partial-reservation approval from status [{$order->status->value}].",
