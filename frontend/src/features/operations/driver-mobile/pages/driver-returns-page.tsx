@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, PlusCircle, CheckCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,18 +12,28 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { ROUTES } from '@/router/routes';
-import { useTripReturns, useAddReturn, useConfirmReturn } from '../hooks/use-driver-mobile';
+import { useTripReturns, useAddReturn } from '../hooks/use-driver-mobile';
 import { ReturnForm } from '../components/return-form';
 import type { DeliveryReturn } from '../types/driver-mobile';
 
+/**
+ * Driver Returns — the driver DECLARES what is coming back; the WAREHOUSE counts and confirms.
+ * TASK-DRIVER-APP-PHASE-5-RETURNS-VEHICLE-RECONCILIATION-001.
+ *
+ * The driver is NOT the authority for warehouse receipt (§3/§13): this screen posts only the
+ * canonical declaration (POST /driver/trips/{id}/returns → a trip return LOG with no inventory
+ * effect) and then shows the warehouse's confirmation READ-ONLY. It offers no "confirm receipt"
+ * control — recording actual received / accepted / damaged / shortage is the warehouse's, under
+ * its own operator permission.
+ */
 export function DriverReturnsPage() {
+  const { t } = useTranslation('driver-mobile');
   const { tripId = '' } = useParams<{ tripId: string }>();
   const navigate = useNavigate();
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const { data: returns, isLoading } = useTripReturns(tripId);
-  const addMutation     = useAddReturn(tripId);
-  const confirmMutation = useConfirmReturn(tripId);
+  const addMutation = useAddReturn(tripId);
 
   return (
     <div className="min-h-screen bg-background pb-6">
@@ -31,16 +42,19 @@ export function DriverReturnsPage() {
         <Button
           variant="ghost"
           size="icon"
+          aria-label={t(($) => $.nav.home)}
           onClick={() => navigate(ROUTES.driverTrip.replace(':tripId', tripId))}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="font-semibold text-base flex-1">Returns</h1>
+        <h1 className="font-semibold text-base flex-1">{t(($) => $.returns.title)}</h1>
         <Button size="sm" variant="outline" onClick={() => setSheetOpen(true)}>
           <PlusCircle className="mr-1.5 h-4 w-4" />
-          Add
+          {t(($) => $.returns.add)}
         </Button>
       </div>
+
+      <p className="px-4 pt-3 text-xs text-muted-foreground">{t(($) => $.returns.intro)}</p>
 
       <div className="p-4 space-y-3">
         {isLoading ? (
@@ -54,16 +68,19 @@ export function DriverReturnsPage() {
                 <div>
                   <p className="font-medium text-sm">{ret.product_name}</p>
                   <p className="text-xs text-muted-foreground">
-                    Qty: {ret.returned_qty} ·{' '}
+                    {t(($) => $.returns.qty, { qty: ret.returned_qty })} ·{' '}
                     <Badge variant="outline" className="text-xs">
-                      {ret.return_type}
+                      {t(($) => $.returns.type[ret.return_type])}
                     </Badge>
                   </p>
                 </div>
                 {ret.warehouse_confirmed_at ? (
-                  <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
+                  <Badge className="gap-1 bg-green-100 text-green-700 shrink-0">
+                    <CheckCircle className="h-3.5 w-3.5" />
+                    {t(($) => $.returns.confirmed)}
+                  </Badge>
                 ) : (
-                  <Badge variant="secondary" className="text-xs shrink-0">Pending</Badge>
+                  <Badge variant="secondary" className="text-xs shrink-0">{t(($) => $.returns.awaitingReceipt)}</Badge>
                 )}
               </div>
 
@@ -71,36 +88,20 @@ export function DriverReturnsPage() {
                 <p className="text-xs text-muted-foreground">{ret.reason}</p>
               )}
 
+              {/* Warehouse-recorded receipt — READ-ONLY (the driver never records it). */}
               {ret.warehouse_confirmed_qty !== null && (
                 <p className="text-xs">
-                  Warehouse Confirmed: {ret.warehouse_confirmed_qty}
+                  {t(($) => $.returns.warehouseReceived, { qty: ret.warehouse_confirmed_qty })}
                   {ret.discrepancy_qty !== null && ret.discrepancy_qty !== 0 && (
-                    <span className="text-red-600 ml-1">(Δ {ret.discrepancy_qty})</span>
+                    <span className="text-red-600 ml-1">{t(($) => $.returns.discrepancy, { qty: ret.discrepancy_qty })}</span>
                   )}
                 </p>
-              )}
-
-              {/* Warehouse confirm action */}
-              {!ret.warehouse_confirmed_at && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    confirmMutation.mutate({
-                      returnId: ret.id,
-                      confirmedQty: ret.returned_qty,
-                    })
-                  }
-                  disabled={confirmMutation.isPending}
-                >
-                  Confirm Receipt
-                </Button>
               )}
             </div>
           ))
         ) : (
           <p className="text-center text-sm text-muted-foreground py-10">
-            No returns recorded yet.
+            {t(($) => $.returns.empty)}
           </p>
         )}
       </div>
@@ -109,7 +110,7 @@ export function DriverReturnsPage() {
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
           <SheetHeader className="mb-4">
-            <SheetTitle>Record Return</SheetTitle>
+            <SheetTitle>{t(($) => $.returns.recordTitle)}</SheetTitle>
           </SheetHeader>
           <ReturnForm
             orderId={0}

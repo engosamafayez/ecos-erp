@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useFormatter } from '@/hooks/use-formatter';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,8 +12,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import type { DeliveryActionType } from '../types/driver-mobile';
-import { ACTION_TYPE_LABELS, PAYMENT_TYPE_LABELS } from '../types/driver-mobile';
 import type { DeliveryActionPayload } from '../services/driver-mobile-service';
+import { useFailureReasons } from '../hooks/use-driver-mobile';
 
 interface DeliveryActionFormProps {
   actionType: DeliveryActionType;
@@ -24,7 +24,17 @@ interface DeliveryActionFormProps {
 
 const REQUIRES_REASON: DeliveryActionType[] = ['refused', 'not_available', 'wrong_address', 'unreachable'];
 const REQUIRES_DATE:   DeliveryActionType[] = ['delay'];
-const REQUIRES_PAYMENT: DeliveryActionType[] = ['completed', 'partial'];
+
+// Display-label keys only. The runtime option list AND fallback come from the
+// backend catalogue (GET /driver/failure-reasons → FailureReason::catalogue()),
+// so this union never decides which reasons exist — it only makes the localized
+// label lookup type-safe, exactly like ResultKey / ReservationStatus elsewhere.
+type FailureReasonKey =
+  | 'customer_unavailable' | 'customer_refused' | 'customer_rescheduled' | 'no_answer'
+  | 'address_not_found' | 'address_inaccessible' | 'wrong_area'
+  | 'product_damaged' | 'wrong_item' | 'item_missing'
+  | 'cannot_pay' | 'amount_disputed'
+  | 'vehicle_breakdown' | 'time_exhausted' | 'weather';
 
 export function DeliveryActionForm({
   actionType,
@@ -32,57 +42,57 @@ export function DeliveryActionForm({
   onCancel,
   isLoading,
 }: DeliveryActionFormProps) {
-  const { currency } = useFormatter();
-  const [reason, setReason]           = useState('');
-  const [notes, setNotes]             = useState('');
-  const [newDate, setNewDate]         = useState('');
-  const [paymentType, setPaymentType] = useState('cash');
-  const [amount, setAmount]           = useState('');
-  const [reference, setReference]     = useState('');
+  const { t } = useTranslation('driver-mobile');
+  const { data: failureReasons } = useFailureReasons();
+  const [reason, setReason]   = useState('');
+  const [notes, setNotes]     = useState('');
+  const [newDate, setNewDate] = useState('');
+
+  const reasonMissing = REQUIRES_REASON.includes(actionType) && !reason;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (reasonMissing) return;
 
-    const payload: DeliveryActionPayload = {
-      action_type: actionType,
-      reason:      reason || undefined,
-      notes:       notes || undefined,
+    // Money is frozen on the driver runtime and partial quantity has no canonical
+    // writer yet, so the payload carries only what stopAction accepts and persists.
+    onSubmit({
+      action_type:       actionType,
+      reason:            reason || undefined,
+      notes:             notes || undefined,
       new_delivery_date: newDate || undefined,
-    };
-
-    if (REQUIRES_PAYMENT.includes(actionType) && amount) {
-      payload.payment_type     = paymentType;
-      payload.payment_amount   = parseFloat(amount);
-      payload.reference_number = reference || undefined;
-    }
-
-    onSubmit(payload);
+    });
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <p className="font-semibold text-sm">
-        {ACTION_TYPE_LABELS[actionType]}
+        {t(($) => $.actions[actionType])}
       </p>
 
-      {/* Reason */}
+      {/* Reason — canonical FailureReason vocabulary (backend is the source of truth) */}
       {REQUIRES_REASON.includes(actionType) && (
         <div className="space-y-1.5">
-          <Label htmlFor="reason">Reason *</Label>
-          <Input
-            id="reason"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="Brief reason..."
-            required
-          />
+          <Label htmlFor="reason">{t(($) => $.stop.failureReason.label)}</Label>
+          <Select value={reason} onValueChange={setReason}>
+            <SelectTrigger id="reason">
+              <SelectValue placeholder={t(($) => $.stop.failureReason.placeholder)} />
+            </SelectTrigger>
+            <SelectContent>
+              {(failureReasons ?? []).map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {t(($) => $.failureReasons[opt.value as FailureReasonKey], { defaultValue: opt.label })}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       )}
 
       {/* Reschedule date */}
       {REQUIRES_DATE.includes(actionType) && (
         <div className="space-y-1.5">
-          <Label htmlFor="new-date">New Delivery Date *</Label>
+          <Label htmlFor="new-date">{t(($) => $.actionForm.newDate)}</Label>
           <Input
             id="new-date"
             type="date"
@@ -93,60 +103,14 @@ export function DeliveryActionForm({
         </div>
       )}
 
-      {/* Payment */}
-      {REQUIRES_PAYMENT.includes(actionType) && (
-        <div className="space-y-3 rounded-lg border p-3 bg-muted/30">
-          <p className="text-sm font-medium">Collect Payment</p>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="pay-type">Payment Method</Label>
-            <Select value={paymentType} onValueChange={setPaymentType}>
-              <SelectTrigger id="pay-type">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(PAYMENT_TYPE_LABELS).map(([k, v]) => (
-                  <SelectItem key={k} value={k}>{v}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="pay-amount">Amount ({currency})</Label>
-            <Input
-              id="pay-amount"
-              type="number"
-              min="0"
-              step="0.01"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="0.00"
-            />
-          </div>
-
-          {paymentType === 'bank_transfer' && (
-            <div className="space-y-1.5">
-              <Label htmlFor="ref">Reference Number</Label>
-              <Input
-                id="ref"
-                value={reference}
-                onChange={(e) => setReference(e.target.value)}
-                placeholder="Transaction reference..."
-              />
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Notes */}
       <div className="space-y-1.5">
-        <Label htmlFor="notes">Notes</Label>
+        <Label htmlFor="notes">{t(($) => $.actionForm.notes)}</Label>
         <Textarea
           id="notes"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Optional notes..."
+          placeholder={t(($) => $.actionForm.notesPlaceholder)}
           rows={3}
         />
       </div>
@@ -154,10 +118,10 @@ export function DeliveryActionForm({
       {/* Actions */}
       <div className="flex gap-2">
         <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
-          Cancel
+          {t(($) => $.actionForm.cancel)}
         </Button>
-        <Button type="submit" className="flex-1" disabled={isLoading}>
-          {isLoading ? 'Saving...' : 'Confirm'}
+        <Button type="submit" className="flex-1" disabled={isLoading || reasonMissing}>
+          {isLoading ? t(($) => $.actionForm.saving) : t(($) => $.actionForm.confirm)}
         </Button>
       </div>
     </form>

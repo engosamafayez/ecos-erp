@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,6 +21,7 @@ interface ReturnFormProps {
 }
 
 export function ReturnForm({ orderId, onSubmit, onCancel, isLoading }: ReturnFormProps) {
+  const { t } = useTranslation('driver-mobile');
   const [productId,   setProductId]   = useState('');
   const [productName, setProductName] = useState('');
   const [returnType,  setReturnType]  = useState('full');
@@ -41,68 +43,68 @@ export function ReturnForm({ orderId, onSubmit, onCancel, isLoading }: ReturnFor
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <Label>Product ID *</Label>
+        <Label>{t(($) => $.returnForm.productId)}</Label>
         <Input
           type="number"
           value={productId}
           onChange={(e) => setProductId(e.target.value)}
-          placeholder="Product ID..."
+          placeholder={t(($) => $.returnForm.productIdPlaceholder)}
           required
         />
       </div>
 
       <div className="space-y-1.5">
-        <Label>Product Name *</Label>
+        <Label>{t(($) => $.returnForm.productName)}</Label>
         <Input
           value={productName}
           onChange={(e) => setProductName(e.target.value)}
-          placeholder="Product name..."
+          placeholder={t(($) => $.returnForm.productNamePlaceholder)}
           required
         />
       </div>
 
       <div className="space-y-1.5">
-        <Label>Return Type *</Label>
+        <Label>{t(($) => $.returnForm.returnType)}</Label>
         <Select value={returnType} onValueChange={setReturnType}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="full">Full Return</SelectItem>
-            <SelectItem value="partial">Partial Return</SelectItem>
+            <SelectItem value="full">{t(($) => $.returnForm.full)}</SelectItem>
+            <SelectItem value="partial">{t(($) => $.returnForm.partial)}</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       <div className="space-y-1.5">
-        <Label>Quantity *</Label>
+        <Label>{t(($) => $.returnForm.quantity)}</Label>
         <Input
           type="number"
           min="0.001"
           step="0.001"
           value={qty}
           onChange={(e) => setQty(e.target.value)}
-          placeholder="0"
+          placeholder={t(($) => $.returnForm.quantityPlaceholder)}
           required
         />
       </div>
 
       <div className="space-y-1.5">
-        <Label>Reason</Label>
+        <Label>{t(($) => $.returnForm.reason)}</Label>
         <Textarea
           value={reason}
           onChange={(e) => setReason(e.target.value)}
-          placeholder="Return reason..."
+          placeholder={t(($) => $.returnForm.reasonPlaceholder)}
           rows={2}
         />
       </div>
 
       <div className="flex gap-2">
         <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
-          Cancel
+          {t(($) => $.returnForm.cancel)}
         </Button>
         <Button type="submit" className="flex-1" disabled={isLoading}>
-          {isLoading ? 'Saving...' : 'Record Return'}
+          {isLoading ? t(($) => $.returnForm.saving) : t(($) => $.returnForm.submit)}
         </Button>
       </div>
     </form>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Navigation, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ interface GeoCoords {
 }
 
 export function DriverMapPage() {
+  const { t } = useTranslation('driver-mobile');
   const { tripId = '' } = useParams<{ tripId: string }>();
   const navigate = useNavigate();
   const [currentPos, setCurrentPos] = useState<GeoCoords | null>(null);
@@ -30,20 +32,28 @@ export function DriverMapPage() {
     }
   }, []);
 
+  // Prefer exact GPS coordinates when the order carries them; fall back to the
+  // free-text address only when it does not.
+  function destinationQuery(stop: DeliveryStop): string {
+    const gps = stop.order?.gps;
+    if (gps) {
+      return `${gps.lat},${gps.lng}`;
+    }
+    return [stop.order?.address, stop.order?.city, stop.order?.governorate]
+      .filter(Boolean)
+      .join(', ');
+  }
+
   function openGoogleMaps(stop: DeliveryStop) {
-    const addr = stop.order?.shipping_address ?? '';
-    const query = encodeURIComponent(
-      [addr, stop.order?.city, stop.order?.governorate].filter(Boolean).join(', '),
-    );
-    window.open(`https://maps.google.com/?q=${query}`, '_blank');
+    window.open(`https://maps.google.com/?q=${encodeURIComponent(destinationQuery(stop))}`, '_blank');
   }
 
   function openWaze(stop: DeliveryStop) {
-    const addr = stop.order?.shipping_address ?? '';
-    const query = encodeURIComponent(
-      [addr, stop.order?.city, stop.order?.governorate].filter(Boolean).join(', '),
-    );
-    window.open(`https://waze.com/ul?q=${query}`, '_blank');
+    const gps = stop.order?.gps;
+    const url = gps
+      ? `https://waze.com/ul?ll=${gps.lat},${gps.lng}&navigate=yes`
+      : `https://waze.com/ul?q=${encodeURIComponent(destinationQuery(stop))}`;
+    window.open(url, '_blank');
   }
 
   return (
@@ -57,7 +67,7 @@ export function DriverMapPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="font-semibold text-base">Route Map</h1>
+        <h1 className="font-semibold text-base">{t(($) => $.map.title)}</h1>
       </div>
 
       <div className="p-4 space-y-4">
@@ -66,7 +76,10 @@ export function DriverMapPage() {
           <div className="rounded-lg border bg-blue-50 dark:bg-blue-950/30 p-3 flex items-center gap-2">
             <Navigation className="h-4 w-4 text-blue-600" />
             <p className="text-sm text-blue-700 dark:text-blue-300">
-              Your location: {currentPos.lat.toFixed(5)}, {currentPos.lng.toFixed(5)}
+              {t(($) => $.map.yourLocation, {
+                lat: currentPos.lat.toFixed(5),
+                lng: currentPos.lng.toFixed(5),
+              })}
             </p>
           </div>
         )}
@@ -74,12 +87,12 @@ export function DriverMapPage() {
         {/* Map placeholder */}
         <div className="rounded-xl border bg-muted/30 h-40 flex items-center justify-center">
           <p className="text-muted-foreground text-sm">
-            Interactive map requires GPS integration
+            {t(($) => $.map.placeholder)}
           </p>
         </div>
 
         {/* Stop list */}
-        <p className="font-semibold text-sm">Delivery Stops</p>
+        <p className="font-semibold text-sm">{t(($) => $.map.stops)}</p>
 
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
@@ -96,7 +109,7 @@ export function DriverMapPage() {
                   <div>
                     <p className="text-sm font-medium">{stop.order?.customer_name ?? '—'}</p>
                     <p className="text-xs text-muted-foreground line-clamp-1">
-                      {stop.order?.shipping_address}
+                      {stop.order?.address}
                     </p>
                   </div>
                 </div>
@@ -113,7 +126,7 @@ export function DriverMapPage() {
                   onClick={() => openGoogleMaps(stop)}
                 >
                   <ExternalLink className="h-3 w-3" />
-                  Google Maps
+                  {t(($) => $.map.googleMaps)}
                 </Button>
                 <Button
                   size="sm"
@@ -122,14 +135,14 @@ export function DriverMapPage() {
                   onClick={() => openWaze(stop)}
                 >
                   <Navigation className="h-3 w-3" />
-                  Waze
+                  {t(($) => $.map.waze)}
                 </Button>
               </div>
             </div>
           ))
         ) : (
           <p className="text-center text-sm text-muted-foreground py-8">
-            No stops found.
+            {t(($) => $.map.empty)}
           </p>
         )}
       </div>

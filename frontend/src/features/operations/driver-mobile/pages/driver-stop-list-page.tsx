@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,23 +8,23 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ROUTES } from '@/router/routes';
 import { useDriverStops } from '../hooks/use-driver-mobile';
 import { DeliveryStopCard } from '../components/delivery-stop-card';
-import { STOP_STATUS_LABELS } from '../types/driver-mobile';
 import type { DeliveryStop, DeliveryStopStatus } from '../types/driver-mobile';
 
 type FilterTab = 'all' | DeliveryStopStatus;
 
-const FILTER_TABS: { key: FilterTab; label: string }[] = [
-  { key: 'all',       label: 'All' },
-  { key: 'pending',   label: STOP_STATUS_LABELS.pending },
-  { key: 'delivered', label: STOP_STATUS_LABELS.delivered },
-  { key: 'failed',    label: STOP_STATUS_LABELS.failed },
-];
-
 export function DriverStopListPage() {
+  const { t } = useTranslation('driver-mobile');
   const { tripId = '' } = useParams<{ tripId: string }>();
   const navigate = useNavigate();
   const [search,    setSearch]    = useState('');
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
+
+  const filterTabs: { key: FilterTab; label: string }[] = [
+    { key: 'all',       label: t(($) => $.orders.filter.all) },
+    { key: 'pending',   label: t(($) => $.orders.filter.pending) },
+    { key: 'delivered', label: t(($) => $.orders.filter.delivered) },
+    { key: 'failed',    label: t(($) => $.orders.filter.failed) },
+  ];
 
   const { data: stops, isLoading } = useDriverStops(tripId);
 
@@ -52,15 +53,15 @@ export function DriverStopListPage() {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="font-semibold text-base">Stop List</h1>
+          <h1 className="font-semibold text-base">{t(($) => $.orders.title)}</h1>
         </div>
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute inset-inline-start-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            className="pl-9"
-            placeholder="Search by order number or customer name..."
+            className="ps-9"
+            placeholder={t(($) => $.orders.search)}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -68,7 +69,7 @@ export function DriverStopListPage() {
 
         {/* Filter tabs */}
         <div className="flex gap-1">
-          {FILTER_TABS.map((tab) => (
+          {filterTabs.map((tab) => (
             <Button
               key={tab.key}
               variant={activeTab === tab.key ? 'default' : 'outline'}
@@ -94,7 +95,7 @@ export function DriverStopListPage() {
           ))
         ) : (
           <div className="text-center py-12 text-muted-foreground">
-            <p className="text-sm">No stops match the filter.</p>
+            <p className="text-sm">{t(($) => $.orders.noMatch)}</p>
           </div>
         )}
       </div>

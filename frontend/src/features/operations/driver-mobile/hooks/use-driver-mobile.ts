@@ -1,7 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { useToast } from '@/components/ds/use-toast';
 import * as svc from '../services/driver-mobile-service';
-import type { AddReturnPayload, CollectPaymentPayload, DeliveryActionPayload, RecordCustodyReturnPayload } from '../services/driver-mobile-service';
+import type { AddReturnPayload, DeliveryActionPayload, RecordCustodyReturnPayload, StopDeliveryLine } from '../services/driver-mobile-service';
+import type { ReportPeriodValue } from '../types/reports';
+import type { CreateTripExpenseInput } from '../types/trip-expenses';
 
 const K = {
   trips:       'driver-trips',
@@ -98,6 +101,23 @@ export function useFinishTrip(tripId: string) {
   });
 }
 
+// ── Record delivered quantities (canonical, cumulative) ────────────────────────
+
+export function useSubmitStopDelivery(tripId: string, stopId: string) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (lines: StopDeliveryLine[]) => svc.submitStopDelivery(stopId, lines),
+    // No optimistic state: re-read the CANONICAL stop detail (and the lists) so delivered /
+    // remaining quantities and the stop status reflect exactly what the backend committed.
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: K.stopDetail(tripId, stopId) });
+      void qc.invalidateQueries({ queryKey: K.stops(tripId) });
+      void qc.invalidateQueries({ queryKey: [K.trips] });
+    },
+  });
+}
+
 // ── Submit delivery action ────────────────────────────────────────────────────
 
 export function useSubmitDeliveryAction(stopId: string) {
@@ -115,24 +135,6 @@ export function useSubmitDeliveryAction(stopId: string) {
     },
     onError: (err: Error) => {
       toast({ title: 'Failed to record delivery', description: err.message, variant: 'destructive' });
-    },
-  });
-}
-
-// ── Collect payment ───────────────────────────────────────────────────────────
-
-export function useCollectPayment(stopId: string) {
-  const qc = useQueryClient();
-  const { toast } = useToast();
-
-  return useMutation({
-    mutationFn: (payload: CollectPaymentPayload) => svc.collectPayment(stopId, payload),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: [K.trips] });
-      toast({ title: 'Payment recorded' });
-    },
-    onError: (err: Error) => {
-      toast({ title: 'Payment failed', description: err.message, variant: 'destructive' });
     },
   });
 }
@@ -288,21 +290,296 @@ export function useCreateException(stopId: string) {
   });
 }
 
-// ── Confirm return ────────────────────────────────────────────────────────────
+// NOTE: there is no driver "confirm return" hook. Recording a warehouse's RECEIPT of a
+// return (actual received / accepted / damaged / shortage) is a Warehouse-operator authority
+// under its own permission — never the driver's (§3/§13). The driver only DECLARES a return
+// via useAddReturn; the warehouse confirmation is shown read-only on the returns screen.
 
-export function useConfirmReturn(tripId: string) {
+// ── Group loading (TASK-DRIVER-WAVE-1 Option 1) ──────────────────────────────
+
+export function useDriverLoading() {
+  return useQuery({
+    queryKey: ['driver-loading'],
+    queryFn: () => svc.fetchLoadingManifest(),
+    refetchInterval: 30_000,
+  });
+}
+
+/** The driver's OWN vehicle inventory (read-only). */
+export function useVehicleInventory() {
+  return useQuery({
+    queryKey: ['driver-vehicle-inventory'],
+    queryFn: () => svc.fetchVehicleInventory(),
+    refetchInterval: 30_000,
+  });
+}
+
+/**
+ * The driver confirms RECEIPT of what they counted.
+ *
+ * Distinct from `useLoadShipmentProduct`, which sets the warehouse's Loaded quantity:
+ * this writes only the driver's own count and confirmation. The server returns the
+ * refreshed manifest, so Difference and the workflow state come back canonical rather
+ * than being recomputed here.
+ */
+export function useConfirmReceivedProduct() {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation('driver-mobile');
 
   return useMutation({
-    mutationFn: ({ returnId, confirmedQty }: { returnId: number; confirmedQty: number }) =>
-      svc.confirmReturn(returnId, confirmedQty),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: K.returns(tripId) });
-      toast({ title: 'Return confirmed' });
+    mutationFn: ({
+      productId,
+      receivedQty,
+      expectedLoadedQty,
+    }: {
+      productId: string;
+      receivedQty: number;
+      expectedLoadedQty: number;
+    }) => svc.confirmReceivedProduct(productId, receivedQty, expectedLoadedQty),
+    onSuccess: (data) => {
+      qc.setQueryData(['driver-loading'], data);
     },
-    onError: (err: Error) => {
-      toast({ title: 'Failed', description: err.message, variant: 'destructive' });
+    onError: (err: unknown) => {
+      toast({
+        title: t(($) => $.loadingScreen.toasts.loadFailed),
+        description: svc.loadingErrorMessage(err),
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+/**
+ * The driver asks the warehouse to review a discrepancy.
+ *
+ * A REQUEST, NOT A CHANGE — the warehouse quantity is untouched until the warehouse
+ * accepts, edits or rejects.
+ */
+export function useRequestQuantityAdjustment() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { t } = useTranslation('driver-mobile');
+
+  return useMutation({
+    mutationFn: ({
+      productId,
+      reportedQty,
+      expectedLoadedQty,
+      reason,
+    }: {
+      productId: string;
+      reportedQty: number;
+      expectedLoadedQty: number;
+      reason?: string;
+    }) => svc.requestQuantityAdjustment(productId, reportedQty, expectedLoadedQty, reason),
+    onSuccess: (data) => {
+      qc.setQueryData(['driver-loading'], data);
+    },
+    onError: (err: unknown) => {
+      toast({
+        title: t(($) => $.loadingScreen.toasts.loadFailed),
+        description: svc.loadingErrorMessage(err),
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+export function useLoadShipmentProduct() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { t } = useTranslation('driver-mobile');
+
+  return useMutation({
+    mutationFn: ({ productId, quantityLoaded }: { productId: string; quantityLoaded: number }) =>
+      svc.loadShipmentProduct(productId, quantityLoaded),
+    onSuccess: (data) => {
+      qc.setQueryData(['driver-loading'], data);
+    },
+    onError: (err: unknown) => {
+      toast({ title: t(($) => $.loadingScreen.toasts.loadFailed), description: svc.loadingErrorMessage(err), variant: 'destructive' });
+    },
+  });
+}
+
+export function useCompleteShipmentLoading() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { t } = useTranslation('driver-mobile');
+
+  return useMutation({
+    mutationFn: () => svc.completeShipmentLoading(),
+    onSuccess: (data) => {
+      qc.setQueryData(['driver-loading'], data);
+      void qc.invalidateQueries({ queryKey: [K.trips] });
+      toast({ title: t(($) => $.loadingScreen.toasts.completed) });
+    },
+    onError: (err: unknown) => {
+      toast({ title: t(($) => $.loadingScreen.toasts.completeFailed), description: svc.loadingErrorMessage(err), variant: 'destructive' });
+    },
+  });
+}
+
+
+// ── Started Delivery (TASK-DRIVER-WAVE-2, audit §10) ─────────────────────────
+
+export function useStartDelivery(tripId: string, stopId: string) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { t } = useTranslation('driver-mobile');
+
+  return useMutation({
+    mutationFn: () => svc.startDelivery(stopId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: K.stopDetail(tripId, stopId) });
+      void qc.invalidateQueries({ queryKey: K.stops(tripId) });
+    },
+    onError: (err: unknown) => {
+      toast({ title: t(($) => $.stop.startFailed), description: svc.loadingErrorMessage(err), variant: 'destructive' });
+    },
+  });
+}
+
+
+// ── Failure vocabulary (TASK-DRIVER-WAVE-2-PHASE-1, Part B) ──────────────────
+
+export function useFailureReasons() {
+  return useQuery({
+    queryKey: ['driver-failure-reasons'],
+    queryFn: () => svc.fetchFailureReasons(),
+    staleTime: 60 * 60 * 1000, // the canonical enum is effectively static
+  });
+}
+
+
+// ── Payment-transfer proof (TASK-DRIVER-WAVE-2-PHASE-1, Part C) ──────────────
+
+/**
+ * SECURE proof of delivery upload — TASK-DRIVER-APP-FINAL-CLOSURE-002 Part 2.
+ *
+ * Sends real files to the certified `/delivery-proof` endpoint. The driver may only
+ * UPLOAD; retrieval is through the tenant-scoped download route, and no storage path
+ * is ever held by the client.
+ */
+export function useUploadDeliveryProof(tripId: string, stopId: string) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { t } = useTranslation('driver-mobile');
+
+  return useMutation({
+    mutationFn: (input: { signature?: File | null; photos?: File[]; notes?: string }) =>
+      svc.uploadDeliveryProof(stopId, input),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: K.stopDetail(tripId, stopId) });
+      toast({ title: t(($) => $.stop.deliveryProof.uploaded) });
+    },
+    onError: (err: unknown) => {
+      toast({
+        title: t(($) => $.stop.deliveryProof.uploadFailed),
+        description: svc.loadingErrorMessage(err),
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+export function useUploadPaymentProof(tripId: string, stopId: string) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { t } = useTranslation('driver-mobile');
+
+  return useMutation({
+    mutationFn: (file: File) => svc.uploadPaymentProof(stopId, file),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: K.stopDetail(tripId, stopId) });
+      toast({ title: t(($) => $.stop.paymentProof.uploaded) });
+    },
+    onError: (err: unknown) => {
+      toast({ title: t(($) => $.stop.paymentProof.uploadFailed), description: svc.loadingErrorMessage(err), variant: 'destructive' });
+    },
+  });
+}
+
+/**
+ * Change the order's payment method during an active delivery — TASK-DRIVER-APP-PHASE-4-
+ * PAYMENT-METHOD-CLOSURE-001. The backend re-evaluates fulfilment canonically and may reject the
+ * change (422); on either outcome we reload canonical stop/order truth so the UI never shows a
+ * method the backend did not accept (§8/§10).
+ */
+export function useChangePaymentMethod(tripId: string, stopId: string) {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { t } = useTranslation('driver-mobile');
+
+  return useMutation({
+    mutationFn: (method: string) => svc.changePaymentMethod(stopId, method),
+    onSuccess: () => {
+      toast({ title: t(($) => $.stop.changeMethod.updated) });
+    },
+    onError: (err: unknown) => {
+      toast({ title: t(($) => $.stop.changeMethod.failed), description: svc.loadingErrorMessage(err), variant: 'destructive' });
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: K.stopDetail(tripId, stopId) });
+      void qc.invalidateQueries({ queryKey: K.stops(tripId) });
+    },
+  });
+}
+
+// ── Wallet + Reports (Phase 6) — driver-scoped server reads ────────────────────
+
+export function useDriverWallet(period: ReportPeriodValue) {
+  return useQuery({ queryKey: ['driver-wallet', period], queryFn: () => svc.fetchDriverWallet(period) });
+}
+
+export function useDriverOrdersReport(period: ReportPeriodValue, page: number) {
+  return useQuery({
+    queryKey: ['driver-orders-report', period, page],
+    queryFn: () => svc.fetchOrdersReport(period, page),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useDriverGoodsMovement(period: ReportPeriodValue) {
+  return useQuery({ queryKey: ['driver-goods-movement', period], queryFn: () => svc.fetchGoodsMovement(period) });
+}
+
+export function useDriverShortages(period: ReportPeriodValue) {
+  return useQuery({ queryKey: ['driver-shortages', period], queryFn: () => svc.fetchShortageReport(period) });
+}
+
+export function useDriverAdvances() {
+  return useQuery({ queryKey: ['driver-advances'], queryFn: () => svc.fetchAdvancesReport() });
+}
+
+export function useDriverStatement(month: string) {
+  return useQuery({ queryKey: ['driver-statement', month], queryFn: () => svc.fetchDriverStatement(month) });
+}
+
+// ── Trip Expenses (operational movements) — TASK-DRIVER-APP-OPERATIONAL-FLOW-VNEXT-001 §30–§43 ──
+
+export function useTripExpenses() {
+  return useQuery({ queryKey: ['driver-trip-expenses'], queryFn: () => svc.fetchTripExpenses() });
+}
+
+export function useCreateTripExpense() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  const { t } = useTranslation('driver-mobile');
+
+  return useMutation({
+    mutationFn: (input: CreateTripExpenseInput) => svc.createTripExpense(input),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['driver-trip-expenses'] });
+      toast({ title: t(($) => $.tripExpenses.created) });
+    },
+    onError: (err: unknown) => {
+      toast({
+        title: t(($) => $.tripExpenses.createFailed),
+        description: svc.loadingErrorMessage(err),
+        variant: 'destructive',
+      });
     },
   });
 }

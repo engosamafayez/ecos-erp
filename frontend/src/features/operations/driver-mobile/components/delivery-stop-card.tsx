@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { useFormatter } from '@/hooks/use-formatter';
+import { useTranslation } from 'react-i18next';
 import { Phone } from 'lucide-react';
 import { ROUTES } from '@/router/routes';
 import type { DeliveryStop } from '../types/driver-mobile';
@@ -21,7 +21,7 @@ const STATUS_BORDER: Record<string, string> = {
 };
 
 export function DeliveryStopCard({ stop, tripId }: DeliveryStopCardProps) {
-  const { money } = useFormatter();
+  const { t } = useTranslation('driver-mobile');
   const navigate = useNavigate();
 
   const handleClick = () => {
@@ -32,8 +32,9 @@ export function DeliveryStopCard({ stop, tripId }: DeliveryStopCardProps) {
     );
   };
 
-  const phone = (stop as unknown as Record<string, unknown>)['billing_phone'] as string | undefined
-    ?? stop.order?.billing_phone;
+  // Canonical: the phone lives on the order payload (order.phone). The old code
+  // reached for a top-level billing_phone the backend never sent.
+  const phone = stop.order?.phone ?? null;
 
   return (
     <div
@@ -51,7 +52,7 @@ export function DeliveryStopCard({ stop, tripId }: DeliveryStopCardProps) {
           </span>
           <div>
             <p className="text-sm font-medium">
-              {stop.order?.order_number ?? `Stop #${stop.sequence}`}
+              {stop.order?.order_number ?? t(($) => $.stop.sequence, { sequence: stop.sequence })}
             </p>
             <p className="text-xs text-muted-foreground">
               {stop.order?.customer_name ?? '—'}
@@ -62,18 +63,23 @@ export function DeliveryStopCard({ stop, tripId }: DeliveryStopCardProps) {
       </div>
 
       {/* Address */}
-      {stop.order?.shipping_address && (
+      {stop.order?.address && (
         <p className="mt-2 text-xs text-muted-foreground line-clamp-1">
-          {stop.order.shipping_address}
+          {stop.order.address}
         </p>
       )}
 
-      {/* Footer */}
-      <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
-        <span>
-          {money(Number(stop.collected_amount || 0))}
-        </span>
-        {phone && (
+      {/* Zone / Area (data, not UI copy) */}
+      {(stop.order?.area || stop.order?.governorate) && (
+        <p className="mt-0.5 text-xs text-muted-foreground/80 line-clamp-1">
+          {[stop.order?.area, stop.order?.governorate].filter(Boolean).join(' · ')}
+        </p>
+      )}
+
+      {/* Footer — phone only. Money collection is frozen on the driver runtime, so the
+          former "collected amount" chip (always 0) was removed (TASK-DRIVER-04 §20). */}
+      {phone && (
+        <div className="mt-2 flex items-center justify-end text-xs">
           <a
             href={`tel:${phone}`}
             onClick={(e) => e.stopPropagation()}
@@ -82,8 +88,8 @@ export function DeliveryStopCard({ stop, tripId }: DeliveryStopCardProps) {
             <Phone className="h-3 w-3" />
             {phone}
           </a>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

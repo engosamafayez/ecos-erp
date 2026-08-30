@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import { useFormatter } from '@/hooks/use-formatter';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Package, DollarSign } from 'lucide-react';
+import { Package } from 'lucide-react';
 import { ROUTES } from '@/router/routes';
 import type { DriverTrip } from '../types/driver-mobile';
 
@@ -17,58 +17,34 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export function DriverTripCard({ trip }: DriverTripCardProps) {
-  const { money } = useFormatter();
+  const { t } = useTranslation('driver-mobile');
   const navigate = useNavigate();
 
   const statusLabel =
-    trip.status === 'out_for_delivery' ? 'Out for Delivery' :
-    trip.status === 'in_progress'      ? 'In Progress' :
+    trip.status === 'out_for_delivery' ? t(($) => $.status.out_for_delivery) :
+    trip.status === 'in_progress'      ? t(($) => $.status.in_progress) :
+    trip.status === 'completed'        ? t(($) => $.status.completed) :
+    trip.status === 'closed'           ? t(($) => $.status.closed) :
     trip.status;
-
-  const collected =
-    Number(trip.total_cash_collected) +
-    Number(trip.total_bank_transfers) +
-    Number(trip.total_already_paid);
 
   return (
     <div className="rounded-xl border bg-card shadow-sm p-4 space-y-3">
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="font-semibold text-sm">{trip.trip_number}</p>
-          {trip.name && <p className="text-xs text-muted-foreground">{trip.name}</p>}
-        </div>
-        <Badge
-          className={STATUS_COLORS[trip.status] ?? 'bg-gray-100 text-gray-700'}
-        >
+        <p className="font-semibold text-sm">{trip.trip_number}</p>
+        <Badge className={STATUS_COLORS[trip.status] ?? 'bg-gray-100 text-gray-700'}>
           {statusLabel}
         </Badge>
       </div>
 
-      {/* Meta */}
+      {/* Meta — assigned orders (stops_count). Money totals, zone and driver/vehicle
+          identity are intentionally not shown here (frozen / forbidden on the Home). */}
       <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-        {trip.zone_code && (
-          <span className="flex items-center gap-1">
-            <MapPin className="h-3.5 w-3.5" />
-            {trip.zone_code}
-          </span>
-        )}
         <span className="flex items-center gap-1">
           <Package className="h-3.5 w-3.5" />
-          {trip.orders_count} orders
-        </span>
-        <span className="flex items-center gap-1">
-          <DollarSign className="h-3.5 w-3.5" />
-          {money(collected)}
+          {t(($) => $.card.orders, { count: trip.stops_count })}
         </span>
       </div>
-
-      {/* Driver / vehicle */}
-      {(trip.driver_name || trip.vehicle_plate) && (
-        <p className="text-xs text-muted-foreground">
-          {[trip.driver_name, trip.vehicle_plate].filter(Boolean).join(' · ')}
-        </p>
-      )}
 
       {/* CTA */}
       <Button
@@ -76,7 +52,7 @@ export function DriverTripCard({ trip }: DriverTripCardProps) {
         className="w-full"
         onClick={() => navigate(ROUTES.driverTrip.replace(':tripId', trip.id))}
       >
-        Open Trip
+        {t(($) => $.card.startLoading)}
       </Button>
     </div>
   );
