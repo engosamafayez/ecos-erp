@@ -8,6 +8,7 @@ import type { DataGridColumnDef } from '@/components/data-grid/types';
 import { UniversalDataGrid } from '@/components/data-grid/universal-data-grid';
 import { WorkspacePage } from '@/components/page/layout/workspace-page';
 import { WorkspaceHeader } from '@/components/workspace/header/workspace-header';
+import { MobileDataCard } from '@/components/mobile';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
@@ -165,6 +166,25 @@ export function FuelReviewPage() {
             rowId={(row) => row.id}
             loading={isFetching && rows.length === 0}
             onRowClick={openRow}
+            // Explicit anomaly-forward card (§5): the status + anomaly badge — the point
+            // of this workspace — stays the headline; tapping opens the same review
+            // drawer as a desktop row click (§9 parity, same handler). Cells reused verbatim.
+            renderMobileCard={(row) => {
+              const cellOf = (key: string) => columns.find((c) => c.key === key)?.cell(row);
+              return (
+                <MobileDataCard
+                  title={cellOf('transacted_at')}
+                  subtitle={row.station ?? undefined}
+                  status={cellOf('status')}
+                  fields={[
+                    { label: t(($) => $.fleet.review.litres), value: cellOf('litres'), align: 'end' },
+                    { label: t(($) => $.fleet.review.cost), value: cellOf('cost'), align: 'end' },
+                    { label: t(($) => $.fleet.review.odometer), value: cellOf('odometer_km'), align: 'end' },
+                  ]}
+                  onOpen={() => openRow(row)}
+                />
+              );
+            }}
             emptyState={
               <div className="flex flex-col items-center gap-2 py-12 text-center">
                 <Fuel className="h-8 w-8 text-muted-foreground" />

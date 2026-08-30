@@ -28,6 +28,8 @@ import {
   useRowSelection,
 } from '@/components/data-grid';
 import { ActionMenu } from '@/components/crud';
+import type { ActionMenuItem } from '@/components/crud/types';
+import { MobileDataCard } from '@/components/mobile';
 import { useFormatter } from '@/hooks/use-formatter';
 import type { DataGridColumnDef } from '@/components/data-grid';
 import {
@@ -390,17 +392,7 @@ export function SuppliersPage() {
         width: 64,
         align: 'end',
         cell: (s) => (
-          <ActionMenu
-            label={t($ => $.columnsExtra.actions)}
-            items={[
-              { key: 'view',     label: t($ => $.actionMenu.view),     icon: Eye,      onSelect: () => openView(s) },
-              { key: 'edit',     label: t($ => $.actionMenu.edit),     icon: Pencil,   onSelect: () => openEdit(s) },
-              { key: 'activity', label: t($ => $.actionMenu.activity), icon: Activity, onSelect: () => openActivity(s) },
-              { key: 'notes',    label: t($ => $.actionMenu.notes),    icon: FileText, onSelect: () => openView(s) },
-              { key: 'archive',  label: t($ => $.actionMenu.archive),  icon: Archive,  onSelect: () => handleArchive(s), disabled: !s.is_active },
-              { key: 'delete',   label: t($ => $.actionMenu.delete),   icon: Trash2,   onSelect: () => setDeleting(s), variant: 'destructive' },
-            ]}
-          />
+          <ActionMenu label={t($ => $.columnsExtra.actions)} items={actionItems(s)} />
         ),
       },
     ],
@@ -434,6 +426,23 @@ export function SuppliersPage() {
         onError: () => toast.error(t($ => $.toast.archiveFailed)),
       },
     );
+  }
+
+  /**
+   * Single source of truth for a supplier's row actions — consumed by BOTH the
+   * desktop actions column and the mobile card, so eligibility guards (Archive
+   * disabled when already inactive; Delete destructive) and handlers are
+   * identical across presentations (§6/§9). No mobile-only mutation path.
+   */
+  function actionItems(s: Supplier): ActionMenuItem[] {
+    return [
+      { key: 'view',     label: t($ => $.actionMenu.view),     icon: Eye,      onSelect: () => openView(s) },
+      { key: 'edit',     label: t($ => $.actionMenu.edit),     icon: Pencil,   onSelect: () => openEdit(s) },
+      { key: 'activity', label: t($ => $.actionMenu.activity), icon: Activity, onSelect: () => openActivity(s) },
+      { key: 'notes',    label: t($ => $.actionMenu.notes),    icon: FileText, onSelect: () => openView(s) },
+      { key: 'archive',  label: t($ => $.actionMenu.archive),  icon: Archive,  onSelect: () => handleArchive(s), disabled: !s.is_active },
+      { key: 'delete',   label: t($ => $.actionMenu.delete),   icon: Trash2,   onSelect: () => setDeleting(s), variant: 'destructive' },
+    ];
   }
 
   function confirmDelete() {
@@ -557,6 +566,35 @@ export function SuppliersPage() {
             selection={selection}
             columnVisibility={visibility}
             skeletonRows={PER_PAGE}
+            // Explicit amount-forward card (§5): identity + status headline, the
+            // payable/outstanding balances an operator acts on, the dial-able phone,
+            // and the SAME action menu (identical guards via actionItems). Balance and
+            // phone cells are reused verbatim from the desktop columns (§9 parity).
+            renderMobileCard={(s) => {
+              const cellOf = (key: string) => columns.find((c) => c.key === key)?.cell(s);
+              return (
+                <MobileDataCard
+                  title={
+                    <button
+                      type="button"
+                      onClick={() => openView(s)}
+                      className="text-start font-medium underline-offset-2 hover:text-primary hover:underline"
+                    >
+                      {s.name}
+                    </button>
+                  }
+                  subtitle={<span className="font-mono">{s.code}</span>}
+                  status={<SupplierStatusBadge isActive={s.is_active} />}
+                  fields={[
+                    { label: t($ => $.columns.phone), value: cellOf('phone') },
+                    { label: t($ => $.columnsExtra.currentSupplierBalance), value: cellOf('current_supplier_balance'), align: 'end' },
+                    { label: t($ => $.columnsExtra.totalOutstanding), value: cellOf('total_outstanding'), align: 'end' },
+                    { label: t($ => $.columnsExtra.lastPurchase), value: cellOf('last_purchase') },
+                  ]}
+                  actions={<ActionMenu label={t($ => $.columnsExtra.actions)} items={actionItems(s)} />}
+                />
+              );
+            }}
           />
         )}
       </WorkspacePage>

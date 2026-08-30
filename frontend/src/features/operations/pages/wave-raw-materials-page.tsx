@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { MobileDataCard } from '@/components/mobile';
 import { SmartToolbar } from '@/components/data-grid/smart-toolbar';
 import { UniversalDataGrid } from '@/components/data-grid/universal-data-grid';
 import { ColumnVisibilityMenu } from '@/components/data-grid/column-visibility-menu';
@@ -248,6 +249,27 @@ export function WaveRawMaterialsPage() {
             rowId={(m) => m.id}
             loading={false}
             columnVisibility={colVis.visibility}
+            // Explicit shortage-forward card (§5): shortage status stays the headline,
+            // required/available/missing and the incoming quantities stay visible.
+            // Reuses the desktop column cell renderers verbatim — identical badge,
+            // formatting and colour, no recomputation (§9 parity).
+            renderMobileCard={(m) => {
+              const cellOf = (key: string) => columns.find((c) => c.key === key)?.cell(m);
+              return (
+                <MobileDataCard
+                  title={m.material_name}
+                  subtitle={m.material_sku ?? undefined}
+                  status={cellOf('status')}
+                  fields={[
+                    { label: t($ => $.wave.rawMaterials.columns.required), value: cellOf('required_qty'), align: 'end' },
+                    { label: t($ => $.wave.rawMaterials.columns.available), value: cellOf('available_qty'), align: 'end' },
+                    { label: t($ => $.wave.rawMaterials.columns.missing), value: cellOf('missing_qty'), align: 'end' },
+                    { label: t($ => $.wave.rawMaterials.columns.expectedToday), value: cellOf('expected_today'), align: 'end' },
+                    { label: t($ => $.wave.rawMaterials.columns.inTransit), value: cellOf('in_transit_qty'), align: 'end' },
+                  ]}
+                />
+              );
+            }}
             emptyState={
               <div className="flex flex-col items-center justify-center py-16 gap-2 text-muted-foreground">
                 <FlaskConical className="w-8 h-8" />
