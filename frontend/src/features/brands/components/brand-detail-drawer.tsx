@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Briefcase, Building2, Globe, History, Package, Pencil, ShoppingCart, Tag, Truck, Warehouse } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -88,16 +89,18 @@ type OverviewTabProps = {
 };
 
 function OverviewTab({ brand, accountsCount, channelsCount, productsCount }: OverviewTabProps) {
+  const { t } = useTranslation('brands');
+
   return (
     <div className="flex flex-col gap-5">
       {/* KPI metrics strip */}
       <div className="grid grid-cols-3 gap-2">
         {[
-          { label: 'Integration Accounts', value: accountsCount },
-          { label: 'Sales Channels',       value: channelsCount },
-          { label: 'Products',             value: productsCount },
-        ].map(({ label, value }) => (
-          <div key={label} className="rounded-md border bg-muted/30 p-2.5 text-center">
+          { key: 'accounts', label: t($ => $.detail.integrationAccounts), value: accountsCount },
+          { key: 'channels', label: t($ => $.detail.salesChannels),       value: channelsCount },
+          { key: 'products', label: t($ => $.detail.products),            value: productsCount },
+        ].map(({ key, label, value }) => (
+          <div key={key} className="rounded-md border bg-muted/30 p-2.5 text-center">
             <p className="text-lg font-bold">{value}</p>
             <p className="text-[10px] text-muted-foreground">{label}</p>
           </div>
@@ -107,47 +110,47 @@ function OverviewTab({ brand, accountsCount, channelsCount, productsCount }: Ove
       {/* Detail rows */}
       <dl className="grid gap-3 text-sm">
         <div className="flex items-center justify-between">
-          <dt className="text-muted-foreground">Code</dt>
+          <dt className="text-muted-foreground">{t($ => $.columns.code)}</dt>
           <dd className="font-mono font-medium">{brand.code}</dd>
         </div>
         <Separator />
         <div className="flex items-center justify-between">
-          <dt className="text-muted-foreground">Name</dt>
+          <dt className="text-muted-foreground">{t($ => $.detail.name)}</dt>
           <dd className="font-medium">{brand.name}</dd>
         </div>
         {brand.slug && (
           <>
             <Separator />
             <div className="flex items-center justify-between">
-              <dt className="text-muted-foreground">Slug</dt>
+              <dt className="text-muted-foreground">{t($ => $.detail.slug)}</dt>
               <dd className="font-mono text-xs text-muted-foreground">{brand.slug}</dd>
             </div>
           </>
         )}
         <Separator />
         <div className="flex items-center justify-between">
-          <dt className="text-muted-foreground">Company</dt>
-          <dd>{brand.company?.name ?? 'Unassigned'}</dd>
+          <dt className="text-muted-foreground">{t($ => $.detail.company)}</dt>
+          <dd>{brand.company?.name ?? t($ => $.detail.unassigned)}</dd>
         </div>
         {brand.description && (
           <>
             <Separator />
             <div className="flex flex-col gap-1">
-              <dt className="text-muted-foreground">Description</dt>
+              <dt className="text-muted-foreground">{t($ => $.form.description.label)}</dt>
               <dd className="text-sm text-muted-foreground/80">{brand.description}</dd>
             </div>
           </>
         )}
         <Separator />
         <div className="flex items-center justify-between">
-          <dt className="text-muted-foreground">Created At</dt>
+          <dt className="text-muted-foreground">{t($ => $.detail.createdAt)}</dt>
           <dd className="text-muted-foreground text-xs">
             {brand.created_at ? new Date(brand.created_at).toLocaleDateString() : '—'}
           </dd>
         </div>
         {brand.updated_at && (
           <div className="flex items-center justify-between">
-            <dt className="text-muted-foreground">Updated At</dt>
+            <dt className="text-muted-foreground">{t($ => $.detail.updatedAt)}</dt>
             <dd className="text-muted-foreground text-xs">
               {new Date(brand.updated_at).toLocaleDateString()}
             </dd>
@@ -160,25 +163,25 @@ function OverviewTab({ brand, accountsCount, channelsCount, productsCount }: Ove
         <div className="rounded-md border bg-muted/20 p-3 flex flex-col gap-2">
           <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wide">
             <Tag className="size-3" />
-            Pricing Policy
+            {t($ => $.policies.pricingPolicy)}
           </div>
           <div className="grid grid-cols-3 gap-2 text-center">
             {brand.default_target_margin !== null && (
               <div>
                 <p className="text-sm font-semibold">{brand.default_target_margin}%</p>
-                <p className="text-[10px] text-muted-foreground">Min Margin</p>
+                <p className="text-[10px] text-muted-foreground">{t($ => $.detail.minMargin)}</p>
               </div>
             )}
             {brand.default_markup !== null && (
               <div>
                 <p className="text-sm font-semibold">{brand.default_markup}%</p>
-                <p className="text-[10px] text-muted-foreground">Markup</p>
+                <p className="text-[10px] text-muted-foreground">{t($ => $.detail.markup)}</p>
               </div>
             )}
             {brand.default_discount_pct !== null && (
               <div>
                 <p className="text-sm font-semibold">{brand.default_discount_pct}%</p>
-                <p className="text-[10px] text-muted-foreground">Discount</p>
+                <p className="text-[10px] text-muted-foreground">{t($ => $.detail.discount)}</p>
               </div>
             )}
           </div>
@@ -191,6 +194,7 @@ function OverviewTab({ brand, accountsCount, channelsCount, productsCount }: Ove
 // ── Drawer ────────────────────────────────────────────────────────────────────
 
 export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDetailDrawerProps) {
+  const { t } = useTranslation('brands');
   if (!brand) return null;
 
   const accountsResult = useBusinessAccountsQuery({ brand_id: brand.id, per_page: 50 }, { enabled: open });
@@ -204,7 +208,7 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="flex flex-col overflow-hidden p-0">
-        <SheetTitle className="sr-only">{brand.name} — Brand Details</SheetTitle>
+        <SheetTitle className="sr-only">{t($ => $.detail.srTitle, { name: brand.name })}</SheetTitle>
 
         {/* ── Header ── */}
         <div className="flex items-start justify-between gap-3 border-b px-6 py-5 flex-none pr-14">
@@ -217,7 +221,7 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
                   variant={brand.is_active ? 'default' : 'secondary'}
                   className="text-[10px] px-1.5 py-0 shrink-0"
                 >
-                  {brand.is_active ? 'Active' : 'Inactive'}
+                  {brand.is_active ? t($ => $.detail.statusActive) : t($ => $.detail.statusInactive)}
                 </Badge>
               </div>
               <SheetDescription className="font-mono text-xs mt-0.5">{brand.code}</SheetDescription>
@@ -226,7 +230,7 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
           {onEdit && (
             <Button variant="outline" size="sm" className="shrink-0" onClick={() => onEdit(brand)}>
               <Pencil className="size-3.5 mr-1" />
-              Edit
+              {t($ => $.detail.edit)}
             </Button>
           )}
         </div>
@@ -236,20 +240,20 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
           <Tabs defaultValue="overview">
             <div className="sticky top-0 z-10 bg-background border-b">
               <TabsList className="w-full rounded-none border-0 bg-transparent h-10 gap-0 p-0">
-                <TabsTrigger value="overview"          className={TAB_CLS}>Overview</TabsTrigger>
-                <TabsTrigger value="pricing"           className={TAB_CLS}>Pricing</TabsTrigger>
+                <TabsTrigger value="overview"          className={TAB_CLS}>{t($ => $.tabs.overview)}</TabsTrigger>
+                <TabsTrigger value="pricing"           className={TAB_CLS}>{t($ => $.tabs.pricing)}</TabsTrigger>
                 <TabsTrigger value="orders"            className={TAB_CLS}>
-                  <ShoppingCart className="size-3 mr-1" />Orders
+                  <ShoppingCart className="size-3 mr-1" />{t($ => $.tabs.orders)}
                 </TabsTrigger>
-                <TabsTrigger value="channels"          className={TAB_CLS}>Channels</TabsTrigger>
-                <TabsTrigger value="products"          className={TAB_CLS}>Products</TabsTrigger>
+                <TabsTrigger value="channels"          className={TAB_CLS}>{t($ => $.tabs.channels)}</TabsTrigger>
+                <TabsTrigger value="products"          className={TAB_CLS}>{t($ => $.tabs.products)}</TabsTrigger>
                 <TabsTrigger value="shipping"          className={TAB_CLS}>
-                  <Truck className="size-3 mr-1" />Shipping &amp; Delivery
+                  <Truck className="size-3 mr-1" />{t($ => $.tabs.shippingDelivery)}
                 </TabsTrigger>
                 <TabsTrigger value="warehouses"        className={TAB_CLS}>
-                  <Warehouse className="size-3 mr-1" />Warehouses
+                  <Warehouse className="size-3 mr-1" />{t($ => $.tabs.warehouses)}
                 </TabsTrigger>
-                <TabsTrigger value="activity"          className={TAB_CLS}>Activity</TabsTrigger>
+                <TabsTrigger value="activity"          className={TAB_CLS}>{t($ => $.tabs.activity)}</TabsTrigger>
               </TabsList>
             </div>
 
@@ -274,7 +278,7 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
               {accountsResult.isLoading ? (
                 <RelationshipSkeleton />
               ) : accounts.length === 0 ? (
-                <EmptyRelationship icon={Briefcase} message="No integration accounts linked to this brand." />
+                <EmptyRelationship icon={Briefcase} message={t($ => $.detail.emptyAccounts)} />
               ) : (
                 <div className="flex flex-col gap-2">
                   {accounts.map((account) => (
@@ -302,7 +306,7 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
               {channelsResult.isLoading ? (
                 <RelationshipSkeleton />
               ) : channels.length === 0 ? (
-                <EmptyRelationship icon={Globe} message="No sales channels linked to this brand." />
+                <EmptyRelationship icon={Globe} message={t($ => $.detail.emptyChannels)} />
               ) : (
                 <div className="flex flex-col gap-2">
                   {channels.map((channel) => (
@@ -330,7 +334,7 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
               {productsResult.isLoading ? (
                 <RelationshipSkeleton />
               ) : products.length === 0 ? (
-                <EmptyRelationship icon={Package} message="No products linked to this brand." />
+                <EmptyRelationship icon={Package} message={t($ => $.detail.emptyProducts)} />
               ) : (
                 <div className="flex flex-col gap-2">
                   {products.map((product) => (
@@ -346,13 +350,13 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
                         <p className="text-[11px] text-muted-foreground font-mono">{product.sku}</p>
                       </div>
                       <Badge variant={product.is_active ? 'default' : 'secondary'} className="text-[10px] shrink-0">
-                        {product.is_active ? 'Active' : 'Inactive'}
+                        {product.is_active ? t($ => $.detail.statusActive) : t($ => $.detail.statusInactive)}
                       </Badge>
                     </div>
                   ))}
                   {(productsResult.data?.meta.total ?? 0) > products.length && (
                     <p className="text-center text-xs text-muted-foreground pt-1">
-                      Showing {products.length} of {productsResult.data?.meta.total} products
+                      {t($ => $.detail.showingProducts, { count: products.length, total: productsResult.data?.meta.total ?? 0 })}
                     </p>
                   )}
                 </div>
@@ -363,8 +367,8 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
               <Tabs defaultValue="general">
                 <div className="border-b px-6">
                   <TabsList className="rounded-none border-0 bg-transparent h-9 gap-0 p-0 -mb-px">
-                    <TabsTrigger value="general"    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-full text-xs px-3">General</TabsTrigger>
-                    <TabsTrigger value="time-slots" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-full text-xs px-3">Delivery Windows</TabsTrigger>
+                    <TabsTrigger value="general"    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-full text-xs px-3">{t($ => $.tabs.general)}</TabsTrigger>
+                    <TabsTrigger value="time-slots" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none h-full text-xs px-3">{t($ => $.tabs.deliveryWindows)}</TabsTrigger>
                   </TabsList>
                 </div>
                 <TabsContent value="general" className="m-0 px-6 py-5">
@@ -381,7 +385,7 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
             </TabsContent>
 
             <TabsContent value="activity" className="m-0 px-6 py-5">
-              <EmptyRelationship icon={History} message="Activity log will be available in a future update." />
+              <EmptyRelationship icon={History} message={t($ => $.detail.emptyActivity)} />
             </TabsContent>
           </Tabs>
         </div>
