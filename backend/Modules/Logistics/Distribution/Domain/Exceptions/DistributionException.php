@@ -54,6 +54,18 @@ class DistributionException extends RuntimeException
         return new self('The selected driver/vehicle assignment is not active.');
     }
 
+    /**
+     * The single-active-custody invariant: a driver may hold at most one open operational custody
+     * at a time. A second goods custody cannot begin until the driver's current one is closed.
+     */
+    public static function driverAlreadyHasOpenCustody(): self
+    {
+        return new self(
+            'This driver already has an open operational custody. '
+            .'Close the current trip/custody before handing over goods for another.',
+        );
+    }
+
     public static function deliveryNotOnTheRoad(TripStatus $status): self
     {
         return new self(sprintf(
