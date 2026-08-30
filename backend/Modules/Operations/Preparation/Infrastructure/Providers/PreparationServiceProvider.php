@@ -29,11 +29,13 @@ use Modules\Operations\Preparation\Application\Services\DailyPreparationSessionM
 use Modules\Operations\Preparation\Application\Services\PreparationReleaseEngine;
 use Modules\Operations\Preparation\Application\Services\SoftReservationService;
 use Modules\Operations\Preparation\Application\Services\WarehouseAssignmentEngine;
+use Modules\Operations\Preparation\Application\Services\WaveEngine\CompanyTimezoneResolver;
 use Modules\Operations\Preparation\Application\Services\WaveEngine\DemandRefreshDispatcher;
 use Modules\Operations\Preparation\Application\Services\WaveEngine\WaveLifecycleService;
 use Modules\Operations\Preparation\Application\Services\WaveEngine\WaveManager;
 use Modules\Operations\Preparation\Application\Services\WaveEngine\WaveMembershipService;
 use Modules\Operations\Preparation\Application\Services\WaveEngine\WavePreparationService;
+use Modules\Operations\Preparation\Application\Services\WaveEngine\WaveScheduleResolver;
 use Modules\Operations\Preparation\Domain\Events\WarehouseAssigned;
 use Modules\Operations\Preparation\Domain\Models\PreparationSession;
 use Modules\Operations\Preparation\Domain\Models\PreparationStation;
@@ -85,6 +87,12 @@ final class PreparationServiceProvider extends ServiceProvider
         $this->app->singleton(WaveLifecycleService::class);
         $this->app->singleton(WaveMembershipService::class);
         $this->app->singleton(WavePreparationService::class);
+
+        // TASK-…-CROSS-DAY-TRANSITION-002 — the operational cycle time model.
+        // CompanyTimezoneResolver is a singleton for its per-request memo: the scheduler
+        // resolves the same handful of companies on every tick.
+        $this->app->singleton(CompanyTimezoneResolver::class);
+        $this->app->singleton(WaveScheduleResolver::class);
     }
 
     public function boot(): void

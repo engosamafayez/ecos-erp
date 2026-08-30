@@ -28,8 +28,8 @@ final class DemandAnalysisService
 {
     /** Orders in these statuses require operational planning. */
     private const OPERATIONAL_STATUSES = [
-        OrderStatus::NewOrder->value,
         OrderStatus::InProgress->value,
+        OrderStatus::Confirmed->value,
     ];
 
     public function analyze(?string $date = null): DemandAnalysisResult

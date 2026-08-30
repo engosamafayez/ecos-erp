@@ -6,6 +6,7 @@ namespace Modules\Operations\Preparation\Domain\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 
 /**
  * @property string $id
@@ -57,10 +58,29 @@ class PreparationSessionPolicy extends Model
     /**
      * Returns the default statuses when no policy exists.
      *
+     * ADR-042 §7 — an order may enter Preparation only while it is In Progress or
+     * Confirmed. `scheduled` and `awaiting_payment` are deliberately excluded: they
+     * sit outside fulfilment execution until their own business triggers move them
+     * to In Progress.
+     *
+     * HISTORY, because this list has been wrong twice and both times silently:
+     *   - `confirm_order` was a pre-V2 token, renamed to `confirmed` in July 2026
+     *     and then MERGED INTO `in_progress` by the V3 consolidation. It matched no
+     *     enum case, so the effective policy had collapsed to `in_progress` alone.
+     *   - V3 then added `new` here, which ADR-042 removes again.
+     * The lesson encoded by ADR-042 §8: a stale status string in a policy list does
+     * not fail loudly, it silently shrinks the eligible set. Hence the closed list
+     * and the test that asserts it.
+     *
+     * Deliberately a closed list: an unknown or future status is NOT eligible.
+     *
      * @return list<string>
      */
     public static function defaultEligibleStatuses(): array
     {
-        return ['confirm_order', 'in_progress'];
+        return array_map(
+            static fn (OrderStatus $s): string => $s->value,
+            OrderStatus::fulfilmentEligible(),
+        );
     }
 }
