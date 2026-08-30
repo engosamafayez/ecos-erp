@@ -20,6 +20,11 @@ export type EcosComboboxProps = {
   loading?: boolean;
   disabled?: boolean;
   className?: string;
+  /** Notified as the user types — lets a caller drive SERVER-SIDE search (opt-in). */
+  onSearchChange?: (query: string) => void;
+  /** When false, the caller supplies already-filtered (e.g. server-searched) options; the
+   *  built-in client-side label filter is skipped. Defaults to true (unchanged behaviour). */
+  filterClientSide?: boolean;
 };
 
 /**
@@ -42,6 +47,8 @@ export function EcosCombobox({
   loading = false,
   disabled = false,
   className,
+  onSearchChange,
+  filterClientSide = true,
 }: EcosComboboxProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -50,7 +57,7 @@ export function EcosCombobox({
   const listRef = useRef<HTMLDivElement>(null);
 
   const selected = options.find((o) => o.value === value) ?? null;
-  const filtered = query
+  const filtered = filterClientSide && query
     ? options.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()))
     : options;
 
@@ -144,7 +151,7 @@ export function EcosCombobox({
             <Input
               ref={inputRef}
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => { setQuery(e.target.value); onSearchChange?.(e.target.value); }}
               placeholder={searchPlaceholder}
               className="h-8"
               aria-label={searchPlaceholder}

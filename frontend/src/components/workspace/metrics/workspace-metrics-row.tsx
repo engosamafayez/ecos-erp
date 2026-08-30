@@ -11,12 +11,14 @@ const GRID_COLS: Record<number, string> = {
   1: 'sm:grid-cols-1',
   2: 'sm:grid-cols-2',
   3: 'sm:grid-cols-3',
+  // Exactly five metrics balance in a single row on desktop. Every other count is
+  // unchanged (4, 6+ fall through to the two-then-four fallback below).
+  5: 'sm:grid-cols-2 lg:grid-cols-5',
 };
 
 export function WorkspaceMetricsRow({ metrics, className }: Props) {
   if (metrics.length === 0) return null;
-  const count = Math.min(metrics.length, 4);
-  const colClass = GRID_COLS[count] ?? 'sm:grid-cols-2 lg:grid-cols-4';
+  const colClass = GRID_COLS[metrics.length] ?? 'sm:grid-cols-2 lg:grid-cols-4';
 
   return (
     <div
