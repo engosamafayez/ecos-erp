@@ -101,7 +101,17 @@ final class RoleTemplateCatalog
                 'dashboard' => ['profile' => 'warehouse'], 'landing' => 'inventoryDashboard',
             ]),
             self::make('finance-director', 'Finance Director', $M, 'Directs finance and accounting.', [
-                'permissions' => ['finance.*', 'purchasing.supplier_invoices.*'],
+                // The three payment-proof verbs are listed EXPLICITLY, not reached by a
+                // wildcard: they live under `sales.*`, which this template deliberately does not
+                // hold. Finance reviews payment evidence without holding any order verb — the
+                // same shape as the concrete `finance-manager` role, whose proof grant is exactly
+                // view+verify+reject. `sales.orders.proof_upload` is excluded on purpose: upload
+                // is a Sales capability, and keeping the two apart is the role-level half of the
+                // maker-checker separation (the identity-level half lives in the actions).
+                'permissions' => [
+                    'finance.*', 'purchasing.supplier_invoices.*',
+                    'sales.orders.proof_view', 'sales.orders.proof_verify', 'sales.orders.proof_reject',
+                ],
                 'nav' => ['dashboard', 'finance', 'purchasing', 'reports'],
                 'dashboard' => ['profile' => 'finance'], 'landing' => 'accounting',
                 'policies' => ['close-period', 'approve-journals'],
@@ -283,7 +293,12 @@ final class RoleTemplateCatalog
                 'policies' => ['approve-journals'],
             ]),
             self::make('financial-controller', 'Financial Controller', $FIN, 'Owns the close, budgets and controls.', [
-                'permissions' => ['finance.*'],
+                // Same reasoning as `finance-director`: explicit proof verbs, no `sales.*`
+                // wildcard, and `proof_upload` deliberately withheld from Finance.
+                'permissions' => [
+                    'finance.*',
+                    'sales.orders.proof_view', 'sales.orders.proof_verify', 'sales.orders.proof_reject',
+                ],
                 'nav' => ['dashboard', 'finance', 'reports'],
                 'dashboard' => ['profile' => 'finance'], 'landing' => 'accounting',
                 'policies' => ['close-period', 'approve-journals', 'approve-budget'],

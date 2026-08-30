@@ -17,16 +17,21 @@ final class WooCommerceOrderStatusTranslator
     /**
      * WooCommerce status → ECOS OrderStatus backing value.
      *
-     * Right-hand values follow the V3 lifecycle established by
-     * 2026_07_22_100000_simplify_order_lifecycle_v3.php:
-     *   pending → new, processing → in_progress, completed → delivered.
+     * Right-hand values follow the canonical lifecycle of ADR-042:
+     *   pending → in_progress, processing → in_progress, completed → delivered.
      *
-     * 'pending' and 'processing' were ECOS statuses before V3 and no longer
-     * exist on the enum, so tryFrom() returned null for them and every imported
-     * pending or processing WooCommerce order silently lost its status.
+     * THIS MAP HAS NOW BROKEN TWICE FOR THE SAME REASON. Before V3 it pointed at
+     * ECOS statuses that the enum later dropped, so tryFrom() returned null and
+     * every imported pending/processing WooCommerce order silently lost its
+     * status. V3 repointed 'pending' at 'new'; ADR-042 removes 'new', which would
+     * have reproduced the failure — worse this time, because the importer's
+     * fallback then calls OrderStatus::from('pending') and throws.
+     *
+     * The right-hand side is a lifecycle status and must be revisited by every
+     * task that changes OrderStatus. It is asserted by a test for that reason.
      */
     private const MAP = [
-        'pending' => 'new',
+        'pending' => 'in_progress',
         'on-hold' => 'awaiting_payment',
         'processing' => 'in_progress',
         'completed' => 'delivered',
