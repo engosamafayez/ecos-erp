@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Briefcase, Building2, Globe, History, Package, Pencil, ShoppingCart, Tag, Truck } from 'lucide-react';
+import { Briefcase, Building2, Globe, History, Package, Pencil, ShoppingCart, Tag, Truck, Warehouse } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import {
 import { getMediaUrl } from '@/lib/media';
 import type { Brand } from '@/features/brands/types/brand';
 import { BrandShippingTab }         from '@/features/brands/components/brand-shipping-tab';
+import { BrandWarehousesTab }       from '@/features/brands/components/brand-warehouses-tab';
 import { BrandDeliveryWindowsTab } from '@/features/brands/components/brand-delivery-windows-tab';
 import { PolicyWorkspace } from '@/features/admin/configuration/components/policy-workspace';
 import { useBusinessAccountsQuery } from '@/features/business-accounts/hooks/use-business-accounts';
@@ -245,6 +246,9 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
                 <TabsTrigger value="shipping"          className={TAB_CLS}>
                   <Truck className="size-3 mr-1" />Shipping &amp; Delivery
                 </TabsTrigger>
+                <TabsTrigger value="warehouses"        className={TAB_CLS}>
+                  <Warehouse className="size-3 mr-1" />Warehouses
+                </TabsTrigger>
                 <TabsTrigger value="activity"          className={TAB_CLS}>Activity</TabsTrigger>
               </TabsList>
             </div>
@@ -370,6 +374,10 @@ export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDe
                   <BrandDeliveryWindowsTab brandId={brand.id} />
                 </TabsContent>
               </Tabs>
+            </TabsContent>
+
+            <TabsContent value="warehouses" className="m-0 p-0">
+              <BrandWarehousesTab brandId={brand.id} />
             </TabsContent>
 
             <TabsContent value="activity" className="m-0 px-6 py-5">

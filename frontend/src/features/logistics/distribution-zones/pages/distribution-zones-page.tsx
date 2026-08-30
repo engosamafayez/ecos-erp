@@ -11,6 +11,7 @@ import {
 
 import { Pagination }       from '@/components/crud';
 import { WorkspaceHeader }  from '@/components/workspace/header/workspace-header';
+import { useNavLabel }      from '@/components/layout/use-nav-label';
 import { WorkspacePage }    from '@/components/page/layout/workspace-page';
 import { SmartToolbar }     from '@/components/data-grid/smart-toolbar';
 import {
@@ -232,6 +233,7 @@ function ZonesTable({
 
 export function DistributionZonesPage() {
   const { toast } = useToast();
+  const navLabel = useNavLabel();
 
   const [search,       setSearch]       = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
@@ -348,7 +350,13 @@ export function DistributionZonesPage() {
   return (
     <>
       <WorkspaceHeader
-        breadcrumbs={[{ label: 'Logistics OS' }, { label: 'Distribution Zones' }]}
+        breadcrumbs={[
+          // Shipping -> Distribution Zones — Zones is a Geography capability under
+          // Shipping (TASK-DISTRIBUTION-DAILY-TEMPLATE-GROUP-LIFECYCLE-AND-NAV-001
+          // Part 1A), labelled from the navigation translation keys.
+          { label: navLabel.group('shipping') },
+          { label: navLabel.item('logistics-distribution-zones') },
+        ]}
         title="Distribution Zones"
         description="Manage delivery zones and assign city areas to each zone"
         metrics={metrics}

@@ -23,6 +23,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { WorkspaceHeader } from '@/components/workspace/header/workspace-header';
+import { useNavLabel } from '@/components/layout/use-nav-label';
 import { SmartToolbar }   from '@/components/data-grid/smart-toolbar';
 import { Badge }   from '@/components/ui/badge';
 import { Button }  from '@/components/ui/button';
@@ -373,6 +374,7 @@ function StartPlanningDialog({
 export function DistributionPlanningPage() {
   const { toast } = useToast();
   const { t } = useTranslation('logistics');
+  const navLabel = useNavLabel();
   const { money } = useFormatter();
 
   // ── View state ──────────────────────────────────────────────────────────────
@@ -601,8 +603,14 @@ export function DistributionPlanningPage() {
         title={t($ => $.planning.title)}
         description={t($ => $.planning.description)}
         breadcrumbs={[
-          { label: t($ => $.planning.breadcrumbRoot) },
-          { label: t($ => $.planning.title) },
+          // Operations -> Distributor Orders -> Distribution Planning
+          // (TASK-OPERATIONS-DISTRIBUTOR-ORDERS-LOADING-001 §11). The labels come from
+          // the navigation's own translation keys so the trail and the sidebar can never
+          // disagree; `planning.breadcrumbRoot` said "Logistics", which is the module
+          // this screen no longer hangs under.
+          { label: navLabel.group('operations') },
+          { label: navLabel.item('distributor-orders') },
+          { label: navLabel.item('logistics-distribution-plan') },
         ]}
         metrics={metrics}
         secondaryActions={[

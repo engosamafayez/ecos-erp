@@ -80,6 +80,12 @@ export type ShippingCompaniesQuery = {
   status?: ShippingCompanyStatus | 'all';
   page?: number;
   per_page?: number;
+  /**
+   * Restrict to carriers the current company can actually be assigned — i.e.
+   * mapped to the operator's company. Used by assignment surfaces (the Vehicle
+   * form) so the offered list matches the fail-closed carrier validation.
+   */
+  assignable_only?: boolean;
 };
 
 export type ShippingCompaniesResult = {

@@ -192,7 +192,13 @@ function DetailsFields({
 }) {
   const { t } = useTranslation('logistics');
   const { data: options } = useVehicleOptions();
-  const { data: carriers } = useShippingCompanies({ status: 'active', per_page: 100 });
+  // Only carriers mapped to the operator's company are assignable — offering any
+  // other would fail the vehicle's fail-closed carrier validation on save.
+  const { data: carriers } = useShippingCompanies({
+    status: 'active',
+    per_page: 100,
+    assignable_only: true,
+  });
   const set = (k: keyof VehicleFormState) => (v: string) => setForm((p) => ({ ...p, [k]: v }));
 
   /** Picking a type pre-fills a sensible order capacity when the field is empty. */
