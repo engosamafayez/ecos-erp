@@ -47,6 +47,22 @@ final class RulePostingStrategy implements PostingStrategyInterface
         'finished_good' => 'finished_goods',
     ];
 
+    /**
+     * The inventory-class → account-role mapping, for callers outside the event bridge.
+     *
+     * A Mode 3 Supplier Invoice debits inventory directly (it IS the inbound authority, so no
+     * event carries the class for it) and needs exactly this table. Exposing the one table is
+     * deliberate: a second copy in Purchasing would be a second place the two vocabularies meet,
+     * and the two copies would drift the first time a class is added.
+     *
+     * @param  string  $context  what asked, so a refusal names the caller
+     */
+    public static function roleForInventoryClass(string $class, string $context): string
+    {
+        return self::INVENTORY_CLASS_ROLES[$class]
+            ?? throw FinanceException::inventoryClassUnknown($class, $context);
+    }
+
     public function __construct(private readonly AccountRoleResolver $roles) {}
 
     public function supports(string $eventType): bool
@@ -138,8 +154,7 @@ final class RulePostingStrategy implements PostingStrategyInterface
             throw FinanceException::inventoryClassMissing($event->eventCode());
         }
 
-        return self::INVENTORY_CLASS_ROLES[$class]
-            ?? throw FinanceException::inventoryClassUnknown($class, $event->eventCode());
+        return self::roleForInventoryClass($class, $event->eventCode());
     }
 
     private function journalTypeFor(BusinessEventType $type): JournalType

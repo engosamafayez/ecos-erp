@@ -288,23 +288,8 @@ parameters:
 			count: 1
 			path: Modules/Organization/Branches/Presentation/Http/Requests/StoreCoverageAreaRequest.php
 
-		-
-			message: '#^Call to static method success\(\) on an unknown class Modules\\Shared\\Application\\OperationResult\.$#'
-			identifier: class.notFound
-			count: 1
-			path: Modules/Purchasing/PurchaseMaterials/Application/Actions/AssignBuyerAction.php
 
-		-
-			message: '#^Method Modules\\Purchasing\\PurchaseMaterials\\Application\\Actions\\AssignBuyerAction\:\:execute\(\) has invalid return type Modules\\Shared\\Application\\OperationResult\.$#'
-			identifier: class.notFound
-			count: 1
-			path: Modules/Purchasing/PurchaseMaterials/Application/Actions/AssignBuyerAction.php
 
-		-
-			message: '#^Call to static method success\(\) on an unknown class Modules\\Shared\\Application\\OperationResult\.$#'
-			identifier: class.notFound
-			count: 1
-			path: Modules/Purchasing/PurchaseMaterials/Application/Actions/SelectLineSupplierAction.php
 
 		-
 			message: '#^Class Modules\\Purchasing\\PurchaseMaterials\\Domain\\Exceptions\\InvalidPurchaseMaterialStatusException constructor invoked with 1 parameter, 3 required\.$#'
@@ -312,11 +297,6 @@ parameters:
 			count: 1
 			path: Modules/Purchasing/PurchaseMaterials/Application/Actions/SelectLineSupplierAction.php
 
-		-
-			message: '#^Method Modules\\Purchasing\\PurchaseMaterials\\Application\\Actions\\SelectLineSupplierAction\:\:execute\(\) has invalid return type Modules\\Shared\\Application\\OperationResult\.$#'
-			identifier: class.notFound
-			count: 1
-			path: Modules/Purchasing/PurchaseMaterials/Application/Actions/SelectLineSupplierAction.php
 
 		-
 			message: '#^Caught class Modules\\System\\Engineering\\Application\\Services\\Throwable not found\.$#'

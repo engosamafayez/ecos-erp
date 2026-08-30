@@ -13,6 +13,7 @@ use Modules\Logistics\Drivers\Domain\Models\DriverVehicleAssignment;
 use Modules\Logistics\Drivers\Domain\Services\DriverVehicleAssignmentService;
 use Modules\Logistics\Drivers\Domain\Services\FleetIdentityResolver;
 use Modules\Logistics\Vehicles\Domain\Models\Vehicle;
+use RuntimeException;
 
 /**
  * VP-1 / D3 + D4 — assigning a Vehicle and Driver to a Distribution Group.
