@@ -34,6 +34,10 @@ final class GoodsReceiptController extends Controller
         $filters = [
             'search' => $request->query('search'),
             'purchase_order_id' => $request->query('purchase_order_id'),
+            // The repository already filters by supplier (EloquentGoodsReceiptRepository:46-49);
+            // the controller simply never forwarded it, so Supplier 360's Goods-Receipts tab
+            // showed every company receipt instead of that supplier's. REALIGNMENT-001 §J.
+            'supplier_id' => $request->query('supplier_id'),
             'warehouse_id' => $request->query('warehouse_id'),
             'status' => $request->query('status', 'all'),
             'date_from' => $request->query('date_from'),

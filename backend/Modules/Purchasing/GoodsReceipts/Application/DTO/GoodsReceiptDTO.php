@@ -12,7 +12,8 @@ final class GoodsReceiptDTO extends BaseDTO
      * @param  list<GoodsReceiptLineDTO>  $lines
      */
     public function __construct(
-        public readonly string $purchase_order_id,
+        // Nullable since Part 1: a Purchase-anchored receipt has no purchase order.
+        public readonly ?string $purchase_order_id,
         public readonly string $warehouse_id,
         public readonly string $receipt_date,
         public readonly ?string $notes,
@@ -51,7 +52,7 @@ final class GoodsReceiptDTO extends BaseDTO
             : null;
 
         return new self(
-            purchase_order_id: (string) $data['purchase_order_id'],
+            purchase_order_id: self::nullableString($data, 'purchase_order_id'),
             warehouse_id: (string) $data['warehouse_id'],
             receipt_date: (string) $data['receipt_date'],
             notes: self::nullableString($data, 'notes'),

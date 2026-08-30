@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Purchasing\GoodsReceipts\Domain\Models;
 
+use Illuminate\Database\Eloquent\Builder;
+use App\Core\Company\TenantOwnershipResolver;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -148,5 +150,48 @@ class GoodsReceipt extends Model
     public function lines(): HasMany
     {
         return $this->hasMany(GoodsReceiptLine::class);
+    }
+
+    /**
+     * B-2 — tenant isolation.
+     *
+     * This model carried NO tenant scope, and the posting endpoint took a raw string id
+     * rather than route-model binding, so nothing between the route and the stock ledger
+     * compared the document's company with the actor's. A Company A actor holding the
+     * posting permission posted a Company B receipt over HTTP and received 200, moving 50
+     * units into another company's warehouse.
+     *
+     * Verbatim the scope the four already-scoped models use (Order, Warehouse, Supplier,
+     * ShippingPricingRule) — a foreign row becomes invisible, the repository lookup returns
+     * null, and the existing not-found exception produces the 404 the certified ECOS tenant
+     * contract expects. No new tenant mechanism is introduced.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('tenant', static function (Builder $query): void {
+            $tenant = app(TenantOwnershipResolver::class);
+
+            // Console, queue workers, seeders and migrations run with no actor.
+            if (! $tenant->appliesTo()) {
+                return;
+            }
+
+            // Cross-company access is granted by an is_system role, never by the
+            // mere absence of a company. See TenantOwnershipResolver.
+            if ($tenant->isUnrestricted()) {
+                return;
+            }
+
+            $companyId = $tenant->companyId();
+
+            // RC-6: a null company must close the query, not remove the filter.
+            if ($companyId === null) {
+                $query->whereRaw('1 = 0');
+
+                return;
+            }
+
+            $query->where('company_id', $companyId);
+        });
     }
 }

@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\Purchasing\GoodsReceipts\Infrastructure\Database\Factories\GoodsReceiptLineFactory;
+use Modules\Purchasing\PurchaseMaterials\Domain\Models\PurchaseMaterialLine;
 use Modules\Purchasing\PurchaseOrders\Domain\Models\PurchaseOrderLine;
 
 /**
@@ -52,6 +53,9 @@ class GoodsReceiptLine extends Model
     protected $fillable = [
         'goods_receipt_id',
         'purchase_order_line_id',
+        // Part 1: the Purchase-Material anchor. Exactly one of this and
+        // purchase_order_line_id is set on any line (enforced in the request + action).
+        'purchase_material_line_id',
         'product_id',
         'uom_id_snapshot',
         'uom_name_snapshot',
@@ -102,6 +106,17 @@ class GoodsReceiptLine extends Model
     public function purchaseOrderLine(): BelongsTo
     {
         return $this->belongsTo(PurchaseOrderLine::class);
+    }
+
+    /**
+     * The Purchase Material line this receipt line was received against (Part 1).
+     * Null on legacy, PO-anchored receipt lines.
+     *
+     * @return BelongsTo<PurchaseMaterialLine, $this>
+     */
+    public function purchaseMaterialLine(): BelongsTo
+    {
+        return $this->belongsTo(PurchaseMaterialLine::class, 'purchase_material_line_id');
     }
 
     /**
