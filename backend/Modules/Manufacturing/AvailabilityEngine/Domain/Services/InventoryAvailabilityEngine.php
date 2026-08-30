@@ -46,10 +46,25 @@ final class InventoryAvailabilityEngine
     ): AvailabilityResult {
         $evaluatedAt = (new DateTimeImmutable)->format(DateTimeInterface::ATOM);
 
+        // Signed availability (on_hand − reserved), exactly as InventoryItem exposes it.
+        // Reported as-is on the result for telemetry; it is ROUTINELY NEGATIVE in the
+        // made-to-order flow, because the order's own finished good is reserved BEFORE
+        // manufacturing runs (on_hand 0, reserved ≥ required).
         $availableFg = $this->inventory->availableQty($warehouseId, $productId, $companyId);
 
-        // RC-1: partial manufacturing — only manufacture the shortage
-        $qtyToManufacture = max(0.0, $requiredQty - $availableFg);
+        // The manufacturing shortage must be measured against FREE PHYSICAL stock only,
+        // so the free position is clamped at zero. A reservation is a commitment, never
+        // additional demand: feeding a negative availability straight into the shortage
+        // would re-add the entire warehouse reservation pool and over-produce by
+        // Σreserved (TASK-MTO-PRODUCTION-QUANTITY-ACCURACY-FIX-001). Clamping
+        // on_hand − reserved — rather than using bare on_hand — is also what keeps this
+        // correct on the shared-stock edge case: physical stock already reserved for
+        // OTHER orders stays committed to them and is never consumed as if it were free,
+        // so the engine neither over-produces nor under-produces.
+        $freeFinishedGoods = max(0.0, $availableFg);
+
+        // RC-1: partial manufacturing — only manufacture the shortage beyond free stock.
+        $qtyToManufacture = max(0.0, $requiredQty - $freeFinishedGoods);
 
         if ($qtyToManufacture <= 0.0) {
             return $this->sufficientResult(

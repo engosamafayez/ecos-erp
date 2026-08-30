@@ -33,12 +33,23 @@ final readonly class AvailabilityResult
         /** Quantity the caller originally requested. */
         public float $required_qty,
 
-        /** Finished goods available at the warehouse (on_hand − reserved). */
+        /**
+         * Finished goods available at the warehouse — SIGNED (on_hand − reserved),
+         * matching InventoryItem::availableQty(). MAY BE NEGATIVE when reservations
+         * exceed physical stock, which is routine in the made-to-order flow (the
+         * order's own finished good is reserved before manufacturing). Reported for
+         * telemetry; qty_to_manufacture shows how the shortage is derived from it.
+         */
         public float $available_finished_goods,
 
         /**
-         * Quantity that must be manufactured.
-         * = max(0, required_qty − available_finished_goods)  [RC-1]
+         * Quantity that must be manufactured — the physical shortage.
+         * = max(0, required_qty − max(0, available_finished_goods))  [RC-1]
+         *
+         * Note the inner max(0, …): only FREE physical stock reduces the shortage. A
+         * reservation is a commitment, never additional demand, so a negative
+         * available_finished_goods must NOT inflate this quantity — that was the MTO
+         * over-production defect (TASK-MTO-PRODUCTION-QUANTITY-ACCURACY-FIX-001).
          */
         public float $qty_to_manufacture,
 
