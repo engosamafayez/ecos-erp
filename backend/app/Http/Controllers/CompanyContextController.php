@@ -41,7 +41,9 @@ final class CompanyContextController extends Controller
                 'name' => $company->name,
                 'currency' => $currency,
                 'currency_symbol' => $currencySymbols[$currency] ?? $currency,
-                'timezone' => $company->timezone ?? 'UTC',
+                // Default to the operational tenant clock, not UTC (G7). A null here
+                // used to silently render every Order/Loading/Delivery timestamp in UTC.
+                'timezone' => $company->timezone ?? 'Africa/Cairo',
                 'language' => $company->language ?? 'en',
                 'locale' => $company->locale ?? 'en-US',
                 'date_format' => $company->date_format ?? 'YYYY-MM-DD',

@@ -41,7 +41,9 @@ final class UpdateCompanyRequest extends FormRequest
             'mobile' => ['nullable', 'string', 'max:50'],
             'website' => ['nullable', 'url', 'max:500'],
             'currency' => ['nullable', 'string', 'max:8'],
-            'timezone' => ['nullable', 'string', 'max:64'],
+            // Must be a real IANA identifier (G7) so the tenant clock can never be
+            // set to an invalid zone that would break presentation-boundary conversion.
+            'timezone' => ['nullable', 'string', 'timezone'],
             'language' => ['nullable', 'string', 'max:10'],
             'locale' => ['nullable', 'string', 'max:20'],
             'date_format' => ['nullable', 'string', 'max:20'],
