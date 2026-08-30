@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Finance\Payables\Domain\Services;
 
 use Illuminate\Support\Carbon;
+use Modules\Finance\Payables\Domain\Enums\SupplierLedgerEntryType;
 use Modules\Finance\Payables\Domain\Models\SupplierLedgerEntry;
 
 /**
@@ -14,13 +15,44 @@ use Modules\Finance\Payables\Domain\Models\SupplierLedgerEntry;
  */
 final class SupplierLedgerService
 {
-    /** The current balance of a supplier — SUM of every entry. Derived. */
+    /** The current NET balance of a supplier — SUM of every entry. Derived. */
     public function balance(string $companyId, string $supplierId): float
     {
         return round((float) SupplierLedgerEntry::query()
             ->where('company_id', $companyId)
             ->where('supplier_id', $supplierId)
             ->sum('amount'), 4);
+    }
+
+    /**
+     * Outstanding Payable — what we owe the supplier on bills/opening-payables net of payments,
+     * EXCLUDING advances (TASK-PROC-SUPPLIER-OPENING-BALANCE-001). This is the figure the supplier
+     * grid + Supplier 360 show as "Outstanding", derived from the ledger (the SSOT) — never from
+     * the hand-entered goods_receipts.paid_amount.
+     */
+    public function outstandingPayable(string $companyId, string $supplierId): float
+    {
+        return round((float) SupplierLedgerEntry::query()
+            ->where('company_id', $companyId)
+            ->where('supplier_id', $supplierId)
+            ->where('entry_type', '!=', SupplierLedgerEntryType::Advance->value)
+            ->sum('amount'), 4);
+    }
+
+    /**
+     * Available Supplier Advance — a prepaid credit shown SEPARATELY from the payable, never as
+     * debt. Advance entries are stored −ve on creation and +ve when consumed against a bill, so
+     * the available advance is the negated sum of the advance bucket.
+     */
+    public function availableAdvance(string $companyId, string $supplierId): float
+    {
+        $sum = (float) SupplierLedgerEntry::query()
+            ->where('company_id', $companyId)
+            ->where('supplier_id', $supplierId)
+            ->where('entry_type', SupplierLedgerEntryType::Advance->value)
+            ->sum('amount');
+
+        return round(-$sum, 4);
     }
 
     /**

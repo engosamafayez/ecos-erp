@@ -8,25 +8,19 @@ use Illuminate\Support\ServiceProvider;
 use Modules\Finance\Allocation\Domain\Services\AllocationEngine;
 use Modules\Finance\Analytics\Domain\Services\FinancialDashboardService;
 use Modules\Finance\Analytics\Domain\Services\FinancialMetricsService;
-use Modules\Finance\Intelligence\Domain\Services\CashFlowIntelligenceService;
-use Modules\Finance\Intelligence\Domain\Services\CostIntelligenceService;
-use Modules\Finance\Intelligence\Domain\Services\ForecastService;
-use Modules\Finance\Intelligence\Domain\Services\ProfitabilityService;
-use Modules\Finance\Intelligence\Domain\Services\ScenarioEngine;
-use Modules\Finance\Intelligence\Domain\Services\TrendAnalysisService;
-use Modules\Finance\Intelligence\Domain\Services\VarianceAnalysisService;
-use Modules\Finance\Reporting\Domain\Services\ExecutiveReportingService;
-use Modules\Finance\Workspace\Domain\Services\CfoWorkspaceService;
-use Modules\Finance\Workspace\Domain\Services\ExecutiveWorkspaceService;
+use Modules\Finance\Banking\Domain\Services\BankingService;
+use Modules\Finance\Banking\Domain\Services\BankReconciliationService;
 use Modules\Finance\Budget\Domain\Services\BudgetControlEngine;
 use Modules\Finance\Budget\Domain\Services\BudgetService;
+use Modules\Finance\Cash\Domain\Services\CashService;
+use Modules\Finance\Closing\Domain\Services\CloseReadinessScorer;
 use Modules\Finance\Closing\Domain\Services\ClosingService;
 use Modules\Finance\Closing\Domain\Services\ClosingWorkspaceService;
-use Modules\Finance\Closing\Domain\Services\CloseReadinessScorer;
 use Modules\Finance\Closing\Domain\Services\PeriodClosingService;
 use Modules\Finance\Closing\Domain\Services\YearEndClosingService;
 use Modules\Finance\Controls\Domain\Services\ControlExceptionService;
 use Modules\Finance\Controls\Domain\Services\FinancialValidationEngine;
+use Modules\Finance\Fiscal\Domain\Services\FiscalCalendarService;
 use Modules\Finance\Integration\Application\Bridge\EventPostingCatalog;
 use Modules\Finance\Integration\Application\Bridge\EventPostingSubscriber;
 use Modules\Finance\Integration\Application\Services\FinancialIntegrationService;
@@ -38,10 +32,13 @@ use Modules\Finance\Integration\Domain\Services\PostingRuleRegistry;
 use Modules\Finance\Integration\Domain\Services\PostingRuleResolver;
 use Modules\Finance\Integration\Domain\Services\PostingTraceService;
 use Modules\Finance\Integration\Domain\Services\RulePostingStrategy;
-use Modules\Finance\Banking\Domain\Services\BankingService;
-use Modules\Finance\Banking\Domain\Services\BankReconciliationService;
-use Modules\Finance\Cash\Domain\Services\CashService;
-use Modules\Finance\Fiscal\Domain\Services\FiscalCalendarService;
+use Modules\Finance\Intelligence\Domain\Services\CashFlowIntelligenceService;
+use Modules\Finance\Intelligence\Domain\Services\CostIntelligenceService;
+use Modules\Finance\Intelligence\Domain\Services\ForecastService;
+use Modules\Finance\Intelligence\Domain\Services\ProfitabilityService;
+use Modules\Finance\Intelligence\Domain\Services\ScenarioEngine;
+use Modules\Finance\Intelligence\Domain\Services\TrendAnalysisService;
+use Modules\Finance\Intelligence\Domain\Services\VarianceAnalysisService;
 use Modules\Finance\Ledger\Domain\Services\ChartOfAccountsService;
 use Modules\Finance\Ledger\Domain\Services\JournalEngine;
 use Modules\Finance\Ledger\Domain\Services\TrialBalanceService;
@@ -51,13 +48,16 @@ use Modules\Finance\Payables\Domain\Services\SupplierLedgerService;
 use Modules\Finance\Posting\Domain\Services\PostingCoordinator;
 use Modules\Finance\Posting\Domain\Services\PostingValidator;
 use Modules\Finance\Posting\Domain\Strategies\DirectPostingStrategy;
-use Modules\Finance\Vat\Domain\Services\VatService;
 use Modules\Finance\Receivables\Domain\Services\AccountsReceivableService;
 use Modules\Finance\Receivables\Domain\Services\ArAgingService;
 use Modules\Finance\Receivables\Domain\Services\CustomerLedgerService;
+use Modules\Finance\Reporting\Domain\Services\ExecutiveReportingService;
 use Modules\Finance\Shared\Domain\Services\ControlAccountReconciliationService;
 use Modules\Finance\Shared\Domain\Services\ControlAccountResolver;
 use Modules\Finance\Tax\Domain\Services\TaxService;
+use Modules\Finance\Vat\Domain\Services\VatService;
+use Modules\Finance\Workspace\Domain\Services\CfoWorkspaceService;
+use Modules\Finance\Workspace\Domain\Services\ExecutiveWorkspaceService;
 
 /**
  * Finance OS — EPIC F1. Ledger Core & Fiscal Foundation.
@@ -163,6 +163,12 @@ final class FinanceServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                \Modules\Finance\Infrastructure\Console\Commands\ProvisionCompanyFinanceCommand::class,
+            ]);
+        }
 
         $this->registerIntegrationSubscribers();
     }
