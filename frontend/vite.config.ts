@@ -34,17 +34,22 @@ export default defineConfig({
     //
     // BACKEND_URL is set by docker-compose.override.yml when Vite runs inside
     // Docker: "http://nginx" reaches nginx directly on ecos-network, bypassing
-    // Windows wslrelay entirely. Fallback "http://127.0.0.1:8080" is used when
+    // Windows wslrelay entirely. Fallback "http://127.0.0.1:8081" is used when
     // Vite runs natively on Windows — the loopback-only nginx binding added by
     // the override avoids the wslrelay "socket hang up" on that path too.
+    //
+    // 8081, not 8080: TASK-ENV-DUAL-STACK-DEV-ISOLATION-001 gave the DEV stack
+    // its own nginx published on 127.0.0.1:8081 (docker-compose.override.yml).
+    // Nothing listens on 8080, so the stale fallback made every proxied /api
+    // call fail with ECONNREFUSED, which Vite surfaces to the browser as 502.
     proxy: {
       '/api': {
-        target: process.env.BACKEND_URL ?? 'http://127.0.0.1:8080',
+        target: process.env.BACKEND_URL ?? 'http://127.0.0.1:8081',
         changeOrigin: true,
         secure: false,
       },
       '/storage': {
-        target: process.env.BACKEND_URL ?? 'http://127.0.0.1:8080',
+        target: process.env.BACKEND_URL ?? 'http://127.0.0.1:8081',
         changeOrigin: true,
         secure: false,
       },
