@@ -415,8 +415,13 @@ class DistributionPlanningController extends Controller
      */
     private function buildCityZoneMaps(bool $includeZoneFlag = false): array
     {
+        // `logistics_cities` is a non-soft-deletes reference table (create migration uses
+        // ->timestamps() only; there is no `deleted_at` column and no Eloquent model). The
+        // former ->whereNull('deleted_at') threw SQLSTATE[42S22] "Unknown column 'deleted_at'",
+        // which 500'd every planning read endpoint and rendered the workspace as all-zeros /
+        // "No orders to plan". Reading the table without that filter restores the wiring; this
+        // does NOT change order eligibility (statuses/date/zone gates are untouched).
         $cities = DB::table('logistics_cities')
-            ->whereNull('deleted_at')
             ->select(['id', 'name_en', 'distribution_zone_id'])
             ->get();
 

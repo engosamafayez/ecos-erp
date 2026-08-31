@@ -33,26 +33,29 @@ function kpis(over: Partial<DaySettlementKpis> = {}): DaySettlementKpis {
     total_sales: 13200,
     total_transfers_paid: 1500,
     total_expenses: null,
+    total_cash_in: 4200,
     net_cash: null,
     ...over,
   };
 }
 
 describe('DaySettlementKpiCards', () => {
-  it('renders the 8 operational KPIs; Delivery Rate is a percentage only (no fraction)', () => {
+  it('renders the 9 operational KPIs; Delivery Rate is a percentage only (no fraction)', () => {
     render(<DaySettlementKpiCards kpis={kpis()} />);
     expect(screen.getByText('driverSettlement.kpis.totalOrders')).toBeInTheDocument();
+    expect(screen.getByText('driverSettlement.kpis.cashIn')).toBeInTheDocument(); // Cash In / Advances
     expect(screen.getByText('driverSettlement.kpis.netCash')).toBeInTheDocument();
     expect(screen.getByText('10')).toBeInTheDocument(); // total orders
     expect(screen.getByText('7')).toBeInTheDocument(); // delivered
     expect(screen.getByText('70%')).toBeInTheDocument(); // delivery rate — percentage only
     expect(screen.queryByText('7/10')).not.toBeInTheDocument();
     expect(screen.getByText('EGP 13200.00')).toBeInTheDocument(); // total sales
+    expect(screen.getByText('EGP 4200.00')).toBeInTheDocument(); // cash in / advances (canonical)
   });
 
-  it('shows Expenses and Net Cash as "Not available" (null) — never a fabricated zero (§10/§11/§12)', () => {
-    render(<DaySettlementKpiCards kpis={kpis({ total_expenses: null, net_cash: null })} />);
-    expect(screen.getAllByText('driverSettlement.notAvailable')).toHaveLength(2);
+  it('shows Expenses, Cash In and Net Cash as "Not available" (null) — never a fabricated zero (§10/§11/§12)', () => {
+    render(<DaySettlementKpiCards kpis={kpis({ total_expenses: null, total_cash_in: null, net_cash: null })} />);
+    expect(screen.getAllByText('driverSettlement.notAvailable')).toHaveLength(3);
   });
 
   it('distinguishes a real canonical zero from "Not available" (§12)', () => {

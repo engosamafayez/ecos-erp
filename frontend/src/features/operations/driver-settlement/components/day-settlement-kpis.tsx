@@ -2,6 +2,7 @@ import {
   CheckCircle2,
   Coins,
   CreditCard,
+  HandCoins,
   Package,
   PackageX,
   Percent,
@@ -32,11 +33,14 @@ function KpiCard({ icon: Icon, label, value, tone }: { icon: LucideIcon; label: 
 }
 
 /**
- * The 8 canonical operational KPI cards (TASK-...-KPI-TABLE-REALDATA-CORRECTION-001, §2) over the
+ * The canonical operational KPI cards (TASK-...-KPI-TABLE-REALDATA-CORRECTION-001, §2) over the
  * currently-visible Active custodies. Every value is server-aggregated from canonical row data;
- * Expenses and Net Cash are honest "Not available" when no canonical cash-movement authority exists
- * (§10/§11/§12) — never a fabricated zero. States stay distinct: Loading / Error / Loaded. Responsive
- * 2-col on mobile → 4-col from md, so nothing scrolls horizontally or clips in Arabic (§31).
+ * Expenses, Cash In / Advances and Net Cash are honest "Not available" when no canonical cash-movement
+ * authority exists (§10/§11/§12) — never a fabricated zero. Cash In / Advances is now a real canonical
+ * figure (`total_cash_in`) since TASK-OPERATIONS-DRIVER-TRIP-MOVEMENT-APPROVAL-001, so it is surfaced
+ * here alongside Expenses/Net Cash instead of only on the per-driver detail. States stay distinct:
+ * Loading / Error / Loaded. Responsive 2-col on mobile → 4-col from md, so nothing scrolls horizontally
+ * or clips in Arabic (§31).
  */
 export function DaySettlementKpiCards({
   kpis,
@@ -54,7 +58,7 @@ export function DaySettlementKpiCards({
   if (error) {
     return (
       <div className={GRID} data-testid="kpi-error" aria-label={t(($) => $.driverSettlement.loadError)}>
-        {Array.from({ length: 8 }, (_, i) => (
+        {Array.from({ length: 9 }, (_, i) => (
           <div
             key={i}
             className="flex h-[60px] items-center justify-center rounded-lg border border-dashed bg-muted/20 text-muted-foreground"
@@ -69,7 +73,7 @@ export function DaySettlementKpiCards({
   if (loading || !kpis) {
     return (
       <div className={GRID} data-testid="kpi-loading">
-        {Array.from({ length: 8 }, (_, i) => (
+        {Array.from({ length: 9 }, (_, i) => (
           <Skeleton key={i} className="h-[60px] rounded-lg" />
         ))}
       </div>
@@ -123,6 +127,12 @@ export function DaySettlementKpiCards({
         tone="bg-muted text-muted-foreground"
         label={t(($) => $.driverSettlement.kpis.expenses)}
         value={moneyOrNa(kpis.total_expenses)}
+      />
+      <KpiCard
+        icon={HandCoins}
+        tone="bg-teal-500/10 text-teal-600 dark:text-teal-400"
+        label={t(($) => $.driverSettlement.kpis.cashIn)}
+        value={moneyOrNa(kpis.total_cash_in ?? null)}
       />
       <KpiCard
         icon={Wallet}

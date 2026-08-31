@@ -111,6 +111,16 @@ export type ModuleNavLink = {
   path: string;
   icon: LucideIcon;
   isSection?: false;
+  /**
+   * Path prefix this ONE entry owns for active-module resolution.
+   *
+   * Normally a nav item owns its own `path` and everything under it. An entry needs a
+   * `subtree` only when a module deliberately exposes ONE sidebar link for a section whose
+   * other routes are tabs rather than sidebar siblings — then `path` is where the link
+   * navigates, and `subtree` is the region that still belongs to this module. Defaults to
+   * `path`, so every other item behaves exactly as before.
+   */
+  subtree?: string;
 };
 
 /** A section header divider (not a clickable link). */
@@ -197,7 +207,12 @@ const ALL_MODULES: AppModule[] = [
     // Loading Workspace and Driver Day Settlement belong to Operations, not Shipping. The
     // pages/routes/backend already exist — this is a nav-ownership restore only.
     items: [
-      { key: 'wave-workspace', path: ROUTES.waveWorkspace, icon: Layers2 },
+      // `subtree` is load-bearing (TASK-PREPARATION-UX-FIX-ARCHIVE-MISSING-001): this ONE
+      // sidebar link opens Today's Preparation, but Archive and Settings (Wave Engine) are
+      // tabs of the same PreparationWorkspaceLayout — not sidebar siblings. Declaring the
+      // shell root /operations/preparation as the owned subtree keeps the Operations
+      // contextual sidebar mounted across all three tabs and the nested Wave pages.
+      { key: 'wave-workspace', path: ROUTES.waveWorkspace, subtree: ROUTES.preparationWorkspace, icon: Layers2 },
       { key: 'logistics-distribution-plan', path: ROUTES.logisticsDistributionPlanning, icon: ListOrdered },
       { key: 'loading-workspace', path: ROUTES.loadingOsWorkspace, icon: PackageCheck },
       { key: 'driver-day-settlement', path: ROUTES.logisticsDriverSettlement, icon: Wallet },
@@ -206,22 +221,38 @@ const ALL_MODULES: AppModule[] = [
   {
     id: 'shipping',
     icon: PackageCheck,
-    // Shipping default → Shipping Companies; the retired Fulfillments item is removed
-    // (TASK-LOGISTICS-FULFILLMENTS-LEGACY-UI-RETIREMENT-002 / SHIPPING-NAVIGATION-SETTINGS-REORGANIZATION-001).
+    // TASK-LOGISTICS-NAVIGATION-ARCHITECTURE-CLEANUP-002 — Shipping lands on its first
+    // canonical Shipping-owned page, Shipping Companies. Distribution Planning / Loading /
+    // Driver Day Settlement are OPERATIONS surfaces and must NOT be Shipping's default.
+    // (The legacy Fulfillments UI stays retired — no `fulfillments` item — and its backend,
+    // tables, data and `sales.fulfillments.*` permissions remain untouched.)
     defaultPath: ROUTES.logisticsShippingCompanies,
     items: [
-      { key: 'carriers-section', isSection: true },
+      // TASK-SHIPPING-NAVIGATION-SETTINGS-REORGANIZATION-001 — the "الإعدادات" (Settings)
+      // section groups the configuration surfaces in the mandated order:
+      // Companies · Vehicles · Drivers · Geography · Distribution Zones. Only navigation
+      // grouping/order changed — routes, pages and permissions are untouched, and the
+      // items reuse their existing keys (Distribution Zones still resolves to
+      // /logistics/geography/distribution-zones; its legacy redirect is unchanged).
+      { key: 'shipping-settings-section', isSection: true },
       { key: 'logistics-shipping-companies', path: ROUTES.logisticsShippingCompanies, icon: Truck },
+      { key: 'logistics-vehicles', path: ROUTES.logisticsVehicles, icon: Truck },
+      { key: 'logistics-drivers', path: ROUTES.logisticsDrivers, icon: UsersIcon },
+      { key: 'egypt-geography', path: ROUTES.logisticsGeography, icon: Map },
+      { key: 'logistics-distribution-zones', path: ROUTES.logisticsDistributionZones, icon: Network },
+      { key: 'carriers-section', isSection: true },
       { key: 'logistics-carriers', path: ROUTES.logisticsCarrierAccounts, icon: Truck },
       { key: 'logistics-automation', path: ROUTES.logisticsAutomation, icon: GitBranch },
       { key: 'logistics-intelligence', path: ROUTES.logisticsIntelligence, icon: Activity },
       { key: 'logistics-fuel-review', path: ROUTES.logisticsFuelReview, icon: Gauge },
-      { key: 'logistics-drivers', path: ROUTES.logisticsDrivers, icon: UsersIcon },
-      { key: 'logistics-vehicles', path: ROUTES.logisticsVehicles, icon: Truck },
       { key: 'fleet-section', isSection: true },
       { key: 'logistics-fleet', path: ROUTES.logisticsFleet, icon: Gauge },
-      // Service Areas (Network) removed from the Shipping UI per CLEANUP-002 §7 — the
-      // /logistics/network route + NetworkController + data + permissions are untouched.
+      // Service Areas (Network) is retired from the Shipping UI
+      // (TASK-LOGISTICS-NAVIGATION-ARCHITECTURE-CLEANUP-002; audit verdict C — UI-redundant,
+      // backend relevant). The `/logistics/network` route, ServiceArea/Network backend,
+      // `network_*` tables, `network.*` permissions and data are all untouched — this only
+      // removes the sidebar entry. Distribution Planning + Loading Workspace + Driver Day
+      // Settlement now belong to the Operations module (approved ownership — CLEANUP-002 §5-6).
       { key: 'dispatch-section', isSection: true },
       { key: 'logistics-dispatch', path: ROUTES.logisticsDispatch, icon: Radio },
       { key: 'logistics-dispatch-exec', path: ROUTES.logisticsDispatchExecution, icon: Zap },
@@ -237,18 +268,6 @@ const ALL_MODULES: AppModule[] = [
       { key: 'logistics-ops-activity', path: ROUTES.logisticsOpsActivity, icon: History },
       { key: 'logistics-ops-readiness', path: ROUTES.logisticsOpsReadiness, icon: ShieldCheck },
       { key: 'logistics-enterprise', path: ROUTES.logisticsEnterprise, icon: LayoutDashboard },
-      { key: 'geo-section', isSection: true },
-      { key: 'egypt-geography', path: ROUTES.logisticsGeography, icon: Map },
-      { key: 'dist-section', isSection: true },
-      {
-        key: 'logistics-distribution-zones',
-        path: ROUTES.logisticsDistributionZones,
-        icon: Network,
-      },
-      // Distribution Planning + Loading Workspace moved to the Operations module (approved
-      // ownership — CLEANUP-002 §5-6). The loading-OS route/page/backend (Lane B,
-      // TASK-DISTRIBUTION-LOADING-STACK-CONVERGENCE-001) are unchanged — only the nav module
-      // that owns the item changed. Distribution Zones stays a Shipping-Settings entry.
       { key: 'delivery-section', isSection: true },
       { key: 'logistics-delivery', path: ROUTES.logisticsDelivery, icon: MapPin },
     ],
@@ -260,7 +279,10 @@ const ALL_MODULES: AppModule[] = [
     items: [
       { key: 'procurement-hub', path: ROUTES.procurementHub, icon: LayoutDashboard },
       { key: 'suppliers', path: ROUTES.suppliers, icon: Truck },
-      { key: 'material-requests', path: ROUTES.materialRequests, icon: ClipboardList },
+      // REALIGNMENT-001 §19 — "Material Requests" is no longer part of the approved
+      // purchasing journey, so it is not offered as a navigation entry point. The route,
+      // page, backend record_type and all historic rows are deliberately UNTOUCHED (no data
+      // loss, deep links still resolve); only this leaf is withdrawn from the menu.
       { key: 'purchases', path: ROUTES.purchases, icon: ShoppingCart },
       { key: 'supplier-invoices', path: ROUTES.supplierInvoices, icon: DollarSign },
       { key: 'receiving-center', path: ROUTES.receivingCenter, icon: PackageOpen },
@@ -494,9 +516,14 @@ export function moduleNavLinks(items: ModuleNavItem[]): ModuleNavLink[] {
 export function findModuleByPath(pathname: string): AppModule | undefined {
   return APP_MODULES.find((m) => {
     if (m.defaultPath === pathname) return true;
-    return m.items.some(
-      (item) => !item.isSection && (pathname === item.path || pathname.startsWith(item.path + '/')),
-    );
+    // Each link owns its `subtree` when declared, otherwise its own `path` — so a module
+    // whose section routes are tabs (not sidebar siblings) still resolves for the whole
+    // subtree. `subtree ?? path` is identical to the old behaviour for every plain item.
+    return m.items.some((item) => {
+      if (item.isSection) return false;
+      const base = item.subtree ?? item.path;
+      return pathname === base || pathname.startsWith(base + '/');
+    });
   });
 }
 

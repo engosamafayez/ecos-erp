@@ -106,6 +106,7 @@
       "totalSales": "Total Sales",
       "transfersPaid": "Total Transfers & Paid",
       "expenses": "Total Expenses",
+      "cashIn": "Cash In / Advances",
       "netCash": "Net Cash"
     },
     "columns": {
