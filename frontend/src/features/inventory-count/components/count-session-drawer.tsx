@@ -21,6 +21,7 @@ import {
 import { getMediaUrl } from '@/lib/media';
 import { formatMoney } from '@/lib/format';
 import { toast } from '@/components/ds/use-toast';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { useCompany } from '@/features/organization/context/company-context';
 
 import {
@@ -108,13 +109,24 @@ function AttachmentThumbnail({
         </div>
       )}
       {canDelete && (
-        <button
-          onClick={onDelete}
-          className="absolute inset-0 bg-destructive/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-          title={t($ => $.drawer.lines.removeAttachment)}
-        >
-          <X className="size-4 text-white" />
-        </button>
+        <>
+          {/* Desktop: hover overlay (unchanged behavior, now md+ only). */}
+          <button
+            onClick={onDelete}
+            className="absolute inset-0 hidden items-center justify-center bg-destructive/80 opacity-0 transition-opacity group-hover:opacity-100 md:flex"
+            title={t($ => $.drawer.lines.removeAttachment)}
+          >
+            <X className="size-4 text-white" />
+          </button>
+          {/* Mobile: always-visible, touch-reachable delete (no hover dependency, §7). */}
+          <button
+            onClick={onDelete}
+            aria-label={t($ => $.drawer.lines.removeAttachment)}
+            className="absolute top-0.5 end-0.5 flex size-4 items-center justify-center rounded-full bg-destructive text-white md:hidden"
+          >
+            <X className="size-3" />
+          </button>
+        </>
       )}
     </div>
   );
@@ -345,6 +357,222 @@ function CountLineRow({
         </div>
       </td>
     </tr>
+  );
+}
+
+// ─── CountLineCard (mobile) ────────────────────────────────────────────────────
+// Mobile presentation of a single count line. Uses the SAME local-state → onChange
+// authority as CountLineRow (feeds the same pendingLineUpdates → updateMutation) and
+// the SAME attachment mutation hooks, so there is no mobile-only inventory path
+// (§5). Rendered below `md`; the desktop table (CountLineRow) is left untouched (§11).
+// Blind-count (showSystemQty) and editability rules are identical to the row.
+function CountLineCard({
+  line,
+  sessionId,
+  editable,
+  showSystemQty,
+  onChange,
+}: {
+  line: CountLine;
+  sessionId: string;
+  editable: boolean;
+  showSystemQty: boolean;
+  onChange?: (id: string, update: LineUpdate) => void;
+}) {
+  const { t } = useTranslation('inventory-count');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
+
+  const [localQty, setLocalQty]         = useState<string>(line.counted_qty != null ? String(line.counted_qty) : '');
+  const [localDamaged, setLocalDamaged] = useState<string>(line.damaged_qty > 0 ? String(line.damaged_qty) : '');
+  const [localReason, setLocalReason]   = useState<string>(line.damage_reason ?? '');
+  const [localNotes, setLocalNotes]     = useState<string>(line.notes ?? '');
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const uploadMutation = useUploadCountLineAttachment(sessionId);
+  const deleteMutation = useDeleteCountLineAttachment(sessionId);
+
+  const damagedVal = parseFloat(localDamaged) || 0;
+  const reasonRequired = damagedVal > 0 && !localReason;
+  const showOtherNotes = localReason === 'Other';
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    uploadMutation.mutate(
+      { lineId: line.id, file },
+      {
+        onSuccess: () => toast.success(t($ => $.drawer.lines.attachAdded)),
+        onError:   () => toast.error(t($ => $.drawer.lines.attachFailed)),
+      },
+    );
+    e.target.value = '';
+  }
+
+  const inputCls =
+    'h-9 w-full rounded border border-input bg-background px-2 text-sm tabular-nums focus:outline-none focus:ring-1 focus:ring-ring';
+
+  return (
+    <div role="listitem" className="space-y-3 border-b p-3.5 last:border-0">
+      {/* Identity + system qty (post-approval only) */}
+      <div className="flex items-start gap-2">
+        {line.product?.image_url ? (
+          <img
+            src={getMediaUrl(line.product.image_url) ?? undefined}
+            alt={line.product.name ?? ''}
+            className="size-9 shrink-0 rounded border object-cover"
+            onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+          />
+        ) : (
+          <div className="flex size-9 shrink-0 items-center justify-center rounded border bg-muted text-[10px] text-muted-foreground">—</div>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium leading-tight">{line.product?.name ?? '—'}</p>
+          <p className="font-mono text-[11px] text-muted-foreground">{line.product?.sku}</p>
+        </div>
+        {showSystemQty && (
+          <div className="shrink-0 text-end">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{t($ => $.drawer.lines.systemQty)}</p>
+            <p className="font-mono text-sm tabular-nums">{line.system_qty != null ? fmt(line.system_qty) : '—'}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Counted + Damaged entry */}
+      <div className="grid grid-cols-2 gap-3">
+        <label className="block space-y-1">
+          <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{t($ => $.drawer.lines.countedQty)}</span>
+          {editable ? (
+            <input
+              type="number"
+              inputMode="decimal"
+              min="0"
+              step="0.01"
+              value={localQty}
+              placeholder="0"
+              onChange={(e) => {
+                setLocalQty(e.target.value);
+                const n = e.target.value === '' ? null : parseFloat(e.target.value);
+                if (n === null || !isNaN(n)) onChange?.(line.id, { counted_qty: n });
+              }}
+              className={inputCls}
+            />
+          ) : (
+            <p className="font-mono text-sm tabular-nums">{line.counted_qty != null ? fmt(line.counted_qty) : '—'}</p>
+          )}
+        </label>
+        <label className="block space-y-1">
+          <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{t($ => $.drawer.lines.damagedQty)}</span>
+          {editable ? (
+            <input
+              type="number"
+              inputMode="decimal"
+              min="0"
+              step="0.01"
+              value={localDamaged}
+              placeholder="0"
+              onChange={(e) => {
+                setLocalDamaged(e.target.value);
+                const n = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                if (!isNaN(n)) onChange?.(line.id, { damaged_qty: n });
+              }}
+              className={inputCls}
+            />
+          ) : (
+            <p className={`font-mono text-sm tabular-nums ${line.damaged_qty > 0 ? 'font-medium text-amber-600' : 'text-muted-foreground'}`}>
+              {line.damaged_qty > 0 ? fmt(line.damaged_qty) : '—'}
+            </p>
+          )}
+        </label>
+      </div>
+
+      {/* Damage reason + notes */}
+      {editable
+        ? (damagedVal > 0 || localReason) && (
+            <div className="space-y-1">
+              <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{t($ => $.drawer.lines.damageReason)}</span>
+              <select
+                value={localReason}
+                onChange={(e) => { setLocalReason(e.target.value); onChange?.(line.id, { damage_reason: e.target.value || null }); }}
+                className={`h-9 w-full rounded border ${reasonRequired ? 'border-destructive' : 'border-input'} bg-background px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring`}
+              >
+                <option value="">{damagedVal > 0 ? t($ => $.drawer.lines.reasonRequired) : '—'}</option>
+                {DAMAGE_REASONS.map((r) => (<option key={r} value={r}>{r}</option>))}
+              </select>
+              {reasonRequired && <p className="text-[11px] text-destructive">{t($ => $.drawer.lines.reasonHint)}</p>}
+              {showOtherNotes && (
+                <textarea
+                  rows={2}
+                  value={localNotes}
+                  placeholder={tAny('drawer.lines.damageNotesPlaceholder')}
+                  onChange={(e) => { setLocalNotes(e.target.value); onChange?.(line.id, { damage_notes: e.target.value || null }); }}
+                  className="w-full resize-none rounded border border-input bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+              )}
+            </div>
+          )
+        : (line.damage_reason || line.notes) && (
+            <div className="space-y-0.5">
+              <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{t($ => $.drawer.lines.damageReason)}</span>
+              <p className="text-sm text-muted-foreground">{line.damage_reason ?? '—'}</p>
+              {line.notes && <p className="text-xs italic text-muted-foreground">{line.notes}</p>}
+            </div>
+          )}
+
+      {/* Shortage + variance (post-approval only) */}
+      {showSystemQty && (
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{t($ => $.drawer.lines.shortage)}</span>
+            <p className="font-mono text-sm">
+              {line.shortage_qty != null && line.shortage_qty > 0 ? (
+                <span className="font-medium text-destructive">-{fmt(line.shortage_qty)}</span>
+              ) : (
+                <span className="text-muted-foreground">—</span>
+              )}
+            </p>
+          </div>
+          <div>
+            <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{t($ => $.drawer.lines.variance)}</span>
+            <p><VariancePill qty={line.variance_qty} /></p>
+          </div>
+        </div>
+      )}
+
+      {/* Attachments */}
+      <div>
+        <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{t($ => $.drawer.lines.attachments)}</span>
+        <div className="mt-1 flex flex-wrap items-start gap-1.5">
+          {line.attachments.map((a) => (
+            <AttachmentThumbnail
+              key={a.id}
+              attachment={a}
+              canDelete={editable}
+              onDelete={() => deleteMutation.mutate(
+                { lineId: line.id, attachmentId: a.id },
+                {
+                  onSuccess: () => toast.success(t($ => $.drawer.lines.attachRemoved)),
+                  onError:   () => toast.error(t($ => $.drawer.lines.attachRemoveFailed)),
+                },
+              )}
+            />
+          ))}
+          {editable && (
+            <>
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploadMutation.isPending}
+                title={t($ => $.drawer.lines.attachTitle)}
+                className="flex size-14 items-center justify-center rounded border border-dashed border-input text-muted-foreground transition-colors hover:border-primary hover:text-foreground disabled:opacity-50"
+              >
+                {uploadMutation.isPending ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
+              </button>
+              <input ref={fileRef} type="file" accept="image/*,.pdf,video/*" className="hidden" onChange={handleFileChange} />
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -669,6 +897,7 @@ function SessionContent({
   const { t } = useTranslation('inventory-count');
   const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
   const { currency, locale } = useCompany();
+  const isMobile = useIsMobile();
   const hasPending = Object.keys(pendingLineUpdates).length > 0;
   const lines = session.lines ?? [];
 
@@ -727,7 +956,7 @@ function SessionContent({
       ) : (
         <>
           {/* Meta strip */}
-          <div className="px-6 py-3 border-b shrink-0 grid grid-cols-4 gap-4 text-xs">
+          <div className="px-6 py-3 border-b shrink-0 grid grid-cols-2 gap-4 text-xs sm:grid-cols-4">
             <div>
               <p className="text-muted-foreground">{t($ => $.drawer.meta.started)}</p>
               <p className="font-medium mt-0.5">{session.started_at ? fmtDateTime(session.started_at) : '—'}</p>
@@ -750,7 +979,7 @@ function SessionContent({
 
           {/* Variance / shortage summary (post-approval only) */}
           {vs && showSystemQty && (
-            <div className="px-6 py-3 border-b shrink-0 grid grid-cols-4 gap-3 text-xs">
+            <div className="px-6 py-3 border-b shrink-0 grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
               <div className="rounded-md border bg-card p-2.5">
                 <p className="text-muted-foreground">{t($ => $.drawer.summary.accuracy)}</p>
                 <p className="text-base font-semibold mt-0.5 text-emerald-600">
@@ -798,6 +1027,19 @@ function SessionContent({
           <div className="flex-1 overflow-auto">
             {lines.length === 0 ? (
               <p className="text-muted-foreground text-sm text-center py-12">{t($ => $.drawer.lines.empty)}</p>
+            ) : isMobile ? (
+              <div role="list" className="divide-y">
+                {lines.map((line) => (
+                  <CountLineCard
+                    key={line.id}
+                    line={line}
+                    sessionId={sessionId}
+                    editable={isEditable}
+                    showSystemQty={showSystemQty}
+                    onChange={onLineChange}
+                  />
+                ))}
+              </div>
             ) : (
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-background z-10 shadow-sm">
