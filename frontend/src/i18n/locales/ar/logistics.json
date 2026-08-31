@@ -16,7 +16,7 @@
     "empty": "لا يوجد سائقون لديهم عهدة مفتوحة",
     "emptyHistory": "لا توجد تصفيات مغلقة في هذه الفترة",
     "tabsActive": "النشطة",
-    "tabsHistory": "السجل",
+    "tabsHistory": "الأرشيف",
     "rangeFrom": "من",
     "rangeTo": "إلى",
     "pageOf": "صفحة {{page}} من {{total}}",

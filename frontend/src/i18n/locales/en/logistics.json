@@ -16,7 +16,7 @@
     "empty": "No drivers with open custody",
     "emptyHistory": "No closed settlements in this period",
     "tabsActive": "Active",
-    "tabsHistory": "History",
+    "tabsHistory": "Archive",
     "rangeFrom": "From",
     "rangeTo": "To",
     "pageOf": "Page {{page}} of {{total}}",

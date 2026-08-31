@@ -88,7 +88,7 @@ import { ConfigurationOsPage } from '@/features/admin/configuration/pages/config
 import { BrandConfigurationPage } from '@/features/admin/configuration/pages/brand-configuration-page';
 import { EgyptGeographyPage } from '@/features/logistics/geography/pages/egypt-geography-page';
 import { DistributionZonesPage } from '@/features/logistics/distribution-zones/pages/distribution-zones-page';
-import { DistributionPlanningPage } from '@/features/logistics/distribution-planning/pages/distribution-planning-page';
+import { DistributionWorkspacePage } from '@/features/logistics/distribution-workspace/pages/distribution-workspace-page';
 import { DriverSettlementWorkspacePage } from '@/features/operations/driver-settlement/pages/driver-settlement-workspace-page';
 import { DriverSettlementDetailPage } from '@/features/operations/driver-settlement/pages/driver-settlement-detail-page';
 import { TripsWorkspacePage } from '@/features/logistics/trips/pages/trips-workspace-page';
@@ -440,7 +440,14 @@ export const router = createBrowserRouter(
             // Logistics OS
             { path: ROUTES.logisticsGeography, Component: EgyptGeographyPage },
             { path: ROUTES.logisticsDistributionZones, Component: DistributionZonesPage },
-            { path: ROUTES.logisticsDistributionPlanning, Component: DistributionPlanningPage },
+            // Distribution Planning = the canonical Distribution Workspace redesign (Group-first:
+            // Eligible Orders → Window → Group + Loading Prep → Vehicle/Driver → Review/Finalize),
+            // backed by the current canonical DistributionWindowController (/logistics/distribution/*).
+            { path: ROUTES.logisticsDistributionWorkspace, Component: DistributionWorkspacePage },
+            // The old zone-status planning page is retired as the primary workspace; its deep link
+            // redirects to the canonical workspace. The DistributionPlanningController + its
+            // /logistics/distribution/planning API remain untouched (CTO retirement decision pending).
+            { path: ROUTES.logisticsDistributionPlanning, loader: () => redirect(ROUTES.logisticsDistributionWorkspace) },
             // Driver-Day-Settlement — the enterprise-side settlement workspace + per-assignment detail.
             { path: ROUTES.logisticsDriverSettlement, Component: DriverSettlementWorkspacePage },
             { path: ROUTES.logisticsDriverSettlementDetail, Component: DriverSettlementDetailPage },

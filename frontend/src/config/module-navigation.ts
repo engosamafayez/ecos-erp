@@ -213,7 +213,9 @@ const ALL_MODULES: AppModule[] = [
       // shell root /operations/preparation as the owned subtree keeps the Operations
       // contextual sidebar mounted across all three tabs and the nested Wave pages.
       { key: 'wave-workspace', path: ROUTES.waveWorkspace, subtree: ROUTES.preparationWorkspace, icon: Layers2 },
-      { key: 'logistics-distribution-plan', path: ROUTES.logisticsDistributionPlanning, icon: ListOrdered },
+      // Points at the canonical Distribution Workspace redesign (not the retired zone-status
+      // planning page); the /logistics/distribution/planning deep link redirects here.
+      { key: 'logistics-distribution-plan', path: ROUTES.logisticsDistributionWorkspace, icon: ListOrdered },
       { key: 'loading-workspace', path: ROUTES.loadingOsWorkspace, icon: PackageCheck },
       { key: 'driver-day-settlement', path: ROUTES.logisticsDriverSettlement, icon: Wallet },
     ],
