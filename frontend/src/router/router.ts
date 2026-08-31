@@ -79,12 +79,18 @@ import { WaveMissingMaterialsPage } from '@/features/operations/pages/wave-missi
 import { WaveOrdersPage } from '@/features/operations/pages/wave-orders-page';
 import { WaveSettingsPage } from '@/features/operations/pages/wave-settings-page';
 import { WaveWorkspaceLayout } from '@/features/operations/components/wave-workspace-layout';
+import { DeficitDecisionsPage } from '@/features/operations/pages/deficit-decisions-page';
+import { WaveArchivePage } from '@/features/operations/pages/wave-archive-page';
+import { WaveEngineSettingsPage } from '@/features/operations/pages/wave-engine-settings-page';
+import { PreparationWorkspaceLayout } from '@/features/operations/components/preparation-workspace-layout';
 import { PosPage } from '@/features/pos/pages/pos-page';
 import { ConfigurationOsPage } from '@/features/admin/configuration/pages/configuration-os-page';
 import { BrandConfigurationPage } from '@/features/admin/configuration/pages/brand-configuration-page';
 import { EgyptGeographyPage } from '@/features/logistics/geography/pages/egypt-geography-page';
 import { DistributionZonesPage } from '@/features/logistics/distribution-zones/pages/distribution-zones-page';
 import { DistributionPlanningPage } from '@/features/logistics/distribution-planning/pages/distribution-planning-page';
+import { DriverSettlementWorkspacePage } from '@/features/operations/driver-settlement/pages/driver-settlement-workspace-page';
+import { DriverSettlementDetailPage } from '@/features/operations/driver-settlement/pages/driver-settlement-detail-page';
 import { TripsWorkspacePage } from '@/features/logistics/trips/pages/trips-workspace-page';
 import { CarrierAccountsPage } from '@/features/logistics/carriers/pages/carrier-accounts-page';
 import { AutomationMonitoringPage } from '@/features/logistics/automation/pages/automation-monitoring-page';
@@ -435,6 +441,9 @@ export const router = createBrowserRouter(
             { path: ROUTES.logisticsGeography, Component: EgyptGeographyPage },
             { path: ROUTES.logisticsDistributionZones, Component: DistributionZonesPage },
             { path: ROUTES.logisticsDistributionPlanning, Component: DistributionPlanningPage },
+            // Driver-Day-Settlement — the enterprise-side settlement workspace + per-assignment detail.
+            { path: ROUTES.logisticsDriverSettlement, Component: DriverSettlementWorkspacePage },
+            { path: ROUTES.logisticsDriverSettlementDetail, Component: DriverSettlementDetailPage },
             { path: ROUTES.logisticsTrips, Component: TripsWorkspacePage },
             { path: ROUTES.logisticsCarrierAccounts, Component: CarrierAccountsPage },
             { path: ROUTES.logisticsAutomation, Component: AutomationMonitoringPage },
@@ -518,17 +527,51 @@ export const router = createBrowserRouter(
             { path: ROUTES.costManagement, Component: CostManagementDashboardPage },
             { path: ROUTES.costManagementPriceReview, Component: CostPricingCenterPage },
             { path: ROUTES.costManagementCostHistory, Component: CostHistoryPage },
-            // Fulfillment Wave Workspace (TASK-PREP-UI-003 + TASK-PREP-UI-004)
+            // Preparation Workspace (TASK-PREPARATION-WORKSPACE-FIX-003 §3) — one
+            // sidebar destination whose top-level tabs are Today's Preparation,
+            // Archive and Settings. Child paths are unchanged, so existing deep
+            // links keep resolving; only the shell around them is new.
             {
-              path: ROUTES.waveWorkspace,
-              Component: WaveWorkspaceLayout,
+              path: ROUTES.preparationWorkspace,
+              Component: PreparationWorkspaceLayout,
               children: [
-                { index: true, Component: FulfillmentWaveWorkspacePage },
-                { path: 'products', Component: WaveProductDemandPage },
-                { path: 'materials', Component: WaveRawMaterialsPage },
-                { path: 'missing', Component: WaveMissingMaterialsPage },
-                { path: 'wave-orders', Component: WaveOrdersPage },
-                { path: 'settings', Component: WaveSettingsPage },
+                // Bare /operations/preparation lands on Today's Preparation rather
+                // than rendering the shell with an empty body.
+                { index: true, loader: () => redirect(ROUTES.waveWorkspace) },
+                // Fulfillment Wave Workspace (TASK-PREP-UI-003 + TASK-PREP-UI-004)
+                {
+                  path: ROUTES.waveWorkspace,
+                  Component: WaveWorkspaceLayout,
+                  children: [
+                    // Today's Preparation opens directly on the Active tab (§8), preserving
+                    // any wave_id already on the URL. The layout then resolves the current
+                    // wave when none is supplied (§3).
+                    {
+                      index: true,
+                      loader: ({ request }) => {
+                        const w = new URL(request.url).searchParams.get('wave_id');
+                        return redirect(
+                          w
+                            ? `${ROUTES.waveProductDemand}?wave_id=${encodeURIComponent(w)}`
+                            : ROUTES.waveProductDemand,
+                        );
+                      },
+                    },
+                    { path: 'products', Component: WaveProductDemandPage },
+                    // The former default landing, preserved as an explicit Overview tab.
+                    { path: 'overview', Component: FulfillmentWaveWorkspacePage },
+                    { path: 'materials', Component: WaveRawMaterialsPage },
+                    { path: 'missing', Component: WaveMissingMaterialsPage },
+                    { path: 'deficit-decisions', Component: DeficitDecisionsPage },
+                    { path: 'wave-orders', Component: WaveOrdersPage },
+                    { path: 'settings', Component: WaveSettingsPage },
+                  ],
+                },
+                // Wave Archive / History — older and terminal waves stay reachable here
+                // once the operational selector narrows to the 3 most recent active waves.
+                { path: ROUTES.waveArchive, Component: WaveArchivePage },
+                // Wave Engine — the operational cycle configuration (start / cutoff / end).
+                { path: ROUTES.waveEngine, Component: WaveEngineSettingsPage },
               ],
             },
             // Claude Bridge

@@ -192,14 +192,24 @@ const ALL_MODULES: AppModule[] = [
     id: 'operations',
     icon: TrendingUp,
     defaultPath: ROUTES.waveWorkspace,
-    items: [{ key: 'wave-workspace', path: ROUTES.waveWorkspace, icon: Layers2 }],
+    // Approved Operations ownership restored (TASK-ECOS-NAV-AND-ROUTING-RECONCILIATION-001;
+    // per TASK-LOGISTICS-NAVIGATION-ARCHITECTURE-CLEANUP-002 §5-6): Distribution Planning,
+    // Loading Workspace and Driver Day Settlement belong to Operations, not Shipping. The
+    // pages/routes/backend already exist — this is a nav-ownership restore only.
+    items: [
+      { key: 'wave-workspace', path: ROUTES.waveWorkspace, icon: Layers2 },
+      { key: 'logistics-distribution-plan', path: ROUTES.logisticsDistributionPlanning, icon: ListOrdered },
+      { key: 'loading-workspace', path: ROUTES.loadingOsWorkspace, icon: PackageCheck },
+      { key: 'driver-day-settlement', path: ROUTES.logisticsDriverSettlement, icon: Wallet },
+    ],
   },
   {
     id: 'shipping',
     icon: PackageCheck,
-    defaultPath: ROUTES.fulfillments,
+    // Shipping default → Shipping Companies; the retired Fulfillments item is removed
+    // (TASK-LOGISTICS-FULFILLMENTS-LEGACY-UI-RETIREMENT-002 / SHIPPING-NAVIGATION-SETTINGS-REORGANIZATION-001).
+    defaultPath: ROUTES.logisticsShippingCompanies,
     items: [
-      { key: 'fulfillments', path: ROUTES.fulfillments, icon: PackageCheck },
       { key: 'carriers-section', isSection: true },
       { key: 'logistics-shipping-companies', path: ROUTES.logisticsShippingCompanies, icon: Truck },
       { key: 'logistics-carriers', path: ROUTES.logisticsCarrierAccounts, icon: Truck },
@@ -210,8 +220,8 @@ const ALL_MODULES: AppModule[] = [
       { key: 'logistics-vehicles', path: ROUTES.logisticsVehicles, icon: Truck },
       { key: 'fleet-section', isSection: true },
       { key: 'logistics-fleet', path: ROUTES.logisticsFleet, icon: Gauge },
-      { key: 'network-section', isSection: true },
-      { key: 'logistics-network', path: ROUTES.logisticsNetwork, icon: Network },
+      // Service Areas (Network) removed from the Shipping UI per CLEANUP-002 §7 — the
+      // /logistics/network route + NetworkController + data + permissions are untouched.
       { key: 'dispatch-section', isSection: true },
       { key: 'logistics-dispatch', path: ROUTES.logisticsDispatch, icon: Radio },
       { key: 'logistics-dispatch-exec', path: ROUTES.logisticsDispatchExecution, icon: Zap },
@@ -235,17 +245,10 @@ const ALL_MODULES: AppModule[] = [
         path: ROUTES.logisticsDistributionZones,
         icon: Network,
       },
-      {
-        key: 'logistics-distribution-plan',
-        path: ROUTES.logisticsDistributionPlanning,
-        icon: ListOrdered,
-      },
-      // Canonical GROUP-grain Loading Execution workspace. The label comes from
-      // common.nav.items ('loading-workspace' → "Loading Workspace" / "مساحة عمل التحميل"),
-      // so there is no literal UI string and no ESLint suppression. The key was renamed
-      // from the misleading 'loading-drivers' to reflect the warehouse Group-loading
-      // responsibility this surface actually owns. TASK-DISTRIBUTION-LOADING-STACK-CONVERGENCE-001.
-      { key: 'loading-workspace', path: ROUTES.loadingOsWorkspace, icon: PackageCheck },
+      // Distribution Planning + Loading Workspace moved to the Operations module (approved
+      // ownership — CLEANUP-002 §5-6). The loading-OS route/page/backend (Lane B,
+      // TASK-DISTRIBUTION-LOADING-STACK-CONVERGENCE-001) are unchanged — only the nav module
+      // that owns the item changed. Distribution Zones stays a Shipping-Settings entry.
       { key: 'delivery-section', isSection: true },
       { key: 'logistics-delivery', path: ROUTES.logisticsDelivery, icon: MapPin },
     ],
