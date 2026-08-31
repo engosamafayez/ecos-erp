@@ -240,11 +240,12 @@ const ALL_MODULES: AppModule[] = [
         path: ROUTES.logisticsDistributionPlanning,
         icon: ListOrdered,
       },
-      // Canonical GROUP-grain Loading Execution workspace. Reuses the existing
-      // `loading-drivers` i18n key (the identity the page's own breadcrumb already
-      // uses), so the label comes from common.nav.items — no literal string, no
-      // ESLint suppression. TASK-1-D-LOADING-EXECUTION-001.
-      { key: 'loading-drivers', path: ROUTES.loadingOsWorkspace, icon: PackageCheck },
+      // Canonical GROUP-grain Loading Execution workspace. The label comes from
+      // common.nav.items ('loading-workspace' → "Loading Workspace" / "مساحة عمل التحميل"),
+      // so there is no literal UI string and no ESLint suppression. The key was renamed
+      // from the misleading 'loading-drivers' to reflect the warehouse Group-loading
+      // responsibility this surface actually owns. TASK-DISTRIBUTION-LOADING-STACK-CONVERGENCE-001.
+      { key: 'loading-workspace', path: ROUTES.loadingOsWorkspace, icon: PackageCheck },
       { key: 'delivery-section', isSection: true },
       { key: 'logistics-delivery', path: ROUTES.logisticsDelivery, icon: MapPin },
     ],

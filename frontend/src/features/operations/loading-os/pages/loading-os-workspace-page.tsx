@@ -83,7 +83,7 @@ export function LoadingOsWorkspacePage() {
         <WorkspaceBreadcrumbs
           crumbs={[
             { label: navLabel.group('operations') },
-            { label: navLabel.item('loading-drivers') },
+            { label: navLabel.item('loading-workspace') },
           ]}
           className="mb-2.5"
         />

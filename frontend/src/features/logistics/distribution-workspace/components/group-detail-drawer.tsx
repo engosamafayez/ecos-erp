@@ -20,6 +20,17 @@ import type {
 } from '../types';
 
 /**
+ * @deprecated DEAD CODE — retire. TASK-DISTRIBUTION-LOADING-STACK-CONVERGENCE-001.
+ *
+ * This drawer cluster (GroupDetailDrawer + GroupLoadingPreparation +
+ * GroupLoadingExecution) is UNWIRED: nothing outside this file imports it. The live
+ * Group detail surface is `group-detail-section.tsx` (rendered inline by
+ * distribution-groups-panel), and the canonical warehouse Loading Execution surface is
+ * the Loading OS workspace (`features/operations/loading-os/`, /api/loading/groups). The
+ * loading widgets here duplicate that responsibility and have no unique operational role.
+ * Left physically in place (not deleted) to avoid cross-lane worktree integration risk;
+ * do NOT re-wire it. Retirement is a CTO cleanup decision.
+ *
  * GROUP DETAIL DRAWER — TASK-DISTRIBUTION-PLANNING-WORKSPACE-PHASE-1.
  *
  * A PRESENTATION shell only. It re-hosts the already-certified per-group panels
