@@ -27,6 +27,7 @@ const COLUMN_STRUCTURE: ColumnStructure[] = [
   { key: 'delivery_driver',     defaultVisible: true },
   { key: 'store',               defaultVisible: true },
   { key: 'shipping_attempts',   defaultVisible: true },
+  { key: 'shipping_company',    defaultVisible: false },
   { key: 'updated_at',          defaultVisible: true },
   { key: 'actions',             alwaysVisible: true  },
   { key: 'delivery_window',     defaultVisible: false },
@@ -52,6 +53,7 @@ function resolveLabel(key: string, t: TFunction<'orders'>): string {
     case 'delivery_driver':     return t($ => $.columns.driver);
     case 'store':               return t($ => $.columns.store);
     case 'shipping_attempts':   return t($ => $.columns.shippingAttempts);
+    case 'shipping_company':    return t($ => $.columns.shippingCompany);
     case 'updated_at':          return t($ => $.columns.updatedAt);
     case 'delivery_window':     return t($ => $.columns.deliveryWindow);
     default:                    return '';

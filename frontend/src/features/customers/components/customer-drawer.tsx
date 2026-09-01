@@ -252,9 +252,15 @@ function AddressesTab({ customer }: { customer: Customer }) {
   const { t } = useTranslation('customers');
   const [copied, setCopied] = useState(false);
 
-  const addressLine  = customer.address;
-  const localityLine = [customer.city, customer.country].filter(Boolean).join(', ');
-  const fullAddress  = [addressLine, localityLine].filter(Boolean).join(' — ');
+  // Same source as SummaryTab (customer.full_address): CustomerController::fullAddress()
+  // prefers the customer's default customer_addresses row over the legacy flat
+  // address/city/country columns. This tab previously re-derived its own string from
+  // those legacy columns, which could genuinely disagree with Summary whenever a
+  // structured default address existed — reading the same resolved field keeps both
+  // tabs honest about a single address. No `is_default` flag reaches the frontend for
+  // this field, so no "Default" badge is shown here rather than asserting one.
+  const fullAddress = customer.full_address;
+  const mapHref = customer.location_url || (fullAddress ? `https://maps.google.com/?q=${encodeURIComponent(fullAddress)}` : null);
 
   const doCopy = () => {
     if (!fullAddress) return;
@@ -268,21 +274,10 @@ function AddressesTab({ customer }: { customer: Customer }) {
     <div className="p-4">
       {fullAddress ? (
         <div className="flex flex-col gap-3 rounded-lg border p-3">
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-[10px]">
-              {t($ => $.drawer.addresses.default)}
-            </Badge>
+          <div className="flex items-start gap-2">
+            <MapPin className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
+            <p className="text-sm">{fullAddress}</p>
           </div>
-
-          {addressLine ? (
-            <div className="flex items-start gap-2">
-              <MapPin className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />
-              <p className="text-sm">{addressLine}</p>
-            </div>
-          ) : null}
-          {localityLine ? (
-            <p className="ms-5 text-xs text-muted-foreground">{localityLine}</p>
-          ) : null}
 
           <div className="flex gap-2">
             <Button
@@ -294,16 +289,14 @@ function AddressesTab({ customer }: { customer: Customer }) {
               <Copy className="size-3" />
               {copied ? '✓' : t($ => $.drawer.addresses.copyAddress)}
             </Button>
-            <Button size="sm" variant="outline" className="h-7 gap-1.5 text-xs" asChild>
-              <a
-                href={`https://maps.google.com/?q=${encodeURIComponent(fullAddress)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <MapPin className="size-3" />
-                {t($ => $.drawer.addresses.openMap)}
-              </a>
-            </Button>
+            {mapHref ? (
+              <Button size="sm" variant="outline" className="h-7 gap-1.5 text-xs" asChild>
+                <a href={mapHref} target="_blank" rel="noopener noreferrer">
+                  <MapPin className="size-3" />
+                  {t($ => $.drawer.addresses.openMap)}
+                </a>
+              </Button>
+            ) : null}
           </div>
         </div>
       ) : (

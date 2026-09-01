@@ -67,9 +67,6 @@ import {
   type ManualOrderLineFormValues,
 } from '@/features/orders/components/order-form-schema';
 import { useCreateManualOrder, useUpdateManualOrder, useBrandOrderPolicy, useShippingQuote } from '@/features/orders/hooks/use-orders';
-import { useOrderDistributionStage } from '@/features/orders/hooks/use-order-distribution-stage';
-import { ImpactAnalysisDialog } from '@/features/orders/components/impact-analysis-dialog';
-import { OrderDistributionStageBanner } from '@/features/orders/components/order-distribution-stage-banner';
 import { SmartStatusSelector } from '@/features/orders/components/smart-status-selector';
 import { ordersService } from '@/features/orders/services/orders-service';
 import { useProductPricing } from '@/features/orders/hooks/use-product-pricing';
@@ -94,7 +91,6 @@ import { parseGoogleMapsUrl, isGoogleMapsUrl } from '@/features/orders/utils/goo
 const FORM_ID = 'manual-order-form';
 
 const STATUS_LABELS: Record<string, string> = {
-  new:               'New',
   in_progress:       'In Progress',
   ready_for_dispatch: 'Ready for Dispatch',
   out_for_delivery:  'Out for Delivery',
@@ -707,9 +703,11 @@ function InlineSpinner({ label }: { label: string }) {
 type Props = {
   mode?: 'create' | 'edit';
   order?: Order;
+  /** Seeds the create-mode customer lookup (e.g. "New Order" from a customer's Quick Action Card). */
+  initialCustomerPhone?: string;
 };
 
-export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
+export function ManualOrderFormWorkspace({ mode = 'create', order, initialCustomerPhone }: Props) {
   const { money, currency } = useFormatter();
   const { t } = useTranslation('orders');
   const navigate = useNavigate();
@@ -725,7 +723,6 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
   const [serverError, setServerError] = useState<string | null>(null);
   const [slotError, setSlotError] = useState<string | null>(null);
   const userHasSelectedSlotRef = useRef(false);
-  const [pendingSubmitValues, setPendingSubmitValues] = useState<ManualOrderFormValues | null>(null);
 
   // ── Diagnostic: prove component lifecycle across SPA navigation ────────────
   // ROOT-CAUSE LOGGING: if this MOUNT log never appears when navigating to
@@ -748,8 +745,6 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Distribution SSOT: detect if this order is in an active trip before allowing save.
-  const { data: distributionStage } = useOrderDistributionStage(isEdit ? (order?.id ?? null) : null, isEdit);
   const [lookupResult, setLookupResult] = useState<CustomerLookupResult>(null);
   const [isNewCustomer, setIsNewCustomer] = useState(isEdit); // edit starts with customer known
   const [brandId, setBrandId] = useState<string | null>(
@@ -1053,7 +1048,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
     const all = Array.isArray(mp) ? mp : [mp];
     const choices = all.filter((s) => !INTERNAL_STATUSES.has(s));
     const validChoices = choices.length > 0 ? choices : all;
-    const first = validChoices[0] ?? 'new';
+    const first = validChoices[0] ?? 'in_progress';
     const current = form.getValues('status');
     if (!current || !validChoices.includes(current)) {
       form.setValue('status', first);
@@ -1348,11 +1343,6 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
     if (import.meta.env.DEV) console.log('[Submit][STEP 2] Zod PASSED — handleSubmit entered. lines:', values.lines.length, '| status:', values.status);
     setServerError(null);
     if (isEdit && order) {
-      // If order is in an active Distribution stage, show Impact Analysis dialog first.
-      if (distributionStage?.is_active) {
-        setPendingSubmitValues(values);
-        return;
-      }
       doEditSave(values);
       return;
     }
@@ -1490,25 +1480,6 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
         />
 
         {!isEdit && <ProgressIndicator steps={progressSteps} />}
-
-        {/* Distribution SSOT banner — visible when editing an order assigned to a trip */}
-        {isEdit && order ? (
-          <OrderDistributionStageBanner orderId={order.id} compact />
-        ) : null}
-
-        {/* Impact Analysis Dialog — intercepts save when order is in active distribution stage */}
-        {isEdit && order && pendingSubmitValues && distributionStage ? (
-          <ImpactAnalysisDialog
-            open={pendingSubmitValues !== null}
-            stage={distributionStage}
-            onConfirm={() => {
-              const values = pendingSubmitValues;
-              setPendingSubmitValues(null);
-              doEditSave(values);
-            }}
-            onCancel={() => setPendingSubmitValues(null)}
-          />
-        ) : null}
 
         <form
           id={FORM_ID}
@@ -1785,6 +1756,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                         onFound={handleCustomerFound}
                         onNotFound={handleCustomerNotFound}
                         onClear={handleLookupClear}
+                        initialPhone={initialCustomerPhone}
                       />
                     )}
 

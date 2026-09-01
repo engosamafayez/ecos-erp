@@ -9,10 +9,12 @@ type Props = {
   onFound: (result: CustomerLookupResult) => void;
   onNotFound: (phone: string) => void;
   onClear: () => void;
+  /** Seeds the field (e.g. from a customer opened via "New Order") — the normal debounced lookup below still runs on it. */
+  initialPhone?: string;
 };
 
-export function OrderCustomerLookupField({ onFound, onNotFound, onClear }: Props) {
-  const [phone, setPhone] = useState('');
+export function OrderCustomerLookupField({ onFound, onNotFound, onClear, initialPhone }: Props) {
+  const [phone, setPhone] = useState(initialPhone ?? '');
   const [debouncedPhone, setDebouncedPhone] = useState('');
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 

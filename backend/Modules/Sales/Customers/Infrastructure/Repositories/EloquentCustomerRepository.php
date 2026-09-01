@@ -31,13 +31,20 @@ final class EloquentCustomerRepository implements CustomerRepositoryInterface
 
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
+            // Phone/mobile matching is load-bearing for the Phone First workspace (DD-055):
+            // the smart search box and CustomerFormDrawer's pre-submit duplicate check both
+            // go through this same generic search, not the dedicated /search-by-phone
+            // exact-match action. Without it, searching an existing customer's exact phone
+            // number always fell through to zero-results/create-new.
             $query->where(function (Builder $builder) use ($search): void {
                 $builder
                     ->where('code', 'like', "%{$search}%")
                     ->orWhere('name', 'like', "%{$search}%")
                     ->orWhere('contact_person', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('city', 'like', "%{$search}%");
+                    ->orWhere('city', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('mobile', 'like', "%{$search}%");
             });
         }
 

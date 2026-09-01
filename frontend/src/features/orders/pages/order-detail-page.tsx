@@ -46,6 +46,7 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ConfirmDialog } from '@/components/crud';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -1369,14 +1370,32 @@ function QuickActionsPanel({
   const transitions = order.allowed_status_transitions ?? [];
   const isPending   = transition.isPending || reschedule.isPending;
 
-  function handleAction(targetStatus: string) {
-    if (targetStatus === 'scheduled') {
+  // Part G — every transition is confirmed before it fires (matching
+  // SmartStatusSelector's behavior), with a reason input surfaced only when
+  // the transition itself requires one (matching WorkflowTab's behavior).
+  // Pure client-side gate in front of the existing transition.mutate(...)
+  // call — no new backend call, no workflow semantics change.
+  const [pendingTransition, setPendingTransition] = useState<Order['allowed_status_transitions'][number] | null>(null);
+  const [reasonText, setReasonText] = useState('');
+
+  function handleAction(tr: Order['allowed_status_transitions'][number]) {
+    if (tr.target_status === 'scheduled') {
       setShowReschedule(true);
       return;
     }
-    const label = transitions.find((tr) => tr.target_status === targetStatus)?.label ?? targetStatus;
-    transition.mutate({ id: order.id, targetStatus }, {
-      onSuccess: () => toast.success(t($ => $.statusSelector.toastSuccess, { order: order.order_number, status: label })),
+    setPendingTransition(tr);
+    setReasonText('');
+  }
+
+  function handleConfirmTransition() {
+    if (!pendingTransition) return;
+    transition.mutate({ id: order.id, targetStatus: pendingTransition.target_status, reason: reasonText.trim() || undefined }, {
+      onSuccess: () => {
+        setPendingTransition(null);
+        setReasonText('');
+        toast.success(t($ => $.statusSelector.toastSuccess, { order: order.order_number, status: pendingTransition.label }));
+      },
+      // Never close on failure — the dialog stays open so the operator can retry or cancel.
       onError: (err) => toast.error(t($ => $.statusSelector.transitionFailed), extractApiErrorMessage(err)),
     });
   }
@@ -1393,6 +1412,7 @@ function QuickActionsPanel({
   }
 
   return (
+    <>
     <Card className="gap-0">
       <CardHeader className="px-4 py-3 border-b">
         <CardTitle className="text-sm font-semibold">{t($ => $.orderDetail.quickActionsTitle)}</CardTitle>
@@ -1464,7 +1484,7 @@ function QuickActionsPanel({
                     key={tr.target_status}
                     variant={variant as 'default' | 'outline' | 'destructive'}
                     size="sm"
-                    onClick={() => handleAction(tr.target_status)}
+                    onClick={() => handleAction(tr)}
                     disabled={isPending}
                     className="justify-start gap-2"
                   >
@@ -1478,6 +1498,31 @@ function QuickActionsPanel({
         ) : null}
       </CardContent>
     </Card>
+
+    <ConfirmDialog
+      open={pendingTransition !== null}
+      onOpenChange={(open) => { if (!open) { setPendingTransition(null); setReasonText(''); } }}
+      title={t($ => $.statusSelector.dialogTitle)}
+      description={
+        <>
+          {t($ => $.statusSelector.dialogDesc)}
+          {pendingTransition?.requires_reason ? (
+            <Input
+              autoFocus
+              placeholder={t($ => $.statusSelector.reasonPlaceholder)}
+              value={reasonText}
+              onChange={(e) => setReasonText(e.target.value)}
+              className="mt-2"
+            />
+          ) : null}
+        </>
+      }
+      confirmLabel={t($ => $.statusSelector.confirm)}
+      variant={pendingTransition?.target_status === 'cancelled' ? 'destructive' : 'default'}
+      loading={transition.isPending}
+      onConfirm={handleConfirmTransition}
+    />
+    </>
   );
 }
 

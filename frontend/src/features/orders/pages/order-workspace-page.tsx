@@ -15,7 +15,10 @@ export function OrderWorkspacePage() {
   const { t } = useTranslation('orders');
   const { t: tCommon } = useTranslation('common');
   const { id } = useParams<{ id: string }>();
-  const { pathname } = useLocation();
+  const { pathname, state } = useLocation();
+  // "New Order" from a customer's Quick Action Card carries the phone through
+  // navigation state (same mechanism recipe-workspace-page.tsx already uses).
+  const locationState = state as { customerPhone?: string } | null;
 
   const mode: 'create' | 'edit' | 'view' = !id
     ? 'create'
@@ -62,6 +65,6 @@ export function OrderWorkspacePage() {
   // key forces a clean remount whenever the mode or order changes.
   // Without it, React reconciles create and edit as the same component instance,
   // allowing serverError / slotError / ref state to bleed across SPA navigations.
-  if (mode === 'create') return <ManualOrderFormWorkspace key="create" />;
+  if (mode === 'create') return <ManualOrderFormWorkspace key="create" initialCustomerPhone={locationState?.customerPhone} />;
   return <ManualOrderFormWorkspace key={order!.id} mode="edit" order={order!} />;
 }

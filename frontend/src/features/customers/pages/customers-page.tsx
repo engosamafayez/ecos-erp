@@ -8,6 +8,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useEffect, useRef, useState, useMemo} from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { PhoneCell } from '@/components/ecos/phone-cell';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -80,11 +81,16 @@ function SortTh({
 }
 
 // ── Row skeleton ──────────────────────────────────────────────────────────────
+// Kept in sync with the table's real <th> count (checkbox, customer, phones,
+// orders count, total value, receiving rate, last order, address, top
+// products, intelligence, actions) so loading/error/empty states span the
+// actual header width instead of drifting whenever a column is added.
+const CUSTOMER_TABLE_COLUMNS = 11;
 
 function CustomerRowSkeleton() {
   return (
     <tr className="border-b">
-      {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+      {Array.from({ length: CUSTOMER_TABLE_COLUMNS }).map((_, i) => (
         <td key={i} className="px-4 py-3">
           <Skeleton className="h-4 w-full" />
         </td>
@@ -105,6 +111,7 @@ function fmtMoney(n: number | null | undefined) {
 export function CustomersPage() {
   const { t } = useTranslation('customers');
   const { t: tCommon } = useTranslation('common');
+  const navigate = useNavigate();
   const searchRef = useRef<HTMLInputElement>(null);
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -349,7 +356,7 @@ export function CustomersPage() {
             onOpen={(c) => openView(c, 'summary')}
             onOpenOrders={openViewOrders}
             onEdit={openEdit}
-            onCreateOrder={() => undefined}
+            onCreateOrder={(c) => navigate(ROUTES.ordersNew, { state: { customerPhone: c.phone ?? undefined } })}
             onClose={() => setSearch('')}
             className="max-w-md"
           />
@@ -373,6 +380,7 @@ export function CustomersPage() {
       {/* ── Data Table ───────────────────────────────────────────────────── */}
       {showTable ? (
         <div className="overflow-hidden rounded-xl border bg-background">
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-10 border-b bg-muted/60 backdrop-blur-sm">
               <tr>
@@ -422,7 +430,7 @@ export function CustomersPage() {
                 Array.from({ length: 8 }).map((_, i) => <CustomerRowSkeleton key={i} />)
               ) : isError ? (
                 <tr>
-                  <td colSpan={7} className="py-12">
+                  <td colSpan={CUSTOMER_TABLE_COLUMNS} className="py-12">
                     <ErrorState
                       description={t($ => $.table.error)}
                       onRetry={() => void refetch()}
@@ -431,7 +439,7 @@ export function CustomersPage() {
                 </tr>
               ) : items.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12">
+                  <td colSpan={CUSTOMER_TABLE_COLUMNS} className="py-12">
                     <EmptyState title={t($ => $.table.empty)} />
                   </td>
                 </tr>
@@ -452,6 +460,7 @@ export function CustomersPage() {
               )}
             </tbody>
           </table>
+          </div>
 
           {meta && meta.last_page > 1 ? (
             <div className="border-t px-4 py-3">

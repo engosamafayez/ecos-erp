@@ -1,4 +1,4 @@
-import { Phone } from 'lucide-react';
+import { MapPin, Phone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -46,9 +46,12 @@ export function OrderMobileCard({
   const phone = order.billing_phone;
 
   const remaining = order.remaining_balance ?? (order.grand_total - (order.deposit_paid ?? 0));
-  const addressSummary = [order.city, order.governorate].filter(Boolean).join(', ');
+  // F3 — include the street so the mobile summary carries the same delivery-point
+  // specificity as the desktop grid's Address column, not just city/governorate.
+  const addressSummary = [order.shipping_address, order.city, order.governorate].filter(Boolean).join(', ');
   const paymentMethod = order.payment_method_manual ?? order.payment_method;
   const scheduledDate = formatDate(order.requested_delivery_date);
+  const mapHref = order.location ? `https://www.google.com/maps?q=${order.location.lat},${order.location.lng}` : null;
 
   const fields: MobileDataCardField[] = [
     {
@@ -115,16 +118,33 @@ export function OrderMobileCard({
       onOpen={() => onView(order)}
       openLabel={`View order ${order.order_number}`}
       actions={
-        phone ? (
-          <Button variant="ghost" size="icon" className="size-7" asChild>
-            <a
-              href={`tel:${phone}`}
-              aria-label={t($ => $.phone.call)}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Phone className="size-3.5" />
-            </a>
-          </Button>
+        phone || mapHref ? (
+          <>
+            {phone ? (
+              <Button variant="ghost" size="icon" className="size-7" asChild>
+                <a
+                  href={`tel:${phone}`}
+                  aria-label={t($ => $.phone.call)}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Phone className="size-3.5" />
+                </a>
+              </Button>
+            ) : null}
+            {mapHref ? (
+              <Button variant="ghost" size="icon" className="size-7" asChild>
+                <a
+                  href={mapHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={t($ => $.drawer.shipping.openMap)}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MapPin className="size-3.5" />
+                </a>
+              </Button>
+            ) : null}
+          </>
         ) : undefined
       }
     />

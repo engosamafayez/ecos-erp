@@ -10,6 +10,7 @@ use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Sales\Customers\Domain\Models\Customer;
+use Modules\Sales\Customers\Domain\Models\CustomerAddress;
 
 final class CustomerAddressController extends Controller
 {
@@ -30,6 +31,21 @@ final class CustomerAddressController extends Controller
 
         return Customer::query()
             ->when($companyId !== null, fn ($q) => $q->where('company_id', $companyId))
+            ->findOrFail($id);
+    }
+
+    /**
+     * Resolve an address inside the caller's tenant, scoped through its own
+     * customer relation. update()/destroy() are registered as shallow routes
+     * (PUT|DELETE /addresses/{address}, no {customer} segment — see
+     * routes/api.php), so there is no customer id to resolve from the URL.
+     */
+    private function address(string $id): CustomerAddress
+    {
+        $companyId = $this->currentCompany->id();
+
+        return CustomerAddress::query()
+            ->when($companyId !== null, fn ($q) => $q->whereHas('customer', fn ($q2) => $q2->where('company_id', $companyId)))
             ->findOrFail($id);
     }
 
@@ -65,10 +81,9 @@ final class CustomerAddressController extends Controller
         return $this->created($address, 'Address added successfully.');
     }
 
-    public function update(Request $request, string $customer, string $address): JsonResponse
+    public function update(Request $request, string $address): JsonResponse
     {
-        $model = $this->customer($customer);
-        $addressModel = $model->addresses()->findOrFail($address);
+        $addressModel = $this->address($address);
 
         $validated = $request->validate([
             'label' => 'sometimes|string|max:100',
@@ -82,7 +97,9 @@ final class CustomerAddressController extends Controller
         ]);
 
         if (! empty($validated['is_default'])) {
-            $model->addresses()->where('id', '!=', $address)->update(['is_default' => false]);
+            CustomerAddress::where('customer_id', $addressModel->customer_id)
+                ->where('id', '!=', $address)
+                ->update(['is_default' => false]);
         }
 
         $addressModel->update($validated);
@@ -90,10 +107,9 @@ final class CustomerAddressController extends Controller
         return $this->updated($addressModel, 'Address updated successfully.');
     }
 
-    public function destroy(string $customer, string $address): JsonResponse
+    public function destroy(string $address): JsonResponse
     {
-        $model = $this->customer($customer);
-        $addressModel = $model->addresses()->findOrFail($address);
+        $addressModel = $this->address($address);
         $addressModel->delete();
 
         return $this->deleted('Address deleted successfully.');

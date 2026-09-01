@@ -581,6 +581,19 @@ export function createOrderColumns(
       },
     },
 
+    // ── Shipping Company (carrier) ────────────────────────────────────────────
+    {
+      key: 'shipping_company',
+      label: t($ => $.columns.shippingCompany),
+      defaultVisible: false,
+      skeletonClassName: 'h-4 w-20',
+      cell: (order) => order.shipping_company_name ? (
+        <span className="text-xs">{order.shipping_company_name}</span>
+      ) : (
+        <span className="text-xs text-muted-foreground">—</span>
+      ),
+    },
+
     // ── Updated ───────────────────────────────────────────────────────────────
     {
       key: 'updated_at',

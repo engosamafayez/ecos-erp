@@ -15,6 +15,7 @@ import {
   Edit,
   ExternalLink,
   FileCheck,
+  Factory,
   Flag,
   Globe,
   Hash,
@@ -771,6 +772,14 @@ function ProductsTab({ order, t }: { order: Order; t: OrdersT }) {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{line.product?.name ?? '—'}</p>
                 <p className="text-xs text-muted-foreground font-mono">{line.product?.sku}</p>
+                {/* F10 — per-line manufacturing_state (backend-tracked, e.g. MTO lines);
+                    shown only when present so non-manufactured lines are unaffected. */}
+                {line.manufacturing_state ? (
+                  <span className="mt-0.5 inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <Factory className="size-2.5" />
+                    {line.manufacturing_state_label ?? line.manufacturing_state}
+                  </span>
+                ) : null}
               </div>
               <div className="text-end shrink-0">
                 <p className="text-sm font-medium tabular-nums">{fmtCur(line.line_total, true)}</p>

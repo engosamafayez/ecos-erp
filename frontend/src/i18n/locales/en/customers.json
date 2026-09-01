@@ -194,7 +194,6 @@
     },
     "addresses": {
       "title": "Address Book",
-      "default": "Default Address",
       "noAddress": "No address on file.",
       "copyAddress": "Copy Address",
       "openMap": "Open Map",
