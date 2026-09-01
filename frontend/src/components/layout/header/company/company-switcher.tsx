@@ -39,7 +39,16 @@ function companyInitials(name: string): string {
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
-export function CompanySwitcher({ className }: { className?: string }) {
+export function CompanySwitcher({
+  className,
+  showLabel = false,
+}: {
+  className?: string;
+  /** Force the name/code label visible below `sm` (default: hidden, matching
+   * the original desktop-topbar-only behavior). Used by the mobile menu,
+   * where the switcher renders full-width and the label must stay legible. */
+  showLabel?: boolean;
+}) {
   const { t } = useTranslation('common');
   const { activeCompanyId, setActiveCompanyId } = useOrganizationContext();
   const [open, setOpen] = useState(false);
@@ -132,12 +141,22 @@ export function CompanySwitcher({ className }: { className?: string }) {
               {activeInitials}
             </span>
 
-            {/* Name + code — hidden on xs, visible sm+ */}
-            <span className="hidden flex-col items-start sm:flex">
-              <span className="max-w-[7rem] truncate text-xs font-semibold leading-tight lg:max-w-[9rem]">
+            {/* Name + code — hidden on xs, visible sm+ (or always, when showLabel) */}
+            <span className={cn('flex-col items-start', showLabel ? 'flex min-w-0 flex-1' : 'hidden sm:flex')}>
+              <span
+                className={cn(
+                  'truncate text-xs font-semibold leading-tight',
+                  showLabel ? 'max-w-full' : 'max-w-[7rem] lg:max-w-[9rem]',
+                )}
+              >
                 {active?.name ?? t(($) => $.loading)}
               </span>
-              <span className="max-w-[7rem] truncate text-[10px] leading-tight text-muted-foreground lg:max-w-[9rem]">
+              <span
+                className={cn(
+                  'truncate text-[10px] leading-tight text-muted-foreground',
+                  showLabel ? 'max-w-full' : 'max-w-[7rem] lg:max-w-[9rem]',
+                )}
+              >
                 {active?.code ?? ''}
               </span>
             </span>

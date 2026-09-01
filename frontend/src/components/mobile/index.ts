@@ -5,6 +5,9 @@
 export { MobileDataCard } from './mobile-data-card';
 export type { MobileDataCardProps, MobileDataCardField } from './mobile-data-card';
 
+export { MobilePageHeader } from './mobile-page-header';
+export type { MobilePageHeaderProps } from './mobile-page-header';
+
 export { AutoDataCard } from './auto-data-card';
 export type { AutoDataCardProps } from './auto-data-card';
 

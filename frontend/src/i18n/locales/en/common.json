@@ -219,7 +219,23 @@
     "menu": "Menu",
     "closeMenu": "Close menu",
     "workspaces": "Workspaces",
-    "moduleNavigation": "Module navigation"
+    "moduleNavigation": "Module navigation",
+    "modules": "Modules",
+    "searchModulesPlaceholder": "Search modules and pages",
+    "recent": "Recent",
+    "current": "Current",
+    "backToModules": "Back to Modules",
+    "companyWarehouse": "Company & Warehouse",
+    "noModuleMatches": "No matches found",
+    "families": {
+      "overview": "Overview",
+      "commerceMarketing": "Commerce & Marketing",
+      "operationsFulfillment": "Operations & Fulfillment",
+      "inventoryProcurement": "Inventory & Procurement",
+      "financePeople": "Finance & People",
+      "platformAdmin": "Platform & Administration",
+      "other": "Other"
+    }
   },
   "language": {
     "switcher": "Language",

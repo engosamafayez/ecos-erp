@@ -72,7 +72,9 @@ export function MobileDataCard({
   const body = (
     <>
       <div className="flex items-start justify-between gap-2">
-        <span className="min-w-0 flex-1 truncate text-sm font-medium leading-tight">{title}</span>
+        <span className="min-w-0 flex-1 truncate text-[15px] font-semibold leading-tight text-foreground">
+          {title}
+        </span>
         {status ? <span className="shrink-0">{status}</span> : null}
       </div>
 
@@ -108,7 +110,13 @@ export function MobileDataCard({
       aria-selected={onSelect ? selected : undefined}
       data-focused={focused || undefined}
       className={cn(
-        'relative border-b p-3.5 transition-colors last:border-0',
+        // Elevated card, not a flat list-row (design report §6/§10 — the
+        // previous flush `border-b` rows read as a compressed desktop table,
+        // not a mobile app). Spacing comes from the card itself (`mb-2`), so
+        // no consumer/container needs a matching change beyond the mobile
+        // card list wrapper no longer needing `divide-y` (see EntityTable /
+        // UniversalDataGrid).
+        'relative mb-2 rounded-xl border p-3.5 shadow-sm transition-colors last:mb-0',
         selected ? 'bg-primary/5' : 'bg-card',
         focused && 'outline outline-1 -outline-offset-1 outline-primary/50',
         className,

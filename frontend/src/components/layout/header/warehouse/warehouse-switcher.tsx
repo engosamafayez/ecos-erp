@@ -12,7 +12,17 @@ import {
 import { useOrganizationContext } from '@/features/organization/context/organization-context';
 import { useWarehousesQuery } from '@/features/warehouses/hooks/use-warehouses';
 
-export function WarehouseSwitcher({ className }: { className?: string }) {
+export function WarehouseSwitcher({
+  className,
+  showLabel = false,
+}: {
+  className?: string;
+  /** Force the name/location label visible below `sm` (default: hidden,
+   * matching the original desktop-topbar-only behavior). Used by the mobile
+   * menu, where the switcher renders full-width and the label must stay
+   * legible. */
+  showLabel?: boolean;
+}) {
   const { t } = useTranslation('common');
   const { activeCompanyId, activeWarehouseId, setActiveWarehouseId } = useOrganizationContext();
   const [open, setOpen] = useState(false);
@@ -93,11 +103,21 @@ export function WarehouseSwitcher({ className }: { className?: string }) {
           className={cn('h-9 gap-2 px-2 sm:px-3', className)}
         >
           <Warehouse className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-          <span className="hidden flex-col items-start sm:flex">
-            <span className="max-w-[7rem] truncate text-xs font-semibold leading-tight lg:max-w-[9rem]">
+          <span className={cn('flex-col items-start', showLabel ? 'flex min-w-0 flex-1' : 'hidden sm:flex')}>
+            <span
+              className={cn(
+                'truncate text-xs font-semibold leading-tight',
+                showLabel ? 'max-w-full' : 'max-w-[7rem] lg:max-w-[9rem]',
+              )}
+            >
               {active?.name ?? 'Loading…'}
             </span>
-            <span className="max-w-[7rem] truncate text-[10px] leading-tight text-muted-foreground lg:max-w-[9rem]">
+            <span
+              className={cn(
+                'truncate text-[10px] leading-tight text-muted-foreground',
+                showLabel ? 'max-w-full' : 'max-w-[7rem] lg:max-w-[9rem]',
+              )}
+            >
               {location}
             </span>
           </span>
