@@ -23,15 +23,17 @@ function resolveTargetToBulkKey(sourceStatus: string, targetStatus: string): Bul
 
   // 'in_progress' maps to different bulk keys depending on source
   if (targetStatus === 'in_progress') {
-    if (sourceStatus === 'confirmed')          return 'unlock_for_edit'; // ADR-042 §5.4
+    // ADR-042 §5.4 "Unlock for Edit" (confirmed -> in_progress) has no canonical
+    // bulk endpoint — offered only per-order via SmartStatusSelector (A5).
+    if (sourceStatus === 'confirmed')          return null;
     if (sourceStatus === 'ready_for_dispatch') return 'return_to_preparation';
-    return 'resume'; // from on_hold, awaiting_stock, awaiting_payment, scheduled, cancelled
+    return 'resume'; // from on_hold, awaiting_stock, scheduled, cancelled
   }
   const map: Partial<Record<string, BulkActionKey>> = {
     ready_for_dispatch: 'move_to_preparation',
     out_for_delivery:   'dispatch',
     delivered:          'complete_delivery',
-    awaiting_payment:   'move_to_awaiting_payment',
+    // awaiting_payment has no canonical bulk endpoint — offered only per-order (A5).
     awaiting_stock:     'awaiting_stock',
     scheduled:          'reschedule',
     on_hold:            'review',
@@ -43,15 +45,12 @@ function resolveTargetToBulkKey(sourceStatus: string, targetStatus: string): Bul
 
 // Display config for each action key (destructive styling + separator before it).
 const BULK_ACTION_DISPLAY: Partial<Record<BulkActionKey, { destructive?: boolean; separator?: boolean }>> = {
-  scrap:  { destructive: true, separator: true },
   cancel: { destructive: true, separator: true },
 };
 
 // Canonical order for rendering — ensures stable, predictable button order.
 const BULK_ACTION_ORDER: BulkActionKey[] = [
   'confirm',
-  'unlock_for_edit',
-  'move_to_awaiting_payment',
   'verify_payment',
   'move_to_preparation',
   'return_to_preparation',
@@ -59,30 +58,24 @@ const BULK_ACTION_ORDER: BulkActionKey[] = [
   'complete_delivery',
   'complete',
   'retry_reservation',
-  'start_manufacturing',
-  'purchase_materials',
   'awaiting_stock',
   'resume',
   'resume_confirmed',
   'return_to_confirmed',
   'delivery_failed',
-  'inspect_return',
   'return_to_stock',
   'reschedule',
   'review',
   'return',
-  'scrap',
   'cancel',
 ];
 
 // Actions that cannot be undone — shown with an irreversible warning in the dialog.
-export const IRREVERSIBLE_BULK_ACTIONS = new Set<BulkActionKey>(['cancel', 'complete', 'scrap']);
+export const IRREVERSIBLE_BULK_ACTIONS = new Set<BulkActionKey>(['cancel', 'complete']);
 
 // Human-readable target outcome for each action (used in confirmation dialog).
 export const BULK_ACTION_TARGET_LABEL: Partial<Record<BulkActionKey, string>> = {
   confirm:                  'Confirmed',
-  unlock_for_edit:          'In Progress',
-  move_to_awaiting_payment: 'Awaiting Payment',
   verify_payment:           'In Progress',
   move_to_preparation:      'Ready for Dispatch',
   return_to_preparation:    'In Progress',
@@ -90,16 +83,12 @@ export const BULK_ACTION_TARGET_LABEL: Partial<Record<BulkActionKey, string>> = 
   complete_delivery:        'Delivered',
   complete:                 'Delivered',
   retry_reservation:        'In Progress',
-  start_manufacturing:      'Manufacturing Started',
-  purchase_materials:       'Procurement Queue',
   awaiting_stock:           'Awaiting Stock',
   resume:                   'In Progress',
   resume_confirmed:         'In Progress',
   return_to_confirmed:      'In Progress',
   delivery_failed:          'On Hold',
-  inspect_return:           'Return Inspection',
   return_to_stock:          'Returned to Stock',
-  scrap:                    'Scrapped',
   reschedule:               'Scheduled',
   review:                   'On Hold',
   return:                   'Returned',

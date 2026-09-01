@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Filter, Search, Users } from 'lucide-react';
+import { Filter, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/crud';
 import { PageHeader } from '@/components/crud';
+import { SearchInput } from '@/components/crud';
 import { useColumnVisibility } from '@/components/data-grid/use-column-visibility';
 import { useRowSelection } from '@/components/data-grid/use-row-selection';
 import type { GridPaginationConfig } from '@/components/data-grid/types';
@@ -34,6 +35,8 @@ import { useOrderStatusLabels, useOrderBulkLabels } from '@/features/orders/hook
 import { OrderTable } from '@/features/orders/components/order-table';
 import { OrderConfirmCustomerDialog } from '@/features/orders/components/order-confirm-customer-dialog';
 import { EmptyState } from '@/components/crud';
+import { toast } from '@/components/ds/use-toast';
+import { extractApiErrorMessage } from '@/lib/api-error';
 import {
   useDeleteOrder,
   useOrderStatusKpis,
@@ -184,7 +187,9 @@ export function OrdersPage() {
       payment_method: advancedFilters.paymentMethod ?? undefined,
       payment_status: advancedFilters.paymentStatus ?? undefined,
       has_payment_proof: advancedFilters.hasPaymentProof ?? undefined,
-      reservation_status: advancedFilters.reservationStatus === 'not_reserved' ? undefined : advancedFilters.reservationStatus ?? undefined,
+      // A8 — passed through as-is; the backend now filters `not_reserved` correctly
+      // against the real reservation_status column (previously silently dropped here).
+      reservation_status: advancedFilters.reservationStatus ?? undefined,
       shipping_company: advancedFilters.shippingCompany ?? undefined,
       date_from: advancedFilters.dateFrom ?? undefined,
       date_to: advancedFilters.dateTo ?? undefined,
@@ -215,7 +220,9 @@ export function OrdersPage() {
       payment_method: advancedFilters.paymentMethod ?? undefined,
       payment_status: advancedFilters.paymentStatus ?? undefined,
       has_payment_proof: advancedFilters.hasPaymentProof ?? undefined,
-      reservation_status: advancedFilters.reservationStatus === 'not_reserved' ? undefined : advancedFilters.reservationStatus ?? undefined,
+      // A8 — passed through as-is; the backend now filters `not_reserved` correctly
+      // against the real reservation_status column (previously silently dropped here).
+      reservation_status: advancedFilters.reservationStatus ?? undefined,
       shipping_company: advancedFilters.shippingCompany ?? undefined,
       date_from: advancedFilters.dateFrom ?? undefined,
       date_to: advancedFilters.dateTo ?? undefined,
@@ -467,33 +474,36 @@ export function OrdersPage() {
   }
 
   // Step 2: Execute after user confirms in the dialog.
+  // A10 — every path gets the same success/failure toast; none were silent before.
   function executeBulkAction() {
     const action = pendingBulkAction;
     if (!action) return;
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
 
+    const feedback = {
+      onSuccess: () => toast.success(t($ => $.bulk.toastSuccess, { count: ids.length })),
+      onError: (err: unknown) => toast.error(t($ => $.bulk.toastError), extractApiErrorMessage(err)),
+    };
+
     switch (action) {
       case 'confirm':
-      case 'verify_payment':           bulkConfirm.mutate(ids); break;
-      case 'cancel':                   bulkCancel.mutate({ ids }); break;
+      case 'verify_payment':           bulkConfirm.mutate(ids, feedback); break;
+      case 'cancel':                   bulkCancel.mutate({ ids }, feedback); break;
       case 'move_to_preparation':
-      case 'return_to_preparation':    bulkMoveToPrep.mutate(ids); break;
-      case 'complete_delivery':        bulkCompleteDelivery.mutate(ids); break;
-      case 'complete':                 bulkComplete.mutate(ids); break;
-      case 'dispatch':                 bulkDispatch.mutate(ids); break;
-      case 'awaiting_stock':           bulkAwaitingStock.mutate({ ids }); break;
+      case 'return_to_preparation':    bulkMoveToPrep.mutate(ids, feedback); break;
+      case 'complete_delivery':        bulkCompleteDelivery.mutate(ids, feedback); break;
+      case 'complete':                 bulkComplete.mutate(ids, feedback); break;
+      case 'dispatch':                 bulkDispatch.mutate(ids, feedback); break;
+      case 'awaiting_stock':           bulkAwaitingStock.mutate({ ids }, feedback); break;
       case 'resume':
-      case 'retry_reservation':        bulkResume.mutate(ids); break;
-      case 'resume_confirmed':         bulkResumeToConfirmed.mutate(ids); break;
+      case 'retry_reservation':        bulkResume.mutate(ids, feedback); break;
+      case 'resume_confirmed':         bulkResumeToConfirmed.mutate(ids, feedback); break;
       case 'review':                   // on_hold action
-      case 'delivery_failed':          bulkReview.mutate({ ids }); break;
-      case 'return':                   bulkReturn.mutate({ ids }); break;
+      case 'delivery_failed':          bulkReview.mutate({ ids }, feedback); break;
+      case 'return':                   bulkReturn.mutate({ ids }, feedback); break;
       case 'return_to_confirmed':
-      case 'return_to_stock':          bulkReturnToConfirmed.mutate(ids); break;
-      // Pending backend implementation — no-op for now:
-      // move_to_awaiting_payment, start_manufacturing, purchase_materials,
-      // inspect_return, scrap
+      case 'return_to_stock':          bulkReturnToConfirmed.mutate(ids, feedback); break;
       default: break;
     }
     clearSelection();
@@ -502,7 +512,14 @@ export function OrdersPage() {
 
   function confirmBulkReschedule() {
     if (!bulkRescheduleDate) return;
-    bulkReschedule.mutate({ ids: pendingRescheduleIds, date: bulkRescheduleDate });
+    const count = pendingRescheduleIds.length;
+    bulkReschedule.mutate(
+      { ids: pendingRescheduleIds, date: bulkRescheduleDate },
+      {
+        onSuccess: () => toast.success(t($ => $.bulk.toastSuccess, { count })),
+        onError: (err) => toast.error(t($ => $.bulk.toastError), extractApiErrorMessage(err)),
+      },
+    );
     setBulkRescheduleOpen(false);
     clearSelection();
   }
@@ -579,21 +596,18 @@ export function OrdersPage() {
       {/* ── Filter bar: Search + Channel + Date range + toggles ── */}
       <div className="border-b bg-background px-4 py-2">
         <div className="flex flex-wrap items-center gap-2">
-          {/* Search — DD-024 */}
-          <div className="relative min-w-48 flex-1">
-            <Search className="pointer-events-none absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
-            <input
+          {/* Search — DD-024. A9: live, debounced (shared SearchInput), server-side authority unchanged. */}
+          <div
+            className="relative min-w-48 flex-1"
+            onKeyDown={(e) => { if (e.key === 'Escape') clearSearch(); }}
+          >
+            <SearchInput
               key={searchKey}
               ref={searchRef}
-              type="search"
+              initialValue={search}
               placeholder={`${t($ => $.search)} · / or Ctrl+K`}
-              defaultValue={search}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleSearchCommit(e.currentTarget.value);
-                if (e.key === 'Escape') clearSearch();
-              }}
-              onBlur={(e) => handleSearchCommit(e.currentTarget.value)}
-              className="h-8 w-full rounded-md border border-input bg-background ps-8 pe-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+              onChange={handleSearchCommit}
+              className="max-w-none"
             />
           </div>
 

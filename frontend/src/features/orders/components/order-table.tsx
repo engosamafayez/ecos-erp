@@ -111,7 +111,6 @@ export function OrderTable({
           isFocused={focusedRowId === order.id}
           onView={onView}
           onSelect={sel?.selectRow ?? (() => {})}
-          onStatusChange={() => {}}
         />
       )}
     />

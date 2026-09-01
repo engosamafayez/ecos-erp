@@ -23,8 +23,8 @@ use Modules\IAM\Domain\Contracts\PermissionServiceInterface;
 use Modules\Operations\Fulfillment\Application\FulfillmentEngine;
 use Modules\Operations\Fulfillment\Application\Workflows\ProcessOrderWorkflow;
 use Modules\Operations\Preparation\Application\Services\BranchAssignmentEngine;
+use Modules\Sales\Customers\Application\Actions\SyncCustomerDefaultAddressAction;
 use Modules\Sales\Customers\Domain\Models\Customer;
-use Modules\Sales\Customers\Domain\Models\CustomerAddress;
 use Throwable;
 
 /**
@@ -48,6 +48,7 @@ final class CreateManualOrderAction extends BaseAction
         private readonly ProcessOrderWorkflow $initiateWorkflow,
         private readonly GoogleMapsUrlResolver $mapsResolver,
         private readonly PaymentFulfillmentGate $paymentGate,
+        private readonly SyncCustomerDefaultAddressAction $syncDefaultAddress,
     ) {}
 
     /**
@@ -108,10 +109,27 @@ final class CreateManualOrderAction extends BaseAction
         $order = DB::transaction(function () use ($data, $orderPolicy, $shippingResult, $statusResolution, &$customerWasReused, &$subtotal, &$monetaryDiscount, &$grandTotal, &$remaining) {
             [$customerId, $customerWasReused] = $this->resolveCustomer($data, $orderPolicy);
 
-            // Keep the customer's default delivery address in sync with the order data.
-            // This runs for both new and existing customers so that the profile is always
-            // up-to-date when searching the same customer in a subsequent order.
-            $this->syncCustomerDefaultAddress($customerId, $data);
+            // C1 (TASK-ECOS-COMMERCE-ORDERS-CUSTOMERS-CLOSURE-001) — this order's delivery
+            // address belongs to this order only unless the operator explicitly opts in.
+            // A temporary/one-off delivery location must not silently become the
+            // customer's saved default.
+            if ($data['use_as_default_address'] ?? false) {
+                $this->syncDefaultAddress->execute($customerId, [
+                    'governorate' => $data['governorate'] ?? null,
+                    'city' => $data['city'] ?? null,
+                    'area' => $data['area'] ?? null,
+                    'address_line' => $data['shipping_address'] ?? null,
+                    'building' => $data['building'] ?? null,
+                    'floor' => $data['floor'] ?? null,
+                    'apartment' => $data['apartment'] ?? null,
+                    'landmark' => $data['landmark'] ?? null,
+                    'address_notes' => $data['address_notes'] ?? null,
+                    'google_maps_lat' => $data['google_maps_lat'] ?? null,
+                    'google_maps_lng' => $data['google_maps_lng'] ?? null,
+                    'google_maps_url' => $data['google_maps_url'] ?? null,
+                    'location_source' => $data['location_source'] ?? null,
+                ]);
+            }
 
             // Load the resolved customer to supply fallback values for snapshot fields.
             // When an existing customer is matched by phone the form may not pre-fill
@@ -739,68 +757,6 @@ final class CreateManualOrderAction extends BaseAction
 
         // CustomerAddress is created by syncCustomerDefaultAddress after resolveCustomer returns.
         return [$customer->id, false];
-    }
-
-    /**
-     * Upserts the customer's default delivery address with the non-null fields
-     * supplied by the order form. Runs for both new and existing customers so the
-     * customer profile always reflects the most recent known delivery details.
-     *
-     * Null values are intentionally skipped — they must not overwrite existing data
-     * when the current order form didn't include every address field.
-     *
-     * @param  array<string, mixed>  $data
-     */
-    private function syncCustomerDefaultAddress(string $customerId, array $data): void
-    {
-        $governorate = $data['governorate'] ?? null;
-        $city = $data['city'] ?? null;
-
-        if ($governorate === null && $city === null) {
-            return;
-        }
-
-        $fields = [
-            'governorate' => $governorate,
-            'city' => $city,
-            'area' => $data['area'] ?? null,
-            'address_line' => $data['shipping_address'] ?? null,
-            'building' => $data['building'] ?? null,
-            'floor' => $data['floor'] ?? null,
-            'apartment' => $data['apartment'] ?? null,
-            'landmark' => $data['landmark'] ?? null,
-            'address_notes' => $data['address_notes'] ?? null,
-            'google_maps_lat' => $data['google_maps_lat'] ?? null,
-            'google_maps_lng' => $data['google_maps_lng'] ?? null,
-            'google_maps_url' => $data['google_maps_url'] ?? null,
-            'location_source' => $data['location_source'] ?? null,
-        ];
-
-        // Only send non-null values so we never blank out fields not present in this request.
-        $updates = array_filter($fields, static fn ($v) => $v !== null);
-
-        if (empty($updates)) {
-            return;
-        }
-
-        $existing = CustomerAddress::where('customer_id', $customerId)
-            ->where('is_default', true)
-            ->first();
-
-        if ($existing !== null) {
-            $existing->update($updates);
-        } else {
-            CustomerAddress::create(array_merge($updates, [
-                'customer_id' => $customerId,
-                'label' => 'Default',
-                'is_default' => true,
-            ]));
-        }
-
-        // Persist customer-level notes when the order form provided them.
-        if (! empty($data['customer_notes'])) {
-            Customer::where('id', $customerId)->update(['notes' => $data['customer_notes']]);
-        }
     }
 
     /**

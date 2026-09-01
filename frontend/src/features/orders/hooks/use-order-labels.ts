@@ -48,15 +48,11 @@ export function useOrderBulkLabels() {
 
   const bulkLabel: Record<BulkActionKey, string> = {
     confirm:                  t($ => $.bulk.confirm),
-    unlock_for_edit:          t($ => $.bulk.unlock_for_edit),
-    move_to_awaiting_payment: t($ => $.bulk.move_to_awaiting_payment),
     verify_payment:           t($ => $.bulk.verify_payment),
     move_to_preparation:      t($ => $.bulk.move_to_preparation),
     return_to_preparation:    t($ => $.bulk.return_to_preparation),
     awaiting_stock:           t($ => $.bulk.awaiting_stock),
     retry_reservation:        t($ => $.bulk.retry_reservation),
-    start_manufacturing:      t($ => $.bulk.start_manufacturing),
-    purchase_materials:       t($ => $.bulk.purchase_materials),
     resume:                   t($ => $.bulk.resume),
     resume_confirmed:         t($ => $.bulk.resume_confirmed),
     dispatch:                 t($ => $.bulk.dispatch),
@@ -67,9 +63,7 @@ export function useOrderBulkLabels() {
     review:                   t($ => $.bulk.review),
     return:                   t($ => $.bulk.return),
     return_to_confirmed:      t($ => $.bulk.return_to_confirmed),
-    inspect_return:           t($ => $.bulk.inspect_return),
     return_to_stock:          t($ => $.bulk.return_to_stock),
-    scrap:                    t($ => $.bulk.scrap),
     cancel:                   t($ => $.bulk.cancel),
   };
 

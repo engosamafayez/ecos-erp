@@ -63,6 +63,10 @@ final class StoreManualOrderRequest extends FormRequest
             'location_source' => 'nullable|string|in:google_maps,manual',
             'shipping_cost' => 'nullable|numeric|min:0',
             'shipping_cost_source' => 'nullable|in:auto,override',
+            // Explicit opt-in (C1) — false unless the operator checks the box. When
+            // true, the address fields above are also applied to the customer's
+            // default address via SyncCustomerDefaultAddressAction.
+            'use_as_default_address' => 'sometimes|boolean',
 
             // ── Financials ───────────────────────────────────────────────────
             'discount_amount' => 'nullable|numeric|min:0',

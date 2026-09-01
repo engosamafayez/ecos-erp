@@ -55,6 +55,10 @@ final class UpdateOrderRequest extends FormRequest
             'google_maps_lng' => ['nullable', 'numeric', 'between:-180,180'],
             'google_maps_url' => ['nullable', 'string', 'max:2000'],
             'location_source' => ['nullable', 'string', 'max:50'],
+            // Explicit opt-in (C1) — false unless the operator checks the box. When
+            // true, the address fields above are also applied to the customer's
+            // default address via SyncCustomerDefaultAddressAction.
+            'use_as_default_address' => ['sometimes', 'boolean'],
             // Enterprise payment/financial fields
             //
             // The method catalogue is CONSTRAINED to the same five values the creation

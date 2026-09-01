@@ -20,21 +20,17 @@
     "invoicePrint": "فاتورة / طباعة",
     "copyLink": "نسخ رابط الطلب",
     "linkCopied": "تم النسخ!",
-    "cancelOrder": "إلغاء الطلب",
+    "deleteOrder": "حذف الطلب",
     "orderActions": "إجراءات الطلب",
     "paymentAndProof": "الدفع والإثبات"
   },
   "bulk": {
     "confirm": "تأكيد الطلبات",
-    "unlock_for_edit": "فتح للتعديل",
-    "move_to_awaiting_payment": "نقل لانتظار الدفع",
     "verify_payment": "التحقق من الدفع",
     "move_to_preparation": "إرسال للتجهيز",
     "return_to_preparation": "إعادة للتجهيز",
     "awaiting_stock": "في انتظار المخزون",
     "retry_reservation": "إعادة محاولة الحجز",
-    "start_manufacturing": "بدء التصنيع",
-    "purchase_materials": "شراء المواد",
     "resume": "استئناف المعالجة",
     "resume_confirmed": "استئناف إلى مؤكد",
     "dispatch": "إرسال للتحميل",
@@ -45,13 +41,13 @@
     "review": "إرسال للمراجعة",
     "return": "تحديد كـ: مُعاد",
     "return_to_confirmed": "إعادة تأكيد للتسليم",
-    "inspect_return": "فحص المُعاد",
     "return_to_stock": "إعادة للمخزون",
-    "scrap": "إتلاف",
     "cancel": "إلغاء الطلبات",
     "rescheduleTitle": "إعادة جدولة {{count}} طلب",
     "rescheduleDate": "تاريخ التسليم الجديد",
-    "rescheduleConfirm": "إعادة الجدولة"
+    "rescheduleConfirm": "إعادة الجدولة",
+    "toastSuccess": "تم تحديث {{count}} طلب",
+    "toastError": "فشل الإجراء الجماعي"
   },
   "statusTabs": {
     "label": "حالة الطلب",
@@ -124,6 +120,12 @@
     "inventory": "المخزون",
     "reserved": "محجوز",
     "notReserved": "غير محجوز",
+    "reservationPending": "بانتظار الحجز",
+    "reservationPartial": "محجوز جزئيًا",
+    "reservationAwaitingStock": "بانتظار التوفر",
+    "reservationReleased": "تم الإفراج عنه",
+    "reservationTransferred": "تم النقل",
+    "reservationConsumed": "تم الاستهلاك",
     "paymentProof": "إثبات الدفع",
     "withProof": "بإثبات دفع",
     "withoutProof": "بدون إثبات دفع",
@@ -265,12 +267,14 @@
     "updatedAt": "آخر تحديث",
     "salesRep": "مندوب المبيعات",
     "driver": "السائق",
+    "driverUnassigned": "غير معيّن",
     "manualOrder": "يدوي",
     "proofReceived": "إثبات الاستلام",
     "actions": "الإجراءات",
     "noProof": "لا يوجد إثبات",
     "noGps": "لا يوجد GPS",
-    "governorateWithName": "محافظة {{name}}"
+    "governorateWithName": "محافظة {{name}}",
+    "totalDue": "متبقي {{amount}}"
   },
   "itemsPreview": {
     "title": "{{count}} عنصر",
@@ -298,7 +302,10 @@
   },
   "mobileCard": {
     "item": "عنصر",
-    "items": "عناصر"
+    "items": "عناصر",
+    "payment": "الدفع",
+    "delivery": "التسليم",
+    "warehouse": "المستودع"
   },
   "table": {
     "selectAll": "تحديد الكل",
@@ -487,6 +494,7 @@
       "refusalFallback": "تم رفض الانتقال. يرجى المحاولة مرة أخرى.",
       "newDeliveryDate": "تاريخ التسليم الجديد",
       "confirmReschedule": "تأكيد إعادة الجدولة",
+      "rescheduleToastSuccess": "تمت إعادة جدولة الطلب إلى {{date}}",
       "cancel": "إلغاء",
       "actions": {
         "confirm": "تأكيد الطلب",
@@ -600,19 +608,14 @@
       }
     },
     "history_tab": {
-      "currentStatus": "الحالة الحالية",
+      "currentStatus": "الحالة الحالية منذ",
       "enteredAt": "تاريخ الدخول:",
       "by": "بواسطة:",
+      "noStatusHistory": "لا يوجد توقيت مسجل لتغيير حالة هذا الطلب.",
       "previousStatus": "الحالة السابقة",
-      "keyDates": "التواريخ الرئيسية",
-      "createdAt": "تاريخ الإنشاء",
-      "paymentConfirmed": "تم تأكيد الدفع",
-      "reserved": "تم الحجز",
-      "shipped": "تم الشحن",
-      "requestedDelivery": "التسليم المطلوب",
       "orderSource": "مصدر الطلب",
       "manual": "يدوي",
-      "auditLogNote": "سجل التدقيق الكامل متاح عبر نقطة نهاية سجل النشاط. التواريخ الرئيسية موضحة أعلاه."
+      "auditLogNote": "سجل التدقيق الكامل متاح في تبويب الجدول الزمني."
     },
     "actor": {
       "by": "بواسطة",
@@ -712,6 +715,7 @@
     "reasonOptional": "(اختياري)",
     "reasonPlaceholder": "أدخل السبب…",
     "transitionFailed": "فشل التحويل — يرجى المحاولة مجدداً أو التواصل مع الدعم.",
+    "toastSuccess": "أصبح الطلب {{order}} الآن {{status}}",
     "cancel": "إلغاء",
     "confirm": "تأكيد"
   },
@@ -854,6 +858,8 @@
     "resolving": "جارٍ التحليل…",
     "importLocation": "استيراد الموقع",
     "customerNotesPlaceholder": "ملاحظات حول هذا العميل",
+    "useAsDefaultAddress": "استخدام هذا كعنوان افتراضي للعميل",
+    "useAsDefaultAddressHint": "معطّل افتراضيًا — هذا العنوان يخص هذا الطلب فقط. فعّل هذا الخيار لتحديث العنوان الافتراضي المحفوظ للعميل أيضًا.",
     "productsCard": "المنتجات",
     "loadingProducts": "جارٍ تحميل المنتجات…",
     "paymentShipping": "الدفع والشحن",

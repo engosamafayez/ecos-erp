@@ -88,11 +88,17 @@ function computeCounts(orders: Order[]): OpCounts {
 }
 
 // ── Context ops per status tab (flat list, counts applied) ────────────────────
+// Keyed by canonical OrderStatus values (ADR-042) — `Partial<Record<StatusFilter, ...>>`
+// means a stale/renamed status here fails to compile instead of silently never
+// matching `activeStatus` and falling through to DEFAULT_GROUPS (A4).
 
-const CONTEXT_OPS: Record<string, OpKey[]> = {
-  waiting_for_payment: ['repeatedCustomers', 'callCustomer', 'codOrders'],
-  shipping:            ['sameShippingCompany', 'ordersWithoutLocation', 'multipleAttempts', 'callCustomer'],
-  preparing:           ['sameProduct', 'printOrders'],
+const CONTEXT_OPS: Partial<Record<StatusFilter, OpKey[]>> = {
+  // "waiting for payment" — orders parked pending a payment fact.
+  awaiting_payment:   ['repeatedCustomers', 'callCustomer', 'codOrders'],
+  // "shipping" — dispatched and actively tracked for delivery attempts/carrier.
+  out_for_delivery:   ['sameShippingCompany', 'ordersWithoutLocation', 'multipleAttempts', 'callCustomer'],
+  // "preparing" — confirmed and being picked/packed ahead of Mark Ready.
+  confirmed:          ['sameProduct', 'printOrders'],
 };
 
 // ── Default grouped view (All tab + unconfigured status tabs) ─────────────────

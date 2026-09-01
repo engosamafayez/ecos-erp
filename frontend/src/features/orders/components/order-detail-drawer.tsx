@@ -62,12 +62,12 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Tabs } from '@/components/ds/tabs';
+import { toast } from '@/components/ds/use-toast';
 import { OrderInventoryExecutionCell } from '@/features/orders/components/order-inventory-execution-cell';
 import { PaymentProofSection } from '@/features/orders/components/payment-proof-section';
 import { RecordPaymentDialog } from '@/features/orders/components/record-payment-dialog';
 import { OrderStatusBadge } from '@/features/orders/components/order-status-badge';
 import { OrderNotesTab } from '@/features/orders/components/notes-tab';
-import { OrderDistributionStageBanner } from '@/features/orders/components/order-distribution-stage-banner';
 import type { Order, OrderActivity } from '@/features/orders/types/order';
 import {
   useOrderActivities,
@@ -1209,6 +1209,7 @@ function ShippingTab({ order, t }: { order: Order; t: OrdersT }) {
         <DetailGrid>
           <DetailRow label={t($ => $.drawer.shipping.shippingCompany)}>{order.shipping_company_name}</DetailRow>
           <DetailRow label={t($ => $.drawer.shipping.carrier)}>{order.shipping_method}</DetailRow>
+          <DetailRow label={t($ => $.drawer.shipping.driver)}>{order.driver?.full_name}</DetailRow>
         </DetailGrid>
       </div>
 
@@ -1571,7 +1572,12 @@ export function WorkflowTab({ order, onClose }: { order: Order; onClose: () => v
       return;
     }
     const reason = reasonText.trim() || undefined;
-    const done   = () => { setActiveReason(null); setReasonText(''); onClose(); };
+    const done   = () => {
+      setActiveReason(null);
+      setReasonText('');
+      toast.success(t($ => $.statusSelector.toastSuccess, { order: order.order_number, status: tr?.label ?? targetStatus }));
+      onClose();
+    };
     setRefusal(null);
     transition.mutate({ id: order.id, targetStatus, reason }, {
       onSuccess: done,
@@ -1585,7 +1591,14 @@ export function WorkflowTab({ order, onClose }: { order: Order; onClose: () => v
     if (!rescheduleDate) return;
     reschedule.mutate(
       { id: order.id, nextDeliveryDate: rescheduleDate },
-      { onSuccess: () => { setShowRescheduleForm(false); onClose(); } },
+      {
+        onSuccess: () => {
+          setShowRescheduleForm(false);
+          toast.success(t($ => $.drawer.workflow.rescheduleToastSuccess, { date: rescheduleDate }));
+          onClose();
+        },
+        onError: (error) => setRefusal(serverRefusalMessage(error) ?? t($ => $.drawer.workflow.refusalFallback)),
+      },
     );
   }
 
@@ -2351,26 +2364,28 @@ function WorkflowHistoryTab({ order }: { order: Order }) {
 
   return (
     <div className="flex flex-col gap-6 p-4">
-      {/* Current status */}
+      {/* B1/B4 — the current-status badge lives on the Workflow tab, which is also
+          where its actions are; History exists to show WHEN/FROM-WHAT it changed,
+          not to repeat the badge. "Key Dates" was removed entirely (Payment,
+          Inventory and Shipping tabs already show date_paid, inventory_reserved_at/
+          inventory_shipped_at and requested_delivery_date respectively). */}
       <div>
         <SectionTitle>{t($ => $.drawer.history_tab.currentStatus)}</SectionTitle>
-        <div className="rounded-md border bg-muted/20 px-4 py-3 flex items-start gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <OrderStatusBadge status={order.status} />
-            </div>
-            {typedOrder.status_entered_at ? (
-              <p className="text-xs text-muted-foreground">
-                {t($ => $.drawer.history_tab.enteredAt)}{' '}
-                {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(
-                  new Date(typedOrder.status_entered_at),
-                )}
-              </p>
-            ) : null}
-            {typedOrder.status_entered_by ? (
-              <p className="text-xs text-muted-foreground">{t($ => $.drawer.history_tab.by)} {typedOrder.status_entered_by}</p>
-            ) : null}
-          </div>
+        <div className="rounded-md border bg-muted/20 px-4 py-3">
+          {typedOrder.status_entered_at ? (
+            <p className="text-xs text-muted-foreground">
+              {t($ => $.drawer.history_tab.enteredAt)}{' '}
+              {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(
+                new Date(typedOrder.status_entered_at),
+              )}
+            </p>
+          ) : null}
+          {typedOrder.status_entered_by ? (
+            <p className="text-xs text-muted-foreground">{t($ => $.drawer.history_tab.by)} {typedOrder.status_entered_by}</p>
+          ) : null}
+          {!typedOrder.status_entered_at && !typedOrder.status_entered_by ? (
+            <p className="text-xs text-muted-foreground">{t($ => $.drawer.history_tab.noStatusHistory)}</p>
+          ) : null}
         </div>
       </div>
 
@@ -2385,36 +2400,6 @@ function WorkflowHistoryTab({ order }: { order: Order }) {
           </div>
         </div>
       ) : null}
-
-      {/* Key dates */}
-      <div>
-        <SectionTitle>{t($ => $.drawer.history_tab.keyDates)}</SectionTitle>
-        <DetailGrid>
-          <DetailRow label={t($ => $.drawer.history_tab.createdAt)}>
-            {formatDateTime(order.created_at)}
-          </DetailRow>
-          {order.date_paid ? (
-            <DetailRow label={t($ => $.drawer.history_tab.paymentConfirmed)}>
-              {formatDate(order.date_paid)}
-            </DetailRow>
-          ) : null}
-          {order.inventory_reserved_at ? (
-            <DetailRow label={t($ => $.drawer.history_tab.reserved)}>
-              {formatDate(order.inventory_reserved_at)}
-            </DetailRow>
-          ) : null}
-          {order.inventory_shipped_at ? (
-            <DetailRow label={t($ => $.drawer.history_tab.shipped)}>
-              {formatDate(order.inventory_shipped_at)}
-            </DetailRow>
-          ) : null}
-          {order.requested_delivery_date ? (
-            <DetailRow label={t($ => $.drawer.history_tab.requestedDelivery)}>
-              {formatDate(order.requested_delivery_date)}
-            </DetailRow>
-          ) : null}
-        </DetailGrid>
-      </div>
 
       {/* Order source */}
       <div>
@@ -2519,9 +2504,6 @@ export function OrderDetailDrawer({
         {isEnriching ? (
           <div className="h-0.5 w-full animate-pulse bg-primary/40" />
         ) : null}
-
-        {/* Distribution OS stage — shown when order is assigned to an active trip */}
-        <OrderDistributionStageBanner orderId={displayOrder.id} />
 
         {/* ── Tabs + content ── */}
         <div className="flex-1 overflow-y-auto">

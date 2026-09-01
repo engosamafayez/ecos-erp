@@ -17,8 +17,7 @@ use Modules\Commerce\Orders\Domain\Events\OrderGeographyChanged;
 use Modules\Commerce\Orders\Domain\Exceptions\OrderAlreadyReleasedException;
 use Modules\Commerce\Orders\Domain\Exceptions\OrderNotFoundException;
 use Modules\Commerce\Orders\Domain\Models\OrderEvent;
-use Modules\Sales\Customers\Domain\Models\Customer;
-use Modules\Sales\Customers\Domain\Models\CustomerAddress;
+use Modules\Sales\Customers\Application\Actions\SyncCustomerDefaultAddressAction;
 use Throwable;
 
 final class UpdateOrderAction extends BaseAction
@@ -66,6 +65,7 @@ final class UpdateOrderAction extends BaseAction
         private readonly GoogleMapsUrlResolver $mapsResolver,
         // Payment-method changes re-open the payment gate — see the trigger below.
         private readonly ReevaluateOrderFulfillmentAction $reevaluateFulfillment,
+        private readonly SyncCustomerDefaultAddressAction $syncDefaultAddress,
     ) {}
 
     public function execute(mixed ...$arguments): OperationResult
@@ -263,9 +263,26 @@ final class UpdateOrderAction extends BaseAction
             }
         }
 
-        // Keep the customer's delivery profile in sync with the order's latest address data.
-        if ($order->customer_id !== null) {
-            $this->syncCustomerDefaultAddress((string) $order->customer_id, $extraData);
+        // C1 (TASK-ECOS-COMMERCE-ORDERS-CUSTOMERS-CLOSURE-001) — the order's delivery
+        // address belongs to that order only. It must NOT alter the customer's default
+        // address unless the operator explicitly opts in — an order can carry a one-off
+        // delivery location without overwriting the customer's real saved address.
+        if ($order->customer_id !== null && ($extraData['use_as_default_address'] ?? false)) {
+            $this->syncDefaultAddress->execute((string) $order->customer_id, [
+                'governorate' => $extraData['governorate'] ?? null,
+                'city' => $extraData['city'] ?? null,
+                'area' => $extraData['area'] ?? null,
+                'address_line' => $extraData['shipping_address'] ?? null,
+                'building' => $extraData['building'] ?? null,
+                'floor' => $extraData['floor'] ?? null,
+                'apartment' => $extraData['apartment'] ?? null,
+                'landmark' => $extraData['landmark'] ?? null,
+                'address_notes' => $extraData['address_notes'] ?? null,
+                'google_maps_lat' => $extraData['google_maps_lat'] ?? null,
+                'google_maps_lng' => $extraData['google_maps_lng'] ?? null,
+                'google_maps_url' => $extraData['google_maps_url'] ?? null,
+                'location_source' => $extraData['location_source'] ?? null,
+            ]);
         }
 
         OrderEvent::log(
@@ -333,62 +350,5 @@ final class UpdateOrderAction extends BaseAction
         }
 
         return OperationResult::success($updated, 'Order updated successfully.');
-    }
-
-    /**
-     * Upserts the customer's default delivery address using non-null address fields
-     * from the order update payload. Null values are skipped so that fields not
-     * present in this particular update don't overwrite existing stored data.
-     *
-     * @param  array<string, mixed>  $data
-     */
-    private function syncCustomerDefaultAddress(string $customerId, array $data): void
-    {
-        $governorate = $data['governorate'] ?? null;
-        $city = $data['city'] ?? null;
-
-        if ($governorate === null && $city === null) {
-            return;
-        }
-
-        $fields = [
-            'governorate' => $governorate,
-            'city' => $city,
-            'area' => $data['area'] ?? null,
-            'address_line' => $data['shipping_address'] ?? null,
-            'building' => $data['building'] ?? null,
-            'floor' => $data['floor'] ?? null,
-            'apartment' => $data['apartment'] ?? null,
-            'landmark' => $data['landmark'] ?? null,
-            'address_notes' => $data['address_notes'] ?? null,
-            'google_maps_lat' => $data['google_maps_lat'] ?? null,
-            'google_maps_lng' => $data['google_maps_lng'] ?? null,
-            'google_maps_url' => $data['google_maps_url'] ?? null,
-            'location_source' => $data['location_source'] ?? null,
-        ];
-
-        $updates = array_filter($fields, static fn ($v) => $v !== null);
-
-        if (empty($updates)) {
-            return;
-        }
-
-        $existing = CustomerAddress::where('customer_id', $customerId)
-            ->where('is_default', true)
-            ->first();
-
-        if ($existing !== null) {
-            $existing->update($updates);
-        } else {
-            CustomerAddress::create(array_merge($updates, [
-                'customer_id' => $customerId,
-                'label' => 'Default',
-                'is_default' => true,
-            ]));
-        }
-
-        if (! empty($data['customer_notes'])) {
-            Customer::where('id', $customerId)->update(['notes' => $data['customer_notes']]);
-        }
     }
 }

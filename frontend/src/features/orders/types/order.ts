@@ -63,17 +63,18 @@ export const STATUS_TAB_ORDER: Array<OrderStatus | 'all'> = [
 
 // ── Bulk action keys ─────────────────────────────────────────────────────────
 // Canonical definition — shared by order-list-toolbar, use-order-labels, and orders-page.
+// A5 — every key here must have a real handler in orders-page.tsx's executeBulkAction()
+// (or, like `reschedule`, its own dedicated flow). Keys with no canonical backend bulk
+// endpoint (unlock_for_edit, move_to_awaiting_payment, start_manufacturing,
+// purchase_materials, inspect_return, scrap) were removed rather than left reachable
+// as no-ops — those transitions remain available per-order via SmartStatusSelector.
 export type BulkActionKey =
   | 'confirm'
-  | 'unlock_for_edit'
-  | 'move_to_awaiting_payment'
   | 'verify_payment'
   | 'move_to_preparation'
   | 'return_to_preparation'
   | 'awaiting_stock'
   | 'retry_reservation'
-  | 'start_manufacturing'
-  | 'purchase_materials'
   | 'resume'
   | 'resume_confirmed'
   | 'dispatch'
@@ -84,9 +85,7 @@ export type BulkActionKey =
   | 'review'
   | 'return'
   | 'return_to_confirmed'
-  | 'inspect_return'
   | 'return_to_stock'
-  | 'scrap'
   | 'cancel';
 
 // ── Sub-types ─────────────────────────────────────────────────────────────────
@@ -213,6 +212,12 @@ export type Order = {
    * demonstrably reserved order rendered "Assigned Warehouse: —".
    */
   assigned_warehouse?: { id: string; name: string; code: string | null } | null;
+  /**
+   * Read-only reference into Distribution's Trip -> DriverVehicleAssignment -> Driver
+   * chain. Null when the order has no active trip assignment; Commerce never writes
+   * this — Distribution is the sole assignment authority.
+   */
+  driver?: { id: number; driver_code: string; full_name: string; mobile: string | null } | null;
   inventory_reserved_at: string | null;
   inventory_released_at: string | null;
   inventory_shipped_at: string | null;
@@ -388,7 +393,9 @@ export type OrdersQuery = {
   payment_method?: string;
   payment_status?: 'paid' | 'partial' | 'unpaid';
   has_payment_proof?: boolean;
-  reservation_status?: ReservationStatus;
+  // A8 — 'not_reserved' is a query-only convenience grouping (no active hold),
+  // not a stored order state; the backend filter resolves it explicitly.
+  reservation_status?: ReservationStatus | 'not_reserved';
   shipping_company?: string;
   date_from?: string;
   date_to?: string;
@@ -708,5 +715,7 @@ export type ManualOrderPayload = {
   deposit_amount?: number | null;
   payment_proof_path?: string | null;
   notes?: string | null;
+  /** C1 — explicit opt-in; false unless the operator checks the box. */
+  use_as_default_address?: boolean;
   lines: { product_id: string; quantity: number; unit_price: number }[];
 };

@@ -133,6 +133,8 @@ export const manualOrderSchema = z.object({
   deposit_amount:           z.string().optional(),
   payment_proof_path:       z.string().optional(),
   notes:                    z.string().optional(),
+  // C1 — explicit opt-in; false/unset unless the operator checks the box.
+  use_as_default_address:   z.boolean().optional(),
   lines: z
     .array(manualOrderLineSchema)
     .superRefine((lines, ctx) => {
@@ -186,6 +188,7 @@ export function toManualPayload(values: ManualOrderFormValues): ManualOrderPaylo
     deposit_amount:           values.deposit_amount ? Number(values.deposit_amount) : null,
     payment_proof_path:       values.payment_proof_path || null,
     notes:                    values.notes || null,
+    use_as_default_address:  values.use_as_default_address ?? false,
     lines: values.lines
       .filter((l) => Boolean(l.product_id))
       .map((l) => ({

@@ -195,7 +195,7 @@ function OrderActionsMenu({ order, callbacks }: { order: Order; callbacks: Order
             onClick={() => callbacks.onDelete!(order)}
           >
             <MoreVertical className="size-3.5" />
-            {t($ => $.actions.cancelOrder)}
+            {t($ => $.actions.deleteOrder)}
           </DropdownMenuItem>
         ) : null}
       </DropdownMenuContent>
@@ -422,7 +422,9 @@ export function createOrderColumns(
         : <span className="text-xs text-muted-foreground">{t($ => $.columns.noProof)}</span>,
     },
 
-    // ── Total (Remaining Balance = Grand Total − Deposit) ─────────────────────
+    // ── Total — grand_total under its own label; remaining balance shown as a
+    // separate, honestly-labeled sub-line so "Total" never silently means
+    // "amount still owed" (A11 — canonical backend fields, no reinterpretation).
     {
       key: 'total',
       label: t($ => $.columns.total),
@@ -434,9 +436,14 @@ export function createOrderColumns(
       cell: (order) => {
         const remaining = order.remaining_balance ?? (order.grand_total - (order.deposit_paid ?? 0));
         return (
-          <span className={remaining < order.grand_total ? 'text-amber-600 dark:text-amber-400' : ''}>
-            {formatMoney(remaining)}
-          </span>
+          <div className="flex flex-col items-end leading-tight">
+            <span>{formatMoney(order.grand_total)}</span>
+            {remaining > 0 && remaining < order.grand_total ? (
+              <span className="text-[11px] font-normal text-amber-600 dark:text-amber-400">
+                {t($ => $.columns.totalDue, { amount: formatMoney(remaining) })}
+              </span>
+            ) : null}
+          </div>
         );
       },
     },
@@ -519,14 +526,16 @@ export function createOrderColumns(
       },
     },
 
-    // ── Delivery Driver ───────────────────────────────────────────────────────
+    // ── Delivery Driver — read-only reference into Distribution's Trip assignment ──
     {
       key: 'delivery_driver',
       label: t($ => $.columns.driver),
       defaultVisible: true,
       skeletonClassName: 'h-4 w-20',
-      cell: () => (
-        <span className="text-xs text-muted-foreground">—</span>
+      cell: (order) => order.driver?.full_name ? (
+        <span className="text-xs">{order.driver.full_name}</span>
+      ) : (
+        <span className="text-xs text-muted-foreground">{t($ => $.columns.driverUnassigned)}</span>
       ),
     },
 

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useFormatter } from '@/hooks/use-formatter';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { toast } from '@/components/ds/use-toast';
+import { extractApiErrorMessage } from '@/lib/api-error';
 import {
   Activity,
   ArrowLeft,
@@ -637,7 +639,7 @@ function ShippingCard({ order }: { order: Order }) {
   const { money } = useFormatter();
   const { t } = useTranslation('orders');
   const hasMeaningfulShipping = order.shipping_company_name || order.shipping_method ||
-    order.tracking_number || order.requested_delivery_date || order.delivery_window;
+    order.tracking_number || order.requested_delivery_date || order.delivery_window || order.driver;
 
   if (!hasMeaningfulShipping) {
     return (
@@ -652,6 +654,9 @@ function ShippingCard({ order }: { order: Order }) {
       <FieldGrid cols={2}>
         <Field label={t($ => $.orderDetail.carrierCompany)}>{order.shipping_company_name}</Field>
         <Field label={t($ => $.orderDetail.shippingMethod)}>{order.shipping_method}</Field>
+        <Field label={t($ => $.columns.driver)}>
+          {order.driver?.full_name ?? <span className="text-muted-foreground">{t($ => $.columns.driverUnassigned)}</span>}
+        </Field>
         <Field label={t($ => $.orderDetail.trackingNumber)}>
           {order.tracking_number ? (
             <span className="font-mono text-xs">{order.tracking_number}</span>
@@ -1369,13 +1374,21 @@ function QuickActionsPanel({
       setShowReschedule(true);
       return;
     }
-    transition.mutate({ id: order.id, targetStatus });
+    const label = transitions.find((tr) => tr.target_status === targetStatus)?.label ?? targetStatus;
+    transition.mutate({ id: order.id, targetStatus }, {
+      onSuccess: () => toast.success(t($ => $.statusSelector.toastSuccess, { order: order.order_number, status: label })),
+      onError: (err) => toast.error(t($ => $.statusSelector.transitionFailed), extractApiErrorMessage(err)),
+    });
   }
 
   function handleRescheduleConfirm() {
     if (!rescheduleDate) return;
     reschedule.mutate({ id: order.id, nextDeliveryDate: rescheduleDate }, {
-      onSuccess: () => setShowReschedule(false),
+      onSuccess: () => {
+        setShowReschedule(false);
+        toast.success(t($ => $.drawer.workflow.rescheduleToastSuccess, { date: rescheduleDate }));
+      },
+      onError: (err) => toast.error(t($ => $.statusSelector.transitionFailed), extractApiErrorMessage(err)),
     });
   }
 

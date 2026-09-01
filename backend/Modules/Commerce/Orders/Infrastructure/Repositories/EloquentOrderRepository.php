@@ -7,6 +7,7 @@ namespace Modules\Commerce\Orders\Infrastructure\Repositories;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Modules\Commerce\Orders\Domain\Contracts\OrderRepositoryInterface;
+use Modules\Commerce\Orders\Domain\Enums\ReservationStatus;
 use Modules\Commerce\Orders\Domain\Models\Order;
 
 final class EloquentOrderRepository implements OrderRepositoryInterface
@@ -15,10 +16,11 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
 
     // `assignedWarehouse` is eager-loaded on BOTH surfaces so OrderResource can resolve
     // the canonical fulfillment warehouse to a name without an N+1
-    // (TASK-ORDERS-PREPARATION-PAYMENT-FINAL-FIX-001, D4).
-    private const WITH = ['channel', 'customer', 'lines.product.unit', 'assignedWarehouse'];
+    // (TASK-ORDERS-PREPARATION-PAYMENT-FINAL-FIX-001, D4). `currentTripOrder...driver`
+    // is the read-only path into Distribution that resolves the assigned driver, if any.
+    private const WITH = ['channel', 'customer', 'lines.product.unit', 'assignedWarehouse', 'currentTripOrder.trip.driverVehicleAssignment.driver'];
 
-    private const WITH_DETAIL = ['channel', 'customer', 'lines.product.unit', 'fees', 'coupons', 'orderNotes', 'assignedWarehouse'];
+    private const WITH_DETAIL = ['channel', 'customer', 'lines.product.unit', 'fees', 'coupons', 'orderNotes', 'assignedWarehouse', 'currentTripOrder.trip.driverVehicleAssignment.driver'];
 
     public function paginate(array $filters): LengthAwarePaginator
     {
@@ -192,14 +194,23 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
             }
         }
 
-        // Reservation status
+        // Reservation status — filters on the canonical orders.reservation_status
+        // enum column (ADR-027), not the inventory_reserved_at timestamp: a
+        // Released/Transferred/Consumed order still carries a historical
+        // inventory_reserved_at, so the timestamp alone cannot distinguish an
+        // active hold from one that has since ended.
         $reservationStatus = trim((string) ($filters['reservation_status'] ?? ''));
-        if ($reservationStatus !== '') {
-            if ($reservationStatus === 'reserved') {
-                $query->whereNotNull('inventory_reserved_at');
-            } elseif ($reservationStatus === 'not_reserved') {
-                $query->whereNull('inventory_reserved_at');
-            }
+        if ($reservationStatus === 'not_reserved') {
+            // No active inventory hold — anything other than Reserved/PartialReserved.
+            $query->where(function (Builder $b): void {
+                $b->whereNull('reservation_status')
+                    ->orWhereNotIn('reservation_status', [
+                        ReservationStatus::Reserved->value,
+                        ReservationStatus::PartialReserved->value,
+                    ]);
+            });
+        } elseif (ReservationStatus::tryFrom($reservationStatus) !== null) {
+            $query->where('reservation_status', $reservationStatus);
         }
 
         // Delivery zone

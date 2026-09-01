@@ -87,6 +87,7 @@ import { useCompaniesQuery } from '@/features/companies/hooks/use-companies';
 import type { CustomerLookupResult, Order } from '@/features/orders/types/order';
 import type { Product } from '@/features/products/types/product';
 import { getMediaUrl } from '@/lib/media';
+import { extractApiErrorMessage } from '@/lib/api-error';
 import { ROUTES } from '@/router/routes';
 import { parseGoogleMapsUrl, isGoogleMapsUrl } from '@/features/orders/utils/google-maps-parser';
 
@@ -166,29 +167,6 @@ function useRawMaterials() {
 
 function fmt(n: number) {
   return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function extractMessage(error: unknown): string {
-  if (!axios.isAxiosError(error)) {
-    return 'Unexpected server error. Please contact your administrator.';
-  }
-  const data = error.response?.data as Record<string, unknown> | undefined;
-  if (!data) {
-    return 'Unexpected server error. Please contact your administrator.';
-  }
-  // Laravel validation errors — collect up to 3 field messages
-  if (data.errors && typeof data.errors === 'object') {
-    const msgs = Object.values(data.errors as Record<string, string[]>)
-      .flat()
-      .filter(Boolean)
-      .slice(0, 3);
-    if (msgs.length > 0) return msgs.join(' ');
-  }
-  // Backend message (business logic failures, auth errors, etc.)
-  if (typeof data.message === 'string' && data.message) {
-    return data.message;
-  }
-  return 'Unexpected server error. Please contact your administrator.';
 }
 
 function resolvedProductPrice(p: Product): number | null {
@@ -738,8 +716,9 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
   const createManual  = useCreateManualOrder();
   const updateManual  = useUpdateManualOrder();
   const isEdit = mode === 'edit';
-  // Structural lock: products/price/shipping/discount are read-only once an order leaves Pending/AwaitingPayment.
-  const isStructurallyLocked = isEdit && order != null && !['new', 'awaiting_payment'].includes(order.status);
+  // Structural lock: unlocked set is exactly ADR-042 §2.2 — in_progress, scheduled,
+  // awaiting_payment. Everything from `confirmed` onward is locked.
+  const isStructurallyLocked = isEdit && order != null && !['in_progress', 'scheduled', 'awaiting_payment'].includes(order.status);
   // Terminal: Delivered/Cancelled/Returned are fully read-only.
   const isTerminal = isEdit && order != null && ['delivered', 'cancelled', 'returned'].includes(order.status);
 
@@ -849,7 +828,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
             : [{ product_id: '', quantity: '1', unit_price: '' }],
         }
       : {
-          status:                   'new',
+          status:                   'in_progress',
           order_date:               new Date().toISOString().slice(0, 10),
           requested_delivery_date:  new Date().toISOString().slice(0, 10),
           payment_method_manual:    'cod',
@@ -1357,8 +1336,8 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
             }
           }
            
-          if (import.meta.env.DEV) console.log('[SERVER-ERROR] doEditSave onError — generic:', extractMessage(err));
-          setServerError(extractMessage(err));
+          if (import.meta.env.DEV) console.log('[SERVER-ERROR] doEditSave onError — generic:', extractApiErrorMessage(err));
+          setServerError(extractApiErrorMessage(err));
         },
       },
     );
@@ -1444,8 +1423,8 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
           }
         }
          
-        if (import.meta.env.DEV) console.log('[SERVER-ERROR] createManual onError — generic:', extractMessage(err));
-        setServerError(extractMessage(err));
+        if (import.meta.env.DEV) console.log('[SERVER-ERROR] createManual onError — generic:', extractApiErrorMessage(err));
+        setServerError(extractApiErrorMessage(err));
       },
     });
   };
@@ -2123,6 +2102,26 @@ export function ManualOrderFormWorkspace({ mode = 'create', order }: Props) {
                               {...form.register('customer_notes')}
                             />
                           </FormField>
+                        </div>
+
+                        {/* C1 — this address belongs to this order only unless explicitly
+                            opted in. Default unchecked: never silently overwrites the
+                            customer's saved default address. */}
+                        <div className="sm:col-span-2">
+                          <label className="flex cursor-pointer items-start gap-2 text-xs font-medium text-foreground/80">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(form.watch('use_as_default_address'))}
+                              onChange={(e) => form.setValue('use_as_default_address', e.target.checked)}
+                              className="mt-0.5 size-3.5 accent-primary"
+                            />
+                            <span>
+                              {t($ => $.workspace.useAsDefaultAddress)}
+                              <span className="mt-0.5 block font-normal text-muted-foreground">
+                                {t($ => $.workspace.useAsDefaultAddressHint)}
+                              </span>
+                            </span>
+                          </label>
                         </div>
                       </div>
                     )}

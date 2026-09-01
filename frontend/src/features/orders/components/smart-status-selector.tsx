@@ -14,6 +14,8 @@ import { ArrowRight, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
+import { toast } from '@/components/ds/use-toast';
+import { extractApiErrorMessage } from '@/lib/api-error';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -85,13 +87,18 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
 
   function handleConfirm() {
     if (!pending || transition.isPending) return;
+    const targetLabel = statusLabel[pending.target_status as keyof typeof statusLabel] ?? pending.label;
     transition.mutate(
       { id: order.id, targetStatus: pending.target_status, reason: reason.trim() || undefined },
       {
         onSuccess: () => {
           setPending(null);
           setReason('');
+          toast.success(t($ => $.statusSelector.toastSuccess, { order: order.order_number, status: targetLabel }));
           onSuccess?.();
+        },
+        onError: (err) => {
+          toast.error(t($ => $.statusSelector.transitionFailed), extractApiErrorMessage(err));
         },
       },
     );

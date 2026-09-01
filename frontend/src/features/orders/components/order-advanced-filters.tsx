@@ -20,7 +20,18 @@ export type AdvancedFilterValues = {
   paymentMethod: string | null;
   paymentStatus: 'paid' | 'partial' | 'unpaid' | null;
   hasPaymentProof: boolean | null;
-  reservationStatus: 'reserved' | 'not_reserved' | null;
+  // A8 — canonical ReservationStatus values (ADR-027) plus the `not_reserved`
+  // convenience grouping (anything without an active hold). No invented states.
+  reservationStatus:
+    | 'reserved'
+    | 'not_reserved'
+    | 'pending'
+    | 'partial_reserved'
+    | 'awaiting_stock'
+    | 'released'
+    | 'transferred'
+    | 'consumed'
+    | null;
   shippingCompany: string | null;
   dateFrom: string | null;
   dateTo: string | null;
@@ -272,6 +283,12 @@ export function OrderAdvancedFilters({ values, onChange, onClear }: Props) {
               <SelectItem value="">{t($ => $.filters.all)}</SelectItem>
               <SelectItem value="reserved">{t($ => $.filters.reserved)}</SelectItem>
               <SelectItem value="not_reserved">{t($ => $.filters.notReserved)}</SelectItem>
+              <SelectItem value="pending">{t($ => $.filters.reservationPending)}</SelectItem>
+              <SelectItem value="partial_reserved">{t($ => $.filters.reservationPartial)}</SelectItem>
+              <SelectItem value="awaiting_stock">{t($ => $.filters.reservationAwaitingStock)}</SelectItem>
+              <SelectItem value="released">{t($ => $.filters.reservationReleased)}</SelectItem>
+              <SelectItem value="transferred">{t($ => $.filters.reservationTransferred)}</SelectItem>
+              <SelectItem value="consumed">{t($ => $.filters.reservationConsumed)}</SelectItem>
             </SelectContent>
           </Select>
         </div>

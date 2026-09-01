@@ -20,21 +20,17 @@
     "invoicePrint": "Invoice / Print",
     "copyLink": "Copy Order Link",
     "linkCopied": "Copied!",
-    "cancelOrder": "Cancel Order",
+    "deleteOrder": "Delete Order",
     "orderActions": "Order actions",
     "paymentAndProof": "Payment & Proof"
   },
   "bulk": {
     "confirm": "Confirm Orders",
-    "unlock_for_edit": "Unlock for Edit",
-    "move_to_awaiting_payment": "Move to Awaiting Payment",
     "verify_payment": "Verify Payment",
     "move_to_preparation": "Send to Preparation",
     "return_to_preparation": "Return to Preparation",
     "awaiting_stock": "Mark Awaiting Stock",
     "retry_reservation": "Retry Reservation",
-    "start_manufacturing": "Start Manufacturing",
-    "purchase_materials": "Purchase Materials",
     "resume": "Resume Processing",
     "resume_confirmed": "Resume to Confirmed",
     "dispatch": "Send to Loading",
@@ -45,13 +41,13 @@
     "review": "Send to Review",
     "return": "Mark Returned",
     "return_to_confirmed": "Re-confirm for Delivery",
-    "inspect_return": "Inspect Return",
     "return_to_stock": "Return to Stock",
-    "scrap": "Scrap",
     "cancel": "Cancel Orders",
     "rescheduleTitle": "Reschedule {{count}} orders",
     "rescheduleDate": "New delivery date",
-    "rescheduleConfirm": "Reschedule"
+    "rescheduleConfirm": "Reschedule",
+    "toastSuccess": "{{count}} order(s) updated",
+    "toastError": "Bulk action failed"
   },
   "statusTabs": {
     "label": "Order status",
@@ -124,6 +120,12 @@
     "inventory": "Inventory",
     "reserved": "Reserved",
     "notReserved": "Not Reserved",
+    "reservationPending": "Pending Reservation",
+    "reservationPartial": "Partially Reserved",
+    "reservationAwaitingStock": "Awaiting Stock",
+    "reservationReleased": "Released",
+    "reservationTransferred": "Transferred",
+    "reservationConsumed": "Consumed",
     "paymentProof": "Payment Proof",
     "withProof": "With Proof",
     "withoutProof": "Without Proof",
@@ -265,12 +267,14 @@
     "updatedAt": "Updated",
     "salesRep": "Sales Rep",
     "driver": "Driver",
+    "driverUnassigned": "Unassigned",
     "manualOrder": "Manual",
     "proofReceived": "Proof Received",
     "actions": "Actions",
     "noProof": "No Proof",
     "noGps": "No GPS",
-    "governorateWithName": "{{name}} Governorate"
+    "governorateWithName": "{{name}} Governorate",
+    "totalDue": "{{amount}} due"
   },
   "itemsPreview": {
     "title": "{{count}} items",
@@ -298,7 +302,10 @@
   },
   "mobileCard": {
     "item": "item",
-    "items": "items"
+    "items": "items",
+    "payment": "Payment",
+    "delivery": "Delivery",
+    "warehouse": "Warehouse"
   },
   "table": {
     "selectAll": "Select all",
@@ -487,6 +494,7 @@
       "refusalFallback": "The transition was refused. Please try again.",
       "newDeliveryDate": "New Delivery Date",
       "confirmReschedule": "Confirm Reschedule",
+      "rescheduleToastSuccess": "Order rescheduled to {{date}}",
       "cancel": "Cancel",
       "actions": {
         "confirm": "Confirm Order",
@@ -600,19 +608,14 @@
       }
     },
     "history_tab": {
-      "currentStatus": "Current Status",
+      "currentStatus": "Current Status Since",
       "enteredAt": "Entered at:",
       "by": "By:",
+      "noStatusHistory": "No status-change timing recorded for this order.",
       "previousStatus": "Previous Status",
-      "keyDates": "Key Dates",
-      "createdAt": "Created At",
-      "paymentConfirmed": "Payment Confirmed",
-      "reserved": "Reserved",
-      "shipped": "Shipped",
-      "requestedDelivery": "Requested Delivery",
       "orderSource": "Order Source",
       "manual": "Manual",
-      "auditLogNote": "The full audit log is available via the activity log endpoint. Key dates are shown above."
+      "auditLogNote": "The full audit log is available in the Timeline tab."
     },
     "actor": {
       "by": "By",
@@ -712,6 +715,7 @@
     "reasonOptional": "(Optional)",
     "reasonPlaceholder": "Enter reason…",
     "transitionFailed": "Transition failed — please try again or contact support.",
+    "toastSuccess": "Order {{order}} is now {{status}}",
     "cancel": "Cancel",
     "confirm": "Confirm"
   },
@@ -854,6 +858,8 @@
     "resolving": "Resolving…",
     "importLocation": "Import Location",
     "customerNotesPlaceholder": "Notes about this customer",
+    "useAsDefaultAddress": "Use as customer's default address",
+    "useAsDefaultAddressHint": "Off by default — this address applies to this order only. Check this to also update the customer's saved default address.",
     "productsCard": "Products",
     "loadingProducts": "Loading products…",
     "paymentShipping": "Payment & Shipping",

@@ -387,4 +387,21 @@ class Order extends Model
     {
         return $this->hasMany(OrderNote::class)->latest();
     }
+
+    /**
+     * Read-only reference into Distribution for display (driver/trip identity).
+     * Mirrors the pattern already used by Logistics\Delivery::order() (a
+     * read-only reference back into Commerce) — this is the same relation in
+     * the opposite direction. Distribution remains the sole writer of trip
+     * assignment; this never queries beyond a single BelongsTo lookup.
+     *
+     * @return HasOne<\Modules\Logistics\Distribution\Domain\Models\TripOrder, $this>
+     */
+    public function currentTripOrder(): HasOne
+    {
+        return $this->hasOne(
+            \Modules\Logistics\Distribution\Domain\Models\TripOrder::class,
+            'order_id',
+        );
+    }
 }

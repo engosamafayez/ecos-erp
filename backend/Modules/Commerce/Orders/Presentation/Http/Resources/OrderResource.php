@@ -267,6 +267,18 @@ final class OrderResource extends JsonResource
                 'name' => $this->assignedWarehouse->name,
                 'code' => $this->assignedWarehouse->code,
             ]),
+            // A1 (TASK-ECOS-COMMERCE-ORDERS-CUSTOMERS-CLOSURE-001) — read-only reference
+            // into Distribution's Trip -> DriverVehicleAssignment -> Driver chain. Null
+            // when the order has no active trip assignment; Commerce never writes here.
+            'driver' => $this->whenLoaded(
+                'currentTripOrder',
+                fn () => $this->currentTripOrder?->trip?->driverVehicleAssignment?->driver === null ? null : [
+                    'id' => $this->currentTripOrder->trip->driverVehicleAssignment->driver->id,
+                    'driver_code' => $this->currentTripOrder->trip->driverVehicleAssignment->driver->driver_code,
+                    'full_name' => $this->currentTripOrder->trip->driverVehicleAssignment->driver->full_name,
+                    'mobile' => $this->currentTripOrder->trip->driverVehicleAssignment->driver->mobile,
+                ],
+            ),
             // Customer confirmation
             'customer_confirmed_at' => $this->customer_confirmed_at?->toIso8601String(),
             'customer_confirmed_by' => $this->customer_confirmed_by,
