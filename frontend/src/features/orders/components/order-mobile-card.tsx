@@ -1,9 +1,10 @@
-import { MapPin, Phone } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { MobileDataCard, type MobileDataCardField } from '@/components/mobile';
 
+import { OrderPhoneCell } from './order-phone-cell';
 import { OrderStatusBadge } from './order-status-badge';
 import type { Order } from '../types/order';
 
@@ -121,15 +122,9 @@ export function OrderMobileCard({
         phone || mapHref ? (
           <>
             {phone ? (
-              <Button variant="ghost" size="icon" className="size-7" asChild>
-                <a
-                  href={`tel:${phone}`}
-                  aria-label={t($ => $.phone.call)}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Phone className="size-3.5" />
-                </a>
-              </Button>
+              <div onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+                <OrderPhoneCell phone={phone} variant="icon" ariaLabel={t($ => $.columns.phone)} />
+              </div>
             ) : null}
             {mapHref ? (
               <Button variant="ghost" size="icon" className="size-7" asChild>

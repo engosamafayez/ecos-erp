@@ -29,7 +29,6 @@ import {
   MessageCircle,
   Navigation,
   Package,
-  Phone,
   Plus,
   Printer,
   RefreshCw,
@@ -56,6 +55,7 @@ import { OrderConfirmationBadge } from '@/features/orders/components/order-confi
 import { PaymentProofSection } from '@/features/orders/components/payment-proof-section';
 import { OrderPaymentBadge } from '@/features/orders/components/order-payment-badge';
 import { OrderInventoryExecutionCell } from '@/features/orders/components/order-inventory-execution-cell';
+import { OrderPhoneCell } from '@/features/orders/components/order-phone-cell';
 import { OrderStatusBadge } from '@/features/orders/components/order-status-badge';
 import {
   useCustomerOrderStats,
@@ -428,7 +428,6 @@ function CustomerCard({ order }: { order: Order }) {
   }
 
   const primaryPhone = order.billing_phone ?? customer.phone ?? customer.mobile;
-  const digits = primaryPhone?.replace(/\D/g, '') ?? '';
   const isVip = (stats?.total ?? 0) >= 10;
   const isReturning = (stats?.total ?? 0) >= 2;
   const hasRejected = (stats?.cancelled ?? 0) > 0 && (stats?.completed ?? 0) === 0;
@@ -478,20 +477,7 @@ function CustomerCard({ order }: { order: Order }) {
         <FieldGrid cols={2}>
           <Field label={t($ => $.orderDetail.primaryPhone)}>
             {primaryPhone ? (
-              <div className="flex items-center gap-1.5">
-                <span className="font-mono text-xs">{primaryPhone}</span>
-                <a href={`tel:${digits}`} className="text-muted-foreground hover:text-foreground">
-                  <Phone className="size-3" />
-                </a>
-                <a
-                  href={`https://wa.me/${digits}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-green-600 hover:text-green-700"
-                >
-                  <MessageCircle className="size-3" />
-                </a>
-              </div>
+              <OrderPhoneCell phone={primaryPhone} className="font-mono text-xs hover:underline" />
             ) : null}
           </Field>
           <Field label={t($ => $.orderDetail.secondaryPhone)}>

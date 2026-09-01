@@ -57,6 +57,13 @@ final class CustomerAddressController extends Controller
         return $this->success($addresses);
     }
 
+    public function show(string $address): JsonResponse
+    {
+        $addressModel = $this->address($address);
+
+        return $this->success($addressModel);
+    }
+
     public function store(Request $request, string $customer): JsonResponse
     {
         $model = $this->customer($customer);

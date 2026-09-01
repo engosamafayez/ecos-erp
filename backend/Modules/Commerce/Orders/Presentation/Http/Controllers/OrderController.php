@@ -32,6 +32,7 @@ use Modules\Commerce\Orders\Domain\Models\OrderBusinessContextSnapshot;
 use Modules\Commerce\Orders\Domain\Models\OrderEvent;
 use Modules\Commerce\Orders\Domain\Models\OrderFinancialSnapshot;
 use Modules\Commerce\Orders\Domain\Models\OrderNote;
+use Modules\Commerce\Orders\Domain\Services\CustomerOrderMetricsService;
 use Modules\Commerce\Orders\Presentation\Http\Requests\PatchOrderRequest;
 use Modules\Commerce\Orders\Presentation\Http\Requests\StoreManualOrderRequest;
 use Modules\Commerce\Orders\Presentation\Http\Requests\StoreOrderRequest;
@@ -47,7 +48,10 @@ final class OrderController extends Controller
 {
     use HasApiResponse;
 
-    public function __construct(private readonly CurrentCompanyService $currentCompany) {}
+    public function __construct(
+        private readonly CurrentCompanyService $currentCompany,
+        private readonly CustomerOrderMetricsService $orderMetrics,
+    ) {}
 
     public function index(Request $request, ListOrdersAction $action): JsonResponse
     {
@@ -84,6 +88,31 @@ final class OrderController extends Controller
         ];
 
         $paginator = $action->execute($filters)->data();
+
+        // F9 closure — batch each row's customer lifetime order count for the current
+        // page ONLY (never one query per row), so OrderResource can resolve the grid's
+        // customer-intelligence badge (VIP/Repeat/New) without an N+1.
+        //
+        // Grouped by each ORDER'S OWN company_id — not $filters['company_id'], which is
+        // null in the documented super-admin cross-tenant context — mirroring
+        // Sales\Customers\CustomerController::index()'s identical pattern for the same
+        // underlying service. A normal user's page is one company (one extra query);
+        // a super-admin's page costs one per distinct company on that page — bounded,
+        // never proportional to total order volume.
+        $orderCounts = [];
+        foreach (collect($paginator->items())->groupBy(fn (Order $o) => (string) $o->company_id) as $rowsCompanyId => $group) {
+            if ($rowsCompanyId === '') {
+                continue;
+            }
+            $customerIds = $group->pluck('customer_id')->filter()->map(fn ($id) => (string) $id)->unique()->values()->all();
+            if ($customerIds === []) {
+                continue;
+            }
+            $orderCounts += $this->orderMetrics->forCustomers($customerIds, $rowsCompanyId);
+        }
+        foreach ($paginator->items() as $order) {
+            $order->setAttribute('customer_total_orders', $orderCounts[(string) $order->customer_id]['orders_count'] ?? 0);
+        }
 
         // KPI cards: sum grand_total for the current company+status scope
         $totalAmount = Order::query()

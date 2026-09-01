@@ -75,12 +75,17 @@ final class OrderResource extends JsonResource
                     'created_at' => $c->created_at?->toIso8601String(),
                     'stats' => null,
                 ];
-                // Customer order stats — computed only on the detail endpoint.
-                // The detail endpoint loads coupons; the list endpoint does not.
-                // This prevents N+1 on list pages.
+                // Customer order stats. On the detail endpoint (coupons eager-loaded), computed
+                // directly here for that one customer. On the list endpoint, computing this
+                // per-row would be an N+1 — instead OrderController::index() batches every
+                // page's distinct customer_ids through CustomerOrderMetricsService::forCustomers()
+                // (one grouped query for the whole page, mirroring Sales\Customers\
+                // CustomerController's identical pattern) and stamps the count onto each Order
+                // model as `customer_total_orders` before this resource ever runs.
                 if ($this->resource->relationLoaded('coupons')) {
                     $stats = \Illuminate\Support\Facades\DB::table('orders')
                         ->where('customer_id', $this->customer_id)
+                        ->where('company_id', $this->company_id)
                         ->whereNull('deleted_at')
                         ->selectRaw('COUNT(*) as total_orders, SUM(total) as lifetime_value, MIN(order_date) as first_order_date, MAX(order_date) as last_order_date')
                         ->first();
@@ -89,6 +94,16 @@ final class OrderResource extends JsonResource
                         'lifetime_value' => (float) ($stats?->lifetime_value ?? 0),
                         'first_order_date' => $stats?->first_order_date ?? null,
                         'last_order_date' => $stats?->last_order_date ?? null,
+                    ];
+                } elseif (isset($this->resource->customer_total_orders)) {
+                    // List endpoint — only the count the grid's intelligence badge needs is
+                    // available at page-batch granularity; the other three fields are detail-
+                    // endpoint-only and stay null/0 here rather than costing a second query.
+                    $data['stats'] = [
+                        'total_orders' => (int) $this->resource->customer_total_orders,
+                        'lifetime_value' => 0,
+                        'first_order_date' => null,
+                        'last_order_date' => null,
                     ];
                 }
 

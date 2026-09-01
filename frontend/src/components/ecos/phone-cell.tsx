@@ -25,6 +25,17 @@ const DEFAULT_LABELS: Required<PhoneCellLabels> = {
 type PhoneCellProps = {
   phone: string | null;
   labels?: PhoneCellLabels;
+  /**
+   * 'text' (default): the phone number itself is the trigger — for table cells.
+   * 'icon': a bare Phone glyph is the trigger, no number text — for tight spaces
+   * (e.g. a mobile card's icon-only action row) that already show the number
+   * elsewhere. Same Call / WhatsApp / Copy menu either way.
+   */
+  variant?: 'text' | 'icon';
+  /** Accessible name for the icon variant's trigger button. Ignored for 'text'. */
+  ariaLabel?: string;
+  /** Extra classes for the trigger button. */
+  className?: string;
 };
 
 /**
@@ -32,12 +43,12 @@ type PhoneCellProps = {
  * No i18n dependency — pass `labels` for translated text.
  * Used in: Orders, Customers, Suppliers, any table with a phone column.
  */
-export function PhoneCell({ phone, labels }: PhoneCellProps) {
+export function PhoneCell({ phone, labels, variant = 'text', ariaLabel, className }: PhoneCellProps) {
   const [copied, setCopied] = useState(false);
   const l = { ...DEFAULT_LABELS, ...labels };
 
   if (!phone) {
-    return <span className="text-muted-foreground">—</span>;
+    return variant === 'icon' ? null : <span className="text-muted-foreground">—</span>;
   }
 
   const digits = phone.replace(/\D/g, '');
@@ -52,13 +63,27 @@ export function PhoneCell({ phone, labels }: PhoneCellProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          onMouseDown={(e) => e.stopPropagation()}
-          className="font-mono text-xs transition-colors underline-offset-2 hover:text-primary hover:underline"
-        >
-          {phone}
-        </button>
+        {variant === 'icon' ? (
+          <button
+            type="button"
+            onMouseDown={(e) => e.stopPropagation()}
+            aria-label={ariaLabel ?? l.call}
+            className={
+              className ??
+              'inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground'
+            }
+          >
+            <Phone className="size-3.5" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onMouseDown={(e) => e.stopPropagation()}
+            className={className ?? 'font-mono text-xs transition-colors underline-offset-2 hover:text-primary hover:underline'}
+          >
+            {phone}
+          </button>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-44">
         <DropdownMenuItem asChild>

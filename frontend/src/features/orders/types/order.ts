@@ -112,6 +112,9 @@ export type OrderCustomer = {
   notes?: string | null;
   is_active?: boolean;
   created_at?: string | null;
+  // total_orders is populated on BOTH endpoints (batched per-page on the list
+  // endpoint to avoid an N+1 — see OrderController::index()); the other three
+  // fields stay null/0 outside the detail endpoint.
   stats?: CustomerStats | null;
 };
 export type OrderProduct  = { id: string; sku: string; name: string; image_url: string | null; unit_name?: string | null };

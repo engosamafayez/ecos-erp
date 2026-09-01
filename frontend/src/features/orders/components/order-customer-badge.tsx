@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ExternalLink, MapPin, MessageCircle, Phone, User } from 'lucide-react';
+import { Check, Copy, ExternalLink, MapPin, MessageCircle, Phone, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { useCustomerOrderStats } from '@/features/orders/hooks/use-orders';
@@ -26,6 +26,7 @@ export function OrderCustomerBadge({ order }: Props) {
   const { t } = useTranslation('orders');
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
+  const [copied, setCopied] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const customer = order.customer;
@@ -72,6 +73,14 @@ export function OrderCustomerBadge({ order }: Props) {
   const email = order.billing_email;
   const shortAddress = [order.shipping_address_1, order.shipping_city].filter(Boolean).join(', ');
   const preferredZone = data?.preferredGovernorate ?? order.governorate ?? order.delivery_zone;
+
+  function handleCopy() {
+    if (!primaryPhone) return;
+    void navigator.clipboard.writeText(primaryPhone).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
 
   const panel = open ? (
     <div
@@ -170,6 +179,15 @@ export function OrderCustomerBadge({ order }: Props) {
       </div>
 
       {/* ── Footer: quick actions ─────────────────────────────────────────── */}
+      {/*
+        This footer lives inside a hand-rolled portal popover (#customer-card-portal,
+        zIndex 9999) with its own outside-click/Escape handling. PhoneCell/OrderPhoneCell
+        render their action menu through a SECOND Radix portal — nesting that here would
+        both fight the 9999 z-index (the menu's own z-50 would render behind this panel)
+        and get misread as an "outside" click by the listener above, closing the whole
+        card. So Call/WhatsApp/Copy stay as plain anchors/buttons in this one surface —
+        every other order surface (drawer, detail page, mobile card) reuses OrderPhoneCell.
+      */}
       <div className="flex items-center gap-1 border-t px-3 py-2">
         {primaryPhone ? (
           <>
@@ -191,6 +209,14 @@ export function OrderCustomerBadge({ order }: Props) {
               <MessageCircle className="size-3" />
               WA
             </a>
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs text-foreground hover:bg-accent"
+              aria-label={t($ => $.phone.copy)}
+            >
+              {copied ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
+            </button>
           </>
         ) : null}
         <a

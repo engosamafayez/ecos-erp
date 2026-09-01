@@ -65,6 +65,7 @@ import {
 import { Tabs } from '@/components/ds/tabs';
 import { toast } from '@/components/ds/use-toast';
 import { OrderInventoryExecutionCell } from '@/features/orders/components/order-inventory-execution-cell';
+import { OrderPhoneCell } from '@/features/orders/components/order-phone-cell';
 import { PaymentProofSection } from '@/features/orders/components/payment-proof-section';
 import { RecordPaymentDialog } from '@/features/orders/components/record-payment-dialog';
 import { OrderStatusBadge } from '@/features/orders/components/order-status-badge';
@@ -433,18 +434,18 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
             </DetailRow>
             <DetailRow label={t($ => $.drawer.customer.primaryPhone)}>
               {primaryPhone ? (
-                <a href={`tel:${primaryPhone}`} className="flex items-center gap-1 text-sm hover:underline">
+                <span className="flex items-center gap-1 text-sm">
                   <Phone className="size-3 shrink-0 text-muted-foreground" />
-                  {primaryPhone}
-                </a>
+                  <OrderPhoneCell phone={primaryPhone} className="text-sm hover:underline" />
+                </span>
               ) : <span className="text-muted-foreground">—</span>}
             </DetailRow>
             <DetailRow label={t($ => $.drawer.customer.secondaryPhone)}>
               {secondaryPhone ? (
-                <a href={`tel:${secondaryPhone}`} className="flex items-center gap-1 text-sm hover:underline">
+                <span className="flex items-center gap-1 text-sm">
                   <Phone className="size-3 shrink-0 text-muted-foreground" />
-                  {secondaryPhone}
-                </a>
+                  <OrderPhoneCell phone={secondaryPhone} className="text-sm hover:underline" />
+                </span>
               ) : <span className="text-muted-foreground">—</span>}
             </DetailRow>
             <DetailRow label={t($ => $.drawer.customer.email)}>
