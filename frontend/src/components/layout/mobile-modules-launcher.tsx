@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
-import { ChevronRight, Search } from 'lucide-react';
+import { ChevronDown, ChevronRight, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { NavLink } from 'react-router-dom';
 
 import { cn } from '@/lib/utils';
 import { useNavigation } from '@/features/authorization';
+import { usePriceReviewBadge } from '@/features/cost-management/hooks/use-pricing-reviews';
 import { moduleNavLinks, type AppModule, type ModuleId, type NavItemKey } from '@/config/module-navigation';
 import { useRecentNav } from '@/hooks/use-recent-nav';
 import { FAMILY_ORDER, familyOf, type ModuleFamily } from './mobile-module-families';
@@ -11,27 +13,29 @@ import { useNavLabel } from './use-nav-label';
 
 type MobileModulesLauncherProps = {
   activeModuleId: ModuleId | null;
-  onOpenModule: (moduleId: ModuleId) => void;
   onNavigate: (path: string) => void;
 };
 
 type PageHit = { module: AppModule; path: string; key: NavItemKey; icon: AppModule['icon'] };
 
 /**
- * Full-screen Modules launcher (TASK-ECOS-MOBILE-UX-COMPLETION-002, parent
- * design report §5) — replaces the single flat 20-item accordion list with a
- * searchable, family-grouped grid plus a Recent row, addressing Navigation
- * Problems #3 (no search/favorites/recency on a flat list) and #8 (no
- * distinct visual identity).
+ * The Drawer's grouped navigation list (TASK-ECOS-MOBILE-NAVIGATION-DRAWER-
+ * BOTTOM-TRIGGER-001) — replaces the previous 3-column tile grid + full-screen
+ * drill-in with a single scrollable list: modules with one destination are
+ * direct links, modules with several expand IN PLACE (an accordion), so the
+ * whole navigation experience stays one Drawer, never a second screen.
  *
- * Modules and their pages come from `useNavigation()` / `moduleNavLinks()` —
- * the SAME canonical RBAC-filtered authority the desktop rail and sidebar use.
- * This component adds no visibility rule of its own: it only searches and
- * groups data that authority already returned.
+ * Same canonical data source as before — `useNavigation()` / `moduleNavLinks()`
+ * — no new visibility rule, no new module, no new route. Search and Recent are
+ * carried over unchanged (they already read the same authorized data and
+ * already rendered as a row list, so they needed no restyle).
+ *
+ * The one badge in the whole nav system (`usePriceReviewBadge`, already shown
+ * on the desktop rail — see `app-sidebar.tsx`) is surfaced here too, on the
+ * same `price-review` item, reusing the same query — not a new capability.
  */
 export function MobileModulesLauncher({
   activeModuleId,
-  onOpenModule,
   onNavigate,
 }: MobileModulesLauncherProps) {
   const { t } = useTranslation('common');
@@ -39,6 +43,9 @@ export function MobileModulesLauncher({
   const { modules } = useNavigation();
   const { recent, recordVisit } = useRecentNav();
   const [query, setQuery] = useState('');
+  // Default-expand the module the User is currently inside, so opening the
+  // Drawer shows "where am I" already unfolded (§9) — collapsed otherwise.
+  const [expandedId, setExpandedId] = useState<ModuleId | null>(activeModuleId);
 
   const trimmed = query.trim().toLowerCase();
   const searching = trimmed.length > 0;
@@ -87,12 +94,26 @@ export function MobileModulesLauncher({
       .filter((e): e is NonNullable<typeof e> => e !== null);
   }, [recent, modules, navLabel]);
 
-  function selectModule(mod: AppModule) {
+  // Toggling a row in the grouped list itself — collapses if already open.
+  function toggleModule(mod: AppModule) {
     if (moduleNavLinks(mod.items).length < 2) {
       recordVisit({ moduleId: mod.id, path: mod.defaultPath });
       onNavigate(mod.defaultPath);
     } else {
-      onOpenModule(mod.id);
+      setExpandedId((cur) => (cur === mod.id ? null : mod.id));
+    }
+  }
+
+  // Selecting a module FROM SEARCH — always exits search and expands the
+  // module in the grouped list (never a toggle: this is a fresh selection,
+  // and the grouped list isn't even visible yet for a toggle to act on).
+  function selectModuleFromSearch(mod: AppModule) {
+    if (moduleNavLinks(mod.items).length < 2) {
+      recordVisit({ moduleId: mod.id, path: mod.defaultPath });
+      onNavigate(mod.defaultPath);
+    } else {
+      setQuery('');
+      setExpandedId(mod.id);
     }
   }
 
@@ -125,13 +146,13 @@ export function MobileModulesLauncher({
           <SearchResults
             moduleHits={searchResults.moduleHits}
             pageHits={searchResults.pageHits}
-            onSelectModule={selectModule}
+            onSelectModule={selectModuleFromSearch}
             onSelectPage={selectPage}
           />
         ) : (
           <>
             {resolvedRecent.length > 0 ? (
-              <div className="mb-6">
+              <div className="mb-5">
                 <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {t(($) => $.nav.recent)}
                 </p>
@@ -164,41 +185,21 @@ export function MobileModulesLauncher({
             ) : null}
 
             {grouped.map(({ family, modules: familyModules }) => (
-              <div key={family} className="mb-6 last:mb-0">
-                <p className="mb-2.5 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <div key={family} className="mb-5 last:mb-0">
+                <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {t(($) => $.nav.families[family])}
                 </p>
-                <div className="grid grid-cols-3 gap-2.5">
-                  {familyModules.map((mod) => {
-                    const Icon = mod.icon;
-                    const isCurrent = mod.id === activeModuleId;
-                    return (
-                      <button
-                        key={mod.id}
-                        type="button"
-                        onClick={() => selectModule(mod)}
-                        aria-current={isCurrent ? 'true' : undefined}
-                        className={cn(
-                          'relative flex min-h-[84px] flex-col items-center justify-center gap-2 rounded-2xl border p-2 text-center shadow-sm transition-all active:scale-[0.97]',
-                          isCurrent
-                            ? 'border-primary/50 bg-primary/5'
-                            : 'border-border bg-card hover:border-primary/40 hover:bg-accent/40',
-                        )}
-                      >
-                        {isCurrent ? (
-                          <span className="absolute end-1.5 top-1.5 rounded-full bg-primary px-1.5 py-0.5 text-[9px] font-semibold leading-none text-primary-foreground">
-                            {t(($) => $.nav.current)}
-                          </span>
-                        ) : null}
-                        <span className="flex size-10 items-center justify-center rounded-2xl bg-primary/10">
-                          <Icon className="size-5 text-primary" aria-hidden />
-                        </span>
-                        <span className="line-clamp-2 w-full break-words text-[12px] font-medium leading-tight text-foreground">
-                          {navLabel.group(mod.id)}
-                        </span>
-                      </button>
-                    );
-                  })}
+                <div className="flex flex-col gap-0.5 rounded-xl border bg-card p-1.5 shadow-sm">
+                  {familyModules.map((mod) => (
+                    <ModuleRow
+                      key={mod.id}
+                      module={mod}
+                      isActiveModule={mod.id === activeModuleId}
+                      isExpanded={expandedId === mod.id}
+                      onToggle={() => toggleModule(mod)}
+                      onNavigateChild={onNavigate}
+                    />
+                  ))}
                 </div>
               </div>
             ))}
@@ -208,6 +209,123 @@ export function MobileModulesLauncher({
     </div>
   );
 }
+
+// ── Price Review badge ─────────────────────────────────────────────────────
+// The one existing unread/pending counter in the nav system (desktop rail —
+// app-sidebar.tsx). Reuses the same canonical query; not a new capability.
+function PriceReviewBadge() {
+  const { data } = usePriceReviewBadge();
+  const count = data?.pending ?? 0;
+  if (count === 0) return null;
+  return (
+    <span className="ms-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-semibold leading-none text-white tabular-nums">
+      {count > 99 ? '99+' : count}
+    </span>
+  );
+}
+
+// ── One module row — a direct link, or an inline-expanding group ───────────
+
+type ModuleRowProps = {
+  module: AppModule;
+  isActiveModule: boolean;
+  isExpanded: boolean;
+  onToggle: () => void;
+  onNavigateChild: (path: string) => void;
+};
+
+function ModuleRow({ module, isActiveModule, isExpanded, onToggle, onNavigateChild }: ModuleRowProps) {
+  const navLabel = useNavLabel();
+  const { recordVisit } = useRecentNav();
+  const Icon = module.icon;
+  const isLeaf = moduleNavLinks(module.items).length < 2;
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isLeaf ? undefined : isExpanded}
+        aria-current={isActiveModule && isLeaf ? 'page' : undefined}
+        className={cn(
+          'flex min-h-11 w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-start transition-colors active:scale-[0.98]',
+          isActiveModule ? 'bg-primary/10' : 'hover:bg-accent/50',
+        )}
+      >
+        <span
+          className={cn(
+            'flex size-8 shrink-0 items-center justify-center rounded-lg',
+            isActiveModule ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+          )}
+        >
+          <Icon className="size-4" aria-hidden />
+        </span>
+        <span className={cn('min-w-0 flex-1 truncate text-[15px] font-medium', isActiveModule ? 'text-primary' : 'text-foreground')}>
+          {navLabel.group(module.id)}
+        </span>
+        {isLeaf ? (
+          isActiveModule ? null : <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden data-flip-rtl />
+        ) : (
+          <ChevronDown
+            className={cn('size-4 shrink-0 text-muted-foreground transition-transform', isExpanded && 'rotate-180')}
+            aria-hidden
+          />
+        )}
+      </button>
+
+      {!isLeaf && isExpanded ? (
+        <div className="ms-[19px] flex flex-col gap-0.5 border-s ps-3.5 py-1">
+          {module.items.map((item) => {
+            if (item.isSection) {
+              return (
+                <p
+                  key={item.key}
+                  className="mb-1 mt-3 px-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground first:mt-1"
+                >
+                  {navLabel.item(item.key)}
+                </p>
+              );
+            }
+            const ItemIcon = item.icon;
+            return (
+              <NavLink
+                key={item.key}
+                to={item.path}
+                onClick={() => {
+                  recordVisit({ moduleId: module.id, itemKey: item.key, path: item.path });
+                  onNavigateChild(item.path);
+                }}
+                className={({ isActive }) =>
+                  cn(
+                    'flex min-h-10 items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-all active:scale-[0.98]',
+                    isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'text-foreground hover:bg-accent/50',
+                  )
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <span
+                      className={cn(
+                        'flex size-6 shrink-0 items-center justify-center rounded-md',
+                        isActive ? 'bg-primary-foreground/15' : 'bg-muted',
+                      )}
+                    >
+                      <ItemIcon className={cn('size-3.5', isActive ? 'text-primary-foreground' : 'text-muted-foreground')} aria-hidden />
+                    </span>
+                    <span className="min-w-0 flex-1 truncate">{navLabel.item(item.key)}</span>
+                    {item.key === 'price-review' ? <PriceReviewBadge /> : null}
+                  </>
+                )}
+              </NavLink>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+// ── Search results (unchanged row style — it already matched this direction) ──
 
 type SearchResultsProps = {
   moduleHits: AppModule[];
