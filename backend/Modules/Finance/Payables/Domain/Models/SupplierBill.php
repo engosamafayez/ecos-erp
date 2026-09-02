@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use Modules\Finance\Ledger\Domain\Models\Account;
 use Modules\Finance\Ledger\Domain\Models\JournalEntry;
 use Modules\Finance\Payables\Domain\Enums\SupplierDocumentType;
+use Modules\Finance\Payables\Domain\Enums\SupplierLedgerEntryType;
 use Modules\Finance\Shared\Domain\Enums\DocumentStatus;
 
 /**
@@ -111,7 +112,20 @@ class SupplierBill extends Model
 
     public function allocatedAmount(): float
     {
-        return round((float) $this->allocations()->sum('amount'), 4);
+        $fromAllocations = (float) $this->allocations()->sum('amount');
+
+        // Advance settlement (SupplierOpeningBalanceService::applyAdvanceToBill) mirrors this
+        // bill's AP reduction as a −ve ledger entry tagged to it, rather than a PaymentAllocation
+        // row (an advance is not a cash payment — see that method's docblock). Folding the tagged
+        // entries in here is what makes outstanding() reflect an advance settlement without
+        // either side needing to know about the other's bookkeeping.
+        $fromAdvances = (float) SupplierLedgerEntry::query()
+            ->where('source_type', 'advance_settlement')
+            ->where('source_id', $this->uuid)
+            ->where('entry_type', SupplierLedgerEntryType::Payment->value)
+            ->sum('amount');
+
+        return round($fromAllocations - $fromAdvances, 4);
     }
 
     /** What we still owe on this document — derived from payment allocations. */

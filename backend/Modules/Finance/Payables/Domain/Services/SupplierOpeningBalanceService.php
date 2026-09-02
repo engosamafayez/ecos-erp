@@ -184,34 +184,57 @@ final class SupplierOpeningBalanceService
      * advance. The ledger (the SSOT) reflects both; no PaymentAllocation is used (an advance is
      * not a cash payment). Reuses the canonical PostingCoordinator — no new engine.
      */
-    public function applyAdvanceToBill(SupplierBill $bill, float $amount, ?int $actorId = null): void
+    public function applyAdvanceToBill(SupplierBill $bill, float $amount, ?int $actorId = null): SupplierBill
     {
-        $this->assertPositive($amount);
+        if ($amount <= 0.0) {
+            throw FinanceException::allocationMustBePositive();
+        }
         $amount = round($amount, 4);
 
         if (! $bill->isPosted()) {
-            throw new RuntimeException('Cannot apply an advance to an unposted bill.');
+            throw FinanceException::documentNotPosted($bill->document_type->label(), $bill->number);
         }
 
         $companyId = (string) $bill->company_id;
         $supplierId = (string) $bill->supplier_id;
         $ledger = app(SupplierLedgerService::class);
 
-        $available = $ledger->availableAdvance($companyId, $supplierId);
-        if ($amount > round($available, 4)) {
-            throw new RuntimeException('Advance application ('.$amount.') exceeds the available advance ('.$available.').');
-        }
-
-        $payable = $ledger->outstandingPayable($companyId, $supplierId);
-        if ($amount > round($payable, 4)) {
-            throw new RuntimeException('Advance application ('.$amount.') exceeds the outstanding payable ('.$payable.').');
-        }
-
         $advances = $this->accountByCode($companyId, self::SUPPLIER_ADVANCES_CODE);
         $apControl = $this->control->payable($companyId);
         $eventId = 'advance_apply:'.$bill->uuid.':'.$amount;
 
-        DB::transaction(function () use ($companyId, $supplierId, $bill, $amount, $actorId, $advances, $apControl, $eventId): void {
+        return DB::transaction(function () use (
+            $companyId, $supplierId, $bill, $amount, $actorId, $advances, $apControl, $eventId, $ledger
+        ): SupplierBill {
+            // CONCURRENCY: availableAdvance() is a supplier-aggregate SUM over MANY
+            // finance_supplier_ledger_entries rows, not one row's own column — unlike
+            // AllocationEngine::allocatePayment (a single payment/bill row each own their sum),
+            // there is no single "advance" row to lock. Locking every existing ledger-entry row
+            // for this supplier FOR UPDATE — the same (company_id, supplier_id) equality predicate
+            // finance_sle_supplier_idx serves — takes MySQL's next-key gap lock over that range,
+            // so a second settlement for this supplier blocks (both on the existing rows and on
+            // inserting new ones into the same gap) until the first commits and its new rows are
+            // visible to the re-derived sum below. The bill is locked next (source before
+            // document, mirroring the approved AllocationEngine fix) so two settlements racing on
+            // the SAME bill can't both see its pre-settlement outstanding.
+            SupplierLedgerEntry::query()
+                ->where('company_id', $companyId)
+                ->where('supplier_id', $supplierId)
+                ->lockForUpdate()
+                ->get();
+
+            $bill = SupplierBill::query()->whereKey($bill->id)->lockForUpdate()->firstOrFail();
+
+            $available = $ledger->availableAdvance($companyId, $supplierId);
+            if ($amount > round($available, 4)) {
+                throw FinanceException::allocationExceedsSource('advance', (string) round($available, 4));
+            }
+
+            $outstanding = $bill->outstanding();
+            if ($amount > round($outstanding, 4)) {
+                throw FinanceException::allocationExceedsDocument($bill->document_type->label().' '.$bill->number, (string) round($outstanding, 4));
+            }
+
             $journal = $this->coordinator->post(
                 self::SOURCE_MODULE,
                 $eventId,
@@ -233,7 +256,9 @@ final class SupplierOpeningBalanceService
                 $actorId,
             );
 
-            // Mirror both GL legs on the supplier subledger (the SSOT).
+            // Mirror both GL legs on the supplier subledger (the SSOT). The Payment-typed leg is
+            // also how SupplierBill::allocatedAmount() recognises this settlement — tagged to
+            // this bill by source_type/source_id, the same pair used to look it up from there.
             SupplierLedgerEntry::create([
                 'company_id' => $companyId,
                 'supplier_id' => $supplierId,
@@ -257,6 +282,8 @@ final class SupplierOpeningBalanceService
                 'journal_entry_id' => $journal->id,
                 'description' => 'Advance consumed on bill '.$bill->number,
             ]);
+
+            return $bill;
         });
     }
 
