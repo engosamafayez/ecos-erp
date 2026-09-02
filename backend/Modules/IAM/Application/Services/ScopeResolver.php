@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\IAM\Domain\Contracts\PermissionServiceInterface;
 use Modules\IAM\Domain\Contracts\ScopeResolverInterface;
 use Modules\IAM\Domain\Enums\DataScope;
+use Modules\IAM\Domain\Models\Role;
 use Modules\IAM\Domain\ValueObjects\ScopeConstraint;
 
 /**
@@ -22,6 +23,10 @@ use Modules\IAM\Domain\ValueObjects\ScopeConstraint;
  * with no explicit narrow grant resolves to ALL → unrestricted → identical to today.
  * Narrow scopes deny-by-default when they cannot be resolved (secure), but this only
  * affects queries a module has explicitly opted into via `scopedTo()`.
+ *
+ * TASK-ECOS-IAM-SECURE-ADMIN-API-002, Security Gate B: see VisibilityResolver's class
+ * docblock — `rbac.scope.*` uses the identical per-user resource-index invalidation
+ * strategy, for the identical reason (keyed per (user, resource), not enumerable otherwise).
  */
 final class ScopeResolver implements ScopeResolverInterface
 {
@@ -56,7 +61,8 @@ final class ScopeResolver implements ScopeResolverInterface
      */
     private function widestScopeFor(User $user, string $resource): array
     {
-        $key = "rbac.scope.{$user->getKey()}.{$resource}";
+        $userId = (int) $user->getKey();
+        $key = "rbac.scope.{$userId}.{$resource}";
 
         /** @var array{scope: string, descriptor: ?string} $row */
         $row = Cache::remember($key, self::CACHE_TTL, function () use ($user, $resource): array {
@@ -88,12 +94,45 @@ final class ScopeResolver implements ScopeResolverInterface
             return ['scope' => $best ?? DataScope::ALL->value, 'descriptor' => $bestDescriptor];
         });
 
+        $this->trackCachedResource($userId, $resource);
+
         $scope = DataScope::tryFrom($row['scope']) ?? DataScope::ALL;
         $descriptor = is_string($row['descriptor'] ?? null)
             ? (array) json_decode((string) $row['descriptor'], true)
             : [];
 
         return [$scope, $descriptor];
+    }
+
+    public function invalidateUserCache(int $userId): void
+    {
+        $indexKey = "rbac.scope.{$userId}.index";
+
+        /** @var list<string> $resources */
+        $resources = Cache::get($indexKey, []);
+        foreach ($resources as $resource) {
+            Cache::forget("rbac.scope.{$userId}.{$resource}");
+        }
+        Cache::forget($indexKey);
+    }
+
+    public function invalidateRoleCache(Role $role): void
+    {
+        $role->users()->select('users.id')->each(
+            fn (User $user) => $this->invalidateUserCache((int) $user->getKey()),
+        );
+    }
+
+    private function trackCachedResource(int $userId, string $resource): void
+    {
+        $indexKey = "rbac.scope.{$userId}.index";
+
+        /** @var list<string> $known */
+        $known = Cache::get($indexKey, []);
+        if (! in_array($resource, $known, true)) {
+            $known[] = $resource;
+            Cache::put($indexKey, $known, self::CACHE_TTL);
+        }
     }
 
     /**

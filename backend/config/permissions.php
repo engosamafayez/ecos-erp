@@ -21,8 +21,17 @@ return [
     'modules' => [
 
         'iam' => [
-            'users' => ['view', 'create', 'update', 'delete', 'activate', 'suspend', 'assign-role', 'assign-org', 'invite', 'reset-password', 'manage-sessions'],
+            // archive/restore/deactivate/lock/unlock/revoke-role added by
+            // TASK-ECOS-IAM-SECURE-ADMIN-API-002, D4 (CTO-ratified) — the domain operations
+            // already existed in UserLifecycleService/UserRoleAssignmentService; only the
+            // catalog rows and HTTP gating were missing.
+            'users' => ['view', 'create', 'update', 'delete', 'activate', 'suspend', 'archive', 'restore', 'deactivate', 'lock', 'unlock', 'assign-role', 'revoke-role', 'assign-org', 'invite', 'reset-password', 'manage-sessions'],
             'roles' => ['view', 'create', 'update', 'delete', 'assign'],
+            // Added by TASK-ECOS-IAM-SECURE-ADMIN-API-002 to gate the Role Template API (§14)
+            // and the read-only Permission catalog API (§13) — both required Task 2 scope with
+            // no existing permission to gate them against.
+            'role-templates' => ['view', 'create', 'update', 'delete'],
+            'permissions' => ['view'],
         ],
 
         'organization' => [
@@ -201,8 +210,10 @@ return [
     'role_permissions' => [
 
         'company-admin' => [
-            'iam.users' => ['view', 'create', 'update', 'delete', 'activate', 'suspend', 'assign-role', 'assign-org', 'invite', 'reset-password', 'manage-sessions'],
+            'iam.users' => ['view', 'create', 'update', 'delete', 'activate', 'suspend', 'archive', 'restore', 'deactivate', 'lock', 'unlock', 'assign-role', 'revoke-role', 'assign-org', 'invite', 'reset-password', 'manage-sessions'],
             'iam.roles' => ['view', 'assign'],
+            'iam.role-templates' => ['view', 'create', 'update', 'delete'],
+            'iam.permissions' => ['view'],
             'organization.companies' => ['view', 'create', 'update'],
             'organization.branches' => ['view', 'create', 'update', 'delete'],
             'inventory.warehouses' => ['view', 'create', 'update', 'delete'],

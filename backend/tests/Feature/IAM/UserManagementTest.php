@@ -39,7 +39,10 @@ class UserManagementTest extends TestCase
 
     private function draft(string $email = 'jane@ecos.test', array $extra = []): User
     {
-        return $this->identity()->createDraft(array_merge(['name' => 'Jane', 'email' => $email], $extra));
+        $companyId = $extra['company_id'] ?? (string) \Illuminate\Support\Str::uuid();
+        unset($extra['company_id']);
+
+        return $this->identity()->createDraft(array_merge(['name' => 'Jane', 'email' => $email], $extra), $companyId);
     }
 
     private function customTemplate(string $key, array $definition): RoleTemplate

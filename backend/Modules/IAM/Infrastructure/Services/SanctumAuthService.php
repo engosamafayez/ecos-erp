@@ -16,12 +16,24 @@ use Modules\IAM\Domain\Contracts\AuthServiceInterface;
  */
 final class SanctumAuthService implements AuthServiceInterface
 {
+    private ?int $lastTokenId = null;
+
     public function attemptCredentials(string $email, string $password): ?User
     {
         /** @var User|null $user */
         $user = User::query()->where('email', $email)->first();
 
         if ($user === null || ! Hash::check($password, (string) $user->password)) {
+            return null;
+        }
+
+        // D7 (TASK-ECOS-IAM-SECURE-ADMIN-API-002, CTO-ratified): valid credentials alone are
+        // insufficient — the canonical lifecycle status gates authentication itself, using the
+        // existing UserStatus::canAuthenticate() authority (previously defined, never called).
+        // Returns null uniformly with the wrong-password case rather than a distinct exception,
+        // deliberately: the login endpoint must not tell an unauthenticated caller whether an
+        // account exists, or what state it's in.
+        if (! $user->statusEnum()->canAuthenticate()) {
             return null;
         }
 
@@ -33,7 +45,10 @@ final class SanctumAuthService implements AuthServiceInterface
         // "Remember me" tokens are long-lived; otherwise expire after a day.
         $expiresAt = $remember ? null : now()->addDay();
 
-        return $user->createToken('auth', ['*'], $expiresAt)->plainTextToken;
+        $newToken = $user->createToken('auth', ['*'], $expiresAt);
+        $this->lastTokenId = (int) $newToken->accessToken->getKey();
+
+        return $newToken->plainTextToken;
     }
 
     public function revokeCurrentToken(User $user): void
@@ -43,5 +58,10 @@ final class SanctumAuthService implements AuthServiceInterface
         if ($token instanceof PersonalAccessToken) {
             $token->delete();
         }
+    }
+
+    public function lastIssuedTokenId(): ?int
+    {
+        return $this->lastTokenId;
     }
 }

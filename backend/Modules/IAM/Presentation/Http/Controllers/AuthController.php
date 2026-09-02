@@ -28,7 +28,7 @@ final class AuthController extends Controller
         /** @var array{email: string, password: string, remember?: bool} $data */
         $data = $request->validated();
 
-        $result = $action->execute(LoginDTO::fromArray($data));
+        $result = $action->execute(LoginDTO::fromArray($data), $request->ip(), $request->userAgent());
 
         return $this->success($result->data(), $result->message());
     }

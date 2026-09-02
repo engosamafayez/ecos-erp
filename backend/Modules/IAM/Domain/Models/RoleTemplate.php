@@ -27,6 +27,7 @@ use Modules\IAM\Domain\ValueObjects\EffectiveRoleProfile;
  * @property bool $is_composable
  * @property array $definition
  * @property ?string $role_id
+ * @property ?string $company_id
  */
 class RoleTemplate extends Model
 {
@@ -40,7 +41,7 @@ class RoleTemplate extends Model
 
     protected $fillable = [
         'key', 'name', 'description', 'category', 'status', 'version',
-        'is_system', 'is_composable', 'definition', 'role_id',
+        'is_system', 'is_composable', 'definition', 'role_id', 'company_id',
         'created_by', 'updated_by', 'published_at',
     ];
 
@@ -51,6 +52,17 @@ class RoleTemplate extends Model
         'definition' => 'array',
         'published_at' => 'datetime',
     ];
+
+    /**
+     * Route-model-binding resolves by the readable, unique `key` (e.g. 'warehouse-clerk')
+     * rather than the opaque UUID primary key — added for the Role Template Admin API
+     * (TASK-ECOS-IAM-SECURE-ADMIN-API-002, §14): `key` is already the canonical lookup used
+     * throughout this module (findByKey()), so /iam/role-templates/{key} matches it directly.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'key';
+    }
 
     public function versions(): HasMany
     {
@@ -76,6 +88,16 @@ class RoleTemplate extends Model
     public function isImmutable(): bool
     {
         return $this->is_system;
+    }
+
+    /**
+     * D11 (TASK-ECOS-IAM-SECURE-ADMIN-API-002, CTO-ratified): system templates are global
+     * (company_id null, portable "official ECOS job profiles" per ADR-039); custom templates
+     * are tenant/company-scoped by construction — createCustom() always sets company_id.
+     */
+    public function isCompanyScoped(): bool
+    {
+        return ! $this->is_system;
     }
 
     /** The declarative profile as an immutable value object. */

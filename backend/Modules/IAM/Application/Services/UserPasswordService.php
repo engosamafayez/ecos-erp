@@ -7,6 +7,7 @@ namespace Modules\IAM\Application\Services;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
+use Modules\IAM\Domain\Exceptions\UserSecurityRuleException;
 
 /**
  * Administrator password reset (TASK-IAM-PASSWORD-RESET-DOMAIN-OPERATION-001).
@@ -68,6 +69,14 @@ class UserPasswordService
         // TenantOwnershipResolver. Throws before any mutation, so a denied reset leaves the
         // target completely untouched.
         Gate::authorize('resetPassword', $target);
+
+        // D1 (TASK-ECOS-IAM-SECURE-ADMIN-API-002, CTO-ratified): a lifecycle-state gate, evaluated
+        // AFTER authorization (matching the existing order-matters-only-for-clarity convention
+        // above) and BEFORE any mutation. Archived/Deleted are rejected outright — restore is a
+        // separate, explicit, audited operation; this method must never perform it implicitly.
+        if (! $target->statusEnum()->allowsAdminPasswordReset()) {
+            throw UserSecurityRuleException::cannotResetPasswordInStatus($target->statusEnum());
+        }
 
         // The `password` cast is `hashed`, which skips values that are already hashed, so this
         // is the same single-hash path `UserInvitationService` and `UserIdentityService` use.

@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Modules\IAM\Application\Services;
 
 use Illuminate\Support\Facades\DB;
+use Modules\IAM\Domain\Contracts\PermissionServiceInterface;
+use Modules\IAM\Domain\Contracts\ScopeResolverInterface;
+use Modules\IAM\Domain\Contracts\VisibilityResolverInterface;
 use Modules\IAM\Domain\Exceptions\UnknownTemplatePermissionException;
 use Modules\IAM\Domain\Models\Permission;
 use Modules\IAM\Domain\Models\Role;
@@ -16,12 +19,23 @@ use Modules\IAM\Domain\Models\RoleTemplate;
  * role_templates.role_id, so the Authorization Platform keeps reading roles unchanged.
  *
  * Idempotent: re-compiling re-syncs the linked role's grants from the current definition.
+ *
+ * TASK-ECOS-IAM-SECURE-ADMIN-API-002, Security Gate B: compile() can change role_permissions
+ * for a role many users share (every holder of the compiled tpl-* role), so it now invalidates
+ * all three effective-authorization caches (permission, visibility, scope) for every current
+ * holder — not just the one user who triggered the compile, which is all the previous call
+ * sites did. Also now leaves an audit trail (§18) — compile() previously wrote a security-
+ * sensitive change (role_permissions) with no record of who or when.
  */
 class RoleTemplateCompiler
 {
     public function __construct(
         private readonly RoleCompositionService $composition,
         private readonly PermissionExpander $expander,
+        private readonly PermissionServiceInterface $permissions,
+        private readonly VisibilityResolverInterface $visibility,
+        private readonly ScopeResolverInterface $scope,
+        private readonly RoleTemplateAuditService $audit,
     ) {}
 
     /** Ensure the template has a linked runtime role whose grants match its profile. */
@@ -76,6 +90,16 @@ class RoleTemplateCompiler
 
         // The compiled role is fully owned by the template — sync (replace) its grants.
         $role->permissions()->sync($pivot);
+
+        // Security Gate B: a role-wide grant change must not leave any current holder's
+        // effective authorization state stale indefinitely. invalidateRoleCache() walks every
+        // user currently holding $role — not just whichever single user's assignment triggered
+        // this compile — across all three cache families.
+        $this->permissions->invalidateRoleCache($role);
+        $this->visibility->invalidateRoleCache($role);
+        $this->scope->invalidateRoleCache($role);
+
+        $this->audit->logTemplate('compiled', $template, [], ['role_id' => $role->getKey(), 'permission_count' => count($pivot)]);
 
         return $role;
     }

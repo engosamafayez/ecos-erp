@@ -19,7 +19,16 @@ class UserLifecycleService
         private readonly UserAuditService $audit,
     ) {}
 
-    public function transition(User $user, UserStatus $to, ?User $actor = null, ?string $reason = null): User
+    /**
+     * @param  bool  $bypassTransitionMap  Narrow, explicit escape hatch for restore() only
+     *                                      (TASK-ECOS-IAM-SECURE-ADMIN-API-002, STOP 5 fix).
+     *                                      DELETED has no outbound transitions in the map —
+     *                                      terminal by design for every other caller — but a
+     *                                      user actually un-trashed via Eloquent SoftDeletes is
+     *                                      the one legitimate case that must still reach ACTIVE.
+     *                                      No caller other than restore() ever sets this true.
+     */
+    public function transition(User $user, UserStatus $to, ?User $actor = null, ?string $reason = null, bool $bypassTransitionMap = false): User
     {
         $from = $user->statusEnum();
 
@@ -27,7 +36,7 @@ class UserLifecycleService
             return $user;
         }
 
-        if (! $from->canTransitionTo($to)) {
+        if (! $bypassTransitionMap && ! $from->canTransitionTo($to)) {
             throw InvalidUserTransitionException::between($from, $to);
         }
 
@@ -84,11 +93,13 @@ class UserLifecycleService
 
     public function restore(User $user, ?User $actor = null): User
     {
-        if ($user->trashed()) {
+        $wasTrashed = $user->trashed();
+
+        if ($wasTrashed) {
             $user->restore();
         }
 
-        return $this->transition($user, UserStatus::ACTIVE, $actor);
+        return $this->transition($user, UserStatus::ACTIVE, $actor, null, bypassTransitionMap: $wasTrashed);
     }
 
     public function softDelete(User $user, ?User $actor = null, ?string $reason = null): User
