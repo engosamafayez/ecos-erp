@@ -8,6 +8,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Finance\Ledger\Domain\Enums\JournalType;
 use Modules\Finance\Ledger\Domain\Exceptions\FinanceException;
+use Modules\Finance\Ledger\Domain\Models\JournalEntry;
+use Modules\Finance\Ledger\Domain\Services\JournalEngine;
 use Modules\Finance\Ledger\Domain\ValueObjects\PostingLine;
 use Modules\Finance\Ledger\Domain\ValueObjects\PostingRequest;
 use Modules\Finance\Posting\Domain\Services\PostingCoordinator;
@@ -39,6 +41,7 @@ final class AccountsReceivableService
     public function __construct(
         private readonly PostingCoordinator $coordinator,
         private readonly ControlAccountResolver $controlAccounts,
+        private readonly JournalEngine $journalEngine,
     ) {}
 
     /**
@@ -252,6 +255,46 @@ final class AccountsReceivableService
             ]);
 
             return $receipt->refresh();
+        });
+    }
+
+    /**
+     * Reverse a posted receipt's journal AND its customer-ledger entry
+     * together, atomically — the AR mirror of AccountsPayableService::
+     * reversePaymentPosting() (TASK-ECOS-FINANCE-FULL-ACCOUNTING-
+     * RECONCILIATION-005). JournalEngine::reverse() is unchanged and remains
+     * the sole GL writer and sole reversal path — its existing allocation
+     * guard applies here unmodified. The compensating entry is a NEW,
+     * append-only, negative-amount CustomerLedgerEntry (same shape as the
+     * original, sign flipped); the original is never edited or deleted.
+     */
+    public function reverseReceiptPosting(CustomerReceipt $receipt, string $reason, ?int $actorId = null): JournalEntry
+    {
+        if ($receipt->journal_entry_id === null) {
+            throw FinanceException::documentNotPosted('Receipt', $receipt->number);
+        }
+
+        return DB::transaction(function () use ($receipt, $reason, $actorId): JournalEntry {
+            $journal = JournalEntry::query()->whereKey($receipt->journal_entry_id)->firstOrFail();
+            $reversalJournal = $this->journalEngine->reverse($journal, $reason, $actorId);
+
+            $original = CustomerLedgerEntry::query()->where('journal_entry_id', $journal->id)->first();
+
+            if ($original !== null) {
+                CustomerLedgerEntry::create([
+                    'company_id' => $original->company_id,
+                    'customer_id' => $original->customer_id,
+                    'entry_date' => Carbon::today(),
+                    'entry_type' => $original->entry_type->value,
+                    'amount' => round((float) $original->amount * -1, 4),
+                    'source_type' => 'ledger_entry_reversal',
+                    'source_id' => $original->uuid,
+                    'journal_entry_id' => $reversalJournal->id,
+                    'description' => 'Reversal of '.$original->description,
+                ]);
+            }
+
+            return $reversalJournal;
         });
     }
 

@@ -182,6 +182,33 @@ class SupplierPaymentController extends Controller
         ]], 201);
     }
 
+    /**
+     * Reverse a posted payment's journal AND its supplier-ledger entry
+     * together (TASK-ECOS-FINANCE-FULL-ACCOUNTING-RECONCILIATION-005) — the
+     * correct, complete path for reversing a payment. The generic
+     * `POST /finance/journals/{uuid}/reverse` still works unchanged for any
+     * journal (it is not restricted), but reversing a payment through it
+     * directly produces no compensating ledger entry; use this endpoint for
+     * a payment. The payment's own `status` column is intentionally left
+     * `posted` — whether its posting is still economically valid is read
+     * from the JOURNAL's own status, not overloaded onto the payment.
+     */
+    public function reversePosting(Request $request, string $uuid): JsonResponse
+    {
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        $payment = $this->find($request, $uuid);
+        $reversalJournal = $this->ap->reversePaymentPosting($payment, $validated['reason'], $this->actorId($request));
+
+        return response()->json(['data' => [
+            'reversal_journal_id' => $reversalJournal->uuid,
+            'reverses_journal_id' => $reversalJournal->reverses_journal_id,
+            'payment_id' => $payment->uuid,
+        ]], 201);
+    }
+
     // ── Internals ─────────────────────────────────────────────────────────────
 
     private function find(Request $request, string $uuid): SupplierPayment

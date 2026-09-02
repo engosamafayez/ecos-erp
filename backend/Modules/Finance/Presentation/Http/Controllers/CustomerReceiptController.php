@@ -227,6 +227,29 @@ class CustomerReceiptController extends Controller
             ->header('Idempotent-Replay', $result->wasReplayed ? 'true' : 'false');
     }
 
+    /**
+     * Reverse a posted receipt's journal AND its customer-ledger entry
+     * together (TASK-ECOS-FINANCE-FULL-ACCOUNTING-RECONCILIATION-005) — the
+     * AR mirror of SupplierPaymentController::reversePosting(). The generic
+     * journal-reversal endpoint still works unchanged for any journal; this
+     * is the correct, complete path specifically for a receipt.
+     */
+    public function reversePosting(Request $request, string $uuid): JsonResponse
+    {
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        $receipt = $this->find($request, $uuid);
+        $reversalJournal = $this->ar->reverseReceiptPosting($receipt, $validated['reason'], $this->actorId($request));
+
+        return response()->json(['data' => [
+            'reversal_journal_id' => $reversalJournal->uuid,
+            'reverses_journal_id' => $reversalJournal->reverses_journal_id,
+            'receipt_id' => $receipt->uuid,
+        ]], 201);
+    }
+
     // ── Internals ─────────────────────────────────────────────────────────────
 
     private function find(Request $request, string $uuid): CustomerReceipt

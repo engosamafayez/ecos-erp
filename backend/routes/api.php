@@ -2694,6 +2694,12 @@ Route::middleware('auth:sanctum')->prefix('finance')->group(function (): void {
             // one pending a separate ratification.
             Route::post('/{uuid}/allocations/{allocationUuid}/reverse', [FinanceCustomerReceiptController::class, 'reverseAllocation'])
                 ->middleware('permission:finance.allocation.manage');
+            // TASK-ECOS-FINANCE-FULL-ACCOUNTING-RECONCILIATION-005 — reverses
+            // the receipt's journal AND its customer-ledger entry together.
+            // Same checker authority as the generic journal-reversal endpoint,
+            // since this is fundamentally a journal reversal.
+            Route::post('/{uuid}/reverse-posting', [FinanceCustomerReceiptController::class, 'reversePosting'])
+                ->middleware('permission:finance.journal.post');
         });
         Route::post('/write-off', [FinanceCustomerReceiptController::class, 'writeOff'])
             ->middleware('permission:finance.ar.writeoff');
@@ -2740,6 +2746,12 @@ Route::middleware('auth:sanctum')->prefix('finance')->group(function (): void {
             // one pending a separate ratification.
             Route::post('/{uuid}/allocations/{allocationUuid}/reverse', [FinanceSupplierPaymentController::class, 'reverseAllocation'])
                 ->middleware('permission:finance.allocation.manage');
+            // TASK-ECOS-FINANCE-FULL-ACCOUNTING-RECONCILIATION-005 — reverses
+            // the payment's journal AND its supplier-ledger entry together.
+            // Same checker authority as the generic journal-reversal endpoint,
+            // since this is fundamentally a journal reversal.
+            Route::post('/{uuid}/reverse-posting', [FinanceSupplierPaymentController::class, 'reversePosting'])
+                ->middleware('permission:finance.journal.post');
         });
 
         // Invoice-anchored "Pay Supplier Invoice" — the canonical Finance use case

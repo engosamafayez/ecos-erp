@@ -8,6 +8,8 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Finance\Ledger\Domain\Enums\JournalType;
 use Modules\Finance\Ledger\Domain\Exceptions\FinanceException;
+use Modules\Finance\Ledger\Domain\Models\JournalEntry;
+use Modules\Finance\Ledger\Domain\Services\JournalEngine;
 use Modules\Finance\Ledger\Domain\ValueObjects\PostingLine;
 use Modules\Finance\Ledger\Domain\ValueObjects\PostingRequest;
 use Modules\Finance\Payables\Domain\Enums\PaymentStatus;
@@ -39,6 +41,7 @@ final class AccountsPayableService
         private readonly PostingCoordinator $coordinator,
         private readonly ControlAccountResolver $controlAccounts,
         private readonly FundingAccountPolicy $fundingAccounts,
+        private readonly JournalEngine $journalEngine,
     ) {}
 
     /**
@@ -278,6 +281,57 @@ final class AccountsPayableService
             ]);
 
             return $payment->refresh();
+        });
+    }
+
+    /**
+     * Reverse a posted payment's journal AND its supplier-ledger entry
+     * together, atomically — TASK-ECOS-FINANCE-FULL-ACCOUNTING-
+     * RECONCILIATION-005's closure of the gap Task 4 found: JournalEngine::
+     * reverse() (unchanged — still the sole GL writer and sole reversal
+     * path; its existing allocation guard applies here unmodified, since
+     * this calls that SAME method, not a second one) has no way to know a
+     * payment's ledger entry needs a compensating entry too, because
+     * SupplierLedgerEntry is this service's own table, not the ledger's.
+     * This method is the request-a-reversal counterpart to postPayment()
+     * requesting a posting: it never writes finance_journal_* itself.
+     *
+     * The compensating entry is a NEW, append-only, negative-amount
+     * SupplierLedgerEntry (same shape as the original, sign flipped),
+     * exactly like every other correction in this codebase — the original
+     * entry is never edited or deleted (its own booted() guard already
+     * forbids it). Generic journal reversal via JournalController::reverse()
+     * still works unchanged for any other journal; this is the additional,
+     * more specific path a payment reversal should use to get the ledger
+     * correction too.
+     */
+    public function reversePaymentPosting(SupplierPayment $payment, string $reason, ?int $actorId = null): JournalEntry
+    {
+        if ($payment->journal_entry_id === null) {
+            throw FinanceException::documentNotPosted('Payment', $payment->number);
+        }
+
+        return DB::transaction(function () use ($payment, $reason, $actorId): JournalEntry {
+            $journal = JournalEntry::query()->whereKey($payment->journal_entry_id)->firstOrFail();
+            $reversalJournal = $this->journalEngine->reverse($journal, $reason, $actorId);
+
+            $original = SupplierLedgerEntry::query()->where('journal_entry_id', $journal->id)->first();
+
+            if ($original !== null) {
+                SupplierLedgerEntry::create([
+                    'company_id' => $original->company_id,
+                    'supplier_id' => $original->supplier_id,
+                    'entry_date' => Carbon::today(),
+                    'entry_type' => $original->entry_type->value,
+                    'amount' => round((float) $original->amount * -1, 4),
+                    'source_type' => 'ledger_entry_reversal',
+                    'source_id' => $original->uuid,
+                    'journal_entry_id' => $reversalJournal->id,
+                    'description' => 'Reversal of '.$original->description,
+                ]);
+            }
+
+            return $reversalJournal;
         });
     }
 
