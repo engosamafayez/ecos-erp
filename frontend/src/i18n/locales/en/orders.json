@@ -298,7 +298,8 @@
   },
   "mobileCard": {
     "item": "item",
-    "items": "items"
+    "items": "items",
+    "hasNote": "Has note"
   },
   "table": {
     "selectAll": "Select all",

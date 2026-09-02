@@ -95,3 +95,36 @@ describe('OrderMobileCard — operational secondary context (no silent data loss
     expect(screen.getByText('cod')).toBeInTheDocument();
   });
 });
+
+// TASK-ECOS-MOBILE-DATA-COMPLETENESS-FINAL-CLOSURE-005 — desktop's single
+// "Inventory Execution" column actually carries TWO distinct signals
+// (customer-confirmation result AND reservation/stock-execution status);
+// Task 3 only wired the first. A silent "has customer note" indicator was
+// also missing entirely. Both are closed here by reusing the existing,
+// already-exported, read-only components/fields — no new status mapping.
+describe('OrderMobileCard — reservation-execution status and notes indicator (TASK-005)', () => {
+  it('shows the reservation/inventory-execution status when present, distinct from the confirmation-call result', () => {
+    render(
+      <OrderMobileCard
+        order={{ ...BASE, reservation_status: 'awaiting_stock', reservation_failure_reason: 'No stock' } as never as Order}
+        onView={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('reservationBadge.awaiting_stock')).toBeInTheDocument();
+  });
+
+  it('does not render a reservation badge when no reservation decision has been made yet', () => {
+    render(<OrderMobileCard order={BASE} onView={vi.fn()} />); // reservation_status is undefined on BASE
+    expect(screen.queryByText(/reservationBadge\./)).toBeNull();
+  });
+
+  it('shows a "has note" indicator when the order carries a customer or internal note', () => {
+    render(<OrderMobileCard order={{ ...BASE, customer_note: 'Leave at the door' } as never as Order} onView={vi.fn()} />);
+    expect(screen.getByText('mobileCard.hasNote')).toBeInTheDocument();
+  });
+
+  it('does not show the note indicator when there is no note', () => {
+    render(<OrderMobileCard order={BASE} onView={vi.fn()} />);
+    expect(screen.queryByText('mobileCard.hasNote')).toBeNull();
+  });
+});

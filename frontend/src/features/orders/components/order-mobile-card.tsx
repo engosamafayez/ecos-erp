@@ -1,10 +1,11 @@
-import { Calendar, Eye, MapPin, Phone, Wallet } from 'lucide-react';
+import { Calendar, Eye, FileText, MapPin, Phone, Wallet } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 import { OrderConfirmationBadge } from './order-confirmation-badge';
+import { OrderInventoryExecutionCell } from './order-inventory-execution-cell';
 import { OrderStatusBadge } from './order-status-badge';
 import type { Order } from '../types/order';
 
@@ -43,6 +44,18 @@ function formatMoney(n: number): string {
  *
  * Secondary tier (design report §9 — no silently-dropped operational context):
  * zone, payment method, reservation/confirmation status, delivery window.
+ *
+ * TASK-ECOS-MOBILE-DATA-COMPLETENESS-FINAL-CLOSURE-005: desktop's single
+ * "Inventory Execution" column actually stacks TWO distinct signals —
+ * `OrderConfirmationBadge` (customer-confirmation call result) AND
+ * `OrderInventoryExecutionCell` (`reservation_status`/`reservation_failure_reason`
+ * — whether the order's stock is actually reserved, partially reserved, or
+ * awaiting/failed). Task 3 added only the first; the reservation-execution
+ * signal was silently missing on mobile even though desktop always shows it.
+ * Reusing the same exported, read-only cell closes that gap without a second
+ * status-mapping. A compact "has notes" indicator was added for the same
+ * reason — desktop always shows the Customer Notes column; mobile had no
+ * presence signal for it at all, only the full text buried in the detail page.
  */
 export function OrderMobileCard({
   order,
@@ -56,8 +69,10 @@ export function OrderMobileCard({
   const remaining = order.remaining_balance ?? order.grand_total - (order.deposit_paid ?? 0);
   const paymentMethod = order.payment_method_manual ?? order.payment_method;
   const deliveryDate = order.requested_delivery_date;
+  const hasNote = Boolean(order.customer_note || order.notes);
   const hasSecondary = Boolean(
-    order.delivery_zone || order.governorate || paymentMethod || deliveryDate || order.confirmation_result,
+    order.delivery_zone || order.governorate || paymentMethod || deliveryDate
+    || order.confirmation_result || order.reservation_status || hasNote,
   );
 
   return (
@@ -146,6 +161,18 @@ export function OrderMobileCard({
               </span>
             ) : null}
             {order.confirmation_result ? <OrderConfirmationBadge order={order} /> : null}
+            {order.reservation_status ? (
+              <OrderInventoryExecutionCell
+                reservationStatus={order.reservation_status}
+                failureReason={order.reservation_failure_reason}
+              />
+            ) : null}
+            {hasNote ? (
+              <span className="inline-flex items-center gap-1" title={t($ => $.mobileCard.hasNote)}>
+                <FileText className="size-3 shrink-0" aria-hidden />
+                <span>{t($ => $.mobileCard.hasNote)}</span>
+              </span>
+            ) : null}
           </div>
         ) : null}
       </button>

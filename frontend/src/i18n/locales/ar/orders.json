@@ -298,7 +298,8 @@
   },
   "mobileCard": {
     "item": "عنصر",
-    "items": "عناصر"
+    "items": "عناصر",
+    "hasNote": "توجد ملاحظة"
   },
   "table": {
     "selectAll": "تحديد الكل",
