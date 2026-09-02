@@ -91,6 +91,13 @@ class FinanceException extends RuntimeException
         return new self('Only a posted journal can be reversed.');
     }
 
+    public static function reversalBlockedByActiveAllocations(string $kind, string $effectiveAmount): self
+    {
+        return new self(
+            "This journal cannot be reversed while {$effectiveAmount} remains actively allocated against the {$kind}. Reverse the allocation(s) first."
+        );
+    }
+
     // ── Period control ───────────────────────────────────────────────────────────
 
     public static function periodNotOpen(string $period, string $status): self

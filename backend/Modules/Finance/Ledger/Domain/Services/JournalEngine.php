@@ -14,6 +14,8 @@ use Modules\Finance\Ledger\Domain\Models\Account;
 use Modules\Finance\Ledger\Domain\Models\JournalEntry;
 use Modules\Finance\Ledger\Domain\ValueObjects\PostingLine;
 use Modules\Finance\Ledger\Domain\ValueObjects\PostingRequest;
+use Modules\Finance\Payables\Domain\Models\SupplierPayment;
+use Modules\Finance\Receivables\Domain\Models\CustomerReceipt;
 
 /**
  * The Journal Engine — the ONE and ONLY writer of the general ledger.
@@ -151,6 +153,10 @@ class JournalEngine
         $period = $this->assertOpenPeriod($entry->company_id, $today);
 
         return DB::transaction(function () use ($entry, $reason, $actorId, $period, $today) {
+            // Re-checked here, inside the transaction, so it reads the latest
+            // committed allocation state rather than a pre-transaction snapshot.
+            $this->assertNoActiveSubledgerAllocations($entry);
+
             $reversal = JournalEntry::create([
                 'company_id' => $entry->company_id,
                 'fiscal_period_id' => $period->id,
@@ -301,5 +307,44 @@ class JournalEngine
         }
 
         return $period;
+    }
+
+    /**
+     * A payment/receipt-sourced journal must not be reversed while its
+     * allocations remain economically active — reversing the GL leg while the
+     * subledger still records it as settling specific bills/invoices would
+     * make the ledger and the subledger disagree (TASK-ECOS-FINANCE-
+     * AP-AR-GL-WIRING-003 §10-11). "Active" means the EFFECTIVE allocated
+     * amount — SupplierPayment/CustomerReceipt::allocatedAmount(), the same
+     * plain SUM(amount) the subledger itself already reports, which a
+     * negative contra-allocation already nets down to zero when fully
+     * reversed. Not a row count. Identified via the journal's own
+     * source_module/source_event_id (the existing 'payment:'/'receipt:'
+     * convention AccountsPayableService::postPayment()/
+     * AccountsReceivableService::postReceipt() already write) — no new
+     * source-linkage column, no fragile string-name guess. Every other
+     * source_module (manual journals, POS, VAT, …) is untouched.
+     */
+    private function assertNoActiveSubledgerAllocations(JournalEntry $entry): void
+    {
+        $eventId = (string) $entry->source_event_id;
+
+        if ($entry->source_module === 'finance.ap' && str_starts_with($eventId, 'payment:')) {
+            $payment = SupplierPayment::query()->where('uuid', substr($eventId, strlen('payment:')))->first();
+            $effective = $payment?->allocatedAmount() ?? 0.0;
+
+            if ($effective > 0.0) {
+                throw FinanceException::reversalBlockedByActiveAllocations('supplier payment', (string) $effective);
+            }
+        }
+
+        if ($entry->source_module === 'finance.ar' && str_starts_with($eventId, 'receipt:')) {
+            $receipt = CustomerReceipt::query()->where('uuid', substr($eventId, strlen('receipt:')))->first();
+            $effective = $receipt?->allocatedAmount() ?? 0.0;
+
+            if ($effective > 0.0) {
+                throw FinanceException::reversalBlockedByActiveAllocations('customer receipt', (string) $effective);
+            }
+        }
     }
 }

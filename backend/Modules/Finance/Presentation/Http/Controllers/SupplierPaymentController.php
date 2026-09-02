@@ -9,10 +9,12 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Carbon;
 use Modules\Finance\Allocation\Domain\Services\AllocationEngine;
+use Modules\Finance\Payables\Domain\Models\PaymentAllocation;
 use Modules\Finance\Payables\Domain\Models\SupplierBill;
 use Modules\Finance\Payables\Domain\Models\SupplierPayment;
 use Modules\Finance\Payables\Domain\Services\AccountsPayableService;
 use Modules\Finance\Presentation\Http\Controllers\Concerns\ResolvesFinanceContext;
+use Modules\Finance\Shared\Domain\Services\CommandIdempotencyGuard;
 
 /**
  * Supplier payments (money out): create (maker) → approve (checker) → post →
@@ -26,6 +28,7 @@ class SupplierPaymentController extends Controller
     public function __construct(
         private readonly AccountsPayableService $ap,
         private readonly AllocationEngine $allocations,
+        private readonly CommandIdempotencyGuard $idempotency,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -41,6 +44,14 @@ class SupplierPaymentController extends Controller
         return response()->json(['data' => $payments]);
     }
 
+    /**
+     * Maker: create a draft payment. An `Idempotency-Key` header is honoured
+     * when present — same key + same payload replays the original result
+     * (200); same key + a materially different payload conflicts (422); no
+     * key runs uncoordinated, exactly as before this existed, so no existing
+     * caller breaks. Requiring the header is a deliberate future tightening,
+     * not made here (TASK-ECOS-FINANCE-AP-AR-GL-WIRING-003 §8).
+     */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -53,19 +64,33 @@ class SupplierPaymentController extends Controller
             'description' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $payment = $this->ap->createPayment(
-            companyId: $this->companyId($request),
-            supplierId: $validated['supplier_id'],
-            number: $validated['number'],
-            paymentDate: Carbon::parse($validated['payment_date']),
-            amount: (float) $validated['amount'],
-            fundingAccountId: $this->accountId($request, $validated['funding_account_id']),
-            currency: $validated['currency'] ?? 'EGP',
-            description: $validated['description'] ?? null,
-            createdBy: $this->actorId($request),
+        $companyId = $this->companyId($request);
+
+        $result = $this->idempotency->execute(
+            companyId: $companyId,
+            commandType: 'ap.payment.create',
+            idempotencyKey: $request->header('Idempotency-Key'),
+            payload: $validated,
+            command: fn () => $this->ap->createPayment(
+                companyId: $companyId,
+                supplierId: $validated['supplier_id'],
+                number: $validated['number'],
+                paymentDate: Carbon::parse($validated['payment_date']),
+                amount: (float) $validated['amount'],
+                fundingAccountId: $this->accountId($request, $validated['funding_account_id']),
+                currency: $validated['currency'] ?? 'EGP',
+                description: $validated['description'] ?? null,
+                createdBy: $this->actorId($request),
+            ),
+            actorId: $this->actorId($request),
         );
 
-        return response()->json(['data' => $this->payload($payment)], 201);
+        /** @var SupplierPayment $payment */
+        $payment = $result->result;
+
+        return response()
+            ->json(['data' => $this->payload($payment)], $result->wasReplayed ? 200 : 201)
+            ->header('Idempotent-Replay', $result->wasReplayed ? 'true' : 'false');
     }
 
     /** Checker: approve a draft payment (must differ from the maker). */
@@ -116,6 +141,47 @@ class SupplierPaymentController extends Controller
         ]]);
     }
 
+    /**
+     * Reverse part (or all) of a posted allocation with a new, append-only,
+     * negative contra-allocation — the original row is never edited or
+     * deleted. Full, partial, and repeated sequential partial reversal are
+     * all the same call with a smaller amount each time; the engine caps at
+     * whatever remains reversible on that specific original allocation.
+     * Scoped to THIS payment by construction (the allocation is looked up as
+     * a child of the already company-scoped payment, never by its uuid
+     * alone) — a foreign-company or cross-payment allocation id 404s here,
+     * it is never reachable to authorize against.
+     */
+    public function reverseAllocation(Request $request, string $uuid, string $allocationUuid): JsonResponse
+    {
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'gt:0'],
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        $payment = $this->find($request, $uuid);
+        $allocation = $this->findAllocation($payment, $allocationUuid);
+
+        $reversal = $this->allocations->reversePaymentAllocation(
+            $allocation,
+            (float) $validated['amount'],
+            $validated['reason'],
+            $this->actorId($request),
+        );
+
+        return response()->json(['data' => [
+            'id' => $reversal->uuid,
+            'reverses_allocation_id' => $allocation->uuid,
+            'payment_id' => $payment->uuid,
+            'supplier_bill_id' => $allocation->supplier_bill_id !== null
+                ? SupplierBill::query()->whereKey($allocation->supplier_bill_id)->value('uuid')
+                : null,
+            'amount' => (float) $reversal->amount,
+            'reason' => $reversal->reversal_reason,
+            'payment_unallocated' => $payment->fresh()->unallocatedAmount(),
+        ]], 201);
+    }
+
     // ── Internals ─────────────────────────────────────────────────────────────
 
     private function find(Request $request, string $uuid): SupplierPayment
@@ -123,6 +189,14 @@ class SupplierPaymentController extends Controller
         return SupplierPayment::query()
             ->where('company_id', $this->companyId($request))
             ->where('uuid', $uuid)
+            ->firstOrFail();
+    }
+
+    private function findAllocation(SupplierPayment $payment, string $allocationUuid): PaymentAllocation
+    {
+        return PaymentAllocation::query()
+            ->where('payment_id', $payment->id)
+            ->where('uuid', $allocationUuid)
             ->firstOrFail();
     }
 

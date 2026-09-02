@@ -2688,6 +2688,12 @@ Route::middleware('auth:sanctum')->prefix('finance')->group(function (): void {
                 ->middleware('permission:finance.allocation.manage');
             Route::post('/{uuid}/auto-allocate', [FinanceCustomerReceiptController::class, 'autoAllocate'])
                 ->middleware('permission:finance.allocation.manage');
+            // TASK-ECOS-FINANCE-AP-AR-GL-WIRING-003 — append-only contra-allocation.
+            // Same authority as allocate/auto-allocate above; reusing the existing
+            // permission per the CTO-approved architecture rather than minting a new
+            // one pending a separate ratification.
+            Route::post('/{uuid}/allocations/{allocationUuid}/reverse', [FinanceCustomerReceiptController::class, 'reverseAllocation'])
+                ->middleware('permission:finance.allocation.manage');
         });
         Route::post('/write-off', [FinanceCustomerReceiptController::class, 'writeOff'])
             ->middleware('permission:finance.ar.writeoff');
@@ -2727,6 +2733,12 @@ Route::middleware('auth:sanctum')->prefix('finance')->group(function (): void {
             Route::post('/{uuid}/allocate', [FinanceSupplierPaymentController::class, 'allocate'])
                 ->middleware('permission:finance.allocation.manage');
             Route::post('/{uuid}/auto-allocate', [FinanceSupplierPaymentController::class, 'autoAllocate'])
+                ->middleware('permission:finance.allocation.manage');
+            // TASK-ECOS-FINANCE-AP-AR-GL-WIRING-003 — append-only contra-allocation.
+            // Same authority as allocate/auto-allocate above; reusing the existing
+            // permission per the CTO-approved architecture rather than minting a new
+            // one pending a separate ratification.
+            Route::post('/{uuid}/allocations/{allocationUuid}/reverse', [FinanceSupplierPaymentController::class, 'reverseAllocation'])
                 ->middleware('permission:finance.allocation.manage');
         });
 
