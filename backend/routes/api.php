@@ -78,6 +78,7 @@ use Modules\Finance\Presentation\Http\Controllers\CfoWorkspaceController as Fina
 use Modules\Finance\Presentation\Http\Controllers\ClosingController as FinanceClosingController;
 use Modules\Finance\Presentation\Http\Controllers\ClosingWorkspaceController as FinanceClosingWorkspaceController;
 use Modules\Finance\Presentation\Http\Controllers\ControlReconciliationController as FinanceControlReconciliationController;
+use Modules\Finance\Presentation\Http\Controllers\CostAllocationController as FinanceCostAllocationController;
 use Modules\Finance\Presentation\Http\Controllers\CostCenterController as FinanceCostCenterController;
 use Modules\Finance\Presentation\Http\Controllers\CostIntelligenceController as FinanceCostIntelligenceController;
 use Modules\Finance\Presentation\Http\Controllers\CustomerInvoiceController as FinanceCustomerInvoiceController;
@@ -85,6 +86,8 @@ use Modules\Finance\Presentation\Http\Controllers\CustomerLedgerController as Fi
 use Modules\Finance\Presentation\Http\Controllers\CustomerReceiptController as FinanceCustomerReceiptController;
 use Modules\Finance\Presentation\Http\Controllers\ExecutiveReportingController as FinanceExecutiveReportingController;
 use Modules\Finance\Presentation\Http\Controllers\ExecutiveWorkspaceController as FinanceExecutiveWorkspaceController;
+use Modules\Finance\Presentation\Http\Controllers\ExpenseCategoryController as FinanceExpenseCategoryController;
+use Modules\Finance\Presentation\Http\Controllers\ExpenseController as FinanceExpenseController;
 use Modules\Finance\Presentation\Http\Controllers\FinancialAnalyticsController as FinanceFinancialAnalyticsController;
 use Modules\Finance\Presentation\Http\Controllers\FinancialControlsController as FinanceFinancialControlsController;
 use Modules\Finance\Presentation\Http\Controllers\FinancialIntelligenceController as FinanceFinancialIntelligenceController;
@@ -2773,6 +2776,40 @@ Route::middleware('auth:sanctum')->prefix('finance')->group(function (): void {
             Route::get('/suppliers/{supplierId}/statement', [FinanceSupplierLedgerController::class, 'statement']);
             Route::get('/suppliers/{supplierId}/balance', [FinanceSupplierLedgerController::class, 'balance']);
         });
+    });
+
+    // ── Expenses (TASK-ECOS-FINANCE-OPERATIONAL-COST-ACCOUNTING-007) ────────────
+    Route::prefix('expense-categories')->group(function (): void {
+        Route::get('/', [FinanceExpenseCategoryController::class, 'index'])
+            ->middleware('permission:finance.expense.view');
+        Route::post('/', [FinanceExpenseCategoryController::class, 'store'])
+            ->middleware('permission:finance.expense.category.manage');
+    });
+    Route::prefix('expenses')->group(function (): void {
+        Route::get('/', [FinanceExpenseController::class, 'index'])
+            ->middleware('permission:finance.expense.view');
+        Route::post('/', [FinanceExpenseController::class, 'store'])
+            ->middleware('permission:finance.expense.create');
+        // SEGREGATION OF DUTIES: approve is a DISTINCT authority from create —
+        // the exact finance.ap.payment.* pattern.
+        Route::patch('/{uuid}/approve', [FinanceExpenseController::class, 'approve'])
+            ->middleware('permission:finance.expense.approve');
+        Route::patch('/{uuid}/post', [FinanceExpenseController::class, 'post'])
+            ->middleware('permission:finance.expense.approve');
+        Route::post('/{uuid}/reverse-posting', [FinanceExpenseController::class, 'reversePosting'])
+            ->middleware('permission:finance.expense.approve');
+    });
+
+    // ── Cost Allocation (TASK-ECOS-FINANCE-OPERATIONAL-COST-ACCOUNTING-007) ─────
+    // A DIFFERENT authority from finance.allocation.manage (AP/AR payment-to-
+    // document matching) — see CostAllocationService's own docblock.
+    Route::prefix('cost-allocations')->group(function (): void {
+        Route::get('/', [FinanceCostAllocationController::class, 'index'])
+            ->middleware('permission:finance.cost_allocation.view');
+        Route::post('/', [FinanceCostAllocationController::class, 'store'])
+            ->middleware('permission:finance.cost_allocation.manage');
+        Route::post('/{uuid}/reverse', [FinanceCostAllocationController::class, 'reverse'])
+            ->middleware('permission:finance.cost_allocation.manage');
     });
 
     // ── Control-account reconciliation (subledger ↔ GL integrity proof) ─────────

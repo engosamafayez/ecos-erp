@@ -233,6 +233,21 @@ class FinanceException extends RuntimeException
         return new self('The person who created a payment may not approve it. Segregation of duties requires a second person.');
     }
 
+    public static function expenseNotApproved(string $number): self
+    {
+        return new self("Expense {$number} must be approved before it can be posted. Money leaving the business needs a second person.");
+    }
+
+    public static function expenseAlreadyApproved(string $number): self
+    {
+        return new self("Expense {$number} is already approved.");
+    }
+
+    public static function expenseApproverCannotBeMaker(): self
+    {
+        return new self('The person who created an expense may not approve it. Segregation of duties requires a second person.');
+    }
+
     public static function cashSessionAlreadyOpen(string $account): self
     {
         return new self("Cash account {$account} already has an open session. Close it before opening another.");

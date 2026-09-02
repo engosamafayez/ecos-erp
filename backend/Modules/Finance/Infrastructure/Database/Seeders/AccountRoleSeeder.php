@@ -72,6 +72,13 @@ class AccountRoleSeeder extends Seeder
             // "Cash in Transit" (1130) already existed for exactly this and is
             // reused rather than minting a new account code.
             'cod_clearing' => ['1130', 'Cash in Transit'],
+            // TASK-ECOS-FINANCE-OPERATIONAL-COST-ACCOUNTING-007: a driver's net
+            // financial position (advances owed BY them, netted against
+            // approved expense reimbursements/shortages owed TO them) — a
+            // swing account by design, the same "due to/from" pattern many
+            // charts use for employee balances rather than a separate asset
+            // and liability account for the same underlying party.
+            'driver_receivable' => ['1320', 'Employee Receivables'],
             'vat_input' => ['1530', 'VAT Receivable (Input)'],
             'ar_control' => ['1310', 'Trade Receivables — control, subledger receivables'],
 
@@ -93,6 +100,15 @@ class AccountRoleSeeder extends Seeder
             'sales_discount' => ['4220', 'Sales Discounts'],
             'coupon_expense' => ['4230', 'Coupon Redemptions — contra-revenue, debit normal'],
             'inventory_adjustment_gain' => ['4920', 'Inventory Gain'],
+            // TASK-ECOS-FINANCE-OPERATIONAL-COST-ACCOUNTING-007: an APPROVED
+            // driver shortage recovery. Chosen deliberately over crediting back
+            // 5170 Inventory Loss: this task found no confirmed evidence that
+            // the originating waste/damage record itself already posts to
+            // Finance as an inventory loss, so netting against it would risk
+            // relieving an expense that was never recognised. If a future task
+            // confirms that linkage, this role should be revisited to net
+            // against 5170 instead of recognising fresh other income.
+            'driver_shortage_recovery' => ['4910', 'Other Income'],
 
             // ── Cost of sales ────────────────────────────────────────────────
             // TASK-ECOS-FINANCE-COMMERCIAL-ACCOUNTING-006: COGS on commercial

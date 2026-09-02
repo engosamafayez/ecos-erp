@@ -21,10 +21,13 @@ use Modules\Finance\Closing\Domain\Services\PeriodClosingService;
 use Modules\Finance\Closing\Domain\Services\YearEndClosingService;
 use Modules\Finance\Controls\Domain\Services\ControlExceptionService;
 use Modules\Finance\Controls\Domain\Services\FinancialValidationEngine;
+use Modules\Finance\CostAllocation\Domain\Services\CostAllocationService;
+use Modules\Finance\Expenses\Domain\Services\ExpenseService;
 use Modules\Finance\Fiscal\Domain\Services\FiscalCalendarService;
 use Modules\Finance\Integration\Application\Bridge\EventPostingCatalog;
 use Modules\Finance\Integration\Application\Bridge\EventPostingSubscriber;
 use Modules\Finance\Integration\Application\Listeners\PostCodCollectionOnCodCollected;
+use Modules\Finance\Integration\Application\Listeners\PostFleetCostOnVehicleCostPosted;
 use Modules\Finance\Integration\Application\Listeners\PostRevenueAndCogsOnOrderDelivered;
 use Modules\Finance\Integration\Application\Services\FinancialIntegrationService;
 use Modules\Finance\Integration\Domain\Services\AccountRoleResolver;
@@ -36,7 +39,9 @@ use Modules\Finance\Integration\Domain\Services\PostingRuleRegistry;
 use Modules\Finance\Integration\Domain\Services\PostingRuleResolver;
 use Modules\Finance\Integration\Domain\Services\PostingTraceService;
 use Modules\Finance\Integration\Domain\Services\RulePostingStrategy;
+use Modules\Finance\OperationalCost\Domain\Services\DriverFinanceService;
 use Modules\Logistics\Delivery\Domain\Events\CodCollected;
+use Modules\Logistics\Fleet\Domain\Events\VehicleCostPosted;
 use Modules\Operations\Fulfillment\Domain\Events\OrderDeliveredEvent;
 use Modules\Finance\Intelligence\Domain\Services\CashFlowIntelligenceService;
 use Modules\Finance\Intelligence\Domain\Services\CostIntelligenceService;
@@ -113,6 +118,14 @@ final class FinanceServiceProvider extends ServiceProvider
 
         // Allocation Engine (shared AR/AP matching).
         $this->app->singleton(AllocationEngine::class);
+
+        // ── TASK-ECOS-FINANCE-OPERATIONAL-COST-ACCOUNTING-007 ───────────────────
+        // Expenses: the canonical capture-and-posting path Task 5 found missing.
+        // Cost Allocation: a genuinely different engine from AllocationEngine
+        // above — management-dimension redistribution, never GL, never AP/AR.
+        $this->app->singleton(ExpenseService::class);
+        $this->app->singleton(CostAllocationService::class);
+        $this->app->singleton(DriverFinanceService::class);
 
         // Cash & Banking.
         $this->app->singleton(CashService::class);
@@ -242,6 +255,14 @@ final class FinanceServiceProvider extends ServiceProvider
 
         if (class_exists(CodCollected::class)) {
             Event::listen(CodCollected::class, PostCodCollectionOnCodCollected::class);
+        }
+
+        // TASK-ECOS-FINANCE-OPERATIONAL-COST-ACCOUNTING-007 — confirmed by
+        // this task's own research to have zero subscribers anywhere before
+        // now. FuelTransactionRecorded is deliberately NOT subscribed here —
+        // see PostFleetCostOnVehicleCostPosted's own docblock for why.
+        if (class_exists(VehicleCostPosted::class)) {
+            Event::listen(VehicleCostPosted::class, PostFleetCostOnVehicleCostPosted::class);
         }
     }
 }
