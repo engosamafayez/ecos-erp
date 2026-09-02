@@ -43,6 +43,16 @@ class ExpenseController extends Controller
     }
 
     /**
+     * TASK-ECOS-FINANCE-UX-REPORTING-CLOSURE-008 — the single-item read every
+     * other Finance resource already exposes (JournalController::show(),
+     * CustomerInvoiceController::show(), ...); Task 7 shipped only index().
+     */
+    public function show(Request $request, string $uuid): JsonResponse
+    {
+        return response()->json(['data' => $this->payload($this->find($request, $uuid))]);
+    }
+
+    /**
      * Maker: create a draft expense. An `Idempotency-Key` header is honoured
      * when present — the same replay/conflict contract as every other F3
      * creation endpoint (SupplierPaymentController::store(),

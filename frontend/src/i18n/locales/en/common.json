@@ -179,7 +179,9 @@
       "finance-treasury": "Cash & Banking",
       "finance-fiscal": "Fiscal Calendar & Closing",
       "finance-budgets": "Budgets",
-      "finance-tax": "Tax & VAT"
+      "finance-tax": "Tax & VAT",
+      "finance-expenses": "Expenses",
+      "finance-costing": "Costing & Profitability"
     },
     "groups": {
       "overview": "Overview",

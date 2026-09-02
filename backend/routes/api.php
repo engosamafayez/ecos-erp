@@ -80,6 +80,7 @@ use Modules\Finance\Presentation\Http\Controllers\ClosingWorkspaceController as 
 use Modules\Finance\Presentation\Http\Controllers\ControlReconciliationController as FinanceControlReconciliationController;
 use Modules\Finance\Presentation\Http\Controllers\CostAllocationController as FinanceCostAllocationController;
 use Modules\Finance\Presentation\Http\Controllers\CostCenterController as FinanceCostCenterController;
+use Modules\Finance\Presentation\Http\Controllers\DriverLedgerController as FinanceDriverLedgerController;
 use Modules\Finance\Presentation\Http\Controllers\CostIntelligenceController as FinanceCostIntelligenceController;
 use Modules\Finance\Presentation\Http\Controllers\CustomerInvoiceController as FinanceCustomerInvoiceController;
 use Modules\Finance\Presentation\Http\Controllers\CustomerLedgerController as FinanceCustomerLedgerController;
@@ -2788,6 +2789,8 @@ Route::middleware('auth:sanctum')->prefix('finance')->group(function (): void {
     Route::prefix('expenses')->group(function (): void {
         Route::get('/', [FinanceExpenseController::class, 'index'])
             ->middleware('permission:finance.expense.view');
+        Route::get('/{uuid}', [FinanceExpenseController::class, 'show'])
+            ->middleware('permission:finance.expense.view');
         Route::post('/', [FinanceExpenseController::class, 'store'])
             ->middleware('permission:finance.expense.create');
         // SEGREGATION OF DUTIES: approve is a DISTINCT authority from create —
@@ -2810,6 +2813,12 @@ Route::middleware('auth:sanctum')->prefix('finance')->group(function (): void {
             ->middleware('permission:finance.cost_allocation.manage');
         Route::post('/{uuid}/reverse', [FinanceCostAllocationController::class, 'reverse'])
             ->middleware('permission:finance.cost_allocation.manage');
+    });
+
+    // ── Driver financial subledger (TASK-ECOS-FINANCE-UX-REPORTING-CLOSURE-008) ─
+    Route::prefix('drivers')->middleware('permission:finance.driver.view')->group(function (): void {
+        Route::get('/{driverId}/ledger', [FinanceDriverLedgerController::class, 'history']);
+        Route::get('/{driverId}/balance', [FinanceDriverLedgerController::class, 'balance']);
     });
 
     // ── Control-account reconciliation (subledger ↔ GL integrity proof) ─────────

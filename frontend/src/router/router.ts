@@ -24,6 +24,8 @@ import { AccountsPayablePage } from '@/features/finance/pages/accounts-payable-p
 import { CashBankingPage } from '@/features/finance/pages/cash-banking-page';
 import { FiscalClosingPage } from '@/features/finance/pages/fiscal-closing-page';
 import { BudgetsPage } from '@/features/finance/pages/budgets-page';
+import { CostingProfitabilityPage } from '@/features/finance/pages/costing-profitability-page';
+import { ExpensesPage } from '@/features/finance/pages/expenses-page';
 import { TaxVatPage } from '@/features/finance/pages/tax-vat-page';
 import { HomePage } from '@/features/home/pages/home-page';
 import { PackagingMaterialsPage } from '@/features/inventory/pages/packaging-materials-page';
@@ -248,6 +250,8 @@ export const router = createBrowserRouter(
             { path: ROUTES.financeFiscalClosing, Component: FiscalClosingPage },
             { path: ROUTES.financeBudgets, Component: BudgetsPage },
             { path: ROUTES.financeTaxVat, Component: TaxVatPage },
+            { path: ROUTES.financeExpenses, Component: ExpensesPage },
+            { path: ROUTES.financeCosting, Component: CostingProfitabilityPage },
             // Organization workspace + sub-pages
             { path: ROUTES.organization, Component: OrganizationWorkspace },
             { path: ROUTES.orgSearch, Component: OrgSearchPage },

@@ -11,16 +11,21 @@ import { usePermission } from '@/features/authorization';
 import { useFormatter } from '@/hooks/use-formatter';
 
 import { BillStatusBadge, PaymentStatusBadge, SupplierRef } from '../components/ap-badges';
+import { PaymentDetailDrawer } from '../components/payment-detail-drawer';
 import { SupplierLedgerDrawer } from '../components/supplier-ledger-drawer';
 import { useApAging, useApBills, useApPayments } from '../hooks/use-finance-ap';
 import { AP_AGING_BUCKETS, type ApAgingSupplierRow, type ApBill, type ApPayment } from '../types/finance-ap';
 
 /**
- * EPIC-FINANCE-UI-001 · Phase 5 — Accounts Payable (read-only).
- * Consumes the certified AP endpoints (aging, bills, payments, supplier ledger). Values are
- * shown exactly as returned — never recalculated in the browser. The AP API exposes only
- * `supplier_id` (no name); ids are shown verbatim (see the report's Finance ↔ vendor boundary).
- * No backend changes; IAM-gated by finance.ap.view; EN/AR; responsive.
+ * EPIC-FINANCE-UI-001 · Phase 5 — Accounts Payable, extended by
+ * TASK-ECOS-FINANCE-AP-AR-MUTATION-UX with the Payments tab's detail drawer
+ * (allocate / auto-allocate / reverse posting — see PaymentDetailDrawer).
+ * Consumes the certified AP endpoints (aging, bills, payments, supplier ledger, allocation).
+ * Values are shown exactly as returned — never recalculated in the browser. The AP API
+ * exposes only `supplier_id` (no name); ids are shown verbatim (see the report's Finance ↔
+ * vendor boundary). No backend changes; IAM-gated by finance.ap.view (the drawer's own write
+ * actions are separately gated by finance.allocation.manage / finance.journal.post); EN/AR;
+ * responsive.
  */
 export function AccountsPayablePage() {
   const { t } = useTranslation('finance');
@@ -30,8 +35,14 @@ export function AccountsPayablePage() {
   const aging = useApAging();
   const [ledgerSupplier, setLedgerSupplier] = useState<string | null>(null);
   const [ledgerOpen, setLedgerOpen] = useState(false);
+  // Hoisted to the page (not left inside PaymentsTab, which lives inside a
+  // TabsContent that Radix unmounts when its tab isn't active) so the drawer
+  // survives a tab switch — the same reason SupplierLedgerDrawer sits here.
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const openLedger = (supplierId: string) => { setLedgerSupplier(supplierId); setLedgerOpen(true); };
+  const openDetail = (id: string) => { setDetailId(id); setDetailOpen(true); };
 
   const metrics = useMemo<WorkspaceMetric[]>(() => {
     const totals = aging.data?.totals;
@@ -75,12 +86,13 @@ export function AccountsPayablePage() {
             <BillsTab />
           </TabsContent>
           <TabsContent value="payments" className="mt-4">
-            <PaymentsTab />
+            <PaymentsTab onOpenDetail={openDetail} />
           </TabsContent>
         </Tabs>
       </WorkspacePage>
 
       <SupplierLedgerDrawer supplierId={ledgerSupplier} open={ledgerOpen} onOpenChange={setLedgerOpen} />
+      <PaymentDetailDrawer paymentId={detailId} open={detailOpen} onOpenChange={setDetailOpen} />
     </>
   );
 }
@@ -157,9 +169,9 @@ function BillsTab() {
   );
 }
 
-// ── Payments (strictly read-only; maker/checker status shown) ─────────────────
+// ── Payments (maker/checker status shown; row opens the detail/mutation drawer) ─
 
-function PaymentsTab() {
+function PaymentsTab({ onOpenDetail }: { onOpenDetail: (id: string) => void }) {
   const { t } = useTranslation('finance');
   const fmt = useFormatter();
   const payments = useApPayments();
@@ -180,6 +192,7 @@ function PaymentsTab() {
       rowId={(p) => p.id}
       loading={payments.isLoading}
       error={payments.isError}
+      onRowClick={(p) => onOpenDetail(p.id)}
       emptyState={<p className="py-10 text-center text-sm text-muted-foreground">{t(($) => $.ap.payment.empty)}</p>}
     />
   );

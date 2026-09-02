@@ -100,3 +100,40 @@ export type ApControlReconciliation = {
 
 export type ApBillParams = { supplier_id?: string; status?: DocumentStatus };
 export type ApPaymentParams = { supplier_id?: string };
+
+// ── Allocation & reversal (write actions) ─────────────────────────────────────
+// Mirrors the certified AllocationEngine / Posting Engine contract exposed by
+// SupplierPaymentController::allocate/autoAllocate/reverseAllocation/reversePosting.
+// Allocation is a pure subledger relationship (never posts a journal); reverse-posting
+// reverses the payment's journal AND its supplier-ledger entry together.
+
+export type ApAllocation = {
+  id: string; // allocation uuid
+  payment_id: string;
+  bill_id: string;
+  amount: number;
+  payment_unallocated: number;
+  bill_outstanding: number;
+};
+
+export type ApAutoAllocateResult = {
+  allocations: number;
+  payment_unallocated: number;
+};
+
+/** An append-only, negative contra-allocation reversing part (or all) of one prior allocation. */
+export type ApAllocationReversal = {
+  id: string; // the new reversal row's uuid
+  reverses_allocation_id: string;
+  payment_id: string;
+  supplier_bill_id: string | null;
+  amount: number;
+  reason: string;
+  payment_unallocated: number;
+};
+
+export type ApReversePostingResult = {
+  reversal_journal_id: string;
+  reverses_journal_id: string | null;
+  payment_id: string;
+};

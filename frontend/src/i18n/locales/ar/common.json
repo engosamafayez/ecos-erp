@@ -179,7 +179,9 @@
       "finance-treasury": "النقدية والبنوك",
       "finance-fiscal": "التقويم المالي والإقفال",
       "finance-budgets": "الموازنات",
-      "finance-tax": "الضرائب والقيمة المضافة"
+      "finance-tax": "الضرائب والقيمة المضافة",
+      "finance-expenses": "المصروفات",
+      "finance-costing": "التكاليف والربحية"
     },
     "groups": {
       "overview": "نظرة عامة",

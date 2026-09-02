@@ -70,6 +70,8 @@ export const ROUTES = {
   financeFiscalClosing: '/accounting/fiscal-closing',
   financeBudgets: '/accounting/budgets',
   financeTaxVat: '/accounting/tax-vat',
+  financeExpenses: '/accounting/expenses',
+  financeCosting: '/accounting/costing-profitability',
   // Executive Platform (EPIC-EXECUTIVE-UI-001)
   executiveDashboard: '/executive',
   crm: '/crm',

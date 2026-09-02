@@ -290,6 +290,12 @@ class CustomerReceiptController extends Controller
             'unallocated' => $r->isPosted() ? $r->unallocatedAmount() : null,
             'journal_entry_id' => $r->journal_entry_id,
             'posted_at' => $r->posted_at?->toIso8601String(),
+            // TASK-ECOS-FINANCE-AP-AR-MUTATION-UX: already stored (see the
+            // 2026_09_02_200003 migration) but not yet exposed — lets the AR
+            // Receipts UI distinguish a COD-collection receipt from an
+            // ordinary one, mirroring ExpenseController::payload().
+            'source_type' => $r->source_type,
+            'source_id' => $r->source_id,
         ];
     }
 }

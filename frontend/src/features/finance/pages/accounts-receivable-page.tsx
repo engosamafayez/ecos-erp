@@ -12,15 +12,21 @@ import { useFormatter } from '@/hooks/use-formatter';
 
 import { CustomerRef, DocumentStatusBadge } from '../components/ar-badges';
 import { CustomerLedgerDrawer } from '../components/customer-ledger-drawer';
+import { ReceiptDetailDrawer } from '../components/receipt-detail-drawer';
 import { useArAging, useArInvoices, useArReceipts } from '../hooks/use-finance-ar';
 import { AGING_BUCKETS, type AgingCustomerRow, type ArInvoice, type ArReceipt } from '../types/finance-ar';
 
 /**
- * EPIC-FINANCE-UI-001 · Phase 4 — Accounts Receivable (read-only).
+ * EPIC-FINANCE-UI-001 · Phase 4 — Accounts Receivable, extended by
+ * TASK-ECOS-FINANCE-AP-AR-MUTATION-UX with the Receipts tab's detail drawer
+ * (allocate / auto-allocate / reverse posting — see ReceiptDetailDrawer).
  * Consumes the certified AR endpoints (aging, invoices, receipts, customer ledger, control
- * reconciliation). Values are shown exactly as returned — never recalculated in the browser.
- * The AR API exposes only `customer_id` (no name); ids are shown verbatim (see the report's
- * Finance ↔ CRM Boundary). No backend changes; IAM-gated by finance.ar.view; EN/AR; responsive.
+ * reconciliation, allocation). Values are shown exactly as returned — never recalculated in
+ * the browser. The AR API exposes only `customer_id` (no name); ids are shown verbatim (see
+ * the report's Finance ↔ CRM Boundary). No backend changes beyond exposing the already-stored
+ * `source_type`/`source_id` on the receipt payload (see CustomerReceiptController::payload()).
+ * IAM-gated by finance.ar.view (the drawer's own write actions are separately gated by
+ * finance.allocation.manage / finance.journal.post); EN/AR; responsive.
  */
 export function AccountsReceivablePage() {
   const { t } = useTranslation('finance');
@@ -30,8 +36,14 @@ export function AccountsReceivablePage() {
   const aging = useArAging();
   const [ledgerCustomer, setLedgerCustomer] = useState<string | null>(null);
   const [ledgerOpen, setLedgerOpen] = useState(false);
+  // Hoisted to the page (not left inside ReceiptsTab, which lives inside a
+  // TabsContent that Radix unmounts when its tab isn't active) so the drawer
+  // survives a tab switch — the same reason CustomerLedgerDrawer sits here.
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
 
   const openLedger = (customerId: string) => { setLedgerCustomer(customerId); setLedgerOpen(true); };
+  const openDetail = (id: string) => { setDetailId(id); setDetailOpen(true); };
 
   const metrics = useMemo<WorkspaceMetric[]>(() => {
     const totals = aging.data?.totals;
@@ -75,12 +87,13 @@ export function AccountsReceivablePage() {
             <InvoicesTab />
           </TabsContent>
           <TabsContent value="receipts" className="mt-4">
-            <ReceiptsTab />
+            <ReceiptsTab onOpenDetail={openDetail} />
           </TabsContent>
         </Tabs>
       </WorkspacePage>
 
       <CustomerLedgerDrawer customerId={ledgerCustomer} open={ledgerOpen} onOpenChange={setLedgerOpen} />
+      <ReceiptDetailDrawer receiptId={detailId} open={detailOpen} onOpenChange={setDetailOpen} />
     </>
   );
 }
@@ -157,9 +170,9 @@ function InvoicesTab() {
   );
 }
 
-// ── Receipts (strictly read-only) ─────────────────────────────────────────────
+// ── Receipts (row opens the detail/mutation drawer) ───────────────────────────
 
-function ReceiptsTab() {
+function ReceiptsTab({ onOpenDetail }: { onOpenDetail: (id: string) => void }) {
   const { t } = useTranslation('finance');
   const fmt = useFormatter();
   const receipts = useArReceipts();
@@ -171,6 +184,11 @@ function ReceiptsTab() {
     { key: 'amount', label: t(($) => $.ar.receipt.amount), align: 'end', cell: (r) => <span className="tabular-nums">{fmt.money(r.amount)}</span> },
     { key: 'unallocated', label: t(($) => $.ar.receipt.unallocated), align: 'end', cell: (r) => <span className="tabular-nums font-medium">{r.unallocated == null ? '—' : fmt.money(r.unallocated)}</span> },
     { key: 'status', label: t(($) => $.ar.receipt.status), cell: (r) => <DocumentStatusBadge status={r.status} /> },
+    // TASK-ECOS-FINANCE-AP-AR-MUTATION-UX: distinguishes a COD-collection
+    // receipt (source_type 'cod_record', per CommercialAccountingService) from
+    // an ordinary one — see CustomerReceiptController::payload() and
+    // finance-ar.ts's ArReceipt type.
+    { key: 'source_type', label: t(($) => $.ar.receipt.source), cell: (r) => r.source_type ?? '—' },
   ], [t, fmt]);
 
   return (
@@ -180,6 +198,7 @@ function ReceiptsTab() {
       rowId={(r) => r.id}
       loading={receipts.isLoading}
       error={receipts.isError}
+      onRowClick={(r) => onOpenDetail(r.id)}
       emptyState={<p className="py-10 text-center text-sm text-muted-foreground">{t(($) => $.ar.receipt.empty)}</p>}
     />
   );
