@@ -305,7 +305,9 @@
     "items": "items",
     "payment": "Payment",
     "delivery": "Delivery",
-    "warehouse": "Warehouse"
+    "warehouse": "Warehouse",
+    "selectOrder": "Select {{number}}",
+    "viewOrder": "View order {{number}}"
   },
   "table": {
     "selectAll": "Select all",

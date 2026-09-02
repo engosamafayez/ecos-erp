@@ -114,10 +114,10 @@ export function OrderMobileCard({
       fields={fields}
       selected={isSelected}
       onSelect={onSelect ? (checked) => onSelect(order.id, checked) : undefined}
-      selectLabel={`Select ${order.order_number}`}
+      selectLabel={t($ => $.mobileCard.selectOrder, { number: order.order_number })}
       focused={isFocused}
       onOpen={() => onView(order)}
-      openLabel={`View order ${order.order_number}`}
+      openLabel={t($ => $.mobileCard.viewOrder, { number: order.order_number })}
       actions={
         phone || mapHref ? (
           <>

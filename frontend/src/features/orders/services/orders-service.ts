@@ -116,49 +116,6 @@ export const ordersService = {
 
   // ── Enterprise Workflow Transitions (TASK-ORDER-LIFECYCLE-001) ───────────────
 
-  async workflowConfirm(id: string): Promise<Order> {
-    const { data } = await api.post<{ status: string; order_id: string }>(`/fulfillment/orders/${id}/confirm`);
-    return data as unknown as Order;
-  },
-
-  async workflowMoveToPreparation(id: string): Promise<Order> {
-    const { data } = await api.post<{ status: string; order_id: string }>(`/fulfillment/orders/${id}/move-to-preparation`);
-    return data as unknown as Order;
-  },
-
-  async workflowCompleteDelivery(id: string): Promise<Order> {
-    const { data } = await api.post<{ status: string; order_id: string }>(`/fulfillment/orders/${id}/complete-delivery`);
-    return data as unknown as Order;
-  },
-
-  async workflowComplete(id: string): Promise<Order> {
-    const { data } = await api.post<{ status: string; order_id: string }>(`/fulfillment/orders/${id}/complete`);
-    return data as unknown as Order;
-  },
-
-  async workflowMarkAwaitingStock(id: string, reason?: string): Promise<Order> {
-    const { data } = await api.post<{ status: string; order_id: string }>(`/fulfillment/orders/${id}/awaiting-stock`, { reason });
-    return data as unknown as Order;
-  },
-
-  async workflowCancel(id: string, reason?: string): Promise<Order> {
-    const { data } = await api.post<{ status: string; order_id: string }>(`/fulfillment/orders/${id}/cancel`, { reason });
-    return data as unknown as Order;
-  },
-
-  async workflowReturn(id: string, reason?: string): Promise<Order> {
-    const { data } = await api.post<{ status: string; order_id: string }>(`/fulfillment/orders/${id}/return`, {
-      return_reason: reason ?? 'Customer return',
-      lines: [],
-    });
-    return data as unknown as Order;
-  },
-
-  async workflowVerifyPayment(id: string, proofPath: string): Promise<Order> {
-    const { data } = await api.post<ApiResponse<Order>>(`/orders/${id}/verify-payment`, { payment_proof_path: proofPath });
-    return data.data;
-  },
-
   /**
    * Record a payment against the order.
    *
@@ -179,36 +136,6 @@ export const ordersService = {
       next_delivery_date: nextDeliveryDate,
       reschedule_reason: reason,
     });
-    return data as unknown as Order;
-  },
-
-  async workflowResume(id: string): Promise<Order> {
-    const { data } = await api.post<{ status: string; order_id: string }>(`/fulfillment/orders/${id}/resume`);
-    return data as unknown as Order;
-  },
-
-  async workflowMoveToReview(id: string, reason?: string): Promise<Order> {
-    const { data } = await api.post<{ status: string; order_id: string }>(`/fulfillment/orders/${id}/review`, { reason });
-    return data as unknown as Order;
-  },
-
-  async workflowDispatch(id: string): Promise<Order> {
-    const { data } = await api.post<{ status: string; order_id: string }>(`/fulfillment/orders/${id}/dispatch`);
-    return data as unknown as Order;
-  },
-
-  async workflowReturnToPending(id: string): Promise<Order> {
-    const { data } = await api.post<{ status: string; order_id: string }>(`/fulfillment/orders/${id}/return-to-pending`);
-    return data as unknown as Order;
-  },
-
-  async workflowRevertToConfirmed(id: string): Promise<Order> {
-    const { data } = await api.post<{ status: string; order_id: string }>(`/fulfillment/orders/${id}/revert-to-confirmed`);
-    return data as unknown as Order;
-  },
-
-  async workflowReturnToProcessing(id: string): Promise<Order> {
-    const { data } = await api.post<{ status: string; order_id: string }>(`/fulfillment/orders/${id}/return-to-processing`);
     return data as unknown as Order;
   },
 
@@ -306,16 +233,6 @@ export const ordersService = {
   async resolveMapsUrl(url: string): Promise<{ resolved_url: string }> {
     const { data } = await api.post<ApiResponse<{ resolved_url: string }>>('/orders/maps/resolve-url', { url });
     return data.data;
-  },
-
-  async workflowResumeToConfirmed(id: string): Promise<unknown> {
-    const { data } = await api.post('/fulfillment/bulk/resume-to-confirmed', { order_ids: [id] });
-    return data;
-  },
-
-  async workflowReturnToConfirmed(id: string): Promise<unknown> {
-    const { data } = await api.post('/fulfillment/bulk/return-to-confirmed', { order_ids: [id] });
-    return data;
   },
 
   async confirmCustomer(

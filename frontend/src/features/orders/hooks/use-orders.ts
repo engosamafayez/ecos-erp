@@ -7,9 +7,7 @@ import type {
   CustomerLookupResult,
   ManualOrderPayload,
   OrderActivity,
-  OrderPayload,
   OrderStatus,
-  OrderStatusCounts,
   OrdersQuery,
   ShippingCalcResult,
   ShippingPricingRule,
@@ -52,33 +50,6 @@ export function useOrderQuery(id: string) {
   });
 }
 
-/** Per-status order counts for Status Tabs. Runs parallel queries (1 per tab). */
-export function useOrderStatusCounts(): OrderStatusCounts {
-  const { activeCompanyId } = useOrganizationContext();
-  const companyId = activeCompanyId ?? 'global';
-  const tabs = STATUS_TAB_ORDER;
-
-  const results = useQueries({
-    queries: tabs.map((tab) => ({
-      queryKey: ['company', companyId, ORDERS_KEY, 'count', tab],
-      queryFn: () =>
-        ordersService.list({
-          ...(tab !== 'all' ? { status: tab as OrderStatus } : {}),
-          per_page: 1,
-          page: 1,
-        }),
-      staleTime: 30_000,
-    })),
-  });
-
-  const counts: OrderStatusCounts = {};
-  tabs.forEach((tab, i) => {
-    counts[tab as OrderStatus | 'all'] = results[i]?.data?.meta.total ?? 0;
-  });
-
-  return counts;
-}
-
 /** Per-status KPI metrics — count + total_amount. Used by KPI cards above the grid. */
 export type StatusKpiEntry = { count: number; totalAmount: number };
 export type OrderStatusKpis = Partial<Record<OrderStatus | 'all', StatusKpiEntry>>;
@@ -119,27 +90,6 @@ export function useOrderStatusKpis(
   });
 
   return kpis;
-}
-
-export function useCreateOrder() {
-  const { activeCompanyId } = useOrganizationContext();
-  const companyId = activeCompanyId ?? 'global';
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (payload: OrderPayload) => ordersService.create(payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['company', companyId, ORDERS_KEY] }),
-  });
-}
-
-export function useUpdateOrder() {
-  const { activeCompanyId } = useOrganizationContext();
-  const companyId = activeCompanyId ?? 'global';
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ id, payload }: { id: string; payload: OrderPayload }) =>
-      ordersService.update(id, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['company', companyId, ORDERS_KEY] }),
-  });
 }
 
 export function useUpdateManualOrder() {

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useParams } from 'react-router-dom';
+import { generatePath, useNavigate, useParams } from 'react-router-dom';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { CustomerDrawer } from '@/features/customers/components/customer-drawer';
@@ -70,7 +70,10 @@ export function CustomerProfilePage() {
         }}
         customer={editCustomer}
         initialPhone=""
-        onFoundExisting={() => undefined}
+        onFoundExisting={(found) => {
+          setEditOpen(false);
+          navigate(generatePath(ROUTES.customerDetail, { customerId: found.id }));
+        }}
       />
     </>
   );

@@ -215,7 +215,7 @@ export function OrderCustomerBadge({ order }: Props) {
               className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs text-foreground hover:bg-accent"
               aria-label={t($ => $.phone.copy)}
             >
-              {copied ? <Check className="size-3 text-emerald-500" /> : <Copy className="size-3" />}
+              {copied ? <Check className="size-3 text-emerald-500 dark:text-emerald-400" /> : <Copy className="size-3" />}
             </button>
           </>
         ) : null}

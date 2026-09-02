@@ -305,7 +305,9 @@
     "items": "عناصر",
     "payment": "الدفع",
     "delivery": "التسليم",
-    "warehouse": "المستودع"
+    "warehouse": "المستودع",
+    "selectOrder": "تحديد {{number}}",
+    "viewOrder": "عرض الطلب {{number}}"
   },
   "table": {
     "selectAll": "تحديد الكل",
