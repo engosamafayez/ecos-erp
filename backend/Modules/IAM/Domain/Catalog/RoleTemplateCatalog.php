@@ -351,11 +351,27 @@ final class RoleTemplateCatalog
 
             // ── Customer Service ─────────────────────────────────────────────────
             self::make('customer-service-agent', 'Customer Service Agent', $CS, 'Handles tickets, conversations and RMAs.', [
-                'permissions' => ['crm.service.view', 'crm.tickets.create', 'crm.tickets.update', 'omnichannel.inbox.view', 'omnichannel.inbox.manage', 'crm.customers.view'],
+                // TASK-ECOS-IAM-CLOSURE-INTEGRATION-GATE-004 — Group B Template Validity
+                // Remediation (CTO review correction). 'crm.tickets.create'/'crm.tickets.update'
+                // do not exist — the 'tickets' resource does not exist under crm at all; the
+                // real resource is crm.service (config/permissions.php + Modules/Crm/Service's
+                // seeder, actions view/manage/assign/resolve/admin). Left uncorrected, this
+                // template throws UnknownTemplatePermissionException the moment it is ever
+                // compiled/assigned — a current catalogue-validity defect, not a future
+                // capability question.
+                //
+                // The real broader alternative, crm.service.manage ("Create and work tickets
+                // (notes, attachments, transitions)"), is INTENTIONALLY NOT granted — the CTO's
+                // least-privilege ruling on this exact template forecloses substituting a
+                // broader token merely to make it compile. The two invalid tokens are removed
+                // outright, not replaced. Ticket create/update capability is a CAPABILITY GAP —
+                // OWNING DOMAIN / FUTURE BUSINESS DECISION, not an IAM defect, once this
+                // template contains only canonical tokens (see the Task 4 report, Group B
+                // section, for the full evidence trail).
+                'permissions' => ['crm.service.view', 'omnichannel.inbox.view', 'omnichannel.inbox.manage', 'crm.customers.view'],
                 'nav' => ['dashboard', 'crm', 'customerEngagement', 'omnichannel'],
                 'dashboard' => ['profile' => 'crm', 'hidden' => ['marketing-perf']],
                 'landing' => 'crm', 'hidden' => self::HIDE_SALES,
-                'scopes' => ['crm.tickets' => 'self'],
             ]),
             self::make('crm-specialist', 'CRM Specialist', $CS, 'Owns customer intelligence and engagement.', [
                 'permissions' => ['crm.*', 'cep.*'],
@@ -415,7 +431,24 @@ final class RoleTemplateCatalog
                 'policies' => ['payroll-approval', 'hiring-approval'],
             ]),
             self::make('hr-officer', 'HR Officer', $HR, 'Handles employee records and attendance.', [
-                'permissions' => ['hr.employees.view', 'hr.employees.create', 'hr.employees.update', 'hr.attendance.view', 'hr.attendance.register', 'hr.leave.view'],
+                // TASK-ECOS-IAM-CLOSURE-INTEGRATION-GATE-004 — Group B Template Validity
+                // Remediation (CTO review correction). 'hr.employees.create'/
+                // 'hr.employees.update' do not exist — the real hr.employees resource has
+                // exactly two actions, view and manage (Modules/Hr/Workforce's
+                // seed_hr_workforce_permissions_table migration + routes/api.php middleware),
+                // no create/update split. Left uncorrected, this template throws
+                // UnknownTemplatePermissionException the moment it is ever compiled/assigned —
+                // a current catalogue-validity defect, not a future capability question.
+                //
+                // The real broader alternative, hr.employees.manage ("Create, update, transfer
+                // and terminate employees"), is INTENTIONALLY NOT granted — the CTO's
+                // least-privilege ruling on this exact template forecloses substituting a
+                // broader token merely to make it compile. The two invalid tokens are removed
+                // outright, not replaced. Employee create/update capability is a CAPABILITY
+                // GAP — OWNING DOMAIN / FUTURE BUSINESS DECISION, not an IAM defect, once this
+                // template contains only canonical tokens (see the Task 4 report, Group B
+                // section, for the full evidence trail).
+                'permissions' => ['hr.employees.view', 'hr.attendance.view', 'hr.attendance.register', 'hr.leave.view'],
                 'nav' => ['dashboard', 'hr'],
                 'dashboard' => ['profile' => 'executive', 'hidden' => ['sales-revenue', 'marketing-perf']],
                 'landing' => 'hr',

@@ -23,6 +23,15 @@ use PHPUnit\Framework\TestCase;
  * real resource is `crm.customers`) and `accounting.ledgers.view` (a fabricated duplicate of
  * the already-held `finance.gl.view`) surviving in `sales-manager`/`sales-representative` and
  * `accountant` respectively. This test's assertions guard the corrected, verified state.
+ *
+ * Group B Template Validity Remediation (CTO-review continuation of Task 4): the initial
+ * closure pass classified Group B (`hr-officer`, `customer-service-agent`) as
+ * "RECONCILED — LEAVE AS-IS" and left them byte-for-byte unchanged, including 4 tokens
+ * (`hr.employees.{create,update}`, `crm.tickets.{create,update}`) proven not to exist anywhere
+ * — a current catalogue-validity defect (either template would throw
+ * `UnknownTemplatePermissionException` on compile), not a deferred business question. The CTO's
+ * least-privilege ruling itself is unchanged: the four tokens are removed outright, never
+ * substituted with the broader real alternatives (`hr.employees.manage`, `crm.service.manage`).
  */
 class RoleTemplateCatalogReconciliationTest extends TestCase
 {
@@ -264,32 +273,130 @@ class RoleTemplateCatalogReconciliationTest extends TestCase
         $this->assertContains('finance.gl.view', $accountant, 'finance.gl.view already covers the intended "view the ledger" capability.');
     }
 
-    // ── TASK-ECOS-IAM-CLOSURE-INTEGRATION-GATE-004 §1/§19: Group B — CTO ruling ─────────
+    // ── TASK-ECOS-IAM-CLOSURE-INTEGRATION-GATE-004 §1/§19, then CTO-review continuation ──
 
     /**
-     * CTO final ruling (this task's §1): hr-officer and customer-service-agent are RECONCILED —
-     * LEAVE AS-IS. No privilege expansion, even where a broken token could technically be
-     * "corrected" to a real one — the CTO explicitly disallowed that here ("Do NOT add optional
-     * permissions merely because those permissions exist in the catalogue. Any future expansion
-     * ... requires an explicit business requirement"). This test pins the exact byte-for-byte
-     * permission lists so a future pass cannot silently widen either role while "fixing" them.
+     * CTO review correction (Group B Template Validity Remediation): the initial Task 4 pass
+     * classified Group B as "RECONCILED — LEAVE AS-IS" and left `hr-officer`/
+     * `customer-service-agent` byte-for-byte unchanged, including 4 tokens
+     * (`hr.employees.{create,update}`, `crm.tickets.{create,update}`) proven not to exist
+     * anywhere in the codebase. The CTO correctly identified that this is a *current
+     * catalogue-validity defect* — RoleTemplateCompiler::compile() would throw
+     * UnknownTemplatePermissionException the moment either template was ever assigned — not a
+     * deferred business question, and required remediation. The least-privilege ruling itself
+     * is unchanged: the fix is to REMOVE the four invalid tokens outright, never to substitute
+     * the broader real alternatives (`hr.employees.manage`, `crm.service.manage`) merely to
+     * make the templates compile. See the Task 4 report's Group B section for the full
+     * evidence trail this file mirrors.
      */
-    public function test_group_b_templates_are_untouched_per_cto_least_privilege_ruling(): void
-    {
-        $this->assertSame(
-            ['hr.employees.view', 'hr.employees.create', 'hr.employees.update', 'hr.attendance.view', 'hr.attendance.register', 'hr.leave.view'],
-            $this->permissionsFor('hr-officer'),
-        );
-        $this->assertSame(
-            ['crm.service.view', 'crm.tickets.create', 'crm.tickets.update', 'omnichannel.inbox.view', 'omnichannel.inbox.manage', 'crm.customers.view'],
-            $this->permissionsFor('customer-service-agent'),
-        );
 
-        // Not widened to the real, broader equivalents that exist in the catalog today
-        // (hr.employees.manage; crm.service.manage) — the CTO ruling forecloses this path for
-        // this batch, even though both are individually "fixable" the same way sales.customers
-        // and accounting.ledgers.view were.
+    /**
+     * Every real permission token in the namespaces Group B templates reference — evidence-
+     * sourced the same way as every other assertion in this file (config/permissions.php's base
+     * registry + the relevant dedicated seeding migrations). Used as a static proxy for "would
+     * pass RoleTemplateCompiler::compile()'s own catalogue check" — this device has no PHP/DB
+     * toolchain to run the live compiler (Task 4 report, tests-executed section), so this
+     * reproduces its exact unknown-token diff against the same sources cited throughout this
+     * file, not a guess.
+     */
+    private function canonicalGroupBNamespaceTokens(): array
+    {
+        return [
+            // hr.employees — Modules/Hr/Workforce/…/seed_hr_workforce_permissions_table.php;
+            // also enforced directly by routes/api.php permission: middleware.
+            'hr.employees.view', 'hr.employees.manage',
+            // hr.attendance — Modules/Hr/Attendance/…/seed_hr_attendance_permissions_table.php
+            'hr.attendance.view', 'hr.attendance.register',
+            // hr.leave — held unchanged by hr-officer throughout this whole batch
+            'hr.leave.view',
+            // crm.service — Modules/Crm/Service/…/seed_crm_service_permissions_table.php
+            'crm.service.view', 'crm.service.manage', 'crm.service.assign', 'crm.service.resolve', 'crm.service.admin',
+            // omnichannel.inbox — config/permissions.php modules.omnichannel
+            'omnichannel.inbox.view', 'omnichannel.inbox.manage',
+            // crm.customers — config/permissions.php modules.crm + Crm/Customers seeder
+            'crm.customers.view', 'crm.customers.create', 'crm.customers.update', 'crm.customers.delete', 'crm.customers.merge', 'crm.customers.archive',
+        ];
+    }
+
+    // ── §6.1/6.2 + the required Group-B catalogue invariant: no nonexistent token, at all,
+    //    for any token either template holds — not just a re-check of the four known ones ──
+
+    public function test_group_b_templates_contain_no_nonexistent_permission_token(): void
+    {
+        $canonical = $this->canonicalGroupBNamespaceTokens();
+        foreach (['hr-officer', 'customer-service-agent'] as $key) {
+            foreach ($this->permissionsFor($key) as $token) {
+                $this->assertContains($token, $canonical, "Template '{$key}' holds '{$token}', which does not resolve to a canonical permission definition.");
+            }
+        }
+    }
+
+    // ── §6.3/6.4: both templates compile against the canonical catalogue ───────
+
+    public function test_group_b_templates_compile_against_the_canonical_catalogue(): void
+    {
+        // Reproduces RoleTemplateCompiler::compile()'s own validation (Permission::query()
+        // ->whereIn('name', $names) then array_diff for $unknown) as a pure, DB-less check.
+        $canonical = array_flip($this->canonicalGroupBNamespaceTokens());
+        foreach (['hr-officer', 'customer-service-agent'] as $key) {
+            $unknown = array_values(array_filter(
+                $this->permissionsFor($key),
+                static fn (string $t): bool => ! isset($canonical[$t]),
+            ));
+            $this->assertSame(
+                [],
+                $unknown,
+                "Template '{$key}' would throw UnknownTemplatePermissionException on compile — unresolved: ".implode(', ', $unknown),
+            );
+        }
+    }
+
+    // ── §6.5: neither template receives the broader manage-level permission ────
+
+    public function test_group_b_templates_do_not_receive_manage_level_widening(): void
+    {
         $this->assertNotContains('hr.employees.manage', $this->permissionsFor('hr-officer'));
         $this->assertNotContains('crm.service.manage', $this->permissionsFor('customer-service-agent'));
+    }
+
+    // ── §6.6: effective privileges did not increase vs. the pre-remediation valid subset ──
+
+    public function test_group_b_effective_privileges_did_not_increase(): void
+    {
+        // The valid subset of the pre-remediation definition — i.e. excluding the two invalid
+        // (hence non-functional either way) tokens each template held. This is exactly what
+        // each role could ever actually have done; remediation must be a subset of this, never
+        // a superset, and (confirmed by the second assertion) not a stricter subset either —
+        // nothing that was already valid was accidentally dropped.
+        $hrOfficerPreRemediationValidSubset = ['hr.employees.view', 'hr.attendance.view', 'hr.attendance.register', 'hr.leave.view'];
+        $csAgentPreRemediationValidSubset = ['crm.service.view', 'omnichannel.inbox.view', 'omnichannel.inbox.manage', 'crm.customers.view'];
+
+        $this->assertEmpty(
+            array_diff($this->permissionsFor('hr-officer'), $hrOfficerPreRemediationValidSubset),
+            'hr-officer must not hold any permission beyond its pre-remediation valid subset.',
+        );
+        $this->assertEmpty(
+            array_diff($this->permissionsFor('customer-service-agent'), $csAgentPreRemediationValidSubset),
+            'customer-service-agent must not hold any permission beyond its pre-remediation valid subset.',
+        );
+        $this->assertSame($hrOfficerPreRemediationValidSubset, $this->permissionsFor('hr-officer'));
+        $this->assertSame($csAgentPreRemediationValidSubset, $this->permissionsFor('customer-service-agent'));
+    }
+
+    // ── §6.7: the four removed tokens cannot reappear unnoticed, anywhere in the catalog ──
+
+    public function test_group_b_removed_tokens_cannot_reappear_unnoticed(): void
+    {
+        $removedTokens = ['hr.employees.create', 'hr.employees.update', 'crm.tickets.create', 'crm.tickets.update'];
+
+        foreach (RoleTemplateCatalog::all() as $template) {
+            foreach ($removedTokens as $token) {
+                $this->assertNotContains(
+                    $token,
+                    $template['definition']['permissions'],
+                    "Template '{$template['key']}' must not hold '{$token}' — proven nonexistent, removed as part of Group B Template Validity Remediation, and must not silently reappear anywhere in the catalog.",
+                );
+            }
+        }
     }
 }
