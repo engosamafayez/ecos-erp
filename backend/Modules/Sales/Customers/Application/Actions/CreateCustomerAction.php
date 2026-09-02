@@ -29,8 +29,10 @@ final class CreateCustomerAction extends BaseAction
         $customer = DB::transaction(function () use ($dto): Customer {
             // Backend-generated unless the caller explicitly supplied one — never
             // typed by the create-customer UI, per TASK-...-OPERATIONAL-READ-MODEL-007.
-            // Generated INSIDE this same transaction: nextCodeNumber()'s row lock only
-            // holds for the transaction's duration, exactly like Brand/Team/BusinessAccount.
+            // Generated INSIDE this same transaction: nextCodeNumber()'s increment-then-
+            // read-back only stays correct while the row lock it takes is still held,
+            // which requires this same enclosing transaction — see
+            // TASK-...-TASK-2-REMEDIATION-007-R1 and EloquentCustomerRepository::nextCodeNumber().
             $code = $dto->code ?? $this->codeGenerator->next((string) $dto->company_id);
 
             $customer = $this->customers->create([
