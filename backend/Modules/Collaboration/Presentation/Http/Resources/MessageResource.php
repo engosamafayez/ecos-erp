@@ -6,6 +6,8 @@ namespace Modules\Collaboration\Presentation\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Collaboration\Domain\Enums\MessageType;
+use Modules\Collaboration\Domain\Models\VoiceMetadata;
 
 /**
  * @mixin \Modules\Collaboration\Domain\Models\Message
@@ -23,7 +25,42 @@ final class MessageResource extends JsonResource
             'body' => $this->body,
             'reply_to_message_id' => $this->reply_to_message_id,
             'mentioned_user_ids' => $this->whenLoaded('mentions', fn () => $this->mentions->pluck('mentioned_user_id')->values()),
+            'attachment' => $this->attachmentPayload(),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
+    }
+
+    /**
+     * Filename/mime/size and (for voice) duration only — never `file_path`
+     * or a storage URL (brief §14/§17). A client fetches the actual bytes
+     * through the authorized MessageAttachmentController endpoint, keyed by
+     * message id alone.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function attachmentPayload(): ?array
+    {
+        if (! in_array($this->type, [MessageType::Image, MessageType::File, MessageType::Voice], true)) {
+            return null;
+        }
+
+        $document = $this->attachment();
+
+        if ($document === null) {
+            return null;
+        }
+
+        $payload = [
+            'name' => $document->name,
+            'mime_type' => $document->mime_type,
+            'file_size' => $document->file_size !== null ? (int) $document->file_size : null,
+        ];
+
+        if ($this->type === MessageType::Voice) {
+            $voice = VoiceMetadata::query()->where('document_id', $document->id)->first();
+            $payload['duration_seconds'] = $voice?->duration_seconds;
+        }
+
+        return $payload;
     }
 }

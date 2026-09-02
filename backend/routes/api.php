@@ -22,9 +22,11 @@ use Modules\ClaudeBridge\Presentation\Http\Controllers\TaskController as CbTaskC
 use Modules\ClaudeBridge\Presentation\Http\Controllers\WorkerApiController as CbWorkerApiController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\WorkerController as CbWorkerController;
 use Modules\ClaudeBridge\Presentation\Http\Middleware\VerifyWorkerToken;
+use Modules\Collaboration\Presentation\Http\Controllers\CollaborationSearchController;
 use Modules\Collaboration\Presentation\Http\Controllers\ConversationController;
 use Modules\Collaboration\Presentation\Http\Controllers\ConversationParticipantController;
 use Modules\Collaboration\Presentation\Http\Controllers\ConversationReadStateController;
+use Modules\Collaboration\Presentation\Http\Controllers\MessageAttachmentController;
 use Modules\Collaboration\Presentation\Http\Controllers\MessageController as CollaborationMessageController;
 use Modules\Collaboration\Presentation\Http\Controllers\OperationalContextLinkController;
 use Modules\Commerce\Channels\Presentation\Http\Controllers\ChannelController;
@@ -4327,10 +4329,19 @@ Route::middleware('auth:sanctum')->prefix('collaboration')->group(function (): v
     Route::delete('conversations/{conversation}/participants/{user}', [ConversationParticipantController::class, 'destroy']);
 
     Route::get('conversations/{conversation}/messages', [CollaborationMessageController::class, 'index']);
-    Route::post('conversations/{conversation}/messages', [CollaborationMessageController::class, 'store']);
+    Route::post('conversations/{conversation}/messages', [CollaborationMessageController::class, 'store'])
+        ->middleware('throttle:60,1');
 
     Route::patch('conversations/{conversation}/read', [ConversationReadStateController::class, 'update']);
 
     // Foundation-proving endpoint only — see AttachOperationalContextAction.
     Route::post('context-links', [OperationalContextLinkController::class, 'store']);
+
+    // Task 3 — media/voice playback, secure by conversation participation
+    // alone (MessageAttachmentController), never by document id or path.
+    Route::get('messages/{message}/attachment', [MessageAttachmentController::class, 'show']);
+
+    // Task 3 — PostgreSQL full-text search, participant-scoped (SearchMessagesAction).
+    Route::get('search/messages', [CollaborationSearchController::class, 'messages'])
+        ->middleware('throttle:30,1');
 });

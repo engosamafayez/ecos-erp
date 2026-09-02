@@ -8,6 +8,7 @@ use App\Core\Actions\BaseAction;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use InvalidArgumentException;
+use Modules\Collaboration\Application\Events\ConversationReadStateBroadcast;
 use Modules\Collaboration\Domain\Models\Conversation;
 use Modules\Collaboration\Domain\Models\ConversationParticipant;
 use Modules\Collaboration\Domain\Models\Message;
@@ -15,7 +16,9 @@ use Modules\Collaboration\Domain\Models\Message;
 /**
  * `last_read_at` is the field unread-count derivation actually relies on
  * (architecture report §8/§12); `last_read_message_id` is kept alongside it
- * only as a UX convenience ("scroll back to here").
+ * only as a UX convenience ("scroll back to here"). Broadcasts the new
+ * cursor (Task 3, brief §23) — the read model itself is unchanged, this
+ * only adds a realtime notice of a value that was already being persisted.
  */
 final class MarkConversationReadAction extends BaseAction
 {
@@ -51,6 +54,12 @@ final class MarkConversationReadAction extends BaseAction
         }
 
         $participant->update($attributes);
+
+        ConversationReadStateBroadcast::dispatch(
+            $conversation->id,
+            $actor->id,
+            $participant->last_read_at?->toIso8601String(),
+        );
 
         return $participant;
     }

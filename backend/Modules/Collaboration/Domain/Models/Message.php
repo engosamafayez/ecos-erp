@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Collaboration\Domain\Models;
 
+use App\Core\Documents\Document;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasVersion7Uuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -80,6 +81,20 @@ class Message extends Model
     public function mentions(): HasMany
     {
         return $this->hasMany(MessageMention::class);
+    }
+
+    /**
+     * Not a real FK relation — `Document.subject_type`/`subject_id` is the
+     * generic string-keyed reference the whole platform uses (§17). At most
+     * one per message in this schema (one file/image/voice per send).
+     */
+    public function attachment(): ?Document
+    {
+        return Document::query()
+            ->where('subject_type', 'CollaborationMessage')
+            ->where('subject_id', $this->id)
+            ->where('is_active', true)
+            ->first();
     }
 
     protected static function newFactory(): MessageFactory

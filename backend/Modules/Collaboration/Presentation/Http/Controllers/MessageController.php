@@ -21,6 +21,12 @@ final class MessageController extends Controller
 {
     use HasApiResponse;
 
+    /**
+     * `after_message_id` (polling-fallback incremental sync, brief §15) and
+     * `before_message_id` (backward history scroll, Task 2) share this one
+     * endpoint and one canonical query action — see
+     * GetConversationMessagesAction's docblock.
+     */
     public function index(Request $request, Conversation $conversation, GetConversationMessagesAction $action): JsonResponse
     {
         $messages = $action->execute(
@@ -28,6 +34,7 @@ final class MessageController extends Controller
             $conversation,
             $request->query('before_message_id'),
             (int) $request->query('limit', 50),
+            $request->query('after_message_id'),
         )->load('mentions');
 
         return $this->success(MessageResource::collection($messages));
@@ -35,13 +42,17 @@ final class MessageController extends Controller
 
     public function store(SendMessageRequest $request, Conversation $conversation, SendMessageAction $action): JsonResponse
     {
+        $type = MessageType::from($request->validated('type', 'text'));
+
         $data = new SendMessageData(
             conversationId: $conversation->id,
             senderUserId: $request->user()->id,
-            type: MessageType::Text,
-            body: (string) $request->validated('body'),
+            type: $type,
+            body: $request->validated('body'),
             replyToMessageId: $request->validated('reply_to_message_id'),
             mentionedUserIds: array_map('intval', $request->validated('mentioned_user_ids', [])),
+            file: $request->file('file'),
+            voiceDurationSeconds: $request->validated('voice_duration_seconds'),
         );
 
         try {
