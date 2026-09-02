@@ -3,8 +3,10 @@ import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
+import { cn } from '@/lib/utils';
 import { BrandLogo } from '@/components/common/brand-logo';
 import { Button } from '@/components/ui/button';
+import { SheetOverlay, SheetPortal, SheetPrimitive } from '@/components/ui/sheet';
 import { useNavigation } from '@/features/authorization';
 import type { ModuleId } from '@/config/module-navigation';
 import { useActiveModule } from '@/hooks/use-active-module';
@@ -18,16 +20,43 @@ type MobileMenuProps = {
 };
 
 /**
- * The Enterprise mobile navigation shell (TASK-ECOS-MOBILE-UX-COMPLETION-002,
- * parent design report §5 — full redesign, supersedes the flat single-open
- * accordion from TASK-ECOS-MOBILE-UX-CORE-CLOSURE-001 that the CTO rejected).
+ * The Enterprise mobile navigation shell.
+ *
+ * TASK-ECOS-MOBILE-NAVIGATION-WORLD-CLASS-REDESIGN-004 — the structural
+ * redesign from TASK-ECOS-MOBILE-UX-COMPLETION-002 (launcher + drill-in,
+ * search, recents, restored section grouping) is preserved unchanged; this
+ * pass replaces the raw `<div role="dialog">` wrapper with the SAME Radix
+ * Dialog primitive `components/ui/sheet.tsx` already wraps for every other
+ * drawer in the app (`SheetPortal`/`SheetOverlay`/`SheetPrimitive.Content`,
+ * now exported for direct composition — see that file's comment). A
+ * full-screen "cover" sheet is not one of `SheetContent`'s side variants, so
+ * this composes the primitives directly rather than adding a mismatched
+ * variant there.
+ *
+ * That swap is the single highest-leverage fix for this task's interaction
+ * requirements — it is not decorative:
+ *   - Escape closes the menu (previously no keyboard close existed at all).
+ *   - Body scroll is locked while open (previously the page behind it could
+ *     still scroll).
+ *   - Focus is trapped inside the menu and returned to the triggering button
+ *     on close (previously focus management didn't exist).
+ *   - Tapping the backdrop closes the menu (a navigation menu has nothing to
+ *     lose, so this is the expected, low-risk mobile pattern — not "accidental
+ *     dismiss" of unsaved work).
+ *   - Open/close now animate (slide-up-from-bottom + backdrop fade) instead of
+ *     an instant mount/unmount — the same animation vocabulary
+ *     (`data-[state=open]:animate-in` / `slide-in-from-bottom`) every other
+ *     Sheet-based drawer in the app already uses, so it reads as one
+ *     consistent motion language, not a bespoke one.
+ * All of this is inherited from Radix's Dialog behavior — none of it is
+ * hand-rolled here.
  *
  * Two views, not an accordion: a full-screen Modules launcher (grouped,
  * searchable, with a Recent row — `MobileModulesLauncher`) and a per-module
  * drill-in page list that restores desktop's section groupings
  * (`MobileModulePages`). The launcher is always the entry point — opening the
- * menu never guesses which module to auto-expand, and "Back" always returns to
- * it, so there is no lost/stale expand state to track across opens.
+ * menu never guesses which module to auto-expand, and "Back" always returns
+ * to it, so there is no lost/stale expand state to track across opens.
  *
  * Modules and pages still come exclusively from `useNavigation()` /
  * `AppModule.items` — the SAME canonical RBAC authority the desktop rail and
@@ -55,8 +84,6 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
     if (open) setOpenModuleId(null);
   }
 
-  if (!open) return null;
-
   const openModule = modules.find((m) => m.id === openModuleId);
 
   // The launcher's tiles/recent/search results are plain buttons (not
@@ -75,50 +102,71 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
   }
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={t(($) => $.nav.menu)}
-      className="fixed inset-0 z-50 flex flex-col bg-background md:hidden"
-    >
-      {/* Header */}
-      <div className="flex h-14 shrink-0 items-center justify-between border-b px-4">
-        <BrandLogo />
-        <Button variant="ghost" size="icon" onClick={onClose} aria-label={t(($) => $.nav.closeMenu)}>
-          <X className="size-5" aria-hidden />
-        </Button>
-      </div>
+    <SheetPrimitive.Root open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
+      <SheetPortal>
+        <SheetOverlay />
+        <SheetPrimitive.Content
+          aria-label={t(($) => $.nav.menu)}
+          className={cn(
+            'fixed inset-0 z-50 flex h-[100dvh] w-full flex-col bg-background md:hidden',
+            'data-[state=open]:animate-in data-[state=closed]:animate-out',
+            'data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
+            'data-[state=closed]:duration-300 data-[state=open]:duration-500',
+          )}
+          onOpenAutoFocus={(e) => {
+            // Land focus on the search field (the launcher's most useful
+            // first action) instead of Radix's default of the first
+            // focusable element (which would be the close button).
+            e.preventDefault();
+            document.getElementById('mobile-menu-search')?.focus();
+          }}
+        >
+          <SheetPrimitive.Description className="sr-only">
+            {t(($) => $.nav.menuDescription)}
+          </SheetPrimitive.Description>
 
-      {/* Company + Warehouse context — mobile only. Stacked full-width rows with
-          visible labels (design report Navigation Problem #2: the desktop
-          switchers hide their name/code label below `sm`, so two side-by-side
-          half-width buttons on mobile were unlabeled and indistinguishable). */}
-      <div className="shrink-0 border-b bg-muted/30 px-4 py-3">
-        <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {t(($) => $.nav.companyWarehouse)}
-        </p>
-        <div className="flex flex-col gap-2">
-          <CompanySwitcher showLabel className="w-full justify-start" />
-          <WarehouseSwitcher showLabel className="w-full justify-start" />
-        </div>
-      </div>
+          {/* Header */}
+          <div className="flex h-14 shrink-0 items-center justify-between border-b px-4">
+            <BrandLogo />
+            <SheetPrimitive.Close asChild>
+              <Button variant="ghost" size="icon" aria-label={t(($) => $.nav.closeMenu)}>
+                <X className="size-5" aria-hidden />
+              </Button>
+            </SheetPrimitive.Close>
+          </div>
 
-      {/* Body — Modules launcher or a module's drill-in page list */}
-      <div className="flex-1 overflow-hidden">
-        {openModule ? (
-          <MobileModulePages
-            module={openModule}
-            onBack={() => setOpenModuleId(null)}
-            onNavigate={handleDrillInNavigate}
-          />
-        ) : (
-          <MobileModulesLauncher
-            activeModuleId={activeId}
-            onOpenModule={setOpenModuleId}
-            onNavigate={handleLauncherNavigate}
-          />
-        )}
-      </div>
-    </div>
+          {/* Company + Warehouse context — mobile only. Stacked full-width rows with
+              visible labels (Navigation Problem #2: the desktop switchers hide their
+              name/code label below `sm`, so two side-by-side half-width buttons on
+              mobile were unlabeled and indistinguishable). */}
+          <div className="shrink-0 border-b bg-muted/30 px-4 py-3">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {t(($) => $.nav.companyWarehouse)}
+            </p>
+            <div className="flex flex-col gap-2">
+              <CompanySwitcher showLabel className="w-full justify-start" />
+              <WarehouseSwitcher showLabel className="w-full justify-start" />
+            </div>
+          </div>
+
+          {/* Body — Modules launcher or a module's drill-in page list */}
+          <div className="flex-1 overflow-hidden">
+            {openModule ? (
+              <MobileModulePages
+                module={openModule}
+                onBack={() => setOpenModuleId(null)}
+                onNavigate={handleDrillInNavigate}
+              />
+            ) : (
+              <MobileModulesLauncher
+                activeModuleId={activeId}
+                onOpenModule={setOpenModuleId}
+                onNavigate={handleLauncherNavigate}
+              />
+            )}
+          </div>
+        </SheetPrimitive.Content>
+      </SheetPortal>
+    </SheetPrimitive.Root>
   );
 }

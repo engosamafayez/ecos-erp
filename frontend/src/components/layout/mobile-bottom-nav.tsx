@@ -38,7 +38,7 @@ export function MobileBottomNav({ onOpenMenu }: MobileBottomNavProps) {
   return (
     <nav
       aria-label={t(($) => $.nav.mobileNavigation)}
-      className="fixed inset-x-0 bottom-0 z-40 flex h-14 items-stretch border-t bg-background md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-stretch border-t bg-background/95 backdrop-blur-sm md:hidden"
     >
       {pinned.map((mod) => {
         const Icon = mod.icon;
@@ -51,13 +51,24 @@ export function MobileBottomNav({ onOpenMenu }: MobileBottomNavProps) {
             to={path}
             aria-label={label}
             aria-current={isActive ? 'page' : undefined}
-            className={cn(
-              'flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors',
-              isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
-            )}
+            className="flex flex-1 flex-col items-center justify-center gap-1 py-2"
           >
-            <Icon className="size-5" aria-hidden />
-            <span className="line-clamp-1 max-w-full break-all">{label}</span>
+            <span
+              className={cn(
+                'flex items-center justify-center rounded-full px-3.5 py-1 transition-colors',
+                isActive && 'bg-primary/10',
+              )}
+            >
+              <Icon className={cn('size-5', isActive ? 'text-primary' : 'text-muted-foreground')} aria-hidden />
+            </span>
+            <span
+              className={cn(
+                'line-clamp-1 max-w-full break-all text-[10px] font-medium transition-colors',
+                isActive ? 'text-primary' : 'text-muted-foreground',
+              )}
+            >
+              {label}
+            </span>
           </Link>
         );
       })}
@@ -67,20 +78,24 @@ export function MobileBottomNav({ onOpenMenu }: MobileBottomNavProps) {
         type="button"
         onClick={openSearch}
         aria-label={t(($) => $.common.search)}
-        className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+        className="flex flex-1 flex-col items-center justify-center gap-1 py-2 text-muted-foreground transition-colors active:text-foreground"
       >
-        <Search className="size-5" aria-hidden />
-        <span>{t(($) => $.common.search)}</span>
+        <span className="flex items-center justify-center rounded-full px-3.5 py-1">
+          <Search className="size-5" aria-hidden />
+        </span>
+        <span className="text-[10px] font-medium">{t(($) => $.common.search)}</span>
       </button>
 
       <button
         type="button"
         onClick={onOpenMenu}
         aria-label={t(($) => $.nav.modules)}
-        className="flex flex-1 flex-col items-center justify-center gap-0.5 text-[10px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+        className="flex flex-1 flex-col items-center justify-center gap-1 py-2 text-muted-foreground transition-colors active:text-foreground"
       >
-        <LayoutGrid className="size-5" aria-hidden />
-        <span>{t(($) => $.nav.modules)}</span>
+        <span className="flex items-center justify-center rounded-full px-3.5 py-1">
+          <LayoutGrid className="size-5" aria-hidden />
+        </span>
+        <span className="text-[10px] font-medium">{t(($) => $.nav.modules)}</span>
       </button>
     </nav>
   );

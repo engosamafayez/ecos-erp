@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import { useState } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -176,5 +177,43 @@ describe('MobileMenu — Modules launcher + drill-in (TASK-ECOS-MOBILE-UX-COMPLE
     fireEvent.click(screen.getByText('reopen'));
     expect(screen.getByText('nav.recent')).toBeInTheDocument();
     expect(screen.getByText('orders')).toBeInTheDocument();
+  });
+});
+
+// TASK-ECOS-MOBILE-NAVIGATION-WORLD-CLASS-REDESIGN-004 — interaction behavior
+// gained by composing the same Radix Dialog primitive `SheetContent` already
+// wraps for every other drawer in the app, instead of a raw `<div>`. Neither
+// of these behaviors existed before this task: closing was previously only
+// possible by tapping the X button.
+describe('MobileMenu — Radix Dialog interaction behavior (TASK-004)', () => {
+  it('Escape closes the menu', () => {
+    const { onClose } = renderMenu();
+    expect(screen.getByText('commerce')).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('clicking the backdrop overlay closes the menu', async () => {
+    // Radix Portals the overlay/content as a sibling of RTL's `container` div,
+    // directly under `document.body` — not inside `container`. Radix's
+    // dismissable-layer listens for a real pointer-event sequence on
+    // `document`, which `userEvent` reproduces faithfully (plain `fireEvent`
+    // on the element alone does not trigger it under jsdom).
+    const user = userEvent.setup();
+    const { onClose } = renderMenu();
+    const overlay = document.body.querySelector('[data-slot="sheet-overlay"]') as HTMLElement;
+    expect(overlay).toBeTruthy();
+    await user.click(overlay);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders as an accessible Radix dialog (role + labelled + a real description, not a manual duplicate)', () => {
+    renderMenu();
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveAttribute('aria-labelledby');
+    expect(dialog).toHaveAttribute('aria-describedby');
+    // The sr-only Description Radix requires is present (silences the a11y
+    // warning) without being visible chrome.
+    expect(screen.getByText('nav.menuDescription')).toBeInTheDocument();
   });
 });

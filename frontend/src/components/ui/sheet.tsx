@@ -121,4 +121,23 @@ function SheetFooter({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
-export { Sheet, SheetTrigger, SheetClose, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter };
+// `SheetPortal`/`SheetOverlay` and the raw `SheetPrimitive` namespace are
+// exported (TASK-ECOS-MOBILE-NAVIGATION-WORLD-CLASS-REDESIGN-004) so a
+// consumer needing a layout `SheetContent` doesn't support (e.g. a true
+// full-screen mobile sheet, not a side/top/bottom panel) can compose the
+// same underlying Radix Dialog primitive directly — reusing this file's one
+// overlay/animation implementation — instead of hand-rolling a second one.
+// Purely additive: no existing export's behavior changes.
+export {
+  Sheet,
+  SheetTrigger,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetFooter,
+  SheetPortal,
+  SheetOverlay,
+  SheetPrimitive,
+};

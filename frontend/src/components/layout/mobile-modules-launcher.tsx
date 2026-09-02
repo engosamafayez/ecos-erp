@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ChevronRight, History, Search } from 'lucide-react';
+import { ChevronRight, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
@@ -105,15 +105,16 @@ export function MobileModulesLauncher({
     <div className="flex h-full flex-col">
       {/* Search */}
       <div className="shrink-0 border-b p-3">
-        <div className="flex items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2">
+        <div className="flex items-center gap-2.5 rounded-xl border bg-muted/40 px-3.5 py-3 transition-colors focus-within:border-primary/40 focus-within:bg-background">
           <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
           <input
+            id="mobile-menu-search"
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t(($) => $.nav.searchModulesPlaceholder)}
             aria-label={t(($) => $.nav.searchModulesPlaceholder)}
-            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
             autoComplete="off"
           />
         </div>
@@ -130,11 +131,11 @@ export function MobileModulesLauncher({
         ) : (
           <>
             {resolvedRecent.length > 0 ? (
-              <div className="mb-5">
-                <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <div className="mb-6">
+                <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {t(($) => $.nav.recent)}
                 </p>
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1.5">
                   {resolvedRecent.map((entry) => {
                     const Icon = entry.icon;
                     return (
@@ -142,10 +143,11 @@ export function MobileModulesLauncher({
                         key={entry.path}
                         type="button"
                         onClick={() => onNavigate(entry.path)}
-                        className="flex min-h-11 items-center gap-3 rounded-lg border bg-card px-3 py-2.5 text-start transition-colors hover:bg-accent/40"
+                        className="flex min-h-11 items-center gap-3 rounded-xl border bg-card px-3 py-2.5 text-start shadow-sm transition-all hover:bg-accent/40 active:scale-[0.98]"
                       >
-                        <History className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                        <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted">
+                          <Icon className="size-4 text-muted-foreground" aria-hidden />
+                        </span>
                         <span className="min-w-0 flex-1 truncate text-sm font-medium">
                           {entry.primary}
                         </span>
@@ -162,11 +164,11 @@ export function MobileModulesLauncher({
             ) : null}
 
             {grouped.map(({ family, modules: familyModules }) => (
-              <div key={family} className="mb-5 last:mb-0">
-                <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+              <div key={family} className="mb-6 last:mb-0">
+                <p className="mb-2.5 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {t(($) => $.nav.families[family])}
                 </p>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-2.5">
                   {familyModules.map((mod) => {
                     const Icon = mod.icon;
                     const isCurrent = mod.id === activeModuleId;
@@ -177,7 +179,7 @@ export function MobileModulesLauncher({
                         onClick={() => selectModule(mod)}
                         aria-current={isCurrent ? 'true' : undefined}
                         className={cn(
-                          'relative flex min-h-[76px] flex-col items-center justify-center gap-1.5 rounded-xl border p-2 text-center transition-colors',
+                          'relative flex min-h-[84px] flex-col items-center justify-center gap-2 rounded-2xl border p-2 text-center shadow-sm transition-all active:scale-[0.97]',
                           isCurrent
                             ? 'border-primary/50 bg-primary/5'
                             : 'border-border bg-card hover:border-primary/40 hover:bg-accent/40',
@@ -188,10 +190,10 @@ export function MobileModulesLauncher({
                             {t(($) => $.nav.current)}
                           </span>
                         ) : null}
-                        <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10">
+                        <span className="flex size-10 items-center justify-center rounded-2xl bg-primary/10">
                           <Icon className="size-5 text-primary" aria-hidden />
                         </span>
-                        <span className="line-clamp-2 w-full break-words text-[11px] font-medium leading-tight text-foreground">
+                        <span className="line-clamp-2 w-full break-words text-[12px] font-medium leading-tight text-foreground">
                           {navLabel.group(mod.id)}
                         </span>
                       </button>
@@ -227,7 +229,7 @@ function SearchResults({ moduleHits, pageHits, onSelectModule, onSelectPage }: S
   }
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-1.5">
       {moduleHits.map((mod) => {
         const Icon = mod.icon;
         return (
@@ -235,9 +237,9 @@ function SearchResults({ moduleHits, pageHits, onSelectModule, onSelectPage }: S
             key={mod.id}
             type="button"
             onClick={() => onSelectModule(mod)}
-            className="flex min-h-11 items-center gap-3 rounded-lg border bg-card px-3 py-2.5 text-start transition-colors hover:bg-accent/40"
+            className="flex min-h-11 items-center gap-3 rounded-xl border bg-card px-3 py-2.5 text-start shadow-sm transition-all hover:bg-accent/40 active:scale-[0.98]"
           >
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
               <Icon className="size-4 text-primary" aria-hidden />
             </span>
             <span className="min-w-0 flex-1 truncate text-sm font-semibold">{navLabel.group(mod.id)}</span>
@@ -250,9 +252,11 @@ function SearchResults({ moduleHits, pageHits, onSelectModule, onSelectPage }: S
           key={`${module.id}-${key}`}
           type="button"
           onClick={() => onSelectPage(module, key, path)}
-          className="flex min-h-11 items-center gap-3 rounded-lg border bg-card px-3 py-2.5 text-start transition-colors hover:bg-accent/40"
+          className="flex min-h-11 items-center gap-3 rounded-xl border bg-card px-3 py-2.5 text-start shadow-sm transition-all hover:bg-accent/40 active:scale-[0.98]"
         >
-          <Icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted">
+            <Icon className="size-4 text-muted-foreground" aria-hidden />
+          </span>
           <span className="min-w-0 flex-1 truncate text-sm font-medium">{navLabel.item(key)}</span>
           <span className="shrink-0 truncate text-xs text-muted-foreground">{navLabel.group(module.id)}</span>
         </button>

@@ -44,13 +44,13 @@ export function MobileModulePages({ module, onBack, onNavigate }: MobileModulePa
         aria-label={navLabel.group(module.id)}
         className="flex-1 overflow-y-auto p-3"
       >
-        <div className="flex flex-col gap-0.5">
+        <div className="flex flex-col gap-1">
           {module.items.map((item) => {
             if (item.isSection) {
               return (
                 <p
                   key={item.key}
-                  className="mb-1 mt-4 px-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground first:mt-0"
+                  className="mb-1.5 mt-5 px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground first:mt-1"
                 >
                   {navLabel.item(item.key)}
                 </p>
@@ -67,15 +67,26 @@ export function MobileModulePages({ module, onBack, onNavigate }: MobileModulePa
                 }}
                 className={({ isActive }) =>
                   cn(
-                    'flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                    'flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium transition-all active:scale-[0.98]',
                     isActive
-                      ? 'bg-primary text-primary-foreground'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
                       : 'text-foreground hover:bg-accent',
                   )
                 }
               >
-                <Icon className="size-4 shrink-0" aria-hidden />
-                <span className="min-w-0 flex-1 truncate">{navLabel.item(item.key)}</span>
+                {({ isActive }) => (
+                  <>
+                    <span
+                      className={cn(
+                        'flex size-8 shrink-0 items-center justify-center rounded-lg',
+                        isActive ? 'bg-primary-foreground/15' : 'bg-muted',
+                      )}
+                    >
+                      <Icon className={cn('size-4', isActive ? 'text-primary-foreground' : 'text-muted-foreground')} aria-hidden />
+                    </span>
+                    <span className="min-w-0 flex-1 truncate">{navLabel.item(item.key)}</span>
+                  </>
+                )}
               </NavLink>
             );
           })}
