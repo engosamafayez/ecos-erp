@@ -274,10 +274,24 @@ final class RoleTemplateCatalog
 
             // ── Sales ────────────────────────────────────────────────────────────
             self::make('sales-manager', 'Sales Manager', $S, 'Runs the sales team and pipeline.', [
+                // TASK-ECOS-IAM-CLOSURE-INTEGRATION-GATE-004 §3: 'sales.customers' is not a
+                // real resource — it appears nowhere in the codebase except this catalog. The
+                // real customer authority is crm.customers.{view,create,update,delete,merge,
+                // archive} (config/permissions.php base registry + Modules/Crm/Customers'
+                // dedicated seed_crm_customer_permissions_table migration, which is also what
+                // every customer route in routes/api.php actually checks). This template
+                // already holds crm.customers.* in full via its 'crm.*' wildcard, so only the
+                // SCOPE KEY was wrong — and it was wrong in the unsafe direction:
+                // EffectiveRoleProfile::scopeFor() falls back to 'all' for a resource with no
+                // matching entry, so the dead 'sales.customers' key was silently granting this
+                // role unrestricted (company-wide) customer visibility instead of the 'team'
+                // scope actually authored here. Renaming the key to the real resource makes the
+                // already-intended 'team' restriction take effect — this narrows current
+                // effective access, it does not widen it.
                 'permissions' => ['sales.*', 'crm.*', 'pos.*'],
                 'nav' => ['dashboard', 'commerce', 'crm', 'pos', 'customerEngagement'],
                 'dashboard' => ['profile' => 'crm'], 'landing' => 'orders',
-                'scopes' => ['sales.orders' => 'team', 'sales.customers' => 'team'],
+                'scopes' => ['sales.orders' => 'team', 'crm.customers' => 'team'],
                 'policies' => ['discount-approval'],
             ]),
             self::make('sales-representative', 'Sales Representative', $S, 'Owns their own orders and customers — no cost visibility.', [
@@ -288,16 +302,28 @@ final class RoleTemplateCatalog
                 // stale create-style token to crm.sales.manage (create/update leads, opportunities,
                 // quotes) + crm.sales.convert (win/lose an opportunity) — the two real write-side
                 // actions a rep who owns their own pipeline actually performs day to day.
+                //
+                // TASK-ECOS-IAM-CLOSURE-INTEGRATION-GATE-004 §3: 'sales.customers.{view,create}'
+                // does not exist either — same non-resource as sales-manager's stale scope key,
+                // above. Unlike sales-manager, this role holds no crm.* wildcard, so the fake
+                // tokens left it with literally zero working customer capability despite the
+                // template's own description ("owns their own... customers"). Resolved to the
+                // canonical 1:1 replacement — crm.customers.view + crm.customers.create — the
+                // exact same two action levels the stale tokens named, nothing wider (no
+                // update/delete/merge/archive added, since the original two tokens gave no
+                // indication of intending them). Scope key renamed for the same reason as
+                // sales-manager's: the dead 'sales.customers' key was defaulting this role to
+                // unrestricted 'all' customer visibility instead of the authored 'self'.
                 'permissions' => [
                     'sales.orders.view', 'sales.orders.create', 'sales.orders.update',
-                    'sales.customers.view', 'sales.customers.create',
+                    'crm.customers.view', 'crm.customers.create',
                     'crm.sales.view', 'crm.sales.manage', 'crm.sales.convert',
                     'inventory.products.view',
                 ],
                 'nav' => ['dashboard', 'commerce', 'crm'],
                 'dashboard' => ['profile' => 'crm', 'hidden' => ['marketing-perf']],
                 'landing' => 'orders', 'hidden' => self::HIDE_SALES,
-                'scopes' => ['sales.orders' => 'self', 'sales.customers' => 'self'],
+                'scopes' => ['sales.orders' => 'self', 'crm.customers' => 'self'],
             ]),
             self::make('cashier', 'Cashier', $S, 'POS operator — own sessions only.', [
                 // TASK-IAM-TEMPLATE-RECONCILIATION-001 Group C: 'pos.sessions.*' and
@@ -346,7 +372,20 @@ final class RoleTemplateCatalog
 
             // ── Accounting / Finance ─────────────────────────────────────────────
             self::make('accountant', 'Accountant', $ACC, 'Records and reconciles transactions.', [
-                'permissions' => ['finance.gl.view', 'finance.journal.create', 'accounting.ledgers.view', 'purchasing.supplier_invoices.view'],
+                // TASK-ECOS-IAM-CLOSURE-INTEGRATION-GATE-004 §5 (final catalog audit):
+                // 'accounting.ledgers.view' does not exist — this is exactly the BUG-GL-011
+                // defect UnknownTemplatePermissionException's own docblock describes ("Four
+                // finance templates shipped that way against an accounting.* namespace that
+                // has zero seeded permissions"). This is the one that survived. It is a pure
+                // redundant duplicate, not a missing capability: 'finance.gl.view' — already
+                // held on this exact same line — is itself seeded with the description "View
+                // the general ledger and journals" (Modules/Finance/…/seed_finance_permissions_
+                // table.php), i.e. it IS the real "view the ledger" permission. Removed the
+                // fabricated duplicate; effective privilege is unchanged (finance.gl.view alone
+                // already granted this). Left uncorrected, RoleTemplateCompiler::compile() would
+                // throw UnknownTemplatePermissionException the moment this template was ever
+                // assigned — a hard integration blocker, not a scope nuance.
+                'permissions' => ['finance.gl.view', 'finance.journal.create', 'purchasing.supplier_invoices.view'],
                 'nav' => ['dashboard', 'finance', 'purchasing', 'reports'],
                 'dashboard' => ['profile' => 'finance'], 'landing' => 'accounting',
             ]),

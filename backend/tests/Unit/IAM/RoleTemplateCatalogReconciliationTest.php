@@ -8,17 +8,21 @@ use Modules\IAM\Domain\Catalog\RoleTemplateCatalog;
 use PHPUnit\Framework\TestCase;
 
 /**
- * TASK-ECOS-IAM-ADMINISTRATION-WORKSPACE-003 — Group A/B/C template reconciliation.
+ * TASK-ECOS-IAM-ADMINISTRATION-WORKSPACE-003 — Group A/B/C template reconciliation, extended by
+ * TASK-ECOS-IAM-CLOSURE-INTEGRATION-GATE-004 — final catalog audit (§3, §5).
  *
  * Pure catalog-data assertions (RoleTemplateCatalog::all() has no DB dependency — the same
  * convention as PermissionNameTest). Every token asserted present here was independently
  * verified against live enforcement (route middleware, Policy::hasPermissionTo() calls) or a
  * dedicated permission-seeding migration before being written into the catalog — see the
  * inline evidence comment on each template in RoleTemplateCatalog.php and §14/§29 of
- * docs/verification/TASK-ECOS-IAM-ADMINISTRATION-WORKSPACE-003-REPORT.md for the full trail,
- * including a self-correction: an earlier pass in this same task fabricated several tokens for
- * `cashier` and `ai-analyst` (plausible-looking dot-paths that do not exist anywhere in the
- * codebase); this test's Group C assertions guard the corrected, verified state.
+ * docs/verification/TASK-ECOS-IAM-ADMINISTRATION-WORKSPACE-003-REPORT.md, and §16/§22 of
+ * docs/verification/TASK-ECOS-IAM-CLOSURE-INTEGRATION-GATE-004-REPORT.md, for the full trail —
+ * including two self-corrections: an earlier pass fabricated several tokens for `cashier` and
+ * `ai-analyst` (Task 3), and a whole-catalog audit (Task 4) found `sales.customers` (invalid,
+ * real resource is `crm.customers`) and `accounting.ledgers.view` (a fabricated duplicate of
+ * the already-held `finance.gl.view`) surviving in `sales-manager`/`sales-representative` and
+ * `accountant` respectively. This test's assertions guard the corrected, verified state.
  */
 class RoleTemplateCatalogReconciliationTest extends TestCase
 {
@@ -204,5 +208,88 @@ class RoleTemplateCatalogReconciliationTest extends TestCase
                 );
             }
         }
+    }
+
+    // ── TASK-ECOS-IAM-CLOSURE-INTEGRATION-GATE-004 §3: sales.customers → crm.customers ──
+
+    /**
+     * 'sales.customers' is not a real resource anywhere in the codebase — the real customer
+     * authority is crm.customers.{view,create,update,delete,merge,archive} (config/
+     * permissions.php base registry + Modules/Crm/Customers' dedicated seeder, and what every
+     * customer route in routes/api.php actually checks). sales-manager already held crm.* (so
+     * its fix is scope-key-only); sales-representative held literal, non-functional
+     * 'sales.customers.{view,create}' tokens and is fixed to the exact same two action levels
+     * under the real resource name — no widening to update/delete/merge/archive.
+     */
+    public function test_sales_customers_stale_reference_is_reconciled_to_crm_customers(): void
+    {
+        $salesManager = $this->definitionFor('sales-manager');
+        $this->assertNotContains('sales.customers', array_keys($salesManager['scopes']), "sales-manager must not carry the dead 'sales.customers' scope key.");
+        $this->assertArrayHasKey('crm.customers', $salesManager['scopes']);
+        $this->assertSame('team', $salesManager['scopes']['crm.customers']);
+        // Permission-side is unaffected: crm.customers.* was already covered by the crm.*
+        // wildcard this role holds — confirm that wildcard is still present, untouched.
+        $this->assertContains('crm.*', $salesManager['permissions']);
+
+        $salesRep = $this->definitionFor('sales-representative');
+        $this->assertNotContains('sales.customers.view', $salesRep['permissions']);
+        $this->assertNotContains('sales.customers.create', $salesRep['permissions']);
+        $this->assertContains('crm.customers.view', $salesRep['permissions']);
+        $this->assertContains('crm.customers.create', $salesRep['permissions']);
+        // No widening: the two stale tokens were view/create-level only, never held
+        // update/delete/merge/archive, and must not gain them through this fix.
+        foreach (['crm.customers.update', 'crm.customers.delete', 'crm.customers.merge', 'crm.customers.archive'] as $wider) {
+            $this->assertNotContains($wider, $salesRep['permissions'], "sales-representative must not gain '{$wider}' — the stale tokens never implied it.");
+        }
+        $this->assertNotContains('sales.customers', array_keys($salesRep['scopes']));
+        $this->assertArrayHasKey('crm.customers', $salesRep['scopes']);
+        $this->assertSame('self', $salesRep['scopes']['crm.customers']);
+    }
+
+    // ── TASK-ECOS-IAM-CLOSURE-INTEGRATION-GATE-004 §5: accounting.ledgers.view removed ──
+
+    /**
+     * BUG-GL-011 (see UnknownTemplatePermissionException's own docblock): "Four finance
+     * templates shipped that way against an accounting.* namespace that has zero seeded
+     * permissions." This was the one that survived. 'accounting.ledgers.view' was a pure
+     * redundant duplicate of 'finance.gl.view' (already held on the same line, seeded with the
+     * description "View the general ledger and journals") — removing it does not reduce
+     * effective privilege, and leaving it in would throw UnknownTemplatePermissionException the
+     * moment this template was ever compiled/assigned.
+     */
+    public function test_accountant_fabricated_accounting_ledgers_token_is_removed(): void
+    {
+        $accountant = $this->permissionsFor('accountant');
+        $this->assertNotContains('accounting.ledgers.view', $accountant);
+        $this->assertContains('finance.gl.view', $accountant, 'finance.gl.view already covers the intended "view the ledger" capability.');
+    }
+
+    // ── TASK-ECOS-IAM-CLOSURE-INTEGRATION-GATE-004 §1/§19: Group B — CTO ruling ─────────
+
+    /**
+     * CTO final ruling (this task's §1): hr-officer and customer-service-agent are RECONCILED —
+     * LEAVE AS-IS. No privilege expansion, even where a broken token could technically be
+     * "corrected" to a real one — the CTO explicitly disallowed that here ("Do NOT add optional
+     * permissions merely because those permissions exist in the catalogue. Any future expansion
+     * ... requires an explicit business requirement"). This test pins the exact byte-for-byte
+     * permission lists so a future pass cannot silently widen either role while "fixing" them.
+     */
+    public function test_group_b_templates_are_untouched_per_cto_least_privilege_ruling(): void
+    {
+        $this->assertSame(
+            ['hr.employees.view', 'hr.employees.create', 'hr.employees.update', 'hr.attendance.view', 'hr.attendance.register', 'hr.leave.view'],
+            $this->permissionsFor('hr-officer'),
+        );
+        $this->assertSame(
+            ['crm.service.view', 'crm.tickets.create', 'crm.tickets.update', 'omnichannel.inbox.view', 'omnichannel.inbox.manage', 'crm.customers.view'],
+            $this->permissionsFor('customer-service-agent'),
+        );
+
+        // Not widened to the real, broader equivalents that exist in the catalog today
+        // (hr.employees.manage; crm.service.manage) — the CTO ruling forecloses this path for
+        // this batch, even though both are individually "fixable" the same way sales.customers
+        // and accounting.ledgers.view were.
+        $this->assertNotContains('hr.employees.manage', $this->permissionsFor('hr-officer'));
+        $this->assertNotContains('crm.service.manage', $this->permissionsFor('customer-service-agent'));
     }
 }
