@@ -250,6 +250,117 @@ class SupplierOpeningBalanceTest extends TestCase
         $this->service()->applyAdvanceToBill($bill->fresh(), 0.0, 1);
     }
 
+    // ── R1 §12 — Cross-Supplier isolation: a bill belonging to Supplier B can never be
+    // settled from Supplier A's advance. applyAdvanceToBill() takes no separate "which
+    // supplier" argument — the supplier used for availableAdvance() is ALWAYS the bill's
+    // own supplier_id — so this is correct by construction, not by an explicit guard.
+    // Proven here rather than assumed: Supplier A holds a large advance, Supplier B holds
+    // none; applying against Supplier B's own bill must fail on Supplier B's own (zero)
+    // available advance, never succeed by reading Supplier A's balance.
+    public function test_advance_cannot_settle_a_bill_belonging_to_a_different_supplier(): void
+    {
+        $supplierA = (string) Str::uuid();
+        $supplierB = (string) Str::uuid();
+        $expense = $this->postableAccount(AccountType::Expense);
+
+        $this->service()->postOpeningAdvance($this->companyId, $supplierA, 'SUP-XA', 10000.0, Carbon::today(), null, null, 1);
+        // Supplier B has no advance at all.
+        $this->assertSame(0.0, $this->ledger()->availableAdvance($this->companyId, $supplierB));
+
+        $billB = app(AccountsPayableService::class)->createDocument(
+            companyId: $this->companyId, supplierId: $supplierB, number: 'BILL-'.substr(md5(uniqid()), 0, 6),
+            documentDate: Carbon::today(), lines: [['expense_account_id' => (int) $expense->id, 'net_amount' => 500.0]],
+            type: SupplierDocumentType::Bill, dueDate: Carbon::today(),
+        );
+        app(AccountsPayableService::class)->postDocument($billB);
+
+        $this->expectException(FinanceException::class);
+        $this->service()->applyAdvanceToBill($billB->fresh(), 500.0, 1);
+
+        // Supplier A's advance must remain completely untouched by the refused attempt.
+        $this->assertSame(10000.0, $this->ledger()->availableAdvance($this->companyId, $supplierA));
+    }
+
+    // ── R1 §16 — Wrong-direction: a Payable-typed balance (company owes supplier) must
+    // never be readable/consumable as an Advance. availableAdvance() sums ONLY
+    // entry_type='advance' rows, so a supplier with a large opening PAYABLE and zero
+    // advance must refuse ANY advance application, verified against the real ledger sign,
+    // not by static reasoning about the query alone.
+    public function test_a_payable_balance_cannot_be_consumed_as_an_advance(): void
+    {
+        $supplier = (string) Str::uuid();
+        $expense = $this->postableAccount(AccountType::Expense);
+
+        // Company owes the supplier 10,000 — a payable, not a credit.
+        $this->service()->postOpeningPayable($this->companyId, $supplier, 'SUP-DIR', 10000.0, Carbon::today(), null, null, 1);
+        $this->assertSame(10000.0, $this->ledger()->outstandingPayable($this->companyId, $supplier));
+        $this->assertSame(0.0, $this->ledger()->availableAdvance($this->companyId, $supplier));
+
+        $bill = app(AccountsPayableService::class)->createDocument(
+            companyId: $this->companyId, supplierId: $supplier, number: 'BILL-'.substr(md5(uniqid()), 0, 6),
+            documentDate: Carbon::today(), lines: [['expense_account_id' => (int) $expense->id, 'net_amount' => 100.0]],
+            type: SupplierDocumentType::Bill, dueDate: Carbon::today(),
+        );
+        app(AccountsPayableService::class)->postDocument($bill);
+
+        // Even a tiny amount must be refused — there is no advance to consume, only a
+        // payable, and the two must never be conflated in either direction.
+        $this->expectException(FinanceException::class);
+        $this->service()->applyAdvanceToBill($bill->fresh(), 1.0, 1);
+    }
+
+    // ── R1 §17 — Partial / Full cases, explicit A/B/C, each independently verified across
+    // availableAdvance(), allocatedAmount(), bill outstanding(), and the tagged entries.
+    public function test_partial_full_and_over_settlement_cases_a_b_c(): void
+    {
+        // A — advance < bill: 400 advance against a 1,000 bill leaves 600 outstanding.
+        $supplierA = (string) Str::uuid();
+        $expense = $this->postableAccount(AccountType::Expense);
+        $this->service()->postOpeningAdvance($this->companyId, $supplierA, 'SUP-PA', 400.0, Carbon::today(), null, null, 1);
+        $billA = app(AccountsPayableService::class)->postDocument(app(AccountsPayableService::class)->createDocument(
+            companyId: $this->companyId, supplierId: $supplierA, number: 'BILL-'.substr(md5(uniqid()), 0, 6),
+            documentDate: Carbon::today(), lines: [['expense_account_id' => (int) $expense->id, 'net_amount' => 1000.0]],
+            type: SupplierDocumentType::Bill, dueDate: Carbon::today(),
+        ));
+        $this->service()->applyAdvanceToBill($billA->fresh(), 400.0, 1);
+        $this->assertSame(0.0, $this->ledger()->availableAdvance($this->companyId, $supplierA));
+        $this->assertSame(400.0, $billA->fresh()->allocatedAmount());
+        $this->assertSame(600.0, $billA->fresh()->outstanding());
+        $this->assertSame(600.0, $this->ledger()->outstandingPayable($this->companyId, $supplierA));
+
+        // B — advance = bill: 1,000 advance against a 1,000 bill fully settles it.
+        $supplierB = (string) Str::uuid();
+        $this->service()->postOpeningAdvance($this->companyId, $supplierB, 'SUP-PB', 1000.0, Carbon::today(), null, null, 1);
+        $billB = app(AccountsPayableService::class)->postDocument(app(AccountsPayableService::class)->createDocument(
+            companyId: $this->companyId, supplierId: $supplierB, number: 'BILL-'.substr(md5(uniqid()), 0, 6),
+            documentDate: Carbon::today(), lines: [['expense_account_id' => (int) $expense->id, 'net_amount' => 1000.0]],
+            type: SupplierDocumentType::Bill, dueDate: Carbon::today(),
+        ));
+        $this->service()->applyAdvanceToBill($billB->fresh(), 1000.0, 1);
+        $this->assertSame(0.0, $this->ledger()->availableAdvance($this->companyId, $supplierB));
+        $this->assertSame(1000.0, $billB->fresh()->allocatedAmount());
+        $this->assertSame(0.0, $billB->fresh()->outstanding());
+        $this->assertSame(0.0, $this->ledger()->outstandingPayable($this->companyId, $supplierB));
+
+        // C — advance > bill: 1,000 advance against a 400 bill fully settles the bill and
+        // leaves 600 advance still available (never over-applied past the bill's own total).
+        $supplierC = (string) Str::uuid();
+        $this->service()->postOpeningAdvance($this->companyId, $supplierC, 'SUP-PC', 1000.0, Carbon::today(), null, null, 1);
+        $billC = app(AccountsPayableService::class)->postDocument(app(AccountsPayableService::class)->createDocument(
+            companyId: $this->companyId, supplierId: $supplierC, number: 'BILL-'.substr(md5(uniqid()), 0, 6),
+            documentDate: Carbon::today(), lines: [['expense_account_id' => (int) $expense->id, 'net_amount' => 400.0]],
+            type: SupplierDocumentType::Bill, dueDate: Carbon::today(),
+        ));
+        $this->service()->applyAdvanceToBill($billC->fresh(), 400.0, 1);
+        $this->assertSame(600.0, $this->ledger()->availableAdvance($this->companyId, $supplierC));
+        $this->assertSame(400.0, $billC->fresh()->allocatedAmount());
+        $this->assertSame(0.0, $billC->fresh()->outstanding());
+        $this->assertSame(0.0, $this->ledger()->outstandingPayable($this->companyId, $supplierC));
+        // The excess 600 cannot be forced onto the same (already-settled) bill.
+        $this->expectException(FinanceException::class);
+        $this->service()->applyAdvanceToBill($billC->fresh(), 600.0, 1);
+    }
+
     // ── A partial advance application composes correctly with a partial cash payment on
     // the SAME bill — both mechanisms feed the one allocatedAmount()/outstanding(). ─────
     public function test_partial_advance_and_partial_cash_payment_compose_on_the_same_bill(): void

@@ -138,6 +138,45 @@ class SupplierAdvanceSettlementConcurrencyTest extends TestCase
         $this->assertSame(100.0, $bill->fresh()->outstanding());
     }
 
+    // ── R1 §21 — Idempotency boundary (documented, not solved here). PostingCoordinator's
+    // (source_module, source_event_id) receipt makes the JOURNAL exactly-once: a second
+    // call with an IDENTICAL (bill, amount) reuses the same journal rather than posting a
+    // new one. But applyAdvanceToBill(), unlike postOpeningPayable/postOpeningAdvance (which
+    // guard with an explicit existingEntry() check before posting), unconditionally creates
+    // TWO NEW SupplierLedgerEntry rows every call — so if enough advance remains for the
+    // SAME valid amount to pass its checks a second time, submitting the exact same command
+    // twice double-consumes the ledger/advance while the GL only reflects one journal's
+    // worth of postings. This is a genuine, pre-existing gap (present before this task too,
+    // since applyAdvanceToBill's structure is otherwise unchanged) — proven here, not fixed,
+    // per this task's explicit instruction not to widen into idempotency-key architecture.
+    // Transactional/concurrency safety (§7/§9 of the R1 remediation) is unaffected: this is
+    // about a SEQUENTIAL duplicate submission, not a concurrent race.
+    public function test_identical_sequential_resubmission_double_consumes_the_ledger_no_duplicate_guard(): void
+    {
+        $supplier = (string) Str::uuid();
+        $expense = $this->account(AccountType::Expense);
+
+        app(SupplierOpeningBalanceService::class)->postOpeningAdvance(
+            $this->companyId, $supplier, 'SUP-DUP', 2000.0, Carbon::today(), null, null, 1,
+        );
+        $bill = $this->postedBill($supplier, $expense, 10000.0);
+
+        $journalCountBefore = DB::table('finance_journal_entries')->count();
+
+        // The identical (bill, amount) command, submitted twice, sequentially.
+        app(SupplierOpeningBalanceService::class)->applyAdvanceToBill($bill->fresh(), 800.0, 1);
+        app(SupplierOpeningBalanceService::class)->applyAdvanceToBill($bill->fresh(), 800.0, 1);
+
+        // PostingCoordinator's receipt makes the JOURNAL exactly-once: only ONE new journal.
+        $this->assertSame($journalCountBefore + 1, DB::table('finance_journal_entries')->count());
+
+        // But the LEDGER was consumed twice — 1,600 total, not 800 — the confirmed gap.
+        $this->assertSame(400.0, app(SupplierLedgerService::class)->availableAdvance($this->companyId, $supplier));
+        $this->assertSame(1600.0, $bill->fresh()->allocatedAmount());
+        $this->assertSame(4, DB::table('finance_supplier_ledger_entries')
+            ->where('supplier_id', $supplier)->where('source_type', 'advance_settlement')->count());
+    }
+
     // ═══ HELPERS (mirrors SupplierPaymentTransactionIntegrityTest's own helpers) ═══
 
     private function postedBill(string $supplier, Account $expense, float $amount): SupplierBill
