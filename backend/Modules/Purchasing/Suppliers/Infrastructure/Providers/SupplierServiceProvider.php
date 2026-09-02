@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Modules\Purchasing\Suppliers\Infrastructure\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Modules\Purchasing\Suppliers\Domain\Contracts\SupplierCategoryRepositoryInterface;
 use Modules\Purchasing\Suppliers\Domain\Contracts\SupplierRepositoryInterface;
+use Modules\Purchasing\Suppliers\Infrastructure\Repositories\EloquentSupplierCategoryRepository;
 use Modules\Purchasing\Suppliers\Infrastructure\Repositories\EloquentSupplierRepository;
 
 /**
@@ -16,6 +18,7 @@ final class SupplierServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->bind(SupplierRepositoryInterface::class, EloquentSupplierRepository::class);
+        $this->app->bind(SupplierCategoryRepositoryInterface::class, EloquentSupplierCategoryRepository::class);
     }
 
     public function boot(): void

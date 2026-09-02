@@ -28,7 +28,8 @@
   "form": {
     "code": {
       "label": "Code",
-      "placeholder": "SUP-001"
+      "placeholder": "SUP-001",
+      "autoPlaceholder": "Auto-generated"
     },
     "name": {
       "label": "Name",
@@ -182,6 +183,21 @@
     "next": "Next",
     "page": "Page {{current}} of {{last}}"
   },
+  "categorySelect": {
+    "empty": "No categories yet.",
+    "filterPlaceholder": "All categories",
+    "manage": {
+      "title": "Manage Categories",
+      "subtitle": "Add or remove Supplier Categories.",
+      "codeLabel": "Code",
+      "nameLabel": "Name",
+      "add": "Add",
+      "added": "Category added.",
+      "deleted": "Category deleted.",
+      "loading": "Loading categories…",
+      "empty": "No categories yet — add your first one above."
+    }
+  },
   "wizard": {
     "title": "New Supplier",
     "subtitle": "Add a new supplier to your procurement network.",
@@ -195,8 +211,10 @@
       "namePlaceholder": "e.g. Al Futtaim Trading",
       "code": "Supplier Code",
       "codePlaceholder": "e.g. SUP-001",
+      "codeAutoHint": "Supplier Code is generated automatically once you save.",
+      "codeAutoShort": "Generated on save",
       "category": "Category",
-      "categoryPlaceholder": "Coming soon",
+      "categoryPlaceholder": "Select a category…",
       "status": "Status",
       "activeSupplier": "Active supplier",
       "contactPerson": "Contact Person",

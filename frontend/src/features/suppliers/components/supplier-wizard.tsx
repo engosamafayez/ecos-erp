@@ -25,6 +25,7 @@ import {
   toPayload,
   type SupplierFormValues,
 } from '@/features/suppliers/components/supplier-form-schema';
+import { SupplierCategorySelect } from '@/features/suppliers/components/supplier-category-select';
 import { useCreateSupplier } from '@/features/suppliers/hooks/use-suppliers';
 
 type Props = {
@@ -109,7 +110,7 @@ export function SupplierWizard({ open, onOpenChange, onCreated }: Props) {
     mode: 'onTouched',
   });
 
-  const { register, formState: { errors }, trigger, getValues, reset } = form;
+  const { register, formState: { errors }, trigger, getValues, reset, watch, setValue } = form;
 
   function extractMessage(error: unknown): string {
     return axios.isAxiosError(error) && typeof error.response?.data?.message === 'string'
@@ -127,7 +128,7 @@ export function SupplierWizard({ open, onOpenChange, onCreated }: Props) {
   }
 
   async function goNext() {
-    const step1Fields: (keyof SupplierFormValues)[] = ['code', 'name', 'is_active'];
+    const step1Fields: (keyof SupplierFormValues)[] = ['name', 'is_active'];
     const step2Fields: (keyof SupplierFormValues)[] = ['contact_person', 'phone', 'email', 'mobile', 'country', 'state', 'city', 'district', 'address', 'google_maps_url'];
 
     const valid = await trigger(step === 1 ? step1Fields : step2Fields);
@@ -152,10 +153,11 @@ export function SupplierWizard({ open, onOpenChange, onCreated }: Props) {
   }
 
   const vals = getValues();
+  const categoryId = watch('supplier_category_id');
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{t($ => $.wizard.title)}</DialogTitle>
           <DialogDescription>{t($ => $.wizard.subtitle)}</DialogDescription>
@@ -169,20 +171,20 @@ export function SupplierWizard({ open, onOpenChange, onCreated }: Props) {
           </Alert>
         )}
 
+        <div className="flex-1 overflow-y-auto px-1 py-1">
         {/* Step 1 — Basic Information */}
         {step === 1 && (
           <div className="flex flex-col gap-4">
             <Field label={t($ => $.wizard.fields.name)} required error={errors.name?.message}>
               <Input {...register('name')} placeholder={t($ => $.wizard.fields.namePlaceholder)} />
             </Field>
-            <Field label={t($ => $.wizard.fields.code)} required error={errors.code?.message}>
-              <Input {...register('code')} placeholder={t($ => $.wizard.fields.codePlaceholder)} className="font-mono" />
-            </Field>
+            <div className="rounded-md border border-dashed p-3 text-xs text-muted-foreground">
+              {t($ => $.wizard.fields.codeAutoHint)}
+            </div>
             <Field label={t($ => $.wizard.fields.category)} error={undefined}>
-              <Input
-                disabled
-                placeholder={t($ => $.wizard.fields.categoryPlaceholder)}
-                className="text-muted-foreground"
+              <SupplierCategorySelect
+                value={categoryId ?? null}
+                onChange={(v) => setValue('supplier_category_id', v)}
               />
             </Field>
             <Field label={t($ => $.wizard.fields.status)} error={undefined}>
@@ -252,7 +254,7 @@ export function SupplierWizard({ open, onOpenChange, onCreated }: Props) {
             <div className="rounded-lg border bg-muted/30 p-4 text-sm space-y-2">
               <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
                 <div><span className="text-muted-foreground">{t($ => $.wizard.review.name)}</span><p className="font-medium mt-0.5">{vals.name || '—'}</p></div>
-                <div><span className="text-muted-foreground">{t($ => $.wizard.review.code)}</span><p className="font-mono mt-0.5">{vals.code || '—'}</p></div>
+                <div><span className="text-muted-foreground">{t($ => $.wizard.review.code)}</span><p className="font-mono mt-0.5 text-muted-foreground">{t($ => $.wizard.fields.codeAutoShort)}</p></div>
                 <div><span className="text-muted-foreground">{t($ => $.wizard.review.contact)}</span><p className="mt-0.5">{vals.contact_person || '—'}</p></div>
                 <div><span className="text-muted-foreground">{t($ => $.wizard.review.phone)}</span><p className="mt-0.5">{vals.phone || '—'}</p></div>
                 <div><span className="text-muted-foreground">{t($ => $.wizard.review.email)}</span><p className="mt-0.5">{vals.email || '—'}</p></div>
@@ -275,6 +277,7 @@ export function SupplierWizard({ open, onOpenChange, onCreated }: Props) {
             </div>
           </div>
         )}
+        </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
           {step > 1 && (

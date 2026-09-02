@@ -33,6 +33,7 @@ final class SupplierController extends Controller
             'status' => $request->query('status', 'all'),
             'country' => $request->query('country'),
             'city' => $request->query('city'),
+            'supplier_category_id' => $request->query('supplier_category_id'),
             'sort_by' => $request->query('sort_by', 'created_at'),
             'sort_dir' => $request->query('sort_dir', 'desc'),
             'per_page' => $request->query('per_page', 10),

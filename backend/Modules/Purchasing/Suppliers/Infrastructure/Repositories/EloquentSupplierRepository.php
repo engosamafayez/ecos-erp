@@ -23,6 +23,9 @@ final class EloquentSupplierRepository implements SupplierRepositoryInterface
     {
         $query = Supplier::query()->select('suppliers.*');
 
+        $query->leftJoin('supplier_categories', 'supplier_categories.id', '=', 'suppliers.supplier_category_id');
+        $query->addSelect(['supplier_categories.name as supplier_category_name']);
+
         // ── Aggregate subqueries (LEFT JOIN on derived tables) ────────────────
 
         $grStats = DB::table('goods_receipts')
@@ -104,6 +107,11 @@ final class EloquentSupplierRepository implements SupplierRepositoryInterface
             $query->where('suppliers.city', $city);
         }
 
+        $categoryId = trim((string) ($filters['supplier_category_id'] ?? ''));
+        if ($categoryId !== '') {
+            $query->where('suppliers.supplier_category_id', $categoryId);
+        }
+
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
             $query->where(function (Builder $builder) use ($search): void {
@@ -138,7 +146,7 @@ final class EloquentSupplierRepository implements SupplierRepositoryInterface
 
     public function findById(string $id): ?Supplier
     {
-        return Supplier::query()->find($id);
+        return Supplier::query()->with('supplierCategory')->find($id);
     }
 
     public function create(array $attributes): Supplier

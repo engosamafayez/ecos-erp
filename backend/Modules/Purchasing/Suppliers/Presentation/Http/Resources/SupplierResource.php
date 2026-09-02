@@ -21,6 +21,12 @@ final class SupplierResource extends JsonResource
         return [
             'id' => $this->id,
             'code' => $this->code,
+            'supplier_category_id' => $this->supplier_category_id,
+            // Populated either via the list query's join alias, or the eager-loaded
+            // relation on a single-record fetch.
+            'supplier_category_name' => $this->relationLoaded('supplierCategory')
+                ? $this->supplierCategory?->name
+                : $this->whenHas('supplier_category_name', fn () => $this->supplier_category_name),
             'name' => $this->name,
             'contact_person' => $this->contact_person,
             'email' => $this->email,

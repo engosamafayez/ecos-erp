@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Purchasing\Suppliers\Infrastructure\Database\Factories\SupplierFactory;
 
@@ -35,6 +36,7 @@ class Supplier extends Model
     protected $fillable = [
         'company_id',
         'code',
+        'supplier_category_id',
         'name',
         'contact_person',
         'email',
@@ -95,5 +97,10 @@ class Supplier extends Model
     protected static function newFactory(): SupplierFactory
     {
         return SupplierFactory::new();
+    }
+
+    public function supplierCategory(): BelongsTo
+    {
+        return $this->belongsTo(SupplierCategory::class, 'supplier_category_id');
     }
 }

@@ -16,6 +16,7 @@ import {
   Plus,
   Search,
   ShoppingCart,
+  Tag,
   Trash2,
   Users,
 } from 'lucide-react';
@@ -47,6 +48,8 @@ import { SupplierFormDrawer } from '@/features/suppliers/components/supplier-for
 import { SupplierStatusBadge } from '@/features/suppliers/components/supplier-status-badge';
 import { Supplier360Drawer } from '@/features/suppliers/components/supplier-360-drawer';
 import { SupplierWizard } from '@/features/suppliers/components/supplier-wizard';
+import { SupplierCategorySelect } from '@/features/suppliers/components/supplier-category-select';
+import { SupplierCategoryManageDrawer } from '@/features/suppliers/components/supplier-category-manage-drawer';
 import { useDeleteSupplier, useSuppliersQuery, useUpdateSupplier } from '@/features/suppliers/hooks/use-suppliers';
 import { useSupplierSummaryStats } from '@/features/suppliers/hooks/use-supplier-analytics';
 import type {
@@ -64,7 +67,7 @@ const COL_STORAGE_KEY = 'suppliers-col-visibility-v3';
 /** Map a Supplier row back into a full update payload (used by Archive). */
 function supplierToPayload(s: Supplier, overrides: Partial<SupplierPayload> = {}): SupplierPayload {
   return {
-    code: s.code,
+    supplier_category_id: s.supplier_category_id,
     name: s.name,
     contact_person: s.contact_person ?? undefined,
     email: s.email ?? undefined,
@@ -115,6 +118,8 @@ export function SuppliersPage() {
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<SupplierStatusFilter>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
   const [activeMetric, setActiveMetric] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<{ field: SupplierSortField; direction: 'asc' | 'desc' }>({
@@ -151,12 +156,13 @@ export function SuppliersPage() {
     () => ({
       search: search || undefined,
       status: statusFilter,
+      supplier_category_id: categoryFilter || undefined,
       page,
       per_page: PER_PAGE,
       sort_by: sort.field,
       sort_dir: sort.direction,
     }),
-    [search, statusFilter, page, sort],
+    [search, statusFilter, categoryFilter, page, sort],
   );
 
   const { data, isLoading, isError, isFetching, refetch } = useSuppliersQuery(params);
@@ -260,7 +266,10 @@ export function SuppliersPage() {
             onClick={() => openView(s)}
           >
             <span className="font-medium underline-offset-2 hover:underline">{s.name}</span>
-            <span className="font-mono text-[10px] text-muted-foreground">{s.code}</span>
+            <span className="font-mono text-[10px] text-muted-foreground">
+              {s.code}
+              {s.supplier_category_name ? ` · ${s.supplier_category_name}` : ''}
+            </span>
           </button>
         ),
       },
@@ -490,6 +499,7 @@ export function SuppliersPage() {
             primaryAction={{ label: t($ => $.actions.new), icon: Plus, onClick: () => setWizardOpen(true) }}
             secondaryActions={[
               { key: 'export', label: t($ => $.exportCsv), icon: Download, onClick: () => exportCsv(items), hideOnMobile: true },
+              { key: 'manage-categories', label: t($ => $.categorySelect.manage.title), icon: Tag, onClick: () => setManageCategoriesOpen(true), hideOnMobile: true },
             ]}
             bulkActions={
               selection.selectedCount > 0
@@ -511,6 +521,12 @@ export function SuppliersPage() {
                     className="h-8 w-[200px] pl-8 sm:w-[240px] text-sm"
                   />
                 </div>
+                <SupplierCategorySelect
+                  value={categoryFilter}
+                  onChange={(v) => { setCategoryFilter(v || null); setPage(1); }}
+                  placeholder={t($ => $.categorySelect.filterPlaceholder)}
+                  className="h-8 w-[160px] text-sm"
+                />
                 <ColumnVisibilityMenu columns={columnMeta} visibility={visibility} onToggle={toggle} onReset={reset} />
               </div>
             }
@@ -617,6 +633,11 @@ export function SuppliersPage() {
         open={wizardOpen}
         onOpenChange={setWizardOpen}
         onCreated={() => void refetch()}
+      />
+
+      <SupplierCategoryManageDrawer
+        open={manageCategoriesOpen}
+        onOpenChange={setManageCategoriesOpen}
       />
 
       <PageConfirmDialog

@@ -3,7 +3,10 @@ import { z } from 'zod';
 import type { Supplier, SupplierPayload } from '@/features/suppliers/types/supplier';
 
 export const supplierSchema = z.object({
-  code: z.string().min(1, 'Code is required.').max(50),
+  // Backend-owned (SupplierCodeGeneratorService) — never user-entered; kept
+  // read-only in the UI, never validated as required here.
+  code: z.string().max(50).optional(),
+  supplier_category_id: z.string().optional(),
   name: z.string().min(1, 'Name is required.').max(255),
   contact_person: z.string().max(255).optional(),
   email: z.union([z.literal(''), z.email('Enter a valid email address.')]).optional(),
@@ -28,6 +31,7 @@ export type SupplierFormValues = z.infer<typeof supplierSchema>;
 export function toFormValues(supplier?: Supplier | null): SupplierFormValues {
   return {
     code: supplier?.code ?? '',
+    supplier_category_id: supplier?.supplier_category_id ?? '',
     name: supplier?.name ?? '',
     contact_person: supplier?.contact_person ?? '',
     email: supplier?.email ?? '',
@@ -46,8 +50,11 @@ export function toFormValues(supplier?: Supplier | null): SupplierFormValues {
 
 /**
  * The supplier CRUD payload carries profile data only. Opening balance is never sent from
- * here — it is posted through the certified Finance endpoint from Supplier 360.
+ * here — it is posted through the certified Finance endpoint from Supplier 360. `code` is
+ * never sent — the backend generates it on create and ignores it on update.
  */
 export function toPayload(values: SupplierFormValues): SupplierPayload {
-  return { ...values };
+  const { code, supplier_category_id, ...rest } = values;
+  void code; // never sent — backend-owned, see comment above
+  return { ...rest, supplier_category_id: supplier_category_id || null };
 }

@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace Modules\Purchasing\Suppliers\Presentation\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 /**
- * Validation for creating a supplier.
+ * Validation for creating a supplier. `code` is normally omitted — the backend
+ * generates it (SupplierCodeGeneratorService) — but may be supplied explicitly
+ * (e.g. import/seed tooling); when supplied it must be unique within the company.
  */
 final class StoreSupplierRequest extends FormRequest
 {
@@ -17,12 +21,25 @@ final class StoreSupplierRequest extends FormRequest
     }
 
     /**
-     * @return array<string, array<int, string>>
+     * @return array<string, array<int, mixed>>
      */
     public function rules(): array
     {
+        $companyId = Auth::user()?->company_id;
+
         return [
-            'code' => ['required', 'string', 'max:50', 'unique:suppliers,code'],
+            'code' => [
+                'nullable',
+                'string',
+                'max:50',
+                Rule::unique('suppliers', 'code')->where(fn ($q) => $q->where('company_id', $companyId)),
+            ],
+            'supplier_category_id' => [
+                'nullable',
+                'uuid',
+                Rule::exists('supplier_categories', 'id')
+                    ->where(fn ($q) => $q->where('company_id', $companyId)->where('is_active', true)),
+            ],
             'name' => ['required', 'string', 'max:255'],
             'contact_person' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],

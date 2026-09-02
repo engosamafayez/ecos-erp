@@ -13,8 +13,11 @@ use App\Core\DTO\BaseDTO;
 final class SupplierDTO extends BaseDTO
 {
     public function __construct(
-        public readonly string $code,
         public readonly string $name,
+        // Backend-owned (SupplierCodeGeneratorService) — null means "generate on create";
+        // ignored entirely on update (TASK-ECOS-PROCUREMENT-SUPPLIERS-BATCH-01-MASTER-DATA-002).
+        public readonly ?string $code = null,
+        public readonly ?string $supplier_category_id = null,
         public readonly ?string $contact_person = null,
         public readonly ?string $email = null,
         public readonly ?string $phone = null,
@@ -35,8 +38,9 @@ final class SupplierDTO extends BaseDTO
     public static function fromArray(array $data): self
     {
         return new self(
-            code: (string) $data['code'],
             name: (string) $data['name'],
+            code: self::nullableString($data, 'code'),
+            supplier_category_id: self::nullableString($data, 'supplier_category_id'),
             contact_person: self::nullableString($data, 'contact_person'),
             email: self::nullableString($data, 'email'),
             phone: self::nullableString($data, 'phone'),

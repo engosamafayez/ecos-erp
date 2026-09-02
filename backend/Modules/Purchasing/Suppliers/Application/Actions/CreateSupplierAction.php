@@ -10,13 +10,17 @@ use Illuminate\Support\Facades\Auth;
 use InvalidArgumentException;
 use Modules\Purchasing\Suppliers\Application\DTO\SupplierDTO;
 use Modules\Purchasing\Suppliers\Domain\Contracts\SupplierRepositoryInterface;
+use Modules\Purchasing\Suppliers\Domain\Services\SupplierCodeGeneratorService;
 
 /**
- * Creates a new supplier.
+ * Creates a new supplier, auto-generating its code if none was supplied.
  */
 final class CreateSupplierAction extends BaseAction
 {
-    public function __construct(private readonly SupplierRepositoryInterface $suppliers) {}
+    public function __construct(
+        private readonly SupplierRepositoryInterface $suppliers,
+        private readonly SupplierCodeGeneratorService $codeGenerator,
+    ) {}
 
     /**
      * @param  mixed  ...$arguments  Expects a single {@see SupplierDTO}.
@@ -30,7 +34,9 @@ final class CreateSupplierAction extends BaseAction
         }
 
         $attributes = $dto->toArray();
-        $attributes['company_id'] ??= Auth::user()?->company_id;
+        $companyId = $attributes['company_id'] ?? Auth::user()?->company_id;
+        $attributes['company_id'] = $companyId;
+        $attributes['code'] = $dto->code ?? $this->codeGenerator->next((string) $companyId);
 
         $supplier = $this->suppliers->create($attributes);
 

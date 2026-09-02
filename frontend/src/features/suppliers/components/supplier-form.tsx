@@ -4,19 +4,34 @@ import { useTranslation } from 'react-i18next';
 import { FormField } from '@/components/crud';
 import { Input } from '@/components/ui/input';
 import type { SupplierFormValues } from '@/features/suppliers/components/supplier-form-schema';
+import { SupplierCategorySelect } from '@/features/suppliers/components/supplier-category-select';
 
 export function SupplierFormFields() {
   const { t } = useTranslation('suppliers');
-  const { register } = useFormContext<SupplierFormValues>();
+  const { register, watch, setValue } = useFormContext<SupplierFormValues>();
+  const code = watch('code');
+  const categoryId = watch('supplier_category_id');
 
   return (
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 sm:grid-cols-2">
-        <FormField name="code" label={t($ => $.form.code.label)} required>
-          <Input placeholder={t($ => $.form.code.placeholder)} {...register('code')} />
+        <FormField name="code" label={t($ => $.form.code.label)}>
+          {/* Backend-owned (SupplierCodeGeneratorService) — never editable here; an
+              ordinary edit must never regenerate it (TASK-...-MASTER-DATA-002 §6). */}
+          <Input
+            value={code || t($ => $.form.code.autoPlaceholder)}
+            disabled
+            className="font-mono text-muted-foreground"
+          />
         </FormField>
         <FormField name="name" label={t($ => $.form.name.label)} required>
           <Input placeholder={t($ => $.form.name.placeholder)} {...register('name')} />
+        </FormField>
+        <FormField name="supplier_category_id" label={t($ => $.wizard.fields.category)}>
+          <SupplierCategorySelect
+            value={categoryId ?? null}
+            onChange={(v) => setValue('supplier_category_id', v)}
+          />
         </FormField>
         <FormField name="contact_person" label={t($ => $.form.contactPerson)}>
           <Input {...register('contact_person')} />

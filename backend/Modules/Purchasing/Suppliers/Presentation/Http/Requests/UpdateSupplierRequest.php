@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Modules\Purchasing\Suppliers\Presentation\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 /**
- * Validation for updating a supplier. The unique `code` rule ignores the
- * supplier being updated.
+ * Validation for updating a supplier. `code` is accepted-but-ignored by
+ * UpdateSupplierAction (backend-owned, never regenerated on edit); the rule
+ * here stays permissive so the field is harmless whether or not a client
+ * still sends the existing value back.
  */
 final class UpdateSupplierRequest extends FormRequest
 {
@@ -23,14 +26,15 @@ final class UpdateSupplierRequest extends FormRequest
      */
     public function rules(): array
     {
-        $supplierId = (string) $this->route('supplier');
+        $companyId = Auth::user()?->company_id;
 
         return [
-            'code' => [
-                'required',
-                'string',
-                'max:50',
-                Rule::unique('suppliers', 'code')->ignore($supplierId),
+            'code' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'supplier_category_id' => [
+                'nullable',
+                'uuid',
+                Rule::exists('supplier_categories', 'id')
+                    ->where(fn ($q) => $q->where('company_id', $companyId)->where('is_active', true)),
             ],
             'name' => ['required', 'string', 'max:255'],
             'contact_person' => ['nullable', 'string', 'max:255'],

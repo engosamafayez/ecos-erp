@@ -1,9 +1,27 @@
 /**
  * Suppliers feature types.
  */
+export type SupplierCategory = {
+  id: string;
+  code: string;
+  name: string;
+  name_ar: string | null;
+  is_active: boolean;
+  created_at: string | null;
+};
+
+export type SupplierCategoryPayload = {
+  code: string;
+  name: string;
+  name_ar?: string;
+  is_active: boolean;
+};
+
 export type Supplier = {
   id: string;
   code: string;
+  supplier_category_id: string | null;
+  supplier_category_name?: string | null;
   name: string;
   contact_person: string | null;
   email: string | null;
@@ -40,7 +58,10 @@ export type Supplier = {
 };
 
 export type SupplierPayload = {
-  code: string;
+  // Backend-owned — omitted on create (auto-generated) and ignored on update
+  // (TASK-ECOS-PROCUREMENT-SUPPLIERS-BATCH-01-MASTER-DATA-002).
+  code?: string;
+  supplier_category_id?: string | null;
   name: string;
   contact_person?: string;
   email?: string;
@@ -72,6 +93,7 @@ export type SuppliersQuery = {
   search?: string;
   country?: string;
   city?: string;
+  supplier_category_id?: string;
   page?: number;
   per_page?: number;
   sort_by?: SupplierSortField;

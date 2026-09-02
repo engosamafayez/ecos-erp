@@ -28,7 +28,8 @@
   "form": {
     "code": {
       "label": "الرمز",
-      "placeholder": "SUP-001"
+      "placeholder": "SUP-001",
+      "autoPlaceholder": "يُنشأ تلقائيًا"
     },
     "name": {
       "label": "الاسم",
@@ -182,6 +183,21 @@
     "next": "التالي",
     "page": "صفحة {{current}} من {{last}}"
   },
+  "categorySelect": {
+    "empty": "لا توجد فئات بعد.",
+    "filterPlaceholder": "جميع الفئات",
+    "manage": {
+      "title": "إدارة الفئات",
+      "subtitle": "إضافة أو حذف فئات الموردين.",
+      "codeLabel": "الرمز",
+      "nameLabel": "الاسم",
+      "add": "إضافة",
+      "added": "تمت إضافة الفئة.",
+      "deleted": "تم حذف الفئة.",
+      "loading": "جارٍ تحميل الفئات…",
+      "empty": "لا توجد فئات بعد — أضف أول فئة أعلاه."
+    }
+  },
   "wizard": {
     "title": "مورد جديد",
     "subtitle": "أضف مورداً جديداً إلى شبكة مشترياتك.",
@@ -195,8 +211,10 @@
       "namePlaceholder": "مثال: الفطيم للتجارة",
       "code": "رمز المورد",
       "codePlaceholder": "مثال: SUP-001",
+      "codeAutoHint": "يُنشأ رمز المورد تلقائيًا عند الحفظ.",
+      "codeAutoShort": "يُنشأ عند الحفظ",
       "category": "الفئة",
-      "categoryPlaceholder": "قريباً",
+      "categoryPlaceholder": "اختر فئة…",
       "status": "الحالة",
       "activeSupplier": "مورد نشط",
       "contactPerson": "جهة الاتصال",

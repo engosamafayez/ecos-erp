@@ -38,7 +38,12 @@ final class UpdateSupplierAction extends BaseAction
             throw new SupplierNotFoundException;
         }
 
-        $supplier = $this->suppliers->update($supplier, $dto->toArray());
+        // Code is backend-owned and assigned once at creation — an ordinary edit must never
+        // regenerate or overwrite it, regardless of what the client sends.
+        $attributes = $dto->toArray();
+        unset($attributes['code']);
+
+        $supplier = $this->suppliers->update($supplier, $attributes);
 
         return OperationResult::success($supplier, 'Supplier updated successfully.');
     }

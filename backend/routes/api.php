@@ -263,6 +263,7 @@ use Modules\Purchasing\SupplierInvoices\Presentation\Http\Controllers\SupplierIn
 use Modules\Purchasing\SupplierInvoices\Presentation\Http\Controllers\SupplierInvoiceDocumentController;
 use Modules\Purchasing\SupplierReturns\Presentation\Http\Controllers\SupplierReturnController;
 use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierAnalyticsController;
+use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierCategoryController;
 use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierController;
 use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierDocumentController;
 use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierOpeningBalanceController;
@@ -750,6 +751,13 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 */
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('suppliers/stats', [SupplierAnalyticsController::class, 'summaryStats']);
+    // TASK-ECOS-PROCUREMENT-SUPPLIERS-BATCH-01-MASTER-DATA-002 — Supplier Category lookup.
+    Route::apiResource('supplier-categories', SupplierCategoryController::class)
+        ->only(['index', 'store', 'update', 'destroy'])
+        ->middlewareFor('index', 'permission:purchasing.suppliers.view')
+        ->middlewareFor('store', 'permission:purchasing.supplier_categories.manage')
+        ->middlewareFor('update', 'permission:purchasing.supplier_categories.manage')
+        ->middlewareFor('destroy', 'permission:purchasing.supplier_categories.manage');
     Route::apiResource('suppliers', SupplierController::class)
         // Read-authorization was open: purchasing.suppliers.view is granted to roles but
         // was attached to no route, so any authenticated company user read suppliers. Gate
