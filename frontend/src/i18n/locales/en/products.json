@@ -362,7 +362,9 @@
   },
   "mobileCard": {
     "viewProduct": "View product",
-    "editProduct": "Edit product"
+    "editProduct": "Edit product",
+    "channelsCount": "{{count}} channels",
+    "marginPercent": "{{value}}% margin"
   },
   "recipePrompt": {
     "title": "Product created successfully",

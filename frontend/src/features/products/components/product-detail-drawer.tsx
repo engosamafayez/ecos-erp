@@ -25,6 +25,8 @@ import {
 import { EntityForm } from '@/components/crud';
 import { StatusBadge } from '@/components/crud/status-badge';
 import { Tabs } from '@/components/ds/tabs';
+import { MobileDetailSection } from '@/components/mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { Input } from '@/components/ui/input';
 import { ChannelCell } from '@/features/products/components/badges/channel-badge';
 import { SyncBadge } from '@/features/products/components/badges/sync-badge';
@@ -1037,6 +1039,7 @@ export function ProductDetailDrawer({
   defaultType = 'finished_good',
 }: ProductDetailDrawerProps) {
   const { t } = useTranslation('products');
+  const isMobile = useIsMobile();
   const isNew = product === null;
   const [mode, setMode]               = useState<DrawerMode>(initialMode ?? (isNew ? 'edit' : 'view'));
   const [activeTab, setActiveTab]     = useState(initialTab ?? 'general');
@@ -1146,7 +1149,7 @@ export function ProductDetailDrawer({
       <SheetContent
         side="right"
         className="flex flex-col gap-0 p-0"
-        style={{ width: '48%', minWidth: 520, maxWidth: 900 }}
+        style={isMobile ? undefined : { width: '48%', minWidth: 520, maxWidth: 900 }}
       >
         {/* Header */}
         <SheetHeader className="border-b px-4 py-3">
@@ -1196,13 +1199,30 @@ export function ProductDetailDrawer({
         {/* Body */}
         {mode === 'view' && displayProduct ? (
           <div className="flex-1 overflow-hidden">
-            <Tabs
-              tabs={tabs}
-              activeKey={activeTab}
-              onTabChange={setActiveTab}
-              className="h-full"
-              contentClassName="overflow-y-auto"
-            />
+            {isMobile ? (
+              // Mobile: every canonical section stacked and scrollable, instead of
+              // an 8-tab switcher that hides 7/8 of the content behind a tap and
+              // squeezes 8 labels into a phone-width tab strip (design report §8 —
+              // "no canonical section may silently disappear"). Reuses the EXACT
+              // SAME `tabs` array (same GeneralTab/PricingTab/.../HistoryTab
+              // components, same single already-fetched `displayProduct`) — only
+              // the container changes from a tab switcher to stacked sections.
+              <div className="h-full overflow-y-auto">
+                {tabs.map((tab) => (
+                  <MobileDetailSection key={tab.key} title={tab.label}>
+                    {tab.content}
+                  </MobileDetailSection>
+                ))}
+              </div>
+            ) : (
+              <Tabs
+                tabs={tabs}
+                activeKey={activeTab}
+                onTabChange={setActiveTab}
+                className="h-full"
+                contentClassName="overflow-y-auto"
+              />
+            )}
           </div>
         ) : (
           <div className="flex flex-1 flex-col overflow-hidden">

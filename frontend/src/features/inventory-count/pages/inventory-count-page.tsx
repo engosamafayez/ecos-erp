@@ -4,6 +4,7 @@ import { Camera } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { PageHeader } from '@/components/crud';
+import { MobileDataCard } from '@/components/mobile';
 import { useFormatter } from '@/hooks/use-formatter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -148,8 +149,49 @@ export function InventoryCountPage() {
             </span>
           </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto rounded-md border">
+          {/* Mobile cards (< lg): the 10-column desktop table is unusable on a phone. */}
+          <div className="block lg:hidden">
+            {isLoading ? (
+              <p className="py-10 text-center text-sm text-muted-foreground">{t($ => $.sessions.loading)}</p>
+            ) : filtered.length === 0 ? (
+              <p className="py-10 text-center text-sm text-muted-foreground">
+                {search ? t($ => $.sessions.noMatches) : t($ => $.sessions.empty)}
+              </p>
+            ) : (
+              <div role="list" className="overflow-hidden rounded-md border">
+                {filtered.map((session) => (
+                  <MobileDataCard
+                    key={session.id}
+                    title={<span className="font-mono">{session.count_number}</span>}
+                    subtitle={session.warehouse?.name ?? '—'}
+                    status={<CountStatusBadge status={session.status} />}
+                    onOpen={() => openSession(session)}
+                    fields={[
+                      { label: t($ => $.sessions.columns.accuracy), value: <AccuracyBadge pct={session.variance_summary?.inventory_accuracy_pct} />, align: 'end' },
+                      { label: t($ => $.sessions.columns.shortageValue), value: <MoneyText v={session.shortage_value} />, align: 'end' },
+                      { label: t($ => $.sessions.columns.wasteValue), value: <MoneyText v={session.waste_value} />, align: 'end' },
+                      { label: t($ => $.sessions.columns.startDate), value: fmtDateTime(session.started_at) },
+                    ]}
+                    actions={
+                      session.status === 'draft' ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
+                          onClick={(e) => void handleDelete(session, e)}
+                        >
+                          {t($ => $.sessions.actions.delete)}
+                        </Button>
+                      ) : undefined
+                    }
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Table (lg+) */}
+          <div className="hidden overflow-x-auto rounded-md border lg:block">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b bg-muted/40">

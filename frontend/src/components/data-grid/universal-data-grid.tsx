@@ -287,12 +287,15 @@ export function UniversalDataGrid<T>({
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <>
-      {/* ── Card layout (< lg, i.e. tablet + mobile) ── */}
-      <div className="block lg:hidden overflow-hidden rounded-lg border bg-card">
+      {/* ── Card layout (< lg, i.e. tablet + mobile) ──
+          No outer panel box: each row is now its own elevated `MobileDataCard`
+          (design report §6/§10), so a wrapping border/bg here would nest a box
+          around boxes. */}
+      <div className="block lg:hidden">
         {loading ? (
-          <div className="divide-y">
+          <div className="flex flex-col gap-2">
             {Array.from({ length: 5 }, (_, i) => (
-              <div key={i} className="animate-pulse space-y-2 p-3.5">
+              <div key={i} className="animate-pulse space-y-2 rounded-xl border bg-card p-3.5 shadow-sm">
                 <Skeleton className="h-4 w-32" />
                 <Skeleton className="h-4 w-48" />
                 <div className="mt-1 flex gap-2">

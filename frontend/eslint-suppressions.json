@@ -1540,7 +1540,7 @@
   },
   "src/features/products/components/product-column-defs.tsx": {
     "react-refresh/only-export-components": {
-      "count": 3
+      "count": 1
     }
   },
   "src/features/products/components/product-column-meta.ts": {

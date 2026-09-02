@@ -219,7 +219,24 @@
     "menu": "القائمة",
     "closeMenu": "إغلاق القائمة",
     "workspaces": "مساحات العمل",
-    "moduleNavigation": "تنقل الوحدات"
+    "moduleNavigation": "تنقل الوحدات",
+    "modules": "الوحدات",
+    "searchModulesPlaceholder": "ابحث في الوحدات والصفحات",
+    "recent": "الأخيرة",
+    "current": "الحالي",
+    "backToModules": "الرجوع إلى الوحدات",
+    "companyWarehouse": "الشركة والمخزن",
+    "noModuleMatches": "لا توجد نتائج مطابقة",
+    "menuDescription": "ابحث أو تصفح كل وحدة وصفحة لديك صلاحية الوصول إليها",
+    "families": {
+      "overview": "نظرة عامة",
+      "commerceMarketing": "التجارة والتسويق",
+      "operationsFulfillment": "العمليات والتنفيذ",
+      "inventoryProcurement": "المخزون والمشتريات",
+      "financePeople": "المالية والموارد البشرية",
+      "platformAdmin": "المنصة والإدارة",
+      "other": "أخرى"
+    }
   },
   "language": {
     "switcher": "اللغة",

@@ -27,6 +27,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { CustomerDrawer } from '@/features/customers/components/customer-drawer';
 import { CustomerFormDrawer } from '@/features/customers/components/customer-form-drawer';
 import { CustomerQuickActionCard } from '@/features/customers/components/customer-quick-action-card';
@@ -113,6 +114,7 @@ export function CustomersPage() {
   const { t: tCommon } = useTranslation('common');
   const navigate = useNavigate();
   const searchRef = useRef<HTMLInputElement>(null);
+  const isMobile = useIsMobile();
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [search, setSearch]               = useState('');
@@ -356,6 +358,16 @@ export function CustomersPage() {
             onOpen={(c) => openView(c, 'summary')}
             onOpenOrders={openViewOrders}
             onEdit={openEdit}
+            // Both the Commerce and Mobile milestones independently fixed the
+            // same bug: this was a literal no-op (`() => undefined`) — a
+            // rendered, tappable "Create Order" button that did nothing on
+            // tap (TASK-ECOS-MOBILE-UX-COMPLETION-003 §13: no placeholder
+            // callbacks). Commerce's version is a strict superset — it also
+            // pre-fills the customer's phone into the manual order form's own
+            // phone-first lookup via router state (verified end-to-end:
+            // order-workspace-page.tsx reads `state.customerPhone` and passes
+            // it as `initialCustomerPhone` → `ManualOrderFormWorkspace` →
+            // `initialPhone` on the phone-lookup step) — kept as canonical.
             onCreateOrder={(c) => navigate(ROUTES.ordersNew, { state: { customerPhone: c.phone ?? undefined } })}
             onClose={() => setSearch('')}
             className="max-w-md"
@@ -377,8 +389,58 @@ export function CustomersPage() {
         ) : null}
       </div>
 
-      {/* ── Data Table ───────────────────────────────────────────────────── */}
-      {showTable ? (
+      {/* ── Data — cards on mobile, table on tablet+ ────────────────────────
+          The desktop table has no mobile treatment at all today (no
+          `renderMobileCard`, no `useIsMobile` branch anywhere in this
+          feature — design report §9). Below `md`, TASK-ECOS-MOBILE-UX-
+          COMPLETION-003 replaces it with a card list built on the SAME
+          Task 2 elevated `MobileDataCard` primitive every other redesigned
+          list already uses, reusing the exact same data/handlers
+          (openView/openViewOrders/openEdit/setDeleting/toggleSelect) —
+          no new query, no new business logic. */}
+      {showTable && isMobile ? (
+        <div role="list">
+          {isLoading ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="mb-2 animate-pulse space-y-2 rounded-xl border bg-card p-3.5 shadow-sm">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-48" />
+              </div>
+            ))
+          ) : isError ? (
+            <ErrorState description={t($ => $.table.error)} onRetry={() => void refetch()} />
+          ) : items.length === 0 ? (
+            <EmptyState title={t($ => $.table.empty)} />
+          ) : (
+            items.map((customer, idx) => (
+              <CustomerMobileCard
+                key={customer.id}
+                customer={customer}
+                isFocused={focusedRowIndex === idx}
+                isSelected={selectedIds.has(customer.id)}
+                onToggleSelect={toggleSelect}
+                onView={openView}
+                onViewOrders={openViewOrders}
+                onEdit={openEdit}
+                onDelete={setDeleting}
+              />
+            ))
+          )}
+          {meta && meta.last_page > 1 ? (
+            <div className="mt-2">
+              <Pagination
+                meta={{
+                  page: meta.current_page,
+                  perPage: meta.per_page,
+                  total: meta.total,
+                  lastPage: meta.last_page,
+                }}
+                onPageChange={(p) => { setPage(p); setFocusedRowIndex(null); }}
+              />
+            </div>
+          ) : null}
+        </div>
+      ) : showTable ? (
         <div className="overflow-hidden rounded-xl border bg-background">
           <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -518,7 +580,7 @@ export function CustomersPage() {
 
 // ── Customer Row ──────────────────────────────────────────────────────────────
 
-type RowProps = {
+export type RowProps = {
   customer: Customer;
   isFocused: boolean;
   isSelected: boolean;
@@ -760,5 +822,162 @@ function CustomerRow({
         </div>
       </td>
     </tr>
+  );
+}
+
+// ── Customer Mobile Card (TASK-ECOS-MOBILE-UX-COMPLETION-003) ────────────────
+// Same data and handlers as CustomerRow (RowProps), same canonical fields
+// (server-computed by CustomerOrderMetricsService — never recomputed here).
+// A bespoke card rather than a `MobileDataCard` composition, matching the
+// Products/Orders mobile cards: Call/WhatsApp/Copy and the overflow ActionMenu
+// need to stay always-visible tap targets (not hover-gated, unlike the desktop
+// row's `opacity-0 group-hover:opacity-100` actions cell, which is unreachable
+// on a touch device) and sit outside the tap-to-open target, matching
+// MobileDataCard's own "no interactive element nested inside another" rule.
+export function CustomerMobileCard({
+  customer,
+  isFocused,
+  isSelected,
+  onToggleSelect,
+  onView,
+  onViewOrders,
+  onEdit,
+  onDelete,
+}: RowProps) {
+  const { t } = useTranslation('customers');
+  const { t: tCommon } = useTranslation('common');
+  const primaryPhone = customer.phone;
+
+  return (
+    <div
+      role="listitem"
+      aria-selected={isSelected}
+      data-focused={isFocused || undefined}
+      className={cn(
+        'relative mb-2 rounded-xl border p-3.5 shadow-sm transition-colors last:mb-0',
+        isSelected ? 'bg-primary/5' : 'bg-card',
+        isFocused && 'outline outline-1 -outline-offset-1 outline-primary/50',
+      )}
+    >
+      <div className="absolute start-3.5 top-4">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={() => onToggleSelect(customer.id)}
+          className="size-4 cursor-pointer rounded accent-primary"
+          aria-label={customer.name}
+        />
+      </div>
+
+      <button
+        type="button"
+        className="block w-full min-h-11 ps-7 text-start"
+        onClick={() => onView(customer)}
+        aria-label={`${tCommon($ => $.actions.view)} ${customer.name}`}
+      >
+        {/* Row 1: Name + code, status */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate text-[15px] font-semibold leading-tight text-foreground">{customer.name}</p>
+            <p className="text-xs text-muted-foreground">{customer.code}</p>
+          </div>
+          {!customer.is_active ? (
+            <Badge variant="secondary" className="h-5 shrink-0 px-1.5 text-[10px]">
+              {t($ => $.tags.inactive)}
+            </Badge>
+          ) : null}
+        </div>
+
+        {/* Row 2: Orders / Total / Receiving / Last order — server-computed KPIs */}
+        <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2">
+          <div>
+            <dt className="truncate text-[11px] uppercase tracking-wide text-muted-foreground">{t($ => $.columns.ordersCount)}</dt>
+            <dd className="mt-0.5 text-sm tabular-nums">{customer.orders_count}</dd>
+          </div>
+          <div>
+            <dt className="truncate text-[11px] uppercase tracking-wide text-muted-foreground">{t($ => $.columns.totalOrderValue)}</dt>
+            <dd className="mt-0.5 text-end text-sm tabular-nums">{fmtMoney(customer.total_order_value)}</dd>
+          </div>
+          <div>
+            <dt className="truncate text-[11px] uppercase tracking-wide text-muted-foreground">{t($ => $.columns.receivingRate)}</dt>
+            <dd className="mt-0.5 text-sm tabular-nums">
+              {customer.receiving_rate === null ? <span className="text-muted-foreground">—</span> : `${customer.receiving_rate}%`}
+            </dd>
+          </div>
+          <div>
+            <dt className="truncate text-[11px] uppercase tracking-wide text-muted-foreground">{t($ => $.columns.lastOrder)}</dt>
+            <dd className="mt-0.5 text-end text-sm tabular-nums">
+              {customer.last_order_at ? new Date(customer.last_order_at).toLocaleDateString() : <span className="text-muted-foreground">—</span>}
+            </dd>
+          </div>
+        </dl>
+
+        {/* Row 3: Address + location */}
+        {customer.full_address || customer.location_url ? (
+          <div className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
+            {customer.full_address ? <p className="min-w-0 flex-1 truncate">{customer.full_address}</p> : null}
+            {customer.location_url ? (
+              <a
+                href={customer.location_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="shrink-0 text-muted-foreground hover:text-primary"
+                title={t($ => $.columns.location)}
+              >
+                <MapPin className="size-3.5" />
+              </a>
+            ) : null}
+          </div>
+        ) : null}
+
+        {customer.notes ? (
+          <div className="mt-2">
+            <Badge
+              variant="secondary"
+              className="h-5 gap-1 px-1.5 text-[10px] text-amber-700 bg-amber-100 border-amber-200 dark:text-amber-400 dark:bg-amber-950/50 dark:border-amber-800"
+            >
+              <FileText className="size-3" />
+              {t($ => $.intelligence.hasNotes)}
+            </Badge>
+          </div>
+        ) : null}
+      </button>
+
+      {/* Footer — Call/WhatsApp/Copy (PhoneCell, unchanged shared component) + View Orders + overflow */}
+      <div className="mt-2.5 flex items-center justify-between gap-2 ps-7">
+        <div onClick={(e) => e.stopPropagation()}>
+          <PhoneCell
+            phone={primaryPhone}
+            labels={{
+              call: t($ => $.phone.call),
+              whatsapp: t($ => $.phone.whatsapp),
+              copy: tCommon($ => $.common.copy),
+            }}
+          />
+        </div>
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          {customer.orders_count > 0 ? (
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => onViewOrders(customer)}>
+              {t($ => $.table.viewOrders)}
+            </Button>
+          ) : null}
+          <ActionMenu
+            label={`Actions for ${customer.name}`}
+            items={[
+              { key: 'edit', label: tCommon($ => $.common.edit), icon: Pencil, onSelect: () => onEdit(customer) },
+              {
+                key: 'copyPhone',
+                label: t($ => $.quickCard.copyPhone),
+                icon: Copy,
+                onSelect: () => { if (primaryPhone) void navigator.clipboard.writeText(primaryPhone); },
+                disabled: !primaryPhone,
+              },
+              { key: 'delete', label: tCommon($ => $.common.delete), icon: Trash2, variant: 'destructive' as const, onSelect: () => onDelete(customer) },
+            ]}
+          />
+        </div>
+      </div>
+    </div>
   );
 }

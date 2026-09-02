@@ -24,11 +24,12 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Tabs } from '@/components/ds/tabs';
+import { MobileDetailSection } from '@/components/mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { OrderStatusBadge } from '@/features/orders/components/order-status-badge';
 import { useOrdersQuery } from '@/features/orders/hooks/use-orders';
 import { useCustomerQuery } from '../hooks/use-customers';
 import type { Customer } from '@/features/customers/types/customer';
-;
 
 type Props = {
   customer: Customer | null;
@@ -510,6 +511,7 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 export function CustomerDrawer({ customer, open, onOpenChange, onEdit, defaultTab }: Props) {
   const { t } = useTranslation('customers');
+  const isMobile = useIsMobile();
 
   const [activeTab, setActiveTab] = useState(defaultTab ?? 'summary');
 
@@ -632,14 +634,30 @@ export function CustomerDrawer({ customer, open, onOpenChange, onEdit, defaultTa
           </div>
         </SheetHeader>
 
-        {/* ── Tabs ────────────────────────────────────────────────────────── */}
-        <Tabs
-          tabs={tabs}
-          activeKey={activeTab}
-          onTabChange={setActiveTab}
-          className="flex-1 overflow-hidden"
-          contentClassName="overflow-y-auto"
-        />
+        {/* ── Body ────────────────────────────────────────────────────────── */}
+        {isMobile ? (
+          // Mobile: every canonical section stacked and scrollable instead of
+          // a 6-tab switcher (design report §9 — "organize into touch-friendly
+          // sections... do not blindly reproduce a desktop drawer layout
+          // vertically" — this reuses the exact same tab bodies/data, just
+          // presented as sections rather than hidden behind tab taps, matching
+          // the pattern already applied to Products' 8-tab detail).
+          <div className="flex-1 overflow-y-auto">
+            {tabs.map((tab) => (
+              <MobileDetailSection key={tab.key} title={tab.label}>
+                {tab.content}
+              </MobileDetailSection>
+            ))}
+          </div>
+        ) : (
+          <Tabs
+            tabs={tabs}
+            activeKey={activeTab}
+            onTabChange={setActiveTab}
+            className="flex-1 overflow-hidden"
+            contentClassName="overflow-y-auto"
+          />
+        )}
       </SheetContent>
     </Sheet>
   );

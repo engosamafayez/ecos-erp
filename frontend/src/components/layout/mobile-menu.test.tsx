@@ -1,11 +1,16 @@
 import '@testing-library/jest-dom/vitest';
 import { useState } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Recovered with the accordion mobile menu (TASK-ECOS-MOBILE-UX-CORE-CLOSURE-001).
-// Mutable holder the mocks read at call time, so each test can set the module set + active module.
+// Rewritten for TASK-ECOS-MOBILE-UX-COMPLETION-002 — the single-open accordion
+// from TASK-ECOS-MOBILE-UX-CORE-CLOSURE-001 was rejected and replaced with a
+// two-view launcher (Modules grid → per-module drill-in page list). These
+// tests cover the new architecture; the RBAC/route guarantees the old suite
+// checked (authorized-only items, own-route navigation, active-state) carry
+// over unchanged since the data source (`useNavigation()`) is untouched.
 const nav = vi.hoisted(() => ({ modules: [] as unknown[], active: undefined as unknown }));
 
 function pathProxy(path: string): unknown {
@@ -38,6 +43,7 @@ const Stub = () => null;
 const commerce = {
   id: 'commerce', icon: Stub, defaultPath: '/orders',
   items: [
+    { key: 'sales-section', isSection: true },
     { key: 'orders', path: '/orders', icon: Stub },
     { key: 'products', path: '/products', icon: Stub },
     { key: 'customers', path: '/customers', icon: Stub },
@@ -53,8 +59,9 @@ const inventory = {
 const dashboard = { id: 'dashboard', icon: Stub, defaultPath: '/dashboard', items: [] };
 
 beforeEach(() => {
-  nav.modules = [commerce, inventory, dashboard];
+  nav.modules = [dashboard, commerce, inventory];
   nav.active = commerce;
+  window.localStorage.clear();
 });
 
 function LocationDisplay() {
@@ -69,6 +76,8 @@ function renderMenu(initialPath = '/orders') {
     return (
       <MemoryRouter initialEntries={[initialPath]}>
         <LocationDisplay />
+        {/* eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- test-harness-only control, not app UI */}
+        <button onClick={() => setOpen(true)}>reopen</button>
         <MobileMenu open={open} onClose={() => { onClose(); setOpen(false); }} />
       </MemoryRouter>
     );
@@ -76,64 +85,135 @@ function renderMenu(initialPath = '/orders') {
   return { onClose, ...render(<Harness />) };
 }
 
-const rowButton = (id: string) => screen.getByText(id).closest('button') as HTMLButtonElement;
+const tile = (id: string) => screen.getByText(id).closest('button') as HTMLButtonElement;
 const childLink = (key: string) => screen.getByText(key).closest('a') as HTMLAnchorElement;
 
-describe('MobileMenu — inline nested (accordion) module sub-navigation', () => {
-  it('auto-expands the active module and shows its children inline (Commerce → Orders/Products/Customers)', () => {
+describe('MobileMenu — Modules launcher + drill-in (TASK-ECOS-MOBILE-UX-COMPLETION-002)', () => {
+  it('opens on the Modules grid, listing every authorized module as a tile', () => {
     renderMenu();
+    expect(screen.getByText('commerce')).toBeInTheDocument();
+    expect(screen.getByText('inventory')).toBeInTheDocument();
+    expect(screen.getByText('dashboard')).toBeInTheDocument();
+  });
+
+  it('a module with a single destination navigates directly and closes (no drill-in)', () => {
+    const { onClose } = renderMenu();
+    fireEvent.click(tile('dashboard'));
+    expect(screen.getByTestId('loc')).toHaveTextContent('/dashboard');
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('a module with multiple destinations drills in, restoring its section header (not filtered out)', () => {
+    renderMenu();
+    fireEvent.click(tile('commerce'));
+    expect(screen.getByText('sales-section')).toBeInTheDocument(); // section header restored
     expect(screen.getByText('orders')).toBeInTheDocument();
     expect(screen.getByText('products')).toBeInTheDocument();
     expect(screen.getByText('customers')).toBeInTheDocument();
   });
 
-  it('a child navigates to ITS OWN canonical route (Products → /products, not the Commerce default /orders) and closes the menu', () => {
+  it('omits unauthorized children in the drill-in — only what the navigation authority returns is rendered', () => {
+    nav.modules = [dashboard, { ...commerce, items: [
+      { key: 'orders', path: '/orders', icon: Stub },
+      { key: 'customers', path: '/customers', icon: Stub },
+    ] }, inventory];
+    renderMenu();
+    fireEvent.click(tile('commerce'));
+    expect(screen.getByText('customers')).toBeInTheDocument();
+    expect(screen.queryByText('products')).toBeNull();
+  });
+
+  it('a drill-in child navigates to ITS OWN canonical route and closes the menu', () => {
     const { onClose } = renderMenu();
+    fireEvent.click(tile('commerce'));
     fireEvent.click(childLink('products'));
     expect(screen.getByTestId('loc')).toHaveTextContent('/products');
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('highlights the current child (active state)', () => {
+  it('highlights the current child (active state) in the drill-in list', () => {
     renderMenu('/products');
+    fireEvent.click(tile('commerce'));
     expect(childLink('products')).toHaveAttribute('aria-current', 'page');
     expect(childLink('orders')).not.toHaveAttribute('aria-current', 'page');
   });
 
-  it('is a single-open accordion — expanding Inventory collapses Commerce', () => {
-    renderMenu(); // Commerce active + expanded
-    expect(screen.getByText('products')).toBeInTheDocument();
-    fireEvent.click(rowButton('inventory'));
-    expect(screen.getByText('stock-ledger')).toBeInTheDocument(); // Inventory now open
-    expect(screen.queryByText('products')).toBeNull();            // Commerce collapsed
-  });
-
-  it('does not show another module’s children until its row is tapped (no stale/cross-module state)', () => {
-    nav.active = inventory; // Inventory active → Commerce starts collapsed
-    renderMenu('/inventory');
-    expect(screen.queryByText('products')).toBeNull();
-    fireEvent.click(rowButton('commerce'));
-    expect(screen.getByText('products')).toBeInTheDocument();
-    expect(screen.queryByText('stock-ledger')).toBeNull(); // Inventory collapsed by single-open
-  });
-
-  it('omits unauthorized children — only what the navigation authority returns is rendered', () => {
-    // Authority returns Commerce WITHOUT Products (user lacks that page).
-    nav.modules = [{ ...commerce, items: [
-      { key: 'orders', path: '/orders', icon: Stub },
-      { key: 'customers', path: '/customers', icon: Stub },
-    ] }, inventory, dashboard];
+  it('Back returns from the drill-in to the Modules grid', () => {
     renderMenu();
-    expect(screen.getByText('customers')).toBeInTheDocument();
-    expect(screen.queryByText('products')).toBeNull();
+    fireEvent.click(tile('commerce'));
+    expect(screen.getByText('orders')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'nav.backToModules' }));
+    expect(screen.getByText('inventory')).toBeInTheDocument();
+    expect(screen.queryByText('sales-section')).toBeNull();
   });
 
-  it('a module with a single destination navigates directly instead of a one-item accordion', () => {
+  it('reopening the menu always starts back on the Modules grid (no stale drill-in state)', () => {
     const { onClose } = renderMenu();
-    // Dashboard has no children → it is a direct link, not an expandable button.
-    expect(screen.getByText('dashboard').closest('button')).toBeNull();
-    fireEvent.click(childLink('dashboard'));
-    expect(screen.getByTestId('loc')).toHaveTextContent('/dashboard');
+    fireEvent.click(tile('commerce'));
+    fireEvent.click(childLink('orders'));
     expect(onClose).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByText('reopen'));
+    // "commerce" now legitimately renders twice (the grid tile + the Recent
+    // row's secondary label) — the grid tile specifically confirms we are
+    // back on the launcher, not still drilled into commerce.
+    expect(screen.getByText('inventory')).toBeInTheDocument();
+    expect(screen.queryByText('sales-section')).toBeNull();
+  });
+
+  it('search finds a page inside an unopened module and navigates directly to it', () => {
+    const { onClose } = renderMenu();
+    fireEvent.change(screen.getByPlaceholderText('nav.searchModulesPlaceholder'), {
+      target: { value: 'stock-ledger' },
+    });
+    fireEvent.click(screen.getByText('stock-ledger'));
+    expect(screen.getByTestId('loc')).toHaveTextContent('/inventory/stock-ledger');
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('records a visit and surfaces it under Recent the next time the menu opens', () => {
+    renderMenu();
+    fireEvent.click(tile('commerce'));
+    fireEvent.click(childLink('orders')); // closes the menu, records the visit
+    fireEvent.click(screen.getByText('reopen'));
+    expect(screen.getByText('nav.recent')).toBeInTheDocument();
+    expect(screen.getByText('orders')).toBeInTheDocument();
+  });
+});
+
+// TASK-ECOS-MOBILE-NAVIGATION-WORLD-CLASS-REDESIGN-004 — interaction behavior
+// gained by composing the same Radix Dialog primitive `SheetContent` already
+// wraps for every other drawer in the app, instead of a raw `<div>`. Neither
+// of these behaviors existed before this task: closing was previously only
+// possible by tapping the X button.
+describe('MobileMenu — Radix Dialog interaction behavior (TASK-004)', () => {
+  it('Escape closes the menu', () => {
+    const { onClose } = renderMenu();
+    expect(screen.getByText('commerce')).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('clicking the backdrop overlay closes the menu', async () => {
+    // Radix Portals the overlay/content as a sibling of RTL's `container` div,
+    // directly under `document.body` — not inside `container`. Radix's
+    // dismissable-layer listens for a real pointer-event sequence on
+    // `document`, which `userEvent` reproduces faithfully (plain `fireEvent`
+    // on the element alone does not trigger it under jsdom).
+    const user = userEvent.setup();
+    const { onClose } = renderMenu();
+    const overlay = document.body.querySelector('[data-slot="sheet-overlay"]') as HTMLElement;
+    expect(overlay).toBeTruthy();
+    await user.click(overlay);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders as an accessible Radix dialog (role + labelled + a real description, not a manual duplicate)', () => {
+    renderMenu();
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveAttribute('aria-labelledby');
+    expect(dialog).toHaveAttribute('aria-describedby');
+    // The sr-only Description Radix requires is present (silences the a11y
+    // warning) without being visible chrome.
+    expect(screen.getByText('nav.menuDescription')).toBeInTheDocument();
   });
 });

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useFormatter } from '@/hooks/use-formatter';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/components/ds/use-toast';
@@ -161,7 +162,7 @@ function Order360Skeleton() {
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-6 w-24 rounded-full" />
       </div>
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
         {Array.from({ length: 7 }).map((_, i) => (
           <Skeleton key={i} className="h-16 rounded-lg" />
         ))}
@@ -1520,6 +1521,7 @@ export function OrderDetailPage() {
   const { data: order, isLoading, isError } = useOrderQuery(id);
 
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   // Part 16 — Loading
@@ -1567,76 +1569,103 @@ export function OrderDetailPage() {
       {/* Part 13 — KPI Row */}
       <KpiRow order={order} />
 
-      {/* Part 14 — Responsive layout: main content + right rail */}
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        {/* ── Left / Center column ── */}
-        <div className="flex flex-col gap-4 min-w-0">
-          {/* Part 3 — Customer 360 */}
-          <CustomerCard order={order} />
-
-          {/* Two-col row: Address + Shipping */}
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* Part 5 — Address */}
-            <AddressCard order={order} />
-            {/* Part 4 — Shipping */}
-            <ShippingCard order={order} />
-          </div>
-
-          {/* Part 7 — Products Grid */}
-          <ProductsGrid order={order} />
-
-          {/* Two-col row: Payment + Inventory */}
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* Part 8 — Payment */}
-            <PaymentCard order={order} />
-            {/* Part 6 — Inventory */}
-            <InventoryCard order={order} />
-          </div>
-
-          {/* Part 9 — Timeline */}
-          <EnterpriseAuditTimeline order={order} />
-
-          {/* Part 10 — Workflow History */}
-          <WorkflowHistoryCard order={order} />
-        </div>
-
-        {/* ── Right sticky rail ── */}
-        <div className="flex flex-col gap-4 lg:sticky lg:top-4 lg:self-start">
-          {/* Part 2 — Financial Summary */}
-          <FinancialSummaryCard order={order} />
-
-          {/* Part 12 — Quick Actions + Workflow */}
+      {(() => {
+        const financialSummary = <FinancialSummaryCard order={order} />;
+        const quickActions = (
           <QuickActionsPanel
             order={order}
             onEdit={() => navigate(`${ROUTES.orders}/${order.id}/edit`)}
             onConfirmCustomer={() => setConfirmOpen(true)}
             onPrint={() => window.print()}
           />
+        );
+        const relatedRecords = <RelatedRecordsCard order={order} />;
+        const notes = (order.notes || order.customer_note) ? (
+          <InfoCard title={t($ => $.orderDetail.notesTitle)} icon={Building2}>
+            <div className="flex flex-col gap-3">
+              {order.notes ? (
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">{t($ => $.orderDetail.notesInternal)}</p>
+                  <p className="text-sm whitespace-pre-wrap">{order.notes}</p>
+                </div>
+              ) : null}
+              {order.customer_note ? (
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">{t($ => $.orderDetail.notesCustomer)}</p>
+                  <p className="rounded-md border bg-muted/30 px-3 py-2 text-sm italic">{order.customer_note}</p>
+                </div>
+              ) : null}
+            </div>
+          </InfoCard>
+        ) : null;
 
-          {/* Part 11 — Related Records */}
-          <RelatedRecordsCard order={order} />
+        const mainContent = (
+          <>
+            {/* Part 3 — Customer 360 */}
+            <CustomerCard order={order} />
 
-          {/* Notes (contextual) */}
-          {(order.notes || order.customer_note) ? (
-            <InfoCard title={t($ => $.orderDetail.notesTitle)} icon={Building2}>
-              <div className="flex flex-col gap-3">
-                {order.notes ? (
-                  <div>
-                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">{t($ => $.orderDetail.notesInternal)}</p>
-                    <p className="text-sm whitespace-pre-wrap">{order.notes}</p>
-                  </div>
-                ) : null}
-                {order.customer_note ? (
-                  <div>
-                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">{t($ => $.orderDetail.notesCustomer)}</p>
-                    <p className="rounded-md border bg-muted/30 px-3 py-2 text-sm italic">{order.customer_note}</p>
-                  </div>
-                ) : null}
-              </div>
-            </InfoCard>
-          ) : null}
-        </div>
-      </div>
+            {/* Two-col row: Address + Shipping */}
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* Part 5 — Address */}
+              <AddressCard order={order} />
+              {/* Part 4 — Shipping */}
+              <ShippingCard order={order} />
+            </div>
+
+            {/* Part 7 — Products Grid */}
+            <ProductsGrid order={order} />
+
+            {/* Two-col row: Payment + Inventory */}
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* Part 8 — Payment */}
+              <PaymentCard order={order} />
+              {/* Part 6 — Inventory */}
+              <InventoryCard order={order} />
+            </div>
+
+            {/* Part 9 — Timeline */}
+            <EnterpriseAuditTimeline order={order} />
+
+            {/* Part 10 — Workflow History */}
+            <WorkflowHistoryCard order={order} />
+          </>
+        );
+
+        // Mobile: the "right rail" (Quick Actions, Financial Summary) is
+        // reordered to sit right after the KPI row instead of at the end of a
+        // single stacked column — on a phone, the grid below already collapses
+        // to one column, so leaving DOM order unchanged would bury the primary
+        // workflow actions after 6 other cards (design report §6: primary
+        // actions belong within easy reach, not at the bottom of a long
+        // scroll). Desktop's two-column grid (`lg:grid-cols-[1fr_320px]`) and
+        // its sticky right rail are completely untouched below.
+        if (isMobile) {
+          return (
+            <div className="flex flex-col gap-4">
+              {quickActions}
+              {financialSummary}
+              {mainContent}
+              {relatedRecords}
+              {notes}
+            </div>
+          );
+        }
+
+        return (
+          <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+            {/* ── Left / Center column ── */}
+            <div className="flex flex-col gap-4 min-w-0">{mainContent}</div>
+
+            {/* ── Right sticky rail ── */}
+            <div className="flex flex-col gap-4 lg:sticky lg:top-4 lg:self-start">
+              {financialSummary}
+              {quickActions}
+              {relatedRecords}
+              {notes}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Dialogs */}
       <OrderConfirmCustomerDialog order={order} open={confirmOpen} onOpenChange={setConfirmOpen} />

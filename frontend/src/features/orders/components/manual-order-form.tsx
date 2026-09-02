@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFormatter } from '@/hooks/use-formatter';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { useNavigate } from 'react-router-dom';
 import {
   Controller,
@@ -293,7 +294,7 @@ function LiveFinancialSummary() {
               <div className="flex justify-between gap-3">
                 <span className="text-muted-foreground text-xs">{t($ => $.workspace.paymentLabel)}</span>
                 <span className="text-xs font-medium">
-                  {t($ => $.workspace.paymentMethodLabels[paymentMethod], { defaultValue: PAYMENT_METHOD_LABELS[paymentMethod] ?? paymentMethod.replace(/_/g, ' ') })}
+                  {t($ => $.workspace.paymentMethodLabels[paymentMethod as keyof typeof $.workspace.paymentMethodLabels], { defaultValue: PAYMENT_METHOD_LABELS[paymentMethod] ?? paymentMethod.replace(/_/g, ' ') })}
                 </span>
               </div>
             )}
@@ -433,6 +434,117 @@ function ManualLineRow({
   );
 }
 
+// ── Mobile line card ──────────────────────────────────────────────────────────
+// Touch-first presentation of a manual-order line (finished product or raw
+// material). Self-contained, but uses the SAME RHF register/setValue/watch and the
+// SAME useProductPricing authority as ManualLineRow (§5): qty is editable, the unit
+// price stays read-only and locked to the Pricing Engine's approved value, and the
+// line total is the identical qty×price preview the desktop row shows. The desktop
+// table (ManualLineRow) is left untouched (§13); useIsMobile selects one layout so
+// each RHF field registers exactly once.
+function ManualLineCard({
+  index,
+  productMap,
+  onRemove,
+  canRemove,
+  errors: errs,
+}: {
+  index: number;
+  productMap: Map<string, Product>;
+  onRemove: () => void;
+  canRemove: boolean;
+  errors: LineError | undefined;
+}) {
+  const { t } = useTranslation('orders');
+  const { register, setValue, watch } = useFormContext<ManualOrderFormValues>();
+
+  const lines = watch('lines');
+  const line = lines[index];
+  const productId = line?.product_id ?? '';
+  const qty = Number(line?.quantity ?? 0);
+  const price = Number(line?.unit_price ?? 0);
+  const selectedProduct = productMap.get(productId);
+
+  const { data: pricing } = useProductPricing(productId || null);
+
+  const prevProductIdRef = useRef<string>(productId);
+  useEffect(() => {
+    const prev = prevProductIdRef.current;
+    prevProductIdRef.current = productId;
+    if (!productId || productId === prev) return;
+    setValue(`lines.${index}.unit_price`, '', { shouldValidate: false });
+  }, [productId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Pricing Engine is authoritative — always overrides the catalog fallback price.
+  useEffect(() => {
+    if (!productId || pricing?.approved_price == null) return;
+    setValue(`lines.${index}.unit_price`, String(pricing.approved_price), { shouldValidate: false });
+  }, [pricing?.approved_price, productId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const isPriceLocked = pricing?.approved_price != null;
+  const imgUrl = getMediaUrl(selectedProduct?.image_url);
+
+  return (
+    <div role="listitem" className="space-y-3 rounded-lg border p-3">
+      <div className="flex items-start gap-2">
+        {imgUrl ? (
+          <img src={imgUrl} alt={selectedProduct!.name} className="size-9 shrink-0 rounded object-cover" />
+        ) : (
+          <div className="size-9 shrink-0 rounded bg-muted" />
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium">{selectedProduct?.name ?? productId}</p>
+          <p className="font-mono text-xs text-muted-foreground">{selectedProduct?.sku}</p>
+          {pricing?.has_pending_review && (
+            <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-600">
+              <AlertTriangle className="size-2.5" />
+              {t($ => $.workspace.priceReviewPending)}
+            </span>
+          )}
+        </div>
+        <Button
+          type="button"
+          size="icon"
+          variant="ghost"
+          className="size-7 shrink-0 text-destructive"
+          onClick={onRemove}
+          disabled={!canRemove}
+        >
+          <Trash2 className="size-3.5" />
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        <label className="block space-y-1">
+          <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{t($ => $.workspace.colQty)}</span>
+          <Input
+            type="number"
+            inputMode="decimal"
+            min="0.0001"
+            step="any"
+            className="h-9 text-sm"
+            {...register(`lines.${index}.quantity`)}
+          />
+        </label>
+        <div className="space-y-1">
+          <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{t($ => $.workspace.colPrice)}</span>
+          {/* Price is read-only, locked to the Pricing Engine — the hidden field carries the value. */}
+          <input type="hidden" {...register(`lines.${index}.unit_price`)} />
+          <div className="flex h-9 items-center gap-1 rounded-md border bg-muted/50 px-2.5 text-sm font-medium tabular-nums">
+            {isPriceLocked && <Lock className="size-3 shrink-0 text-muted-foreground" />}
+            <span className={!price ? 'italic text-muted-foreground' : ''}>{price > 0 ? fmt(price) : '—'}</span>
+          </div>
+        </div>
+        <div className="space-y-1">
+          <span className="text-[11px] uppercase tracking-wide text-muted-foreground">{t($ => $.workspace.colTotal)}</span>
+          <div className="flex h-9 items-center justify-end text-sm font-medium tabular-nums">{fmt(qty * price)}</div>
+        </div>
+      </div>
+      {fieldError(errs, 'quantity') && <p className="text-destructive text-xs">{fieldError(errs, 'quantity')}</p>}
+    </div>
+  );
+}
+
 // ── Products Section ──────────────────────────────────────────────────────────
 
 function ManualOrderProductsSection({
@@ -456,6 +568,7 @@ function ManualOrderProductsSection({
   } = useFormContext<ManualOrderFormValues>();
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' });
   const lines = useWatch<ManualOrderFormValues, 'lines'>({ name: 'lines' });
+  const isMobile = useIsMobile();
   const [showRm, setShowRm] = useState(false);
   const [showBrowser, setShowBrowser] = useState(true);
 
@@ -586,35 +699,54 @@ function ManualOrderProductsSection({
           <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             {t($ => $.workspace.selectedProducts, { count: filledFgIndices.length })}
           </p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-start text-xs text-muted-foreground">
-                  <th className="pb-1.5 pr-3 font-medium">{t($ => $.workspace.colProduct)}</th>
-                  <th className="w-24 pb-1.5 pr-3 font-medium">{t($ => $.workspace.colQty)}</th>
-                  <th className="w-28 pb-1.5 pr-3 font-medium">{t($ => $.workspace.colPrice)}</th>
-                  <th className="w-24 pb-1.5 pr-3 text-end font-medium">{t($ => $.workspace.colTotal)}</th>
-                  <th className="w-10 pb-1.5" />
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {fgIndices.map((i) => {
-                  const pid = (lines ?? [])[i]?.product_id;
-                  if (!pid) return null;
-                  return (
-                    <ManualLineRow
-                      key={fields[i].id}
-                      index={i}
-                      productMap={allProductMap}
-                      onRemove={() => remove(i)}
-                      canRemove={fields.length > 1}
-                      errors={lineErrors?.[i]}
-                    />
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          {isMobile ? (
+            <div role="list" className="space-y-3">
+              {fgIndices.map((i) => {
+                const pid = (lines ?? [])[i]?.product_id;
+                if (!pid) return null;
+                return (
+                  <ManualLineCard
+                    key={fields[i].id}
+                    index={i}
+                    productMap={allProductMap}
+                    onRemove={() => remove(i)}
+                    canRemove={fields.length > 1}
+                    errors={lineErrors?.[i]}
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-start text-xs text-muted-foreground">
+                    <th className="pb-1.5 pr-3 font-medium">{t($ => $.workspace.colProduct)}</th>
+                    <th className="w-24 pb-1.5 pr-3 font-medium">{t($ => $.workspace.colQty)}</th>
+                    <th className="w-28 pb-1.5 pr-3 font-medium">{t($ => $.workspace.colPrice)}</th>
+                    <th className="w-24 pb-1.5 pr-3 text-end font-medium">{t($ => $.workspace.colTotal)}</th>
+                    <th className="w-10 pb-1.5" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {fgIndices.map((i) => {
+                    const pid = (lines ?? [])[i]?.product_id;
+                    if (!pid) return null;
+                    return (
+                      <ManualLineRow
+                        key={fields[i].id}
+                        index={i}
+                        productMap={allProductMap}
+                        onRemove={() => remove(i)}
+                        canRemove={fields.length > 1}
+                        errors={lineErrors?.[i]}
+                      />
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
@@ -640,35 +772,54 @@ function ManualOrderProductsSection({
           <div className="mt-3 flex flex-col gap-3">
             <ProductBrowser products={rawMaterials} onAdd={handleAddProduct} />
             {filledRmIndices.length > 0 && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b text-start text-xs text-muted-foreground">
-                      <th className="pb-1.5 pr-3 font-medium">{t($ => $.workspace.colMaterial)}</th>
-                      <th className="w-24 pb-1.5 pr-3 font-medium">{t($ => $.workspace.colQty)}</th>
-                      <th className="w-28 pb-1.5 pr-3 font-medium">{t($ => $.workspace.colPrice)}</th>
-                      <th className="w-24 pb-1.5 pr-3 text-end font-medium">{t($ => $.workspace.colTotal)}</th>
-                      <th className="w-10 pb-1.5" />
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {rmIndices.map((i) => {
-                      const pid = (lines ?? [])[i]?.product_id;
-                      if (!pid) return null;
-                      return (
-                        <ManualLineRow
-                          key={fields[i].id}
-                          index={i}
-                          productMap={allProductMap}
-                          onRemove={() => remove(i)}
-                          canRemove={fields.length > 1}
-                          errors={lineErrors?.[i]}
-                        />
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              isMobile ? (
+                <div role="list" className="space-y-3">
+                  {rmIndices.map((i) => {
+                    const pid = (lines ?? [])[i]?.product_id;
+                    if (!pid) return null;
+                    return (
+                      <ManualLineCard
+                        key={fields[i].id}
+                        index={i}
+                        productMap={allProductMap}
+                        onRemove={() => remove(i)}
+                        canRemove={fields.length > 1}
+                        errors={lineErrors?.[i]}
+                      />
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-start text-xs text-muted-foreground">
+                        <th className="pb-1.5 pr-3 font-medium">{t($ => $.workspace.colMaterial)}</th>
+                        <th className="w-24 pb-1.5 pr-3 font-medium">{t($ => $.workspace.colQty)}</th>
+                        <th className="w-28 pb-1.5 pr-3 font-medium">{t($ => $.workspace.colPrice)}</th>
+                        <th className="w-24 pb-1.5 pr-3 text-end font-medium">{t($ => $.workspace.colTotal)}</th>
+                        <th className="w-10 pb-1.5" />
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {rmIndices.map((i) => {
+                        const pid = (lines ?? [])[i]?.product_id;
+                        if (!pid) return null;
+                        return (
+                          <ManualLineRow
+                            key={fields[i].id}
+                            index={i}
+                            productMap={allProductMap}
+                            onRemove={() => remove(i)}
+                            canRemove={fields.length > 1}
+                            errors={lineErrors?.[i]}
+                          />
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )
             )}
             <Button
               type="button"
@@ -868,7 +1019,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order, initialCustom
       .filter((key) => key !== 'cash')
       .map((key) => ({
         value: key,
-        label: t($ => $.workspace.paymentMethodLabels[key], { defaultValue: PAYMENT_METHOD_LABELS[key] ?? key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) }),
+        label: t($ => $.workspace.paymentMethodLabels[key as keyof typeof $.workspace.paymentMethodLabels], { defaultValue: PAYMENT_METHOD_LABELS[key] ?? key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) }),
       }));
    
   }, [orderPolicy, t]);
@@ -1650,7 +1801,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order, initialCustom
                               <SelectContent>
                                 {validChoices.map((s) => (
                                   <SelectItem key={s} value={s}>
-                                    {t($ => $.status[s], { defaultValue: STATUS_LABELS[s] ?? s })}
+                                    {t($ => $.status[s as keyof typeof $.status], { defaultValue: STATUS_LABELS[s] ?? s })}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -2405,7 +2556,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order, initialCustom
                         const mp = orderPolicy.source_entry_policies.manual;
                         const ss = Array.isArray(mp) ? mp : [mp];
                         const label = ss.length === 1
-                          ? t($ => $.status[ss[0]], { defaultValue: STATUS_LABELS[ss[0]] ?? ss[0] })
+                          ? t($ => $.status[ss[0] as keyof typeof $.status], { defaultValue: STATUS_LABELS[ss[0]] ?? ss[0] })
                           : t($ => $.workspace.entryStatuses, { count: ss.length });
                         return `${t($ => $.workspace.policy.entryStatus)}: ${label}`;
                       })()}
@@ -2436,7 +2587,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order, initialCustom
                           <dd className="mt-0.5 font-medium">{(() => {
                             const mp = orderPolicy.source_entry_policies.manual;
                             const ss = Array.isArray(mp) ? mp : [mp];
-                            return ss.map((s) => t($ => $.status[s], { defaultValue: STATUS_LABELS[s] ?? s })).join(', ');
+                            return ss.map((s) => t($ => $.status[s as keyof typeof $.status], { defaultValue: STATUS_LABELS[s] ?? s })).join(', ');
                           })()}</dd>
                         </div>
                         <div>
@@ -2466,7 +2617,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order, initialCustom
                                 }`}
                               >
                                 <Info className="size-2.5" />
-                                {t($ => $.workspace.paymentMethodLabels[method], { defaultValue: PAYMENT_METHOD_LABELS[method] ?? method.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) })}: {req}
+                                {t($ => $.workspace.paymentMethodLabels[method as keyof typeof $.workspace.paymentMethodLabels], { defaultValue: PAYMENT_METHOD_LABELS[method] ?? method.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) })}: {req}
                               </span>
                             ))}
                           </dd>

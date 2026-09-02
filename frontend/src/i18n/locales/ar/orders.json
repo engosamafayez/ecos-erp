@@ -307,7 +307,8 @@
     "delivery": "التسليم",
     "warehouse": "المستودع",
     "selectOrder": "تحديد {{number}}",
-    "viewOrder": "عرض الطلب {{number}}"
+    "viewOrder": "عرض الطلب {{number}}",
+    "hasNote": "توجد ملاحظة"
   },
   "table": {
     "selectAll": "تحديد الكل",
