@@ -11,7 +11,7 @@
 
 ## 1. Final Status
 
-**COMPLETE**, with one CTO-authorized in-task scope addition (§9) and one deliberately-deferred, low-risk enhancement (§18.4) — frontend Collaboration Workspace (Conversations + Tasks), driver task exposure via the existing DriverShell, and the batch-wide source reconciliation are all complete; `TESTS EXECUTED` is `YES` for the frontend (real `vitest` runs, see §16) and `NO` for the backend identity-lookup addition (same second-device constraint as every prior task in this batch, see §10.6); `VERIFIED`/`CERTIFIED` remain `NO` for anything requiring a running database or browser. No known source-level security blocker remains.
+**COMPLETE**, with one CTO-authorized in-task scope addition (§9) and one deliberately-deferred, low-risk enhancement (§18). Frontend Collaboration Workspace (Conversations + Tasks), driver task exposure via the existing DriverShell, and the batch-wide source reconciliation are all complete. `TESTS WRITTEN`: `YES` for both backend (§9.4/§4.5) and frontend (§21). `TESTS EXECUTED`: `YES` for the frontend — real `npm`/`vitest`/`tsc`/`eslint` runs on this device, a first for this batch (§20/§21) — and `NO` for the backend (same second-device constraint as every prior task in this batch: no PHP/Composer/database here). `VERIFIED`/`CERTIFIED` remain `NO` for anything requiring a running database or an actual browser. No known source-level security blocker remains.
 
 ---
 
