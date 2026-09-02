@@ -19,16 +19,55 @@ use Tests\TestCase;
  * required (§4 of the remediation task spec) for the customer_code_sequences-backed
  * design that replaced the original count()+1+lockForUpdate() implementation.
  *
- * NOT EXECUTED in this environment — no MySQL server is reachable on the test
- * connection here (see the remediation report §12 "Test Database Safety"). Written
- * to run, unmodified, the moment a reachable ecos_erp_test database is available; do
- * not treat this file's presence as proof the assertions have passed.
+ * EXECUTED and PASSING (8/8, 12 assertions) as of
+ * TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-CUSTOMER-CODE-VERIFICATION-007-R2, against a
+ * disposable, isolated MySQL 8.4 container — not canonical DEV. See that task's report
+ * for the full evidence (connections, transaction boundaries, generated codes, blocking
+ * behavior observed for the concurrency case).
  */
 final class CustomerCodeSequenceTest extends TestCase
 {
     use RefreshDatabase;
 
     private EloquentCustomerRepository $repository;
+
+    /**
+     * TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-CUSTOMER-CODE-VERIFICATION-007-R2.
+     *
+     * Test-harness-only: restricts RefreshDatabase's migrate:fresh to exactly the
+     * tables this suite needs (users, companies, customers + its sequence table),
+     * instead of the whole application's 700+ migrations across every module. This
+     * changes nothing about what is tested — same assertions, same production
+     * repository code, same schema for every table this suite touches — it only
+     * bounds how much unrelated schema gets built to run these 8 tests. Does not
+     * affect any other test class; RefreshDatabase's per-process migrated flag is
+     * keyed globally, so running this suite alongside others in the same process is
+     * not this task's concern (§15: only this suite is run here).
+     */
+    protected function migrateFreshUsing()
+    {
+        return array_merge([
+            '--drop-views' => $this->shouldDropViews(),
+            '--drop-types' => $this->shouldDropTypes(),
+            '--seed' => $this->shouldSeed(),
+        ], [
+            '--path' => [
+                'database/migrations/0001_01_01_000000_create_users_table.php',
+                'database/migrations/2026_07_07_000002_add_company_id_to_users_table.php',
+                'Modules/Organization/Companies/Infrastructure/Database/Migrations',
+                'Modules/Sales/Customers/Tests/Support/Migrations/2026_07_08_910001_add_company_id_to_customers_table_test_only.php',
+                'Modules/Sales/Customers/Infrastructure/Database/Migrations/2026_06_23_160000_create_customers_table.php',
+                'Modules/Sales/Customers/Infrastructure/Database/Migrations/2026_09_10_100000_add_sales_owner_to_customers_table.php',
+                'Modules/Sales/Customers/Infrastructure/Database/Migrations/2026_09_10_100001_scope_customers_code_uniqueness_to_company.php',
+                'Modules/Sales/Customers/Infrastructure/Database/Migrations/2026_09_10_100002_create_customer_code_sequences_table.php',
+                // CustomerObserver (Commerce\Synchronization) fires on every Customer
+                // created/updated event and queries `channels` — needs to exist (empty is
+                // fine; Eloquent skips the `credential` eager-load on an empty base result).
+                'Modules/Commerce/Channels/Infrastructure/Database/Migrations/2026_06_23_170000_create_channels_table.php',
+                'Modules/Commerce/Channels/Infrastructure/Database/Migrations/2026_06_23_600000_add_sync_customers_and_webhook_ids_to_channels.php',
+            ],
+        ]);
+    }
 
     protected function setUp(): void
     {
