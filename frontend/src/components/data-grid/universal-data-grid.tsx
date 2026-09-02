@@ -310,16 +310,47 @@ export function UniversalDataGrid<T>({
         ) : data.length === 0 ? (
           defaultEmpty
         ) : renderMobileCard ? (
-          <div role="list">
-            {/* Keyed by the caller's own row id, the same identity the desktop
-                table uses. Without it React warned on every grid in the app —
-                this branch renders even on desktop, where CSS hides it. Keying
-                by array index would silence the warning while still remapping
-                state onto the wrong row after a sort or filter. */}
-            {data.map((row) => (
-              <Fragment key={rowId(row)}>{renderMobileCard(row, selection)}</Fragment>
-            ))}
-          </div>
+          <>
+            {/* Mobile Select All (§10) — the desktop <thead> checkbox has no
+                mobile equivalent today, so there was no way to select every
+                row on the current page from a card list. Reuses the same
+                `selection.selectAll` the desktop header already calls; scope
+                is exactly the current page's loaded `data`, matching the
+                desktop control's own scope — never a larger "all pages"
+                selection. */}
+            {selection ? (
+              <div className="mb-2 flex items-center justify-between gap-2 px-0.5">
+                <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={selection.allSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = selection.someSelected;
+                    }}
+                    onChange={(e) => selection.selectAll(e.target.checked)}
+                    className="size-4 cursor-pointer rounded accent-primary"
+                    aria-label={t(($) => $.selection.selectAllRows)}
+                  />
+                  {t(($) => $.selection.selectAllRows)}
+                </label>
+                {selection.selectedCount > 0 ? (
+                  <span className="text-xs font-medium text-primary">
+                    {t(($) => $.mobile.selectedCount, { count: selection.selectedCount })}
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+            <div role="list">
+              {/* Keyed by the caller's own row id, the same identity the desktop
+                  table uses. Without it React warned on every grid in the app —
+                  this branch renders even on desktop, where CSS hides it. Keying
+                  by array index would silence the warning while still remapping
+                  state onto the wrong row after a sort or filter. */}
+              {data.map((row) => (
+                <Fragment key={rowId(row)}>{renderMobileCard(row, selection)}</Fragment>
+              ))}
+            </div>
+          </>
         ) : (
           /* Conservative automatic fallback: pages that don't supply a bespoke
              card still get a legible card list instead of an empty box. */

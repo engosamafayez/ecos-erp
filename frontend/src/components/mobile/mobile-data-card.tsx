@@ -86,7 +86,19 @@ export function MobileDataCard({
         <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2">
           {fields.map((field, index) => (
             <div key={index} className="min-w-0">
-              <dt className="truncate text-[11px] uppercase tracking-wide text-muted-foreground">
+              <dt
+                className={cn(
+                  'truncate text-[11px] uppercase tracking-wide text-muted-foreground',
+                  // RTL fix (TASK-ECOS-MOBILE-COMMERCE-SCREENS-UX-REFINEMENT-001): the
+                  // label previously stayed at the block-start edge regardless of the
+                  // value's alignment, so an 'end'-aligned value (money, tabular
+                  // figures) visually detached from its own label — in RTL this read as
+                  // the amount being "pushed" to the far side of the card, away from its
+                  // caption. Pairing the label to the same edge as its value keeps them
+                  // reading as one unit in both directions.
+                  field.align === 'end' && 'text-end',
+                )}
+              >
                 {field.label}
               </dt>
               <dd

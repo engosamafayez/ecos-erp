@@ -71,15 +71,22 @@ export function ProductQuickStats({ stats, activeFilter, onFilterChange }: Produ
           active={activeFilter === null}
           onClick={() => onFilterChange(null)}
         />
-        <QuickStatCard
-          compact
-          icon={WifiOff}
-          title={t($ => $.quickStats.notSynced)}
-          value={stats.notSynced}
-          colorClassName="text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30"
-          active={isActive({ type: 'not_synced', value: true })}
-          onClick={() => toggle({ type: 'not_synced', value: true })}
-        />
+        {/* TASK-ECOS-MOBILE-COMMERCE-SCREENS-UX-REFINEMENT-001 (§12) — Mobile-only
+            presentation decision: the User asked for this card hidden on the Mobile
+            Products list specifically. Desktop is untouched (still shows/filters on
+            it below), and this is CSS visibility only — the underlying `not_synced`
+            data, the desktop indicator, and the filter itself are all unchanged. */}
+        <div className="hidden md:block">
+          <QuickStatCard
+            compact
+            icon={WifiOff}
+            title={t($ => $.quickStats.notSynced)}
+            value={stats.notSynced}
+            colorClassName="text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30"
+            active={isActive({ type: 'not_synced', value: true })}
+            onClick={() => toggle({ type: 'not_synced', value: true })}
+          />
+        </div>
         <QuickStatCard
           compact
           icon={Clock}

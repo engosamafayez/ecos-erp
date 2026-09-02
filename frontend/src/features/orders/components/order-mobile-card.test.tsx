@@ -2,17 +2,12 @@ import '@testing-library/jest-dom/vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-// TASK-ECOS-MOBILE-INTEGRATION-CONFLICT-RESOLUTION-002 — this component is the
-// reconciled merge of the Commerce lane's develop-side rebuild (MobileDataCard
-// architecture, Warehouse, Driver, full address, Map action) and the Mobile
-// milestone's Task 3/5 version (reservation/stock-execution status, confirmation
-// result, has-note indicator, and the grand_total/remaining_balance money
-// hierarchy). This file replaces the pre-merge test suite, which asserted
-// against the old bespoke-<div> DOM shape — the combined component now renders
-// through the shared `MobileDataCard` primitive, so every assertion below
-// targets that primitive's actual contract (a single whole-card `onOpen`
-// button wrapping title/subtitle/status/fields, a `dl`/`dt`/`dd` fields grid,
-// and a sibling actions row).
+// TASK-ECOS-MOBILE-COMMERCE-SCREENS-UX-REFINEMENT-001 — density/hierarchy pass
+// on the combined card from TASK-ECOS-MOBILE-INTEGRATION-CONFLICT-RESOLUTION-002.
+// The card still renders through the shared `MobileDataCard` primitive (a single
+// whole-card `onOpen` button wrapping title/subtitle/status/fields, a
+// `dl`/`dt`/`dd` fields grid, and a sibling actions row) — what changed is field
+// count/grouping and header hierarchy, not the underlying architecture.
 function pathProxy(path: string): unknown {
   const target = () => path;
   return new Proxy(target, {
@@ -38,6 +33,20 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
+// OrderPaymentCell (the canonical, reused desktop payment component — §9) pulls
+// in permission + mutation hooks that need a real AuthorizationProvider /
+// QueryClientProvider. Faking both keeps this a focused unit test of the card:
+// `can: () => false` takes the same read-only path the old inline-capitalize
+// span always rendered (no popover, no PATCH), so only `resolveMethod`'s label
+// mapping is under test here — exactly what §9 asked for ("a clear readable
+// word"), not the inline-edit affordance that comes bundled with reuse.
+vi.mock('@/features/authorization/use-authorization', () => ({
+  usePermission: () => ({ can: () => false, cannot: () => true, canAccess: () => false, canExecute: () => false }),
+}));
+vi.mock('@/features/orders/hooks/use-orders', () => ({
+  usePatchOrder: () => ({ mutate: vi.fn(), isPending: false }),
+}));
+
 import { OrderMobileCard } from './order-mobile-card';
 import type { Order } from '../types/order';
 
@@ -45,7 +54,13 @@ const BASE = {
   id: 'o1',
   order_number: 'ORD-1001',
   status: 'in_progress',
-  channel: { id: 'ch1', name: 'Website' },
+  channel: {
+    id: 'ch1',
+    name: 'Website',
+    type: 'web',
+    brand_id: 'b1',
+    brand: { id: 'b1', name: 'Acme Cosmetics', code: 'ACM' },
+  },
   customer: { id: 'c1', name: 'Jane Doe' },
   lines: [{ id: 'l1', quantity: 2 }, { id: 'l2', quantity: 1 }],
   billing_phone: '+201234567890',
@@ -59,7 +74,8 @@ const BASE = {
   city: 'Giza',
   governorate: 'Cairo',
   payment_method: 'cod',
-  payment_method_manual: null,
+  payment_method_manual: 'cod',
+  payment_method_title: null,
   requested_delivery_date: '2026-09-10',
   confirmation_result: null,
   assigned_warehouse: { id: 'w1', name: 'Main Warehouse', code: 'WH1' },
@@ -96,12 +112,47 @@ describe('OrderMobileCard — money hierarchy (CTO-authoritative, TASK-002 §8)'
     render(<OrderMobileCard order={BASE} onView={vi.fn()} />);
     expect(screen.getByText('columns.total')).toBeInTheDocument();
   });
+
+  it('pairs the Total label to the same edge as its value (RTL fix — §5)', () => {
+    render(<OrderMobileCard order={BASE} onView={vi.fn()} />);
+    // MobileDataCard's dt now shares the field's own align='end' — this is a
+    // regression guard for the "value pushed away from its label" bug, not a
+    // literal RTL render (jsdom has no layout engine to assert direction on).
+    expect(screen.getByText('columns.total')).toHaveClass('text-end');
+  });
+});
+
+describe('OrderMobileCard — header hierarchy (order number → brand → customer → status, §6/§7)', () => {
+  it('shows the owning Brand next to the order number', () => {
+    render(<OrderMobileCard order={BASE} onView={vi.fn()} />);
+    expect(screen.getByText('ORD-1001')).toBeInTheDocument();
+    expect(screen.getByText(/Acme Cosmetics/)).toBeInTheDocument();
+  });
+
+  it('does not render Brand when the channel has no brand relation loaded', () => {
+    render(
+      <OrderMobileCard
+        order={{ ...BASE, channel: { ...BASE.channel, brand: null } } as never as Order}
+        onView={vi.fn()}
+      />,
+    );
+    expect(screen.queryByText(/Acme Cosmetics/)).toBeNull();
+  });
+
+  it('renders the customer name with foreground/semibold prominence, not the muted default subtitle style', () => {
+    render(<OrderMobileCard order={BASE} onView={vi.fn()} />);
+    const name = screen.getByText('Jane Doe');
+    expect(name).toHaveClass('font-semibold');
+    expect(name).not.toHaveClass('text-muted-foreground');
+  });
 });
 
 describe('OrderMobileCard — Commerce capabilities preserved (Warehouse, Driver, address, Map)', () => {
-  it('shows the assigned warehouse', () => {
+  it('shows the assigned warehouse with distinct emphasis from its label', () => {
     render(<OrderMobileCard order={BASE} onView={vi.fn()} />);
-    expect(screen.getByText('Main Warehouse')).toBeInTheDocument();
+    const value = screen.getByText('Main Warehouse');
+    expect(value).toBeInTheDocument();
+    expect(value).toHaveClass('font-medium');
   });
 
   it('shows the assigned driver', () => {
@@ -114,9 +165,9 @@ describe('OrderMobileCard — Commerce capabilities preserved (Warehouse, Driver
     expect(screen.getByText('columns.driverUnassigned')).toBeInTheDocument();
   });
 
-  it('shows the full street address, not just city/governorate', () => {
+  it('shows the full street address with the delivery zone folded in (no data loss from dropping its own row)', () => {
     render(<OrderMobileCard order={BASE} onView={vi.fn()} />);
-    expect(screen.getByText('12 Nile St, Apt 4, Giza, Cairo')).toBeInTheDocument();
+    expect(screen.getByText('12 Nile St, Apt 4, Giza, Cairo · Zone A')).toBeInTheDocument();
   });
 
   it('renders a Map action linking to the resolved location', () => {
@@ -130,15 +181,33 @@ describe('OrderMobileCard — Commerce capabilities preserved (Warehouse, Driver
     expect(screen.queryByRole('link', { name: 'drawer.shipping.openMap' })).toBeNull();
   });
 
-  it('exposes zone, payment method, and delivery date', () => {
+  it('shows a real delivery date', () => {
     render(<OrderMobileCard order={BASE} onView={vi.fn()} />);
-    expect(screen.getByText('Zone A')).toBeInTheDocument();
-    expect(screen.getByText('cod')).toBeInTheDocument();
+    expect(screen.getByText(new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date('2026-09-10')))).toBeInTheDocument();
   });
 
   it('renders a phone action wired to the canonical shared phone component', () => {
     render(<OrderMobileCard order={BASE} onView={vi.fn()} />);
     expect(screen.getByRole('button', { name: 'columns.phone' })).toBeInTheDocument();
+  });
+});
+
+describe('OrderMobileCard — Payment Method (§9: a clear readable word, not a raw backend value)', () => {
+  it('shows a short, human-readable label for a canonical payment method, not the raw backend string', () => {
+    render(<OrderMobileCard order={BASE} onView={vi.fn()} />);
+    expect(screen.getByText('COD')).toBeInTheDocument();
+    expect(screen.queryByText('cod')).toBeNull();
+  });
+
+  it('never renders an underscored raw value like "mobile_wallet"', () => {
+    render(
+      <OrderMobileCard
+        order={{ ...BASE, payment_method_manual: 'mobile_wallet', payment_method: 'mobile_wallet' } as never as Order}
+        onView={vi.fn()}
+      />,
+    );
+    expect(screen.queryByText(/mobile_wallet/)).toBeNull();
+    expect(screen.getByText('Wallet')).toBeInTheDocument();
   });
 });
 
@@ -166,10 +235,10 @@ describe('OrderMobileCard — single canonical open action, no duplicate status 
 
 // TASK-ECOS-MOBILE-DATA-COMPLETENESS-FINAL-CLOSURE-005 — desktop's single
 // "Inventory Execution" column actually carries TWO distinct signals
-// (customer-confirmation result AND reservation/stock-execution status);
-// Task 3 only wired the first. A silent "has customer note" indicator was
-// also missing entirely. Both are closed here by reusing the existing,
-// already-exported, read-only components/fields — no new status mapping.
+// (customer-confirmation result AND reservation/stock-execution status).
+// Both are preserved here; the has-note flag now rides as a small icon on the
+// Confirmation Result value instead of its own row (§4 density pass) but
+// remains present and independently assertable.
 describe('OrderMobileCard — Mobile capabilities preserved (reservation status, confirmation result, notes)', () => {
   it('shows the reservation/inventory-execution status when present, distinct from the confirmation-call result', () => {
     render(

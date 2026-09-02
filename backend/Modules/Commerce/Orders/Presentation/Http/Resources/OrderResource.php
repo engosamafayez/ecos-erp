@@ -48,6 +48,15 @@ final class OrderResource extends JsonResource
                 'name' => $this->channel->name,
                 'type' => $this->channel->channel_type,
                 'brand_id' => $this->channel->brand_id,
+                // TASK-ECOS-MOBILE-COMMERCE-SCREENS-UX-REFINEMENT-001 — the Mobile Order
+                // card needs the Brand NAME, not just brand_id; resolved via the channel's
+                // own canonical brand() relation (Channel belongsTo Brand), eager-loaded
+                // alongside channel in EloquentOrderRepository — no new query.
+                'brand' => $this->channel->relationLoaded('brand') && $this->channel->brand ? [
+                    'id' => $this->channel->brand->id,
+                    'name' => $this->channel->brand->name,
+                    'code' => $this->channel->brand->code,
+                ] : null,
             ]),
             'customer_id' => $this->customer_id,
             'customer' => $this->whenLoaded('customer', function () {

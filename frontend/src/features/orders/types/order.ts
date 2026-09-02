@@ -103,7 +103,14 @@ export type BulkActionKey =
   | 'cancel';
 
 // ── Sub-types ─────────────────────────────────────────────────────────────────
-export type OrderChannel  = { id: string; name: string; type: string | null; brand_id: string | null };
+export type OrderChannel  = {
+  id: string;
+  name: string;
+  type: string | null;
+  brand_id: string | null;
+  /** Resolved via the channel's brand() relation — null until eager-loaded or when the channel has no brand. */
+  brand: { id: string; name: string; code: string | null } | null;
+};
 export type CustomerStats = {
   total_orders: number;
   lifetime_value: number;

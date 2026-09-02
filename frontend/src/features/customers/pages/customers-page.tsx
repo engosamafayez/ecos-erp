@@ -895,7 +895,10 @@ export function CustomerMobileCard({
             <dd className="mt-0.5 text-sm tabular-nums">{customer.orders_count}</dd>
           </div>
           <div>
-            <dt className="truncate text-[11px] uppercase tracking-wide text-muted-foreground">{t($ => $.columns.totalOrderValue)}</dt>
+            {/* text-end on both dt and dd (§15): the label previously stayed at
+                the block-start edge while the value sat at 'end', so the value
+                visually detached from its own label under RTL. */}
+            <dt className="truncate text-end text-[11px] uppercase tracking-wide text-muted-foreground">{t($ => $.columns.totalOrderValue)}</dt>
             <dd className="mt-0.5 text-end text-sm tabular-nums">{fmtMoney(customer.total_order_value)}</dd>
           </div>
           <div>
@@ -905,7 +908,7 @@ export function CustomerMobileCard({
             </dd>
           </div>
           <div>
-            <dt className="truncate text-[11px] uppercase tracking-wide text-muted-foreground">{t($ => $.columns.lastOrder)}</dt>
+            <dt className="truncate text-end text-[11px] uppercase tracking-wide text-muted-foreground">{t($ => $.columns.lastOrder)}</dt>
             <dd className="mt-0.5 text-end text-sm tabular-nums">
               {customer.last_order_at ? new Date(customer.last_order_at).toLocaleDateString() : <span className="text-muted-foreground">—</span>}
             </dd>

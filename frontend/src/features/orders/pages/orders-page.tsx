@@ -17,6 +17,8 @@ import { SearchInput } from '@/components/crud';
 import { useColumnVisibility } from '@/components/data-grid/use-column-visibility';
 import { useRowSelection } from '@/components/data-grid/use-row-selection';
 import type { GridPaginationConfig } from '@/components/data-grid/types';
+import { MobileFilterSheet } from '@/components/mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { useChannelOptions } from '@/features/channels/hooks/use-channel-options';
 import type { AdvancedFilterValues } from '@/features/orders/components/order-advanced-filters';
 import { OrderAdvancedFilters } from '@/features/orders/components/order-advanced-filters';
@@ -117,6 +119,7 @@ export function OrdersPage() {
   const { t } = useTranslation('orders');
   const { t: tCommon } = useTranslation('common');
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   const { statusLabel, statusTabLabel } = useOrderStatusLabels();
   const { bulkLabel } = useOrderBulkLabels();
@@ -668,8 +671,26 @@ export function OrdersPage() {
         </div>
       </div>
 
-      {/* ── DD-026 Advanced Filters panel (collapsible) ── */}
-      {showAdvancedFilters ? (
+      {/* ── DD-026 Advanced Filters panel — inline on desktop; on mobile the
+          same chips used to wrap and collide against the viewport edge, so
+          they open in a dismissible bottom sheet instead (§11). Filtering
+          capability and the underlying state are unchanged either way — only
+          where the controls render differs. ── */}
+      {isMobile ? (
+        <MobileFilterSheet
+          open={showAdvancedFilters}
+          onOpenChange={setShowAdvancedFilters}
+          title={t($ => $.filters.advanced)}
+          activeCount={advancedActiveCount}
+          onClear={clearAdvancedFilters}
+        >
+          <OrderAdvancedFilters
+            values={advancedFilters}
+            onChange={handleAdvancedFiltersChange}
+            onClear={clearAdvancedFilters}
+          />
+        </MobileFilterSheet>
+      ) : showAdvancedFilters ? (
         <OrderAdvancedFilters
           values={advancedFilters}
           onChange={handleAdvancedFiltersChange}
@@ -677,8 +698,23 @@ export function OrdersPage() {
         />
       ) : null}
 
-      {/* ── DD-025 Customer Intelligence panel (collapsible) ── */}
-      {showCustomerIntelligence ? (
+      {/* ── DD-025 Customer Intelligence panel — same mobile-sheet treatment,
+          positioned as its own dedicated control alongside Filters rather
+          than an inline chip row (§11). ── */}
+      {isMobile ? (
+        <MobileFilterSheet
+          open={showCustomerIntelligence}
+          onOpenChange={setShowCustomerIntelligence}
+          title={t($ => $.customerIntelligence.title)}
+          activeCount={customerFilters.length}
+          onClear={() => handleCustomerFiltersChange([])}
+        >
+          <OrderCustomerIntelligence
+            value={customerFilters}
+            onChange={handleCustomerFiltersChange}
+          />
+        </MobileFilterSheet>
+      ) : showCustomerIntelligence ? (
         <OrderCustomerIntelligence
           value={customerFilters}
           onChange={handleCustomerFiltersChange}

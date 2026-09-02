@@ -70,6 +70,36 @@ describe('CustomerMobileCard — canonical identity/context (no mobile treatment
   });
 });
 
+// TASK-ECOS-MOBILE-COMMERCE-SCREENS-UX-REFINEMENT-001 §15 — Total Value and
+// Last Order previously right-aligned their VALUE (`dd`) while their LABEL
+// (`dt`) stayed at the default block-start edge, so under RTL the value sat
+// at the opposite edge from its own caption. jsdom has no layout engine to
+// assert physical direction, so this is a regression guard on the underlying
+// cause: label and value must now share the same alignment class.
+describe('CustomerMobileCard — RTL stat alignment (§15: label/value must share an edge)', () => {
+  it('pairs the Total Value label to the same edge as its value', () => {
+    render(<CustomerMobileCard customer={CUSTOMER} isFocused={false} isSelected={false} {...HANDLERS} />);
+    const label = screen.getByText('columns.totalOrderValue');
+    const value = screen.getByText('1,250.50');
+    expect(label).toHaveClass('text-end');
+    expect(value).toHaveClass('text-end');
+  });
+
+  it('pairs the Last Order label to the same edge as its value', () => {
+    render(<CustomerMobileCard customer={CUSTOMER} isFocused={false} isSelected={false} {...HANDLERS} />);
+    const label = screen.getByText('columns.lastOrder');
+    const value = screen.getByText(new Date(CUSTOMER.last_order_at as string).toLocaleDateString());
+    expect(label).toHaveClass('text-end');
+    expect(value).toHaveClass('text-end');
+  });
+
+  it('does not force the same alignment onto unrelated stats (Orders count, Receiving rate)', () => {
+    render(<CustomerMobileCard customer={CUSTOMER} isFocused={false} isSelected={false} {...HANDLERS} />);
+    expect(screen.getByText('columns.ordersCount')).not.toHaveClass('text-end');
+    expect(screen.getByText('columns.receivingRate')).not.toHaveClass('text-end');
+  });
+});
+
 describe('CustomerMobileCard — real actions, no fake callbacks', () => {
   it('tapping the card invokes onView with the customer', () => {
     const onView = vi.fn();

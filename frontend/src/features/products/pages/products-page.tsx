@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Download, Plus, Search, Upload } from 'lucide-react';
+import { Download, Plus, Search, SlidersHorizontal, Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 
@@ -13,6 +13,8 @@ import {
 } from '@/components/data-grid';
 import type { GridPaginationConfig, GridSortState } from '@/components/data-grid/types';
 import { EmptyState } from '@/components/crud';
+import { MobileFilterSheet } from '@/components/mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -101,6 +103,10 @@ export function ProductsPage() {
   const { toast } = useToast();
   const location = useLocation();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
+
+  // ── Mobile: filters default to collapsed behind a "More" trigger (§13) ────
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
 
   // ── Column visibility (framework hook with localStorage persistence) ───────
   const { visibility: columnVisibility, toggle: toggleColumn, reset: resetColumns } =
@@ -211,6 +217,15 @@ export function ProductsPage() {
     filters.low_stock || filters.has_images !== null || filters.not_synced ||
     filters.has_recipe !== null || filters.manufacturing_ready || filters.needs_pricing_review || filters.low_margin ||
     filters.manufacturing_availability !== '';
+
+  // Active-filter count for the Mobile "More" trigger's badge (§13) — same
+  // fields `hasFilters` already checks, counted rather than just booleaned.
+  const activeFilterCount =
+    (filters.category_id ? 1 : 0) + (filters.brand_id ? 1 : 0) + (filters.warehouse_id ? 1 : 0) + (filters.channel_id ? 1 : 0) +
+    (filters.status !== 'all' ? 1 : 0) + (filters.stock_status !== '' ? 1 : 0) + (filters.is_published !== null ? 1 : 0) +
+    (filters.low_stock ? 1 : 0) + (filters.has_images !== null ? 1 : 0) + (filters.not_synced ? 1 : 0) +
+    (filters.has_recipe !== null ? 1 : 0) + (filters.manufacturing_ready ? 1 : 0) + (filters.needs_pricing_review ? 1 : 0) +
+    (filters.low_margin ? 1 : 0) + (filters.manufacturing_availability !== '' ? 1 : 0);
 
   // Reset row focus when list contents change
   useEffect(() => { setFocusedRowIndex(null); }, [search, filters, page]);
@@ -507,12 +522,48 @@ export function ProductsPage() {
         />
       </div>
 
-      {/* ── Filter Bar ── */}
-      <ProductFilterBar
-        filters={filters}
-        onChange={handleFilterChange}
-        onClear={clearFilters}
-      />
+      {/* ── Filter Bar — inline on desktop; on Mobile it defaults to collapsed
+          behind a compact "More" trigger (with an active-count badge) instead
+          of consuming screen space up front (§13). Filter state/values are
+          unaffected either way. ── */}
+      {isMobile ? (
+        <>
+          <Button
+            type="button"
+            variant={activeFilterCount > 0 ? 'secondary' : 'outline'}
+            size="sm"
+            onClick={() => setShowMobileFilters(true)}
+            className="w-fit gap-1.5"
+          >
+            <SlidersHorizontal className="size-3.5" />
+            {t($ => $.filterBar.more)}
+            {activeFilterCount > 0 ? (
+              <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary/15 px-1 text-[10px] font-semibold text-primary">
+                {activeFilterCount}
+              </span>
+            ) : null}
+          </Button>
+          <MobileFilterSheet
+            open={showMobileFilters}
+            onOpenChange={setShowMobileFilters}
+            title={t($ => $.filterBar.more)}
+            activeCount={activeFilterCount}
+            onClear={clearFilters}
+          >
+            <ProductFilterBar
+              filters={filters}
+              onChange={handleFilterChange}
+              onClear={clearFilters}
+            />
+          </MobileFilterSheet>
+        </>
+      ) : (
+        <ProductFilterBar
+          filters={filters}
+          onChange={handleFilterChange}
+          onClear={clearFilters}
+        />
+      )}
 
       {/* ── Product Grid ── */}
       <ProductTable

@@ -18,9 +18,15 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
     // the canonical fulfillment warehouse to a name without an N+1
     // (TASK-ORDERS-PREPARATION-PAYMENT-FINAL-FIX-001, D4). `currentTripOrder...driver`
     // is the read-only path into Distribution that resolves the assigned driver, if any.
-    private const WITH = ['channel', 'customer', 'lines.product.unit', 'assignedWarehouse', 'currentTripOrder.trip.driverVehicleAssignment.driver'];
+    // TASK-ECOS-MOBILE-COMMERCE-SCREENS-UX-REFINEMENT-001 — 'channel.brand' replaces
+    // the bare 'channel' load. The Mobile Order card needed the owning Brand name and
+    // it was genuinely absent from the resolved read model (OrderResource only ever
+    // exposed channel.brand_id, a raw UUID with no name to render). Nested dot-notation
+    // eager-loads both channel and channel.brand in one relation, matching the existing
+    // assignedWarehouse/driver pattern below — no new query, no N+1.
+    private const WITH = ['channel.brand', 'customer', 'lines.product.unit', 'assignedWarehouse', 'currentTripOrder.trip.driverVehicleAssignment.driver'];
 
-    private const WITH_DETAIL = ['channel', 'customer', 'lines.product.unit', 'fees', 'coupons', 'orderNotes', 'assignedWarehouse', 'currentTripOrder.trip.driverVehicleAssignment.driver'];
+    private const WITH_DETAIL = ['channel.brand', 'customer', 'lines.product.unit', 'fees', 'coupons', 'orderNotes', 'assignedWarehouse', 'currentTripOrder.trip.driverVehicleAssignment.driver'];
 
     public function paginate(array $filters): LengthAwarePaginator
     {
