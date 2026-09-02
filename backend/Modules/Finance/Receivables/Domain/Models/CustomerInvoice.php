@@ -48,7 +48,7 @@ class CustomerInvoice extends Model
         'uuid', 'company_id', 'customer_id', 'document_type', 'number',
         'invoice_date', 'due_date', 'currency', 'subtotal', 'tax_total', 'total',
         'status', 'ar_control_account_id', 'journal_entry_id', 'description',
-        'created_by', 'approved_by', 'posted_at',
+        'created_by', 'approved_by', 'posted_at', 'source_type', 'source_id',
     ];
 
     protected function casts(): array

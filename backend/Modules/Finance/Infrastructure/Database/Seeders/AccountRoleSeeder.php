@@ -67,6 +67,11 @@ class AccountRoleSeeder extends Seeder
             'packaging_materials' => ['1440', 'Packaging Materials'],
             'wip' => ['1430', 'Work In Progress'],
             'pos_clearing' => ['1140', 'POS Clearing'],
+            // TASK-ECOS-FINANCE-COMMERCIAL-ACCOUNTING-006: cash a driver is
+            // physically holding after COD collection but has not yet banked —
+            // "Cash in Transit" (1130) already existed for exactly this and is
+            // reused rather than minting a new account code.
+            'cod_clearing' => ['1130', 'Cash in Transit'],
             'vat_input' => ['1530', 'VAT Receivable (Input)'],
             'ar_control' => ['1310', 'Trade Receivables — control, subledger receivables'],
 
@@ -90,6 +95,10 @@ class AccountRoleSeeder extends Seeder
             'inventory_adjustment_gain' => ['4920', 'Inventory Gain'],
 
             // ── Cost of sales ────────────────────────────────────────────────
+            // TASK-ECOS-FINANCE-COMMERCIAL-ACCOUNTING-006: COGS on commercial
+            // delivery (Dr 5100, Cr finished_goods 1410 — see the
+            // shipping.delivery_confirmation posting rule).
+            'cost_of_goods_sold' => ['5100', 'Cost of Goods Sold'],
             'scrap_expense' => ['5150', 'Scrap & Rework'],
             'inventory_writeoff_expense' => ['5160', 'Inventory Write-Off'],
             'inventory_adjustment_loss' => ['5170', 'Inventory Loss'],

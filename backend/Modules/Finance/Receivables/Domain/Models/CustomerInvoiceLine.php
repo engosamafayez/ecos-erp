@@ -29,8 +29,8 @@ class CustomerInvoiceLine extends Model
 
     protected $fillable = [
         'uuid', 'customer_invoice_id', 'revenue_account_id', 'description',
-        'quantity', 'unit_price', 'net_amount', 'tax_code_id', 'tax_amount',
-        'cost_center_id', 'branch_id',
+        'quantity', 'unit_price', 'net_amount', 'tax_code_id', 'tax_amount', 'tax_account_id',
+        'cost_center_id', 'branch_id', 'profit_center_id',
     ];
 
     protected function casts(): array

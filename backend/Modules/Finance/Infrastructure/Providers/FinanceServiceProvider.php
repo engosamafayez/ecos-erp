@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Finance\Infrastructure\Providers;
 
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Modules\Finance\Allocation\Domain\Services\AllocationEngine;
 use Modules\Finance\Analytics\Domain\Services\FinancialDashboardService;
@@ -23,8 +24,11 @@ use Modules\Finance\Controls\Domain\Services\FinancialValidationEngine;
 use Modules\Finance\Fiscal\Domain\Services\FiscalCalendarService;
 use Modules\Finance\Integration\Application\Bridge\EventPostingCatalog;
 use Modules\Finance\Integration\Application\Bridge\EventPostingSubscriber;
+use Modules\Finance\Integration\Application\Listeners\PostCodCollectionOnCodCollected;
+use Modules\Finance\Integration\Application\Listeners\PostRevenueAndCogsOnOrderDelivered;
 use Modules\Finance\Integration\Application\Services\FinancialIntegrationService;
 use Modules\Finance\Integration\Domain\Services\AccountRoleResolver;
+use Modules\Finance\Integration\Domain\Services\CommercialAccountingService;
 use Modules\Finance\Integration\Domain\Services\DeadLetterService;
 use Modules\Finance\Integration\Domain\Services\FinancialEventProcessor;
 use Modules\Finance\Integration\Domain\Services\PostingAuditRecorder;
@@ -32,6 +36,8 @@ use Modules\Finance\Integration\Domain\Services\PostingRuleRegistry;
 use Modules\Finance\Integration\Domain\Services\PostingRuleResolver;
 use Modules\Finance\Integration\Domain\Services\PostingTraceService;
 use Modules\Finance\Integration\Domain\Services\RulePostingStrategy;
+use Modules\Logistics\Delivery\Domain\Events\CodCollected;
+use Modules\Operations\Fulfillment\Domain\Events\OrderDeliveredEvent;
 use Modules\Finance\Intelligence\Domain\Services\CashFlowIntelligenceService;
 use Modules\Finance\Intelligence\Domain\Services\CostIntelligenceService;
 use Modules\Finance\Intelligence\Domain\Services\ForecastService;
@@ -127,6 +133,7 @@ final class FinanceServiceProvider extends ServiceProvider
         $this->app->singleton(EventPostingCatalog::class);
         $this->app->singleton(EventPostingSubscriber::class);
         $this->app->singleton(FinancialIntegrationService::class);
+        $this->app->singleton(CommercialAccountingService::class);
 
         // ── EPIC F4 · Financial Control, Closing & Budget ───────────────────────
         // Governance over the ledger, never a change to it. Closing orchestrates
@@ -171,6 +178,7 @@ final class FinanceServiceProvider extends ServiceProvider
         }
 
         $this->registerIntegrationSubscribers();
+        $this->registerCommercialAccountingListeners();
     }
 
     /**
@@ -205,6 +213,35 @@ final class FinanceServiceProvider extends ServiceProvider
                 priority: (int) config('finance.integration.subscriber_priority'),
                 queue: (string) config('finance.integration.queue'),
             );
+        }
+    }
+
+    /**
+     * Commercial Accounting (TASK-ECOS-FINANCE-COMMERCIAL-ACCOUNTING-006) —
+     * revenue/COGS on order delivery, and COD-collection settlement. These
+     * are plain Laravel event listeners (both source events are plain
+     * Dispatchable events, not routed through EnterpriseEventBus), gated by
+     * the SAME auto_subscribe flag as the bridge above — this posts real
+     * journals off operational events with the same prerequisite (account
+     * roles seeded) and the same risk profile, so it shares the one
+     * kill-switch rather than adding a second.
+     *
+     * Event::listen is additive: Fulfillment's own HandleOrderDelivered
+     * listener for OrderDeliveredEvent, and any existing (there are none
+     * today) listener for CodCollected, are untouched.
+     */
+    private function registerCommercialAccountingListeners(): void
+    {
+        if (! (bool) config('finance.integration.auto_subscribe')) {
+            return;
+        }
+
+        if (class_exists(OrderDeliveredEvent::class)) {
+            Event::listen(OrderDeliveredEvent::class, PostRevenueAndCogsOnOrderDelivered::class);
+        }
+
+        if (class_exists(CodCollected::class)) {
+            Event::listen(CodCollected::class, PostCodCollectionOnCodCollected::class);
         }
     }
 }

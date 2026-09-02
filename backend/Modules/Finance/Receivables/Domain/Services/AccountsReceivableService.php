@@ -48,7 +48,18 @@ final class AccountsReceivableService
      * Create a DRAFT customer document (invoice / credit note / debit note) with
      * its lines. Nothing touches the ledger yet.
      *
-     * @param  array<int, array{revenue_account_id:int, description?:string, quantity?:float, unit_price?:float, net_amount?:float, tax_code_id?:int|null, cost_center_id?:int|null, branch_id?:string|null}>  $lines
+     * A line's tax is normally derived from tax_code_id; passing tax_amount
+     * explicitly instead uses that figure verbatim (paired with
+     * tax_account_id to route it) — for an integration that already owns a
+     * canonical, precomputed tax total and must not have it re-derived from a
+     * rate that could silently disagree (TASK-ECOS-FINANCE-COMMERCIAL-
+     * ACCOUNTING-006).
+     *
+     * $sourceType/$sourceId are the same generic reference pair already used
+     * by the ledger-entry models — the caller's own dedup key (e.g. 'order' /
+     * the order's uuid), never interpreted here.
+     *
+     * @param  array<int, array{revenue_account_id:int, description?:string, quantity?:float, unit_price?:float, net_amount?:float, tax_code_id?:int|null, tax_amount?:float, tax_account_id?:int|null, cost_center_id?:int|null, branch_id?:string|null, profit_center_id?:string|null}>  $lines
      */
     public function createDocument(
         string $companyId,
@@ -61,13 +72,15 @@ final class AccountsReceivableService
         string $currency = 'EGP',
         ?string $description = null,
         ?int $createdBy = null,
+        ?string $sourceType = null,
+        ?string $sourceId = null,
     ): CustomerInvoice {
         if ($lines === []) {
             throw FinanceException::documentHasNoLines($type->label());
         }
 
         return DB::transaction(function () use (
-            $companyId, $customerId, $number, $documentDate, $lines, $type, $dueDate, $currency, $description, $createdBy
+            $companyId, $customerId, $number, $documentDate, $lines, $type, $dueDate, $currency, $description, $createdBy, $sourceType, $sourceId
         ): CustomerInvoice {
             $invoice = CustomerInvoice::create([
                 'company_id' => $companyId,
@@ -80,6 +93,8 @@ final class AccountsReceivableService
                 'status' => DocumentStatus::Draft->value,
                 'description' => $description,
                 'created_by' => $createdBy,
+                'source_type' => $sourceType,
+                'source_id' => $sourceId,
             ]);
 
             $subtotal = 0.0;
@@ -98,8 +113,10 @@ final class AccountsReceivableService
                     'net_amount' => $net,
                     'tax_code_id' => $raw['tax_code_id'] ?? null,
                     'tax_amount' => $tax,
+                    'tax_account_id' => $raw['tax_account_id'] ?? null,
                     'cost_center_id' => $raw['cost_center_id'] ?? null,
                     'branch_id' => $raw['branch_id'] ?? null,
+                    'profit_center_id' => $raw['profit_center_id'] ?? null,
                 ]);
 
                 $subtotal += $net;
@@ -176,6 +193,8 @@ final class AccountsReceivableService
         string $currency = 'EGP',
         ?string $description = null,
         ?int $createdBy = null,
+        ?string $sourceType = null,
+        ?string $sourceId = null,
     ): CustomerReceipt {
         return CustomerReceipt::create([
             'company_id' => $companyId,
@@ -188,6 +207,8 @@ final class AccountsReceivableService
             'status' => DocumentStatus::Draft->value,
             'description' => $description,
             'created_by' => $createdBy,
+            'source_type' => $sourceType,
+            'source_id' => $sourceId,
         ]);
     }
 
@@ -276,6 +297,44 @@ final class AccountsReceivableService
 
         return DB::transaction(function () use ($receipt, $reason, $actorId): JournalEntry {
             $journal = JournalEntry::query()->whereKey($receipt->journal_entry_id)->firstOrFail();
+            $reversalJournal = $this->journalEngine->reverse($journal, $reason, $actorId);
+
+            $original = CustomerLedgerEntry::query()->where('journal_entry_id', $journal->id)->first();
+
+            if ($original !== null) {
+                CustomerLedgerEntry::create([
+                    'company_id' => $original->company_id,
+                    'customer_id' => $original->customer_id,
+                    'entry_date' => Carbon::today(),
+                    'entry_type' => $original->entry_type->value,
+                    'amount' => round((float) $original->amount * -1, 4),
+                    'source_type' => 'ledger_entry_reversal',
+                    'source_id' => $original->uuid,
+                    'journal_entry_id' => $reversalJournal->id,
+                    'description' => 'Reversal of '.$original->description,
+                ]);
+            }
+
+            return $reversalJournal;
+        });
+    }
+
+    /**
+     * Reverse a posted document's journal AND its customer-ledger entry
+     * together, atomically — the invoice-side mirror of
+     * reverseReceiptPosting() (TASK-ECOS-FINANCE-COMMERCIAL-ACCOUNTING-006,
+     * the correction path for a commercial order recognised then cancelled
+     * or returned after posting). JournalEngine::reverse() is unchanged and
+     * remains the sole GL writer and sole reversal path.
+     */
+    public function reverseDocumentPosting(CustomerInvoice $invoice, string $reason, ?int $actorId = null): JournalEntry
+    {
+        if ($invoice->journal_entry_id === null) {
+            throw FinanceException::documentNotPosted($invoice->document_type->label(), $invoice->number);
+        }
+
+        return DB::transaction(function () use ($invoice, $reason, $actorId): JournalEntry {
+            $journal = JournalEntry::query()->whereKey($invoice->journal_entry_id)->firstOrFail();
             $reversalJournal = $this->journalEngine->reverse($journal, $reason, $actorId);
 
             $original = CustomerLedgerEntry::query()->where('journal_entry_id', $journal->id)->first();
@@ -391,14 +450,19 @@ final class AccountsReceivableService
                         'costCenterId' => $line->cost_center_id !== null ? (int) $line->cost_center_id : null,
                         'branchId' => $line->branch_id,
                         'description' => $line->description,
+                        'profitCenterId' => $line->profit_center_id,
                     ],
                 );
             }
 
             $tax = round((float) $line->tax_amount, 4);
-            if ($tax > 0.0 && $line->tax_code_id !== null) {
-                $taxCode = TaxCode::find($line->tax_code_id);
-                $taxAccountId = $taxCode?->output_account_id;
+            if ($tax > 0.0) {
+                // An explicit tax_account_id (a precomputed tax total the caller
+                // must not have re-derived) wins over the tax_code_id lookup.
+                $taxAccountId = $line->tax_account_id !== null
+                    ? (int) $line->tax_account_id
+                    : ($line->tax_code_id !== null ? TaxCode::find($line->tax_code_id)?->output_account_id : null);
+
                 if ($taxAccountId !== null) {
                     $taxByAccount[$taxAccountId] = round(($taxByAccount[$taxAccountId] ?? 0.0) + $tax, 4);
                 }
@@ -443,6 +507,10 @@ final class AccountsReceivableService
     /** @param array<string,mixed> $raw */
     private function lineTax(array $raw, float $net): float
     {
+        if (isset($raw['tax_amount'])) {
+            return round((float) $raw['tax_amount'], 4);
+        }
+
         if (empty($raw['tax_code_id'])) {
             return 0.0;
         }
