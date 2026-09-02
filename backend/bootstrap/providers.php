@@ -139,6 +139,10 @@ return [
     // HR & Workforce OS — EPIC H1 + H2. Employee is the workforce single source
     // of truth; Attendance owns attendance events. Referenced, never duplicated.
     Modules\Hr\Infrastructure\Providers\HrServiceProvider::class,
+    // TASK-ECOS-COLLABORATION-CORE-FOUNDATION-002 (ADR-044). Depends on IAM
+    // (permissions/authorization/data-scope) and Logistics\Drivers (driver→user
+    // linkage), both already registered above, so it registers after them.
+    Modules\Collaboration\Infrastructure\Providers\CollaborationServiceProvider::class,
     Modules\ClaudeBridge\Infrastructure\Providers\ClaudeBridgeServiceProvider::class,
     Modules\System\Engineering\Infrastructure\Providers\EngineeringServiceProvider::class,
 ];

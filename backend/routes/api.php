@@ -22,6 +22,11 @@ use Modules\ClaudeBridge\Presentation\Http\Controllers\TaskController as CbTaskC
 use Modules\ClaudeBridge\Presentation\Http\Controllers\WorkerApiController as CbWorkerApiController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\WorkerController as CbWorkerController;
 use Modules\ClaudeBridge\Presentation\Http\Middleware\VerifyWorkerToken;
+use Modules\Collaboration\Presentation\Http\Controllers\ConversationController;
+use Modules\Collaboration\Presentation\Http\Controllers\ConversationParticipantController;
+use Modules\Collaboration\Presentation\Http\Controllers\ConversationReadStateController;
+use Modules\Collaboration\Presentation\Http\Controllers\MessageController as CollaborationMessageController;
+use Modules\Collaboration\Presentation\Http\Controllers\OperationalContextLinkController;
 use Modules\Commerce\Channels\Presentation\Http\Controllers\ChannelController;
 use Modules\Commerce\Connectors\Presentation\Http\Controllers\ConnectorController;
 use Modules\Commerce\Fulfillments\Presentation\Http\Controllers\FulfillmentController;
@@ -4293,4 +4298,39 @@ Route::middleware('auth:sanctum')->prefix('hr/executive')->group(function (): vo
         Route::get('/analytics/trends', [HrExecutiveController::class, 'trends']);
         Route::get('/analytics/trends/{series}', [HrExecutiveController::class, 'trend']);
     });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Internal Collaboration & Tasks — ADR-044 (Accepted)
+|--------------------------------------------------------------------------
+| TASK-ECOS-COLLABORATION-CORE-FOUNDATION-002 — core conversation/messaging
+| foundation only. Voice, realtime, notifications, search and Internal Tasks
+| are Task 3/4/5 — see the architecture report and ADR-044 for the full V1
+| shape and what is deliberately not here yet.
+|
+| Conversation read/send and group-membership mutation are participation-
+| gated (ConversationPolicy / the actions themselves enforce it directly),
+| not permission-gated — only conversation/group *creation*, and messaging a
+| driver specifically (permission + IAM data scope, see
+| Domain\Services\DriverMessagingAuthorizer), are registered permissions.
+*/
+Route::middleware('auth:sanctum')->prefix('collaboration')->group(function (): void {
+    Route::get('conversations', [ConversationController::class, 'index']);
+    Route::get('conversations/{conversation}', [ConversationController::class, 'show']);
+    Route::post('conversations/direct', [ConversationController::class, 'storeDirect'])
+        ->middleware('permission:collaboration.conversations.create');
+    Route::post('conversations/groups', [ConversationController::class, 'storeGroup'])
+        ->middleware('permission:collaboration.groups.create');
+
+    Route::post('conversations/{conversation}/participants', [ConversationParticipantController::class, 'store']);
+    Route::delete('conversations/{conversation}/participants/{user}', [ConversationParticipantController::class, 'destroy']);
+
+    Route::get('conversations/{conversation}/messages', [CollaborationMessageController::class, 'index']);
+    Route::post('conversations/{conversation}/messages', [CollaborationMessageController::class, 'store']);
+
+    Route::patch('conversations/{conversation}/read', [ConversationReadStateController::class, 'update']);
+
+    // Foundation-proving endpoint only — see AttachOperationalContextAction.
+    Route::post('context-links', [OperationalContextLinkController::class, 'store']);
 });

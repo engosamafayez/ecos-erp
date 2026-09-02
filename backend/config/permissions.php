@@ -30,6 +30,15 @@ return [
             'branches' => ['view', 'create', 'update', 'delete'],
         ],
 
+        // Internal Collaboration & Tasks — ADR-044. Conversation read/send and
+        // group-membership mutation are participation-gated, not permission-gated
+        // (see the module's ConversationPolicy), so only the coarse capabilities
+        // that a data check cannot express are registered here.
+        'collaboration' => [
+            'conversations' => ['create', 'message_drivers'],
+            'groups' => ['create'],
+        ],
+
         'inventory' => [
             'products' => ['view', 'create', 'update', 'delete'],
             'warehouses' => ['view', 'create', 'update', 'delete'],
