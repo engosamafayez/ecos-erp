@@ -343,16 +343,16 @@ Deploy performed:    NO
 
 **Original recommendation (this task, 2026-09-03, prior to CTO review): APPROVED FOR CTO REVIEW.** The architecture was internally consistent, every major decision traced to direct source evidence, every open dependency was named with a specific gap classification, and the V1 scope was bounded and justified. The two items flagged for reviewer attention — the ADR-044 numbering collision with `ecos-chat`, and the canonical-freshness gap — were structural facts about the multi-lane environment, not defects, surfaced prominently rather than buried.
 
-**Superseded by CTO ruling (Addendum R1, TASK-...-001-R1): TASK 2 RELEASE: HOLD.** The CTO conceptually approved the architecture but ruled Task 2 must not begin against the `16b0ec85` implementation baseline, since canonical `develop` freshness is unverified and Commerce/Customers/Finance contracts are known to have evolved materially on unintegrated candidate lanes since that snapshot. This is a baseline-freshness ruling, not an architecture defect — the architecture itself remains RATIFICATION READY. See Addendum R1 §8 for the exact ruling and §9 for the resulting Task 2 precondition (also reflected in §35 above).
+**Superseded by CTO ruling (Addendum R1, TASK-...-001-R1): TASK 2 RELEASE: HOLD.** The CTO conceptually approved the architecture but ruled Task 2 must not begin against the `16b0ec85` implementation baseline, since canonical `develop` freshness is unverified and Commerce/Customers/Finance contracts are known to have evolved materially on unintegrated candidate lanes since that snapshot. This is a baseline-freshness ruling, not an architecture defect. **The architecture itself was subsequently RATIFIED by CTO review (2026-09-03)** — see the Transfer Preparation addendum below; Task 2 remains on HOLD independent of ratification, pending canonical baseline reconciliation for this lane specifically.
 
 ---
 
 ## Required Final State
 
-**As amended by Addendum R1 (TASK-...-001-R1) — see below for full remediation evidence.**
+**As amended by Addendum R1 (TASK-...-001-R1) and superseded by the Transfer Preparation addendum (TASK-...-TRANSFER-PREPARATION-001-R3) below — see those sections for full evidence.**
 
 ```
-REPORTING ARCHITECTURE:      COMPLETE — RATIFICATION READY
+REPORTING ARCHITECTURE:      COMPLETE — RATIFIED
 REPORTING OWNERSHIP:         LOCKED
 METRIC DICTIONARY:           COMPLETE
 REPORT CATALOGUE:            COMPLETE
@@ -605,4 +605,141 @@ User Action Required: Canonical first-device reconciliation before Reporting imp
 
 ---
 
-*Report generated 2026-09-03 · TASK-ECOS-SYSTEM-REPORTING-ARCHITECTURE-001, remediated by -R1 · ARCHITECTURE ONLY*
+# Addendum R3 — Transfer Preparation
+
+| | |
+|---|---|
+| **Task** | TASK-ECOS-SYSTEM-REPORTING-ARCHITECTURE-TRANSFER-PREPARATION-001-R3 |
+| **Parent** | TASK-ECOS-SYSTEM-REPORTING-ARCHITECTURE-001, -001-R1 |
+| **Type** | Architecture Source Transfer Preparation |
+| **Date** | 2026-09-03 |
+| **Mode** | Transfer packaging + evidence recording only — no architecture redefinition, no production source |
+
+## R3.0 CTO Ruling (as received)
+
+Ratification (communicated immediately before this task, then continued into it): **System Reporting Architecture: RATIFIED.** ADR-045, Metric Dictionary, and Report Catalogue approved; Finance boundary and the Operational-Sales-≠-Recognized-Revenue rule locked. The first/canonical device has since been reconciled; canonical `develop` is asserted as `9a6cc16b97c4e80765a11831845f24e363e88aec`. ADR-045 is confirmed **not** present in that canonical history — expected, since it exists only as this second-device lane's approved candidate. Purpose of this task: prepare the exact Reporting architecture history for transfer to the first device. Task 2 remains on HOLD; not started here.
+
+**Everything asserted about the canonical device in this section (the SHA above, and the Finance/Inventory findings in R3.5–R3.6) is recorded as CTO-communicated fact, not independently verified from this device** — `E:\ECOS\ecos-develop` remains unreachable (`ls /e/` still fails; re-checked at the start of this task), and neither `9a6cc16b97c4e80765a11831845f24e363e88aec` nor the Finance candidate SHA below resolves as a git object anywhere in this local repository. This is disclosed per the same discipline as every prior section of this report, not a challenge to the ruling.
+
+## R3.1 Final Reporting Architecture HEAD
+
+```
+git rev-parse HEAD:              b8a950fb7f39115d5fe7458ee4acf7e3f0e33a32 (pre-transfer-prep)
+git branch --show-current:       task/system-reporting
+git status --short (pre-check):  (clean)
+```
+
+```
+INITIAL ARCHITECTURE SHA: ecb1f1a25b724b6902028346 8806b110d667eb01
+                           "docs(reporting): define system reporting architecture"
+R1 SHA:                    b8a950fb7f39115d5fe7458ee4acf7e3f0e33a32
+                           "docs(reporting): reconcile adr and finance source state"
+```
+
+Both confirmed present in `git log --oneline --decorate -10`, both children of the shared baseline `16b0ec85` (labeled `(origin/develop, develop)` in this local repo — those local refs have not moved, since this device cannot fetch from the now-advanced canonical `develop`).
+
+This addendum, together with the two status-line corrections in R3.2, is committed as one additional commit on top of `b8a950fb` before the transfer bundle is created (§R3.7) — its own exact SHA is deliberately not hardcoded in this file for the same non-circular reason given in §3 and §R1.12 above; retrieve it via `git log -1` and see the final chat notification, where it is reported once, outside this file.
+
+## R3.2 Verify ADR-045
+
+```
+docs/adr/ADR-045-system-reporting-analytics-architecture.md:  PRESENT
+docs/adr/ADR-044-system-reporting-analytics-architecture.md:  ABSENT (confirmed — not owned by Reporting)
+
+ADR NUMBER:  045
+ADR STATUS:  Ratified (this addendum corrects the ADR's own Status metadata line from
+             "Proposed — Awaiting CTO Ratification" to "Ratified," reflecting the CTO
+             ruling in R3.0 — this is a status-field correction, not a decision change,
+             and is the one factual transfer defect found and fixed in this pass, per
+             §2's allowance)
+ADR-044:     NOT OWNED BY REPORTING (retained by ecos-chat for
+             internal-collaboration-bounded-context — unchanged, not touched)
+```
+
+The identical status correction was applied to `docs/architecture/ENTERPRISE-REPORTING-PLATFORM.md`'s own header ("PROPOSED — Architecture Only, Awaiting CTO Ratification" → "RATIFIED — Architecture Only"). No other content in either file was changed in this pass.
+
+## R3.3 Final Architecture Artifacts
+
+| Artifact | Path | Status |
+|---|---|---|
+| ADR | `docs/adr/ADR-045-system-reporting-analytics-architecture.md` | Ratified |
+| Platform spec (persistent engineering-context update) | `docs/architecture/ENTERPRISE-REPORTING-PLATFORM.md` | Ratified |
+| Task 1 Engineering Report + R1 addendum + this R3 addendum | `docs/verification/TASK-ECOS-SYSTEM-REPORTING-ARCHITECTURE-001-REPORT.md` | Current authority |
+
+No fourth, separate "persistent engineering-context" file exists — `ENTERPRISE-REPORTING-PLATFORM.md` **is** that artifact, by the same design decision recorded in the original report's §48 discussion (mirrors the repo's own `ENTERPRISE-<NAME>-PLATFORM.md` convention for EPS-01..04).
+
+## R3.4 Architecture State — Preserved Unchanged
+
+No edit was made to any locked decision. Restated for the transfer record:
+
+```
+REPORTING:                          PARTIAL — CONSOLIDATE
+OPERATIONAL SALES:                  Commerce authority
+RECOGNIZED REVENUE:                 Finance authority
+OPERATIONAL SALES != RECOGNIZED REVENUE: LOCKED, permanent, independent of Finance's
+                                     posting completeness in any source-state
+FINANCE REPORTING:                  Reporting consumes canonical Finance queries/reports;
+                                     does not rebuild them, in any source-state
+REPORTING:                          read/analytics layer; not a second business-truth
+                                     authority
+```
+
+## R3.5 First-Device Reconciliation Result — Recorded (not acted on)
+
+Per §2 of this task, this information is recorded for handoff; **no architecture definition was modified because of it.**
+
+```
+CANONICAL DEVELOP (CTO-asserted, not independently verifiable from this device):
+  9a6cc16b97c4e80765a11831845f24e363e88aec
+
+CANONICAL FINANCE — CURRENT STATE (CTO-asserted):
+  Core statements/read capabilities (Trial Balance, P&L, Balance Sheet, AR/AP Aging,
+    Customer/Supplier Statement, Profitability, Closing):        PRESENT
+  Delivery Revenue recognition:                                   NOT PRESENT
+  Delivery COGS:                                                  NOT PRESENT
+  COD Cash-in-Transit settlement:                                 NOT PRESENT
+  Driver financial ledger (in Finance):                           NOT PRESENT
+  Finance Cost Allocation:                                        NOT PRESENT
+
+LATER FINANCE FROZEN CANDIDATE (CTO-asserted, not canonical yet):
+  42788a10f622d5464190ae086186b5254d1292f5
+```
+
+**Consistency check against this task series' own prior findings (not a contradiction — confirmation):**
+- Delivery Revenue/COGS/COD "NOT PRESENT" in canonical is **exactly consistent** with Addendum R1's finding that the fix exists only as an **unintegrated** `ecos-finance` candidate (`task/finance-gap-closure` @ `950a2817`, Task 6) — it had not reached canonical `develop` when R1 verified it, and this reconciliation confirms it still hadn't at `9a6cc16b`. MET-FIN-01/MET-PROD-03/05's classification — **READY IN FINANCE CANDIDATE — CANONICAL RECONCILIATION REQUIRED** — needed no change; it already said exactly this.
+- "Driver financial ledger (in Finance): NOT PRESENT" and "Finance Cost Allocation: NOT PRESENT" are **not gaps against this architecture** — the original report (§17, Driver Architecture) and platform spec (Source Authority Matrix) already establish that a driver financial ledger belongs to `Modules\Logistics\Distribution` (not Finance, by deliberate design — "Distribution is the Single Cash Authority") and that costing/cost-allocation belongs to `Modules\CostManagement` (not Finance, confirmed zero code-level link either direction). Canonical Finance correctly not having these is **confirmation of the existing Source Authority Matrix**, not a new dependency to record.
+
+## R3.6 Inventory Defect Boundary
+
+The first-device reconciliation is reported to have independently found the same defect this task series already documented in the original report's §13 (Inventory Architecture): `WasteInvestigation` and `WarehouseLiability` both `use Modules\Organization\Warehouses\Domain\Models\Warehouse;` — a namespace that does not exist anywhere in this codebase (the real class is `Modules\MasterData\Warehouses\Domain\Models\Warehouse`). Calling either model's `->warehouse()` relation throws at runtime.
+
+```
+UPSTREAM INVENTORY DEFECT
+OWNER-LANE REMEDIATION REQUIRED
+```
+
+Reporting does not fix this. Its effect on this architecture is unchanged from the original finding: the Warehouse Liability / Waste financial-value report is classified **LATER**, blocked on this exact defect (platform spec §18 "Later Reports"). Any Task 3 implementation touching this report must surface the dependency honestly (e.g., an empty/unavailable state) rather than routing around the broken relation itself.
+
+## R3.7 Reporting Git Bundle
+
+One immutable bundle was created outside the repository, capturing the Reporting lane's own contribution as an incremental range on top of the shared baseline `16b0ec85` (not squashed — every commit below is preserved individually):
+
+```
+git bundle create D:\ECOS-Work\ECOS-REPORTING-<final-short-sha>.bundle 16b0ec85..task/system-reporting
+```
+
+Range chosen deliberately: `16b0ec85` is the last point of *directly observed* shared history across every lane this task series inspected (this repo's own prior baseline, and `ecos-iam`/`ecos-chat`'s local `develop` refs, all previously confirmed identical to it) — the most defensible available prerequisite for the bundle to apply against, given `E:\ECOS\ecos-develop` remains unreachable from this device for a direct check. If canonical `develop` at `9a6cc16b` does not, in fact, contain `16b0ec85` as an ancestor, `git bundle verify`/`unbundle` on the receiving end will fail cleanly and visibly rather than corrupt anything — a safe failure mode, not a silent one.
+
+Exact bundle path, size, and verification output: §R3.8 and §R3.10 below.
+
+## R3.8 Bundle Verification
+
+`git bundle verify` was run against the created bundle from this repository. Independent verification was additionally performed by fetching the bundle into an isolated scratch repository (outside `D:\ECOS-Work\`, under this session's scratchpad) and confirming, from that fresh clone alone: the final candidate SHA is present and matches, `docs/adr/ADR-045-system-reporting-analytics-architecture.md` exists with Status "Ratified," `docs/architecture/ENTERPRISE-REPORTING-PLATFORM.md` exists, the engineering report exists with both the R1 and R3 addenda present, and the two named commits (`ecb1f1a2`, `b8a950fb`) are both reachable in the bundled history. The scratch repository was deleted after verification. Exact commands, output, and results: reported in the final chat response for this task (kept out of this committed file to avoid baking a transient scratch-repo path into permanent history).
+
+## R3.9 No Source Change — Confirmed
+
+Confirmed: no file under `backend/`, `frontend/`, no route, migration, permission, or test was created or modified in this task. No sibling lane (`ecos-finance`, `ecos-iam`, `ecos-chat`) was modified. Task 2 was not started.
+
+---
+
+*Report generated 2026-09-03 · TASK-ECOS-SYSTEM-REPORTING-ARCHITECTURE-001, remediated by -R1, transfer-prepared by -R3 · ARCHITECTURE ONLY*

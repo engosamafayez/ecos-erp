@@ -3,7 +3,7 @@
 **Document:** ENTERPRISE-REPORTING-PLATFORM
 **Service:** Analytics Platform (named, non-EPS, in `ENTERPRISE-PLATFORM-SERVICES.md` §7)
 **Version:** 1.0
-**Status:** PROPOSED — Architecture Only, Awaiting CTO Ratification
+**Status:** RATIFIED — Architecture Only (CTO review, 2026-09-03; implementation remains on HOLD pending canonical `develop` baseline reconciliation — see ADR-045 and the engineering report's Transfer Preparation addendum)
 **Date:** 2026-09-03
 **Task:** TASK-ECOS-SYSTEM-REPORTING-ARCHITECTURE-001
 **ADR:** `docs/adr/ADR-045-system-reporting-analytics-architecture.md` (originally filed as ADR-044; renumbered by TASK-...-001-R1 after a confirmed collision with `ecos-chat`'s own `ADR-044-internal-collaboration-bounded-context.md` — see that ADR's "Known Documentation Gaps")

@@ -1,6 +1,6 @@
 # ADR-045: System Reporting & Analytics Architecture
 
-**Status:** Proposed — Awaiting CTO Ratification
+**Status:** Ratified (CTO review, 2026-09-03 — see TASK-ECOS-SYSTEM-REPORTING-ARCHITECTURE-001-R1 and the Transfer Preparation addendum in the accompanying engineering report)
 **Version:** v1.0
 **Date:** 2026-09-03
 **Author:** Engineering Architecture Review
@@ -196,4 +196,4 @@ Recorded here because they affect how future ADRs/readers should navigate this r
 
 ## Status of Implementation
 
-**NOT STARTED.** This ADR is Task 1 of System Reporting Batch 01 (architecture only). No endpoint, migration, permission, or UI was created. Task 2 (Reporting Foundation + Commercial Reports) begins only after CTO ratification of this ADR — see the engineering report §35 for the exact Task 2–5 plan and stop conditions.
+**NOT STARTED.** This ADR is Task 1 of System Reporting Batch 01 (architecture only). No endpoint, migration, permission, or UI was created. **This ADR is ratified** (CTO review, 2026-09-03); Task 2 (Reporting Foundation + Commercial Reports) remains **on HOLD** independent of ratification, pending canonical `develop` baseline reconciliation for this lane's implementation branch — see the engineering report §35 and the Transfer Preparation addendum for the exact status and Task 2–5 plan.
