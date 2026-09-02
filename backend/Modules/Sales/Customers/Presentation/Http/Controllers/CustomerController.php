@@ -50,18 +50,19 @@ final class CustomerController extends Controller
 
         $paginator = $action->execute($filters)->data();
 
-        // FOUR aggregate queries per company on the page — never one per row.
+        // FIVE aggregate queries per company on the page — never one per row.
         //
         // Grouping by the customer's OWN company_id matters for the documented super-admin
         // context, where CurrentCompanyService::id() is null: filtering by a single company
         // would zero every metric. A normal user's page is one company, so this stays at
-        // four queries; a super-admin's page costs four per distinct company — bounded,
+        // five queries; a super-admin's page costs five per distinct company — bounded,
         // and never proportional to the number of customers.
         $customers = collect($paginator->items());
         $metrics = [];
         $topProds = [];
         $locations = [];
         $governorates = [];
+        $channels = [];
 
         foreach ($customers->groupBy(fn (Customer $c) => (string) $c->company_id) as $companyId => $group) {
             if ((string) $companyId === '') {
@@ -73,6 +74,7 @@ final class CustomerController extends Controller
             $topProds += $this->orderMetrics->topProductsForCustomers($ids, (string) $companyId);
             $locations += $this->orderMetrics->locationUrlForCustomers($ids, (string) $companyId);
             $governorates += $this->orderMetrics->preferredGovernorateForCustomers($ids, (string) $companyId);
+            $channels += $this->orderMetrics->channelsForCustomers($ids, (string) $companyId);
         }
 
         return $this->success([
@@ -88,6 +90,9 @@ final class CustomerController extends Controller
                 // Most frequent orders.governorate. NULL when the customer has no order
                 // carrying one — never substituted with city or a guess.
                 'preferred_governorate' => $governorates[(string) $c->id] ?? null,
+                // Distinct Channels this customer has ordered through, most-used first.
+                // Derived read — see CustomerOrderMetricsService::channelsForCustomers().
+                'channels' => $channels[(string) $c->id] ?? [],
             ])->all(),
             'meta' => [
                 'current_page' => $paginator->currentPage(),
@@ -122,6 +127,7 @@ final class CustomerController extends Controller
             'purchased_products' => $this->orderMetrics->purchasedProducts($id, $companyId),
             'location_url' => $this->orderMetrics->locationUrlForCustomers([$id], $companyId)[$id] ?? null,
             'preferred_governorate' => $this->orderMetrics->preferredGovernorateForCustomers([$id], $companyId)[$id] ?? null,
+            'channels' => $this->orderMetrics->channelsForCustomers([$id], $companyId)[$id] ?? [],
             'full_address' => $this->fullAddress($model),
         ]);
     }
@@ -242,6 +248,14 @@ final class CustomerController extends Controller
      * wins over the denormalised `customers.*` columns, so both screens answer the same
      * address for the same customer. The two sources exist and can disagree — see the
      * TASK-CUSTOMER-360 report; this does not re-decide that, it follows it.
+     *
+     * TASK-...-OPERATIONAL-READ-MODEL-007: extended to include building/floor/apartment/
+     * landmark — `customer_addresses` has carried these columns since
+     * 2026_07_13_200001_add_address_details_to_customer_addresses_table.php, but this
+     * formatter never read them, so "full address" was missing exactly the operational
+     * detail (which building, which floor) a driver actually needs. The legacy
+     * `customers.*` fallback branch is unchanged — those flat columns never had
+     * building/floor/apartment/landmark equivalents to begin with.
      */
     private function fullAddress(Customer $customer): ?string
     {
@@ -250,7 +264,16 @@ final class CustomerController extends Controller
             : null;
 
         $parts = $default !== null
-            ? [$default->address_line, $default->area, $default->city, $default->governorate]
+            ? [
+                $default->address_line,
+                $default->building,
+                $default->floor,
+                $default->apartment,
+                $default->area,
+                $default->city,
+                $default->governorate,
+                $default->landmark,
+            ]
             : [$customer->address, $customer->area, $customer->city, $customer->governorate];
 
         $parts = array_values(array_filter(

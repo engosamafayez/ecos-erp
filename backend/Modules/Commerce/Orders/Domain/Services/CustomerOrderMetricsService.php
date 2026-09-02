@@ -295,6 +295,57 @@ final class CustomerOrderMetricsService
         return $out;
     }
 
+    /**
+     * The distinct sales Channels a customer has ordered through — for MANY
+     * customers in ONE query (TASK-...-OPERATIONAL-READ-MODEL-007).
+     *
+     * Derived, not maintained: unlike customer_brands (a first-class entity with
+     * its own write-time state), no evidence of a richer "acquisition channel" or
+     * "assigned channel" concept exists anywhere in the codebase — this is a flat
+     * read of every channel that appears on this customer's own orders, ordered by
+     * how many orders went through each one (most-used first). A customer with no
+     * qualifying orders is simply absent from the result.
+     *
+     * @param  list<string>  $customerIds
+     * @return array<string, list<array<string, mixed>>> customer_id => channels, most-used first
+     */
+    public function channelsForCustomers(array $customerIds, string $companyId): array
+    {
+        if ($customerIds === []) {
+            return [];
+        }
+
+        $rows = DB::table('orders as o')
+            ->join('channels as c', 'c.id', '=', 'o.channel_id')
+            ->whereIn('o.customer_id', $customerIds)
+            ->where('o.company_id', $companyId)
+            ->whereNull('o.deleted_at')
+            ->groupBy('o.customer_id', 'o.channel_id', 'c.name')
+            ->selectRaw('
+                o.customer_id,
+                o.channel_id,
+                c.name AS channel_name,
+                COUNT(*) AS orders_count
+            ')
+            ->orderBy('o.customer_id')
+            ->orderByDesc('orders_count')
+            ->get();
+
+        $out = [];
+
+        foreach ($rows as $row) {
+            $key = (string) $row->customer_id;
+            $out[$key] ??= [];
+            $out[$key][] = [
+                'channel_id' => (string) $row->channel_id,
+                'channel_name' => $row->channel_name,
+                'orders_count' => (int) $row->orders_count,
+            ];
+        }
+
+        return $out;
+    }
+
     /** @return array<string, mixed> */
     public static function emptyMetrics(): array
     {

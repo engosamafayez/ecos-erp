@@ -75,7 +75,10 @@
     "receivingRate": "Receiving Rate",
     "fullAddress": "Address",
     "location": "Location",
-    "topProducts": "Top Products"
+    "topProducts": "Top Products",
+    "brands": "Brand(s)",
+    "salesOwner": "Sales Owner",
+    "channels": "Channel(s)"
   },
   "intelligence": {
     "hasNotes": "Notes",
@@ -88,7 +91,8 @@
     "viewOrders": "View Orders",
     "viewAllProducts": "View all {{count}} products",
     "distinctProductsHint": "{{count}} distinct products ordered — hover to see the top ones by quantity",
-    "topProductsByQuantity": "Top products by quantity"
+    "topProductsByQuantity": "Top products by quantity",
+    "unassigned": "Unassigned"
   },
   "phone": {
     "call": "Call",

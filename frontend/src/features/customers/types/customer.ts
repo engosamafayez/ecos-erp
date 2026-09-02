@@ -27,9 +27,18 @@ export type CustomerPurchasedProduct = {
   last_ordered_at: string | null;
 };
 
+export type CustomerChannel = {
+  channel_id: string;
+  channel_name: string | null;
+  orders_count: number;
+};
+
 export type Customer = {
   id: string;
   company_id: string | null;
+  /** Nullable until a future task adds the assignment action — every customer is unassigned today. */
+  sales_owner_id: string | null;
+  sales_owner_name: string | null;
   code: string;
   name: string;
   contact_person: string | null;
@@ -61,6 +70,8 @@ export type Customer = {
   full_address: string | null;
   /** Most frequent orders.governorate, computed server-side. NULL when no order carries one. */
   preferred_governorate: string | null;
+  /** Distinct Channels ordered through, most-used first. Derived from order history, not maintained. */
+  channels: CustomerChannel[];
   /** Returned by GET /customers/{id} only — the list omits it by design (heavier query). */
   purchased_products?: CustomerPurchasedProduct[];
   created_at: string | null;
@@ -69,7 +80,8 @@ export type Customer = {
 
 export type CustomerPayload = {
   brand_id: string;
-  code: string;
+  /** Omitted (or blank) on create — the backend generates one. Required on update. */
+  code?: string;
   name: string;
   contact_person?: string;
   email?: string;

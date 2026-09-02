@@ -160,6 +160,12 @@ function SummaryTab({ customer }: { customer: Customer }) {
         {customer.code ? (
           <InfoRow label={t($ => $.drawer.summary.code)} value={customer.code} />
         ) : null}
+        {/* Sales Owner — denormalised sales_owner_name, null until a future task adds the
+            assignment action. Always shown (not gated) so "Unassigned" is visible by default. */}
+        <InfoRow
+          label={t($ => $.columns.salesOwner)}
+          value={customer.sales_owner_name ?? t($ => $.table.unassigned)}
+        />
         {customer.contact_person ? (
           <InfoRow label={t($ => $.drawer.summary.contactPerson)} value={customer.contact_person} />
         ) : null}
@@ -208,6 +214,24 @@ function SummaryTab({ customer }: { customer: Customer }) {
                   )}
                 </span>
               </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {/* Channels — derived read over this customer's own order history
+          (CustomerOrderMetricsService::channelsForCustomers), most-used first. */}
+      {customer.channels && customer.channels.length > 0 ? (
+        <div className="flex flex-col gap-1.5 rounded-lg border p-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {t($ => $.columns.channels)}
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {customer.channels.map((c) => (
+              <Badge key={c.channel_id} variant="secondary" className="h-5 gap-1 px-1.5 text-[10px]">
+                {c.channel_name ?? '—'}
+                <span className="text-muted-foreground">({c.orders_count})</span>
+              </Badge>
             ))}
           </div>
         </div>

@@ -22,10 +22,12 @@ use Modules\Sales\Customers\Infrastructure\Database\Factories\CustomerFactory;
  * Brand associations are managed through the customer_brands relationship entity.
  * A Customer without a Company is an invalid aggregate.
  *
- * @property string      $id
- * @property string      $company_id
- * @property string      $code
- * @property string      $name
+ * @property string $id
+ * @property string $company_id
+ * @property int|null $sales_owner_id
+ * @property string|null $sales_owner_name
+ * @property string $code
+ * @property string $name
  * @property string|null $contact_person
  * @property string|null $email
  * @property string|null $phone
@@ -36,7 +38,7 @@ use Modules\Sales\Customers\Infrastructure\Database\Factories\CustomerFactory;
  * @property string|null $area
  * @property string|null $address
  * @property string|null $notes
- * @property bool        $is_active
+ * @property bool $is_active
  */
 class Customer extends Model
 {
@@ -52,6 +54,8 @@ class Customer extends Model
      */
     protected $fillable = [
         'company_id',
+        'sales_owner_id',
+        'sales_owner_name',
         'code',
         'name',
         'contact_person',

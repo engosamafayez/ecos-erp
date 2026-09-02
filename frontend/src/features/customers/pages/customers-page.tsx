@@ -82,10 +82,11 @@ function SortTh({
 
 // ── Row skeleton ──────────────────────────────────────────────────────────────
 // Kept in sync with the table's real <th> count (checkbox, customer, phones,
-// orders count, total value, receiving rate, last order, address, top
-// products, intelligence, actions) so loading/error/empty states span the
-// actual header width instead of drifting whenever a column is added.
-const CUSTOMER_TABLE_COLUMNS = 11;
+// brands, sales owner, channels, orders count, total value, receiving rate,
+// last order, address, top products, intelligence, actions) so loading/error/
+// empty states span the actual header width instead of drifting whenever a
+// column is added.
+const CUSTOMER_TABLE_COLUMNS = 14;
 
 function CustomerRowSkeleton() {
   return (
@@ -96,6 +97,36 @@ function CustomerRowSkeleton() {
         </td>
       ))}
     </tr>
+  );
+}
+
+// Compact chip list for a table cell — shows up to 2 chips inline plus a "+N" badge for the
+// rest, same Badge styling already used by the Intelligence column in this table.
+const CHIP_LIST_VISIBLE = 2;
+
+function ChipList({ items }: { items: { key: string; label: string }[] }) {
+  const { t } = useTranslation('customers');
+
+  if (items.length === 0) {
+    return <span className="text-xs text-muted-foreground">—</span>;
+  }
+
+  const visible = items.slice(0, CHIP_LIST_VISIBLE);
+  const overflow = items.length - visible.length;
+
+  return (
+    <div className="flex flex-wrap gap-1">
+      {visible.map((item) => (
+        <Badge key={item.key} variant="secondary" className="h-5 px-1.5 text-[10px]">
+          {item.label}
+        </Badge>
+      ))}
+      {overflow > 0 ? (
+        <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+          {t($ => $.phone.more, { count: overflow })}
+        </Badge>
+      ) : null}
+    </div>
   );
 }
 
@@ -401,6 +432,15 @@ export function CustomersPage() {
                 <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
                   {t($ => $.columns.phones)}
                 </th>
+                <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
+                  {t($ => $.columns.brands)}
+                </th>
+                <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
+                  {t($ => $.columns.salesOwner)}
+                </th>
+                <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
+                  {t($ => $.columns.channels)}
+                </th>
                 <th className="px-4 py-3 text-end text-xs font-medium text-muted-foreground">
                   {t($ => $.columns.ordersCount)}
                 </th>
@@ -455,6 +495,7 @@ export function CustomersPage() {
                     onViewOrders={openViewOrders}
                     onEdit={openEdit}
                     onDelete={setDeleting}
+                    onCreateOrder={(c) => navigate(ROUTES.ordersNew, { state: { customerPhone: c.phone ?? undefined } })}
                   />
                 ))
               )}
@@ -527,6 +568,7 @@ type RowProps = {
   onViewOrders: (c: Customer) => void;
   onEdit: (c: Customer) => void;
   onDelete: (c: Customer) => void;
+  onCreateOrder: (c: Customer) => void;
 };
 
 function CustomerRow({
@@ -538,6 +580,7 @@ function CustomerRow({
   onViewOrders,
   onEdit,
   onDelete,
+  onCreateOrder,
 }: RowProps) {
   const { t } = useTranslation('customers');
   const { t: tCommon } = useTranslation('common');
@@ -601,6 +644,29 @@ function CustomerRow({
             />
           ) : null}
         </div>
+      </td>
+
+      {/* Brand(s) — already-canonical customer.brands (customer_brands pivot), just not
+          previously rendered as a table column. Compact chips + overflow, same pattern
+          the profile drawer's Summary tab already uses. */}
+      <td className="px-4 py-3">
+        <ChipList
+          items={customer.brands.map((b) => ({ key: b.id, label: b.brand_name ?? '—' }))}
+        />
+      </td>
+
+      {/* CRM Sales Owner — denormalised sales_owner_name, null until a future task adds
+          the assignment action. */}
+      <td className="px-4 py-3 text-xs">
+        {customer.sales_owner_name ?? <span className="text-muted-foreground">{t($ => $.table.unassigned)}</span>}
+      </td>
+
+      {/* Channel(s) — derived read over this customer's own order history
+          (CustomerOrderMetricsService::channelsForCustomers), most-used first. */}
+      <td className="px-4 py-3">
+        <ChipList
+          items={customer.channels.map((c) => ({ key: c.channel_id, label: c.channel_name ?? '—' }))}
+        />
       </td>
 
       {/* Orders Count — clicking the number opens this customer's orders. */}
@@ -738,6 +804,12 @@ function CustomerRow({
                 label: tCommon($ => $.common.edit),
                 icon: Pencil,
                 onSelect: () => onEdit(customer),
+              },
+              {
+                key: 'createOrder',
+                label: t($ => $.quickCard.createOrder),
+                icon: Plus,
+                onSelect: () => onCreateOrder(customer),
               },
               {
                 key: 'copyPhone',

@@ -106,4 +106,17 @@ final class EloquentCustomerRepository implements CustomerRepositoryInterface
     {
         $customer->delete();
     }
+
+    public function nextCodeNumber(string $companyId): int
+    {
+        // Lock the count inside the caller's transaction to prevent concurrent duplicates —
+        // the exact pattern already used by Brand/BusinessAccount/Team code generation.
+        $count = Customer::query()
+            ->withTrashed()
+            ->where('company_id', $companyId)
+            ->lockForUpdate()
+            ->count();
+
+        return $count + 1;
+    }
 }

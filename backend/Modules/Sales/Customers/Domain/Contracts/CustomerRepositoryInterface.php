@@ -24,4 +24,11 @@ interface CustomerRepositoryInterface
     public function update(Customer $customer, array $attributes): Customer;
 
     public function delete(Customer $customer): void;
+
+    /**
+     * The next sequential number for this company's Customer Code, under a row lock.
+     * MUST be called inside the same DB transaction that inserts the new Customer —
+     * the lock only holds for the transaction's duration.
+     */
+    public function nextCodeNumber(string $companyId): int;
 }

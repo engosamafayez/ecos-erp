@@ -33,9 +33,14 @@ export function CustomerFormFields({ isEdit = false }: Props) {
             />
           </FormField>
         </div>
-        <FormField name="code" label={t($ => $.form.code.label)} required>
-          <Input placeholder={t($ => $.form.code.placeholder)} {...register('code')} />
-        </FormField>
+        {/* Create: not rendered at all — the backend generates the code
+            (CustomerCodeGeneratorService), never typed by an operator. Edit: still
+            shown/editable exactly as before this task. */}
+        {isEdit ? (
+          <FormField name="code" label={t($ => $.form.code.label)} required>
+            <Input placeholder={t($ => $.form.code.placeholder)} {...register('code')} />
+          </FormField>
+        ) : null}
         <FormField name="name" label={t($ => $.form.name.label)} required>
           <Input placeholder={t($ => $.form.name.placeholder)} {...register('name')} />
         </FormField>

@@ -75,7 +75,10 @@
     "receivingRate": "معدل الاستلام",
     "fullAddress": "العنوان",
     "location": "الموقع",
-    "topProducts": "أكثر المنتجات"
+    "topProducts": "أكثر المنتجات",
+    "brands": "العلامة التجارية",
+    "salesOwner": "مسؤول المبيعات",
+    "channels": "القنوات"
   },
   "intelligence": {
     "hasNotes": "ملاحظات",
@@ -88,7 +91,8 @@
     "viewOrders": "عرض الطلبات",
     "viewAllProducts": "عرض كل المنتجات ({{count}})",
     "distinctProductsHint": "عدد المنتجات المختلفة التي طلبها العميل: {{count}} — مرّر لعرض الأعلى كميةً",
-    "topProductsByQuantity": "أكثر المنتجات كميةً"
+    "topProductsByQuantity": "أكثر المنتجات كميةً",
+    "unassigned": "غير معيّن"
   },
   "phone": {
     "call": "اتصال",
