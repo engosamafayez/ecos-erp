@@ -362,7 +362,9 @@
   },
   "mobileCard": {
     "viewProduct": "عرض المنتج",
-    "editProduct": "تعديل المنتج"
+    "editProduct": "تعديل المنتج",
+    "channelsCount": "{{count}} قناة",
+    "marginPercent": "هامش {{value}}%"
   },
   "recipePrompt": {
     "title": "تم إنشاء المنتج بنجاح",

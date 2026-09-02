@@ -4,9 +4,10 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { getMediaUrl } from '@/lib/media';
 import { cn } from '@/lib/utils';
+import { marginColorClass } from '@/features/products/lib/pricing-utils';
 
 import { PublishBadge } from './badges/publish-badge';
-import { StockStatusBadge } from './stock-status-badge';
+import { StockStatusCell } from './product-column-defs';
 import type { Product } from '../types/product';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -43,20 +44,24 @@ export function ProductMobileCard({
 }: ProductMobileCardProps) {
   const { t } = useTranslation('products');
 
+  const hasSecondary = Boolean(
+    product.category?.name || product.brand?.name || (product.channels?.length ?? 0) > 0 || product.final_margin_pct != null,
+  );
+
   return (
     <div
       role="listitem"
       aria-selected={isSelected}
       data-focused={isFocused || undefined}
       className={cn(
-        'relative border-b last:border-0 p-3.5 transition-colors',
+        'relative mb-2 rounded-xl border p-3.5 shadow-sm transition-colors last:mb-0',
         isSelected ? 'bg-primary/5' : 'bg-card',
         isFocused && 'outline outline-1 -outline-offset-1 outline-primary/50',
       )}
     >
       {/* Checkbox */}
       {onSelect ? (
-        <div className="absolute left-3.5 top-4">
+        <div className="absolute start-3.5 top-4">
           <input
             type="checkbox"
             checked={isSelected}
@@ -70,7 +75,7 @@ export function ProductMobileCard({
       {/* Main content row */}
       <button
         type="button"
-        className={cn('flex w-full items-start gap-3 text-start', onSelect && 'pl-7')}
+        className={cn('flex w-full items-start gap-3 text-start', onSelect && 'ps-7')}
         onClick={() => onView(product)}
         aria-label={`View ${product.name}`}
       >
@@ -91,7 +96,7 @@ export function ProductMobileCard({
         <div className="min-w-0 flex-1">
           {/* Row 1: Name + Price */}
           <div className="mb-0.5 flex items-start justify-between gap-2">
-            <p className="truncate text-sm font-medium leading-tight" title={product.name}>
+            <p className="truncate text-[15px] font-semibold leading-tight text-foreground" title={product.name}>
               {product.name}
             </p>
             <span className="shrink-0 text-sm font-semibold tabular-nums">
@@ -102,16 +107,41 @@ export function ProductMobileCard({
           {/* Row 2: SKU */}
           <p className="mb-1.5 font-mono text-[11px] text-muted-foreground">{product.sku}</p>
 
-          {/* Row 3: Badges */}
+          {/* Row 3: PRIMARY badges — canonical availability (fixed: reads the SAME
+              product/product_type/availability_state/manufacturing_availability
+              branch the desktop list column reads, via the exported StockStatusCell,
+              instead of the WooCommerce-only stock_status field). */}
           <div className="flex flex-wrap items-center gap-1.5">
-            <StockStatusBadge status={product.stock_status} />
+            <StockStatusCell product={product} />
             <PublishBadge published={product.is_published} />
           </div>
+
+          {/* Row 4: SECONDARY tier — category/brand/channels/margin (design report
+              §10: not just image+name+price). Read as-is from the server-computed
+              fields; never recomputed here (CTO Rule, product.ts line 87). */}
+          {hasSecondary ? (
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-muted-foreground">
+              {product.category?.name ? <span className="truncate">{product.category.name}</span> : null}
+              {product.brand?.name ? <span className="truncate">{product.brand.name}</span> : null}
+              {(product.channels?.length ?? 0) > 0 ? (
+                <span className="truncate">
+                  {product.channels!.length === 1
+                    ? product.channels![0].name
+                    : t($ => $.mobileCard.channelsCount, { count: product.channels!.length })}
+                </span>
+              ) : null}
+              {product.final_margin_pct != null ? (
+                <span className={cn('font-medium tabular-nums', marginColorClass(product.final_margin_pct))}>
+                  {t($ => $.mobileCard.marginPercent, { value: product.final_margin_pct.toFixed(0) })}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </button>
 
       {/* Quick actions */}
-      <div className={cn('mt-2.5 flex items-center justify-end gap-0.5', onSelect && 'pl-7')}>
+      <div className={cn('mt-2.5 flex items-center justify-end gap-0.5', onSelect && 'ps-7')}>
         <Button
           variant="ghost"
           size="icon"

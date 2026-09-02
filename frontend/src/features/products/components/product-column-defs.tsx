@@ -49,7 +49,10 @@ function fmtDate(d: string | null | undefined): string {
 }
 
 // PART 6: 3-state for finished goods (manufacturing_availability), 2-state for other types (stock_status)
-function StockStatusCell({ product }: { product: Product }) {
+// Exported (TASK-ECOS-MOBILE-UX-COMPLETION-003) so the mobile product card and mobile
+// detail screen render the IDENTICAL canonical availability logic instead of a second,
+// divergent implementation — see product-mobile-card.tsx for the bug this fixed.
+export function StockStatusCell({ product }: { product: Product }) {
   const { t } = useTranslation('products');
   if (!product) return <span className="text-muted-foreground text-xs">—</span>;
   if (product.product_type === 'finished_good') {
