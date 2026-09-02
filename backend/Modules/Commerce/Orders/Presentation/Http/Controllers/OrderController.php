@@ -26,6 +26,7 @@ use Modules\Commerce\Orders\Application\Actions\UpdateOrderAction;
 use Modules\Commerce\Orders\Application\Actions\VerifyPaymentAction;
 use Modules\Commerce\Orders\Application\DTO\OrderDTO;
 use Modules\Commerce\Orders\Application\Services\CreateOrderSnapshotService;
+use Modules\Commerce\Orders\Domain\Contracts\OrderRepositoryInterface;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Orders\Domain\Models\OrderBusinessContextSnapshot;
@@ -51,6 +52,7 @@ final class OrderController extends Controller
     public function __construct(
         private readonly CurrentCompanyService $currentCompany,
         private readonly CustomerOrderMetricsService $orderMetrics,
+        private readonly OrderRepositoryInterface $orders,
     ) {}
 
     public function index(Request $request, ListOrdersAction $action): JsonResponse
@@ -114,14 +116,15 @@ final class OrderController extends Controller
             $order->setAttribute('customer_total_orders', $orderCounts[(string) $order->customer_id]['orders_count'] ?? 0);
         }
 
-        // KPI cards: sum grand_total for the current company+status scope
-        $totalAmount = Order::query()
-            ->where('company_id', $filters['company_id'])
-            ->when(
-                ($filters['status'] ?? 'all') !== 'all',
-                fn ($q) => $q->where('status', $filters['status']),
-            )
-            ->sum('total');
+        // KPI cards: sum grand_total across the exact same filtered scope $paginator
+        // just listed — every filter in $filters, via the repository's single
+        // canonical filter-building authority (EloquentOrderRepository::sumTotal(),
+        // which shares buildFilteredQuery() with paginate()). Previously this was a
+        // hand-rolled query applying only company_id+status, so the dollar total
+        // shown next to a correctly-filtered count silently reverted to an
+        // unfiltered figure whenever any other filter (search, channel, product,
+        // payment, date range, etc.) was active — INTEGRATION-GATE-REMEDIATION-001.
+        $totalAmount = $this->orders->sumTotal($filters);
 
         return $this->success([
             'items' => OrderResource::collection($paginator->items()),
@@ -292,7 +295,7 @@ final class OrderController extends Controller
     public function paymentMethods(): JsonResponse
     {
         $companyId = $this->currentCompany->id() ?? '';
-        $methods = app(\Modules\Commerce\Orders\Domain\Contracts\OrderRepositoryInterface::class)
+        $methods = app(OrderRepositoryInterface::class)
             ->listPaymentMethods($companyId);
 
         return $this->success($methods);
@@ -302,7 +305,7 @@ final class OrderController extends Controller
     public function shippingCompanies(): JsonResponse
     {
         $companyId = $this->currentCompany->id() ?? '';
-        $companies = app(\Modules\Commerce\Orders\Domain\Contracts\OrderRepositoryInterface::class)
+        $companies = app(OrderRepositoryInterface::class)
             ->listShippingCompanies($companyId);
 
         return $this->success($companies);

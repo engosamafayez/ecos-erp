@@ -20,23 +20,10 @@ import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { OrderStatusBadge } from '@/features/orders/components/order-status-badge';
 import { useOrdersQuery } from '@/features/orders/hooks/use-orders';
+import { TERMINAL_ORDER_STATUSES } from '@/features/orders/types/order';
 
 import type { Customer } from '@/features/customers/types/customer';
 import { cn } from '@/lib/utils';
-
-// Statuses that mean an order is in-flight (not terminal). Aligned to the
-// canonical V3 OrderStatus union — the legacy values (processing/review/
-// confirmed/preparing/rescheduled) are no longer emitted by the backend.
-const ACTIVE_ORDER_STATUSES = new Set<string>([
-  'new',
-  'in_progress',
-  'awaiting_payment',
-  'awaiting_stock',
-  'scheduled',
-  'ready_for_dispatch',
-  'out_for_delivery',
-  'on_hold',
-]);
 
 type Props = {
   customer: Customer;
@@ -78,7 +65,7 @@ export function CustomerQuickActionCard({
 
   const totalOrders   = ordersData?.meta.total ?? null;
   const lastOrderDate = ordersData?.items[0]?.order_date ?? null;
-  const activeOrder   = ordersData?.items.find((o) => ACTIVE_ORDER_STATUSES.has(o.status)) ?? null;
+  const activeOrder   = ordersData?.items.find((o) => !TERMINAL_ORDER_STATUSES.has(o.status)) ?? null;
   const isReturning   = totalOrders !== null && totalOrders > 1;
 
   const handleCopyPhone = () => {

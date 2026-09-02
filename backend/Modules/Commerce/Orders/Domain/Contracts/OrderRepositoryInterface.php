@@ -11,6 +11,12 @@ interface OrderRepositoryInterface
 {
     public function paginate(array $filters): LengthAwarePaginator;
 
+    /**
+     * Sum `total` across the exact same filtered scope `paginate()` would list —
+     * every filter, not a hand-picked subset. Used for KPI-card dollar totals.
+     */
+    public function sumTotal(array $filters): float;
+
     public function findById(string $id): ?Order;
 
     /**

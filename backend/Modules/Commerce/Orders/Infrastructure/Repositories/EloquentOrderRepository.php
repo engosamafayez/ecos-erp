@@ -24,6 +24,33 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
 
     public function paginate(array $filters): LengthAwarePaginator
     {
+        $query = $this->buildFilteredQuery($filters);
+
+        $sortBy = (string) ($filters['sort_by'] ?? 'created_at');
+        if (! in_array($sortBy, self::SORTABLE, true)) {
+            $sortBy = 'created_at';
+        }
+
+        $sortDir = strtolower((string) ($filters['sort_dir'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
+        $perPage = max(1, min((int) ($filters['per_page'] ?? 10), 100));
+
+        return $query->orderBy($sortBy, $sortDir)->paginate($perPage);
+    }
+
+    /**
+     * Sum `total` across the exact same filtered scope `paginate()` lists — built
+     * by the same {@see buildFilteredQuery()}, never a second, independently
+     * maintained filter subset (INTEGRATION-GATE-REMEDIATION-001: the prior
+     * KPI-card total query only applied company_id+status, silently ignoring
+     * every other active filter the paginated count already honored).
+     */
+    public function sumTotal(array $filters): float
+    {
+        return (float) $this->buildFilteredQuery($filters)->sum('total');
+    }
+
+    private function buildFilteredQuery(array $filters): Builder
+    {
         $query = Order::query()->with(self::WITH);
 
         $companyId = trim((string) ($filters['company_id'] ?? ''));
@@ -255,15 +282,7 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
             }
         }
 
-        $sortBy = (string) ($filters['sort_by'] ?? 'created_at');
-        if (! in_array($sortBy, self::SORTABLE, true)) {
-            $sortBy = 'created_at';
-        }
-
-        $sortDir = strtolower((string) ($filters['sort_dir'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
-        $perPage = max(1, min((int) ($filters['per_page'] ?? 10), 100));
-
-        return $query->orderBy($sortBy, $sortDir)->paginate($perPage);
+        return $query;
     }
 
     private function applyCustomerIntelligenceFilter(Builder $query, string $key): void

@@ -38,6 +38,20 @@ export type OrderStatus =
   | 'returned';
 
 /**
+ * Terminal statuses — an order here has reached its final business state and is no
+ * longer "active"/"open". Mirrors the backend's canonical
+ * OrderStatus::isTerminal() (ADR-042) — the single source of truth for what counts
+ * as terminal; every other status is active by construction (INTEGRATION-GATE-
+ * REMEDIATION-001, so an "active order" check never needs its own independent,
+ * driftable status list).
+ */
+export const TERMINAL_ORDER_STATUSES: ReadonlySet<OrderStatus> = new Set<OrderStatus>([
+  'delivered',
+  'cancelled',
+  'returned',
+]);
+
+/**
  * Official V3 status display order — applies everywhere in the UI:
  * filters, selector, dashboard, analytics, timeline, toolbar, badges, exports.
  * Do NOT reorder.
