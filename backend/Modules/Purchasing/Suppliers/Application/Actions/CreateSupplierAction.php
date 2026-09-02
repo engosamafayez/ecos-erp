@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use InvalidArgumentException;
 use Modules\Purchasing\Suppliers\Application\DTO\SupplierDTO;
 use Modules\Purchasing\Suppliers\Domain\Contracts\SupplierRepositoryInterface;
-use Modules\Purchasing\Suppliers\Domain\Services\SupplierCodeGeneratorService;
+use Modules\Purchasing\Suppliers\Domain\Services\SupplierCodeSequenceService;
 
 /**
  * Creates a new supplier, auto-generating its code if none was supplied.
@@ -19,7 +19,7 @@ final class CreateSupplierAction extends BaseAction
 {
     public function __construct(
         private readonly SupplierRepositoryInterface $suppliers,
-        private readonly SupplierCodeGeneratorService $codeGenerator,
+        private readonly SupplierCodeSequenceService $codeGenerator,
     ) {}
 
     /**
