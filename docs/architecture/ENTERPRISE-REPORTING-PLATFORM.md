@@ -6,7 +6,7 @@
 **Status:** PROPOSED — Architecture Only, Awaiting CTO Ratification
 **Date:** 2026-09-03
 **Task:** TASK-ECOS-SYSTEM-REPORTING-ARCHITECTURE-001
-**ADR:** `docs/adr/ADR-044-system-reporting-analytics-architecture.md`
+**ADR:** `docs/adr/ADR-045-system-reporting-analytics-architecture.md` (originally filed as ADR-044; renumbered by TASK-...-001-R1 after a confirmed collision with `ecos-chat`'s own `ADR-044-internal-collaboration-bounded-context.md` — see that ADR's "Known Documentation Gaps")
 **Parent reference:** `docs/architecture/ENTERPRISE-PLATFORM-SERVICES.md` (§7 names "Analytics Platform" as the home for "Reporting and analytics," outside EPS-01..04 — this document is that platform's specification. `ENTERPRISE-PLATFORM-SERVICES.md` itself is frozen and is **not** modified by this task.)
 
 ---
@@ -28,7 +28,19 @@ Reporting reads. It aggregates. It presents. It never mutates a canonical busine
 
 ## 3. Bounded Context & Ownership Rule
 
-`Modules\Reporting` is a new backend module. It owns exactly two categories of table: export/generation metadata (`export_jobs`, `report_generation_audit`) and, only where explicitly justified later (§8, Pattern D — not adopted in V1), a narrow event-fed rollup table. It owns **zero** business-fact tables. See ADR-044 Decision 1 for the full module skeleton.
+`Modules\Reporting` is a new backend module. It owns exactly two categories of table: export/generation metadata (`export_jobs`, `report_generation_audit`) and, only where explicitly justified later (§8, Pattern D — not adopted in V1), a narrow event-fed rollup table. It owns **zero** business-fact tables. See ADR-045 Decision 1 for the full module skeleton.
+
+## 1a. Source-State Model (governs every factual claim in this document)
+
+Every statement below about what exists "in Finance," "in Commerce," or in any other module names exactly one of three states — a claim never left ambiguous about which one it describes:
+
+| State | Meaning |
+|---|---|
+| **A. Local Integrated Baseline** | This workspace's own committed code (`ecos-reporting` at the HEAD this architecture was authored against, `16b0ec85`) |
+| **B. Unintegrated Source Candidate** | Real code confirmed by direct read-only inspection of a sibling lane's own branch (e.g. `ecos-finance`), not merged to shared `develop`, not assumed canonical |
+| **C. First-Device Canonical Develop** | The true, authoritative integrated source (`E:\ECOS\ecos-develop`) — **NOT VERIFIED** from this device |
+
+A confirmed gap in State A is never restated as a permanent, system-wide fact once a State-B candidate addressing it has been directly verified — nor is a State-B candidate ever described as already integrated into A or C. Full rationale: ADR-045 Context §5 and Source-State Model.
 
 ```
 Modules/Reporting/
@@ -105,7 +117,7 @@ Evaluated against actual evidence: MySQL 8.4, single physical database, no exist
 
 ## 8. IAM / Authorization Model
 
-Category-level permissions (task §20 Option B — see ADR-044 Decision 5 for the full rejection rationale of A/C/D): `reports.executive.view`, `reports.sales.view`, `reports.customers.view`, `reports.products.view`, `reports.inventory.view`, `reports.procurement.view`, `reports.preparation.view`, `reports.distribution.view`, `reports.drivers.view`, `reports.finance.view`. Seeded via the migration-driven convention already dominant for Finance/HR/CRM/Logistics; gated with the existing `permission:` route middleware. **No new AuthorizationGateway, no new middleware, no new engine.** `reports.finance.view` is additive to, never a substitute for, the underlying `finance.*.view` permissions.
+Category-level permissions (task §20 Option B — see ADR-045 Decision 5 for the full rejection rationale of A/C/D): `reports.executive.view`, `reports.sales.view`, `reports.customers.view`, `reports.products.view`, `reports.inventory.view`, `reports.procurement.view`, `reports.preparation.view`, `reports.distribution.view`, `reports.drivers.view`, `reports.finance.view`. Seeded via the migration-driven convention already dominant for Finance/HR/CRM/Logistics; gated with the existing `permission:` route middleware. **No new AuthorizationGateway, no new middleware, no new engine.** `reports.finance.view` is additive to, never a substitute for, the underlying `finance.*.view` permissions.
 
 ## 9. Data-Scope Security
 
@@ -209,7 +221,7 @@ Backend pagination and date-bounding on every list endpoint; indexes reviewed pe
 - **Freshness:** LIVE (current) / effectively immutable once Confirmed (historical)
 - **Classification:** OPERATIONAL
 - **Drill-through:** Orders workspace, filtered
-- **Known dependency:** Not equal to MET-FIN-01 (Recognized Revenue) — see §5, Decision 2b of ADR-044
+- **Known dependency:** Not equal to MET-FIN-01 (Recognized Revenue) — see §5, Decision 2b of ADR-045
 
 #### MET-SALES-02 · Net Sales
 - **Definition:** Gross Sales less order-level discounts and coupon/fee adjustments.
@@ -317,13 +329,13 @@ Backend pagination and date-bounding on every list endpoint; indexes reviewed pe
 - **Definition:** Cost of goods sold as computed by Commerce at the point of shipment or order-confirm snapshot.
 - **Source:** `orders.actual_cogs_amount` (mutable, written by `ShipOrderInventoryAction` at ship time) **or** `order_line_snapshots` cost columns (immutable, captured at Confirm) — these are two independently-computed, non-reconciled figures; a report must pick and label one, never blend them
 - **Freshness:** LIVE (ship-time) / immutable (snapshot) · **Classification:** OPERATIONAL
-- **Known dependency:** Not the same number as MET-PROD-03; see ADR-044 Decision 2b
+- **Known dependency:** Not the same number as MET-PROD-03; see ADR-045 Decision 2b
 
 #### MET-PROD-03 · COGS — Accounting (GL-Posted)
 - **Definition:** Cost of goods sold as posted to the General Ledger's cost-of-sales accounts (5100–5130).
 - **Source:** `Modules\Finance` — `FinancialMetricsService`, GL account category `cost_of_sales`
 - **Freshness:** ACCOUNTING-POSTED · **Classification:** ACCOUNTING
-- **Known dependency:** **Confirmed currently near-zero for the delivery/COD channel** — `EventPostingCatalog` has no `orders.delivered`/`inventory.stock.shipped` posting rule today. This is Finance's tracked gap, not a Reporting defect (FINANCE DEPENDENCY)
+- **Known dependency:** **State A (Local Integrated Baseline, `16b0ec85`): confirmed near-zero for the delivery/COD channel** — `EventPostingCatalog` has no `orders.delivered`/`inventory.stock.shipped` posting rule at this baseline. **State B (Unintegrated Finance Candidate, `ecos-finance` @ `task/finance-gap-closure`, HEAD `950a2817`, "Task 6 — Commercial Accounting"): verified by direct source inspection to be FULLY IMPLEMENTED AND WIRED** — `Operations\Fulfillment`'s `OrderDeliveredEvent` → `Finance\Integration`'s `PostRevenueAndCogsOnOrderDelivered` listener → `CommercialAccountingService::recognizeCogs()` → an async `shipping.delivery_confirmation` posting rule (Dr `cost_of_goods_sold`/Cr `finished_goods`) → `PostingCoordinator`/`JournalEngine::post()` — a genuine call chain to a real GL posting, not scaffolding, though gated by `finance.integration.auto_subscribe` (defaults on) and, by the candidate's own record, `TESTS EXECUTED: NO` / `CERTIFIED: NO` / `INTEGRATED: NO`. **State C (canonical `develop`): NOT YET VERIFIED FROM THIS DEVICE.** Gap classification: READY IN FINANCE CANDIDATE — CANONICAL RECONCILIATION REQUIRED (not FEATURE ABSENT, and not yet READY IN LOCAL BASELINE either). Reporting integrates this metric only once State C confirms it, never against State B alone.
 
 #### MET-PROD-04 · Gross Profit — Operational
 - **Formula:** MET-SALES-01 (or MET-SALES-03) − MET-PROD-02, matched at the same grain
@@ -332,7 +344,7 @@ Backend pagination and date-bounding on every list endpoint; indexes reviewed pe
 #### MET-PROD-05 · Gross Profit — Accounting
 - **Formula:** MET-FIN-01 − MET-PROD-03
 - **Freshness:** ACCOUNTING-POSTED · **Classification:** ACCOUNTING
-- **Known dependency:** Only meaningful once the GL revenue/COGS gap (MET-FIN-01, MET-PROD-03) closes for non-POS channels — FINANCE DEPENDENCY
+- **Known dependency:** Depends on MET-FIN-01 and MET-PROD-03, both currently READY IN FINANCE CANDIDATE — CANONICAL RECONCILIATION REQUIRED, not yet READY IN LOCAL BASELINE. Do not compute this metric against State-B figures alone.
 
 #### MET-PROD-06 · Gross Margin — Operational
 - **Formula:** MET-PROD-04 ÷ MET-SALES-01 (or MET-SALES-03), as a percentage
@@ -341,7 +353,7 @@ Backend pagination and date-bounding on every list endpoint; indexes reviewed pe
 #### MET-PROD-07 · Gross Margin — Accounting
 - **Formula:** MET-PROD-05 ÷ MET-FIN-01, as a percentage
 - **Freshness:** ACCOUNTING-POSTED · **Classification:** ACCOUNTING
-- **Known dependency:** Finance's own `ProfitabilityService` already returns `available:false` (honest null) for the product/channel cut, blocked on a ledger-dimension gap — Reporting must mirror that honesty, never fabricate a per-product accounting margin (FINANCE DEPENDENCY)
+- **Known dependency:** This is a **separate, still-fully-open gap from MET-PROD-03/05's revenue/COGS-posting-existence question.** Even under the verified State-B Finance candidate (Task 6), the per-posting `profit_center_id`/Brand dimension is never populated by `PostRevenueAndCogsOnOrderDelivered` — confirmed by direct source inspection to be an explicitly-deferred external dependency on Commerce/Orders, not something Task 6 touches. Finance's own `ProfitabilityService` already returns `available:false` (an honest null) for the product/channel cut in State A, and nothing found in State B changes that. Reporting must mirror that honesty, never fabricate a per-product accounting margin (FINANCE DEPENDENCY — this label, unlike MET-PROD-03/05, is not expected to resolve to "candidate implemented")
 
 ### Inventory
 
@@ -469,7 +481,7 @@ Backend pagination and date-bounding on every list endpoint; indexes reviewed pe
 - **Definition:** Revenue posted to the General Ledger.
 - **Source:** `Modules\Finance` — GL journal entries, revenue accounts
 - **Freshness:** ACCOUNTING-POSTED · **Classification:** ACCOUNTING
-- **Known dependency:** **Confirmed today: only `pos.sale.finalized` posts revenue.** The delivery/COD channel posts nothing — Finance's own audit and UAT reports certify this as a real, open gap (EGP 21,132 of confirmed order value producing zero GL entries in one certified UAT run). Never equate this with MET-SALES-01/02/03 (FINANCE DEPENDENCY)
+- **Known dependency:** **State A (Local Integrated Baseline, `16b0ec85`): only `pos.sale.finalized` posts revenue** — the delivery/COD channel posts nothing at this baseline, per Finance's own audit and UAT reports (EGP 21,132 of confirmed order value producing zero GL entries in one certified UAT run). **State B (Unintegrated Finance Candidate, `ecos-finance` @ `task/finance-gap-closure`, HEAD `950a2817`, "Task 6 — Commercial Accounting"): verified by direct source inspection to be FULLY IMPLEMENTED AND WIRED.** Full traced chain: `Operations\Fulfillment\FulfillmentEngine` dispatches `OrderDeliveredEvent` post-commit → `Finance\Integration`'s `PostRevenueAndCogsOnOrderDelivered::handle()` → `CommercialAccountingService::recognizeRevenue()` → `AccountsReceivableService::createDocument()`/`postDocument()` builds a real `CustomerInvoice` (Dr AR-control / Cr sales_revenue / Cr vat_output) → `PostingCoordinator::post()` → `JournalEngine::post()`, a genuine `JournalEntry`+lines. COD collection settles the same receivable via a parallel, independently-dispatched `CodCollected` → `PostCodCollectionOnCodCollected` → `recognizeCodCollection()` → `CustomerReceipt` (Dr cod_clearing / Cr ar_control) → `AllocationEngine::allocateReceipt()` chain. This is real, complete, working code — not scaffolding — gated by one config flag (`finance.integration.auto_subscribe`, defaults on) and, by the candidate's own committed report, `TESTS EXECUTED: NO` / `VERIFIED: NO` / `CERTIFIED: NO` / `INTEGRATED: NO`. **State C (canonical `develop`): NOT YET VERIFIED FROM THIS DEVICE.** Gap classification: READY IN FINANCE CANDIDATE — CANONICAL RECONCILIATION REQUIRED. Never equate this metric with MET-SALES-01/02/03 in *any* state — Operational Sales and Recognized Revenue remain two separate metrics even after full accounting integration lands, per ADR-045's locked hard rule; integration only means MET-FIN-01 starts returning non-trivial values for more than the POS channel, not that it becomes the same number as Operational Sales
 
 #### MET-FIN-02 · Outstanding AR
 - **Definition:** Amount owed by a customer, net of allocated receipts.
@@ -533,8 +545,8 @@ Gap classification: READY — SMALL QUERY/API REQUIRED.
 **RPT-PROD-02 · Top Sellers / Slow Movers / Zero-Sale** — Rank/filter over MET-SALES-05 within a date window. Read strategy: **B**. Permission: `reports.products.view`. **V1.**
 Gap classification: READY — SMALL QUERY/API REQUIRED.
 
-**RPT-PROD-03 · Product Profitability (Operational)** — Metrics: MET-PROD-02/04/06 only (never the Accounting variants — see MET-PROD-07's known dependency). Read strategy: **B**. Permission: `reports.products.view`. **V1** (operational cut only) / accounting cut is **LATER**, blocked on Finance's own product-dimension gap.
-Gap classification: READY — SMALL QUERY/API REQUIRED (operational) / FINANCE DEPENDENCY (accounting cut, deferred).
+**RPT-PROD-03 · Product Profitability (Operational)** — Metrics: MET-PROD-02/04/06 only (never the Accounting variants — see MET-PROD-07's known dependency). Read strategy: **B**. Permission: `reports.products.view`. **V1** (operational cut only) / accounting cut is **LATER**, blocked specifically on Finance's product/channel ledger-dimension gap (MET-PROD-07) — a gap distinct from, and not resolved by, the revenue/COGS-posting-existence candidate covered under MET-PROD-03/05.
+Gap classification: READY — SMALL QUERY/API REQUIRED (operational) / FINANCE DEPENDENCY (accounting cut, still deferred — dimension gap, not a posting-existence gap).
 
 ### Inventory
 
@@ -597,7 +609,7 @@ Gap classification: READY — EXISTING QUERY.
 **RPT-DRV-03 · Driver Monthly Statement** — Read strategy: **A** (`DriverReportsReadService::monthlyStatement()`). Permission: `reports.drivers.view`. **V1.**
 Gap classification: READY — EXISTING QUERY. Known dependency: this service's own `wallet()` method still hardcodes advances/expenses as unavailable (`no_canonical_authority`) — a stale docblock relative to `driver_trip_movements`, which now IS a real authority (confirmed live elsewhere in the same module). Flag for the owning module to reconcile before Reporting surfaces it; do not silently "fix" it from within Reporting (UPSTREAM DATA QUALITY DEPENDENCY).
 
-### Financial (thin proxy only — see ADR-044 Decision 6)
+### Financial (thin proxy only — see ADR-045 Decision 6)
 
 **RPT-FIN-01 · Trial Balance** — Read strategy: **A** (`TrialBalanceService`, already routed `GET /finance/trial-balance`). Permission: `reports.finance.view` + `finance.trialbalance.view`. **V1.** Gap: READY — EXISTING QUERY.
 
@@ -607,7 +619,7 @@ Gap classification: READY — EXISTING QUERY. Known dependency: this service's o
 
 **RPT-FIN-04 · Customer / Supplier Statement** — Read strategy: **A** (`CustomerLedgerService::statement()`/`SupplierLedgerService::statement()` — backend-complete, never surfaced). **V1** — same item as RPT-CUST-03/RPT-PROC-03; listed once here as the canonical Financial-category entry, cross-linked from Customers/Procurement. Gap: READY — EXISTING QUERY (backend) / READY — SMALL QUERY/API REQUIRED (frontend).
 
-**RPT-FIN-05 · Profitability & Closing** — Read strategy: **A** (`ProfitabilityService`, `ClosingWorkspaceService`). **V1.** Gap: READY — EXISTING QUERY. Known dependency: product/channel profitability cuts honestly return `available:false` today — Reporting must preserve that honesty, not paper over it.
+**RPT-FIN-05 · Profitability & Closing** — Read strategy: **A** (`ProfitabilityService`, `ClosingWorkspaceService`). **V1.** Gap: READY — EXISTING QUERY. Known dependency: product/channel profitability cuts honestly return `available:false` today (the ledger-dimension gap, MET-PROD-07 — separate from, and unaffected by, the revenue/COGS-posting candidate under MET-FIN-01/MET-PROD-03) — Reporting must preserve that honesty, not paper over it.
 
 ### Later Reports (deferred, with reason)
 
