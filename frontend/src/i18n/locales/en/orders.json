@@ -216,6 +216,7 @@
     "printOrders": "Print",
     "packingQueue": "Pack Queue",
     "more": "More",
+    "toggleLabel": "Smart Tools",
     "vipCustomers": "VIP Customers",
     "repeatedSameProduct": "Repeated + Same Product",
     "repeatedSameShippingCo": "Repeated + Same Carrier"

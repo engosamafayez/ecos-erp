@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Filter, Users } from 'lucide-react';
+import { Filter, Sparkles, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -155,6 +155,15 @@ export function OrdersPage() {
   // ── DD-025 Customer Intelligence — multi-select array ────────────────────────
   const [showCustomerIntelligence, setShowCustomerIntelligence] = useState(false);
   const [customerFilters, setCustomerFilters] = useState<CustomerIntelligenceFilter[]>([]);
+
+  // TASK-ECOS-MOBILE-POST-DEV-UX-REVIEW-001 §6 — the Smart Operations
+  // Toolbar (DD-028/029) used to render unconditionally, directly beneath the
+  // Filters/Customer Intelligence toggle row, on every viewport. On Mobile
+  // that meant two chip-like rows stacked immediately on top of each other,
+  // competing for the same narrow width. It's now a third toggle, beside
+  // Customer Intelligence, hidden by default on Mobile; desktop is unchanged
+  // (still always visible — this state is simply never read there).
+  const [showSmartTools, setShowSmartTools] = useState(false);
 
   // ── DD-031 Toolbar ops — direct query param toggles ───────────────────────────
   const [hasLocation, setHasLocation] = useState<boolean | null>(null);
@@ -668,6 +677,23 @@ export function OrdersPage() {
               </span>
             ) : null}
           </Button>
+
+          {/* Smart Tools toggle — Mobile only (§6); on desktop the Smart
+              Operations Toolbar below is always visible and this button
+              simply never renders. */}
+          {isMobile ? (
+            <Button
+              type="button"
+              variant={showSmartTools ? 'secondary' : 'outline'}
+              size="sm"
+              onClick={() => setShowSmartTools((v) => !v)}
+              aria-expanded={showSmartTools}
+              aria-label={t($ => $.smartToolbar.toggleLabel)}
+            >
+              <Sparkles className="size-3.5" />
+              {t($ => $.smartToolbar.toggleLabel)}
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -721,22 +747,27 @@ export function OrdersPage() {
         />
       ) : null}
 
-      {/* ── DD-028 / DD-029 Smart Operations Toolbar ── */}
-      <OrderSmartToolbar
-        activeStatus={activeStatus}
-        selectedIds={selectedIds}
-        orders={orders}
-        advancedFilters={advancedFilters}
-        setAdvancedFilters={(next) => { setAdvancedFilters(next); resetPage(); }}
-        setCustomerFilter={handleSmartToolbarCustomerFilter}
-        setActiveStatus={handleStatusChange}
-        showAdvancedFilters={showAdvancedFilters}
-        setShowAdvancedFilters={setShowAdvancedFilters}
-        showCustomerIntelligence={showCustomerIntelligence}
-        setShowCustomerIntelligence={setShowCustomerIntelligence}
-        setHasLocation={(v) => { setHasLocation(v); resetPage(); }}
-        setMinShippingAttempts={(v) => { setMinShippingAttempts(v); resetPage(); }}
-      />
+      {/* ── DD-028 / DD-029 Smart Operations Toolbar — always visible on
+          desktop (unchanged); on Mobile it shows/hides behind the "Smart
+          Tools" toggle above instead of always occupying its own row
+          directly under the Filters/Customer Intelligence buttons (§6). ── */}
+      {!isMobile || showSmartTools ? (
+        <OrderSmartToolbar
+          activeStatus={activeStatus}
+          selectedIds={selectedIds}
+          orders={orders}
+          advancedFilters={advancedFilters}
+          setAdvancedFilters={(next) => { setAdvancedFilters(next); resetPage(); }}
+          setCustomerFilter={handleSmartToolbarCustomerFilter}
+          setActiveStatus={handleStatusChange}
+          showAdvancedFilters={showAdvancedFilters}
+          setShowAdvancedFilters={setShowAdvancedFilters}
+          showCustomerIntelligence={showCustomerIntelligence}
+          setShowCustomerIntelligence={setShowCustomerIntelligence}
+          setHasLocation={(v) => { setHasLocation(v); resetPage(); }}
+          setMinShippingAttempts={(v) => { setMinShippingAttempts(v); resetPage(); }}
+        />
+      ) : null}
 
       {/* ── Table ── */}
       <div className="flex-1 overflow-auto px-4 py-3">

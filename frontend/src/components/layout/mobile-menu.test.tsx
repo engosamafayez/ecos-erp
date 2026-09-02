@@ -196,11 +196,10 @@ describe('MobileMenu — grouped accordion navigation list (single Drawer, no dr
   });
 });
 
-describe('MobileMenu — profile identity + logout (new in this task)', () => {
-  it('shows the signed-in user\'s name and email', () => {
+describe('MobileMenu — profile identity + logout (TASK-DRAWER-BOTTOM-TRIGGER-001)', () => {
+  it('shows the signed-in user\'s name', () => {
     renderMenu();
     expect(screen.getByText('Jane Doe')).toBeInTheDocument();
-    expect(screen.getByText('jane@ecos.test')).toBeInTheDocument();
   });
 
   it('falls back to the canonical placeholder name when no user is loaded yet', () => {
@@ -209,18 +208,47 @@ describe('MobileMenu — profile identity + logout (new in this task)', () => {
     expect(screen.getByText('userMenu.fallbackName')).toBeInTheDocument();
   });
 
-  it('renders the Company and Warehouse context controls', () => {
-    renderMenu();
-    expect(screen.getByTestId('company')).toBeInTheDocument();
-    expect(screen.getByTestId('warehouse')).toBeInTheDocument();
-  });
-
   it('Logout calls the canonical auth store logout and closes the Drawer', async () => {
     const { onClose } = renderMenu();
     fireEvent.click(screen.getByRole('button', { name: 'userMenu.logout' }));
     expect(auth.logout).toHaveBeenCalledTimes(1);
     await Promise.resolve();
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
+
+// TASK-ECOS-MOBILE-POST-DEV-UX-REVIEW-001 §5 — the User reviewed the previous
+// always-expanded identity + Company/Warehouse block on DEV: too large, too
+// dominant, competing with the navigation list every time the Drawer opened.
+// It's now a compact summary row (name + role) that expands ON DEMAND to
+// reveal email and the Company/Warehouse card — nothing removed, one tap away.
+describe('MobileMenu — collapsible context area (§5: compact by default, not a permanently-open block)', () => {
+  const summaryRow = () => screen.getByText('Jane Doe').closest('button') as HTMLButtonElement;
+
+  it('starts collapsed — email and Company/Warehouse are not in the document until expanded', () => {
+    renderMenu();
+    expect(screen.queryByText('jane@ecos.test')).toBeNull();
+    expect(screen.queryByTestId('company')).toBeNull();
+    expect(screen.queryByTestId('warehouse')).toBeNull();
+    expect(summaryRow()).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('tapping the summary row expands it, revealing email and the Company/Warehouse controls', () => {
+    renderMenu();
+    fireEvent.click(summaryRow());
+    expect(screen.getByText('jane@ecos.test')).toBeInTheDocument();
+    expect(screen.getByTestId('company')).toBeInTheDocument();
+    expect(screen.getByTestId('warehouse')).toBeInTheDocument();
+    expect(summaryRow()).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('tapping the summary row again collapses it back — the capability is preserved, not removed', () => {
+    renderMenu();
+    fireEvent.click(summaryRow());
+    expect(screen.getByTestId('company')).toBeInTheDocument();
+    fireEvent.click(summaryRow());
+    expect(screen.queryByTestId('company')).toBeNull();
+    expect(screen.queryByTestId('warehouse')).toBeNull();
   });
 });
 

@@ -11,22 +11,55 @@ import type { Order } from '../types/order';
 // ── Method badge helpers ──────────────────────────────────────────────────────
 
 type BadgeVariant = { label: string; className: string };
+type TFn = ReturnType<typeof useTranslation<'orders'>>['t'];
 
-const METHOD_MAP: Record<string, BadgeVariant> = {
-  cod:         { label: 'COD',    className: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
+/**
+ * TASK-ECOS-MOBILE-POST-DEV-UX-REVIEW-001 (§7) — the canonical manual payment
+ * methods (`order-payment-section.tsx`'s own picker, `workspace.
+ * paymentMethodLabels`) already have real, translated labels ("Cash on
+ * Delivery" / "الدفع عند الاستلام", not a bare "COD"). This badge used to carry
+ * its OWN separate, hardcoded-English, untranslated short-label map for the
+ * exact same 5 values — the raw "COD" the User flagged on the Mobile card was
+ * a symptom of that duplication, not a Mobile-only bug (the desktop Payment
+ * column rendered it identically). Fixed at the canonical authority itself, so
+ * both desktop and Mobile — every consumer of this component — read correctly
+ * in whichever language is active, rather than patching Mobile in isolation.
+ */
+const CANONICAL_METHODS = ['cod', 'instapay', 'mobile_wallet', 'credit_card', 'bank_transfer'] as const;
+
+const CANONICAL_METHOD_CLASS: Record<(typeof CANONICAL_METHODS)[number], string> = {
+  cod:           'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+  instapay:      'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
+  mobile_wallet: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400',
+  bank_transfer: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
+  credit_card:   'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+};
+
+// Legacy/WooCommerce-origin values outside the 5 canonical manual methods
+// above (e.g. a raw WC gateway id) — kept as the short, non-localized
+// heuristic this badge always used, since no canonical translated label
+// exists for these; never applied to a canonical method.
+const LEGACY_METHOD_MAP: Record<string, BadgeVariant> = {
   cash:        { label: 'Cash',   className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
   visa:        { label: 'Visa',   className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-  credit_card: { label: 'Card',   className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
   bank:        { label: 'Bank',   className: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' },
   instalment:  { label: 'Inst.', className: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' },
   wallet:      { label: 'Wallet', className: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400' },
 };
 
-function resolveMethod(method: string | null, methodTitle: string | null): BadgeVariant {
+function resolveMethod(method: string | null, methodTitle: string | null, t: TFn): BadgeVariant {
   const key   = (method ?? '').toLowerCase();
   const title = (methodTitle ?? method ?? '').toLowerCase();
 
-  for (const [k, v] of Object.entries(METHOD_MAP)) {
+  if ((CANONICAL_METHODS as readonly string[]).includes(key)) {
+    const canonicalKey = key as (typeof CANONICAL_METHODS)[number];
+    return {
+      label: t($ => $.workspace.paymentMethodLabels[canonicalKey]),
+      className: CANONICAL_METHOD_CLASS[canonicalKey],
+    };
+  }
+
+  for (const [k, v] of Object.entries(LEGACY_METHOD_MAP)) {
     if (key.includes(k) || title.includes(k)) return v;
   }
 
@@ -49,7 +82,8 @@ type BadgeProps = {
 };
 
 export function OrderPaymentBadge({ method, methodTitle, datePaid }: BadgeProps) {
-  const badge  = resolveMethod(method, methodTitle);
+  const { t } = useTranslation('orders');
+  const badge  = resolveMethod(method, methodTitle, t);
   const isPaid = Boolean(datePaid);
 
   return (
@@ -65,9 +99,8 @@ export function OrderPaymentBadge({ method, methodTitle, datePaid }: BadgeProps)
 }
 
 // ── OrderPaymentCell — method badge with inline edit (A3) ─────────────────────
-
-/** The five canonical payment methods (StoreManualOrderRequest / PatchOrderRequest). */
-const PAYMENT_METHODS = ['cod', 'instapay', 'mobile_wallet', 'credit_card', 'bank_transfer'] as const;
+// (StoreManualOrderRequest / PatchOrderRequest — the same 5 values as
+// CANONICAL_METHODS above; kept as one shared constant, not two.)
 
 type CellProps = { order: Order; onVerifyPayment?: () => void };
 
@@ -78,7 +111,7 @@ export function OrderPaymentCell({ order, onVerifyPayment: _onVerifyPayment }: C
     order.payment_method_title ??
     order.payment_method;
 
-  const badge = resolveMethod(method, order.payment_method_title);
+  const badge = resolveMethod(method, order.payment_method_title, t);
 
   // A3 — inline payment-method edit, written through the canonical quick-update PATCH
   // (payment_method_manual, whitelisted to the 5-value catalogue server-side). This component
@@ -137,7 +170,7 @@ export function OrderPaymentCell({ order, onVerifyPayment: _onVerifyPayment }: C
       </PopoverTrigger>
       <PopoverContent align="start" className="w-44 p-1" onClick={(e) => e.stopPropagation()}>
         <div className="flex flex-col">
-          {PAYMENT_METHODS.map((m) => (
+          {CANONICAL_METHODS.map((m) => (
             <button
               key={m}
               type="button"
@@ -148,7 +181,7 @@ export function OrderPaymentCell({ order, onVerifyPayment: _onVerifyPayment }: C
                 m === order.payment_method_manual && 'font-semibold',
               )}
             >
-              {resolveMethod(m, null).label}
+              {resolveMethod(m, null, t).label}
               {m === order.payment_method_manual ? <span className="text-emerald-600">✓</span> : null}
             </button>
           ))}

@@ -1330,7 +1330,7 @@
       "count": 1
     },
     "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 6
+      "count": 5
     }
   },
   "src/features/orders/components/order-payment-section.tsx": {

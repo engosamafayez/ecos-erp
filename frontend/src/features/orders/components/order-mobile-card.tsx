@@ -75,6 +75,27 @@ function formatDate(d: string | null | undefined): string | null {
  * the same order detail view used on desktop, whose Workflow tab is the one
  * canonical status-transition surface — avoiding a duplicate mobile-only
  * status-change implementation.
+ *
+ * TASK-ECOS-MOBILE-POST-DEV-UX-REVIEW-001 — a second DEV-review pass. Still no
+ * data lost, only layout and wording:
+ *
+ *   Total is now `fullWidth` (§8): an `align:'end'` value confined to a
+ *   half-width grid cell hugs that CELL's inner edge, not the card's own true
+ *   edge — under RTL this read as the amount floating away from the card's
+ *   right side, "detached." Full-width lets both "Total" and its value hug
+ *   the card's real edge, with `grand_total` still the larger, primary
+ *   figure and `remaining_balance` still the always-shown secondary caption
+ *   underneath — the CTO-authoritative money hierarchy itself is unchanged.
+ *
+ *   Reordered so Delivery sits directly beneath Payment (§9) — Warehouse
+ *   moved up next to Payment to make that column pairing land correctly —
+ *   and Address is now `fullWidth` too (§9): a street address squeezed into
+ *   half the card's width wrapped awkwardly for no benefit.
+ *
+ *   Payment now reads as a real localized phrase via `OrderPaymentCell`'s own
+ *   fix (§7, see order-payment-cell.tsx) — "COD" is no longer raw English on
+ *   a Mobile card whose UI is otherwise fully Arabic; that fix lives in the
+ *   shared component itself, so the desktop Payment column is corrected too.
  */
 export function OrderMobileCard({
   order,
@@ -99,14 +120,22 @@ export function OrderMobileCard({
 
   const fields: MobileDataCardField[] = [
     {
+      // TASK-ECOS-MOBILE-POST-DEV-UX-REVIEW-001 §8 — full-width now (not
+      // sharing a row with Payment): an `align:'end'` value confined to a
+      // half-width grid cell hugs the INNER edge of that cell, not the
+      // card's own true edge — under RTL this read as the amount floating
+      // away from the card's right edge, "detached." Full-width lets both
+      // the label and the value hug the card's real edge.
+      //
       // PRIMARY commercial figure (grand_total) + SECONDARY financial figure
       // (remaining_balance), always both shown, explicitly labeled — never one
       // standing in for the other (CTO decision, TASK-002 §8).
       label: t($ => $.columns.total),
       align: 'end',
+      fullWidth: true,
       value: (
         <div className="flex flex-col items-end leading-tight">
-          <span>{formatTotal(order.grand_total)}</span>
+          <span className="text-base font-semibold">{formatTotal(order.grand_total)}</span>
           <span className="text-[11px] font-normal text-muted-foreground">
             {t($ => $.columns.totalDue, { amount: formatTotal(remaining) })}
           </span>
@@ -115,25 +144,32 @@ export function OrderMobileCard({
     },
     {
       // Canonical payment-method label — the same OrderPaymentCell the desktop
-      // column renders, not a raw backend value (§9: never "mobile_wallet").
+      // column renders, localized (§7), not a raw backend value.
       label: t($ => $.mobileCard.payment),
       value: <OrderPaymentCell order={order} />,
     },
     {
-      label: t($ => $.columns.address),
-      value: addressWithZone || <span className="text-muted-foreground">—</span>,
-    },
-    {
-      label: t($ => $.mobileCard.delivery),
-      value: scheduledDate ?? <span className="text-muted-foreground">—</span>,
-    },
-    {
+      // Warehouse moved up to pair with Payment's row (§9) so Delivery lands
+      // directly beneath Payment in the same column — see Delivery below.
       // font-medium: the prior default weight sat too close to the muted
-      // uppercase label above it to read as a distinct value at a glance (§8).
+      // uppercase label above it to read as a distinct value at a glance.
       label: t($ => $.mobileCard.warehouse),
       value: order.assigned_warehouse?.name
         ? <span className="font-medium text-foreground">{order.assigned_warehouse.name}</span>
         : <span className="text-muted-foreground">—</span>,
+    },
+    {
+      // §9 — directly under Payment (same grid column, the next row).
+      label: t($ => $.mobileCard.delivery),
+      value: scheduledDate ?? <span className="text-muted-foreground">—</span>,
+    },
+    {
+      // §9 — full-width: a street address squeezed into half the card width
+      // wrapped awkwardly and cost an extra line/row for no benefit; the full
+      // card width reads it in fewer lines without losing any of it.
+      label: t($ => $.columns.address),
+      fullWidth: true,
+      value: addressWithZone || <span className="text-muted-foreground">—</span>,
     },
     {
       label: t($ => $.columns.driver),

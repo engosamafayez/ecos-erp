@@ -1,4 +1,5 @@
-import { LogOut, X } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, LogOut, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
@@ -56,6 +57,15 @@ type MobileMenuProps = {
  *     mobile page chrome every other mobile screen renders under, which is
  *     out of this task's scope (navigation-only). Keeping it here, right
  *     below identity, is also where the User's own selected concept keeps it.
+ *
+ * TASK-ECOS-MOBILE-POST-DEV-UX-REVIEW-001 (§5) — the User reviewed the above
+ * on DEV: the identity + company/warehouse block was permanently expanded and
+ * too dominant, competing with the navigation list for the Drawer's limited
+ * vertical space every time it opened. It is now a compact summary row
+ * (avatar + name + role, one line) that expands ON DEMAND — collapsed by
+ * default — to reveal email and the Company/Warehouse switchers underneath.
+ * Nothing was removed: every field and control that existed before still
+ * exists, one tap away, never buried behind a second screen or a nested menu.
  */
 export function MobileMenu({ open, onClose }: MobileMenuProps) {
   const { t } = useTranslation('common');
@@ -69,6 +79,11 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
   const name = user?.name ?? t(($) => $.userMenu.fallbackName);
   const email = user?.email ?? '';
   const role = t(($) => $.userMenu.role);
+
+  // Collapsed by default (§5) — the upper context area used to be a
+  // permanently-open stacked block; it now expands on demand instead of
+  // dominating the Drawer's vertical space every time it opens.
+  const [contextExpanded, setContextExpanded] = useState(false);
 
   async function handleLogout() {
     await logout();
@@ -125,32 +140,45 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
             </SheetPrimitive.Close>
           </div>
 
-          {/* Profile identity + Company/Warehouse context — both card-like
-              surfaces on a subtly-tinted backdrop, visually separating "who
-              I am / where I am" from the scrollable module list below. */}
+          {/* Profile identity + Company/Warehouse context — a compact,
+              always-visible summary row that expands on demand (§5) instead
+              of a permanently-open stacked block. Collapsed, it costs one
+              row's worth of height; expanded, it reveals email and the
+              Company/Warehouse card exactly as before — nothing removed. */}
           <div className="shrink-0 border-b bg-muted/20 p-3">
-            <div className="flex items-center gap-3 rounded-xl border bg-card p-3 shadow-sm">
-              <Avatar className="size-11">
-                <AvatarFallback className="text-sm font-bold">{getInitials(name)}</AvatarFallback>
+            <button
+              type="button"
+              onClick={() => setContextExpanded((v) => !v)}
+              aria-expanded={contextExpanded}
+              className="flex w-full items-center gap-3 rounded-xl border bg-card p-2.5 text-start shadow-sm"
+            >
+              <Avatar className="size-9">
+                <AvatarFallback className="text-xs font-bold">{getInitials(name)}</AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold text-foreground">{name}</p>
-                <p className="truncate text-xs text-muted-foreground">{email}</p>
+                <p className="truncate text-[11px] text-muted-foreground">{role}</p>
               </div>
-              <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-                {role}
-              </span>
-            </div>
+              <ChevronDown
+                className={cn('size-4 shrink-0 text-muted-foreground transition-transform', contextExpanded && 'rotate-180')}
+                aria-hidden
+              />
+            </button>
 
-            <div className="mt-2 rounded-xl border bg-card p-2.5 shadow-sm">
-              <p className="mb-2 px-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                {t(($) => $.nav.companyWarehouse)}
-              </p>
-              <div className="flex flex-col gap-2">
-                <CompanySwitcher showLabel className="w-full justify-start" />
-                <WarehouseSwitcher showLabel className="w-full justify-start" />
+            {contextExpanded ? (
+              <div className="mt-2 flex flex-col gap-2">
+                {email ? <p className="truncate px-1 text-xs text-muted-foreground">{email}</p> : null}
+                <div className="rounded-xl border bg-card p-2.5 shadow-sm">
+                  <p className="mb-2 px-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {t(($) => $.nav.companyWarehouse)}
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    <CompanySwitcher showLabel className="w-full justify-start" />
+                    <WarehouseSwitcher showLabel className="w-full justify-start" />
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : null}
           </div>
 
           {/* Body — the grouped, accordion-style navigation list */}

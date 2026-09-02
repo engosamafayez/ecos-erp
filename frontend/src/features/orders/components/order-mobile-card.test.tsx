@@ -8,6 +8,15 @@ import { describe, expect, it, vi } from 'vitest';
 // whole-card `onOpen` button wrapping title/subtitle/status/fields, a
 // `dl`/`dt`/`dd` fields grid, and a sibling actions row) — what changed is field
 // count/grouping and header hierarchy, not the underlying architecture.
+//
+// TASK-ECOS-MOBILE-POST-DEV-UX-REVIEW-001 — a second DEV-review pass: Total and
+// Address are now `fullWidth` (col-span-2, see mobile-data-card.tsx), Delivery
+// moved to sit directly under Payment, Payment's label now resolves through
+// the canonical, localized `paymentMethodLabels` map instead of a raw
+// hardcoded string. Still zero data loss — every field from the prior pass
+// still renders, jsdom just can't assert physical RTL position, so the
+// full-width tests below assert the underlying cause (the `col-span-2` class)
+// rather than a literal screen coordinate.
 function pathProxy(path: string): unknown {
   const target = () => path;
   return new Proxy(target, {
@@ -120,6 +129,21 @@ describe('OrderMobileCard — money hierarchy (CTO-authoritative, TASK-002 §8)'
     // literal RTL render (jsdom has no layout engine to assert direction on).
     expect(screen.getByText('columns.total')).toHaveClass('text-end');
   });
+
+  // TASK-ECOS-MOBILE-POST-DEV-UX-REVIEW-001 §8 — an `align:'end'` value
+  // confined to a half-width grid cell hugs that CELL's inner edge, not the
+  // card's own true edge; under RTL this read as the amount floating away
+  // from the card, "detached." `fullWidth` (col-span-2) is the fix. jsdom has
+  // no layout engine, so this asserts the underlying cause (the class), not a
+  // literal screen coordinate.
+  it('renders Total full-width so the value hugs the card\'s own edge, not a half-width cell\'s inner edge', () => {
+    render(<OrderMobileCard order={BASE} onView={vi.fn()} />);
+    const totalLabel = screen.getByText('columns.total');
+    // The field wrapper is the dt's grandparent-adjacent sibling container —
+    // walk up to the `min-w-0` field cell and check it spans both columns.
+    const fieldCell = totalLabel.closest('.min-w-0');
+    expect(fieldCell).toHaveClass('col-span-2');
+  });
 });
 
 describe('OrderMobileCard — header hierarchy (order number → brand → customer → status, §6/§7)', () => {
@@ -165,6 +189,12 @@ describe('OrderMobileCard — Commerce capabilities preserved (Warehouse, Driver
     expect(screen.getByText('columns.driverUnassigned')).toBeInTheDocument();
   });
 
+  it('renders Address full-width (§9) so a long street address is never squeezed into half the card', () => {
+    render(<OrderMobileCard order={BASE} onView={vi.fn()} />);
+    const addressLabel = screen.getByText('columns.address');
+    expect(addressLabel.closest('.min-w-0')).toHaveClass('col-span-2');
+  });
+
   it('shows the full street address with the delivery zone folded in (no data loss from dropping its own row)', () => {
     render(<OrderMobileCard order={BASE} onView={vi.fn()} />);
     expect(screen.getByText('12 Nile St, Apt 4, Giza, Cairo · Zone A')).toBeInTheDocument();
@@ -186,6 +216,25 @@ describe('OrderMobileCard — Commerce capabilities preserved (Warehouse, Driver
     expect(screen.getByText(new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date('2026-09-10')))).toBeInTheDocument();
   });
 
+  // TASK-ECOS-MOBILE-POST-DEV-UX-REVIEW-001 §9 — "delivery date must appear
+  // directly under payment." MobileDataCard lays fields out in a 2-column
+  // grid that auto-flows in DOM order — for Delivery to land in the same
+  // column as Payment (one row below it), Warehouse must sit between them in
+  // the field array (Payment, Warehouse, Delivery = col-A/col-B/col-A). This
+  // asserts that exact DOM order — jsdom has no layout engine to assert the
+  // resulting screen position directly.
+  it('places Payment, Warehouse, then Delivery consecutively — the order that lands Delivery in Payment\'s own grid column', () => {
+    render(<OrderMobileCard order={BASE} onView={vi.fn()} />);
+    const fieldCells = Array.from(document.querySelectorAll('dl.grid > .min-w-0'));
+    const labels = fieldCells.map((cell) => cell.querySelector('dt')?.textContent);
+    const paymentIdx = labels.indexOf('mobileCard.payment');
+    const warehouseIdx = labels.indexOf('mobileCard.warehouse');
+    const deliveryIdx = labels.indexOf('mobileCard.delivery');
+    expect(paymentIdx).toBeGreaterThanOrEqual(0);
+    expect(warehouseIdx).toBe(paymentIdx + 1);
+    expect(deliveryIdx).toBe(paymentIdx + 2);
+  });
+
   it('renders a phone action wired to the canonical shared phone component', () => {
     render(<OrderMobileCard order={BASE} onView={vi.fn()} />);
     expect(screen.getByRole('button', { name: 'columns.phone' })).toBeInTheDocument();
@@ -193,21 +242,34 @@ describe('OrderMobileCard — Commerce capabilities preserved (Warehouse, Driver
 });
 
 describe('OrderMobileCard — Payment Method (§9: a clear readable word, not a raw backend value)', () => {
-  it('shows a short, human-readable label for a canonical payment method, not the raw backend string', () => {
+  // TASK-ECOS-MOBILE-POST-DEV-UX-REVIEW-001 §7 — "COD" was a raw, unlocalized
+  // badge label baked into OrderPaymentCell itself; fixed at that canonical
+  // authority (order-payment-cell.tsx) to read `workspace.paymentMethodLabels`
+  // instead, so the fix applies to Desktop too, not just Mobile. Under this
+  // file's path-proxy i18n mock, a real translated string can't be asserted
+  // directly — the mock returns the KEY PATH instead — so these tests assert
+  // the canonical, localized key is what's actually selected, which is what
+  // distinguishes "the fixed code path" from "the old raw-string code path"
+  // (the exact regression this fix closes).
+  it('routes a canonical payment method through the localized paymentMethodLabels map, not a raw hardcoded string', () => {
     render(<OrderMobileCard order={BASE} onView={vi.fn()} />);
-    expect(screen.getByText('COD')).toBeInTheDocument();
+    expect(screen.getByText('workspace.paymentMethodLabels.cod')).toBeInTheDocument();
+    expect(screen.queryByText('COD')).toBeNull();
     expect(screen.queryByText('cod')).toBeNull();
   });
 
-  it('never renders an underscored raw value like "mobile_wallet"', () => {
+  it('never renders an underscored raw value like "mobile_wallet" as the visible label — it resolves through the same localized map', () => {
     render(
       <OrderMobileCard
         order={{ ...BASE, payment_method_manual: 'mobile_wallet', payment_method: 'mobile_wallet' } as never as Order}
         onView={vi.fn()}
       />,
     );
-    expect(screen.queryByText(/mobile_wallet/)).toBeNull();
-    expect(screen.getByText('Wallet')).toBeInTheDocument();
+    // The raw value never stands alone as the rendered text — only as part of
+    // the resolved i18n key path, which under this mock is the visible proof
+    // the localized map (not a raw pass-through) produced it.
+    expect(screen.queryByText('mobile_wallet')).toBeNull();
+    expect(screen.getByText('workspace.paymentMethodLabels.mobile_wallet')).toBeInTheDocument();
   });
 });
 

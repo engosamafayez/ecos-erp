@@ -10,6 +10,19 @@ export type MobileDataCardField = {
   value: ReactNode;
   /** `end` right-aligns the value (money / quantities); pairs with tabular-nums. */
   align?: 'start' | 'end';
+  /**
+   * Spans both grid columns instead of sharing a row with the next field.
+   * For a money value this also means `align:'end'` now hugs the card's own
+   * true edge rather than the inner edge of a half-width cell — the fix for
+   * TASK-ECOS-MOBILE-POST-DEV-UX-REVIEW-001 §8's "detached-looking numeric
+   * block" (an `align:'end'` value confined to a 50%-width cell sat away from
+   * the card's actual edge, not just away from a same-column label). Also
+   * useful for a long text block (an address) that shouldn't be squeezed into
+   * half the card width. A full-width field always ends its row cleanly, so
+   * the field immediately after it starts fresh at the grid's first column —
+   * no manual row/column bookkeeping needed by callers.
+   */
+  fullWidth?: boolean;
 };
 
 export type MobileDataCardProps = {
@@ -85,7 +98,7 @@ export function MobileDataCard({
       {hasFields ? (
         <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2">
           {fields.map((field, index) => (
-            <div key={index} className="min-w-0">
+            <div key={index} className={cn('min-w-0', field.fullWidth && 'col-span-2')}>
               <dt
                 className={cn(
                   'truncate text-[11px] uppercase tracking-wide text-muted-foreground',
