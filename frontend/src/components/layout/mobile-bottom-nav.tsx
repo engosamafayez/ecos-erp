@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutGrid, Search } from 'lucide-react';
+import { Menu, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
@@ -21,8 +21,15 @@ type MobileBottomNavProps = {
  * pinned an item to users who may never touch it, without inventing a new
  * per-role priority table: it reuses the existing module order as-is.
  *
- * "Modules" replaces the old "More" — it opens the same `MobileMenu`, now the
- * full Modules launcher rather than a flat accordion (see `mobile-menu.tsx`).
+ * This IS the Drawer trigger (TASK-ECOS-MOBILE-NAVIGATION-DRAWER-BOTTOM-
+ * TRIGGER-001 §5: "reuse it" rather than adding a second, confusing entry
+ * point) — tapping it opens `MobileMenu`. The icon changed from a tile-grid
+ * glyph (`LayoutGrid`, which specifically signaled the now-rejected tile
+ * launcher) to a plain hamburger (`Menu`) — the universal "open a navigation
+ * drawer" glyph — for a more obvious trigger (§13); the label, position, and
+ * every other slot are unchanged. It never gains an active/highlighted state:
+ * it has no route of its own, so it must never falsely read as the current
+ * page (§9) — unlike the pinned module icons to its left, which do.
  */
 export function MobileBottomNav({ onOpenMenu }: MobileBottomNavProps) {
   const { t } = useTranslation('common');
@@ -93,7 +100,7 @@ export function MobileBottomNav({ onOpenMenu }: MobileBottomNavProps) {
         className="flex flex-1 flex-col items-center justify-center gap-1 py-2 text-muted-foreground transition-colors active:text-foreground"
       >
         <span className="flex items-center justify-center rounded-full px-3.5 py-1">
-          <LayoutGrid className="size-5" aria-hidden />
+          <Menu className="size-5" aria-hidden />
         </span>
         <span className="text-[10px] font-medium">{t(($) => $.nav.modules)}</span>
       </button>
