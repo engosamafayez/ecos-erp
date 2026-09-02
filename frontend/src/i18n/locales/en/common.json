@@ -180,9 +180,11 @@
       "finance-treasury": "Cash & Banking",
       "finance-fiscal": "Fiscal Calendar & Closing",
       "finance-budgets": "Budgets",
-      "finance-tax": "Tax & VAT"
+      "finance-tax": "Tax & VAT",
+      "collaboration-workspace": "Collaboration"
     },
     "groups": {
+      "collaboration": "Collaboration",
       "overview": "Overview",
       "organization": "Organization",
       "inventory": "Inventory",

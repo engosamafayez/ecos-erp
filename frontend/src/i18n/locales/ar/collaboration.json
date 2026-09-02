@@ -1,0 +1,206 @@
+{
+  "workspace": {
+    "title": "التعاون",
+    "tabs": {
+      "conversations": "المحادثات",
+      "tasks": "المهام"
+    }
+  },
+  "conversations": {
+    "title": "المحادثات",
+    "newDirect": "رسالة جديدة",
+    "newGroup": "مجموعة جديدة",
+    "list": {
+      "empty": {
+        "title": "لا توجد محادثات بعد",
+        "subtitle": "ابدأ محادثة مع زميل أو سائق."
+      },
+      "error": "تعذّر تحميل محادثاتك.",
+      "retry": "إعادة المحاولة",
+      "unread_one": "{{count}} غير مقروءة",
+      "unread_other": "{{count}} غير مقروءة",
+      "groupLabel": "مجموعة",
+      "you": "أنت: "
+    },
+    "empty": {
+      "title": "اختر محادثة",
+      "subtitle": "اختر محادثة من القائمة، أو ابدأ محادثة جديدة."
+    },
+    "info": {
+      "title": "التفاصيل",
+      "participants": "المشاركون",
+      "type": {
+        "direct": "رسالة مباشرة",
+        "group": "مجموعة تعاون"
+      },
+      "addMember": "إضافة عضو",
+      "removeMember": "إزالة",
+      "leaveGroup": "مغادرة المجموعة"
+    },
+    "newDirectDialog": {
+      "title": "رسالة جديدة",
+      "recipient": "إلى",
+      "recipientPlaceholder": "ابحث عن موظف أو سائق…",
+      "submit": "بدء المحادثة",
+      "cancel": "إلغاء",
+      "failed": "تعذّر بدء المحادثة."
+    },
+    "newGroupDialog": {
+      "title": "مجموعة تعاون جديدة",
+      "hint": "هذه مجموعة تعاون مؤقتة، وليست فريقًا تنظيميًا رسميًا.",
+      "name": "اسم المجموعة",
+      "namePlaceholder": "مثال: فريق مخزن أ",
+      "members": "الأعضاء",
+      "membersPlaceholder": "ابحث عن موظف أو سائق…",
+      "submit": "إنشاء المجموعة",
+      "cancel": "إلغاء",
+      "failed": "تعذّر إنشاء المجموعة."
+    }
+  },
+  "message": {
+    "typePlaceholder": "اكتب رسالة…",
+    "send": "إرسال",
+    "replyingTo": "الرد على",
+    "cancelReply": "إلغاء الرد",
+    "mention": "إشارة",
+    "attachImage": "إرفاق صورة",
+    "attachFile": "إرفاق ملف",
+    "recordVoice": "تسجيل رسالة صوتية",
+    "sending": "جارٍ الإرسال…",
+    "sendFailed": "تعذّر إرسال الرسالة. حاول مرة أخرى.",
+    "uploadFailed": "تعذّر رفع المرفق.",
+    "download": "تنزيل",
+    "createTask": "إنشاء مهمة",
+    "types": {
+      "image": "[صورة]",
+      "file": "[ملف]",
+      "voice": "[رسالة صوتية]"
+    }
+  },
+  "voice": {
+    "start": "تسجيل",
+    "recording": "جارٍ التسجيل…",
+    "stop": "إيقاف",
+    "discard": "تجاهل",
+    "preview": "معاينة",
+    "send": "إرسال",
+    "micDenied": "تم رفض الوصول إلى الميكروفون. يرجى السماح بالوصول إلى الميكروفون من متصفحك لتسجيل رسالة صوتية.",
+    "micUnavailable": "لم يتم العثور على ميكروفون على هذا الجهاز.",
+    "unsupported": "تسجيل الصوت غير مدعوم في هذا المتصفح.",
+    "recordingFailed": "فشل التسجيل. حاول مرة أخرى.",
+    "playbackUnauthorized": "ليس لديك صلاحية الوصول إلى هذه الرسالة الصوتية."
+  },
+  "search": {
+    "placeholder": "ابحث في الرسائل والمهام…",
+    "messagesTab": "الرسائل",
+    "tasksTab": "المهام",
+    "noResults": "لا توجد نتائج.",
+    "error": "فشل البحث.",
+    "openConversation": "فتح المحادثة",
+    "openTask": "فتح المهمة"
+  },
+  "tasks": {
+    "title": "المهام",
+    "create": "مهمة جديدة",
+    "filters": {
+      "scope": "عرض",
+      "scopeMine": "مهامي",
+      "scopeCreated": "التي أنشأتها",
+      "scopeAssigned": "المسندة إليّ",
+      "status": "الحالة",
+      "priority": "الأولوية",
+      "overdue": "المتأخرة فقط",
+      "all": "الكل"
+    },
+    "list": {
+      "empty": {
+        "title": "لا توجد مهام",
+        "subtitle": "ستظهر هنا المهام المسندة إليك أو التي أنشأتها."
+      },
+      "error": "تعذّر تحميل المهام.",
+      "retry": "إعادة المحاولة"
+    },
+    "status": {
+      "todo": "قيد الانتظار",
+      "in_progress": "قيد التنفيذ",
+      "done": "مكتملة",
+      "cancelled": "ملغاة"
+    },
+    "priority": {
+      "low": "منخفضة",
+      "normal": "عادية",
+      "high": "عالية",
+      "urgent": "عاجلة"
+    },
+    "overdue": "متأخرة",
+    "dueAt": "الاستحقاق {{date}}",
+    "noDueDate": "بدون موعد استحقاق",
+    "detail": {
+      "title": "المهمة",
+      "description": "الوصف",
+      "assignee": "المسندة إلى",
+      "creator": "أنشأها",
+      "priority": "الأولوية",
+      "status": "الحالة",
+      "due": "موعد الاستحقاق",
+      "comments": "التعليقات",
+      "attachments": "المرفقات",
+      "activity": "السجل",
+      "context": "مرتبطة بـ",
+      "sourceMessage": "أُنشئت من رسالة",
+      "sourceUnavailable": "الرسالة المصدر غير متاحة",
+      "viewSource": "عرض في المحادثة",
+      "addCommentPlaceholder": "أضف تعليقًا…",
+      "postComment": "تعليق",
+      "noComments": "لا توجد تعليقات بعد.",
+      "addAttachment": "إضافة مرفق",
+      "noAttachments": "لا توجد مرفقات.",
+      "noActivity": "لا يوجد نشاط بعد.",
+      "reassign": "إعادة الإسناد",
+      "edit": "تعديل المهمة",
+      "loadFailed": "تعذّر تحميل هذه المهمة.",
+      "forbidden": "ليس لديك صلاحية الوصول إلى هذه المهمة.",
+      "transitions": {
+        "start": "بدء",
+        "complete": "تحديد كمكتملة",
+        "cancel": "إلغاء المهمة",
+        "reopen": "إعادة الفتح"
+      }
+    },
+    "createDialog": {
+      "title": "مهمة جديدة",
+      "fromMessage": "من رسالة",
+      "titleLabel": "العنوان",
+      "titlePlaceholder": "ما الذي يجب إنجازه؟",
+      "descriptionLabel": "الوصف",
+      "assigneeLabel": "المسندة إلى",
+      "assigneeDefault": "إسناد لنفسي",
+      "priorityLabel": "الأولوية",
+      "dueLabel": "موعد الاستحقاق",
+      "submit": "إنشاء المهمة",
+      "cancel": "إلغاء",
+      "success": "تم إنشاء المهمة",
+      "failed": "تعذّر إنشاء المهمة."
+    },
+    "activityEvents": {
+      "created": "أنشأ هذه المهمة",
+      "assigned": "أعاد إسناد هذه المهمة",
+      "status_changed": "غيّر الحالة",
+      "priority_changed": "غيّر الأولوية",
+      "due_date_changed": "غيّر موعد الاستحقاق",
+      "comment_added": "علّق",
+      "updated": "حدّث المهمة"
+    },
+    "context": {
+      "order": "طلب",
+      "distribution_group": "مجموعة توزيع",
+      "trip": "رحلة",
+      "driver": "سائق"
+    }
+  },
+  "errors": {
+    "forbidden": "ليس لديك صلاحية الوصول إلى هذا.",
+    "notFound": "غير موجود.",
+    "generic": "حدث خطأ ما."
+  }
+}

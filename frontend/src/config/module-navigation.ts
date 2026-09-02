@@ -78,6 +78,7 @@ export type NavGroupKey = keyof (typeof enCommon)['nav']['groups'];
 
 export type ModuleId =
   | 'dashboard'
+  | 'collaboration'
   | 'commerce'
   | 'shipping'
   | 'pos'
@@ -150,6 +151,20 @@ const ALL_MODULES: AppModule[] = [
     id: 'dashboard',
     icon: LayoutDashboard,
     defaultPath: ROUTES.dashboard,
+    items: [],
+  },
+  {
+    // Internal Collaboration & Tasks (TASK-ECOS-COLLABORATION-WORKSPACE-DRIVER-EXPOSURE-
+    // CLOSURE-005). A cross-cutting utility every employee uses, not a business-domain
+    // module — its backend authorizes conversations/messages/tasks by participation and
+    // ownership, not by a `collaboration.*` permission grant (no Role Template grants one
+    // today), so there is no permission domain the standard MODULE_DOMAINS fallback could
+    // gate on. It is deliberately in `ALWAYS_VISIBLE` (use-navigation.ts) alongside
+    // `dashboard` rather than listed here in MODULE_DOMAINS. Conversations and Tasks are
+    // tabs of the ONE workspace route (query-param driven), not separate sidebar entries.
+    id: 'collaboration',
+    icon: MessageSquare,
+    defaultPath: ROUTES.collaborationWorkspace,
     items: [],
   },
   {

@@ -31,6 +31,6 @@ final class TaskStatusController extends Controller
             return $this->error($e->getMessage(), 422);
         }
 
-        return $this->updated(new TaskResource($task), 'Task status updated.');
+        return $this->updated(new TaskResource($task->load(['creator', 'assignee'])), 'Task status updated.');
     }
 }

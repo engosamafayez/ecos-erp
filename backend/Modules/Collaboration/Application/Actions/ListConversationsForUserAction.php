@@ -40,6 +40,7 @@ final class ListConversationsForUserAction extends BaseAction
 
         $conversations = Conversation::query()
             ->whereIn('id', $participantRows->keys())
+            ->with('activeParticipants.user')
             ->orderByDesc('last_message_at')
             ->orderByDesc('created_at')
             ->get();

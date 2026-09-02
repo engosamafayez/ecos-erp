@@ -21,7 +21,7 @@ final class TaskCommentController extends Controller
     {
         $this->authorize('view', $task);
 
-        $comments = $task->comments()->orderBy('created_at')->get();
+        $comments = $task->comments()->with('author')->orderBy('created_at')->get();
 
         return $this->success(TaskCommentResource::collection($comments));
     }
@@ -30,6 +30,6 @@ final class TaskCommentController extends Controller
     {
         $comment = $action->execute($request->user(), $task, (string) $request->validated('body'));
 
-        return $this->created(new TaskCommentResource($comment));
+        return $this->created(new TaskCommentResource($comment->load('author')));
     }
 }

@@ -4350,6 +4350,13 @@ Route::middleware('auth:sanctum')->prefix('collaboration')->group(function (): v
     Route::get('search/messages', [CollaborationSearchController::class, 'messages'])
         ->middleware('throttle:30,1');
 
+    // Task 5 — "somebody to newly address" (new direct conversation, new group
+    // member, task assignee/reassignment). See SearchAddressableUsersAction: reuses
+    // IAM's UserRepository, company-scoped, driver candidates filtered by the same
+    // permission + data-scope DriverMessagingAuthorizer enforces at the mutation.
+    Route::get('search/users', [CollaborationSearchController::class, 'users'])
+        ->middleware('throttle:30,1');
+
     // Task 4 — Internal Tasks (ADR-044 §1.5/§1.10). View/comment/status-
     // transition are ownership-gated inside TaskPolicy/the actions themselves
     // (creator or assignee) — only creation carries a registered permission,

@@ -718,7 +718,8 @@
       "returns": "Returns",
       "wallet": "Wallet",
       "tripExpenses": "Trip expenses",
-      "map": "Map"
+      "map": "Map",
+      "tasks": "Tasks"
     }
   },
   "tripExpenses": {

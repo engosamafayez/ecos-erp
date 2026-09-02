@@ -18,6 +18,7 @@ final class TaskActivityResource extends JsonResource
         return [
             'id' => $this->id,
             'actor_user_id' => $this->actor_user_id,
+            'actor_name' => $this->whenLoaded('actor', fn () => $this->actor?->name),
             'event_type' => $this->event_type,
             'from_value' => $this->from_value,
             'to_value' => $this->to_value,

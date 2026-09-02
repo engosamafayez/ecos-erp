@@ -29,7 +29,8 @@ final class CollaborationTaskDomainTest extends TestCase
     {
         $company = Company::factory()->create();
         $actor = $this->employee($company);
-        $assignee = User::factory()->create(['company_id' => $company->id]);
+        $actor->forceFill(['name' => 'Task Creator'])->save();
+        $assignee = User::factory()->create(['company_id' => $company->id, 'name' => 'Task Assignee']);
 
         $this->actingAsUnprivileged($actor)
             ->postJson('/api/collaboration/tasks', [
@@ -39,7 +40,10 @@ final class CollaborationTaskDomainTest extends TestCase
             ->assertCreated()
             ->assertJsonPath('data.title', 'Restock warehouse A')
             ->assertJsonPath('data.status', 'todo')
-            ->assertJsonPath('data.assignee_user_id', $assignee->id);
+            ->assertJsonPath('data.assignee_user_id', $assignee->id)
+            // Task 5 — creator/assignee names resolve inline, not bare ids.
+            ->assertJsonPath('data.creator_name', 'Task Creator')
+            ->assertJsonPath('data.assignee_name', 'Task Assignee');
     }
 
     // 2. Unauthorized task create rejected.

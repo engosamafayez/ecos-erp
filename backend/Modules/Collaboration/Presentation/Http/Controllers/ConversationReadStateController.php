@@ -20,6 +20,6 @@ final class ConversationReadStateController extends Controller
     {
         $participant = $action->execute($request->user(), $conversation, $request->validated('last_read_message_id'));
 
-        return $this->updated(new ConversationParticipantResource($participant), 'Conversation marked read.');
+        return $this->updated(new ConversationParticipantResource($participant->load('user')), 'Conversation marked read.');
     }
 }

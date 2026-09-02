@@ -29,7 +29,7 @@ final class ConversationParticipantController extends Controller
     {
         $participant = $action->execute($request->user(), $conversation, (int) $request->validated('user_id'));
 
-        return $this->created(new ConversationParticipantResource($participant));
+        return $this->created(new ConversationParticipantResource($participant->load('user')));
     }
 
     public function destroy(Request $request, Conversation $conversation, int $user, RemoveGroupParticipantAction $action): JsonResponse

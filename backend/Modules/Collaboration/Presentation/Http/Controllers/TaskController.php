@@ -61,14 +61,14 @@ final class TaskController extends Controller
 
         $task = $action->execute($request->user(), $data);
 
-        return $this->created(new TaskResource($task->load(['activity'])));
+        return $this->created(new TaskResource($task->load(['activity.actor', 'creator', 'assignee'])));
     }
 
     public function show(Request $request, InternalTask $task): JsonResponse
     {
         $this->authorize('view', $task);
 
-        return $this->success(new TaskResource($task->load(['activity'])));
+        return $this->success(new TaskResource($task->load(['activity.actor', 'creator', 'assignee'])));
     }
 
     public function update(UpdateTaskRequest $request, InternalTask $task, UpdateTaskAction $action): JsonResponse
@@ -83,6 +83,6 @@ final class TaskController extends Controller
 
         $task = $action->execute($request->user(), $task, $changes);
 
-        return $this->updated(new TaskResource($task));
+        return $this->updated(new TaskResource($task->load(['creator', 'assignee'])));
     }
 }

@@ -37,7 +37,7 @@ final class CollaborationTaskCommentsAttachmentsTest extends TestCase
     {
         $company = Company::factory()->create();
         $creator = $this->employee($company);
-        $assignee = User::factory()->create(['company_id' => $company->id]);
+        $assignee = User::factory()->create(['company_id' => $company->id, 'name' => 'Commenting Assignee']);
 
         $taskId = $this->actingAsUnprivileged($creator)
             ->postJson('/api/collaboration/tasks', ['title' => 'x', 'assignee_user_id' => $assignee->id])
@@ -47,7 +47,9 @@ final class CollaborationTaskCommentsAttachmentsTest extends TestCase
             ->postJson("/api/collaboration/tasks/{$taskId}/comments", ['body' => 'Working on it now'])
             ->assertCreated()
             ->assertJsonPath('data.body', 'Working on it now')
-            ->assertJsonPath('data.author_user_id', $assignee->id);
+            ->assertJsonPath('data.author_user_id', $assignee->id)
+            // Task 5 — comment author name resolves inline, not a bare id.
+            ->assertJsonPath('data.author_name', 'Commenting Assignee');
     }
 
     // 22. Unauthorized comment rejected.

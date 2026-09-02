@@ -19,6 +19,7 @@ final class ConversationParticipantResource extends JsonResource
             'id' => $this->id,
             'conversation_id' => $this->conversation_id,
             'user_id' => $this->user_id,
+            'name' => $this->whenLoaded('user', fn () => $this->user?->name),
             'role' => $this->role->value,
             'joined_at' => $this->joined_at?->toIso8601String(),
             'left_at' => $this->left_at?->toIso8601String(),

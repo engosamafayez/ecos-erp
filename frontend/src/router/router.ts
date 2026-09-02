@@ -166,6 +166,8 @@ import { DriverWalletPage } from '@/features/operations/driver-mobile/pages/driv
 import { DriverReportsPage } from '@/features/operations/driver-mobile/pages/driver-reports-page';
 import { DriverStatementPage } from '@/features/operations/driver-mobile/pages/driver-statement-page';
 import { DriverTripExpensesPage } from '@/features/operations/driver-mobile/pages/driver-trip-expenses-page';
+import { DriverTasksPage } from '@/features/operations/driver-mobile/pages/driver-tasks-page';
+import { CollaborationWorkspacePage } from '@/features/collaboration/pages/collaboration-workspace-page';
 import { JourneyExplorerPage } from '@/features/core/business-attribution/pages/journey-explorer-page';
 import { BaeTimelinePage } from '@/features/core/business-attribution/pages/bae-timeline-page';
 import { UnifiedInboxPage } from '@/features/customer-engagement/pages/unified-inbox-page';
@@ -295,6 +297,9 @@ export const router = createBrowserRouter(
             { path: ROUTES.driverReports, Component: DriverReportsPage },
             { path: ROUTES.driverStatement, Component: DriverStatementPage },
             { path: ROUTES.driverTripExpenses, Component: DriverTripExpensesPage },
+            // Internal Collaboration & Tasks (TASK-ECOS-COLLABORATION-WORKSPACE-DRIVER-
+            // EXPOSURE-CLOSURE-005) — nav entry + page only, DriverShell unchanged.
+            { path: ROUTES.driverTasks, Component: DriverTasksPage },
           ],
         },
         // Enterprise shell — EnterpriseAppShell guards AppShell so a driver-only user who
@@ -305,6 +310,9 @@ export const router = createBrowserRouter(
           Component: EnterpriseAppShell,
           children: [
             { path: ROUTES.dashboard, Component: DashboardPage },
+            // Internal Collaboration & Tasks (TASK-ECOS-COLLABORATION-WORKSPACE-DRIVER-
+            // EXPOSURE-CLOSURE-005) — Conversations + Tasks are tabs of this one route.
+            { path: ROUTES.collaborationWorkspace, Component: CollaborationWorkspacePage },
             // Executive Platform (EPIC-EXECUTIVE-UI-001)
             { path: ROUTES.executiveDashboard, Component: ExecutivePlatformPage },
             // Finance workspace (EPIC-FINANCE-UI-001). /accounting = Executive Finance.

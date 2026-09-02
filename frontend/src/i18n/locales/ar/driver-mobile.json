@@ -758,7 +758,8 @@
       "returns": "المرتجعات",
       "wallet": "المحفظة",
       "tripExpenses": "مصاريف الرحلة",
-      "map": "الخريطة"
+      "map": "الخريطة",
+      "tasks": "المهام"
     }
   },
   "tripExpenses": {

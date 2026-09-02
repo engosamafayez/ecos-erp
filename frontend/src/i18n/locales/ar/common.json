@@ -180,9 +180,11 @@
       "finance-treasury": "النقدية والبنوك",
       "finance-fiscal": "التقويم المالي والإقفال",
       "finance-budgets": "الموازنات",
-      "finance-tax": "الضرائب والقيمة المضافة"
+      "finance-tax": "الضرائب والقيمة المضافة",
+      "collaboration-workspace": "التعاون"
     },
     "groups": {
+      "collaboration": "التعاون",
       "overview": "نظرة عامة",
       "organization": "المنظمة",
       "inventory": "المخزون",

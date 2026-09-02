@@ -33,7 +33,7 @@ final class ListMyTasksAction extends BaseAction
             throw new InvalidArgumentException('ListMyTasksAction::execute expects (User $user, array $filters).');
         }
 
-        $query = InternalTask::query()->where('company_id', $user->company_id);
+        $query = InternalTask::query()->where('company_id', $user->company_id)->with(['creator', 'assignee']);
 
         $query->where(function ($q) use ($user, $filters): void {
             $scope = $filters['scope'] ?? 'mine';

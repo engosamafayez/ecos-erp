@@ -25,6 +25,6 @@ final class TaskAssignmentController extends Controller
     {
         $task = $action->execute($request->user(), $task, (int) $request->validated('assignee_user_id'));
 
-        return $this->updated(new TaskResource($task), 'Task reassigned.');
+        return $this->updated(new TaskResource($task->load(['creator', 'assignee'])), 'Task reassigned.');
     }
 }

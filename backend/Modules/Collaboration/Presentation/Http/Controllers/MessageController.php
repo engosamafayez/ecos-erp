@@ -35,7 +35,7 @@ final class MessageController extends Controller
             $request->query('before_message_id'),
             (int) $request->query('limit', 50),
             $request->query('after_message_id'),
-        )->load('mentions');
+        )->load(['mentions.mentionedUser', 'sender']);
 
         return $this->success(MessageResource::collection($messages));
     }
@@ -61,6 +61,6 @@ final class MessageController extends Controller
             return $this->error($e->getMessage(), 422);
         }
 
-        return $this->created(new MessageResource($message->load('mentions')));
+        return $this->created(new MessageResource($message->load(['mentions.mentionedUser', 'sender'])));
     }
 }

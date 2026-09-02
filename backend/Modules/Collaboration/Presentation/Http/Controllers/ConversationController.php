@@ -37,7 +37,7 @@ final class ConversationController extends Controller
             return $this->error($e->getMessage(), 422);
         }
 
-        return $this->created(new ConversationResource($conversation));
+        return $this->created(new ConversationResource($conversation->load('activeParticipants.user')));
     }
 
     public function storeGroup(StoreGroupConversationRequest $request, CreateGroupConversationAction $action): JsonResponse
@@ -53,13 +53,13 @@ final class ConversationController extends Controller
             return $this->error($e->getMessage(), 422);
         }
 
-        return $this->created(new ConversationResource($conversation));
+        return $this->created(new ConversationResource($conversation->load('activeParticipants.user')));
     }
 
     public function show(Request $request, Conversation $conversation): JsonResponse
     {
         $this->authorize('view', $conversation);
 
-        return $this->success(new ConversationResource($conversation));
+        return $this->success(new ConversationResource($conversation->load('activeParticipants.user')));
     }
 }

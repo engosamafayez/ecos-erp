@@ -19,6 +19,7 @@ final class TaskCommentResource extends JsonResource
             'id' => $this->id,
             'task_id' => $this->task_id,
             'author_user_id' => $this->author_user_id,
+            'author_name' => $this->whenLoaded('author', fn () => $this->author?->name),
             'body' => $this->body,
             'created_at' => $this->created_at?->toIso8601String(),
         ];

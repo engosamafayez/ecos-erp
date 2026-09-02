@@ -54,8 +54,20 @@ const MODULE_DOMAINS: Record<string, string[]> = {
   executive: ['finance', 'crm', 'operations', 'inventory', 'purchasing'],
 };
 
-/** Always-visible modules (the home surface). */
-const ALWAYS_VISIBLE = new Set(['dashboard']);
+/**
+ * Always-visible modules (the home surface).
+ *
+ * `collaboration` joins `dashboard` here rather than in `MODULE_DOMAINS` below: its backend
+ * authorizes every read/write by conversation participation or task ownership, not by a
+ * `collaboration.*` permission grant, and no Role Template grants one of those tokens today
+ * (TASK-ECOS-COLLABORATION-CORE-FOUNDATION-002's "no automatic role grants" ruling — the two
+ * tokens that exist, `collaboration.conversations.message_drivers` and
+ * `collaboration.tasks.assign_drivers`, are narrow driver-facing capabilities, not a general
+ * "can use Collaboration" gate). A `MODULE_DOMAINS` entry would therefore hide the module from
+ * every non-system user by construction. Every authenticated user having their own messages
+ * and tasks is the intended behavior, mirroring why `dashboard` itself is always visible.
+ */
+const ALWAYS_VISIBLE = new Set(['dashboard', 'collaboration']);
 
 /**
  * Decide whether a module is visible to the current user (pure — testable without React).

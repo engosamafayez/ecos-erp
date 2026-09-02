@@ -34,14 +34,20 @@ final class CollaborationTaskActivityNotificationTest extends TestCase
     {
         $company = Company::factory()->create();
         $actor = $this->employee($company);
+        $actor->forceFill(['name' => 'Activity Actor'])->save();
 
-        $taskId = $this->actingAsUnprivileged($actor)->postJson('/api/collaboration/tasks', ['title' => 'x'])->assertCreated()->json('data.id');
+        $response = $this->actingAsUnprivileged($actor)->postJson('/api/collaboration/tasks', ['title' => 'x'])->assertCreated();
+        $taskId = $response->json('data.id');
 
         $this->assertDatabaseHas('collaboration_internal_task_activity', [
             'task_id' => $taskId,
             'actor_user_id' => $actor->id,
             'event_type' => 'created',
         ]);
+
+        // Task 5 — the activity feed's actor name resolves inline, not a bare id.
+        $entry = collect($response->json('data.activity'))->firstWhere('event_type', 'created');
+        self::assertSame('Activity Actor', $entry['actor_name'] ?? null);
     }
 
     // 39. Assignment activity recorded.

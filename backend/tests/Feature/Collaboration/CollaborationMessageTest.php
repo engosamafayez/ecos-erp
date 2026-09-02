@@ -34,6 +34,7 @@ final class CollaborationMessageTest extends TestCase
     {
         $company = Company::factory()->create();
         $actor = $this->employee($company);
+        $actor->forceFill(['name' => 'Sending Employee'])->save();
         $target = User::factory()->create(['company_id' => $company->id]);
         $conversation = $this->directConversation($company, $actor, $target);
 
@@ -41,7 +42,9 @@ final class CollaborationMessageTest extends TestCase
             ->postJson("/api/collaboration/conversations/{$conversation->id}/messages", ['body' => 'Hello there'])
             ->assertCreated()
             ->assertJsonPath('data.body', 'Hello there')
-            ->assertJsonPath('data.type', 'text');
+            ->assertJsonPath('data.type', 'text')
+            // Task 5 — the sender's name is resolved inline, not left as a bare id.
+            ->assertJsonPath('data.sender_name', 'Sending Employee');
     }
 
     // 10. Non-member cannot read a conversation.
@@ -139,7 +142,7 @@ final class CollaborationMessageTest extends TestCase
     {
         $company = Company::factory()->create();
         $owner = $this->employee($company);
-        $member = User::factory()->create(['company_id' => $company->id]);
+        $member = User::factory()->create(['company_id' => $company->id, 'name' => 'Mentioned Member']);
         $conversation = $this->groupConversation($company, $owner, [$member]);
 
         $this->actingAsUnprivileged($owner)
@@ -148,7 +151,10 @@ final class CollaborationMessageTest extends TestCase
                 'mentioned_user_ids' => [$member->id],
             ])
             ->assertCreated()
-            ->assertJsonPath('data.mentioned_user_ids.0', $member->id);
+            ->assertJsonPath('data.mentioned_user_ids.0', $member->id)
+            // Task 5 — mentions resolve to a name too (brief: mentions render from the
+            // conversation's own authorized participants, never a global user search).
+            ->assertJsonPath('data.mentioned_users.0.name', 'Mentioned Member');
     }
 
     // 15. Read/unread update.

@@ -266,6 +266,9 @@ export const ROUTES = {
   engineeringWorkspace:         '/engineering/workspace',
   // Branch Coverage (TASK-BRANCH-COVERAGE-UI-001)
   branchCoverage: '/settings/branch-coverage',
+  // Internal Collaboration & Tasks (TASK-ECOS-COLLABORATION-WORKSPACE-DRIVER-EXPOSURE-CLOSURE-005)
+  collaborationWorkspace: '/collaboration',
+  driverTasks: '/driver/tasks',
 } as const;
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES];

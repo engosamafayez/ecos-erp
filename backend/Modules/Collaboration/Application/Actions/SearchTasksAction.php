@@ -32,6 +32,7 @@ final class SearchTasksAction extends BaseAction
         return InternalTask::query()
             ->where('company_id', $user->company_id)
             ->where(fn ($q) => $q->where('creator_user_id', $user->id)->orWhere('assignee_user_id', $user->id))
+            ->with(['creator', 'assignee'])
             ->whereRaw("search_tsv @@ websearch_to_tsquery('english', ?)", [$searchQuery])
             ->orderByDesc('created_at')
             ->limit($limit)

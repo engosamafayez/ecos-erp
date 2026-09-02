@@ -78,10 +78,10 @@ final class CollaborationConversationTest extends TestCase
     {
         $company = Company::factory()->create();
         $actor = $this->employee($company);
-        $memberA = User::factory()->create(['company_id' => $company->id]);
-        $memberB = User::factory()->create(['company_id' => $company->id]);
+        $memberA = User::factory()->create(['company_id' => $company->id, 'name' => 'Member A']);
+        $memberB = User::factory()->create(['company_id' => $company->id, 'name' => 'Member B']);
 
-        $this->actingAsUnprivileged($actor)
+        $response = $this->actingAsUnprivileged($actor)
             ->postJson('/api/collaboration/conversations/groups', [
                 'title' => 'Warehouse Ops',
                 'participant_user_ids' => [$memberA->id, $memberB->id],
@@ -90,6 +90,12 @@ final class CollaborationConversationTest extends TestCase
             ->assertJsonPath('data.type', 'group')
             ->assertJsonPath('data.title', 'Warehouse Ops')
             ->assertJsonPath('data.my_role', 'owner');
+
+        // Task 5 — a group's participants come back with resolved names, not just
+        // ids: the frontend has no other way to render "who's in this group".
+        $names = collect($response->json('data.participants'))->pluck('name');
+        self::assertTrue($names->contains('Member A'));
+        self::assertTrue($names->contains('Member B'));
     }
 
     // 7. Group membership addition/removal.
