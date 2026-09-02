@@ -191,6 +191,21 @@ export function useWarehouseLiabilitiesQuery(params: WarehouseLiabilitiesQuery =
   });
 }
 
+// TASK-ECOS-MOBILE-REMAINING-PAGES-WAREHOUSE-EXCEPTIONS-002 — a WIRING GAP
+// only: `warehouseLiabilityService.get(id)` and the backend
+// `GET /inventory/warehouse-liabilities/{id}` route both already existed;
+// no hook ever called this endpoint (the desktop page never offered a detail
+// view). Mirrors `useWasteInvestigationQuery` exactly — same cache-key shape,
+// same `enabled: !!id` guard.
+export function useWarehouseLiabilityQuery(id: string) {
+  const companyId = useCompanyScope();
+  return useQuery({
+    queryKey: LIABILITY_KEYS.detail(companyId, id),
+    queryFn: () => warehouseLiabilityService.get(id),
+    enabled: !!id,
+  });
+}
+
 export function useApproveWarehouseLiability() {
   const companyId = useCompanyScope();
   const qc = useQueryClient();

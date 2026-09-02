@@ -420,6 +420,7 @@
     },
     "fifoSnapshot": "لقطة FIFO",
     "empty": "لا توجد مسؤوليات مستودع",
+    "viewDetails": "عرض التفاصيل",
     "actions": {
       "approve": "اعتماد",
       "reject": "رفض"
@@ -445,6 +446,35 @@
       "approved": "تم اعتماد المسؤولية وتعديل المخزون.",
       "rejected": "تم رفض المسؤولية.",
       "failed": "فشل الإجراء. حاول مرة أخرى."
+    },
+    "detail": {
+      "header": {
+        "fallbackTitle": "مسؤولية المستودع",
+        "approved": "معتمد",
+        "rejected": "مرفوض",
+        "pending": "في الانتظار"
+      },
+      "summary": {
+        "product": "المنتج",
+        "quantity": "الكمية",
+        "unitCost": "تكلفة الوحدة",
+        "totalValue": "القيمة الإجمالية",
+        "fifoSnapshot": "لقطة تكلفة FIFO",
+        "fifoSnapshotFull": "لقطة تكلفة FIFO · الطريقة: {{method}} · العملة: {{currency}}",
+        "type": "النوع",
+        "warehouse": "المستودع",
+        "manager": "مدير المستودع",
+        "status": "الحالة",
+        "approvedBy": "اعتُمد بواسطة",
+        "rejectedBy": "رُفض بواسطة",
+        "decisionDate": "تاريخ القرار",
+        "month": "الشهر",
+        "notes": "ملاحظات",
+        "integrationRefs": "مراجع التكامل",
+        "sourceInvestigation": "التحقيق المصدر",
+        "viewInvestigation": "عرض التحقيق المرتبط",
+        "noInvestigation": "غير مرتبط بتحقيق هالك"
+      }
     }
   }
 }

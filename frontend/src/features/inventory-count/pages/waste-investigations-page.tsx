@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ds/use-toast';
 import { PageHeader } from '@/components/crud';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 
 import {
   useWasteInvestigationsQuery,
@@ -25,6 +26,7 @@ import type {
   WasteInvestigationOutcome,
 } from '../types/inventory-count';
 import { WasteInvestigationDetailDrawer } from '../components/waste-investigation-detail-drawer';
+import { WasteInvestigationMobileCard } from '../components/waste-investigation-mobile-card';
 
 type ResolveState = {
   investigation: WasteInvestigation;
@@ -48,6 +50,7 @@ export function WasteInvestigationsPage() {
   const [resolveState, setResolveState] = useState<ResolveState | null>(null);
   const [resolvedBy, setResolvedBy] = useState('');
   const [detailId, setDetailId] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   const query = useWasteInvestigationsQuery({
     month,
@@ -167,6 +170,17 @@ export function WasteInvestigationsPage() {
           <div className="flex flex-col items-center gap-2 py-16 text-center">
             <AlertTriangle className="size-8 text-muted-foreground/40" />
             <p className="text-sm text-muted-foreground">{t($ => $.waste.empty)}</p>
+          </div>
+        ) : isMobile ? (
+          <div role="list" className="p-3">
+            {items.map((inv) => (
+              <WasteInvestigationMobileCard
+                key={inv.id}
+                investigation={inv}
+                onOpen={(investigation) => setDetailId(investigation.id)}
+                onResolve={(investigation) => setResolveState({ investigation, outcome: '', notes: '' })}
+              />
+            ))}
           </div>
         ) : (
           <table className="w-full text-sm">

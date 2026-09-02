@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle, Clock, Loader2, Shield, XCircle } from 'lucide-react';
+import { CheckCircle, Clock, Eye, Loader2, Shield, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ds/use-toast';
 import { PageHeader } from '@/components/crud';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 
 import {
   useWarehouseLiabilitiesQuery,
@@ -22,6 +23,8 @@ import {
   useRejectWarehouseLiability,
 } from '../hooks/use-inventory-count';
 import type { WarehouseLiability } from '../types/inventory-count';
+import { WarehouseLiabilityDetailDrawer } from '../components/warehouse-liability-detail-drawer';
+import { WarehouseLiabilityMobileCard } from '../components/warehouse-liability-mobile-card';
 
 type ActionState = { liability: WarehouseLiability; action: 'approve' | 'reject'; actorName: string; notes: string };
 
@@ -32,6 +35,8 @@ export function WarehouseLiabilityPage() {
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [actionState, setActionState] = useState<ActionState | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   const query = useWarehouseLiabilitiesQuery({
     month,
@@ -162,6 +167,18 @@ export function WarehouseLiabilityPage() {
             <Shield className="size-8 text-muted-foreground/40" />
             <p className="text-sm text-muted-foreground">{t($ => $.liability.empty)}</p>
           </div>
+        ) : isMobile ? (
+          <div role="list" className="p-3">
+            {items.map((lib) => (
+              <WarehouseLiabilityMobileCard
+                key={lib.id}
+                liability={lib}
+                onOpen={(liability) => setDetailId(liability.id)}
+                onApprove={(liability) => setActionState({ liability, action: 'approve', actorName: '', notes: '' })}
+                onReject={(liability) => setActionState({ liability, action: 'reject', actorName: '', notes: '' })}
+              />
+            ))}
+          </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
@@ -200,26 +217,37 @@ export function WarehouseLiabilityPage() {
                   <td className="px-4 py-2.5 text-xs text-muted-foreground">{lib.warehouse_manager ?? '—'}</td>
                   <td className="px-4 py-2.5">{statusBadge(lib.status)}</td>
                   <td className="px-4 py-2.5 text-end">
-                    {lib.status === 'pending' && (
-                      <div className="flex items-center justify-end gap-1.5">
-                        <Button
-                          size="sm"
-                          variant="default"
-                          className="h-7 text-xs"
-                          onClick={() => setActionState({ liability: lib, action: 'approve', actorName: '', notes: '' })}
-                        >
-                          {t($ => $.liability.actions.approve)}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-7 text-xs text-destructive hover:text-destructive"
-                          onClick={() => setActionState({ liability: lib, action: 'reject', actorName: '', notes: '' })}
-                        >
-                          {t($ => $.liability.actions.reject)}
-                        </Button>
-                      </div>
-                    )}
+                    <div className="flex items-center justify-end gap-1.5">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 w-7 p-0 text-muted-foreground"
+                        title={t($ => $.liability.viewDetails)}
+                        onClick={() => setDetailId(lib.id)}
+                      >
+                        <Eye className="size-3.5" />
+                      </Button>
+                      {lib.status === 'pending' && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="default"
+                            className="h-7 text-xs"
+                            onClick={() => setActionState({ liability: lib, action: 'approve', actorName: '', notes: '' })}
+                          >
+                            {t($ => $.liability.actions.approve)}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs text-destructive hover:text-destructive"
+                            onClick={() => setActionState({ liability: lib, action: 'reject', actorName: '', notes: '' })}
+                          >
+                            {t($ => $.liability.actions.reject)}
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -227,6 +255,12 @@ export function WarehouseLiabilityPage() {
           </table>
         )}
       </div>
+
+      <WarehouseLiabilityDetailDrawer
+        liabilityId={detailId}
+        open={!!detailId}
+        onOpenChange={(o) => { if (!o) setDetailId(null); }}
+      />
 
       {/* Approve/Reject dialog */}
       <Dialog open={!!actionState} onOpenChange={(o) => { if (!o) setActionState(null); }}>

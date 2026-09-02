@@ -420,6 +420,7 @@
     },
     "fifoSnapshot": "FIFO Snapshot",
     "empty": "No warehouse liabilities",
+    "viewDetails": "View Details",
     "actions": {
       "approve": "Approve",
       "reject": "Reject"
@@ -445,6 +446,35 @@
       "approved": "Liability approved and inventory adjusted.",
       "rejected": "Liability rejected.",
       "failed": "Action failed. Please try again."
+    },
+    "detail": {
+      "header": {
+        "fallbackTitle": "Warehouse Liability",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "pending": "Pending"
+      },
+      "summary": {
+        "product": "Product",
+        "quantity": "Quantity",
+        "unitCost": "Unit Cost",
+        "totalValue": "Total Value",
+        "fifoSnapshot": "FIFO Cost Snapshot",
+        "fifoSnapshotFull": "FIFO Cost Snapshot · Method: {{method}} · Currency: {{currency}}",
+        "type": "Type",
+        "warehouse": "Warehouse",
+        "manager": "Warehouse Manager",
+        "status": "Status",
+        "approvedBy": "Approved By",
+        "rejectedBy": "Rejected By",
+        "decisionDate": "Decision Date",
+        "month": "Month",
+        "notes": "Notes",
+        "integrationRefs": "Integration References",
+        "sourceInvestigation": "Source Investigation",
+        "viewInvestigation": "View Related Investigation",
+        "noInvestigation": "Not linked to a waste investigation"
+      }
     }
   }
 }
