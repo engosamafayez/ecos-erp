@@ -375,6 +375,12 @@ final class WaveDemandController extends Controller
             'o.city          AS city',
             'dz.name_en      AS zone_name_en',
             'dz.name_ar      AS zone_name_ar',
+            // TASK-ECOS-MOBILE-REMAINING-PAGES-PREPARATION-003 §12 — Brand and requested
+            // delivery date are already-canonical Order attributes (the same ones
+            // OrderResource exposes as channel.brand.name / requested_delivery_date); both
+            // are joined/selected read-only here, never recomputed.
+            'br.name         AS brand_name',
+            'o.requested_delivery_date AS requested_delivery_date',
         ];
     }
 
@@ -395,6 +401,8 @@ final class WaveDemandController extends Controller
             'city' => $r->city,
             // null is meaningful: the presentation layer renders it as "Unassigned".
             'delivery_zone' => $r->zone_name_en ?? $r->zone_name_ar,
+            'brand_name' => $r->brand_name,
+            'requested_delivery_date' => $r->requested_delivery_date,
         ];
     }
 
@@ -412,13 +420,16 @@ final class WaveDemandController extends Controller
         $wave = $this->findWave($waveId, $request->user()->company_id);
 
         $groupBy = ['o.id', 'o.order_number', 'o.customer_name', 'o.status', 'o.payment_status',
-            'o.total', 'o.shipping_address', 'o.governorate', 'o.city', 'dz.name_en', 'dz.name_ar'];
+            'o.total', 'o.shipping_address', 'o.governorate', 'o.city', 'dz.name_en', 'dz.name_ar',
+            'br.name', 'o.requested_delivery_date'];
 
         $rows = DB::table('preparation_wave_orders as pwo')
             ->join('orders as o', 'o.id', '=', 'pwo.order_id')
             ->join('order_lines as ol', 'ol.order_id', '=', 'o.id')
             ->leftJoin('logistics_cities as lc', 'lc.id', '=', 'o.logistics_city_id')
             ->leftJoin('distribution_zones as dz', 'dz.id', '=', 'lc.distribution_zone_id')
+            ->leftJoin('channels as ch', 'ch.id', '=', 'o.channel_id')
+            ->leftJoin('brands as br', 'br.id', '=', 'ch.brand_id')
             ->where('pwo.preparation_wave_id', $wave->id)
             ->whereNull('pwo.postponed_at')
             ->where('ol.product_id', $productId)
@@ -475,6 +486,7 @@ final class WaveDemandController extends Controller
 
         $groupBy = ['o.id', 'o.order_number', 'o.customer_name', 'o.status', 'o.payment_status',
             'o.total', 'o.shipping_address', 'o.governorate', 'o.city', 'dz.name_en', 'dz.name_ar',
+            'br.name', 'o.requested_delivery_date',
             'p.id', 'p.name'];
 
         $rows = DB::table('preparation_wave_orders as pwo')
@@ -485,6 +497,8 @@ final class WaveDemandController extends Controller
             ->join('bill_of_material_lines as boml', 'boml.bom_id', '=', 'bom.id')
             ->leftJoin('logistics_cities as lc', 'lc.id', '=', 'o.logistics_city_id')
             ->leftJoin('distribution_zones as dz', 'dz.id', '=', 'lc.distribution_zone_id')
+            ->leftJoin('channels as ch', 'ch.id', '=', 'o.channel_id')
+            ->leftJoin('brands as br', 'br.id', '=', 'ch.brand_id')
             ->where('pwo.preparation_wave_id', $wave->id)
             ->whereNull('pwo.postponed_at')
             ->whereIn('bom.id', $bomIds)

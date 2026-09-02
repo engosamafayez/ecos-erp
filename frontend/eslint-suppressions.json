@@ -1030,6 +1030,11 @@
       "count": 54
     }
   },
+  "src/features/operations/components/related-orders-panel.test.tsx": {
+    "ecos-i18n/no-hardcoded-ui-strings": {
+      "count": 6
+    }
+  },
   "src/features/operations/components/wave-picker.tsx": {
     "react-refresh/only-export-components": {
       "count": 1

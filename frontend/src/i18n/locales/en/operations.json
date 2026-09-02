@@ -205,7 +205,10 @@
     "relatedOrders": {
       "address": "Address",
       "status": "Status",
-      "total": "Total"
+      "total": "Total",
+      "brand": "Brand",
+      "requestedDelivery": "Requested Delivery",
+      "viewOrder": "View order {{number}}"
     },
     "preparationWorkspace": {
       "title": "Preparation Workspace",
@@ -273,6 +276,10 @@
         "waiting": "Waiting"
       },
       "waveCompletion": "Wave Completion",
+      "opened": "Opened",
+      "cutoff": "Cutoff",
+      "notStarted": "Not started",
+      "notSet": "Not set",
       "mfgProgress": {
         "title": "Manufacturing Progress",
         "overallProgress": "Overall Progress"

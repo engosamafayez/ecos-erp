@@ -923,6 +923,10 @@ export type RelatedOrderBase = {
   governorate: string | null;
   city: string | null;
   delivery_zone: string | null;
+  /** Already-canonical Order attribute (channel.brand.name) — joined read-only. */
+  brand_name: string | null;
+  /** Already-canonical Order attribute — joined read-only. */
+  requested_delivery_date: string | null;
 };
 
 /** One order contributing to a product's Required inside the wave. */

@@ -19,6 +19,8 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '@/router/routes';
+import { MobileDataCard, type MobileDataCardField } from '@/components/mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import {
   usePreparationWave,
   useWaveKpis,
@@ -93,6 +95,7 @@ function SectionHeader({ icon, title, count }: { icon: React.ReactNode; title: s
 export function FulfillmentWaveWorkspacePage() {
   const { t } = useTranslation('operations');
   const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
+  const isMobile = useIsMobile();
 
   const waveId = useSelectedWaveId();
 
@@ -158,8 +161,12 @@ export function FulfillmentWaveWorkspacePage() {
 
           {/* ── Wave Completion progress ───────────────────────────────────── */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center justify-between mb-1.5 flex-wrap gap-x-3 gap-y-1">
               <span className="text-xs font-medium text-muted-foreground">{t($ => $.wave.dashboard.waveCompletion)}</span>
+              <span className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                <span>{t($ => $.wave.dashboard.opened)}: {wave.starts_at ? fmtTime(wave.starts_at) : t($ => $.wave.dashboard.notStarted)}</span>
+                <span>{t($ => $.wave.dashboard.cutoff)}: {wave.intake_closes_at ? fmtTime(wave.intake_closes_at) : t($ => $.wave.dashboard.notSet)}</span>
+              </span>
               <span className="text-xs tabular-nums text-muted-foreground">{completionPct.toFixed(1)}%</span>
             </div>
             <Progress value={completionPct} className="h-2" />
@@ -185,6 +192,24 @@ export function FulfillmentWaveWorkspacePage() {
               <Progress value={completionPct} className="h-2" />
             </div>
             {mfgItems.length > 0 && (
+              isMobile ? (
+                <div role="list" className="mt-3">
+                  {mfgItems.slice(0, 6).map((m) => {
+                    const fields: MobileDataCardField[] = [
+                      { label: t($ => $.wave.dashboard.mfgTable.planned), align: 'end', value: fmt(m.planned_qty) },
+                      { label: t($ => $.wave.dashboard.mfgTable.manufacturing), align: 'end', value: <span className="text-blue-700">{fmt(m.manufacturing_qty)}</span> },
+                      { label: t($ => $.wave.dashboard.mfgTable.completed), align: 'end', value: <span className="text-emerald-700">{fmt(m.completed_qty)}</span> },
+                      { label: t($ => $.wave.dashboard.mfgTable.remaining), align: 'end', value: (
+                        <span className={m.remaining_qty > 0 ? 'text-amber-700' : 'text-muted-foreground'}>{fmt(m.remaining_qty)}</span>
+                      ) },
+                    ];
+                    return <MobileDataCard key={m.id} title={m.product_name} fields={fields} />;
+                  })}
+                  {mfgItems.length > 6 && (
+                    <p className="text-xs text-muted-foreground px-1">{tAny('wave.dashboard.productTable.more', { count: mfgItems.length - 6 })}</p>
+                  )}
+                </div>
+              ) : (
               <div className="mt-3 rounded-lg border border-border/60 overflow-hidden">
                 <table className="w-full text-xs">
                   <thead>
@@ -218,6 +243,7 @@ export function FulfillmentWaveWorkspacePage() {
                   </div>
                 )}
               </div>
+              )
             )}
           </div>
 
@@ -229,6 +255,35 @@ export function FulfillmentWaveWorkspacePage() {
               <SectionHeader icon={<Package className="h-4 w-4" />} title={t($ => $.wave.dashboard.sections.productDemand)} count={products.length} />
               {products.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-2">{t($ => $.wave.productDemand.emptyNoDemand)}</p>
+              ) : isMobile ? (
+                <div role="list">
+                  {products.slice(0, 6).map((item) => {
+                    const fields: MobileDataCardField[] = [
+                      { label: t($ => $.wave.dashboard.productTable.req), align: 'end', value: fmt(item.required_qty) },
+                      { label: t($ => $.wave.dashboard.productTable.prep), align: 'end', value: <span className="text-emerald-700">{fmt(item.prepared_qty)}</span> },
+                      { label: t($ => $.wave.dashboard.productTable.rem), align: 'end', value: (
+                        <span className={item.remaining_qty > 0 ? 'text-amber-700' : 'text-muted-foreground'}>{fmt(item.remaining_qty)}</span>
+                      ) },
+                      { label: t($ => $.wave.dashboard.productTable.progress), fullWidth: true, value: (
+                        <div className="space-y-0.5">
+                          <Progress value={item.completion_pct} className="h-1.5" />
+                          <span className="text-[10px] text-muted-foreground">{item.completion_pct.toFixed(0)}%</span>
+                        </div>
+                      ) },
+                    ];
+                    return (
+                      <MobileDataCard
+                        key={item.id}
+                        title={item.product_name}
+                        subtitle={item.product_sku ?? undefined}
+                        fields={fields}
+                      />
+                    );
+                  })}
+                  {products.length > 6 && (
+                    <p className="text-xs text-muted-foreground px-1">{tAny('wave.dashboard.productTable.more', { count: products.length - 6 })}</p>
+                  )}
+                </div>
               ) : (
                 <div className="rounded-lg border border-border/60 overflow-hidden">
                   <table className="w-full text-xs">
@@ -281,6 +336,34 @@ export function FulfillmentWaveWorkspacePage() {
               <SectionHeader icon={<FlaskConical className="h-4 w-4" />} title={t($ => $.wave.dashboard.sections.rawMaterialDemand)} count={materials.length} />
               {materials.length === 0 ? (
                 <p className="text-xs text-muted-foreground py-2">{t($ => $.wave.rawMaterials.emptyNoDemand)}</p>
+              ) : isMobile ? (
+                <div role="list">
+                  {materials.slice(0, 6).map((mat) => {
+                    const fields: MobileDataCardField[] = [
+                      { label: t($ => $.wave.dashboard.materialTable.required), align: 'end', value: fmt(mat.required_qty) },
+                      { label: t($ => $.wave.dashboard.materialTable.available), align: 'end', value: fmt(mat.available_qty) },
+                      { label: t($ => $.wave.dashboard.materialTable.reserved, { defaultValue: 'Reserved' }), align: 'end', value: <span className="text-muted-foreground">{fmt(mat.reserved_qty)}</span> },
+                      { label: t($ => $.wave.dashboard.materialTable.missing), align: 'end', value: mat.missing_qty > 0 ? <span className="text-red-600 font-medium">{fmt(mat.missing_qty)}</span> : <span className="text-muted-foreground">—</span> },
+                      { label: t($ => $.wave.dashboard.materialTable.coverage, { defaultValue: 'Coverage' }), align: 'end', value: (
+                        <span className={mat.coverage_pct >= 100 ? 'text-emerald-700' : mat.coverage_pct > 0 ? 'text-amber-700' : 'text-red-600'}>
+                          {mat.coverage_pct.toFixed(0)}%
+                        </span>
+                      ) },
+                    ];
+                    return (
+                      <MobileDataCard
+                        key={mat.id}
+                        title={mat.material_name}
+                        subtitle={mat.material_sku ?? undefined}
+                        fields={fields}
+                        className={mat.missing_qty > 0 ? 'border-red-200 bg-red-50/40' : undefined}
+                      />
+                    );
+                  })}
+                  {materials.length > 6 && (
+                    <p className="text-xs text-muted-foreground px-1">{tAny('wave.dashboard.materialTable.more', { count: materials.length - 6 })}</p>
+                  )}
+                </div>
               ) : (
                 <div className="rounded-lg border border-border/60 overflow-hidden">
                   <table className="w-full text-xs">
@@ -350,6 +433,21 @@ export function FulfillmentWaveWorkspacePage() {
                     </Button>
                   </Link>
                 </div>
+                {isMobile ? (
+                  <div role="list">
+                    {missing.slice(0, 6).map((mat) => (
+                      <MobileDataCard
+                        key={mat.id}
+                        title={<span className="text-red-900">{mat.material_name}</span>}
+                        className="border-red-200 bg-red-50/40"
+                        fields={[
+                          { label: t($ => $.wave.dashboard.missingTable.missing), align: 'end', value: <span className="text-red-700 font-semibold">{fmt(mat.missing_qty)}</span> },
+                          { label: t($ => $.wave.dashboard.missingTable.orders), align: 'end', value: <span className="text-red-800">{mat.affected_orders_count}</span> },
+                        ]}
+                      />
+                    ))}
+                  </div>
+                ) : (
                 <div className="rounded-lg border border-red-200 overflow-hidden bg-red-50/30">
                   <table className="w-full text-xs">
                     <thead>
@@ -372,6 +470,7 @@ export function FulfillmentWaveWorkspacePage() {
                     </tbody>
                   </table>
                 </div>
+                )}
               </section>
             )}
 
@@ -389,6 +488,21 @@ export function FulfillmentWaveWorkspacePage() {
           {recentOrders.length > 0 && (
             <section>
               <SectionHeader icon={<Clock className="h-4 w-4" />} title={t($ => $.wave.dashboard.sections.recentOrders)} />
+              {isMobile ? (
+                <div role="list">
+                  {recentOrders.map((o) => (
+                    <MobileDataCard
+                      key={o.id}
+                      title={<span className="font-mono">{o.order_number}</span>}
+                      subtitle={o.customer_name_snapshot ?? undefined}
+                      fields={[
+                        { label: t($ => $.wave.dashboard.ordersTable.deliveryZone), value: o.delivery_zone_snapshot ?? <span className="text-muted-foreground">—</span> },
+                        { label: t($ => $.wave.dashboard.ordersTable.added), value: fmtTime(o.added_at) },
+                      ]}
+                    />
+                  ))}
+                </div>
+              ) : (
               <div className="rounded-lg border border-border/60 overflow-hidden">
                 <table className="w-full text-xs">
                   <thead>
@@ -413,6 +527,7 @@ export function FulfillmentWaveWorkspacePage() {
                   </tbody>
                 </table>
               </div>
+              )}
             </section>
           )}
 

@@ -159,6 +159,68 @@ class WaveCurrentAndKpisHttpTest extends TestCase
             ->assertJsonPath('data.completion_pct', fn ($v): bool => (float) $v === 100.0);
     }
 
+    /**
+     * TASK-ECOS-MOBILE-REMAINING-PAGES-PREPARATION-003 §8/§26 — the exact "product 100% /
+     * wave header 0%" contradiction, exercised end-to-end through the live mutation route
+     * (not just the calculator in isolation). Recording Prepared through the canonical
+     * `updatePrepared` endpoint must leave the wave RESOURCE's own `completion_pct`
+     * (`PreparationWaveResource`, backed by the cached `total_units_required/prepared`
+     * columns) in agreement with the live `/kpis` completion — both derive from the same
+     * `wave_product_demand` SUM, so recording progress on one product to 100% can never
+     * leave the header reading 0%.
+     */
+    public function test_completion_has_no_contradiction_between_wave_header_and_live_kpis_after_prepared_update(): void
+    {
+        $wave = $this->makeWave(WaveStatus::Preparing);
+        $this->seedProductDemand($wave, 'prod-a', required: 10.0, prepared: 0.0);
+        $this->seedProductDemand($wave, 'prod-b', required: 10.0, prepared: 0.0);
+
+        // Record product A as fully prepared (10/10 = 100% for that product alone).
+        $this->actingAs($this->user)
+            ->patchJson("/api/preparation/waves/{$wave->id}/product-demand/prod-a/prepared", [
+                'prepared_qty' => 10.0,
+            ])
+            ->assertOk();
+
+        // Wave-wide: (10 + 0) / (10 + 10) = 50% — quantity-weighted, not the product's own 100%.
+        $kpis = $this->actingAs($this->user)
+            ->getJson("/api/preparation/waves/{$wave->id}/kpis")
+            ->assertOk()
+            ->assertJsonPath('data.completion_pct', fn ($v): bool => abs((float) $v - 50.0) < 0.01)
+            ->json('data.completion_pct');
+
+        $header = $this->actingAs($this->user)
+            ->getJson("/api/preparation/waves/{$wave->id}")
+            ->assertOk()
+            ->json('data.completion_pct');
+
+        // The two independently-served fields (live /kpis vs the cached-but-synced wave
+        // resource) must agree — the contradiction this task was asked to close.
+        $this->assertEqualsWithDelta((float) $kpis, (float) $header, 0.5);
+        $this->assertGreaterThan(0.0, (float) $header);
+    }
+
+    /**
+     * A wave with no product-demand rows yet (nothing generated/prepared) must report a
+     * safely bounded 0%, never NaN/INF/a divide-by-zero error, on both the live KPI read
+     * and the wave resource's own cached field.
+     */
+    public function test_completion_is_zero_and_bounded_when_wave_has_no_product_demand_yet(): void
+    {
+        $wave = $this->makeWave(WaveStatus::Collecting);
+
+        $this->actingAs($this->user)
+            ->getJson("/api/preparation/waves/{$wave->id}/kpis")
+            ->assertOk()
+            ->assertJsonPath('data.completion_pct', fn ($v): bool => (float) $v === 0.0)
+            ->assertJsonPath('data.products_count', 0);
+
+        $this->actingAs($this->user)
+            ->getJson("/api/preparation/waves/{$wave->id}")
+            ->assertOk()
+            ->assertJsonPath('data.completion_pct', fn ($v): bool => (float) $v === 0.0);
+    }
+
     // ── Helpers ─────────────────────────────────────────────────────────────────
 
     /** @return array<string, mixed> */

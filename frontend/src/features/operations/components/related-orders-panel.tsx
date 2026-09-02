@@ -16,9 +16,19 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { toast } from '@/components/ds/use-toast';
+import { MobileDataCard, type MobileDataCardField } from '@/components/mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { OrderStatusBadge } from '@/features/orders/components/order-status-badge';
+import { OrderDetailDrawer } from '@/features/orders/components/order-detail-drawer';
+import type { Order } from '@/features/orders/types/order';
 import { usePostponeWaveOrder } from '../hooks/use-preparation';
 import type { RelatedOrderBase } from '../types/preparation';
+
+function fmtDate(val: string | null | undefined): string | null {
+  if (!val) return null;
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? null : d.toLocaleDateString(undefined, { dateStyle: 'medium' });
+}
 
 /**
  * Related Orders — ONE panel, used by both Product Demand and Missing Materials.
@@ -62,8 +72,11 @@ export function RelatedOrdersPanel<T extends RelatedOrderBase>({
   extraColumns: Array<{ key: string; header: string; cell: (order: T) => ReactNode; align?: 'start' | 'end' }>;
 }) {
   const { t } = useTranslation('operations');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
+  const isMobile = useIsMobile();
   const postpone = usePostponeWaveOrder();
   const [pending, setPending] = useState<T | null>(null);
+  const [detailOrderId, setDetailOrderId] = useState<string | null>(null);
 
   const rows = orders ?? [];
 
@@ -112,6 +125,79 @@ export function RelatedOrdersPanel<T extends RelatedOrderBase>({
             </div>
           ) : rows.length === 0 ? (
             <p className="py-8 text-sm text-muted-foreground">{emptyLabel}</p>
+          ) : isMobile ? (
+            <div role="list">
+              {rows.map((o) => {
+                const fields: MobileDataCardField[] = [
+                  {
+                    label: t($ => $.wave.relatedOrders.status),
+                    value: <OrderStatusBadge status={o.status} />,
+                  },
+                  {
+                    label: t($ => $.wave.orders.columns.deliveryZone),
+                    value: o.delivery_zone ?? (
+                      <Badge variant="outline" className="text-[11px] font-normal text-muted-foreground">
+                        {t($ => $.wave.orders.unassignedZone)}
+                      </Badge>
+                    ),
+                  },
+                  {
+                    label: t($ => $.wave.relatedOrders.address),
+                    fullWidth: true,
+                    value: addressOf(o) ?? <span className="text-muted-foreground">—</span>,
+                  },
+                  {
+                    label: t($ => $.wave.orders.columns.payment),
+                    value: o.payment_status ?? <span className="text-muted-foreground">—</span>,
+                  },
+                  {
+                    label: t($ => $.wave.relatedOrders.total),
+                    align: 'end',
+                    value: o.total != null
+                      ? o.total.toLocaleString(undefined, { maximumFractionDigits: 2 })
+                      : <span className="text-muted-foreground">—</span>,
+                  },
+                  ...(o.brand_name
+                    ? [{ label: t($ => $.wave.relatedOrders.brand), value: o.brand_name } satisfies MobileDataCardField]
+                    : []),
+                  ...(fmtDate(o.requested_delivery_date)
+                    ? [{
+                        label: t($ => $.wave.relatedOrders.requestedDelivery),
+                        value: fmtDate(o.requested_delivery_date),
+                      } satisfies MobileDataCardField]
+                    : []),
+                  ...extraColumns.map((c) => ({
+                    label: c.header,
+                    align: c.align,
+                    value: c.cell(o),
+                  } satisfies MobileDataCardField)),
+                ];
+
+                return (
+                  <MobileDataCard
+                    key={o.order_id}
+                    title={<span className="font-mono">{o.order_number}</span>}
+                    subtitle={o.customer_name ?? undefined}
+                    fields={fields}
+                    onOpen={() => setDetailOrderId(o.order_id)}
+                    openLabel={tAny('wave.relatedOrders.viewOrder', { number: o.order_number })}
+                    actions={
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 gap-1.5 text-xs"
+                        title={t($ => $.wave.orders.postpone.tooltip)}
+                        disabled={!waveId || postpone.isPending}
+                        onClick={() => setPending(o)}
+                      >
+                        <CalendarClock className="size-3.5" />
+                        {t($ => $.wave.orders.postpone.action)}
+                      </Button>
+                    }
+                  />
+                );
+              })}
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -119,10 +205,12 @@ export function RelatedOrdersPanel<T extends RelatedOrderBase>({
                   <tr className="border-b text-xs text-muted-foreground">
                     <th className="py-2 pe-3 text-start font-medium">{t($ => $.wave.orders.columns.orderNo)}</th>
                     <th className="py-2 pe-3 text-start font-medium">{t($ => $.wave.orders.columns.customer)}</th>
+                    <th className="py-2 pe-3 text-start font-medium">{t($ => $.wave.relatedOrders.brand)}</th>
                     <th className="py-2 pe-3 text-start font-medium">{t($ => $.wave.relatedOrders.status)}</th>
                     <th className="py-2 pe-3 text-start font-medium">{t($ => $.wave.orders.columns.deliveryZone)}</th>
                     <th className="py-2 pe-3 text-start font-medium">{t($ => $.wave.relatedOrders.address)}</th>
                     <th className="py-2 pe-3 text-start font-medium">{t($ => $.wave.orders.columns.payment)}</th>
+                    <th className="py-2 pe-3 text-start font-medium">{t($ => $.wave.relatedOrders.requestedDelivery)}</th>
                     <th className="py-2 pe-3 text-end font-medium">{t($ => $.wave.relatedOrders.total)}</th>
                     {extraColumns.map((c) => (
                       <th
@@ -138,9 +226,21 @@ export function RelatedOrdersPanel<T extends RelatedOrderBase>({
                 <tbody>
                   {rows.map((o) => (
                     <tr key={o.order_id} className="border-b border-border/40 last:border-0 align-top">
-                      <td className="py-2 pe-3 font-mono text-xs font-medium whitespace-nowrap">{o.order_number}</td>
+                      <td className="py-2 pe-3 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => setDetailOrderId(o.order_id)}
+                          className="font-mono text-xs font-medium text-primary hover:underline"
+                          title={tAny('wave.relatedOrders.viewOrder', { number: o.order_number })}
+                        >
+                          {o.order_number}
+                        </button>
+                      </td>
                       <td className="py-2 pe-3">
                         {o.customer_name ?? <span className="text-muted-foreground">&mdash;</span>}
+                      </td>
+                      <td className="py-2 pe-3 text-xs text-muted-foreground">
+                        {o.brand_name ?? <span>&mdash;</span>}
                       </td>
                       <td className="py-2 pe-3 whitespace-nowrap">
                         <OrderStatusBadge status={o.status} />
@@ -157,6 +257,9 @@ export function RelatedOrdersPanel<T extends RelatedOrderBase>({
                       </td>
                       <td className="py-2 pe-3 text-xs">
                         {o.payment_status ?? <span className="text-muted-foreground">&mdash;</span>}
+                      </td>
+                      <td className="py-2 pe-3 text-xs text-muted-foreground whitespace-nowrap">
+                        {fmtDate(o.requested_delivery_date) ?? <span>&mdash;</span>}
                       </td>
                       <td className="py-2 pe-3 text-end tabular-nums whitespace-nowrap">
                         {o.total != null
@@ -192,6 +295,12 @@ export function RelatedOrdersPanel<T extends RelatedOrderBase>({
           )}
         </SheetContent>
       </Sheet>
+
+      <OrderDetailDrawer
+        order={detailOrderId ? ({ id: detailOrderId } as Order) : null}
+        open={detailOrderId !== null}
+        onOpenChange={(o) => { if (!o) setDetailOrderId(null); }}
+      />
 
       {/* Same confirmation the Orders tab shows — postponement is one decision with one
           meaning, wherever the operator triggers it from. */}

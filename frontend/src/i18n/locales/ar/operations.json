@@ -205,7 +205,10 @@
     "relatedOrders": {
       "address": "العنوان",
       "status": "الحالة",
-      "total": "الإجمالي"
+      "total": "الإجمالي",
+      "brand": "العلامة التجارية",
+      "requestedDelivery": "التسليم المطلوب",
+      "viewOrder": "عرض الطلب {{number}}"
     },
     "preparationWorkspace": {
       "title": "مساحة عمل التحضير",
@@ -273,6 +276,10 @@
         "waiting": "في الانتظار"
       },
       "waveCompletion": "إتمام الموجة",
+      "opened": "الفتح",
+      "cutoff": "الإغلاق",
+      "notStarted": "لم يبدأ",
+      "notSet": "غير محدد",
       "mfgProgress": {
         "title": "تقدم التصنيع",
         "overallProgress": "التقدم الإجمالي"
