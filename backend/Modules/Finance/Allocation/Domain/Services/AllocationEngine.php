@@ -127,6 +127,55 @@ final class AllocationEngine
         return $created;
     }
 
+    /**
+     * Reverse part (or all) of a posted receipt allocation with a new,
+     * negative, append-only row against the SAME receipt+invoice pair — the
+     * original row is never edited or deleted (see ReceiptAllocation::booted()).
+     * A row that is itself a reversal cannot be reversed again; correct it
+     * with a fresh ordinary allocation instead (one-step correction only).
+     */
+    public function reverseReceiptAllocation(
+        ReceiptAllocation $allocation,
+        float $amount,
+        string $reason,
+        ?int $actorId = null,
+    ): ReceiptAllocation {
+        $amount = round($amount, 4);
+
+        $this->assertPositive($amount);
+        $this->assertReasonGiven($reason);
+        $this->assertNotAlreadyAReversal($allocation->reverses_allocation_id !== null);
+
+        return DB::transaction(function () use ($allocation, $amount, $reason, $actorId): ReceiptAllocation {
+            // Same lock order as allocateReceipt: receipt before invoice — a
+            // correction racing a fresh allocation on the same pair serializes
+            // on the identical row locks, so neither can over-allocate or
+            // over-reverse the same available amount.
+            $receipt = CustomerReceipt::query()->whereKey($allocation->receipt_id)->lockForUpdate()->firstOrFail();
+            $invoice = CustomerInvoice::query()->whereKey($allocation->customer_invoice_id)->lockForUpdate()->firstOrFail();
+
+            // Re-derive under the lock: how much of THIS specific original
+            // allocation remains unreversed. Read after the lock is held, so it
+            // reflects committed state even under concurrent reversal attempts.
+            $alreadyReversed = round((float) $allocation->reversals()->sum('amount') * -1, 4);
+            $reversible = round((float) $allocation->amount - $alreadyReversed, 4);
+            if ($amount > $reversible) {
+                throw FinanceException::reversalExceedsAllocation((string) $reversible);
+            }
+
+            return ReceiptAllocation::create([
+                'company_id' => $receipt->company_id,
+                'receipt_id' => $receipt->id,
+                'customer_invoice_id' => $invoice->id,
+                'amount' => -$amount,
+                'reverses_allocation_id' => $allocation->id,
+                'reversal_reason' => $reason,
+                'allocated_at' => Carbon::now(),
+                'allocated_by' => $actorId,
+            ]);
+        });
+    }
+
     // ── Accounts Payable ────────────────────────────────────────────────────────
 
     /** Apply part (or all) of a posted payment to one posted bill. */
@@ -223,6 +272,55 @@ final class AllocationEngine
         return $created;
     }
 
+    /**
+     * Reverse part (or all) of a posted payment allocation with a new,
+     * negative, append-only row against the SAME payment+bill pair — the
+     * original row is never edited or deleted (see PaymentAllocation::booted()).
+     * A row that is itself a reversal cannot be reversed again; correct it
+     * with a fresh ordinary allocation instead (one-step correction only).
+     */
+    public function reversePaymentAllocation(
+        PaymentAllocation $allocation,
+        float $amount,
+        string $reason,
+        ?int $actorId = null,
+    ): PaymentAllocation {
+        $amount = round($amount, 4);
+
+        $this->assertPositive($amount);
+        $this->assertReasonGiven($reason);
+        $this->assertNotAlreadyAReversal($allocation->reverses_allocation_id !== null);
+
+        return DB::transaction(function () use ($allocation, $amount, $reason, $actorId): PaymentAllocation {
+            // Same lock order as allocatePayment: payment before bill — a
+            // correction racing a fresh allocation on the same pair serializes
+            // on the identical row locks, so neither can over-allocate or
+            // over-reverse the same available amount.
+            $payment = SupplierPayment::query()->whereKey($allocation->payment_id)->lockForUpdate()->firstOrFail();
+            $bill = SupplierBill::query()->whereKey($allocation->supplier_bill_id)->lockForUpdate()->firstOrFail();
+
+            // Re-derive under the lock: how much of THIS specific original
+            // allocation remains unreversed. Read after the lock is held, so it
+            // reflects committed state even under concurrent reversal attempts.
+            $alreadyReversed = round((float) $allocation->reversals()->sum('amount') * -1, 4);
+            $reversible = round((float) $allocation->amount - $alreadyReversed, 4);
+            if ($amount > $reversible) {
+                throw FinanceException::reversalExceedsAllocation((string) $reversible);
+            }
+
+            return PaymentAllocation::create([
+                'company_id' => $payment->company_id,
+                'payment_id' => $payment->id,
+                'supplier_bill_id' => $bill->id,
+                'amount' => -$amount,
+                'reverses_allocation_id' => $allocation->id,
+                'reversal_reason' => $reason,
+                'allocated_at' => Carbon::now(),
+                'allocated_by' => $actorId,
+            ]);
+        });
+    }
+
     // ── Guards ──────────────────────────────────────────────────────────────────
 
     private function assertPositive(float $amount): void
@@ -236,6 +334,20 @@ final class AllocationEngine
     {
         if (! $isPosted) {
             throw FinanceException::documentNotPosted($kind, $number);
+        }
+    }
+
+    private function assertReasonGiven(string $reason): void
+    {
+        if (trim($reason) === '') {
+            throw FinanceException::reversalReasonRequired();
+        }
+    }
+
+    private function assertNotAlreadyAReversal(bool $isAlreadyAReversal): void
+    {
+        if ($isAlreadyAReversal) {
+            throw FinanceException::cannotReverseAReversal();
         }
     }
 }

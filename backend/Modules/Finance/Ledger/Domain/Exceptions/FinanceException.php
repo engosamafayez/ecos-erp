@@ -194,6 +194,23 @@ class FinanceException extends RuntimeException
         return new self('An allocation amount must be greater than zero.');
     }
 
+    // ── Allocation reversal (append-only contra-allocation) ─────────────────────
+
+    public static function reversalExceedsAllocation(string $remaining): self
+    {
+        return new self("This reversal exceeds what remains allocated ({$remaining} reversible).");
+    }
+
+    public static function reversalReasonRequired(): self
+    {
+        return new self('A reversal must state a reason.');
+    }
+
+    public static function cannotReverseAReversal(): self
+    {
+        return new self('A reversal cannot itself be reversed. Correct it with a fresh allocation instead.');
+    }
+
     public static function paymentNotApproved(string $number): self
     {
         return new self("Payment {$number} must be approved before it can be posted. Money leaving the business needs a second person.");
@@ -322,5 +339,17 @@ class FinanceException extends RuntimeException
     public static function vatPeriodSettled(string $period): self
     {
         return new self("VAT period {$period} is already settled.");
+    }
+
+    // ── Finance command idempotency ─────────────────────────────────────────────
+
+    public static function idempotencyKeyConflict(string $key): self
+    {
+        return new self("Idempotency key '{$key}' was already used for a different request. Use a new key for a new command.");
+    }
+
+    public static function idempotencyKeyRaceUnresolved(): self
+    {
+        return new self('A concurrent request with the same idempotency key could not be resolved. Retry with the same key.');
     }
 }

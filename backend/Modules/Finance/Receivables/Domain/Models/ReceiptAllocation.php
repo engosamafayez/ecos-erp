@@ -6,6 +6,7 @@ namespace Modules\Finance\Receivables\Domain\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 /**
@@ -15,6 +16,14 @@ use Illuminate\Support\Str;
  * invoice = one invoice settled by many receipts. Outstanding balances are the
  * SUM of these rows — never a stored figure. Allocations are immutable; an error
  * is undone by a reversing allocation, not an edit.
+ *
+ * That reversing allocation is a second, negative-amount row created by
+ * {@see \Modules\Finance\Allocation\Domain\Services\AllocationEngine::reverseReceiptAllocation()}
+ * with `reverses_allocation_id` pointing back at the row it corrects. The
+ * effective allocation for any invoice/receipt is still just SUM(amount) — a
+ * reversal nets out automatically, with no change to allocatedAmount() on
+ * either side. A row that is itself a reversal can never be reversed again
+ * (one-step correction only).
  */
 class ReceiptAllocation extends Model
 {
@@ -23,6 +32,7 @@ class ReceiptAllocation extends Model
     protected $fillable = [
         'uuid', 'company_id', 'receipt_id', 'customer_invoice_id',
         'amount', 'allocated_at', 'allocated_by',
+        'reverses_allocation_id', 'reversal_reason',
     ];
 
     protected function casts(): array
@@ -54,5 +64,17 @@ class ReceiptAllocation extends Model
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(CustomerInvoice::class, 'customer_invoice_id');
+    }
+
+    /** The original allocation this row reverses, if it is a reversal. */
+    public function reverses(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'reverses_allocation_id');
+    }
+
+    /** Reversal rows created against this allocation, if any. */
+    public function reversals(): HasMany
+    {
+        return $this->hasMany(self::class, 'reverses_allocation_id');
     }
 }
