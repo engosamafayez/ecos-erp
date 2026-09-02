@@ -257,42 +257,6 @@ function useWorkflowMutation<TArg>(mutationFn: (arg: TArg) => Promise<unknown>) 
   });
 }
 
-export function useOrderWorkflowConfirm() {
-  return useWorkflowMutation((id: string) => ordersService.workflowConfirm(id));
-}
-
-export function useOrderWorkflowMoveToPreparation() {
-  return useWorkflowMutation((id: string) => ordersService.workflowMoveToPreparation(id));
-}
-
-export function useOrderWorkflowCompleteDelivery() {
-  return useWorkflowMutation((id: string) => ordersService.workflowCompleteDelivery(id));
-}
-
-export function useOrderWorkflowComplete() {
-  return useWorkflowMutation((id: string) => ordersService.workflowComplete(id));
-}
-
-export function useOrderWorkflowMarkAwaitingStock() {
-  return useWorkflowMutation(({ id, reason }: { id: string; reason?: string }) =>
-    ordersService.workflowMarkAwaitingStock(id, reason));
-}
-
-export function useOrderWorkflowCancel() {
-  return useWorkflowMutation(({ id, reason }: { id: string; reason?: string }) =>
-    ordersService.workflowCancel(id, reason));
-}
-
-export function useOrderWorkflowReturn() {
-  return useWorkflowMutation(({ id, reason }: { id: string; reason?: string }) =>
-    ordersService.workflowReturn(id, reason));
-}
-
-export function useOrderWorkflowVerifyPayment() {
-  return useWorkflowMutation(({ id, proofPath }: { id: string; proofPath: string }) =>
-    ordersService.workflowVerifyPayment(id, proofPath));
-}
-
 /** Record a payment through the domain action (guards + audit event). See D6. */
 export function useRecordOrderPayment() {
   return useWorkflowMutation(({ id, amount }: { id: string; amount: number }) =>
@@ -302,39 +266,6 @@ export function useRecordOrderPayment() {
 export function useOrderWorkflowReschedule() {
   return useWorkflowMutation(({ id, nextDeliveryDate, reason }: { id: string; nextDeliveryDate: string; reason?: string }) =>
     ordersService.workflowReschedule(id, nextDeliveryDate, reason));
-}
-
-export function useOrderWorkflowResume() {
-  return useWorkflowMutation((id: string) => ordersService.workflowResume(id));
-}
-
-export function useOrderWorkflowMoveToReview() {
-  return useWorkflowMutation(({ id, reason }: { id: string; reason?: string }) =>
-    ordersService.workflowMoveToReview(id, reason));
-}
-
-export function useOrderWorkflowDispatch() {
-  return useWorkflowMutation((id: string) => ordersService.workflowDispatch(id));
-}
-
-export function useOrderWorkflowResumeToConfirmed() {
-  return useWorkflowMutation((id: string) => ordersService.workflowResumeToConfirmed(id));
-}
-
-export function useOrderWorkflowReturnToConfirmed() {
-  return useWorkflowMutation((id: string) => ordersService.workflowReturnToConfirmed(id));
-}
-
-export function useOrderWorkflowReturnToPending() {
-  return useWorkflowMutation((id: string) => ordersService.workflowReturnToPending(id));
-}
-
-export function useOrderWorkflowRevertToConfirmed() {
-  return useWorkflowMutation((id: string) => ordersService.workflowRevertToConfirmed(id));
-}
-
-export function useOrderWorkflowReturnToProcessing() {
-  return useWorkflowMutation((id: string) => ordersService.workflowReturnToProcessing(id));
 }
 
 // Generic business-state transition hook.
