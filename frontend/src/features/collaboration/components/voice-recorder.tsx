@@ -166,7 +166,6 @@ export function VoiceRecorder({ onCancel, onSend }: { onCancel: () => void; onSe
 
   return (
     <div className="flex items-center gap-3 rounded-md border px-3 py-2">
-      {/* eslint-disable-next-line jsx-a11y/media-has-caption -- voice message preview, no caption source exists */}
       <audio controls src={state.url} className="h-9 max-w-[220px] flex-1" />
       <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{formatElapsed(state.durationSeconds)}</span>
       <Button type="button" variant="ghost" size="sm" onClick={discard} aria-label={t(($) => $.voice.discard)}>
