@@ -15,7 +15,10 @@ use Modules\Finance\Ledger\Domain\Services\ChartOfAccountsService;
 use Modules\Finance\Fiscal\Domain\Models\FiscalPeriod;
 use Modules\Finance\Fiscal\Domain\Services\FiscalCalendarService;
 use Modules\Finance\Presentation\Http\Controllers\CustomerReceiptController;
+use Modules\Finance\Receivables\Domain\Enums\CustomerDocumentType;
+use Modules\Finance\Receivables\Domain\Models\CustomerInvoice;
 use Modules\Finance\Receivables\Domain\Models\CustomerReceipt;
+use Modules\Finance\Receivables\Domain\Services\AccountsReceivableService;
 use Modules\Finance\Shared\Domain\Models\FinanceCommandReceipt;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Tests\TestCase;
@@ -45,6 +48,10 @@ class CustomerReceiptIdempotencyEndpointTest extends TestCase
         $this->companyId = (string) $this->company->id;
         $this->actingUser = User::factory()->create(['company_id' => $this->companyId]);
         $this->openPeriodForToday();
+        // Only writeOff()'s new tests need this (it posts a receipt AND an
+        // invoice internally); the existing createReceipt()-only tests above
+        // never post anything, so this addition does not affect them.
+        $this->controlAccount('ar', AccountType::Asset);
     }
 
     // 26. Same key + same receipt payload replays safely.
@@ -154,6 +161,46 @@ class CustomerReceiptIdempotencyEndpointTest extends TestCase
         $this->assertSame(2, CustomerReceipt::query()->count());
     }
 
+    // TASK-ECOS-FINANCE-FOUNDATION-GATE-004 finding: writeOff() is also a
+    // real receipt-creation path (a CustomerReceipt funded by a bad-debt
+    // account) and was not wired to the idempotency guard in Task 3.
+    public function test_write_off_first_command_succeeds(): void
+    {
+        $customer = (string) Str::uuid();
+        $invoice = $this->postedInvoice($customer, 500.0);
+
+        $response = app(CustomerReceiptController::class)->writeOff(
+            $this->writeOffRequest($invoice->uuid, (string) Str::uuid()),
+        );
+
+        $this->assertSame(201, $response->getStatusCode());
+        $this->assertSame(0.0, $invoice->fresh()->outstanding());
+        $this->assertSame(1, CustomerReceipt::query()->count());
+    }
+
+    // Same key + same payload replays the original write-off — no second
+    // bad-debt receipt is created (previously this would have thrown a raw
+    // unique-constraint violation on the deterministic 'WO-'.number instead
+    // of replaying gracefully; both were safe, only this one is graceful).
+    public function test_write_off_same_key_and_same_payload_replays_safely(): void
+    {
+        $customer = (string) Str::uuid();
+        $invoice = $this->postedInvoice($customer, 500.0);
+        $key = (string) Str::uuid();
+
+        $first = app(CustomerReceiptController::class)->writeOff($this->writeOffRequest($invoice->uuid, $key));
+        $second = app(CustomerReceiptController::class)->writeOff($this->writeOffRequest($invoice->uuid, $key));
+
+        $this->assertSame(201, $first->getStatusCode());
+        $this->assertSame(200, $second->getStatusCode());
+        $this->assertSame('true', $second->headers->get('Idempotent-Replay'));
+
+        $firstReceipt = json_decode((string) $first->getContent(), true)['data']['write_off_receipt'];
+        $secondReceipt = json_decode((string) $second->getContent(), true)['data']['write_off_receipt'];
+        $this->assertSame($firstReceipt, $secondReceipt);
+        $this->assertSame(1, CustomerReceipt::query()->count());
+    }
+
     // ═══ HELPERS ═══════════════════════════════════════════════════════════════
 
     private function storeRequest(
@@ -195,6 +242,58 @@ class CustomerReceiptIdempotencyEndpointTest extends TestCase
         }
 
         return $request;
+    }
+
+    private function writeOffRequest(string $invoiceId, ?string $key): Request
+    {
+        $badDebt = $this->accountFor($this->companyId, AccountType::Expense);
+        $request = Request::create('/finance/ar/write-off', 'POST', [
+            'invoice_id' => $invoiceId,
+            'bad_debt_account_id' => $badDebt->uuid,
+        ]);
+        $request->setUserResolver(fn () => $this->actingUser);
+
+        if ($key !== null) {
+            $request->headers->set('Idempotency-Key', $key);
+        }
+
+        return $request;
+    }
+
+    private function postedInvoice(string $customer, float $amount): CustomerInvoice
+    {
+        $revenue = $this->accountFor($this->companyId, AccountType::Revenue);
+        $invoice = app(AccountsReceivableService::class)->createDocument(
+            companyId: $this->companyId, customerId: $customer, number: 'INV-'.$this->suffix(),
+            documentDate: Carbon::today(), lines: [['revenue_account_id' => (int) $revenue->id, 'net_amount' => $amount]],
+            type: CustomerDocumentType::Invoice, dueDate: Carbon::today(),
+        );
+
+        return app(AccountsReceivableService::class)->postDocument($invoice);
+    }
+
+    private function accountFor(string $companyId, AccountType $type): Account
+    {
+        return app(ChartOfAccountsService::class)->create([
+            'company_id' => $companyId,
+            'code' => strtoupper($type->value[0]).'-'.$this->suffix(),
+            'name' => ucfirst($type->value).' account',
+            'account_type' => $type,
+            'is_postable' => true,
+        ]);
+    }
+
+    private function controlAccount(string $subledger, AccountType $type): Account
+    {
+        return app(ChartOfAccountsService::class)->create([
+            'company_id' => $this->companyId,
+            'code' => strtoupper($subledger).'-CTRL-'.$this->suffix(),
+            'name' => strtoupper($subledger).' control',
+            'account_type' => $type,
+            'is_postable' => true,
+            'is_control' => true,
+            'control_subledger' => $subledger,
+        ]);
     }
 
     private function suffix(): string

@@ -176,7 +176,18 @@ class CustomerReceiptController extends Controller
         ]], 201);
     }
 
-    /** Write off the outstanding balance of a posted invoice to a bad-debt account. */
+    /**
+     * Write off the outstanding balance of a posted invoice to a bad-debt
+     * account. Internally creates a CustomerReceipt (funded by the bad-debt
+     * account) exactly like an ordinary receipt — TASK-ECOS-FINANCE-
+     * FOUNDATION-GATE-004 found this real creation path was not yet wired to
+     * CommandIdempotencyGuard, unlike store() (Task 3). It never silently
+     * duplicated (the receipt number is server-derived deterministically
+     * from the invoice — 'WO-'.$invoice->number — so a bare retry already
+     * collided with the existing unique(company_id, number) constraint and
+     * failed loudly), but a retry deserves the same graceful replay/conflict
+     * contract as every other creation path, not just a raw DB error.
+     */
     public function writeOff(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -186,21 +197,34 @@ class CustomerReceiptController extends Controller
             'reason' => ['nullable', 'string', 'max:500'],
         ]);
 
+        $companyId = $this->companyId($request);
         $invoice = $this->findInvoice($request, $validated['invoice_id']);
 
-        $receipt = $this->ar->writeOff(
-            invoice: $invoice,
-            badDebtAccountId: $this->accountId($request, $validated['bad_debt_account_id']),
-            allocations: $this->allocations,
-            amount: isset($validated['amount']) ? (float) $validated['amount'] : null,
+        $result = $this->idempotency->execute(
+            companyId: $companyId,
+            commandType: 'ar.receipt.writeoff',
+            idempotencyKey: $request->header('Idempotency-Key'),
+            payload: $validated,
+            command: fn () => $this->ar->writeOff(
+                invoice: $invoice,
+                badDebtAccountId: $this->accountId($request, $validated['bad_debt_account_id']),
+                allocations: $this->allocations,
+                amount: isset($validated['amount']) ? (float) $validated['amount'] : null,
+                actorId: $this->actorId($request),
+                reason: $validated['reason'] ?? null,
+            ),
             actorId: $this->actorId($request),
-            reason: $validated['reason'] ?? null,
         );
 
-        return response()->json(['data' => [
-            'write_off_receipt' => $receipt->uuid,
-            'invoice_outstanding' => $invoice->fresh()->outstanding(),
-        ]], 201);
+        /** @var CustomerReceipt $receipt */
+        $receipt = $result->result;
+
+        return response()
+            ->json(['data' => [
+                'write_off_receipt' => $receipt->uuid,
+                'invoice_outstanding' => $invoice->fresh()->outstanding(),
+            ]], $result->wasReplayed ? 200 : 201)
+            ->header('Idempotent-Replay', $result->wasReplayed ? 'true' : 'false');
     }
 
     // ── Internals ─────────────────────────────────────────────────────────────
