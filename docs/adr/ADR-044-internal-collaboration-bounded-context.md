@@ -1,0 +1,88 @@
+# ADR-044 — Internal Collaboration Bounded Context
+
+**Date:** 2026-09-02
+**Status:** Accepted
+**Ratified:** 2026-09-02 — CTO approved with amendments (see "CTO Ratification" below). Original proposal date unchanged.
+**Author:** A1 — Internal Collaboration
+
+---
+
+## Context
+
+ECOS ERP has no facility for internal operational communication. Employees — and employees and drivers — currently have no in-product channel for direct messages, group/team conversations, voice notes, or lightweight task hand-off. The only conversation/message domain in the codebase, `Modules\CustomerEngagement` ("CEP"), is explicitly external-facing (WhatsApp/Meta-style customer channels) and is locked as out-of-bounds for this work — it must not become the internal-chat authority (product/architecture lock, TASK-ECOS-INTERNAL-COLLABORATION-ARCHITECTURE-001 §1.2).
+
+Before designing a new bounded context, six areas of the existing codebase were inspected directly (not assumed) to determine what is safe to reuse, what must be extended, and what has to be built new: `IAM` (identity/policy), `Logistics\Drivers` + DriverShell (driver identity + driver-facing frontend), `Organization\Teams` + `Hr\Workforce` (team/department authority), `CustomerEngagement` (closest existing domain shape), `Platform`/`Common`/`Core`/`System` (shared notification/storage/realtime/audit/search infrastructure), and the frontend shell/navigation layer. Full findings are in the companion report, [TASK-ECOS-INTERNAL-COLLABORATION-ARCHITECTURE-001-REPORT.md](../verification/TASK-ECOS-INTERNAL-COLLABORATION-ARCHITECTURE-001-REPORT.md); the load-bearing ones are restated here because they directly drive this decision.
+
+**Identity.** The canonical identity is `App\Models\User` (bigint PK, `users` table, `UserStatus` enum, `SoftDeletes`). `Modules\Logistics\Drivers\Domain\Models\Driver` (bigint PK, `logistics_drivers`) already carries a nullable, unique `user_id` FK to `users` — a driver only has a login-capable identity when that column is set; most driver rows today are master data with no login. Sanctum authentication is unified — there is no separate driver guard or token type. A second, overlapping "employee" representation exists at `Modules\Hr\Workforce\Domain\Models\Employee` (uuid PK, optional `user_id`); this decision does not attempt to reconcile that pre-existing drift, but it rules out inventing a *third* identity representation.
+
+**Teams.** `docs/adr/ADR-011-V2.2-organization-os.md` already assigns "Team" exclusively to Organization OS and forbids any other module from redefining it. The actual `Modules\Organization\Teams\Domain\Models\Team` row, however, has no membership relation at all today (no pivot, no `members()`/`employees()` method), and its `leader_name` is a free-text string, not a foreign key — it is a label table, not an operational aggregate.
+
+**CEP as prior art.** CEP has `Conversation`/`Message` models with a workable type-discriminator shape, but its technical plumbing is not something to copy: no realtime (zero `ShouldBroadcast` anywhere in the backend), no notifications, no generic attachment model (media is three flat, unvalidated columns), an unenforced and never-populated `customer_id`, and a type-mismatched (uuid vs bigint) `assigned_employee_id`. It is useful for domain-shape inspiration only.
+
+**Shared platform infrastructure.** `docs/architecture/ENTERPRISE-NOTIFICATION-PLATFORM.md` is architecture-only with zero implementation; `App\Core\Audit\AuditService` exists but is dead code (imported nowhere); there is no `laravel/reverb`, no `config/broadcasting.php`, and no `routes/channels.php` anywhere in the repo despite `docs/CLAUDE.md` naming Reverb as intended stack; there is no Scout/Meilisearch integration anywhere despite the same document naming Meilisearch as intended stack. The one genuinely reused piece of shared infrastructure is `App\Core\Documents\DocumentService` (+ `Document` model, table `documents`), already consumed by Purchasing and Operations/Preparation for auth-gated, private-disk file storage — though it has no signed-URL support yet. IAM also already exposes a generic **Data Scope Engine** — `ScopeResolverInterface::resolve(User $user, string $resource, ?string $ownerColumn = null): ScopeConstraint` (`Modules/IAM/Domain/Contracts/ScopeResolverInterface.php:16-25`, ADR-038 Part 3) — the canonical mechanism for "which records of a resource can this user act on," separate from the coarser permission gate.
+
+**Frontend.** `docs/CLAUDE.md` states the frontend is Next.js; it is not — it is Vite + React 19 + React Router v7 (`frontend/package.json`). This ADR and its report use the actual stack. The main office shell is `AppShell` (topbar + module rail + sidebar); the driver shell is a deliberately separate `DriverShell` (bottom nav + "more" sheet) that imports nothing from `AppShell`. Neither shell, nor any part of the frontend, has any voice-recording capability (`MediaRecorder`/`getUserMedia`) today.
+
+## Decision
+
+Create a new bounded context, module name **`Collaboration`** (namespace `Modules\Collaboration`, not `InternalCollaboration`) under `backend/Modules/`, following the standard Domain/Application/Infrastructure/Presentation layout from `backend/Modules/README.md`. "Internal" is dropped from the module's code name because `CustomerEngagement` already unambiguously owns the external case — the qualifier adds nothing inside this codebase's own vocabulary and only produces a longer namespace. The product/task-tracking name "Internal Collaboration" is unaffected — only the module's code name changes. (Alternative considered: keep `InternalCollaboration` verbatim, for exact traceability to the task/workstream name. Rejected as the primary recommendation because every comparable peer module uses a short, single concept name — Finance, Hr, Crm, Sales, Marketing — and CEP's existence already removes the ambiguity "Internal" was guarding against.)
+
+Specifically:
+
+1. **Identity — no new identity store.** Every conversation participant, message sender, and task assignee is referenced by a single, enforced `user_id` (bigint, `constrained('users')`). There is no second "actor type" and no polymorphic participant reference. A `Driver` is reachable through Collaboration if and only if `logistics_drivers.user_id` is set — drivers without a linked `User` (the common case for master-data-only driver rows today) are not addressable by this module until Logistics links them. This is treated as a correct invariant, not a gap to work around.
+
+2. **CEP boundary — enforced by non-overlap, not by convention.** `Modules\Collaboration` owns its own `conversations`/`messages` tables, fully separate from `cep_conversations`/`cep_messages`. No code in either module references the other's tables or models. Both may independently depend on the same shared platform primitives (`DocumentService`, Sanctum, permissions) without either becoming the other's authority.
+
+3. **Teams — not reused for V1, for a documented reason.** `Modules\Organization\Teams\Team` is not extended with new membership logic, and Collaboration does not introduce a competing "Team" concept (which ADR-011 would forbid). Group conversations are self-contained: `conversation_participants` rows *are* the membership, added ad hoc by whoever starts the group. A `Conversation` (and an `InternalTask`) may carry an optional, read-only `team_id` reference to `Organization\Teams\Team` purely as a label/filter — the same soft-reference pattern `Crm\Service\Ticket.team_id` and CEP's `assigned_team_id` already use — never as an ownership or membership mechanism. If Organization/Teams later grows real membership, "create group from Team" becomes a natural follow-up feature; it is out of scope now because there is nothing to read yet.
+
+4. **Media/voice storage — extend `DocumentService`, do not build a parallel store.** Images, files, and voice-message audio are all stored via `App\Core\Documents\DocumentService`, subject-keyed to the owning `Message` (or `InternalTask`), on the existing private `local` disk. Playback/download goes through a Collaboration-owned controller action that checks conversation-participation before streaming the file (mirroring `SupplierInvoiceDocumentController`'s existing pattern) — never a public-disk URL. `DocumentService` gains no schema changes; Collaboration owns a small side table (`collaboration_voice_metadata`: duration, format — one row per voice `Document`) rather than widening the shared `documents` table for one consumer's needs.
+
+5. **Realtime, notifications, and search — build small and local; do not block on unbuilt platform initiatives.** None of Reverb, the Enterprise Notification Platform, or Meilisearch exist in this codebase today, and standing any of them up is a platform-wide commitment beyond this module's mandate. V1 uses: stock Laravel `Notification`/`Notifiable` classes dispatched to the existing vanilla `notifications` table (the same pattern `Operations\Preparation` already uses), not a new notification engine; and Postgres `ILIKE`/full-text search over Collaboration's own tables, not Scout/Meilisearch. *(Superseded for realtime specifically — see CTO Ratification below: near-realtime delivery via Reverb/Broadcasting is now the approved V1 target, not a deferred choice.)*
+
+6. **Audit/activity — module-owned, matching existing convention.** `App\Core\Audit\AuditService` is unused dead code repo-wide; resurrecting it is out of this module's scope. `InternalTask` gets its own `InternalTaskActivity` history table, consistent with how every other module in this codebase already logs its own activity independently.
+
+---
+
+## CTO Ratification — 2026-09-02
+
+The CTO reviewed this ADR and the companion report and **approved the architecture with amendments**. The eight decisions flagged as open in the original proposal are now resolved as follows. Items not listed here (identity, CEP boundary, message-editing deferral) are **approved exactly as originally proposed** — see the Decision section above.
+
+| # | Decision | Original Recommendation | Final Ratified Decision |
+|---|---|---|---|
+| 1 | Module name | `Collaboration` | **Approved as recommended.** |
+| 2 | Team/group authority | Ad-hoc Collaboration-owned groups; no reuse of `Organization\Teams\Team` | **Approved as recommended**, plus a mandatory terminology rule: the ad-hoc entity is always called a **Collaboration Group** in documentation, schema, and UI — never "Team" — to keep it unmistakably distinct from `Organizational Team` (`Organization\Teams\Team`). Collaboration Groups are not organizational master data. |
+| 3 | Message edit/delete | Defer both from V1 | **Approved as recommended.** |
+| 4 | V1 operational-context types | Order, Trip, Driver | **Amended: add Distribution Group.** Final V1 set is **Order, Distribution Group, Trip, Driver**. Distribution Group is a real, actively-used concept in `Modules\Logistics\Distribution` (e.g. `DistributionGroupTemplate`, `GroupFinalizationService`, `GroupLoadingContextService`, `GroupVehicleAssignmentService`) — see report §13. The generic `context_type`/`context_id` link mechanism (§13/§19 of the report) already accommodates this without a design change; only the initially-supported value set grows from 3 to 4, and the set stays config-driven, not hardcoded, to remain extensible to later types. |
+| 5 | Employee → Driver messaging scope | A broad `collaboration.conversations.message_drivers` permission alone | **Amended — permission alone is not sufficient.** Starting an employee↔driver conversation now requires **both** (a) the `collaboration.conversations.message_drivers` permission gate, **and** (b) an authorized operational/data scope over the target driver, resolved through IAM's existing Data Scope Engine (`ScopeResolverInterface::resolve()`, ADR-038 Part 3) rather than a Collaboration-specific rule. A user whose resolved scope is organization-wide (e.g. a legitimately privileged role) is unaffected in practice — the gate only narrows access for roles whose canonical scope is narrower. See report §14 for the full conceptual flow. |
+| 6 | Realtime | Polling-only for V1; Reverb deferred to a future decision point | **Amended — superseded.** Near-realtime message/unread delivery is the approved V1 product target, with Laravel Reverb/canonical Laravel Broadcasting as the preferred technical direction where technically safe, and polling demoted to fallback/resilience mode rather than the primary experience. Reverb is confirmed **not currently installed** (no package, no `config/broadcasting.php`, no `routes/channels.php`) — Task 3 must run an explicit Existing Capability/Runtime Gate (package and runtime availability, deployment topology, private-channel authentication, tenant isolation, conversation-level authorization, DriverShell compatibility, reconnect behavior, and polling-fallback behavior) before writing any Reverb-dependent code. Typing indicators and presence remain deferred regardless of this change. |
+| 7 | Search | Postgres full-text search, not Scout/Meilisearch | **Approved as recommended**, with an explicit requirement that all search results remain authorization-scoped to the requesting user's conversation participation (already the original design — now stated as a hard requirement, not just a design choice). |
+| 8 | Driver-side task visibility | Not required for V1 | **Amended — superseded.** A driver may interact with tasks assigned to them in V1: see assigned tasks, open task detail, receive assignment/update notifications, comment where authorized, and progress the task through allowed states. `Modules\Collaboration` continues to own the task/assignment/comment/activity domain and API; Shipping/DriverShell continues to own the driver-facing presentation (entry point, list, detail screen, allowed status actions, notification deep-links) — Collaboration does not rebuild DriverShell or become the Driver Experience owner. See report §21. |
+
+No item above remains open. The full rationale, evidence, and updated conceptual designs for each amendment are in the companion report.
+
+---
+
+## Consequences
+
+### Positive
+- Zero duplicate identity stores; the only new FK surface is a single, enforced `user_id` column pattern repeated across Collaboration's tables — directly satisfies the Identity Authority lock.
+- No conflict with ADR-011 (Team ownership) because Collaboration never writes to or redefines `Team`, and the Collaboration Group / Organizational Team naming split removes any residual ambiguity.
+- Voice-message access is auth-gated by construction (participation check + private disk), avoiding the "guessable public URL" failure mode already present elsewhere in this codebase (`MediaController`, `ProductResource`).
+- Employee↔driver messaging reuses IAM's existing Data Scope Engine instead of a bespoke security rule, keeping exactly one place in the codebase that answers "what can this user see/act on."
+- The ratified near-realtime target gives V1 a materially better user experience than polling alone, while the mandatory Task 3 capability gate prevents committing to Reverb blindly in an environment where it has never been run.
+
+### Negative / Trade-offs
+- Standing up Reverb (even scoped narrowly to Collaboration's channels) is genuinely new platform infrastructure with real operational cost — deployment topology, connection scaling, reconnect handling — that this module now carries the initial burden of proving out for the rest of the platform.
+- Employee→driver scope-gating depends on a driver-scope resource being registered with IAM's `ScopeResolverInterface`; if no such resource is registered yet, Task 3 gains a dependency on IAM/Logistics work that is not confirmed to exist today (see report §14) — this is a real open risk, not just a formality.
+- Driver-side task visibility expands Task 4/5 scope to include a second, driver-facing presentation surface coordinated with Shipping's ownership of DriverShell, rather than a single office-only UI.
+- Postgres `ILIKE`/tsvector search will not scale as gracefully as Meilisearch under very large message volumes; revisit if/when message volume or query latency justifies it.
+- Group conversations being pure ad-hoc membership (no Team reuse) means there is no "message the whole Sales team" one-click action in V1 — the sender must add participants manually.
+- Task→Team is a label only; it cannot be used to compute "everyone on this team" for notification fan-out until Organization/Teams gains real membership.
+
+## Future Considerations
+
+- If `Organization\Teams` gains real membership, revisit decision 3 to allow "create group from Team" and team-scoped task fan-out.
+- If message volume or cross-conversation search requirements grow, revisit the search choice in favor of Scout/Meilisearch — at that point it becomes a platform decision benefiting more than just Collaboration.
+- If the Enterprise Notification Platform (`docs/architecture/ENTERPRISE-NOTIFICATION-PLATFORM.md`) is ever implemented, Collaboration's stock-Laravel notifications should migrate to it rather than remain a second bespoke notifier.
+- If Task 3's Reverb capability gate finds real-time broadcasting unsafe or infeasible in the current deployment topology, that finding must be escalated back to the CTO as a scope change before permanently downgrading to polling-only — it would be reversing an explicit, ratified product requirement, not a routine implementation detail.
+- `docs/CLAUDE.md`'s technology-stack section is stale (states Next.js; actual frontend is Vite + React Router) and should be corrected independently of this task.
