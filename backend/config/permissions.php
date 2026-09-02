@@ -37,6 +37,12 @@ return [
         'collaboration' => [
             'conversations' => ['create', 'message_drivers'],
             'groups' => ['create'],
+            // Internal Tasks (TASK-ECOS-COLLABORATION-INTERNAL-TASKS-004). Task
+            // view/comment/status-transition are ownership-gated (creator/
+            // assignee — see TaskPolicy), not permission-gated, exactly like
+            // conversation participation — so only creation and driver
+            // assignment need a registered token here.
+            'tasks' => ['create', 'assign_drivers'],
         ],
 
         'inventory' => [

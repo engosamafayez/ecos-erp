@@ -29,3 +29,12 @@ Broadcast::channel('collaboration.conversation.{conversationId}', function ($use
         ->whereNull('left_at')
         ->exists();
 });
+
+/*
+| TASK-ECOS-COLLABORATION-INTERNAL-TASKS-004 (brief §25). A task is not
+| always tied to a conversation, so TaskBroadcast uses a private per-user
+| channel instead — a user may only ever listen to their own.
+*/
+Broadcast::channel('collaboration.user.{userId}', function ($user, string $userId): bool {
+    return (int) $user->id === (int) $userId;
+});

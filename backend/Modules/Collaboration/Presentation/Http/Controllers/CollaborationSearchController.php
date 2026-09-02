@@ -9,7 +9,9 @@ use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Collaboration\Application\Actions\SearchMessagesAction;
+use Modules\Collaboration\Application\Actions\SearchTasksAction;
 use Modules\Collaboration\Presentation\Http\Resources\MessageResource;
+use Modules\Collaboration\Presentation\Http\Resources\TaskResource;
 
 final class CollaborationSearchController extends Controller
 {
@@ -29,5 +31,22 @@ final class CollaborationSearchController extends Controller
         );
 
         return $this->success(MessageResource::collection($results));
+    }
+
+    /** Its own index, deliberately not mixed into message search (brief §23). */
+    public function tasks(Request $request, SearchTasksAction $action): JsonResponse
+    {
+        $request->validate([
+            'q' => ['required', 'string', 'min:1', 'max:200'],
+            'limit' => ['sometimes', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $results = $action->execute(
+            $request->user(),
+            (string) $request->query('q'),
+            (int) $request->query('limit', 20),
+        );
+
+        return $this->success(TaskResource::collection($results));
     }
 }

@@ -12,18 +12,23 @@ use Modules\Logistics\Drivers\Domain\Models\Driver;
 
 /**
  * The single place Collaboration enforces ADR-044 §1.6 / architecture report
- * §14: employee→driver messaging needs BOTH the collaboration permission
- * AND IAM's canonical Data Scope Engine — never a permission alone, and
- * never a Collaboration-specific substitute for either mechanism. Centralised
- * here so no Action can add a driver to a conversation while accidentally
- * skipping the check.
+ * §14 for every employee->driver interaction: messaging (Task 2) and now
+ * task assignment (Task 4, brief §9) — both need BOTH a permission AND
+ * IAM's canonical Data Scope Engine, never a permission alone, and never a
+ * Collaboration-specific substitute for either. Two public methods share
+ * one private check, parameterised only by which permission applies —
+ * assignment gets its own token (`collaboration.tasks.assign_drivers`)
+ * rather than reusing the messaging one, since a company may reasonably
+ * want to grant one without the other.
  *
  * A no-op for a target who is not a linked driver — ordinary employee-to-
- * employee messaging is unaffected.
+ * employee interaction is unaffected either way.
  */
 final class DriverMessagingAuthorizer
 {
-    private const PERMISSION = 'collaboration.conversations.message_drivers';
+    private const MESSAGE_PERMISSION = 'collaboration.conversations.message_drivers';
+
+    private const ASSIGN_PERMISSION = 'collaboration.tasks.assign_drivers';
 
     private const SCOPE_RESOURCE = 'logistics.drivers';
 
@@ -32,11 +37,19 @@ final class DriverMessagingAuthorizer
         private readonly ScopeResolverInterface $scopeResolver,
     ) {}
 
-    /**
-     * @throws AuthorizationException when $actor lacks the permission, or the
-     *                                 target driver falls outside $actor's resolved data scope
-     */
+    /** @throws AuthorizationException */
     public function assertCanAddress(User $actor, User $target): void
+    {
+        $this->assertDriverPermissionAndScope($actor, $target, self::MESSAGE_PERMISSION);
+    }
+
+    /** @throws AuthorizationException */
+    public function assertCanAssign(User $actor, User $target): void
+    {
+        $this->assertDriverPermissionAndScope($actor, $target, self::ASSIGN_PERMISSION);
+    }
+
+    private function assertDriverPermissionAndScope(User $actor, User $target, string $permission): void
     {
         $driver = Driver::query()->where('user_id', $target->id)->first();
 
@@ -45,7 +58,7 @@ final class DriverMessagingAuthorizer
         }
 
         // Throws AuthorizationException itself on denial (IAM's own contract).
-        $this->authorizationGateway->authorize($actor, self::PERMISSION);
+        $this->authorizationGateway->authorize($actor, $permission);
 
         $inScope = Driver::query()
             ->scopedTo($actor, self::SCOPE_RESOURCE)

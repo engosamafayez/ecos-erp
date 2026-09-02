@@ -25,6 +25,8 @@ final class CollaborationException extends RuntimeException
 
     public const UNKNOWN_OPERATIONAL_CONTEXT_TYPE = 'UNKNOWN_OPERATIONAL_CONTEXT_TYPE';
 
+    public const INVALID_STATUS_TRANSITION = 'INVALID_STATUS_TRANSITION';
+
     /** @param  array<string, mixed>  $context */
     private function __construct(
         string $message,
@@ -67,6 +69,15 @@ final class CollaborationException extends RuntimeException
             "'{$type}' is not a supported operational-context type.",
             self::UNKNOWN_OPERATIONAL_CONTEXT_TYPE,
             ['type' => $type],
+        );
+    }
+
+    public static function invalidStatusTransition(string $from, string $to): self
+    {
+        return new self(
+            "Cannot transition a task from '{$from}' to '{$to}'.",
+            self::INVALID_STATUS_TRANSITION,
+            ['from' => $from, 'to' => $to],
         );
     }
 

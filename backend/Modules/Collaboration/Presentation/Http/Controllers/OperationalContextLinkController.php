@@ -12,15 +12,35 @@ use Modules\Collaboration\Application\Actions\AttachOperationalContextAction;
 use Modules\Collaboration\Domain\Enums\AttachedToType;
 use Modules\Collaboration\Domain\Enums\OperationalContextType;
 use Modules\Collaboration\Domain\Exceptions\CollaborationException;
+use Modules\Collaboration\Domain\Models\InternalTask;
+use Modules\Collaboration\Domain\Models\OperationalContextLink;
 use Modules\Collaboration\Presentation\Http\Requests\AttachOperationalContextRequest;
 
 /**
- * Foundation-proving endpoint only (architecture report §13) — full V1
- * behaviour per context type belongs to Task 4/5.
+ * Foundation-proving endpoints (architecture report §13, wired for Task 4's
+ * approved context types — Order, Distribution Group, Trip, Driver). The
+ * response is always the bare reference — type + id — never any
+ * denormalized data from the linked entity itself (brief §21): Collaboration
+ * has no code path that fetches Order/Trip/Distribution Group/Driver data,
+ * so there is structurally nothing here to leak.
  */
 final class OperationalContextLinkController extends Controller
 {
     use HasApiResponse;
+
+    public function indexForTask(Request $request, InternalTask $task): JsonResponse
+    {
+        $this->authorize('view', $task);
+
+        $links = OperationalContextLink::query()
+            ->where('attached_to_type', AttachedToType::Task)
+            ->where('attached_to_id', $task->id)
+            ->get()
+            ->map(fn (OperationalContextLink $link): array => $this->format($link))
+            ->values();
+
+        return $this->success($links);
+    }
 
     public function store(AttachOperationalContextRequest $request, AttachOperationalContextAction $action): JsonResponse
     {
@@ -36,12 +56,18 @@ final class OperationalContextLinkController extends Controller
             return $this->error($e->getMessage(), 422);
         }
 
-        return $this->created([
+        return $this->created($this->format($link));
+    }
+
+    /** @return array<string, mixed> */
+    private function format(OperationalContextLink $link): array
+    {
+        return [
             'id' => $link->id,
             'context_type' => $link->context_type->value,
             'context_id' => $link->context_id,
             'attached_to_type' => $link->attached_to_type->value,
             'attached_to_id' => $link->attached_to_id,
-        ]);
+        ];
     }
 }

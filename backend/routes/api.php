@@ -29,6 +29,11 @@ use Modules\Collaboration\Presentation\Http\Controllers\ConversationReadStateCon
 use Modules\Collaboration\Presentation\Http\Controllers\MessageAttachmentController;
 use Modules\Collaboration\Presentation\Http\Controllers\MessageController as CollaborationMessageController;
 use Modules\Collaboration\Presentation\Http\Controllers\OperationalContextLinkController;
+use Modules\Collaboration\Presentation\Http\Controllers\TaskAssignmentController;
+use Modules\Collaboration\Presentation\Http\Controllers\TaskAttachmentController;
+use Modules\Collaboration\Presentation\Http\Controllers\TaskCommentController;
+use Modules\Collaboration\Presentation\Http\Controllers\TaskController;
+use Modules\Collaboration\Presentation\Http\Controllers\TaskStatusController;
 use Modules\Commerce\Channels\Presentation\Http\Controllers\ChannelController;
 use Modules\Commerce\Connectors\Presentation\Http\Controllers\ConnectorController;
 use Modules\Commerce\Fulfillments\Presentation\Http\Controllers\FulfillmentController;
@@ -4343,5 +4348,29 @@ Route::middleware('auth:sanctum')->prefix('collaboration')->group(function (): v
 
     // Task 3 — PostgreSQL full-text search, participant-scoped (SearchMessagesAction).
     Route::get('search/messages', [CollaborationSearchController::class, 'messages'])
+        ->middleware('throttle:30,1');
+
+    // Task 4 — Internal Tasks (ADR-044 §1.5/§1.10). View/comment/status-
+    // transition are ownership-gated inside TaskPolicy/the actions themselves
+    // (creator or assignee) — only creation carries a registered permission,
+    // exactly like conversation/group creation.
+    Route::get('tasks', [TaskController::class, 'index']);
+    Route::post('tasks', [TaskController::class, 'store'])
+        ->middleware(['permission:collaboration.tasks.create', 'throttle:60,1']);
+    Route::get('tasks/{task}', [TaskController::class, 'show']);
+    Route::patch('tasks/{task}', [TaskController::class, 'update']);
+    Route::patch('tasks/{task}/assignee', [TaskAssignmentController::class, 'update']);
+    Route::patch('tasks/{task}/status', [TaskStatusController::class, 'update']);
+
+    Route::get('tasks/{task}/comments', [TaskCommentController::class, 'index']);
+    Route::post('tasks/{task}/comments', [TaskCommentController::class, 'store']);
+
+    Route::get('tasks/{task}/attachments', [TaskAttachmentController::class, 'index']);
+    Route::post('tasks/{task}/attachments', [TaskAttachmentController::class, 'store'])
+        ->middleware('throttle:60,1');
+    Route::get('tasks/{task}/attachments/{document}', [TaskAttachmentController::class, 'show']);
+    Route::get('tasks/{task}/context-links', [OperationalContextLinkController::class, 'indexForTask']);
+
+    Route::get('search/tasks', [CollaborationSearchController::class, 'tasks'])
         ->middleware('throttle:30,1');
 });
