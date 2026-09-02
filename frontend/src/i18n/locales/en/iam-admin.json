@@ -1,0 +1,207 @@
+{
+  "workspace": {
+    "title": "IAM / Access Management",
+    "subtitle": "Administer users, roles, permissions and role templates.",
+    "tabs": {
+      "users": "Users",
+      "roles": "Roles & Permissions",
+      "templates": "Role Templates"
+    },
+    "noAccess": "You don't have permission to view this section."
+  },
+  "users": {
+    "title": "Users",
+    "subtitle": "Manage user accounts, lifecycle status and access.",
+    "searchPlaceholder": "Search by name, email or employee number…",
+    "includeArchived": "Include archived",
+    "columns": {
+      "identity": "User",
+      "employeeNumber": "Employee #",
+      "status": "Status",
+      "lastActivity": "Last activity"
+    },
+    "empty": {
+      "title": "No users found",
+      "description": "Try adjusting your search or filters."
+    },
+    "create": {
+      "trigger": "New user",
+      "title": "Create user",
+      "description": "Company ownership is assigned automatically and cannot be chosen here.",
+      "submit": "Create user",
+      "submitting": "Creating…",
+      "errorTitle": "Couldn't create user"
+    },
+    "fields": {
+      "name": "Full name",
+      "email": "Email",
+      "displayName": "Display name",
+      "username": "Username",
+      "employeeNumber": "Employee number",
+      "phone": "Phone"
+    },
+    "detail": {
+      "title": "User",
+      "genericError": "Something went wrong. Please try again.",
+      "tabs": {
+        "profile": "Profile",
+        "roles": "Roles",
+        "organization": "Organization",
+        "security": "Security"
+      }
+    },
+    "lifecycle": {
+      "activate": "Activate",
+      "suspend": "Suspend",
+      "deactivate": "Deactivate",
+      "lock": "Lock",
+      "unlock": "Unlock",
+      "archive": "Archive",
+      "restore": "Restore"
+    },
+    "lifecycleConfirm": {
+      "genericError": "This action couldn't be completed.",
+      "activate": { "title": "Activate user?", "description": "The user will be able to sign in again." },
+      "suspend": { "title": "Suspend user?", "description": "The user will be temporarily unable to sign in." },
+      "deactivate": { "title": "Deactivate user?", "description": "The user will be marked inactive and unable to sign in." },
+      "lock": { "title": "Lock user?", "description": "The user will be locked out until an administrator unlocks the account." },
+      "unlock": { "title": "Unlock user?", "description": "The user will be restored to active and able to sign in." },
+      "archive": { "title": "Archive user?", "description": "The account will be archived. It can be restored later, but a password reset requires restoring first." },
+      "restore": { "title": "Restore user?", "description": "The account will be restored to active." }
+    },
+    "roles": {
+      "none": "No roles assigned.",
+      "primary": "Primary",
+      "assign": "Assign",
+      "revoke": "Revoke",
+      "selectPlaceholder": "Select a role template…"
+    },
+    "organization": {
+      "none": "No organization assignments.",
+      "primary": "primary",
+      "assign": "Assign",
+      "typePlaceholder": "Type",
+      "idPlaceholder": "ID (optional)",
+      "labelPlaceholder": "Label (optional)"
+    },
+    "security": {
+      "passwordTitle": "Password",
+      "resetTrigger": "Reset password",
+      "resetTitle": "Reset password",
+      "resetSubmit": "Reset password",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm password",
+      "resetRequiresRestore": "This account is archived — restore it before resetting the password.",
+      "resetUnavailableDeleted": "This account is deleted — password reset is not available.",
+      "resetKeepsStatus": "Resetting the password will not reactivate or unlock this account.",
+      "sessionsTitle": "Active sessions",
+      "noSessions": "No active sessions.",
+      "unknownBrowser": "Unknown browser",
+      "revokeSession": "Revoke",
+      "forceLogoutTrigger": "Force logout everywhere",
+      "forceLogoutTitle": "Revoke all sessions?",
+      "forceLogoutDescription": "This will sign the user out on every device."
+    }
+  },
+  "roles": {
+    "title": "Roles & Permissions",
+    "subtitle": "Roles are compiled from Role Templates and shown here read-only.",
+    "empty": "No roles found.",
+    "systemBadge": "System",
+    "customBadge": "Custom",
+    "tabs": {
+      "roles": "Roles",
+      "permissions": "Permission catalog"
+    },
+    "columns": {
+      "name": "Role",
+      "type": "Type",
+      "template": "Template",
+      "userCount": "Users"
+    },
+    "detail": {
+      "title": "Role",
+      "userCount": "{{count}} user assigned",
+      "userCount_other": "{{count}} users assigned",
+      "managedByTemplate": "Managed by template \"{{name}}\" — edit there",
+      "permissions": "Permissions",
+      "noPermissions": "This role has no permissions."
+    }
+  },
+  "permissions": {
+    "empty": "No permissions found.",
+    "searchPlaceholder": "Search permissions…"
+  },
+  "roleTemplates": {
+    "title": "Role Templates",
+    "subtitle": "System templates are immutable; custom templates belong to your company.",
+    "empty": "No role templates found.",
+    "systemBadge": "System",
+    "customBadge": "Custom",
+    "cloneAction": "Clone",
+    "columns": {
+      "name": "Template",
+      "type": "Type",
+      "category": "Category",
+      "version": "Version",
+      "status": "Status"
+    },
+    "fields": {
+      "key": "Key",
+      "keyHint": "A stable, unique identifier (e.g. \"night-warehouse-clerk\").",
+      "name": "Name",
+      "category": "Category",
+      "description": "Description",
+      "permissions": "Permissions"
+    },
+    "form": {
+      "genericError": "Something went wrong. Please try again.",
+      "noPermissions": "No permissions selected yet.",
+      "addPermissionPlaceholder": "Search the permission catalog…",
+      "addPermission": "Add",
+      "removePermission": "Remove"
+    },
+    "create": {
+      "trigger": "New template",
+      "title": "Create custom template",
+      "description": "Company ownership is assigned automatically.",
+      "submit": "Create template",
+      "submitting": "Creating…"
+    },
+    "clone": {
+      "title": "Clone \"{{name}}\"",
+      "submit": "Clone"
+    },
+    "detail": {
+      "title": "Role template",
+      "assignmentCount": "{{count}} assignment",
+      "assignmentCount_other": "{{count}} assignments",
+      "systemImmutable": "This is an official system template and cannot be edited or deleted. Clone it to create an editable copy.",
+      "tabs": {
+        "definition": "Definition",
+        "versions": "Version history"
+      },
+      "applyTrigger": "Apply version…",
+      "archiveTrigger": "Archive",
+      "archiveConfirmTitle": "Archive this template?",
+      "archiveConfirmDescription": "Archiving preserves all current assignments and compiled access — it is the safe way to retire a template that may still be in use.",
+      "deleteTrigger": "Delete",
+      "deleteConfirmTitle": "Delete this template?",
+      "deleteConfirmDescription": "This permanently deletes the template. It is only offered here because it has no current assignments."
+    },
+    "apply": {
+      "title": "Apply template version",
+      "genericError": "The template could not be applied.",
+      "scopeWarningTitle": "This applies to every current holder",
+      "scopeWarningDescription": "All holders of this template share one compiled role — applying the current definition updates every one of the {{count}} current holder(s) at once. There is no way to apply this to only some holders.",
+      "currentVersion": "Version",
+      "affectedHolders": "Affected holders",
+      "additions": "Permission additions",
+      "removals": "Permission removals",
+      "none": "None",
+      "confirm": "Apply to all current holders",
+      "successTitle": "Template applied",
+      "successDescription": "Updated {{count}} current holder(s)."
+    }
+  }
+}

@@ -145,10 +145,16 @@ final class RoleTemplateCatalog
                 'policies' => ['inventory-approval', 'stock-adjustment', 'transfer-approval'],
             ]),
             self::make('warehouse-clerk', 'Warehouse Clerk', $W, 'Floor clerk — no cost visibility, no overrides.', [
+                // TASK-IAM-TEMPLATE-RECONCILIATION-001 Group C: 'operations.preparation.operate'
+                // did not exist — the domain's real actions are view/create/update/delete
+                // (config/permissions.php). Resolved to create+update ("do the day-to-day
+                // preparation work"); delete is deliberately withheld — a floor clerk operating
+                // preparation records is not the same grant as being able to remove them, and
+                // the original single token's intent was operational, not destructive.
                 'permissions' => [
                     'inventory.products.view', 'inventory.stock.view', 'inventory.count.view',
                     'inventory.count.create', 'inventory.count.update', 'inventory.recipes.view',
-                    'operations.preparation.view', 'operations.preparation.operate',
+                    'operations.preparation.view', 'operations.preparation.create', 'operations.preparation.update',
                 ],
                 'nav' => ['dashboard', 'inventory', 'operations'],
                 'dashboard' => ['profile' => 'warehouse', 'hidden' => ['sales-revenue', 'marketing-perf', 'ai-intelligence']],
@@ -171,8 +177,18 @@ final class RoleTemplateCatalog
                 'policies' => ['purchase-approval'],
             ]),
             self::make('purchasing-officer', 'Purchasing Officer', $O, 'Creates and manages purchase orders.', [
+                // TASK-IAM-TEMPLATE-RECONCILIATION-001 Group C: 'purchasing.purchases.update'
+                // did not exist — the domain has view/create/review/merge/split/select_supplier/
+                // approve/execute/cancel/export, no bare "update". Resolved to review +
+                // select_supplier: both are already the officer-level grant on the independent,
+                // pre-existing 'purchasing-officer' legacy role (config/permissions.php
+                // role_permissions), corroborating this is the right scope. approve/execute/
+                // merge/split are deliberately withheld — that same legacy config grants them
+                // only to 'purchasing-manager', a level above officer; adopting them here would
+                // widen an officer to manager-level purchasing authority.
                 'permissions' => [
-                    'purchasing.purchases.view', 'purchasing.purchases.create', 'purchasing.purchases.update',
+                    'purchasing.purchases.view', 'purchasing.purchases.create',
+                    'purchasing.purchases.review', 'purchasing.purchases.select_supplier',
                     'purchasing.materials.view', 'purchasing.suppliers.view',
                 ],
                 'nav' => ['dashboard', 'purchasing', 'inventory'],
@@ -219,17 +235,41 @@ final class RoleTemplateCatalog
                 'policies' => ['dispatch-approval'],
             ]),
             self::make('dispatcher', 'Dispatcher', $SH, 'Assigns orders to drivers and vehicles.', [
-                'permissions' => ['logistics.dispatch.view', 'logistics.dispatch.operate', 'logistics.drivers.view', 'logistics.vehicles.view'],
+                // TASK-IAM-TEMPLATE-RECONCILIATION-001 Group C: 'logistics.dispatch.*' does not
+                // exist — the real domain is bare 'dispatch.*' (two-segment, seeded directly by
+                // Logistics/Dispatch migrations, not the 'logistics.' prefix). operate resolved
+                // to queue+session management (the direct operate-equivalents); view resolved to
+                // monitoring+audit. dispatch.assignment.{review,approve,override} are deliberately
+                // NOT included — no 'operate'-equivalent action exists on that resource, and
+                // adding the review/approve/override actions would be a broader grant than the
+                // original single "operate" token intended.
+                'permissions' => ['dispatch.monitoring.view', 'dispatch.audit.view', 'dispatch.queue.manage', 'dispatch.session.manage', 'logistics.drivers.view', 'logistics.vehicles.view'],
                 'nav' => ['dashboard', 'shipping', 'logistics'],
                 'dashboard' => ['profile' => 'operations', 'hidden' => ['sales-revenue', 'marketing-perf']],
                 'landing' => 'fulfillments', 'hidden' => self::HIDE_SALES,
             ]),
             self::make('driver', 'Driver', $SH, 'Delivery driver — mobile, own routes only.', [
-                'permissions' => ['logistics.deliveries.view', 'logistics.deliveries.operate'],
+                // TASK-IAM-TEMPLATE-RECONCILIATION-001 Group C: 'logistics.deliveries.*' does not
+                // exist — the real domain is bare 'delivery.*' (seeded directly by
+                // Logistics/Delivery migrations). operate resolved to the three concrete
+                // field-operation grants a driver actually performs (POD capture, COD collection,
+                // return handling); view resolved to the one real analytics permission.
+                'permissions' => ['delivery.analytics.view', 'delivery.pod.capture', 'delivery.cod.collect', 'delivery.return.manage'],
                 'nav' => ['dashboard', 'shipping'],
                 'dashboard' => ['profile' => 'operations', 'hidden' => ['sales-revenue', 'marketing-perf', 'ai-intelligence']],
                 'landing' => 'fulfillments', 'hidden' => self::HIDE_SALES,
-                'scopes' => ['logistics.deliveries' => 'self'],
+                // scopeFor() is an EXACT key lookup (EffectiveRoleProfile::scopeFor(), not a
+                // prefix match) against resourceOf($permissionName) — "sales.orders.view" scopes
+                // under "sales.orders", so each of these four permissions scopes under its own
+                // two-segment resource key. A single 'delivery' => 'self' entry would silently
+                // match none of them and leave the driver unscoped (defaulting to 'all') — this
+                // was verified directly against ScopeResolver/EffectiveRoleProfile before writing it.
+                'scopes' => [
+                    'delivery.pod' => 'self',
+                    'delivery.cod' => 'self',
+                    'delivery.return' => 'self',
+                    'delivery.analytics' => 'self',
+                ],
             ]),
 
             // ── Sales ────────────────────────────────────────────────────────────
@@ -241,9 +281,17 @@ final class RoleTemplateCatalog
                 'policies' => ['discount-approval'],
             ]),
             self::make('sales-representative', 'Sales Representative', $S, 'Owns their own orders and customers — no cost visibility.', [
+                // TASK-IAM-TEMPLATE-RECONCILIATION-001 Group C: 'crm.leads.create' does not
+                // exist — the CRM Sales domain has no separate "leads" resource; its three real
+                // tokens are crm.sales.{view,manage,convert} (config/permissions.php seeder,
+                // Modules/Crm/Sales). 'crm.sales.view' was already correctly held; resolved the
+                // stale create-style token to crm.sales.manage (create/update leads, opportunities,
+                // quotes) + crm.sales.convert (win/lose an opportunity) — the two real write-side
+                // actions a rep who owns their own pipeline actually performs day to day.
                 'permissions' => [
                     'sales.orders.view', 'sales.orders.create', 'sales.orders.update',
-                    'sales.customers.view', 'sales.customers.create', 'crm.sales.view', 'crm.leads.create',
+                    'sales.customers.view', 'sales.customers.create',
+                    'crm.sales.view', 'crm.sales.manage', 'crm.sales.convert',
                     'inventory.products.view',
                 ],
                 'nav' => ['dashboard', 'commerce', 'crm'],
@@ -252,11 +300,27 @@ final class RoleTemplateCatalog
                 'scopes' => ['sales.orders' => 'self', 'sales.customers' => 'self'],
             ]),
             self::make('cashier', 'Cashier', $S, 'POS operator — own sessions only.', [
-                'permissions' => ['pos.sessions.view', 'pos.sessions.operate', 'pos.sales.create', 'inventory.products.view'],
+                // TASK-IAM-TEMPLATE-RECONCILIATION-001 Group C: 'pos.sessions.*' and
+                // 'pos.sales.create' do not exist.
+                // CORRECTION (this task): an earlier pass at this reconciliation invented
+                // 'pos.shifts.*', 'pos.carts.*' and 'pos.payments.*' — none of these exist
+                // anywhere in the codebase. Checked: config/permissions.php's canonical
+                // registry (modules.pos has exactly one resource, 'terminal', with actions
+                // view/operate — no shifts/carts/payments resource at all); every POS module
+                // migration under Modules/POS/*/Infrastructure/Database/Migrations (all
+                // schema-only, none seeds a permission); and routes/api.php, where the ENTIRE
+                // POS route group — sessions, shifts, carts, cart lines, sales, returns,
+                // exchanges, receipts — is gated by the single middleware
+                // 'permission:pos.terminal.operate' (line ~882). There is no finer-grained
+                // token for any individual POS sub-resource to reference. Resolved to the
+                // real two-token pos.terminal surface only.
+                'permissions' => ['pos.terminal.view', 'pos.terminal.operate', 'inventory.products.view'],
                 'nav' => ['dashboard', 'pos'],
                 'dashboard' => ['profile' => 'crm', 'hidden' => ['marketing-perf', 'ai-intelligence']],
                 'landing' => 'pos', 'hidden' => self::HIDE_SALES,
-                'scopes' => ['pos.sessions' => 'self', 'sales.orders' => 'self'],
+                // scopeFor() exact-match (see the driver template's note) — this role holds no
+                // sales.orders.* permission, so a sales.orders scope entry would be dead config.
+                'scopes' => ['pos.terminal' => 'self'],
             ]),
 
             // ── Customer Service ─────────────────────────────────────────────────
@@ -335,7 +399,25 @@ final class RoleTemplateCatalog
                 'dashboard' => ['profile' => 'executive'], 'landing' => 'engineeringDashboard',
             ]),
             self::make('ai-analyst', 'AI Analyst', $AI, 'Read-only analytics across the AI platform.', [
-                'permissions' => ['bae.view', 'claude_bridge.view', 'engineering.view'],
+                // TASK-IAM-TEMPLATE-RECONCILIATION-001 Group C: none of 'bae.view',
+                // 'claude_bridge.view', 'engineering.view' exist as tokens.
+                // CORRECTION (this task): an earlier pass at this reconciliation invented a
+                // large per-domain taxonomy (engineering.pipelines/tasks/queue/releases/repair/
+                // workers/ai_reviews, claude_bridge.settings/tasks/workers, bae.attributions
+                // [plural — also a typo of the real singular resource]/timeline) and cited "the
+                // enterprise permission matrix migration" as evidence; that migration does not
+                // touch these namespaces at all (checked directly — zero matches), and none of
+                // those 11 tokens appears anywhere else in the codebase either. The only real
+                // tokens for these three modules are their base view/manage pair
+                // (config/permissions.php modules.{bae.attribution,claude_bridge.platform,
+                // engineering.platform}); the one other genuinely real engineering permission
+                // family, engineering.inbox.* (EngineeringTaskPolicy), is a distinct task-inbox
+                // concern the original 'engineering.view' token gave no indication of covering,
+                // so it is deliberately left out rather than guessed back in. Resolved to a
+                // direct 1:1 swap of each stale module-wide token for its one real view-level
+                // equivalent — no invented resource names, no widening beyond what the original
+                // three tokens evidently intended.
+                'permissions' => ['bae.attribution.view', 'claude_bridge.platform.view', 'engineering.platform.view'],
                 'nav' => ['dashboard', 'engineering', 'reports'],
                 'dashboard' => ['profile' => 'executive', 'hidden' => ['sales-revenue']],
                 'landing' => 'engineeringDashboard',

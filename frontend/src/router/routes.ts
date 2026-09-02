@@ -147,10 +147,13 @@ export const ROUTES = {
   // Organization — WP-ORG-002
   businessAccounts: '/business-accounts',
   teams: '/teams',
-  // Organization — WP-ORG-003 (People & Access — ComingSoon)
+  // Organization — WP-ORG-003 (People & Access — IAM Administration Workspace,
+  // TASK-ECOS-IAM-ADMINISTRATION-WORKSPACE-003). users/roles were Coming Soon placeholders;
+  // all three now render IamWorkspacePage, one shared workspace with 3 tabs.
   users: '/admin/users',
   userInvitations: '/admin/users/invitations',
   roles: '/admin/roles',
+  roleTemplates: '/admin/role-templates',
   orgSearch: '/organization/search',
   // Configuration OS
   configurationOs:      '/admin/configuration',
