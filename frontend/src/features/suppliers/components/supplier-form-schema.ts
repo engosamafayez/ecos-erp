@@ -7,6 +7,10 @@ export const supplierSchema = z.object({
   // read-only in the UI, never validated as required here.
   code: z.string().max(50).optional(),
   supplier_category_id: z.string().optional(),
+  // Supply Capabilities (TASK-...-SUPPLY-CAPABILITIES-003) — a declaration of
+  // what this Supplier CAN supply, not purchase history.
+  raw_material_ids: z.array(z.string()),
+  product_category_ids: z.array(z.string()),
   name: z.string().min(1, 'Name is required.').max(255),
   contact_person: z.string().max(255).optional(),
   email: z.union([z.literal(''), z.email('Enter a valid email address.')]).optional(),
@@ -32,6 +36,8 @@ export function toFormValues(supplier?: Supplier | null): SupplierFormValues {
   return {
     code: supplier?.code ?? '',
     supplier_category_id: supplier?.supplier_category_id ?? '',
+    raw_material_ids: supplier?.raw_materials?.map((m) => m.id) ?? [],
+    product_category_ids: supplier?.product_categories?.map((c) => c.id) ?? [],
     name: supplier?.name ?? '',
     contact_person: supplier?.contact_person ?? '',
     email: supplier?.email ?? '',

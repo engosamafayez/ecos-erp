@@ -183,6 +183,27 @@
     "next": "التالي",
     "page": "صفحة {{current}} من {{last}}"
   },
+  "capabilities": {
+    "sectionTitle": "قدرات التوريد",
+    "rawMaterials": {
+      "label": "المواد الخام",
+      "placeholder": "اختر المواد الخام التي يمكن لهذا المورد توفيرها…",
+      "searchPlaceholder": "بحث في المواد الخام…",
+      "empty": "لم يتم العثور على مواد خام.",
+      "emptyState": "لم يتم تحديد أي مواد خام بعد.",
+      "filterPlaceholder": "أي مادة خام",
+      "countBadge": "{{count}} مادة خام"
+    },
+    "productCategories": {
+      "label": "فئات المنتجات / الأقسام",
+      "placeholder": "اختر الفئات التي يمكن لهذا المورد توفيرها…",
+      "searchPlaceholder": "بحث في الفئات…",
+      "empty": "لم يتم العثور على فئات.",
+      "emptyState": "لم يتم تحديد أي فئات بعد.",
+      "filterPlaceholder": "أي فئة",
+      "countBadge": "{{count}} فئة"
+    }
+  },
   "categorySelect": {
     "empty": "لا توجد فئات بعد.",
     "filterPlaceholder": "جميع الفئات",

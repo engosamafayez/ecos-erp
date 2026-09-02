@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import {
   Activity,
   AlertCircle,
@@ -28,7 +29,7 @@ import {
   useColumnVisibility,
   useRowSelection,
 } from '@/components/data-grid';
-import { ActionMenu } from '@/components/crud';
+import { ActionMenu, Combobox } from '@/components/crud';
 import type { ActionMenuItem } from '@/components/crud/types';
 import { MobileDataCard } from '@/components/mobile';
 import { useFormatter } from '@/hooks/use-formatter';
@@ -50,6 +51,8 @@ import { Supplier360Drawer } from '@/features/suppliers/components/supplier-360-
 import { SupplierWizard } from '@/features/suppliers/components/supplier-wizard';
 import { SupplierCategorySelect } from '@/features/suppliers/components/supplier-category-select';
 import { SupplierCategoryManageDrawer } from '@/features/suppliers/components/supplier-category-manage-drawer';
+import { productsService } from '@/features/products/services/products-service';
+import { categoriesService } from '@/features/categories/services/categories-service';
 import { useDeleteSupplier, useSuppliersQuery, useUpdateSupplier } from '@/features/suppliers/hooks/use-suppliers';
 import { useSupplierSummaryStats } from '@/features/suppliers/hooks/use-supplier-analytics';
 import type {
@@ -119,7 +122,23 @@ export function SuppliersPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<SupplierStatusFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [rawMaterialFilter, setRawMaterialFilter] = useState<string | null>(null);
+  const [productCategoryFilter, setProductCategoryFilter] = useState<string | null>(null);
   const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
+
+  // Capability filters (§12) — backend-authoritative (query params consumed by
+  // EloquentSupplierRepository::paginate()'s whereHas filters), not client-side
+  // filtering over the currently loaded page.
+  const { data: rawMaterialOptions } = useQuery({
+    queryKey: ['raw-materials-filter-options'],
+    queryFn: () => productsService.list({ product_type: 'raw_material', per_page: 100 }),
+    staleTime: 60 * 1000,
+  });
+  const { data: productCategoryOptions } = useQuery({
+    queryKey: ['product-categories-filter-options'],
+    queryFn: () => categoriesService.list({ scope: 'product', per_page: 100 }),
+    staleTime: 60 * 1000,
+  });
   const [activeMetric, setActiveMetric] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [sort, setSort] = useState<{ field: SupplierSortField; direction: 'asc' | 'desc' }>({
@@ -157,12 +176,14 @@ export function SuppliersPage() {
       search: search || undefined,
       status: statusFilter,
       supplier_category_id: categoryFilter || undefined,
+      raw_material_id: rawMaterialFilter || undefined,
+      product_category_id: productCategoryFilter || undefined,
       page,
       per_page: PER_PAGE,
       sort_by: sort.field,
       sort_dir: sort.direction,
     }),
-    [search, statusFilter, categoryFilter, page, sort],
+    [search, statusFilter, categoryFilter, rawMaterialFilter, productCategoryFilter, page, sort],
   );
 
   const { data, isLoading, isError, isFetching, refetch } = useSuppliersQuery(params);
@@ -270,6 +291,15 @@ export function SuppliersPage() {
               {s.code}
               {s.supplier_category_name ? ` · ${s.supplier_category_name}` : ''}
             </span>
+            {/* Compact capability summary (§11) — counts only, never a chip
+                wall; the full set is in Supplier detail. */}
+            {((s.raw_material_count ?? 0) > 0 || (s.product_category_count ?? 0) > 0) && (
+              <span className="text-[10px] text-muted-foreground">
+                {(s.raw_material_count ?? 0) > 0 && tAny('capabilities.rawMaterials.countBadge', { count: s.raw_material_count })}
+                {(s.raw_material_count ?? 0) > 0 && (s.product_category_count ?? 0) > 0 ? ' · ' : ''}
+                {(s.product_category_count ?? 0) > 0 && tAny('capabilities.productCategories.countBadge', { count: s.product_category_count })}
+              </span>
+            )}
           </button>
         ),
       },
@@ -525,6 +555,20 @@ export function SuppliersPage() {
                   value={categoryFilter}
                   onChange={(v) => { setCategoryFilter(v || null); setPage(1); }}
                   placeholder={t($ => $.categorySelect.filterPlaceholder)}
+                  className="h-8 w-[160px] text-sm"
+                />
+                <Combobox
+                  options={(rawMaterialOptions?.items ?? []).map((p) => ({ value: p.id, label: `${p.name} (${p.sku})` }))}
+                  value={rawMaterialFilter}
+                  onChange={(v) => { setRawMaterialFilter(v || null); setPage(1); }}
+                  placeholder={t($ => $.capabilities.rawMaterials.filterPlaceholder)}
+                  className="h-8 w-[160px] text-sm"
+                />
+                <Combobox
+                  options={(productCategoryOptions?.items ?? []).map((c) => ({ value: c.id, label: `${c.name} (${c.code})` }))}
+                  value={productCategoryFilter}
+                  onChange={(v) => { setProductCategoryFilter(v || null); setPage(1); }}
+                  placeholder={t($ => $.capabilities.productCategories.filterPlaceholder)}
                   className="h-8 w-[160px] text-sm"
                 />
                 <ColumnVisibilityMenu columns={columnMeta} visibility={visibility} onToggle={toggle} onReset={reset} />

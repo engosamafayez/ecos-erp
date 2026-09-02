@@ -99,7 +99,7 @@ export function SupplierFormDrawer({ open, onOpenChange, supplier }: SupplierFor
       ) : null}
 
       <EntityForm form={form} id={FORM_ID} onSubmit={handleSubmit}>
-        <SupplierFormFields />
+        <SupplierFormFields supplier={supplier} />
       </EntityForm>
     </EntityDrawer>
   );

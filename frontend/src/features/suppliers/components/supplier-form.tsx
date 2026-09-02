@@ -5,12 +5,23 @@ import { FormField } from '@/components/crud';
 import { Input } from '@/components/ui/input';
 import type { SupplierFormValues } from '@/features/suppliers/components/supplier-form-schema';
 import { SupplierCategorySelect } from '@/features/suppliers/components/supplier-category-select';
+import { SupplierRawMaterialsSelect } from '@/features/suppliers/components/supplier-raw-materials-select';
+import { SupplierProductCategoriesSelect } from '@/features/suppliers/components/supplier-product-categories-select';
+import type { Supplier } from '@/features/suppliers/types/supplier';
 
-export function SupplierFormFields() {
+type SupplierFormFieldsProps = {
+  /** The Supplier being edited (undefined on create) — used only to preload
+   *  Supply Capability chip labels before the user has searched for them. */
+  supplier?: Supplier | null;
+};
+
+export function SupplierFormFields({ supplier }: SupplierFormFieldsProps = {}) {
   const { t } = useTranslation('suppliers');
   const { register, watch, setValue } = useFormContext<SupplierFormValues>();
   const code = watch('code');
   const categoryId = watch('supplier_category_id');
+  const rawMaterialIds = watch('raw_material_ids');
+  const productCategoryIds = watch('product_category_ids');
 
   return (
     <div className="flex flex-col gap-4">
@@ -45,6 +56,29 @@ export function SupplierFormFields() {
         <FormField name="mobile" label={t($ => $.form.mobile)}>
           <Input {...register('mobile')} />
         </FormField>
+      </div>
+
+      {/* Supply Capabilities (TASK-...-SUPPLY-CAPABILITIES-003) */}
+      <div className="border-border/60 border-t pt-4">
+        <h4 className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
+          {t($ => $.capabilities.sectionTitle)}
+        </h4>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormField name="raw_material_ids" label={t($ => $.capabilities.rawMaterials.label)}>
+            <SupplierRawMaterialsSelect
+              value={rawMaterialIds}
+              onChange={(ids) => setValue('raw_material_ids', ids)}
+              preloaded={supplier?.raw_materials}
+            />
+          </FormField>
+          <FormField name="product_category_ids" label={t($ => $.capabilities.productCategories.label)}>
+            <SupplierProductCategoriesSelect
+              value={productCategoryIds}
+              onChange={(ids) => setValue('product_category_ids', ids)}
+              preloaded={supplier?.product_categories}
+            />
+          </FormField>
+        </div>
       </div>
 
       {/* Location (Part 1) */}

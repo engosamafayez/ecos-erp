@@ -183,6 +183,27 @@
     "next": "Next",
     "page": "Page {{current}} of {{last}}"
   },
+  "capabilities": {
+    "sectionTitle": "Supply Capabilities",
+    "rawMaterials": {
+      "label": "Raw Materials",
+      "placeholder": "Select raw materials this supplier can provide…",
+      "searchPlaceholder": "Search raw materials…",
+      "empty": "No raw materials found.",
+      "emptyState": "No raw materials declared yet.",
+      "filterPlaceholder": "Any raw material",
+      "countBadge": "{{count}} RM"
+    },
+    "productCategories": {
+      "label": "Product Categories / Departments",
+      "placeholder": "Select categories this supplier can provide…",
+      "searchPlaceholder": "Search categories…",
+      "empty": "No categories found.",
+      "emptyState": "No categories declared yet.",
+      "filterPlaceholder": "Any category",
+      "countBadge": "{{count}} Cat"
+    }
+  },
   "categorySelect": {
     "empty": "No categories yet.",
     "filterPlaceholder": "All categories",

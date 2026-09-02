@@ -17,6 +17,18 @@ export type SupplierCategoryPayload = {
   is_active: boolean;
 };
 
+export type SupplierRawMaterial = {
+  id: string;
+  sku: string;
+  name: string;
+};
+
+export type SupplierProductCategoryCapability = {
+  id: string;
+  code: string;
+  name: string;
+};
+
 export type Supplier = {
   id: string;
   code: string;
@@ -55,6 +67,12 @@ export type Supplier = {
   total_purchased_value?: number;
   total_outstanding?: number;
   current_supplier_balance?: number;
+  // Supply Capabilities (TASK-...-SUPPLY-CAPABILITIES-003). Full sets on
+  // single-record fetch (Supplier detail); counts only on the list endpoint.
+  raw_materials?: SupplierRawMaterial[];
+  product_categories?: SupplierProductCategoryCapability[];
+  raw_material_count?: number;
+  product_category_count?: number;
 };
 
 export type SupplierPayload = {
@@ -62,6 +80,8 @@ export type SupplierPayload = {
   // (TASK-ECOS-PROCUREMENT-SUPPLIERS-BATCH-01-MASTER-DATA-002).
   code?: string;
   supplier_category_id?: string | null;
+  raw_material_ids?: string[];
+  product_category_ids?: string[];
   name: string;
   contact_person?: string;
   email?: string;
@@ -94,6 +114,8 @@ export type SuppliersQuery = {
   country?: string;
   city?: string;
   supplier_category_id?: string;
+  raw_material_id?: string;
+  product_category_id?: string;
   page?: number;
   per_page?: number;
   sort_by?: SupplierSortField;

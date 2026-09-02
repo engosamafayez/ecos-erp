@@ -10,7 +10,10 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Inventory\Products\Domain\Models\Product;
+use Modules\MasterData\Categories\Domain\Models\Category;
 use Modules\Purchasing\Suppliers\Infrastructure\Database\Factories\SupplierFactory;
 
 /**
@@ -102,5 +105,30 @@ class Supplier extends Model
     public function supplierCategory(): BelongsTo
     {
         return $this->belongsTo(SupplierCategory::class, 'supplier_category_id');
+    }
+
+    /**
+     * Raw Materials this Supplier declares it CAN supply — a capability
+     * declaration, not purchase history. Every row is enforced at write time
+     * (StoreSupplierRequest/UpdateSupplierRequest) to reference a Product
+     * with product_type = 'raw_material' in this Supplier's own company.
+     */
+    public function rawMaterials(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class, 'supplier_products')
+            ->withPivot('created_by')
+            ->withTimestamps();
+    }
+
+    /**
+     * Product Categories / Departments this Supplier declares it can supply
+     * — distinct from `supplierCategory()` above, which classifies the
+     * Supplier itself (TASK-...-MASTER-DATA-002 §21).
+     */
+    public function productCategories(): BelongsToMany
+    {
+        return $this->belongsToMany(Category::class, 'supplier_product_categories')
+            ->withPivot('created_by')
+            ->withTimestamps();
     }
 }

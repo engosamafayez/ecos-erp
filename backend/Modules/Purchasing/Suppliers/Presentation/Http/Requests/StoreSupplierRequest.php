@@ -40,6 +40,23 @@ final class StoreSupplierRequest extends FormRequest
                 Rule::exists('supplier_categories', 'id')
                     ->where(fn ($q) => $q->where('company_id', $companyId)->where('is_active', true)),
             ],
+            // Supply Capabilities (TASK-...-SUPPLY-CAPABILITIES-003) — backend-authoritative:
+            // a Raw Material must belong to THIS company and actually be raw-material typed;
+            // a Category must exist in the shared, non-tenant catalog with an appropriate scope.
+            'raw_material_ids' => ['array'],
+            'raw_material_ids.*' => [
+                'uuid',
+                Rule::exists('products', 'id')->where(fn ($q) => $q
+                    ->where('company_id', $companyId)
+                    ->where('product_type', 'raw_material')),
+            ],
+            'product_category_ids' => ['array'],
+            'product_category_ids.*' => [
+                'uuid',
+                Rule::exists('categories', 'id')->where(fn ($q) => $q
+                    ->whereIn('category_scope', ['product', 'material'])
+                    ->where('is_active', true)),
+            ],
             'name' => ['required', 'string', 'max:255'],
             'contact_person' => ['nullable', 'string', 'max:255'],
             'email' => ['nullable', 'email', 'max:255'],

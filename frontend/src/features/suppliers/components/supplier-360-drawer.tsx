@@ -229,6 +229,42 @@ function OverviewTab({ supplier, supplierId }: { supplier: Supplier; supplierId:
         </Card>
       </div>
 
+      <div>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t($ => $.capabilities.sectionTitle)}</h3>
+        <Card>
+          <CardContent className="flex flex-col gap-4 p-4">
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">{t($ => $.capabilities.rawMaterials.label)}</p>
+              {supplier.raw_materials && supplier.raw_materials.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {supplier.raw_materials.map((m) => (
+                    <span key={m.id} className="inline-flex items-center rounded bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+                      {m.name} <span className="ms-1 font-mono text-muted-foreground">({m.sku})</span>
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">{t($ => $.capabilities.rawMaterials.emptyState)}</p>
+              )}
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-2">{t($ => $.capabilities.productCategories.label)}</p>
+              {supplier.product_categories && supplier.product_categories.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {supplier.product_categories.map((c) => (
+                    <span key={c.id} className="inline-flex items-center rounded bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+                      {c.name} <span className="ms-1 font-mono text-muted-foreground">({c.code})</span>
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">{t($ => $.capabilities.productCategories.emptyState)}</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {hasFinancialPosition && (
         <div>
           <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3">{t($ => $.drawer360.overview.financialPosition)}</h3>

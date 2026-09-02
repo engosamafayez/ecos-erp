@@ -53,6 +53,23 @@ final class SupplierResource extends JsonResource
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
 
+            // Supply Capabilities (TASK-...-SUPPLY-CAPABILITIES-003). Full sets are
+            // only present when eager-loaded (Supplier detail / findById()); the
+            // list endpoint instead sends the batched counts below — never both,
+            // and never a per-row query for either.
+            'raw_materials' => $this->whenLoaded('rawMaterials', fn () => $this->rawMaterials->map(fn ($p) => [
+                'id' => $p->id,
+                'sku' => $p->sku,
+                'name' => $p->name,
+            ])),
+            'product_categories' => $this->whenLoaded('productCategories', fn () => $this->productCategories->map(fn ($c) => [
+                'id' => $c->id,
+                'code' => $c->code,
+                'name' => $c->name,
+            ])),
+            'raw_material_count' => $this->whenHas('raw_material_count', fn () => (int) $this->raw_material_count),
+            'product_category_count' => $this->whenHas('product_category_count', fn () => (int) $this->product_category_count),
+
             // Aggregate columns — populated when fetched via the list endpoint (LEFT JOIN subqueries).
             // Null-safe: will be null on single-record fetches that don't include the joins.
             'total_invoiced' => $this->whenHas('total_invoiced', fn () => round((float) $this->total_invoiced, 2)),

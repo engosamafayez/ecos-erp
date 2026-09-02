@@ -26,6 +26,8 @@ import {
   type SupplierFormValues,
 } from '@/features/suppliers/components/supplier-form-schema';
 import { SupplierCategorySelect } from '@/features/suppliers/components/supplier-category-select';
+import { SupplierRawMaterialsSelect } from '@/features/suppliers/components/supplier-raw-materials-select';
+import { SupplierProductCategoriesSelect } from '@/features/suppliers/components/supplier-product-categories-select';
 import { useCreateSupplier } from '@/features/suppliers/hooks/use-suppliers';
 
 type Props = {
@@ -154,6 +156,8 @@ export function SupplierWizard({ open, onOpenChange, onCreated }: Props) {
 
   const vals = getValues();
   const categoryId = watch('supplier_category_id');
+  const rawMaterialIds = watch('raw_material_ids');
+  const productCategoryIds = watch('product_category_ids');
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -187,6 +191,25 @@ export function SupplierWizard({ open, onOpenChange, onCreated }: Props) {
                 onChange={(v) => setValue('supplier_category_id', v)}
               />
             </Field>
+            <div className="border-border/60 border-t pt-4">
+              <h4 className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
+                {t($ => $.capabilities.sectionTitle)}
+              </h4>
+              <div className="flex flex-col gap-3">
+                <Field label={t($ => $.capabilities.rawMaterials.label)} error={undefined}>
+                  <SupplierRawMaterialsSelect
+                    value={rawMaterialIds}
+                    onChange={(ids) => setValue('raw_material_ids', ids)}
+                  />
+                </Field>
+                <Field label={t($ => $.capabilities.productCategories.label)} error={undefined}>
+                  <SupplierProductCategoriesSelect
+                    value={productCategoryIds}
+                    onChange={(ids) => setValue('product_category_ids', ids)}
+                  />
+                </Field>
+              </div>
+            </div>
             <Field label={t($ => $.wizard.fields.status)} error={undefined}>
               <div className="flex items-center gap-2">
                 <input

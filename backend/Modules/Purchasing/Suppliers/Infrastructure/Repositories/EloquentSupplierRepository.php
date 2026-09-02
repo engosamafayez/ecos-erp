@@ -95,6 +95,25 @@ final class EloquentSupplierRepository implements SupplierRepositoryInterface
             ]);
         }
 
+        // ── Supply Capability counts (batched — one grouped join each, never a
+        // query per Supplier) for the list's compact summary display. Full sets
+        // are only ever fetched via findById() (Supplier detail). ─────────────
+        $rawMaterialStats = DB::table('supplier_products')
+            ->selectRaw('supplier_id, COUNT(*) AS raw_material_count')
+            ->groupBy('supplier_id');
+
+        $categoryStats = DB::table('supplier_product_categories')
+            ->selectRaw('supplier_id, COUNT(*) AS product_category_count')
+            ->groupBy('supplier_id');
+
+        $query->leftJoinSub($rawMaterialStats, 'rm_agg', fn ($j) => $j->on('suppliers.id', '=', 'rm_agg.supplier_id'));
+        $query->leftJoinSub($categoryStats, 'cat_agg', fn ($j) => $j->on('suppliers.id', '=', 'cat_agg.supplier_id'));
+
+        $query->addSelect([
+            DB::raw('COALESCE(rm_agg.raw_material_count, 0)     AS raw_material_count'),
+            DB::raw('COALESCE(cat_agg.product_category_count, 0) AS product_category_count'),
+        ]);
+
         // ── Filters ───────────────────────────────────────────────────────────
 
         $country = trim((string) ($filters['country'] ?? ''));
@@ -110,6 +129,18 @@ final class EloquentSupplierRepository implements SupplierRepositoryInterface
         $categoryId = trim((string) ($filters['supplier_category_id'] ?? ''));
         if ($categoryId !== '') {
             $query->where('suppliers.supplier_category_id', $categoryId);
+        }
+
+        // Capability filters — backend-authoritative (correlated EXISTS via
+        // whereHas), not client-side filtering over the loaded page (§12).
+        $rawMaterialId = trim((string) ($filters['raw_material_id'] ?? ''));
+        if ($rawMaterialId !== '') {
+            $query->whereHas('rawMaterials', fn (Builder $q) => $q->where('products.id', $rawMaterialId));
+        }
+
+        $productCategoryId = trim((string) ($filters['product_category_id'] ?? ''));
+        if ($productCategoryId !== '') {
+            $query->whereHas('productCategories', fn (Builder $q) => $q->where('categories.id', $productCategoryId));
         }
 
         $search = trim((string) ($filters['search'] ?? ''));
@@ -146,7 +177,9 @@ final class EloquentSupplierRepository implements SupplierRepositoryInterface
 
     public function findById(string $id): ?Supplier
     {
-        return Supplier::query()->with('supplierCategory')->find($id);
+        // Single-record fetch — eager-loading these 3 relations is a constant 3
+        // extra queries regardless of how many related rows exist, never N+1.
+        return Supplier::query()->with(['supplierCategory', 'rawMaterials', 'productCategories'])->find($id);
     }
 
     public function create(array $attributes): Supplier

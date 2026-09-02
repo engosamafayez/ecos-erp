@@ -30,6 +30,14 @@ final class SupplierDTO extends BaseDTO
         public readonly ?string $google_maps_url = null,
         public readonly ?string $notes = null,
         public readonly bool $is_active = true,
+        // Supply Capabilities (TASK-...-SUPPLY-CAPABILITIES-003) — NOT `suppliers`
+        // columns; CreateSupplierAction/UpdateSupplierAction strip these before
+        // writing Supplier attributes and use them to sync the two pivot tables
+        // instead. Full-replace semantics (sync), matching a multi-select UI.
+        /** @var list<string> */
+        public readonly array $raw_material_ids = [],
+        /** @var list<string> */
+        public readonly array $product_category_ids = [],
     ) {}
 
     /**
@@ -53,7 +61,24 @@ final class SupplierDTO extends BaseDTO
             google_maps_url: self::nullableString($data, 'google_maps_url'),
             notes: self::nullableString($data, 'notes'),
             is_active: (bool) ($data['is_active'] ?? true),
+            raw_material_ids: self::stringList($data, 'raw_material_ids'),
+            product_category_ids: self::stringList($data, 'product_category_ids'),
         );
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return list<string>
+     */
+    private static function stringList(array $data, string $key): array
+    {
+        $value = $data[$key] ?? [];
+
+        if (! is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_unique(array_map('strval', $value)));
     }
 
     /**
