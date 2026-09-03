@@ -115,7 +115,14 @@ export function OrderMobileCard({
   const addressWithZone = [addressSummary || null, order.delivery_zone].filter(Boolean).join(' · ');
   const scheduledDate = formatDate(order.requested_delivery_date);
   const mapHref = order.location ? `https://www.google.com/maps?q=${order.location.lat},${order.location.lng}` : null;
-  const hasNote = Boolean(order.customer_note || order.notes);
+  // TASK-ECOS-MOBILE-REMAINING-PAGES-DATA-COMPLETENESS-SOURCE-CLOSURE-005 —
+  // customer_note/notes are the legacy single-string columns; order_notes_list
+  // (the structured thread most notes are actually added to today, via the
+  // drawer's Notes tab) was never checked here, so a note added there never
+  // flipped this indicator. notes_count is the new list-read-model aggregate
+  // (EloquentOrderRepository::paginate() -> withCount('orderNotes')) — a
+  // single extra count query for the page, not a loaded thread per row.
+  const hasNote = Boolean(order.customer_note || order.notes || (order.notes_count ?? 0) > 0);
   const brandName = order.channel?.brand?.name;
 
   const fields: MobileDataCardField[] = [

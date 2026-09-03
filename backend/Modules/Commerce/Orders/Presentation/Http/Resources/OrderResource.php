@@ -151,6 +151,13 @@ final class OrderResource extends JsonResource
             'internal_notes' => $this->internal_notes,
             'created_by_id' => $this->created_by_id,
             'created_by_name' => $this->created_by_name,
+            // TASK-ECOS-MOBILE-REMAINING-PAGES-DATA-COMPLETENESS-SOURCE-CLOSURE-005 —
+            // present only on the list/paginate read model (EloquentOrderRepository::
+            // paginate() chains withCount('orderNotes')); absent on the single-order
+            // detail fetch, which loads the full order_notes_list below instead. Lets
+            // a Mobile/desktop list row show "has a note" without loading every note
+            // row for every order on the page.
+            'notes_count' => $this->whenCounted('orderNotes'),
             'order_notes_list' => $this->whenLoaded('orderNotes', fn () => $this->orderNotes->map(
                 fn (OrderNote $n) => [
                     'id' => $n->id,

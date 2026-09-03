@@ -30,7 +30,14 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
 
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = $this->buildFilteredQuery($filters);
+        // TASK-ECOS-MOBILE-REMAINING-PAGES-DATA-COMPLETENESS-SOURCE-CLOSURE-005 —
+        // the Mobile card's "has note" indicator only ever read the plain
+        // notes/customer_note columns, never the orderNotes relation, because
+        // eager-loading the full thread here (as WITH_DETAIL does for a single
+        // order) would mean loading every note row for every order on the page.
+        // withCount is the one-aggregate-query answer: a single extra subquery
+        // for the whole page, not N+1, and it never touches WITH_DETAIL/findById.
+        $query = $this->buildFilteredQuery($filters)->withCount('orderNotes');
 
         $sortBy = (string) ($filters['sort_by'] ?? 'created_at');
         if (! in_array($sortBy, self::SORTABLE, true)) {

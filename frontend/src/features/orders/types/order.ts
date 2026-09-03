@@ -268,6 +268,13 @@ export type Order = {
   internal_notes: string | null;
   created_by_id: string | null;
   created_by_name: string | null;
+  /**
+   * Present only on the list/paginate read model (an aggregate `withCount`,
+   * not the loaded thread) — absent on the single-order detail fetch, which
+   * carries the full `order_notes_list` instead. A list/card row should
+   * prefer this over loading every note per row just to show "has a note".
+   */
+  notes_count?: number;
   order_notes_list: OrderNote[];
 
   // Billing

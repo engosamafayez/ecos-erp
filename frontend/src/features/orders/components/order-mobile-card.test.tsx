@@ -331,4 +331,22 @@ describe('OrderMobileCard — Mobile capabilities preserved (reservation status,
     render(<OrderMobileCard order={BASE} onView={vi.fn()} />);
     expect(screen.queryByText('mobileCard.hasNote')).toBeNull();
   });
+
+  // TASK-ECOS-MOBILE-REMAINING-PAGES-DATA-COMPLETENESS-SOURCE-CLOSURE-005 §9 —
+  // customer_note/notes are the legacy single-string columns; most notes are
+  // actually added today through the drawer's Notes tab, into the structured
+  // orderNotes relation the LIST/card read model never eager-loaded (loading
+  // the full thread per row would cost one query per order on the page).
+  // notes_count is the new list-read-model aggregate (a single extra COUNT
+  // subquery for the whole page, via EloquentOrderRepository::paginate()'s
+  // withCount('orderNotes')) — this is the regression test for that fix.
+  it('shows the note indicator from the notes_count aggregate, even with no legacy note field set', () => {
+    render(<OrderMobileCard order={{ ...BASE, notes_count: 2 } as never as Order} onView={vi.fn()} />);
+    expect(screen.getByText('mobileCard.hasNote')).toBeInTheDocument();
+  });
+
+  it('does not show the note indicator when notes_count is exactly zero', () => {
+    render(<OrderMobileCard order={{ ...BASE, notes_count: 0 } as never as Order} onView={vi.fn()} />);
+    expect(screen.queryByText('mobileCard.hasNote')).toBeNull();
+  });
 });
