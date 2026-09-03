@@ -32,6 +32,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { CustomerDrawer } from '@/features/customers/components/customer-drawer';
 import { CustomerFormDrawer } from '@/features/customers/components/customer-form-drawer';
 import { CustomerQuickActionCard } from '@/features/customers/components/customer-quick-action-card';
@@ -163,6 +164,11 @@ export function CustomersPage() {
   const { t: tCommon } = useTranslation('common');
   const navigate = useNavigate();
   const searchRef = useRef<HTMLInputElement>(null);
+  // TASK-...-FINAL-CLOSURE-011 (§9/§11) — reconciled from develop's already-merged
+  // Mobile lane (customers-page.tsx, "feat(mobile): complete customers products and
+  // orders mobile UX"). Same hook, same below-`md` card-list treatment; only the
+  // Blocked-Customer wiring (§12) is new on top of it.
+  const isMobile = useIsMobile();
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [search, setSearch]               = useState('');
@@ -584,8 +590,62 @@ export function CustomersPage() {
         ) : null}
       </div>
 
-      {/* ── Data Table ───────────────────────────────────────────────────── */}
-      {showTable ? (
+      {/* ── Data — cards on mobile, table on tablet+ ────────────────────────
+          Reconciled from develop's already-merged Mobile lane (TASK-...-FINAL-
+          CLOSURE-011 §9/§11): same below-`md` card-list treatment, same reused
+          handlers (openView/openViewOrders/openEdit/setDeleting/toggleSelect) —
+          no new query, no new business logic. CustomerMobileCard additionally
+          receives this batch's Blocked-Customer props (onCreateOrder/onBlock/
+          onUnblock/canBlock/canUnblock) so Block/Unblock parity holds on both
+          layouts. */}
+      {showTable && isMobile ? (
+        <div role="list">
+          {isLoading ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="mb-2 animate-pulse space-y-2 rounded-xl border bg-card p-3.5 shadow-sm">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-48" />
+              </div>
+            ))
+          ) : isError ? (
+            <ErrorState description={t($ => $.table.error)} onRetry={() => void refetch()} />
+          ) : items.length === 0 ? (
+            <EmptyState title={t($ => $.table.empty)} />
+          ) : (
+            items.map((customer, idx) => (
+              <CustomerMobileCard
+                key={customer.id}
+                customer={customer}
+                isFocused={focusedRowIndex === idx}
+                isSelected={selectedIds.has(customer.id)}
+                onToggleSelect={toggleSelect}
+                onView={openView}
+                onViewOrders={openViewOrders}
+                onEdit={openEdit}
+                onDelete={setDeleting}
+                onCreateOrder={(c) => navigate(ROUTES.ordersNew, { state: { customerPhone: c.phone ?? undefined } })}
+                onBlock={(c) => { setBlockReason(''); setBlocking(c); }}
+                onUnblock={(c) => { setUnblockReason(''); setUnblocking(c); }}
+                canBlock={canBlock}
+                canUnblock={canUnblock}
+              />
+            ))
+          )}
+          {meta && meta.last_page > 1 ? (
+            <div className="mt-2">
+              <Pagination
+                meta={{
+                  page: meta.current_page,
+                  perPage: meta.per_page,
+                  total: meta.total,
+                  lastPage: meta.last_page,
+                }}
+                onPageChange={(p) => { setPage(p); setFocusedRowIndex(null); }}
+              />
+            </div>
+          ) : null}
+        </div>
+      ) : showTable ? (
         <div className="overflow-hidden rounded-xl border bg-background">
           <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -826,8 +886,12 @@ export function CustomersPage() {
 }
 
 // ── Customer Row ──────────────────────────────────────────────────────────────
+// Shared by both CustomerRow (desktop table) and CustomerMobileCard (below-`md`
+// card list, TASK-...-FINAL-CLOSURE-011 §9/§11/§14) — exported so it stays the
+// single contract both layouts are built against; every field here is required
+// by at least one of them, and neither layout may drop a field the other needs.
 
-type RowProps = {
+export type RowProps = {
   customer: Customer;
   isFocused: boolean;
   isSelected: boolean;
@@ -1145,5 +1209,224 @@ function CustomerRow({
         </div>
       </td>
     </tr>
+  );
+}
+
+// ── Customer Mobile Card ────────────────────────────────────────────────────
+// TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-FINAL-CLOSURE-011 (§9-§14). Reconciled
+// from develop's already-merged Mobile lane (customers-page.tsx, "feat(mobile):
+// complete customers products and orders mobile UX") — the below-`md` card list
+// this function renders, its checkbox/name/KPI-grid/address/notes/phone-footer
+// layout, and its base ActionMenu items (edit/copyPhone/delete) are that
+// implementation, preserved as-is. On top of it, this batch's Blocked-Customer
+// contract is wired in using RowProps' shared shape (§9): a Blocked badge
+// (parity with desktop's Intelligence cell), a Repeat-Customer badge (same
+// parity), and the same Block/Unblock ActionMenu behavior desktop's CustomerRow
+// already has — same onBlock/onUnblock callbacks (opening the SAME page-level
+// ConfirmDialogs and useBlockCustomer/useUnblockCustomer mutations, §12: no
+// duplicate mutation implementation), same canBlock/canUnblock permission gate.
+// A "Create Order" item is included too so `onCreateOrder` — required by the
+// shared RowProps contract — has a real call site here, mirroring desktop's
+// own ActionMenu ordering (edit, createOrder, copyPhone, block/unblock, delete)
+// exactly rather than leaving the prop unused.
+export function CustomerMobileCard({
+  customer,
+  isFocused,
+  isSelected,
+  onToggleSelect,
+  onView,
+  onViewOrders,
+  onEdit,
+  onDelete,
+  onCreateOrder,
+  onBlock,
+  onUnblock,
+  canBlock,
+  canUnblock,
+}: RowProps) {
+  const { t } = useTranslation('customers');
+  const { t: tCommon } = useTranslation('common');
+  const primaryPhone = customer.phone;
+
+  return (
+    <div
+      role="listitem"
+      aria-selected={isSelected}
+      data-focused={isFocused || undefined}
+      className={cn(
+        'relative mb-2 rounded-xl border p-3.5 shadow-sm transition-colors last:mb-0',
+        isSelected ? 'bg-primary/5' : 'bg-card',
+        isFocused && 'outline outline-1 -outline-offset-1 outline-primary/50',
+      )}
+    >
+      <div className="absolute start-3.5 top-4">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={() => onToggleSelect(customer.id)}
+          className="size-4 cursor-pointer rounded accent-primary"
+          aria-label={customer.name}
+        />
+      </div>
+
+      <button
+        type="button"
+        className="block w-full min-h-11 ps-7 text-start"
+        onClick={() => onView(customer)}
+        aria-label={`${tCommon($ => $.actions.view)} ${customer.name}`}
+      >
+        {/* Row 1: Name + code, status — Blocked/Repeat/Inactive badges grouped
+            together (parity with desktop's single "Intelligence" cell), wrapped
+            so they stack cleanly on narrow screens instead of the single-badge
+            layout Mobile had before this batch. */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="truncate text-[15px] font-semibold leading-tight text-foreground">{customer.name}</p>
+            <p className="text-xs text-muted-foreground">{customer.code}</p>
+          </div>
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+            {customer.is_blocked ? (
+              <Badge
+                variant="secondary"
+                className="h-5 gap-1 px-1.5 text-[10px] text-red-700 bg-red-100 border-red-200 dark:text-red-400 dark:bg-red-950/50 dark:border-red-800"
+                title={customer.block_reason ?? undefined}
+              >
+                <Ban className="size-3" />
+                {t($ => $.blocked.badge)}
+              </Badge>
+            ) : null}
+            {customer.is_repeat_customer ? (
+              <Badge
+                variant="secondary"
+                className="h-5 gap-1 px-1.5 text-[10px] text-emerald-700 bg-emerald-100 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/50 dark:border-emerald-800"
+                title={t($ => $.intelligence.repeatHint, { count: REPEAT_ORDER_THRESHOLD })}
+              >
+                <Repeat className="size-3" />
+                {t($ => $.intelligence.repeat)}
+              </Badge>
+            ) : null}
+            {!customer.is_active ? (
+              <Badge variant="secondary" className="h-5 shrink-0 px-1.5 text-[10px]">
+                {t($ => $.tags.inactive)}
+              </Badge>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Row 2: Orders / Total / Receiving / Last order — server-computed KPIs */}
+        <dl className="mt-2.5 grid grid-cols-2 gap-x-4 gap-y-2">
+          <div>
+            <dt className="truncate text-[11px] uppercase tracking-wide text-muted-foreground">{t($ => $.columns.ordersCount)}</dt>
+            <dd className="mt-0.5 text-sm tabular-nums">{customer.orders_count}</dd>
+          </div>
+          <div>
+            {/* text-end on both dt and dd (§15): the label previously stayed at
+                the block-start edge while the value sat at 'end', so the value
+                visually detached from its own label under RTL. */}
+            <dt className="truncate text-end text-[11px] uppercase tracking-wide text-muted-foreground">{t($ => $.columns.totalOrderValue)}</dt>
+            <dd className="mt-0.5 text-end text-sm tabular-nums">{fmtMoney(customer.total_order_value)}</dd>
+          </div>
+          <div>
+            <dt className="truncate text-[11px] uppercase tracking-wide text-muted-foreground">{t($ => $.columns.receivingRate)}</dt>
+            <dd className="mt-0.5 text-sm tabular-nums">
+              {customer.receiving_rate === null ? <span className="text-muted-foreground">—</span> : `${customer.receiving_rate}%`}
+            </dd>
+          </div>
+          <div>
+            <dt className="truncate text-end text-[11px] uppercase tracking-wide text-muted-foreground">{t($ => $.columns.lastOrder)}</dt>
+            <dd className="mt-0.5 text-end text-sm tabular-nums">
+              {customer.last_order_at ? new Date(customer.last_order_at).toLocaleDateString() : <span className="text-muted-foreground">—</span>}
+            </dd>
+          </div>
+        </dl>
+
+        {/* Row 3: Address + location */}
+        {customer.full_address || customer.location_url ? (
+          <div className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
+            {customer.full_address ? <p className="min-w-0 flex-1 truncate">{customer.full_address}</p> : null}
+            {customer.location_url ? (
+              <a
+                href={customer.location_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="shrink-0 text-muted-foreground hover:text-primary"
+                title={t($ => $.columns.location)}
+              >
+                <MapPin className="size-3.5" />
+              </a>
+            ) : null}
+          </div>
+        ) : null}
+
+        {customer.notes ? (
+          <div className="mt-2">
+            <Badge
+              variant="secondary"
+              className="h-5 gap-1 px-1.5 text-[10px] text-amber-700 bg-amber-100 border-amber-200 dark:text-amber-400 dark:bg-amber-950/50 dark:border-amber-800"
+            >
+              <FileText className="size-3" />
+              {t($ => $.intelligence.hasNotes)}
+            </Badge>
+          </div>
+        ) : null}
+      </button>
+
+      {/* Footer — Call/WhatsApp/Copy (PhoneCell, unchanged shared component) + View Orders + overflow */}
+      <div className="mt-2.5 flex items-center justify-between gap-2 ps-7">
+        <div onClick={(e) => e.stopPropagation()}>
+          <PhoneCell
+            phone={primaryPhone}
+            labels={{
+              call: t($ => $.phone.call),
+              whatsapp: t($ => $.phone.whatsapp),
+              copy: tCommon($ => $.common.copy),
+            }}
+          />
+        </div>
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          {customer.orders_count > 0 ? (
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => onViewOrders(customer)}>
+              {t($ => $.table.viewOrders)}
+            </Button>
+          ) : null}
+          <ActionMenu
+            label={`Actions for ${customer.name}`}
+            items={[
+              { key: 'edit', label: tCommon($ => $.common.edit), icon: Pencil, onSelect: () => onEdit(customer) },
+              {
+                key: 'createOrder',
+                label: t($ => $.quickCard.createOrder),
+                icon: Plus,
+                onSelect: () => onCreateOrder(customer),
+              },
+              {
+                key: 'copyPhone',
+                label: t($ => $.quickCard.copyPhone),
+                icon: Copy,
+                onSelect: () => { if (primaryPhone) void navigator.clipboard.writeText(primaryPhone); },
+                disabled: !primaryPhone,
+              },
+              ...(customer.is_blocked
+                ? [{
+                    key: 'unblock',
+                    label: t($ => $.blocked.unblockAction),
+                    icon: ShieldCheck,
+                    onSelect: () => onUnblock(customer),
+                    disabled: !canUnblock,
+                  }]
+                : [{
+                    key: 'block',
+                    label: t($ => $.blocked.blockAction),
+                    icon: Ban,
+                    onSelect: () => onBlock(customer),
+                    disabled: !canBlock,
+                  }]),
+              { key: 'delete', label: tCommon($ => $.common.delete), icon: Trash2, variant: 'destructive' as const, onSelect: () => onDelete(customer) },
+            ]}
+          />
+        </div>
+      </div>
+    </div>
   );
 }
