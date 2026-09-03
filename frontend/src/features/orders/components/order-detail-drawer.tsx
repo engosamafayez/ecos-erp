@@ -1,6 +1,7 @@
 import axios from 'axios';
 import {
   Activity,
+  AlertTriangle,
   ArrowDown,
   ArrowRightCircle,
   BadgeCheck,
@@ -140,15 +141,27 @@ function useOrderMoney() {
 
 // ── Payment method labels ─────────────────────────────────────────────────────
 
-const PAYMENT_METHOD_LABELS: Record<string, string> = {
-  cod:           'Cash on Delivery',
+// TASK-ECOS-MOBILE-REMAINING-PAGES-ORDER-DRAWER-PAYMENT-NOTES-004 — the 5
+// canonical manual methods already have a real, translated label authority at
+// `workspace.paymentMethodLabels.*` (the exact fix already applied to
+// OrderPaymentCell for the identical class of bug — see that file's own
+// comment). This tab carried its own separate, hardcoded-English map for the
+// same values, so a canonical method rendered in English regardless of the
+// active language, and two of the five canonical methods (instapay,
+// mobile_wallet) weren't in the map at all and fell through to an
+// unreadable "Mobile_wallet"-style title-case guess. Fixed at the same
+// canonical authority, not a second local map.
+const CANONICAL_PAYMENT_METHODS = ['cod', 'instapay', 'mobile_wallet', 'credit_card', 'bank_transfer'] as const;
+
+// Legacy/WooCommerce-origin values outside the 5 canonical methods — no
+// canonical translated label exists for these; kept as the same short,
+// non-localized heuristic OrderPaymentCell's own LEGACY_METHOD_MAP uses.
+const LEGACY_PAYMENT_METHOD_LABELS: Record<string, string> = {
   cash:          'Cash',
   visa:          'Visa Card',
   mastercard:    'Mastercard',
-  credit_card:   'Credit Card',
   card:          'Credit Card',
   bank:          'Bank Transfer',
-  bank_transfer: 'Bank Transfer',
   instalment:    'Instalment',
   installment:   'Instalment',
   wallet:        'Digital Wallet',
@@ -158,11 +171,14 @@ const PAYMENT_METHOD_LABELS: Record<string, string> = {
 };
 
 /** Converts a technical payment code ("cod", "bank_transfer") to a business label. */
-function formatPaymentLabel(raw: string | null): string | null {
+function formatPaymentLabel(raw: string | null, t: OrdersT): string | null {
   if (!raw) return null;
   const key = raw.toLowerCase().replace(/[-\s]/g, '_');
-  if (PAYMENT_METHOD_LABELS[key]) return PAYMENT_METHOD_LABELS[key];
-  for (const [k, label] of Object.entries(PAYMENT_METHOD_LABELS)) {
+  if ((CANONICAL_PAYMENT_METHODS as readonly string[]).includes(key)) {
+    return t($ => $.workspace.paymentMethodLabels[key as (typeof CANONICAL_PAYMENT_METHODS)[number]]);
+  }
+  if (LEGACY_PAYMENT_METHOD_LABELS[key]) return LEGACY_PAYMENT_METHOD_LABELS[key];
+  for (const [k, label] of Object.entries(LEGACY_PAYMENT_METHOD_LABELS)) {
     if (key.includes(k) || k.includes(key)) return label;
   }
   // Fallback: title-case the raw value
@@ -170,10 +186,13 @@ function formatPaymentLabel(raw: string | null): string | null {
 }
 
 /** Resolves the best human-readable payment method from an order. */
-function resolvePaymentLabel(order: { payment_method_manual?: string | null; payment_method_title?: string | null; payment_method?: string | null }): string | null {
-  if (order.payment_method_manual) return formatPaymentLabel(order.payment_method_manual);
+function resolvePaymentLabel(
+  order: { payment_method_manual?: string | null; payment_method_title?: string | null; payment_method?: string | null },
+  t: OrdersT,
+): string | null {
+  if (order.payment_method_manual) return formatPaymentLabel(order.payment_method_manual, t);
   if (order.payment_method_title)  return order.payment_method_title; // WooCommerce title is already readable
-  if (order.payment_method)        return formatPaymentLabel(order.payment_method);
+  if (order.payment_method)        return formatPaymentLabel(order.payment_method, t);
   return null;
 }
 
@@ -239,7 +258,7 @@ function KpiCard({ label, value, variant }: { label: string; value: string; vari
 
 function SummaryTab({ order, t }: { order: Order; t: OrdersT }) {
   const fmtCur = useOrderMoney();
-  const paymentLabel = resolvePaymentLabel(order);
+  const paymentLabel = resolvePaymentLabel(order, t);
   const hasDiscount = order.discount_amount > 0.005;
   const hasDeposit  = order.deposit_paid > 0.005;
 
@@ -828,10 +847,35 @@ function ProductsTab({ order, t }: { order: Order; t: OrdersT }) {
   );
 }
 
-function PaymentTab({ order, t }: { order: Order; t: OrdersT }) {
+// TASK-ECOS-MOBILE-REMAINING-PAGES-ORDER-DRAWER-PAYMENT-NOTES-004 §17 — shared
+// by Payment and Notes, the two tabs this task closes: a failed detail fetch
+// must never look like "there's simply nothing here." Reuses the existing
+// full-page order-detail error copy (`orderDetail.failedToLoad*`) rather than
+// inventing a second set of strings for the same condition.
+function TabLoadError({ t, onRetry }: { t: OrdersT; onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-center gap-3 py-12 text-center p-4">
+      <AlertTriangle className="size-6 text-destructive/70" />
+      <div>
+        <p className="text-sm font-medium">{t($ => $.orderDetail.failedToLoad)}</p>
+        <p className="text-xs text-muted-foreground mt-1">{t($ => $.orderDetail.failedToLoadDesc)}</p>
+      </div>
+      <Button variant="outline" size="sm" className="gap-1.5" onClick={onRetry}>
+        <RotateCcw className="size-3.5" />
+        {t($ => $.orderDetail.retry)}
+      </Button>
+    </div>
+  );
+}
+
+export function PaymentTab({ order, t, readFailed, onRetry }: { order: Order; t: OrdersT; readFailed: boolean; onRetry: () => void }) {
   const fmtCur = useOrderMoney();
-  const paymentLabel = resolvePaymentLabel(order);
+  const paymentLabel = resolvePaymentLabel(order, t);
   const [recordPaymentOpen, setRecordPaymentOpen] = useState(false);
+
+  if (readFailed) {
+    return <TabLoadError t={t} onRetry={onRetry} />;
+  }
 
   // Derive payment status from the ERP's own payment authority.
   //
@@ -2453,12 +2497,22 @@ export function OrderDetailDrawer({
 
   // Fetch fresh detail data so canonical financial fields and full customer profile are always current.
   // Falls back to grid row data (order) until the request completes.
-  const { data: detailOrder, isLoading: detailLoading } = useOrderQuery(order?.id ?? '');
+  const { data: detailOrder, isLoading: detailLoading, isError: detailFailed, refetch: refetchOrder } = useOrderQuery(order?.id ?? '');
   const displayOrder = detailOrder ?? order;
 
   if (!displayOrder) return null;
 
   const isEnriching = detailLoading && !detailOrder;
+  // TASK-ECOS-MOBILE-REMAINING-PAGES-ORDER-DRAWER-PAYMENT-NOTES-004 §17 — Payment
+  // and Notes both depend on fields the narrower grid-row `order` doesn't carry
+  // (order_notes_list, payment_proofs are fetched separately but the financial/
+  // notes fields themselves need the full detail fetch). Before this, a failed
+  // detail fetch silently fell back to the stale grid row with no indication
+  // anything went wrong — an empty/stale Payment or Notes tab looked identical
+  // to a genuine "nothing here yet". Only treated as a hard failure when there
+  // is no real detail data at all — a transient error after a successful first
+  // load must not blank out data already on screen.
+  const detailReadFailed = detailFailed && !detailOrder;
 
   const tabs = [
     { key: 'summary',   label: t($ => $.drawer.tabs.summary),   content: <SummaryTab order={displayOrder} t={t} /> },
@@ -2468,9 +2522,9 @@ export function OrderDetailDrawer({
     { key: 'products',  label: t($ => $.drawer.tabs.products),   content: <ProductsTab order={displayOrder} t={t} />, badge: (displayOrder.lines ?? []).length },
     { key: 'inventory', label: t($ => $.drawer.tabs.inventory),  content: <InventoryTab order={displayOrder} /> },
     { key: 'timeline',  label: t($ => $.drawer.tabs.timeline),   content: <TimelineTab order={displayOrder} /> },
-    { key: 'payment',   label: t($ => $.drawer.tabs.payment),    content: <PaymentTab order={displayOrder} t={t} /> },
+    { key: 'payment',   label: t($ => $.drawer.tabs.payment),    content: <PaymentTab order={displayOrder} t={t} readFailed={detailReadFailed} onRetry={refetchOrder} /> },
     { key: 'shipping',  label: t($ => $.drawer.tabs.shipping),   content: <ShippingTab order={displayOrder} t={t} /> },
-    { key: 'notes',     label: t($ => $.drawer.tabs.notes),      content: <OrderNotesTab order={displayOrder} /> },
+    { key: 'notes',     label: t($ => $.drawer.tabs.notes),      content: <OrderNotesTab order={displayOrder} readFailed={detailReadFailed} onRetry={refetchOrder} /> },
     { key: 'location',  label: t($ => $.drawer.tabs.location),   content: <LocationTab order={displayOrder} t={t} autoResolve={autoResolveLocation} /> },
   ];
 

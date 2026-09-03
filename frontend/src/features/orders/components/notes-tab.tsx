@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Clock, Loader2, MessageSquare, Pencil, Search, Trash2, TriangleAlert } from 'lucide-react';
+import { AlertTriangle, Clock, Loader2, MessageSquare, Pencil, RotateCcw, Search, Trash2, TriangleAlert } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/components/ds/use-toast';
+import { usePermission } from '@/features/authorization/use-authorization';
 import {
   useAddOrderNote,
   useDeleteOrderNote,
@@ -75,6 +76,12 @@ function InternalNoteCard({
   orderId: string;
 }) {
   const { t } = useTranslation('orders');
+  const { can } = usePermission();
+  // TASK-…-ORDER-DRAWER-PAYMENT-NOTES-004 §13 — same permission the backend
+  // route itself requires (routes/api.php: orders/{order}/notes/{note}
+  // PATCH/DELETE both gated by sales.orders.update). A read-only user must not
+  // see edit/delete controls that would only 403 on submit.
+  const canMutate = can('sales.orders.update');
   const [editing, setEditing]   = useState(false);
   const [editText, setEditText] = useState(note.content);
   const { toast }               = useToast();
@@ -157,7 +164,7 @@ function InternalNoteCard({
         )}
       </div>
 
-      {!editing && (
+      {!editing && canMutate && (
         <div className="flex items-start gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 pt-0.5">
           <Button
             size="icon"
@@ -180,6 +187,27 @@ function InternalNoteCard({
           </Button>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Load-failure state ───────────────────────────────────────────────────────
+// Mirrors order-detail-drawer.tsx's own TabLoadError — a failed detail fetch
+// must never look identical to "there are simply no notes yet" (§17).
+
+function NotesLoadError({ onRetry }: { onRetry: () => void }) {
+  const { t } = useTranslation('orders');
+  return (
+    <div className="flex flex-col items-center gap-3 py-12 text-center p-4">
+      <AlertTriangle className="size-6 text-destructive/70" />
+      <div>
+        <p className="text-sm font-medium">{t($ => $.orderDetail.failedToLoad)}</p>
+        <p className="text-xs text-muted-foreground mt-1">{t($ => $.orderDetail.failedToLoadDesc)}</p>
+      </div>
+      <Button variant="outline" size="sm" className="gap-1.5" onClick={onRetry}>
+        <RotateCcw className="size-3.5" />
+        {t($ => $.orderDetail.retry)}
+      </Button>
     </div>
   );
 }
@@ -303,15 +331,33 @@ function CustomerNotesSection({ order }: { order: Order }) {
 
 function InternalNotesSection({ order }: { order: Order }) {
   const { t } = useTranslation('orders');
+  const { can } = usePermission();
+  // Same canonical gate as InternalNoteCard's own edit/delete controls (§13) —
+  // a read-only user gets the read-only note list with no compose box at all,
+  // not a compose box that would only 403 on submit.
+  const canMutate = can('sales.orders.update');
   const notes = order.order_notes_list.filter((n) => n.type === 'internal');
+  // TASK-…-ORDER-DRAWER-PAYMENT-NOTES-004 §17 — `order.internal_notes` (a
+  // distinct legacy DB column from the structured order_notes_list) had zero
+  // presence anywhere in this tab, even though the sibling legacy field
+  // (order.notes) was already folded into Customer Notes below. Same
+  // read-only treatment, same section it semantically belongs to.
+  const hasLegacyInternal = Boolean(order.internal_notes);
 
   return (
     <div className="flex flex-col gap-3">
-      {notes.length === 0 ? (
-        <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
-          <MessageSquare className="size-4 mr-2 opacity-40" />
-          {t($ => $.notesTab.noInternalNotes)}
+      {hasLegacyInternal && (
+        <div className="rounded-lg border bg-muted/30 p-3.5">
+          <p className="text-sm whitespace-pre-wrap break-words">{order.internal_notes}</p>
         </div>
+      )}
+      {notes.length === 0 ? (
+        !hasLegacyInternal && (
+          <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
+            <MessageSquare className="size-4 mr-2 opacity-40" />
+            {t($ => $.notesTab.noInternalNotes)}
+          </div>
+        )
       ) : (
         <div className="flex flex-col gap-4">
           {notes.map((n) => (
@@ -319,8 +365,12 @@ function InternalNotesSection({ order }: { order: Order }) {
           ))}
         </div>
       )}
-      <Separator />
-      <ComposeBox orderId={order.id} />
+      {canMutate && (
+        <>
+          <Separator />
+          <ComposeBox orderId={order.id} />
+        </>
+      )}
     </div>
   );
 }
@@ -354,12 +404,18 @@ function WooCommerceNotesSection({ order }: { order: Order }) {
 
 type OrderNotesTabProps = {
   order: Order;
+  readFailed?: boolean;
+  onRetry?: () => void;
 };
 
-export function OrderNotesTab({ order }: OrderNotesTabProps) {
+export function OrderNotesTab({ order, readFailed = false, onRetry }: OrderNotesTabProps) {
   const { t } = useTranslation('orders');
   const [search, setSearch]   = useState('');
   const [filter, setFilter]   = useState<NoteFilter>('all');
+
+  if (readFailed) {
+    return <NotesLoadError onRetry={onRetry ?? (() => {})} />;
+  }
 
   const filterLabels: Record<NoteFilter, string> = {
     all:         t($ => $.notesTab.filterAll),
