@@ -403,10 +403,20 @@ final class DistributionCollectionService
         // in its own Group. Without the filter an Order would inherit whichever of
         // the two rows came back last — a cross-warehouse Group membership arriving
         // by the back door.
-        DB::table('distribution_slot_zones')
-            ->where('distribution_window_id', $windowId)
-            ->when($warehouseId !== null, fn ($q) => $q->where('warehouse_id', $warehouseId))
-            ->select('distribution_zone_id', 'virtual_slot_id')
+        //
+        // TASK-ECOS-DISTRIBUTION-PLANNING-DAILY-GROUP-LIFECYCLE-006 — excludes a Zone
+        // whose last claimant Group has since closed. DailyGroupLifecycleService::
+        // closeWave() never touches distribution_slot_zones, so a stale row would
+        // otherwise keep routing new Orders into a defunct Group indefinitely. A
+        // closed Group's Zone reads as unclaimed instead — the same state as a Zone
+        // that was never attached at all — so the next sweep or manual Apply/attach
+        // re-establishes it against a live Group.
+        DB::table('distribution_slot_zones as dsz')
+            ->join('distribution_virtual_slots as s', 's.id', '=', 'dsz.virtual_slot_id')
+            ->where('dsz.distribution_window_id', $windowId)
+            ->whereNull('s.closed_at')
+            ->when($warehouseId !== null, fn ($q) => $q->where('dsz.warehouse_id', $warehouseId))
+            ->select('dsz.distribution_zone_id', 'dsz.virtual_slot_id')
             ->get()
             ->each(function (object $row) use (&$map): void {
                 $map[(int) $row->distribution_zone_id] = (string) $row->virtual_slot_id;

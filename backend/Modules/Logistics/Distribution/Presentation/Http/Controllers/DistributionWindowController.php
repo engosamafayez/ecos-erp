@@ -1418,7 +1418,21 @@ final class DistributionWindowController extends Controller
         ]);
     }
 
-    /** Create a Virtual Capacity Slot. Never creates or references a Vehicle. */
+    /**
+     * Create a Virtual Capacity Slot. Never creates or references a Vehicle.
+     *
+     * TASK-ECOS-DISTRIBUTION-PLANNING-DAILY-GROUP-LIFECYCLE-006 — stamps the current
+     * governing Wave, exactly like GroupTemplateService::applyToNewGroup() already
+     * does for a Template-created Group. Before this, a manually-created Group's
+     * `preparation_wave_id` stayed NULL forever: DailyGroupLifecycleService::closeWave()
+     * only ever closes Groups matching a real wave id, and slotSummaries()'s board
+     * query treats a NULL wave as "never a different Wave's" and shows it regardless —
+     * so a manual Group outlived every later Wave it was never part of. Stamping the
+     * Wave here (never re-derived afterward — same provenance-only contract as the
+     * Template id) makes a manual Group subject to the identical close-on-wave-end
+     * lifecycle a Template-created Group already has, with no new engine and no
+     * change to an existing historical row.
+     */
     public function storeSlot(Request $request, string $window): JsonResponse
     {
         $w = $this->window($request, $window);
@@ -1454,6 +1468,7 @@ final class DistributionWindowController extends Controller
         $slot = VirtualCapacitySlot::query()->create([
             'company_id' => $w->company_id,
             'distribution_window_id' => $w->id,
+            'preparation_wave_id' => $this->activeWaveId((string) $w->company_id, $validated['warehouse_id']),
             ...$validated,
         ]);
 
