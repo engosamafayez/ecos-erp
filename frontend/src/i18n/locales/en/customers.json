@@ -96,6 +96,21 @@
     "minPurchases": "Min. purchases",
     "clear": "Clear filters"
   },
+  "filtersPanel": {
+    "trigger": "Filters",
+    "brand": "Brand",
+    "allBrands": "All Brands",
+    "salesOwner": "Sales Owner",
+    "allSalesOwners": "All Sales Owners",
+    "channel": "Channel",
+    "allChannels": "All Channels",
+    "orderActivity": "Order Activity",
+    "orderActivityAll": "All",
+    "noOrders": "No Orders",
+    "oneTimeCustomer": "One-time Customer",
+    "repeatCustomer": "Repeat Customer",
+    "clearAll": "Clear All"
+  },
   "table": {
     "empty": "No customers found.",
     "error": "Failed to load customers. Please try again.",
@@ -218,8 +233,8 @@
       "unblockAction": "Unblock",
       "history": "Block History",
       "historyEmpty": "No block history.",
-      "historyBlockedEntry": "Blocked — {{reason}}",
-      "historyUnblockedEntry": "Unblocked — {{reason}}"
+      "historyBlockedEntry": "Blocked — {{reason}} · by {{actor}}",
+      "historyUnblockedEntry": "Unblocked — {{reason}} · by {{actor}}"
     },
     "phonesTab": {
       "title": "Phone Numbers",
@@ -285,6 +300,7 @@
   },
   "blocked": {
     "filter": "Blocked",
+    "notBlockedFilter": "Not Blocked",
     "badge": "Blocked",
     "blockAction": "Block",
     "unblockAction": "Unblock",

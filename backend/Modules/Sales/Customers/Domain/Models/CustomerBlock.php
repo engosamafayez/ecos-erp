@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Sales\Customers\Domain\Models;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -66,5 +67,25 @@ class CustomerBlock extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    /**
+     * TASK-...-FINAL-UI-CLOSURE-014 (§5/§6) — the actor who performed the block.
+     * `blocked_by`/`unblocked_by` store `users.id` as a string (see BlockCustomerOrPhoneAction/
+     * UnblockCustomerAction — `(string) $request->user()->id`), not a real UUID, despite the
+     * column's `uuid()` type (a plain CHAR(36), no format is enforced by MySQL). withTrashed()
+     * so a later-deactivated user's name still resolves for historical blocks.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function blockedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'blocked_by')->withTrashed();
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function unblockedByUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'unblocked_by')->withTrashed();
     }
 }

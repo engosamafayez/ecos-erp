@@ -129,6 +129,8 @@ function BlockedCard({ customer }: { customer: Customer }) {
       {customer.is_blocked ? (
         <div className="flex flex-col gap-2 text-sm">
           <InfoRow label={t($ => $.drawer.blocked.reason)} value={customer.block_reason ?? '—'} />
+          {/* TASK-...-FINAL-UI-CLOSURE-014 (§5) — canonical actor identity, never a raw id. */}
+          <InfoRow label={t($ => $.drawer.blocked.blockedBy)} value={customer.blocked_by_name ?? '—'} />
           <InfoRow
             label={t($ => $.drawer.blocked.blockedAt)}
             value={customer.blocked_at ? new Date(customer.blocked_at).toLocaleString() : '—'}
@@ -155,7 +157,10 @@ function BlockedCard({ customer }: { customer: Customer }) {
             {history.flatMap((episode) => {
               const rows = [
                 <li key={`${episode.id}-blocked`}>
-                  {t($ => $.drawer.blocked.historyBlockedEntry, { reason: episode.block_reason })}
+                  {t($ => $.drawer.blocked.historyBlockedEntry, {
+                    reason: episode.block_reason,
+                    actor: episode.blocked_by_name ?? '—',
+                  })}
                   {' · '}
                   {new Date(episode.blocked_at).toLocaleDateString()}
                 </li>,
@@ -163,7 +168,10 @@ function BlockedCard({ customer }: { customer: Customer }) {
               if (episode.unblocked_at) {
                 rows.push(
                   <li key={`${episode.id}-unblocked`}>
-                    {t($ => $.drawer.blocked.historyUnblockedEntry, { reason: episode.unblock_reason ?? '' })}
+                    {t($ => $.drawer.blocked.historyUnblockedEntry, {
+                      reason: episode.unblock_reason ?? '',
+                      actor: episode.unblocked_by_name ?? '—',
+                    })}
                     {' · '}
                     {new Date(episode.unblocked_at).toLocaleDateString()}
                   </li>,

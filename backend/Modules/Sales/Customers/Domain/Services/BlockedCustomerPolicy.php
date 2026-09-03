@@ -111,6 +111,9 @@ final class BlockedCustomerPolicy
                     $query->orWhereIn('normalized_phone', array_keys($phoneToCustomerIds));
                 }
             })
+            // TASK-...-FINAL-UI-CLOSURE-014 (§6) — ONE extra batched query for the whole
+            // page (bounded by how many active blocks exist), never one per row/customer.
+            ->with(['blockedByUser:id,name,display_name'])
             ->get();
 
         $result = [];
@@ -207,6 +210,9 @@ final class BlockedCustomerPolicy
                     $q->orWhereIn('normalized_phone', $normalizedPhones);
                 }
             })
+            // TASK-...-FINAL-UI-CLOSURE-014 (§5/§6) — ONE extra batched query for this
+            // customer's whole history, never one per history row.
+            ->with(['blockedByUser:id,name,display_name', 'unblockedByUser:id,name,display_name'])
             ->orderByDesc('blocked_at')
             ->get();
     }

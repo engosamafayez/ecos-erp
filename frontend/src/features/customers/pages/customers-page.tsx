@@ -1,12 +1,15 @@
 import {
   Ban,
   Copy,
+  Download,
   FileText,
   MapPin,
   Pencil,
   Plus,
+  Printer,
   Repeat,
   ShieldCheck,
+  SlidersHorizontal,
   TrendingUp,
   Trash2,
   Users,
@@ -33,20 +36,31 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useBrandOptions } from '@/features/brands/hooks/use-brand-options';
+import { useChannelOptions } from '@/features/channels/hooks/use-channel-options';
 import { CustomerDrawer } from '@/features/customers/components/customer-drawer';
 import { CustomerFormDrawer } from '@/features/customers/components/customer-form-drawer';
 import { CustomerQuickActionCard } from '@/features/customers/components/customer-quick-action-card';
+import { customersService } from '@/features/customers/services/customers-service';
 import {
   useBlockCustomer,
   useBlockPhone,
   useCustomersQuery,
   useDeleteCustomer,
+  useSalesOwnerOptions,
   useUnblockCustomer,
 } from '@/features/customers/hooks/use-customers';
 import { useProductOptions } from '@/features/orders/hooks/use-product-options';
 import { usePermission } from '@/features/authorization/use-authorization';
+import { useOrganizationContext } from '@/features/organization/context/organization-context';
 import { REPEAT_ORDER_THRESHOLD } from '@/features/customers/types/customer';
-import type { Customer, CustomerSortField, CustomerStatusFilter } from '@/features/customers/types/customer';
+import type {
+  Customer,
+  CustomersQuery,
+  CustomerSortField,
+  CustomerStatusFilter,
+  OrderActivityFilter,
+} from '@/features/customers/types/customer';
 import { ROUTES } from '@/router/routes';
 import { cn } from '@/lib/utils';
 
@@ -189,8 +203,23 @@ export function CustomersPage() {
   const [minPurchaseCount, setMinPurchaseCount]   = useState(REPEAT_ORDER_THRESHOLD);
   const { data: productOptions = [], isLoading: loadingProducts } = useProductOptions();
 
-  // ── Blocked Customers filter/segment (TASK-...-BLOCKED-CUSTOMERS-009 §40) ──
+  // ── Blocked Customers filter/segment (TASK-...-BLOCKED-CUSTOMERS-009 §40,
+  //    extended to a true All/Blocked/Not Blocked classification by TASK-...-
+  //    FINAL-UI-CLOSURE-014 §17 via a second, mutually-exclusive toggle rather
+  //    than restructuring the original button — its click→true/click-again→
+  //    undefined contract is preserved exactly). ──────────────────────────────
   const [blockedOnly, setBlockedOnly] = useState(false);
+  const [notBlockedOnly, setNotBlockedOnly] = useState(false);
+
+  // ── Additional classification filters (TASK-...-FINAL-UI-CLOSURE-014 §13-19) ──
+  const { activeCompanyId } = useOrganizationContext();
+  const [brandId, setBrandId] = useState<string | null>(null);
+  const [salesOwnerFilter, setSalesOwnerFilter] = useState<string | null>(null);
+  const [channelFilterId, setChannelFilterId] = useState<string | null>(null);
+  const [orderActivity, setOrderActivity] = useState<OrderActivityFilter | null>(null);
+  const { data: brandOptions = [] } = useBrandOptions(activeCompanyId);
+  const { data: channelOptions = [] } = useChannelOptions();
+  const { data: salesOwnerOptions = [] } = useSalesOwnerOptions();
 
   // ── Drawer / dialog state ──────────────────────────────────────────────────
   const [viewCustomer, setViewCustomer]     = useState<Customer | null>(null);
@@ -234,18 +263,28 @@ export function CustomersPage() {
   // ── Queries ───────────────────────────────────────────────────────────────
   const counts = useCustomerCounts();
 
-  const { data, isLoading, isError, isFetching, refetch } = useCustomersQuery({
+  // TASK-...-FINAL-UI-CLOSURE-014 (§10/§11) — the SAME params drive the live query AND
+  // Print/Export, so what the user sees is always exactly what gets printed/exported.
+  const queryParams: CustomersQuery = {
     search: debouncedSearch || undefined,
     status: statusFilter,
+    brand_id: brandId ?? undefined,
+    sales_owner_id: salesOwnerFilter && salesOwnerFilter !== 'unassigned' ? salesOwnerFilter : undefined,
+    unassigned_sales_owner: salesOwnerFilter === 'unassigned' ? true : undefined,
+    channel_id: channelFilterId ?? undefined,
     repeat_only: repeatOnly || undefined,
     product_id: affinityProductId ?? undefined,
     min_purchase_count: affinityProductId ? minPurchaseCount : undefined,
+    order_activity: orderActivity ?? undefined,
     blocked_only: blockedOnly || undefined,
+    not_blocked_only: notBlockedOnly || undefined,
     page,
     per_page: PER_PAGE,
     sort_by: sort.field,
     sort_dir: sort.direction,
-  });
+  };
+
+  const { data, isLoading, isError, isFetching, refetch } = useCustomersQuery(queryParams);
 
   const deleteCustomer = useDeleteCustomer();
 
@@ -305,14 +344,83 @@ export function CustomersPage() {
     setFocusedRowIndex(null);
   }
 
+  // TASK-...-FINAL-UI-CLOSURE-014 (§7/§8) — root cause of the "Top Spenders" bug: this
+  // control is a SORT over the current (optionally filtered) population, not a segment
+  // that reduces it — "shows ALL Customers" was therefore correct behavior, not a data
+  // bug. The actual defect was that it had no way to turn back OFF: clicking it again
+  // re-sent the identical sort, and it was excluded from hasActiveIntelligenceFilter/
+  // clearIntelligenceFilters, so the button stayed permanently highlighted with no
+  // "Clear filters" affordance able to reach it. Both are fixed below. No canonical
+  // "Top Spenders" population/threshold exists anywhere in current source (confirmed by
+  // an exhaustive repo-wide search) — per this task's own §9, that is NOT invented here.
   const isHighestSpendSort = sort.field === 'total_order_value' && sort.direction === 'desc';
-  const hasActiveIntelligenceFilter = repeatOnly || affinityProductId !== null;
+  const hasActiveIntelligenceFilter = repeatOnly || affinityProductId !== null || isHighestSpendSort;
 
   function clearIntelligenceFilters() {
     setRepeatOnly(false);
     setAffinityProductId(null);
     setMinPurchaseCount(REPEAT_ORDER_THRESHOLD);
+    setSort({ field: 'created_at', direction: 'desc' });
     setPage(1);
+  }
+
+  // ── Additional classification filters — active count + Clear All
+  //    (TASK-...-FINAL-UI-CLOSURE-014 §13/§20) ───────────────────────────────
+  const activeExtraFilterCount =
+    (brandId ? 1 : 0) +
+    (salesOwnerFilter ? 1 : 0) +
+    (channelFilterId ? 1 : 0) +
+    (orderActivity ? 1 : 0);
+
+  function clearExtraFilters() {
+    setBrandId(null);
+    setSalesOwnerFilter(null);
+    setChannelFilterId(null);
+    setOrderActivity(null);
+    setPage(1);
+  }
+
+  // ── Print / Export (TASK-...-FINAL-UI-CLOSURE-014 §10/§11) — backend-authoritative:
+  //    both call the SAME /customers/export endpoint with the SAME queryParams the live
+  //    table uses, so the result always matches the current filtered/sorted view, never
+  //    just the current page and never a browser-side re-derivation. ─────────────────
+  const [printing, setPrinting] = useState(false);
+  const [exportingCsv, setExportingCsv] = useState(false);
+
+  async function handlePrint() {
+    setPrinting(true);
+    try {
+      const html = await customersService.exportHtml(queryParams);
+      const win = window.open('', '_blank');
+      if (win) {
+        win.document.write(html);
+        win.document.close();
+        win.print();
+      }
+    } catch (error) {
+      console.error('Failed to print customers', error);
+    } finally {
+      setPrinting(false);
+    }
+  }
+
+  async function handleExportCsv() {
+    setExportingCsv(true);
+    try {
+      const blob = await customersService.exportCsv(queryParams);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `customers-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Failed to export customers', error);
+    } finally {
+      setExportingCsv(false);
+    }
   }
 
   // ── Keyboard navigation ───────────────────────────────────────────────────
@@ -429,7 +537,7 @@ export function CustomersPage() {
 
       {/* ── Smart Search (DD-055/056) ────────────────────────────────────── */}
       <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Input
             ref={searchRef}
             value={search}
@@ -471,7 +579,14 @@ export function CustomersPage() {
                       variant={isHighestSpendSort ? 'default' : 'outline'}
                       className="h-7 gap-1 text-xs"
                       onClick={() => {
-                        setSort({ field: 'total_order_value', direction: 'desc' });
+                        // TASK-...-FINAL-UI-CLOSURE-014 (§8) — a real toggle: it can now
+                        // turn itself back off, so the button's active state can never
+                        // stay permanently highlighted.
+                        setSort(
+                          isHighestSpendSort
+                            ? { field: 'created_at', direction: 'desc' }
+                            : { field: 'total_order_value', direction: 'desc' },
+                        );
                         setPage(1);
                       }}
                     >
@@ -535,16 +650,137 @@ export function CustomersPage() {
             </PopoverContent>
           </Popover>
 
-          {/* Blocked Customers filter/segment (§40) */}
+          {/* ── Additional classification filters: Brand / Sales Owner / Channel /
+              Order Activity (TASK-...-FINAL-UI-CLOSURE-014 §13-19) — every filter here
+              is backend-authoritative (EloquentCustomerRepository::buildQuery()), never
+              a client-side filter of the current page. ─────────────────────────────── */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn('gap-1.5', activeExtraFilterCount > 0 && 'border-primary text-primary')}
+              >
+                <SlidersHorizontal className="size-3.5" />
+                {t($ => $.filtersPanel.trigger)}
+                {activeExtraFilterCount > 0 ? (
+                  <Badge variant="secondary" className="h-4 min-w-4 rounded-full px-1 text-[10px]">
+                    {activeExtraFilterCount}
+                  </Badge>
+                ) : null}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-80 p-3">
+              <div className="flex flex-col gap-3">
+                <div>
+                  <p className="mb-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                    {t($ => $.filtersPanel.brand)}
+                  </p>
+                  <Combobox
+                    options={[{ value: '', label: t($ => $.filtersPanel.allBrands) }, ...brandOptions]}
+                    value={brandId ?? ''}
+                    onChange={(v) => { setBrandId(v || null); setPage(1); }}
+                    placeholder={t($ => $.filtersPanel.allBrands)}
+                    className="h-8"
+                  />
+                </div>
+
+                <div>
+                  <p className="mb-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                    {t($ => $.filtersPanel.salesOwner)}
+                  </p>
+                  <Combobox
+                    options={[
+                      { value: '', label: t($ => $.filtersPanel.allSalesOwners) },
+                      { value: 'unassigned', label: t($ => $.table.unassigned) },
+                      ...salesOwnerOptions,
+                    ]}
+                    value={salesOwnerFilter ?? ''}
+                    onChange={(v) => { setSalesOwnerFilter(v || null); setPage(1); }}
+                    placeholder={t($ => $.filtersPanel.allSalesOwners)}
+                    className="h-8"
+                  />
+                </div>
+
+                <div>
+                  <p className="mb-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                    {t($ => $.filtersPanel.channel)}
+                  </p>
+                  <Combobox
+                    options={[{ value: '', label: t($ => $.filtersPanel.allChannels) }, ...channelOptions]}
+                    value={channelFilterId ?? ''}
+                    onChange={(v) => { setChannelFilterId(v || null); setPage(1); }}
+                    placeholder={t($ => $.filtersPanel.allChannels)}
+                    className="h-8"
+                  />
+                </div>
+
+                <div>
+                  <p className="mb-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                    {t($ => $.filtersPanel.orderActivity)}
+                  </p>
+                  <Combobox
+                    options={[
+                      { value: '', label: t($ => $.filtersPanel.orderActivityAll) },
+                      { value: 'no_orders', label: t($ => $.filtersPanel.noOrders) },
+                      { value: 'one_time', label: t($ => $.filtersPanel.oneTimeCustomer) },
+                      { value: 'repeat', label: t($ => $.filtersPanel.repeatCustomer) },
+                    ]}
+                    value={orderActivity ?? ''}
+                    onChange={(v) => { setOrderActivity((v || null) as OrderActivityFilter | null); setPage(1); }}
+                    placeholder={t($ => $.filtersPanel.orderActivityAll)}
+                    className="h-8"
+                  />
+                </div>
+
+                {activeExtraFilterCount > 0 ? (
+                  <Button type="button" size="sm" variant="ghost" className="h-7 self-start text-xs" onClick={clearExtraFilters}>
+                    {t($ => $.filtersPanel.clearAll)}
+                  </Button>
+                ) : null}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Blocked Customers filter/segment (§40). Mutually exclusive with Not Blocked
+              below, but its own click→true/click-again→undefined contract is unchanged. */}
           <Button
             type="button"
             variant={blockedOnly ? 'default' : 'outline'}
             size="sm"
             className="gap-1.5"
-            onClick={() => { setBlockedOnly((v) => !v); setPage(1); }}
+            onClick={() => {
+              setBlockedOnly((v) => {
+                const next = !v;
+                if (next) setNotBlockedOnly(false);
+                return next;
+              });
+              setPage(1);
+            }}
           >
             <Ban className="size-3.5" />
             {t($ => $.blocked.filter)}
+          </Button>
+
+          {/* TASK-...-FINAL-UI-CLOSURE-014 (§17) — the honest complement: All / Blocked /
+              Not Blocked as two independent, mutually-exclusive toggles rather than
+              restructuring the existing Blocked button (see note above). */}
+          <Button
+            type="button"
+            variant={notBlockedOnly ? 'default' : 'outline'}
+            size="sm"
+            className="gap-1.5"
+            onClick={() => {
+              setNotBlockedOnly((v) => {
+                const next = !v;
+                if (next) setBlockedOnly(false);
+                return next;
+              });
+              setPage(1);
+            }}
+          >
+            <ShieldCheck className="size-3.5" />
+            {t($ => $.blocked.notBlockedFilter)}
           </Button>
 
           {/* Phone-before-Customer block entry point (§12) */}
@@ -559,6 +795,38 @@ export function CustomersPage() {
               <Ban className="size-3.5" />
               {t($ => $.blocked.blockPhoneAction)}
             </Button>
+          ) : null}
+
+          {/* TASK-...-FINAL-UI-CLOSURE-014 (§10/§11/§24) — Print/Export stay desktop-
+              toolbar actions, matching this app's existing responsive pattern (Orders'
+              own Print/Export are desktop-toolbar-only too). Both call the backend
+              /customers/export endpoint with the CURRENT filter/sort state — never the
+              browser's currently-rendered rows only. */}
+          {!isMobile ? (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => void handlePrint()}
+                disabled={printing}
+              >
+                <Printer className="size-3.5" />
+                {t($ => $.smartOps.print)}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => void handleExportCsv()}
+                disabled={exportingCsv}
+              >
+                <Download className="size-3.5" />
+                {t($ => $.smartOps.export)}
+              </Button>
+            </>
           ) : null}
         </div>
 
@@ -1045,9 +1313,16 @@ function CustomerRow({
       {/* Full Address + Location. The Location is the canonical `orders.google_maps_url`
           from the customer's most recent order carrying one — never derived from city. */}
       <td className="px-4 py-3">
-        <div className="flex max-w-[240px] items-start gap-1.5">
+        {/* TASK-...-FINAL-UI-CLOSURE-014 (§4) — the full formatted address (already a
+            correct, canonical read-model field — CustomerController::fullAddress())
+            must be directly readable, not truncated behind a hover-only tooltip. Wraps
+            naturally within a fixed-but-generous column width; `title` stays only as
+            supplemental copy/select-friendly hover text, never load-bearing. */}
+        <div className="flex w-64 items-start gap-1.5">
           {customer.full_address ? (
-            <p className="truncate text-xs" title={customer.full_address}>{customer.full_address}</p>
+            <p className="whitespace-normal break-words text-xs" title={customer.full_address}>
+              {customer.full_address}
+            </p>
           ) : (
             <span className="text-xs text-muted-foreground">—</span>
           )}
@@ -1340,10 +1615,16 @@ export function CustomerMobileCard({
           </div>
         </dl>
 
-        {/* Row 3: Address + location */}
+        {/* Row 3: Address + location. TASK-...-FINAL-UI-CLOSURE-014 (§4) — full address
+            must be directly readable here too (previously truncated with no `title`
+            fallback at all — worse than desktop, not just at parity). */}
         {customer.full_address || customer.location_url ? (
           <div className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
-            {customer.full_address ? <p className="min-w-0 flex-1 truncate">{customer.full_address}</p> : null}
+            {customer.full_address ? (
+              <p className="min-w-0 flex-1 whitespace-normal break-words" title={customer.full_address}>
+                {customer.full_address}
+              </p>
+            ) : null}
             {customer.location_url ? (
               <a
                 href={customer.location_url}

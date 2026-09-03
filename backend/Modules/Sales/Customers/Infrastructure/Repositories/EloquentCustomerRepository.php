@@ -7,6 +7,7 @@ namespace Modules\Sales\Customers\Infrastructure\Repositories;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Modules\Commerce\Orders\Domain\Services\CustomerOrderMetricsService;
 use Modules\Sales\Customers\Domain\Contracts\CustomerRepositoryInterface;
@@ -18,6 +19,14 @@ final class EloquentCustomerRepository implements CustomerRepositoryInterface
     private const SORTABLE = ['code', 'name', 'country', 'city', 'is_active', 'created_at'];
 
     /**
+     * TASK-...-FINAL-UI-CLOSURE-014 (§11) — a defensive cap on allMatching(), never a
+     * real pagination mechanism: Print/Export must cover the full filtered population,
+     * but an unbounded query is still not safe to promise for an arbitrarily large
+     * company. Chosen well above any realistic current tenant size, not a business rule.
+     */
+    private const MAX_EXPORT_ROWS = 10000;
+
+    /**
      * Customer Intelligence sort fields (TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-CUSTOMER-
      * INTELLIGENCE-008) — not real columns on `customers`, so they sort by a correlated
      * subquery over `orders` instead of ->orderBy($column). Same qualifying-order scope
@@ -27,6 +36,35 @@ final class EloquentCustomerRepository implements CustomerRepositoryInterface
     private const AGGREGATE_SORTABLE = ['total_order_value', 'orders_count', 'last_order_at'];
 
     public function paginate(array $filters): LengthAwarePaginator
+    {
+        $perPage = max(1, min((int) ($filters['per_page'] ?? 10), 100));
+
+        // Default address only — ONE extra query for the whole page, never one per row.
+        return $this->buildQuery($filters)
+            ->with(['customerBrands.brand', 'addresses' => fn ($a) => $a->where('is_default', true)])
+            ->paginate($perPage);
+    }
+
+    /**
+     * TASK-...-FINAL-UI-CLOSURE-014 (§10/§11) — the full filtered+sorted population for
+     * Print/Export, never just the current page and never the browser re-deriving it from
+     * paginated fetches. Same filter/sort logic as paginate() (buildQuery() is shared), so
+     * the two can never disagree about which Customers match. Capped by MAX_EXPORT_ROWS —
+     * a safety bound, not a second pagination mechanism.
+     */
+    public function allMatching(array $filters): Collection
+    {
+        return $this->buildQuery($filters)
+            ->with(['customerBrands.brand', 'addresses' => fn ($a) => $a->where('is_default', true)])
+            ->limit(self::MAX_EXPORT_ROWS)
+            ->get();
+    }
+
+    /**
+     * All filter + sort logic shared by paginate() and allMatching() — the list view and
+     * Print/Export must never be able to disagree about which Customers match.
+     */
+    private function buildQuery(array $filters): Builder
     {
         $query = Customer::query();
 
@@ -78,9 +116,50 @@ final class EloquentCustomerRepository implements CustomerRepositoryInterface
             $query->where('city', $city);
         }
 
+        // TASK-...-FINAL-UI-CLOSURE-014 (§15) — Sales Owner filter, over the existing
+        // denormalised sales_owner_id column (Customers Batch 02). "Unassigned" is an
+        // honest NULL check, never a sentinel id — mutually exclusive with a specific
+        // owner id, matching how the frontend control presents them.
+        $salesOwnerId = trim((string) ($filters['sales_owner_id'] ?? ''));
+        if ($salesOwnerId !== '') {
+            $query->where('sales_owner_id', $salesOwnerId);
+        } elseif (filter_var($filters['unassigned_sales_owner'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            $query->whereNull('sales_owner_id');
+        }
+
+        // TASK-...-FINAL-UI-CLOSURE-014 (§16) — Channel filter. There is no `channel`
+        // column on `customers` — Channel is order-level — so "this Customer's channel"
+        // is always a derived read over its own qualifying orders, same ordersSubquery()
+        // shape product_id already uses below.
+        $channelId = trim((string) ($filters['channel_id'] ?? ''));
+        if ($channelId !== '') {
+            $query->where(
+                $this->ordersSubquery()->where('orders.channel_id', $channelId)->selectRaw('COUNT(*)'),
+                '>=',
+                1,
+            );
+        }
+
         // Repeat Customers — orders_count >= REPEAT_ORDER_THRESHOLD, same threshold and
         // same qualifying-order scope as CustomerOrderMetricsService.
         if (filter_var($filters['repeat_only'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            $query->where(
+                $this->ordersSubquery()->selectRaw('COUNT(*)'),
+                '>=',
+                CustomerOrderMetricsService::REPEAT_ORDER_THRESHOLD,
+            );
+        }
+
+        // TASK-...-FINAL-UI-CLOSURE-014 (§18) — Order Activity classification. Reuses the
+        // SAME ordersSubquery()/REPEAT_ORDER_THRESHOLD 'repeat_only' above already uses —
+        // never a second repeat-customer definition. Independent of repeat_only (the two
+        // compose harmlessly — both express the identical condition when both are sent).
+        $orderActivity = (string) ($filters['order_activity'] ?? 'all');
+        if ($orderActivity === 'no_orders') {
+            $query->where($this->ordersSubquery()->selectRaw('COUNT(*)'), '=', 0);
+        } elseif ($orderActivity === 'one_time') {
+            $query->where($this->ordersSubquery()->selectRaw('COUNT(*)'), '=', 1);
+        } elseif ($orderActivity === 'repeat') {
             $query->where(
                 $this->ordersSubquery()->selectRaw('COUNT(*)'),
                 '>=',
@@ -95,6 +174,11 @@ final class EloquentCustomerRepository implements CustomerRepositoryInterface
         // matched. Fixed below via applyBlockedOnlyFilter() — see its own docblock.
         if (filter_var($filters['blocked_only'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
             $this->applyBlockedOnlyFilter($query, $companyId);
+        } elseif (filter_var($filters['not_blocked_only'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            // TASK-...-FINAL-UI-CLOSURE-014 (§17) — the honest inverse of the same
+            // identity match applyBlockedOnlyFilter() uses, never a separate/weaker
+            // definition of "blocked".
+            $this->applyNotBlockedFilter($query, $companyId);
         }
 
         // Product-specific repeat buyers ("customers who bought Product X repeatedly") —
@@ -116,7 +200,6 @@ final class EloquentCustomerRepository implements CustomerRepositoryInterface
 
         $sortBy = (string) ($filters['sort_by'] ?? 'created_at');
         $sortDir = strtolower((string) ($filters['sort_dir'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
-        $perPage = max(1, min((int) ($filters['per_page'] ?? 10), 100));
 
         if (in_array($sortBy, self::AGGREGATE_SORTABLE, true)) {
             $query->orderBy($this->aggregateSortSubquery($sortBy), $sortDir);
@@ -124,10 +207,7 @@ final class EloquentCustomerRepository implements CustomerRepositoryInterface
             $query->orderBy(in_array($sortBy, self::SORTABLE, true) ? $sortBy : 'created_at', $sortDir);
         }
 
-        // Default address only — ONE extra query for the whole page, never one per row.
-        return $query
-            ->with(['customerBrands.brand', 'addresses' => fn ($a) => $a->where('is_default', true)])
-            ->paginate($perPage);
+        return $query;
     }
 
     /**
@@ -193,6 +273,57 @@ final class EloquentCustomerRepository implements CustomerRepositoryInterface
                 $q->orWhereIn(DB::raw(PhoneNormalizer::sqlExpression('mobile')), $normalizedPhones);
             }
         });
+    }
+
+    /**
+     * TASK-...-FINAL-UI-CLOSURE-014 (§17) — the honest inverse of
+     * applyBlockedOnlyFilter(): a Customer matches only when NEITHER its id NOR its
+     * saved phone/mobile (normalized) appears in this company's current active-block
+     * list. Mirrors that method's two strategies (scoped vs. the documented unscoped/
+     * super-admin case) so "Blocked" and "Not Blocked" can never both — or neither —
+     * match the same Customer. PhoneNormalizer::sqlExpression() already COALESCEs a
+     * NULL phone/mobile to '', which never equals a real (non-empty) blocked number —
+     * so a Customer with no saved mobile is correctly never excluded by the mobile leg.
+     */
+    private function applyNotBlockedFilter(Builder $query, string $companyId): void
+    {
+        if ($companyId === '') {
+            $query->whereNotExists(function (QueryBuilder $q): void {
+                $q->select(DB::raw(1))
+                    ->from('customer_blocks')
+                    ->whereColumn('customer_blocks.company_id', 'customers.company_id')
+                    ->where('customer_blocks.is_active', true)
+                    ->where(function (QueryBuilder $q2): void {
+                        $q2->whereColumn('customer_blocks.customer_id', 'customers.id')
+                            ->orWhereRaw('customer_blocks.normalized_phone = '.PhoneNormalizer::sqlExpression('customers.phone'))
+                            ->orWhereRaw('customer_blocks.normalized_phone = '.PhoneNormalizer::sqlExpression('customers.mobile'));
+                    });
+            });
+
+            return;
+        }
+
+        $blocks = DB::table('customer_blocks')
+            ->where('company_id', $companyId)
+            ->where('is_active', true)
+            ->select('customer_id', 'normalized_phone')
+            ->get();
+
+        $customerIds = $blocks->pluck('customer_id')->filter()->map(fn ($id) => (string) $id)->unique()->values()->all();
+        $normalizedPhones = $blocks->pluck('normalized_phone')->filter()->unique()->values()->all();
+
+        if ($customerIds === [] && $normalizedPhones === []) {
+            // No active block in this company at all — every Customer is "not blocked".
+            return;
+        }
+
+        if ($customerIds !== []) {
+            $query->whereNotIn('id', $customerIds);
+        }
+        if ($normalizedPhones !== []) {
+            $query->whereNotIn(DB::raw(PhoneNormalizer::sqlExpression('phone')), $normalizedPhones);
+            $query->whereNotIn(DB::raw(PhoneNormalizer::sqlExpression('mobile')), $normalizedPhones);
+        }
     }
 
     /**

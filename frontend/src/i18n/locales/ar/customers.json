@@ -96,6 +96,21 @@
     "minPurchases": "الحد الأدنى للشراء",
     "clear": "مسح الفلاتر"
   },
+  "filtersPanel": {
+    "trigger": "الفلاتر",
+    "brand": "العلامة التجارية",
+    "allBrands": "كل العلامات التجارية",
+    "salesOwner": "مسؤول المبيعات",
+    "allSalesOwners": "كل مسؤولي المبيعات",
+    "channel": "القناة",
+    "allChannels": "كل القنوات",
+    "orderActivity": "نشاط الطلبات",
+    "orderActivityAll": "الكل",
+    "noOrders": "بدون طلبات",
+    "oneTimeCustomer": "عميل لمرة واحدة",
+    "repeatCustomer": "عميل متكرر",
+    "clearAll": "مسح الكل"
+  },
   "table": {
     "empty": "لا يوجد عملاء.",
     "error": "فشل تحميل العملاء. يرجى المحاولة مجدداً.",
@@ -218,8 +233,8 @@
       "unblockAction": "إلغاء الحظر",
       "history": "سجل الحظر",
       "historyEmpty": "لا يوجد سجل حظر.",
-      "historyBlockedEntry": "تم الحظر — {{reason}}",
-      "historyUnblockedEntry": "تم إلغاء الحظر — {{reason}}"
+      "historyBlockedEntry": "تم الحظر — {{reason}} · بواسطة {{actor}}",
+      "historyUnblockedEntry": "تم إلغاء الحظر — {{reason}} · بواسطة {{actor}}"
     },
     "phonesTab": {
       "title": "أرقام الهاتف",
@@ -285,6 +300,7 @@
   },
   "blocked": {
     "filter": "محظور",
+    "notBlockedFilter": "غير محظور",
     "badge": "محظور",
     "blockAction": "حظر",
     "unblockAction": "إلغاء الحظر",

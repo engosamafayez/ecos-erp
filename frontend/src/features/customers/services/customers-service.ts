@@ -5,6 +5,7 @@ import type {
   CustomerPayload,
   CustomersQuery,
   CustomersResult,
+  SalesOwnerOption,
 } from '@/features/customers/types/customer';
 import type { ApiResponse } from '@/types';
 
@@ -55,6 +56,34 @@ export const customersService = {
 
   async blockHistory(id: string): Promise<CustomerBlock[]> {
     const { data } = await api.get<ApiResponse<CustomerBlock[]>>(`/customers/${id}/block-history`);
+    return data.data;
+  },
+
+  // ── Print / Export (TASK-...-FINAL-UI-CLOSURE-014 §10/§11) ───────────────
+  // Backend-authoritative: the SAME filters as list(), covering the full filtered
+  // population server-side — never just the currently-rendered page, never built
+  // from paginated fetches in the browser.
+
+  async exportCsv(params: CustomersQuery): Promise<Blob> {
+    const { data } = await api.get<Blob>('/customers/export', {
+      params: { ...params, format: 'csv' },
+      responseType: 'blob',
+    });
+    return data;
+  },
+
+  async exportHtml(params: CustomersQuery): Promise<string> {
+    const { data } = await api.get<string>('/customers/export', {
+      params: { ...params, format: 'html' },
+      responseType: 'text',
+    });
+    return data;
+  },
+
+  // ── Sales Owner filter options (TASK-...-FINAL-UI-CLOSURE-014 §15) ───────
+
+  async salesOwnerOptions(): Promise<SalesOwnerOption[]> {
+    const { data } = await api.get<ApiResponse<SalesOwnerOption[]>>('/customers/sales-owners');
     return data.data;
   },
 };

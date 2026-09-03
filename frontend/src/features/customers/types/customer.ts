@@ -55,9 +55,16 @@ export type CustomerBlock = {
   is_active: boolean;
   block_reason: string;
   blocked_by: string | null;
+  /** Canonical human-readable actor identity — "System" when blocked_by is null. Optional
+   *  (rather than required) so it doesn't force every existing test fixture/mock literal
+   *  of this type to be updated — the real API always sends it. */
+  blocked_by_name?: string | null;
   blocked_at: string;
   unblock_reason: string | null;
   unblocked_by: string | null;
+  /** Null when this episode was never unblocked, not just an unresolved name. Optional
+   *  for the same fixture-compatibility reason as blocked_by_name above. */
+  unblocked_by_name?: string | null;
   unblocked_at: string | null;
 };
 
@@ -118,6 +125,11 @@ export type Customer = {
   block_reason: string | null;
   blocked_at: string | null;
   blocked_by: string | null;
+  /** Canonical human-readable actor identity — "System" when blocked_by is null,
+   *  null when the customer isn't currently blocked at all. Optional (rather than
+   *  required) so it doesn't force every existing test fixture/mock Customer literal
+   *  to be updated — the real API always sends it. */
+  blocked_by_name?: string | null;
   /** The ACTIVE customer_blocks id — required by POST .../unblock as `block_id`. */
   customer_block_id: string | null;
 };
@@ -151,24 +163,45 @@ export type CustomerSortField =
   | 'last_order_at';
 export type SortDirection = 'asc' | 'desc';
 
+/** TASK-...-FINAL-UI-CLOSURE-014 (§18) — Order Activity classification. 'repeat' reuses
+ *  the same REPEAT_ORDER_THRESHOLD definition repeat_only already uses. */
+export type OrderActivityFilter = 'no_orders' | 'one_time' | 'repeat';
+
 export type CustomersQuery = {
   search?: string;
   status?: CustomerStatusFilter;
   brand_id?: string;
   country?: string;
   city?: string;
+  /** TASK-...-FINAL-UI-CLOSURE-014 (§15) — a specific Sales Owner id. */
+  sales_owner_id?: string;
+  /** Customers with no Sales Owner assigned at all — an honest NULL check. */
+  unassigned_sales_owner?: boolean;
+  /** TASK-...-FINAL-UI-CLOSURE-014 (§16) — Channel filter (derived: Channel is order-level). */
+  channel_id?: string;
   /** Repeat Customers only (orders_count >= REPEAT_ORDER_THRESHOLD). Backend-authoritative. */
   repeat_only?: boolean;
   /** Product Affinity filter: customers who purchased this product repeatedly. */
   product_id?: string;
   /** Defaults to REPEAT_ORDER_THRESHOLD server-side when product_id is set. */
   min_purchase_count?: number;
+  order_activity?: OrderActivityFilter;
   /** Blocked Customers filter/segment. Backend-authoritative. */
   blocked_only?: boolean;
+  /** TASK-...-FINAL-UI-CLOSURE-014 (§17) — the honest inverse of blocked_only. */
+  not_blocked_only?: boolean;
   page?: number;
   per_page?: number;
   sort_by?: CustomerSortField;
   sort_dir?: SortDirection;
+};
+
+/** GET /customers/sales-owners — distinct Sales Owners currently referenced by this
+ *  company's Customers, read off the existing denormalised column. Not an employee
+ *  directory: naturally empty until a future task adds the assignment action. */
+export type SalesOwnerOption = {
+  id: string;
+  name: string | null;
 };
 
 export type PaginationMeta = {

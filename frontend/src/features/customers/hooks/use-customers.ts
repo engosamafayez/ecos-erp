@@ -100,3 +100,21 @@ export function useCustomerBlockHistory(id: string, enabled: boolean) {
     enabled: enabled && Boolean(id),
   });
 }
+
+// ── Sales Owner filter options (TASK-...-FINAL-UI-CLOSURE-014 §15) ─────────
+// Distinct owners already referenced by this company's Customers — not an employee
+// directory, so this naturally returns [] until a future task adds the assignment
+// action. Same {value,label} shape useBrandOptions/useChannelOptions return.
+
+export function useSalesOwnerOptions() {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
+  return useQuery({
+    queryKey: ['company', companyId, CUSTOMERS_KEY, 'sales-owner-options'],
+    queryFn: async () => {
+      const owners = await customersService.salesOwnerOptions();
+      return owners.map((o) => ({ value: o.id, label: o.name ?? o.id }));
+    },
+    staleTime: 60_000,
+  });
+}

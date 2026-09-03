@@ -641,6 +641,11 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 */
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('customers/search-by-phone', [CustomerController::class, 'searchByPhone']);
+    // TASK-...-FINAL-UI-CLOSURE-014 (§10/§11/§15) — registered before the apiResource's
+    // {customer} routes, same reason as search-by-phone: otherwise "export"/"sales-owners"
+    // would be swallowed as a {customer} id.
+    Route::get('customers/export', [CustomerController::class, 'export']);
+    Route::get('customers/sales-owners', [CustomerController::class, 'salesOwnerOptions']);
     // TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-BLOCKED-CUSTOMERS-009 (§11/§12/§35).
     // block-phone is registered before the apiResource's {customer} routes so it
     // is never swallowed by them.

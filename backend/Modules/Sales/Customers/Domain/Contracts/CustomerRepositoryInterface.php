@@ -5,11 +5,21 @@ declare(strict_types=1);
 namespace Modules\Sales\Customers\Domain\Contracts;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Modules\Sales\Customers\Domain\Models\Customer;
 
 interface CustomerRepositoryInterface
 {
     public function paginate(array $filters): LengthAwarePaginator;
+
+    /**
+     * TASK-...-FINAL-UI-CLOSURE-014 (§10/§11) — the full filtered+sorted population for
+     * Print/Export, using the exact same filters as paginate() (never re-derived from
+     * paginated fetches). Capped at a defensive maximum, not truly unbounded.
+     *
+     * @return Collection<int, Customer>
+     */
+    public function allMatching(array $filters): Collection;
 
     /**
      * Tenant-aware lookup. $companyId is REQUIRED — there is deliberately no unscoped
