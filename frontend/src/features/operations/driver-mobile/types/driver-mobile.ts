@@ -61,8 +61,15 @@ export interface StopOrderSummary {
   city: string | null;
   area: string | null;
   gps: { lat: number; lng: number } | null;
+  // Canonical Distribution Zone (orders.logistics_city_id → logistics_cities.
+  // distribution_zone_id → distribution_zones) — null when the order's city has no
+  // Zone assigned, or before the PII disclosure stage that also gates governorate/city/area.
+  zone: { id: number; code: string; name_en: string; name_ar: string } | null;
   payment_method: string | null;
   grand_total: number;
+  // §8 — shipping + discount value (EGP), resolved server-side to match the office order view.
+  shipping_value: number;
+  discount_value: number;
   deposit_paid: number;
   remaining_balance: number;
   items_count: number;
@@ -183,11 +190,16 @@ export interface DeliveryStopDetail {
   proof: DeliveryProof | null;
 }
 
+// TASK-DRIVER-UX-AND-OPERATIONAL-CLOSURE-002 §5 — the DRIVER-facing presentation of a
+// partial delivery is simply "Delivered" (green), so a driver is never shown a "Partial"
+// state. This is a display-only relabel/recolor: the canonical `stop.status` value stays
+// 'partial', quantities/accounting are untouched, and every non-driver surface (enterprise
+// delivery/settlement views use their own separate label maps) is unaffected.
 export const STOP_STATUS_LABELS: Record<DeliveryStopStatus, string> = {
   pending:     'Pending',
   in_progress: 'In Progress',
   delivered:   'Delivered',
-  partial:     'Partial',
+  partial:     'Delivered',
   failed:      'Failed',
   returned:    'Returned',
   skipped:     'Skipped',
@@ -197,7 +209,7 @@ export const STOP_STATUS_COLORS: Record<DeliveryStopStatus, string> = {
   pending:     'bg-gray-100 text-gray-700',
   in_progress: 'bg-blue-100 text-blue-700',
   delivered:   'bg-green-100 text-green-700',
-  partial:     'bg-amber-100 text-amber-700',
+  partial:     'bg-green-100 text-green-700',
   failed:      'bg-red-100 text-red-700',
   returned:    'bg-purple-100 text-purple-700',
   skipped:     'bg-gray-100 text-gray-500',

@@ -287,6 +287,8 @@
       "title": "Payment",
       "method": "Payment Method",
       "total": "Total",
+      "shipping": "Shipping",
+      "discount": "Discount",
       "deposit": "Deposit Paid",
       "balance": "Balance Due",
       "methods": {
@@ -348,7 +350,18 @@
       "updating": "Updating…",
       "updated": "Payment method updated",
       "failed": "Couldn't change the payment method"
-    }
+    },
+    "phoneActions": {
+      "call": "Call",
+      "whatsapp": "WhatsApp",
+      "copy": "Copy",
+      "copied": "Copied!"
+    },
+    "locationAction": "Open location in Maps",
+    "locationUnavailable": "Location not available",
+    "itemsCount_one": "{{count}} item",
+    "itemsCount_other": "{{count}} items",
+    "itemsCount": "{{count}} items"
   },
   "map": {
     "title": "Route Map",
@@ -567,8 +580,8 @@
     },
     "noMatch": "No orders match this filter.",
     "count": "{{count}} orders",
-    "unzoned": "Other area",
-    "allAreas": "All areas"
+    "unassignedZone": "Unassigned Zone",
+    "allZones": "All Zones"
   },
   "returns": {
     "title": "Returns",
@@ -633,6 +646,9 @@
     },
     "advancesUnavailable": "Advances: no record in the system",
     "expensesUnavailable": "Expenses: no driver record in the system",
+    "openPositionHint": "Your current open (unsettled) position. Settled days move to your Statement.",
+    "advances": "Advances",
+    "expenses": "Expenses",
     "statementLink": "Monthly statement",
     "error": "Couldn't load the wallet.",
     "retry": "Retry"
@@ -658,7 +674,14 @@
       "orders": "Orders",
       "goods": "Goods",
       "shortage": "Shortage",
-      "advances": "Advances"
+      "advances": "Advances",
+      "expenses": "Expenses"
+    },
+    "movements": {
+      "total": "Total",
+      "pending": "Pending",
+      "advancesEmpty": "No advances in this period",
+      "expensesEmpty": "No expenses in this period"
     },
     "orders": {
       "received": "Received",
@@ -718,7 +741,9 @@
       "returns": "Returns",
       "wallet": "Wallet",
       "tripExpenses": "Trip expenses",
-      "map": "Map"
+      "map": "Map",
+      "statement": "Statement",
+      "exceptions": "Exceptions"
     }
   },
   "tripExpenses": {

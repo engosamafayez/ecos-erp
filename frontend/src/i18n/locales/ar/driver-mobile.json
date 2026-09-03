@@ -311,6 +311,8 @@
       "title": "الدفع",
       "method": "طريقة الدفع",
       "total": "الإجمالي",
+      "shipping": "الشحن",
+      "discount": "الخصم",
       "deposit": "العربون المدفوع",
       "balance": "المبلغ المستحق",
       "methods": {
@@ -376,7 +378,18 @@
       "updating": "جارٍ التحديث…",
       "updated": "تم تحديث طريقة الدفع",
       "failed": "تعذّر تغيير طريقة الدفع"
-    }
+    },
+    "phoneActions": {
+      "call": "اتصال",
+      "whatsapp": "واتساب",
+      "copy": "نسخ",
+      "copied": "تم النسخ!"
+    },
+    "locationAction": "فتح الموقع في الخرائط",
+    "locationUnavailable": "الموقع غير متاح",
+    "itemsCount_one": "منتج واحد",
+    "itemsCount_other": "{{count}} منتجات",
+    "itemsCount": "{{count}} منتجات"
   },
   "map": {
     "title": "خريطة المسار",
@@ -599,8 +612,8 @@
     },
     "noMatch": "لا توجد طلبات مطابقة.",
     "count": "{{count}} طلب",
-    "unzoned": "منطقة أخرى",
-    "allAreas": "كل المناطق"
+    "unassignedZone": "منطقة غير محددة",
+    "allZones": "كل المناطق"
   },
   "returns": {
     "title": "المرتجعات",
@@ -669,6 +682,9 @@
     },
     "advancesUnavailable": "السُلف: لا سجل في النظام",
     "expensesUnavailable": "المصروفات: لا سجل للسائق في النظام",
+    "openPositionHint": "وضعك الحالي المفتوح (غير المُقفل). الأيام المُقفلة تنتقل إلى كشف الحساب.",
+    "advances": "السُلف",
+    "expenses": "المصروفات",
     "statementLink": "كشف الحساب الشهري",
     "error": "تعذّر تحميل المحفظة.",
     "retry": "إعادة المحاولة"
@@ -694,7 +710,14 @@
       "orders": "الطلبات",
       "goods": "البضائع",
       "shortage": "العجز",
-      "advances": "السُلف"
+      "advances": "السُلف",
+      "expenses": "المصروفات"
+    },
+    "movements": {
+      "total": "الإجمالي",
+      "pending": "قيد الاعتماد",
+      "advancesEmpty": "لا توجد سُلف في هذه الفترة",
+      "expensesEmpty": "لا توجد مصروفات في هذه الفترة"
     },
     "orders": {
       "received": "المستلمة",
@@ -758,7 +781,9 @@
       "returns": "المرتجعات",
       "wallet": "المحفظة",
       "tripExpenses": "مصاريف الرحلة",
-      "map": "الخريطة"
+      "map": "الخريطة",
+      "statement": "كشف الحساب",
+      "exceptions": "الاستثناءات"
     }
   },
   "tripExpenses": {

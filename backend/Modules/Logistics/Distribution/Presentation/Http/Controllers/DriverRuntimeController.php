@@ -9,6 +9,7 @@ use BackedEnum;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -23,8 +24,10 @@ use Modules\Logistics\Distribution\Domain\Enums\DeliveryStopStatus;
 use Modules\Logistics\Distribution\Domain\Enums\TripStatus;
 use Modules\Logistics\Distribution\Domain\Exceptions\DistributionException;
 use Modules\Logistics\Distribution\Domain\Models\DeliveryStop;
+use Modules\Logistics\Distribution\Domain\Models\DistributionZone;
 use Modules\Logistics\Distribution\Domain\Models\Trip;
 use Modules\Logistics\Distribution\Domain\Services\DeliveryService;
+use Modules\Logistics\Distribution\Domain\Services\OrderZoneResolver;
 use Modules\Logistics\Distribution\Domain\Services\TripService;
 use Modules\Logistics\Drivers\Domain\Models\Driver;
 use Modules\Operations\Loading\Application\Actions\RecordProductDeliveryAction;
@@ -58,6 +61,7 @@ final class DriverRuntimeController extends Controller
         private readonly TripService $trips,
         private readonly TenantOwnershipResolver $tenant,
         private readonly LoadingCustodyService $custody,
+        private readonly OrderZoneResolver $zones,
     ) {}
 
     // ── Trips ────────────────────────────────────────────────────────────────
@@ -263,7 +267,13 @@ final class DriverRuntimeController extends Controller
         // already-loaded trip status without an N+1 per stop.
         $stops->each(fn (DeliveryStop $s) => $s->setRelation('trip', $trip));
 
-        return response()->json($stops->map(fn (DeliveryStop $s) => $this->stopSummary($s))->all());
+        // Canonical Distribution Zone, batched for the WHOLE list (3 queries total,
+        // never one per stop) — TASK-ECOS-DRIVER-ORDERS-LIST-PAGE-CLOSURE-001 §9.
+        $zonesByOrderId = $this->resolveZonesForStops($stops);
+
+        return response()->json(
+            $stops->map(fn (DeliveryStop $s) => $this->stopSummary($s, $zonesByOrderId))->all(),
+        );
     }
 
     public function stop(string $tripId, string $stopId): JsonResponse
@@ -884,7 +894,10 @@ final class DriverRuntimeController extends Controller
      *
      * @return array<string, mixed>
      */
-    private function stopSummary(DeliveryStop $stop): array
+    /**
+     * @param  array<int|string, array{id: int, code: string, name_en: string, name_ar: string}>  $zonesByOrderId
+     */
+    private function stopSummary(DeliveryStop $stop, array $zonesByOrderId = []): array
     {
         return [
             'id' => $stop->uuid ?? $stop->id,
@@ -897,7 +910,7 @@ final class DriverRuntimeController extends Controller
             'attempted_at' => optional($stop->attempted_at)->toIso8601String(),
             'completed_at' => optional($stop->completed_at)->toIso8601String(),
             'notes' => $stop->notes,
-            'order' => $this->orderPayload($stop, withLines: false),
+            'order' => $this->orderPayload($stop, withLines: false, zonesByOrderId: $zonesByOrderId),
         ];
     }
 
@@ -908,6 +921,61 @@ final class DriverRuntimeController extends Controller
         $summary['order'] = $this->orderPayload($stop, withLines: true);
 
         return $summary;
+    }
+
+    /**
+     * Batch-resolve every stop's order to its canonical Distribution Zone in a fixed,
+     * small number of queries regardless of how many stops the trip has — never one
+     * lookup per stop. Reuses the existing OrderZoneResolver (orders.logistics_city_id →
+     * logistics_cities.distribution_zone_id → distribution_zones); no second Zone
+     * authority is introduced here.
+     *
+     * @param  Collection<int, DeliveryStop>  $stops
+     * @return array<int|string, array{id: int, code: string, name_en: string, name_ar: string}>
+     */
+    private function resolveZonesForStops(Collection $stops): array
+    {
+        $orderIds = $stops->pluck('order_id')->filter()->unique()->values()->all();
+
+        if ($orderIds === []) {
+            return [];
+        }
+
+        // orderId => logistics_city_id (1 query).
+        $cityIdByOrderId = Order::query()->whereIn('id', $orderIds)->pluck('logistics_city_id', 'id');
+
+        // cityId => zoneId, via the existing batched resolver (1 query).
+        $cityIds = $cityIdByOrderId->filter()->unique()->values()->all();
+        $zoneIdByCityId = $this->zones->resolveMany($cityIds);
+
+        if ($zoneIdByCityId === []) {
+            return [];
+        }
+
+        // zoneId => {code, name_en, name_ar} (1 query).
+        $zonesById = DistributionZone::query()
+            ->whereIn('id', array_unique(array_values($zoneIdByCityId)))
+            ->get(['id', 'code', 'name_en', 'name_ar'])
+            ->keyBy('id');
+
+        $result = [];
+        foreach ($cityIdByOrderId as $orderId => $cityId) {
+            $zoneId = $cityId !== null ? ($zoneIdByCityId[$cityId] ?? null) : null;
+            $zone = $zoneId !== null ? $zonesById->get($zoneId) : null;
+
+            if ($zone === null) {
+                continue; // no Zone resolved for this order — it stays "unassigned" downstream.
+            }
+
+            $result[$orderId] = [
+                'id' => (int) $zone->id,
+                'code' => $zone->code,
+                'name_en' => $zone->name_en,
+                'name_ar' => $zone->name_ar,
+            ];
+        }
+
+        return $result;
     }
 
     /**
@@ -931,9 +999,14 @@ final class DriverRuntimeController extends Controller
      * (manual entry wins over the channel-supplied value), so the driver sees the method
      * the payment contract actually evaluates rather than a second interpretation.
      *
+     * `$zonesByOrderId` is pre-resolved (batched) by resolveZonesForStops(), keyed by
+     * order id. Empty when called from the single-stop detail path, which does not
+     * (yet) surface Zone.
+     *
+     * @param  array<int|string, array{id: int, code: string, name_en: string, name_ar: string}>  $zonesByOrderId
      * @return array<string, mixed>|null
      */
-    private function orderPayload(DeliveryStop $stop, bool $withLines): ?array
+    private function orderPayload(DeliveryStop $stop, bool $withLines, array $zonesByOrderId = []): ?array
     {
         // The list needs a COUNT of items, not the items — `withCount` keeps a stop list
         // to one order query per stop instead of loading every line and every product.
@@ -971,9 +1044,25 @@ final class DriverRuntimeController extends Controller
             'gps' => ($showIdentity && $order->google_maps_lat !== null && $order->google_maps_lng !== null)
                 ? ['lat' => (float) $order->google_maps_lat, 'lng' => (float) $order->google_maps_lng]
                 : null,
+            // Canonical Distribution Zone (orders.logistics_city_id → logistics_cities.
+            // distribution_zone_id → distribution_zones) — same PII gate as the other
+            // geographic fields above; a pre-departure trip must not leak it either.
+            'zone' => $showIdentity ? ($zonesByOrderId[$order->id] ?? null) : null,
             // Non-PII operational fields — always visible (§1: order number, payment class, value, products).
             'payment_method' => trim((string) ($order->payment_method_manual ?? $order->payment_method ?? '')) ?: null,
             'grand_total' => (float) $order->total,
+            // TASK-DRIVER-UX-AND-OPERATIONAL-CLOSURE-002 §8 — Shipping + Discount value, resolved
+            // identically to the office OrderResource (shipping_cost ?? shipping_total; discount by
+            // discount_type) so the driver sees the same figures. Non-PII operational read-only
+            // fields (like grand_total); no writer, no status/accounting change.
+            'shipping_value' => $order->shipping_cost !== null
+                ? (float) $order->shipping_cost
+                : (float) ($order->shipping_total ?? 0),
+            'discount_value' => match ($order->discount_type) {
+                'percentage' => round((float) ($order->subtotal ?? 0) * (float) ($order->discount_amount ?? 0) / 100, 2),
+                'fixed' => (float) ($order->discount_amount ?? 0),
+                default => max((float) ($order->discount_amount ?? 0), (float) ($order->discount_total ?? 0)),
+            },
             'deposit_paid' => (float) ($order->deposit_amount ?? 0),
             'remaining_balance' => (float) ($order->remaining_balance ?? 0),
             'items_count' => (int) ($order->lines_count ?? $order->lines->count()),
