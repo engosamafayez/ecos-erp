@@ -41,4 +41,27 @@ final class PhoneNormalizer
 
         return $digits;
     }
+
+    /**
+     * TASK-...-009-R1 (§4) — the SQL equivalent of normalize(), for the one
+     * comparison that cannot pull every row into PHP first:
+     * EloquentCustomerRepository's `blocked_only` filter has to decide, at query
+     * time and before pagination, which Customers match a KNOWN set of already-
+     * normalized block phones. Every other consumer of this class (the block
+     * write actions, BlockedCustomerPolicy's per-page read-model enrichment) has
+     * the candidate Customer rows already in hand and calls normalize() in PHP —
+     * this is the sole exception, not a second algorithm.
+     *
+     * MUST stay in sync with normalize() above — same two rules, restated in SQL:
+     * strip everything but digits, then rewrite a leading local '0' to the '2'
+     * country code once the digit-only form is 10+ characters long. `$column`
+     * must be a trusted column identifier (a literal string from calling code,
+     * never user input) — it is interpolated directly into the returned raw SQL.
+     */
+    public static function sqlExpression(string $column): string
+    {
+        $digits = "REGEXP_REPLACE(COALESCE({$column}, ''), '[^0-9]', '')";
+
+        return "CASE WHEN {$digits} REGEXP '^0[0-9]{9,}$' THEN CONCAT('2', {$digits}) ELSE {$digits} END";
+    }
 }

@@ -47,11 +47,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/crud';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { BlockedCustomerBanner } from '@/features/orders/components/blocked-customer-banner';
 import { OrderConfirmCustomerDialog } from '@/features/orders/components/order-confirm-customer-dialog';
 import { OrderConfirmationBadge } from '@/features/orders/components/order-confirmation-badge';
 import { PaymentProofSection } from '@/features/orders/components/payment-proof-section';
@@ -1337,26 +1337,6 @@ const QUICK_TARGET_ICON: Record<string, React.ComponentType<{ className?: string
   review:           Activity,
   returned:         RotateCcw,
 };
-
-function BlockedCustomerBanner({ order }: { order: Order }) {
-  const { t } = useTranslation('orders');
-
-  if (order.status !== 'on_hold' || order.hold_reason_code !== 'blocked_customer') {
-    return null;
-  }
-
-  return (
-    <Alert variant="destructive">
-      <Ban />
-      <AlertTitle>{t($ => $.orderDetail.blockedCustomer.bannerTitle)}</AlertTitle>
-      <AlertDescription>
-        {order.is_blocked_customer_hold
-          ? t($ => $.orderDetail.blockedCustomer.bannerDescription)
-          : t($ => $.orderDetail.blockedCustomer.bannerDescriptionOverridden)}
-      </AlertDescription>
-    </Alert>
-  );
-}
 
 function QuickActionsPanel({
   order,

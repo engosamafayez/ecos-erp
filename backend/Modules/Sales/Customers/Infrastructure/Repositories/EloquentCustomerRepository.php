@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Commerce\Orders\Domain\Services\CustomerOrderMetricsService;
 use Modules\Sales\Customers\Domain\Contracts\CustomerRepositoryInterface;
 use Modules\Sales\Customers\Domain\Models\Customer;
+use Modules\Sales\Customers\Domain\Services\PhoneNormalizer;
 
 final class EloquentCustomerRepository implements CustomerRepositoryInterface
 {
@@ -87,22 +88,13 @@ final class EloquentCustomerRepository implements CustomerRepositoryInterface
             );
         }
 
-        // TASK-...-BLOCKED-CUSTOMERS-009 (§40) — Blocked Customers filter/segment.
-        // EXISTS against the active-block authority; matches by customer_id (the
-        // common case once bound) OR either saved phone/mobile, so a phone-first
-        // block whose Customer only just started existing still surfaces here.
+        // TASK-...-BLOCKED-CUSTOMERS-009-R1 (§4) — Blocked Customers filter/segment.
+        // The original whereColumn version compared customer_blocks.normalized_phone
+        // (digits, country-code-prefixed) directly against customers.phone/mobile
+        // (raw, unnormalized), so a differently-formatted but equivalent phone never
+        // matched. Fixed below via applyBlockedOnlyFilter() — see its own docblock.
         if (filter_var($filters['blocked_only'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
-            $query->whereExists(function (QueryBuilder $q): void {
-                $q->select(DB::raw(1))
-                    ->from('customer_blocks')
-                    ->whereColumn('customer_blocks.company_id', 'customers.company_id')
-                    ->where('customer_blocks.is_active', true)
-                    ->where(function (QueryBuilder $q2): void {
-                        $q2->whereColumn('customer_blocks.customer_id', 'customers.id')
-                            ->orWhereColumn('customer_blocks.normalized_phone', 'customers.phone')
-                            ->orWhereColumn('customer_blocks.normalized_phone', 'customers.mobile');
-                    });
-            });
+            $this->applyBlockedOnlyFilter($query, $companyId);
         }
 
         // Product-specific repeat buyers ("customers who bought Product X repeatedly") —
@@ -136,6 +128,71 @@ final class EloquentCustomerRepository implements CustomerRepositoryInterface
         return $query
             ->with(['customerBrands.brand', 'addresses' => fn ($a) => $a->where('is_default', true)])
             ->paginate($perPage);
+    }
+
+    /**
+     * TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-BLOCKED-CUSTOMERS-009-R1 (§4).
+     *
+     * Dispatches to whichever of the two strategies below fits the caller's scope.
+     * The common case (a real tenant request, $companyId set) gets the cheap ONE-
+     * QUERY-FOR-THE-WHOLE-PAGE path; the documented super-admin cross-company case
+     * (index()'s own comment: CurrentCompanyService::id() can be null) falls back
+     * to a correlated per-row check, since there is no single company's block list
+     * to pre-fetch. Both paths compare against PhoneNormalizer::sqlExpression() —
+     * the SAME normalization rules normalize() uses in PHP, restated in SQL rather
+     * than duplicated ad hoc — so a customer whose saved phone is a differently
+     * formatted equivalent of a blocked number (e.g. "0100 123 4567" vs the block's
+     * normalized "201001234567") is no longer missed.
+     */
+    private function applyBlockedOnlyFilter(Builder $query, string $companyId): void
+    {
+        if ($companyId === '') {
+            $query->whereExists(function (QueryBuilder $q): void {
+                $q->select(DB::raw(1))
+                    ->from('customer_blocks')
+                    ->whereColumn('customer_blocks.company_id', 'customers.company_id')
+                    ->where('customer_blocks.is_active', true)
+                    ->where(function (QueryBuilder $q2): void {
+                        $q2->whereColumn('customer_blocks.customer_id', 'customers.id')
+                            ->orWhereRaw('customer_blocks.normalized_phone = '.PhoneNormalizer::sqlExpression('customers.phone'))
+                            ->orWhereRaw('customer_blocks.normalized_phone = '.PhoneNormalizer::sqlExpression('customers.mobile'));
+                    });
+            });
+
+            return;
+        }
+
+        // ONE query for the whole page, not one per customer: every active block for
+        // THIS company is read once — bounded by how many blocks exist, never by how
+        // many customers do — then the main query matches against that fixed, small
+        // list. A phone-first block (customer_id still null) still surfaces a Customer
+        // whose saved phone/mobile normalizes to the same digits.
+        $blocks = DB::table('customer_blocks')
+            ->where('company_id', $companyId)
+            ->where('is_active', true)
+            ->select('customer_id', 'normalized_phone')
+            ->get();
+
+        $customerIds = $blocks->pluck('customer_id')->filter()->map(fn ($id) => (string) $id)->unique()->values()->all();
+        $normalizedPhones = $blocks->pluck('normalized_phone')->filter()->unique()->values()->all();
+
+        if ($customerIds === [] && $normalizedPhones === []) {
+            // No active block in this company — the filter must yield zero rows,
+            // not "unfiltered".
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $query->where(function (Builder $q) use ($customerIds, $normalizedPhones): void {
+            if ($customerIds !== []) {
+                $q->orWhereIn('id', $customerIds);
+            }
+            if ($normalizedPhones !== []) {
+                $q->orWhereIn(DB::raw(PhoneNormalizer::sqlExpression('phone')), $normalizedPhones);
+                $q->orWhereIn(DB::raw(PhoneNormalizer::sqlExpression('mobile')), $normalizedPhones);
+            }
+        });
     }
 
     /**
