@@ -35,6 +35,9 @@ export interface DriverWallet {
     cash: number;
     transfer: number;
     card: number;
+    /** Canonical driver-collected channels; present so the breakdown sums to `total`. */
+    instapay: number;
+    wallet: number;
     already_paid: number;
   };
   cash: {

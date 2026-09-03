@@ -229,6 +229,10 @@ export interface DaySettlementCollections {
   cash: number;
   bank_transfer: number;
   card: number;
+  /** Canonical driver-collected InstaPay / Wallet — the ACTUAL collection channel, never
+   *  derived from an order's declared payment method. */
+  instapay?: number;
+  wallet?: number;
   already_paid: number;
   total_collected: number;
   delivered_sales: number;
@@ -243,10 +247,10 @@ export interface DaySettlementCollections {
   driver_collected_electronic?: number;
   driver_collected_total?: number;
   prepaid_before_delivery?: number;
-  /** The finest split the canonical collection authority can express. `PaymentType` is
-   *  {cash, bank_transfer, card, already_paid} — there is no InstaPay case and no Wallet case, so
-   *  an InstaPay collection is stored as `bank_transfer`. The two flags let the UI render an
-   *  honest "not available" instead of a fabricated zero. */
+  /** Channel availability, reported by the server. `PaymentType` now carries InstaPay and Wallet
+   *  as first-class driver-collected channels, so both flags are true and the KPI cards show real
+   *  figures. Historical rows recorded before the extension remain bank_transfer / card and are
+   *  never reinterpreted — those totals stay visible in Transfers and Reconciliation. */
   channel_granularity?: string;
   instapay_available?: boolean;
   wallet_available?: boolean;

@@ -156,7 +156,6 @@
     },
     "detail": {
       "subtitle": "مساحة عمل تقفيل اليوم",
-      "channelNote": "لا يمكن حاليًا الفصل بين إنستاباي والمحفظة الإلكترونية في سجل التحصيل المعتمد: أنواع الدفع هي نقد / تحويل بنكي / بطاقة / مدفوع مسبقًا، لذلك يُسجَّل تحصيل إنستاباي كتحويل بنكي. لهذا تعرض البطاقتان أعلاه القنوات المعتمدة كما هي بدل إعادة تسميتها.",
       "kpi": {
         "ordersDelivered": "الطلبات / تم التسليم",
         "ordersDeliveredCaption": "الإجمالي / تم التسليم",
@@ -168,16 +167,16 @@
         "cashCollectedCaption": "نقد فعلي من العملاء",
         "alreadyPaid": "مدفوع مسبقًا",
         "alreadyPaidCaption": "مدفوع قبل التسليم",
-        "bankTransfer": "تحويل بنكي",
-        "bankTransferCaption": "حصّله السائق",
-        "card": "بطاقة / نقاط بيع",
-        "cardCaption": "حصّله السائق",
         "expenses": "المصروفات",
         "expensesCaption": "مصروف نقدي معتمد",
         "cashIn": "نقد وارد / سلف",
         "cashInCaption": "نقد معتمد للسائق",
         "collectionDifference": "فرق التحصيل",
-        "collectionDifferenceCaption": "المُحصَّل − المتوقع عند التسليم"
+        "collectionDifferenceCaption": "المُحصَّل − المتوقع عند التسليم",
+        "instapay": "إنستاباي",
+        "instapayCaption": "حصّله السائق عبر إنستاباي",
+        "wallet": "محفظة إلكترونية",
+        "walletCaption": "حصّله السائق عبر المحفظة"
       },
       "goods": {
         "title": "البضاعة",
@@ -223,7 +222,9 @@
         "trip": "الرحلة",
         "tripDate": "تاريخ الرحلة",
         "tripStatus": "حالة الرحلة",
-        "trips": "عدد الرحلات"
+        "trips": "عدد الرحلات",
+        "instapay": "إنستاباي (بواسطة السائق)",
+        "wallet": "محفظة إلكترونية (بواسطة السائق)"
       },
       "transfers": {
         "method": "الطريقة",
@@ -2404,7 +2405,11 @@
         "cash": "نقدًا",
         "bank_transfer": "تحويل بنكي",
         "card": "بطاقة",
-        "already_paid": "مدفوع مسبقًا"
+        "already_paid": "مدفوع مسبقًا",
+        "instapay": "إنستاباي",
+        "wallet": "محفظة إلكترونية",
+        "groupCollected": "محصَّل الآن",
+        "groupPreDelivery": "مدفوع قبل التسليم"
       },
       "settlement": {
         "title": "التسوية",

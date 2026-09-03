@@ -244,16 +244,25 @@ class SettlementService
         );
 
         $cash = $sumOf(PaymentType::Cash);
-        $bank = $sumOf(PaymentType::BankTransfer);
-        $card = $sumOf(PaymentType::Card);
         $alreadyPaid = $sumOf(PaymentType::AlreadyPaid);
+
+        // Every driver-collected NON-CASH channel, derived from the canonical enum rather than a
+        // hardcoded type list (TASK-...-DRIVER-COLLECTION-CHANNELS-003 §13). Adding a channel to
+        // PaymentType therefore joins it to this total and to every consumer of it, with no
+        // second formula to keep in step.
+        $electronic = round((float) array_sum(array_map($sumOf, PaymentType::electronicCases())), 2);
 
         return [
             'cash_collected' => $cash,
-            'bank_transfers_pending' => $bank + $card,
+            // KEY NAME PRESERVED for backward compatibility with every existing consumer
+            // (trips.total_bank_transfers, the settlement resources, the day-settlement board).
+            // Its MEANING is "all driver-collected non-cash channels" — bank transfer, card,
+            // InstaPay and wallet — not bank transfers alone.
+            'bank_transfers_pending' => $electronic,
             'already_paid' => $alreadyPaid,
-            'total_collected' => round($cash + $bank + $card + $alreadyPaid, 2),
-            // Only physical cash is reconciled against the driver's hand-back.
+            'total_collected' => round($cash + $electronic + $alreadyPaid, 2),
+            // Only physical cash is reconciled against the driver's hand-back. Unchanged by the
+            // channel extension: InstaPay and wallet are collected, but never travel as cash.
             'cash_expected' => $cash,
         ];
     }

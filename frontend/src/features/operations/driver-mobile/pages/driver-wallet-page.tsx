@@ -74,6 +74,8 @@ export function DriverWalletPage() {
                 <Row label={t(($) => $.wallet.cash)} value={money(data.collections.cash)} />
                 <Row label={t(($) => $.wallet.transfer)} value={money(data.collections.transfer)} />
                 <Row label={t(($) => $.wallet.card)} value={money(data.collections.card)} />
+                <Row label={t(($) => $.wallet.instapay)} value={money(data.collections.instapay)} />
+                <Row label={t(($) => $.wallet.wallet)} value={money(data.collections.wallet)} />
                 <Row label={t(($) => $.wallet.alreadyPaid)} value={money(data.collections.already_paid)} />
               </div>
             </div>

@@ -162,7 +162,13 @@ export function DriverSettlementDetailPage() {
 
   // Driver-collected channels. The server already split them by canonical PaymentType; these
   // fallbacks only cover an older payload and re-derive nothing new.
-  const driverElectronic = c.driver_collected_electronic ?? Math.round((c.bank_transfer + c.card) * 100) / 100;
+  const instapay = c.instapay ?? 0;
+  const wallet = c.wallet ?? 0;
+  // Bank transfer + card stay visible in their own right: historical collections recorded before
+  // the channel extension live here and are never reinterpreted as InstaPay or Wallet.
+  const electronicOther = Math.round((c.bank_transfer + c.card) * 100) / 100;
+  const driverElectronic =
+    c.driver_collected_electronic ?? Math.round((electronicOther + instapay + wallet) * 100) / 100;
   const collectedFromCustomers = c.driver_collected_total ?? Math.round((c.cash + driverElectronic) * 100) / 100;
   const expectedAvailable = c.expected_collection_available && c.expected_collection !== null;
 
@@ -296,19 +302,20 @@ export function DriverSettlementDetailPage() {
             caption={t(($) => $.driverSettlement.detail.kpi.alreadyPaidCaption)}
           />
 
-          {/* Row 2 — driver-collected electronic channels + trip cash + reconciliation.
-              These two slots hold the canonical driver-collected electronic channels. InstaPay and
-              Mobile Wallet are NOT separable in the canonical collection record (see channelNote
-              below), so they are named for what the authority actually stores rather than relabelled. */}
+          {/* Row 2 — the two intended driver-collected channel KPIs, now backed by canonical
+              PaymentType cases (TASK-...-DRIVER-COLLECTION-CHANNELS-003). These are ACTUAL
+              driver collections, never inferred from an order's declared payment method. Bank
+              Transfer and Card keep their own rows in the Settlement summary, the Reconciliation
+              ledger and the Transfers tab — no data was discarded to free these slots. */}
           <Kpi
-            label={t(($) => $.driverSettlement.detail.kpi.bankTransfer)}
-            value={money(c.bank_transfer)}
-            caption={t(($) => $.driverSettlement.detail.kpi.bankTransferCaption)}
+            label={t(($) => $.driverSettlement.detail.kpi.instapay)}
+            value={money(instapay)}
+            caption={t(($) => $.driverSettlement.detail.kpi.instapayCaption)}
           />
           <Kpi
-            label={t(($) => $.driverSettlement.detail.kpi.card)}
-            value={money(c.card)}
-            caption={t(($) => $.driverSettlement.detail.kpi.cardCaption)}
+            label={t(($) => $.driverSettlement.detail.kpi.wallet)}
+            value={money(wallet)}
+            caption={t(($) => $.driverSettlement.detail.kpi.walletCaption)}
           />
           <Kpi
             label={t(($) => $.driverSettlement.detail.kpi.expenses)}
@@ -335,11 +342,6 @@ export function DriverSettlementDetailPage() {
             }
           />
         </div>
-
-        {/* The channel-granularity limit, stated on the page rather than left to be discovered. */}
-        {c.instapay_available === false || c.wallet_available === false ? (
-          <GapNote text={t(($) => $.driverSettlement.detail.channelNote)} />
-        ) : null}
 
         {/* ── GOODS · Driver Warehouse ─────────────────────────────────────────── */}
         <section className="rounded-lg border bg-muted/20 p-3">
@@ -428,6 +430,8 @@ export function DriverSettlementDetailPage() {
                     muted={!expectedAvailable}
                   />
                   <SummaryRow label={t(($) => $.driverSettlement.detail.settlement.cashPhysical)} value={money(c.cash)} />
+                  <SummaryRow label={t(($) => $.driverSettlement.detail.settlement.instapay)} value={money(instapay)} />
+                  <SummaryRow label={t(($) => $.driverSettlement.detail.settlement.wallet)} value={money(wallet)} />
                   <SummaryRow label={t(($) => $.driverSettlement.detail.settlement.bankTransfer)} value={money(c.bank_transfer)} />
                   <SummaryRow label={t(($) => $.driverSettlement.detail.settlement.card)} value={money(c.card)} />
                   <SummaryRow
@@ -607,6 +611,8 @@ export function DriverSettlementDetailPage() {
                 />
                 <SummaryRow label={t(($) => $.driverSettlement.detail.settlement.alreadyPaid)} value={money(c.already_paid)} />
                 <SummaryRow label={t(($) => $.driverSettlement.detail.settlement.cashPhysical)} value={money(c.cash)} />
+                <SummaryRow label={t(($) => $.driverSettlement.detail.settlement.instapay)} value={money(instapay)} />
+                <SummaryRow label={t(($) => $.driverSettlement.detail.settlement.wallet)} value={money(wallet)} />
                 <SummaryRow label={t(($) => $.driverSettlement.detail.settlement.bankTransfer)} value={money(c.bank_transfer)} />
                 <SummaryRow label={t(($) => $.driverSettlement.detail.settlement.card)} value={money(c.card)} />
                 <SummaryRow

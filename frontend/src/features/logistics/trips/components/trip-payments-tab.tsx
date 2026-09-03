@@ -19,7 +19,7 @@ import {
   useTripPayments,
   useVerifyPayment,
 } from '../hooks/use-trip-settlement';
-import { PAYMENT_TYPES, type PaymentType } from '../types/trip-settlement';
+import { DRIVER_COLLECTED_PAYMENT_TYPES, type PaymentType } from '../types/trip-settlement';
 
 type LogisticsLabel = ($: typeof enLogistics) => string;
 
@@ -27,6 +27,8 @@ const PAYMENT_TYPE_LABEL: Record<PaymentType, LogisticsLabel> = {
   cash: ($) => $.trips.settlement.paymentType.cash,
   bank_transfer: ($) => $.trips.settlement.paymentType.bank_transfer,
   card: ($) => $.trips.settlement.paymentType.card,
+  instapay: ($) => $.trips.settlement.paymentType.instapay,
+  wallet: ($) => $.trips.settlement.paymentType.wallet,
   already_paid: ($) => $.trips.settlement.paymentType.already_paid,
 };
 
@@ -170,11 +172,20 @@ export function TripPaymentsTab({ tripId }: { tripId: string }) {
               onChange={(e) => setPaymentType(e.target.value as PaymentType)}
               className="h-9 rounded-md border bg-background px-2 text-sm"
             >
-              {PAYMENT_TYPES.map((value) => (
-                <option key={value} value={value}>
-                  {t(PAYMENT_TYPE_LABEL[value])}
-                </option>
-              ))}
+              {/* The ACTUAL channels the customer can pay through at the stop. `already_paid` is
+                  kept selectable — recording it is how the canonical workflow marks value settled
+                  before dispatch — but it sits in its own group so it can never be mistaken for a
+                  "collected now" channel. */}
+              <optgroup label={t(($) => $.trips.settlement.paymentType.groupCollected)}>
+                {DRIVER_COLLECTED_PAYMENT_TYPES.map((value) => (
+                  <option key={value} value={value}>
+                    {t(PAYMENT_TYPE_LABEL[value])}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label={t(($) => $.trips.settlement.paymentType.groupPreDelivery)}>
+                <option value="already_paid">{t(PAYMENT_TYPE_LABEL.already_paid)}</option>
+              </optgroup>
             </select>
           </div>
 

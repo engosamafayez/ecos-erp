@@ -156,7 +156,6 @@
     },
     "detail": {
       "subtitle": "Day settlement workspace",
-      "channelNote": "InstaPay and Mobile Wallet cannot be separated in the canonical collection record today: PaymentType is cash / bank transfer / card / already paid, so an InstaPay collection is stored as a Bank Transfer. The two cards above therefore name the canonical channels rather than relabelling them.",
       "kpi": {
         "ordersDelivered": "Orders / Delivered",
         "ordersDeliveredCaption": "Total / Delivered",
@@ -168,16 +167,16 @@
         "cashCollectedCaption": "Physical cash from customers",
         "alreadyPaid": "Already Paid",
         "alreadyPaidCaption": "Prepaid before delivery",
-        "bankTransfer": "Bank Transfer",
-        "bankTransferCaption": "Collected by driver",
-        "card": "Card / POS",
-        "cardCaption": "Collected by driver",
         "expenses": "Expenses",
         "expensesCaption": "Approved cash out",
         "cashIn": "Cash In / Advances",
         "cashInCaption": "Approved cash to the driver",
         "collectionDifference": "Collection Difference",
-        "collectionDifferenceCaption": "Collected − expected at handoff"
+        "collectionDifferenceCaption": "Collected − expected at handoff",
+        "instapay": "InstaPay",
+        "instapayCaption": "Collected by driver via InstaPay",
+        "wallet": "Wallet",
+        "walletCaption": "Collected by driver via Wallet"
       },
       "goods": {
         "title": "Goods",
@@ -223,7 +222,9 @@
         "trip": "Trip",
         "tripDate": "Trip date",
         "tripStatus": "Trip status",
-        "trips": "Trips"
+        "trips": "Trips",
+        "instapay": "InstaPay (by driver)",
+        "wallet": "Wallet (by driver)"
       },
       "transfers": {
         "method": "Method",
@@ -2404,7 +2405,11 @@
         "cash": "Cash",
         "bank_transfer": "Bank Transfer",
         "card": "Card",
-        "already_paid": "Already Paid"
+        "already_paid": "Already Paid",
+        "instapay": "InstaPay",
+        "wallet": "Wallet",
+        "groupCollected": "Collected now",
+        "groupPreDelivery": "Paid before delivery"
       },
       "settlement": {
         "title": "Settlement",

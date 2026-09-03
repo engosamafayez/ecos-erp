@@ -357,7 +357,10 @@ class DriverDaySettlementReadService
 
         $transferCollections = PaymentCollection::query()
             ->whereIn('trip_id', $tripIds)
-            ->whereIn('payment_type', [PaymentType::BankTransfer->value, PaymentType::Card->value])
+            // Every driver-collected ELECTRONIC channel, from the canonical enum: bank transfer,
+            // card, InstaPay, wallet. `already_paid` is structurally excluded, so a pre-delivery
+            // payment can never surface here as a driver collection (§14).
+            ->whereIn('payment_type', PaymentType::electronicValues())
             ->with('stop')
             ->latest()
             ->get();
@@ -920,8 +923,10 @@ class DriverDaySettlementReadService
         $cash = $sumType(PaymentType::Cash);
         $bank = $sumType(PaymentType::BankTransfer);
         $card = $sumType(PaymentType::Card);
+        $instapay = $sumType(PaymentType::InstaPay);
+        $wallet = $sumType(PaymentType::Wallet);
         $alreadyPaid = $sumType(PaymentType::AlreadyPaid);
-        $totalCollected = round($cash + $bank + $card + $alreadyPaid, 2);
+        $totalCollected = round($cash + $bank + $card + $instapay + $wallet + $alreadyPaid, 2);
 
         // Expected Collection = Σ of the per-stop handoff snapshots. Available ONLY when every stop
         // carries one; a null (pre-snapshot / historical) stop makes the whole figure unavailable
@@ -938,7 +943,8 @@ class DriverDaySettlementReadService
         // Difference and is deliberately NOT "expected cash − physical cash": every driver-collected
         // channel counts toward it, so a customer paying electronically at the door does not read as
         // a driver shortage.
-        $driverElectronic = round($bank + $card, 2);
+        // All electronic channels, derived from the enum so a new channel is counted automatically.
+        $driverElectronic = round((float) array_sum(array_map($sumType, PaymentType::electronicCases())), 2);
         $collectedFromCustomers = round($cash + $driverElectronic, 2);
         $collectionDifference = $expectedCollection !== null
             ? round($collectedFromCustomers - $expectedCollection, 2)
@@ -948,6 +954,10 @@ class DriverDaySettlementReadService
             'cash' => $cash,
             'bank_transfer' => $bank,
             'card' => $card,
+            // Canonical driver-collected InstaPay / Wallet — the ACTUAL collection channel, never
+            // derived from an order's declared payment method (§11/§12 of CHANNELS-003).
+            'instapay' => $instapay,
+            'wallet' => $wallet,
             'already_paid' => $alreadyPaid,
             'total_collected' => $totalCollected,
             'delivered_sales' => $deliveredSales,
@@ -965,16 +975,14 @@ class DriverDaySettlementReadService
             'driver_collected_electronic' => $driverElectronic,
             'driver_collected_total' => $collectedFromCustomers,
             'prepaid_before_delivery' => $alreadyPaid,
-            // The finest split the canonical collection authority can express. PaymentType is
-            // {cash, bank_transfer, card, already_paid} — see the enum and the
-            // distribution_payment_collections.payment_type column. There is NO InstaPay case and
-            // NO Wallet case, so an InstaPay collection is stored as `bank_transfer` and is
-            // indistinguishable from any other bank transfer. These two flags say so explicitly, so
-            // the UI can render an honest "not available" instead of a fabricated zero, and so the
-            // gap is machine-readable rather than a UI assumption.
+            // The canonical collection authority now carries InstaPay and Wallet as first-class
+            // driver-collected channels (TASK-...-DRIVER-COLLECTION-CHANNELS-003), so the split
+            // below is the real one and the flags report availability truthfully. Historical rows
+            // recorded before the extension remain `bank_transfer` / `card` and are NOT
+            // reinterpreted — those totals stay visible in Transfers and Reconciliation.
             'channel_granularity' => 'payment_type',
-            'instapay_available' => false,
-            'wallet_available' => false,
+            'instapay_available' => true,
+            'wallet_available' => true,
         ];
     }
 
@@ -1004,11 +1012,12 @@ class DriverDaySettlementReadService
             $out[$orderId] ??= ['cash' => 0.0, 'electronic' => 0.0, 'already_paid' => 0.0];
             $amount = (float) $c->amount;
 
-            $bucket = match ($c->payment_type) {
-                PaymentType::Cash => 'cash',
-                PaymentType::BankTransfer, PaymentType::Card => 'electronic',
-                PaymentType::AlreadyPaid => 'already_paid',
-            };
+            // Classified from the canonical enum, not from a case list: physical cash, any
+            // driver-collected electronic channel, or pre-delivery value. The three are mutually
+            // exclusive by construction, so a payment can never land in two buckets, and a new
+            // channel is classified correctly the moment it is added to PaymentType.
+            $type = $c->payment_type;
+            $bucket = $type->isPhysicalCash() ? 'cash' : ($type->isDriverCollected() ? 'electronic' : 'already_paid');
             $out[$orderId][$bucket] += $amount;
         }
 

@@ -651,7 +651,9 @@
     "expenses": "Expenses",
     "statementLink": "Monthly statement",
     "error": "Couldn't load the wallet.",
-    "retry": "Retry"
+    "retry": "Retry",
+    "instapay": "InstaPay",
+    "wallet": "Wallet"
   },
   "reports": {
     "title": "Reports",

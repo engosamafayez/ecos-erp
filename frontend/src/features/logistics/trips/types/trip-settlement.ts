@@ -16,14 +16,30 @@ export const SETTLEMENT_STATUSES = [
 
 export type SettlementStatus = (typeof SETTLEMENT_STATUSES)[number];
 
-export const PAYMENT_TYPES = ['cash', 'bank_transfer', 'card', 'already_paid'] as const;
+/**
+ * Mirrors the canonical backend `PaymentType`. The first five are ACTUAL driver-collected
+ * channels; `already_paid` is the pre-delivery marker and is deliberately last — it is not a
+ * "the customer just paid me now" channel and the recording UI groups it apart.
+ */
+export const PAYMENT_TYPES = ['cash', 'bank_transfer', 'card', 'instapay', 'wallet', 'already_paid'] as const;
 
 export type PaymentType = (typeof PAYMENT_TYPES)[number];
+
+/** The channels a driver may record as collected during custody (everything but `already_paid`). */
+export const DRIVER_COLLECTED_PAYMENT_TYPES = PAYMENT_TYPES.filter(
+  (v): v is Exclude<PaymentType, 'already_paid'> => v !== 'already_paid',
+);
 
 /** Payment rows carry their own review state, separate from the settlement's. */
 export type PaymentStatus = string;
 
-export type SettlementOption = { value: string; label: string };
+export type SettlementOption = {
+  value: string;
+  label: string;
+  /** Sent by the backend so a client can group channels without re-encoding the rule. */
+  driver_collected?: boolean;
+  electronic?: boolean;
+};
 
 export type SettlementOptions = {
   payment_types: SettlementOption[];

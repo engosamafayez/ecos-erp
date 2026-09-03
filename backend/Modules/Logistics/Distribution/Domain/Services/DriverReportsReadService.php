@@ -136,6 +136,11 @@ class DriverReportsReadService
                 'cash' => $collections['cash'],
                 'transfer' => $collections['bank_transfer'],
                 'card' => $collections['card'],
+                // Added with the canonical channel extension. Without these lines the named
+                // breakdown would stop summing to `total`, which now includes InstaPay and wallet
+                // collections via the per-trip engine.
+                'instapay' => $collections['instapay'],
+                'wallet' => $collections['wallet'],
                 'already_paid' => $collections['already_paid'],
             ],
             'cash' => [
@@ -487,12 +492,18 @@ class DriverReportsReadService
     }
 
     /**
+     * Collected amount per canonical channel. Keyed by every {@see PaymentType} case — including
+     * `instapay` and `wallet` — so the shape follows the enum rather than a fixed list.
+     *
      * @param  list<int>  $tripIds
-     * @return array{cash: float, bank_transfer: float, card: float, already_paid: float}
+     * @return array<string, float>
      */
     private function collectionsByType(array $tripIds): array
     {
-        $out = ['cash' => 0.0, 'bank_transfer' => 0.0, 'card' => 0.0, 'already_paid' => 0.0];
+        $out = [];
+        foreach (PaymentType::cases() as $type) {
+            $out[$type->value] = 0.0;
+        }
         if ($tripIds === []) {
             return $out;
         }

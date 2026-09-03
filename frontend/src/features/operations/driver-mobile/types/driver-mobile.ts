@@ -1,6 +1,7 @@
 export type DeliveryStopStatus = 'pending' | 'in_progress' | 'delivered' | 'partial' | 'failed' | 'returned' | 'skipped';
 export type DeliveryActionType = 'completed' | 'partial' | 'refused' | 'not_available' | 'delay' | 'wrong_address' | 'unreachable';
-export type PaymentType = 'cash' | 'bank_transfer' | 'already_paid';
+/** Mirrors the canonical backend `PaymentType`. `card` was already canonical but missing here. */
+export type PaymentType = 'cash' | 'bank_transfer' | 'card' | 'instapay' | 'wallet' | 'already_paid';
 export type PaymentCollectionStatus = 'recorded' | 'pending_verification' | 'verified' | 'rejected';
 export type ExceptionType = 'damaged' | 'missing' | 'wrong_product' | 'complaint' | 'packaging' | 'other';
 export type ReturnType = 'full' | 'partial';

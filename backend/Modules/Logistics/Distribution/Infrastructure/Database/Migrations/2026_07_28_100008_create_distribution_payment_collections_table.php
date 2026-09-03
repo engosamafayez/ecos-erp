@@ -21,7 +21,12 @@ return new class extends Migration
             $table->foreignId('stop_id')->nullable()
                 ->constrained('distribution_delivery_stops')->cascadeOnDelete();
 
-            $table->string('payment_type', 20); // cash | bank_transfer | card | already_paid
+            // Plain string, deliberately NOT a DB enum or CHECK constraint: the canonical value
+            // set is PaymentType (Modules\Logistics\Distribution\Domain\Enums\PaymentType), which
+            // is where new collection channels are added. Listing the values here would only go
+            // stale — it already had, before `instapay` and `wallet` were added. 20 chars fits
+            // every current value ('bank_transfer' and 'already_paid' are the longest at 13/12).
+            $table->string('payment_type', 20);
             $table->decimal('amount', 12, 2)->default(0);
             $table->string('reference_number', 100)->nullable();
             $table->string('image_path', 500)->nullable();
