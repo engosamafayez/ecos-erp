@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Commerce\Orders\Domain\Services;
 
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 
@@ -52,9 +53,35 @@ use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
  *   This closes the LAST_ORDER_DATE_CONTRACT gap recorded in
  *   TASK-SALES-CUSTOMERS-POST-360-HARDENING-001 §S.7 — the frontend was already reading
  *   `order_date`; this service was the inconsistent side.
+ *
+ * CUSTOMER INTELLIGENCE (TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-CUSTOMER-INTELLIGENCE-008)
+ * -----------------------------------------------------------------------------------------
+ *   Highest-Spend / Purchase Frequency / Recency all reuse the SAME "Total Orders"/
+ *   "Total Value" scope defined above — no new qualifying-order semantics were invented.
+ *   Cancelled/Returned/On Hold orders count exactly as they already did.
+ *
+ *   Repeat Customer = orders_count >= self::REPEAT_ORDER_THRESHOLD (2). Also the default
+ *   minimum purchase count for the product-specific repeat-buyer filter
+ *   (EloquentCustomerRepository::paginate()'s `product_id` filter) — "repeat" means the
+ *   same thing everywhere it appears in Customer Intelligence.
+ *
+ *   Purchase Frequency = average days between qualifying orders, i.e.
+ *   (last_order_at - first_order_at) / (orders_count - 1), in days, rounded to 1 decimal.
+ *   NULL when orders_count < 2 — there is no interval to measure yet, and this is never
+ *   computed as a divide-by-zero. See averageDaysBetweenOrders().
+ *
+ *   Product Affinity ("Products a Customer repeatedly purchases") ranks by
+ *   COUNT(DISTINCT order_id) per product — the number of SEPARATE qualifying orders that
+ *   included the product — not by SUM(quantity). A customer who buys 50 units in one order
+ *   is not exhibiting "repeat" behaviour for that product; a customer who orders it in 5
+ *   separate orders is. total_quantity remains available as a secondary/tiebreak signal,
+ *   never the primary ranking key. This is a deliberate correction to the ranking this
+ *   service used prior to Task 3 (previously SUM(quantity) DESC only).
  */
 final class CustomerOrderMetricsService
 {
+    public const REPEAT_ORDER_THRESHOLD = 2;
+
     /**
      * Metrics for many customers in ONE query.
      *
@@ -84,6 +111,7 @@ final class CustomerOrderMetricsService
             // and is deliberately NOT used here: a back-dated or imported order would
             // otherwise report the wrong "last order".
             ->selectRaw('MAX(order_date) AS last_order_at')
+            ->selectRaw('MIN(order_date) AS first_order_at')
             ->whereIn('customer_id', $customerIds)
             ->where('company_id', $companyId)   // tenant boundary — never cross-company
             ->whereNull('deleted_at')
@@ -98,6 +126,7 @@ final class CustomerOrderMetricsService
                 (float) $row->total_order_value,
                 (int) $row->delivered_count,
                 $row->last_order_at !== null ? (string) $row->last_order_at : null,
+                $row->first_order_at !== null ? (string) $row->first_order_at : null,
             );
         }
 
@@ -116,6 +145,10 @@ final class CustomerOrderMetricsService
      * One grouped query — never "fetch all orders and aggregate in the client".
      * A product ordered in five separate orders appears once, with the summed
      * quantity and the number of orders containing it.
+     *
+     * Ordered by orders_count DESC (Product Affinity — see class docblock): how many
+     * SEPARATE orders included the product, not how many units. total_quantity is the
+     * tiebreak.
      *
      * @return list<array<string, mixed>>
      */
@@ -136,6 +169,7 @@ final class CustomerOrderMetricsService
                 COUNT(DISTINCT o.id)        AS orders_count,
                 MAX(o.order_date)           AS last_ordered_at
             ')
+            ->orderByDesc('orders_count')
             ->orderByDesc('total_quantity')
             ->get()
             ->map(fn ($r) => [
@@ -151,7 +185,11 @@ final class CustomerOrderMetricsService
     }
 
     /**
-     * Top products for MANY customers in ONE query.
+     * Top products for MANY customers in ONE query — ranked by Product Affinity, i.e. how
+     * many SEPARATE qualifying orders included the product (orders_count DESC), not by
+     * units purchased. total_quantity is the tiebreak, never the primary key: a customer
+     * who bought 50 units in one order is not "repeatedly buying" it; a customer who
+     * ordered it across 5 separate orders is — see the class docblock.
      *
      * Window functions do the per-customer ranking in the database: ROW_NUMBER caps the
      * rows at $limit per customer, and COUNT(*) OVER counts the grouped rows — which is
@@ -179,8 +217,12 @@ final class CustomerOrderMetricsService
                 ol.product_id,
                 p.name AS product_name,
                 SUM(ol.quantity) AS total_quantity,
-                ROW_NUMBER() OVER (PARTITION BY o.customer_id ORDER BY SUM(ol.quantity) DESC) AS rn,
-                COUNT(*)     OVER (PARTITION BY o.customer_id)                              AS distinct_products
+                COUNT(DISTINCT o.id) AS orders_count,
+                ROW_NUMBER() OVER (
+                    PARTITION BY o.customer_id
+                    ORDER BY COUNT(DISTINCT o.id) DESC, SUM(ol.quantity) DESC
+                ) AS rn,
+                COUNT(*) OVER (PARTITION BY o.customer_id) AS distinct_products
             ');
 
         $rows = DB::query()->fromSub($ranked, 't')->where('rn', '<=', $limit)->orderBy('customer_id')->orderBy('rn')->get();
@@ -194,6 +236,7 @@ final class CustomerOrderMetricsService
                 'product_id' => $row->product_id,
                 'product_name' => $row->product_name,
                 'total_quantity' => round((float) $row->total_quantity, 4),
+                'orders_count' => (int) $row->orders_count,
             ];
         }
 
@@ -349,12 +392,17 @@ final class CustomerOrderMetricsService
     /** @return array<string, mixed> */
     public static function emptyMetrics(): array
     {
-        return self::shape(0, 0.0, 0, null);
+        return self::shape(0, 0.0, 0, null, null);
     }
 
     /** @return array<string, mixed> */
-    private static function shape(int $orders, float $value, int $delivered, ?string $lastOrderAt): array
-    {
+    private static function shape(
+        int $orders,
+        float $value,
+        int $delivered,
+        ?string $lastOrderAt,
+        ?string $firstOrderAt,
+    ): array {
         return [
             'orders_count' => $orders,
             'total_order_value' => round($value, 2),
@@ -364,6 +412,26 @@ final class CustomerOrderMetricsService
             'receiving_rate' => $orders > 0 ? round(($delivered / $orders) * 100, 2) : null,
             'average_order_value' => $orders > 0 ? round($value / $orders, 2) : null,
             'last_order_at' => $lastOrderAt,
+            'first_order_at' => $firstOrderAt,
+            'is_repeat_customer' => $orders >= self::REPEAT_ORDER_THRESHOLD,
+            'avg_days_between_orders' => self::averageDaysBetweenOrders($orders, $firstOrderAt, $lastOrderAt),
         ];
+    }
+
+    /**
+     * Average days between qualifying orders — NULL when fewer than 2 orders exist (no
+     * interval to measure; NEVER a divide-by-zero). A customer whose first and last
+     * qualifying orders both fall on the same day legitimately gets 0.0, not NULL — that
+     * is an honest answer, not a missing one.
+     */
+    private static function averageDaysBetweenOrders(int $orders, ?string $firstOrderAt, ?string $lastOrderAt): ?float
+    {
+        if ($orders < self::REPEAT_ORDER_THRESHOLD || $firstOrderAt === null || $lastOrderAt === null) {
+            return null;
+        }
+
+        $days = Carbon::parse($firstOrderAt)->diffInDays(Carbon::parse($lastOrderAt));
+
+        return round($days / ($orders - 1), 1);
     }
 }

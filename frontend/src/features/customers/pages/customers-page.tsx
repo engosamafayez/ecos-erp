@@ -4,6 +4,8 @@ import {
   MapPin,
   Pencil,
   Plus,
+  Repeat,
+  TrendingUp,
   Trash2,
   Users,
 } from 'lucide-react';
@@ -22,6 +24,7 @@ import {
   PageHeader,
   Pagination,
 } from '@/components/crud';
+import { Combobox } from '@/components/crud/combobox';
 import { QuickStatCard } from '@/components/ds/quick-stat-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -31,6 +34,8 @@ import { CustomerDrawer } from '@/features/customers/components/customer-drawer'
 import { CustomerFormDrawer } from '@/features/customers/components/customer-form-drawer';
 import { CustomerQuickActionCard } from '@/features/customers/components/customer-quick-action-card';
 import { useCustomersQuery, useDeleteCustomer } from '@/features/customers/hooks/use-customers';
+import { useProductOptions } from '@/features/orders/hooks/use-product-options';
+import { REPEAT_ORDER_THRESHOLD } from '@/features/customers/types/customer';
 import type { Customer, CustomerSortField, CustomerStatusFilter } from '@/features/customers/types/customer';
 import { ROUTES } from '@/router/routes';
 import { cn } from '@/lib/utils';
@@ -57,19 +62,24 @@ function SortTh({
   label,
   sort,
   onSort,
+  align = 'start',
 }: {
   field: CustomerSortField;
   label: string;
   sort: { field: CustomerSortField; direction: 'asc' | 'desc' };
   onSort: (f: CustomerSortField) => void;
+  align?: 'start' | 'end';
 }) {
   const isActive = sort.field === field;
   return (
-    <th className="px-4 py-3 text-start">
+    <th className={cn('px-4 py-3', align === 'end' ? 'text-end' : 'text-start')}>
       <button
         type="button"
         onClick={() => onSort(field)}
-        className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+        className={cn(
+          'inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors',
+          align === 'end' && 'flex-row-reverse',
+        )}
       >
         {label}
         <span className="text-[10px]">
@@ -157,6 +167,13 @@ export function CustomersPage() {
   const [focusedRowIndex, setFocusedRowIndex] = useState<number | null>(null);
   const [selectedIds, setSelectedIds]     = useState<Set<string>>(new Set());
 
+  // ── Customer Intelligence filters (backend-authoritative — never a client-side
+  //    filter of the current page) ──────────────────────────────────────────────
+  const [repeatOnly, setRepeatOnly]           = useState(false);
+  const [affinityProductId, setAffinityProductId] = useState<string | null>(null);
+  const [minPurchaseCount, setMinPurchaseCount]   = useState(REPEAT_ORDER_THRESHOLD);
+  const { data: productOptions = [], isLoading: loadingProducts } = useProductOptions();
+
   // ── Drawer / dialog state ──────────────────────────────────────────────────
   const [viewCustomer, setViewCustomer]     = useState<Customer | null>(null);
   const [viewDefaultTab, setViewDefaultTab] = useState('summary');
@@ -186,6 +203,9 @@ export function CustomersPage() {
   const { data, isLoading, isError, isFetching, refetch } = useCustomersQuery({
     search: debouncedSearch || undefined,
     status: statusFilter,
+    repeat_only: repeatOnly || undefined,
+    product_id: affinityProductId ?? undefined,
+    min_purchase_count: affinityProductId ? minPurchaseCount : undefined,
     page,
     per_page: PER_PAGE,
     sort_by: sort.field,
@@ -248,6 +268,16 @@ export function CustomersPage() {
     );
     setPage(1);
     setFocusedRowIndex(null);
+  }
+
+  const isHighestSpendSort = sort.field === 'total_order_value' && sort.direction === 'desc';
+  const hasActiveIntelligenceFilter = repeatOnly || affinityProductId !== null;
+
+  function clearIntelligenceFilters() {
+    setRepeatOnly(false);
+    setAffinityProductId(null);
+    setMinPurchaseCount(REPEAT_ORDER_THRESHOLD);
+    setPage(1);
   }
 
   // ── Keyboard navigation ───────────────────────────────────────────────────
@@ -378,6 +408,97 @@ export function CustomersPage() {
           {isFetching && isSearching ? (
             <span className="text-xs text-muted-foreground">{tCommon($ => $.loading) ?? 'Loading…'}</span>
           ) : null}
+
+          {/* ── Customer Intelligence panel: Highest Spend / Repeat / Product Affinity —
+              every filter here is backend-authoritative (EloquentCustomerRepository::
+              paginate()), never a client-side filter of the current page. */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn('gap-1.5', hasActiveIntelligenceFilter && 'border-primary text-primary')}
+              >
+                <TrendingUp className="size-3.5" />
+                {t($ => $.intelligencePanel.trigger)}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-80 p-3">
+              <div className="flex flex-col gap-3">
+                <div>
+                  <p className="mb-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                    {t($ => $.intelligencePanel.segments)}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={isHighestSpendSort ? 'default' : 'outline'}
+                      className="h-7 gap-1 text-xs"
+                      onClick={() => {
+                        setSort({ field: 'total_order_value', direction: 'desc' });
+                        setPage(1);
+                      }}
+                    >
+                      <TrendingUp className="size-3" />
+                      {t($ => $.intelligencePanel.highestSpend)}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={repeatOnly ? 'default' : 'outline'}
+                      className="h-7 gap-1 text-xs"
+                      onClick={() => {
+                        setRepeatOnly((v) => !v);
+                        setPage(1);
+                      }}
+                    >
+                      <Repeat className="size-3" />
+                      {t($ => $.intelligencePanel.repeatCustomers)}
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                    {t($ => $.intelligencePanel.productAffinity)}
+                  </p>
+                  <Combobox
+                    options={productOptions}
+                    value={affinityProductId}
+                    onChange={(v) => { setAffinityProductId(v || null); setPage(1); }}
+                    placeholder={t($ => $.intelligencePanel.selectProduct)}
+                    loading={loadingProducts}
+                    className="h-8"
+                  />
+                  {affinityProductId ? (
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {t($ => $.intelligencePanel.minPurchases)}
+                      </span>
+                      <Input
+                        type="number"
+                        min={1}
+                        className="h-7 w-16"
+                        value={minPurchaseCount}
+                        onChange={(e) => {
+                          const n = parseInt(e.target.value, 10);
+                          setMinPurchaseCount(Number.isFinite(n) && n > 0 ? n : REPEAT_ORDER_THRESHOLD);
+                          setPage(1);
+                        }}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+
+                {hasActiveIntelligenceFilter ? (
+                  <Button type="button" size="sm" variant="ghost" className="h-7 self-start text-xs" onClick={clearIntelligenceFilters}>
+                    {t($ => $.intelligencePanel.clear)}
+                  </Button>
+                ) : null}
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
 
         {/* DD-056: Single result → Quick Action Card */}
@@ -441,18 +562,12 @@ export function CustomersPage() {
                 <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
                   {t($ => $.columns.channels)}
                 </th>
-                <th className="px-4 py-3 text-end text-xs font-medium text-muted-foreground">
-                  {t($ => $.columns.ordersCount)}
-                </th>
-                <th className="px-4 py-3 text-end text-xs font-medium text-muted-foreground">
-                  {t($ => $.columns.totalOrderValue)}
-                </th>
+                <SortTh field="orders_count" label={t($ => $.columns.ordersCount)} sort={sort} onSort={handleSortChange} align="end" />
+                <SortTh field="total_order_value" label={t($ => $.columns.totalOrderValue)} sort={sort} onSort={handleSortChange} align="end" />
                 <th className="px-4 py-3 text-end text-xs font-medium text-muted-foreground">
                   {t($ => $.columns.receivingRate)}
                 </th>
-                <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                  {t($ => $.columns.lastOrder)}
-                </th>
+                <SortTh field="last_order_at" label={t($ => $.columns.lastOrder)} sort={sort} onSort={handleSortChange} />
                 <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
                   {t($ => $.columns.fullAddress)}
                 </th>
@@ -745,15 +860,17 @@ function CustomerRow({
                 {customer.top_products_count}
               </button>
             </PopoverTrigger>
-            <PopoverContent align="start" className="w-60 p-2">
+            <PopoverContent align="start" className="w-64 p-2">
               <p className="mb-1.5 px-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-                {t($ => $.table.topProductsByQuantity)}
+                {t($ => $.table.topProductsByAffinity)}
               </p>
               <ul className="flex flex-col gap-0.5">
                 {customer.top_products.map((p) => (
                   <li key={p.product_id ?? p.product_name} className="flex items-center justify-between gap-2 px-1 text-xs">
                     <span className="truncate">{p.product_name ?? '—'}</span>
-                    <span className="shrink-0 tabular-nums text-muted-foreground">{p.total_quantity}</span>
+                    <span className="shrink-0 tabular-nums text-muted-foreground">
+                      {t($ => $.table.orderedNTimes, { count: p.orders_count })} · {p.total_quantity}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -776,6 +893,16 @@ function CustomerRow({
       {/* Customer Intelligence */}
       <td className="px-4 py-3">
         <div className="flex flex-wrap gap-1">
+          {customer.is_repeat_customer ? (
+            <Badge
+              variant="secondary"
+              className="h-5 gap-1 px-1.5 text-[10px] text-emerald-700 bg-emerald-100 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/50 dark:border-emerald-800"
+              title={t($ => $.intelligence.repeatHint, { count: REPEAT_ORDER_THRESHOLD })}
+            >
+              <Repeat className="size-3" />
+              {t($ => $.intelligence.repeat)}
+            </Badge>
+          ) : null}
           {customer.notes ? (
             <Badge
               variant="secondary"

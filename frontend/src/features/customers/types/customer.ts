@@ -16,7 +16,16 @@ export type CustomerTopProduct = {
   product_id: string | null;
   product_name: string | null;
   total_quantity: number;
+  /** Distinct qualifying orders containing this product — the Product Affinity ranking key. */
+  orders_count: number;
 };
+
+/**
+ * A Customer becomes a "Repeat Customer" at this many qualifying orders, and it is the
+ * default minimum for the product-specific repeat-buyer filter — "repeat" means the same
+ * thing everywhere it appears. Mirrors CustomerOrderMetricsService::REPEAT_ORDER_THRESHOLD.
+ */
+export const REPEAT_ORDER_THRESHOLD = 2;
 
 export type CustomerPurchasedProduct = {
   product_id: string | null;
@@ -62,6 +71,13 @@ export type Customer = {
   receiving_rate: number | null;
   average_order_value: number | null;
   last_order_at: string | null;
+  /** NULL until the first qualifying order (no orders yet). */
+  first_order_at: string | null;
+  /** orders_count >= REPEAT_ORDER_THRESHOLD. Computed server-side, single source of truth. */
+  is_repeat_customer: boolean;
+  /** Average days between qualifying orders. NULL when fewer than 2 orders — never a
+   *  divide-by-zero; 0 is a real, valid value (same-day repeat orders). */
+  avg_days_between_orders: number | null;
   /** Number of DISTINCT products ordered, not units. */
   top_products_count: number;
   top_products: CustomerTopProduct[];
@@ -95,7 +111,16 @@ export type CustomerPayload = {
 };
 
 export type CustomerStatusFilter = 'all' | 'active' | 'inactive';
-export type CustomerSortField = 'code' | 'name' | 'country' | 'city' | 'is_active' | 'created_at';
+export type CustomerSortField =
+  | 'code'
+  | 'name'
+  | 'country'
+  | 'city'
+  | 'is_active'
+  | 'created_at'
+  | 'total_order_value'
+  | 'orders_count'
+  | 'last_order_at';
 export type SortDirection = 'asc' | 'desc';
 
 export type CustomersQuery = {
@@ -104,6 +129,12 @@ export type CustomersQuery = {
   brand_id?: string;
   country?: string;
   city?: string;
+  /** Repeat Customers only (orders_count >= REPEAT_ORDER_THRESHOLD). Backend-authoritative. */
+  repeat_only?: boolean;
+  /** Product Affinity filter: customers who purchased this product repeatedly. */
+  product_id?: string;
+  /** Defaults to REPEAT_ORDER_THRESHOLD server-side when product_id is set. */
+  min_purchase_count?: number;
   page?: number;
   per_page?: number;
   sort_by?: CustomerSortField;

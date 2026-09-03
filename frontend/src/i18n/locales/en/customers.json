@@ -82,7 +82,19 @@
   },
   "intelligence": {
     "hasNotes": "Notes",
-    "returning": "Returning"
+    "returning": "Returning",
+    "repeat": "Repeat",
+    "repeatHint": "{{count}}+ qualifying orders"
+  },
+  "intelligencePanel": {
+    "trigger": "Intelligence",
+    "segments": "Segments",
+    "highestSpend": "Highest Spend",
+    "repeatCustomers": "Repeat Customers",
+    "productAffinity": "Product Affinity",
+    "selectProduct": "Select a product…",
+    "minPurchases": "Min. purchases",
+    "clear": "Clear filters"
   },
   "table": {
     "empty": "No customers found.",
@@ -90,8 +102,9 @@
     "selectAll": "Select all",
     "viewOrders": "View Orders",
     "viewAllProducts": "View all {{count}} products",
-    "distinctProductsHint": "{{count}} distinct products ordered — hover to see the top ones by quantity",
-    "topProductsByQuantity": "Top products by quantity",
+    "distinctProductsHint": "{{count}} distinct products ordered — hover to see the top ones by affinity",
+    "topProductsByAffinity": "Top products by affinity",
+    "orderedNTimes": "{{count}} orders",
     "unassigned": "Unassigned"
   },
   "phone": {
@@ -188,7 +201,13 @@
       "delivered": "Delivered",
       "avgOrderValue": "Avg. Order Value",
       "openInMaps": "Open in Maps",
-      "preferredGovernorate": "Preferred Governorate"
+      "preferredGovernorate": "Preferred Governorate",
+      "repeatStatus": "Repeat Status",
+      "notRepeat": "Not yet a repeat customer",
+      "firstOrder": "First Order",
+      "purchaseCadence": "Purchase Cadence",
+      "cadenceUnavailable": "Not enough orders yet",
+      "cadenceDays": "Every {{count}} days on average"
     },
     "phonesTab": {
       "title": "Phone Numbers",

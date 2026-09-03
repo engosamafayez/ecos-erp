@@ -6,13 +6,24 @@ namespace Modules\Sales\Customers\Infrastructure\Repositories;
 
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\DB;
+use Modules\Commerce\Orders\Domain\Services\CustomerOrderMetricsService;
 use Modules\Sales\Customers\Domain\Contracts\CustomerRepositoryInterface;
 use Modules\Sales\Customers\Domain\Models\Customer;
 
 final class EloquentCustomerRepository implements CustomerRepositoryInterface
 {
     private const SORTABLE = ['code', 'name', 'country', 'city', 'is_active', 'created_at'];
+
+    /**
+     * Customer Intelligence sort fields (TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-CUSTOMER-
+     * INTELLIGENCE-008) — not real columns on `customers`, so they sort by a correlated
+     * subquery over `orders` instead of ->orderBy($column). Same qualifying-order scope
+     * as CustomerOrderMetricsService::forCustomers() (company_id + soft-delete only, no
+     * status filter) so the sort order always agrees with the displayed totals.
+     */
+    private const AGGREGATE_SORTABLE = ['total_order_value', 'orders_count', 'last_order_at'];
 
     public function paginate(array $filters): LengthAwarePaginator
     {
@@ -66,19 +77,69 @@ final class EloquentCustomerRepository implements CustomerRepositoryInterface
             $query->where('city', $city);
         }
 
-        $sortBy = (string) ($filters['sort_by'] ?? 'created_at');
-        if (! in_array($sortBy, self::SORTABLE, true)) {
-            $sortBy = 'created_at';
+        // Repeat Customers — orders_count >= REPEAT_ORDER_THRESHOLD, same threshold and
+        // same qualifying-order scope as CustomerOrderMetricsService.
+        if (filter_var($filters['repeat_only'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            $query->where(
+                $this->ordersSubquery()->selectRaw('COUNT(*)'),
+                '>=',
+                CustomerOrderMetricsService::REPEAT_ORDER_THRESHOLD,
+            );
         }
 
+        // Product-specific repeat buyers ("customers who bought Product X repeatedly") —
+        // backend-authoritative, never a client-side filter of the current page. Defaults
+        // to the same repeat threshold as Repeat Customers unless the caller overrides it.
+        $productId = trim((string) ($filters['product_id'] ?? ''));
+        if ($productId !== '') {
+            $minPurchases = max(1, (int) ($filters['min_purchase_count'] ?? CustomerOrderMetricsService::REPEAT_ORDER_THRESHOLD));
+
+            $query->where(
+                $this->ordersSubquery()
+                    ->join('order_lines as ol', 'ol.order_id', '=', 'orders.id')
+                    ->where('ol.product_id', $productId)
+                    ->selectRaw('COUNT(DISTINCT orders.id)'),
+                '>=',
+                $minPurchases,
+            );
+        }
+
+        $sortBy = (string) ($filters['sort_by'] ?? 'created_at');
         $sortDir = strtolower((string) ($filters['sort_dir'] ?? 'desc')) === 'asc' ? 'asc' : 'desc';
         $perPage = max(1, min((int) ($filters['per_page'] ?? 10), 100));
+
+        if (in_array($sortBy, self::AGGREGATE_SORTABLE, true)) {
+            $query->orderBy($this->aggregateSortSubquery($sortBy), $sortDir);
+        } else {
+            $query->orderBy(in_array($sortBy, self::SORTABLE, true) ? $sortBy : 'created_at', $sortDir);
+        }
 
         // Default address only — ONE extra query for the whole page, never one per row.
         return $query
             ->with(['customerBrands.brand', 'addresses' => fn ($a) => $a->where('is_default', true)])
-            ->orderBy($sortBy, $sortDir)
             ->paginate($perPage);
+    }
+
+    /**
+     * Correlated subquery scoped to THIS row's own customer_id/company_id — the same
+     * qualifying-order scope CustomerOrderMetricsService::forCustomers() uses (tenant +
+     * soft-delete only, no status filter). Callers add their own select()/aggregate.
+     */
+    private function ordersSubquery(): QueryBuilder
+    {
+        return DB::table('orders')
+            ->whereColumn('orders.customer_id', 'customers.id')
+            ->whereColumn('orders.company_id', 'customers.company_id')
+            ->whereNull('orders.deleted_at');
+    }
+
+    private function aggregateSortSubquery(string $sortBy): QueryBuilder
+    {
+        return match ($sortBy) {
+            'total_order_value' => $this->ordersSubquery()->selectRaw('COALESCE(SUM(orders.total), 0)'),
+            'orders_count' => $this->ordersSubquery()->selectRaw('COUNT(*)'),
+            'last_order_at' => $this->ordersSubquery()->selectRaw('MAX(orders.order_date)'),
+        };
     }
 
     public function findById(string $id, ?string $companyId): ?Customer

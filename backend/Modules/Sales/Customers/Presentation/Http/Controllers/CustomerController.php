@@ -42,6 +42,12 @@ final class CustomerController extends Controller
             'country' => $request->query('country'),
             'city' => $request->query('city'),
             'brand_id' => $request->query('brand_id'),
+            // Customer Intelligence (TASK-...-CUSTOMER-INTELLIGENCE-008): Repeat Customers
+            // and product-specific repeat-buyer filters, both backend-authoritative —
+            // never a client-side filter of the current page.
+            'repeat_only' => $request->query('repeat_only'),
+            'product_id' => $request->query('product_id'),
+            'min_purchase_count' => $request->query('min_purchase_count'),
             'sort_by' => $request->query('sort_by', 'created_at'),
             'sort_dir' => $request->query('sort_dir', 'desc'),
             'per_page' => $request->query('per_page', 10),

@@ -6,6 +6,7 @@ import {
   MessageCircle,
   Pencil,
   Phone,
+  Repeat,
   ShoppingBag,
   X,
 } from 'lucide-react';
@@ -118,6 +119,46 @@ function SummaryTab({ customer }: { customer: Customer }) {
           label={t($ => $.drawer.summary.lastOrder)}
           value={customer.last_order_at ? new Date(customer.last_order_at).toLocaleDateString() : '—'}
         />
+      </div>
+
+      {/* Customer Intelligence — repeat status, first order, purchase cadence. Total
+          spend/orders/last order already live in the KPI grid above; this card adds only
+          the pieces that grid doesn't cover. All figures computed server-side by
+          CustomerOrderMetricsService — never re-derived here. */}
+      <div className="flex flex-col gap-1.5 rounded-lg border p-3">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          {t($ => $.columns.intelligence)}
+        </p>
+        <div className="flex flex-col gap-2 text-sm">
+          <div className="flex items-center gap-2">
+            <span className="w-28 shrink-0 text-xs text-muted-foreground">
+              {t($ => $.drawer.summary.repeatStatus)}
+            </span>
+            {customer.is_repeat_customer ? (
+              <Badge
+                variant="secondary"
+                className="h-5 gap-1 px-1.5 text-[10px] text-emerald-700 bg-emerald-100 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/50 dark:border-emerald-800"
+              >
+                <Repeat className="size-3" />
+                {t($ => $.intelligence.repeat)}
+              </Badge>
+            ) : (
+              <span className="text-sm text-muted-foreground">{t($ => $.drawer.summary.notRepeat)}</span>
+            )}
+          </div>
+          <InfoRow
+            label={t($ => $.drawer.summary.firstOrder)}
+            value={customer.first_order_at ? new Date(customer.first_order_at).toLocaleDateString() : '—'}
+          />
+          <InfoRow
+            label={t($ => $.drawer.summary.purchaseCadence)}
+            value={
+              customer.avg_days_between_orders === null
+                ? t($ => $.drawer.summary.cadenceUnavailable)
+                : t($ => $.drawer.summary.cadenceDays, { count: customer.avg_days_between_orders })
+            }
+          />
+        </div>
       </div>
 
       {/* Address + Location */}
