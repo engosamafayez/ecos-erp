@@ -116,10 +116,10 @@ final class CustomerController extends Controller
                 // TASK-...-BLOCKED-CUSTOMERS-009 (§33) — current block state only;
                 // full history is fetched on demand via GET .../block-history.
                 'is_blocked' => isset($blocks[(string) $c->id]),
-                'block_reason' => $blocks[(string) $c->id]?->block_reason,
-                'blocked_at' => $blocks[(string) $c->id]?->blocked_at?->toIso8601String(),
-                'blocked_by' => $blocks[(string) $c->id]?->blocked_by,
-                'customer_block_id' => $blocks[(string) $c->id]?->id,
+                'block_reason' => ($blocks[(string) $c->id] ?? null)?->block_reason,
+                'blocked_at' => ($blocks[(string) $c->id] ?? null)?->blocked_at?->toIso8601String(),
+                'blocked_by' => ($blocks[(string) $c->id] ?? null)?->blocked_by,
+                'customer_block_id' => ($blocks[(string) $c->id] ?? null)?->id,
             ])->all(),
             'meta' => [
                 'current_page' => $paginator->currentPage(),
