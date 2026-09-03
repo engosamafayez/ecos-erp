@@ -94,6 +94,51 @@ class DriverDaySettlementReadService
     /** Quantities are decimal(18,4); compare below that resolution. */
     private const EPSILON = 0.00005;
 
+    /**
+     * The canonical delivery-stop outcomes this board counts, and the row key each one lands in.
+     * `Failed`, `Returned` and `Skipped` are SEPARATE canonical statuses (DeliveryStopStatus) and
+     * keep separate buckets — the board's third outcome is their disjoint union, computed from
+     * these, never a rename of one to another. Pending / InProgress are outstanding, not outcomes.
+     */
+    private const COUNT_BUCKET = [
+        'delivered' => 'delivered',
+        'partial' => 'partial',
+        'failed' => 'failed',
+        'returned' => 'returned',
+        'skipped' => 'skipped',
+    ];
+
+    /** The money counterpart of {@see self::COUNT_BUCKET}. */
+    private const VALUE_BUCKET = [
+        'delivered' => 'delivered_value',
+        'partial' => 'partial_value',
+        'failed' => 'failed_value',
+        'returned' => 'returned_value',
+        'skipped' => 'skipped_value',
+    ];
+
+    private const EMPTY_OUTCOME_COUNTS = [
+        'delivered' => 0,
+        'partial' => 0,
+        'failed' => 0,
+        'returned' => 0,
+        'skipped' => 0,
+    ];
+
+    private const EMPTY_OUTCOME_VALUES = [
+        'orders_value' => 0.0,
+        'delivered_value' => 0.0,
+        'partial_value' => 0.0,
+        'failed_value' => 0.0,
+        'returned_value' => 0.0,
+        'skipped_value' => 0.0,
+    ];
+
+    /** `value_basis` on the board response — tells the UI which money semantics it is showing. */
+    public const VALUE_BASIS_ORDER_TOTAL = 'order_total';
+
+    public const VALUE_BASIS_BRAND_LINE_TOTAL = 'brand_line_total';
+
     /** The operational-day anchor, reused across every query. */
     private const DAY_EXPR = 'DATE(COALESCE(trip_started_at, dispatched_at, created_at))';
 
@@ -123,12 +168,15 @@ class DriverDaySettlementReadService
             ->with(['driverVehicleAssignment.driver', 'driverVehicleAssignment.vehicle', 'settlement'])
             ->get();
 
-        $rows = $this->buildRows($companyId, $trips);
+        $brandId = $this->brandFilter($filters);
+        $rows = $this->buildRows($companyId, $trips, $brandId);
         $filtered = $this->applyListFilters($rows, $filters)->values();
 
         return [
             'scope' => 'day',
             'date' => $date,
+            'brand_id' => $brandId,
+            'value_basis' => $this->valueBasis($brandId),
             'kpis' => $this->kpis($rows),
             'drivers' => $this->sortRows($filtered, $filters['sort'] ?? 'driver', $filters['dir'] ?? 'asc')->values()->all(),
         ];
@@ -163,12 +211,15 @@ class DriverDaySettlementReadService
 
         // Grain = ONE row per open Trip/Custody (§7) — NOT per calendar day. A driver holding more
         // than one open custody (legacy corruption) is surfaced as needs-review, never deduped (§13).
-        $rows = $this->flagDuplicateOpenCustody($this->buildRows($companyId, $trips));
+        $brandId = $this->brandFilter($filters);
+        $rows = $this->flagDuplicateOpenCustody($this->buildRows($companyId, $trips, $brandId));
 
         $filtered = $this->applyListFilters($rows, $filters)->values();
 
         return [
             'scope' => 'active',
+            'brand_id' => $brandId,
+            'value_basis' => $this->valueBasis($brandId),
             'kpis' => $this->kpis($rows),
             'drivers' => $this->sortRows($filtered, $filters['sort'] ?? 'date', $filters['dir'] ?? 'desc')->values()->all(),
         ];
@@ -225,7 +276,8 @@ class DriverDaySettlementReadService
             ->with(['driverVehicleAssignment.driver', 'driverVehicleAssignment.vehicle', 'settlement'])
             ->get();
 
-        $rows = $this->sortRows($this->buildRows($companyId, $trips), $sort, $dir);
+        $brandId = $this->brandFilter($filters);
+        $rows = $this->sortRows($this->buildRows($companyId, $trips, $brandId), $sort, $dir);
 
         $total = $rows->count();
         $paged = $rows->forPage($page, $perPage)->values();
@@ -233,6 +285,8 @@ class DriverDaySettlementReadService
         return [
             'scope' => 'history',
             'range' => ['from' => $from, 'to' => $to],
+            'brand_id' => $brandId,
+            'value_basis' => $this->valueBasis($brandId),
             'kpis' => $this->kpis($rows),
             'drivers' => $paged->all(),
             'meta' => [
@@ -452,7 +506,7 @@ class DriverDaySettlementReadService
      * @param  Collection<int, Trip>  $trips
      * @return Collection<int, array<string, mixed>>
      */
-    private function buildRows(string $companyId, Collection $trips): Collection
+    private function buildRows(string $companyId, Collection $trips, ?string $brandId = null): Collection
     {
         if ($trips->isEmpty()) {
             return collect();
@@ -464,13 +518,19 @@ class DriverDaySettlementReadService
         $reconByTrip = $this->reconciliationAggregatesByTrip($companyId, $tripIds);
         $valueByTrip = $this->orderValueBreakdownByTrip($tripIds);
         $movementSums = $this->movementSumsByTrip($companyId, $tripIds);
+        // ONE extra grouped query for the whole board when a single Brand is selected — never one
+        // per driver, order or brand (§18). Null means All Brands: the canonical whole-order path.
+        $brandByTrip = $brandId !== null ? $this->brandOutcomeByTrip($companyId, $tripIds, $brandId) : null;
+        // Brand-scoped DRIVER WAREHOUSE stock — additive context only. It never replaces the
+        // overall custody figure and never feeds the closing stage (see brandGoodsOnHandByTrip).
+        $brandGoods = $brandId !== null ? $this->brandGoodsOnHandByTrip($companyId, $tripIds, $brandId) : null;
 
-        return $trips
+        $rows = $trips
             // ONE row per open Trip/Custody — the canonical operational identity (§7). NOT grouped
             // by calendar day, so a custody spanning midnight stays the SAME single row (§8), and
             // two genuine open custodies never collapse into one (§13).
             ->groupBy(fn (Trip $t): string => (string) $t->id)
-            ->map(function (Collection $group) use ($stopBreakdown, $returnsByTrip, $reconByTrip, $valueByTrip, $movementSums): array {
+            ->map(function (Collection $group) use ($stopBreakdown, $returnsByTrip, $reconByTrip, $valueByTrip, $brandByTrip, $brandGoods, $movementSums): array {
                 $trip = $group->first();
                 $assignment = $trip->driverVehicleAssignment;
                 $driver = $assignment?->driver;
@@ -480,17 +540,33 @@ class DriverDaySettlementReadService
 
                 $summaries = $group->map(fn (Trip $t): array => $this->settlements->financialSummary($t));
 
-                $orders = (int) $summaries->sum(fn (array $s): int => (int) $s['stops_total']);
-                $delivered = (int) $group->sum(fn (Trip $t): int => (int) ($stopBreakdown[$t->id]['delivered'] ?? 0));
-                $partial = (int) $group->sum(fn (Trip $t): int => (int) ($stopBreakdown[$t->id]['partial'] ?? 0));
-                $failed = (int) $group->sum(fn (Trip $t): int => (int) ($stopBreakdown[$t->id]['failed'] ?? 0));
+                // The order population and its commercial value — whole-order canonical for All
+                // Brands, narrowed to one Brand's attributable LINE value when a Brand is selected.
+                $o = $this->outcomeForRow($group, $summaries, $stopBreakdown, $valueByTrip, $brandByTrip);
+                $orders = (int) $o['orders'];
+                $delivered = (int) $o['delivered'];
+                $partial = (int) $o['partial'];
+                $failed = (int) $o['failed'];
+                $returnedOrders = (int) $o['returned'];
+                $skipped = (int) $o['skipped'];
+                // Goods-return records (canonical TripReturn) — a DIFFERENT authority from the
+                // `returned` delivery-stop outcome above; the two are never conflated.
                 $returns = (int) $group->sum(fn (Trip $t): int => (int) $returnsByTrip->get($t->id, 0));
 
-                // Canonical order-value breakdown (Order.total by delivery outcome). Total Sales uses
-                // actual delivered value, NOT total assigned order value.
-                $ordersValue = round((float) $group->sum(fn (Trip $t): float => (float) ($valueByTrip[$t->id]['orders_value'] ?? 0.0)), 2);
-                $deliveredValue = round((float) $group->sum(fn (Trip $t): float => (float) ($valueByTrip[$t->id]['delivered_value'] ?? 0.0)), 2);
-                $failedValue = round((float) $group->sum(fn (Trip $t): float => (float) ($valueByTrip[$t->id]['failed_value'] ?? 0.0)), 2);
+                $ordersValue = round((float) $o['orders_value'], 2);
+                $deliveredValue = round((float) $o['delivered_value'], 2);
+                $partialValue = round((float) $o['partial_value'], 2);
+                $failedValue = round((float) $o['failed_value'], 2);
+                $returnedValue = round((float) $o['returned_value'], 2);
+                $skippedValue = round((float) $o['skipped_value'], 2);
+
+                // The board's THIRD outcome: the disjoint union of the canonical undelivered
+                // outcomes. A stop carries exactly one status, so Failed / Returned / Skipped never
+                // overlap and the sum double-counts nothing. The components stay on the row so the
+                // canonical distinction is preserved and presentable — nothing is renamed or merged
+                // away (§5).
+                $undelivered = $failed + $returnedOrders + $skipped;
+                $undeliveredValue = round($failedValue + $returnedValue + $skippedValue, 2);
 
                 // Custody / reconciliation aggregate across the group's trips.
                 $damaged = 0.0;
@@ -551,6 +627,12 @@ class DriverDaySettlementReadService
                     'delivered' => $delivered,
                     'partial' => $partial,
                     'failed' => $failed,
+                    // Canonical Returned / Skipped delivery-stop outcomes, previously surfaced
+                    // nowhere. `returned_orders` is the stop OUTCOME; `returns` below is the
+                    // TripReturn goods authority. Distinct facts, distinct fields.
+                    'returned_orders' => $returnedOrders,
+                    'skipped' => $skipped,
+                    'undelivered' => $undelivered,
                     'delivery_pct' => $this->deliveryPct($delivered, $orders),
                     'returns' => $returns,
                     'cash_expected' => round((float) $summaries->sum(fn (array $s): float => (float) $s['cash_expected']), 2),
@@ -559,7 +641,11 @@ class DriverDaySettlementReadService
                     // Canonical operational value columns (final workspace table — CTO UX correction).
                     'orders_value' => $ordersValue,
                     'delivered_value' => $deliveredValue,
+                    'partial_value' => $partialValue,
                     'failed_value' => $failedValue,
+                    'returned_orders_value' => $returnedValue,
+                    'skipped_value' => $skippedValue,
+                    'undelivered_value' => $undeliveredValue,
                     'total_sales' => $deliveredValue,
                     'transfers_paid' => round((float) $summaries->sum(fn (array $s): float => (float) $s['bank_transfers_pending'] + (float) $s['already_paid']), 2),
                     // Operational cash-movement columns (TASK-OPERATIONS-DRIVER-TRIP-MOVEMENT-APPROVAL-001).
@@ -570,7 +656,17 @@ class DriverDaySettlementReadService
                     'pending_movements' => (int) $mv['pending'],
                     'damaged_qty' => round($damaged, 4),
                     'shortage_qty' => round(max(0.0, $shortage), 4),
+                    // ALWAYS the driver's CURRENT physical on-hand stock in the canonical Driver /
+                    // Vehicle Warehouse custody (SUM of VehicleInventoryItem.quantity_on_hand across
+                    // the custody's vehicle assignments) — never order/undelivered/planned quantity
+                    // and never settlement arithmetic. A Brand selection does NOT alter it.
                     'goods_on_hand' => round($onHand, 4),
+                    // Brand-scoped slice of that SAME canonical custody stock, present only while a
+                    // Brand is selected. Additive context, explicitly labelled by the UI — the
+                    // overall figure above stays the primary Goods Remaining value.
+                    'brand_goods_on_hand' => $brandGoods === null
+                        ? null
+                        : round((float) $group->sum(fn (Trip $t): float => (float) ($brandGoods[$t->id] ?? 0.0)), 4),
                     'reconciliation_status' => $reconStatus,
                     'settlement_status' => $settlementStatus,
                     'closing_stage' => $this->deriveClosingStage(
@@ -586,6 +682,65 @@ class DriverDaySettlementReadService
                 ];
             })
             ->values();
+
+        // A Brand drill-down answers "for this Driver/Trip, what happened for Brand X?" — a custody
+        // the brand never participated in has no answer to give, so it drops out of both the rows
+        // and the KPIs that aggregate them (§17). All Brands keeps every row.
+        return $brandByTrip === null
+            ? $rows
+            : $rows->filter(fn (array $r): bool => (int) $r['orders'] > 0)->values();
+    }
+
+    /**
+     * The order population and commercial value for ONE board row.
+     *
+     * All Brands (`$brandByTrip === null`): the canonical whole-order figures — the count from the
+     * per-trip settlement engine (`stops_total`), the outcome counts from the delivery-stop
+     * authority and the money from `Order.total` by outcome.
+     *
+     * One Brand: the count is COUNT(DISTINCT orders) the brand participated in and the money is
+     * that brand's attributable `order_lines.line_total` — both already aggregated by the single
+     * grouped {@see self::brandOutcomeByTrip} query. Order-level shipping / discount / tax are not
+     * attributed to any brand (§14), so a brand's value is strictly below the whole-order total.
+     *
+     * @param  Collection<int, Trip>  $group
+     * @param  Collection<int, array<string, mixed>>  $summaries
+     * @param  array<int, array<string, int>>  $stopBreakdown
+     * @param  array<int, array<string, float>>  $valueByTrip
+     * @param  array<int, array<string, float|int>>|null  $brandByTrip
+     * @return array<string, float|int>
+     */
+    private function outcomeForRow(
+        Collection $group,
+        Collection $summaries,
+        array $stopBreakdown,
+        array $valueByTrip,
+        ?array $brandByTrip,
+    ): array {
+        if ($brandByTrip !== null) {
+            $out = self::EMPTY_OUTCOME_COUNTS + self::EMPTY_OUTCOME_VALUES + ['orders' => 0];
+            foreach ($group as $t) {
+                $b = $brandByTrip[$t->id] ?? null;
+                if ($b === null) {
+                    continue;
+                }
+                foreach (array_keys($out) as $k) {
+                    $out[$k] += $b[$k] ?? 0;
+                }
+            }
+
+            return $out;
+        }
+
+        $out = ['orders' => (int) $summaries->sum(fn (array $s): int => (int) $s['stops_total'])];
+        foreach (self::COUNT_BUCKET as $bucket) {
+            $out[$bucket] = (int) $group->sum(fn (Trip $t): int => (int) ($stopBreakdown[$t->id][$bucket] ?? 0));
+        }
+        foreach (array_keys(self::EMPTY_OUTCOME_VALUES) as $bucket) {
+            $out[$bucket] = (float) $group->sum(fn (Trip $t): float => (float) ($valueByTrip[$t->id][$bucket] ?? 0.0));
+        }
+
+        return $out;
     }
 
     /**
@@ -642,12 +797,29 @@ class DriverDaySettlementReadService
     {
         $totalOrders = (int) $rows->sum(fn (array $r): int => (int) $r['orders']);
         $totalDelivered = (int) $rows->sum(fn (array $r): int => (int) $r['delivered']);
+        $count = fn (string $key): int => (int) $rows->sum(fn (array $r): int => (int) ($r[$key] ?? 0));
+        $value = fn (string $key): float => round((float) $rows->sum(fn (array $r): float => (float) ($r[$key] ?? 0.0)), 2);
 
         return [
             'total_orders' => $totalOrders,
             'total_delivered' => $totalDelivered,
-            'total_failed' => (int) $rows->sum(fn (array $r): int => (int) $r['failed']),
+            'total_failed' => $count('failed'),
+            // The canonical undelivered outcomes. `total_undelivered` is the disjoint union that the
+            // third KPI card leads with; the three components are reported alongside it so the
+            // canonical Failed / Returned / Skipped distinction stays visible and is never renamed
+            // into one another (§5/§9).
+            'total_returned' => $count('returned_orders'),
+            'total_skipped' => $count('skipped'),
+            'total_undelivered' => $count('undelivered'),
             'delivery_rate' => $totalOrders > 0 ? (int) round($totalDelivered / $totalOrders * 100) : 0,
+            // Commercial ORDER VALUE for exactly the populations counted above (§4/§6). Commercial
+            // value is NOT collected cash — the cash figures below stay separate and unnetted.
+            'total_orders_value' => $value('orders_value'),
+            'total_delivered_value' => $value('delivered_value'),
+            'total_failed_value' => $value('failed_value'),
+            'total_returned_value' => $value('returned_orders_value'),
+            'total_skipped_value' => $value('skipped_value'),
+            'total_undelivered_value' => $value('undelivered_value'),
             'total_sales' => round((float) $rows->sum(fn (array $r): float => (float) $r['total_sales']), 2),
             'total_transfers_paid' => round((float) $rows->sum(fn (array $r): float => (float) $r['transfers_paid']), 2),
             // Approved cash-out expenses and net physical cash (cash collected + approved cash-in −
@@ -1207,6 +1379,35 @@ class DriverDaySettlementReadService
         return round((float) array_sum($discrepancies), 2);
     }
 
+    // ── Brand narrowing (§10-§17) ─────────────────────────────────────────────────
+
+    /**
+     * The selected canonical Brand id, or null for All Brands.
+     *
+     * The Brand identity is the canonical {@see \Modules\Organization\Brands\Domain\Models\Brand}
+     * (uuid), reached through the canonical products.brand_id ownership edge. No Distribution-local
+     * brand table, no DriverBrand / SettlementBrand, and no free-text matching: an unknown id simply
+     * attributes nothing and the board comes back empty rather than guessing.
+     *
+     * @param  array<string, mixed>  $filters
+     */
+    private function brandFilter(array $filters): ?string
+    {
+        $brandId = $filters['brand_id'] ?? null;
+
+        return is_string($brandId) && trim($brandId) !== '' ? trim($brandId) : null;
+    }
+
+    /**
+     * Which money semantics the board's order-value figures carry, declared to the client so the UI
+     * never has to guess: whole-order `Order.total` for All Brands, or brand-attributable
+     * `order_lines.line_total` when one Brand is selected (§13/§14).
+     */
+    private function valueBasis(?string $brandId): string
+    {
+        return $brandId !== null ? self::VALUE_BASIS_BRAND_LINE_TOTAL : self::VALUE_BASIS_ORDER_TOTAL;
+    }
+
     // ── Filters / sort ────────────────────────────────────────────────────────────
 
     /**
@@ -1295,8 +1496,16 @@ class DriverDaySettlementReadService
     }
 
     /**
+     * Delivery-stop outcome counts per trip, one grouped query.
+     *
+     * `Failed`, `Returned` and `Skipped` are DISTINCT canonical DeliveryStopStatus cases and are
+     * counted separately here — never collapsed into one another, never renamed. Returned and
+     * Skipped were previously counted NOWHERE on this board; that read gap is closed. The board's
+     * third outcome presents their disjoint union (a stop carries exactly one status) while keeping
+     * each component individually addressable, so no canonical meaning is lost.
+     *
      * @param  list<int>  $tripIds
-     * @return array<int, array{delivered: int, partial: int, failed: int}>
+     * @return array<int, array{delivered: int, partial: int, failed: int, returned: int, skipped: int}>
      */
     private function stopBreakdownByTrip(array $tripIds): array
     {
@@ -1312,15 +1521,11 @@ class DriverDaySettlementReadService
 
         $out = [];
         foreach ($rows as $r) {
-            $out[$r->trip_id] ??= ['delivered' => 0, 'partial' => 0, 'failed' => 0];
+            $out[$r->trip_id] ??= self::EMPTY_OUTCOME_COUNTS;
             $status = $r->status instanceof DeliveryStopStatus ? $r->status : DeliveryStopStatus::tryFrom((string) $r->status);
-            $count = (int) $r->aggregate;
-            if ($status === DeliveryStopStatus::Delivered) {
-                $out[$r->trip_id]['delivered'] += $count;
-            } elseif ($status === DeliveryStopStatus::Partial) {
-                $out[$r->trip_id]['partial'] += $count;
-            } elseif ($status === DeliveryStopStatus::Failed) {
-                $out[$r->trip_id]['failed'] += $count;
+            $bucket = self::COUNT_BUCKET[$status?->value ?? ''] ?? null;
+            if ($bucket !== null) {
+                $out[$r->trip_id][$bucket] += (int) $r->aggregate;
             }
         }
 
@@ -1328,12 +1533,19 @@ class DriverDaySettlementReadService
     }
 
     /**
-     * Canonical order-value breakdown per trip: SUM(Order.total) grouped by delivery-stop outcome.
-     * `orders_value` = all stops (total assigned); `delivered_value` = delivered stops (the actual
-     * delivered/sold value used for Total Sales); `failed_value` = failed/exception stops.
+     * Canonical WHOLE-ORDER commercial value breakdown per trip: SUM(Order.total) grouped by
+     * delivery-stop outcome, one grouped query.
+     *
+     * `Order.total` is the canonical commercial FINAL total of the order — it already carries
+     * shipping_total / discount_total / tax_total. It is the COMMERCIAL value of the order, NOT
+     * cash collected; cash stays in the payment/settlement figures (cash_collected, transfers_paid,
+     * net_cash), which this never touches. `orders_value` = every stop (total assigned);
+     * `delivered_value` = delivered stops (the actual delivered/sold value used for Total Sales);
+     * `failed_value` / `returned_value` / `skipped_value` are the three DISTINCT canonical
+     * undelivered outcomes, kept separate.
      *
      * @param  list<int>  $tripIds
-     * @return array<int, array{orders_value: float, delivered_value: float, failed_value: float}>
+     * @return array<int, array<string, float>>
      */
     private function orderValueBreakdownByTrip(array $tripIds): array
     {
@@ -1350,14 +1562,82 @@ class DriverDaySettlementReadService
 
         $out = [];
         foreach ($rows as $r) {
-            $out[$r->trip_id] ??= ['orders_value' => 0.0, 'delivered_value' => 0.0, 'failed_value' => 0.0];
+            $out[$r->trip_id] ??= self::EMPTY_OUTCOME_VALUES;
             $status = $r->status instanceof DeliveryStopStatus ? $r->status : DeliveryStopStatus::tryFrom((string) $r->status);
             $value = (float) $r->value;
             $out[$r->trip_id]['orders_value'] += $value;
-            if ($status === DeliveryStopStatus::Delivered) {
-                $out[$r->trip_id]['delivered_value'] += $value;
-            } elseif ($status === DeliveryStopStatus::Failed) {
-                $out[$r->trip_id]['failed_value'] += $value;
+            $bucket = self::VALUE_BUCKET[$status?->value ?? ''] ?? null;
+            if ($bucket !== null) {
+                $out[$r->trip_id][$bucket] += $value;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * BRAND-ATTRIBUTABLE outcome breakdown per trip, restricted to ONE canonical Brand
+     * (TASK-ECOS-DISTRIBUTION-DRIVER-DAY-SETTLEMENT-PAGE-001 §12/§13/§14).
+     *
+     * ONE grouped query for the WHOLE board — no per-driver, per-order or per-brand query, and no
+     * browser-side aggregation.
+     *
+     * Counts use `COUNT(DISTINCT distribution_delivery_stops.id)`. A stop references exactly one
+     * order, so this is COUNT(DISTINCT orders): an order carrying several lines of the SAME brand
+     * counts ONCE (§12). A multi-brand order legitimately appears under each participating brand,
+     * which is the expected behaviour for a brand drill-down.
+     *
+     * Value uses `SUM(order_lines.line_total)` — the canonical LINE-LEVEL attributable commercial
+     * value, reached over order_lines → products → products.brand_id (the canonical Brand ownership
+     * edge; Brand is never re-modelled here). The full order total is deliberately NOT assigned to
+     * every participating brand, which would duplicate revenue (§13). Order-level components of
+     * `Order.total` that belong to no line — shipping_total, discount_total, tax_total, fees — are
+     * NOT distributed across brands: ECOS carries no canonical brand-attribution policy for them,
+     * and a proportional allocation would be an invented formula. Brand value is therefore
+     * attributable line value only, and is strictly less than the whole-order final total (§14).
+     *
+     * @param  list<int>  $tripIds
+     * @return array<int, array<string, float|int>>
+     */
+    private function brandOutcomeByTrip(string $companyId, array $tripIds, string $brandId): array
+    {
+        if ($tripIds === []) {
+            return [];
+        }
+
+        $rows = DeliveryStop::query()
+            ->join('orders', 'orders.id', '=', 'distribution_delivery_stops.order_id')
+            ->join('order_lines', 'order_lines.order_id', '=', 'orders.id')
+            ->join('products', 'products.id', '=', 'order_lines.product_id')
+            ->whereIn('distribution_delivery_stops.trip_id', $tripIds)
+            ->where('orders.company_id', $companyId)
+            ->where('products.brand_id', $brandId)
+            ->groupBy('distribution_delivery_stops.trip_id', 'distribution_delivery_stops.status')
+            ->selectRaw(
+                'distribution_delivery_stops.trip_id as trip_id,'
+                .' distribution_delivery_stops.status as status,'
+                .' COUNT(DISTINCT distribution_delivery_stops.id) as stops,'
+                .' SUM(order_lines.line_total) as value'
+            )
+            ->get();
+
+        $out = [];
+        foreach ($rows as $r) {
+            $out[$r->trip_id] ??= self::EMPTY_OUTCOME_COUNTS + self::EMPTY_OUTCOME_VALUES + ['orders' => 0];
+            $status = $r->status instanceof DeliveryStopStatus ? $r->status : DeliveryStopStatus::tryFrom((string) $r->status);
+            $stops = (int) $r->stops;
+            $value = (float) $r->value;
+
+            $out[$r->trip_id]['orders'] += $stops;
+            $out[$r->trip_id]['orders_value'] += $value;
+
+            $countBucket = self::COUNT_BUCKET[$status?->value ?? ''] ?? null;
+            if ($countBucket !== null) {
+                $out[$r->trip_id][$countBucket] += $stops;
+            }
+            $valueBucket = self::VALUE_BUCKET[$status?->value ?? ''] ?? null;
+            if ($valueBucket !== null) {
+                $out[$r->trip_id][$valueBucket] += $value;
             }
         }
 
@@ -1450,6 +1730,58 @@ class DriverDaySettlementReadService
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * Brand-scoped slice of the canonical DRIVER / VEHICLE WAREHOUSE stock, per trip.
+     *
+     * The authority is the SAME canonical custody engine the overall figure uses —
+     * {@see VehicleInventoryItem}.quantity_on_hand keyed by vehicle_assignment_id. This is a FILTER
+     * over that authority along the canonical products.brand_id ownership edge, not a second driver
+     * stock calculation: no quantity is re-derived, apportioned or invented. Custody stock is held
+     * per product, and a product has exactly one canonical Brand owner, so the slice is fully
+     * attributable with no shared residue to distribute.
+     *
+     * Deliberately SEPARATE from {@see self::reconciliationAggregatesByTrip}: that aggregate feeds
+     * `has_custody` and therefore the derived closing stage, and narrowing it by Brand would change
+     * a custody-lifecycle signal. Trip/custody lifecycle semantics are untouched here.
+     *
+     * Two grouped queries for the whole board — no per-driver, per-product or per-brand query.
+     *
+     * @param  list<int>  $tripIds
+     * @return array<int, float>  trip_id → brand-attributable quantity on hand
+     */
+    private function brandGoodsOnHandByTrip(string $companyId, array $tripIds, string $brandId): array
+    {
+        if ($tripIds === []) {
+            return [];
+        }
+
+        $assignments = VehicleAssignment::query()
+            ->where('company_id', $companyId)
+            ->whereIn('trip_id', $tripIds)
+            ->get(['id', 'trip_id']);
+
+        if ($assignments->isEmpty()) {
+            return [];
+        }
+
+        $qtyByAssignment = VehicleInventoryItem::query()
+            ->join('products', 'products.id', '=', 'vehicle_inventory_items.product_id')
+            ->where('vehicle_inventory_items.company_id', $companyId)
+            ->whereIn('vehicle_inventory_items.vehicle_assignment_id', $assignments->pluck('id')->all())
+            ->where('products.brand_id', $brandId)
+            ->groupBy('vehicle_inventory_items.vehicle_assignment_id')
+            ->selectRaw('vehicle_inventory_items.vehicle_assignment_id as assignment_id, SUM(vehicle_inventory_items.quantity_on_hand) as qty')
+            ->pluck('qty', 'assignment_id');
+
+        $out = [];
+        foreach ($assignments as $a) {
+            $qty = (float) ($qtyByAssignment[$a->id] ?? 0.0);
+            $out[$a->trip_id] = ($out[$a->trip_id] ?? 0.0) + $qty;
+        }
+
+        return $out;
     }
 
     // ── Driver trip movements (operational cash) — TASK-OPERATIONS-DRIVER-TRIP-MOVEMENT-APPROVAL-001 ──

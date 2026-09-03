@@ -22,6 +22,7 @@ import { useDriverSettlementBoard } from '../hooks/use-driver-settlement';
 import type { BoardScope, DaySettlementDriverRow } from '../types/driver-settlement';
 import { historyRange, type HistoryPreset } from '../lib/history-range';
 import { DaySettlementKpiCards } from '../components/day-settlement-kpis';
+import { DaySettlementBrandFilter } from '../components/day-settlement-brand-filter';
 import { DaySettlementDriverCard } from '../components/day-settlement-driver-card';
 
 const HISTORY_PRESETS: HistoryPreset[] = [
@@ -45,6 +46,12 @@ export function DriverSettlementWorkspacePage() {
   const [scope, setScope] = useState<BoardScope>('active');
   const [search, setSearch] = useState('');
 
+  // Brand Statistics — a PAGE-LOCAL narrowing (§11). It never writes to the global header Brand
+  // context, so opening this drill-down cannot reshape unrelated screens. Brand and Search compose:
+  // changing one never clears the other (§19), and both survive the Active/Archive tab (§20).
+  const [brandId, setBrandId] = useState<string | null>(null);
+  const [brandPanelOpen, setBrandPanelOpen] = useState(false);
+
   // History-only controls.
   const [preset, setPreset] = useState<HistoryPreset>('this_month');
   const [customFrom, setCustomFrom] = useState('');
@@ -66,13 +73,20 @@ export function DriverSettlementWorkspacePage() {
           sort,
           dir,
           search: search || undefined,
+          brand_id: brandId ?? undefined,
         }
-      : { scope: 'active', search: search || undefined },
+      : { scope: 'active', search: search || undefined, brand_id: brandId ?? undefined },
   );
 
   const { data, isLoading, isFetching, isError, refetch } = board;
   const drivers = data?.drivers ?? [];
   const meta = data?.meta;
+  const brandSelected = brandId !== null;
+
+  const onBrandChange = useCallback((next: string | null) => {
+    setBrandId(next);
+    setPage(1);
+  }, []);
 
   const openReview = useCallback(
     (row: DaySettlementDriverRow) => {
@@ -141,16 +155,33 @@ export function DriverSettlementWorkspacePage() {
         ),
       },
       {
-        key: 'failed',
-        label: t(($) => $.driverSettlement.columns.failed),
+        // The canonical THIRD outcome: the disjoint union of Failed + Returned + Skipped, which are
+        // three SEPARATE DeliveryStopStatus cases. Nothing is renamed and nothing is merged away —
+        // the hover title names each component so the canonical distinction stays reachable (§5).
+        // Same population and same value semantics as the matching KPI card (§8).
+        key: 'undelivered',
+        label: t(($) => $.driverSettlement.columns.undelivered),
         defaultVisible: true,
         align: 'end',
-        cell: (r) => (
-          <div className="text-end">
-            <div className={`tabular-nums text-sm font-medium ${r.failed > 0 ? 'text-destructive' : ''}`}>{r.failed}</div>
-            <div className="tabular-nums text-[11px] text-muted-foreground">{money(r.failed_value)}</div>
-          </div>
-        ),
+        cell: (r) => {
+          const count = r.undelivered ?? r.failed;
+          const value = r.undelivered_value ?? r.failed_value;
+          const parts =
+            r.returned_orders === undefined
+              ? undefined
+              : [
+                  `${t(($) => $.driverSettlement.outcomes.returned)} ${r.returned_orders}`,
+                  `${t(($) => $.driverSettlement.outcomes.failed)} ${r.failed}`,
+                  `${t(($) => $.driverSettlement.outcomes.skipped)} ${r.skipped ?? 0}`,
+                ].join(' · ');
+
+          return (
+            <div className="text-end" title={parts}>
+              <div className={`tabular-nums text-sm font-medium ${count > 0 ? 'text-destructive' : ''}`}>{count}</div>
+              <div className="tabular-nums text-[11px] text-muted-foreground">{money(value)}</div>
+            </div>
+          );
+        },
       },
       {
         // Delivery Rate — percentage ONLY, never a delivered/total fraction (§15/§22).
@@ -202,11 +233,34 @@ export function DriverSettlementWorkspacePage() {
         cell: (r) => <span className="tabular-nums text-sm font-medium">{money(r.net_cash)}</span>,
       },
       {
+        // GOODS REMAINING = the driver's CURRENT physical on-hand stock in the canonical Driver /
+        // Vehicle Warehouse custody (server-summed VehicleInventoryItem.quantity_on_hand). It is
+        // never order/undelivered/planned quantity and never settlement arithmetic, and a Brand
+        // selection does NOT alter this primary figure. Actionable: it opens the canonical
+        // Settlement detail, where "Goods with driver" already lists the per-SKU quantities — so
+        // the drill-down reuses the existing authority instead of adding a per-row query.
         key: 'goods_remaining',
         label: t(($) => $.driverSettlement.columns.goodsRemaining),
         defaultVisible: true,
         align: 'end',
-        cell: (r) => <span className="tabular-nums text-sm">{r.goods_on_hand}</span>,
+        cell: (r) => (
+          <button
+            type="button"
+            className="ms-auto flex flex-col items-end rounded px-1 py-0.5 text-end hover:bg-muted focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            onClick={() => openReview(r)}
+            title={t(($) => $.driverSettlement.goods.openSkus)}
+          >
+            <span className="tabular-nums text-sm underline decoration-dotted underline-offset-2">
+              {r.goods_on_hand}
+            </span>
+            {/* Brand-scoped slice of the SAME custody authority — labelled, never a silent swap. */}
+            {r.brand_goods_on_hand !== null && r.brand_goods_on_hand !== undefined ? (
+              <span className="tabular-nums text-[10px] text-muted-foreground">
+                {t(($) => $.driverSettlement.goods.brandStock, { qty: r.brand_goods_on_hand })}
+              </span>
+            ) : null}
+          </button>
+        ),
       },
       {
         // Settlement — navigation into the canonical closing detail, NOT an auto-close (§13/§14).
@@ -317,12 +371,23 @@ export function DriverSettlementWorkspacePage() {
           placeholder={t(($) => $.driverSettlement.searchPlaceholder)}
           className="h-8 w-full text-xs sm:w-56"
         />
+        <DaySettlementBrandFilter
+          brandId={brandId}
+          onBrandChange={onBrandChange}
+          open={brandPanelOpen}
+          onOpenChange={setBrandPanelOpen}
+        />
       </div>
 
       {/* KPIs — scoped by the filter above. A failed read renders a distinct unavailable state,
           never an indefinite skeleton or false zeros (§2). */}
       <div className="px-4 pt-3">
-        <DaySettlementKpiCards kpis={data?.kpis} loading={isLoading} error={isError} />
+        <DaySettlementKpiCards
+          kpis={data?.kpis}
+          loading={isLoading}
+          error={isError}
+          brandSelected={brandSelected}
+        />
       </div>
 
       {/* Table */}
@@ -354,9 +419,11 @@ export function DriverSettlementWorkspacePage() {
                   <div className="flex flex-col items-center justify-center py-16 gap-2 text-muted-foreground">
                     <Truck className="w-8 h-8 opacity-30" />
                     <p className="text-sm">
-                      {scope === 'history'
-                        ? t(($) => $.driverSettlement.emptyHistory)
-                        : t(($) => $.driverSettlement.empty)}
+                      {brandSelected
+                        ? t(($) => $.driverSettlement.brand.emptyForBrand)
+                        : scope === 'history'
+                          ? t(($) => $.driverSettlement.emptyHistory)
+                          : t(($) => $.driverSettlement.empty)}
                     </p>
                   </div>
                 }

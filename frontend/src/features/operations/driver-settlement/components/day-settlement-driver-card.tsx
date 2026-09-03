@@ -35,6 +35,11 @@ export function DaySettlementDriverCard({
   const { t } = useTranslation('logistics');
   const { money } = useFormatter();
 
+  // The canonical third outcome: Failed + Returned + Skipped, three DISTINCT DeliveryStopStatus
+  // cases summed as a disjoint union. An older server that only knows Failed falls back to it.
+  const undelivered = row.undelivered ?? row.failed;
+  const undeliveredValue = row.undelivered_value ?? row.failed_value;
+
   return (
     <div role="listitem" className="space-y-2.5 border-b p-3.5 last:border-0">
       {/* Driver / Trip (no vehicle, no Status field — §32) */}
@@ -55,22 +60,33 @@ export function DaySettlementDriverCard({
         </div>
       ) : null}
 
-      {/* Orders — total / delivered / exceptions, each count + value */}
+      {/* Orders — total / delivered / canonical third outcome, each count + value */}
       <div className="grid grid-cols-3 gap-2">
         <Metric label={t(($) => $.driverSettlement.columns.totalOrders)} value={String(row.orders)} sub={money(row.orders_value)} />
         <Metric label={t(($) => $.driverSettlement.columns.delivered)} value={String(row.delivered)} sub={money(row.delivered_value)} />
         <Metric
-          label={t(($) => $.driverSettlement.columns.failed)}
-          value={String(row.failed)}
-          sub={money(row.failed_value)}
-          tone={row.failed > 0 ? 'text-destructive' : undefined}
+          label={t(($) => $.driverSettlement.columns.undelivered)}
+          value={String(undelivered)}
+          sub={money(undeliveredValue)}
+          tone={undelivered > 0 ? 'text-destructive' : undefined}
         />
       </div>
 
-      {/* Delivery rate + goods remaining with driver */}
+      {/* Delivery rate + the driver's current physical warehouse stock. Goods Remaining is the
+          canonical Driver / Vehicle Warehouse on-hand quantity, unaffected by any Brand selection;
+          a selected Brand's slice is shown beneath it, explicitly labelled. Tapping the card's
+          Settlement action opens the per-SKU breakdown. */}
       <div className="grid grid-cols-2 gap-2">
         <Metric label={t(($) => $.driverSettlement.columns.deliveryPct)} value={`${row.delivery_pct}%`} />
-        <Metric label={t(($) => $.driverSettlement.columns.goodsRemaining)} value={String(row.goods_on_hand)} />
+        <Metric
+          label={t(($) => $.driverSettlement.columns.goodsRemaining)}
+          value={String(row.goods_on_hand)}
+          sub={
+            row.brand_goods_on_hand !== null && row.brand_goods_on_hand !== undefined
+              ? t(($) => $.driverSettlement.goods.brandStock, { qty: row.brand_goods_on_hand })
+              : undefined
+          }
+        />
       </div>
 
       {/* Financial — Total Sales, Transfers/Paid, Expenses + Net Cash (canonical approved movements) */}

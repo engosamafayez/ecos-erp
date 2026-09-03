@@ -107,7 +107,9 @@
       "transfersPaid": "Total Transfers & Paid",
       "expenses": "Total Expenses",
       "cashIn": "Cash In / Advances",
-      "netCash": "Net Cash"
+      "netCash": "Net Cash",
+      "undelivered": "Returned / Failed / Exceptions",
+      "transfersAndExpenses": "Transfers / Paid + Expenses"
     },
     "columns": {
       "driver": "Driver",
@@ -128,7 +130,29 @@
       "transfersPaid": "Transfers / Paid",
       "goodsRemaining": "Goods Remaining",
       "status": "Status",
-      "action": "Action"
+      "action": "Action",
+      "undelivered": "Returned / Failed"
+    },
+    "outcomes": {
+      "returned": "Returned",
+      "failed": "Failed",
+      "skipped": "Skipped"
+    },
+    "goods": {
+      "openSkus": "View the products with the driver",
+      "brandStock": "Brand: {{qty}}"
+    },
+    "brand": {
+      "title": "Brand Statistics",
+      "label": "Brand",
+      "all": "All Brands",
+      "selected": "Selected brand",
+      "loading": "Loading brands…",
+      "empty": "No brands",
+      "allNote": "Showing every brand. Order value is the full order total.",
+      "scopeNote": "Order counts and order values are limited to this brand. A brand value counts only its own order lines — shipping, order-level discounts and tax are not attributed to any brand. Driver cash (transfers / paid, expenses, cash in, net cash) and the driver’s warehouse stock stay overall trip figures.",
+      "overallFinancials": "Overall trip / driver financials",
+      "emptyForBrand": "No orders for this brand in the current view"
     },
     "overview": {
       "trips": "Trips"

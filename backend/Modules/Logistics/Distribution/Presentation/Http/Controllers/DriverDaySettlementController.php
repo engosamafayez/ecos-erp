@@ -24,6 +24,14 @@ use Modules\Logistics\Distribution\Domain\Services\DriverDaySettlementReadServic
  * `active` (open custody, not date-bounded) or `history` (closed settlements, date-ranged,
  * paginated, sorted). All read-only.
  *
+ * `brand_id` optionally narrows the board to ONE canonical Brand. Brand narrowing is applied in the
+ * read model with grouped aggregates (never per driver/order/brand), and it only touches figures
+ * that are genuinely Brand-attributable: the order population, the order commercial value (line
+ * level) and the delivery rate. Driver/Trip cash facts — transfers/paid, expenses, cash-in, net cash
+ * — have NO canonical Brand association and stay overall, as does the driver's physical warehouse
+ * stock; the response declares `value_basis` so the client never has to guess which semantics it
+ * received.
+ *
  * Both endpoints are gated on `logistics.distribution.view` at the route, and fail closed
  * on tenancy here: a caller with no company scope is refused with 403 (copied from
  * SettlementController).
@@ -119,6 +127,10 @@ class DriverDaySettlementController extends Controller
         return [
             'search' => ['nullable', 'string', 'max:100'],
             'shipping_company_id' => ['nullable', 'integer'],
+            // ONE canonical Brand (Organization\Brands uuid) or absent for All Brands. Narrows the
+            // brand-attributable operational/commercial figures only; the Driver/Trip cash facts
+            // stay overall (they carry no canonical Brand association). Composes with `search`.
+            'brand_id' => ['nullable', 'uuid'],
             'status' => ['nullable', 'in:needs_review,under_review,disputed,settled'],
             'stage' => ['nullable', 'in:open_custody,in_operation,ready_for_return,warehouse_counting,needs_review,ready_for_closing,closed'],
             'has_damage' => ['nullable', 'boolean'],
@@ -135,6 +147,7 @@ class DriverDaySettlementController extends Controller
         return [
             'search' => $request->query('search'),
             'shipping_company_id' => $request->query('shipping_company_id'),
+            'brand_id' => $request->query('brand_id'),
             'status' => $request->query('status'),
             'stage' => $request->query('stage'),
             'has_damage' => $request->boolean('has_damage'),

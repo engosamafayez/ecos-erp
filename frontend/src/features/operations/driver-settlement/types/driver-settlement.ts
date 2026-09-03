@@ -25,14 +25,33 @@ export type ReconciliationStatus = 'open' | 'completed' | 'approved' | 'disputed
 
 export type BoardScope = 'day' | 'active' | 'history';
 
+/** Which money semantics the board's order-value figures carry, declared by the server so the UI
+ *  never guesses: whole-order `Order.total`, or one Brand's attributable `order_lines.line_total`. */
+export type OrderValueBasis = 'order_total' | 'brand_line_total';
+
 /** The 8 canonical operational KPIs over the visible Active custodies. Expenses/Net Cash are null
  *  when no canonical Driver cash-movement authority exists → rendered "Not available", never zero. */
 export interface DaySettlementKpis {
   total_orders: number;
   total_delivered: number;
+  /** Canonical DeliveryStopStatus::Failed only — NOT returned, NOT skipped. */
   total_failed: number;
+  /** Canonical DeliveryStopStatus::Returned — a distinct outcome, never a renamed Failed. */
+  total_returned?: number;
+  /** Canonical DeliveryStopStatus::Skipped — a distinct settled non-delivered outcome. */
+  total_skipped?: number;
+  /** The disjoint union failed + returned + skipped. A stop holds one status, so nothing is double
+   *  counted; the three components above stay separately reported. */
+  total_undelivered?: number;
   /** Percentage 0–100 (delivered / orders), computed server-side. */
   delivery_rate: number;
+  /** Commercial ORDER VALUE for exactly the populations counted above (never collected cash). */
+  total_orders_value?: number;
+  total_delivered_value?: number;
+  total_failed_value?: number;
+  total_returned_value?: number;
+  total_skipped_value?: number;
+  total_undelivered_value?: number;
   total_sales: number;
   total_transfers_paid: number;
   /** Approved cash-out expenses (canonical DriverTripMovement). Real, no longer "Not available". */
@@ -63,23 +82,42 @@ export interface DaySettlementDriverRow {
   orders: number;
   delivered: number;
   partial: number;
+  /** Canonical DeliveryStopStatus::Failed only. */
   failed: number;
+  /** Canonical DeliveryStopStatus::Returned delivery-stop OUTCOME — distinct from `returns` below,
+   *  which is the canonical TripReturn goods authority. The two are never conflated. */
+  returned_orders?: number;
+  skipped?: number;
+  /** failed + returned_orders + skipped (disjoint statuses). */
+  undelivered?: number;
   delivery_pct: number;
+  /** Canonical TripReturn goods-return record count (NOT a delivery-stop outcome). */
   returns: number;
   cash_expected: number;
   transfers: number;
   difference: number | null;
-  /** Canonical operational value columns (final workspace table). */
+  /** Canonical operational value columns (final workspace table). Whole-order `Order.total` by
+   *  outcome, or one Brand's attributable line value — see `value_basis` on the board. */
   orders_value: number;
   delivered_value: number;
+  partial_value?: number;
   failed_value: number;
+  returned_orders_value?: number;
+  skipped_value?: number;
+  undelivered_value?: number;
   /** Actual delivered/sold value (= delivered_value), not total assigned order value. */
   total_sales: number;
   /** Non-physical-cash settled: bank transfer + card + prepaid. Excludes physical cash. */
   transfers_paid: number;
   damaged_qty: number;
   shortage_qty: number;
+  /** ALWAYS the driver's CURRENT physical on-hand stock in the canonical Driver / Vehicle Warehouse
+   *  custody (SUM of VehicleInventoryItem.quantity_on_hand). Never order / undelivered / planned
+   *  quantity, never settlement arithmetic. A Brand selection does NOT alter it. */
   goods_on_hand: number;
+  /** Brand-scoped slice of that same canonical custody stock; present only while a Brand is
+   *  selected. Additive context — the overall figure above stays the primary Goods Remaining. */
+  brand_goods_on_hand?: number | null;
   /** Operational cash movements (canonical DriverTripMovement, approved only). */
   cash_collected: number;
   expenses: number;
@@ -102,6 +140,9 @@ export interface DaySettlementBoard {
   scope: BoardScope;
   date?: string;
   range?: { from: string; to: string };
+  /** The canonical Brand the board is narrowed to, or null for All Brands. */
+  brand_id?: string | null;
+  value_basis?: OrderValueBasis;
   kpis: DaySettlementKpis;
   drivers: DaySettlementDriverRow[];
   meta?: PaginationMeta;
@@ -312,6 +353,8 @@ export interface DaySettlementBoardParams {
   dir?: 'asc' | 'desc';
   search?: string;
   shipping_company_id?: number;
+  /** ONE canonical Brand (Organization\Brands uuid) or absent for All Brands. */
+  brand_id?: string;
   status?: DaySettlementStatus;
   stage?: ClosingStage;
   has_damage?: boolean;
