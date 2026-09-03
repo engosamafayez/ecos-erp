@@ -90,6 +90,8 @@
     "trigger": "الذكاء",
     "segments": "الشرائح",
     "highestSpend": "الأعلى إنفاقًا",
+    "topSpenders": "كبار المنفقين",
+    "topSpendersHint": "أعلى 20% من العملاء حسب إجمالي قيمة الطلبات",
     "repeatCustomers": "العملاء المتكررون",
     "productAffinity": "ولاء المنتج",
     "selectProduct": "اختر منتجًا…",

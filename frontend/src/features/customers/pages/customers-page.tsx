@@ -203,6 +203,12 @@ export function CustomersPage() {
   const [minPurchaseCount, setMinPurchaseCount]   = useState(REPEAT_ORDER_THRESHOLD);
   const { data: productOptions = [], isLoading: loadingProducts } = useProductOptions();
 
+  // TASK-...-FINAL-UI-CLOSURE-014-R1 (§2/§4) — Top Spenders: a real backend-
+  // authoritative population SEGMENT, deliberately a SEPARATE control from the
+  // existing "Highest Spend" SORT toggle below (isHighestSpendSort) — the two are
+  // different UI concepts and neither is touched by the other's state.
+  const [topSpenders, setTopSpenders] = useState(false);
+
   // ── Blocked Customers filter/segment (TASK-...-BLOCKED-CUSTOMERS-009 §40,
   //    extended to a true All/Blocked/Not Blocked classification by TASK-...-
   //    FINAL-UI-CLOSURE-014 §17 via a second, mutually-exclusive toggle rather
@@ -272,6 +278,7 @@ export function CustomersPage() {
     sales_owner_id: salesOwnerFilter && salesOwnerFilter !== 'unassigned' ? salesOwnerFilter : undefined,
     unassigned_sales_owner: salesOwnerFilter === 'unassigned' ? true : undefined,
     channel_id: channelFilterId ?? undefined,
+    top_spenders: topSpenders || undefined,
     repeat_only: repeatOnly || undefined,
     product_id: affinityProductId ?? undefined,
     min_purchase_count: affinityProductId ? minPurchaseCount : undefined,
@@ -354,13 +361,14 @@ export function CustomersPage() {
   // "Top Spenders" population/threshold exists anywhere in current source (confirmed by
   // an exhaustive repo-wide search) — per this task's own §9, that is NOT invented here.
   const isHighestSpendSort = sort.field === 'total_order_value' && sort.direction === 'desc';
-  const hasActiveIntelligenceFilter = repeatOnly || affinityProductId !== null || isHighestSpendSort;
+  const hasActiveIntelligenceFilter = repeatOnly || affinityProductId !== null || isHighestSpendSort || topSpenders;
 
   function clearIntelligenceFilters() {
     setRepeatOnly(false);
     setAffinityProductId(null);
     setMinPurchaseCount(REPEAT_ORDER_THRESHOLD);
     setSort({ field: 'created_at', direction: 'desc' });
+    setTopSpenders(false);
     setPage(1);
   }
 
@@ -592,6 +600,25 @@ export function CustomersPage() {
                     >
                       <TrendingUp className="size-3" />
                       {t($ => $.intelligencePanel.highestSpend)}
+                    </Button>
+                    {/* TASK-...-FINAL-UI-CLOSURE-014-R1 (§2-§7) — Top Spenders: a REAL
+                        population segment (top 20% of eligible Customers, tenant-wide,
+                        by total_order_value), computed backend-authoritatively —
+                        deliberately a separate control from "Highest Spend" above,
+                        which only ever re-sorts the same (unreduced) population. */}
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={topSpenders ? 'default' : 'outline'}
+                      className="h-7 gap-1 text-xs"
+                      title={t($ => $.intelligencePanel.topSpendersHint)}
+                      onClick={() => {
+                        setTopSpenders((v) => !v);
+                        setPage(1);
+                      }}
+                    >
+                      <TrendingUp className="size-3" />
+                      {t($ => $.intelligencePanel.topSpenders)}
                     </Button>
                     <Button
                       type="button"

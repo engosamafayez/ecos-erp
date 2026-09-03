@@ -90,6 +90,8 @@
     "trigger": "Intelligence",
     "segments": "Segments",
     "highestSpend": "Highest Spend",
+    "topSpenders": "Top Spenders",
+    "topSpendersHint": "Top 20% of customers by total order value",
     "repeatCustomers": "Repeat Customers",
     "productAffinity": "Product Affinity",
     "selectProduct": "Select a product…",

@@ -179,6 +179,11 @@ export type CustomersQuery = {
   unassigned_sales_owner?: boolean;
   /** TASK-...-FINAL-UI-CLOSURE-014 (§16) — Channel filter (derived: Channel is order-level). */
   channel_id?: string;
+  /** TASK-...-FINAL-UI-CLOSURE-014-R1 (§2) — the CTO-approved Top Spenders population
+   *  segment (top 20% of eligible Customers by total_order_value, tenant-wide).
+   *  Deliberately separate from sort_by='total_order_value' ("Highest Spend" — a
+   *  sort, not a segment). Backend-authoritative. */
+  top_spenders?: boolean;
   /** Repeat Customers only (orders_count >= REPEAT_ORDER_THRESHOLD). Backend-authoritative. */
   repeat_only?: boolean;
   /** Product Affinity filter: customers who purchased this product repeatedly. */

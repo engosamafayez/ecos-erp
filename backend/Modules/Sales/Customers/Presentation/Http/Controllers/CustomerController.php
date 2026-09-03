@@ -376,6 +376,9 @@ final class CustomerController extends Controller
             'sales_owner_id' => $request->query('sales_owner_id'),
             'unassigned_sales_owner' => $request->query('unassigned_sales_owner'),
             'channel_id' => $request->query('channel_id'),
+            // TASK-...-FINAL-UI-CLOSURE-014-R1 (§2) — Top Spenders population segment,
+            // deliberately separate from the sort_by=total_order_value "Highest Spend" sort.
+            'top_spenders' => $request->query('top_spenders'),
             // Customer Intelligence (TASK-...-CUSTOMER-INTELLIGENCE-008): Repeat Customers
             // and product-specific repeat-buyer filters, both backend-authoritative —
             // never a client-side filter of the current page.

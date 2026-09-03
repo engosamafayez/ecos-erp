@@ -140,6 +140,15 @@ final class EloquentCustomerRepository implements CustomerRepositoryInterface
             );
         }
 
+        // TASK-...-FINAL-UI-CLOSURE-014-R1 (§2) — Top Spenders: a real backend-
+        // authoritative population SEGMENT (top 20% of eligible Customers by
+        // total_order_value), deliberately separate from the "Highest Spend" SORT
+        // (sort_by=total_order_value) below/elsewhere — this never touches sort_by/
+        // sort_dir, and the sort is untouched by this filter.
+        if (filter_var($filters['top_spenders'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            $this->applyTopSpendersFilter($query, $companyId);
+        }
+
         // Repeat Customers — orders_count >= REPEAT_ORDER_THRESHOLD, same threshold and
         // same qualifying-order scope as CustomerOrderMetricsService.
         if (filter_var($filters['repeat_only'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
@@ -324,6 +333,93 @@ final class EloquentCustomerRepository implements CustomerRepositoryInterface
             $query->whereNotIn(DB::raw(PhoneNormalizer::sqlExpression('phone')), $normalizedPhones);
             $query->whereNotIn(DB::raw(PhoneNormalizer::sqlExpression('mobile')), $normalizedPhones);
         }
+    }
+
+    /**
+     * TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-FINAL-UI-CLOSURE-014-R1 (§2/§6/§7) —
+     * CTO-approved Top Spenders population segment.
+     *
+     * Eligible population: this company's Customers with at least one qualifying
+     * order (orders_count > 0) — the SAME qualifying-order scope every other filter
+     * in this class uses (tenant + soft-delete only, no status filter) and the SAME
+     * total_order_value definition CustomerOrderMetricsService::forCustomers()
+     * computes (COALESCE(SUM(total), 0)) / aggregateSortSubquery('total_order_value')
+     * already uses below — no new spend metric is created here.
+     *
+     * Segment = every eligible Customer whose total_order_value is >= the value at
+     * the top-20%-of-N cutoff rank (§7 — never a hard top-N cut that would
+     * arbitrarily exclude Customers tied with the last included one). Computed
+     * against the WHOLE eligible tenant population; other active filters intersect
+     * with this fixed set via the normal AND-composed WHERE this adds — they never
+     * narrow the population §6's percentile is computed over (§3).
+     */
+    private function applyTopSpendersFilter(Builder $query, string $companyId): void
+    {
+        // The segment is defined per-tenant (§2: "same tenant/company only"). There
+        // is no single population to rank against in the documented unscoped/
+        // super-admin case, so this correctly yields zero matches there rather than
+        // silently ignoring the filter — which would desync the button's active
+        // state from the real query, exactly the bug class this task exists to fix.
+        if ($companyId === '') {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $cutoff = $this->topSpenderCutoffValue($companyId);
+
+        if ($cutoff === null) {
+            // No eligible (orders_count > 0) Customer in this company at all.
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $query->where(
+            $this->ordersSubquery()->selectRaw('COALESCE(SUM(orders.total), 0)'),
+            '>=',
+            $cutoff,
+        );
+    }
+
+    /**
+     * The total_order_value AT the 20% cutoff rank for this company, or null when no
+     * Customer here has ever placed a qualifying order. TWO bounded queries scoped
+     * to this one company — never per-row, never per-customer, never fetching every
+     * eligible Customer's full row into PHP just to rank them.
+     */
+    private function topSpenderCutoffValue(string $companyId): ?float
+    {
+        $eligibleCount = DB::table('orders')
+            ->where('company_id', $companyId)
+            ->whereNull('deleted_at')
+            ->distinct()
+            ->count('customer_id');
+
+        if ($eligibleCount === 0) {
+            return null;
+        }
+
+        // ceil(N * 0.20), minimum 1 when N > 0 (§7) — ceil() of any N >= 1 already
+        // guarantees >= 1; max() here documents the requirement, not a real branch.
+        $targetCount = max(1, (int) ceil($eligibleCount * 0.20));
+
+        $cutoff = DB::table('orders')
+            ->where('company_id', $companyId)
+            ->whereNull('deleted_at')
+            ->groupBy('customer_id')
+            ->selectRaw('COALESCE(SUM(total), 0) AS total_order_value')
+            // Stable tiebreak on a natural key, matching this codebase's established
+            // convention (see CustomerOrderMetricsService::preferredGovernorateForCustomers'
+            // own docblock) — irrelevant to the VALUE returned (tied rows share the
+            // same value); kept only so the query plan is deterministic.
+            ->orderByDesc('total_order_value')
+            ->orderBy('customer_id')
+            ->offset($targetCount - 1)
+            ->limit(1)
+            ->value('total_order_value');
+
+        return $cutoff !== null ? (float) $cutoff : null;
     }
 
     /**
