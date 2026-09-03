@@ -149,6 +149,16 @@ export const ordersService = {
     return data as unknown as Order;
   },
 
+  /**
+   * TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-BLOCKED-CUSTOMERS-009 (§25/§42).
+   * "Override Block for This Order" — grants a one-order override and
+   * re-evaluates ONLY this Order. The Customer/phone remains blocked (§26/§27).
+   */
+  async blockOverride(id: string, reason: string): Promise<Order> {
+    const { data } = await api.post<ApiResponse<Order>>(`/orders/${id}/block-override`, { reason });
+    return data.data;
+  },
+
   // ── Bulk Workflow Transitions ─────────────────────────────────────────────
 
   async bulkConfirm(ids: string[]): Promise<unknown> {

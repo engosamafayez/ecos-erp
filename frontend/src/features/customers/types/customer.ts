@@ -42,6 +42,25 @@ export type CustomerChannel = {
   orders_count: number;
 };
 
+/**
+ * TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-BLOCKED-CUSTOMERS-009.
+ * One block EPISODE — a row with `unblocked_at` set is a closed/historical
+ * episode, not the current state. See BlockedCustomerPolicy on the backend.
+ */
+export type CustomerBlock = {
+  id: string;
+  company_id: string;
+  customer_id: string | null;
+  normalized_phone: string;
+  is_active: boolean;
+  block_reason: string;
+  blocked_by: string | null;
+  blocked_at: string;
+  unblock_reason: string | null;
+  unblocked_by: string | null;
+  unblocked_at: string | null;
+};
+
 export type Customer = {
   id: string;
   company_id: string | null;
@@ -92,6 +111,15 @@ export type Customer = {
   purchased_products?: CustomerPurchasedProduct[];
   created_at: string | null;
   updated_at: string | null;
+
+  // ── Blocked Customer (TASK-...-BLOCKED-CUSTOMERS-009) ──────────────────────
+  /** Current state only — see block-history for the full timeline. */
+  is_blocked: boolean;
+  block_reason: string | null;
+  blocked_at: string | null;
+  blocked_by: string | null;
+  /** The ACTIVE customer_blocks id — required by POST .../unblock as `block_id`. */
+  customer_block_id: string | null;
 };
 
 export type CustomerPayload = {
@@ -135,6 +163,8 @@ export type CustomersQuery = {
   product_id?: string;
   /** Defaults to REPEAT_ORDER_THRESHOLD server-side when product_id is set. */
   min_purchase_count?: number;
+  /** Blocked Customers filter/segment. Backend-authoritative. */
+  blocked_only?: boolean;
   page?: number;
   per_page?: number;
   sort_by?: CustomerSortField;

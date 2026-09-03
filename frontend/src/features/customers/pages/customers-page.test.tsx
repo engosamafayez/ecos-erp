@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
@@ -21,13 +21,28 @@ import type { Customer, CustomersResult } from '@/features/customers/types/custo
 
 const mockList = vi.hoisted(() => vi.fn());
 const mockNavigate = vi.hoisted(() => vi.fn());
+const mockBlock = vi.hoisted(() => vi.fn());
+const mockBlockPhone = vi.hoisted(() => vi.fn());
+const mockUnblock = vi.hoisted(() => vi.fn());
 
 vi.mock('@/features/customers/services/customers-service', () => ({
-  customersService: { list: mockList },
+  customersService: {
+    list: mockList,
+    block: mockBlock,
+    blockPhone: mockBlockPhone,
+    unblock: mockUnblock,
+    blockHistory: vi.fn().mockResolvedValue([]),
+  },
 }));
 
 vi.mock('@/features/organization/context/organization-context', () => ({
   useOrganizationContext: () => ({ activeCompanyId: 'company-1' }),
+}));
+
+// TASK-...-BLOCKED-CUSTOMERS-009: full grant by default; the read-only test overrides it.
+const mockCan = vi.hoisted(() => vi.fn(() => true));
+vi.mock('@/features/authorization/use-authorization', () => ({
+  usePermission: () => ({ can: mockCan, cannot: (p: string) => !mockCan(p), canAccess: mockCan, canExecute: mockCan }),
 }));
 
 // The label is an API RESPONSE FIXTURE reproducing useProductOptions' real "SKU – Name"
@@ -113,6 +128,11 @@ function customer(overrides: Partial<Customer> = {}): Customer {
     channels: [],
     created_at: null,
     updated_at: null,
+    is_blocked: false,
+    block_reason: null,
+    blocked_at: null,
+    blocked_by: null,
+    customer_block_id: null,
     ...overrides,
   };
 }
@@ -144,6 +164,7 @@ function renderPage() {
 beforeEach(() => {
   vi.clearAllMocks();
   mockList.mockResolvedValue(result([customer()]));
+  mockCan.mockReturnValue(true);
 });
 
 describe('CustomersPage — Customer Intelligence', () => {
@@ -228,5 +249,67 @@ describe('CustomersPage — Customer Intelligence', () => {
     renderPage();
 
     expect(await screen.findByText('empty')).toBeInTheDocument();
+  });
+});
+
+describe('CustomersPage — Blocked Customers (TASK-...-BLOCKED-CUSTOMERS-009)', () => {
+  it('renders a Blocked badge for a blocked customer', async () => {
+    mockList.mockResolvedValue(result([
+      customer({ id: 'c1', is_blocked: true, block_reason: 'Fraud suspected' }),
+    ]));
+    renderPage();
+
+    expect(await screen.findByText('badge')).toBeInTheDocument();
+  });
+
+  it('toggling the Blocked filter queries the backend by blocked_only, and clears on toggle-off', async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    await screen.findByText('Acme Corp');
+    await user.click(screen.getByText('filter'));
+
+    await waitFor(() => {
+      const lastCall = mockList.mock.calls.at(-1)?.[0];
+      expect(lastCall).toMatchObject({ blocked_only: true });
+    });
+
+    await user.click(screen.getByText('filter'));
+    await waitFor(() => {
+      const lastCall = mockList.mock.calls.at(-1)?.[0];
+      expect(lastCall?.blocked_only).toBeUndefined();
+    });
+  });
+
+  it('Block Phone requires both a phone and a reason before submitting', async () => {
+    const user = userEvent.setup();
+    mockBlockPhone.mockResolvedValue({ id: 'block-1' });
+    renderPage();
+
+    await screen.findByText('Acme Corp');
+    await user.click(screen.getByText('blockPhoneAction'));
+
+    const dialog = await screen.findByRole('dialog');
+    const confirmButton = within(dialog).getByText('blockAction').closest('button')!;
+    expect(confirmButton).toBeDisabled();
+
+    await user.type(within(dialog).getByPlaceholderText('phonePlaceholder'), '01012345678');
+    expect(confirmButton).toBeDisabled();
+
+    await user.type(within(dialog).getByPlaceholderText('reasonPlaceholder'), 'Chargeback fraud');
+    expect(confirmButton).not.toBeDisabled();
+
+    await user.click(confirmButton);
+    await waitFor(() => {
+      expect(mockBlockPhone).toHaveBeenCalledWith('01012345678', 'Chargeback fraud');
+    });
+  });
+
+  it('hides the Block Phone action for a read-only (unauthorized) user', async () => {
+    mockCan.mockReturnValue(false);
+    renderPage();
+
+    await screen.findByText('Acme Corp');
+    expect(screen.queryByText('blockPhoneAction')).not.toBeInTheDocument();
   });
 });

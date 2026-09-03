@@ -21,6 +21,8 @@ type ConfirmDialogProps = {
   onConfirm: () => void;
   loading?: boolean;
   variant?: 'default' | 'destructive';
+  /** Disables the confirm button without affecting Cancel — e.g. a mandatory reason field left blank. */
+  confirmDisabled?: boolean;
 };
 
 /**
@@ -36,6 +38,7 @@ export function ConfirmDialog({
   onConfirm,
   loading = false,
   variant = 'default',
+  confirmDisabled = false,
 }: ConfirmDialogProps) {
   const { t } = useTranslation('common');
 
@@ -55,7 +58,7 @@ export function ConfirmDialog({
           >
             {cancelLabel ?? t($ => $.common.cancel)}
           </Button>
-          <Button type="button" variant={variant} onClick={onConfirm} disabled={loading}>
+          <Button type="button" variant={variant} onClick={onConfirm} disabled={loading || confirmDisabled}>
             {loading ? t($ => $.actions.working) : (confirmLabel ?? t($ => $.common.confirm))}
           </Button>
         </DialogFooter>

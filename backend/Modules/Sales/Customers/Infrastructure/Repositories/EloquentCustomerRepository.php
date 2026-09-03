@@ -87,6 +87,24 @@ final class EloquentCustomerRepository implements CustomerRepositoryInterface
             );
         }
 
+        // TASK-...-BLOCKED-CUSTOMERS-009 (§40) — Blocked Customers filter/segment.
+        // EXISTS against the active-block authority; matches by customer_id (the
+        // common case once bound) OR either saved phone/mobile, so a phone-first
+        // block whose Customer only just started existing still surfaces here.
+        if (filter_var($filters['blocked_only'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            $query->whereExists(function (QueryBuilder $q): void {
+                $q->select(DB::raw(1))
+                    ->from('customer_blocks')
+                    ->whereColumn('customer_blocks.company_id', 'customers.company_id')
+                    ->where('customer_blocks.is_active', true)
+                    ->where(function (QueryBuilder $q2): void {
+                        $q2->whereColumn('customer_blocks.customer_id', 'customers.id')
+                            ->orWhereColumn('customer_blocks.normalized_phone', 'customers.phone')
+                            ->orWhereColumn('customer_blocks.normalized_phone', 'customers.mobile');
+                    });
+            });
+        }
+
         // Product-specific repeat buyers ("customers who bought Product X repeatedly") —
         // backend-authoritative, never a client-side filter of the current page. Defaults
         // to the same repeat threshold as Repeat Customers unless the caller overrides it.

@@ -227,6 +227,13 @@ export function useOrderWorkflowTransition() {
   );
 }
 
+/** TASK-...-BLOCKED-CUSTOMERS-009 (§25/§42) — one-order block override. */
+export function useOrderBlockOverride() {
+  return useWorkflowMutation(
+    ({ id, reason }: { id: string; reason: string }) => ordersService.blockOverride(id, reason),
+  );
+}
+
 export function useConfirmCustomer() {
   return useWorkflowMutation(
     (payload: { id: string; communication_method: string; result: string; notes?: string }) =>

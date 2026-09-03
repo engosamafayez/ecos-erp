@@ -21,6 +21,8 @@ use Modules\Logistics\Geography\Domain\Models\City;
 use Modules\Logistics\Geography\Domain\Models\Governorate;
 use Modules\Organization\Brands\Domain\Models\Brand;
 use Modules\Sales\Customers\Domain\Models\Customer;
+use Modules\Sales\Customers\Domain\Services\BlockedCustomerPolicy;
+use Modules\Sales\Customers\Domain\Services\PhoneNormalizer;
 use RuntimeException;
 use Throwable;
 
@@ -42,6 +44,11 @@ final class WooCommerceOrderImporter
         // The SAME gate the manual and standard creation paths consult. Import is a third
         // creation path, so it is subject to the same financial control — see buildOrder().
         private readonly PaymentFulfillmentGate $paymentGate,
+        // TASK-...-BLOCKED-CUSTOMERS-009 (§4/§13/§31). The canonical normalizer this
+        // class's own normalizePhone() used to be a private, unshared copy of — see
+        // PhoneNormalizer's docblock — plus the shared blocked-customer read authority.
+        private readonly PhoneNormalizer $phoneNormalizer,
+        private readonly BlockedCustomerPolicy $blockedCustomerPolicy,
     ) {}
 
     /**
@@ -82,7 +89,16 @@ final class WooCommerceOrderImporter
 
         $wooStatus = (string) ($wooOrder['status'] ?? 'pending');
 
-        if (in_array($wooStatus, self::RESERVE_ON_IMPORT, true)) {
+        // TASK-...-BLOCKED-CUSTOMERS-009 capability-gate re-verification: this gate
+        // used to check ONLY the raw WooCommerce status, never the final RESOLVED
+        // ECOS status buildOrder() actually persisted — so a shipping-review or
+        // blocked-customer override to on_hold/awaiting_payment (both applied AFTER
+        // the raw status is known) still reserved inventory. Fixed to require BOTH:
+        // the pre-existing raw-status signal, AND that resolution did not park the
+        // order (§13/§20 — a blocked or payment-blocked order must never reserve).
+        $resolvedBlocksReservation = in_array($createdOrder->status, [OrderStatus::OnHold, OrderStatus::AwaitingPayment], true);
+
+        if (! $resolvedBlocksReservation && in_array($wooStatus, self::RESERVE_ON_IMPORT, true)) {
             try {
                 $this->reserveInventory->execute($createdOrder);
             } catch (Throwable) {
@@ -175,7 +191,11 @@ final class WooCommerceOrderImporter
                                 $createdOrder->coupons()->createMany($coupons);
                             }
 
-                            if (in_array($wooOrder['status'] ?? 'pending', self::RESERVE_ON_IMPORT, true)) {
+                            // See importSingle()'s identical fix for why the resolved
+                            // status must gate this too, not only the raw Woo status.
+                            $resolvedBlocksReservation = in_array($createdOrder->status, [OrderStatus::OnHold, OrderStatus::AwaitingPayment], true);
+
+                            if (! $resolvedBlocksReservation && in_array($wooOrder['status'] ?? 'pending', self::RESERVE_ON_IMPORT, true)) {
                                 try {
                                     $this->reserveInventory->execute($createdOrder);
                                 } catch (Throwable $ie) {
@@ -241,20 +261,14 @@ final class WooCommerceOrderImporter
     /**
      * Normalize a phone number to E.164-like digits (no +).
      * Example: 01012345678 → 201012345678
+     *
+     * TASK-...-BLOCKED-CUSTOMERS-009 (§4): delegates to the canonical
+     * PhoneNormalizer this method's old body was promoted into — see its docblock.
+     * Kept as a thin wrapper so every existing call site in this file is unchanged.
      */
     private function normalizePhone(string $phone): string
     {
-        $digits = preg_replace('/\D/', '', $phone) ?? '';
-
-        if ($digits === '') {
-            return '';
-        }
-
-        if (str_starts_with($digits, '0') && strlen($digits) >= 10) {
-            $digits = '2'.$digits;
-        }
-
-        return $digits;
+        return $this->phoneNormalizer->normalize($phone);
     }
 
     /**
@@ -526,6 +540,35 @@ final class WooCommerceOrderImporter
             $companyId,
         )) {
             $orderAttributes['status'] = OrderStatus::AwaitingPayment->value;
+        }
+
+        // TASK-...-BLOCKED-CUSTOMERS-009 (§13/§14/§31). PLACED LAST, same reasoning
+        // as the payment gate's own "placed last" note above §3.1 gives it precedence
+        // over the shipping-review override — a blocked Customer/phone outranks BOTH:
+        // the order must still be imported (§13 forbids rejecting solely for this),
+        // but it lands on OnHold before any reservation or automatic fulfillment,
+        // regardless of what Woo's status or the shipping engine decided.
+        $activeBlock = null;
+        foreach ([$customer->phone, $customer->mobile] as $candidate) {
+            $normalized = $this->blockedCustomerPolicy->normalize($candidate);
+            if ($normalized === '') {
+                continue;
+            }
+            $activeBlock = $this->blockedCustomerPolicy->activeBlockForPhone($companyId, $normalized);
+            if ($activeBlock !== null) {
+                break;
+            }
+        }
+
+        if ($activeBlock !== null) {
+            $orderAttributes['status'] = OrderStatus::OnHold->value;
+            $orderAttributes['hold_reason_code'] = BlockedCustomerPolicy::HOLD_REASON_BLOCKED_CUSTOMER;
+
+            // Opportunistic Customer binding (§10) — a phone-first block created
+            // before this Customer existed now has a real Customer to reference.
+            if ($activeBlock->customer_id === null) {
+                $activeBlock->update(['customer_id' => $customer->id]);
+            }
         }
 
         return [$orderAttributes, $lines, $fees, $coupons, $failedLines, $lineErrors];

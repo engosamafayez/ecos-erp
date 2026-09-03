@@ -10,14 +10,17 @@ use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Commerce\Orders\Domain\Services\CustomerOrderMetricsService;
+use Modules\Sales\Customers\Application\Actions\BlockCustomerOrPhoneAction;
 use Modules\Sales\Customers\Application\Actions\CreateCustomerAction;
 use Modules\Sales\Customers\Application\Actions\DeleteCustomerAction;
 use Modules\Sales\Customers\Application\Actions\GetCustomerAction;
 use Modules\Sales\Customers\Application\Actions\ListCustomersAction;
 use Modules\Sales\Customers\Application\Actions\SearchCustomerByPhoneAction;
+use Modules\Sales\Customers\Application\Actions\UnblockCustomerAction;
 use Modules\Sales\Customers\Application\Actions\UpdateCustomerAction;
 use Modules\Sales\Customers\Application\DTO\CustomerDTO;
 use Modules\Sales\Customers\Domain\Models\Customer;
+use Modules\Sales\Customers\Domain\Services\BlockedCustomerPolicy;
 use Modules\Sales\Customers\Presentation\Http\Requests\StoreCustomerRequest;
 use Modules\Sales\Customers\Presentation\Http\Requests\UpdateCustomerRequest;
 use Modules\Sales\Customers\Presentation\Http\Resources\CustomerResource;
@@ -32,6 +35,9 @@ final class CustomerController extends Controller
         // order semantics — Orders Count, Total Value and Receiving Rate mean one thing
         // platform-wide, and that meaning lives in Commerce\Orders where `orders` lives.
         private readonly CustomerOrderMetricsService $orderMetrics,
+        // TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-BLOCKED-CUSTOMERS-009 (§33) — the
+        // single read authority for index()/show() block-state enrichment.
+        private readonly BlockedCustomerPolicy $blockedPolicy,
     ) {}
 
     public function index(Request $request, ListCustomersAction $action): JsonResponse
@@ -48,6 +54,8 @@ final class CustomerController extends Controller
             'repeat_only' => $request->query('repeat_only'),
             'product_id' => $request->query('product_id'),
             'min_purchase_count' => $request->query('min_purchase_count'),
+            // TASK-...-BLOCKED-CUSTOMERS-009 (§40) — Blocked Customers filter/segment.
+            'blocked_only' => $request->query('blocked_only'),
             'sort_by' => $request->query('sort_by', 'created_at'),
             'sort_dir' => $request->query('sort_dir', 'desc'),
             'per_page' => $request->query('per_page', 10),
@@ -69,6 +77,7 @@ final class CustomerController extends Controller
         $locations = [];
         $governorates = [];
         $channels = [];
+        $blocks = [];
 
         foreach ($customers->groupBy(fn (Customer $c) => (string) $c->company_id) as $companyId => $group) {
             if ((string) $companyId === '') {
@@ -81,6 +90,11 @@ final class CustomerController extends Controller
             $locations += $this->orderMetrics->locationUrlForCustomers($ids, (string) $companyId);
             $governorates += $this->orderMetrics->preferredGovernorateForCustomers($ids, (string) $companyId);
             $channels += $this->orderMetrics->channelsForCustomers($ids, (string) $companyId);
+            // TASK-...-BLOCKED-CUSTOMERS-009 (§33/§54) — ONE query per company on the
+            // page, never one per row, same shape as the metrics above. Takes the
+            // Customer models (not bare ids): matching is by customer_id OR either
+            // saved phone/mobile (§10), which bare ids cannot express.
+            $blocks += $this->blockedPolicy->activeBlocksForCustomers($group, (string) $companyId);
         }
 
         return $this->success([
@@ -99,6 +113,13 @@ final class CustomerController extends Controller
                 // Distinct Channels this customer has ordered through, most-used first.
                 // Derived read — see CustomerOrderMetricsService::channelsForCustomers().
                 'channels' => $channels[(string) $c->id] ?? [],
+                // TASK-...-BLOCKED-CUSTOMERS-009 (§33) — current block state only;
+                // full history is fetched on demand via GET .../block-history.
+                'is_blocked' => isset($blocks[(string) $c->id]),
+                'block_reason' => $blocks[(string) $c->id]?->block_reason,
+                'blocked_at' => $blocks[(string) $c->id]?->blocked_at?->toIso8601String(),
+                'blocked_by' => $blocks[(string) $c->id]?->blocked_by,
+                'customer_block_id' => $blocks[(string) $c->id]?->id,
             ])->all(),
             'meta' => [
                 'current_page' => $paginator->currentPage(),
@@ -126,6 +147,8 @@ final class CustomerController extends Controller
             return $this->success(new CustomerResource($model));
         }
 
+        $activeBlock = $this->blockedPolicy->activeBlocksForCustomers(collect([$model]), $companyId)[$id] ?? null;
+
         return $this->success([
             ...(new CustomerResource($model))->toArray($request),
             ...$this->orderMetrics->forCustomer($id, $companyId),
@@ -135,6 +158,12 @@ final class CustomerController extends Controller
             'preferred_governorate' => $this->orderMetrics->preferredGovernorateForCustomers([$id], $companyId)[$id] ?? null,
             'channels' => $this->orderMetrics->channelsForCustomers([$id], $companyId)[$id] ?? [],
             'full_address' => $this->fullAddress($model),
+            // TASK-...-BLOCKED-CUSTOMERS-009 (§33/§41).
+            'is_blocked' => $activeBlock !== null,
+            'block_reason' => $activeBlock?->block_reason,
+            'blocked_at' => $activeBlock?->blocked_at?->toIso8601String(),
+            'blocked_by' => $activeBlock?->blocked_by,
+            'customer_block_id' => $activeBlock?->id,
         ]);
     }
 
@@ -205,6 +234,94 @@ final class CustomerController extends Controller
         $result = $action->execute($phone);
 
         return $this->success($result->data(), $result->message());
+    }
+
+    /**
+     * TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-BLOCKED-CUSTOMERS-009 (§11).
+     * POST /customers/{customer}/block — blocks an existing Customer's saved phone.
+     */
+    public function block(Request $request, string $customer, BlockCustomerOrPhoneAction $action): JsonResponse
+    {
+        $companyId = $this->currentCompany->id();
+
+        if ($companyId === null) {
+            return $this->error('A company context is required to block a customer.', 422);
+        }
+
+        $validated = $request->validate(['reason' => ['required', 'string', 'max:1000']]);
+        $actorId = $request->user()?->id !== null ? (string) $request->user()->id : null;
+
+        $result = $action->execute($companyId, $customer, null, $validated['reason'], $actorId);
+
+        return $this->success($result->data(), $result->message());
+    }
+
+    /**
+     * TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-BLOCKED-CUSTOMERS-009 (§12).
+     * POST /customers/block-phone — blocks a phone that may not yet belong to a
+     * Customer. Never fabricates a Customer record.
+     */
+    public function blockPhone(Request $request, BlockCustomerOrPhoneAction $action): JsonResponse
+    {
+        $companyId = $this->currentCompany->id();
+
+        if ($companyId === null) {
+            return $this->error('A company context is required to block a phone.', 422);
+        }
+
+        $validated = $request->validate([
+            'phone' => ['required', 'string', 'max:32'],
+            'reason' => ['required', 'string', 'max:1000'],
+        ]);
+        $actorId = $request->user()?->id !== null ? (string) $request->user()->id : null;
+
+        $result = $action->execute($companyId, null, $validated['phone'], $validated['reason'], $actorId);
+
+        return $this->success($result->data(), $result->message());
+    }
+
+    /**
+     * TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-BLOCKED-CUSTOMERS-009 (§28).
+     * POST /customers/{customer}/unblock — expects the ACTIVE customer_block id
+     * (surfaced as `customer_block_id` on the Customer read model) as `block_id`.
+     */
+    public function unblock(Request $request, string $customer, UnblockCustomerAction $action): JsonResponse
+    {
+        $companyId = $this->currentCompany->id();
+
+        if ($companyId === null) {
+            return $this->error('A company context is required to unblock a customer.', 422);
+        }
+
+        $validated = $request->validate([
+            'block_id' => ['required', 'string'],
+            'reason' => ['required', 'string', 'max:1000'],
+        ]);
+        $actorId = $request->user()?->id !== null ? (string) $request->user()->id : null;
+
+        $result = $action->execute($companyId, $validated['block_id'], $validated['reason'], $actorId);
+
+        return $this->success($result->data(), $result->message());
+    }
+
+    /**
+     * TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-BLOCKED-CUSTOMERS-009 (§6/§41).
+     * GET /customers/{customer}/block-history
+     */
+    public function blockHistory(string $customer): JsonResponse
+    {
+        $companyId = $this->currentCompany->id();
+        $model = Customer::query()
+            ->when($companyId !== null, fn ($q) => $q->where('company_id', $companyId))
+            ->findOrFail($customer);
+
+        $history = $this->blockedPolicy->historyForCustomer(
+            (string) $model->id,
+            (string) ($companyId ?? $model->company_id),
+            [$model->phone, $model->mobile],
+        );
+
+        return $this->success($history->values());
     }
 
     /**

@@ -19,6 +19,7 @@ use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentResult;
 use Modules\Operations\Fulfillment\Domain\Contracts\FulfillmentWorkflowInterface;
 use Modules\Operations\Fulfillment\Domain\Events\InterWarehouseTransferRequestedEvent;
 use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionException;
+use Modules\Sales\Customers\Domain\Services\BlockedCustomerPolicy;
 
 /**
  * Initiates an order: reserves inventory and moves to In Progress.
@@ -54,6 +55,9 @@ final class ProcessOrderWorkflow implements FulfillmentWorkflowInterface
         // decision consults, and an interface introduced only to avoid this dependency
         // would be a second seam with no second implementation behind it.
         private readonly PaymentFulfillmentGate $paymentGate,
+        // TASK-...-BLOCKED-CUSTOMERS-009 (§24/§32). The SAME single read authority
+        // every blocked-customer integration point consults — see the guard below.
+        private readonly BlockedCustomerPolicy $blockedCustomerPolicy,
     ) {}
 
     public function guard(FulfillmentContext $ctx): void
@@ -81,6 +85,23 @@ final class ProcessOrderWorkflow implements FulfillmentWorkflowInterface
         if (! in_array($order->status, $allowed, true)) {
             throw new WorkflowPreconditionException(
                 "Order [{$order->id}] cannot be initiated from status [{$order->status->value}].",
+            );
+        }
+
+        // TASK-...-BLOCKED-CUSTOMERS-009 (§23/§24). This is the one place BOTH ways
+        // out of On Hold converge — the generic status-patch route and the dedicated
+        // fulfillment endpoint alike resolve to this workflow (PatchOrderAction::
+        // resolveWorkflow(), OrderFulfillmentController::resume) — so gating here,
+        // once, protects every caller without a second engine. Checked regardless of
+        // WHY the order is on hold (not gated on hold_reason_code): if the Customer/
+        // phone is currently blocked, this Order does not resume without an
+        // Order-specific override, no matter which trigger asked. Never confirmed:
+        // WorkflowPreconditionException is this codebase's existing "not yet" signal
+        // (see the Scheduled-activation guard below), so a reevaluation trigger that
+        // reaches a still-blocked order is a safe no-op, not an error.
+        if ($order->status === OrderStatus::OnHold && $this->blockedCustomerPolicy->isOrderBlocked($order)) {
+            throw new WorkflowPreconditionException(
+                "Order [{$order->id}] cannot resume: its Customer/phone is currently blocked. Grant a one-order override to proceed with just this Order.",
             );
         }
 
@@ -125,6 +146,9 @@ final class ProcessOrderWorkflow implements FulfillmentWorkflowInterface
                 'next_delivery_date' => null,
                 'resume_from_status' => null,
                 'reschedule_reason' => null,
+                // Guard above already proved the block no longer applies (unblocked, or
+                // an override was granted) — the on-hold reason is now historical.
+                'hold_reason_code' => null,
             ]);
             $order->refresh();
         }

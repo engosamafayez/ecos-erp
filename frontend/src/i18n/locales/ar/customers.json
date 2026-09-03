@@ -209,6 +209,18 @@
       "cadenceUnavailable": "لا توجد طلبات كافية بعد",
       "cadenceDays": "كل {{count}} يوم في المتوسط"
     },
+    "blocked": {
+      "title": "عميل محظور",
+      "badge": "محظور",
+      "reason": "السبب",
+      "blockedBy": "تم الحظر بواسطة",
+      "blockedAt": "تاريخ الحظر",
+      "unblockAction": "إلغاء الحظر",
+      "history": "سجل الحظر",
+      "historyEmpty": "لا يوجد سجل حظر.",
+      "historyBlockedEntry": "تم الحظر — {{reason}}",
+      "historyUnblockedEntry": "تم إلغاء الحظر — {{reason}}"
+    },
     "phonesTab": {
       "title": "أرقام الهاتف",
       "noPhone": "لا توجد أرقام هاتف مسجلة.",
@@ -270,6 +282,26 @@
   "delete": {
     "title": "حذف العميل",
     "confirm": "حذف"
+  },
+  "blocked": {
+    "filter": "محظور",
+    "badge": "محظور",
+    "blockAction": "حظر",
+    "unblockAction": "إلغاء الحظر",
+    "blockPhoneAction": "حظر رقم هاتف",
+    "reasonPlaceholder": "سبب هذا الإجراء…",
+    "blockDialog": {
+      "title": "حظر العميل",
+      "description": "سيُمنع {{name}} من التنفيذ: سيتم تعليق الطلبات الجديدة والمفتوحة حاليًا. هذا لا يحذف أو يعطّل سجل العميل."
+    },
+    "unblockDialog": {
+      "title": "إلغاء حظر العميل",
+      "description": "سيتمكن {{name}} من تقديم طلبات جديدة مجددًا. الطلبات المعلّقة الحالية لن تُفرج تلقائيًا — كل طلب يتطلب قرارًا منفصلًا."
+    },
+    "blockPhoneDialog": {
+      "description": "حظر رقم هاتف قد لا يخص عميلاً بعد. لن يتم إنشاء سجل عميل.",
+      "phonePlaceholder": "رقم الهاتف…"
+    }
   },
   "profile": {
     "notFound": "العميل غير موجود",

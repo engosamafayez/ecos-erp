@@ -43,6 +43,8 @@ use Modules\Commerce\Orders\Presentation\Http\Resources\OrderResource;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentContext;
 use Modules\Operations\Fulfillment\Application\FulfillmentEngine;
 use Modules\Operations\Fulfillment\Application\Workflows\ConfirmOrderWorkflow;
+use Modules\Sales\Customers\Application\Actions\OverrideOrderBlockAction;
+use Modules\Sales\Customers\Domain\Services\BlockedCustomerPolicy;
 use Throwable;
 
 final class OrderController extends Controller
@@ -138,11 +140,18 @@ final class OrderController extends Controller
         ]);
     }
 
-    public function show(string $order, GetOrderAction $action): JsonResponse
+    public function show(Request $request, string $order, GetOrderAction $action, BlockedCustomerPolicy $blockedPolicy): JsonResponse
     {
         $model = $action->execute($order)->data();
 
-        return $this->success(new OrderResource($model));
+        // TASK-...-BLOCKED-CUSTOMERS-009 (§34) — ONE order, so ONE live block/
+        // override check here is not the N+1 OrderResource itself must avoid (see
+        // its own note). List responses never carry this derived field.
+        return $this->success([
+            ...(new OrderResource($model))->toArray($request),
+            'is_blocked_customer_hold' => $model->hold_reason_code === BlockedCustomerPolicy::HOLD_REASON_BLOCKED_CUSTOMER
+                && $blockedPolicy->isOrderBlocked($model),
+        ]);
     }
 
     public function store(StoreOrderRequest $request, CreateOrderAction $action): JsonResponse
@@ -467,6 +476,31 @@ final class OrderController extends Controller
         );
 
         return $this->updated(new OrderResource($model), 'Customer confirmation recorded.');
+    }
+
+    /**
+     * TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-BLOCKED-CUSTOMERS-009 (§25/§42).
+     * "Override Block for This Order" — grants a one-order override and
+     * re-evaluates ONLY this Order. Gated by its own permission (crm.customers.
+     * override_block, see routes/api.php), separate from sales.orders.* and
+     * operations.fulfillment.manage, since it is a Customer-blocking authority
+     * acting on an Order, not a general order-fulfillment action.
+     */
+    public function blockOverride(Request $request, string $order, OverrideOrderBlockAction $action): JsonResponse
+    {
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $model = Order::where('id', $order)
+            ->where('company_id', $this->currentCompany->id())
+            ->firstOrFail();
+
+        $actorId = $request->user()?->id !== null ? (string) $request->user()->id : null;
+
+        $result = $action->execute($model, $validated['reason'], $actorId);
+
+        return $this->success(new OrderResource($result->data()), $result->message());
     }
 
     /**

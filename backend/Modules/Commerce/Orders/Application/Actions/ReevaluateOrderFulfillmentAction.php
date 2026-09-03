@@ -15,6 +15,7 @@ use Modules\Operations\Fulfillment\Application\FulfillmentEngine;
 use Modules\Operations\Fulfillment\Application\Workflows\ProcessOrderWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\ReturnToPaymentWorkflow;
 use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionException;
+use Modules\Sales\Customers\Domain\Services\BlockedCustomerPolicy;
 
 /**
  * THE canonical re-evaluation entry point after a payment fact changes.
@@ -74,6 +75,18 @@ use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionExcepti
  * already-transitioned order and becomes a no-op. A gate that is still unsatisfied is likewise a
  * no-op: `WorkflowPreconditionException` means "not yet"/"not applicable", never "error", so the
  * payment fact that triggered the re-evaluation always stays committed.
+ *
+ * THIRD DIRECTION (TASK-...-BLOCKED-CUSTOMERS-009, §24/§26) — added without touching any of the
+ * above: a blocked-customer one-order override must cause exactly this action to re-evaluate,
+ * per that task's explicit instruction ("Then invoke: ReevaluateOrderFulfillmentAction. Do not
+ * create ReevaluateBlockedOrderAction... or another parallel mechanism"). The new branch fires
+ * ONLY when the locked order is On Hold with `hold_reason_code = blocked_customer` — every OTHER
+ * On Hold cause (an operator's manual "Review" action, any pre-existing hold reason) leaves
+ * `hold_reason_code` null and this branch is skipped entirely, so no pre-existing On-Hold order
+ * anywhere in the system starts auto-resuming because ITS payment method happened to change.
+ * ProcessOrderWorkflow's own guard is what actually decides whether the block still applies
+ * (BlockedCustomerPolicy::isOrderBlocked) — this action does not re-implement that check, it
+ * only asks the question again, exactly like the two directions above.
  *
  * @param  mixed  ...$arguments  [0] = Order
  */
@@ -170,6 +183,23 @@ final class ReevaluateOrderFulfillmentAction extends BaseAction
 
                     return self::OUTCOME_RETURNED;
                 } catch (WorkflowPreconditionException) {
+                    return self::OUTCOME_NONE;
+                }
+            }
+
+            // ── Blocked-customer resume (§24/§26) ───────────────────────────────────
+            // See the class docblock's "THIRD DIRECTION" note: scoped to
+            // hold_reason_code = blocked_customer so no unrelated On Hold order is
+            // ever attempted. ProcessOrderWorkflow's guard re-checks the block itself.
+            if ($locked->status === OrderStatus::OnHold
+                && $locked->hold_reason_code === BlockedCustomerPolicy::HOLD_REASON_BLOCKED_CUSTOMER
+            ) {
+                try {
+                    $this->engine->run($this->processWorkflow, $locked, [], $actorId);
+
+                    return self::OUTCOME_ADVANCED;
+                } catch (WorkflowPreconditionException) {
+                    // Still blocked (no override yet) — left parked, not forced.
                     return self::OUTCOME_NONE;
                 }
             }

@@ -1119,6 +1119,16 @@
     "snapshottedAt": "Snapshotted at"
   },
   "orderDetail": {
+    "blockedCustomer": {
+      "bannerTitle": "On Hold — Blocked Customer",
+      "bannerDescription": "This order's Customer/phone is currently blocked. It will not reserve, prepare or advance until the block is lifted or a one-order override is granted.",
+      "bannerDescriptionOverridden": "This order was held for a blocked Customer/phone; an override has been granted so it can proceed. The Customer/phone remains blocked for other orders.",
+      "overrideAction": "Override Block for This Order",
+      "overrideDialogTitle": "Override Block for This Order",
+      "overrideDialogDescription": "The Customer/phone remains blocked for every other order. Only this order becomes eligible to proceed.",
+      "overrideReasonPlaceholder": "Reason for this override…",
+      "overrideToastSuccess": "Override granted. This order has been re-evaluated."
+    },
     "backToOrders": "Back to orders",
     "print": "Print",
     "confirmCustomer": "Confirm Customer",

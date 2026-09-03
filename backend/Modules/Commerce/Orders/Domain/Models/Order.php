@@ -102,6 +102,7 @@ use Modules\Sales\Customers\Domain\Models\Customer;
  * @property string|null $location_source
  * @property string|null $reservation_status
  * @property string|null $reservation_failure_reason
+ * @property string|null $hold_reason_code
  */
 class Order extends Model
 {
@@ -274,6 +275,9 @@ class Order extends Model
         // Reservation lifecycle (TASK-INV-RESERVATION-LIFECYCLE-001)
         'reservation_status',
         'reservation_failure_reason',
+        // Hold reason (TASK-...-BLOCKED-CUSTOMERS-009, §15) — machine-readable
+        // sub-reason while status = on_hold, e.g. 'blocked_customer'.
+        'hold_reason_code',
         // Branch assignment (TASK-BRANCH-ASSIGNMENT-ENGINE-001)
         'assigned_branch_id',
         'warehouse_assignment_failure_reason',

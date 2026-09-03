@@ -1,4 +1,5 @@
 import {
+  Ban,
   Calendar,
   Copy,
   FileText,
@@ -15,6 +16,8 @@ import { useTranslation } from 'react-i18next';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/crud';
+import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/crud/status-badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -27,7 +30,8 @@ import {
 import { Tabs } from '@/components/ds/tabs';
 import { OrderStatusBadge } from '@/features/orders/components/order-status-badge';
 import { useOrdersQuery } from '@/features/orders/hooks/use-orders';
-import { useCustomerQuery } from '../hooks/use-customers';
+import { usePermission } from '@/features/authorization/use-authorization';
+import { useCustomerBlockHistory, useCustomerQuery, useUnblockCustomer } from '../hooks/use-customers';
 import type { Customer } from '@/features/customers/types/customer';
 ;
 
@@ -86,6 +90,127 @@ function PhoneRow({
   );
 }
 
+// ── Blocked Customer card (TASK-...-BLOCKED-CUSTOMERS-009 §41) ────────────────
+
+function BlockedCard({ customer }: { customer: Customer }) {
+  const { t } = useTranslation('customers');
+  const { can } = usePermission();
+  const canUnblock = can('crm.customers.unblock');
+  const { data: history = [] } = useCustomerBlockHistory(customer.id, true);
+  const unblockCustomer = useUnblockCustomer();
+  const [unblocking, setUnblocking] = useState(false);
+  const [unblockReason, setUnblockReason] = useState('');
+
+  if (!customer.is_blocked && history.length === 0) {
+    return null;
+  }
+
+  return (
+    <div
+      className={cnBorder(customer.is_blocked)}
+    >
+      <div className="flex items-center justify-between">
+        <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <Ban className="size-3.5" />
+          {t($ => $.drawer.blocked.title)}
+        </p>
+        {customer.is_blocked ? (
+          <Badge
+            variant="secondary"
+            className="h-5 gap-1 px-1.5 text-[10px] text-red-700 bg-red-100 border-red-200 dark:text-red-400 dark:bg-red-950/50 dark:border-red-800"
+          >
+            <Ban className="size-3" />
+            {t($ => $.drawer.blocked.badge)}
+          </Badge>
+        ) : null}
+      </div>
+
+      {customer.is_blocked ? (
+        <div className="flex flex-col gap-2 text-sm">
+          <InfoRow label={t($ => $.drawer.blocked.reason)} value={customer.block_reason ?? '—'} />
+          <InfoRow
+            label={t($ => $.drawer.blocked.blockedAt)}
+            value={customer.blocked_at ? new Date(customer.blocked_at).toLocaleString() : '—'}
+          />
+          {canUnblock ? (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 w-fit gap-1.5 text-xs"
+              onClick={() => { setUnblockReason(''); setUnblocking(true); }}
+            >
+              {t($ => $.drawer.blocked.unblockAction)}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {history.length > 0 ? (
+        <div className="flex flex-col gap-1 border-t pt-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            {t($ => $.drawer.blocked.history)}
+          </p>
+          <ul className="flex flex-col gap-1 text-xs text-muted-foreground">
+            {history.flatMap((episode) => {
+              const rows = [
+                <li key={`${episode.id}-blocked`}>
+                  {t($ => $.drawer.blocked.historyBlockedEntry, { reason: episode.block_reason })}
+                  {' · '}
+                  {new Date(episode.blocked_at).toLocaleDateString()}
+                </li>,
+              ];
+              if (episode.unblocked_at) {
+                rows.push(
+                  <li key={`${episode.id}-unblocked`}>
+                    {t($ => $.drawer.blocked.historyUnblockedEntry, { reason: episode.unblock_reason ?? '' })}
+                    {' · '}
+                    {new Date(episode.unblocked_at).toLocaleDateString()}
+                  </li>,
+                );
+              }
+              return rows;
+            })}
+          </ul>
+        </div>
+      ) : null}
+
+      <ConfirmDialog
+        open={unblocking}
+        onOpenChange={setUnblocking}
+        title={t($ => $.blocked.unblockDialog.title)}
+        description={
+          <>
+            {t($ => $.blocked.unblockDialog.description, { name: customer.name })}
+            <Input
+              autoFocus
+              placeholder={t($ => $.blocked.reasonPlaceholder)}
+              value={unblockReason}
+              onChange={(e) => setUnblockReason(e.target.value)}
+              className="mt-2"
+            />
+          </>
+        }
+        confirmLabel={t($ => $.drawer.blocked.unblockAction)}
+        loading={unblockCustomer.isPending}
+        confirmDisabled={unblockReason.trim() === ''}
+        onConfirm={() => {
+          if (!customer.customer_block_id) return;
+          unblockCustomer.mutate(
+            { id: customer.id, blockId: customer.customer_block_id, reason: unblockReason.trim() },
+            { onSuccess: () => setUnblocking(false) },
+          );
+        }}
+      />
+    </div>
+  );
+}
+
+function cnBorder(blocked: boolean): string {
+  return blocked
+    ? 'flex flex-col gap-2 rounded-lg border border-red-200 bg-red-50/50 p-3 dark:border-red-900 dark:bg-red-950/20'
+    : 'flex flex-col gap-2 rounded-lg border p-3';
+}
+
 // ── Summary tab ───────────────────────────────────────────────────────────────
 
 function SummaryTab({ customer }: { customer: Customer }) {
@@ -104,6 +229,9 @@ function SummaryTab({ customer }: { customer: Customer }) {
         </div>
         <StatusBadge status={customer.is_active ? 'active' : 'inactive'} className="ms-auto shrink-0" />
       </div>
+
+      {/* Blocked Customer (TASK-...-BLOCKED-CUSTOMERS-009 §41) */}
+      <BlockedCard customer={customer} />
 
       {/* Order KPIs — every figure computed by CustomerOrderMetricsService and rendered
           as-is. Previously this fetched up to 200 orders and summed them in the browser,

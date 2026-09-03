@@ -71,7 +71,12 @@ return [
         ],
 
         'crm' => [
-            'customers' => ['view', 'create', 'update', 'delete'],
+            // 'block'/'unblock'/'override_block' — TASK-ECOS-COMMERCE-CUSTOMERS-
+            // BATCH-02-BLOCKED-CUSTOMERS-009 (§35). Dedicated verbs rather than
+            // reusing 'update': blocking is an operational fulfillment restriction,
+            // not a profile edit, and override is a narrower, more sensitive grant
+            // than either (§36/§37 require it to be independently deniable).
+            'customers' => ['view', 'create', 'update', 'delete', 'block', 'unblock', 'override_block'],
         ],
 
         'logistics' => [
@@ -222,7 +227,7 @@ return [
             'purchasing.materials' => ['view', 'create', 'update', 'delete', 'submit', 'review', 'select_supplier', 'approve', 'cancel'],
             'purchasing.supplier_invoices' => ['view', 'create', 'edit', 'validate', 'post', 'cancel'],
             'purchasing.supplier_returns' => ['view', 'create', 'edit', 'submit', 'approve', 'reject', 'cancel', 'complete', 'mark_sent', 'credit_pending'],
-            'crm.customers' => ['view', 'create', 'update', 'delete'],
+            'crm.customers' => ['view', 'create', 'update', 'delete', 'block', 'unblock', 'override_block'],
             'sales.channels' => ['view', 'create', 'update', 'delete', 'sync'],
             // proof_verify / proof_reject: separation of duties for the payment gate
             // (TASK-ORDERS-PAYMENT-CONFIRMATION-FULFILLMENT-IMPLEMENTATION-001, Decision 2).
@@ -300,7 +305,7 @@ return [
         'sales' => [
             'inventory.categories' => ['view'],
             'inventory.products' => ['view'],
-            'crm.customers' => ['view', 'create', 'update', 'delete'],
+            'crm.customers' => ['view', 'create', 'update', 'delete', 'block', 'unblock', 'override_block'],
             'sales.channels' => ['view'],
             'sales.orders' => ['view', 'create', 'update', 'fulfill', 'override_price', 'proof_view', 'proof_upload'],
             'sales.fulfillments' => ['view', 'create', 'update'],
@@ -424,7 +429,7 @@ return [
         'sales-manager' => [
             'inventory.products' => ['view'],
             'inventory.categories' => ['view'],
-            'crm.customers' => ['view', 'create', 'update', 'delete'],
+            'crm.customers' => ['view', 'create', 'update', 'delete', 'block', 'unblock', 'override_block'],
             'sales.channels' => ['view', 'create', 'update', 'delete', 'sync'],
             'sales.orders' => ['view', 'create', 'update', 'delete', 'fulfill', 'override_price', 'proof_view', 'proof_upload'],
             'sales.fulfillments' => ['view', 'create', 'update', 'delete'],
@@ -436,7 +441,9 @@ return [
         'sales-representative' => [
             'inventory.products' => ['view'],
             'inventory.categories' => ['view'],
-            'crm.customers' => ['view', 'create', 'update'],
+            // No 'override_block' here (§35/§36): overriding a fulfillment hold is a
+            // supervisory exception, reserved for company-admin/sales/sales-manager.
+            'crm.customers' => ['view', 'create', 'update', 'block', 'unblock'],
             'sales.channels' => ['view'],
             'sales.orders' => ['view', 'create', 'update', 'fulfill', 'proof_view', 'proof_upload'],
             'sales.fulfillments' => ['view', 'create'],
@@ -445,7 +452,7 @@ return [
 
         'customer-service' => [
             'inventory.products' => ['view'],
-            'crm.customers' => ['view', 'create', 'update'],
+            'crm.customers' => ['view', 'create', 'update', 'block', 'unblock'],
             'sales.orders' => ['view', 'update'],
             'sales.fulfillments' => ['view'],
             'cep.inbox' => ['view', 'manage'],

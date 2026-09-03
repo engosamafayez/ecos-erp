@@ -209,6 +209,18 @@
       "cadenceUnavailable": "Not enough orders yet",
       "cadenceDays": "Every {{count}} days on average"
     },
+    "blocked": {
+      "title": "Blocked Customer",
+      "badge": "Blocked",
+      "reason": "Reason",
+      "blockedBy": "Blocked by",
+      "blockedAt": "Blocked at",
+      "unblockAction": "Unblock",
+      "history": "Block History",
+      "historyEmpty": "No block history.",
+      "historyBlockedEntry": "Blocked — {{reason}}",
+      "historyUnblockedEntry": "Unblocked — {{reason}}"
+    },
     "phonesTab": {
       "title": "Phone Numbers",
       "noPhone": "No phone numbers on file.",
@@ -270,6 +282,26 @@
   "delete": {
     "title": "Delete customer",
     "confirm": "Delete"
+  },
+  "blocked": {
+    "filter": "Blocked",
+    "badge": "Blocked",
+    "blockAction": "Block",
+    "unblockAction": "Unblock",
+    "blockPhoneAction": "Block Phone",
+    "reasonPlaceholder": "Reason for this action…",
+    "blockDialog": {
+      "title": "Block Customer",
+      "description": "{{name}} will be barred from fulfillment: new and existing open orders are placed On Hold. This does not delete or deactivate the customer record."
+    },
+    "unblockDialog": {
+      "title": "Unblock Customer",
+      "description": "{{name}} will be able to place new orders again. Existing held orders are NOT released automatically — each requires its own decision."
+    },
+    "blockPhoneDialog": {
+      "description": "Block a phone number that may not yet belong to a customer. No customer record is created.",
+      "phonePlaceholder": "Phone number…"
+    }
   },
   "profile": {
     "notFound": "Customer not found",

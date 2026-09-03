@@ -8,6 +8,7 @@ import {
   Activity,
   ArrowLeft,
   ArrowRightCircle,
+  Ban,
   Banknote,
   Bot,
   Box,
@@ -46,6 +47,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfirmDialog } from '@/components/crud';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -60,10 +62,12 @@ import { OrderStatusBadge } from '@/features/orders/components/order-status-badg
 import {
   useCustomerOrderStats,
   useOrderActivities,
+  useOrderBlockOverride,
   useOrderQuery,
   useOrderWorkflowReschedule,
   useOrderWorkflowTransition,
 } from '@/features/orders/hooks/use-orders';
+import { usePermission } from '@/features/authorization/use-authorization';
 import type { Order, OrderActivity, OrderActivityActionType } from '@/features/orders/types/order';
 import { getMediaUrl } from '@/lib/media';
 import { cn } from '@/lib/utils';
@@ -1334,6 +1338,26 @@ const QUICK_TARGET_ICON: Record<string, React.ComponentType<{ className?: string
   returned:         RotateCcw,
 };
 
+function BlockedCustomerBanner({ order }: { order: Order }) {
+  const { t } = useTranslation('orders');
+
+  if (order.status !== 'on_hold' || order.hold_reason_code !== 'blocked_customer') {
+    return null;
+  }
+
+  return (
+    <Alert variant="destructive">
+      <Ban />
+      <AlertTitle>{t($ => $.orderDetail.blockedCustomer.bannerTitle)}</AlertTitle>
+      <AlertDescription>
+        {order.is_blocked_customer_hold
+          ? t($ => $.orderDetail.blockedCustomer.bannerDescription)
+          : t($ => $.orderDetail.blockedCustomer.bannerDescriptionOverridden)}
+      </AlertDescription>
+    </Alert>
+  );
+}
+
 function QuickActionsPanel({
   order,
   onEdit,
@@ -1348,6 +1372,17 @@ function QuickActionsPanel({
   const { t } = useTranslation('orders');
   const transition = useOrderWorkflowTransition();
   const reschedule = useOrderWorkflowReschedule();
+  const blockOverride = useOrderBlockOverride();
+  const { can } = usePermission();
+  const canOverrideBlock = can('crm.customers.override_block');
+
+  // TASK-...-BLOCKED-CUSTOMERS-009 (§42) — the Order is already on_hold whenever
+  // this is true (is_blocked_customer_hold is only ever true for a live block on
+  // an on_hold Order), so no separate terminal/physical-execution check is
+  // needed here: this flag itself never applies to a terminal or already-in-
+  // physical-execution Order.
+  const [overrideOpen, setOverrideOpen] = useState(false);
+  const [overrideReason, setOverrideReason] = useState('');
 
   const today = new Date().toISOString().slice(0, 10);
   const [showReschedule, setShowReschedule] = useState(false);
@@ -1426,6 +1461,21 @@ function QuickActionsPanel({
             <a href={ROUTES.warehouses}>
               <Warehouse className="size-4" /> {t($ => $.orderDetail.openWarehouse)}
             </a>
+          </Button>
+        ) : null}
+
+        {/* TASK-...-BLOCKED-CUSTOMERS-009 (§42/§43) — only ever rendered while the
+            block genuinely still applies; never a placeholder/disabled-without-
+            reason button (§43). Not shown when the operator lacks the permission
+            (§35), rather than shown-but-disabled with no explanation. */}
+        {order.is_blocked_customer_hold && canOverrideBlock ? (
+          <Button
+            variant="outline"
+            size="sm"
+            className="justify-start gap-2 border-destructive/40 text-destructive hover:text-destructive"
+            onClick={() => { setOverrideReason(''); setOverrideOpen(true); }}
+          >
+            <Ban className="size-4" /> {t($ => $.orderDetail.blockedCustomer.overrideAction)}
           </Button>
         ) : null}
 
@@ -1508,6 +1558,46 @@ function QuickActionsPanel({
       loading={transition.isPending}
       onConfirm={handleConfirmTransition}
     />
+
+    {/* TASK-...-BLOCKED-CUSTOMERS-009 (§25/§42) — mandatory reason (§7), same
+        ConfirmDialog + Input pattern as the transition dialog above. Confirming
+        does NOT reserve/confirm/prepare directly (§26) — it only grants the
+        override; the backend's own ReevaluateOrderFulfillmentAction call decides
+        whether the Order can actually advance. */}
+    <ConfirmDialog
+      open={overrideOpen}
+      onOpenChange={(open) => { if (!open) { setOverrideOpen(false); setOverrideReason(''); } }}
+      title={t($ => $.orderDetail.blockedCustomer.overrideDialogTitle)}
+      description={
+        <>
+          {t($ => $.orderDetail.blockedCustomer.overrideDialogDescription)}
+          <Input
+            autoFocus
+            placeholder={t($ => $.orderDetail.blockedCustomer.overrideReasonPlaceholder)}
+            value={overrideReason}
+            onChange={(e) => setOverrideReason(e.target.value)}
+            className="mt-2"
+          />
+        </>
+      }
+      confirmLabel={t($ => $.orderDetail.blockedCustomer.overrideAction)}
+      variant="destructive"
+      loading={blockOverride.isPending}
+      confirmDisabled={overrideReason.trim() === ''}
+      onConfirm={() => {
+        blockOverride.mutate(
+          { id: order.id, reason: overrideReason.trim() },
+          {
+            onSuccess: () => {
+              setOverrideOpen(false);
+              setOverrideReason('');
+              toast.success(t($ => $.orderDetail.blockedCustomer.overrideToastSuccess));
+            },
+            onError: (err) => toast.error(t($ => $.statusSelector.transitionFailed), extractApiErrorMessage(err)),
+          },
+        );
+      }}
+    />
     </>
   );
 }
@@ -1563,6 +1653,11 @@ export function OrderDetailPage() {
         onConfirmCustomer={() => setConfirmOpen(true)}
         onPrint={() => window.print()}
       />
+
+      {/* TASK-...-BLOCKED-CUSTOMERS-009 (§34/§42) — distinguishes ON HOLD — BLOCKED
+          CUSTOMER from every other On Hold cause; never replaces the canonical
+          OrderStatusBadge itself. */}
+      <BlockedCustomerBanner order={order} />
 
       {/* Part 13 — KPI Row */}
       <KpiRow order={order} />

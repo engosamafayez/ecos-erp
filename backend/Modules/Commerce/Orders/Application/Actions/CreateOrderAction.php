@@ -11,12 +11,17 @@ use Modules\Commerce\Orders\Application\DTO\OrderDTO;
 use Modules\Commerce\Orders\Domain\Contracts\OrderRepositoryInterface;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Commerce\Orders\Domain\Services\PaymentFulfillmentGate;
+use Modules\Sales\Customers\Domain\Models\Customer;
+use Modules\Sales\Customers\Domain\Services\BlockedCustomerPolicy;
 
 final class CreateOrderAction extends BaseAction
 {
     public function __construct(
         private readonly OrderRepositoryInterface $orders,
         private readonly PaymentFulfillmentGate $paymentGate,
+        // TASK-...-BLOCKED-CUSTOMERS-009 (§13/§31) — this is the generic creation
+        // path OrderController::store and the POS→Commerce bridge both use.
+        private readonly BlockedCustomerPolicy $blockedCustomerPolicy,
     ) {}
 
     public function execute(mixed ...$arguments): OperationResult
@@ -50,6 +55,31 @@ final class CreateOrderAction extends BaseAction
             $companyId !== null ? (string) $companyId : null,
         )) {
             $attributes['status'] = OrderStatus::AwaitingPayment->value;
+        }
+
+        // TASK-...-BLOCKED-CUSTOMERS-009 (§13/§14) — outranks the payment-gate result
+        // above, same precedence CreateManualOrderAction / WooCommerceOrderImporter use.
+        // This DTO carries no free-text phone of its own (only customer_id), so the
+        // check is against the resolved Customer's saved phone/mobile.
+        if ($companyId !== null && ! empty($attributes['customer_id'])) {
+            $customer = Customer::find((string) $attributes['customer_id']);
+            $activeBlock = null;
+
+            foreach ([$customer?->phone, $customer?->mobile] as $candidate) {
+                $normalized = $this->blockedCustomerPolicy->normalize($candidate);
+                if ($normalized === '') {
+                    continue;
+                }
+                $activeBlock = $this->blockedCustomerPolicy->activeBlockForPhone((string) $companyId, $normalized);
+                if ($activeBlock !== null) {
+                    break;
+                }
+            }
+
+            if ($activeBlock !== null) {
+                $attributes['status'] = OrderStatus::OnHold->value;
+                $attributes['hold_reason_code'] = BlockedCustomerPolicy::HOLD_REASON_BLOCKED_CUSTOMER;
+            }
         }
 
         $subtotal = array_sum(array_column($dto->lineAttributes(), 'line_total'));

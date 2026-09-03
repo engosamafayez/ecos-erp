@@ -1,10 +1,12 @@
 import {
+  Ban,
   Copy,
   FileText,
   MapPin,
   Pencil,
   Plus,
   Repeat,
+  ShieldCheck,
   TrendingUp,
   Trash2,
   Users,
@@ -33,8 +35,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CustomerDrawer } from '@/features/customers/components/customer-drawer';
 import { CustomerFormDrawer } from '@/features/customers/components/customer-form-drawer';
 import { CustomerQuickActionCard } from '@/features/customers/components/customer-quick-action-card';
-import { useCustomersQuery, useDeleteCustomer } from '@/features/customers/hooks/use-customers';
+import {
+  useBlockCustomer,
+  useBlockPhone,
+  useCustomersQuery,
+  useDeleteCustomer,
+  useUnblockCustomer,
+} from '@/features/customers/hooks/use-customers';
 import { useProductOptions } from '@/features/orders/hooks/use-product-options';
+import { usePermission } from '@/features/authorization/use-authorization';
 import { REPEAT_ORDER_THRESHOLD } from '@/features/customers/types/customer';
 import type { Customer, CustomerSortField, CustomerStatusFilter } from '@/features/customers/types/customer';
 import { ROUTES } from '@/router/routes';
@@ -174,6 +183,9 @@ export function CustomersPage() {
   const [minPurchaseCount, setMinPurchaseCount]   = useState(REPEAT_ORDER_THRESHOLD);
   const { data: productOptions = [], isLoading: loadingProducts } = useProductOptions();
 
+  // ── Blocked Customers filter/segment (TASK-...-BLOCKED-CUSTOMERS-009 §40) ──
+  const [blockedOnly, setBlockedOnly] = useState(false);
+
   // ── Drawer / dialog state ──────────────────────────────────────────────────
   const [viewCustomer, setViewCustomer]     = useState<Customer | null>(null);
   const [viewDefaultTab, setViewDefaultTab] = useState('summary');
@@ -181,6 +193,22 @@ export function CustomersPage() {
   const [drawerCustomer, setDrawerCustomer] = useState<Customer | null>(null);
   const [initialPhone, setInitialPhone]     = useState('');
   const [deleting, setDeleting]             = useState<Customer | null>(null);
+
+  // ── Blocked Customer dialogs (TASK-...-BLOCKED-CUSTOMERS-009 §11/§12/§28) ──
+  const [blocking, setBlocking]         = useState<Customer | null>(null);
+  const [blockReason, setBlockReason]   = useState('');
+  const [unblocking, setUnblocking]     = useState<Customer | null>(null);
+  const [unblockReason, setUnblockReason] = useState('');
+  const [blockPhoneOpen, setBlockPhoneOpen]     = useState(false);
+  const [blockPhoneValue, setBlockPhoneValue]   = useState('');
+  const [blockPhoneReason, setBlockPhoneReason] = useState('');
+
+  const { can } = usePermission();
+  const canBlock = can('crm.customers.block');
+  const canUnblock = can('crm.customers.unblock');
+  const blockCustomer = useBlockCustomer();
+  const unblockCustomer = useUnblockCustomer();
+  const blockPhone = useBlockPhone();
 
   // ── DD-055: Auto-focus search on mount ────────────────────────────────────
   useEffect(() => {
@@ -206,6 +234,7 @@ export function CustomersPage() {
     repeat_only: repeatOnly || undefined,
     product_id: affinityProductId ?? undefined,
     min_purchase_count: affinityProductId ? minPurchaseCount : undefined,
+    blocked_only: blockedOnly || undefined,
     page,
     per_page: PER_PAGE,
     sort_by: sort.field,
@@ -499,6 +528,32 @@ export function CustomersPage() {
               </div>
             </PopoverContent>
           </Popover>
+
+          {/* Blocked Customers filter/segment (§40) */}
+          <Button
+            type="button"
+            variant={blockedOnly ? 'default' : 'outline'}
+            size="sm"
+            className="gap-1.5"
+            onClick={() => { setBlockedOnly((v) => !v); setPage(1); }}
+          >
+            <Ban className="size-3.5" />
+            {t($ => $.blocked.filter)}
+          </Button>
+
+          {/* Phone-before-Customer block entry point (§12) */}
+          {canBlock ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => { setBlockPhoneValue(''); setBlockPhoneReason(''); setBlockPhoneOpen(true); }}
+            >
+              <Ban className="size-3.5" />
+              {t($ => $.blocked.blockPhoneAction)}
+            </Button>
+          ) : null}
         </div>
 
         {/* DD-056: Single result → Quick Action Card */}
@@ -611,6 +666,10 @@ export function CustomersPage() {
                     onEdit={openEdit}
                     onDelete={setDeleting}
                     onCreateOrder={(c) => navigate(ROUTES.ordersNew, { state: { customerPhone: c.phone ?? undefined } })}
+                    onBlock={(c) => { setBlockReason(''); setBlocking(c); }}
+                    onUnblock={(c) => { setUnblockReason(''); setUnblocking(c); }}
+                    canBlock={canBlock}
+                    canUnblock={canUnblock}
                   />
                 ))
               )}
@@ -668,6 +727,100 @@ export function CustomersPage() {
           if (deleting) deleteCustomer.mutate(deleting.id, { onSuccess: () => setDeleting(null) });
         }}
       />
+
+      {/* ── Block Confirm (§11) — mandatory reason (§7) ──────────────────── */}
+      <ConfirmDialog
+        open={blocking !== null}
+        onOpenChange={(open) => { if (!open) setBlocking(null); }}
+        title={t($ => $.blocked.blockDialog.title)}
+        description={
+          <>
+            {t($ => $.blocked.blockDialog.description, { name: blocking?.name ?? '' })}
+            <Input
+              autoFocus
+              placeholder={t($ => $.blocked.reasonPlaceholder)}
+              value={blockReason}
+              onChange={(e) => setBlockReason(e.target.value)}
+              className="mt-2"
+            />
+          </>
+        }
+        confirmLabel={t($ => $.blocked.blockAction)}
+        variant="destructive"
+        loading={blockCustomer.isPending}
+        confirmDisabled={blockReason.trim() === ''}
+        onConfirm={() => {
+          if (!blocking) return;
+          blockCustomer.mutate(
+            { id: blocking.id, reason: blockReason.trim() },
+            { onSuccess: () => setBlocking(null) },
+          );
+        }}
+      />
+
+      {/* ── Unblock Confirm (§28) — mandatory reason (§7) ────────────────── */}
+      <ConfirmDialog
+        open={unblocking !== null}
+        onOpenChange={(open) => { if (!open) setUnblocking(null); }}
+        title={t($ => $.blocked.unblockDialog.title)}
+        description={
+          <>
+            {t($ => $.blocked.unblockDialog.description, { name: unblocking?.name ?? '' })}
+            <Input
+              autoFocus
+              placeholder={t($ => $.blocked.reasonPlaceholder)}
+              value={unblockReason}
+              onChange={(e) => setUnblockReason(e.target.value)}
+              className="mt-2"
+            />
+          </>
+        }
+        confirmLabel={t($ => $.blocked.unblockAction)}
+        loading={unblockCustomer.isPending}
+        confirmDisabled={unblockReason.trim() === ''}
+        onConfirm={() => {
+          if (!unblocking || !unblocking.customer_block_id) return;
+          unblockCustomer.mutate(
+            { id: unblocking.id, blockId: unblocking.customer_block_id, reason: unblockReason.trim() },
+            { onSuccess: () => setUnblocking(null) },
+          );
+        }}
+      />
+
+      {/* ── Block Phone (§12) — phone-before-Customer, never fabricates a Customer ── */}
+      <ConfirmDialog
+        open={blockPhoneOpen}
+        onOpenChange={setBlockPhoneOpen}
+        title={t($ => $.blocked.blockPhoneAction)}
+        description={
+          <>
+            {t($ => $.blocked.blockPhoneDialog.description)}
+            <Input
+              autoFocus
+              placeholder={t($ => $.blocked.blockPhoneDialog.phonePlaceholder)}
+              value={blockPhoneValue}
+              onChange={(e) => setBlockPhoneValue(e.target.value)}
+              className="mt-2"
+            />
+            <Input
+              placeholder={t($ => $.blocked.reasonPlaceholder)}
+              value={blockPhoneReason}
+              onChange={(e) => setBlockPhoneReason(e.target.value)}
+              className="mt-2"
+            />
+          </>
+        }
+        confirmLabel={t($ => $.blocked.blockAction)}
+        variant="destructive"
+        loading={blockPhone.isPending}
+        confirmDisabled={blockPhoneValue.trim() === '' || blockPhoneReason.trim() === ''}
+        onConfirm={() => {
+          blockPhone.mutate(
+            { phone: blockPhoneValue.trim(), reason: blockPhoneReason.trim() },
+            { onSuccess: () => setBlockPhoneOpen(false) },
+          );
+        }}
+      />
     </div>
   );
 }
@@ -684,6 +837,10 @@ type RowProps = {
   onEdit: (c: Customer) => void;
   onDelete: (c: Customer) => void;
   onCreateOrder: (c: Customer) => void;
+  onBlock: (c: Customer) => void;
+  onUnblock: (c: Customer) => void;
+  canBlock: boolean;
+  canUnblock: boolean;
 };
 
 function CustomerRow({
@@ -696,6 +853,10 @@ function CustomerRow({
   onEdit,
   onDelete,
   onCreateOrder,
+  onBlock,
+  onUnblock,
+  canBlock,
+  canUnblock,
 }: RowProps) {
   const { t } = useTranslation('customers');
   const { t: tCommon } = useTranslation('common');
@@ -893,6 +1054,16 @@ function CustomerRow({
       {/* Customer Intelligence */}
       <td className="px-4 py-3">
         <div className="flex flex-wrap gap-1">
+          {customer.is_blocked ? (
+            <Badge
+              variant="secondary"
+              className="h-5 gap-1 px-1.5 text-[10px] text-red-700 bg-red-100 border-red-200 dark:text-red-400 dark:bg-red-950/50 dark:border-red-800"
+              title={customer.block_reason ?? undefined}
+            >
+              <Ban className="size-3" />
+              {t($ => $.blocked.badge)}
+            </Badge>
+          ) : null}
           {customer.is_repeat_customer ? (
             <Badge
               variant="secondary"
@@ -947,6 +1118,21 @@ function CustomerRow({
                 },
                 disabled: !primaryPhone,
               },
+              ...(customer.is_blocked
+                ? [{
+                    key: 'unblock',
+                    label: t($ => $.blocked.unblockAction),
+                    icon: ShieldCheck,
+                    onSelect: () => onUnblock(customer),
+                    disabled: !canUnblock,
+                  }]
+                : [{
+                    key: 'block',
+                    label: t($ => $.blocked.blockAction),
+                    icon: Ban,
+                    onSelect: () => onBlock(customer),
+                    disabled: !canBlock,
+                  }]),
               {
                 key: 'delete',
                 label: tCommon($ => $.common.delete),
