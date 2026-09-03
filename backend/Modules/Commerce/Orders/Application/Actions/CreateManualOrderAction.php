@@ -19,12 +19,12 @@ use Modules\Commerce\Orders\Domain\Models\OrderEvent;
 use Modules\Commerce\Orders\Domain\Services\PaymentFulfillmentGate;
 use Modules\Commerce\Shipping\Domain\Services\ShippingValidationService;
 use Modules\Commerce\Shipping\Domain\ValueObjects\ShippingValidationResult;
+use Modules\Crm\Customers\Domain\Models\Customer;
 use Modules\IAM\Domain\Contracts\PermissionServiceInterface;
 use Modules\Operations\Fulfillment\Application\FulfillmentEngine;
 use Modules\Operations\Fulfillment\Application\Workflows\ProcessOrderWorkflow;
 use Modules\Operations\Preparation\Application\Services\BranchAssignmentEngine;
 use Modules\Sales\Customers\Application\Actions\SyncCustomerDefaultAddressAction;
-use Modules\Sales\Customers\Domain\Models\Customer;
 use Modules\Sales\Customers\Domain\Services\BlockedCustomerPolicy;
 use Throwable;
 

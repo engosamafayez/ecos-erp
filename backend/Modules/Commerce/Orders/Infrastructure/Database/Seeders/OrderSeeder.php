@@ -9,8 +9,8 @@ use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Orders\Domain\Models\OrderLine;
+use Modules\Crm\Customers\Domain\Models\Customer;
 use Modules\Inventory\Products\Domain\Models\Product;
-use Modules\Sales\Customers\Domain\Models\Customer;
 
 final class OrderSeeder extends Seeder
 {
