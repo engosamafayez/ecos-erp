@@ -25,6 +25,7 @@ use Modules\Operations\Fulfillment\Application\Workflows\ProcessOrderWorkflow;
 use Modules\Operations\Preparation\Application\Services\BranchAssignmentEngine;
 use Modules\Sales\Customers\Application\Actions\SyncCustomerDefaultAddressAction;
 use Modules\Sales\Customers\Domain\Models\Customer;
+use Modules\Sales\Customers\Domain\Services\BlockedCustomerPolicy;
 use Throwable;
 
 /**
@@ -49,6 +50,9 @@ final class CreateManualOrderAction extends BaseAction
         private readonly GoogleMapsUrlResolver $mapsResolver,
         private readonly PaymentFulfillmentGate $paymentGate,
         private readonly SyncCustomerDefaultAddressAction $syncDefaultAddress,
+        // TASK-...-BLOCKED-CUSTOMERS-009 (§13/§31) — one of the shared policy's few
+        // consult sites (manual creation, WooCommerce import, generic creation).
+        private readonly BlockedCustomerPolicy $blockedCustomerPolicy,
     ) {}
 
     /**
@@ -106,7 +110,8 @@ final class CreateManualOrderAction extends BaseAction
             $actorCompanyId !== null ? (string) $actorCompanyId : null,
         );
 
-        $order = DB::transaction(function () use ($data, $orderPolicy, $shippingResult, $statusResolution, &$customerWasReused, &$subtotal, &$monetaryDiscount, &$grandTotal, &$remaining) {
+        $activeBlock = null;
+        $order = DB::transaction(function () use ($data, $orderPolicy, $shippingResult, $statusResolution, &$customerWasReused, &$subtotal, &$monetaryDiscount, &$grandTotal, &$remaining, &$activeBlock) {
             [$customerId, $customerWasReused] = $this->resolveCustomer($data, $orderPolicy);
 
             // C1 (TASK-ECOS-COMMERCE-ORDERS-CUSTOMERS-CLOSURE-001) — this order's delivery
@@ -136,6 +141,35 @@ final class CreateManualOrderAction extends BaseAction
             // secondary_phone or notes, so we fall back to the customer record's current
             // values to ensure the snapshot is complete at creation time.
             $customerRecord = Customer::find($customerId);
+
+            // TASK-...-BLOCKED-CUSTOMERS-009 (§13/§29). Checked against the phone
+            // actually submitted with THIS order first, then the resolved Customer's
+            // saved phone/mobile as a fallback — same preference order
+            // BlockedCustomerPolicy::candidatePhonesForOrder() uses for an existing Order.
+            $actorCompanyIdForBlock = (string) (Auth::user()?->company_id ?? '');
+            $blockCandidates = [
+                $data['customer_phone'] ?? null,
+                $customerRecord?->phone,
+                $customerRecord?->mobile,
+            ];
+            $activeBlock = null;
+            foreach ($blockCandidates as $candidate) {
+                $normalized = $this->blockedCustomerPolicy->normalize($candidate);
+                if ($normalized === '') {
+                    continue;
+                }
+                $activeBlock = $this->blockedCustomerPolicy->activeBlockForPhone($actorCompanyIdForBlock, $normalized);
+                if ($activeBlock !== null) {
+                    break;
+                }
+            }
+
+            // Opportunistic Customer binding (§10) — a phone-first block created before
+            // this Customer existed now has a real Customer to reference. Best-effort:
+            // never blocks order creation on this write.
+            if ($activeBlock !== null && $activeBlock->customer_id === null && $customerId !== null) {
+                $activeBlock->update(['customer_id' => $customerId]);
+            }
 
             $subtotal = array_sum(
                 array_map(
@@ -173,9 +207,18 @@ final class CreateManualOrderAction extends BaseAction
                 // be confirmed straight out of `on_hold` with no payment and no proof. Worse,
                 // the §3.1 audit event was still written and still reported
                 // `stored_status: awaiting_payment`, which the row contradicted.
-                'status' => $statusResolution['payment_blocked']
-                    ? $statusResolution['status']
-                    : ($shippingResult['status_override'] ?? $statusResolution['status']),
+                //
+                // TASK-...-BLOCKED-CUSTOMERS-009 (§13/§14): a blocked Customer/phone
+                // outranks BOTH of the above. §13 requires the order to still be CREATED
+                // (never rejected solely for this) but land on OnHold before any reservation
+                // or automatic fulfillment — so this is the outermost, last-word override,
+                // not a fourth peer condition.
+                'status' => $activeBlock !== null
+                    ? OrderStatus::OnHold->value
+                    : ($statusResolution['payment_blocked']
+                        ? $statusResolution['status']
+                        : ($shippingResult['status_override'] ?? $statusResolution['status'])),
+                'hold_reason_code' => $activeBlock !== null ? BlockedCustomerPolicy::HOLD_REASON_BLOCKED_CUSTOMER : null,
                 'subtotal' => $subtotal,
                 'total' => $grandTotal,
                 'notes' => $data['notes'] ?? null,
@@ -232,6 +275,19 @@ final class CreateManualOrderAction extends BaseAction
 
         // TASK-BRANCH-ASSIGNMENT-ENGINE-001: Resolve branch → warehouse via coverage rules.
         $this->branchAssignment->assign($order, Auth::user()?->company_id ?? $order->channel?->brand?->company_id);
+
+        // TASK-...-BLOCKED-CUSTOMERS-009 (§13/§28) — machine-readable audit trail for
+        // why this order landed on OnHold at creation, distinct from the payment/
+        // shipping overrides logged below.
+        if ($activeBlock !== null) {
+            OrderEvent::log(
+                orderId: $order->id,
+                type: 'created_on_hold_blocked_customer',
+                description: "Order #{$order->order_number} created On Hold: its Customer/phone is currently blocked.",
+                payload: ['customer_block_id' => $activeBlock->id],
+                module: 'orders',
+            );
+        }
 
         // ADR-042 §3.1 — record the one sanctioned entry-status override. Written
         // before the fulfilment trigger so the audit trail reflects creation order.

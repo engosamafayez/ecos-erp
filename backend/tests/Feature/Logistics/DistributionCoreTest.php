@@ -14,6 +14,7 @@ use Modules\Commerce\Orders\Domain\Models\OrderLine;
 use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\Logistics\Distribution\Domain\Enums\DistributionAssignmentSource;
 use Modules\Logistics\Distribution\Domain\Enums\DistributionWindowStatus;
+use Modules\Logistics\Distribution\Domain\Exceptions\DistributionException;
 use Modules\Logistics\Distribution\Domain\Models\DistributionWindowOrder;
 use Modules\Logistics\Distribution\Domain\Models\VirtualCapacitySlot;
 use Modules\Logistics\Distribution\Domain\Services\DistributionAggregationService;
@@ -291,6 +292,63 @@ final class DistributionCoreTest extends TestCase
         self::assertSame($slot->id, $moved->virtual_slot_id);
         self::assertSame(DistributionAssignmentSource::ManualLate, $moved->assignment_source);
         self::assertNotNull($moved->previous_window_id, 'The prior Window must be retained for audit.');
+    }
+
+    /**
+     * TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-BLOCKED-CUSTOMERS-009 (§22).
+     *
+     * Re-verifies and closes the capability-gate finding: assignLateOrder() admitted a
+     * NEW Order into a Distribution Window with no status check at all (its sibling
+     * eligibleZoneArrivals() gates via constrainToLoadingEligible(); the automatic
+     * ingestion path gates via eligibleUnassignedOrders(); this one gated neither).
+     * on_hold is exactly the status a blocked-customer Order sits in — this is the
+     * status-eligibility gate every reason an Order is on_hold benefits from, not a
+     * blocked-customer-specific check.
+     */
+    public function test_assign_late_order_rejects_an_order_that_is_not_status_eligible(): void
+    {
+        $windows = app(DistributionWindowService::class);
+        $window = $windows->windowFor($this->companyA->id, $this->beforeCutoff->toDateString(), $this->afterCutoff);
+        $this->makeSlot($window->id, 'S1', 100);
+
+        $order = $this->order(status: 'on_hold');
+
+        $this->expectException(DistributionException::class);
+
+        app(ManualAssignmentService::class)->assignLateOrder(
+            $window, $order->id, null, null, $this->afterCutoff,
+        );
+    }
+
+    /**
+     * The same status check must NOT apply when the Order is already inside the
+     * Window and is merely being moved between zones/slots (§22's own scoping note)
+     * — only NEW admission is gated. Re-uses test_6's exact happy path but with the
+     * Order deliberately started on_hold to isolate: does the EXISTING-assignment
+     * branch still work for a status the NEW-admission branch would now reject?
+     */
+    public function test_assign_late_order_still_moves_an_already_assigned_order_regardless_of_status(): void
+    {
+        $windows = app(DistributionWindowService::class);
+        $window = $windows->windowFor($this->companyA->id, $this->beforeCutoff->toDateString(), $this->afterCutoff);
+        $slot = $this->makeSlot($window->id, 'S1', 100);
+        app(ManualAssignmentService::class)->assignZoneToSlot($window, $this->zoneA, $slot);
+
+        $order = $this->order();
+        $this->collect($this->afterCutoff);
+        self::assertNotSame($window->id, $this->assignment($order)->distribution_window_id);
+
+        // Order moves on_hold AFTER it is already inside a Window — this must not
+        // block moving its EXISTING assignment (it is not a new admission). Raw
+        // DB write, deliberately bypassing OrderStatusGuard/FulfillmentEngine: this
+        // fixture only needs the persisted column changed, not a real transition.
+        DB::table('orders')->where('id', $order->id)->update(['status' => 'on_hold']);
+
+        $moved = app(ManualAssignmentService::class)->assignLateOrder(
+            $window, $order->id, null, null, $this->afterCutoff,
+        );
+
+        self::assertSame($window->id, $moved->distribution_window_id);
     }
 
     public function test_19_late_manual_assignment_updates_aggregation_immediately(): void

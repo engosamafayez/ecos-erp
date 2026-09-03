@@ -243,6 +243,11 @@ final class OrderResource extends JsonResource
             'inventory_released_at' => $this->inventory_released_at?->toIso8601String(),
             'reservation_status' => $this->reservation_status?->value,
             'reservation_failure_reason' => $this->reservation_failure_reason,
+            // TASK-...-BLOCKED-CUSTOMERS-009 (§15/§34) — raw column only, no query.
+            // The LIVE "is this still blocked" derived flag is detail-only (see
+            // OrderController::show()) — resolving it here would run a block lookup
+            // per row on every Order LIST response, an N+1 this Resource must not have.
+            'hold_reason_code' => $this->hold_reason_code,
             'reservation_shortage_lines' => $this->resolveReservationShortageLines(),
             'partial_reservation_approved_at' => $this->partial_reservation_approved_at?->toIso8601String(),
             'partial_reservation_approved_by' => $this->partial_reservation_approved_by,

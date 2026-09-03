@@ -1,9 +1,13 @@
 import {
+  Ban,
   Copy,
   FileText,
   MapPin,
   Pencil,
   Plus,
+  Repeat,
+  ShieldCheck,
+  TrendingUp,
   Trash2,
   Users,
 } from 'lucide-react';
@@ -22,6 +26,7 @@ import {
   PageHeader,
   Pagination,
 } from '@/components/crud';
+import { Combobox } from '@/components/crud/combobox';
 import { QuickStatCard } from '@/components/ds/quick-stat-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -31,7 +36,16 @@ import { useIsMobile } from '@/hooks/use-is-mobile';
 import { CustomerDrawer } from '@/features/customers/components/customer-drawer';
 import { CustomerFormDrawer } from '@/features/customers/components/customer-form-drawer';
 import { CustomerQuickActionCard } from '@/features/customers/components/customer-quick-action-card';
-import { useCustomersQuery, useDeleteCustomer } from '@/features/customers/hooks/use-customers';
+import {
+  useBlockCustomer,
+  useBlockPhone,
+  useCustomersQuery,
+  useDeleteCustomer,
+  useUnblockCustomer,
+} from '@/features/customers/hooks/use-customers';
+import { useProductOptions } from '@/features/orders/hooks/use-product-options';
+import { usePermission } from '@/features/authorization/use-authorization';
+import { REPEAT_ORDER_THRESHOLD } from '@/features/customers/types/customer';
 import type { Customer, CustomerSortField, CustomerStatusFilter } from '@/features/customers/types/customer';
 import { ROUTES } from '@/router/routes';
 import { cn } from '@/lib/utils';
@@ -58,19 +72,24 @@ function SortTh({
   label,
   sort,
   onSort,
+  align = 'start',
 }: {
   field: CustomerSortField;
   label: string;
   sort: { field: CustomerSortField; direction: 'asc' | 'desc' };
   onSort: (f: CustomerSortField) => void;
+  align?: 'start' | 'end';
 }) {
   const isActive = sort.field === field;
   return (
-    <th className="px-4 py-3 text-start">
+    <th className={cn('px-4 py-3', align === 'end' ? 'text-end' : 'text-start')}>
       <button
         type="button"
         onClick={() => onSort(field)}
-        className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+        className={cn(
+          'inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors',
+          align === 'end' && 'flex-row-reverse',
+        )}
       >
         {label}
         <span className="text-[10px]">
@@ -83,10 +102,11 @@ function SortTh({
 
 // ── Row skeleton ──────────────────────────────────────────────────────────────
 // Kept in sync with the table's real <th> count (checkbox, customer, phones,
-// orders count, total value, receiving rate, last order, address, top
-// products, intelligence, actions) so loading/error/empty states span the
-// actual header width instead of drifting whenever a column is added.
-const CUSTOMER_TABLE_COLUMNS = 11;
+// brands, sales owner, channels, orders count, total value, receiving rate,
+// last order, address, top products, intelligence, actions) so loading/error/
+// empty states span the actual header width instead of drifting whenever a
+// column is added.
+const CUSTOMER_TABLE_COLUMNS = 14;
 
 function CustomerRowSkeleton() {
   return (
@@ -97,6 +117,36 @@ function CustomerRowSkeleton() {
         </td>
       ))}
     </tr>
+  );
+}
+
+// Compact chip list for a table cell — shows up to 2 chips inline plus a "+N" badge for the
+// rest, same Badge styling already used by the Intelligence column in this table.
+const CHIP_LIST_VISIBLE = 2;
+
+function ChipList({ items }: { items: { key: string; label: string }[] }) {
+  const { t } = useTranslation('customers');
+
+  if (items.length === 0) {
+    return <span className="text-xs text-muted-foreground">—</span>;
+  }
+
+  const visible = items.slice(0, CHIP_LIST_VISIBLE);
+  const overflow = items.length - visible.length;
+
+  return (
+    <div className="flex flex-wrap gap-1">
+      {visible.map((item) => (
+        <Badge key={item.key} variant="secondary" className="h-5 px-1.5 text-[10px]">
+          {item.label}
+        </Badge>
+      ))}
+      {overflow > 0 ? (
+        <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+          {t($ => $.phone.more, { count: overflow })}
+        </Badge>
+      ) : null}
+    </div>
   );
 }
 
@@ -114,6 +164,10 @@ export function CustomersPage() {
   const { t: tCommon } = useTranslation('common');
   const navigate = useNavigate();
   const searchRef = useRef<HTMLInputElement>(null);
+  // TASK-...-FINAL-CLOSURE-011 (§9/§11) — reconciled from develop's already-merged
+  // Mobile lane (customers-page.tsx, "feat(mobile): complete customers products and
+  // orders mobile UX"). Same hook, same below-`md` card-list treatment; only the
+  // Blocked-Customer wiring (§12) is new on top of it.
   const isMobile = useIsMobile();
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -128,6 +182,16 @@ export function CustomersPage() {
   const [focusedRowIndex, setFocusedRowIndex] = useState<number | null>(null);
   const [selectedIds, setSelectedIds]     = useState<Set<string>>(new Set());
 
+  // ── Customer Intelligence filters (backend-authoritative — never a client-side
+  //    filter of the current page) ──────────────────────────────────────────────
+  const [repeatOnly, setRepeatOnly]           = useState(false);
+  const [affinityProductId, setAffinityProductId] = useState<string | null>(null);
+  const [minPurchaseCount, setMinPurchaseCount]   = useState(REPEAT_ORDER_THRESHOLD);
+  const { data: productOptions = [], isLoading: loadingProducts } = useProductOptions();
+
+  // ── Blocked Customers filter/segment (TASK-...-BLOCKED-CUSTOMERS-009 §40) ──
+  const [blockedOnly, setBlockedOnly] = useState(false);
+
   // ── Drawer / dialog state ──────────────────────────────────────────────────
   const [viewCustomer, setViewCustomer]     = useState<Customer | null>(null);
   const [viewDefaultTab, setViewDefaultTab] = useState('summary');
@@ -135,6 +199,22 @@ export function CustomersPage() {
   const [drawerCustomer, setDrawerCustomer] = useState<Customer | null>(null);
   const [initialPhone, setInitialPhone]     = useState('');
   const [deleting, setDeleting]             = useState<Customer | null>(null);
+
+  // ── Blocked Customer dialogs (TASK-...-BLOCKED-CUSTOMERS-009 §11/§12/§28) ──
+  const [blocking, setBlocking]         = useState<Customer | null>(null);
+  const [blockReason, setBlockReason]   = useState('');
+  const [unblocking, setUnblocking]     = useState<Customer | null>(null);
+  const [unblockReason, setUnblockReason] = useState('');
+  const [blockPhoneOpen, setBlockPhoneOpen]     = useState(false);
+  const [blockPhoneValue, setBlockPhoneValue]   = useState('');
+  const [blockPhoneReason, setBlockPhoneReason] = useState('');
+
+  const { can } = usePermission();
+  const canBlock = can('crm.customers.block');
+  const canUnblock = can('crm.customers.unblock');
+  const blockCustomer = useBlockCustomer();
+  const unblockCustomer = useUnblockCustomer();
+  const blockPhone = useBlockPhone();
 
   // ── DD-055: Auto-focus search on mount ────────────────────────────────────
   useEffect(() => {
@@ -157,6 +237,10 @@ export function CustomersPage() {
   const { data, isLoading, isError, isFetching, refetch } = useCustomersQuery({
     search: debouncedSearch || undefined,
     status: statusFilter,
+    repeat_only: repeatOnly || undefined,
+    product_id: affinityProductId ?? undefined,
+    min_purchase_count: affinityProductId ? minPurchaseCount : undefined,
+    blocked_only: blockedOnly || undefined,
     page,
     per_page: PER_PAGE,
     sort_by: sort.field,
@@ -219,6 +303,16 @@ export function CustomersPage() {
     );
     setPage(1);
     setFocusedRowIndex(null);
+  }
+
+  const isHighestSpendSort = sort.field === 'total_order_value' && sort.direction === 'desc';
+  const hasActiveIntelligenceFilter = repeatOnly || affinityProductId !== null;
+
+  function clearIntelligenceFilters() {
+    setRepeatOnly(false);
+    setAffinityProductId(null);
+    setMinPurchaseCount(REPEAT_ORDER_THRESHOLD);
+    setPage(1);
   }
 
   // ── Keyboard navigation ───────────────────────────────────────────────────
@@ -349,6 +443,123 @@ export function CustomersPage() {
           {isFetching && isSearching ? (
             <span className="text-xs text-muted-foreground">{tCommon($ => $.loading) ?? 'Loading…'}</span>
           ) : null}
+
+          {/* ── Customer Intelligence panel: Highest Spend / Repeat / Product Affinity —
+              every filter here is backend-authoritative (EloquentCustomerRepository::
+              paginate()), never a client-side filter of the current page. */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn('gap-1.5', hasActiveIntelligenceFilter && 'border-primary text-primary')}
+              >
+                <TrendingUp className="size-3.5" />
+                {t($ => $.intelligencePanel.trigger)}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-80 p-3">
+              <div className="flex flex-col gap-3">
+                <div>
+                  <p className="mb-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                    {t($ => $.intelligencePanel.segments)}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={isHighestSpendSort ? 'default' : 'outline'}
+                      className="h-7 gap-1 text-xs"
+                      onClick={() => {
+                        setSort({ field: 'total_order_value', direction: 'desc' });
+                        setPage(1);
+                      }}
+                    >
+                      <TrendingUp className="size-3" />
+                      {t($ => $.intelligencePanel.highestSpend)}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={repeatOnly ? 'default' : 'outline'}
+                      className="h-7 gap-1 text-xs"
+                      onClick={() => {
+                        setRepeatOnly((v) => !v);
+                        setPage(1);
+                      }}
+                    >
+                      <Repeat className="size-3" />
+                      {t($ => $.intelligencePanel.repeatCustomers)}
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="mb-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
+                    {t($ => $.intelligencePanel.productAffinity)}
+                  </p>
+                  <Combobox
+                    options={productOptions}
+                    value={affinityProductId}
+                    onChange={(v) => { setAffinityProductId(v || null); setPage(1); }}
+                    placeholder={t($ => $.intelligencePanel.selectProduct)}
+                    loading={loadingProducts}
+                    className="h-8"
+                  />
+                  {affinityProductId ? (
+                    <div className="mt-2 flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {t($ => $.intelligencePanel.minPurchases)}
+                      </span>
+                      <Input
+                        type="number"
+                        min={1}
+                        className="h-7 w-16"
+                        value={minPurchaseCount}
+                        onChange={(e) => {
+                          const n = parseInt(e.target.value, 10);
+                          setMinPurchaseCount(Number.isFinite(n) && n > 0 ? n : REPEAT_ORDER_THRESHOLD);
+                          setPage(1);
+                        }}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+
+                {hasActiveIntelligenceFilter ? (
+                  <Button type="button" size="sm" variant="ghost" className="h-7 self-start text-xs" onClick={clearIntelligenceFilters}>
+                    {t($ => $.intelligencePanel.clear)}
+                  </Button>
+                ) : null}
+              </div>
+            </PopoverContent>
+          </Popover>
+
+          {/* Blocked Customers filter/segment (§40) */}
+          <Button
+            type="button"
+            variant={blockedOnly ? 'default' : 'outline'}
+            size="sm"
+            className="gap-1.5"
+            onClick={() => { setBlockedOnly((v) => !v); setPage(1); }}
+          >
+            <Ban className="size-3.5" />
+            {t($ => $.blocked.filter)}
+          </Button>
+
+          {/* Phone-before-Customer block entry point (§12) */}
+          {canBlock ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => { setBlockPhoneValue(''); setBlockPhoneReason(''); setBlockPhoneOpen(true); }}
+            >
+              <Ban className="size-3.5" />
+              {t($ => $.blocked.blockPhoneAction)}
+            </Button>
+          ) : null}
         </div>
 
         {/* DD-056: Single result → Quick Action Card */}
@@ -358,16 +569,6 @@ export function CustomersPage() {
             onOpen={(c) => openView(c, 'summary')}
             onOpenOrders={openViewOrders}
             onEdit={openEdit}
-            // Both the Commerce and Mobile milestones independently fixed the
-            // same bug: this was a literal no-op (`() => undefined`) — a
-            // rendered, tappable "Create Order" button that did nothing on
-            // tap (TASK-ECOS-MOBILE-UX-COMPLETION-003 §13: no placeholder
-            // callbacks). Commerce's version is a strict superset — it also
-            // pre-fills the customer's phone into the manual order form's own
-            // phone-first lookup via router state (verified end-to-end:
-            // order-workspace-page.tsx reads `state.customerPhone` and passes
-            // it as `initialCustomerPhone` → `ManualOrderFormWorkspace` →
-            // `initialPhone` on the phone-lookup step) — kept as canonical.
             onCreateOrder={(c) => navigate(ROUTES.ordersNew, { state: { customerPhone: c.phone ?? undefined } })}
             onClose={() => setSearch('')}
             className="max-w-md"
@@ -390,14 +591,13 @@ export function CustomersPage() {
       </div>
 
       {/* ── Data — cards on mobile, table on tablet+ ────────────────────────
-          The desktop table has no mobile treatment at all today (no
-          `renderMobileCard`, no `useIsMobile` branch anywhere in this
-          feature — design report §9). Below `md`, TASK-ECOS-MOBILE-UX-
-          COMPLETION-003 replaces it with a card list built on the SAME
-          Task 2 elevated `MobileDataCard` primitive every other redesigned
-          list already uses, reusing the exact same data/handlers
-          (openView/openViewOrders/openEdit/setDeleting/toggleSelect) —
-          no new query, no new business logic. */}
+          Reconciled from develop's already-merged Mobile lane (TASK-...-FINAL-
+          CLOSURE-011 §9/§11): same below-`md` card-list treatment, same reused
+          handlers (openView/openViewOrders/openEdit/setDeleting/toggleSelect) —
+          no new query, no new business logic. CustomerMobileCard additionally
+          receives this batch's Blocked-Customer props (onCreateOrder/onBlock/
+          onUnblock/canBlock/canUnblock) so Block/Unblock parity holds on both
+          layouts. */}
       {showTable && isMobile ? (
         <div role="list">
           {isLoading ? (
@@ -423,6 +623,11 @@ export function CustomersPage() {
                 onViewOrders={openViewOrders}
                 onEdit={openEdit}
                 onDelete={setDeleting}
+                onCreateOrder={(c) => navigate(ROUTES.ordersNew, { state: { customerPhone: c.phone ?? undefined } })}
+                onBlock={(c) => { setBlockReason(''); setBlocking(c); }}
+                onUnblock={(c) => { setUnblockReason(''); setUnblocking(c); }}
+                canBlock={canBlock}
+                canUnblock={canUnblock}
               />
             ))
           )}
@@ -463,18 +668,21 @@ export function CustomersPage() {
                 <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
                   {t($ => $.columns.phones)}
                 </th>
-                <th className="px-4 py-3 text-end text-xs font-medium text-muted-foreground">
-                  {t($ => $.columns.ordersCount)}
+                <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
+                  {t($ => $.columns.brands)}
                 </th>
-                <th className="px-4 py-3 text-end text-xs font-medium text-muted-foreground">
-                  {t($ => $.columns.totalOrderValue)}
+                <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
+                  {t($ => $.columns.salesOwner)}
                 </th>
+                <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
+                  {t($ => $.columns.channels)}
+                </th>
+                <SortTh field="orders_count" label={t($ => $.columns.ordersCount)} sort={sort} onSort={handleSortChange} align="end" />
+                <SortTh field="total_order_value" label={t($ => $.columns.totalOrderValue)} sort={sort} onSort={handleSortChange} align="end" />
                 <th className="px-4 py-3 text-end text-xs font-medium text-muted-foreground">
                   {t($ => $.columns.receivingRate)}
                 </th>
-                <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
-                  {t($ => $.columns.lastOrder)}
-                </th>
+                <SortTh field="last_order_at" label={t($ => $.columns.lastOrder)} sort={sort} onSort={handleSortChange} />
                 <th className="px-4 py-3 text-start text-xs font-medium text-muted-foreground">
                   {t($ => $.columns.fullAddress)}
                 </th>
@@ -517,6 +725,11 @@ export function CustomersPage() {
                     onViewOrders={openViewOrders}
                     onEdit={openEdit}
                     onDelete={setDeleting}
+                    onCreateOrder={(c) => navigate(ROUTES.ordersNew, { state: { customerPhone: c.phone ?? undefined } })}
+                    onBlock={(c) => { setBlockReason(''); setBlocking(c); }}
+                    onUnblock={(c) => { setUnblockReason(''); setUnblocking(c); }}
+                    canBlock={canBlock}
+                    canUnblock={canUnblock}
                   />
                 ))
               )}
@@ -574,11 +787,109 @@ export function CustomersPage() {
           if (deleting) deleteCustomer.mutate(deleting.id, { onSuccess: () => setDeleting(null) });
         }}
       />
+
+      {/* ── Block Confirm (§11) — mandatory reason (§7) ──────────────────── */}
+      <ConfirmDialog
+        open={blocking !== null}
+        onOpenChange={(open) => { if (!open) setBlocking(null); }}
+        title={t($ => $.blocked.blockDialog.title)}
+        description={
+          <>
+            {t($ => $.blocked.blockDialog.description, { name: blocking?.name ?? '' })}
+            <Input
+              autoFocus
+              placeholder={t($ => $.blocked.reasonPlaceholder)}
+              value={blockReason}
+              onChange={(e) => setBlockReason(e.target.value)}
+              className="mt-2"
+            />
+          </>
+        }
+        confirmLabel={t($ => $.blocked.blockAction)}
+        variant="destructive"
+        loading={blockCustomer.isPending}
+        confirmDisabled={blockReason.trim() === ''}
+        onConfirm={() => {
+          if (!blocking) return;
+          blockCustomer.mutate(
+            { id: blocking.id, reason: blockReason.trim() },
+            { onSuccess: () => setBlocking(null) },
+          );
+        }}
+      />
+
+      {/* ── Unblock Confirm (§28) — mandatory reason (§7) ────────────────── */}
+      <ConfirmDialog
+        open={unblocking !== null}
+        onOpenChange={(open) => { if (!open) setUnblocking(null); }}
+        title={t($ => $.blocked.unblockDialog.title)}
+        description={
+          <>
+            {t($ => $.blocked.unblockDialog.description, { name: unblocking?.name ?? '' })}
+            <Input
+              autoFocus
+              placeholder={t($ => $.blocked.reasonPlaceholder)}
+              value={unblockReason}
+              onChange={(e) => setUnblockReason(e.target.value)}
+              className="mt-2"
+            />
+          </>
+        }
+        confirmLabel={t($ => $.blocked.unblockAction)}
+        loading={unblockCustomer.isPending}
+        confirmDisabled={unblockReason.trim() === ''}
+        onConfirm={() => {
+          if (!unblocking || !unblocking.customer_block_id) return;
+          unblockCustomer.mutate(
+            { id: unblocking.id, blockId: unblocking.customer_block_id, reason: unblockReason.trim() },
+            { onSuccess: () => setUnblocking(null) },
+          );
+        }}
+      />
+
+      {/* ── Block Phone (§12) — phone-before-Customer, never fabricates a Customer ── */}
+      <ConfirmDialog
+        open={blockPhoneOpen}
+        onOpenChange={setBlockPhoneOpen}
+        title={t($ => $.blocked.blockPhoneAction)}
+        description={
+          <>
+            {t($ => $.blocked.blockPhoneDialog.description)}
+            <Input
+              autoFocus
+              placeholder={t($ => $.blocked.blockPhoneDialog.phonePlaceholder)}
+              value={blockPhoneValue}
+              onChange={(e) => setBlockPhoneValue(e.target.value)}
+              className="mt-2"
+            />
+            <Input
+              placeholder={t($ => $.blocked.reasonPlaceholder)}
+              value={blockPhoneReason}
+              onChange={(e) => setBlockPhoneReason(e.target.value)}
+              className="mt-2"
+            />
+          </>
+        }
+        confirmLabel={t($ => $.blocked.blockAction)}
+        variant="destructive"
+        loading={blockPhone.isPending}
+        confirmDisabled={blockPhoneValue.trim() === '' || blockPhoneReason.trim() === ''}
+        onConfirm={() => {
+          blockPhone.mutate(
+            { phone: blockPhoneValue.trim(), reason: blockPhoneReason.trim() },
+            { onSuccess: () => setBlockPhoneOpen(false) },
+          );
+        }}
+      />
     </div>
   );
 }
 
 // ── Customer Row ──────────────────────────────────────────────────────────────
+// Shared by both CustomerRow (desktop table) and CustomerMobileCard (below-`md`
+// card list, TASK-...-FINAL-CLOSURE-011 §9/§11/§14) — exported so it stays the
+// single contract both layouts are built against; every field here is required
+// by at least one of them, and neither layout may drop a field the other needs.
 
 export type RowProps = {
   customer: Customer;
@@ -589,6 +900,11 @@ export type RowProps = {
   onViewOrders: (c: Customer) => void;
   onEdit: (c: Customer) => void;
   onDelete: (c: Customer) => void;
+  onCreateOrder: (c: Customer) => void;
+  onBlock: (c: Customer) => void;
+  onUnblock: (c: Customer) => void;
+  canBlock: boolean;
+  canUnblock: boolean;
 };
 
 function CustomerRow({
@@ -600,6 +916,11 @@ function CustomerRow({
   onViewOrders,
   onEdit,
   onDelete,
+  onCreateOrder,
+  onBlock,
+  onUnblock,
+  canBlock,
+  canUnblock,
 }: RowProps) {
   const { t } = useTranslation('customers');
   const { t: tCommon } = useTranslation('common');
@@ -663,6 +984,29 @@ function CustomerRow({
             />
           ) : null}
         </div>
+      </td>
+
+      {/* Brand(s) — already-canonical customer.brands (customer_brands pivot), just not
+          previously rendered as a table column. Compact chips + overflow, same pattern
+          the profile drawer's Summary tab already uses. */}
+      <td className="px-4 py-3">
+        <ChipList
+          items={customer.brands.map((b) => ({ key: b.id, label: b.brand_name ?? '—' }))}
+        />
+      </td>
+
+      {/* CRM Sales Owner — denormalised sales_owner_name, null until a future task adds
+          the assignment action. */}
+      <td className="px-4 py-3 text-xs">
+        {customer.sales_owner_name ?? <span className="text-muted-foreground">{t($ => $.table.unassigned)}</span>}
+      </td>
+
+      {/* Channel(s) — derived read over this customer's own order history
+          (CustomerOrderMetricsService::channelsForCustomers), most-used first. */}
+      <td className="px-4 py-3">
+        <ChipList
+          items={customer.channels.map((c) => ({ key: c.channel_id, label: c.channel_name ?? '—' }))}
+        />
       </td>
 
       {/* Orders Count — clicking the number opens this customer's orders. */}
@@ -741,15 +1085,17 @@ function CustomerRow({
                 {customer.top_products_count}
               </button>
             </PopoverTrigger>
-            <PopoverContent align="start" className="w-60 p-2">
+            <PopoverContent align="start" className="w-64 p-2">
               <p className="mb-1.5 px-1 text-[11px] uppercase tracking-wide text-muted-foreground">
-                {t($ => $.table.topProductsByQuantity)}
+                {t($ => $.table.topProductsByAffinity)}
               </p>
               <ul className="flex flex-col gap-0.5">
                 {customer.top_products.map((p) => (
                   <li key={p.product_id ?? p.product_name} className="flex items-center justify-between gap-2 px-1 text-xs">
                     <span className="truncate">{p.product_name ?? '—'}</span>
-                    <span className="shrink-0 tabular-nums text-muted-foreground">{p.total_quantity}</span>
+                    <span className="shrink-0 tabular-nums text-muted-foreground">
+                      {t($ => $.table.orderedNTimes, { count: p.orders_count })} · {p.total_quantity}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -772,6 +1118,26 @@ function CustomerRow({
       {/* Customer Intelligence */}
       <td className="px-4 py-3">
         <div className="flex flex-wrap gap-1">
+          {customer.is_blocked ? (
+            <Badge
+              variant="secondary"
+              className="h-5 gap-1 px-1.5 text-[10px] text-red-700 bg-red-100 border-red-200 dark:text-red-400 dark:bg-red-950/50 dark:border-red-800"
+              title={customer.block_reason ?? undefined}
+            >
+              <Ban className="size-3" />
+              {t($ => $.blocked.badge)}
+            </Badge>
+          ) : null}
+          {customer.is_repeat_customer ? (
+            <Badge
+              variant="secondary"
+              className="h-5 gap-1 px-1.5 text-[10px] text-emerald-700 bg-emerald-100 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/50 dark:border-emerald-800"
+              title={t($ => $.intelligence.repeatHint, { count: REPEAT_ORDER_THRESHOLD })}
+            >
+              <Repeat className="size-3" />
+              {t($ => $.intelligence.repeat)}
+            </Badge>
+          ) : null}
           {customer.notes ? (
             <Badge
               variant="secondary"
@@ -802,6 +1168,12 @@ function CustomerRow({
                 onSelect: () => onEdit(customer),
               },
               {
+                key: 'createOrder',
+                label: t($ => $.quickCard.createOrder),
+                icon: Plus,
+                onSelect: () => onCreateOrder(customer),
+              },
+              {
                 key: 'copyPhone',
                 label: t($ => $.quickCard.copyPhone),
                 icon: Copy,
@@ -810,6 +1182,21 @@ function CustomerRow({
                 },
                 disabled: !primaryPhone,
               },
+              ...(customer.is_blocked
+                ? [{
+                    key: 'unblock',
+                    label: t($ => $.blocked.unblockAction),
+                    icon: ShieldCheck,
+                    onSelect: () => onUnblock(customer),
+                    disabled: !canUnblock,
+                  }]
+                : [{
+                    key: 'block',
+                    label: t($ => $.blocked.blockAction),
+                    icon: Ban,
+                    onSelect: () => onBlock(customer),
+                    disabled: !canBlock,
+                  }]),
               {
                 key: 'delete',
                 label: tCommon($ => $.common.delete),
@@ -825,15 +1212,23 @@ function CustomerRow({
   );
 }
 
-// ── Customer Mobile Card (TASK-ECOS-MOBILE-UX-COMPLETION-003) ────────────────
-// Same data and handlers as CustomerRow (RowProps), same canonical fields
-// (server-computed by CustomerOrderMetricsService — never recomputed here).
-// A bespoke card rather than a `MobileDataCard` composition, matching the
-// Products/Orders mobile cards: Call/WhatsApp/Copy and the overflow ActionMenu
-// need to stay always-visible tap targets (not hover-gated, unlike the desktop
-// row's `opacity-0 group-hover:opacity-100` actions cell, which is unreachable
-// on a touch device) and sit outside the tap-to-open target, matching
-// MobileDataCard's own "no interactive element nested inside another" rule.
+// ── Customer Mobile Card ────────────────────────────────────────────────────
+// TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-FINAL-CLOSURE-011 (§9-§14). Reconciled
+// from develop's already-merged Mobile lane (customers-page.tsx, "feat(mobile):
+// complete customers products and orders mobile UX") — the below-`md` card list
+// this function renders, its checkbox/name/KPI-grid/address/notes/phone-footer
+// layout, and its base ActionMenu items (edit/copyPhone/delete) are that
+// implementation, preserved as-is. On top of it, this batch's Blocked-Customer
+// contract is wired in using RowProps' shared shape (§9): a Blocked badge
+// (parity with desktop's Intelligence cell), a Repeat-Customer badge (same
+// parity), and the same Block/Unblock ActionMenu behavior desktop's CustomerRow
+// already has — same onBlock/onUnblock callbacks (opening the SAME page-level
+// ConfirmDialogs and useBlockCustomer/useUnblockCustomer mutations, §12: no
+// duplicate mutation implementation), same canBlock/canUnblock permission gate.
+// A "Create Order" item is included too so `onCreateOrder` — required by the
+// shared RowProps contract — has a real call site here, mirroring desktop's
+// own ActionMenu ordering (edit, createOrder, copyPhone, block/unblock, delete)
+// exactly rather than leaving the prop unused.
 export function CustomerMobileCard({
   customer,
   isFocused,
@@ -843,6 +1238,11 @@ export function CustomerMobileCard({
   onViewOrders,
   onEdit,
   onDelete,
+  onCreateOrder,
+  onBlock,
+  onUnblock,
+  canBlock,
+  canUnblock,
 }: RowProps) {
   const { t } = useTranslation('customers');
   const { t: tCommon } = useTranslation('common');
@@ -875,17 +1275,42 @@ export function CustomerMobileCard({
         onClick={() => onView(customer)}
         aria-label={`${tCommon($ => $.actions.view)} ${customer.name}`}
       >
-        {/* Row 1: Name + code, status */}
+        {/* Row 1: Name + code, status — Blocked/Repeat/Inactive badges grouped
+            together (parity with desktop's single "Intelligence" cell), wrapped
+            so they stack cleanly on narrow screens instead of the single-badge
+            layout Mobile had before this batch. */}
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="truncate text-[15px] font-semibold leading-tight text-foreground">{customer.name}</p>
             <p className="text-xs text-muted-foreground">{customer.code}</p>
           </div>
-          {!customer.is_active ? (
-            <Badge variant="secondary" className="h-5 shrink-0 px-1.5 text-[10px]">
-              {t($ => $.tags.inactive)}
-            </Badge>
-          ) : null}
+          <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
+            {customer.is_blocked ? (
+              <Badge
+                variant="secondary"
+                className="h-5 gap-1 px-1.5 text-[10px] text-red-700 bg-red-100 border-red-200 dark:text-red-400 dark:bg-red-950/50 dark:border-red-800"
+                title={customer.block_reason ?? undefined}
+              >
+                <Ban className="size-3" />
+                {t($ => $.blocked.badge)}
+              </Badge>
+            ) : null}
+            {customer.is_repeat_customer ? (
+              <Badge
+                variant="secondary"
+                className="h-5 gap-1 px-1.5 text-[10px] text-emerald-700 bg-emerald-100 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/50 dark:border-emerald-800"
+                title={t($ => $.intelligence.repeatHint, { count: REPEAT_ORDER_THRESHOLD })}
+              >
+                <Repeat className="size-3" />
+                {t($ => $.intelligence.repeat)}
+              </Badge>
+            ) : null}
+            {!customer.is_active ? (
+              <Badge variant="secondary" className="h-5 shrink-0 px-1.5 text-[10px]">
+                {t($ => $.tags.inactive)}
+              </Badge>
+            ) : null}
+          </div>
         </div>
 
         {/* Row 2: Orders / Total / Receiving / Last order — server-computed KPIs */}
@@ -970,12 +1395,33 @@ export function CustomerMobileCard({
             items={[
               { key: 'edit', label: tCommon($ => $.common.edit), icon: Pencil, onSelect: () => onEdit(customer) },
               {
+                key: 'createOrder',
+                label: t($ => $.quickCard.createOrder),
+                icon: Plus,
+                onSelect: () => onCreateOrder(customer),
+              },
+              {
                 key: 'copyPhone',
                 label: t($ => $.quickCard.copyPhone),
                 icon: Copy,
                 onSelect: () => { if (primaryPhone) void navigator.clipboard.writeText(primaryPhone); },
                 disabled: !primaryPhone,
               },
+              ...(customer.is_blocked
+                ? [{
+                    key: 'unblock',
+                    label: t($ => $.blocked.unblockAction),
+                    icon: ShieldCheck,
+                    onSelect: () => onUnblock(customer),
+                    disabled: !canUnblock,
+                  }]
+                : [{
+                    key: 'block',
+                    label: t($ => $.blocked.blockAction),
+                    icon: Ban,
+                    onSelect: () => onBlock(customer),
+                    disabled: !canBlock,
+                  }]),
               { key: 'delete', label: tCommon($ => $.common.delete), icon: Trash2, variant: 'destructive' as const, onSelect: () => onDelete(customer) },
             ]}
           />

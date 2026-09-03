@@ -247,6 +247,17 @@ export type Order = {
   inventory_shipped_at: string | null;
   reservation_status: ReservationStatus | null;
   reservation_failure_reason: string | null;
+  /**
+   * TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-BLOCKED-CUSTOMERS-009 (§15/§28/§34).
+   * Machine-readable sub-reason while status = 'on_hold'. Only 'blocked_customer'
+   * is written today; null while on hold for any other reason, and null once the
+   * order leaves on_hold. Never the sole authority for UI copy — pair with
+   * `is_blocked_customer_hold` (derived server-side, live block state) to decide
+   * whether "Override Block for This Order" applies.
+   */
+  hold_reason_code: string | null;
+  /** True while hold_reason_code = blocked_customer AND the block is still live (no override yet). */
+  is_blocked_customer_hold: boolean;
   subtotal: number;
   shipping_total: number;
   discount_total: number;

@@ -17,6 +17,7 @@ use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentResult;
 use Modules\Operations\Fulfillment\Domain\Contracts\FulfillmentWorkflowInterface;
 use Modules\Operations\Fulfillment\Domain\Events\OrderConfirmedEvent;
 use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionException;
+use Modules\Sales\Customers\Domain\Services\BlockedCustomerPolicy;
 
 /**
  * Confirm — the explicit operator action that commits an order (ADR-042 §5.3).
@@ -43,6 +44,10 @@ final class ConfirmOrderWorkflow implements FulfillmentWorkflowInterface
         private readonly CreateOrderSnapshotService $snapshot,
         private readonly UpdateReservationStatusAction $updateReservationStatus,
         private readonly PaymentFulfillmentGate $paymentGate,
+        // TASK-...-BLOCKED-CUSTOMERS-009 (§24/§32) — same authority ProcessOrderWorkflow
+        // consults; OnHold is a legal source here too (Confirm can be reached directly
+        // from On Hold), so the same guard applies.
+        private readonly BlockedCustomerPolicy $blockedCustomerPolicy,
     ) {}
 
     public function guard(FulfillmentContext $ctx): void
@@ -64,6 +69,12 @@ final class ConfirmOrderWorkflow implements FulfillmentWorkflowInterface
         if (! in_array($order->status, $allowed, true)) {
             throw new WorkflowPreconditionException(
                 "Order [{$order->id}] cannot be confirmed from status [{$order->status->value}].",
+            );
+        }
+
+        if ($order->status === OrderStatus::OnHold && $this->blockedCustomerPolicy->isOrderBlocked($order)) {
+            throw new WorkflowPreconditionException(
+                "Order [{$order->id}] cannot be confirmed: its Customer/phone is currently blocked. Grant a one-order override to proceed with just this Order.",
             );
         }
 
@@ -142,6 +153,7 @@ final class ConfirmOrderWorkflow implements FulfillmentWorkflowInterface
                 'next_delivery_date' => null,
                 'resume_from_status' => null,
                 'reschedule_reason' => null,
+                'hold_reason_code' => null,
             ]);
             $order->refresh();
         }

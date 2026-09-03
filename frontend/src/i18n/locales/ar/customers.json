@@ -75,11 +75,26 @@
     "receivingRate": "معدل الاستلام",
     "fullAddress": "العنوان",
     "location": "الموقع",
-    "topProducts": "أكثر المنتجات"
+    "topProducts": "أكثر المنتجات",
+    "brands": "العلامة التجارية",
+    "salesOwner": "مسؤول المبيعات",
+    "channels": "القنوات"
   },
   "intelligence": {
     "hasNotes": "ملاحظات",
-    "returning": "متكرر"
+    "returning": "متكرر",
+    "repeat": "متكرر",
+    "repeatHint": "{{count}}+ طلبات مؤهلة"
+  },
+  "intelligencePanel": {
+    "trigger": "الذكاء",
+    "segments": "الشرائح",
+    "highestSpend": "الأعلى إنفاقًا",
+    "repeatCustomers": "العملاء المتكررون",
+    "productAffinity": "ولاء المنتج",
+    "selectProduct": "اختر منتجًا…",
+    "minPurchases": "الحد الأدنى للشراء",
+    "clear": "مسح الفلاتر"
   },
   "table": {
     "empty": "لا يوجد عملاء.",
@@ -87,8 +102,10 @@
     "selectAll": "تحديد الكل",
     "viewOrders": "عرض الطلبات",
     "viewAllProducts": "عرض كل المنتجات ({{count}})",
-    "distinctProductsHint": "عدد المنتجات المختلفة التي طلبها العميل: {{count}} — مرّر لعرض الأعلى كميةً",
-    "topProductsByQuantity": "أكثر المنتجات كميةً"
+    "distinctProductsHint": "عدد المنتجات المختلفة التي طلبها العميل: {{count}} — مرّر لعرض الأعلى ولاءً",
+    "topProductsByAffinity": "أكثر المنتجات ولاءً",
+    "orderedNTimes": "{{count}} طلبات",
+    "unassigned": "غير معيّن"
   },
   "phone": {
     "call": "اتصال",
@@ -184,7 +201,25 @@
       "delivered": "تم التسليم",
       "avgOrderValue": "متوسط قيمة الطلب",
       "openInMaps": "فتح في الخرائط",
-      "preferredGovernorate": "المحافظة الأكثر تكرارًا"
+      "preferredGovernorate": "المحافظة الأكثر تكرارًا",
+      "repeatStatus": "حالة التكرار",
+      "notRepeat": "ليس عميلاً متكررًا بعد",
+      "firstOrder": "أول طلب",
+      "purchaseCadence": "معدل تكرار الشراء",
+      "cadenceUnavailable": "لا توجد طلبات كافية بعد",
+      "cadenceDays": "كل {{count}} يوم في المتوسط"
+    },
+    "blocked": {
+      "title": "عميل محظور",
+      "badge": "محظور",
+      "reason": "السبب",
+      "blockedBy": "تم الحظر بواسطة",
+      "blockedAt": "تاريخ الحظر",
+      "unblockAction": "إلغاء الحظر",
+      "history": "سجل الحظر",
+      "historyEmpty": "لا يوجد سجل حظر.",
+      "historyBlockedEntry": "تم الحظر — {{reason}}",
+      "historyUnblockedEntry": "تم إلغاء الحظر — {{reason}}"
     },
     "phonesTab": {
       "title": "أرقام الهاتف",
@@ -247,6 +282,26 @@
   "delete": {
     "title": "حذف العميل",
     "confirm": "حذف"
+  },
+  "blocked": {
+    "filter": "محظور",
+    "badge": "محظور",
+    "blockAction": "حظر",
+    "unblockAction": "إلغاء الحظر",
+    "blockPhoneAction": "حظر رقم هاتف",
+    "reasonPlaceholder": "سبب هذا الإجراء…",
+    "blockDialog": {
+      "title": "حظر العميل",
+      "description": "سيُمنع {{name}} من التنفيذ: سيتم تعليق الطلبات الجديدة والمفتوحة حاليًا. هذا لا يحذف أو يعطّل سجل العميل."
+    },
+    "unblockDialog": {
+      "title": "إلغاء حظر العميل",
+      "description": "سيتمكن {{name}} من تقديم طلبات جديدة مجددًا. الطلبات المعلّقة الحالية لن تُفرج تلقائيًا — كل طلب يتطلب قرارًا منفصلًا."
+    },
+    "blockPhoneDialog": {
+      "description": "حظر رقم هاتف قد لا يخص عميلاً بعد. لن يتم إنشاء سجل عميل.",
+      "phonePlaceholder": "رقم الهاتف…"
+    }
   },
   "profile": {
     "notFound": "العميل غير موجود",

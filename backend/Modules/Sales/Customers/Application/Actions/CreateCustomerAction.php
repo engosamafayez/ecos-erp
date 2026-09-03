@@ -11,10 +11,14 @@ use Modules\Sales\Customers\Application\DTO\CustomerDTO;
 use Modules\Sales\Customers\Domain\Contracts\CustomerRepositoryInterface;
 use Modules\Sales\Customers\Domain\Models\Customer;
 use Modules\Sales\Customers\Domain\Models\CustomerBrand;
+use Modules\Sales\Customers\Domain\Services\CustomerCodeGeneratorService;
 
 final class CreateCustomerAction extends BaseAction
 {
-    public function __construct(private readonly CustomerRepositoryInterface $customers) {}
+    public function __construct(
+        private readonly CustomerRepositoryInterface $customers,
+        private readonly CustomerCodeGeneratorService $codeGenerator,
+    ) {}
 
     public function execute(mixed ...$arguments): OperationResult
     {
@@ -23,27 +27,35 @@ final class CreateCustomerAction extends BaseAction
 
         /** @var Customer $customer */
         $customer = DB::transaction(function () use ($dto): Customer {
+            // Backend-generated unless the caller explicitly supplied one — never
+            // typed by the create-customer UI, per TASK-...-OPERATIONAL-READ-MODEL-007.
+            // Generated INSIDE this same transaction: nextCodeNumber()'s increment-then-
+            // read-back only stays correct while the row lock it takes is still held,
+            // which requires this same enclosing transaction — see
+            // TASK-...-TASK-2-REMEDIATION-007-R1 and EloquentCustomerRepository::nextCodeNumber().
+            $code = $dto->code ?? $this->codeGenerator->next((string) $dto->company_id);
+
             $customer = $this->customers->create([
-                'company_id'     => $dto->company_id,
-                'code'           => $dto->code,
-                'name'           => $dto->name,
+                'company_id' => $dto->company_id,
+                'code' => $code,
+                'name' => $dto->name,
                 'contact_person' => $dto->contact_person,
-                'email'          => $dto->email,
-                'phone'          => $dto->phone,
-                'mobile'         => $dto->mobile,
-                'country'        => $dto->country,
-                'city'           => $dto->city,
-                'address'        => $dto->address,
-                'notes'          => $dto->notes,
-                'is_active'      => $dto->is_active,
+                'email' => $dto->email,
+                'phone' => $dto->phone,
+                'mobile' => $dto->mobile,
+                'country' => $dto->country,
+                'city' => $dto->city,
+                'address' => $dto->address,
+                'notes' => $dto->notes,
+                'is_active' => $dto->is_active,
             ]);
 
             if ($dto->brand_id !== null) {
                 CustomerBrand::create([
                     'customer_id' => $customer->id,
-                    'brand_id'    => $dto->brand_id,
-                    'is_primary'  => true,
-                    'status'      => 'active',
+                    'brand_id' => $dto->brand_id,
+                    'is_primary' => true,
+                    'status' => 'active',
                 ]);
             }
 

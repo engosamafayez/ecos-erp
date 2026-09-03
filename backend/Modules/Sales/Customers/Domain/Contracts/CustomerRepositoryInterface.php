@@ -24,4 +24,17 @@ interface CustomerRepositoryInterface
     public function update(Customer $customer, array $attributes): Customer;
 
     public function delete(Customer $customer): void;
+
+    /**
+     * The next sequential number for this company's Customer Code, backed by a dedicated
+     * per-company sequence row (customer_code_sequences) — gap/legacy-tolerant and safe
+     * under concurrent first-use for the same company. MUST be called inside the same DB
+     * transaction that inserts the new Customer: the exclusive row lock taken by the
+     * increment is only held for that transaction's duration, and the implementation
+     * relies on it still being held when it reads the value back. See
+     * EloquentCustomerRepository::nextCodeNumber() and
+     * TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-TASK-2-REMEDIATION-007-R1 for the full
+     * correctness/concurrency proof.
+     */
+    public function nextCodeNumber(string $companyId): int;
 }

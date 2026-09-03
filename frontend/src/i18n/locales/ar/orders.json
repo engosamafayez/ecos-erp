@@ -1121,6 +1121,16 @@
     "snapshottedAt": "تاريخ الالتقاط"
   },
   "orderDetail": {
+    "blockedCustomer": {
+      "bannerTitle": "معلّق — عميل محظور",
+      "bannerDescription": "عميل/رقم هاتف هذا الطلب محظور حاليًا. لن يتم حجز المخزون أو التجهيز أو التقدّم حتى يُرفع الحظر أو يُمنح استثناء لهذا الطلب.",
+      "bannerDescriptionOverridden": "تم تعليق هذا الطلب بسبب عميل محظور؛ تم منح استثناء للمتابعة. يظل العميل/الرقم محظورًا بالنسبة لباقي الطلبات.",
+      "overrideAction": "استثناء الحظر لهذا الطلب",
+      "overrideDialogTitle": "استثناء الحظر لهذا الطلب",
+      "overrideDialogDescription": "يظل العميل/رقم الهاتف محظورًا بالنسبة لكل طلب آخر. فقط هذا الطلب يصبح مؤهلاً للمتابعة.",
+      "overrideReasonPlaceholder": "سبب هذا الاستثناء…",
+      "overrideToastSuccess": "تم منح الاستثناء. تمت إعادة تقييم هذا الطلب."
+    },
     "backToOrders": "العودة للطلبات",
     "print": "طباعة",
     "confirmCustomer": "تأكيد العميل",

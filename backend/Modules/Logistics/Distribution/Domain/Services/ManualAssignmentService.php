@@ -528,6 +528,29 @@ final class ManualAssignmentService
             throw new DistributionException('Order not found.');
         }
 
+        // TASK-...-BLOCKED-CUSTOMERS-009 capability-gate re-verification (§22):
+        // this was the one write path that admitted a NEW Order into a Distribution
+        // Window with no status check at all — its sibling eligibleZoneArrivals()
+        // gates via constrainToLoadingEligible(), and the automatic ingestion path
+        // (DistributionCollectionService::collectForCompany()) gates via
+        // eligibleUnassignedOrders(), but assignLateOrder() checked neither. Closing
+        // this closes it for every reason an Order is ineligible today — on_hold
+        // (blocked-customer included), cancelled, returned, awaiting_payment/stock,
+        // scheduled — not only the blocked-customer case this task adds.
+        // PreparationEligibilityReader::isEligible() already existed for exactly
+        // this call site (see its own docblock) but had zero callers anywhere in
+        // the codebase; it is wired in here rather than reimplemented.
+        //
+        // Scoped to a NEW admission only ($existing === null, checked below) — an
+        // Order already inside this Window being moved between zones/slots is not
+        // a new admission and is unaffected, matching how the other write paths in
+        // this class (assignZoneToSlot, changeOrderZone/Slot) already behave.
+        $existingAssignment = DistributionWindowOrder::query()->where('order_id', $orderId)->first();
+
+        if ($existingAssignment === null && ! $this->preparation->isEligible($orderId)) {
+            throw new DistributionException('Order is not eligible for Distribution in its current status.');
+        }
+
         $zoneId = app(OrderZoneResolver::class)->resolve(
             $order->logistics_city_id === null ? null : (int) $order->logistics_city_id,
         );
@@ -541,7 +564,7 @@ final class ManualAssignmentService
                     (string) $order->assigned_warehouse_id,
                 )[$zoneId] ?? null));
 
-        $existing = DistributionWindowOrder::query()->where('order_id', $orderId)->first();
+        $existing = $existingAssignment;
 
         if ($existing === null) {
             $created = $this->collection->attach(

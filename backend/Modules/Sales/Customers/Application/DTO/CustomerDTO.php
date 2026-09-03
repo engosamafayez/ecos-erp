@@ -9,8 +9,11 @@ use App\Core\DTO\BaseDTO;
 final class CustomerDTO extends BaseDTO
 {
     public function __construct(
-        public readonly string  $code,
-        public readonly string  $name,
+        // Null on create means "generate one" (CreateCustomerAction, backend-only —
+        // TASK-...-OPERATIONAL-READ-MODEL-007). Always a real value on update, enforced
+        // by UpdateCustomerRequest's own `required` rule, not re-validated here.
+        public readonly ?string $code,
+        public readonly string $name,
         // brand_id carries the initial brand on creation; null on update (brand management is separate).
         public readonly ?string $brand_id = null,
         // company_id is injected server-side on create; never updated.
@@ -23,7 +26,7 @@ final class CustomerDTO extends BaseDTO
         public readonly ?string $city = null,
         public readonly ?string $address = null,
         public readonly ?string $notes = null,
-        public readonly bool    $is_active = true,
+        public readonly bool $is_active = true,
     ) {}
 
     /**
@@ -32,9 +35,9 @@ final class CustomerDTO extends BaseDTO
     public static function fromArray(array $data): self
     {
         return new self(
-            code:       (string) $data['code'],
-            name:       (string) $data['name'],
-            brand_id:   self::nullableString($data, 'brand_id'),
+            code: self::nullableString($data, 'code'),
+            name: (string) $data['name'],
+            brand_id: self::nullableString($data, 'brand_id'),
             company_id: self::nullableString($data, 'company_id'),
             contact_person: self::nullableString($data, 'contact_person'),
             email: self::nullableString($data, 'email'),

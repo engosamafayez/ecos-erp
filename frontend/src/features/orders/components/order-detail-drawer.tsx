@@ -5,6 +5,7 @@ import {
   ArrowDown,
   ArrowRightCircle,
   BadgeCheck,
+  Ban,
   Banknote,
   Box,
   Building,
@@ -53,6 +54,8 @@ import { useFormatter } from '@/hooks/use-formatter';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/crud';
+import { Input } from '@/components/ui/input';
 import { MediaViewer } from '@/components/ui/media-viewer';
 import { Separator } from '@/components/ui/separator';
 import React from 'react';
@@ -65,6 +68,8 @@ import {
 } from '@/components/ui/sheet';
 import { Tabs } from '@/components/ds/tabs';
 import { toast } from '@/components/ds/use-toast';
+import { usePermission } from '@/features/authorization/use-authorization';
+import { BlockedCustomerBanner } from '@/features/orders/components/blocked-customer-banner';
 import { OrderInventoryExecutionCell } from '@/features/orders/components/order-inventory-execution-cell';
 import { OrderPhoneCell } from '@/features/orders/components/order-phone-cell';
 import { PaymentProofSection } from '@/features/orders/components/payment-proof-section';
@@ -74,6 +79,7 @@ import { OrderNotesTab } from '@/features/orders/components/notes-tab';
 import type { Order, OrderActivity } from '@/features/orders/types/order';
 import {
   useOrderActivities,
+  useOrderBlockOverride,
   useOrderQuery,
   useOrderWorkflowReschedule,
   useOrderWorkflowTransition,
@@ -1601,6 +1607,9 @@ export function WorkflowTab({ order, onClose }: { order: Order; onClose: () => v
   const { t } = useTranslation('orders');
   const transition = useOrderWorkflowTransition();
   const reschedule = useOrderWorkflowReschedule();
+  const blockOverride = useOrderBlockOverride();
+  const { can } = usePermission();
+  const canOverrideBlock = can('crm.customers.override_block');
 
   const today = new Date().toISOString().slice(0, 10);
   const [showRescheduleForm, setShowRescheduleForm] = useState(false);
@@ -1610,6 +1619,14 @@ export function WorkflowTab({ order, onClose }: { order: Order; onClose: () => v
   // RC-10: the backend is authoritative for WHY a transition is refused. This
   // holds its reason verbatim; the UI never decides validity itself.
   const [refusal, setRefusal]                       = useState<string | null>(null);
+
+  // TASK-...-BLOCKED-CUSTOMERS-009-R1 (§5) — same one-order override as
+  // order-detail-page.tsx's QuickActionsPanel: same hook, same backend action,
+  // same mandatory-reason ConfirmDialog. is_blocked_customer_hold is only ever
+  // true for a live block on an on_hold Order, so no separate terminal/physical-
+  // execution check is needed here either.
+  const [overrideOpen, setOverrideOpen]     = useState(false);
+  const [overrideReason, setOverrideReason] = useState('');
 
   const transitions = order.allowed_status_transitions ?? [];
   const isPending   = transition.isPending || reschedule.isPending;
@@ -1657,11 +1674,28 @@ export function WorkflowTab({ order, onClose }: { order: Order; onClose: () => v
   }
 
   return (
+    <>
     <div className="flex flex-col gap-6 p-4">
       <div>
         <SectionTitle>{t($ => $.drawer.workflow.currentStatus)}</SectionTitle>
         <OrderStatusBadge status={order.status} />
       </div>
+
+      {/* TASK-...-BLOCKED-CUSTOMERS-009-R1 (§5) — only ever rendered while the block
+          genuinely still applies (never a placeholder/disabled button), and never
+          shown when the operator lacks the permission rather than shown-but-disabled
+          with no explanation. */}
+      {order.is_blocked_customer_hold && canOverrideBlock ? (
+        <Button
+          variant="outline"
+          size="sm"
+          className="justify-start gap-2 self-start border-destructive/40 text-destructive hover:text-destructive"
+          onClick={() => { setOverrideReason(''); setOverrideOpen(true); }}
+        >
+          <Ban className="size-4" /> {t($ => $.orderDetail.blockedCustomer.overrideAction)}
+        </Button>
+      ) : null}
+
       {refusal !== null ? (
         // The backend's reason, verbatim. Logical properties only, so it mirrors
         // correctly under RTL.
@@ -1772,6 +1806,47 @@ export function WorkflowTab({ order, onClose }: { order: Order; onClose: () => v
         <p className="text-sm text-muted-foreground">{t($ => $.drawer.workflow.noActions)}</p>
       )}
     </div>
+
+    {/* Same ConfirmDialog + mandatory-reason pattern as order-detail-page.tsx.
+        Confirming does NOT reserve/confirm/prepare directly — it only grants the
+        override; the backend's own ReevaluateOrderFulfillmentAction call (via
+        useOrderBlockOverride -> the same block-override endpoint) decides whether
+        the Order can actually advance. */}
+    <ConfirmDialog
+      open={overrideOpen}
+      onOpenChange={(open) => { if (!open) { setOverrideOpen(false); setOverrideReason(''); } }}
+      title={t($ => $.orderDetail.blockedCustomer.overrideDialogTitle)}
+      description={
+        <>
+          {t($ => $.orderDetail.blockedCustomer.overrideDialogDescription)}
+          <Input
+            autoFocus
+            placeholder={t($ => $.orderDetail.blockedCustomer.overrideReasonPlaceholder)}
+            value={overrideReason}
+            onChange={(e) => setOverrideReason(e.target.value)}
+            className="mt-2"
+          />
+        </>
+      }
+      confirmLabel={t($ => $.orderDetail.blockedCustomer.overrideAction)}
+      variant="destructive"
+      loading={blockOverride.isPending}
+      confirmDisabled={overrideReason.trim() === ''}
+      onConfirm={() => {
+        blockOverride.mutate(
+          { id: order.id, reason: overrideReason.trim() },
+          {
+            onSuccess: () => {
+              setOverrideOpen(false);
+              setOverrideReason('');
+              toast.success(t($ => $.orderDetail.blockedCustomer.overrideToastSuccess));
+            },
+            onError: (error) => setRefusal(serverRefusalMessage(error) ?? t($ => $.drawer.workflow.refusalFallback)),
+          },
+        );
+      }}
+    />
+    </>
   );
 }
 
@@ -2563,6 +2638,15 @@ export function OrderDetailDrawer({
             </SheetClose>
           </div>
         </SheetHeader>
+
+        {/* TASK-...-BLOCKED-CUSTOMERS-009-R1 (§5) — same shared banner order-detail-
+            page.tsx uses, visible regardless of which tab is active (the block
+            context matters no matter what the operator is looking at). */}
+        {displayOrder.status === 'on_hold' && displayOrder.hold_reason_code === 'blocked_customer' ? (
+          <div className="border-b px-4 py-3">
+            <BlockedCustomerBanner order={displayOrder} />
+          </div>
+        ) : null}
 
         {/* Loading indicator — shown only on first fetch before detail data arrives */}
         {isEnriching ? (

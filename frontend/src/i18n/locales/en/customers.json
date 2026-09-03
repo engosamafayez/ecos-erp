@@ -75,11 +75,26 @@
     "receivingRate": "Receiving Rate",
     "fullAddress": "Address",
     "location": "Location",
-    "topProducts": "Top Products"
+    "topProducts": "Top Products",
+    "brands": "Brand(s)",
+    "salesOwner": "Sales Owner",
+    "channels": "Channel(s)"
   },
   "intelligence": {
     "hasNotes": "Notes",
-    "returning": "Returning"
+    "returning": "Returning",
+    "repeat": "Repeat",
+    "repeatHint": "{{count}}+ qualifying orders"
+  },
+  "intelligencePanel": {
+    "trigger": "Intelligence",
+    "segments": "Segments",
+    "highestSpend": "Highest Spend",
+    "repeatCustomers": "Repeat Customers",
+    "productAffinity": "Product Affinity",
+    "selectProduct": "Select a product…",
+    "minPurchases": "Min. purchases",
+    "clear": "Clear filters"
   },
   "table": {
     "empty": "No customers found.",
@@ -87,8 +102,10 @@
     "selectAll": "Select all",
     "viewOrders": "View Orders",
     "viewAllProducts": "View all {{count}} products",
-    "distinctProductsHint": "{{count}} distinct products ordered — hover to see the top ones by quantity",
-    "topProductsByQuantity": "Top products by quantity"
+    "distinctProductsHint": "{{count}} distinct products ordered — hover to see the top ones by affinity",
+    "topProductsByAffinity": "Top products by affinity",
+    "orderedNTimes": "{{count}} orders",
+    "unassigned": "Unassigned"
   },
   "phone": {
     "call": "Call",
@@ -184,7 +201,25 @@
       "delivered": "Delivered",
       "avgOrderValue": "Avg. Order Value",
       "openInMaps": "Open in Maps",
-      "preferredGovernorate": "Preferred Governorate"
+      "preferredGovernorate": "Preferred Governorate",
+      "repeatStatus": "Repeat Status",
+      "notRepeat": "Not yet a repeat customer",
+      "firstOrder": "First Order",
+      "purchaseCadence": "Purchase Cadence",
+      "cadenceUnavailable": "Not enough orders yet",
+      "cadenceDays": "Every {{count}} days on average"
+    },
+    "blocked": {
+      "title": "Blocked Customer",
+      "badge": "Blocked",
+      "reason": "Reason",
+      "blockedBy": "Blocked by",
+      "blockedAt": "Blocked at",
+      "unblockAction": "Unblock",
+      "history": "Block History",
+      "historyEmpty": "No block history.",
+      "historyBlockedEntry": "Blocked — {{reason}}",
+      "historyUnblockedEntry": "Unblocked — {{reason}}"
     },
     "phonesTab": {
       "title": "Phone Numbers",
@@ -247,6 +282,26 @@
   "delete": {
     "title": "Delete customer",
     "confirm": "Delete"
+  },
+  "blocked": {
+    "filter": "Blocked",
+    "badge": "Blocked",
+    "blockAction": "Block",
+    "unblockAction": "Unblock",
+    "blockPhoneAction": "Block Phone",
+    "reasonPlaceholder": "Reason for this action…",
+    "blockDialog": {
+      "title": "Block Customer",
+      "description": "{{name}} will be barred from fulfillment: new and existing open orders are placed On Hold. This does not delete or deactivate the customer record."
+    },
+    "unblockDialog": {
+      "title": "Unblock Customer",
+      "description": "{{name}} will be able to place new orders again. Existing held orders are NOT released automatically — each requires its own decision."
+    },
+    "blockPhoneDialog": {
+      "description": "Block a phone number that may not yet belong to a customer. No customer record is created.",
+      "phonePlaceholder": "Phone number…"
+    }
   },
   "profile": {
     "notFound": "Customer not found",

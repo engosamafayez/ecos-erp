@@ -9,6 +9,7 @@ use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentContext;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentResult;
 use Modules\Operations\Fulfillment\Domain\Contracts\FulfillmentWorkflowInterface;
 use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionException;
+use Modules\Sales\Customers\Domain\Services\BlockedCustomerPolicy;
 
 /**
  * Returns a Processing / AwaitingStock / Review order back to Confirmed.
@@ -19,6 +20,14 @@ use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionExcepti
  */
 final class RevertToConfirmedWorkflow implements FulfillmentWorkflowInterface
 {
+    public function __construct(
+        // TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-FINAL-CLOSURE-011 (§3/§4). The SAME
+        // single read authority ProcessOrderWorkflow/ConfirmOrderWorkflow already
+        // consult — see the guard below. This route (POST .../revert-to-confirmed)
+        // previously had no knowledge of an active Customer block at all.
+        private readonly BlockedCustomerPolicy $blockedCustomerPolicy,
+    ) {}
+
     public function guard(FulfillmentContext $ctx): void
     {
         $allowed = [
@@ -30,6 +39,17 @@ final class RevertToConfirmedWorkflow implements FulfillmentWorkflowInterface
         if (! in_array($ctx->order->status, $allowed, true)) {
             throw new WorkflowPreconditionException(
                 "Order [{$ctx->order->id}] must be in InProgress, AwaitingStock, or OnHold to revert. Current: [{$ctx->order->status->value}].",
+            );
+        }
+
+        // TASK-...-FINAL-CLOSURE-011 (§3/§4) — mirrors ProcessOrderWorkflow::guard()'s
+        // identical check verbatim. Checked regardless of WHY the order is on hold: if
+        // the Customer/phone is currently blocked, this route must not revert it out of
+        // On Hold either — only a canonical one-order override (or the block being
+        // lifted) may.
+        if ($ctx->order->status === OrderStatus::OnHold && $this->blockedCustomerPolicy->isOrderBlocked($ctx->order)) {
+            throw new WorkflowPreconditionException(
+                "Order [{$ctx->order->id}] cannot revert to confirmed: its Customer/phone is currently blocked. Grant a one-order override to proceed with just this Order.",
             );
         }
     }

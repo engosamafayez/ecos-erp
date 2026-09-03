@@ -4,7 +4,11 @@ import type { Customer, CustomerPayload } from '@/features/customers/types/custo
 
 export const customerSchema = z.object({
   brand_id: z.string().min(1, 'Brand is required.'),
-  code: z.string().min(1, 'Code is required.').max(50),
+  // Optional: on create the field isn't even rendered (backend generates it — see
+  // CustomerFormFields' isEdit gate); on edit it's still shown and the backend's own
+  // `required` validation is the real enforcement, matching how this form already
+  // trusts the backend for duplicate-phone checking rather than re-deciding it here.
+  code: z.string().max(50).optional(),
   name: z.string().min(1, 'Name is required.').max(255),
   contact_person: z.string().max(255).optional(),
   email: z.union([z.literal(''), z.email('Enter a valid email address.')]).optional(),

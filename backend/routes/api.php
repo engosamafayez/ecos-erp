@@ -522,6 +522,13 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 */
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('customers/search-by-phone', [CustomerController::class, 'searchByPhone']);
+    // TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-BLOCKED-CUSTOMERS-009 (§11/§12/§35).
+    // block-phone is registered before the apiResource's {customer} routes so it
+    // is never swallowed by them.
+    Route::post('customers/block-phone', [CustomerController::class, 'blockPhone'])->middleware('permission:crm.customers.block');
+    Route::post('customers/{customer}/block', [CustomerController::class, 'block'])->middleware('permission:crm.customers.block');
+    Route::post('customers/{customer}/unblock', [CustomerController::class, 'unblock'])->middleware('permission:crm.customers.unblock');
+    Route::get('customers/{customer}/block-history', [CustomerController::class, 'blockHistory']);
     Route::apiResource('customers', CustomerController::class)
         ->middlewareFor('store', 'permission:crm.customers.create')
         ->middlewareFor('update', 'permission:crm.customers.update')
@@ -564,6 +571,9 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     // on success, so it carries the update permission like the other order writes.
     Route::post('orders/{order}/resolve-location', [OrderController::class, 'resolveLocation'])->middleware('permission:sales.orders.update');
     Route::post('orders/{order}/confirm-customer', [OrderController::class, 'confirmCustomer'])->middleware('permission:sales.orders.update');
+    // TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-BLOCKED-CUSTOMERS-009 (§25/§35) — its own
+    // permission, distinct from sales.orders.* / operations.fulfillment.manage.
+    Route::post('orders/{order}/block-override', [OrderController::class, 'blockOverride'])->middleware('permission:crm.customers.override_block');
     Route::get('orders/{order}/activities', [OrderController::class, 'activities']);
     Route::post('orders/{order}/notes', [OrderController::class, 'addNote'])->middleware('permission:sales.orders.update');
     Route::patch('orders/{order}/notes/{note}', [OrderController::class, 'updateNote'])->middleware('permission:sales.orders.update');
