@@ -1660,8 +1660,15 @@ export function WorkflowTab({ order, onClose }: { order: Order; onClose: () => v
 
   function handleRescheduleConfirm() {
     if (!rescheduleDate) return;
-    reschedule.mutate(
-      { id: order.id, nextDeliveryDate: rescheduleDate },
+    // TASK-...-SCHEDULED-LIFECYCLE-002 (§4/§9) — routed through the SAME generic
+    // transition endpoint the grid uses (MarkRescheduledWorkflow), persisting the
+    // canonical requested_delivery_date column instead of RescheduleOrderWorkflow's
+    // next_delivery_date (a different feature — postponing an order already in
+    // flight, with its own resume_from_status). `reschedule` (useOrderWorkflowReschedule)
+    // is deliberately left wired above for that other feature; this transition no
+    // longer uses it.
+    transition.mutate(
+      { id: order.id, targetStatus: 'scheduled', requestedDeliveryDate: rescheduleDate },
       {
         onSuccess: () => {
           setShowRescheduleForm(false);

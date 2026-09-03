@@ -71,6 +71,10 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
   const transition = useOrderWorkflowTransition();
   const [pending, setPending] = useState<StatusTransition | null>(null);
   const [reason, setReason] = useState('');
+  // TASK-...-SCHEDULED-LIFECYCLE-002 (§7) — collected only when the pending
+  // transition's own requires_date flag is set (currently: Schedule).
+  const today = new Date().toISOString().slice(0, 10);
+  const [scheduleDate, setScheduleDate] = useState('');
 
   // Defensive: field absent on legacy API responses before this task
   const transitions: StatusTransition[] = order.allowed_status_transitions ?? [];
@@ -82,18 +86,29 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
 
   function handleSelect(targetStatus: string) {
     const t = transitions.find((tr) => tr.target_status === targetStatus);
-    if (t) { setPending(t); setReason(''); }
+    if (t) { setPending(t); setReason(''); setScheduleDate(''); }
   }
 
+  // TASK-...-SCHEDULED-LIFECYCLE-002 (§7) — client-side mirror of the backend's
+  // "required and future" rule, purely so Confirm can be disabled early; the
+  // workflow guard remains the actual authority.
+  const scheduleDateInvalid = !!pending?.requires_date && (!scheduleDate || scheduleDate <= today);
+
   function handleConfirm() {
-    if (!pending || transition.isPending) return;
+    if (!pending || transition.isPending || scheduleDateInvalid) return;
     const targetLabel = statusLabel[pending.target_status as keyof typeof statusLabel] ?? pending.label;
     transition.mutate(
-      { id: order.id, targetStatus: pending.target_status, reason: reason.trim() || undefined },
+      {
+        id: order.id,
+        targetStatus: pending.target_status,
+        reason: reason.trim() || undefined,
+        requestedDeliveryDate: pending.requires_date ? scheduleDate : undefined,
+      },
       {
         onSuccess: () => {
           setPending(null);
           setReason('');
+          setScheduleDate('');
           toast.success(t($ => $.statusSelector.toastSuccess, { order: order.order_number, status: targetLabel }));
           onSuccess?.();
         },
@@ -107,6 +122,7 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
   function handleCancel() {
     setPending(null);
     setReason('');
+    setScheduleDate('');
   }
 
   // ── Select ─────────────────────────────────────────────────────────────────
@@ -214,6 +230,25 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
               </div>
             </div>
 
+            {/* Schedule date — only when the workflow requires it (Schedule target) */}
+            {pending?.requires_date && (
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-foreground/80">
+                  {t($ => $.statusSelector.scheduleDate)}
+                </label>
+                <Input
+                  autoFocus
+                  type="date"
+                  min={today}
+                  value={scheduleDate}
+                  onChange={(e) => setScheduleDate(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Escape') handleCancel();
+                  }}
+                />
+              </div>
+            )}
+
             {/* Reason input — only when the workflow requires it */}
             {pending?.requires_reason && (
               <div className="space-y-1.5">
@@ -252,7 +287,7 @@ export function SmartStatusSelector({ order, onSuccess }: Props) {
             <Button
               type="button"
               onClick={(e) => { e.stopPropagation(); handleConfirm(); }}
-              disabled={transition.isPending}
+              disabled={transition.isPending || scheduleDateInvalid}
             >
               {transition.isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
               {t($ => $.statusSelector.confirm)}

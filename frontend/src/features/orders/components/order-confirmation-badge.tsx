@@ -1,4 +1,4 @@
-import { CheckCircle2, XCircle, Clock, PhoneMissed } from 'lucide-react';
+import { PhoneCall, XCircle, Clock, PhoneMissed } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -16,9 +16,19 @@ function fmtDateTime(d: string): string {
   return new Intl.DateTimeFormat(undefined, { dateStyle: 'short', timeStyle: 'short' }).format(new Date(d));
 }
 
+// TASK-ECOS-COMMERCE-ORDERS-BATCH-02-SCHEDULED-LIFECYCLE-002 (§2) — this badge
+// reports the CUSTOMER PHONE CONFIRMATION CALL outcome (confirmation_result),
+// a fact independent of the canonical OrderStatus (which can separately show
+// "In Progress" on the very same row). The `confirmed` case previously used a
+// generic checkmark and the bare word "Confirmed" — easily misread as the
+// order's lifecycle status. A phone icon (matching the sibling `not_answered`
+// state's phone icon) plus a "Call Confirmed" label makes the call-outcome
+// authority unambiguous without touching confirmation_result itself, which
+// remains a permanent record of the call (never reset by a later status
+// change) per this task's own instruction to preserve the underlying state.
 const RESULT_CONFIG = {
   confirmed: {
-    icon: CheckCircle2,
+    icon: PhoneCall,
     className:
       'bg-emerald-100 text-emerald-700 ring-emerald-600/20 dark:bg-emerald-900/30 dark:text-emerald-400',
   },

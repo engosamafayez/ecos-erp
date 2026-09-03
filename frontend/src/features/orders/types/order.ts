@@ -383,6 +383,9 @@ export type Order = {
     target_status: string;  // business state — use as Select value
     label: string;          // human-readable — display to user
     requires_reason: boolean;
+    /** TASK-...-SCHEDULED-LIFECYCLE-002 (§7) — UI must collect a future
+     *  requested_delivery_date before confirming this transition. */
+    requires_date: boolean;
     action: string;         // opaque audit field — frontend must NOT route on this
   }>;
 

@@ -141,10 +141,21 @@ export const ordersService = {
 
   // Generic business-state transition — sends target_status; backend resolves the workflow.
   // The frontend must never know which internal workflow handles a given target_status.
-  async workflowTransition(id: string, targetStatus: string, reason?: string): Promise<Order> {
+  // TASK-...-SCHEDULED-LIFECYCLE-002 (§4/§7): requestedDeliveryDate is the canonical
+  // schedule field — only meaningful (and required) when targetStatus is 'scheduled'.
+  async workflowTransition(
+    id: string,
+    targetStatus: string,
+    reason?: string,
+    requestedDeliveryDate?: string,
+  ): Promise<Order> {
     const { data } = await api.post<{ status: string; order_id: string }>(
       `/fulfillment/orders/${id}/transition`,
-      { target_status: targetStatus, ...(reason ? { reason } : {}) },
+      {
+        target_status: targetStatus,
+        ...(reason ? { reason } : {}),
+        ...(requestedDeliveryDate ? { requested_delivery_date: requestedDeliveryDate } : {}),
+      },
     );
     return data as unknown as Order;
   },

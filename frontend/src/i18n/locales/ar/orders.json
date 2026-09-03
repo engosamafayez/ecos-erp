@@ -718,6 +718,7 @@
     "reason": "السبب",
     "reasonOptional": "(اختياري)",
     "reasonPlaceholder": "أدخل السبب…",
+    "scheduleDate": "تاريخ الجدولة",
     "transitionFailed": "فشل التحويل — يرجى المحاولة مجدداً أو التواصل مع الدعم.",
     "toastSuccess": "أصبح الطلب {{order}} الآن {{status}}",
     "cancel": "إلغاء",
@@ -817,8 +818,7 @@
     "selectChannel_ph": "اختر القناة",
     "loadingPolicy": "جارٍ تحميل السياسة…",
     "selectEntryStatus": "اختر حالة الإدخال…",
-    "rescheduledStatus": "مُعاد جدولته",
-    "futureDateNote": "تاريخ تسليم مستقبلي — سيدخل هذا الطلب بحالة {{status}} بناءً على سياسة العلامة التجارية.",
+    "futureDateNote": "تاريخ تسليم مستقبلي — سيتم إنشاء هذا الطلب بحالة {{status}}، ما لم تختر حالة إدخال أخرى أعلاه.",
     "loadingTimeSlots": "جارٍ تحميل مواعيد التسليم…",
     "noTimeSlots": "لا توجد نوافذ تسليم نشطة لهذه العلامة التجارية.",
     "manageTimeSlots": "إدارة نوافذ التسليم",
@@ -977,7 +977,7 @@
     "add": "إضافة"
   },
   "confirmationBadge": {
-    "confirmed": "تم التأكيد",
+    "confirmed": "تم التأكيد هاتفيًا",
     "not_answered": "لم يُجب",
     "rejected": "مرفوض",
     "postponed": "مؤجل",

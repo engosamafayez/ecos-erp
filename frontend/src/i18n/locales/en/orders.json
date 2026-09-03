@@ -718,6 +718,7 @@
     "reason": "Reason",
     "reasonOptional": "(Optional)",
     "reasonPlaceholder": "Enter reason…",
+    "scheduleDate": "Schedule Date",
     "transitionFailed": "Transition failed — please try again or contact support.",
     "toastSuccess": "Order {{order}} is now {{status}}",
     "cancel": "Cancel",
@@ -817,8 +818,7 @@
     "selectChannel_ph": "Select channel",
     "loadingPolicy": "Loading policy…",
     "selectEntryStatus": "Select entry status…",
-    "rescheduledStatus": "Rescheduled",
-    "futureDateNote": "Future delivery date — this order will enter as {{status}} status based on brand policy.",
+    "futureDateNote": "Future delivery date — this order will be created as {{status}}, unless you choose a different entry status above.",
     "loadingTimeSlots": "Loading time slots…",
     "noTimeSlots": "No active Delivery Time Slots configured for this Brand.",
     "manageTimeSlots": "Manage Delivery Time Slots",
@@ -977,7 +977,7 @@
     "add": "Add"
   },
   "confirmationBadge": {
-    "confirmed": "Confirmed",
+    "confirmed": "Call Confirmed",
     "not_answered": "Not Answered",
     "rejected": "Rejected",
     "postponed": "Postponed",

@@ -1404,7 +1404,11 @@ function QuickActionsPanel({
 
   function handleRescheduleConfirm() {
     if (!rescheduleDate) return;
-    reschedule.mutate({ id: order.id, nextDeliveryDate: rescheduleDate }, {
+    // TASK-...-SCHEDULED-LIFECYCLE-002 (§4/§9) — same canonical transition the
+    // grid and drawer now use (MarkRescheduledWorkflow / requested_delivery_date)
+    // instead of RescheduleOrderWorkflow's next_delivery_date — see
+    // order-detail-drawer.tsx's WorkflowTab for the full rationale.
+    transition.mutate({ id: order.id, targetStatus: 'scheduled', requestedDeliveryDate: rescheduleDate }, {
       onSuccess: () => {
         setShowReschedule(false);
         toast.success(t($ => $.drawer.workflow.rescheduleToastSuccess, { date: rescheduleDate }));

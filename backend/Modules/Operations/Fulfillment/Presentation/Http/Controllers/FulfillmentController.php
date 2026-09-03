@@ -359,6 +359,13 @@ final class FulfillmentController extends Controller
         $data = $request->validate([
             'target_status' => ['required', 'string', 'max:50'],
             'reason' => ['nullable', 'string', 'max:500'],
+            // TASK-...-SCHEDULED-LIFECYCLE-002 (§4/§7) — the canonical schedule
+            // field. Only meaningful for target_status=scheduled;
+            // MarkRescheduledWorkflow's own guard enforces "required and future"
+            // for that target specifically — this stays a loose format check so
+            // every other transition target (which never sends this field) is
+            // unaffected.
+            'requested_delivery_date' => ['nullable', 'date_format:Y-m-d'],
         ]);
 
         $current = $order->status->value;
@@ -374,7 +381,11 @@ final class FulfillmentController extends Controller
             ], 422);
         }
 
-        $result = $this->engine->run($workflow, $order, ['target_status' => $target, 'reason' => $reason], $actorId);
+        $result = $this->engine->run($workflow, $order, [
+            'target_status' => $target,
+            'reason' => $reason,
+            'requested_delivery_date' => $data['requested_delivery_date'] ?? null,
+        ], $actorId);
 
         return response()->json([
             'message' => $result->message,
