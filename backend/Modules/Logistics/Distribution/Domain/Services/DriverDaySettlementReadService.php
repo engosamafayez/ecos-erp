@@ -418,6 +418,9 @@ class DriverDaySettlementReadService
         $cashCollected = round((float) array_sum(array_column($summaries, 'cash_collected')), 2);
         $netCash = round($cashCollected + $movements['approved_cash_in'] - $movements['approved_expenses'], 2);
 
+        // Per-order money split, folded out of the collections already loaded above (no new query).
+        $byOrder = $this->collectionsByOrder($allNonRejected);
+
         return [
             'date' => $date,
             'driver' => [
@@ -458,16 +461,39 @@ class DriverDaySettlementReadService
             'closing_readiness' => $this->closingReadiness($summaries, $stopsOutstanding, $recon, $difference, (int) $movements['pending_count']),
             'timeline' => $this->timeline($trips, $recon['reconciliations']),
             'trips' => $trips->map(fn (Trip $t): array => $this->tripRow($t, $summaries[$t->id]))->values()->all(),
-            'orders' => $stops->map(fn (DeliveryStop $stop): array => [
-                'order_id' => $stop->order_id,
-                'order_number' => $ordersById->get($stop->order_id)?->order_number,
-                'customer_name' => $ordersById->get($stop->order_id)?->customer_name,
-                'order_value' => $ordersById->get($stop->order_id) !== null
-                    ? round((float) $ordersById->get($stop->order_id)->total, 2)
-                    : null,
-                'payment_method' => $ordersById->get($stop->order_id)?->payment_method,
-                'status' => $stop->status->value,
-            ])->values()->all(),
+            'orders' => $stops->map(function (DeliveryStop $stop) use ($ordersById, $byOrder): array {
+                $order = $ordersById->get($stop->order_id);
+                $orderValue = $order !== null ? round((float) $order->total, 2) : null;
+                $split = $byOrder[$stop->order_id] ?? ['cash' => 0.0, 'electronic' => 0.0, 'already_paid' => 0.0];
+
+                // Expected at handoff — the immutable per-stop snapshot. Null for stops handed off
+                // before it was tracked; never backfilled from current order state.
+                $expected = $stop->expected_collection_at_handoff !== null
+                    ? round((float) $stop->expected_collection_at_handoff, 2)
+                    : null;
+                $collected = round($split['cash'] + $split['electronic'], 2);
+
+                return [
+                    'order_id' => $stop->order_id,
+                    'order_number' => $order?->order_number,
+                    'customer_name' => $order?->customer_name,
+                    'order_value' => $orderValue,
+                    // Commercial value that actually reached the customer. Only a Delivered stop has
+                    // delivered value; Partial is NOT treated as fully delivered, and reporting a
+                    // partial line's delivered value would need a per-line delivered authority this
+                    // read model does not own — so it stays null rather than guessing.
+                    'delivered_value' => $stop->status === DeliveryStopStatus::Delivered ? $orderValue : null,
+                    'payment_method' => $order?->payment_method,
+                    // Canonical, mutually exclusive buckets (see collectionsByOrder).
+                    'cash_collected' => round($split['cash'], 2),
+                    'electronic_collected' => round($split['electronic'], 2),
+                    'already_paid' => round($split['already_paid'], 2),
+                    'expected_collection' => $expected,
+                    'collected_from_customer' => $collected,
+                    'outstanding' => $expected !== null ? round($expected - $collected, 2) : null,
+                    'status' => $stop->status->value,
+                ];
+            })->values()->all(),
             'transfers' => $transferCollections->map(function (PaymentCollection $c) use ($ordersById, $proofsByOrder): array {
                 $orderId = $c->stop?->order_id;
                 $proof = $orderId !== null ? $proofsByOrder->get($orderId) : null;
@@ -480,15 +506,33 @@ class DriverDaySettlementReadService
                     'payment_type' => $c->payment_type->value,
                     'payment_label' => $c->payment_type->label(),
                     'collection_status' => $c->status,
+                    'reference_number' => $c->reference_number,
+                    // Timing/origin, canonical rather than inferred: this row is a collection the
+                    // DRIVER recorded against a stop during custody (`already_paid` collections are
+                    // excluded from this list by the query above), so it is never confused with a
+                    // pre-dispatch payment.
+                    'is_driver_collected' => true,
+                    'collected_at' => optional($c->created_at)?->toIso8601String(),
+                    'verified_at' => optional($c->verified_at)?->toIso8601String(),
                     'proof' => $proof !== null ? ['id' => $proof->id, 'state' => $proof->state->value] : null,
                 ];
             })->values()->all(),
             'returns' => $returns->map(fn (TripReturn $r): array => [
                 'order_id' => $r->order_id,
+                'product_id' => $r->product_id,
                 'product_name' => $r->product_name,
                 'kind' => $r->kind->value,
+                'dispatched_qty' => $r->dispatched_qty !== null ? (float) $r->dispatched_qty : null,
                 'returned_qty' => (float) $r->returned_qty,
                 'warehouse_confirmed_qty' => $r->warehouse_confirmed_qty !== null ? (float) $r->warehouse_confirmed_qty : null,
+                'discrepancy_qty' => $r->discrepancy_qty !== null ? (float) $r->discrepancy_qty : null,
+                // Canonical reverse-custody detail, surfaced rather than re-derived. `driver_liable`
+                // is reported exactly as the canonical record states it — this read model never
+                // infers or creates liability.
+                'reason' => $r->reason,
+                'disposition' => $r->disposition,
+                'custody_type' => $r->custody_type,
+                'warehouse_confirmed_at' => optional($r->warehouse_confirmed_at)?->toIso8601String(),
                 'driver_liable' => (bool) $r->driver_liable,
                 'confirmed' => $r->isConfirmed(),
             ])->values()->all(),
@@ -839,6 +883,10 @@ class DriverDaySettlementReadService
         return [
             'id' => $trip->uuid,
             'trip_number' => $trip->trip_number,
+            // Operational trip facts for the Driver/Trip context panel — read straight off the
+            // already-loaded Trip; no extra query, no new stored field.
+            'trip_status' => $trip->status->value,
+            'operational_date' => $this->tripDay($trip),
             'settlement_status' => $summary['settlement_status'],
             'cash_expected' => round((float) $summary['cash_expected'], 2),
             'difference' => $summary['discrepancy'] !== null ? round((float) $summary['discrepancy'], 2) : null,
@@ -884,9 +932,14 @@ class DriverDaySettlementReadService
             ? round((float) $snapshots->sum(fn ($v): float => (float) $v), 2)
             : null;
 
-        // What customers actually paid during the trip (physical cash + electronic), excluding the
-        // prepaid "already_paid" portion that was never collectible, against the handoff expectation.
-        $collectedFromCustomers = round($cash + $bank + $card, 2);
+        // What customers actually paid DURING the trip (physical cash + driver-collected
+        // electronic), excluding the prepaid `already_paid` portion that was never collectible at
+        // handoff, measured against the handoff expectation. This is the canonical Collection
+        // Difference and is deliberately NOT "expected cash − physical cash": every driver-collected
+        // channel counts toward it, so a customer paying electronically at the door does not read as
+        // a driver shortage.
+        $driverElectronic = round($bank + $card, 2);
+        $collectedFromCustomers = round($cash + $driverElectronic, 2);
         $collectionDifference = $expectedCollection !== null
             ? round($collectedFromCustomers - $expectedCollection, 2)
             : null;
@@ -904,7 +957,62 @@ class DriverDaySettlementReadService
             'expected_collection' => $expectedCollection,
             'expected_collection_available' => $expectedAvailable,
             'collection_difference' => $collectionDifference,
+            // ── Driver-collected vs prepaid, stated rather than left to the client ──────────
+            // A PaymentCollection row IS a driver collection: it is recorded against a stop by the
+            // driver, with `collected_by` stamped. `payment_type = already_paid` is the canonical
+            // marker for value that was settled BEFORE custody. So the timing split below is
+            // canonical, never inferred from an order's declared payment method.
+            'driver_collected_electronic' => $driverElectronic,
+            'driver_collected_total' => $collectedFromCustomers,
+            'prepaid_before_delivery' => $alreadyPaid,
+            // The finest split the canonical collection authority can express. PaymentType is
+            // {cash, bank_transfer, card, already_paid} — see the enum and the
+            // distribution_payment_collections.payment_type column. There is NO InstaPay case and
+            // NO Wallet case, so an InstaPay collection is stored as `bank_transfer` and is
+            // indistinguishable from any other bank transfer. These two flags say so explicitly, so
+            // the UI can render an honest "not available" instead of a fabricated zero, and so the
+            // gap is machine-readable rather than a UI assumption.
+            'channel_granularity' => 'payment_type',
+            'instapay_available' => false,
+            'wallet_available' => false,
         ];
+    }
+
+    /**
+     * Per-order collection split, folded out of the collections ALREADY loaded for this driver-day.
+     *
+     * Costs NO additional query: `$collections` is the one bounded, already-fetched set of
+     * non-rejected PaymentCollection rows for these trips (with `stop` eager-loaded), so this is
+     * server-side aggregation over loaded data — not a per-order query and not browser-side work.
+     *
+     * Each amount is attributed by canonical `payment_type`, and every payment lands in exactly ONE
+     * bucket: physical cash, driver-collected electronic, or prepaid-before-delivery. Nothing is
+     * counted twice.
+     *
+     * @param  Collection<int, PaymentCollection>  $collections
+     * @return array<string, array{cash: float, electronic: float, already_paid: float}>
+     */
+    private function collectionsByOrder(Collection $collections): array
+    {
+        $out = [];
+        foreach ($collections as $c) {
+            $orderId = $c->stop?->order_id;
+            if ($orderId === null) {
+                continue;
+            }
+
+            $out[$orderId] ??= ['cash' => 0.0, 'electronic' => 0.0, 'already_paid' => 0.0];
+            $amount = (float) $c->amount;
+
+            $bucket = match ($c->payment_type) {
+                PaymentType::Cash => 'cash',
+                PaymentType::BankTransfer, PaymentType::Card => 'electronic',
+                PaymentType::AlreadyPaid => 'already_paid',
+            };
+            $out[$orderId][$bucket] += $amount;
+        }
+
+        return $out;
     }
 
     // ── Reconciliation / custody surfacing (§8, §9, §11, §12) ────────────────────

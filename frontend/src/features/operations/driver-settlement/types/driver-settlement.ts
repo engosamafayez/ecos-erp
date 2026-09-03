@@ -151,6 +151,9 @@ export interface DaySettlementBoard {
 export interface DaySettlementTripRow {
   id: string;
   trip_number: string | null;
+  /** Canonical TripStatus + operational day, for the Driver/Trip context panel. */
+  trip_status?: string;
+  operational_date?: string;
   settlement_status: string | null;
   cash_expected: number;
   difference: number | null;
@@ -163,7 +166,18 @@ export interface DaySettlementOrderRow {
   order_number: string | null;
   customer_name: string | null;
   order_value: number | null;
+  /** Commercial value that reached the customer — only a Delivered stop has one. Null for
+   *  Partial: a per-line delivered authority would be needed, and guessing is worse than null. */
+  delivered_value?: number | null;
   payment_method: string | null;
+  /** Mutually exclusive canonical buckets — a payment appears in exactly one of these. */
+  cash_collected?: number;
+  electronic_collected?: number;
+  already_paid?: number;
+  /** Immutable per-stop handoff snapshot; null when the stop predates snapshot tracking. */
+  expected_collection?: number | null;
+  collected_from_customer?: number;
+  outstanding?: number | null;
   status: string;
 }
 
@@ -175,16 +189,31 @@ export interface DaySettlementTransferRow {
   payment_type: string;
   payment_label: string;
   collection_status: string;
+  reference_number?: string | null;
+  /** True for every row here: these are collections the DRIVER recorded against a stop during
+   *  custody. Pre-dispatch `already_paid` value is excluded from this list by the server. */
+  is_driver_collected?: boolean;
+  collected_at?: string | null;
+  verified_at?: string | null;
   /** Canonical payment_proofs record, matched by order_id only (the two stores stay separate). */
   proof: { id: string; state: string } | null;
 }
 
 export interface DaySettlementReturnRow {
   order_id: string | null;
+  product_id?: string | number | null;
   product_name: string | null;
   kind: string;
+  dispatched_qty?: number | null;
   returned_qty: number;
   warehouse_confirmed_qty: number | null;
+  discrepancy_qty?: number | null;
+  reason?: string | null;
+  /** Where the goods went / how they were held — canonical reverse-custody fields. */
+  disposition?: string | null;
+  custody_type?: string | null;
+  warehouse_confirmed_at?: string | null;
+  /** Reported exactly as the canonical record states it. Never inferred, never created here. */
   driver_liable: boolean;
   confirmed: boolean;
 }
@@ -209,6 +238,18 @@ export interface DaySettlementCollections {
   expected_collection: number | null;
   expected_collection_available: boolean;
   collection_difference: number | null;
+  /** Driver-collected electronic (bank transfer + card) and the full driver-collected total
+   *  (cash + electronic). Excludes prepaid value, which is reported separately below. */
+  driver_collected_electronic?: number;
+  driver_collected_total?: number;
+  prepaid_before_delivery?: number;
+  /** The finest split the canonical collection authority can express. `PaymentType` is
+   *  {cash, bank_transfer, card, already_paid} — there is no InstaPay case and no Wallet case, so
+   *  an InstaPay collection is stored as `bank_transfer`. The two flags let the UI render an
+   *  honest "not available" instead of a fabricated zero. */
+  channel_granularity?: string;
+  instapay_available?: boolean;
+  wallet_available?: boolean;
 }
 
 /** Aggregate vehicle-custody reconciliation summary (§8). */
