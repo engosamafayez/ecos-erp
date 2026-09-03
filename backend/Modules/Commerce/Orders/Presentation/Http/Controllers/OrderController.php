@@ -397,11 +397,20 @@ final class OrderController extends Controller
      * Records that a CRM operator called the customer and confirmed the order.
      * POST /orders/{order}/confirm-customer
      *
-     * When result = 'confirmed' and the order is in a pre-execution status
-     * (Pending | AwaitingPayment | Review | Rescheduled), the order status is
+     * confirmation_result is recorded regardless of the Order's current OrderStatus —
+     * it is a separate customer-contact fact, never itself a lifecycle status.
+     *
+     * When result = 'confirmed' and the Order is in a pre-execution status
+     * (In Progress | Awaiting Payment | On Hold), the order status is ALSO
      * automatically transitioned to Confirmed via the canonical ConfirmOrderWorkflow
-     * (inventory reservation + financial snapshot + audit trail).
-     * Both the confirmation update and the status transition are committed atomically.
+     * (inventory reservation + financial snapshot + audit trail). Both the
+     * confirmation update and the status transition are committed atomically.
+     *
+     * Scheduled is deliberately excluded from that auto-transition
+     * (TASK-...-SCHEDULED-LIFECYCLE-002-R1 §2/§5/§7): a future-dated Scheduled Order
+     * may be confirmed by phone and stay Scheduled — ConfirmOrderWorkflow does not
+     * admit Scheduled as a source, and only the Order's own due-date activation
+     * trigger may ever advance it.
      */
     public function confirmCustomer(
         Request $request,
@@ -422,12 +431,27 @@ final class OrderController extends Controller
         $actorId = $request->user()?->id !== null ? (string) $request->user()->id : null;
         $actorName = $request->user()?->name ?? 'system';
 
-        // Pre-execution states where customer confirmation triggers automatic order status transition
+        // Pre-execution states where customer confirmation triggers automatic order status
+        // transition via the canonical ConfirmOrderWorkflow.
+        //
+        // TASK-ECOS-COMMERCE-ORDERS-BATCH-02-SCHEDULED-LIFECYCLE-002-R1 (§2/§3/§5/§7) —
+        // Scheduled is deliberately NOT in this list. A future-dated Scheduled Order may
+        // still receive Call Confirmation (confirmation_result is a separate customer-
+        // contact fact, recorded unconditionally below regardless of status), but it must
+        // stay Scheduled: ConfirmOrderWorkflow's own guard does not admit Scheduled as a
+        // source (Confirm is reached only from In Progress/Awaiting Payment/Awaiting Stock/
+        // On Hold/Returned/Cancelled — ADR-042), so calling it for a Scheduled Order always
+        // threw WorkflowPreconditionException, and — because the guard() pre-check below
+        // runs BEFORE the transaction that records confirmation_result — the whole
+        // confirmation request failed outright, not just the status transition. Excluding
+        // Scheduled here means confirmation_result is now recorded normally and no FSM
+        // transition is attempted at all: the Order's own due-date activation trigger
+        // (ActivateScheduledOrdersCommand / ProcessOrderWorkflow) remains the only thing
+        // that ever advances it, exactly as Task 2 established.
         $preExecutionStatuses = [
             OrderStatus::InProgress,
             OrderStatus::AwaitingPayment,
             OrderStatus::OnHold,
-            OrderStatus::Scheduled,
         ];
 
         $shouldAutoConfirm = $validated['result'] === 'confirmed'
