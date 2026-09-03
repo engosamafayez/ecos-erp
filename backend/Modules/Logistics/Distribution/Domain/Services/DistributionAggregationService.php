@@ -186,15 +186,26 @@ final class DistributionAggregationService
      * working on a Group whose Wave has since closed. Making the parameter required would
      * have turned those reads into historical blind spots.
      *
-     * Groups with NO Wave are still shown. A null `preparation_wave_id` means the Group
-     * was never wave-scoped (an operator created it, or no Wave was open), so it cannot
-     * belong to a *different* Wave and hiding it would make operator work vanish. The
-     * window filter still confines it to the right day.
+     * TASK-...-006-R1 §2/§4 — a Group with NO Wave is NO LONGER shown here. A manual
+     * Group used to stay wave-less forever (fixed upstream at creation, dfe822a9), so
+     * treating a null Wave as "safe to show" was really "show every orphan ever
+     * created." Every CURRENT operational create path now stamps a real Wave id
+     * (§3 of that task's report); a genuinely wave-less row from before that fix is
+     * historical, not in-progress, and belongs off the current board, not on it.
+     *
+     * @param  array<string, string>|null  $currentWaveByWarehouse  TASK-...-006-R1 §6 —
+     *         ALL-WAREHOUSES mode. Passed only when $warehouseId is null: warehouse_id
+     *         => that warehouse's OWN governing Wave id (governingPreparationWavesByCompany()).
+     *         A single $waveId cannot scope every warehouse at once, so this checks each
+     *         Group against its OWN warehouse's current Wave instead of disabling Wave
+     *         scoping. Mutually exclusive with $waveId in practice — a caller resolves
+     *         one or the other depending on whether a warehouse is selected.
      */
     public function slotSummaries(
         string $windowId,
         ?string $warehouseId = null,
         ?string $waveId = null,
+        ?array $currentWaveByWarehouse = null,
     ): array {
         // The GROUP LIST is filtered by OWNERSHIP, not merely by the orders it
         // reports. Part 5A scoped the totals, which hid the symptom; a group owned
@@ -202,12 +213,9 @@ final class DistributionAggregationService
         $slots = VirtualCapacitySlot::query()
             ->where('distribution_window_id', $windowId)
             ->when($warehouseId !== null, fn ($q) => $q->where('warehouse_id', $warehouseId))
-            // WAVE ISOLATION. Groups of this Wave, plus Groups belonging to no Wave at
-            // all — never another Wave's.
-            ->when($waveId !== null, fn ($q) => $q->where(
-                fn ($w) => $w->where('preparation_wave_id', $waveId)
-                    ->orWhereNull('preparation_wave_id'),
-            ))
+            // WAVE ISOLATION — this Wave, strictly. A null preparation_wave_id no
+            // longer qualifies (TASK-...-006-R1 §2): see the docblock above.
+            ->when($waveId !== null, fn ($q) => $q->where('preparation_wave_id', $waveId))
             // TASK-002 PART 15 — the ACTIVE board shows operational Groups only.
             //
             // A Group closed with its Preparation Wave is historical: it keeps every row
@@ -217,6 +225,19 @@ final class DistributionAggregationService
             ->whereNull('closed_at')
             ->orderBy('code')
             ->get();
+
+        if ($currentWaveByWarehouse !== null) {
+            // ALL-WAREHOUSES MODE (§6): each Group is checked against its OWN
+            // warehouse's current Wave, never a single Wave applied to all of them.
+            // A Group whose warehouse has no governing Wave right now, or whose own
+            // Wave isn't that warehouse's current one, is excluded — the same
+            // exclusion §2 applies to a single selected warehouse, just resolved per
+            // warehouse instead of once.
+            $slots = $slots->filter(
+                fn (VirtualCapacitySlot $s): bool => $s->preparation_wave_id !== null
+                    && $s->preparation_wave_id === ($currentWaveByWarehouse[$s->warehouse_id] ?? null),
+            )->values();
+        }
 
         $demand = $this->slotOrderCounts($windowId, $warehouseId);
         $zonesBySlot = $this->zonesBySlot($windowId);
@@ -417,6 +438,32 @@ final class DistributionAggregationService
             // The operational timezone is the COMPANY's - the certified authority.
             'timezone' => DB::table('companies')->where('id', $companyId)->value('timezone'),
         ];
+    }
+
+    /**
+     * The governing Wave id for EVERY warehouse of this company, keyed by warehouse_id.
+     *
+     * The ALL-WAREHOUSES counterpart to governingPreparationWave() (TASK-...-006-R1 §6):
+     * one Wave cannot scope every warehouse's Groups at once, so a board with no
+     * warehouse selected must resolve each warehouse's OWN current Wave instead of
+     * disabling Wave scoping entirely. Same engine-only rule as the single-warehouse
+     * resolver: a warehouse whose only active wave is manually-created has no
+     * governing Wave here either, exactly as governingPreparationWave() already treats
+     * it — this is not a second rule, it is the same one applied per warehouse.
+     *
+     * @return array<string, string> warehouse_id => wave_id
+     */
+    public function governingPreparationWavesByCompany(string $companyId): array
+    {
+        $out = [];
+
+        foreach ($this->waves->getActiveWavesByCompany($companyId) as $warehouseId => $wave) {
+            if ($wave->wave_type === 'engine') {
+                $out[$warehouseId] = $wave->id;
+            }
+        }
+
+        return $out;
     }
 
     /**

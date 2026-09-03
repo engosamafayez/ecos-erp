@@ -256,7 +256,7 @@ final class ManualAssignmentService
         // array key coercing to '' inside the slot map lookup.
         $slotId = $zoneId === null || $orderWarehouseId === null
             ? null
-            : ($this->collection->slotMapForWindow($window->id, (string) $orderWarehouseId)[$zoneId] ?? null);
+            : ($this->collection->slotMapForWindow((string) $window->company_id, $window->id, (string) $orderWarehouseId)[$zoneId] ?? null);
 
         // GROUP CAPACITY. Changing an Order's Zone moves it into the destination
         // Zone's Group, so it is an add to that Group and is checked as one. The
@@ -560,6 +560,7 @@ final class ManualAssignmentService
             : ($order->assigned_warehouse_id === null
                 ? null
                 : ($this->collection->slotMapForWindow(
+                    $target->company_id,
                     $target->id,
                     (string) $order->assigned_warehouse_id,
                 )[$zoneId] ?? null));

@@ -105,7 +105,7 @@ final class DistributionCollectionService
         /** @var array<string, array<int, string>> $slotByZone */
         $slotByZone = [];
 
-        $slotFor = function (string $windowId, ?string $warehouseId, ?int $zoneId) use (&$slotByZone): ?string {
+        $slotFor = function (string $windowId, ?string $warehouseId, ?int $zoneId) use ($companyId, &$slotByZone): ?string {
             if ($zoneId === null || $warehouseId === null) {
                 return null;
             }
@@ -113,7 +113,7 @@ final class DistributionCollectionService
             $key = $windowId.'|'.$warehouseId;
 
             if (! array_key_exists($key, $slotByZone)) {
-                $slotByZone[$key] = $this->slotMapForWindow($windowId, $warehouseId);
+                $slotByZone[$key] = $this->slotMapForWindow($companyId, $windowId, $warehouseId);
             }
 
             return $slotByZone[$key][$zoneId] ?? null;
@@ -321,7 +321,7 @@ final class DistributionCollectionService
             // The Group a re-zoned Order joins is its OWN warehouse's Group.
             $warehouseId = $row->assigned_warehouse_id;
             if ($warehouseId !== null && ! array_key_exists($warehouseId, $slotByZoneForWarehouse)) {
-                $slotByZoneForWarehouse[$warehouseId] = $this->slotMapForWindow($windowId, $warehouseId);
+                $slotByZoneForWarehouse[$warehouseId] = $this->slotMapForWindow($companyId, $windowId, $warehouseId);
             }
             $slotByZone = $warehouseId === null ? [] : $slotByZoneForWarehouse[$warehouseId];
 
@@ -387,35 +387,56 @@ final class DistributionCollectionService
     }
 
     /**
-     * Zone → Slot map for one Window.
+     * Zone → Slot map for one Window, scoped to the Warehouse's CURRENT governing Wave.
      *
      * Orders inherit their Slot from their Zone, so this is read once per run
      * rather than per Order.
      *
+     * TASK-ECOS-DISTRIBUTION-PLANNING-DAILY-GROUP-LIFECYCLE-006 — excludes a Zone
+     * whose last claimant Group has since closed. DailyGroupLifecycleService::
+     * closeWave() never touches distribution_slot_zones, so a stale row would
+     * otherwise keep routing new Orders into a defunct Group indefinitely. A
+     * closed Group's Zone reads as unclaimed instead — the same state as a Zone
+     * that was never attached at all — so the next sweep or manual Apply/attach
+     * re-establishes it against a live Group.
+     *
+     * TASK-...-006-R1 §10 — closure alone was not enough: a Zone's last claimant
+     * could also be a Group with NO Wave (a legacy manual Group from before
+     * dfe822a9) or a Group from a Wave that ended without ever being closed via
+     * closeWave(). Neither is "the current Wave's Group", so both are now excluded
+     * the same way the board excludes them (§2/§4): a Zone counts as claimed only
+     * by a Group belonging to ITS WAREHOUSE'S current governing Wave, resolved via
+     * the same WaveManager this service already depends on. No warehouse, or no
+     * active Wave for it right now, means nothing can match yet — never a guess.
+     *
      * @return array<int, string>
      */
-    public function slotMapForWindow(string $windowId, ?string $warehouseId = null): array
+    public function slotMapForWindow(string $companyId, string $windowId, ?string $warehouseId = null): array
     {
         /** @var array<int, string> $map */
         $map = [];
+
+        if ($warehouseId === null) {
+            return $map;
+        }
+
+        $wave = $this->waves->getActiveWave($companyId, $warehouseId);
+        $currentWaveId = ($wave !== null && $wave->wave_type === 'engine') ? $wave->id : null;
+
+        if ($currentWaveId === null) {
+            return $map;
+        }
 
         // Warehouse-aware: the same Zone can now be planned by two warehouses, each
         // in its own Group. Without the filter an Order would inherit whichever of
         // the two rows came back last — a cross-warehouse Group membership arriving
         // by the back door.
-        //
-        // TASK-ECOS-DISTRIBUTION-PLANNING-DAILY-GROUP-LIFECYCLE-006 — excludes a Zone
-        // whose last claimant Group has since closed. DailyGroupLifecycleService::
-        // closeWave() never touches distribution_slot_zones, so a stale row would
-        // otherwise keep routing new Orders into a defunct Group indefinitely. A
-        // closed Group's Zone reads as unclaimed instead — the same state as a Zone
-        // that was never attached at all — so the next sweep or manual Apply/attach
-        // re-establishes it against a live Group.
         DB::table('distribution_slot_zones as dsz')
             ->join('distribution_virtual_slots as s', 's.id', '=', 'dsz.virtual_slot_id')
             ->where('dsz.distribution_window_id', $windowId)
+            ->where('dsz.warehouse_id', $warehouseId)
+            ->where('s.preparation_wave_id', $currentWaveId)
             ->whereNull('s.closed_at')
-            ->when($warehouseId !== null, fn ($q) => $q->where('dsz.warehouse_id', $warehouseId))
             ->select('dsz.distribution_zone_id', 'dsz.virtual_slot_id')
             ->get()
             ->each(function (object $row) use (&$map): void {

@@ -42,6 +42,29 @@ final class WaveManager
             ->first();
     }
 
+    /**
+     * The active wave for EVERY warehouse of this company, keyed by warehouse_id — the
+     * batched form of getActiveWave() for a caller that must resolve each warehouse's
+     * own current wave in one query rather than one call per warehouse (e.g. an
+     * "all warehouses" board view, TASK-...-006-R1 §6).
+     *
+     * Same ACTIVE_STATUSES and newest-planning_date-first tie-break as getActiveWave();
+     * a warehouse with more than one somehow-active wave keeps only the newest, exactly
+     * as getActiveWave() would resolve it for that one warehouse.
+     *
+     * @return array<string, PreparationWave>
+     */
+    public function getActiveWavesByCompany(string $companyId): array
+    {
+        return PreparationWave::where('company_id', $companyId)
+            ->whereIn('status', self::ACTIVE_STATUSES)
+            ->orderByDesc('planning_date')
+            ->get()
+            ->unique('warehouse_id')
+            ->keyBy('warehouse_id')
+            ->all();
+    }
+
     public function getActiveWaveForDate(string $companyId, string $warehouseId, string $date): ?PreparationWave
     {
         return PreparationWave::where('company_id', $companyId)

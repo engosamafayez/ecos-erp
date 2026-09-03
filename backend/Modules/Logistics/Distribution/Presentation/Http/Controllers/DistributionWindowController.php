@@ -141,6 +141,13 @@ final class DistributionWindowController extends Controller
         // DistributionWindowService::resolvePlanningWindow().
         $wave = $this->aggregation->governingPreparationWave($companyId, $warehouseId);
 
+        // ALL-WAREHOUSES MODE (TASK-...-006-R1 §6): no single Wave can scope every
+        // warehouse's Groups, so resolve each warehouse's OWN governing Wave instead
+        // of leaving slotSummaries() to skip Wave scoping altogether.
+        $waveByWarehouse = $warehouseId === null
+            ? $this->aggregation->governingPreparationWavesByCompany($companyId)
+            : null;
+
         $window = $this->windows->resolvePlanningWindow(
             $companyId,
             $wave['wave_id'] ?? null,
@@ -200,7 +207,7 @@ final class DistributionWindowController extends Controller
             'warehouse_id' => $warehouseId,
             'zones' => $this->aggregation->zoneSummaries($window->id, $warehouseId),
             // The wave resolved at the top of this action — not resolved a second time.
-            'slots' => $this->aggregation->slotSummaries($window->id, $warehouseId, $wave['wave_id'] ?? null),
+            'slots' => $this->aggregation->slotSummaries($window->id, $warehouseId, $wave['wave_id'] ?? null, $waveByWarehouse),
         ]]);
     }
 
@@ -308,13 +315,17 @@ final class DistributionWindowController extends Controller
     {
         $w = $this->window($request, $window);
 
+        $companyId = $this->companyId($request);
         $warehouseId = $this->warehouseId($request);
 
         return response()->json([
             'data' => $this->aggregation->slotSummaries(
                 $w->id,
                 $warehouseId,
-                $this->activeWaveId($this->companyId($request), $warehouseId),
+                $this->activeWaveId($companyId, $warehouseId),
+                // ALL-WAREHOUSES MODE (TASK-...-006-R1 §6) — see current() for the
+                // same reasoning: a single Wave cannot scope every warehouse's Groups.
+                $warehouseId === null ? $this->aggregation->governingPreparationWavesByCompany($companyId) : null,
             ),
         ]);
     }
