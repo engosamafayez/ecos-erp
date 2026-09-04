@@ -23,7 +23,7 @@ final class RoleTemplateInUseException extends RuntimeException
     {
         return new self(
             "Role template '{$key}' cannot be deleted — it is currently assigned to {$assignmentCount} user(s). ".
-            'Archive it instead; hard-delete is only available for a template with zero assignments.'
+            'Archive it instead; hard-delete is only available for a template with zero assignments.',
         );
     }
 }

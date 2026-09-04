@@ -20,6 +20,7 @@ use Modules\Finance\Presentation\Http\Controllers\SupplierPaymentController;
 use Modules\Finance\Shared\Domain\Models\FinanceCommandReceipt;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Tests\TestCase;
+use Throwable;
 
 /**
  * TASK-ECOS-FINANCE-AP-AR-GL-WIRING-003 — CommandIdempotencyGuard wired into
@@ -118,7 +119,7 @@ class SupplierPaymentIdempotencyEndpointTest extends TestCase
                 fundingAccountUuid: (string) Str::uuid(), // does not exist -> createPayment() throws
             ));
             $this->fail('Expected the invalid funding account to raise an exception.');
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // expected
         }
 
@@ -139,7 +140,7 @@ class SupplierPaymentIdempotencyEndpointTest extends TestCase
                 key: $key,
                 fundingAccountUuid: (string) Str::uuid(),
             ));
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // expected first-attempt failure
         }
 

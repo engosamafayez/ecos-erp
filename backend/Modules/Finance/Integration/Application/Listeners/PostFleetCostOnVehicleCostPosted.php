@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Finance\Integration\Application\Listeners;
 
+use BackedEnum;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Modules\Finance\Integration\Application\Services\FinancialIntegrationService;
@@ -58,7 +59,7 @@ final class PostFleetCostOnVehicleCostPosted
         }
 
         try {
-            $costType = $entry->cost_type instanceof \BackedEnum ? $entry->cost_type->value : (string) $entry->cost_type;
+            $costType = $entry->cost_type instanceof BackedEnum ? $entry->cost_type->value : (string) $entry->cost_type;
 
             $financialEvent = new FinancialEvent(
                 companyId: (string) $entry->company_id,

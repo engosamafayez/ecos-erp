@@ -9,11 +9,11 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Modules\Finance\Fiscal\Domain\Models\FiscalPeriod;
+use Modules\Finance\Fiscal\Domain\Services\FiscalCalendarService;
 use Modules\Finance\Ledger\Domain\Enums\AccountType;
 use Modules\Finance\Ledger\Domain\Models\Account;
 use Modules\Finance\Ledger\Domain\Services\ChartOfAccountsService;
-use Modules\Finance\Fiscal\Domain\Models\FiscalPeriod;
-use Modules\Finance\Fiscal\Domain\Services\FiscalCalendarService;
 use Modules\Finance\Presentation\Http\Controllers\CustomerReceiptController;
 use Modules\Finance\Receivables\Domain\Enums\CustomerDocumentType;
 use Modules\Finance\Receivables\Domain\Models\CustomerInvoice;
@@ -22,6 +22,7 @@ use Modules\Finance\Receivables\Domain\Services\AccountsReceivableService;
 use Modules\Finance\Shared\Domain\Models\FinanceCommandReceipt;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Tests\TestCase;
+use Throwable;
 
 /**
  * TASK-ECOS-FINANCE-AP-AR-GL-WIRING-003 — the AR mirror of
@@ -111,7 +112,7 @@ class CustomerReceiptIdempotencyEndpointTest extends TestCase
                 depositAccountUuid: (string) Str::uuid(), // does not exist -> throws
             ));
             $this->fail('Expected the invalid deposit account to raise an exception.');
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // expected
         }
 

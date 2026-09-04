@@ -44,9 +44,9 @@ final class CommandIdempotencyGuard
      * path does today.
      *
      * @param  array<string, mixed>  $payload  Business-meaningful command
-     *   fields only — see fingerprint() for exactly what must NOT be included.
+     *                                         fields only — see fingerprint() for exactly what must NOT be included.
      * @param  callable(): Model  $command  Must be pure persistence (no
-     *   external side effects): on a lost race its effects are rolled back.
+     *                                      external side effects): on a lost race its effects are rolled back.
      */
     public function execute(
         string $companyId,

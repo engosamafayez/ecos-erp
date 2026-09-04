@@ -8,6 +8,7 @@ use App\Core\Company\TenantOwnershipResolver;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use InvalidArgumentException;
 use Modules\IAM\Domain\Contracts\PermissionServiceInterface;
 use Modules\IAM\Domain\Contracts\RoleCompositionInterface;
 use Modules\IAM\Domain\Contracts\RoleTemplateRepositoryInterface;
@@ -163,7 +164,7 @@ class UserRoleAssignmentService
 
         $model = $this->templates->findByKey($template);
         if ($model === null) {
-            throw new \InvalidArgumentException("Unknown role template '{$template}'.");
+            throw new InvalidArgumentException("Unknown role template '{$template}'.");
         }
 
         return $model;

@@ -100,13 +100,13 @@ class RoleTemplateRepository implements RoleTemplateRepositoryInterface
 
     /**
      * @param  array<string,mixed>  $attributes  'company_id' is D11 tenant ownership — every
-     *                                            caller reachable from the Admin API must supply
-     *                                            it (server-derived, never client-selected,
-     *                                            matching the D2 pattern for Users); left
-     *                                            nullable at the schema/service level so the
-     *                                            pre-existing RoleTemplateImportService caller
-     *                                            (out of this task's HTTP-wiring scope) keeps
-     *                                            working unchanged.
+     *                                           caller reachable from the Admin API must supply
+     *                                           it (server-derived, never client-selected,
+     *                                           matching the D2 pattern for Users); left
+     *                                           nullable at the schema/service level so the
+     *                                           pre-existing RoleTemplateImportService caller
+     *                                           (out of this task's HTTP-wiring scope) keeps
+     *                                           working unchanged.
      */
     public function createCustom(array $attributes): RoleTemplate
     {

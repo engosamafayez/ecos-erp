@@ -9,12 +9,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Modules\IAM\Application\Services\UserIdentityService;
 use Modules\IAM\Application\Services\UserLifecycleService;
-use Modules\IAM\Application\Services\UserPasswordService;
 use Modules\IAM\Domain\Contracts\RoleTemplateRepositoryInterface;
-use Modules\IAM\Domain\Enums\UserStatus;
 use Modules\IAM\Domain\Models\Permission;
 use Modules\IAM\Domain\Models\Role;
-use Modules\IAM\Domain\Models\RoleTemplate;
 use Tests\TestCase;
 
 /**

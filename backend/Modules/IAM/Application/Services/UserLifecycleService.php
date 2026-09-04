@@ -21,12 +21,12 @@ class UserLifecycleService
 
     /**
      * @param  bool  $bypassTransitionMap  Narrow, explicit escape hatch for restore() only
-     *                                      (TASK-ECOS-IAM-SECURE-ADMIN-API-002, STOP 5 fix).
-     *                                      DELETED has no outbound transitions in the map —
-     *                                      terminal by design for every other caller — but a
-     *                                      user actually un-trashed via Eloquent SoftDeletes is
-     *                                      the one legitimate case that must still reach ACTIVE.
-     *                                      No caller other than restore() ever sets this true.
+     *                                     (TASK-ECOS-IAM-SECURE-ADMIN-API-002, STOP 5 fix).
+     *                                     DELETED has no outbound transitions in the map —
+     *                                     terminal by design for every other caller — but a
+     *                                     user actually un-trashed via Eloquent SoftDeletes is
+     *                                     the one legitimate case that must still reach ACTIVE.
+     *                                     No caller other than restore() ever sets this true.
      */
     public function transition(User $user, UserStatus $to, ?User $actor = null, ?string $reason = null, bool $bypassTransitionMap = false): User
     {

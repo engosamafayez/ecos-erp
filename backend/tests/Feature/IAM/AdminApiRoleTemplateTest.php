@@ -17,7 +17,6 @@ use Modules\IAM\Domain\Exceptions\SystemTemplateImmutableException;
 use Modules\IAM\Domain\Exceptions\UnknownTemplatePermissionException;
 use Modules\IAM\Domain\Models\Permission;
 use Modules\IAM\Domain\Models\Role;
-use Modules\IAM\Domain\Models\RoleTemplate;
 use Tests\TestCase;
 
 /**

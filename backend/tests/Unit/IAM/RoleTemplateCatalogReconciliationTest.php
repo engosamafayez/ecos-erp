@@ -6,6 +6,7 @@ namespace Tests\Unit\IAM;
 
 use Modules\IAM\Domain\Catalog\RoleTemplateCatalog;
 use PHPUnit\Framework\TestCase;
+use RuntimeException;
 
 /**
  * TASK-ECOS-IAM-ADMINISTRATION-WORKSPACE-003 — Group A/B/C template reconciliation, extended by
@@ -43,7 +44,7 @@ class RoleTemplateCatalogReconciliationTest extends TestCase
             }
         }
 
-        throw new \RuntimeException("No catalog template with key '{$key}'");
+        throw new RuntimeException("No catalog template with key '{$key}'");
     }
 
     private function permissionsFor(string $key): array

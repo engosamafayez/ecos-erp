@@ -8,7 +8,6 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
-use Modules\Finance\Expenses\Domain\Enums\ExpenseStatus;
 use Modules\Finance\Expenses\Domain\Models\Expense;
 use Modules\Finance\Expenses\Domain\Models\ExpenseCategory;
 use Modules\Finance\Expenses\Domain\Services\ExpenseService;

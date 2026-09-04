@@ -8,6 +8,7 @@ use App\Core\Company\TenantOwnershipResolver;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Traits\HasApiResponse;
+use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -216,7 +217,7 @@ final class UserController extends Controller
         return $this->success(null, 'Password reset.');
     }
 
-    private function transition(TransitionReasonRequest $request, User $user, string $ability, \Closure $run): JsonResponse
+    private function transition(TransitionReasonRequest $request, User $user, string $ability, Closure $run): JsonResponse
     {
         Gate::authorize($ability, $user);
 
