@@ -10,17 +10,26 @@ use Illuminate\Database\Eloquent\Collection;
 use InvalidArgumentException;
 use Modules\Collaboration\Domain\Models\ConversationParticipant;
 use Modules\Collaboration\Domain\Models\Message;
+use Modules\Collaboration\Domain\Services\SearchQueryExpander;
 
 /**
  * MySQL-native full-text search (ADR-044 §9, brief §19-21) — no Scout, no
  * Meilisearch. Remediation of the original PostgreSQL tsvector/websearch_to_
  * tsquery design for MySQL 8.4, the authoritative ECOS database (see
  * TASK-ECOS-INTERNAL-COLLABORATION-MYSQL-MIGRATION-REMEDIATION-003 and the
- * 2026_09_02_100008 migration's docblock). NATURAL LANGUAGE MODE is used
- * deliberately over BOOLEAN MODE: the original contract defines no ranking
- * beyond `orderByDesc('created_at')`, so no operator syntax (+/-/".../*) is
- * needed, and free-text user input is never at risk of being misparsed as
- * a boolean operator.
+ * 2026_09_02_100008 migration's docblock).
+ *
+ * BOOLEAN MODE, via the shared SearchQueryExpander (TASK-ECOS-INTERNAL-
+ * COLLABORATION-MYSQL-SEARCH-STEMMING-REMEDIATION-003-R1): MySQL FULLTEXT
+ * has no built-in stemmer, so a plural query like "shipments" would not
+ * match a stored singular "shipment" the way the original PostgreSQL design
+ * did. The expander turns the raw query into the raw term(s) plus bounded
+ * singular/plural alternates, extracted as plain word tokens — never the
+ * user's raw punctuation — so the resulting AGAINST() string is always safe
+ * boolean-mode input, with no operator-injection risk. The original
+ * contract still defines no ranking beyond `orderByDesc('created_at')`, so
+ * BOOLEAN MODE's default (space-separated terms = OR, no relevance scoring
+ * concerns) changes nothing observable beyond adding the stemmed matches.
  *
  * Authorization comes first, structurally: the participant scope is
  * resolved and applied to the query *before* the search predicate runs, so
@@ -31,6 +40,10 @@ use Modules\Collaboration\Domain\Models\Message;
  */
 final class SearchMessagesAction extends BaseAction
 {
+    public function __construct(
+        private readonly SearchQueryExpander $queryExpander,
+    ) {}
+
     /** @param  mixed  ...$arguments  [User $user, string $query, int $limit] */
     public function execute(mixed ...$arguments): Collection
     {
@@ -53,7 +66,7 @@ final class SearchMessagesAction extends BaseAction
 
         return Message::query()
             ->whereIn('conversation_id', $authorizedConversationIds)
-            ->whereRaw('MATCH(body) AGAINST(? IN NATURAL LANGUAGE MODE)', [$searchQuery])
+            ->whereRaw('MATCH(body) AGAINST(? IN BOOLEAN MODE)', [$this->queryExpander->toBooleanQueryString($searchQuery)])
             ->orderByDesc('created_at')
             ->limit($limit)
             ->get();
