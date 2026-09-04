@@ -22,6 +22,8 @@ use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Operations\Fulfillment\Application\FulfillmentEngine;
 use Modules\Operations\Fulfillment\Application\Workflows\ConfirmOrderWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\ProcessOrderWorkflow;
+use Modules\Operations\Fulfillment\Application\Workflows\ResumeOrderWorkflow;
+use Modules\Operations\Fulfillment\Application\Workflows\RevertToConfirmedWorkflow;
 use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionException;
 use Modules\Organization\Brands\Domain\Models\Brand;
 use Modules\Organization\Companies\Domain\Models\Company;
@@ -438,6 +440,34 @@ final class BlockedOrderFulfillmentTest extends TestCase
         $this->expectException(WorkflowPreconditionException::class);
 
         app(FulfillmentEngine::class)->run(app(ConfirmOrderWorkflow::class), $order->fresh(), [], null);
+    }
+
+    // TASK-ECOS-BUSINESS-INTEGRATION-CONVEYOR-001 — closes the verification debt
+    // FINAL-CLOSURE-011 (§3/§4) itself documented as accepted-but-unremediated: these
+    // two routes (`resume`, `revert-to-confirmed`) gained the identical
+    // BlockedCustomerPolicy guard ProcessOrderWorkflow/ConfirmOrderWorkflow already had
+    // tested above, but never received their own direct coverage.
+
+    public function test_resume_order_workflow_guard_rejects_resuming_a_blocked_order_directly(): void
+    {
+        $product = $this->product();
+        $order = $this->order([['product' => $product, 'qty' => 1]], OrderStatus::OnHold, 'blocked_customer');
+        $this->blockCustomer();
+
+        $this->expectException(WorkflowPreconditionException::class);
+
+        app(FulfillmentEngine::class)->run(app(ResumeOrderWorkflow::class), $order->fresh(), [], null);
+    }
+
+    public function test_revert_to_confirmed_workflow_guard_rejects_reverting_a_blocked_order_directly(): void
+    {
+        $product = $this->product();
+        $order = $this->order([['product' => $product, 'qty' => 1]], OrderStatus::OnHold, 'blocked_customer');
+        $this->blockCustomer();
+
+        $this->expectException(WorkflowPreconditionException::class);
+
+        app(FulfillmentEngine::class)->run(app(RevertToConfirmedWorkflow::class), $order->fresh(), [], null);
     }
 
     // ── §25-§27 — One-order override ──────────────────────────────────────────
