@@ -27,6 +27,8 @@ class ConversationParticipant extends Model
     /** @use HasFactory<ConversationParticipantFactory> */
     use HasFactory, HasUuids;
 
+    protected $table = 'collaboration_conversation_participants';
+
     public $incrementing = false;
 
     protected $keyType = 'string';

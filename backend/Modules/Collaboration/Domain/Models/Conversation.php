@@ -34,6 +34,8 @@ class Conversation extends Model
     /** @use HasFactory<ConversationFactory> */
     use HasFactory, HasUuids;
 
+    protected $table = 'collaboration_conversations';
+
     public $incrementing = false;
 
     protected $keyType = 'string';

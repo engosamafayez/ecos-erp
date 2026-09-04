@@ -6,7 +6,7 @@ namespace Modules\Collaboration\Domain\Models;
 
 use App\Core\Documents\Document;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Concerns\HasVersion7Uuids;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -32,7 +32,9 @@ use Modules\Collaboration\Infrastructure\Database\Factories\MessageFactory;
 class Message extends Model
 {
     /** @use HasFactory<MessageFactory> */
-    use HasFactory, HasVersion7Uuids;
+    use HasFactory, HasUuids;
+
+    protected $table = 'collaboration_messages';
 
     public $incrementing = false;
 

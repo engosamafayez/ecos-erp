@@ -29,6 +29,8 @@ class OperationalContextLink extends Model
 {
     use HasUuids;
 
+    protected $table = 'collaboration_operational_context_links';
+
     public $incrementing = false;
 
     protected $keyType = 'string';

@@ -19,6 +19,8 @@ class MessageMention extends Model
 {
     use HasUuids;
 
+    protected $table = 'collaboration_message_mentions';
+
     public $incrementing = false;
 
     protected $keyType = 'string';
