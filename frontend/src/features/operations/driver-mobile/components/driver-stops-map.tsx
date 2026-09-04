@@ -37,7 +37,7 @@ const STATUS_PIN_COLOR: Record<DeliveryStopStatus, string> = {
   pending:     '#6b7280', // gray-500
   in_progress: '#2563eb', // blue-600 — "out for delivery"
   delivered:   '#16a34a', // green-600
-  partial:     '#d97706', // amber-600
+  partial:     '#16a34a', // green-600 — driver-facing: partial presents as Delivered (§5)
   failed:      '#dc2626', // red-600
   returned:    '#9333ea', // purple-600
   skipped:     '#9ca3af', // gray-400

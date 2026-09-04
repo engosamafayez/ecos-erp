@@ -147,7 +147,7 @@ export function DriverOrdersMapPage() {
     return (
       <div className="space-y-3">
         <Skeleton className="h-9 w-full rounded-lg" />
-        <Skeleton className="h-[60svh] min-h-[320px] w-full rounded-xl" />
+        <Skeleton className="h-[calc(100svh-11rem)] min-h-[420px] w-full rounded-xl" />
       </div>
     );
   }
@@ -228,7 +228,7 @@ export function DriverOrdersMapPage() {
       <PageHeader view={view} onView={setView} showToggle quality={quality} />
 
       {view === 'map' ? (
-        <div className="relative isolate h-[calc(100svh-15rem)] min-h-[340px] w-full overflow-hidden rounded-xl border">
+        <div className="relative isolate h-[calc(100svh-11rem)] min-h-[420px] w-full overflow-hidden rounded-xl border">
           <DriverStopsMap
             stops={located}
             selectedStopId={emphasisId}
