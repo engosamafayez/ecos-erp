@@ -185,6 +185,20 @@ final class DriverLoadingController extends Controller
             return response()->json(['message' => $e->getMessage()], 422);
         }
 
+        // TASK-DRIVER-UX-AND-OPERATIONAL-CLOSURE-002 §2 — Automatic trip start. Once THIS
+        // receipt resolves the LAST loaded task (a full OR accepted-partial confirm leaves every
+        // loaded task driver_confirmed → no unresolved tasks), open custody automatically by
+        // delegating to the canonical completion bridge, so the driver no longer needs a separate
+        // "complete loading" tap. complete() re-applies the exact same custody gate, the
+        // single-active-custody guard and full idempotency, and returns the same manifest shape;
+        // if a finalization prerequisite refuses it returns its own 422 with the whole completion
+        // rolled back (the already-committed receipt is untouched — separate transaction). This
+        // opens custody at LoadingCompleted only; physical departure (InProgress) stays a
+        // deliberate driver action. Reuses TripService/finalization — no new engine.
+        if ($this->custody->unresolvedLoadedTasks((string) $task->vehicle_assignment_id) === []) {
+            return $this->complete();
+        }
+
         return response()->json(['data' => $this->manifest($trip)]);
     }
 
