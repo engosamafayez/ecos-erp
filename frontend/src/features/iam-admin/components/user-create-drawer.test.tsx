@@ -84,6 +84,7 @@ describe('UserCreateDrawer', () => {
       response: {
         status: 422,
         data: {
+          // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- mock server-response text; the app displays server messages verbatim (see extractMessage), it does not translate them client-side
           message: 'The given data was invalid.',
           errors: { email: ['The email has already been taken.'] },
         },
@@ -105,6 +106,7 @@ describe('UserCreateDrawer', () => {
     const user = userEvent.setup();
     mockCreate.mockRejectedValue({
       isAxiosError: true,
+      // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- mock server-response text; the app displays server messages verbatim (see extractMessage), it does not translate them client-side
       response: { status: 422, data: { message: 'Invalid.', errors: { email: ['Already taken.'] } } },
     });
     renderDrawer();

@@ -177,6 +177,7 @@ describe('RolesPermissionsTab', () => {
   it('shows an error state (not a blank/leaked detail) when the role detail request fails', async () => {
     const user = userEvent.setup();
     mockRolesList.mockResolvedValue([role()]);
+    // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- mock server-response text, not translated client-side
     mockRoleGet.mockRejectedValue({ isAxiosError: true, response: { status: 404, data: { message: 'Not found.' } } });
     renderTab();
 

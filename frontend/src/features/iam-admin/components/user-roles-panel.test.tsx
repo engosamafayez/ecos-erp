@@ -29,7 +29,7 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-const mockCan = vi.hoisted(() => vi.fn((_permission: string) => true));
+const mockCan = vi.hoisted(() => vi.fn<(permission: string) => boolean>(() => true));
 vi.mock('@/features/authorization', () => ({
   Can: ({ permission, children }: { permission: string | string[]; children: React.ReactNode }) => {
     const list = Array.isArray(permission) ? permission : [permission];

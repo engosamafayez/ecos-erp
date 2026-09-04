@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 
@@ -32,12 +32,16 @@ export function TemplateCreateDrawer({ open, onOpenChange }: { open: boolean; on
   const [values, setValues] = useState<CreateRoleTemplatePayload>(EMPTY);
   const [serverError, setServerError] = useState<string | null>(null);
 
-  useEffect(() => {
+  // Resets the form each time the drawer opens — adjusted during render (React's documented
+  // pattern for this) rather than in a useEffect, which would cost an extra render.
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (open) {
       setValues(EMPTY);
       setServerError(null);
     }
-  }, [open]);
+  }
 
   function handleSubmit() {
     setServerError(null);

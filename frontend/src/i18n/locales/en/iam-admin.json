@@ -91,6 +91,7 @@
       "resetSubmit": "Reset password",
       "newPassword": "New password",
       "confirmPassword": "Confirm password",
+      "passwordMismatch": "Passwords do not match.",
       "resetRequiresRestore": "This account is archived — restore it before resetting the password.",
       "resetUnavailableDeleted": "This account is deleted — password reset is not available.",
       "resetKeepsStatus": "Resetting the password will not reactivate or unlock this account.",

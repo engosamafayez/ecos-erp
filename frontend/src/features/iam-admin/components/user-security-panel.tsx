@@ -23,14 +23,20 @@ import type { UserDetail } from '@/features/iam-admin/types/user';
  * §7: the password-strength rule itself is NOT re-derived here — this schema only enforces
  * "non-empty and matches confirmation"; the actual strength policy (Password::defaults(), D5)
  * is validated server-side, and a 422 from that surfaces via the server-error alert below.
+ *
+ * Built inside ResetPasswordDialog (not module scope) so the mismatch message can go through
+ * t() — Zod needs the resolved string at schema-construction time, and useTranslation is only
+ * available inside a component.
  */
-const resetSchema = z
-  .object({ password: z.string().min(1, 'Required.'), password_confirmation: z.string().min(1, 'Required.') })
-  .refine((v) => v.password === v.password_confirmation, {
-    path: ['password_confirmation'],
-    message: 'Passwords do not match.',
-  });
-type ResetFormValues = z.infer<typeof resetSchema>;
+function buildResetSchema(passwordMismatch: string) {
+  return z
+    .object({ password: z.string().min(1, 'Required.'), password_confirmation: z.string().min(1, 'Required.') })
+    .refine((v) => v.password === v.password_confirmation, {
+      path: ['password_confirmation'],
+      message: passwordMismatch,
+    });
+}
+type ResetFormValues = z.infer<ReturnType<typeof buildResetSchema>>;
 
 /** §9: sessions/security, folded into the User detail rather than a separate top-level workspace. */
 export function UserSecurityPanel({ user }: { user: UserDetail }) {
@@ -146,7 +152,7 @@ function ResetPasswordDialog({
   const resetPassword = useResetPassword(userId);
   const [serverError, setServerError] = useState<string | null>(null);
   const form = useForm<ResetFormValues>({
-    resolver: zodResolver(resetSchema),
+    resolver: zodResolver(buildResetSchema(t(($) => $.users.security.passwordMismatch))),
     defaultValues: { password: '', password_confirmation: '' },
   });
 

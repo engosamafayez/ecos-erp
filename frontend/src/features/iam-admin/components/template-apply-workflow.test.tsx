@@ -44,6 +44,7 @@ function templateDetail(overrides: Partial<RoleTemplateDetail> = {}): RoleTempla
   return {
     key: 'cashier',
     name: 'Cashier',
+    // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- mock API fixture value (arbitrary role-template description content), never rendered through i18n
     description: 'POS operator',
     category: 'sales',
     status: 'published',
@@ -257,6 +258,7 @@ describe('TemplateApplyWorkflow', () => {
       permission_additions: [],
       permission_removals: [],
     });
+    // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- mock server-response text; this test specifically asserts the message is shown verbatim, not translated client-side
     mockApply.mockRejectedValue({ isAxiosError: true, response: { status: 409, data: { message: 'Template already applying.' } } });
     renderWorkflow();
 

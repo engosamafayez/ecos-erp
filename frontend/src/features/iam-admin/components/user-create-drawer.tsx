@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -42,13 +42,17 @@ export function UserCreateDrawer({ open, onOpenChange }: { open: boolean; onOpen
     defaultValues: toFormValues(),
   });
 
-  useEffect(() => {
+  // Resets the form/errors each time the drawer opens — adjusted during render (React's
+  // documented pattern for this) rather than in a useEffect, which would cost an extra render.
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
     if (open) {
       form.reset(toFormValues());
       setServerError(null);
       setFieldErrors({});
     }
-  }, [open, form]);
+  }
 
   const handleSubmit = (values: UserFormValues) => {
     setServerError(null);

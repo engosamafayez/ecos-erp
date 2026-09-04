@@ -34,7 +34,7 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-const mockCan = vi.hoisted(() => vi.fn((_permission: string) => true));
+const mockCan = vi.hoisted(() => vi.fn<(permission: string) => boolean>(() => true));
 vi.mock('@/features/authorization', () => ({
   usePermission: () => ({ can: mockCan }),
   Can: ({ permission, children }: { permission: string | string[]; children: React.ReactNode }) => {
@@ -179,6 +179,7 @@ describe('UsersTab', () => {
     const user = userEvent.setup();
     const conflict = {
       isAxiosError: true,
+      // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- mock server-response text; this test specifically asserts the message is shown verbatim, not translated client-side
       response: { status: 409, data: { message: 'User is already archived.' } },
     };
     mockTransition.mockRejectedValue(conflict);

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 
@@ -78,14 +78,19 @@ function TemplateDetailContent({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [applyOpen, setApplyOpen] = useState(false);
 
-  useEffect(() => {
+  // Keeps `values` in sync whenever the `template` prop changes identity (refetch, save,
+  // switching templates) — adjusted during render (React's documented pattern for this) rather
+  // than in a useEffect, which would cost an extra render.
+  const [prevTemplate, setPrevTemplate] = useState(template);
+  if (template !== prevTemplate) {
+    setPrevTemplate(template);
     setValues({
       name: template.name,
       description: template.description ?? '',
       category: template.category,
       definition: template.definition,
     });
-  }, [template]);
+  }
 
   const editable = !template.is_system;
 

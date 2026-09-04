@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -60,10 +60,15 @@ function UserDetailContent({ user }: { user: NonNullable<ReturnType<typeof useUs
     defaultValues: toFormValues(user),
   });
 
-  useEffect(() => {
+  // Keeps the form/errors in sync whenever the `user` prop changes identity (refetch, save) —
+  // adjusted during render (React's documented pattern for this) rather than in a useEffect,
+  // which would cost an extra render.
+  const [prevUser, setPrevUser] = useState(user);
+  if (user !== prevUser) {
+    setPrevUser(user);
     form.reset(toFormValues(user));
     setServerError(null);
-  }, [user, form]);
+  }
 
   const handleSubmit = (values: UserFormValues) => {
     setServerError(null);

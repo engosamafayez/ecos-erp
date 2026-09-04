@@ -29,7 +29,7 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-const mockCan = vi.hoisted(() => vi.fn((_permission: string) => true));
+const mockCan = vi.hoisted(() => vi.fn(() => true));
 vi.mock('@/features/authorization', () => ({
   Can: ({ permission, children }: { permission: string | string[]; children: React.ReactNode }) => {
     const list = Array.isArray(permission) ? permission : [permission];
@@ -62,6 +62,7 @@ function templateDetail(overrides: Partial<RoleTemplateDetail> = {}): RoleTempla
   return {
     key: 'cashier',
     name: 'Cashier',
+    // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- mock API fixture value (arbitrary role-template description content), never rendered through i18n
     description: 'POS operator',
     category: 'sales',
     status: 'published',

@@ -318,7 +318,7 @@ Route::prefix('auth')->group(function (): void {
 |--------------------------------------------------------------------------
 | Every write route names its permission explicitly (no group-level blanket permission,
 | matching the /configuration precedent) because each action maps to a distinct
-| iam.users.*/iam.role-templates.* token — tenant ownership and lifecycle-state rules are
+| iam.users.* / iam.role-templates.* token — tenant ownership and lifecycle-state rules are
 | enforced inside the Policy/Service layer, not by route middleware, exactly like every
 | other tenant-scoped resource in this file.
 */

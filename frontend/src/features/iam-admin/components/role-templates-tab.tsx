@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Copy, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -32,11 +32,15 @@ export function RoleTemplatesTab({
 
   // focusKey is a prop, not just an initial value — a later "managed by template" click while
   // this tab is already mounted must re-open the drawer too, not only on first mount.
-  useEffect(() => {
+  // Adjusted during render (React's documented pattern for this) rather than in a useEffect,
+  // which would cost an extra render.
+  const [prevFocusKey, setPrevFocusKey] = useState(focusKey);
+  if (focusKey !== prevFocusKey) {
+    setPrevFocusKey(focusKey);
     if (focusKey) {
       setSelectedKey(focusKey);
     }
-  }, [focusKey]);
+  }
 
   const columns = useMemo<ColumnDef<RoleTemplateSummary>[]>(
     () => [

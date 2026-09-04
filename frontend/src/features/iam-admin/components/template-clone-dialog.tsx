@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 
@@ -28,13 +28,22 @@ export function TemplateCloneDialog({
   const [newName, setNewName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  // Resets the form each time the dialog opens for a (possibly new) source template —
+  // adjusted during render (React's documented pattern for this) rather than in a useEffect,
+  // which would cost an extra render. Tracks both `open` and `sourceName`, matching the
+  // original effect's dependency list exactly: the parent can swap `cloneTarget` directly from
+  // one template to another without this component unmounting in between.
+  const [prevOpen, setPrevOpen] = useState(open);
+  const [prevSourceName, setPrevSourceName] = useState(sourceName);
+  if (open !== prevOpen || sourceName !== prevSourceName) {
+    setPrevOpen(open);
+    setPrevSourceName(sourceName);
     if (open) {
       setNewKey('');
       setNewName(`${sourceName} (Copy)`);
       setError(null);
     }
-  }, [open, sourceName]);
+  }
 
   function handleSubmit() {
     setError(null);
