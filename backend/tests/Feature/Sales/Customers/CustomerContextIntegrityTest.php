@@ -9,6 +9,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
 use Modules\Organization\Brands\Domain\Models\Brand;
 use Modules\Organization\Companies\Domain\Models\Company;
+use Modules\Sales\Customers\Application\Actions\BlockCustomerOrPhoneAction;
 use Modules\Sales\Customers\Domain\Models\Customer;
 use Modules\Sales\Customers\Domain\Models\CustomerBrand;
 use Tests\TestCase;
@@ -416,5 +417,42 @@ final class CustomerContextIntegrityTest extends TestCase
 
         $response->assertStatus(200);
         $this->assertEquals(2, $response->json('data.meta.total'));
+    }
+
+    /**
+     * TASK-ECOS-BUSINESS-INTEGRATION-CONVEYOR-001 — direct regression guard for
+     * d6e67f56 ("fix(commerce): guard unblocked-customer array access in
+     * CustomerController::index()"). The $blocks map built by
+     * BlockedCustomerPolicy::activeBlocksForCustomers() only carries an entry for
+     * customers who ARE currently blocked; index() reads it as
+     * `($blocks[$id] ?? null)?->field` for every row. A bare `$blocks[$id]?->field`
+     * (evaluating the array offset before the null-safe operator short-circuits)
+     * threw whenever the current page contained at least one UNBLOCKED customer —
+     * i.e. on every ordinary page. Three customers, only one blocked, is the
+     * minimal sparse-map shape that exercises this exact path; the two prior
+     * regression tests for this bug (007-R2, 009) only ever exercised all-blocked
+     * or all-unblocked pages.
+     *
+     * @test
+     */
+    public function index_survives_a_sparse_block_map_without_error(): void
+    {
+        $blocked = $this->makeCustomer(['name' => 'Blocked One']);
+        $this->makeCustomer(['name' => 'Unblocked Two']);
+        $this->makeCustomer(['name' => 'Unblocked Three']);
+
+        app(BlockCustomerOrPhoneAction::class)->execute(
+            (string) $this->company->id, (string) $blocked->id, null, 'Regression test block', null,
+        );
+
+        $response = $this->auth()->getJson('/api/customers');
+
+        $response->assertStatus(200);
+        $this->assertEquals(3, $response->json('data.meta.total'));
+
+        $items = collect($response->json('data.items'));
+        $this->assertTrue($items->firstWhere('name', 'Blocked One')['is_blocked']);
+        $this->assertFalse($items->firstWhere('name', 'Unblocked Two')['is_blocked']);
+        $this->assertFalse($items->firstWhere('name', 'Unblocked Three')['is_blocked']);
     }
 }
