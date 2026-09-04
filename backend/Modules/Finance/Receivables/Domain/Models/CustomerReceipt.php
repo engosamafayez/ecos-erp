@@ -37,6 +37,7 @@ class CustomerReceipt extends Model
         'uuid', 'company_id', 'customer_id', 'number', 'receipt_date', 'amount',
         'currency', 'deposit_account_id', 'ar_control_account_id', 'journal_entry_id',
         'status', 'description', 'created_by', 'approved_by', 'posted_at',
+        'source_type', 'source_id',
     ];
 
     protected function casts(): array

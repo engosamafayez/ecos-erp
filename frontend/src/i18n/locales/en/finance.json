@@ -2,6 +2,17 @@
   "breadcrumb": {
     "finance": "Finance"
   },
+  "costing": {
+    "title": "Costing & Profitability",
+    "subtitle": "Profitability, cost intelligence, cash flow, cost allocation and driver financial activity.",
+    "tab": {
+      "profitability": "Profitability",
+      "costIntelligence": "Cost Intelligence",
+      "cashFlow": "Cash Flow",
+      "costAllocation": "Cost Allocation",
+      "driverLedger": "Driver Ledger"
+    }
+  },
   "loading": "Loading…",
   "empty": "No data for this period.",
   "error": "Could not load this data.",
@@ -295,6 +306,7 @@
       "amount": "Amount",
       "unallocated": "Unallocated",
       "status": "Status",
+      "source": "Source",
       "empty": "No receipts found."
     },
     "ledger": {
@@ -321,6 +333,27 @@
       "debit_note": "Debit Note",
       "receipt": "Receipt",
       "write_off": "Write-off"
+    },
+    "action": {
+      "allocate": "Allocate",
+      "autoAllocate": "Auto-Allocate"
+    },
+    "detail": {
+      "title": "Receipt",
+      "notFound": "This receipt could not be found in the current list (it may be older than the most recent 100).",
+      "amount": "Amount",
+      "audit": "Audit",
+      "journal": "Journal",
+      "source": "Source",
+      "reverseReason": "Reason for reversal",
+      "allocationTitle": "Allocate to an Invoice",
+      "allocationHint": "There is no invoice picker here — enter the invoice's id (uuid) directly.",
+      "invoiceId": "Invoice ID",
+      "allocateAmount": "Amount",
+      "allocateFailed": "The allocation could not be recorded.",
+      "autoAllocateFailed": "Auto-allocation could not be run.",
+      "autoAllocateResult": "{{count}} allocation(s) created. {{remaining}} remaining unallocated.",
+      "noAllocationHistory": "The API exposes no endpoint to list this receipt's existing allocations, so its history cannot be shown and no single allocation can be reversed here."
     }
   },
   "ap": {
@@ -398,6 +431,26 @@
       "credit_note": "Credit Note",
       "debit_note": "Debit Note",
       "payment": "Payment"
+    },
+    "action": {
+      "allocate": "Allocate",
+      "autoAllocate": "Auto-Allocate"
+    },
+    "detail": {
+      "title": "Payment",
+      "notFound": "This payment could not be found in the current list (it may be older than the most recent 100).",
+      "amount": "Amount",
+      "audit": "Audit",
+      "journal": "Journal",
+      "reverseReason": "Reason for reversal",
+      "allocationTitle": "Allocate to a Bill",
+      "allocationHint": "There is no bill picker here — enter the bill's id (uuid) directly.",
+      "billId": "Bill ID",
+      "allocateAmount": "Amount",
+      "allocateFailed": "The allocation could not be recorded.",
+      "autoAllocateFailed": "Auto-allocation could not be run.",
+      "autoAllocateResult": "{{count}} allocation(s) created. {{remaining}} remaining unallocated.",
+      "noAllocationHistory": "The API exposes no endpoint to list this payment's existing allocations, so its history cannot be shown and no single allocation can be reversed here."
     }
   },
   "treasury": {
@@ -849,6 +902,164 @@
       "returnGenerated": "Return generated.",
       "periodSettled": "VAT period settled.",
       "categoryCreated": "Tax category created."
+    }
+  },
+  "expense": {
+    "title": "Expenses",
+    "subtitle": "Create, approve, post and reverse operational expenses.",
+    "empty": "No expenses.",
+    "kpi": {
+      "total": "Total Amount",
+      "count": "Expenses",
+      "pending": "Pending Approval/Post"
+    },
+    "filter": {
+      "all": "All statuses"
+    },
+    "field": {
+      "number": "Number",
+      "date": "Date",
+      "amount": "Amount",
+      "status": "Status",
+      "source": "Source",
+      "category": "Category",
+      "fundingAccount": "Funding Account",
+      "description": "Description"
+    },
+    "status": {
+      "draft": "Draft",
+      "approved": "Approved",
+      "posted": "Posted",
+      "void": "Void"
+    },
+    "action": {
+      "new": "New Expense",
+      "newCategory": "New Category"
+    },
+    "form": {
+      "title": "New Expense",
+      "subtitle": "Maker step — a different checker must approve before it can post.",
+      "error": "The expense could not be created."
+    },
+    "category": {
+      "form": {
+        "title": "New Expense Category",
+        "error": "The category could not be created."
+      },
+      "field": {
+        "name": "Name",
+        "account": "Expense Account"
+      }
+    },
+    "detail": {
+      "title": "Expense",
+      "amount": "Amount",
+      "audit": "Audit",
+      "journal": "Journal",
+      "source": "Source",
+      "post": "Post",
+      "reverseReason": "Reason for reversal"
+    }
+  },
+  "profitability": {
+    "tab": { "company": "Company", "branch": "Branch", "costCenter": "Cost Center", "project": "Project", "customer": "Customer", "product": "Product", "channel": "Channel" },
+    "filter": { "from": "From", "to": "To" },
+    "field": { "revenue": "Revenue", "expense": "Expense", "profit": "Profit", "marginPct": "Margin", "estimatedProfit": "Est. Profit" },
+    "customer": { "attributionPrefix": "Attribution method:" },
+    "unavailable": { "heading": "Not yet available", "companyFallback": "Company-level profitability (shown instead)" },
+    "empty": "No profitability data for this period.",
+    "error": "Could not load profitability data."
+  },
+  "costIntelligence": {
+    "tab": { "breakdown": "Breakdown", "operational": "Operational", "trend": "Trend" },
+    "filter": { "months": "Months" },
+    "field": { "amount": "Amount", "totalCost": "Total Cost", "costOfSales": "Cost of Sales", "operatingExpense": "Operating Expense", "otherExpense": "Other Expense" },
+    "bucket": { "manufacturing": "Manufacturing", "logistics": "Logistics", "marketing": "Marketing", "administrative": "Administrative", "other": "Other" },
+    "rulesLabel": "Classification keywords",
+    "trend": { "month": "Month" },
+    "empty": "No cost data for this period.",
+    "error": "Could not load cost data."
+  },
+  "cashFlow": {
+    "tab": { "current": "Current Position", "forecast": "Forecast" },
+    "field": { "cashPosition": "Cash Position", "receivables": "Receivables", "payables": "Payables", "monthToDateOperating": "Month-to-Date Operating Profit", "month": "Month", "operatingFlow": "Operating Flow", "collections": "Collections", "payments": "Payments", "netFlow": "Net Flow", "closingCash": "Closing Cash", "openingCash": "Opening Cash" },
+    "forecast": { "horizonLabel": "Horizon (months)" },
+    "schedule": { "receivable": "Expected Collections", "payable": "Expected Payments" },
+    "methodNote": "Collections and payments are scheduled from the AR/AP aging buckets.",
+    "risk": { "title": "Cash-Flow Risk Alerts", "empty": "No active cash-flow risk alerts.", "severity": { "critical": "Critical", "warning": "Warning" } },
+    "empty": "No cash-flow data.",
+    "error": "Could not load cash-flow data."
+  },
+  "costAllocation": {
+    "hint": "Attributes a posted expense's cost to Brand/Profit-Center destinations, shown by their raw reference id (Finance has no Brand directory). This never posts a second entry to the general ledger — it is a management-dimension attribution only.",
+    "empty": "No cost allocations found.",
+    "action": { "new": "New Allocation" },
+    "field": {
+      "source": "Source",
+      "sourceAmount": "Source Amount",
+      "method": "Method",
+      "destination": "Destination",
+      "allocatedAmount": "Allocated Amount",
+      "percentage": "Percentage",
+      "createdAt": "Created",
+      "reversalOf": "Reverses",
+      "expense": "Expense",
+      "expensePlaceholder": "Select a posted expense",
+      "destinations": "Destinations",
+      "profitCenterPlaceholder": "Brand / Profit-Center reference id",
+      "amount": "Amount"
+    },
+    "method": { "fixed": "Fixed Amount", "percentage": "Percentage" },
+    "form": {
+      "title": "New Cost Allocation",
+      "subtitle": "Split a posted expense's cost across one or more Brand/Profit-Center destinations.",
+      "error": "The cost allocation could not be created.",
+      "neverPosts": "This never creates a second general-ledger journal — it is a management-dimension attribution only.",
+      "availableToAllocate": "Available to allocate",
+      "addDestination": "Add Destination",
+      "removeDestination": "Remove destination",
+      "profitCenterNote": "Entered as a raw Brand/Profit-Center reference id — Finance has no Brand directory to select from.",
+      "totalPercentage": "Total Percentage",
+      "overPercentage": "Exceeds 100%",
+      "totalAllocated": "Total Allocated",
+      "overAllocated": "Exceeds the source amount"
+    },
+    "reverse": {
+      "title": "Reverse Allocation",
+      "description": "This appends a new offsetting allocation; the original row is never edited or removed.",
+      "reasonPlaceholder": "Reason for reversal (required)",
+      "failed": "The allocation could not be reversed."
+    },
+    "toast": { "reversed": "Cost allocation reversed." }
+  },
+  "driverLedger": {
+    "balance": "Balance",
+    "empty": "No ledger entries for this driver.",
+    "field": {
+      "date": "Date",
+      "type": "Type",
+      "description": "Description",
+      "source": "Source",
+      "amount": "Amount",
+      "runningBalance": "Running Balance",
+      "driverId": "Driver ID"
+    },
+    "entryType": {
+      "advance": "Advance",
+      "expense": "Expense",
+      "shortage": "Shortage",
+      "settlement": "Settlement"
+    },
+    "lookup": {
+      "title": "Driver Lookup",
+      "hint": "Finance has no driver directory — enter the driver's id to fetch their ledger.",
+      "placeholder": "Driver id",
+      "load": "Load Ledger"
+    },
+    "balanceMeaning": {
+      "owesCompany": "The driver owes the company this amount.",
+      "owedByCompany": "The company owes the driver this amount.",
+      "settled": "Settled — nothing outstanding."
     }
   }
 }

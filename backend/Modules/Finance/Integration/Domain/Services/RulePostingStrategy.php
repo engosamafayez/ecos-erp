@@ -89,6 +89,7 @@ final class RulePostingStrategy implements PostingStrategyInterface
         $dimensions = [
             'branchId' => $event->branchId(),
             'costCenterId' => $event->costCenterId(),
+            'profitCenterId' => $event->profitCenterId(),
             'currency' => $event->currency,
         ];
 

@@ -11,6 +11,7 @@ use Illuminate\Support\Carbon;
 use Modules\Finance\Payables\Application\Services\PaySupplierInvoiceService;
 use Modules\Finance\Payables\Domain\Models\SupplierPayment;
 use Modules\Finance\Presentation\Http\Controllers\Concerns\ResolvesFinanceContext;
+use Modules\Finance\Shared\Domain\Services\CommandIdempotencyGuard;
 
 /**
  * Invoice-anchored supplier payments — the canonical Finance entry point a
@@ -26,9 +27,22 @@ class SupplierInvoicePaymentController extends Controller
 {
     use ResolvesFinanceContext;
 
-    public function __construct(private readonly PaySupplierInvoiceService $payInvoice) {}
+    public function __construct(
+        private readonly PaySupplierInvoiceService $payInvoice,
+        private readonly CommandIdempotencyGuard $idempotency,
+    ) {}
 
-    /** Maker: create a draft payment for the invoice's payable (does NOT approve or post). */
+    /**
+     * Maker: create a draft payment for the invoice's payable (does NOT
+     * approve or post). An `Idempotency-Key` header is honoured when present
+     * — same key + same payload replays the original result (200); same key
+     * + a materially different payload conflicts (422); no key runs
+     * uncoordinated, unchanged from before this existed. Namespaced under
+     * its own command type (`ap.payment.create.invoice_anchored`), distinct
+     * from the generic `SupplierPaymentController::store()` path, since the
+     * two are different logical commands even though both ultimately create
+     * a SupplierPayment.
+     */
     public function initiate(Request $request, string $invoiceId): JsonResponse
     {
         $validated = $request->validate([
@@ -40,19 +54,33 @@ class SupplierInvoicePaymentController extends Controller
             'description' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $payment = $this->payInvoice->initiatePayment(
-            companyId: $this->companyId($request),
-            invoiceId: $invoiceId,
-            number: $validated['number'],
-            paymentDate: Carbon::parse($validated['payment_date']),
-            amount: (float) $validated['amount'],
-            fundingAccountId: $this->accountId($request, $validated['funding_account_id']),
-            currency: $validated['currency'] ?? 'EGP',
-            description: $validated['description'] ?? null,
-            createdBy: $this->actorId($request),
+        $companyId = $this->companyId($request);
+
+        $result = $this->idempotency->execute(
+            companyId: $companyId,
+            commandType: 'ap.payment.create.invoice_anchored',
+            idempotencyKey: $request->header('Idempotency-Key'),
+            payload: $validated + ['invoice_id' => $invoiceId],
+            command: fn () => $this->payInvoice->initiatePayment(
+                companyId: $companyId,
+                invoiceId: $invoiceId,
+                number: $validated['number'],
+                paymentDate: Carbon::parse($validated['payment_date']),
+                amount: (float) $validated['amount'],
+                fundingAccountId: $this->accountId($request, $validated['funding_account_id']),
+                currency: $validated['currency'] ?? 'EGP',
+                description: $validated['description'] ?? null,
+                createdBy: $this->actorId($request),
+            ),
+            actorId: $this->actorId($request),
         );
 
-        return response()->json(['data' => $this->payload($payment, $invoiceId)], 201);
+        /** @var SupplierPayment $payment */
+        $payment = $result->result;
+
+        return response()
+            ->json(['data' => $this->payload($payment, $invoiceId)], $result->wasReplayed ? 200 : 201)
+            ->header('Idempotent-Replay', $result->wasReplayed ? 'true' : 'false');
     }
 
     /** Settle: allocate an already-posted payment to the invoice's payable. */

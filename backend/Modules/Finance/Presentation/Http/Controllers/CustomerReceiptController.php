@@ -12,7 +12,9 @@ use Modules\Finance\Allocation\Domain\Services\AllocationEngine;
 use Modules\Finance\Presentation\Http\Controllers\Concerns\ResolvesFinanceContext;
 use Modules\Finance\Receivables\Domain\Models\CustomerInvoice;
 use Modules\Finance\Receivables\Domain\Models\CustomerReceipt;
+use Modules\Finance\Receivables\Domain\Models\ReceiptAllocation;
 use Modules\Finance\Receivables\Domain\Services\AccountsReceivableService;
+use Modules\Finance\Shared\Domain\Services\CommandIdempotencyGuard;
 
 /**
  * Customer receipts (money in), their posting, allocation to invoices, and the
@@ -26,6 +28,7 @@ class CustomerReceiptController extends Controller
     public function __construct(
         private readonly AccountsReceivableService $ar,
         private readonly AllocationEngine $allocations,
+        private readonly CommandIdempotencyGuard $idempotency,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -41,6 +44,14 @@ class CustomerReceiptController extends Controller
         return response()->json(['data' => $receipts]);
     }
 
+    /**
+     * An `Idempotency-Key` header is honoured when present — same key + same
+     * payload replays the original result (200); same key + a materially
+     * different payload conflicts (422); no key runs uncoordinated, exactly
+     * as before this existed, so no existing caller breaks. Requiring the
+     * header is a deliberate future tightening, not made here
+     * (TASK-ECOS-FINANCE-AP-AR-GL-WIRING-003 §8).
+     */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -53,19 +64,33 @@ class CustomerReceiptController extends Controller
             'description' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $receipt = $this->ar->createReceipt(
-            companyId: $this->companyId($request),
-            customerId: $validated['customer_id'],
-            number: $validated['number'],
-            receiptDate: Carbon::parse($validated['receipt_date']),
-            amount: (float) $validated['amount'],
-            depositAccountId: $this->accountId($request, $validated['deposit_account_id']),
-            currency: $validated['currency'] ?? 'EGP',
-            description: $validated['description'] ?? null,
-            createdBy: $this->actorId($request),
+        $companyId = $this->companyId($request);
+
+        $result = $this->idempotency->execute(
+            companyId: $companyId,
+            commandType: 'ar.receipt.create',
+            idempotencyKey: $request->header('Idempotency-Key'),
+            payload: $validated,
+            command: fn () => $this->ar->createReceipt(
+                companyId: $companyId,
+                customerId: $validated['customer_id'],
+                number: $validated['number'],
+                receiptDate: Carbon::parse($validated['receipt_date']),
+                amount: (float) $validated['amount'],
+                depositAccountId: $this->accountId($request, $validated['deposit_account_id']),
+                currency: $validated['currency'] ?? 'EGP',
+                description: $validated['description'] ?? null,
+                createdBy: $this->actorId($request),
+            ),
+            actorId: $this->actorId($request),
         );
 
-        return response()->json(['data' => $this->payload($receipt)], 201);
+        /** @var CustomerReceipt $receipt */
+        $receipt = $result->result;
+
+        return response()
+            ->json(['data' => $this->payload($receipt)], $result->wasReplayed ? 200 : 201)
+            ->header('Idempotent-Replay', $result->wasReplayed ? 'true' : 'false');
     }
 
     public function post(Request $request, string $uuid): JsonResponse
@@ -110,7 +135,59 @@ class CustomerReceiptController extends Controller
         ]]);
     }
 
-    /** Write off the outstanding balance of a posted invoice to a bad-debt account. */
+    /**
+     * Reverse part (or all) of a posted allocation with a new, append-only,
+     * negative contra-allocation — the original row is never edited or
+     * deleted. Full, partial, and repeated sequential partial reversal are
+     * all the same call with a smaller amount each time; the engine caps at
+     * whatever remains reversible on that specific original allocation.
+     * Scoped to THIS receipt by construction (the allocation is looked up as
+     * a child of the already company-scoped receipt, never by its uuid
+     * alone) — a foreign-company or cross-receipt allocation id 404s here,
+     * it is never reachable to authorize against.
+     */
+    public function reverseAllocation(Request $request, string $uuid, string $allocationUuid): JsonResponse
+    {
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'gt:0'],
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        $receipt = $this->find($request, $uuid);
+        $allocation = $this->findAllocation($receipt, $allocationUuid);
+
+        $reversal = $this->allocations->reverseReceiptAllocation(
+            $allocation,
+            (float) $validated['amount'],
+            $validated['reason'],
+            $this->actorId($request),
+        );
+
+        return response()->json(['data' => [
+            'id' => $reversal->uuid,
+            'reverses_allocation_id' => $allocation->uuid,
+            'receipt_id' => $receipt->uuid,
+            'customer_invoice_id' => $allocation->customer_invoice_id !== null
+                ? CustomerInvoice::query()->whereKey($allocation->customer_invoice_id)->value('uuid')
+                : null,
+            'amount' => (float) $reversal->amount,
+            'reason' => $reversal->reversal_reason,
+            'receipt_unallocated' => $receipt->fresh()->unallocatedAmount(),
+        ]], 201);
+    }
+
+    /**
+     * Write off the outstanding balance of a posted invoice to a bad-debt
+     * account. Internally creates a CustomerReceipt (funded by the bad-debt
+     * account) exactly like an ordinary receipt — TASK-ECOS-FINANCE-
+     * FOUNDATION-GATE-004 found this real creation path was not yet wired to
+     * CommandIdempotencyGuard, unlike store() (Task 3). It never silently
+     * duplicated (the receipt number is server-derived deterministically
+     * from the invoice — 'WO-'.$invoice->number — so a bare retry already
+     * collided with the existing unique(company_id, number) constraint and
+     * failed loudly), but a retry deserves the same graceful replay/conflict
+     * contract as every other creation path, not just a raw DB error.
+     */
     public function writeOff(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -120,20 +197,56 @@ class CustomerReceiptController extends Controller
             'reason' => ['nullable', 'string', 'max:500'],
         ]);
 
+        $companyId = $this->companyId($request);
         $invoice = $this->findInvoice($request, $validated['invoice_id']);
 
-        $receipt = $this->ar->writeOff(
-            invoice: $invoice,
-            badDebtAccountId: $this->accountId($request, $validated['bad_debt_account_id']),
-            allocations: $this->allocations,
-            amount: isset($validated['amount']) ? (float) $validated['amount'] : null,
+        $result = $this->idempotency->execute(
+            companyId: $companyId,
+            commandType: 'ar.receipt.writeoff',
+            idempotencyKey: $request->header('Idempotency-Key'),
+            payload: $validated,
+            command: fn () => $this->ar->writeOff(
+                invoice: $invoice,
+                badDebtAccountId: $this->accountId($request, $validated['bad_debt_account_id']),
+                allocations: $this->allocations,
+                amount: isset($validated['amount']) ? (float) $validated['amount'] : null,
+                actorId: $this->actorId($request),
+                reason: $validated['reason'] ?? null,
+            ),
             actorId: $this->actorId($request),
-            reason: $validated['reason'] ?? null,
         );
 
+        /** @var CustomerReceipt $receipt */
+        $receipt = $result->result;
+
+        return response()
+            ->json(['data' => [
+                'write_off_receipt' => $receipt->uuid,
+                'invoice_outstanding' => $invoice->fresh()->outstanding(),
+            ]], $result->wasReplayed ? 200 : 201)
+            ->header('Idempotent-Replay', $result->wasReplayed ? 'true' : 'false');
+    }
+
+    /**
+     * Reverse a posted receipt's journal AND its customer-ledger entry
+     * together (TASK-ECOS-FINANCE-FULL-ACCOUNTING-RECONCILIATION-005) — the
+     * AR mirror of SupplierPaymentController::reversePosting(). The generic
+     * journal-reversal endpoint still works unchanged for any journal; this
+     * is the correct, complete path specifically for a receipt.
+     */
+    public function reversePosting(Request $request, string $uuid): JsonResponse
+    {
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        $receipt = $this->find($request, $uuid);
+        $reversalJournal = $this->ar->reverseReceiptPosting($receipt, $validated['reason'], $this->actorId($request));
+
         return response()->json(['data' => [
-            'write_off_receipt' => $receipt->uuid,
-            'invoice_outstanding' => $invoice->fresh()->outstanding(),
+            'reversal_journal_id' => $reversalJournal->uuid,
+            'reverses_journal_id' => $reversalJournal->reverses_journal_id,
+            'receipt_id' => $receipt->uuid,
         ]], 201);
     }
 
@@ -155,6 +268,14 @@ class CustomerReceiptController extends Controller
             ->firstOrFail();
     }
 
+    private function findAllocation(CustomerReceipt $receipt, string $allocationUuid): ReceiptAllocation
+    {
+        return ReceiptAllocation::query()
+            ->where('receipt_id', $receipt->id)
+            ->where('uuid', $allocationUuid)
+            ->firstOrFail();
+    }
+
     /** @return array<string, mixed> */
     private function payload(CustomerReceipt $r): array
     {
@@ -169,6 +290,12 @@ class CustomerReceiptController extends Controller
             'unallocated' => $r->isPosted() ? $r->unallocatedAmount() : null,
             'journal_entry_id' => $r->journal_entry_id,
             'posted_at' => $r->posted_at?->toIso8601String(),
+            // TASK-ECOS-FINANCE-AP-AR-MUTATION-UX: already stored (see the
+            // 2026_09_02_200003 migration) but not yet exposed — lets the AR
+            // Receipts UI distinguish a COD-collection receipt from an
+            // ordinary one, mirroring ExpenseController::payload().
+            'source_type' => $r->source_type,
+            'source_id' => $r->source_id,
         ];
     }
 }

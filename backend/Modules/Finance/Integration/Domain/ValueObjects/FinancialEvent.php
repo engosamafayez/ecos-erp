@@ -63,6 +63,19 @@ final class FinancialEvent
     }
 
     /**
+     * The profit-center dimension (e.g. Brand), carried verbatim — mirrors
+     * branchId()/costCenterId(). Ready-for-use since EPIC F1's journal-line
+     * schema; wired into RulePostingStrategy by
+     * TASK-ECOS-FINANCE-COMMERCIAL-ACCOUNTING-006.
+     */
+    public function profitCenterId(): ?string
+    {
+        $p = $this->dimensions['profit_center_id'] ?? null;
+
+        return $p !== null ? (string) $p : null;
+    }
+
+    /**
      * The class of stock this movement concerned, as stated by the publisher.
      *
      * Finance treats it as an opaque token: it selects an account role and is

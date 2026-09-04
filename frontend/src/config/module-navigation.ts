@@ -33,6 +33,7 @@ import {
   PackageCheck,
   Percent,
   PiggyBank,
+  Receipt,
   Wallet,
   Bell,
   History,
@@ -306,6 +307,8 @@ const ALL_MODULES: AppModule[] = [
       { key: 'finance-fiscal', path: ROUTES.financeFiscalClosing, icon: CalendarDays },
       { key: 'finance-budgets', path: ROUTES.financeBudgets, icon: PiggyBank },
       { key: 'finance-tax', path: ROUTES.financeTaxVat, icon: Percent },
+      { key: 'finance-expenses', path: ROUTES.financeExpenses, icon: Receipt },
+      { key: 'finance-costing', path: ROUTES.financeCosting, icon: TrendingUp },
     ],
   },
   {

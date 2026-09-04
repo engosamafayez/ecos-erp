@@ -68,6 +68,13 @@ export type ArReceipt = {
   unallocated: number | null; // null unless posted
   journal_entry_id: number | null;
   posted_at: string | null;
+  /**
+   * Traces a receipt back to the event that created it (e.g. a COD collection
+   * settled to the "Cash in Transit" clearing account — TASK-ECOS-FINANCE-
+   * COMMERCIAL-ACCOUNTING-006). Null for an ordinary manually-entered receipt.
+   */
+  source_type: string | null;
+  source_id: string | null;
 };
 
 export type CustomerLedgerLine = {
@@ -101,3 +108,40 @@ export type ArControlReconciliation = {
 
 export type ArInvoiceParams = { customer_id?: string; status?: DocumentStatus };
 export type ArReceiptParams = { customer_id?: string };
+
+// ── Allocation & reversal (write actions) ─────────────────────────────────────
+// Mirrors the certified AllocationEngine / Posting Engine contract exposed by
+// CustomerReceiptController::allocate/autoAllocate/reverseAllocation/reversePosting.
+// Allocation is a pure subledger relationship (never posts a journal); reverse-posting
+// reverses the receipt's journal AND its customer-ledger entry together.
+
+export type ArAllocation = {
+  id: string; // allocation uuid
+  receipt_id: string;
+  invoice_id: string;
+  amount: number;
+  receipt_unallocated: number;
+  invoice_outstanding: number;
+};
+
+export type ArAutoAllocateResult = {
+  allocations: number;
+  receipt_unallocated: number;
+};
+
+/** An append-only, negative contra-allocation reversing part (or all) of one prior allocation. */
+export type ArAllocationReversal = {
+  id: string; // the new reversal row's uuid
+  reverses_allocation_id: string;
+  receipt_id: string;
+  customer_invoice_id: string | null;
+  amount: number;
+  reason: string;
+  receipt_unallocated: number;
+};
+
+export type ArReversePostingResult = {
+  reversal_journal_id: string;
+  reverses_journal_id: string | null;
+  receipt_id: string;
+};

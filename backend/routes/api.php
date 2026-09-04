@@ -78,13 +78,17 @@ use Modules\Finance\Presentation\Http\Controllers\CfoWorkspaceController as Fina
 use Modules\Finance\Presentation\Http\Controllers\ClosingController as FinanceClosingController;
 use Modules\Finance\Presentation\Http\Controllers\ClosingWorkspaceController as FinanceClosingWorkspaceController;
 use Modules\Finance\Presentation\Http\Controllers\ControlReconciliationController as FinanceControlReconciliationController;
+use Modules\Finance\Presentation\Http\Controllers\CostAllocationController as FinanceCostAllocationController;
 use Modules\Finance\Presentation\Http\Controllers\CostCenterController as FinanceCostCenterController;
+use Modules\Finance\Presentation\Http\Controllers\DriverLedgerController as FinanceDriverLedgerController;
 use Modules\Finance\Presentation\Http\Controllers\CostIntelligenceController as FinanceCostIntelligenceController;
 use Modules\Finance\Presentation\Http\Controllers\CustomerInvoiceController as FinanceCustomerInvoiceController;
 use Modules\Finance\Presentation\Http\Controllers\CustomerLedgerController as FinanceCustomerLedgerController;
 use Modules\Finance\Presentation\Http\Controllers\CustomerReceiptController as FinanceCustomerReceiptController;
 use Modules\Finance\Presentation\Http\Controllers\ExecutiveReportingController as FinanceExecutiveReportingController;
 use Modules\Finance\Presentation\Http\Controllers\ExecutiveWorkspaceController as FinanceExecutiveWorkspaceController;
+use Modules\Finance\Presentation\Http\Controllers\ExpenseCategoryController as FinanceExpenseCategoryController;
+use Modules\Finance\Presentation\Http\Controllers\ExpenseController as FinanceExpenseController;
 use Modules\Finance\Presentation\Http\Controllers\FinancialAnalyticsController as FinanceFinancialAnalyticsController;
 use Modules\Finance\Presentation\Http\Controllers\FinancialControlsController as FinanceFinancialControlsController;
 use Modules\Finance\Presentation\Http\Controllers\FinancialIntelligenceController as FinanceFinancialIntelligenceController;
@@ -2698,6 +2702,18 @@ Route::middleware('auth:sanctum')->prefix('finance')->group(function (): void {
                 ->middleware('permission:finance.allocation.manage');
             Route::post('/{uuid}/auto-allocate', [FinanceCustomerReceiptController::class, 'autoAllocate'])
                 ->middleware('permission:finance.allocation.manage');
+            // TASK-ECOS-FINANCE-AP-AR-GL-WIRING-003 — append-only contra-allocation.
+            // Same authority as allocate/auto-allocate above; reusing the existing
+            // permission per the CTO-approved architecture rather than minting a new
+            // one pending a separate ratification.
+            Route::post('/{uuid}/allocations/{allocationUuid}/reverse', [FinanceCustomerReceiptController::class, 'reverseAllocation'])
+                ->middleware('permission:finance.allocation.manage');
+            // TASK-ECOS-FINANCE-FULL-ACCOUNTING-RECONCILIATION-005 — reverses
+            // the receipt's journal AND its customer-ledger entry together.
+            // Same checker authority as the generic journal-reversal endpoint,
+            // since this is fundamentally a journal reversal.
+            Route::post('/{uuid}/reverse-posting', [FinanceCustomerReceiptController::class, 'reversePosting'])
+                ->middleware('permission:finance.journal.post');
         });
         Route::post('/write-off', [FinanceCustomerReceiptController::class, 'writeOff'])
             ->middleware('permission:finance.ar.writeoff');
@@ -2738,6 +2754,31 @@ Route::middleware('auth:sanctum')->prefix('finance')->group(function (): void {
                 ->middleware('permission:finance.allocation.manage');
             Route::post('/{uuid}/auto-allocate', [FinanceSupplierPaymentController::class, 'autoAllocate'])
                 ->middleware('permission:finance.allocation.manage');
+            // TASK-ECOS-FINANCE-AP-AR-GL-WIRING-003 — append-only contra-allocation.
+            // Same authority as allocate/auto-allocate above; reusing the existing
+            // permission per the CTO-approved architecture rather than minting a new
+            // one pending a separate ratification.
+            Route::post('/{uuid}/allocations/{allocationUuid}/reverse', [FinanceSupplierPaymentController::class, 'reverseAllocation'])
+                ->middleware('permission:finance.allocation.manage');
+            // TASK-ECOS-FINANCE-FULL-ACCOUNTING-RECONCILIATION-005 — reverses
+            // the payment's journal AND its supplier-ledger entry together.
+            // Same checker authority as the generic journal-reversal endpoint,
+            // since this is fundamentally a journal reversal.
+            Route::post('/{uuid}/reverse-posting', [FinanceSupplierPaymentController::class, 'reversePosting'])
+                ->middleware('permission:finance.journal.post');
+        });
+
+        // Invoice-anchored "Pay Supplier Invoice" — the canonical Finance use case
+        // a Procurement surface deep-links into. It resolves the invoice's payable
+        // ('SI-'.<invoice id>) and drives the existing AP authorities. Approve and
+        // post stay on the generic /payments endpoints above: initiating a payment
+        // here (finance.ap.payment.create) can never approve or post it, so the
+        // maker/checker identity gate is preserved by construction.
+        Route::prefix('supplier-invoices')->group(function (): void {
+            Route::post('/{invoiceId}/payments', [FinanceSupplierInvoicePaymentController::class, 'initiate'])
+                ->middleware('permission:finance.ap.payment.create');
+            Route::post('/{invoiceId}/payments/{uuid}/settle', [FinanceSupplierInvoicePaymentController::class, 'settle'])
+                ->middleware('permission:finance.allocation.manage');
         });
 
         // Invoice-anchored "Pay Supplier Invoice" — the canonical Finance use case
@@ -2759,6 +2800,48 @@ Route::middleware('auth:sanctum')->prefix('finance')->group(function (): void {
             Route::get('/suppliers/{supplierId}/statement', [FinanceSupplierLedgerController::class, 'statement']);
             Route::get('/suppliers/{supplierId}/balance', [FinanceSupplierLedgerController::class, 'balance']);
         });
+    });
+
+    // ── Expenses (TASK-ECOS-FINANCE-OPERATIONAL-COST-ACCOUNTING-007) ────────────
+    Route::prefix('expense-categories')->group(function (): void {
+        Route::get('/', [FinanceExpenseCategoryController::class, 'index'])
+            ->middleware('permission:finance.expense.view');
+        Route::post('/', [FinanceExpenseCategoryController::class, 'store'])
+            ->middleware('permission:finance.expense.category.manage');
+    });
+    Route::prefix('expenses')->group(function (): void {
+        Route::get('/', [FinanceExpenseController::class, 'index'])
+            ->middleware('permission:finance.expense.view');
+        Route::get('/{uuid}', [FinanceExpenseController::class, 'show'])
+            ->middleware('permission:finance.expense.view');
+        Route::post('/', [FinanceExpenseController::class, 'store'])
+            ->middleware('permission:finance.expense.create');
+        // SEGREGATION OF DUTIES: approve is a DISTINCT authority from create —
+        // the exact finance.ap.payment.* pattern.
+        Route::patch('/{uuid}/approve', [FinanceExpenseController::class, 'approve'])
+            ->middleware('permission:finance.expense.approve');
+        Route::patch('/{uuid}/post', [FinanceExpenseController::class, 'post'])
+            ->middleware('permission:finance.expense.approve');
+        Route::post('/{uuid}/reverse-posting', [FinanceExpenseController::class, 'reversePosting'])
+            ->middleware('permission:finance.expense.approve');
+    });
+
+    // ── Cost Allocation (TASK-ECOS-FINANCE-OPERATIONAL-COST-ACCOUNTING-007) ─────
+    // A DIFFERENT authority from finance.allocation.manage (AP/AR payment-to-
+    // document matching) — see CostAllocationService's own docblock.
+    Route::prefix('cost-allocations')->group(function (): void {
+        Route::get('/', [FinanceCostAllocationController::class, 'index'])
+            ->middleware('permission:finance.cost_allocation.view');
+        Route::post('/', [FinanceCostAllocationController::class, 'store'])
+            ->middleware('permission:finance.cost_allocation.manage');
+        Route::post('/{uuid}/reverse', [FinanceCostAllocationController::class, 'reverse'])
+            ->middleware('permission:finance.cost_allocation.manage');
+    });
+
+    // ── Driver financial subledger (TASK-ECOS-FINANCE-UX-REPORTING-CLOSURE-008) ─
+    Route::prefix('drivers')->middleware('permission:finance.driver.view')->group(function (): void {
+        Route::get('/{driverId}/ledger', [FinanceDriverLedgerController::class, 'history']);
+        Route::get('/{driverId}/balance', [FinanceDriverLedgerController::class, 'balance']);
     });
 
     // ── Control-account reconciliation (subledger ↔ GL integrity proof) ─────────

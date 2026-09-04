@@ -21,6 +21,7 @@ class CostCenter extends Model
 
     protected $fillable = [
         'uuid', 'company_id', 'code', 'name', 'name_ar', 'parent_id', 'is_active', 'created_by',
+        'source_type', 'source_id',
     ];
 
     protected function casts(): array
