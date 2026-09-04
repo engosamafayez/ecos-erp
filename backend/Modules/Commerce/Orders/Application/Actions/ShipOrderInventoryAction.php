@@ -16,6 +16,8 @@ use Modules\Inventory\InventoryItems\Application\Actions\ShipStockAction;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
 use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInterface;
 use Modules\Inventory\ReceiptLayers\Application\Services\InventoryLayerConsumptionService;
+use Modules\Operations\Loading\Domain\Models\AllocationRecord;
+use Modules\Operations\Loading\Domain\Models\VehicleAssignment;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 final class ShipOrderInventoryAction
@@ -120,31 +122,66 @@ final class ShipOrderInventoryAction
                 }
             }
 
-            // 3. Stamp COGS and margin on the order
+            // 3. Stamp COGS and margin on the order. ACCUMULATED across calls, not
+            //    overwritten — TASK-...-FINAL-CROSS-SURFACE-CLOSURE-005-R1 §8. A split
+            //    order's later vehicle now actually reaches this method (see the
+            //    completion check below), so a second real call had to stop erasing the
+            //    first vehicle's COGS contribution. For the ordinary single-call path
+            //    (order.actual_cogs_amount starts null/0) this is numerically identical
+            //    to the previous overwrite.
+            $previousCogs = (float) ($order->actual_cogs_amount ?? 0.0);
+            $cumulativeCogs = round($previousCogs + $totalCogs, 2);
             $revenue = (float) $order->total;
-            $margin = $revenue - $totalCogs;
+            $margin = round($revenue - $cumulativeCogs, 2);
             $marginPct = $revenue > 0 ? round($margin / $revenue * 100, 2) : null;
 
-            $order->update([
-                'inventory_shipped_at' => now(),
-                'actual_cogs_amount' => round($totalCogs, 2),
-                'actual_margin_amount' => round($margin, 2),
-                'actual_margin_percent' => $marginPct,
-                'reservation_status' => ReservationStatus::Transferred->value,
-            ]);
+            // Is the ORDER — not just this call's lines — now fully shipped?
+            // TASK-...-FINAL-CROSS-SURFACE-CLOSURE-005-R1 §3-§7. A split order's lines can
+            // be carried by several VehicleAssignments (allocation_records.order_id is
+            // already denormalized — no join needed). DispatchVehicleAction stamps THIS
+            // vehicle's own dispatched_at before calling into this action (same
+            // transaction), so this query already sees it. An order with no allocation
+            // records at all never entered the Loading OS (DispatchOrderWorkflow's direct
+            // path) — allocation_records.vehicle_assignment_id is NOT NULL, so that case is
+            // schema-guaranteed to be "no rows", preserving today's stamp-immediately
+            // behavior for the common single-shipment case exactly.
+            $assignmentIds = AllocationRecord::query()
+                ->where('order_id', $order->id)
+                ->distinct()
+                ->pluck('vehicle_assignment_id');
+            $isFullyShipped = $assignmentIds->isEmpty()
+                || VehicleAssignment::query()->whereIn('id', $assignmentIds)->whereNull('dispatched_at')->doesntExist();
 
-            // Audit inside the transaction so the record commits or rolls back
-            // atomically with the shipment (F-INV-H6 fix).
-            OrderReservationAudit::record(
-                orderId: $order->id,
-                fromStatus: $previousReservationStatus,
-                toStatus: ReservationStatus::Transferred->value,
-                reason: 'Inventory transferred to vehicle during loading',
-                warehouseId: $order->assigned_warehouse_id,
-                meta: ['line_count' => $order->lines->count()],
-                actorId: Auth::id(),
-                actorType: Auth::check() ? 'user' : 'system',
-            );
+            $order->update(array_merge(
+                [
+                    'actual_cogs_amount' => $cumulativeCogs,
+                    'actual_margin_amount' => $margin,
+                    'actual_margin_percent' => $marginPct,
+                ],
+                $isFullyShipped ? [
+                    'inventory_shipped_at' => now(),
+                    'reservation_status' => ReservationStatus::Transferred->value,
+                ] : [],
+            ));
+
+            // The order-level reservation_status transition — and its audit record — only
+            // actually happens once every vehicle carrying this order's lines has
+            // dispatched. A partial vehicle shipment still moves real stock/FIFO/COGS
+            // above; it just doesn't (yet) flip the order to "fully shipped". Audited
+            // inside the transaction so it commits or rolls back atomically with the
+            // shipment (F-INV-H6 fix, preserved).
+            if ($isFullyShipped) {
+                OrderReservationAudit::record(
+                    orderId: $order->id,
+                    fromStatus: $previousReservationStatus,
+                    toStatus: ReservationStatus::Transferred->value,
+                    reason: 'Inventory transferred to vehicle during loading',
+                    warehouseId: $order->assigned_warehouse_id,
+                    meta: ['line_count' => $order->lines->count()],
+                    actorId: Auth::id(),
+                    actorType: Auth::check() ? 'user' : 'system',
+                );
+            }
         });
     }
 
