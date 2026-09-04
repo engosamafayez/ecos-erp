@@ -145,4 +145,5 @@ return [
     Modules\Collaboration\Infrastructure\Providers\CollaborationServiceProvider::class,
     Modules\ClaudeBridge\Infrastructure\Providers\ClaudeBridgeServiceProvider::class,
     Modules\System\Engineering\Infrastructure\Providers\EngineeringServiceProvider::class,
+    Modules\Reporting\Infrastructure\Providers\ReportingServiceProvider::class,
 ];

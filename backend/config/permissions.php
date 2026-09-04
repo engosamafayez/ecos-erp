@@ -171,6 +171,24 @@ return [
             'ap.opening' => ['post'],
         ],
 
+        // TASK-ECOS-REPORTING-PLATFORM-FOUNDATION-002 — category-level Reporting
+        // permissions (ADR-045 Decision 5, Option B). One per Reports workspace category;
+        // 'reports.finance.view' is additive to, never a substitute for, finance.*.view.
+        // Seeded via Modules\Reporting\Infrastructure\Database\Migrations\
+        // 2026_09_04_100000_seed_reporting_permissions_table.php.
+        'reports' => [
+            'executive' => ['view'],
+            'sales' => ['view'],
+            'customers' => ['view'],
+            'products' => ['view'],
+            'inventory' => ['view'],
+            'procurement' => ['view'],
+            'preparation' => ['view'],
+            'distribution' => ['view'],
+            'drivers' => ['view'],
+            'finance' => ['view'],
+        ],
+
     ],
 
     // ── Role definitions ──────────────────────────────────────────────────────

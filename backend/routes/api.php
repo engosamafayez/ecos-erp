@@ -266,6 +266,7 @@ use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierAnalytics
 use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierController;
 use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierDocumentController;
 use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierOpeningBalanceController;
+use Modules\Reporting\Presentation\Http\Controllers\ReportCatalogueController;
 use Modules\Sales\Customers\Presentation\Http\Controllers\CustomerAddressController;
 use Modules\Sales\Customers\Presentation\Http\Controllers\CustomerController;
 use Modules\System\Engineering\Presentation\Http\Controllers\AgentRegistrationController;
@@ -396,6 +397,22 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->prefix('iam')->group(func
             Route::post('apply', [IamRoleTemplateController::class, 'apply'])->middleware('permission:iam.role-templates.update');
         });
     });
+});
+
+/*
+|--------------------------------------------------------------------------
+| Reporting — Platform metadata only (TASK-ECOS-REPORTING-PLATFORM-FOUNDATION-002)
+|
+| Foundation phase: exposes the Report Catalogue and Metric Dictionary as read-only
+| platform metadata (ADR-045 Decision 4). Deliberately not gated on any reports.*.view
+| category permission — see ReportCatalogueController's own docblock for why. No report
+| execution endpoint exists yet; that is explicit future scope (ADR-045 Decision 10),
+| never built here (§8: "Do NOT build all 35 report endpoints in this task").
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->prefix('reporting')->group(function (): void {
+    Route::get('catalogue', [ReportCatalogueController::class, 'catalogue']);
+    Route::get('metrics', [ReportCatalogueController::class, 'metrics']);
 });
 
 /*
