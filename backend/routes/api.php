@@ -267,6 +267,7 @@ use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierControlle
 use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierDocumentController;
 use Modules\Purchasing\Suppliers\Presentation\Http\Controllers\SupplierOpeningBalanceController;
 use Modules\Reporting\Presentation\Http\Controllers\ReportCatalogueController;
+use Modules\Reporting\Presentation\Http\Controllers\ReportExecutionController;
 use Modules\Sales\Customers\Presentation\Http\Controllers\CustomerAddressController;
 use Modules\Sales\Customers\Presentation\Http\Controllers\CustomerController;
 use Modules\System\Engineering\Presentation\Http\Controllers\AgentRegistrationController;
@@ -413,6 +414,16 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->prefix('iam')->group(func
 Route::middleware('auth:sanctum')->prefix('reporting')->group(function (): void {
     Route::get('catalogue', [ReportCatalogueController::class, 'catalogue']);
     Route::get('metrics', [ReportCatalogueController::class, 'metrics']);
+
+    // TASK-ECOS-REPORTING-QUERY-EXECUTION-AND-FIRST-REPORTS-003 §13 — one generic,
+    // read-only execution endpoint. Permission enforcement is dynamic (inside
+    // ReportExecutionService, keyed by the requested report's own catalogue permission)
+    // because the same route serves every report id, each potentially requiring a
+    // different reports.*.view permission — a static middleware string cannot express
+    // that. Only the reports actually registered in ReportHandlerRegistry execute; every
+    // other cataloged report id fails cleanly with 501 (§4/§13: "Only executable Task 3
+    // reports should execute").
+    Route::get('reports/{reportId}/execute', [ReportExecutionController::class, 'execute']);
 });
 
 /*
