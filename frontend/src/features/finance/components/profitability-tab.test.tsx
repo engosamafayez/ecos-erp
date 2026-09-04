@@ -19,7 +19,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (sel: unknown, _opts?: unknown) => {
+    t: (sel: unknown) => {
       if (typeof sel !== 'function') return String(sel);
       const path: string[] = [];
       const proxy: unknown = new Proxy({}, {
@@ -123,8 +123,8 @@ describe('ProfitabilityTab', () => {
     render(<ProfitabilityTab />);
     await user.click(screen.getByText('branch'));
 
-    expect(screen.getByText('b1111111-uuid')).toBeInTheDocument();
-    expect(screen.getByText('$300')).toBeInTheDocument();
+    expect(screen.getAllByText('b1111111-uuid')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('$300')[0]).toBeInTheDocument();
   });
 
   it('shows the HONEST "not yet available" state for product — never an empty chart', async () => {

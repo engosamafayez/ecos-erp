@@ -71,6 +71,7 @@ vi.mock('@/hooks/use-formatter', () => ({
   }),
 }));
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- signature must accept perm; reassigned per-test below
 const { canRef } = vi.hoisted(() => ({ canRef: { current: (_perm: string): boolean => true } }));
 vi.mock('@/features/authorization', () => ({
   usePermission: () => ({ can: (perm: string) => canRef.current(perm) }),
@@ -226,12 +227,14 @@ describe('CostAllocationTab', () => {
     await waitFor(() =>
       expect(reverseMutateAsync).toHaveBeenCalledWith({ uuid: 'ca-1', reason: 'Wrong brand' }),
     );
+    // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- i18n key asserted on the toast call, not rendered UI copy
     expect(toastSpy).toHaveBeenCalledWith(expect.objectContaining({ title: 'costAllocation.toast.reversed' }));
     // The dialog closes on success.
     await waitFor(() => expect(screen.queryByText('costAllocation.reverse.title')).not.toBeInTheDocument());
   });
 
   it('shows a destructive toast and keeps the dialog open when the reversal fails', async () => {
+    // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- mocked API error message fixture, not rendered UI copy
     reverseMutateAsync.mockRejectedValueOnce({ response: { data: { message: 'Already reversed.' } } });
     const user = userEvent.setup();
     render(<CostAllocationTab />);
@@ -243,7 +246,9 @@ describe('CostAllocationTab', () => {
     await waitFor(() =>
       expect(toastSpy).toHaveBeenCalledWith(
         expect.objectContaining({
+          // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- i18n key asserted on the toast call, not rendered UI copy
           title: 'costAllocation.reverse.failed',
+          // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- mocked API error message fixture, not rendered UI copy
           description: 'Already reversed.',
           variant: 'destructive',
         }),

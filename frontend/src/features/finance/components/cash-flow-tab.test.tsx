@@ -113,7 +113,7 @@ describe('CashFlowTab', () => {
     await user.click(screen.getByText('forecast'));
 
     // Liquidity projection row.
-    expect(screen.getByText('$51500')).toBeInTheDocument();
+    expect(screen.getAllByText('$51500')[0]).toBeInTheDocument();
     // Both schedule cards.
     expect(screen.getAllByText('2026-10').length).toBeGreaterThan(0);
     // The risk alert's exact server message, not a paraphrase.

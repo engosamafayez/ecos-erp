@@ -35,6 +35,7 @@ vi.mock('@/hooks/use-formatter', () => ({
   }),
 }));
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- signature must accept perm; reassigned per-test below
 const { canRef } = vi.hoisted(() => ({ canRef: { current: (_perm: string): boolean => true } }));
 vi.mock('@/features/authorization', () => ({
   usePermission: () => ({ can: (perm: string) => canRef.current(perm) }),

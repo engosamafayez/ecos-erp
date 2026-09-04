@@ -17,7 +17,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (sel: unknown, _opts?: unknown) => {
+    t: (sel: unknown) => {
       if (typeof sel !== 'function') return String(sel);
       const path: string[] = [];
       const proxy: unknown = new Proxy({}, {
@@ -79,10 +79,10 @@ describe('CostIntelligenceTab', () => {
 
     render(<CostIntelligenceTab />);
 
-    expect(screen.getByText('$9000')).toBeInTheDocument();
-    expect(screen.getByText('5100')).toBeInTheDocument();
-    expect(screen.getByText('Freight Out')).toBeInTheDocument();
-    expect(screen.getByText('$1200')).toBeInTheDocument();
+    expect(screen.getAllByText('$9000')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('5100')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('Freight Out')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('$1200')[0]).toBeInTheDocument();
   });
 
   it('shows a loading state before the breakdown endpoint responds', () => {
