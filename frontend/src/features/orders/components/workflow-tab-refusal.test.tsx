@@ -40,6 +40,10 @@ vi.mock('react-i18next', () => ({
 vi.mock('@/features/orders/hooks/use-orders', () => ({
   useOrderWorkflowTransition: () => ({ mutate: transitionMutate, isPending: false }),
   useOrderWorkflowReschedule: () => ({ mutate: rescheduleMutate, isPending: false }),
+  // Batch 02's block-override wiring in WorkflowTab: this suite doesn't exercise the
+  // override action itself (see order-detail-drawer-block-override.test.tsx for that),
+  // it just needs the hook to exist so the component can render.
+  useOrderBlockOverride: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 import { WorkflowTab } from './order-detail-drawer';
