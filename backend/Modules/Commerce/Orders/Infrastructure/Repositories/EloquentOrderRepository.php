@@ -219,18 +219,26 @@ final class EloquentOrderRepository implements OrderRepositoryInterface
             }
         }
 
-        // Has payment proof
+        // Has payment proof — TASK-...-FINAL-CROSS-SURFACE-CLOSURE-005 §10/§14. Previously
+        // queried the legacy, non-authoritative `payment_proof_path` column directly — the
+        // exact field Task 3 confirmed carries no real evidence authority. An order proved
+        // through the canonical path (never touches this column) could be wrongly excluded
+        // by "has proof: yes", while a stale legacy string could be wrongly included. Now
+        // checks for an ACTIVE `payment_proofs` row (superseded_at IS NULL) — the same
+        // authority every other proof surface in this codebase already uses
+        // (PaymentFulfillmentGate::hasVerifiedProof()/proofStatesForOrders()).
         $hasProof = $filters['has_payment_proof'] ?? null;
         if ($hasProof !== null && $hasProof !== '') {
             $boolProof = filter_var($hasProof, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            $activeProofExists = function ($sub): void {
+                $sub->from('payment_proofs')
+                    ->whereColumn('payment_proofs.order_id', 'orders.id')
+                    ->whereNull('payment_proofs.superseded_at');
+            };
             if ($boolProof === true) {
-                $query->whereNotNull('payment_proof_path')
-                    ->where('payment_proof_path', '!=', '');
+                $query->whereExists($activeProofExists);
             } elseif ($boolProof === false) {
-                $query->where(function (Builder $b): void {
-                    $b->whereNull('payment_proof_path')
-                        ->orWhere('payment_proof_path', '');
-                });
+                $query->whereNotExists($activeProofExists);
             }
         }
 

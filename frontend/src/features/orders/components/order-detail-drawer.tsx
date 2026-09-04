@@ -1341,7 +1341,12 @@ function ShippingTab({ order, t }: { order: Order; t: OrdersT }) {
                 : null
             }
             statusText={
-              order.confirmation_result === 'confirmed'   ? t($ => $.drawer.shipping.confirmed) :
+              // TASK-...-FINAL-CROSS-SURFACE-CLOSURE-005 §12 — reuse the SAME "Call
+              // Confirmed" wording OrderConfirmationBadge already uses (Task 2's own fix),
+              // not this tab's own bare "Confirmed" key — that exact word, next to a
+              // checkmark, is what Task 2 replaced everywhere else specifically because it
+              // reads as a second, competing Order Status.
+              order.confirmation_result === 'confirmed'   ? t($ => $.confirmationBadge.confirmed) :
               order.confirmation_result === 'not_answered'? t($ => $.drawer.shipping.noAnswer) :
               order.confirmation_result === 'rejected'    ? t($ => $.drawer.shipping.rejected)  :
               order.confirmation_result === 'postponed'   ? t($ => $.drawer.shipping.postponed) :

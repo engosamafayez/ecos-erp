@@ -82,6 +82,21 @@ final class ShipOrderInventoryAction
                     notes: "Shipped for order #{$order->order_number}",
                 ));
 
+                // TASK-...-FINAL-CROSS-SURFACE-CLOSURE-005 §2-§6 — the write this action was
+                // missing: shipping the WAREHOUSE stock above never touched the corresponding
+                // order-line field, leaving Reserved > 0 on a line whose units had physically
+                // shipped. DECREMENT by $qty (the amount actually shipped in THIS call), not an
+                // unconditional zero — mirrors ShipStockAction's own reserved_qty pattern
+                // exactly ($reservedAfter = $reservedBefore - $dto->quantity, above) because
+                // this action supports split-shipment across vehicles (LoadVehicleWorkflow
+                // passes $lineQuantities for only ONE vehicle's allocation, which can be less
+                // than the line's full reserved_qty); a blind zero here would falsely clear a
+                // remaining reservation the domain has not actually shipped yet. In the
+                // ordinary single-shipment path (DispatchOrderWorkflow, $lineQuantities=null,
+                // $qty === the line's full reserved_qty) this decrement still lands on exactly
+                // 0 — the same result a zero-set would give, reached the same way in every case.
+                $line->update(['reserved_qty' => max(0.0, (float) ($line->reserved_qty ?? 0.0) - $qty)]);
+
                 // 2. FIFO layer consumption (within same transaction).
                 //    C-002: use company-scoped lookup so the audit record's inventory_item_id
                 //    always references this tenant's InventoryItem, not another company's.
