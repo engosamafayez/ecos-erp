@@ -26,6 +26,7 @@ export type ModuleFamily =
 const MODULE_FAMILY: Record<ModuleId, ModuleFamily> = {
   dashboard: 'overview',
   executive: 'overview',
+  collaboration: 'overview',
   commerce: 'commerceMarketing',
   crm: 'commerceMarketing',
   customerEngagement: 'commerceMarketing',
