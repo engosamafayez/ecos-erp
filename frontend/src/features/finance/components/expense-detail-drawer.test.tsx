@@ -35,7 +35,7 @@ vi.mock('@/hooks/use-formatter', () => ({
   }),
 }));
 
-const { canRef } = vi.hoisted(() => ({ canRef: { current: (_perm: string) => true } }));
+const { canRef } = vi.hoisted(() => ({ canRef: { current: (_perm: string): boolean => true } }));
 vi.mock('@/features/authorization', () => ({
   usePermission: () => ({ can: (perm: string) => canRef.current(perm) }),
 }));

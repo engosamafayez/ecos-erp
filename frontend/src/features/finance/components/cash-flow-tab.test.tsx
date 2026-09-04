@@ -17,7 +17,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (sel: unknown, _opts?: unknown) => {
+    t: (sel: unknown) => {
       if (typeof sel !== 'function') return String(sel);
       const path: string[] = [];
       const proxy: unknown = new Proxy({}, {
@@ -98,8 +98,11 @@ describe('CashFlowTab', () => {
           opening_cash: 50000,
           months: [{ month: '2026-10', operating_flow: 1000, collections: 2000, payments: 1500, net_flow: 1500, closing_cash: 51500 }],
         },
+        // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- mock server response fixture, not rendered UI copy
         receivable_forecast: { label: 'expected_collection', total: 2000, schedule: [{ month: '2026-10', amount: 2000 }], method: 'aging_bucket_schedule' },
+        // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- mock server response fixture, not rendered UI copy
         payable_forecast: { label: 'expected_payment', total: 1500, schedule: [{ month: '2026-10', amount: 1500 }], method: 'aging_bucket_schedule' },
+        // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- mock server response fixture, not rendered UI copy
         risk_alerts: [{ key: 'low_liquidity_cover', severity: 'warning', message: 'Cash is below outstanding payables.' }],
       },
       isLoading: false,
@@ -128,7 +131,9 @@ describe('CashFlowTab', () => {
           opening_cash: 50000,
           months: [{ month: '2026-10', operating_flow: 1000, collections: 0, payments: 0, net_flow: 1000, closing_cash: 51000 }],
         },
+        // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- mock server response fixture, not rendered UI copy
         receivable_forecast: { label: 'expected_collection', total: 0, schedule: [], method: 'aging_bucket_schedule' },
+        // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- mock server response fixture, not rendered UI copy
         payable_forecast: { label: 'expected_payment', total: 0, schedule: [], method: 'aging_bucket_schedule' },
         risk_alerts: [],
       },

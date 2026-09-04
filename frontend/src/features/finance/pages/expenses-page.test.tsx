@@ -6,8 +6,9 @@
  */
 import '@testing-library/jest-dom/vitest';
 import type { ReactNode } from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
 function pathProxy(path: string): unknown {
@@ -63,7 +64,7 @@ vi.mock('@/hooks/use-formatter', () => ({
   }),
 }));
 
-const { canRef } = vi.hoisted(() => ({ canRef: { current: (_perm: string) => true } }));
+const { canRef } = vi.hoisted(() => ({ canRef: { current: (_perm: string): boolean => true } }));
 vi.mock('@/features/authorization', () => ({
   usePermission: () => ({ can: (perm: string) => canRef.current(perm) }),
 }));
@@ -118,53 +119,53 @@ beforeEach(() => {
 
 describe('ExpensesPage', () => {
   it('renders an expense row with its amount and status', () => {
-    render(<ExpensesPage />);
+    render(<MemoryRouter><ExpensesPage /></MemoryRouter>);
     expect(screen.getByText('EXP-1001')).toBeInTheDocument();
-    expect(screen.getByText('EGP 250')).toBeInTheDocument();
+    expect(within(screen.getByTestId('expense-row')).getByText('EGP 250')).toBeInTheDocument();
   });
 
   it('shows the empty state when there are no expenses', () => {
     mockExpenses.mockReturnValue({ data: [], isLoading: false, isError: false });
-    render(<ExpensesPage />);
+    render(<MemoryRouter><ExpensesPage /></MemoryRouter>);
     expect(screen.getByText('expense.empty')).toBeInTheDocument();
   });
 
   it('hides the whole page behind NoAccess without finance.expense.view', () => {
     canRef.current = () => false;
-    render(<ExpensesPage />);
+    render(<MemoryRouter><ExpensesPage /></MemoryRouter>);
     expect(screen.queryByTestId('expense-row')).not.toBeInTheDocument();
     expect(screen.queryByText('expense.action.new')).not.toBeInTheDocument();
   });
 
   it('shows New Expense only when the viewer can create expenses', () => {
     canRef.current = (perm) => perm !== 'finance.expense.create';
-    render(<ExpensesPage />);
-    expect(screen.queryByRole('button', { name: /expense.action.new/ })).not.toBeInTheDocument();
+    render(<MemoryRouter><ExpensesPage /></MemoryRouter>);
+    expect(screen.queryByRole('button', { name: 'expense.action.new' })).not.toBeInTheDocument();
   });
 
   it('shows New Category only when the viewer can manage expense categories', () => {
     canRef.current = (perm) => perm !== 'finance.expense.category.manage';
-    render(<ExpensesPage />);
+    render(<MemoryRouter><ExpensesPage /></MemoryRouter>);
     expect(screen.queryByRole('button', { name: /expense.action.newCategory/ })).not.toBeInTheDocument();
   });
 
   it('opens the create drawer from New Expense', async () => {
     const user = userEvent.setup();
-    render(<ExpensesPage />);
-    await user.click(screen.getByRole('button', { name: /expense.action.new/ }));
+    render(<MemoryRouter><ExpensesPage /></MemoryRouter>);
+    await user.click(screen.getByRole('button', { name: 'expense.action.new' }));
     expect(screen.getByTestId('create-drawer-open')).toBeInTheDocument();
   });
 
   it('opens the category dialog from New Category', async () => {
     const user = userEvent.setup();
-    render(<ExpensesPage />);
+    render(<MemoryRouter><ExpensesPage /></MemoryRouter>);
     await user.click(screen.getByRole('button', { name: /expense.action.newCategory/ }));
     expect(screen.getByTestId('category-dialog-open')).toBeInTheDocument();
   });
 
   it('opens the detail drawer for the clicked expense', async () => {
     const user = userEvent.setup();
-    render(<ExpensesPage />);
+    render(<MemoryRouter><ExpensesPage /></MemoryRouter>);
     await user.click(screen.getByTestId('expense-row'));
     expect(screen.getByTestId('detail-drawer-open')).toHaveTextContent('exp-1');
   });

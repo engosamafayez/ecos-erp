@@ -19,7 +19,7 @@ import { Card, CardContent } from '@/components/ui/card';
  * is FinanceIntelligenceUnavailableCard below, a different state entirely.
  */
 export function FinanceIntelligenceStateCard({
-  loading,
+  loading: _loading,
   error,
   loadingLabel,
   errorLabel,
