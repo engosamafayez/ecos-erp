@@ -11,10 +11,13 @@ use InvalidArgumentException;
 use Modules\Collaboration\Domain\Models\InternalTask;
 
 /**
- * Its own tsvector/index, deliberately separate from message search (brief
- * §23). Scoped to tasks the requester created or is assigned to — the same
- * ownership boundary every other task operation uses, applied before the
- * text predicate (never "search everything, filter after").
+ * Its own MySQL FULLTEXT index, deliberately separate from message search
+ * (brief §23). Remediation of the original PostgreSQL tsvector design for
+ * MySQL 8.4 — see 2026_09_02_100008's docblock for the full rationale,
+ * including why NATURAL LANGUAGE MODE is used here too. Scoped to tasks the
+ * requester created or is assigned to — the same ownership boundary every
+ * other task operation uses, applied before the text predicate (never
+ * "search everything, filter after").
  */
 final class SearchTasksAction extends BaseAction
 {
@@ -33,7 +36,7 @@ final class SearchTasksAction extends BaseAction
             ->where('company_id', $user->company_id)
             ->where(fn ($q) => $q->where('creator_user_id', $user->id)->orWhere('assignee_user_id', $user->id))
             ->with(['creator', 'assignee'])
-            ->whereRaw("search_tsv @@ websearch_to_tsquery('english', ?)", [$searchQuery])
+            ->whereRaw('MATCH(title, description) AGAINST(? IN NATURAL LANGUAGE MODE)', [$searchQuery])
             ->orderByDesc('created_at')
             ->limit($limit)
             ->get();

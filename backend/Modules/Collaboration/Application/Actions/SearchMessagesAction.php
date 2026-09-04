@@ -12,13 +12,22 @@ use Modules\Collaboration\Domain\Models\ConversationParticipant;
 use Modules\Collaboration\Domain\Models\Message;
 
 /**
- * PostgreSQL full-text search (ADR-044 §9, brief §19-21) — no Scout, no
- * Meilisearch. Authorization comes first, structurally: the participant
- * scope is resolved and applied to the query *before* the search predicate
- * runs, so a conversation the actor cannot access is never a candidate row
- * in the first place (brief §20 — never "search globally, filter after").
- * Tenant/company isolation follows for free — a user can only ever be an
- * active participant of a conversation in their own company (Task 2).
+ * MySQL-native full-text search (ADR-044 §9, brief §19-21) — no Scout, no
+ * Meilisearch. Remediation of the original PostgreSQL tsvector/websearch_to_
+ * tsquery design for MySQL 8.4, the authoritative ECOS database (see
+ * TASK-ECOS-INTERNAL-COLLABORATION-MYSQL-MIGRATION-REMEDIATION-003 and the
+ * 2026_09_02_100008 migration's docblock). NATURAL LANGUAGE MODE is used
+ * deliberately over BOOLEAN MODE: the original contract defines no ranking
+ * beyond `orderByDesc('created_at')`, so no operator syntax (+/-/".../*) is
+ * needed, and free-text user input is never at risk of being misparsed as
+ * a boolean operator.
+ *
+ * Authorization comes first, structurally: the participant scope is
+ * resolved and applied to the query *before* the search predicate runs, so
+ * a conversation the actor cannot access is never a candidate row in the
+ * first place (brief §20 — never "search globally, filter after"). Tenant/
+ * company isolation follows for free — a user can only ever be an active
+ * participant of a conversation in their own company (Task 2).
  */
 final class SearchMessagesAction extends BaseAction
 {
@@ -44,7 +53,7 @@ final class SearchMessagesAction extends BaseAction
 
         return Message::query()
             ->whereIn('conversation_id', $authorizedConversationIds)
-            ->whereRaw("body_tsv @@ websearch_to_tsquery('english', ?)", [$searchQuery])
+            ->whereRaw('MATCH(body) AGAINST(? IN NATURAL LANGUAGE MODE)', [$searchQuery])
             ->orderByDesc('created_at')
             ->limit($limit)
             ->get();

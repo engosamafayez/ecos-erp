@@ -3,45 +3,37 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * PostgreSQL full-text search foundation (architecture report §18, ratified
- * ADR-044 §9): a STORED generated `tsvector` column plus a GIN index over it.
- * No Scout, no Meilisearch, no external search service — Postgres computes
- * and maintains the vector itself on every insert/update, so application
- * code never writes to this column directly (it is not, and must never be,
- * in Message::$fillable).
- *
- * Raw SQL because Laravel's schema builder has no first-class generated-
- * column/tsvector support; `Schema::hasColumn()` still works correctly for
- * the idempotency guard regardless of how the column was created.
+ * MySQL-native full-text search foundation (architecture report §18,
+ * ratified ADR-044 §9). Remediates the original PostgreSQL tsvector/GIN
+ * design (TASK-ECOS-INTERNAL-COLLABORATION-MYSQL-MIGRATION-REMEDIATION-003)
+ * for MySQL 8.4, the authoritative ECOS runtime/test database
+ * (backend/phpunit.xml forces DB_CONNECTION=mysql). No Scout, no
+ * Meilisearch, no external search service — MySQL's InnoDB FULLTEXT index
+ * lives directly on `body` itself; unlike Postgres, no generated helper
+ * column is needed, so `body` stays unchanged and out of any special-case
+ * handling in Message::$fillable.
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        if (Schema::hasColumn('collaboration_messages', 'body_tsv')) {
+        if (Schema::hasIndex('collaboration_messages', 'collab_messages_body_fulltext')) {
             return;
         }
 
-        DB::statement(<<<'SQL'
-            ALTER TABLE collaboration_messages
-            ADD COLUMN body_tsv tsvector
-            GENERATED ALWAYS AS (to_tsvector('english', coalesce(body, ''))) STORED
-        SQL);
-
-        DB::statement(<<<'SQL'
-            CREATE INDEX collaboration_messages_body_tsv_index
-            ON collaboration_messages
-            USING GIN (body_tsv)
-        SQL);
+        Schema::table('collaboration_messages', function (Blueprint $table): void {
+            $table->fullText('body', 'collab_messages_body_fulltext');
+        });
     }
 
     public function down(): void
     {
-        DB::statement('DROP INDEX IF EXISTS collaboration_messages_body_tsv_index');
-        DB::statement('ALTER TABLE collaboration_messages DROP COLUMN IF EXISTS body_tsv');
+        Schema::table('collaboration_messages', function (Blueprint $table): void {
+            $table->dropFullText('collab_messages_body_fulltext');
+        });
     }
 };

@@ -30,11 +30,22 @@ return new class extends Migration
             $table->string('context_id', 64);
             $table->string('attached_to_type', 20);
             $table->uuid('attached_to_id');
-            $table->foreignId('created_by_user_id')->constrained('users')->restrictOnDelete();
+            // Explicit names below: Laravel's auto-generated names for this FK
+            // and both indexes (66/77/69 chars) exceed MySQL's 64-char
+            // identifier limit (TASK-ECOS-INTERNAL-COLLABORATION-MYSQL-MIGRATION-
+            // REMEDIATION-003) — same columns, same FK/index semantics, naming
+            // only. The FK is declared via the base foreign()/references()/on()
+            // call, not ->constrained()->name() — see the sibling fix in
+            // 2026_09_02_100003 for why that chain silently drops the constraint.
+            $table->foreignId('created_by_user_id');
+
+            $table->foreign('created_by_user_id', 'collab_context_links_created_by_foreign')
+                ->references('id')->on('users')
+                ->restrictOnDelete();
             $table->timestampTz('created_at');
 
-            $table->index(['attached_to_type', 'attached_to_id']);
-            $table->index(['context_type', 'context_id']);
+            $table->index(['attached_to_type', 'attached_to_id'], 'collab_context_links_attached_to_index');
+            $table->index(['context_type', 'context_id'], 'collab_context_links_context_index');
         });
     }
 

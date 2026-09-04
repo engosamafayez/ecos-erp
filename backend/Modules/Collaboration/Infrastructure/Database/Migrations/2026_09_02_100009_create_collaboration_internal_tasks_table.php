@@ -52,7 +52,13 @@ return new class extends Migration
 
             $table->timestampsTz();
 
-            $table->index(['company_id', 'assignee_user_id', 'status']);
+            // Explicit name on the first index only: Laravel's auto-generated
+            // name for it (69 chars) exceeds MySQL's 64-char identifier limit.
+            // The other two below stay at their Laravel-default names (61/59
+            // chars, within limit). Verification-only fix (TASK-ECOS-INTERNAL-
+            // COLLABORATION-ISOLATED-INTEGRATION-VERIFICATION-002) — same
+            // columns, same index semantics, naming only.
+            $table->index(['company_id', 'assignee_user_id', 'status'], 'collab_internal_tasks_company_assignee_status_index');
             $table->index(['company_id', 'creator_user_id']);
             $table->index(['company_id', 'status', 'due_at']);
         });

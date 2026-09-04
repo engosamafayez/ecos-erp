@@ -43,7 +43,12 @@ return new class extends Migration
             // One row per (conversation, user) for the life of the membership —
             // leaving and rejoining re-activates the same row via left_at, it never
             // inserts a second one.
-            $table->unique(['conversation_id', 'user_id']);
+            // Explicit name: Laravel's auto-generated name for this constraint
+            // (collaboration_conversation_participants_conversation_id_user_id_unique,
+            // 70 chars) exceeds MySQL's 64-char identifier limit. Verification-only
+            // fix (TASK-ECOS-INTERNAL-COLLABORATION-ISOLATED-INTEGRATION-VERIFICATION-002)
+            // — same columns, same uniqueness semantics, naming only.
+            $table->unique(['conversation_id', 'user_id'], 'collab_conv_participants_conv_user_unique');
             $table->index(['user_id', 'left_at']);
         });
     }
