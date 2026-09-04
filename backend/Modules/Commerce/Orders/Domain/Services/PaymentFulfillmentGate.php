@@ -272,7 +272,7 @@ final class PaymentFulfillmentGate
      *
      * @param  list<string>  $orderIds
      * @return array<string, string> order_id => 'uploaded'|'verified'|'rejected'; an order with
-     *                                no active proof is simply absent from the array.
+     *                               no active proof is simply absent from the array.
      */
     public function proofStatesForOrders(array $orderIds, string $companyId): array
     {

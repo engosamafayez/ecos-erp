@@ -340,14 +340,13 @@ final class DistributionAggregationService
      * created." Every CURRENT operational create path now stamps a real Wave id
      * (§3 of that task's report); a genuinely wave-less row from before that fix is
      * historical, not in-progress, and belongs off the current board, not on it.
-     *
      * @param  array<string, string>|null  $currentWaveByWarehouse  TASK-...-006-R1 §6 —
-     *         ALL-WAREHOUSES mode. Passed only when $warehouseId is null: warehouse_id
-     *         => that warehouse's OWN governing Wave id (governingPreparationWavesByCompany()).
-     *         A single $waveId cannot scope every warehouse at once, so this checks each
-     *         Group against its OWN warehouse's current Wave instead of disabling Wave
-     *         scoping. Mutually exclusive with $waveId in practice — a caller resolves
-     *         one or the other depending on whether a warehouse is selected.
+     *                                                              ALL-WAREHOUSES mode. Passed only when $warehouseId is null: warehouse_id
+     *                                                              => that warehouse's OWN governing Wave id (governingPreparationWavesByCompany()).
+     *                                                              A single $waveId cannot scope every warehouse at once, so this checks each
+     *                                                              Group against its OWN warehouse's current Wave instead of disabling Wave
+     *                                                              scoping. Mutually exclusive with $waveId in practice — a caller resolves
+     *                                                              one or the other depending on whether a warehouse is selected.
      */
     public function slotSummaries(
         string $windowId,
