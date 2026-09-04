@@ -340,6 +340,10 @@ export type Order = {
   // Enterprise payment / financial fields
   payment_method_manual: string | null;
   payment_proof_path: string | null;
+  /** Orders list read-model only (batched per-page) — null on the single-order detail fetch. */
+  payment_proof_required?: boolean | null;
+  /** 'none' | 'uploaded' | 'verified' | 'rejected'; null on the single-order detail fetch. */
+  payment_proof_state?: 'none' | 'uploaded' | 'verified' | 'rejected' | null;
   shipping_cost: number | null;
   shipping_cost_source: string | null;
   discount_amount: number;

@@ -260,6 +260,14 @@ final class OrderResource extends JsonResource
             'delivery_zone' => $this->delivery_zone,
             'payment_method_manual' => $this->payment_method_manual,
             'payment_proof_path' => $this->payment_proof_path,
+            // Orders list read-model (TASK-...-LIST-READ-MODEL-AND-RESERVATION-004 §8/§9) —
+            // batched per-page by OrderController::index() via PaymentFulfillmentGate's
+            // proofRequiredForOrders()/proofStatesForOrders(); absent (null) on the single-order
+            // detail fetch, which does not run that batching and does not need to — the Order
+            // Details page/drawer already resolve proof state through their own dedicated,
+            // single-order-scoped hooks (useBrandOrderPolicy / usePaymentProofs).
+            'payment_proof_required' => isset($this->resource->payment_proof_required) ? (bool) $this->resource->payment_proof_required : null,
+            'payment_proof_state' => isset($this->resource->payment_proof_state) ? (string) $this->resource->payment_proof_state : null,
             'governorate' => $this->governorate,
             'city' => $this->city,
             'shipping_address' => $this->shipping_address,

@@ -34,6 +34,7 @@ use Modules\Commerce\Orders\Domain\Models\OrderEvent;
 use Modules\Commerce\Orders\Domain\Models\OrderFinancialSnapshot;
 use Modules\Commerce\Orders\Domain\Models\OrderNote;
 use Modules\Commerce\Orders\Domain\Services\CustomerOrderMetricsService;
+use Modules\Commerce\Orders\Domain\Services\PaymentFulfillmentGate;
 use Modules\Commerce\Orders\Presentation\Http\Requests\PatchOrderRequest;
 use Modules\Commerce\Orders\Presentation\Http\Requests\StoreManualOrderRequest;
 use Modules\Commerce\Orders\Presentation\Http\Requests\StoreOrderRequest;
@@ -55,6 +56,7 @@ final class OrderController extends Controller
         private readonly CurrentCompanyService $currentCompany,
         private readonly CustomerOrderMetricsService $orderMetrics,
         private readonly OrderRepositoryInterface $orders,
+        private readonly PaymentFulfillmentGate $paymentGate,
     ) {}
 
     public function index(Request $request, ListOrdersAction $action): JsonResponse
@@ -116,6 +118,27 @@ final class OrderController extends Controller
         }
         foreach ($paginator->items() as $order) {
             $order->setAttribute('customer_total_orders', $orderCounts[(string) $order->customer_id]['orders_count'] ?? 0);
+        }
+
+        // TASK-...-LIST-READ-MODEL-AND-RESERVATION-004 §9 — batch each row's Payment Proof
+        // required/state for the current page ONLY, same shape as the customer-order-count
+        // batching just above. proofRequiredForOrders() groups internally by (channel_id,
+        // company_id) — bounded by distinct channels on the page, never one lookup per row.
+        // proofStatesForOrders() is grouped by each row's OWN company_id here, mirroring the
+        // defensive per-row-company grouping above, for the same super-admin cross-tenant
+        // reason: $filters['company_id'] is null in that view.
+        $proofRequired = $this->paymentGate->proofRequiredForOrders(collect($paginator->items()));
+        $proofStates = [];
+        foreach (collect($paginator->items())->groupBy(fn (Order $o) => (string) $o->company_id) as $rowsCompanyId => $group) {
+            if ($rowsCompanyId === '') {
+                continue;
+            }
+            $orderIds = $group->pluck('id')->map(fn ($id) => (string) $id)->all();
+            $proofStates += $this->paymentGate->proofStatesForOrders($orderIds, $rowsCompanyId);
+        }
+        foreach ($paginator->items() as $order) {
+            $order->setAttribute('payment_proof_required', $proofRequired[(string) $order->id] ?? false);
+            $order->setAttribute('payment_proof_state', $proofStates[(string) $order->id] ?? 'none');
         }
 
         // KPI cards: sum grand_total across the exact same filtered scope $paginator

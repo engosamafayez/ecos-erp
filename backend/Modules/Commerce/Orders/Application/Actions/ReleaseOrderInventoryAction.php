@@ -110,6 +110,18 @@ final class ReleaseOrderInventoryAction
                     reference_id: $order->id,
                     notes: "Released reservation for order #{$order->order_number}",
                 ));
+
+                // TASK-...-LIST-READ-MODEL-AND-RESERVATION-004 §11/§12 — the write this action
+                // was missing: releasing the WAREHOUSE reservation above never zeroed the
+                // corresponding order-line field, leaving Reservation Summary = Released while
+                // an individual line still showed Reserved > 0. A single order reserves against
+                // exactly one warehouse at a time and reserved_qty is never split across
+                // multiple reservation records (confirmed by reading ReserveOrderInventoryAction
+                // and the stock ledger), and releaseStock->execute() above either fully
+                // releases $qtyToRelease or throws (rolling back this entire DB::transaction,
+                // including this update) — so unconditionally zeroing here, in the same
+                // iteration as the release it corresponds to, is exact, not an approximation.
+                $line->update(['reserved_qty' => 0]);
             }
 
             $order->update([

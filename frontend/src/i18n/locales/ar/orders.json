@@ -261,7 +261,7 @@
     "reservationStatus": "الحجز",
     "editZone": "تعديل منطقة التسليم",
     "addZone": "إضافة منطقة",
-    "deliveryWindow": "موعد التسليم",
+    "deliveryWindow": "التسليم المطلوب",
     "shippingAttempts": "محاولات الشحن",
     "shippingCompany": "شركة الشحن",
     "createdAt": "تاريخ الإنشاء",
@@ -273,6 +273,7 @@
     "proofReceived": "إثبات الاستلام",
     "actions": "الإجراءات",
     "noProof": "لا يوجد إثبات",
+    "proofUpload": "رفع",
     "noGps": "لا يوجد GPS",
     "governorateWithName": "محافظة {{name}}",
     "totalDue": "متبقي {{amount}}"

@@ -230,6 +230,66 @@ final class PaymentFulfillmentGate
     }
 
     /**
+     * Batched proof-REQUIRED resolution for many orders — Orders list read-model support
+     * (TASK-...-LIST-READ-MODEL-AND-RESERVATION-004 §9). Same requirement each order's own
+     * method already resolves to via requirementFor(), but with ONE orderPolicyFor() lookup
+     * per distinct (channel_id, company_id) pair present in $orders — never one per order.
+     * orderPolicyFor() itself queries Channel/ConfigurationManager internally, so calling it
+     * per row on a list would be exactly the N+1 this method exists to avoid. A page's orders
+     * span a small, bounded number of distinct channels regardless of row count.
+     *
+     * @param  \Illuminate\Support\Collection<int, Order>  $orders
+     * @return array<string, bool> order_id => true iff that order's own method resolves to 'required'
+     */
+    public function proofRequiredForOrders(\Illuminate\Support\Collection $orders): array
+    {
+        $groups = $orders->groupBy(fn (Order $o) => ($o->channel_id ?? '').'|'.($o->company_id ?? ''));
+        $policyByGroup = [];
+        $out = [];
+
+        foreach ($groups as $key => $group) {
+            /** @var Order $first */
+            $first = $group->first();
+            $policyByGroup[$key] ??= $this->orderPolicyFor($first->channel_id, $first->company_id);
+            $policy = $policyByGroup[$key];
+
+            foreach ($group as $order) {
+                $method = $this->methodOf($order);
+                $out[(string) $order->id] = $method !== '' && ($policy[$method] ?? 'none') === 'required';
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Batched ACTIVE proof state for many orders — the list-safe sibling of hasVerifiedProof().
+     * ONE query for every order on the page scoped to one company, instead of one
+     * `payment_proofs` query per row. Mirrors this class's own single-order scoping: ACTIVE
+     * means `superseded_at IS NULL`; the state is returned as-is (uploaded/verified/rejected) —
+     * callers that need a plain paid/unpaid boolean should compare against 'verified'
+     * themselves, exactly as hasVerifiedProof() does for one order.
+     *
+     * @param  list<string>  $orderIds
+     * @return array<string, string> order_id => 'uploaded'|'verified'|'rejected'; an order with
+     *                                no active proof is simply absent from the array.
+     */
+    public function proofStatesForOrders(array $orderIds, string $companyId): array
+    {
+        if ($orderIds === []) {
+            return [];
+        }
+
+        return PaymentProof::query()
+            ->whereIn('order_id', $orderIds)
+            ->where('company_id', $companyId)
+            ->whereNull('superseded_at')
+            ->pluck('state', 'order_id')
+            ->map(fn ($state) => $state instanceof PaymentProofState ? $state->value : (string) $state)
+            ->all();
+    }
+
+    /**
      * Paid in full — the same derivation the read model uses (`EloquentOrderRepository`).
      * No payment state is stored anywhere; money is the truth.
      */

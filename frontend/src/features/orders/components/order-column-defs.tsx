@@ -1,11 +1,10 @@
 // @refresh reset
 import type { TFunction } from 'i18next';
-import { Clock, ExternalLink, FileCheck, MessageCircle, MoreVertical, Printer, User, Wallet } from 'lucide-react';
+import { Clock, ExternalLink, FileCheck, MessageCircle, MoreVertical, Printer, Upload, User, Wallet } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { DataGridColumnDef } from '@/components/data-grid/types';
-import { MediaViewer } from '@/components/ui/media-viewer';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,30 +50,69 @@ function formatTime(d: string | null): string {
 }
 
 // ── Payment Proof cell ───────────────────────────────────────────────────────
+// TASK-...-LIST-READ-MODEL-AND-RESERVATION-004 §6-§9. Replaces a cell that read the legacy
+// `payment_proof_path` column directly — the exact non-authoritative field Task 3 confirmed
+// carries no real evidence authority (payment_proofs is canonical; a verified proof uploaded
+// the correct way was invisible here, and any stale/legacy path string showed as "received"
+// regardless of real state). Driven entirely by the batched, backend-resolved
+// payment_proof_required/payment_proof_state fields (PaymentFulfillmentGate::
+// proofRequiredForOrders()/proofStatesForOrders(), batched once per page in
+// OrderController::index() — no N+1). The action reuses the SAME canonical onVerifyPayment
+// callback the existing "Payment & Proof" row-menu item already uses (opens the order drawer,
+// whose Payment tab hosts the canonical PaymentProofSection) — no table-specific uploader.
 
-function PaymentProofCell({ rawPath }: { rawPath: string }) {
+function PaymentProofColumnCell({
+  order, onVerifyPayment,
+}: { order: Order; onVerifyPayment?: (order: Order) => void }) {
   const { t } = useTranslation('orders');
-  return (
-    <MediaViewer
-      path={rawPath}
-      title="Payment Proof"
-      trigger={
-        <button
-          type="button"
-          onClick={(e) => e.stopPropagation()}
-          onMouseDown={(e) => e.stopPropagation()}
-          className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium
-            text-emerald-700 dark:text-emerald-400
-            bg-emerald-50 dark:bg-emerald-900/30
-            ring-1 ring-inset ring-emerald-600/20
-            hover:ring-emerald-500/40 transition-colors"
-        >
-          <FileCheck className="size-3" />
-          {t($ => $.columns.proofReceived)}
-        </button>
-      }
-    />
-  );
+  const state = order.payment_proof_state ?? 'none';
+
+  if (state !== 'none') {
+    // B — proof exists (any state: uploaded/verified/rejected). Color mirrors
+    // PaymentProofSection's own state coloring, so the same state reads the same way
+    // everywhere in the product.
+    const cls = state === 'verified'
+      ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 ring-emerald-600/20 hover:ring-emerald-500/40'
+      : state === 'rejected'
+        ? 'text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/30 ring-red-600/20 hover:ring-red-500/40'
+        : 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 ring-amber-600/20 hover:ring-amber-500/40';
+    return (
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onVerifyPayment?.(order); }}
+        onMouseDown={(e) => e.stopPropagation()}
+        className={cn('inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium ring-1 ring-inset transition-colors', cls)}
+      >
+        <FileCheck className="size-3" />
+        {t($ => $.orderDetail.proofView)}
+      </button>
+    );
+  }
+
+  if (order.payment_proof_required) {
+    // A — required and missing. COD (and any other 'none'-policy method) can never land
+    // here: payment_proof_required is resolved from the same PaymentFulfillmentGate policy
+    // that already exempts COD, not a frontend method check.
+    return (
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onVerifyPayment?.(order); }}
+        onMouseDown={(e) => e.stopPropagation()}
+        className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-medium
+          text-amber-700 dark:text-amber-400
+          bg-amber-50 dark:bg-amber-900/30
+          ring-1 ring-inset ring-amber-600/20
+          hover:ring-amber-500/40 transition-colors"
+      >
+        <Upload className="size-3" />
+        {t($ => $.columns.proofUpload)}
+      </button>
+    );
+  }
+
+  // C — not required: neutral, no "Required"/"Missing" text, no action — same dash
+  // convention the rest of this grid uses for an empty cell.
+  return <span className="text-xs text-muted-foreground">—</span>;
 }
 
 // ── Customer Intelligence badge ──────────────────────────────────────────────
@@ -214,7 +252,7 @@ export function createOrderColumns(
   callbacks: OrderColumnCallbacks,
   t: TFunction<'orders'>,
 ): DataGridColumnDef<Order>[] {
-  const { onView, onEditLocation, onDeleteLocation, onConfirmCustomer, onStatusUpdated } = callbacks;
+  const { onView, onEditLocation, onDeleteLocation, onConfirmCustomer, onStatusUpdated, onVerifyPayment } = callbacks;
 
   return [
     // ── Order # ───────────────────────────────────────────────────────────────
@@ -236,6 +274,18 @@ export function createOrderColumns(
           >
             {order.order_number}
           </button>
+          {/* Brand — TASK-...-LIST-READ-MODEL-AND-RESERVATION-004 §4/§5. Reuses the same
+              channel.brand relation OrderResource already eager-loads for every Order (list
+              and detail alike, EloquentOrderRepository::WITH/WITH_DETAIL) — zero new query.
+              An Order has exactly one Channel and a Channel belongsTo exactly one Brand
+              (Channel::brand() is a BelongsTo, confirmed by reading the model), so there is no
+              real multi-brand-per-order case to reconcile here; Product-level brand is never
+              surfaced on Orders anywhere in this codebase. */}
+          {order.channel?.brand?.name ? (
+            <span className="text-[10px] text-muted-foreground leading-none">
+              {order.channel.brand.name}
+            </span>
+          ) : null}
           {order.external_order_id ? (
             <span className="font-mono text-[10px] text-muted-foreground leading-none">
               {order.external_order_id}
@@ -417,9 +467,7 @@ export function createOrderColumns(
       label: t($ => $.columns.paymentProof),
       defaultVisible: true,
       skeletonClassName: 'h-5 w-24',
-      cell: (order) => order.payment_proof_path
-        ? <PaymentProofCell rawPath={order.payment_proof_path} />
-        : <span className="text-xs text-muted-foreground">{t($ => $.columns.noProof)}</span>,
+      cell: (order) => <PaymentProofColumnCell order={order} onVerifyPayment={onVerifyPayment} />,
     },
 
     // ── Total — grand_total under its own label; remaining balance shown as a

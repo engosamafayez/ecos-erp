@@ -261,7 +261,7 @@
     "reservationStatus": "Reservation",
     "editZone": "Edit delivery zone",
     "addZone": "Add zone",
-    "deliveryWindow": "Delivery Window",
+    "deliveryWindow": "Requested Delivery",
     "shippingAttempts": "Attempts",
     "shippingCompany": "Carrier",
     "createdAt": "Created",
@@ -273,6 +273,7 @@
     "proofReceived": "Proof Received",
     "actions": "Actions",
     "noProof": "No Proof",
+    "proofUpload": "Upload",
     "noGps": "No GPS",
     "governorateWithName": "{{name}} Governorate",
     "totalDue": "{{amount}} due"
