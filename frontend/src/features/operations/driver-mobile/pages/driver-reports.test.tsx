@@ -31,22 +31,23 @@ vi.mock('../hooks/use-driver-mobile', () => ({
   useDriverOrdersReport: () => ({ ...ordersData, refetch: vi.fn() }),
   useDriverGoodsMovement: () => idleQuery,
   useDriverShortages: () => idleQuery,
-  useDriverAdvances: () => ({ data: { available: false, reason: 'no_canonical_authority', items: [] }, isLoading: false }),
+  useDriverAdvances: () => ({ data: { available: true, items: [], total: 0, pending_count: 0 }, isLoading: false, isError: false, refetch: vi.fn() }),
+  useDriverExpenses: () => ({ data: { available: true, items: [], total: 0, pending_count: 0 }, isLoading: false, isError: false, refetch: vi.fn() }),
 }));
 
 import { DriverWalletPage } from './driver-wallet-page';
 import { DriverReportsPage } from './driver-reports-page';
 
 describe('Driver Wallet', () => {
-  it('renders server-derived collections and surfaces the unavailable advances/expenses honestly', () => {
+  it('shows only the open position with canonical advances/expenses (§6/§7)', () => {
     walletData.data = {
       period: { from: '2026-08-01', to: '2026-08-31' },
       trips: 2,
       collections: { total: 500, cash: 300, transfer: 150, card: 50, already_paid: 0 },
       cash: { expected: 300, submitted: 290, difference: -10, is_balanced: false },
       settlement_status: 'under_review',
-      advances: { available: false, reason: 'no_canonical_authority', items: [] },
-      expenses: { available: false, reason: 'no_canonical_authority', items: [] },
+      advances: { available: true, items: [], total: 120, pending_count: 0 },
+      expenses: { available: true, items: [], total: 80, pending_count: 0 },
       liability: { available: false },
       closing: {
         all_trips_closed: false, deliveries_outstanding: 1, custody_remaining: 2,
@@ -57,8 +58,13 @@ describe('Driver Wallet', () => {
 
     expect(screen.getByText('500')).toBeInTheDocument(); // total collected, money-formatted
     expect(screen.getByText('wallet.collections')).toBeInTheDocument();
-    // §5/§8 — no fabricated advances/expenses; the unavailable note is shown.
-    expect(screen.getByText('wallet.advancesUnavailable')).toBeInTheDocument();
+    // §7 — the wallet is labelled as the current open/unsettled position.
+    expect(screen.getByText('wallet.openPositionHint')).toBeInTheDocument();
+    // §6 — advances + expenses now come from the canonical movement ledger (no "unavailable" note).
+    expect(screen.getByText('wallet.advances')).toBeInTheDocument();
+    expect(screen.getByText('120')).toBeInTheDocument(); // advances total
+    expect(screen.getByText('80')).toBeInTheDocument(); // expenses total
+    expect(screen.queryByText('wallet.advancesUnavailable')).toBeNull();
   });
 });
 
@@ -76,7 +82,8 @@ describe('Driver Reports', () => {
     expect(screen.getByText('reports.orders.received')).toBeInTheDocument();
     expect(screen.getByText('3')).toBeInTheDocument(); // received count
     expect(screen.getByText('33%')).toBeInTheDocument(); // delivery rate
-    // The four report tabs are exposed (§3).
+    // The report tabs are exposed (§3/§6) — including Advances and the new Expenses tab.
     expect(screen.getByText('reports.tabs.advances')).toBeInTheDocument();
+    expect(screen.getByText('reports.tabs.expenses')).toBeInTheDocument();
   });
 });

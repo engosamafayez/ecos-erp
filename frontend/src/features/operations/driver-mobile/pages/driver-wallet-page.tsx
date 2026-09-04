@@ -62,6 +62,12 @@ export function DriverWalletPage() {
           </div>
         ) : (
           <>
+            {/* §7 — the wallet is the driver's current OPEN (unsettled) position; once Operations
+                settles a day it moves to the auditable Statement and leaves the live wallet. */}
+            <p className="rounded-lg bg-muted/40 px-3 py-2 text-[11px] text-muted-foreground">
+              {t(($) => $.wallet.openPositionHint)}
+            </p>
+
             {/* Collections */}
             <div className="rounded-xl border bg-card p-4">
               <div className="mb-3 flex items-center justify-between">
@@ -119,13 +125,13 @@ export function DriverWalletPage() {
               {t(($) => $.wallet.statementLink)}
             </Button>
 
-            {/* Advances / expenses — no canonical driver authority (§5/§8), surfaced honestly. */}
-            {(!data.advances.available || !data.expenses.available) && (
-              <div className="rounded-xl border border-dashed p-4 text-xs text-muted-foreground space-y-1">
-                {!data.advances.available && <p>{t(($) => $.wallet.advancesUnavailable)}</p>}
-                {!data.expenses.available && <p>{t(($) => $.wallet.expensesUnavailable)}</p>}
-              </div>
-            )}
+            {/* §6/§7 — Advances (cash-in) + Expenses (cash-out) for this open position, from the
+                canonical DriverTripMovement ledger (approved/settled totals). Full detail lives on
+                the Reports → Advances / Expenses tabs. */}
+            <div className="grid grid-cols-2 gap-2">
+              <Row label={t(($) => $.wallet.advances)} value={money(data.advances.total)} />
+              <Row label={t(($) => $.wallet.expenses)} value={money(data.expenses.total)} />
+            </div>
           </>
         )}
       </div>

@@ -549,8 +549,12 @@ export function useDriverShortages(period: ReportPeriodValue) {
   return useQuery({ queryKey: ['driver-shortages', period], queryFn: () => svc.fetchShortageReport(period) });
 }
 
-export function useDriverAdvances() {
-  return useQuery({ queryKey: ['driver-advances'], queryFn: () => svc.fetchAdvancesReport() });
+export function useDriverAdvances(period: ReportPeriodValue) {
+  return useQuery({ queryKey: ['driver-advances', period], queryFn: () => svc.fetchAdvancesReport(period) });
+}
+
+export function useDriverExpenses(period: ReportPeriodValue) {
+  return useQuery({ queryKey: ['driver-expenses', period], queryFn: () => svc.fetchExpensesReport(period) });
 }
 
 export function useDriverStatement(month: string) {
