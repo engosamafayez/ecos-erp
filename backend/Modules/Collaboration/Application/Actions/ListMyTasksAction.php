@@ -63,7 +63,7 @@ final class ListMyTasksAction extends BaseAction
             $query->where('team_id', $filters['team_id']);
         }
 
-        return $query->orderByRaw("due_at IS NULL, due_at ASC")
+        return $query->orderByRaw('due_at IS NULL, due_at ASC')
             ->orderByDesc('created_at')
             ->get();
     }

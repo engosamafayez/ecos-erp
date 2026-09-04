@@ -61,7 +61,7 @@ final class SearchMessagesAction extends BaseAction
             ->pluck('conversation_id');
 
         if ($authorizedConversationIds->isEmpty()) {
-            return new Collection();
+            return new Collection;
         }
 
         return Message::query()

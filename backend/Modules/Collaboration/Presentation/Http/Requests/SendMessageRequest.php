@@ -63,7 +63,7 @@ final class SendMessageRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'type.in' => "Message type must be one of: text, image, file, voice.",
+            'type.in' => 'Message type must be one of: text, image, file, voice.',
             'file.required' => 'A file upload is required for this message type.',
         ];
     }

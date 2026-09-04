@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Collaboration\Application\Notifications;
 
-use Modules\Collaboration\Domain\Enums\TaskStatus;
 use Illuminate\Notifications\Notification;
+use Modules\Collaboration\Domain\Enums\TaskStatus;
 use Modules\Collaboration\Domain\Models\InternalTask;
 
 /**
