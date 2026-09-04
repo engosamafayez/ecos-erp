@@ -47,8 +47,8 @@ export interface DriverWallet {
     is_balanced: boolean | null;
   };
   settlement_status: SettlementRollupStatus;
-  advances: UnavailableSection;
-  expenses: UnavailableSection;
+  advances: DriverMovementsReport;
+  expenses: DriverMovementsReport;
   liability: UnavailableSection;
   closing: {
     all_trips_closed: boolean;
@@ -129,11 +129,28 @@ export interface DriverShortageReport {
   note: string;
 }
 
-export interface DriverAdvancesReport {
-  available: boolean;
-  reason: string;
-  items: unknown[];
+/** §6 — one movement row from the canonical DriverTripMovement ledger. */
+export interface DriverMovementItem {
+  id: string;
+  category: 'fuel' | 'road_toll' | 'advance' | 'other';
+  is_expense: boolean;
+  amount: number;
+  note: string | null;
+  status: 'pending' | 'approved' | 'rejected' | 'settled';
+  occurred_at: string | null;
 }
+
+/** §6 — Advances (cash-in) / Expenses (cash-out) report over the period. */
+export interface DriverMovementsReport {
+  available: boolean;
+  items: DriverMovementItem[];
+  total: number;
+  pending_count: number;
+  reason?: string;
+}
+
+export type DriverAdvancesReport = DriverMovementsReport;
+export type DriverExpensesReport = DriverMovementsReport;
 
 export interface DriverStatement {
   month: string;

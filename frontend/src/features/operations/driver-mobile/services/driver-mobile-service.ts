@@ -2,6 +2,7 @@ import axios from 'axios';
 import { api } from '@/lib/axios';
 import type {
   DriverAdvancesReport,
+  DriverExpensesReport,
   DriverGoodsMovement,
   DriverOrdersReport,
   DriverShortageReport,
@@ -447,9 +448,14 @@ export async function fetchShortageReport(p: ReportPeriodValue): Promise<DriverS
   return data.data as DriverShortageReport;
 }
 
-export async function fetchAdvancesReport(): Promise<DriverAdvancesReport> {
-  const { data } = await api.get('/driver/reports/advances');
+export async function fetchAdvancesReport(p: ReportPeriodValue): Promise<DriverAdvancesReport> {
+  const { data } = await api.get('/driver/reports/advances', { params: periodParams(p) });
   return data.data as DriverAdvancesReport;
+}
+
+export async function fetchExpensesReport(p: ReportPeriodValue): Promise<DriverExpensesReport> {
+  const { data } = await api.get('/driver/reports/expenses', { params: periodParams(p) });
+  return data.data as DriverExpensesReport;
 }
 
 export async function fetchDriverStatement(month: string): Promise<DriverStatement> {

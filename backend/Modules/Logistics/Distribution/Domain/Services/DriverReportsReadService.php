@@ -16,6 +16,10 @@ use Modules\Logistics\Distribution\Domain\Enums\TripStatus;
 use Modules\Logistics\Distribution\Domain\Models\DeliveryAction;
 use Modules\Logistics\Distribution\Domain\Models\DeliveryStop;
 use Modules\Logistics\Distribution\Domain\Models\PaymentCollection;
+use Modules\Logistics\Distribution\Domain\Enums\DriverTripMovementCategory;
+use Modules\Logistics\Distribution\Domain\Enums\DriverTripMovementDirection;
+use Modules\Logistics\Distribution\Domain\Enums\DriverTripMovementStatus;
+use Modules\Logistics\Distribution\Domain\Models\DriverTripMovement;
 use Modules\Logistics\Distribution\Domain\Models\Trip;
 use Modules\Logistics\Drivers\Domain\Models\Driver;
 use Modules\Operations\Loading\Domain\Models\VehicleAssignment;
@@ -114,7 +118,12 @@ class DriverReportsReadService
      */
     public function wallet(Driver $driver, string $companyId, string $from, string $to): array
     {
-        $trips = $this->driverTrips($driver, $companyId, $from, $to);
+        // §7 — the wallet is the driver's CURRENT position: only OPEN/unsettled trips. A trip whose
+        // settlement Operations has Finalized is closed; its figures move to the auditable Monthly
+        // Statement and no longer clutter the live wallet (settled history stays queryable there).
+        $trips = $this->driverTrips($driver, $companyId, $from, $to)
+            ->filter(fn (Trip $t): bool => ! $t->settlement?->isFinal())
+            ->values();
         $tripIds = $trips->pluck('id')->all();
 
         // Money SSOT — canonical per-trip engine, summed. Never re-derived in React.
@@ -152,9 +161,11 @@ class DriverReportsReadService
             'settlement_status' => $this->aggregateSettlementStatus(
                 $summaries->map(fn (array $s): ?string => $s['settlement_status'])->all(),
             ),
-            // §5/§8 — no canonical driver-attributed authority; surfaced, not invented.
-            'advances' => ['available' => false, 'reason' => 'no_canonical_authority', 'items' => []],
-            'expenses' => ['available' => false, 'reason' => 'no_canonical_authority', 'items' => []],
+            // §6 — advances (cash-in) + expenses (cash-out) now come from the canonical
+            // DriverTripMovement ledger (TASK-OPERATIONS-DRIVER-TRIP-MOVEMENT-APPROVAL-001) over this
+            // wallet's open trips — no longer a stub, and no new authority is introduced.
+            'advances' => $this->movementsReport($companyId, (string) $driver->id, $tripIds, DriverTripMovementDirection::CashIn),
+            'expenses' => $this->movementsReport($companyId, (string) $driver->id, $tripIds, DriverTripMovementDirection::CashOut),
             'liability' => ['available' => false, 'reason' => 'no_monetary_liability_authority'],
             'closing' => $this->closingIndicators($trips, $summaries->all(), $tripIds, $companyId),
         ];
@@ -186,6 +197,83 @@ class DriverReportsReadService
             'custody_reconciled' => $custodyRemaining < 0.0001,
             'settlement_status' => $settlementStatus,
             'settlement_complete' => $settlementStatus === DriverDaySettlementReadService::STATUS_SETTLED,
+        ];
+    }
+
+    // ── Advances & Expenses (§6) — canonical DriverTripMovement ledger ──────────
+
+    /**
+     * Advances report (cash-in movements) over the window — the canonical DriverTripMovement
+     * ledger, scoped to the driver's own trips. The same ledger the Trip Expenses page writes to;
+     * no new authority.
+     *
+     * @return array<string, mixed>
+     */
+    public function advances(Driver $driver, string $companyId, string $from, string $to): array
+    {
+        $tripIds = $this->driverTrips($driver, $companyId, $from, $to)->pluck('id')->all();
+
+        return $this->movementsReport($companyId, (string) $driver->id, $tripIds, DriverTripMovementDirection::CashIn);
+    }
+
+    /**
+     * Expenses report (cash-out movements: fuel / road_toll / other) over the window — the same
+     * canonical DriverTripMovement ledger.
+     *
+     * @return array<string, mixed>
+     */
+    public function expenses(Driver $driver, string $companyId, string $from, string $to): array
+    {
+        $tripIds = $this->driverTrips($driver, $companyId, $from, $to)->pluck('id')->all();
+
+        return $this->movementsReport($companyId, (string) $driver->id, $tripIds, DriverTripMovementDirection::CashOut);
+    }
+
+    /**
+     * Shared read over DriverTripMovement for one direction, scoped to the driver's own trips.
+     * `total` sums only movements that count toward totals (approved/settled); pending items are
+     * listed (visible) but never summed. Read-only — the driver approves nothing here.
+     *
+     * @param  list<int>  $tripIds
+     * @return array<string, mixed>
+     */
+    private function movementsReport(string $companyId, string $driverId, array $tripIds, DriverTripMovementDirection $direction): array
+    {
+        if ($tripIds === []) {
+            return ['available' => true, 'items' => [], 'total' => 0.0, 'pending_count' => 0];
+        }
+
+        $movements = DriverTripMovement::query()
+            ->where('company_id', $companyId)
+            ->where('driver_id', $driverId)
+            ->whereIn('trip_id', $tripIds)
+            ->where('direction', $direction->value)
+            ->orderByDesc('occurred_at')
+            ->orderByDesc('id')
+            ->get();
+
+        $total = round(
+            (float) $movements
+                ->filter(fn (DriverTripMovement $m): bool => $m->status->countsTowardTotals())
+                ->sum(fn (DriverTripMovement $m): float => (float) $m->amount),
+            2,
+        );
+
+        return [
+            'available' => true,
+            'items' => $movements->map(fn (DriverTripMovement $m): array => [
+                'id' => (string) $m->id,
+                'category' => $m->category->value,
+                'is_expense' => $m->category->isExpense(),
+                'amount' => (float) $m->amount,
+                'note' => $m->note,
+                'status' => $m->status->value,
+                'occurred_at' => optional($m->occurred_at)->toIso8601String(),
+            ])->all(),
+            'total' => $total,
+            'pending_count' => $movements->filter(
+                fn (DriverTripMovement $m): bool => $m->status === DriverTripMovementStatus::Pending,
+            )->count(),
         ];
     }
 

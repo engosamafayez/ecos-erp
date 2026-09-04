@@ -71,18 +71,27 @@ final class DriverReportsController extends Controller
     }
 
     /**
-     * GET /api/driver/reports/advances — no canonical driver-operational advances authority
-     * exists; this returns an explicit unavailable payload rather than fabricating data (§5).
+     * GET /api/driver/reports/advances — canonical driver advances (cash-in movements) over the
+     * window, from the DriverTripMovement ledger (§6). No fabrication: real approved authority.
      */
     public function advances(Request $request): JsonResponse
     {
-        $this->context(); // still fail-closed to a real driver
+        [$driver, $companyId] = $this->context();
+        [$from, $to] = $this->window($request);
 
-        return response()->json(['data' => [
-            'available' => false,
-            'reason' => 'no_canonical_authority',
-            'items' => [],
-        ]]);
+        return response()->json(['data' => $this->reports->advances($driver, $companyId, $from, $to)]);
+    }
+
+    /**
+     * GET /api/driver/reports/expenses — canonical driver expenses (cash-out movements: fuel /
+     * road_toll / other) over the window, from the DriverTripMovement ledger (§6).
+     */
+    public function expenses(Request $request): JsonResponse
+    {
+        [$driver, $companyId] = $this->context();
+        [$from, $to] = $this->window($request);
+
+        return response()->json(['data' => $this->reports->expenses($driver, $companyId, $from, $to)]);
     }
 
     /** GET /api/driver/statement?month=YYYY-MM — permanent monthly statement (read model). */

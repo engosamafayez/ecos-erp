@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import type { UseQueryResult } from '@tanstack/react-query';
 import { AlertTriangle, ArrowLeft, BarChart3, ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -13,14 +14,15 @@ import { ROUTES } from '@/router/routes';
 import { ReportPeriodFilter } from '../components/report-period-filter';
 import {
   useDriverAdvances,
+  useDriverExpenses,
   useDriverGoodsMovement,
   useDriverOrdersReport,
   useDriverShortages,
 } from '../hooks/use-driver-mobile';
-import type { ReportPeriodValue } from '../types/reports';
+import type { DriverMovementsReport, ReportPeriodValue } from '../types/reports';
 
-type Tab = 'orders' | 'goods' | 'shortage' | 'advances';
-const TABS: Tab[] = ['orders', 'goods', 'shortage', 'advances'];
+type Tab = 'orders' | 'goods' | 'shortage' | 'advances' | 'expenses';
+const TABS: Tab[] = ['orders', 'goods', 'shortage', 'advances', 'expenses'];
 
 /**
  * Driver Reports (§3) — the driver's own operational reports, tabbed and mobile-first. Every
@@ -62,11 +64,12 @@ export function DriverReportsPage() {
       </div>
 
       <div className="space-y-4 p-4">
-        {tab !== 'advances' && <ReportPeriodFilter value={period} onChange={setPeriod} />}
+        <ReportPeriodFilter value={period} onChange={setPeriod} />
         {tab === 'orders' && <OrdersTab period={period} />}
         {tab === 'goods' && <GoodsTab period={period} />}
         {tab === 'shortage' && <ShortageTab period={period} />}
-        {tab === 'advances' && <AdvancesTab />}
+        {tab === 'advances' && <AdvancesTab period={period} />}
+        {tab === 'expenses' && <ExpensesTab period={period} />}
       </div>
     </div>
   );
@@ -231,19 +234,64 @@ function ShortageTab({ period }: { period: ReportPeriodValue }) {
   );
 }
 
-function AdvancesTab() {
+function AdvancesTab({ period }: { period: ReportPeriodValue }) {
+  return <MovementsList q={useDriverAdvances(period)} kind="advances" />;
+}
+
+function ExpensesTab({ period }: { period: ReportPeriodValue }) {
+  return <MovementsList q={useDriverExpenses(period)} kind="expenses" />;
+}
+
+/**
+ * §6 — Advances (cash-in) / Expenses (cash-out) list from the canonical DriverTripMovement ledger.
+ * `total` counts approved/settled only; pending items are listed but not summed. Read-only.
+ */
+function MovementsList({
+  q,
+  kind,
+}: {
+  q: UseQueryResult<DriverMovementsReport>;
+  kind: 'advances' | 'expenses';
+}) {
   const { t } = useTranslation('driver-mobile');
-  const { data, isLoading } = useDriverAdvances();
+  const { money } = useFormatter();
+  const { data, isLoading, isError, refetch } = q;
 
-  if (isLoading) return <Skeleton className="h-32 w-full rounded-xl" />;
+  if (isLoading && !data) return <Skeleton className="h-40 w-full rounded-xl" />;
+  if (isError || !data) return <LoadError onRetry={() => void refetch()} />;
 
-  // Whether or not the read resolves, there is no canonical driver advances authority (§5).
+  const items = data.items ?? [];
   return (
-    <div className="flex flex-col items-center gap-2 py-14 text-center text-muted-foreground">
-      <AlertTriangle className="h-9 w-9 opacity-40" aria-hidden="true" />
-      <p className="text-sm font-medium">{t(($) => $.reports.advances.unavailable)}</p>
-      <p className="max-w-xs text-xs">{t(($) => $.reports.advances.unavailableHint)}</p>
-      {data && !data.available && <span className="sr-only">{data.reason}</span>}
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2">
+        <StatTile label={t(($) => $.reports.movements.total)} value={money(data.total)} />
+        <StatTile label={t(($) => $.reports.movements.pending)} value={data.pending_count} />
+      </div>
+      {items.length === 0 ? (
+        <Empty
+          text={t(($) =>
+            kind === 'advances' ? $.reports.movements.advancesEmpty : $.reports.movements.expensesEmpty,
+          )}
+        />
+      ) : (
+        items.map((m) => (
+          <div key={m.id} className="flex items-start justify-between gap-2 rounded-lg border bg-card p-3">
+            <div className="min-w-0">
+              <p className="text-sm font-medium">{t(($) => $.tripExpenses.category[m.category])}</p>
+              {m.note && <p className="truncate text-xs text-muted-foreground">{m.note}</p>}
+              {m.occurred_at && (
+                <p className="text-[11px] text-muted-foreground" dir="ltr">{m.occurred_at.slice(0, 10)}</p>
+              )}
+            </div>
+            <div className="shrink-0 text-end">
+              <p className="text-sm font-semibold tabular-nums">{money(m.amount)}</p>
+              <Badge variant="outline" className="mt-0.5 text-[10px]">
+                {t(($) => $.tripExpenses.status[m.status])}
+              </Badge>
+            </div>
+          </div>
+        ))
+      )}
     </div>
   );
 }

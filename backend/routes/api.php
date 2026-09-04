@@ -3245,6 +3245,7 @@ Route::middleware(['auth:sanctum', 'permission:loading.driver.operate'])
         Route::get('/reports/goods-movement', [DriverReportsController::class, 'goodsMovement']);
         Route::get('/reports/shortages', [DriverReportsController::class, 'shortages']);
         Route::get('/reports/advances', [DriverReportsController::class, 'advances']);
+        Route::get('/reports/expenses', [DriverReportsController::class, 'expenses']);
 
         // TASK-DRIVER-APP-OPERATIONAL-FLOW-VNEXT-001 §30–§43 — Driver Trip Expenses (operational
         // cash movements: fuel/toll/other = cash out, advance = cash in). READ + CREATE only,
