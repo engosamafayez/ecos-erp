@@ -86,6 +86,17 @@ class PostingCoordinator
         return $this->existingReceipt($sourceModule, $sourceEventId) !== null;
     }
 
+    /**
+     * Reverse a posted journal. Subledger services correct a posting through
+     * this boundary rather than depending on the Journal Engine directly —
+     * the engine remains the ledger's sole writer either way; this only
+     * keeps that dependency behind the same entry point post() already uses.
+     */
+    public function reverse(JournalEntry $entry, string $reason, ?int $actorId = null): JournalEntry
+    {
+        return $this->engine->reverse($entry, $reason, $actorId);
+    }
+
     private function existingReceipt(string $sourceModule, string $sourceEventId): ?PostedEventReceipt
     {
         return PostedEventReceipt::query()

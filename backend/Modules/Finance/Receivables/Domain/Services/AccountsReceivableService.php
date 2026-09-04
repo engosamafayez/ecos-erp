@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\DB;
 use Modules\Finance\Ledger\Domain\Enums\JournalType;
 use Modules\Finance\Ledger\Domain\Exceptions\FinanceException;
 use Modules\Finance\Ledger\Domain\Models\JournalEntry;
-use Modules\Finance\Ledger\Domain\Services\JournalEngine;
 use Modules\Finance\Ledger\Domain\ValueObjects\PostingLine;
 use Modules\Finance\Ledger\Domain\ValueObjects\PostingRequest;
 use Modules\Finance\Posting\Domain\Services\PostingCoordinator;
@@ -41,7 +40,6 @@ final class AccountsReceivableService
     public function __construct(
         private readonly PostingCoordinator $coordinator,
         private readonly ControlAccountResolver $controlAccounts,
-        private readonly JournalEngine $journalEngine,
     ) {}
 
     /**
@@ -283,9 +281,11 @@ final class AccountsReceivableService
      * Reverse a posted receipt's journal AND its customer-ledger entry
      * together, atomically — the AR mirror of AccountsPayableService::
      * reversePaymentPosting() (TASK-ECOS-FINANCE-FULL-ACCOUNTING-
-     * RECONCILIATION-005). JournalEngine::reverse() is unchanged and remains
-     * the sole GL writer and sole reversal path — its existing allocation
-     * guard applies here unmodified. The compensating entry is a NEW,
+     * RECONCILIATION-005). Requested through the Posting Coordinator, same as
+     * every other posting this service makes — the Journal Engine remains
+     * unchanged and is still the sole GL writer and sole reversal path; its
+     * existing allocation guard applies here unmodified. The compensating
+     * entry is a NEW,
      * append-only, negative-amount CustomerLedgerEntry (same shape as the
      * original, sign flipped); the original is never edited or deleted.
      */
@@ -297,7 +297,7 @@ final class AccountsReceivableService
 
         return DB::transaction(function () use ($receipt, $reason, $actorId): JournalEntry {
             $journal = JournalEntry::query()->whereKey($receipt->journal_entry_id)->firstOrFail();
-            $reversalJournal = $this->journalEngine->reverse($journal, $reason, $actorId);
+            $reversalJournal = $this->coordinator->reverse($journal, $reason, $actorId);
 
             $original = CustomerLedgerEntry::query()->where('journal_entry_id', $journal->id)->first();
 
@@ -324,8 +324,9 @@ final class AccountsReceivableService
      * together, atomically — the invoice-side mirror of
      * reverseReceiptPosting() (TASK-ECOS-FINANCE-COMMERCIAL-ACCOUNTING-006,
      * the correction path for a commercial order recognised then cancelled
-     * or returned after posting). JournalEngine::reverse() is unchanged and
-     * remains the sole GL writer and sole reversal path.
+     * or returned after posting). Requested through the Posting Coordinator,
+     * same as reverseReceiptPosting() — the Journal Engine remains unchanged
+     * and is still the sole GL writer and sole reversal path.
      */
     public function reverseDocumentPosting(CustomerInvoice $invoice, string $reason, ?int $actorId = null): JournalEntry
     {
@@ -335,7 +336,7 @@ final class AccountsReceivableService
 
         return DB::transaction(function () use ($invoice, $reason, $actorId): JournalEntry {
             $journal = JournalEntry::query()->whereKey($invoice->journal_entry_id)->firstOrFail();
-            $reversalJournal = $this->journalEngine->reverse($journal, $reason, $actorId);
+            $reversalJournal = $this->coordinator->reverse($journal, $reason, $actorId);
 
             $original = CustomerLedgerEntry::query()->where('journal_entry_id', $journal->id)->first();
 

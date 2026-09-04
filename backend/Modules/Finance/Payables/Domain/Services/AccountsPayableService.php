@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\DB;
 use Modules\Finance\Ledger\Domain\Enums\JournalType;
 use Modules\Finance\Ledger\Domain\Exceptions\FinanceException;
 use Modules\Finance\Ledger\Domain\Models\JournalEntry;
-use Modules\Finance\Ledger\Domain\Services\JournalEngine;
 use Modules\Finance\Ledger\Domain\ValueObjects\PostingLine;
 use Modules\Finance\Ledger\Domain\ValueObjects\PostingRequest;
 use Modules\Finance\Payables\Domain\Enums\PaymentStatus;
@@ -41,7 +40,6 @@ final class AccountsPayableService
         private readonly PostingCoordinator $coordinator,
         private readonly ControlAccountResolver $controlAccounts,
         private readonly FundingAccountPolicy $fundingAccounts,
-        private readonly JournalEngine $journalEngine,
     ) {}
 
     /**
@@ -287,14 +285,17 @@ final class AccountsPayableService
     /**
      * Reverse a posted payment's journal AND its supplier-ledger entry
      * together, atomically — TASK-ECOS-FINANCE-FULL-ACCOUNTING-
-     * RECONCILIATION-005's closure of the gap Task 4 found: JournalEngine::
-     * reverse() (unchanged — still the sole GL writer and sole reversal
-     * path; its existing allocation guard applies here unmodified, since
-     * this calls that SAME method, not a second one) has no way to know a
-     * payment's ledger entry needs a compensating entry too, because
-     * SupplierLedgerEntry is this service's own table, not the ledger's.
-     * This method is the request-a-reversal counterpart to postPayment()
-     * requesting a posting: it never writes finance_journal_* itself.
+     * RECONCILIATION-005's closure of the gap Task 4 found: the Journal
+     * Engine (unchanged — still the sole GL writer and sole reversal path;
+     * its existing allocation guard applies here unmodified, since this
+     * requests that SAME reversal through the Posting Coordinator, not a
+     * second path) has no way to know a payment's ledger entry needs a
+     * compensating entry too, because SupplierLedgerEntry is this service's
+     * own table, not the ledger's. This method is the request-a-reversal
+     * counterpart to postPayment() requesting a posting: it never writes
+     * finance_journal_* itself, and — like every posting this service makes —
+     * it goes through the Posting Coordinator rather than the Journal Engine
+     * directly, so this service never depends on the engine at all.
      *
      * The compensating entry is a NEW, append-only, negative-amount
      * SupplierLedgerEntry (same shape as the original, sign flipped),
@@ -313,7 +314,7 @@ final class AccountsPayableService
 
         return DB::transaction(function () use ($payment, $reason, $actorId): JournalEntry {
             $journal = JournalEntry::query()->whereKey($payment->journal_entry_id)->firstOrFail();
-            $reversalJournal = $this->journalEngine->reverse($journal, $reason, $actorId);
+            $reversalJournal = $this->coordinator->reverse($journal, $reason, $actorId);
 
             $original = SupplierLedgerEntry::query()->where('journal_entry_id', $journal->id)->first();
 

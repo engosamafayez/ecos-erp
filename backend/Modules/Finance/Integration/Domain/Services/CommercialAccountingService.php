@@ -6,6 +6,7 @@ namespace Modules\Finance\Integration\Domain\Services;
 
 use Illuminate\Support\Carbon;
 use Modules\Finance\Allocation\Domain\Services\AllocationEngine;
+use Modules\Finance\Integration\Application\Services\FinancialIntegrationService;
 use Modules\Finance\Integration\Domain\Enums\BusinessEventType;
 use Modules\Finance\Integration\Domain\ValueObjects\FinancialEvent;
 use Modules\Finance\Ledger\Domain\Models\JournalEntry;
