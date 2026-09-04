@@ -2,13 +2,16 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import {
+  AlertTriangle,
   BarChart3,
   ClipboardList,
+  FileText,
   Home,
   Map as MapIcon,
   Menu,
   Package,
   Receipt,
+  RotateCcw,
   Truck,
   Wallet,
   type LucideIcon,
@@ -17,6 +20,7 @@ import {
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/router/routes';
+import { useDriverTrips } from '@/features/operations/driver-mobile/hooks/use-driver-mobile';
 import type enDriverMobile from '@/i18n/locales/en/driver-mobile.json';
 
 /**
@@ -68,22 +72,24 @@ const PRIMARY_NAV: DriverNavItem[] = [
   },
 ];
 
-/** "More" sheet — the remaining canonical flat destinations. */
+/** "More" sheet, general section — the canonical flat driver destinations. */
 const SECONDARY_NAV: DriverNavItem[] = [
   { key: 'map', label: ($) => $.shell.nav.map, icon: MapIcon, path: ROUTES.driverMap },
   { key: 'wallet', label: ($) => $.shell.nav.wallet, icon: Wallet, path: ROUTES.driverWallet },
-  {
-    key: 'reports',
-    label: ($) => $.shell.nav.reports,
-    icon: BarChart3,
-    path: ROUTES.driverReports,
-  },
-  {
-    key: 'tripExpenses',
-    label: ($) => $.shell.nav.tripExpenses,
-    icon: Receipt,
-    path: ROUTES.driverTripExpenses,
-  },
+  { key: 'reports', label: ($) => $.shell.nav.reports, icon: BarChart3, path: ROUTES.driverReports },
+  { key: 'tripExpenses', label: ($) => $.shell.nav.tripExpenses, icon: Receipt, path: ROUTES.driverTripExpenses },
+  { key: 'statement', label: ($) => $.shell.nav.statement, icon: FileText, path: ROUTES.driverStatement },
+];
+
+/**
+ * "More" sheet, trip section (§1) — execution screens that belong to the driver's CURRENT trip.
+ * They carry a `:tripId`, so they appear only when an active trip exists and the id is substituted
+ * at render. This gives Returns/Exceptions a real navigation entry without exposing raw
+ * parameterised routes as top-level destinations.
+ */
+const TRIP_NAV: DriverNavItem[] = [
+  { key: 'returns', label: ($) => $.shell.nav.returns, icon: RotateCcw, path: ROUTES.driverTripReturns },
+  { key: 'exceptions', label: ($) => $.shell.nav.exceptions, icon: AlertTriangle, path: ROUTES.driverTripExceptions },
 ];
 
 function isActivePath(pathname: string, path: string): boolean {
@@ -95,7 +101,18 @@ export function DriverShell() {
   const { pathname } = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const moreActive = SECONDARY_NAV.some((item) => isActivePath(pathname, item.path));
+  // Resolve the driver's current trip so the "From current trip" section can offer its execution
+  // screens (Returns / Exceptions) without exposing raw :tripId routes. Same selection rule the
+  // Orders page uses; empty when the driver has no active trip.
+  const { data: trips } = useDriverTrips();
+  const currentTrip = (trips ?? []).find((trp) => (trp.stops_count ?? 0) > 0) ?? (trips ?? [])[0] ?? null;
+  const tripLinks = currentTrip
+    ? TRIP_NAV.map((item) => ({ ...item, to: item.path.replace(':tripId', String(currentTrip.id)) }))
+    : [];
+
+  const moreActive =
+    SECONDARY_NAV.some((item) => isActivePath(pathname, item.path)) ||
+    tripLinks.some((item) => isActivePath(pathname, item.to));
 
   return (
     <div className="flex min-h-svh flex-col bg-background">
@@ -172,6 +189,39 @@ export function DriverShell() {
               );
             })}
           </div>
+
+          {/* §1 — trip-scoped execution screens for the driver's current trip (Returns / Exceptions),
+              shown only when an active trip exists. */}
+          {tripLinks.length > 0 && (
+            <>
+              <p className="mt-5 mb-2 text-xs font-semibold text-muted-foreground">
+                {t(($) => $.shell.fromCurrentTrip)}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {tripLinks.map(({ key, label, icon: Icon, to }) => {
+                  const active = isActivePath(pathname, to);
+                  const text = t(label);
+                  return (
+                    <Link
+                      key={key}
+                      to={to}
+                      onClick={() => setMenuOpen(false)}
+                      aria-current={active ? 'page' : undefined}
+                      className={cn(
+                        'flex items-center gap-3 rounded-xl border p-4 text-sm font-medium transition-colors',
+                        active
+                          ? 'border-primary/40 bg-primary/5 text-primary'
+                          : 'bg-card text-foreground hover:bg-accent/40',
+                      )}
+                    >
+                      <Icon className="size-5 shrink-0" aria-hidden />
+                      <span>{text}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </SheetContent>
       </Sheet>
     </div>
