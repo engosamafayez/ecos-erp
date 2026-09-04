@@ -2604,6 +2604,19 @@ export function OrderDetailDrawer({
   const { data: detailOrder, isLoading: detailLoading, isError: detailFailed, refetch: refetchOrder } = useOrderQuery(order?.id ?? '');
   const displayOrder = detailOrder ?? order;
 
+  // Same policy authority (PaymentFulfillmentGate::proofPolicyFor(), via the brand-order-policy
+  // endpoint) the Create/Edit form already uses for its own proof-required display — fetched
+  // here (not inside PaymentTab) so PaymentTab keeps working when unit-tested in isolation
+  // without a QueryClientProvider. One call keyed by this order's own brand; channel.brand is
+  // already eager-loaded on both list and detail Order payloads (EloquentOrderRepository::
+  // WITH/WITH_DETAIL), so this is never an extra query per row.
+  //
+  // Called unconditionally, before the early return below — Rules of Hooks: displayOrder can
+  // be null on the very first render (before either the grid row or the detail fetch has
+  // resolved), so this must never sit after a `return null` or the hook call count would
+  // differ between renders.
+  const { data: orderPolicy } = useBrandOrderPolicy(displayOrder?.channel?.brand?.id ?? null);
+
   if (!displayOrder) return null;
 
   const isEnriching = detailLoading && !detailOrder;
@@ -2617,14 +2630,6 @@ export function OrderDetailDrawer({
   // is no real detail data at all — a transient error after a successful first
   // load must not blank out data already on screen.
   const detailReadFailed = detailFailed && !detailOrder;
-
-  // Same policy authority (PaymentFulfillmentGate::proofPolicyFor(), via the brand-order-policy
-  // endpoint) the Create/Edit form already uses for its own proof-required display — fetched
-  // here (not inside PaymentTab) so PaymentTab keeps working when unit-tested in isolation
-  // without a QueryClientProvider. One call keyed by this order's own brand; channel.brand is
-  // already eager-loaded on both list and detail Order payloads (EloquentOrderRepository::
-  // WITH/WITH_DETAIL), so this is never an extra query per row.
-  const { data: orderPolicy } = useBrandOrderPolicy(displayOrder.channel?.brand?.id ?? null);
 
   const tabs = [
     { key: 'summary',   label: t($ => $.drawer.tabs.summary),   content: <SummaryTab order={displayOrder} t={t} /> },
