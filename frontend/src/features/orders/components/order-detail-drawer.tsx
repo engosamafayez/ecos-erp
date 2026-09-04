@@ -78,6 +78,7 @@ import { OrderStatusBadge } from '@/features/orders/components/order-status-badg
 import { OrderNotesTab } from '@/features/orders/components/notes-tab';
 import type { Order, OrderActivity } from '@/features/orders/types/order';
 import {
+  useBrandOrderPolicy,
   useOrderActivities,
   useOrderBlockOverride,
   useOrderQuery,
@@ -874,7 +875,21 @@ function TabLoadError({ t, onRetry }: { t: OrdersT; onRetry: () => void }) {
   );
 }
 
-export function PaymentTab({ order, t, readFailed, onRetry }: { order: Order; t: OrdersT; readFailed: boolean; onRetry: () => void }) {
+export function PaymentTab({
+  order, t, readFailed, onRetry, paymentProofPolicy,
+}: {
+  order: Order;
+  t: OrdersT;
+  readFailed: boolean;
+  onRetry: () => void;
+  /**
+   * Server-resolved proof policy for this order's own brand (PaymentFulfillmentGate::
+   * proofPolicyFor(), via useBrandOrderPolicy on the CALLER — not fetched in here, so this
+   * component stays usable in isolation, e.g. under unit tests that render it without a
+   * QueryClientProvider). Optional: absent simply means the "Required" badge stays hidden.
+   */
+  paymentProofPolicy?: Record<string, 'none' | 'required' | 'optional'>;
+}) {
   const fmtCur = useOrderMoney();
   const paymentLabel = resolvePaymentLabel(order, t);
   const [recordPaymentOpen, setRecordPaymentOpen] = useState(false);
@@ -1011,8 +1026,9 @@ export function PaymentTab({ order, t, readFailed, onRetry }: { order: Order; t:
         open={recordPaymentOpen}
         onOpenChange={setRecordPaymentOpen}
         orderId={order.id}
-        total={order.grand_total ?? order.total}
+        total={order.total}
         paid={order.deposit_paid ?? order.deposit_amount ?? 0}
+        outstanding={order.outstanding_amount ?? 0}
       />
 
       <Separator />
@@ -1030,6 +1046,7 @@ export function PaymentTab({ order, t, readFailed, onRetry }: { order: Order; t:
         <PaymentProofSection
           orderId={order.id}
           paymentMethod={order.payment_method_manual ?? order.payment_method ?? null}
+          proofPolicy={paymentProofPolicy}
         />
 
         {/* Legacy attachment, only for orders proofed before the lifecycle existed. */}
@@ -2596,6 +2613,14 @@ export function OrderDetailDrawer({
   // load must not blank out data already on screen.
   const detailReadFailed = detailFailed && !detailOrder;
 
+  // Same policy authority (PaymentFulfillmentGate::proofPolicyFor(), via the brand-order-policy
+  // endpoint) the Create/Edit form already uses for its own proof-required display — fetched
+  // here (not inside PaymentTab) so PaymentTab keeps working when unit-tested in isolation
+  // without a QueryClientProvider. One call keyed by this order's own brand; channel.brand is
+  // already eager-loaded on both list and detail Order payloads (EloquentOrderRepository::
+  // WITH/WITH_DETAIL), so this is never an extra query per row.
+  const { data: orderPolicy } = useBrandOrderPolicy(displayOrder.channel?.brand?.id ?? null);
+
   const tabs = [
     { key: 'summary',   label: t($ => $.drawer.tabs.summary),   content: <SummaryTab order={displayOrder} t={t} /> },
     { key: 'workflow',  label: t($ => $.drawer.tabs.workflow),   content: <WorkflowTab order={displayOrder} onClose={() => onOpenChange(false)} /> },
@@ -2604,7 +2629,7 @@ export function OrderDetailDrawer({
     { key: 'products',  label: t($ => $.drawer.tabs.products),   content: <ProductsTab order={displayOrder} t={t} />, badge: (displayOrder.lines ?? []).length },
     { key: 'inventory', label: t($ => $.drawer.tabs.inventory),  content: <InventoryTab order={displayOrder} /> },
     { key: 'timeline',  label: t($ => $.drawer.tabs.timeline),   content: <TimelineTab order={displayOrder} /> },
-    { key: 'payment',   label: t($ => $.drawer.tabs.payment),    content: <PaymentTab order={displayOrder} t={t} readFailed={detailReadFailed} onRetry={refetchOrder} /> },
+    { key: 'payment',   label: t($ => $.drawer.tabs.payment),    content: <PaymentTab order={displayOrder} t={t} readFailed={detailReadFailed} onRetry={refetchOrder} paymentProofPolicy={orderPolicy?.payment_proof_policy} /> },
     { key: 'shipping',  label: t($ => $.drawer.tabs.shipping),   content: <ShippingTab order={displayOrder} t={t} /> },
     { key: 'notes',     label: t($ => $.drawer.tabs.notes),      content: <OrderNotesTab order={displayOrder} readFailed={detailReadFailed} onRetry={refetchOrder} /> },
     { key: 'location',  label: t($ => $.drawer.tabs.location),   content: <LocationTab order={displayOrder} t={t} autoResolve={autoResolveLocation} /> },

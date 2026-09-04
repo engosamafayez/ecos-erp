@@ -13,9 +13,19 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   orderId: string;
+  /** Display only (Total row). Must be order.total, not grand_total — see `outstanding`. */
   total: number;
-  /** Amount already paid (deposit_amount) — used to prefill the outstanding balance. */
+  /** Display only (Paid row) — amount already paid (deposit_amount). */
   paid: number;
+  /**
+   * The canonical payable balance: order.outstanding_amount, i.e. the same
+   * `total - deposit_amount` basis RecordOrderPaymentAction itself validates against
+   * (and PaymentFulfillmentGate::isPaidInFull() uses). Passed in rather than
+   * re-derived here so this dialog can never drift from the backend's own figure —
+   * `order.grand_total` (tax-inclusive) is a DIFFERENT, display-only total and must
+   * never be used for this value or for `total` above.
+   */
+  outstanding: number;
 };
 
 /**
@@ -27,12 +37,12 @@ type Props = {
  * directly and never sets Order.status — payment state is derived server-side (a deposit is
  * PARTIALLY_PAID, only full payment reaches PAID).
  */
-export function RecordPaymentDialog({ open, onOpenChange, orderId, total, paid }: Props) {
+export function RecordPaymentDialog({ open, onOpenChange, orderId, total, paid, outstanding: outstandingProp }: Props) {
   const { t } = useTranslation('orders');
   const { toast } = useToast();
   const record = useRecordOrderPayment();
 
-  const outstanding = Math.max(0, Number((total - paid).toFixed(2)));
+  const outstanding = Math.max(0, Number(outstandingProp.toFixed(2)));
   const [amount, setAmount] = useState<string>(outstanding > 0 ? String(outstanding) : '');
 
   // Re-prime the field to the current outstanding balance each time the dialog opens.

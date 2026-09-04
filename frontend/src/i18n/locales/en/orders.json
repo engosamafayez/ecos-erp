@@ -941,7 +941,8 @@
       "uploadFailed": "Upload failed. Please try again.",
       "proofRequired": "Payment proof is required for this payment method.",
       "proofOptionalNote": "Payment proof is optional but recommended.",
-      "proofNotRequired": "Payment proof is not required for this method."
+      "proofNotRequired": "Payment proof is not required for this method.",
+      "proofAfterCreate": "Payment proof can be uploaded once the order has been created."
     },
     "lineItems": "Line Items",
     "saveZone": "Save",

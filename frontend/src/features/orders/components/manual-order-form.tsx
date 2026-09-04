@@ -59,6 +59,7 @@ import { OrderCustomerIntelligencePanel } from '@/features/orders/components/ord
 import { OrderCustomerLookupField } from '@/features/orders/components/order-customer-lookup-field';
 import { OrderInventoryStatusCard } from '@/features/orders/components/order-inventory-status-card';
 import { OrderPaymentSection } from '@/features/orders/components/order-payment-section';
+import { PaymentProofSection } from '@/features/orders/components/payment-proof-section';
 import { BrandConfigHealthCard } from '@/features/orders/components/brand-config-health-card';
 import { ProductBrowser } from '@/features/orders/components/product-browser';
 import {
@@ -219,7 +220,6 @@ function LiveFinancialSummary() {
   const shippingSource    = useWatch<ManualOrderFormValues, 'shipping_cost_source'>({ name: 'shipping_cost_source' });
   const depositAmountStr  = useWatch<ManualOrderFormValues, 'deposit_amount'>({ name: 'deposit_amount' });
   const paymentMethod     = useWatch<ManualOrderFormValues, 'payment_method_manual'>({ name: 'payment_method_manual' });
-  const proofPath         = useWatch<ManualOrderFormValues, 'payment_proof_path'>({ name: 'payment_proof_path' });
 
   const productsTotal = (lines ?? []).reduce(
     (sum, l) => sum + Number(l.quantity || 0) * Number(l.unit_price || 0),
@@ -288,22 +288,14 @@ function LiveFinancialSummary() {
             </div>
           </>
         )}
-        {(paymentMethod || proofPath) && (
+        {paymentMethod && (
           <div className="border-t pt-2 flex flex-col gap-1.5">
-            {paymentMethod && (
-              <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground text-xs">{t($ => $.workspace.paymentLabel)}</span>
-                <span className="text-xs font-medium">
-                  {t($ => $.workspace.paymentMethodLabels[paymentMethod as keyof typeof $.workspace.paymentMethodLabels], { defaultValue: PAYMENT_METHOD_LABELS[paymentMethod] ?? paymentMethod.replace(/_/g, ' ') })}
-                </span>
-              </div>
-            )}
-            {proofPath && (
-              <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground text-xs">{t($ => $.workspace.proofLabel)}</span>
-                <span className="text-xs font-medium text-emerald-600">{t($ => $.workspace.uploaded)}</span>
-              </div>
-            )}
+            <div className="flex justify-between gap-3">
+              <span className="text-muted-foreground text-xs">{t($ => $.workspace.paymentLabel)}</span>
+              <span className="text-xs font-medium">
+                {t($ => $.workspace.paymentMethodLabels[paymentMethod as keyof typeof $.workspace.paymentMethodLabels], { defaultValue: PAYMENT_METHOD_LABELS[paymentMethod] ?? paymentMethod.replace(/_/g, ' ') })}
+              </span>
+            </div>
           </div>
         )}
       </CardContent>
@@ -2318,9 +2310,31 @@ export function ManualOrderFormWorkspace({ mode = 'create', order, initialCustom
                   </CardHeader>
                   <CardContent className="flex flex-col gap-4">
                     <OrderPaymentSection
-                      paymentProofPolicy={orderPolicy?.payment_proof_policy}
                       paymentMethods={policyPaymentMethods}
                     />
+
+                    {/* Payment proof — TASK-...-PAYMENT-PROOF-AND-PAYMENT-BASIS-003.
+                        A payment_proofs row needs an order to attach to, so real evidence
+                        cannot be captured before the order exists. In edit mode the order
+                        already exists: render the same canonical component the Order
+                        Details page/drawer uses (no second upload path). In create mode,
+                        only tell the operator proof comes after creation — and only when
+                        the selected method's brand policy actually calls for proof at all. */}
+                    {isEdit && order ? (
+                      <PaymentProofSection
+                        orderId={order.id}
+                        paymentMethod={watchedPayment ?? null}
+                        proofPolicy={orderPolicy?.payment_proof_policy}
+                      />
+                    ) : (
+                      watchedPayment
+                      && orderPolicy?.payment_proof_policy
+                      && (orderPolicy.payment_proof_policy[watchedPayment] ?? 'none') !== 'none' && (
+                        <p className="text-xs text-muted-foreground">
+                          {t($ => $.workspace.paymentSection.proofAfterCreate)}
+                        </p>
+                      )
+                    )}
 
                     {/* Shipping cost — read-only when structurally locked or auto-calculated */}
                     <div className="border-t pt-4">
