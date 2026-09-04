@@ -100,9 +100,40 @@ class UserPolicy extends BasePolicy
         return $this->allow($user, 'iam.users.suspend', $target);
     }
 
+    /** D4 (TASK-ECOS-IAM-SECURE-ADMIN-API-002, CTO-ratified) — new iam.users.* tokens below. */
+    public function deactivate(User $user, User $target): bool
+    {
+        return $this->allow($user, 'iam.users.deactivate', $target);
+    }
+
+    public function lock(User $user, User $target): bool
+    {
+        return $this->allow($user, 'iam.users.lock', $target);
+    }
+
+    public function unlock(User $user, User $target): bool
+    {
+        return $this->allow($user, 'iam.users.unlock', $target);
+    }
+
+    public function archive(User $user, User $target): bool
+    {
+        return $this->allow($user, 'iam.users.archive', $target);
+    }
+
+    public function restore(User $user, User $target): bool
+    {
+        return $this->allow($user, 'iam.users.restore', $target);
+    }
+
     public function assignRole(User $user, User $target): bool
     {
         return $this->allow($user, 'iam.users.assign-role', $target);
+    }
+
+    public function revokeRole(User $user, User $target): bool
+    {
+        return $this->allow($user, 'iam.users.revoke-role', $target);
     }
 
     public function assignOrganization(User $user, User $target): bool

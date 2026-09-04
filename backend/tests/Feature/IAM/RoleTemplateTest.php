@@ -97,11 +97,13 @@ class RoleTemplateTest extends TestCase
     public function test_cloning_a_system_template_produces_an_editable_custom(): void
     {
         $this->seedTemplates();
-        $clone = $this->repository()->clone($this->repository()->findByKey('warehouse-clerk'), 'night-clerk', 'Night Clerk');
+        $companyId = (string) \Illuminate\Support\Str::uuid();
+        $clone = $this->repository()->clone($this->repository()->findByKey('warehouse-clerk'), 'night-clerk', $companyId, 'Night Clerk');
 
         $this->assertFalse($clone->is_system);
         $this->assertSame(RoleTemplateStatus::DRAFT->value, $clone->status);
         $this->assertSame(1, $clone->version);
+        $this->assertSame($companyId, $clone->company_id);
         $this->assertNull($clone->role_id);
         // The clone is now freely editable.
         $updated = $this->repository()->update($clone, ['name' => 'Night Warehouse Clerk']);

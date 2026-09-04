@@ -53,6 +53,7 @@ import type enFulfillments from '@/i18n/locales/en/fulfillments.json';
 import type enGoodsReceipts from '@/i18n/locales/en/goods-receipts.json';
 import type enHome from '@/i18n/locales/en/home.json';
 import type enHr from '@/i18n/locales/en/hr.json';
+import type enIamAdmin from '@/i18n/locales/en/iam-admin.json';
 import type enInventory from '@/i18n/locales/en/inventory.json';
 import type enInventoryControl from '@/i18n/locales/en/inventory-control.json';
 import type enInventoryCount from '@/i18n/locales/en/inventory-count.json';
@@ -114,6 +115,7 @@ declare module 'i18next' {
       'goods-receipts': typeof enGoodsReceipts;
       home: typeof enHome;
       hr: typeof enHr;
+      'iam-admin': typeof enIamAdmin;
       inventory: typeof enInventory;
       'inventory-control': typeof enInventoryControl;
       'inventory-count': typeof enInventoryCount;

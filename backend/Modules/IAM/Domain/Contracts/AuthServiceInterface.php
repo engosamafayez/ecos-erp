@@ -29,4 +29,12 @@ interface AuthServiceInterface
      * Revoke the access token used for the current request.
      */
     public function revokeCurrentToken(User $user): void;
+
+    /**
+     * The database id of the token most recently issued by issueToken() on this instance, or
+     * null if none has been issued yet. Additive (TASK-ECOS-IAM-SECURE-ADMIN-API-002, D10) — lets
+     * a caller record session metadata against the issued token without changing issueToken()'s
+     * existing return type.
+     */
+    public function lastIssuedTokenId(): ?int;
 }

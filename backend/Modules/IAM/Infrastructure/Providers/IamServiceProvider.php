@@ -29,8 +29,10 @@ use Modules\IAM\Domain\Contracts\RoleTemplateRepositoryInterface;
 use Modules\IAM\Domain\Contracts\ScopeResolverInterface;
 use Modules\IAM\Domain\Contracts\SensitiveFieldRegistryInterface;
 use Modules\IAM\Domain\Contracts\VisibilityResolverInterface;
+use Modules\IAM\Domain\Models\RoleTemplate;
 use Modules\IAM\Infrastructure\Middleware\RequirePermissionMiddleware;
 use Modules\IAM\Infrastructure\Services\SanctumAuthService;
+use Modules\IAM\Presentation\Policies\RoleTemplatePolicy;
 use Modules\IAM\Presentation\Policies\UserPolicy;
 
 /**
@@ -87,6 +89,9 @@ final class IamServiceProvider extends ServiceProvider
 
         // Enterprise User Management Platform authorization (TASK-IAM-004 / ADR-040).
         Gate::policy(User::class, UserPolicy::class);
+
+        // Role Template Admin API authorization (TASK-ECOS-IAM-SECURE-ADMIN-API-002, §14).
+        Gate::policy(RoleTemplate::class, RoleTemplatePolicy::class);
 
         // Data Scope Engine query macro (ADR-038, Part 3). Modules narrow a query to the
         // caller's data scope with `Model::query()->scopedTo($user, 'sales.orders')`

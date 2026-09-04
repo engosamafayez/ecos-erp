@@ -7,6 +7,7 @@ namespace Modules\IAM\Domain\Models;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * RBAC Role entity.
@@ -62,5 +63,18 @@ class Role extends Model
             'role_id',
             'user_id',
         )->using(UserRole::class)->withTimestamps();
+    }
+
+    /**
+     * The Role Template that compiled this role, if any (inverse of RoleTemplate::role()).
+     * Added by TASK-ECOS-IAM-SECURE-ADMIN-API-002 for the read-only Roles Admin API (§7) —
+     * a role that came from a template links back to it; a role predating the template system
+     * (e.g. 'super-admin') has none.
+     *
+     * @return HasOne<RoleTemplate, $this>
+     */
+    public function roleTemplate(): HasOne
+    {
+        return $this->hasOne(RoleTemplate::class, 'role_id');
     }
 }

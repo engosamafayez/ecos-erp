@@ -6,6 +6,7 @@ namespace Modules\IAM\Domain\Contracts;
 
 use App\Models\User;
 use Modules\IAM\Domain\Enums\FieldVisibility;
+use Modules\IAM\Domain\Models\Role;
 
 /**
  * VisibilityResolverInterface — the Information Visibility Engine
@@ -27,4 +28,17 @@ interface VisibilityResolverInterface
      * @return list<string>
      */
     public function hiddenFields(User $user, string $resource): array;
+
+    /**
+     * Drop every cached hidden-field set for a specific user, across every resource it was
+     * ever computed for (TASK-ECOS-IAM-SECURE-ADMIN-API-002, Security Gate B). Call this
+     * wherever PermissionServiceInterface::invalidateUserCache() is called — a permission
+     * change can change field visibility too.
+     */
+    public function invalidateUserCache(int $userId): void;
+
+    /**
+     * Drop the cached hidden-field set for every user who holds the given role.
+     */
+    public function invalidateRoleCache(Role $role): void;
 }

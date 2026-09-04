@@ -9,6 +9,11 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Modules\IAM\Domain\Exceptions\InvalidUserTransitionException;
+use Modules\IAM\Domain\Exceptions\RoleTemplateInUseException;
+use Modules\IAM\Domain\Exceptions\SystemTemplateImmutableException;
+use Modules\IAM\Domain\Exceptions\UnknownTemplatePermissionException;
+use Modules\IAM\Domain\Exceptions\UserSecurityRuleException;
 use Modules\Inventory\InventoryItems\Domain\Exceptions\InsufficientStockException;
 use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionException;
 use Modules\POS\Cart\Domain\Exceptions\InvalidCartTransitionException;
@@ -123,6 +128,52 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (InsufficientStockException $e, Request $request) {
             if ($request->is('api/*')) {
                 return ApiResponse::error($e->getMessage(), 422);
+            }
+
+            return null;
+        });
+
+        // IAM domain exceptions (TASK-ECOS-IAM-SECURE-ADMIN-API-002, §19/D6 error contract).
+        // 409 = business/state conflict: the request is well-formed and the target real, but the
+        // current domain state doesn't permit the operation. 422 = the submitted definition/
+        // payload itself is invalid. This is a more specific classification than the platform's
+        // existing precedent (POS/Fulfillment lump their own transition exceptions under 422) —
+        // deliberately so for IAM's own exception types only; no other module's mapping changes.
+        $exceptions->render(function (InvalidUserTransitionException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return ApiResponse::error($e->getMessage(), 409);
+            }
+
+            return null;
+        });
+
+        $exceptions->render(function (UserSecurityRuleException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return ApiResponse::error($e->getMessage(), 409);
+            }
+
+            return null;
+        });
+
+        $exceptions->render(function (SystemTemplateImmutableException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return ApiResponse::error($e->getMessage(), 409);
+            }
+
+            return null;
+        });
+
+        $exceptions->render(function (RoleTemplateInUseException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return ApiResponse::error($e->getMessage(), 409);
+            }
+
+            return null;
+        });
+
+        $exceptions->render(function (UnknownTemplatePermissionException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return ApiResponse::error($e->getMessage(), 422, ['unknown_permissions' => $e->unknown]);
             }
 
             return null;

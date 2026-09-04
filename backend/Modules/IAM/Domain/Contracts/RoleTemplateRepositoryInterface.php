@@ -25,7 +25,21 @@ interface RoleTemplateRepositoryInterface
     /** @return Collection<int,RoleTemplate> */
     public function customTemplates(): Collection;
 
+    /**
+     * Custom templates belonging to one company (D11 — tenant-scoped). System templates are
+     * never returned here; they are global and reached only via systemTemplates()/findByKey().
+     *
+     * @return Collection<int,RoleTemplate>
+     */
+    public function customTemplatesForCompany(string $companyId): Collection;
+
     public function findByKey(string $key): ?RoleTemplate;
+
+    /**
+     * Whether any user currently holds this template (TASK-ECOS-IAM-SECURE-ADMIN-API-002, D13).
+     * A true result means hard-delete must be refused — archive instead.
+     */
+    public function isInUse(RoleTemplate $template): bool;
 
     /**
      * Idempotently upsert a system template (used by the seeder).
@@ -48,9 +62,20 @@ interface RoleTemplateRepositoryInterface
      */
     public function update(RoleTemplate $template, array $attributes, ?string $changeNote = null): RoleTemplate;
 
-    /** Clone any template into a new editable custom template. */
-    public function clone(RoleTemplate $template, string $newKey, ?string $newName = null): RoleTemplate;
+    /** Clone any template into a new editable custom template, owned by $companyId (D11). */
+    public function clone(RoleTemplate $template, string $newKey, string $companyId, ?string $newName = null): RoleTemplate;
 
-    /** Delete a template. Refuses system templates. */
+    /**
+     * Move a used or unused custom template to ARCHIVED (D13's preferred lifecycle path).
+     * Refuses system templates, exactly like update()/delete().
+     */
+    public function archive(RoleTemplate $template, ?string $changeNote = null): RoleTemplate;
+
+    /**
+     * Delete a template. Refuses system templates AND refuses a template isInUse() reports
+     * as currently held by any user (D13 hard security contract) — call archive() instead.
+     *
+     * @throws \Modules\IAM\Domain\Exceptions\RoleTemplateInUseException when isInUse() is true
+     */
     public function delete(RoleTemplate $template): void;
 }

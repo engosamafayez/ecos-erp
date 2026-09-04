@@ -16,27 +16,34 @@ use Modules\IAM\Domain\Enums\UserStatus;
  */
 class UserIdentityService
 {
+    /**
+     * `company_id` is deliberately excluded (TASK-ECOS-IAM-SECURE-ADMIN-API-002, D2/D3 —
+     * CTO-ratified). Tenant ownership is server-derived on create and non-writable on
+     * update; a client-supplied value in $data is never read by fill(), by construction.
+     */
     private const IDENTITY_FIELDS = [
-        'name', 'display_name', 'email', 'username', 'employee_number', 'phone', 'avatar_path', 'company_id',
+        'name', 'display_name', 'email', 'username', 'employee_number', 'phone', 'avatar_path',
     ];
 
     public function __construct(private readonly UserAuditService $audit) {}
 
     /**
      * @param  array<string,mixed>  $data
+     * @param  string  $companyId  server-derived tenant ownership (D2) — never taken from $data
      */
-    public function createDraft(array $data, ?int $actorId = null): User
+    public function createDraft(array $data, string $companyId, ?int $actorId = null): User
     {
         $this->assertUniqueIdentity($data, null);
 
         $user = new User();
         $user->fill(array_intersect_key($data, array_flip(self::IDENTITY_FIELDS)));
+        $user->company_id = $companyId;
         $user->password = Hash::make(Str::random(40)); // unusable until set via invitation
         $user->status = UserStatus::DRAFT->value;
         $user->created_by = $actorId;
         $user->save();
 
-        $this->audit->log('created', $user, [], ['email' => $user->email, 'status' => $user->status]);
+        $this->audit->log('created', $user, [], ['email' => $user->email, 'status' => $user->status, 'company_id' => $companyId]);
 
         return $user;
     }

@@ -28,6 +28,8 @@ import { CostingProfitabilityPage } from '@/features/finance/pages/costing-profi
 import { ExpensesPage } from '@/features/finance/pages/expenses-page';
 import { TaxVatPage } from '@/features/finance/pages/tax-vat-page';
 import { HomePage } from '@/features/home/pages/home-page';
+// IAM Administration Workspace (TASK-ECOS-IAM-ADMINISTRATION-WORKSPACE-003)
+import { IamWorkspacePage } from '@/features/iam-admin/pages/iam-workspace-page';
 import { PackagingMaterialsPage } from '@/features/inventory/pages/packaging-materials-page';
 import { ConsumablesPage } from '@/features/inventory/pages/consumables-page';
 import { SemiFinishedMaterialsPage } from '@/features/inventory/pages/semi-finished-materials-page';
@@ -233,7 +235,11 @@ import { ROUTES } from '@/router/routes';
 // resolves to /crm/customers, but the bare /crm URL still rendered a Coming Soon
 // placeholder for anyone arriving by bookmark, deep link or typed address
 // (BUG-GL-004). It redirects instead.
-const moduleRoutes = [ROUTES.sales, ROUTES.reports, ROUTES.users, ROUTES.roles].map((path) => ({
+// ROUTES.users/ROUTES.roles are ALSO deliberately absent now (TASK-ECOS-IAM-
+// ADMINISTRATION-WORKSPACE-003) — they were Coming Soon placeholders behind the sidebar's
+// existing "Users"/"Roles & Permissions" nav items; both now render the real
+// IamWorkspacePage instead, registered explicitly below alongside ROUTES.roleTemplates.
+const moduleRoutes = [ROUTES.sales, ROUTES.reports].map((path) => ({
   path,
   Component: ComingSoonPage,
 }));
@@ -604,6 +610,13 @@ export const router = createBrowserRouter(
             { path: ROUTES.engineeringAiSupervisor, Component: AIEngineeringWorkspacePage },
             { path: ROUTES.engineeringRepair, Component: RepairSessionsPage },
             { path: ROUTES.engineeringWorkspace, Component: EnterpriseWorkspacePage },
+            // IAM Administration Workspace (TASK-ECOS-IAM-ADMINISTRATION-WORKSPACE-003) — one
+            // shared page, three routes, matching the sidebar's existing "Users"/
+            // "Roles & Permissions" nav items (ROUTES.roleTemplates has no nav entry of its
+            // own by design — reached via the in-page tab or a "managed by template" link).
+            { path: ROUTES.users, Component: IamWorkspacePage },
+            { path: ROUTES.roles, Component: IamWorkspacePage },
+            { path: ROUTES.roleTemplates, Component: IamWorkspacePage },
             // Driver routes moved to the DriverShell sibling above (TASK-DRIVER-SHELL-FINAL-CLOSURE-001).
             ...moduleRoutes,
             // UAT BUG-04 — the menu's "Settings" entry pointed at a Coming Soon

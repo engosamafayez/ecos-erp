@@ -7,7 +7,8 @@
     "delete": "Delete",
     "search": "Search",
     "confirm": "Confirm",
-    "copy": "Copy"
+    "copy": "Copy",
+    "close": "Close"
   },
   "topbar": {
     "search": "Search…"

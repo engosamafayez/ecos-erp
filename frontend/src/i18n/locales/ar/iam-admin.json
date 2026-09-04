@@ -1,0 +1,208 @@
+{
+  "workspace": {
+    "title": "إدارة الهوية والصلاحيات",
+    "subtitle": "إدارة المستخدمين والأدوار والصلاحيات وقوالب الأدوار.",
+    "tabs": {
+      "users": "المستخدمون",
+      "roles": "الأدوار والصلاحيات",
+      "templates": "قوالب الأدوار"
+    },
+    "noAccess": "ليس لديك صلاحية لعرض هذا القسم."
+  },
+  "users": {
+    "title": "المستخدمون",
+    "subtitle": "إدارة حسابات المستخدمين وحالة دورة الحياة والوصول.",
+    "searchPlaceholder": "البحث بالاسم أو البريد الإلكتروني أو الرقم الوظيفي…",
+    "includeArchived": "تضمين المؤرشفين",
+    "columns": {
+      "identity": "المستخدم",
+      "employeeNumber": "الرقم الوظيفي",
+      "status": "الحالة",
+      "lastActivity": "آخر نشاط"
+    },
+    "empty": {
+      "title": "لا يوجد مستخدمون",
+      "description": "حاول تعديل البحث أو الفلاتر."
+    },
+    "create": {
+      "trigger": "مستخدم جديد",
+      "title": "إنشاء مستخدم",
+      "description": "يتم تحديد ملكية الشركة تلقائيًا ولا يمكن اختيارها هنا.",
+      "submit": "إنشاء المستخدم",
+      "submitting": "جارٍ الإنشاء…",
+      "errorTitle": "تعذر إنشاء المستخدم"
+    },
+    "fields": {
+      "name": "الاسم الكامل",
+      "email": "البريد الإلكتروني",
+      "displayName": "اسم العرض",
+      "username": "اسم المستخدم",
+      "employeeNumber": "الرقم الوظيفي",
+      "phone": "الهاتف"
+    },
+    "detail": {
+      "title": "المستخدم",
+      "genericError": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+      "tabs": {
+        "profile": "الملف الشخصي",
+        "roles": "الأدوار",
+        "organization": "التنظيم",
+        "security": "الأمان"
+      }
+    },
+    "lifecycle": {
+      "activate": "تفعيل",
+      "suspend": "تعليق",
+      "deactivate": "إلغاء التفعيل",
+      "lock": "قفل",
+      "unlock": "فتح القفل",
+      "archive": "أرشفة",
+      "restore": "استعادة"
+    },
+    "lifecycleConfirm": {
+      "genericError": "تعذر إتمام هذا الإجراء.",
+      "activate": { "title": "تفعيل المستخدم؟", "description": "سيتمكن المستخدم من تسجيل الدخول مرة أخرى." },
+      "suspend": { "title": "تعليق المستخدم؟", "description": "لن يتمكن المستخدم من تسجيل الدخول مؤقتًا." },
+      "deactivate": { "title": "إلغاء تفعيل المستخدم؟", "description": "سيتم وضع علامة على المستخدم كغير نشط ولن يتمكن من تسجيل الدخول." },
+      "lock": { "title": "قفل المستخدم؟", "description": "سيتم قفل المستخدم حتى يقوم أحد المسؤولين بفتح القفل." },
+      "unlock": { "title": "فتح قفل المستخدم؟", "description": "ستتم إعادة المستخدم إلى الحالة النشطة وسيتمكن من تسجيل الدخول." },
+      "archive": { "title": "أرشفة المستخدم؟", "description": "سيتم أرشفة الحساب. يمكن استعادته لاحقًا، لكن إعادة تعيين كلمة المرور تتطلب الاستعادة أولاً." },
+      "restore": { "title": "استعادة المستخدم؟", "description": "ستتم استعادة الحساب إلى الحالة النشطة." }
+    },
+    "roles": {
+      "none": "لا توجد أدوار معيّنة.",
+      "primary": "أساسي",
+      "assign": "تعيين",
+      "revoke": "إلغاء",
+      "selectPlaceholder": "اختر قالب دور…"
+    },
+    "organization": {
+      "none": "لا توجد تعيينات تنظيمية.",
+      "primary": "أساسي",
+      "assign": "تعيين",
+      "typePlaceholder": "النوع",
+      "idPlaceholder": "المعرف (اختياري)",
+      "labelPlaceholder": "التسمية (اختياري)"
+    },
+    "security": {
+      "passwordTitle": "كلمة المرور",
+      "resetTrigger": "إعادة تعيين كلمة المرور",
+      "resetTitle": "إعادة تعيين كلمة المرور",
+      "resetSubmit": "إعادة تعيين كلمة المرور",
+      "newPassword": "كلمة المرور الجديدة",
+      "confirmPassword": "تأكيد كلمة المرور",
+      "passwordMismatch": "كلمتا المرور غير متطابقتين.",
+      "resetRequiresRestore": "هذا الحساب مؤرشف — يجب استعادته قبل إعادة تعيين كلمة المرور.",
+      "resetUnavailableDeleted": "هذا الحساب محذوف — إعادة تعيين كلمة المرور غير متاحة.",
+      "resetKeepsStatus": "إعادة تعيين كلمة المرور لن تعيد تفعيل هذا الحساب أو تفتح قفله.",
+      "sessionsTitle": "الجلسات النشطة",
+      "noSessions": "لا توجد جلسات نشطة.",
+      "unknownBrowser": "متصفح غير معروف",
+      "revokeSession": "إلغاء",
+      "forceLogoutTrigger": "تسجيل الخروج من كل مكان",
+      "forceLogoutTitle": "إلغاء كل الجلسات؟",
+      "forceLogoutDescription": "سيؤدي هذا إلى تسجيل خروج المستخدم من كل جهاز."
+    }
+  },
+  "roles": {
+    "title": "الأدوار والصلاحيات",
+    "subtitle": "يتم تجميع الأدوار من قوالب الأدوار وتُعرض هنا للقراءة فقط.",
+    "empty": "لا توجد أدوار.",
+    "systemBadge": "نظامي",
+    "customBadge": "مخصص",
+    "tabs": {
+      "roles": "الأدوار",
+      "permissions": "دليل الصلاحيات"
+    },
+    "columns": {
+      "name": "الدور",
+      "type": "النوع",
+      "template": "القالب",
+      "userCount": "المستخدمون"
+    },
+    "detail": {
+      "title": "الدور",
+      "userCount": "مستخدم واحد معيّن",
+      "userCount_other": "{{count}} مستخدمين معيّنين",
+      "managedByTemplate": "تتم إدارته عبر قالب \"{{name}}\" — عدّل هناك",
+      "permissions": "الصلاحيات",
+      "noPermissions": "لا توجد صلاحيات لهذا الدور."
+    }
+  },
+  "permissions": {
+    "empty": "لا توجد صلاحيات.",
+    "searchPlaceholder": "البحث في الصلاحيات…"
+  },
+  "roleTemplates": {
+    "title": "قوالب الأدوار",
+    "subtitle": "القوالب النظامية غير قابلة للتعديل؛ القوالب المخصصة تخص شركتك.",
+    "empty": "لا توجد قوالب أدوار.",
+    "systemBadge": "نظامي",
+    "customBadge": "مخصص",
+    "cloneAction": "استنساخ",
+    "columns": {
+      "name": "القالب",
+      "type": "النوع",
+      "category": "الفئة",
+      "version": "الإصدار",
+      "status": "الحالة"
+    },
+    "fields": {
+      "key": "المفتاح",
+      "keyHint": "معرّف فريد وثابت (مثال: \"night-warehouse-clerk\").",
+      "name": "الاسم",
+      "category": "الفئة",
+      "description": "الوصف",
+      "permissions": "الصلاحيات"
+    },
+    "form": {
+      "genericError": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+      "noPermissions": "لم يتم تحديد أي صلاحيات بعد.",
+      "addPermissionPlaceholder": "البحث في دليل الصلاحيات…",
+      "addPermission": "إضافة",
+      "removePermission": "إزالة"
+    },
+    "create": {
+      "trigger": "قالب جديد",
+      "title": "إنشاء قالب مخصص",
+      "description": "يتم تحديد ملكية الشركة تلقائيًا.",
+      "submit": "إنشاء القالب",
+      "submitting": "جارٍ الإنشاء…"
+    },
+    "clone": {
+      "title": "استنساخ \"{{name}}\"",
+      "submit": "استنساخ"
+    },
+    "detail": {
+      "title": "قالب الدور",
+      "assignmentCount": "تعيين واحد",
+      "assignmentCount_other": "{{count}} تعيينات",
+      "systemImmutable": "هذا قالب نظامي رسمي ولا يمكن تعديله أو حذفه. استنسخه لإنشاء نسخة قابلة للتعديل.",
+      "tabs": {
+        "definition": "التعريف",
+        "versions": "سجل الإصدارات"
+      },
+      "applyTrigger": "تطبيق إصدار…",
+      "archiveTrigger": "أرشفة",
+      "archiveConfirmTitle": "أرشفة هذا القالب؟",
+      "archiveConfirmDescription": "الأرشفة تحافظ على جميع التعيينات الحالية والصلاحيات المجمّعة — إنها الطريقة الآمنة لإيقاف قالب قد يكون لا يزال قيد الاستخدام.",
+      "deleteTrigger": "حذف",
+      "deleteConfirmTitle": "حذف هذا القالب؟",
+      "deleteConfirmDescription": "سيتم حذف القالب نهائيًا. لا يُعرض هذا الخيار إلا لأنه لا توجد له تعيينات حالية."
+    },
+    "apply": {
+      "title": "تطبيق إصدار القالب",
+      "genericError": "تعذر تطبيق القالب.",
+      "scopeWarningTitle": "ينطبق هذا على جميع الحاملين الحاليين",
+      "scopeWarningDescription": "يشترك جميع حاملي هذا القالب في دور واحد مجمّع — تطبيق التعريف الحالي يحدّث جميع الحاملين الحاليين البالغ عددهم {{count}} دفعة واحدة. لا توجد طريقة لتطبيق هذا على بعض الحاملين فقط.",
+      "currentVersion": "الإصدار",
+      "affectedHolders": "الحاملون المتأثرون",
+      "additions": "الصلاحيات المضافة",
+      "removals": "الصلاحيات المزالة",
+      "none": "لا شيء",
+      "confirm": "تطبيق على جميع الحاملين الحاليين",
+      "successTitle": "تم تطبيق القالب",
+      "successDescription": "تم تحديث {{count}} من الحاملين الحاليين."
+    }
+  }
+}

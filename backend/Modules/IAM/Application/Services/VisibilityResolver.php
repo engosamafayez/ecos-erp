@@ -10,6 +10,7 @@ use Modules\IAM\Domain\Contracts\PermissionServiceInterface;
 use Modules\IAM\Domain\Contracts\SensitiveFieldRegistryInterface;
 use Modules\IAM\Domain\Contracts\VisibilityResolverInterface;
 use Modules\IAM\Domain\Enums\FieldVisibility;
+use Modules\IAM\Domain\Models\Role;
 
 /**
  * VisibilityResolver — the Information Visibility Engine (TASK-IAM-002 / ADR-038, Part 2).
@@ -20,7 +21,15 @@ use Modules\IAM\Domain\Enums\FieldVisibility;
  *
  * Reuses the existing per-user permission cache indirectly (PermissionService is cached)
  * and memoises the per-(user,resource) hidden set for the request under an `rbac.vis.*`
- * key that is dropped by the same invalidation hooks as permissions.
+ * key.
+ *
+ * TASK-ECOS-IAM-SECURE-ADMIN-API-002, Security Gate B: `rbac.vis.*` is keyed per
+ * (user, resource), and resource is open-ended, so it cannot be forgotten by a single key —
+ * unlike PermissionService's single `rbac.user.{id}.perms` key. A small per-user index
+ * (`rbac.vis.{id}.index`, same TTL) records every resource ever cached for that user, so
+ * invalidateUserCache() can deterministically forget every one of them rather than relying
+ * on the 300s TTL alone. This reuses the same Cache facade/keying scheme already in use here
+ * — it is not a second cache mechanism.
  */
 final class VisibilityResolver implements VisibilityResolverInterface
 {
@@ -59,7 +68,8 @@ final class VisibilityResolver implements VisibilityResolverInterface
             return [];
         }
 
-        $key = "rbac.vis.{$user->getKey()}.{$resource}";
+        $userId = (int) $user->getKey();
+        $key = "rbac.vis.{$userId}.{$resource}";
 
         /** @var list<string> $hidden */
         $hidden = Cache::remember($key, self::CACHE_TTL, function () use ($user, $map): array {
@@ -74,6 +84,39 @@ final class VisibilityResolver implements VisibilityResolverInterface
             return $hidden;
         });
 
+        $this->trackCachedResource($userId, $resource);
+
         return $hidden;
+    }
+
+    public function invalidateUserCache(int $userId): void
+    {
+        $indexKey = "rbac.vis.{$userId}.index";
+
+        /** @var list<string> $resources */
+        $resources = Cache::get($indexKey, []);
+        foreach ($resources as $resource) {
+            Cache::forget("rbac.vis.{$userId}.{$resource}");
+        }
+        Cache::forget($indexKey);
+    }
+
+    public function invalidateRoleCache(Role $role): void
+    {
+        $role->users()->select('users.id')->each(
+            fn (User $user) => $this->invalidateUserCache((int) $user->getKey()),
+        );
+    }
+
+    private function trackCachedResource(int $userId, string $resource): void
+    {
+        $indexKey = "rbac.vis.{$userId}.index";
+
+        /** @var list<string> $known */
+        $known = Cache::get($indexKey, []);
+        if (! in_array($resource, $known, true)) {
+            $known[] = $resource;
+            Cache::put($indexKey, $known, self::CACHE_TTL);
+        }
     }
 }

@@ -133,6 +133,11 @@ use Modules\Hr\Workforce\Presentation\Http\Controllers\EmploymentContractControl
 use Modules\Hr\Workforce\Presentation\Http\Controllers\OrganizationChartController as HrOrgChartController;
 use Modules\Hr\Workforce\Presentation\Http\Controllers\WorkforceStructureController as HrStructureController;
 use Modules\IAM\Presentation\Http\Controllers\AuthController;
+use Modules\IAM\Presentation\Http\Controllers\PermissionController as IamPermissionController;
+use Modules\IAM\Presentation\Http\Controllers\RoleController as IamRoleController;
+use Modules\IAM\Presentation\Http\Controllers\RoleTemplateController as IamRoleTemplateController;
+use Modules\IAM\Presentation\Http\Controllers\SessionController as IamSessionController;
+use Modules\IAM\Presentation\Http\Controllers\UserController as IamUserController;
 use Modules\Inventory\CountSessions\Presentation\Http\Controllers\InventoryCountController;
 use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\AbcClassificationController;
 use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\CycleCountPlanController;
@@ -308,6 +313,75 @@ Route::prefix('auth')->group(function (): void {
     Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
         Route::post('/logout', [AuthController::class, 'logout']);
         Route::get('/me', [AuthController::class, 'me']);
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| IAM — Secure Administration API (TASK-ECOS-IAM-SECURE-ADMIN-API-002)
+|--------------------------------------------------------------------------
+| Every write route names its permission explicitly (no group-level blanket permission,
+| matching the /configuration precedent) because each action maps to a distinct
+| iam.users.* / iam.role-templates.* token — tenant ownership and lifecycle-state rules are
+| enforced inside the Policy/Service layer, not by route middleware, exactly like every
+| other tenant-scoped resource in this file.
+*/
+Route::middleware(['auth:sanctum', 'throttle:120,1'])->prefix('iam')->group(function (): void {
+
+    // ── Users ───────────────────────────────────────────────────────────────
+    Route::prefix('users')->group(function (): void {
+        Route::get('/', [IamUserController::class, 'index']);
+        Route::post('/', [IamUserController::class, 'store'])->middleware('permission:iam.users.create');
+
+        Route::prefix('{user}')->group(function (): void {
+            Route::get('/', [IamUserController::class, 'show']);
+            Route::patch('/', [IamUserController::class, 'update'])->middleware('permission:iam.users.update');
+            Route::put('organization', [IamUserController::class, 'assignOrganization'])->middleware('permission:iam.users.assign-org');
+            Route::put('templates/{templateKey}', [IamUserController::class, 'assignTemplate'])->middleware('permission:iam.users.assign-role');
+            Route::delete('templates/{templateKey}', [IamUserController::class, 'revokeTemplate'])->middleware('permission:iam.users.revoke-role');
+            Route::post('activate', [IamUserController::class, 'activate'])->middleware('permission:iam.users.activate');
+            Route::post('suspend', [IamUserController::class, 'suspend'])->middleware('permission:iam.users.suspend');
+            Route::post('deactivate', [IamUserController::class, 'deactivate'])->middleware('permission:iam.users.deactivate');
+            Route::post('lock', [IamUserController::class, 'lock'])->middleware('permission:iam.users.lock');
+            Route::post('unlock', [IamUserController::class, 'unlock'])->middleware('permission:iam.users.unlock');
+            Route::post('archive', [IamUserController::class, 'archive'])->middleware('permission:iam.users.archive');
+            // withTrashed(): a genuinely DELETED user is excluded from default route-model
+            // binding (SoftDeletes global scope) — restore() must still be able to find them.
+            Route::post('restore', [IamUserController::class, 'restore'])->middleware('permission:iam.users.restore')->withTrashed();
+            Route::post('reset-password', [IamUserController::class, 'resetPassword'])->middleware('permission:iam.users.reset-password');
+
+            Route::get('sessions', [IamSessionController::class, 'index'])->middleware('permission:iam.users.manage-sessions');
+            Route::delete('sessions/{session}', [IamSessionController::class, 'destroy'])->middleware('permission:iam.users.manage-sessions');
+            Route::post('sessions/force-logout', [IamSessionController::class, 'forceLogout'])->middleware('permission:iam.users.manage-sessions');
+        });
+    });
+
+    // ── Roles (read-only — §7/§11: writes go through Role Templates) ─────────
+    Route::prefix('roles')->middleware('permission:iam.roles.view')->group(function (): void {
+        Route::get('/', [IamRoleController::class, 'index']);
+        Route::get('{role}', [IamRoleController::class, 'show']);
+    });
+
+    // ── Permissions (read-only catalog — §8/§13) ──────────────────────────────
+    Route::get('permissions', [IamPermissionController::class, 'index'])->middleware('permission:iam.permissions.view');
+
+    // ── Role Templates ─────────────────────────────────────────────────────
+    Route::prefix('role-templates')->group(function (): void {
+        Route::get('/', [IamRoleTemplateController::class, 'index'])->middleware('permission:iam.role-templates.view');
+        Route::post('/', [IamRoleTemplateController::class, 'store'])->middleware('permission:iam.role-templates.create');
+
+        Route::prefix('{roleTemplate}')->group(function (): void {
+            Route::get('/', [IamRoleTemplateController::class, 'show'])->middleware('permission:iam.role-templates.view');
+            Route::patch('/', [IamRoleTemplateController::class, 'update'])->middleware('permission:iam.role-templates.update');
+            Route::delete('/', [IamRoleTemplateController::class, 'destroy'])->middleware('permission:iam.role-templates.delete');
+            Route::get('versions', [IamRoleTemplateController::class, 'versions'])->middleware('permission:iam.role-templates.view');
+            Route::get('compare/{other}', [IamRoleTemplateController::class, 'compare'])->middleware('permission:iam.role-templates.view');
+            Route::get('export', [IamRoleTemplateController::class, 'export'])->middleware('permission:iam.role-templates.view');
+            Route::post('clone', [IamRoleTemplateController::class, 'cloneTemplate'])->middleware('permission:iam.role-templates.create');
+            Route::post('archive', [IamRoleTemplateController::class, 'archive'])->middleware('permission:iam.role-templates.update');
+            Route::get('impact-preview', [IamRoleTemplateController::class, 'impactPreview'])->middleware('permission:iam.role-templates.view');
+            Route::post('apply', [IamRoleTemplateController::class, 'apply'])->middleware('permission:iam.role-templates.update');
+        });
     });
 });
 

@@ -41,6 +41,19 @@ enum UserStatus: string
         return $this === self::ACTIVE;
     }
 
+    /**
+     * May an administrator reset this account's password without first changing its lifecycle
+     * state? (D1, TASK-ECOS-IAM-SECURE-ADMIN-API-002 — CTO-ratified for ACTIVE/SUSPENDED/LOCKED/
+     * ARCHIVED/DELETED explicitly.) DRAFT/INVITED/PENDING_ACTIVATION are excluded here as a
+     * deliberate, documented extension of that rule: those states have no real credential yet —
+     * the invitation flow, not admin reset, is the canonical path to one. INACTIVE is treated
+     * like SUSPENDED/LOCKED — a temporary administrative hold on a real, provisioned account.
+     */
+    public function allowsAdminPasswordReset(): bool
+    {
+        return in_array($this, [self::ACTIVE, self::INACTIVE, self::SUSPENDED, self::LOCKED], true);
+    }
+
     /** Statuses this status may transition to. */
     public function allowedTransitions(): array
     {
