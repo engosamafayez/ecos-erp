@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -36,6 +36,13 @@ vi.mock('@/features/auth/store/auth-store', () => ({
 }));
 vi.mock('@/components/layout/app-shell', () => ({
   AppShell: () => <div data-testid="enterprise-shell" />,
+}));
+
+// The shell resolves the driver's current trip (§1) to build the "From current trip" section.
+// Default: no active trip → no trip section. Individual tests can set an active trip.
+let mockTrips: Array<{ id: string; stops_count: number }> = [];
+vi.mock('@/features/operations/driver-mobile/hooks/use-driver-mobile', () => ({
+  useDriverTrips: () => ({ data: mockTrips }),
 }));
 
 import { DriverShell } from './driver-shell';
@@ -110,6 +117,26 @@ describe('DriverShell', () => {
     expect(screen.getByRole('link', { name: 'shell.nav.home' })).not.toHaveAttribute(
       'aria-current',
     );
+  });
+
+  it('exposes Statement and the current-trip execution screens in the More sheet (§1)', () => {
+    mockTrips = [{ id: 'T1', stops_count: 3 }];
+    renderAt('/driver/home');
+    fireEvent.click(screen.getByRole('button', { name: 'shell.openMenu' }));
+    expect(screen.getByRole('link', { name: 'shell.nav.statement' })).toHaveAttribute(
+      'href',
+      '/driver/statement',
+    );
+    // Trip-scoped screens carry the resolved :tripId, not a raw parameterised route.
+    expect(screen.getByRole('link', { name: 'shell.nav.returns' })).toHaveAttribute(
+      'href',
+      '/driver/trips/T1/returns',
+    );
+    expect(screen.getByRole('link', { name: 'shell.nav.exceptions' })).toHaveAttribute(
+      'href',
+      '/driver/trips/T1/exceptions',
+    );
+    mockTrips = [];
   });
 });
 
