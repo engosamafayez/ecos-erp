@@ -40,7 +40,8 @@ vi.mock('@/features/organization/context/organization-context', () => ({
 }));
 
 // TASK-...-BLOCKED-CUSTOMERS-009: full grant by default; the read-only test overrides it.
-const mockCan = vi.hoisted(() => vi.fn(() => true));
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- signature must accept a permission arg; cannot()/canAccess() forward it
+const mockCan = vi.hoisted(() => vi.fn((_permission?: string) => true));
 vi.mock('@/features/authorization/use-authorization', () => ({
   usePermission: () => ({ can: mockCan, cannot: (p: string) => !mockCan(p), canAccess: mockCan, canExecute: mockCan }),
 }));

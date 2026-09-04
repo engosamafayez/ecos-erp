@@ -50,6 +50,11 @@ const HANDLERS = {
   onViewOrders: vi.fn(),
   onEdit: vi.fn(),
   onDelete: vi.fn(),
+  onCreateOrder: vi.fn(),
+  onBlock: vi.fn(),
+  onUnblock: vi.fn(),
+  canBlock: true,
+  canUnblock: true,
 };
 
 describe('CustomerMobileCard — canonical identity/context (no mobile treatment previously existed)', () => {

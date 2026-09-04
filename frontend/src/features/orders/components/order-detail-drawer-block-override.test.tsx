@@ -22,7 +22,8 @@ const { transitionMutate, rescheduleMutate, blockOverrideMutate, mockCan } = vi.
   transitionMutate: vi.fn(),
   rescheduleMutate: vi.fn(),
   blockOverrideMutate: vi.fn(),
-  mockCan: vi.fn(() => true),
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- signature must accept a permission arg; cannot() forwards it
+  mockCan: vi.fn((_permission?: string) => true),
 }));
 
 const { activeBundle } = vi.hoisted(() => ({ activeBundle: { current: null as unknown } }));
