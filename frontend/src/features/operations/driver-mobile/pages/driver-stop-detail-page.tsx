@@ -372,6 +372,15 @@ export function DriverStopDetailPage() {
             <span className="text-muted-foreground">{t(($) => $.stop.payment.total)}</span>
             <span>{money(Number(order?.grand_total ?? 0))}</span>
           </div>
+          {/* §8 — Shipping + Discount value (read-only, resolved to match the office view). */}
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">{t(($) => $.stop.payment.shipping)}</span>
+            <span>{money(Number(order?.shipping_value ?? 0))}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-muted-foreground">{t(($) => $.stop.payment.discount)}</span>
+            <span className="text-green-600">- {money(Number(order?.discount_value ?? 0))}</span>
+          </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">{t(($) => $.stop.payment.deposit)}</span>
             <span className="text-green-600">
