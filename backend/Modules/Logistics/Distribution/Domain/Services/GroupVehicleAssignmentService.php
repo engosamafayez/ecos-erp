@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Logistics\Distribution\Domain\Services;
 
 use Illuminate\Support\Facades\DB;
+use Modules\Logistics\Distribution\Domain\Enums\TripStatus;
 use Modules\Logistics\Distribution\Domain\Models\Trip;
 use Modules\Logistics\Distribution\Domain\Models\VirtualCapacitySlot;
 use Modules\Logistics\Drivers\Domain\Exceptions\FleetAssignmentException;
@@ -13,6 +14,7 @@ use Modules\Logistics\Drivers\Domain\Models\DriverVehicleAssignment;
 use Modules\Logistics\Drivers\Domain\Services\DriverVehicleAssignmentService;
 use Modules\Logistics\Drivers\Domain\Services\FleetIdentityResolver;
 use Modules\Logistics\Vehicles\Domain\Models\Vehicle;
+use Modules\Operations\Loading\Domain\Enums\VehicleAssignmentStatus;
 use RuntimeException;
 
 /**
@@ -86,6 +88,17 @@ class GroupVehicleAssignmentService
         // contends on this vehicle's OWN status row for this decision.
         if (! $vehicle->canBeDispatched()) {
             throw FleetAssignmentException::vehicleNotDispatchable(
+                $vehicle->plate_number ?? (string) $vehicle->id,
+            );
+        }
+
+        // TASK-ECOS-DISTRIBUTION-GROUP-DETAILS-CANONICAL-RECONCILIATION-009-R1
+        // — the server-side mirror of groupFleetOptions()'s Loading-busy
+        // exclusion (see loadingBusyVehicleUuids() below). Same reasoning as
+        // the check above: the selector already hides this vehicle, so this
+        // is the stale-drawer fail-safe, not the primary UX guard.
+        if ($this->loadingBusyVehicleUuids([$vehicle->uuid]) !== []) {
+            throw FleetAssignmentException::vehicleBusyInLoading(
                 $vehicle->plate_number ?? (string) $vehicle->id,
             );
         }
@@ -197,6 +210,75 @@ class GroupVehicleAssignmentService
             'remaining_capacity' => $capacity - $groupOrders,
             'fits' => $groupOrders <= $capacity,
         ];
+    }
+
+    /**
+     * Vehicle uuids (from the given candidate set) currently committed to
+     * active Operations\Loading work — TASK-ECOS-DISTRIBUTION-GROUP-DETAILS-
+     * CANONICAL-RECONCILIATION-009-R1.
+     *
+     * DELIBERATELY NOT a plain `VehicleAssignmentStatus::isActive()` filter.
+     * Source tracing proved that trap: a Group/Trip-originated
+     * `vehicle_assignments` row can never advance past `LoadingComplete` —
+     * `DispatchVehicleAction` (the only path that would move it to
+     * Dispatched/Returning/Reconciling/Reconciled) requires an
+     * Operations\Loading `DriverAssignment` row that
+     * `GroupLoadingContextService` never creates. A naive "any non-terminal
+     * `vehicle_assignments` row = busy" filter would therefore mark every
+     * vehicle that has EVER completed one Group/Trip delivery as permanently
+     * unavailable, forever — confirmed live on DEV, where a vehicle already
+     * carries two such `loading_complete` rows from separate dates weeks
+     * apart, neither ever reconciled.
+     *
+     * So "still busy" is scoped by the linked TRIP's own lifecycle instead —
+     * the record that genuinely keeps progressing for this flow, and the
+     * SAME classification (`TripStatus::nonTerminalValues()`) the pairing
+     * -engagement check already trusts elsewhere. Once a Vehicle's Trip
+     * closes or is cancelled, the Vehicle is free again regardless of what
+     * `vehicle_assignments.status` itself is frozen at. A row with no linked
+     * Trip at all (`trip_id` null — a standalone, non-Distribution Loading
+     * assignment, if one exists) falls back to its own status, since there is
+     * no Trip to defer to and that status DOES keep progressing outside the
+     * Group/Trip bridge.
+     *
+     * The known custody defect (`loading_complete` with zero `LoadingTask`/
+     * `VehicleInventoryItem` rows underneath, parent `LoadingSession` stuck
+     * at `draft`) is NOT specially handled here, by design: this reads only
+     * `vehicle_assignments.status` and its Trip's `status` — never inventory
+     * presence — so a defect-affected row is judged exactly like a normal
+     * one, using the existing authoritative commitment record, without
+     * pretending inventory custody was materialized either way.
+     *
+     * Explicitly `Cancelled` rows are excluded regardless of their Trip's own
+     * status — an operator who cancelled this specific assignment meant it,
+     * even if the Trip itself has not separately closed.
+     *
+     * ONE bounded query regardless of fleet size — no per-vehicle Loading
+     * lookup.
+     *
+     * @param  list<string>  $vehicleUuids
+     * @return list<string>
+     */
+    public function loadingBusyVehicleUuids(array $vehicleUuids): array
+    {
+        if ($vehicleUuids === []) {
+            return [];
+        }
+
+        return DB::table('vehicle_assignments as va')
+            ->leftJoin('distribution_trips as dt', 'dt.id', '=', 'va.trip_id')
+            ->whereIn('va.vehicle_id', $vehicleUuids)
+            ->whereNotIn('va.status', [
+                VehicleAssignmentStatus::Reconciled->value,
+                VehicleAssignmentStatus::Cancelled->value,
+            ])
+            ->where(function ($q): void {
+                $q->whereNull('va.trip_id')
+                    ->orWhereIn('dt.status', TripStatus::nonTerminalValues());
+            })
+            ->distinct()
+            ->pluck('va.vehicle_id')
+            ->all();
     }
 
     // ── Internals ─────────────────────────────────────────────────────────────

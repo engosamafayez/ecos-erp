@@ -93,4 +93,20 @@ class FleetAssignmentException extends RuntimeException
             $vehicle,
         ));
     }
+
+    /**
+     * TASK-ECOS-DISTRIBUTION-GROUP-DETAILS-CANONICAL-RECONCILIATION-009-R1 —
+     * the truthful rejection for a Vehicle committed to active Operations\
+     * Loading work (see GroupVehicleAssignmentService::loadingBusyVehicleUuids()).
+     * Deliberately distinct wording from `pairingEngagedElsewhere()` — this is
+     * the Vehicle's own Loading commitment, not its pairing's Trip engagement.
+     */
+    public static function vehicleBusyInLoading(string $vehicle): self
+    {
+        return new self(sprintf(
+            'Vehicle %s is currently assigned to active loading work. '
+            .'Refresh and choose another vehicle.',
+            $vehicle,
+        ));
+    }
 }

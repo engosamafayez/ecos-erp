@@ -1022,8 +1022,22 @@ final class DistributionWindowController extends Controller
         // OutOfService / Archived / InDelivery and any vehicle blocked by an
         // expired licence or insurance document, alongside the trip-engagement
         // exclusion above (independent checks — both must pass).
+        //
+        // TASK-ECOS-DISTRIBUTION-GROUP-DETAILS-CANONICAL-RECONCILIATION-009-R1
+        // — a THIRD, independent exclusion: a Vehicle currently committed to
+        // active Operations\Loading work (see
+        // GroupVehicleAssignmentService::loadingBusyVehicleUuids() for why
+        // this is scoped by the linked Trip's lifecycle rather than
+        // VehicleAssignmentStatus alone). ONE bounded query for every
+        // candidate Vehicle's uuid, not one per option.
+        $loadingBusyUuids = array_flip(
+            $this->groupAssignment->loadingBusyVehicleUuids($vehicleModels->pluck('uuid')->all()),
+        );
+
         $vehicles = $vehicleModels
-            ->reject(fn (Vehicle $v): bool => isset($busyVehicleIds[$v->id]) || ! $v->canBeDispatched())
+            ->reject(fn (Vehicle $v): bool => isset($busyVehicleIds[$v->id])
+                || ! $v->canBeDispatched()
+                || isset($loadingBusyUuids[$v->uuid]))
             ->map(fn (Vehicle $v): array => [
                 // The uuid is the CROSS-MODULE reference (D1-C). The bigint id is
                 // never published to the client.
