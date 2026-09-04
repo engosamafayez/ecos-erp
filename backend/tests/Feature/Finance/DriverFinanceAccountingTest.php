@@ -8,6 +8,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Modules\Finance\Cash\Domain\Services\CashService;
 use Modules\Finance\Fiscal\Domain\Services\FiscalCalendarService;
 use Modules\Finance\Ledger\Domain\Enums\AccountType;
 use Modules\Finance\Ledger\Domain\Models\Account;
@@ -254,10 +255,18 @@ class DriverFinanceAccountingTest extends TestCase
 
     private function cashAccount(): Account
     {
-        return app(ChartOfAccountsService::class)->create([
+        $account = app(ChartOfAccountsService::class)->create([
             'company_id' => $this->companyId, 'code' => 'A-'.$this->suffix(), 'name' => 'Cash account',
             'account_type' => AccountType::Asset, 'is_postable' => true,
         ]);
+
+        // A bare Asset-typed GL account is not itself an eligible funding
+        // source (FundingAccountPolicy requires a CashAccount/BankAccount
+        // subledger record backing it) — same pattern as
+        // SupplierPaymentFundingAccountTest::test_a_cash_backed_account_is_accepted_as_funding().
+        app(CashService::class)->createAccount($this->companyId, 'TILL-'.$this->suffix(), 'Till', (int) $account->id);
+
+        return $account;
     }
 
     private function expenseAccount(): Account

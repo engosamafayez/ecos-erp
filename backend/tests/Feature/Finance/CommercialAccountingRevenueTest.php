@@ -47,6 +47,7 @@ class CommercialAccountingRevenueTest extends TestCase
     public function test_delivered_order_recognizes_revenue_once_with_source_linkage(): void
     {
         $revenueAccount = $this->seedRole($this->companyId, 'sales_revenue', AccountType::Revenue);
+        $this->seedRole($this->companyId, 'vat_output', AccountType::Liability);
         $orderId = (string) Str::uuid();
         $customerId = (string) Str::uuid();
 

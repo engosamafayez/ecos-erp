@@ -163,9 +163,12 @@ class CommercialAccountingDimensionAndControlTest extends TestCase
             // expected — JournalEngine::reverse() itself blocks this
         }
 
+        // Exactly one correction exists — the blocked second attempt (asserted
+        // above) never reaches JournalEntry::create(), so this count proves no
+        // duplicate was written, not merely that an exception was thrown.
         $invoice = $service->findOrderInvoice($this->companyId, $orderId);
         $this->assertSame(
-            2,
+            1,
             JournalEntry::query()->where('reverses_journal_id', $invoice->journal_entry_id)->count(),
         );
     }
