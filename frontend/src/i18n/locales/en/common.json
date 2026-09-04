@@ -183,9 +183,11 @@
       "finance-budgets": "Budgets",
       "finance-tax": "Tax & VAT",
       "finance-expenses": "Expenses",
-      "finance-costing": "Costing & Profitability"
+      "finance-costing": "Costing & Profitability",
+      "collaboration-workspace": "Collaboration"
     },
     "groups": {
+      "collaboration": "Collaboration",
       "overview": "Overview",
       "organization": "Organization",
       "inventory": "Inventory",

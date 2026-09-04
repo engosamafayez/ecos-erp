@@ -183,9 +183,11 @@
       "finance-budgets": "الموازنات",
       "finance-tax": "الضرائب والقيمة المضافة",
       "finance-expenses": "المصروفات",
-      "finance-costing": "التكاليف والربحية"
+      "finance-costing": "التكاليف والربحية",
+      "collaboration-workspace": "التعاون"
     },
     "groups": {
+      "collaboration": "التعاون",
       "overview": "نظرة عامة",
       "organization": "المنظمة",
       "inventory": "المخزون",

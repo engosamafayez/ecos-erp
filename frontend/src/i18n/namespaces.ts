@@ -72,6 +72,9 @@ export const NAMESPACES = [
   'logistics',
   'driver-mobile',
 
+  // ── Internal Collaboration & Tasks ────────────────────────────────────────
+  'collaboration',
+
   // ── Finance & Reporting ───────────────────────────────────────────────────
   'cost-management',
   'dashboard',

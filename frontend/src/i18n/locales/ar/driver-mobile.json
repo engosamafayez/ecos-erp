@@ -785,7 +785,8 @@
       "tripExpenses": "مصاريف الرحلة",
       "map": "الخريطة",
       "statement": "كشف الحساب",
-      "exceptions": "الاستثناءات"
+      "exceptions": "الاستثناءات",
+      "tasks": "المهام"
     }
   },
   "tripExpenses": {

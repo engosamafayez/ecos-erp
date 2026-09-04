@@ -7,6 +7,7 @@ import {
   ClipboardList,
   FileText,
   Home,
+  ListChecks,
   Map as MapIcon,
   Menu,
   Package,
@@ -79,6 +80,12 @@ const SECONDARY_NAV: DriverNavItem[] = [
   { key: 'reports', label: ($) => $.shell.nav.reports, icon: BarChart3, path: ROUTES.driverReports },
   { key: 'tripExpenses', label: ($) => $.shell.nav.tripExpenses, icon: Receipt, path: ROUTES.driverTripExpenses },
   { key: 'statement', label: ($) => $.shell.nav.statement, icon: FileText, path: ROUTES.driverStatement },
+  // Internal Collaboration & Tasks (TASK-ECOS-COLLABORATION-WORKSPACE-DRIVER-EXPOSURE-
+  // CLOSURE-005) — a nav ENTRY only, added the same way every other flat destination
+  // here is: DriverShell itself, its four primary thumb-reach slots, and its ownership
+  // are all untouched. The page it points to lives in Operations\DriverMobile, reusing
+  // Collaboration's existing TaskDetailDrawer — no parallel driver task authority.
+  { key: 'tasks', label: ($) => $.shell.nav.tasks, icon: ListChecks, path: ROUTES.driverTasks },
 ];
 
 /**

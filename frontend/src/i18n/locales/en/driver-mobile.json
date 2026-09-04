@@ -745,7 +745,8 @@
       "tripExpenses": "Trip expenses",
       "map": "Map",
       "statement": "Statement",
-      "exceptions": "Exceptions"
+      "exceptions": "Exceptions",
+      "tasks": "Tasks"
     }
   },
   "tripExpenses": {

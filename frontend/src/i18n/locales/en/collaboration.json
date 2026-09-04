@@ -1,0 +1,206 @@
+{
+  "workspace": {
+    "title": "Collaboration",
+    "tabs": {
+      "conversations": "Conversations",
+      "tasks": "Tasks"
+    }
+  },
+  "conversations": {
+    "title": "Conversations",
+    "newDirect": "New Message",
+    "newGroup": "New Group",
+    "list": {
+      "empty": {
+        "title": "No conversations yet",
+        "subtitle": "Start a conversation with a colleague or driver."
+      },
+      "error": "Couldn't load your conversations.",
+      "retry": "Retry",
+      "unread_one": "{{count}} unread",
+      "unread_other": "{{count}} unread",
+      "groupLabel": "Group",
+      "you": "You: "
+    },
+    "empty": {
+      "title": "Select a conversation",
+      "subtitle": "Choose a conversation from the list, or start a new one."
+    },
+    "info": {
+      "title": "Details",
+      "participants": "Participants",
+      "type": {
+        "direct": "Direct message",
+        "group": "Collaboration Group"
+      },
+      "addMember": "Add member",
+      "removeMember": "Remove",
+      "leaveGroup": "Leave group"
+    },
+    "newDirectDialog": {
+      "title": "New Message",
+      "recipient": "To",
+      "recipientPlaceholder": "Search people or drivers…",
+      "submit": "Start conversation",
+      "cancel": "Cancel",
+      "failed": "Couldn't start the conversation."
+    },
+    "newGroupDialog": {
+      "title": "New Collaboration Group",
+      "hint": "This is an ad-hoc Collaboration Group, not an organizational Team.",
+      "name": "Group name",
+      "namePlaceholder": "e.g. Warehouse A Team",
+      "members": "Members",
+      "membersPlaceholder": "Search people or drivers…",
+      "submit": "Create group",
+      "cancel": "Cancel",
+      "failed": "Couldn't create the group."
+    }
+  },
+  "message": {
+    "typePlaceholder": "Type a message…",
+    "send": "Send",
+    "replyingTo": "Replying to",
+    "cancelReply": "Cancel reply",
+    "mention": "Mention",
+    "attachImage": "Attach image",
+    "attachFile": "Attach file",
+    "recordVoice": "Record voice message",
+    "sending": "Sending…",
+    "sendFailed": "Couldn't send the message. Retry.",
+    "uploadFailed": "Couldn't upload the attachment.",
+    "download": "Download",
+    "createTask": "Create Task",
+    "types": {
+      "image": "[Image]",
+      "file": "[File]",
+      "voice": "[Voice message]"
+    }
+  },
+  "voice": {
+    "start": "Record",
+    "recording": "Recording…",
+    "stop": "Stop",
+    "discard": "Discard",
+    "preview": "Preview",
+    "send": "Send",
+    "micDenied": "Microphone access was denied. Allow microphone access in your browser to record a voice message.",
+    "micUnavailable": "No microphone was found on this device.",
+    "unsupported": "Voice recording isn't supported in this browser.",
+    "recordingFailed": "Recording failed. Try again.",
+    "playbackUnauthorized": "You don't have access to this voice message."
+  },
+  "search": {
+    "placeholder": "Search messages and tasks…",
+    "messagesTab": "Messages",
+    "tasksTab": "Tasks",
+    "noResults": "No results.",
+    "error": "Search failed.",
+    "openConversation": "Open conversation",
+    "openTask": "Open task"
+  },
+  "tasks": {
+    "title": "Tasks",
+    "create": "New Task",
+    "filters": {
+      "scope": "Show",
+      "scopeMine": "My tasks",
+      "scopeCreated": "Created by me",
+      "scopeAssigned": "Assigned to me",
+      "status": "Status",
+      "priority": "Priority",
+      "overdue": "Overdue only",
+      "all": "All"
+    },
+    "list": {
+      "empty": {
+        "title": "No tasks",
+        "subtitle": "Tasks assigned to you or created by you will appear here."
+      },
+      "error": "Couldn't load tasks.",
+      "retry": "Retry"
+    },
+    "status": {
+      "todo": "To Do",
+      "in_progress": "In Progress",
+      "done": "Done",
+      "cancelled": "Cancelled"
+    },
+    "priority": {
+      "low": "Low",
+      "normal": "Normal",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "overdue": "Overdue",
+    "dueAt": "Due {{date}}",
+    "noDueDate": "No due date",
+    "detail": {
+      "title": "Task",
+      "description": "Description",
+      "assignee": "Assignee",
+      "creator": "Created by",
+      "priority": "Priority",
+      "status": "Status",
+      "due": "Due date",
+      "comments": "Comments",
+      "attachments": "Attachments",
+      "activity": "Activity",
+      "context": "Linked to",
+      "sourceMessage": "Started from a message",
+      "sourceUnavailable": "Source message unavailable",
+      "viewSource": "View in conversation",
+      "addCommentPlaceholder": "Add a comment…",
+      "postComment": "Comment",
+      "noComments": "No comments yet.",
+      "addAttachment": "Add attachment",
+      "noAttachments": "No attachments.",
+      "noActivity": "No activity yet.",
+      "reassign": "Reassign",
+      "edit": "Edit task",
+      "loadFailed": "Couldn't load this task.",
+      "forbidden": "You don't have access to this task.",
+      "transitions": {
+        "start": "Start",
+        "complete": "Mark done",
+        "cancel": "Cancel task",
+        "reopen": "Reopen"
+      }
+    },
+    "createDialog": {
+      "title": "New Task",
+      "fromMessage": "From message",
+      "titleLabel": "Title",
+      "titlePlaceholder": "What needs to be done?",
+      "descriptionLabel": "Description",
+      "assigneeLabel": "Assignee",
+      "assigneeDefault": "Assign to myself",
+      "priorityLabel": "Priority",
+      "dueLabel": "Due date",
+      "submit": "Create Task",
+      "cancel": "Cancel",
+      "success": "Task created",
+      "failed": "Couldn't create the task."
+    },
+    "activityEvents": {
+      "created": "created this task",
+      "assigned": "reassigned this task",
+      "status_changed": "changed status",
+      "priority_changed": "changed priority",
+      "due_date_changed": "changed the due date",
+      "comment_added": "commented",
+      "updated": "updated the task"
+    },
+    "context": {
+      "order": "Order",
+      "distribution_group": "Distribution Group",
+      "trip": "Trip",
+      "driver": "Driver"
+    }
+  },
+  "errors": {
+    "forbidden": "You don't have access to this.",
+    "notFound": "Not found.",
+    "generic": "Something went wrong."
+  }
+}

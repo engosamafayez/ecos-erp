@@ -46,6 +46,7 @@ import type enCrm from '@/i18n/locales/en/crm.json';
 import type enCustomers from '@/i18n/locales/en/customers.json';
 import type enDashboard from '@/i18n/locales/en/dashboard.json';
 import type enDriverMobile from '@/i18n/locales/en/driver-mobile.json';
+import type enCollaboration from '@/i18n/locales/en/collaboration.json';
 import type enEngineering from '@/i18n/locales/en/engineering.json';
 import type enExecutive from '@/i18n/locales/en/executive.json';
 import type enFinance from '@/i18n/locales/en/finance.json';
@@ -108,6 +109,7 @@ declare module 'i18next' {
       customers: typeof enCustomers;
       dashboard: typeof enDashboard;
       'driver-mobile': typeof enDriverMobile;
+      collaboration: typeof enCollaboration;
       engineering: typeof enEngineering;
       executive: typeof enExecutive;
       finance: typeof enFinance;

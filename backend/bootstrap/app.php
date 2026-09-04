@@ -29,6 +29,17 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    // TASK-ECOS-COLLABORATION-MEDIA-VOICE-REALTIME-NOTIFICATIONS-SEARCH-003
+    // (ADR-044 §1.8). Registers routes/channels.php and applies auth:sanctum
+    // to the broadcasting auth endpoint it creates — the same guard every
+    // other authenticated API route in this app already uses. Functions
+    // today with the default 'log' broadcast driver (BROADCAST_CONNECTION
+    // is unchanged); see config/broadcasting.php's docblock for what
+    // switching to 'reverb' additionally requires.
+    ->withBroadcasting(
+        __DIR__.'/../routes/channels.php',
+        ['middleware' => ['auth:sanctum']],
+    )
     ->withMiddleware(function (Middleware $middleware) {
         // Trust reverse proxies: Docker Nginx, Cloudflare, load balancers.
         // TRUSTED_PROXIES=* is safe in Docker because PHP-FPM (port 9000) is

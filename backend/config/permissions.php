@@ -39,6 +39,21 @@ return [
             'branches' => ['view', 'create', 'update', 'delete'],
         ],
 
+        // Internal Collaboration & Tasks — ADR-044. Conversation read/send and
+        // group-membership mutation are participation-gated, not permission-gated
+        // (see the module's ConversationPolicy), so only the coarse capabilities
+        // that a data check cannot express are registered here.
+        'collaboration' => [
+            'conversations' => ['create', 'message_drivers'],
+            'groups' => ['create'],
+            // Internal Tasks (TASK-ECOS-COLLABORATION-INTERNAL-TASKS-004). Task
+            // view/comment/status-transition are ownership-gated (creator/
+            // assignee — see TaskPolicy), not permission-gated, exactly like
+            // conversation participation — so only creation and driver
+            // assignment need a registered token here.
+            'tasks' => ['create', 'assign_drivers'],
+        ],
+
         'inventory' => [
             'products' => ['view', 'create', 'update', 'delete'],
             'warehouses' => ['view', 'create', 'update', 'delete'],

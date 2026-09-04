@@ -63,6 +63,15 @@ describe('isModuleVisible (dynamic sidebar)', () => {
     expect(isModuleVisible('dashboard', ctx({}))).toBe(true);
   });
 
+  // TASK-ECOS-COLLABORATION-WORKSPACE-DRIVER-EXPOSURE-CLOSURE-005 — collaboration
+  // joins dashboard in ALWAYS_VISIBLE: its backend authorizes by participation/
+  // ownership, not a collaboration.* permission grant, so a plain permission-driven
+  // user (no navigation whitelist, no collaboration.* permissions) must still see it.
+  it('collaboration is always visible, even with zero collaboration.* permissions', () => {
+    expect(isModuleVisible('collaboration', ctx({ permissions: ['inventory.products.view'] }))).toBe(true);
+    expect(isModuleVisible('collaboration', ctx({}))).toBe(true);
+  });
+
   it('a template navigation whitelist is authoritative', () => {
     const c = ctx({ navigation: ['inventory', 'operations'] });
     expect(isModuleVisible('inventory', c)).toBe(true);
