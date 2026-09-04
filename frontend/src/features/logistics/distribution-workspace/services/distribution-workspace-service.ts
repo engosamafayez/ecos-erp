@@ -16,6 +16,7 @@ import type {
   GroupTrip,
   GroupTripsResult,
   GroupTripReconciliation,
+  GroupZoneBreakdown,
   OrdersAwaitingGroupResponse,
   GroupVehicleAssignmentResult,
   MapData,
@@ -394,6 +395,19 @@ export const distributionWorkspaceService = {
   async getGroupFleetOptions(windowId: string, slotId: string): Promise<GroupFleetOptions> {
     const { data } = await apiClient.get<{ data: GroupFleetOptions }>(
       `${BASE}/windows/${windowId}/slots/${slotId}/fleet-options`,
+    );
+    return data.data;
+  },
+
+  /**
+   * TASK-ECOS-DISTRIBUTION-GROUP-DETAILS-CANONICAL-RECONCILIATION-009 — the
+   * Zone breakdown for ONE Group, reconciled server-side by construction with
+   * the Group's own Order total. The GET counterpart of `addZoneToGroup` /
+   * `removeZoneFromGroup` / `moveZoneToGroup`, on the same `.../zones` path.
+   */
+  async getGroupZoneBreakdown(windowId: string, slotId: string): Promise<GroupZoneBreakdown> {
+    const { data } = await apiClient.get<{ data: GroupZoneBreakdown }>(
+      `${BASE}/windows/${windowId}/slots/${slotId}/zones`,
     );
     return data.data;
   },

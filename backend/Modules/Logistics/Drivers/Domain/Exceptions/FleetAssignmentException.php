@@ -75,4 +75,22 @@ class FleetAssignmentException extends RuntimeException
             $vehicle,
         ));
     }
+
+    /**
+     * TASK-ECOS-DISTRIBUTION-GROUP-DETAILS-CANONICAL-RECONCILIATION-009 — the
+     * server-side mirror of the fleet drawer's `canBeDispatched()` exclusion
+     * (see `DistributionWindowController::groupFleetOptions()`). A stale drawer
+     * — opened while the vehicle was still dispatchable, submitted after it went
+     * to Maintenance/OutOfService/Archived, went InDelivery, or picked up a
+     * blocking expired document — must fail here rather than assign a vehicle
+     * the selector would no longer have offered.
+     */
+    public static function vehicleNotDispatchable(string $vehicle): self
+    {
+        return new self(sprintf(
+            'Vehicle %s is not currently available for assignment (off the road, '
+            .'archived, or blocked by an expired document). Refresh and choose another vehicle.',
+            $vehicle,
+        ));
+    }
 }

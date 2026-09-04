@@ -530,6 +530,55 @@ export interface GroupFleetOptions {
   drivers: FleetDriverOption[];
 }
 
+/**
+ * One Zone owned by ONE Group (via `distribution_slot_zones`), with its own
+ * Order stats — TASK-ECOS-DISTRIBUTION-GROUP-DETAILS-CANONICAL-RECONCILIATION-009.
+ *
+ * Deliberately a narrower shape than `ZoneSummary`: no `virtual_slot_id` (this
+ * IS that Slot's own view) and no `spans_slots` (not a window-wide rollup).
+ */
+export interface GroupZoneBreakdownEntry {
+  zone_id: number;
+  zone_code: string | null;
+  zone_name: string | null;
+  order_count: number;
+  total_value: number;
+  products_count: number;
+  paid_orders: number;
+  unpaid_orders: number;
+}
+
+/**
+ * `zones[].order_count` summed, plus `unclaimed_zone_order_count`, always
+ * equals the Group's own `orders_count` — reconciled server-side by
+ * construction, not by cross-checking two independent queries client-side.
+ */
+export interface GroupZoneBreakdown {
+  zones: GroupZoneBreakdownEntry[];
+  /**
+   * Orders that carry this Group's own membership but whose OWN Zone is
+   * either absent or not one of this Group's owned Zones (see the backend
+   * docblock for how that can happen). Never force-fitted into a fake Zone
+   * membership to make the arithmetic agree.
+   */
+  unclaimed_zone_order_count: number;
+}
+
+/**
+ * The fields `ZoneImpactDialog` actually reads — satisfied structurally by
+ * BOTH `ZoneSummary` (the window-wide rollup) and `GroupZoneBreakdownEntry`
+ * (one Group's own breakdown), so the same preview dialog serves Add (which
+ * targets a window-wide Zone) and Remove/Move (which target one of this
+ * Group's own zones) without either caller reshaping its data to fit.
+ */
+export interface ZoneImpactSummary {
+  zone_id: number | null;
+  zone_name: string | null;
+  order_count: number;
+  products_count: number;
+  total_value: number;
+}
+
 export interface GroupVehicleAssignmentResult {
   trip: GroupTrip | null;
   group_orders: number;

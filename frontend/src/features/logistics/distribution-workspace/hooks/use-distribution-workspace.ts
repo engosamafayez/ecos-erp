@@ -45,6 +45,10 @@ const KEYS = {
   // state, its Trip and its remaining capacity together.
   groupFleet: (windowId: string, slotId: string) =>
     [...KEYS.all, 'group-fleet', windowId, slotId] as const,
+  // Same root: Add/Remove/Move Zone all live under KEYS.all already, so this
+  // refreshes with them — no second sync mechanism.
+  groupZoneBreakdown: (windowId: string, slotId: string) =>
+    [...KEYS.all, 'group-zone-breakdown', windowId, slotId] as const,
   // The map is a projection of the SAME window, so it lives under the same root
   // and every existing mutation already refreshes it. No second sync mechanism.
   map: (windowId: string, warehouseId: string | null) =>
@@ -192,6 +196,22 @@ export function useGroupFleetOptions(
     queryFn: () =>
       distributionWorkspaceService.getGroupFleetOptions(windowId as string, slotId as string),
     enabled: Boolean(windowId) && Boolean(slotId) && enabled,
+  });
+}
+
+/**
+ * TASK-ECOS-DISTRIBUTION-GROUP-DETAILS-CANONICAL-RECONCILIATION-009 — the
+ * Zone breakdown for ONE Group, reconciled by construction with its own Order
+ * total. This is deliberately NOT derived from the window-wide `zones` in
+ * `useCurrentDistributionWindow()` — see `GroupZoneManager` for why that can
+ * disagree with a Group's own header/card Zone list.
+ */
+export function useGroupZoneBreakdown(windowId: string | undefined, slotId: string | undefined) {
+  return useQuery({
+    queryKey: KEYS.groupZoneBreakdown(windowId ?? '', slotId ?? ''),
+    queryFn: () =>
+      distributionWorkspaceService.getGroupZoneBreakdown(windowId as string, slotId as string),
+    enabled: Boolean(windowId) && Boolean(slotId),
   });
 }
 

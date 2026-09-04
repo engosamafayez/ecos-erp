@@ -920,6 +920,28 @@ final class DistributionWindowController extends Controller
     }
 
     /**
+     * GET /windows/{window}/slots/{slot}/zones
+     *
+     * Zone breakdown for ONE Group, reconciled BY CONSTRUCTION with the Group's
+     * own Order total — see DistributionAggregationService::slotZoneBreakdown()
+     * for why this is a genuinely different question from the window-wide
+     * `zones()` action above, and TASK-ECOS-DISTRIBUTION-GROUP-DETAILS-CANONICAL-
+     * RECONCILIATION-009's report for the observed defect this closes (a Group's
+     * own Zones tab could show "no zones yet" while its header/card showed real
+     * Zone names, and its total Order count could exceed the sum of its Zone
+     * breakdown).
+     */
+    public function groupZoneBreakdown(Request $request, string $window, string $slot): JsonResponse
+    {
+        $w = $this->window($request, $window);
+        $s = $this->slot($w, $slot);
+
+        return response()->json([
+            'data' => $this->aggregation->slotZoneBreakdown($w->id, $s->id),
+        ]);
+    }
+
+    /**
      * GET /windows/{window}/slots/{slot}/fleet-options
      *
      * The Vehicle and Driver selectors for the assignment drawer.
@@ -953,7 +975,10 @@ final class DistributionWindowController extends Controller
             }
         }
 
+        // `documents` is eager-loaded so canBeDispatched() below costs no extra
+        // query per vehicle — Vehicle::canBeDispatched() lazy-loads it otherwise.
         $vehicleModels = Vehicle::query()
+            ->with('documents')
             ->where('capacity_orders', '>', 0)
             ->orderBy('plate_number')
             ->get();
@@ -973,10 +998,32 @@ final class DistributionWindowController extends Controller
         //
         // TASK-DISTRIBUTION-DRIVER-AVAILABILITY-FIX-001 — and a pairing already
         // engaged by a live trip on another Group is dropped here (see the helper),
-        // so the drawer never offers a driver/vehicle that is busy elsewhere.
-        $eligibleDriverUuids = $this->activeDriverUuidsByVehicleId($vehicleModels->pluck('id')->all(), $s->id);
+        // so the drawer never offers a driver that is busy elsewhere.
+        //
+        // TASK-ECOS-DISTRIBUTION-GROUP-DETAILS-CANONICAL-RECONCILIATION-009 — that
+        // prior fix stopped short of the VEHICLE itself: a vehicle whose one active
+        // pairing is engaged elsewhere stayed listed, with `driver_ids` collapsing
+        // to empty — which read as "no driver assigned" (a driverless vehicle) when
+        // the truth was "busy elsewhere". The vehicle itself is now excluded (see
+        // the helper's `busy_vehicle_ids`), so a vehicle in this list can only ever
+        // have zero drivers because it genuinely has none — the message stops
+        // being misleading without changing its wording.
+        $fleetAvailability = $this->resolveFleetAvailability($vehicleModels->pluck('id')->all(), $s->id);
+        $eligibleDriverUuids = $fleetAvailability['drivers'];
+        $busyVehicleIds = array_flip($fleetAvailability['busy_vehicle_ids']);
 
+        // TASK-DISTRIBUTION-DRIVER-AVAILABILITY-FIX-001 §14 named this the OTHER
+        // known gap, explicitly out of that task's scope: "an out_of_service /
+        // maintenance vehicle with capacity > 0 is still listed", and suggested
+        // exactly this as the follow-up. `Vehicle::canBeDispatched()` already
+        // exists for this precise purpose — its own docblock calls itself "the
+        // integration point Distribution will call rather than re-deriving the
+        // rule" — so this is that call, not a new rule: excludes Maintenance /
+        // OutOfService / Archived / InDelivery and any vehicle blocked by an
+        // expired licence or insurance document, alongside the trip-engagement
+        // exclusion above (independent checks — both must pass).
         $vehicles = $vehicleModels
+            ->reject(fn (Vehicle $v): bool => isset($busyVehicleIds[$v->id]) || ! $v->canBeDispatched())
             ->map(fn (Vehicle $v): array => [
                 // The uuid is the CROSS-MODULE reference (D1-C). The bigint id is
                 // never published to the client.
@@ -991,6 +1038,7 @@ final class DistributionWindowController extends Controller
                 // which the drawer states explicitly instead of offering the world.
                 'driver_ids' => $eligibleDriverUuids[$v->id] ?? [],
             ])
+            ->values()
             ->all();
 
         $drivers = Driver::query()
@@ -1015,21 +1063,38 @@ final class DistributionWindowController extends Controller
     }
 
     /**
-     * Active driver uuids per vehicle bigint id, from the canonical pairing ledger.
+     * Fleet availability per candidate vehicle, from the canonical pairing ledger.
      *
      * `active_flag` is 1 while a pairing is live and NULL once released, and the
      * unique indexes guarantee at most one active driver per vehicle — so each
-     * list holds at most one entry today. It is still returned as a LIST because
-     * the selector's contract is "the drivers eligible for this vehicle", and a
-     * shape that assumed exactly one would have to change if that rule ever did.
+     * `drivers` list holds at most one entry today. It is still returned as a LIST
+     * because the selector's contract is "the drivers eligible for this vehicle",
+     * and a shape that assumed exactly one would have to change if that rule ever
+     * did.
+     *
+     * TASK-DISTRIBUTION-DRIVER-AVAILABILITY-FIX-001 — a pairing already engaged by
+     * a live (non-terminal) trip on ANOTHER Group is not offered as a driver here.
+     * This calls the SAME predicate the write guard enforces, so the drawer can
+     * never present a combination the assign endpoint would reject. A pairing
+     * engaged on THIS group's own trip is the idempotent case and is deliberately
+     * kept, so re-opening the drawer still shows the group's current selection.
+     *
+     * TASK-ECOS-DISTRIBUTION-GROUP-DETAILS-CANONICAL-RECONCILIATION-009 — that fix
+     * stopped at the driver: an engaged pairing dropped its driver from the map,
+     * but left the VEHICLE itself listed as if merely unpaired, which the drawer
+     * could only describe as "no drivers assigned" — true in wording, false in
+     * substance, since the vehicle DOES have a driver, just a busy one. A vehicle
+     * whose pairing is engaged elsewhere is now surfaced as `busy_vehicle_ids` too,
+     * so the caller can exclude the VEHICLE — the same "busy elsewhere" fact this
+     * method already computed, exposed one level higher than before.
      *
      * @param  list<int>  $vehicleIds
-     * @return array<int, list<string>>
+     * @return array{drivers: array<int, list<string>>, busy_vehicle_ids: list<int>}
      */
-    private function activeDriverUuidsByVehicleId(array $vehicleIds, ?string $currentGroupId): array
+    private function resolveFleetAvailability(array $vehicleIds, ?string $currentGroupId): array
     {
         if ($vehicleIds === []) {
-            return [];
+            return ['drivers' => [], 'busy_vehicle_ids' => []];
         }
 
         $pairings = DriverVehicleAssignment::query()
@@ -1038,15 +1103,9 @@ final class DistributionWindowController extends Controller
             ->get(['id', 'driver_id', 'vehicle_id']);
 
         if ($pairings->isEmpty()) {
-            return [];
+            return ['drivers' => [], 'busy_vehicle_ids' => []];
         }
 
-        // TASK-DISTRIBUTION-DRIVER-AVAILABILITY-FIX-001 — a pairing already engaged
-        // by a live (non-terminal) trip on ANOTHER Group is not offered here. This
-        // calls the SAME predicate the write guard enforces, so the drawer can never
-        // present a combination the assign endpoint would reject. A pairing engaged
-        // on THIS group's own trip is the idempotent case and is deliberately kept,
-        // so re-opening the drawer still shows the group's current selection.
         $engaged = array_flip($this->trips->assignmentsEngagedElsewhere(
             $pairings->pluck('id')->map(static fn ($id): int => (int) $id)->all(),
             $currentGroupId,
@@ -1059,22 +1118,29 @@ final class DistributionWindowController extends Controller
             ->where('status', Driver::STATUS_ACTIVE)
             ->pluck('uuid', 'id');
 
-        $map = [];
+        $drivers = [];
+        $busyVehicleIds = [];
 
         foreach ($pairings as $pairing) {
-            // Busy on another Group — the pairing consumes its availability there.
+            // Busy on another Group — the pairing consumes its availability there,
+            // so the VEHICLE is unavailable here, not merely "driverless".
             if (isset($engaged[(int) $pairing->id])) {
+                $busyVehicleIds[] = (int) $pairing->vehicle_id;
+
                 continue;
             }
 
             $uuid = $uuidByDriverId[$pairing->driver_id] ?? null;
 
             if ($uuid !== null) {
-                $map[(int) $pairing->vehicle_id][] = (string) $uuid;
+                $drivers[(int) $pairing->vehicle_id][] = (string) $uuid;
             }
         }
 
-        return $map;
+        return [
+            'drivers' => $drivers,
+            'busy_vehicle_ids' => array_values(array_unique($busyVehicleIds)),
+        ];
     }
 
     /**

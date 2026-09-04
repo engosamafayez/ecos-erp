@@ -1892,6 +1892,12 @@ Route::middleware('auth:sanctum')->prefix('logistics/distribution')->group(funct
         ->middleware('permission:logistics.distribution.update');
     Route::get('/windows/{window}/slots/{slot}/trips', [DistributionWindowController::class, 'groupTrips'])
         ->middleware('permission:logistics.distribution.view');
+    // Zone breakdown for ONE Group — reconciled by construction with the Group's
+    // own Order total (TASK-ECOS-DISTRIBUTION-GROUP-DETAILS-CANONICAL-
+    // RECONCILIATION-009). The GET counterpart of the mutation trio below, on the
+    // same `.../zones` path — same view permission as every other sibling read.
+    Route::get('/windows/{window}/slots/{slot}/zones', [DistributionWindowController::class, 'groupZoneBreakdown'])
+        ->middleware('permission:logistics.distribution.view');
     // Group ↔ Trip reconciliation — a READ that makes the difference between the
     // Group's planning membership and its Trips' execution manifest visible. It
     // mutates nothing and synchronises nothing: the approved contract keeps the two

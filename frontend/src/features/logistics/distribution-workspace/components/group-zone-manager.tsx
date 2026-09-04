@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowRightLeft, MapPin, Plus, X } from 'lucide-react';
+import { AlertTriangle, ArrowRightLeft, MapPin, Plus, X } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,15 +11,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useFormatter } from '@/hooks/use-formatter';
 
 import {
   useAddZoneToGroup,
+  useGroupZoneBreakdown,
   useMoveZoneToGroup,
   useRemoveZoneFromGroup,
 } from '../hooks/use-distribution-workspace';
 import { ZoneImpactDialog, type ZoneAction } from './zone-impact-dialog';
-import type { SlotSummary, ZoneSummary } from '../types';
+import type { SlotSummary, ZoneImpactSummary, ZoneSummary } from '../types';
 
 /**
  * Zone management inside one Distribution Group.
@@ -63,7 +65,7 @@ export function GroupZoneManager({
   const move = useMoveZoneToGroup();
 
   const [action, setAction] = useState<ZoneAction>('add');
-  const [target, setTarget] = useState<ZoneSummary | null>(null);
+  const [target, setTarget] = useState<ZoneImpactSummary | null>(null);
   const [destination, setDestination] = useState<SlotSummary | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [pendingZoneId, setPendingZoneId] = useState<string>('');
@@ -77,11 +79,22 @@ export function GroupZoneManager({
     return map;
   }, [zones]);
 
-  /** The zones this group holds, with their server-computed rollups. */
-  const memberZones = useMemo(
-    () => group.zone_ids.map((id) => zoneById.get(id)).filter((z): z is ZoneSummary => Boolean(z)),
-    [group.zone_ids, zoneById],
-  );
+  /**
+   * The zones this group holds, with their OWN Order stats — TASK-ECOS-
+   * DISTRIBUTION-GROUP-DETAILS-CANONICAL-RECONCILIATION-009.
+   *
+   * Deliberately NOT derived from the window-wide `zones` prop above (that is
+   * `zoneSummaries()` — a narrower eligibility predicate, no per-Slot filter,
+   * and zones with zero currently-eligible Orders simply absent). This group's
+   * own zone list must always match its header/card `zone_ids` exactly, and
+   * its own Order stats must always sum to its own total — both guaranteed by
+   * the server for this one call, not by cross-checking two window-wide reads
+   * client-side. `zones`/`zoneById` stay in use below for `addable`/`claimed`,
+   * which genuinely are window-wide questions ("what can still be added").
+   */
+  const zoneBreakdown = useGroupZoneBreakdown(windowId, group.slot_id);
+  const memberZones = zoneBreakdown.data?.zones ?? [];
+  const unclaimedOrders = zoneBreakdown.data?.unclaimed_zone_order_count ?? 0;
 
   /**
    * Addable zones: this warehouse has work there, and no group OF THIS WAREHOUSE
@@ -107,7 +120,7 @@ export function GroupZoneManager({
           ?.message ?? mutation.error.message)
       : null;
 
-  function openDialog(next: ZoneAction, zone: ZoneSummary, to?: SlotSummary) {
+  function openDialog(next: ZoneAction, zone: ZoneImpactSummary, to?: SlotSummary) {
     add.reset();
     remove.reset();
     move.reset();
@@ -185,104 +198,131 @@ export function GroupZoneManager({
         ) : null}
       </div>
 
-      {memberZones.length === 0 ? (
-        // An empty group is a legitimate state, not an error — it stays visible.
-        <p className="mt-2 text-sm text-muted-foreground">
-          {t(($) => $.distributionWorkspace.zoneManager.empty)}
+      {zoneBreakdown.isLoading ? (
+        <Skeleton className="mt-2 h-16 w-full" data-testid={`group-zones-loading-${group.code}`} />
+      ) : zoneBreakdown.isError ? (
+        // A read failure is never rendered as "no zones yet" — that would be a
+        // silent lie about a Group that may hold real Zones.
+        <p className="mt-2 text-sm text-destructive" data-testid={`group-zones-error-${group.code}`}>
+          {t(($) => $.distributionWorkspace.zoneManager.loadFailed)}
         </p>
       ) : (
-        <ul className="mt-2 space-y-2">
-          {memberZones.map((zone) => (
-            <li
-              key={zone.zone_id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-2.5"
-              data-testid={`group-zone-row-${zone.zone_id}`}
-            >
-              <div className="flex items-center gap-2">
-                <MapPin className="size-3.5 text-muted-foreground" aria-hidden />
-                <div>
-                  <p className="text-sm font-medium">
-                    {zone.zone_code ? `${zone.zone_code} — ` : ''}
-                    {zone.zone_name ??
-                      t(($) => $.distributionWorkspace.zoneFallback, { id: zone.zone_id })}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {t(($) => $.distributionWorkspace.zoneManager.zoneStats, {
-                      orders: zone.order_count,
-                      products: zone.products_count,
-                      value: money(zone.total_value),
-                      paid: zone.paid_orders,
-                      unpaid: zone.unpaid_orders,
-                    })}
-                  </p>
-                </div>
-              </div>
+        <>
+          {memberZones.length === 0 ? (
+            // An empty group is a legitimate state, not an error — it stays visible.
+            <p className="mt-2 text-sm text-muted-foreground">
+              {t(($) => $.distributionWorkspace.zoneManager.empty)}
+            </p>
+          ) : (
+            <ul className="mt-2 space-y-2">
+              {memberZones.map((zone) => (
+                <li
+                  key={zone.zone_id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-2.5"
+                  data-testid={`group-zone-row-${zone.zone_id}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <MapPin className="size-3.5 text-muted-foreground" aria-hidden />
+                    <div>
+                      <p className="text-sm font-medium">
+                        {zone.zone_code ? `${zone.zone_code} — ` : ''}
+                        {zone.zone_name ??
+                          t(($) => $.distributionWorkspace.zoneFallback, { id: zone.zone_id })}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t(($) => $.distributionWorkspace.zoneManager.zoneStats, {
+                          orders: zone.order_count,
+                          products: zone.products_count,
+                          value: money(zone.total_value),
+                          paid: zone.paid_orders,
+                          unpaid: zone.unpaid_orders,
+                        })}
+                      </p>
+                    </div>
+                  </div>
 
-              {canPlan ? (
-                <div className="flex items-center gap-2">
-                  {otherGroups.length > 0 ? (
-                    <>
-                      <Select
-                        value={moveTo[zone.zone_id as number] ?? ''}
-                        onValueChange={(v) =>
-                          setMoveTo((prev) => ({ ...prev, [zone.zone_id as number]: v }))
-                        }
-                      >
-                        <SelectTrigger
-                          className="h-8 w-44"
-                          data-testid={`move-zone-select-${zone.zone_id}`}
-                        >
-                          <SelectValue
-                            placeholder={t(
-                              ($) => $.distributionWorkspace.zoneManager.movePlaceholder,
-                            )}
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {otherGroups.map((g) => (
-                            <SelectItem key={g.slot_id} value={g.slot_id}>
-                              {g.code}
-                              {g.name ? ` — ${g.name}` : ''}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                  {canPlan ? (
+                    <div className="flex items-center gap-2">
+                      {otherGroups.length > 0 ? (
+                        <>
+                          <Select
+                            value={moveTo[zone.zone_id] ?? ''}
+                            onValueChange={(v) =>
+                              setMoveTo((prev) => ({ ...prev, [zone.zone_id]: v }))
+                            }
+                          >
+                            <SelectTrigger
+                              className="h-8 w-44"
+                              data-testid={`move-zone-select-${zone.zone_id}`}
+                            >
+                              <SelectValue
+                                placeholder={t(
+                                  ($) => $.distributionWorkspace.zoneManager.movePlaceholder,
+                                )}
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {otherGroups.map((g) => (
+                                <SelectItem key={g.slot_id} value={g.slot_id}>
+                                  {g.code}
+                                  {g.name ? ` — ${g.name}` : ''}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={!moveTo[zone.zone_id]}
+                            onClick={() => {
+                              const to = otherGroups.find(
+                                (g) => g.slot_id === moveTo[zone.zone_id],
+                              );
+                              if (to) openDialog('move', zone, to);
+                            }}
+                            data-testid={`move-zone-${zone.zone_id}`}
+                          >
+                            <ArrowRightLeft className="me-1 size-3.5" aria-hidden />
+                            {t(($) => $.distributionWorkspace.zoneManager.move)}
+                          </Button>
+                        </>
+                      ) : null}
+
                       <Button
                         size="sm"
-                        variant="outline"
-                        disabled={!moveTo[zone.zone_id as number]}
-                        onClick={() => {
-                          const to = otherGroups.find(
-                            (g) => g.slot_id === moveTo[zone.zone_id as number],
-                          );
-                          if (to) openDialog('move', zone, to);
-                        }}
-                        data-testid={`move-zone-${zone.zone_id}`}
+                        variant="ghost"
+                        onClick={() => openDialog('remove', zone)}
+                        data-testid={`remove-zone-${zone.zone_id}`}
                       >
-                        <ArrowRightLeft className="me-1 size-3.5" aria-hidden />
-                        {t(($) => $.distributionWorkspace.zoneManager.move)}
+                        <X className="me-1 size-3.5" aria-hidden />
+                        {t(($) => $.distributionWorkspace.zoneManager.remove)}
                       </Button>
-                    </>
-                  ) : null}
+                    </div>
+                  ) : (
+                    <Badge variant="outline">
+                      {t(($) => $.distributionWorkspace.zoneManager.planningClosed)}
+                    </Badge>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
 
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => openDialog('remove', zone)}
-                    data-testid={`remove-zone-${zone.zone_id}`}
-                  >
-                    <X className="me-1 size-3.5" aria-hidden />
-                    {t(($) => $.distributionWorkspace.zoneManager.remove)}
-                  </Button>
-                </div>
-              ) : (
-                <Badge variant="outline">
-                  {t(($) => $.distributionWorkspace.zoneManager.planningClosed)}
-                </Badge>
-              )}
-            </li>
-          ))}
-        </ul>
+          {unclaimedOrders > 0 ? (
+            // Orders that carry this Group's own membership but whose Zone is
+            // not one of the Group's owned Zones — never hidden, never
+            // force-fitted into one of the rows above (TASK-009 §7/§12).
+            <p
+              className="mt-2 flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400"
+              data-testid={`group-zones-unclaimed-${group.code}`}
+            >
+              <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+              {t(($) => $.distributionWorkspace.zoneManager.unclaimedOrders, {
+                count: unclaimedOrders,
+              })}
+            </p>
+          ) : null}
+        </>
       )}
 
       <ZoneImpactDialog

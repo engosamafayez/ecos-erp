@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useFormatter } from '@/hooks/use-formatter';
 
-import type { SlotSummary, ZoneSummary } from '../types';
+import type { SlotSummary, ZoneImpactSummary } from '../types';
 
 /**
  * Impact preview for Add / Remove / Move Zone.
@@ -64,7 +64,7 @@ function GroupProjection({
 }: {
   title: string;
   group: SlotSummary;
-  zone: ZoneSummary;
+  zone: ZoneImpactSummary;
   /** +1 the zone joins this group, -1 it leaves. */
   sign: 1 | -1;
   money: (n: number) => string;
@@ -115,7 +115,7 @@ export function ZoneImpactDialog({
   onOpenChange,
 }: {
   action: ZoneAction;
-  zone: ZoneSummary | null;
+  zone: ZoneImpactSummary | null;
   /** The group the zone is in (remove/move) or joining (add). */
   group: SlotSummary | null;
   /** Move only — where it is going. */

@@ -166,6 +166,154 @@ final class DistributionAggregationService
     }
 
     /**
+     * Zone breakdown for ONE Group ("Slot"), reconciled BY CONSTRUCTION with the
+     * Group's own Order total — never a second, independently-computed figure
+     * that can silently drift from it.
+     *
+     * TASK-ECOS-DISTRIBUTION-GROUP-DETAILS-CANONICAL-RECONCILIATION-009 —
+     * `zoneSummaries()` (above) answers a WINDOW-WIDE question: "what does the
+     * window's currently-eligible Order population look like, zone by zone" —
+     * `constrainToEligible()` (the narrower predicate), no Slot filter at all,
+     * zones with zero currently-eligible Orders simply absent, and each zone's
+     * `virtual_slot_id` is its PLANNED Slot from `distribution_slot_zones` — not
+     * necessarily where its Orders currently sit. That is the right question for
+     * the window-wide Zones board, but the WRONG one for a single Group's own
+     * Zones tab: an Order can carry THIS Group's `virtual_slot_id` (the Group's
+     * own, canonical Order membership — the same one `slotOrderCounts()` counts)
+     * while its OWN `distribution_zone_id` points at a Zone this Group has never
+     * claimed in `distribution_slot_zones`, or no longer claims (Zone ownership
+     * there is an upsert — "whichever Group last claimed it" — so a Zone
+     * reclaimed by another Group does not retroactively move the Orders already
+     * sitting in it). `zoneSummaries()` would then attribute that Order's zone
+     * row to nobody's Slot, or to whichever Group's pivot now claims the Zone —
+     * never to THIS Group — and the Order silently disappears from this Group's
+     * own Zone reconciliation even though it never left the Group's total.
+     *
+     * This method starts from the SAME predicate and the SAME `virtual_slot_id`
+     * filter `slotOrderCounts()` (the Group card's own `demand_orders`) uses —
+     * `constrainToLoadingEligible()` — so its sum is ALWAYS that Group's own
+     * total, by construction:
+     *
+     *     sum(zones[].order_count) + unclaimed_zone_order_count === the Group's
+     *     own orders_count, for every Group, always — because both are computed
+     *     by partitioning the identical `virtual_slot_id = $slotId` rowset by its
+     *     own `distribution_zone_id`, nothing is filtered out along the way, and
+     *     nothing is invented to make the arithmetic agree (a genuinely
+     *     unclaimed-zone Order stays in `unclaimed_zone_order_count`, never
+     *     force-fitted into one of the Group's own zones).
+     *
+     * The Zone LIST itself — which Zones this Group has — comes from the SAME
+     * pivot `zonesBySlot()` already reads for the Group's header/card `zone_ids`,
+     * so this can never disagree with them the way the window-wide `zones[]`
+     * can: every owned Zone is listed even at zero current Orders.
+     *
+     * @return array{zones: list<array<string, mixed>>, unclaimed_zone_order_count: int}
+     */
+    public function slotZoneBreakdown(string $windowId, string $slotId): array
+    {
+        $ownedZoneIds = $this->zonesBySlot($windowId)[$slotId] ?? [];
+
+        $rows = $this->preparation->constrainToLoadingEligible(
+            DB::table('distribution_window_orders as dwo')
+                ->leftJoin('distribution_zones as dz', 'dz.id', '=', 'dwo.distribution_zone_id')
+                ->join('orders as o', 'o.id', '=', 'dwo.order_id')
+                ->where('dwo.distribution_window_id', $windowId)
+                ->where('dwo.virtual_slot_id', $slotId),
+            'o',
+        )
+            ->groupBy('dwo.distribution_zone_id', 'dz.code', 'dz.name_en', 'dz.name_ar')
+            ->select([
+                'dwo.distribution_zone_id',
+                'dz.code as zone_code',
+                'dz.name_en as zone_name_en',
+                'dz.name_ar as zone_name_ar',
+                DB::raw('COUNT(*) as order_count'),
+                DB::raw('COALESCE(SUM(o.total), 0) as total_value'),
+                // Same correlated-subquery/epsilon rules as zoneSummaries() —
+                // re-scoped, not reinvented.
+                DB::raw('COALESCE(SUM((SELECT COUNT(DISTINCT ol.product_id) FROM order_lines ol WHERE ol.order_id = dwo.order_id)), 0) as products_count'),
+                DB::raw('SUM(CASE WHEN COALESCE(o.deposit_amount, 0) > 0 AND (o.total <= 0 OR COALESCE(o.deposit_amount, 0) + 0.001 >= o.total) THEN 1 ELSE 0 END) as paid_orders'),
+            ])
+            ->get();
+
+        $ownedSet = array_flip($ownedZoneIds);
+        $statsByZone = [];
+        $unclaimed = 0;
+
+        foreach ($rows as $r) {
+            $zoneId = $r->distribution_zone_id === null ? null : (int) $r->distribution_zone_id;
+            $orderCount = (int) $r->order_count;
+
+            // Not one of the Group's own Zones — either genuinely unzoned, or
+            // zoned to a Zone this Group does not (or no longer) claim. Neither
+            // is manufactured into a fake membership; both are honestly the
+            // same "not accounted for by any Zone this Group owns" bucket.
+            if ($zoneId === null || ! isset($ownedSet[$zoneId])) {
+                $unclaimed += $orderCount;
+
+                continue;
+            }
+
+            $paidOrders = (int) $r->paid_orders;
+
+            $statsByZone[$zoneId] = [
+                'zone_code' => $r->zone_code,
+                'zone_name' => $r->zone_name_en ?? $r->zone_name_ar,
+                'order_count' => $orderCount,
+                'total_value' => (float) $r->total_value,
+                'products_count' => (int) $r->products_count,
+                'paid_orders' => $paidOrders,
+                'unpaid_orders' => $orderCount - $paidOrders,
+            ];
+        }
+
+        // An owned Zone with zero currently-loading-eligible Orders has no row
+        // above at all — its name is fetched separately so it still appears
+        // (order_count: 0), matching the header/card `zone_ids` exactly.
+        $missingIds = array_values(array_diff($ownedZoneIds, array_keys($statsByZone)));
+
+        if ($missingIds !== []) {
+            DB::table('distribution_zones')
+                ->whereIn('id', $missingIds)
+                ->select('id', 'code', 'name_en', 'name_ar')
+                ->get()
+                ->each(function (object $z) use (&$statsByZone): void {
+                    $statsByZone[(int) $z->id] = [
+                        'zone_code' => $z->code,
+                        'zone_name' => $z->name_en ?? $z->name_ar,
+                        'order_count' => 0,
+                        'total_value' => 0.0,
+                        'products_count' => 0,
+                        'paid_orders' => 0,
+                        'unpaid_orders' => 0,
+                    ];
+                });
+        }
+
+        $zones = [];
+
+        foreach ($ownedZoneIds as $zoneId) {
+            $stats = $statsByZone[$zoneId] ?? null;
+
+            $zones[] = [
+                'zone_id' => $zoneId,
+                'zone_code' => $stats['zone_code'] ?? null,
+                'zone_name' => $stats['zone_name'] ?? null,
+                'order_count' => $stats['order_count'] ?? 0,
+                'total_value' => $stats['total_value'] ?? 0.0,
+                'products_count' => $stats['products_count'] ?? 0,
+                'paid_orders' => $stats['paid_orders'] ?? 0,
+                'unpaid_orders' => $stats['unpaid_orders'] ?? 0,
+            ];
+        }
+
+        return [
+            'zones' => $zones,
+            'unclaimed_zone_order_count' => $unclaimed,
+        ];
+    }
+
+    /**
      * Per-Slot rollup, including capacity, utilisation and overflow.
      *
      * Utilisation is null on an unconstrained dimension. A Slot with no order

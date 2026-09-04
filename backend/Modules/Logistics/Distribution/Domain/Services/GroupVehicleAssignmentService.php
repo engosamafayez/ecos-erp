@@ -78,6 +78,18 @@ class GroupVehicleAssignmentService
         $this->assertBelongsToGroupCompany($group, $vehicle->company_id, 'vehicle');
         $this->assertBelongsToGroupCompany($group, $driver->company_id, 'driver');
 
+        // TASK-ECOS-DISTRIBUTION-GROUP-DETAILS-CANONICAL-RECONCILIATION-009 —
+        // the server-side mirror of groupFleetOptions()'s canBeDispatched()
+        // exclusion. The selector already hides a non-dispatchable vehicle, so
+        // this is the fail-safe for a stale drawer, not the primary UX guard —
+        // needs no lock: unlike the pairing check below, no concurrent writer
+        // contends on this vehicle's OWN status row for this decision.
+        if (! $vehicle->canBeDispatched()) {
+            throw FleetAssignmentException::vehicleNotDispatchable(
+                $vehicle->plate_number ?? (string) $vehicle->id,
+            );
+        }
+
         return DB::transaction(function () use ($group, $vehicle, $driver, $actorId) {
             // Lock the Group so the order count read below cannot move under the
             // capacity check — the same lock-then-measure shape GroupFinalization

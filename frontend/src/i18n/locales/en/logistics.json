@@ -2958,11 +2958,15 @@
       "addOption": "{{name}} · {{count}} orders",
       "add": "Add",
       "empty": "This group holds no zones yet.",
+      "loadFailed": "Couldn't load this group's zones. Try again.",
       "zoneStats": "{{orders}} orders · {{products}} products · {{value}} · {{paid}} paid / {{unpaid}} unpaid",
       "movePlaceholder": "Move to…",
       "move": "Move",
       "remove": "Remove",
-      "planningClosed": "Planning closed"
+      "planningClosed": "Planning closed",
+      "unclaimedOrders": "{{count}} orders belong to this group but sit outside its zones above — check the Orders tab.",
+      "unclaimedOrders_one": "{{count}} order belongs to this group but sits outside its zones above — check the Orders tab.",
+      "unclaimedOrders_other": "{{count}} orders belong to this group but sit outside its zones above — check the Orders tab."
     },
     "impact": {
       "titleAdd": "Add zone — {{zone}}",
