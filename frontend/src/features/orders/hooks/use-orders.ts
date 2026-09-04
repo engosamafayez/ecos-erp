@@ -220,10 +220,17 @@ export function useOrderWorkflowReschedule() {
 
 // Generic business-state transition hook.
 // SmartStatusSelector uses this exclusively — no individual workflow hooks needed.
+// TASK-...-SCHEDULED-LIFECYCLE-002 (§4/§7/§9): requestedDeliveryDate lets every
+// caller (grid, drawer, desktop detail page) reach the SAME canonical
+// scheduling behavior — the one place a Scheduled target needs a date.
 export function useOrderWorkflowTransition() {
   return useWorkflowMutation(
-    ({ id, targetStatus, reason }: { id: string; targetStatus: string; reason?: string }) =>
-      ordersService.workflowTransition(id, targetStatus, reason),
+    ({ id, targetStatus, reason, requestedDeliveryDate }: {
+      id: string;
+      targetStatus: string;
+      reason?: string;
+      requestedDeliveryDate?: string;
+    }) => ordersService.workflowTransition(id, targetStatus, reason, requestedDeliveryDate),
   );
 }
 

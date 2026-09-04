@@ -59,6 +59,7 @@ import { OrderCustomerIntelligencePanel } from '@/features/orders/components/ord
 import { OrderCustomerLookupField } from '@/features/orders/components/order-customer-lookup-field';
 import { OrderInventoryStatusCard } from '@/features/orders/components/order-inventory-status-card';
 import { OrderPaymentSection } from '@/features/orders/components/order-payment-section';
+import { PaymentProofSection } from '@/features/orders/components/payment-proof-section';
 import { BrandConfigHealthCard } from '@/features/orders/components/brand-config-health-card';
 import { ProductBrowser } from '@/features/orders/components/product-browser';
 import {
@@ -219,7 +220,6 @@ function LiveFinancialSummary() {
   const shippingSource    = useWatch<ManualOrderFormValues, 'shipping_cost_source'>({ name: 'shipping_cost_source' });
   const depositAmountStr  = useWatch<ManualOrderFormValues, 'deposit_amount'>({ name: 'deposit_amount' });
   const paymentMethod     = useWatch<ManualOrderFormValues, 'payment_method_manual'>({ name: 'payment_method_manual' });
-  const proofPath         = useWatch<ManualOrderFormValues, 'payment_proof_path'>({ name: 'payment_proof_path' });
 
   const productsTotal = (lines ?? []).reduce(
     (sum, l) => sum + Number(l.quantity || 0) * Number(l.unit_price || 0),
@@ -288,22 +288,14 @@ function LiveFinancialSummary() {
             </div>
           </>
         )}
-        {(paymentMethod || proofPath) && (
+        {paymentMethod && (
           <div className="border-t pt-2 flex flex-col gap-1.5">
-            {paymentMethod && (
-              <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground text-xs">{t($ => $.workspace.paymentLabel)}</span>
-                <span className="text-xs font-medium">
-                  {t($ => $.workspace.paymentMethodLabels[paymentMethod as keyof typeof $.workspace.paymentMethodLabels], { defaultValue: PAYMENT_METHOD_LABELS[paymentMethod] ?? paymentMethod.replace(/_/g, ' ') })}
-                </span>
-              </div>
-            )}
-            {proofPath && (
-              <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground text-xs">{t($ => $.workspace.proofLabel)}</span>
-                <span className="text-xs font-medium text-emerald-600">{t($ => $.workspace.uploaded)}</span>
-              </div>
-            )}
+            <div className="flex justify-between gap-3">
+              <span className="text-muted-foreground text-xs">{t($ => $.workspace.paymentLabel)}</span>
+              <span className="text-xs font-medium">
+                {t($ => $.workspace.paymentMethodLabels[paymentMethod as keyof typeof $.workspace.paymentMethodLabels], { defaultValue: PAYMENT_METHOD_LABELS[paymentMethod] ?? paymentMethod.replace(/_/g, ' ') })}
+              </span>
+            </div>
           </div>
         )}
       </CardContent>
@@ -1206,6 +1198,26 @@ export function ManualOrderFormWorkspace({ mode = 'create', order, initialCustom
     }
   }, [orderPolicy, isEdit]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // TASK-ECOS-COMMERCE-ORDERS-BATCH-02-SCHEDULED-LIFECYCLE-002 (§3/§10) — a
+  // future delivery date should default a NEW order into Scheduled, without
+  // overriding an operator's own explicit choice: CreateManualOrderAction::
+  // resolveManualOrderStatus()'s PICK-AND-STAY rule means any explicitly
+  // submitted status already wins on the backend, so its future-date fallback
+  // never fired in practice (this form always submits an explicit status,
+  // auto-defaulted above). This effect only ever touches that SAME
+  // auto-defaulted value — via setValue with no shouldDirty, exactly like the
+  // effect above — so a status the operator picked themselves (shouldDirty:
+  // true on the Select's onValueChange below) is never overridden. Runs after
+  // the brand-policy effect above so it correctly wins when both fire together
+  // on initial load.
+  useEffect(() => {
+    if (isEdit) return;
+    if (form.formState.dirtyFields.status) return;
+    if (isDeliveryFuture && form.getValues('status') !== 'scheduled') {
+      form.setValue('status', 'scheduled');
+    }
+  }, [isDeliveryFuture, isEdit]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Background slot validation — only fires AFTER the user has explicitly selected a slot.
   // Silent when user hasn't touched the field (satisfies "no error on page load" requirement).
   // Also silent during brand resets (userHasSelectedSlotRef is cleared there).
@@ -1819,11 +1831,16 @@ export function ManualOrderFormWorkspace({ mode = 'create', order, initialCustom
                         <Input type="date" {...form.register('requested_delivery_date')} />
                       </FormField>
 
-                      {/* Part 1 — Future delivery date info banner */}
+                      {/* Part 1 — Future delivery date info banner. TASK-...-
+                          SCHEDULED-LIFECYCLE-002 (§3/§10): now describes what
+                          actually happens (auto-defaults to Scheduled above,
+                          unless the operator picks a different entry status),
+                          using the canonical "Scheduled" label — not the
+                          retired "Rescheduled" term. */}
                       {isDeliveryFuture && (
                         <div className="sm:col-span-3 flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-800/50 dark:bg-amber-950/20 dark:text-amber-400">
                           <CalendarDays className="size-3.5 shrink-0" />
-                          {t($ => $.workspace.futureDateNote, { status: t($ => $.workspace.rescheduledStatus) })}
+                          {t($ => $.workspace.futureDateNote, { status: t($ => $.status.scheduled) })}
                         </div>
                       )}
 
@@ -2293,9 +2310,31 @@ export function ManualOrderFormWorkspace({ mode = 'create', order, initialCustom
                   </CardHeader>
                   <CardContent className="flex flex-col gap-4">
                     <OrderPaymentSection
-                      paymentProofPolicy={orderPolicy?.payment_proof_policy}
                       paymentMethods={policyPaymentMethods}
                     />
+
+                    {/* Payment proof — TASK-...-PAYMENT-PROOF-AND-PAYMENT-BASIS-003.
+                        A payment_proofs row needs an order to attach to, so real evidence
+                        cannot be captured before the order exists. In edit mode the order
+                        already exists: render the same canonical component the Order
+                        Details page/drawer uses (no second upload path). In create mode,
+                        only tell the operator proof comes after creation — and only when
+                        the selected method's brand policy actually calls for proof at all. */}
+                    {isEdit && order ? (
+                      <PaymentProofSection
+                        orderId={order.id}
+                        paymentMethod={watchedPayment ?? null}
+                        proofPolicy={orderPolicy?.payment_proof_policy}
+                      />
+                    ) : (
+                      watchedPayment
+                      && orderPolicy?.payment_proof_policy
+                      && (orderPolicy.payment_proof_policy[watchedPayment] ?? 'none') !== 'none' && (
+                        <p className="text-xs text-muted-foreground">
+                          {t($ => $.workspace.paymentSection.proofAfterCreate)}
+                        </p>
+                      )
+                    )}
 
                     {/* Shipping cost — read-only when structurally locked or auto-calculated */}
                     <div className="border-t pt-4">

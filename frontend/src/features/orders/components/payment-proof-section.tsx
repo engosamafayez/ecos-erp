@@ -18,12 +18,20 @@ import {
   type PaymentProofState,
 } from '@/features/orders/services/payment-proof-service';
 
-/** Methods for which the approved brand policy requires proof (COD → none, card → optional). */
-const PROOF_REQUIRED_METHODS = ['instapay', 'bank_transfer'];
+type Props = {
+  orderId: string;
+  paymentMethod: string | null;
+  /**
+   * Server-resolved proof requirement per payment method — the same policy map
+   * PaymentFulfillmentGate::proofPolicyFor() produces (e.g. via useBrandOrderPolicy).
+   * Absent while the policy is still loading, or when the order has no resolvable
+   * brand: the "Required" badge then simply stays hidden rather than guessing —
+   * a missing badge that self-corrects is safer than a wrong "required" claim.
+   */
+  proofPolicy?: Record<string, 'none' | 'required' | 'optional'>;
+};
 
-type Props = { orderId: string; paymentMethod: string | null };
-
-export function PaymentProofSection({ orderId, paymentMethod }: Props) {
+export function PaymentProofSection({ orderId, paymentMethod, proofPolicy }: Props) {
   const { t } = useTranslation('orders');
   const { toast } = useToast();
 
@@ -40,7 +48,9 @@ export function PaymentProofSection({ orderId, paymentMethod }: Props) {
   const [reason, setReason] = useState('');
 
   const active = proofs.find((p) => p.is_active) ?? null;
-  const required = PROOF_REQUIRED_METHODS.includes((paymentMethod ?? '').toLowerCase());
+  const required = proofPolicy != null && paymentMethod != null
+    ? proofPolicy[paymentMethod.toLowerCase()] === 'required'
+    : false;
   const fail = () => toast({ title: t(($) => $.orderDetail.proofActionFailed), variant: 'destructive' });
 
   // A7 — the server already enforces these permissions on the proof routes; the UI

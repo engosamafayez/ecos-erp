@@ -11,12 +11,26 @@ use Modules\Operations\Fulfillment\Domain\Contracts\FulfillmentWorkflowInterface
 use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionException;
 
 /**
- * V2: Marks an order as Rescheduled from any pre-execution state.
+ * Moves an order to Scheduled from any pre-execution state.
  *
- * This is a lightweight version of RescheduleOrderWorkflow for use in the
- * Smart Status Selector. It sets the status to Rescheduled without requiring
- * a delivery date (date updates can be handled separately via the reschedule
- * endpoint). Any existing inventory reservation is preserved.
+ * TASK-ECOS-COMMERCE-ORDERS-BATCH-02-SCHEDULED-LIFECYCLE-002 (§4/§7) — this is
+ * the workflow the generic `/fulfillment/orders/{order}/transition` endpoint
+ * resolves to for any (early|reserved) → scheduled request (Orders grid's
+ * SmartStatusSelector, the desktop detail page, and the detail drawer all call
+ * that one endpoint). It now REQUIRES a genuinely future `requested_delivery_date`
+ * and persists it — the SAME canonical column ActivateScheduledOrdersCommand and
+ * ProcessOrderWorkflow's D-1 guard already read. Previously this workflow set
+ * Scheduled with no date at all ("date updates can be handled separately via the
+ * reschedule endpoint" — that endpoint's own guard blocks Scheduled as a SOURCE,
+ * so an order Scheduled here could never actually reach it), which meant every
+ * order Scheduled through this path activated as "due now" on the very next
+ * nightly cron run regardless of intent.
+ *
+ * Deliberately NOT RescheduleOrderWorkflow, which is a different feature —
+ * temporarily postponing an order ALREADY in flight and remembering which
+ * status to resume to afterwards, via `next_delivery_date`/`resume_from_status`.
+ * This workflow never touches those fields, only the canonical schedule field
+ * and the lifecycle status. Any existing inventory reservation is preserved.
  */
 final class MarkRescheduledWorkflow implements FulfillmentWorkflowInterface
 {
@@ -36,20 +50,46 @@ final class MarkRescheduledWorkflow implements FulfillmentWorkflowInterface
                 "Order [{$ctx->order->id}] cannot be rescheduled from status [{$ctx->order->status->value}].",
             );
         }
+
+        // TASK-...-SCHEDULED-LIFECYCLE-002 (§7) — Scheduled with no schedule date
+        // is not permitted. The controller already validates the format
+        // (date_format:Y-m-d) when present, so a plain string comparison against
+        // today's date is sufficient here — same idiom
+        // CreateManualOrderAction::resolveManualOrderStatus() already uses for its
+        // own future-date fallback.
+        $requestedDeliveryDate = trim((string) ($ctx->get('requested_delivery_date') ?? ''));
+
+        if ($requestedDeliveryDate === '') {
+            throw new WorkflowPreconditionException(
+                'A future requested delivery date is required to move this Order to Scheduled.',
+            );
+        }
+
+        if ($requestedDeliveryDate <= now()->toDateString()) {
+            throw new WorkflowPreconditionException(
+                "The requested delivery date [{$requestedDeliveryDate}] must be in the future to schedule this Order.",
+            );
+        }
     }
 
     public function execute(FulfillmentContext $ctx): FulfillmentResult
     {
         $order = $ctx->order;
-        $reason = $ctx->get('reason');
+        $requestedDeliveryDate = (string) $ctx->get('requested_delivery_date');
 
-        $order->update(['status' => OrderStatus::Scheduled]);
+        $order->update([
+            'status' => OrderStatus::Scheduled,
+            'requested_delivery_date' => $requestedDeliveryDate,
+        ]);
         $order->refresh();
 
         return FulfillmentResult::success(
             $order,
-            "Order #{$order->order_number} marked as Rescheduled.",
-            ['reason' => $reason, 'actor_id' => $ctx->actorId],
+            "Order #{$order->order_number} scheduled for {$requestedDeliveryDate}.",
+            [
+                'actor_id' => $ctx->actorId,
+                'requested_delivery_date' => $requestedDeliveryDate,
+            ],
         );
     }
 

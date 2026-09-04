@@ -61,6 +61,7 @@ import { OrderInventoryExecutionCell } from '@/features/orders/components/order-
 import { OrderPhoneCell } from '@/features/orders/components/order-phone-cell';
 import { OrderStatusBadge } from '@/features/orders/components/order-status-badge';
 import {
+  useBrandOrderPolicy,
   useCustomerOrderStats,
   useOrderActivities,
   useOrderBlockOverride,
@@ -826,6 +827,9 @@ function PaymentCard({ order }: { order: Order }) {
   const { t } = useTranslation('orders');
   const method = order.payment_method_manual ?? order.payment_method;
   const remaining = order.remaining_balance;
+  // Same policy authority the Create/Edit form and Order Detail Drawer already use, so the
+  // proof "Required" badge below reflects the real brand policy rather than a hardcoded list.
+  const { data: orderPolicy } = useBrandOrderPolicy(order.channel?.brand?.id ?? null);
 
   return (
     <InfoCard title={t($ => $.orderDetail.paymentTitle)} icon={ShoppingBag}>
@@ -882,7 +886,7 @@ function PaymentCard({ order }: { order: Order }) {
         </Field>
       </FieldGrid>
       <div className="mt-4 border-t pt-4">
-        <PaymentProofSection orderId={order.id} paymentMethod={method} />
+        <PaymentProofSection orderId={order.id} paymentMethod={method} proofPolicy={orderPolicy?.payment_proof_policy} />
       </div>
     </InfoCard>
   );
@@ -1404,7 +1408,11 @@ function QuickActionsPanel({
 
   function handleRescheduleConfirm() {
     if (!rescheduleDate) return;
-    reschedule.mutate({ id: order.id, nextDeliveryDate: rescheduleDate }, {
+    // TASK-...-SCHEDULED-LIFECYCLE-002 (§4/§9) — same canonical transition the
+    // grid and drawer now use (MarkRescheduledWorkflow / requested_delivery_date)
+    // instead of RescheduleOrderWorkflow's next_delivery_date — see
+    // order-detail-drawer.tsx's WorkflowTab for the full rationale.
+    transition.mutate({ id: order.id, targetStatus: 'scheduled', requestedDeliveryDate: rescheduleDate }, {
       onSuccess: () => {
         setShowReschedule(false);
         toast.success(t($ => $.drawer.workflow.rescheduleToastSuccess, { date: rescheduleDate }));

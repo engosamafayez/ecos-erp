@@ -34,6 +34,7 @@ use Modules\Commerce\Orders\Domain\Models\OrderEvent;
 use Modules\Commerce\Orders\Domain\Models\OrderFinancialSnapshot;
 use Modules\Commerce\Orders\Domain\Models\OrderNote;
 use Modules\Commerce\Orders\Domain\Services\CustomerOrderMetricsService;
+use Modules\Commerce\Orders\Domain\Services\PaymentFulfillmentGate;
 use Modules\Commerce\Orders\Presentation\Http\Requests\PatchOrderRequest;
 use Modules\Commerce\Orders\Presentation\Http\Requests\StoreManualOrderRequest;
 use Modules\Commerce\Orders\Presentation\Http\Requests\StoreOrderRequest;
@@ -55,6 +56,7 @@ final class OrderController extends Controller
         private readonly CurrentCompanyService $currentCompany,
         private readonly CustomerOrderMetricsService $orderMetrics,
         private readonly OrderRepositoryInterface $orders,
+        private readonly PaymentFulfillmentGate $paymentGate,
     ) {}
 
     public function index(Request $request, ListOrdersAction $action): JsonResponse
@@ -116,6 +118,27 @@ final class OrderController extends Controller
         }
         foreach ($paginator->items() as $order) {
             $order->setAttribute('customer_total_orders', $orderCounts[(string) $order->customer_id]['orders_count'] ?? 0);
+        }
+
+        // TASK-...-LIST-READ-MODEL-AND-RESERVATION-004 §9 — batch each row's Payment Proof
+        // required/state for the current page ONLY, same shape as the customer-order-count
+        // batching just above. proofRequiredForOrders() groups internally by (channel_id,
+        // company_id) — bounded by distinct channels on the page, never one lookup per row.
+        // proofStatesForOrders() is grouped by each row's OWN company_id here, mirroring the
+        // defensive per-row-company grouping above, for the same super-admin cross-tenant
+        // reason: $filters['company_id'] is null in that view.
+        $proofRequired = $this->paymentGate->proofRequiredForOrders(collect($paginator->items()));
+        $proofStates = [];
+        foreach (collect($paginator->items())->groupBy(fn (Order $o) => (string) $o->company_id) as $rowsCompanyId => $group) {
+            if ($rowsCompanyId === '') {
+                continue;
+            }
+            $orderIds = $group->pluck('id')->map(fn ($id) => (string) $id)->all();
+            $proofStates += $this->paymentGate->proofStatesForOrders($orderIds, $rowsCompanyId);
+        }
+        foreach ($paginator->items() as $order) {
+            $order->setAttribute('payment_proof_required', $proofRequired[(string) $order->id] ?? false);
+            $order->setAttribute('payment_proof_state', $proofStates[(string) $order->id] ?? 'none');
         }
 
         // KPI cards: sum grand_total across the exact same filtered scope $paginator
@@ -397,11 +420,20 @@ final class OrderController extends Controller
      * Records that a CRM operator called the customer and confirmed the order.
      * POST /orders/{order}/confirm-customer
      *
-     * When result = 'confirmed' and the order is in a pre-execution status
-     * (Pending | AwaitingPayment | Review | Rescheduled), the order status is
+     * confirmation_result is recorded regardless of the Order's current OrderStatus —
+     * it is a separate customer-contact fact, never itself a lifecycle status.
+     *
+     * When result = 'confirmed' and the Order is in a pre-execution status
+     * (In Progress | Awaiting Payment | On Hold), the order status is ALSO
      * automatically transitioned to Confirmed via the canonical ConfirmOrderWorkflow
-     * (inventory reservation + financial snapshot + audit trail).
-     * Both the confirmation update and the status transition are committed atomically.
+     * (inventory reservation + financial snapshot + audit trail). Both the
+     * confirmation update and the status transition are committed atomically.
+     *
+     * Scheduled is deliberately excluded from that auto-transition
+     * (TASK-...-SCHEDULED-LIFECYCLE-002-R1 §2/§5/§7): a future-dated Scheduled Order
+     * may be confirmed by phone and stay Scheduled — ConfirmOrderWorkflow does not
+     * admit Scheduled as a source, and only the Order's own due-date activation
+     * trigger may ever advance it.
      */
     public function confirmCustomer(
         Request $request,
@@ -422,12 +454,27 @@ final class OrderController extends Controller
         $actorId = $request->user()?->id !== null ? (string) $request->user()->id : null;
         $actorName = $request->user()?->name ?? 'system';
 
-        // Pre-execution states where customer confirmation triggers automatic order status transition
+        // Pre-execution states where customer confirmation triggers automatic order status
+        // transition via the canonical ConfirmOrderWorkflow.
+        //
+        // TASK-ECOS-COMMERCE-ORDERS-BATCH-02-SCHEDULED-LIFECYCLE-002-R1 (§2/§3/§5/§7) —
+        // Scheduled is deliberately NOT in this list. A future-dated Scheduled Order may
+        // still receive Call Confirmation (confirmation_result is a separate customer-
+        // contact fact, recorded unconditionally below regardless of status), but it must
+        // stay Scheduled: ConfirmOrderWorkflow's own guard does not admit Scheduled as a
+        // source (Confirm is reached only from In Progress/Awaiting Payment/Awaiting Stock/
+        // On Hold/Returned/Cancelled — ADR-042), so calling it for a Scheduled Order always
+        // threw WorkflowPreconditionException, and — because the guard() pre-check below
+        // runs BEFORE the transaction that records confirmation_result — the whole
+        // confirmation request failed outright, not just the status transition. Excluding
+        // Scheduled here means confirmation_result is now recorded normally and no FSM
+        // transition is attempted at all: the Order's own due-date activation trigger
+        // (ActivateScheduledOrdersCommand / ProcessOrderWorkflow) remains the only thing
+        // that ever advances it, exactly as Task 2 established.
         $preExecutionStatuses = [
             OrderStatus::InProgress,
             OrderStatus::AwaitingPayment,
             OrderStatus::OnHold,
-            OrderStatus::Scheduled,
         ];
 
         $shouldAutoConfirm = $validated['result'] === 'confirmed'

@@ -261,7 +261,7 @@
     "reservationStatus": "Reservation",
     "editZone": "Edit delivery zone",
     "addZone": "Add zone",
-    "deliveryWindow": "Delivery Window",
+    "deliveryWindow": "Requested Delivery",
     "shippingAttempts": "Attempts",
     "shippingCompany": "Carrier",
     "createdAt": "Created",
@@ -273,6 +273,7 @@
     "proofReceived": "Proof Received",
     "actions": "Actions",
     "noProof": "No Proof",
+    "proofUpload": "Upload",
     "noGps": "No GPS",
     "governorateWithName": "{{name}} Governorate",
     "totalDue": "{{amount}} due"
@@ -718,6 +719,7 @@
     "reason": "Reason",
     "reasonOptional": "(Optional)",
     "reasonPlaceholder": "Enter reason…",
+    "scheduleDate": "Schedule Date",
     "transitionFailed": "Transition failed — please try again or contact support.",
     "toastSuccess": "Order {{order}} is now {{status}}",
     "cancel": "Cancel",
@@ -817,8 +819,7 @@
     "selectChannel_ph": "Select channel",
     "loadingPolicy": "Loading policy…",
     "selectEntryStatus": "Select entry status…",
-    "rescheduledStatus": "Rescheduled",
-    "futureDateNote": "Future delivery date — this order will enter as {{status}} status based on brand policy.",
+    "futureDateNote": "Future delivery date — this order will be created as {{status}}, unless you choose a different entry status above.",
     "loadingTimeSlots": "Loading time slots…",
     "noTimeSlots": "No active Delivery Time Slots configured for this Brand.",
     "manageTimeSlots": "Manage Delivery Time Slots",
@@ -941,7 +942,8 @@
       "uploadFailed": "Upload failed. Please try again.",
       "proofRequired": "Payment proof is required for this payment method.",
       "proofOptionalNote": "Payment proof is optional but recommended.",
-      "proofNotRequired": "Payment proof is not required for this method."
+      "proofNotRequired": "Payment proof is not required for this method.",
+      "proofAfterCreate": "Payment proof can be uploaded once the order has been created."
     },
     "lineItems": "Line Items",
     "saveZone": "Save",
@@ -977,7 +979,7 @@
     "add": "Add"
   },
   "confirmationBadge": {
-    "confirmed": "Confirmed",
+    "confirmed": "Call Confirmed",
     "not_answered": "Not Answered",
     "rejected": "Rejected",
     "postponed": "Postponed",

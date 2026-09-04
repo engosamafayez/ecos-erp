@@ -340,6 +340,10 @@ export type Order = {
   // Enterprise payment / financial fields
   payment_method_manual: string | null;
   payment_proof_path: string | null;
+  /** Orders list read-model only (batched per-page) — null on the single-order detail fetch. */
+  payment_proof_required?: boolean | null;
+  /** 'none' | 'uploaded' | 'verified' | 'rejected'; null on the single-order detail fetch. */
+  payment_proof_state?: 'none' | 'uploaded' | 'verified' | 'rejected' | null;
   shipping_cost: number | null;
   shipping_cost_source: string | null;
   discount_amount: number;
@@ -383,6 +387,9 @@ export type Order = {
     target_status: string;  // business state — use as Select value
     label: string;          // human-readable — display to user
     requires_reason: boolean;
+    /** TASK-...-SCHEDULED-LIFECYCLE-002 (§7) — UI must collect a future
+     *  requested_delivery_date before confirming this transition. */
+    requires_date: boolean;
     action: string;         // opaque audit field — frontend must NOT route on this
   }>;
 

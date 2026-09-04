@@ -260,6 +260,14 @@ final class OrderResource extends JsonResource
             'delivery_zone' => $this->delivery_zone,
             'payment_method_manual' => $this->payment_method_manual,
             'payment_proof_path' => $this->payment_proof_path,
+            // Orders list read-model (TASK-...-LIST-READ-MODEL-AND-RESERVATION-004 §8/§9) —
+            // batched per-page by OrderController::index() via PaymentFulfillmentGate's
+            // proofRequiredForOrders()/proofStatesForOrders(); absent (null) on the single-order
+            // detail fetch, which does not run that batching and does not need to — the Order
+            // Details page/drawer already resolve proof state through their own dedicated,
+            // single-order-scoped hooks (useBrandOrderPolicy / usePaymentProofs).
+            'payment_proof_required' => isset($this->resource->payment_proof_required) ? (bool) $this->resource->payment_proof_required : null,
+            'payment_proof_state' => isset($this->resource->payment_proof_state) ? (string) $this->resource->payment_proof_state : null,
             'governorate' => $this->governorate,
             'city' => $this->city,
             'shipping_address' => $this->shipping_address,
@@ -373,6 +381,10 @@ final class OrderResource extends JsonResource
      *   - target_status  : business state — frontend uses this as the Select value
      *   - label          : display string (uses official V2 status labels)
      *   - requires_reason: UX prompts for reason before confirming
+     *   - requires_date  : UX must collect a future requested_delivery_date before
+     *                      confirming (TASK-...-SCHEDULED-LIFECYCLE-002 §7) — set
+     *                      only for the `scheduled` target; the workflow's own
+     *                      guard is still the authority, this only drives the UI
      *   - action         : opaque workflow key — for audit/transparency only; frontend must NOT route on this
      *
      * Canonical status order — ADR-042 (Order FSM V3 Canonical):
@@ -382,14 +394,15 @@ final class OrderResource extends JsonResource
      * Confirm action. The former `return_to_new` edge is now `return_to_in_progress`
      * and means "unlock for edit".
      *
-     * @return list<array{target_status: string, label: string, requires_reason: bool, action: string}>
+     * @return list<array{target_status: string, label: string, requires_reason: bool, requires_date: bool, action: string}>
      */
     private function resolveAllowedTransitions(): array
     {
-        $t = static fn (string $target, string $label, bool $reason = false, string $action = ''): array => [
+        $t = static fn (string $target, string $label, bool $reason = false, string $action = '', bool $requiresDate = false): array => [
             'target_status' => $target,
             'label' => $label,
             'requires_reason' => $reason,
+            'requires_date' => $requiresDate,
             'action' => $action,
         ];
 
@@ -402,7 +415,11 @@ final class OrderResource extends JsonResource
                 $t('confirmed', 'Confirm', false, 'confirm_order'),
                 $t('ready_for_dispatch', 'Mark Ready', false, 'ready_for_dispatch'),
                 $t('awaiting_payment', 'Awaiting Payment', false, 'set_early_status'),
-                $t('scheduled', 'Schedule', false, 'set_early_status'),
+                // TASK-...-SCHEDULED-LIFECYCLE-002 (§4/§7) — action corrected to
+                // match resolveTransitionWorkflow()'s actual routing
+                // (MarkRescheduledWorkflow, not SetEarlyStatusWorkflow); requires_date
+                // added so the UI collects a future date before confirming.
+                $t('scheduled', 'Schedule', false, 'mark_rescheduled', true),
                 $t('awaiting_stock', 'Awaiting Stock', false, 'mark_awaiting_stock'),
                 $t('on_hold', 'Put On Hold', true, 'put_on_hold'),
                 $t('cancelled', 'Cancel', true, 'cancel_order'),
