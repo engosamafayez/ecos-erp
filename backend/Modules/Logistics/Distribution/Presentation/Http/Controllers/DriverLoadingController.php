@@ -29,6 +29,7 @@ use Modules\Operations\Loading\Domain\Enums\VehicleAssignmentStatus;
 use Modules\Operations\Loading\Domain\Models\LoadingTask;
 use Modules\Operations\Loading\Domain\Models\LoadingTaskAdjustment;
 use Modules\Operations\Loading\Domain\Models\VehicleAssignment;
+use Modules\Operations\Loading\Domain\Models\VehicleInventoryItem;
 use Modules\Operations\Loading\Domain\Services\LoadingCustodyService;
 use Modules\Operations\Loading\Domain\Services\LoadingSessionProgressCoordinator;
 use Modules\Operations\Loading\Domain\Services\StaleQuantityException;
@@ -294,19 +295,31 @@ final class DriverLoadingController extends Controller
         );
 
         /*
-         * MATERIALIZATION GATE — TASK-...-IMPLEMENTATION-002 (Architecture Task 001 §7/§18).
+         * CUSTODY MATERIALIZATION GATE — TASK-...-IMPLEMENTATION-002-R1 (Architecture Task
+         * 001 §7/§8/§18; supersedes 002's own LoadingTask-existence check per the CTO's own
+         * R1 review — a task can legitimately exist with quantity_loaded == 0, which never
+         * creates a VehicleInventoryItem, so checking task existence alone was NECESSARY
+         * but NOT SUFFICIENT).
          *
          * ┌─ THE DEFECT THIS CLOSES ─────────────────────────────────────────────┐
          * │ markLoading() above auto-advances Pending → Loading on ANY call to    │
          * │ this method, and the custody gate below only inspects LOADED tasks —  │
-         * │ so a driver who never once called loadProduct() could still reach     │
-         * │ LoadingComplete with zero LoadingTask/VehicleInventoryItem rows        │
-         * │ (proven live on DEV: trip 276's assignment, Architecture 001 §18).     │
+         * │ so a driver who never once called loadProduct() — or whose recorded   │
+         * │ tasks all carry zero quantity — could still reach LoadingComplete     │
+         * │ with zero VehicleInventoryItem rows: a status-only completion with no  │
+         * │ inventory-authoritative custody behind it (proven live on DEV: trip    │
+         * │ 276's assignment, Architecture 001 §18).                              │
          * └──────────────────────────────────────────────────────────────────────┘
+         *
+         * Checks the TRUE custody authority directly (VehicleInventoryItem), never
+         * inferred from LoadingTask existence — VehicleInventoryService::recordLoad() is
+         * the only writer, called only from inside LoadProductAction whenever a real
+         * positive quantity is recorded (§6 of the R1 task: do not infer custody from
+         * LoadingTask existence).
          *
          * Only refuses when there is real cargo to account for. A Group with zero
          * required products has nothing to materialize — that is the one legitimate
-         * zero-task case Architecture 001 §7 asked to be handled explicitly rather
+         * zero-custody case Architecture 001 §7 asked to be handled explicitly rather
          * than silently allowed, and it is handled here by simply not triggering.
          */
         $requiredRows = $this->groupProductRows($group);
@@ -320,9 +333,9 @@ final class DriverLoadingController extends Controller
             }
         }
 
-        if ($hasRequiredCargo && ! LoadingTask::query()->where('vehicle_assignment_id', $assignment->id)->exists()) {
+        if ($hasRequiredCargo && ! VehicleInventoryItem::query()->where('vehicle_assignment_id', $assignment->id)->exists()) {
             return response()->json([
-                'message' => 'Loading cannot be completed: no products have been loaded yet for this shipment.',
+                'message' => 'Loading cannot be completed: vehicle custody has not been recorded for this shipment yet.',
             ], 422);
         }
 

@@ -151,24 +151,43 @@ final class LoadProductAction
                         $assignment->decrement('loading_weight_kg', -$delta);
                     }
 
-                    // TASK-...-IMPLEMENTATION-002 — REOPEN ON POST-COMPLETION CORRECTION.
+                    // TASK-...-IMPLEMENTATION-002-R1 — INVALIDATE THE STALE CONFIRMATION
+                    // ITSELF, NOT JUST THE ASSIGNMENT STATUS.
                     //
-                    // ┌─ THE GAP THIS CLOSES ────────────────────────────────────────────┐
-                    // │ LoadingTask::isDriverConfirmationCurrent() already derives that a  │
-                    // │ driver's confirmation is stale the moment quantity_loaded moves    │
-                    // │ (proven live on DEV, Architecture Task 001 §18). But nothing ever  │
-                    // │ acted on that once the ASSIGNMENT itself had already reached        │
-                    // │ LoadingComplete — the assignment's own status silently kept         │
-                    // │ claiming "done" while the task underneath it was, in truth, no       │
-                    // │ longer resolved.                                                    │
+                    // ┌─ WHY 002's OWN APPROACH WAS NOT ENOUGH (CTO R1 review) ──────────┐
+                    // │ 002 left driver_confirmed_at / driver_confirmed_loaded_qty in      │
+                    // │ place and relied on isDriverConfirmationCurrent() (a DERIVED       │
+                    // │ comparison) plus reopening the assignment. That protects the ONE   │
+                    // │ gate that happens to call isDriverConfirmationCurrent() — but any   │
+                    // │ future/other reader that checks only "driver_confirmed_at IS NOT    │
+                    // │ NULL" would be misled, and an assignment still at Loading (not yet   │
+                    // │ complete) never got its stale task-level confirmation cleared at     │
+                    // │ all, since the reopen logic below only fires for an already-         │
+                    // │ complete assignment.                                                │
                     // └──────────────────────────────────────────────────────────────────┘
                     //
-                    // Reopening ONLY the assignment (Loading, not a new state) is enough:
-                    // it forces LoadingCustodyService::unresolvedLoadedTasks() — the exact
-                    // gate DriverLoadingController::complete() already runs — to see this
-                    // task's now-stale confirmation the next time completion is attempted,
-                    // without a second staleness engine and without touching the driver's
-                    // original confirmation record (kept intact for audit).
+                    // Clearing these four columns makes "no longer authoritative" a STORED
+                    // fact rather than something only correctly derived by one specific
+                    // caller. The driver's confirmation ceases to exist the moment the
+                    // warehouse number it was made against actually changes — applies
+                    // regardless of the assignment's current status, and only inside this
+                    // delta-guarded block, so a no-op resubmission never churns a fresh,
+                    // still-valid confirmation (R1 §9).
+                    if ($existing->driver_confirmed_at !== null) {
+                        $existing->update([
+                            'driver_confirmed_at' => null,
+                            'driver_confirmed_by' => null,
+                            'driver_received_qty' => null,
+                            'driver_confirmed_loaded_qty' => null,
+                        ]);
+                    }
+
+                    // REOPEN ON POST-COMPLETION CORRECTION (from 002, preserved). The task-
+                    // level fix above already makes the confirmation non-authoritative for
+                    // any reader; this additionally corrects the ASSIGNMENT's own status for
+                    // the specific case where it had already reached LoadingComplete, so a
+                    // shipment already marked done is truthfully reopened rather than left
+                    // claiming "done" while carrying an unconfirmed item underneath it.
                     $lockedAssignment = VehicleAssignment::query()
                         ->whereKey($assignment->id)
                         ->lockForUpdate()
