@@ -37,13 +37,24 @@ final class ShippingOrderReadModel
      */
     private const LATEST_REASON_SQL = <<<'SQL'
         (SELECT da.reason FROM distribution_delivery_actions da
-         WHERE da.stop_id = ds.id ORDER BY da.created_at DESC LIMIT 1)
+         WHERE da.stop_id = ds.id ORDER BY da.created_at DESC, da.id DESC LIMIT 1)
         SQL;
 
     private const LATEST_ACTION_TYPE_SQL = <<<'SQL'
         (SELECT da.action_type FROM distribution_delivery_actions da
-         WHERE da.stop_id = ds.id ORDER BY da.created_at DESC LIMIT 1)
+         WHERE da.stop_id = ds.id ORDER BY da.created_at DESC, da.id DESC LIMIT 1)
         SQL;
+
+    /**
+     * The page's "operational day" — the Trip's own execution milestone, never
+     * `orders.created_at` (task 002 §27; TASK-...-SOURCE-CLOSURE-003 §20 re-confirms
+     * no single canonical "Trip execution date" column exists, so this progressive
+     * fallback remains the deliberate, if not CTO-pinned-to-one-column, choice). Kept
+     * as one shared constant — the controller's date filter and this class's own
+     * default ORDER BY (§21 of Task 003: pagination must be deterministic) both use
+     * this SAME expression, so they can never silently diverge.
+     */
+    public const OPERATIONAL_DATE_SQL = 'COALESCE(trip.trip_started_at, trip.dispatched_at, trip.finalized_at, ds.created_at)';
 
     /**
      * Custody evidence: TRUE only when EVERY distinct product on this order's own
@@ -126,7 +137,7 @@ final class ShippingOrderReadModel
                     ->whereRaw('ds.id = (
                         SELECT id FROM distribution_delivery_stops
                         WHERE order_id = orders.id
-                        ORDER BY created_at DESC
+                        ORDER BY created_at DESC, id DESC
                         LIMIT 1
                     )');
             })
@@ -149,6 +160,12 @@ final class ShippingOrderReadModel
                 .self::CUSTODY_SQL.' as custody_confirmed, '
                 .'('.self::classificationSql().') as shipping_classification',
             )
+            // TASK-...-SOURCE-CLOSURE-003 §21 — pagination must be deterministic; the
+            // query previously had no ORDER BY at all, which risks duplicate/missing
+            // rows across pages under concurrent writes. Most-recent-activity-first,
+            // with the Order's own primary key as a guaranteed-unique tie-breaker.
+            ->orderByRaw(self::OPERATIONAL_DATE_SQL.' DESC')
+            ->orderBy('orders.id', 'desc')
             ->with(['channel.brand', 'customer', 'lines']);
     }
 

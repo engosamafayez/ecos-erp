@@ -105,18 +105,20 @@ final class ShippingOrderController extends Controller
         // Order.created_at. Falls back progressively through earlier lifecycle
         // timestamps so an "Assigned Driver" order (custody confirmed, trip not yet
         // started) still has a known operational day instead of disappearing from
-        // every date filter until the trip literally starts moving.
+        // every date filter until the trip literally starts moving. Reuses the SAME
+        // shared expression the read model's own default ORDER BY uses (Task 003
+        // §20/§21) — never duplicated as a second, driftable copy.
         $dateFrom = $request->query('date_from');
         if (is_string($dateFrom) && $dateFrom !== '') {
             $query->whereRaw(
-                'COALESCE(trip.trip_started_at, trip.dispatched_at, trip.finalized_at, ds.created_at) >= ?',
+                ShippingOrderReadModel::OPERATIONAL_DATE_SQL.' >= ?',
                 [$dateFrom.' 00:00:00'],
             );
         }
         $dateTo = $request->query('date_to');
         if (is_string($dateTo) && $dateTo !== '') {
             $query->whereRaw(
-                'COALESCE(trip.trip_started_at, trip.dispatched_at, trip.finalized_at, ds.created_at) <= ?',
+                ShippingOrderReadModel::OPERATIONAL_DATE_SQL.' <= ?',
                 [$dateTo.' 23:59:59'],
             );
         }
