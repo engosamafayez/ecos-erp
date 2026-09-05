@@ -14,7 +14,42 @@ export type RawNotification = {
   data: Record<string, unknown>;
   read_at: string | null;
   created_at: string | null;
+  /**
+   * TASK-ECOS-NOTIFICATIONS-FOUNDATION-002 (ADR-047 §24) read-model fields. Optional:
+   * a row written before the schema extension, or by a producer that has not migrated
+   * onto the shared contract, simply omits them — nothing here is backfilled/guessed.
+   * Not yet rendered by the Notification Center (that UI work is a later task); this is
+   * the foundation those fields need to exist on the wire first.
+   */
+  company_id?: string | null;
+  priority?: NotificationPriority | null;
+  category?: NotificationCategory | null;
+  source_module?: string | null;
+  deep_link?: { entity_type: string; entity_id: string; action_key: string | null; route: string | null } | null;
+  dedupe_key?: string | null;
+  group_key?: string | null;
+  expires_at?: string | null;
+  dismissed_at?: string | null;
 };
+
+/** ADR-047 §6 — the locked 8-value taxonomy. Mirrors the backend's NotificationCategory enum. */
+export const NOTIFICATION_CATEGORIES = [
+  'alert',
+  'task',
+  'approval',
+  'assignment',
+  'warning',
+  'mention',
+  'ai_notification',
+  'exception',
+] as const;
+
+export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number];
+
+/** ADR-047 §7 — always orthogonal to category. Mirrors the backend's NotificationPriority enum. */
+export const NOTIFICATION_PRIORITIES = ['low', 'normal', 'high', 'critical'] as const;
+
+export type NotificationPriority = (typeof NOTIFICATION_PRIORITIES)[number];
 
 export type NotificationPage = {
   data: RawNotification[];
@@ -54,6 +89,13 @@ export type UiNotification = {
   message: string;
   createdAt: string | null;
   read: boolean;
+  /**
+   * Read-model foundation only (ADR-047 §24) — not yet rendered (badges/grouping are a
+   * later task). Absent (not defaulted) when the source row predates the schema
+   * extension, so a consumer can tell "no priority was ever assigned" apart from "low".
+   */
+  priority?: NotificationPriority;
+  category?: NotificationCategory;
 };
 
 const SOURCE_BY_SEGMENT: Record<string, NotificationSource> = {
@@ -94,5 +136,7 @@ export function toUiNotification(raw: RawNotification): UiNotification {
     message,
     createdAt: raw.created_at,
     read: raw.read_at !== null,
+    ...(raw.priority ? { priority: raw.priority } : {}),
+    ...(raw.category ? { category: raw.category } : {}),
   };
 }
