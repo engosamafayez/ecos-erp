@@ -6,6 +6,7 @@ namespace Modules\Operations\Loading\Application\Actions;
 
 use Illuminate\Support\Facades\DB;
 use Modules\Operations\Loading\Domain\Enums\LoadingTaskStatus;
+use Modules\Operations\Loading\Domain\Enums\VehicleAssignmentStatus;
 use Modules\Operations\Loading\Domain\Models\LoadingTask;
 use Modules\Operations\Loading\Domain\Models\VehicleAssignment;
 use Modules\Operations\Loading\Domain\Services\VehicleInventoryService;
@@ -148,6 +149,43 @@ final class LoadProductAction
                         // and an increment-with-negative aimed at a non-negative column
                         // reads like an accident waiting to underflow.
                         $assignment->decrement('loading_weight_kg', -$delta);
+                    }
+
+                    // TASK-...-IMPLEMENTATION-002 — REOPEN ON POST-COMPLETION CORRECTION.
+                    //
+                    // ┌─ THE GAP THIS CLOSES ────────────────────────────────────────────┐
+                    // │ LoadingTask::isDriverConfirmationCurrent() already derives that a  │
+                    // │ driver's confirmation is stale the moment quantity_loaded moves    │
+                    // │ (proven live on DEV, Architecture Task 001 §18). But nothing ever  │
+                    // │ acted on that once the ASSIGNMENT itself had already reached        │
+                    // │ LoadingComplete — the assignment's own status silently kept         │
+                    // │ claiming "done" while the task underneath it was, in truth, no       │
+                    // │ longer resolved.                                                    │
+                    // └──────────────────────────────────────────────────────────────────┘
+                    //
+                    // Reopening ONLY the assignment (Loading, not a new state) is enough:
+                    // it forces LoadingCustodyService::unresolvedLoadedTasks() — the exact
+                    // gate DriverLoadingController::complete() already runs — to see this
+                    // task's now-stale confirmation the next time completion is attempted,
+                    // without a second staleness engine and without touching the driver's
+                    // original confirmation record (kept intact for audit).
+                    $lockedAssignment = VehicleAssignment::query()
+                        ->whereKey($assignment->id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($lockedAssignment !== null) {
+                        $assignmentStatus = $lockedAssignment->status instanceof VehicleAssignmentStatus
+                            ? $lockedAssignment->status
+                            : VehicleAssignmentStatus::from((string) $lockedAssignment->status);
+
+                        if ($assignmentStatus === VehicleAssignmentStatus::LoadingComplete) {
+                            $lockedAssignment->update([
+                                'status' => VehicleAssignmentStatus::Loading->value,
+                                'loading_completed_at' => null,
+                                'updated_by' => $loadedBy,
+                            ]);
+                        }
                     }
                 }
 

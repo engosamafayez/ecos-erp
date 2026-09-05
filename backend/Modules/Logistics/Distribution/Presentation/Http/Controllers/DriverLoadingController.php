@@ -30,6 +30,7 @@ use Modules\Operations\Loading\Domain\Models\LoadingTask;
 use Modules\Operations\Loading\Domain\Models\LoadingTaskAdjustment;
 use Modules\Operations\Loading\Domain\Models\VehicleAssignment;
 use Modules\Operations\Loading\Domain\Services\LoadingCustodyService;
+use Modules\Operations\Loading\Domain\Services\LoadingSessionProgressCoordinator;
 use Modules\Operations\Loading\Domain\Services\StaleQuantityException;
 use RuntimeException;
 
@@ -68,6 +69,7 @@ final class DriverLoadingController extends Controller
         private readonly TripService $trips,
         private readonly GroupFinalizationService $groupFinalization,
         private readonly TransferLoadedStockToVehicleAction $custodyTransfer,
+        private readonly LoadingSessionProgressCoordinator $sessionCoordinator,
     ) {}
 
     /** GET /api/driver/loading — the current shipment loading manifest (read-only). */
@@ -292,6 +294,39 @@ final class DriverLoadingController extends Controller
         );
 
         /*
+         * MATERIALIZATION GATE — TASK-...-IMPLEMENTATION-002 (Architecture Task 001 §7/§18).
+         *
+         * ┌─ THE DEFECT THIS CLOSES ─────────────────────────────────────────────┐
+         * │ markLoading() above auto-advances Pending → Loading on ANY call to    │
+         * │ this method, and the custody gate below only inspects LOADED tasks —  │
+         * │ so a driver who never once called loadProduct() could still reach     │
+         * │ LoadingComplete with zero LoadingTask/VehicleInventoryItem rows        │
+         * │ (proven live on DEV: trip 276's assignment, Architecture 001 §18).     │
+         * └──────────────────────────────────────────────────────────────────────┘
+         *
+         * Only refuses when there is real cargo to account for. A Group with zero
+         * required products has nothing to materialize — that is the one legitimate
+         * zero-task case Architecture 001 §7 asked to be handled explicitly rather
+         * than silently allowed, and it is handled here by simply not triggering.
+         */
+        $requiredRows = $this->groupProductRows($group);
+        $hasRequiredCargo = false;
+
+        foreach ($requiredRows as $requiredRow) {
+            if ((float) ($requiredRow['total_quantity'] ?? 0.0) > 0.0) {
+                $hasRequiredCargo = true;
+
+                break;
+            }
+        }
+
+        if ($hasRequiredCargo && ! LoadingTask::query()->where('vehicle_assignment_id', $assignment->id)->exists()) {
+            return response()->json([
+                'message' => 'Loading cannot be completed: no products have been loaded yet for this shipment.',
+            ], 422);
+        }
+
+        /*
          * CUSTODY GATE — TASK-LOADING-DRIVER-COMPLETE-GATE-001.
          *
          * ┌─ THE DEFECT THIS CLOSES ─────────────────────────────────────────────┐
@@ -351,6 +386,18 @@ final class DriverLoadingController extends Controller
                     'loading_completed_at' => now(),
                     'updated_by' => (string) Auth::id(),
                 ]);
+
+                // PARENT SESSION COORDINATOR — TASK-...-IMPLEMENTATION-002 (Architecture
+                // Task 001 §5/§18). This assignment finishing may be the last one a shared
+                // LoadingSession was waiting on; the coordinator re-evaluates ALL of the
+                // session's assignments fresh and only advances the session when every one
+                // of them has independently reached a loading-terminal state — it never
+                // completes the session just because THIS assignment did.
+                $session = $assignment->loadingSession;
+
+                if ($session !== null) {
+                    $this->sessionCoordinator->advanceIfComplete($session, (string) Auth::id());
+                }
 
                 // Finalize the Group through the canonical service — THIS is what fills
                 // distribution_trip_orders, respecting the existing capacity split. No
@@ -584,11 +631,25 @@ final class DriverLoadingController extends Controller
             : VehicleAssignmentStatus::from((string) $assignment->status);
 
         if ($status === VehicleAssignmentStatus::Pending) {
-            $assignment->update([
-                'status' => VehicleAssignmentStatus::Loading->value,
-                'loading_started_at' => $assignment->loading_started_at ?? now(),
-                'updated_by' => (string) Auth::id(),
-            ]);
+            DB::transaction(function () use ($assignment): void {
+                $assignment->update([
+                    'status' => VehicleAssignmentStatus::Loading->value,
+                    'loading_started_at' => $assignment->loading_started_at ?? now(),
+                    'updated_by' => (string) Auth::id(),
+                ]);
+
+                // SESSION TRUTHFULNESS — TASK-...-IMPLEMENTATION-002 (Architecture Task
+                // 001 §6/§18). The first real loading action for ANY assignment under a
+                // shared LoadingSession is exactly the moment "loading has genuinely
+                // started" becomes true at the session grain too — reusing the same
+                // signal already used at the assignment grain above, so a session created
+                // via the Group/Trip flow no longer stays Draft forever.
+                $session = $assignment->loadingSession;
+
+                if ($session !== null) {
+                    $this->sessionCoordinator->ensureStarted($session, (string) Auth::id());
+                }
+            });
         }
     }
 }
