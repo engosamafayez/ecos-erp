@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\Purchasing\Suppliers\Application\Queries;
 
+use App\Core\Company\TenantOwnershipResolver;
 use Illuminate\Support\Facades\DB;
 use Modules\Inventory\ReceiptLayers\Domain\Models\InventoryReceiptLayer;
 use Modules\Purchasing\GoodsReceipts\Domain\Enums\GoodsReceiptStatus;
-use Modules\Purchasing\GoodsReceipts\Domain\Models\GoodsReceipt;
 use Modules\Purchasing\Suppliers\Domain\Exceptions\SupplierNotFoundException;
 use Modules\Purchasing\Suppliers\Domain\Models\Supplier;
 
@@ -27,7 +27,20 @@ final class GetSupplierAnalyticsQuery
         }
 
         // ── Purchasing totals from posted GRs ─────────────────────────────────
-        $purchasing = GoodsReceipt::query()
+        // TASK-ECOS-REPORTING-CROSS-DOMAIN-AND-FINANCIAL-REPORTS-004 §4/§24 fix: this block
+        // used to be `GoodsReceipt::query()->join('purchase_orders', ...)`. `GoodsReceipt` has
+        // its own Eloquent global scope adding an unqualified `where('company_id', ...)`;
+        // `purchase_orders` also has a `company_id` column, so once joined in the same
+        // builder, that predicate became genuinely ambiguous (fires for any real, scoped,
+        // non-system caller — found while wiring RPT-PROC-02 to this exact function, not a
+        // hypothetical). Rewritten on the plain query builder — `GoodsReceipt`'s Eloquent
+        // scope never runs on `DB::table()` — with an explicit, qualified
+        // `goods_receipts.company_id` filter added back in, matching every other block in
+        // this same method (`$leadTime`, `$deliveryRow`, `$fillRow`, ... already use
+        // `DB::table('goods_receipts as gr')`, just without the tenant filter, which was
+        // previously and only "safe" because `purchase_orders.supplier_id` is itself already
+        // scoped transitively via the `Supplier::query()->find($supplierId)` check above).
+        $purchasing = self::scopedGoodsReceipts()
             ->join('purchase_orders', 'goods_receipts.purchase_order_id', '=', 'purchase_orders.id')
             ->where('purchase_orders.supplier_id', $supplierId)
             ->where('goods_receipts.status', GoodsReceiptStatus::Posted->value)
@@ -152,5 +165,30 @@ final class GetSupplierAnalyticsQuery
             'pending_grs_count' => $pendingGrsCount,
             'total_products_supplied' => $totalProductsSupplied,
         ];
+    }
+
+    /**
+     * `goods_receipts` on the plain query builder, with the exact same fail-closed tenant
+     * semantics `GoodsReceipt`'s own Eloquent global scope applies — replicated explicitly
+     * because the plain query builder never runs a model's global scope, and this specific
+     * query needs to join to `purchase_orders` (also `company_id`-bearing) in one builder,
+     * which the Eloquent-scoped model could not safely do (see this method's only caller).
+     */
+    private static function scopedGoodsReceipts(): \Illuminate\Database\Query\Builder
+    {
+        $query = DB::table('goods_receipts');
+        $tenant = app(TenantOwnershipResolver::class);
+
+        if (! $tenant->appliesTo() || $tenant->isUnrestricted()) {
+            return $query;
+        }
+
+        $companyId = $tenant->companyId();
+
+        if ($companyId === null) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where('goods_receipts.company_id', $companyId);
     }
 }

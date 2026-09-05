@@ -180,8 +180,8 @@ final class ReportCatalogue
             self::make('RPT-INV-03', 'Stock Movements', $category,
                 [],
                 ReadStrategy::NewSourceOwnedQueryService, GapClassification::ReadySmallQueryRequired, true,
-                ['Modules\\Inventory\\StockLedger'],
-                'Movement log by type/date/warehouse. Source: StockLedgerEntry (canonical — never the legacy stock_movements table). UPSTREAM DATA QUALITY DEPENDENCY if the legacy stock_movements read path is ever accidentally reused — Reporting must not touch that controller at all.'),
+                ['Modules\\Inventory\\InventoryItems'],
+                'Movement log by type/date/warehouse. Source: StockLedgerEntry (canonical — never the legacy stock_movements table). Catalogue correction (TASK-ECOS-REPORTING-CROSS-DOMAIN-AND-FINANCIAL-REPORTS-004 §24): StockLedgerEntry lives in Modules\\Inventory\\InventoryItems, not Modules\\Inventory\\StockLedger — that namespace does not exist; StockMovement (the legacy model this report must never use) lives there instead. UPSTREAM DATA QUALITY DEPENDENCY if the legacy stock_movements read path is ever accidentally reused — Reporting must not touch that controller at all.'),
 
             self::make('RPT-INV-04', 'Shortage & Zero-Stock', $category,
                 ['MET-INV-04', 'MET-INV-05'],

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Purchasing\Suppliers\Application\Queries;
 
+use App\Core\Company\TenantOwnershipResolver;
+use Illuminate\Database\Eloquent\Builder;
 use Modules\Inventory\ReceiptLayers\Domain\Models\InventoryReceiptLayer;
 use Modules\Purchasing\GoodsReceipts\Domain\Enums\GoodsReceiptStatus;
 use Modules\Purchasing\GoodsReceipts\Domain\Models\GoodsReceipt;
@@ -14,6 +16,17 @@ final class GetSupplierSummaryStatsQuery
 {
     /**
      * Global KPI aggregates across all suppliers — used for the workspace header cards.
+     *
+     * TASK-ECOS-REPORTING-CROSS-DOMAIN-AND-FINANCIAL-REPORTS-004 §4/§24 fix: `open_pos_total`,
+     * `delayed_pos` (`PurchaseOrder`) and `total_inventory_value` (`InventoryReceiptLayer`)
+     * previously carried no `company_id` filter at all — a real cross-tenant data leak found
+     * while wiring RPT-PROC-01 to this function, not a hypothetical. `PurchaseOrder` and
+     * `InventoryReceiptLayer` carry their own `company_id` column but no Eloquent global scope
+     * (unlike `Order`/`Supplier`/`GoodsReceipt`), so nothing scoped them automatically. Fixed
+     * by resolving the same `TenantOwnershipResolver` authority `Order`'s own global scope
+     * uses, applied explicitly here — same fail-closed semantics (unrestricted actors see
+     * every company; a scoped actor with no company sees none; everyone else sees only their
+     * own), no signature change, so every existing caller is automatically corrected.
      *
      * @return array<string, mixed>
      */
@@ -27,12 +40,12 @@ final class GetSupplierSummaryStatsQuery
             ->whereMonth('created_at', now()->month)
             ->count();
 
-        $openPos = PurchaseOrder::query()
+        $openPos = self::scoped(PurchaseOrder::query())
             ->whereIn('status', ['approved', 'partially_received'])
             ->whereNull('deleted_at')
             ->count();
 
-        $delayedPos = PurchaseOrder::query()
+        $delayedPos = self::scoped(PurchaseOrder::query())
             ->whereIn('status', ['approved', 'partially_received'])
             ->whereNotNull('expected_date')
             ->where('expected_date', '<', now()->toDateString())
@@ -52,7 +65,7 @@ final class GetSupplierSummaryStatsQuery
         $totalPaid = (float) ($financials?->total_paid ?? 0);
         $totalOutstanding = max(0.0, $totalInvoiced - $totalPaid);
 
-        $totalInventoryValue = (float) (InventoryReceiptLayer::query()
+        $totalInventoryValue = (float) (self::scoped(InventoryReceiptLayer::query())
             ->where('remaining_qty', '>', 0)
             ->whereNotNull('supplier_id')
             ->selectRaw('COALESCE(SUM(remaining_qty * landed_unit_cost), 0) as total_value')
@@ -78,5 +91,39 @@ final class GetSupplierSummaryStatsQuery
             'total_inventory_value' => round($totalInventoryValue, 2),
             'needs_review_count' => $needsReviewCount,
         ];
+    }
+
+    /**
+     * Applies the exact same fail-closed tenant semantics as `Order`'s own Eloquent global
+     * scope (`Modules\Commerce\Orders\Domain\Models\Order::booted()`), replicated explicitly
+     * here because `PurchaseOrder`/`InventoryReceiptLayer` carry a `company_id` column but no
+     * global scope of their own: console/queue/unauthenticated context is left unfiltered
+     * (matches `appliesTo()`), an unrestricted (system-role) actor sees every company, a
+     * scoped actor with a resolved company id is filtered to it, and — critically — a scoped
+     * actor with NO resolvable company id gets a query-closing `1 = 0`, never a bare
+     * `where('company_id', null)` (Laravel's query builder turns that into `IS NULL`, which
+     * would wrongly match any row whose `company_id` happens to be null instead of returning
+     * nothing).
+     *
+     * @template TModel of \Illuminate\Database\Eloquent\Model
+     *
+     * @param  Builder<TModel>  $query
+     * @return Builder<TModel>
+     */
+    private static function scoped(Builder $query): Builder
+    {
+        $tenant = app(TenantOwnershipResolver::class);
+
+        if (! $tenant->appliesTo() || $tenant->isUnrestricted()) {
+            return $query;
+        }
+
+        $companyId = $tenant->companyId();
+
+        if ($companyId === null) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where('company_id', $companyId);
     }
 }
