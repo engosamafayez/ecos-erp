@@ -7,6 +7,7 @@ namespace Modules\Inventory\InventoryItems\Application\Queries;
 use DateTimeImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Operations\DemandAnalysis\Domain\Models\WaveMissingMaterial;
 use Modules\Operations\Preparation\Domain\Enums\WaveStatus;
 use Modules\Operations\Preparation\Domain\Models\PreparationWave;
@@ -32,6 +33,13 @@ use Modules\Reporting\Domain\ValueObjects\ReportResult;
  * InventoryItem row) for a given warehouse" — requires a LEFT JOIN from `products` to
  * `inventory_items` (a product with no row at all must count), so it cannot be expressed as
  * a plain `InventoryItem` query alone.
+ *
+ * TASK-ECOS-REPORTING-V1-SOURCE-REMEDIATION-007 §7 fix: `warehouse_id` was validated only
+ * for UUID format, never for ownership by the caller's company — a caller-supplied warehouse
+ * belonging to another company would silently make every one of the caller's own active
+ * products appear as zero-stock (no `inventory_items` row could ever match a foreign
+ * warehouse), a wrong answer rather than a clean rejection. Fixed by validating the
+ * warehouse belongs to the caller's own company explicitly, before either query runs.
  */
 final class ShortageAndZeroStockQuery implements ReportHandlerInterface
 {
@@ -54,6 +62,13 @@ final class ShortageAndZeroStockQuery implements ReportHandlerInterface
     public function execute(ReportQueryContext $context, array $filters): ReportResult
     {
         $warehouseId = $filters['warehouse_id'];
+
+        // Fail closed before either query below runs — never rely on referential
+        // integrity or an incidental empty result to keep a foreign warehouse out.
+        Warehouse::query()
+            ->where('id', $warehouseId)
+            ->where('company_id', $context->companyId)
+            ->firstOrFail();
 
         // MET-INV-04 — Stock Shortage (Material), summed across active waves in this warehouse.
         $activeWaveIds = PreparationWave::query()

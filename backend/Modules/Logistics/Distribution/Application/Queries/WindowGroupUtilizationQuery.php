@@ -6,6 +6,7 @@ namespace Modules\Logistics\Distribution\Application\Queries;
 
 use DateTimeImmutable;
 use Illuminate\Support\Facades\Validator;
+use Modules\Logistics\Distribution\Domain\Models\DistributionWindow;
 use Modules\Logistics\Distribution\Domain\Models\VirtualCapacitySlot;
 use Modules\Logistics\Distribution\Domain\Services\DistributionAggregationService;
 use Modules\Reporting\Domain\Contracts\ReportHandlerInterface;
@@ -27,6 +28,16 @@ use Modules\Reporting\Domain\ValueObjects\ReportResult;
  * `VehicleTripUtilizationQuery` for that separate metric).
  *
  * `VirtualCapacitySlot` carries `company_id` but no global scope — filtered explicitly.
+ *
+ * TASK-ECOS-REPORTING-V1-SOURCE-REMEDIATION-007 §8 fix: `slotOrderCounts()` used to be
+ * called with the raw, caller-supplied `window_id` before any explicit ownership check —
+ * the company-scoped `$slots` query happening to come back empty for a foreign window
+ * meant the HTTP response was harmless in practice, but the aggregation service still ran
+ * real queries against another company's window first, an incidental safety net rather
+ * than a deliberate precondition. Fixed by validating the window belongs to the caller's
+ * own company explicitly, up front, before calling the aggregation at all — the same
+ * `findOrFail()`-then-continue pattern already established by `SupplierScorecardQuery`
+ * (Task 4).
  */
 final class WindowGroupUtilizationQuery implements ReportHandlerInterface
 {
@@ -55,6 +66,13 @@ final class WindowGroupUtilizationQuery implements ReportHandlerInterface
     public function execute(ReportQueryContext $context, array $filters): ReportResult
     {
         $windowId = $filters['window_id'];
+
+        // Fail closed BEFORE any aggregation runs — never after, and never merely inferred
+        // from the slots query happening to come back empty.
+        DistributionWindow::query()
+            ->where('id', $windowId)
+            ->where('company_id', $context->companyId)
+            ->firstOrFail();
 
         $slots = VirtualCapacitySlot::query()
             ->where('company_id', $context->companyId)

@@ -119,6 +119,47 @@ final class EnterpriseCostEngine
     }
 
     /**
+     * Canonical FIFO inventory value for an entire company (optionally one warehouse
+     * within it), grouped by product — the one bulk-capable sibling of
+     * {@see self::inventoryValue()}, which is per-product only by design (looping it
+     * to build a company-wide total would be a real N+1: one query per product).
+     *
+     * TASK-ECOS-REPORTING-V1-SOURCE-REMEDIATION-007 §5: added so Reporting's inventory
+     * valuation report can consume this engine directly instead of independently
+     * mirroring the FIFO formula — reads the exact same `inventory_receipt_layers`
+     * data {@see self::fifoInventoryValue()} reads for a single product, at the
+     * row-set grain instead of the single-row grain. This is the same formula and
+     * the same data source, never a second valuation strategy: FIFO only, matching
+     * `CostStrategy::canonical()` — Average/Standard bulk valuation is not exposed
+     * here since neither is the enterprise default and no caller has needed it yet.
+     * Purely additive: no existing method's signature or behavior changes.
+     *
+     * @return list<array{product_id: string, remaining_qty: float, value: float}>
+     */
+    public function fifoInventoryValueByProduct(string $companyId, ?string $warehouseId = null): array
+    {
+        $query = DB::table('inventory_receipt_layers')
+            ->where('company_id', $companyId)
+            ->where('remaining_qty', '>', 0);
+
+        if ($warehouseId !== null) {
+            $query->where('warehouse_id', $warehouseId);
+        }
+
+        return $query
+            ->selectRaw('product_id, COALESCE(SUM(remaining_qty), 0) as remaining_qty, COALESCE(SUM(remaining_qty * landed_unit_cost), 0) as value')
+            ->groupBy('product_id')
+            ->orderByDesc('value')
+            ->get()
+            ->map(static fn (object $row): array => [
+                'product_id' => $row->product_id,
+                'remaining_qty' => round((float) $row->remaining_qty, 4),
+                'value' => round((float) $row->value, 4),
+            ])
+            ->all();
+    }
+
+    /**
      * FIFO valuation: sum of every open layer's remaining value.
      * Company-scoped when a company id is supplied.
      */
