@@ -73,6 +73,7 @@ import type enRawMaterials from '@/i18n/locales/en/raw-materials.json';
 import type enReceivingCenter from '@/i18n/locales/en/receiving-center.json';
 import type enRecipes from '@/i18n/locales/en/recipes.json';
 import type enSettings from '@/i18n/locales/en/settings.json';
+import type enShippingOrders from '@/i18n/locales/en/shipping-orders.json';
 import type enStockLedger from '@/i18n/locales/en/stock-ledger.json';
 import type enStockSync from '@/i18n/locales/en/stock-sync.json';
 import type enStockTransfers from '@/i18n/locales/en/stock-transfers.json';
@@ -136,6 +137,7 @@ declare module 'i18next' {
       'receiving-center': typeof enReceivingCenter;
       recipes: typeof enRecipes;
       settings: typeof enSettings;
+      'shipping-orders': typeof enShippingOrders;
       'stock-ledger': typeof enStockLedger;
       'stock-sync': typeof enStockSync;
       'stock-transfers': typeof enStockTransfers;

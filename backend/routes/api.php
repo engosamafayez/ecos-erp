@@ -223,6 +223,7 @@ use Modules\Operations\Loading\Presentation\Http\Controllers\LoadingDashboardCon
 use Modules\Operations\Loading\Presentation\Http\Controllers\LoadingExceptionController;
 use Modules\Operations\Loading\Presentation\Http\Controllers\LoadingSessionController;
 use Modules\Operations\Loading\Presentation\Http\Controllers\ShipmentGroupController;
+use Modules\Operations\ShippingOrders\Presentation\Http\Controllers\ShippingOrderController;
 use Modules\Operations\Loading\Presentation\Http\Controllers\VehicleAssignmentController;
 use Modules\Operations\Loading\Presentation\Http\Controllers\VehicleInventoryController;
 use Modules\Operations\Loading\Presentation\Http\Controllers\VehicleShiftReconciliationController;
@@ -1843,6 +1844,31 @@ Route::middleware('auth:sanctum')->prefix('logistics/distribution')->group(funct
     Route::put('/zones/{id}', [DistributionZoneController::class, 'update'])->middleware('permission:logistics.distribution.update');
     Route::delete('/zones/{id}', [DistributionZoneController::class, 'destroy'])->middleware('permission:logistics.distribution.delete');
     Route::patch('/zones/{id}/status', [DistributionZoneController::class, 'toggleStatus'])->middleware('permission:logistics.distribution.update');
+});
+
+// ── Shipping Orders — TASK-ECOS-OPERATIONS-SHIPPING-ORDERS-IMPLEMENTATION-002 ────
+// Office/operations monitoring page across Drivers/Trips/Orders. Read-only — no
+// mutation route lives here; Driver operational actions remain on the existing
+// canonical Driver runtime routes. Gated on the EXISTING `logistics.distribution.view`
+// permission rather than a new one: config/permissions.php is a SEED SOURCE
+// (Modules\IAM\Infrastructure\Database\Seeders\RbacSeeder reads it into the
+// role_permissions table — confirmed by reading the seeder directly) — a brand-new
+// permission string added there would be inert until that seeder runs, which this
+// task's freeze does not authorize (no migration/seed). `logistics.distribution.view`
+// is already granted, in the live database, to exactly the roles this page is for
+// (dispatcher, shipping-coordinator, fleet-manager, company-admin, system-auditor —
+// confirmed in config/permissions.php's role blocks). This task's own §36 asks for
+// "Operations/Distribution/Shipping view permission authority" specifically (not a
+// Sales one) and to "reuse the closest existing approved view authority" if no exact
+// dedicated permission exists — Architecture-001 §31 separately named dormant
+// `sales.orders.view` (Sales-namespaced, granted to sales/sales-manager/viewer, not
+// this page's operational audience) or a brand-new `operations.shipping_orders.view`
+// as its two options; `logistics.distribution.view` is neither, but matches both the
+// Distribution/Shipping naming §36 asks for AND the actual role set this page needs,
+// without requiring a new permission + seed run.
+Route::middleware('auth:sanctum')->prefix('operations/shipping-orders')->group(function (): void {
+    Route::get('/', [ShippingOrderController::class, 'index'])
+        ->middleware('permission:logistics.distribution.view');
 });
 
 // ── Shipping Distribution Core — Windows / Zones / Virtual Capacity Slots ────

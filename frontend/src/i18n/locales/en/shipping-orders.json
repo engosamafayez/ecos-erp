@@ -1,0 +1,44 @@
+{
+  "pageTitle": "Shipping Orders",
+  "tabs": {
+    "all": "All"
+  },
+  "classifications": {
+    "assigned_driver": "Assigned Driver",
+    "out_for_delivery": "Out for Delivery",
+    "delivered": "Delivered",
+    "postponed": "Postponed",
+    "no_answer": "No Answer",
+    "cancelled": "Cancelled"
+  },
+  "paymentStatus": {
+    "unpaid": "Unpaid",
+    "partially_paid": "Partially Paid",
+    "paid": "Paid"
+  },
+  "columns": {
+    "orderNumber": "Order Number",
+    "brand": "Brand",
+    "customer": "Customer",
+    "orderValue": "Order Value",
+    "shippingStatus": "Shipping Status",
+    "shippingCompany": "Shipping Company",
+    "driver": "Driver",
+    "address": "Address"
+  },
+  "internalFleet": "Own Fleet",
+  "viewLocation": "View Location",
+  "noLocation": "No location available",
+  "searchPlaceholder": "Order number, customer, driver…",
+  "filters": {
+    "dateFrom": "From date",
+    "dateTo": "To date",
+    "allBrands": "All Brands",
+    "allShippingCompanies": "All Shipping Companies",
+    "allDrivers": "All Drivers",
+    "allPaymentStatuses": "All Payment Statuses"
+  },
+  "table": {
+    "empty": "No shipping orders found."
+  }
+}

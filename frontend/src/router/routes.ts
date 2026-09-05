@@ -119,6 +119,9 @@ export const ROUTES = {
   // T-04/T-05 convergence: Stack B operator workspace (approved Operations\Loading backend)
   loadingOsWorkspace:     '/operations/loading/workspace',
   dispatchGate:           '/operations/dispatch-gate',
+  // TASK-ECOS-OPERATIONS-SHIPPING-ORDERS-IMPLEMENTATION-002 — office monitoring page,
+  // navigation position: Operations → Shipping Orders → Driver/Day Settlement.
+  shippingOrders:         '/operations/shipping-orders',
   // Preparation Workspace shell (TASK-PREPARATION-WORKSPACE-FIX-003 §3) — the single
   // Operations sidebar destination; Today's Preparation / Archive / Settings are its tabs.
   preparationWorkspace: '/operations/preparation',

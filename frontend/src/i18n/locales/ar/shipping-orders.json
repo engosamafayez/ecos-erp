@@ -1,0 +1,44 @@
+{
+  "pageTitle": "طلبات الشحن",
+  "tabs": {
+    "all": "الكل"
+  },
+  "classifications": {
+    "assigned_driver": "تعيين سواق",
+    "out_for_delivery": "خارج للتسليم",
+    "delivered": "تم التسليم",
+    "postponed": "تأجيل",
+    "no_answer": "لا يرد",
+    "cancelled": "إلغاء"
+  },
+  "paymentStatus": {
+    "unpaid": "غير مدفوع",
+    "partially_paid": "مدفوع جزئيًا",
+    "paid": "مدفوع"
+  },
+  "columns": {
+    "orderNumber": "رقم الطلب",
+    "brand": "البراند",
+    "customer": "العميل",
+    "orderValue": "قيمة الطلب",
+    "shippingStatus": "حالة الشحن",
+    "shippingCompany": "شركة الشحن",
+    "driver": "المندوب",
+    "address": "العنوان"
+  },
+  "internalFleet": "أسطول داخلي",
+  "viewLocation": "عرض الموقع",
+  "noLocation": "لا يوجد موقع متاح",
+  "searchPlaceholder": "رقم الطلب، العميل، المندوب…",
+  "filters": {
+    "dateFrom": "من تاريخ",
+    "dateTo": "إلى تاريخ",
+    "allBrands": "كل البراندات",
+    "allShippingCompanies": "كل شركات الشحن",
+    "allDrivers": "كل السائقين",
+    "allPaymentStatuses": "كل حالات الدفع"
+  },
+  "table": {
+    "empty": "لا توجد طلبات شحن."
+  }
+}

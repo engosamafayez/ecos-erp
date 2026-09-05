@@ -233,6 +233,9 @@ const ALL_MODULES: AppModule[] = [
       // planning page); the /logistics/distribution/planning deep link redirects here.
       { key: 'logistics-distribution-plan', path: ROUTES.logisticsDistributionWorkspace, icon: ListOrdered },
       { key: 'loading-workspace', path: ROUTES.loadingOsWorkspace, icon: PackageCheck },
+      // TASK-ECOS-OPERATIONS-SHIPPING-ORDERS-IMPLEMENTATION-002 — Architecture-001 §32's
+      // approved insertion point: immediately before Driver/Day Settlement.
+      { key: 'shipping-orders', path: ROUTES.shippingOrders, icon: Truck },
       { key: 'driver-day-settlement', path: ROUTES.logisticsDriverSettlement, icon: Wallet },
     ],
   },
