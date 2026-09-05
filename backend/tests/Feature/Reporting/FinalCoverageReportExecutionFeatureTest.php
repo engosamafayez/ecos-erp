@@ -8,28 +8,44 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Modules\Finance\Fiscal\Domain\Enums\FiscalYearStatus;
+use Modules\Finance\Fiscal\Domain\Enums\PeriodStatus;
+use Modules\Finance\Fiscal\Domain\Models\FiscalPeriod;
+use Modules\Finance\Fiscal\Domain\Models\FiscalYear;
+use Modules\Finance\Ledger\Domain\Enums\AccountCategory;
+use Modules\Finance\Ledger\Domain\Enums\AccountType;
+use Modules\Finance\Ledger\Domain\Enums\JournalStatus;
+use Modules\Finance\Ledger\Domain\Models\Account;
+use Modules\Finance\Ledger\Domain\Models\JournalEntry;
+use Modules\Finance\Payables\Domain\Enums\SupplierDocumentType;
+use Modules\Finance\Payables\Domain\Enums\SupplierLedgerEntryType;
+use Modules\Finance\Payables\Domain\Models\SupplierBill;
+use Modules\Finance\Payables\Domain\Models\SupplierLedgerEntry;
+use Modules\Finance\Receivables\Domain\Enums\CustomerDocumentType;
+use Modules\Finance\Receivables\Domain\Enums\CustomerLedgerEntryType;
+use Modules\Finance\Receivables\Domain\Models\CustomerInvoice;
+use Modules\Finance\Receivables\Domain\Models\CustomerLedgerEntry;
+use Modules\Finance\Shared\Domain\Enums\DocumentStatus;
 use Modules\IAM\Domain\Models\Permission;
 use Modules\IAM\Domain\Models\Role;
-use Modules\Inventory\InventoryItems\Domain\Models\InventoryItem;
 use Modules\Inventory\Products\Domain\Models\Product;
-use Modules\Inventory\ReceiptLayers\Domain\Models\InventoryReceiptLayer;
-use Modules\Logistics\Distribution\Domain\Enums\DeliveryStopStatus;
-use Modules\Logistics\Distribution\Domain\Models\DeliveryStop;
-use Modules\Logistics\Distribution\Domain\Models\Trip;
-use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
+use Modules\Organization\Brands\Domain\Models\Brand;
 use Modules\Organization\Companies\Domain\Models\Company;
-use Modules\Purchasing\GoodsReceipts\Domain\Models\GoodsReceipt;
-use Modules\Purchasing\PurchaseOrders\Domain\Models\PurchaseOrder;
 use Modules\Purchasing\Suppliers\Domain\Models\Supplier;
+use Modules\Sales\Customers\Domain\Models\Customer;
 use Tests\TestCase;
 
 /**
- * TASK-ECOS-REPORTING-CROSS-DOMAIN-AND-FINANCIAL-REPORTS-004 §21 — end-to-end, real-MySQL
- * verification of the second tranche (Inventory, Procurement, Preparation, Distribution,
- * Drivers). Fast-baseline schema (§20): curated `--path` list, extending Task 3's own with
- * every module this tranche's handlers actually touch.
+ * TASK-ECOS-REPORTING-V1-FINAL-COVERAGE-AND-SOURCE-CLOSURE-005 §20 — end-to-end,
+ * real-MySQL verification of the final tranche (Executive, Products, Customer/Procurement
+ * Finance thin-proxies, Financial). Fast-baseline schema (§19): Task 4's own migration list
+ * extended with Order snapshot tables (RPT-PROD-03) and a curated, individually-listed
+ * Finance schema (Finance has no per-submodule migration directories — every migration
+ * lives in one flat `Modules/Finance/Infrastructure/Database/Migrations` folder, confirmed
+ * by direct inspection — so whole-directory `--path` entries are not available here the way
+ * they are for IAM/Companies/etc.).
  */
-final class CrossDomainReportExecutionFeatureTest extends TestCase
+final class FinalCoverageReportExecutionFeatureTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -126,17 +142,13 @@ final class CrossDomainReportExecutionFeatureTest extends TestCase
                 'Modules/Sales/Customers/Infrastructure/Database/Migrations/2026_09_15_100000_create_customer_blocks_table.php',
                 'Modules/Sales/Customers/Infrastructure/Database/Migrations/2026_09_15_100001_create_order_block_overrides_table.php',
                 'Modules/Reporting/Infrastructure/Database/Migrations/2026_09_04_100000_seed_reporting_permissions_table.php',
-                // TASK-ECOS-REPORTING-V1-FINAL-COVERAGE-AND-SOURCE-CLOSURE-005 — Laravel's
-                // RefreshDatabaseState::$migrated flag is process-wide, not per-class: only
-                // the FIRST test class to run in a given PHPUnit invocation actually gets its
-                // migrateFreshUsing() executed, and every other RefreshDatabase test class in
-                // the same run reuses that same schema. Since this suite always runs alongside
-                // the Task 5 Feature test class, every Reporting Feature test class's migration
-                // list must be a superset covering Task 5's needs too, regardless of run order.
+                // Task 5 — Order financial/line snapshots (RPT-PROD-03)
                 'Modules/Commerce/Orders/Infrastructure/Database/Migrations/2026_07_06_400000_create_order_financial_snapshots_table.php',
                 'Modules/Commerce/Orders/Infrastructure/Database/Migrations/2026_07_06_400001_create_order_line_snapshots_table.php',
                 'Modules/Commerce/Orders/Infrastructure/Database/Migrations/2026_07_06_400002_enhance_order_financial_snapshots_table.php',
                 'Modules/Commerce/Orders/Infrastructure/Database/Migrations/2026_07_06_400003_enhance_order_line_snapshots_table.php',
+                // Task 5 — Finance (one flat migrations directory; individually listed, never
+                // the whole ~90-file folder — confirmed no per-submodule split exists)
                 'Modules/Finance/Infrastructure/Database/Migrations/2026_08_10_100000_create_finance_fiscal_years_table.php',
                 'Modules/Finance/Infrastructure/Database/Migrations/2026_08_10_100001_create_finance_fiscal_periods_table.php',
                 'Modules/Finance/Infrastructure/Database/Migrations/2026_08_10_100002_create_finance_accounts_table.php',
@@ -197,211 +209,310 @@ final class CrossDomainReportExecutionFeatureTest extends TestCase
         return $user;
     }
 
-    // ── B: authorization — one check per new category ──────────────────────
-
-    public function test_authorized_inventory_request_succeeds(): void
+    /** @return array{period: FiscalPeriod, revenue_account_id: string, ar_account_id: string} */
+    private function setUpFinanceFixtures(): array
     {
-        $user = $this->userWithPermission('reports.inventory.view');
-        $response = $this->actingAs($user)->getJson('/api/reporting/reports/RPT-INV-01/execute');
-        $response->assertOk();
-        $this->assertSame('RPT-INV-01', $response->json('data.report_id'));
-    }
-
-    public function test_authorized_procurement_request_succeeds(): void
-    {
-        $user = $this->userWithPermission('reports.procurement.view');
-        $response = $this->actingAs($user)->getJson('/api/reporting/reports/RPT-PROC-01/execute');
-        $response->assertOk();
-    }
-
-    public function test_authorized_preparation_request_succeeds(): void
-    {
-        $user = $this->userWithPermission('reports.preparation.view');
-        $response = $this->actingAs($user)->getJson('/api/reporting/reports/RPT-PREP-01/execute');
-        $response->assertOk();
-    }
-
-    public function test_authorized_distribution_request_succeeds(): void
-    {
-        $user = $this->userWithPermission('reports.distribution.view');
-        $response = $this->actingAs($user)->getJson('/api/reporting/reports/RPT-DIST-02/execute');
-        $response->assertOk();
-    }
-
-    public function test_authorized_drivers_request_requires_its_own_permission(): void
-    {
-        $user = $this->userWithPermission('reports.inventory.view'); // wrong category on purpose
-        $driver = DB::table('logistics_drivers')->insertGetId([
-            'driver_code' => 'D-1', 'full_name' => 'Driver One',
-            'mobile' => '01000000000', 'national_id' => '11111111111111', 'status' => 'active',
-            'company_id' => $this->company->id, 'created_at' => now(), 'updated_at' => now(),
+        $year = FiscalYear::query()->create([
+            'company_id' => $this->company->id, 'name' => 'FY2026',
+            'start_date' => '2026-01-01', 'end_date' => '2026-12-31', 'status' => FiscalYearStatus::Open,
+        ]);
+        $period = FiscalPeriod::query()->create([
+            'company_id' => $this->company->id, 'fiscal_year_id' => $year->id, 'period_number' => 1,
+            'name' => 'Jan 2026', 'start_date' => '2026-01-01', 'end_date' => '2026-01-31',
+            'status' => PeriodStatus::Open,
         ]);
 
-        $response = $this->actingAs($user)->getJson("/api/reporting/reports/RPT-DRV-03/execute?driver_id={$driver}&month=2026-04");
+        $ar = Account::query()->create([
+            'company_id' => $this->company->id, 'code' => '1310', 'name' => 'Trade Receivables',
+            'account_type' => AccountType::Asset, 'account_category' => AccountCategory::CurrentAsset,
+            'is_control' => true, 'control_subledger' => 'ar',
+        ]);
+        $ap = Account::query()->create([
+            'company_id' => $this->company->id, 'code' => '2110', 'name' => 'Trade Payables',
+            'account_type' => AccountType::Liability, 'account_category' => AccountCategory::CurrentLiability,
+            'is_control' => true, 'control_subledger' => 'ap',
+        ]);
+        $bank = Account::query()->create([
+            'company_id' => $this->company->id, 'code' => '1210', 'name' => 'Bank — Current Accounts',
+            'account_type' => AccountType::Asset, 'account_category' => AccountCategory::CurrentAsset,
+        ]);
+        $revenue = Account::query()->create([
+            'company_id' => $this->company->id, 'code' => '4110', 'name' => 'Product Sales',
+            'account_type' => AccountType::Revenue, 'account_category' => AccountCategory::OperatingRevenue,
+        ]);
+
+        $entry = JournalEntry::query()->create([
+            'company_id' => $this->company->id, 'fiscal_period_id' => $period->id,
+            'entry_date' => '2026-01-15', 'status' => JournalStatus::Posted,
+        ]);
+        $entry->lines()->createMany([
+            ['account_id' => $bank->id, 'debit' => 1000, 'credit' => 0, 'company_id' => $this->company->id, 'line_number' => 1],
+            ['account_id' => $revenue->id, 'debit' => 0, 'credit' => 1000, 'company_id' => $this->company->id, 'line_number' => 2],
+        ]);
+
+        return ['period' => $period, 'revenue_account_id' => $revenue->id, 'ar_account_id' => $ar->id, 'ap_account_id' => $ap->id];
+    }
+
+    // ── B: authorization — one check per new category, plus co-gating ──────
+
+    public function test_authorized_products_request_succeeds(): void
+    {
+        $user = $this->userWithPermission('reports.products.view');
+        $response = $this->actingAs($user)->getJson('/api/reporting/reports/RPT-PROD-01/execute');
+        $response->assertOk();
+        $this->assertSame('RPT-PROD-01', $response->json('data.report_id'));
+    }
+
+    public function test_authorized_executive_request_succeeds(): void
+    {
+        $this->setUpFinanceFixtures();
+        $user = $this->userWithPermission('reports.executive.view');
+        $response = $this->actingAs($user)->getJson('/api/reporting/reports/RPT-EXEC-03/execute');
+        $response->assertOk();
+    }
+
+    public function test_authorized_finance_request_succeeds(): void
+    {
+        $this->setUpFinanceFixtures();
+        $user = $this->userWithPermission('reports.finance.view');
+        $response = $this->actingAs($user)->getJson('/api/reporting/reports/RPT-FIN-01/execute');
+        $response->assertOk();
+    }
+
+    public function test_customer_outstanding_ar_requires_the_cogated_finance_permission(): void
+    {
+        $customer = Customer::factory()->create(['company_id' => $this->company->id]);
+        // Holds the category permission but NOT finance.ar.view — the co-gate must still deny.
+        $user = $this->userWithPermission('reports.customers.view');
+
+        $response = $this->actingAs($user)->getJson("/api/reporting/reports/RPT-CUST-03/execute?customer_id={$customer->id}");
         $response->assertForbidden();
     }
 
-    // ── D/Regression: the two real defects this task found and fixed ───────
-
-    public function test_supplier_summary_stats_is_tenant_scoped_after_the_fix(): void
+    public function test_customer_outstanding_ar_succeeds_with_both_permissions(): void
     {
-        $otherCompany = Company::factory()->create();
-        $warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
+        $customer = Customer::factory()->create(['company_id' => $this->company->id]);
+        $user = $this->userWithPermission('reports.customers.view', 'finance.ar.view');
 
-        PurchaseOrder::query()->create([
-            'company_id' => $this->company->id, 'supplier_id' => Supplier::factory()->create(['company_id' => $this->company->id])->id,
-            'po_number' => 'PO-MINE', 'status' => 'approved', 'order_date' => now()->toDateString(), 'warehouse_id' => $warehouse->id,
-            'subtotal' => 0, 'total' => 0,
-        ]);
-        // A purchase order belonging to a DIFFERENT company — must never be counted.
-        $otherWarehouse = Warehouse::factory()->create(['company_id' => $otherCompany->id]);
-        PurchaseOrder::query()->create([
-            'company_id' => $otherCompany->id, 'supplier_id' => Supplier::factory()->create(['company_id' => $otherCompany->id])->id,
-            'po_number' => 'PO-OTHER', 'status' => 'approved', 'order_date' => now()->toDateString(), 'warehouse_id' => $otherWarehouse->id,
-            'subtotal' => 0, 'total' => 0,
-        ]);
-
-        $user = $this->userWithPermission('reports.procurement.view');
-        $response = $this->actingAs($user)->getJson('/api/reporting/reports/RPT-PROC-01/execute');
-
+        $response = $this->actingAs($user)->getJson("/api/reporting/reports/RPT-CUST-03/execute?customer_id={$customer->id}");
         $response->assertOk();
-        $this->assertSame(1, $response->json('data.totals.open_pos_total'), 'GetSupplierSummaryStatsQuery must count only the caller\'s own company\'s open POs after the tenant-scoping fix.');
     }
 
-    public function test_supplier_analytics_query_executes_without_an_ambiguous_column_error(): void
+    public function test_supplier_statement_requires_the_cogated_finance_permission(): void
     {
         $supplier = Supplier::factory()->create(['company_id' => $this->company->id]);
-        $warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $po = PurchaseOrder::query()->create([
-            'company_id' => $this->company->id, 'supplier_id' => $supplier->id, 'po_number' => 'PO-1',
-            'status' => 'approved', 'order_date' => now()->toDateString(), 'warehouse_id' => $warehouse->id,
-            'subtotal' => 0, 'total' => 0,
-        ]);
-        GoodsReceipt::query()->create([
-            'company_id' => $this->company->id, 'purchase_order_id' => $po->id,
-            'warehouse_id' => $warehouse->id, 'receipt_number' => 'GR-1', 'status' => 'posted',
-            'receipt_date' => now()->toDateString(), 'invoice_total_amount' => 500, 'paid_amount' => 200,
-        ]);
-
         $user = $this->userWithPermission('reports.procurement.view');
-        // The specific query historically threw "column reference company_id is ambiguous"
-        // for any real, scoped, non-system caller — proving no exception is thrown here IS
-        // the regression proof.
-        $response = $this->actingAs($user)->getJson("/api/reporting/reports/RPT-PROC-02/execute?supplier_id={$supplier->id}");
 
-        $response->assertOk();
-        $this->assertSame(1, $response->json('data.totals.analytics.total_purchases'));
+        $response = $this->actingAs($user)->getJson("/api/reporting/reports/RPT-PROC-03/execute?supplier_id={$supplier->id}");
+        $response->assertForbidden();
     }
 
     // ── D: source authority correctness ─────────────────────────────────────
 
-    public function test_stock_on_hand_reads_available_and_reserved_correctly(): void
+    public function test_trial_balance_reads_posted_journal_lines(): void
     {
-        $user = $this->userWithPermission('reports.inventory.view');
-        $warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $product = Product::factory()->create(['company_id' => $this->company->id]);
-        InventoryItem::query()->create([
-            'company_id' => $this->company->id, 'warehouse_id' => $warehouse->id, 'product_id' => $product->id,
-            'on_hand_qty' => 100, 'reserved_qty' => 30,
-        ]);
+        $fixtures = $this->setUpFinanceFixtures();
+        $user = $this->userWithPermission('reports.finance.view');
 
-        $response = $this->actingAs($user)->getJson('/api/reporting/reports/RPT-INV-01/execute');
+        $response = $this->actingAs($user)->getJson('/api/reporting/reports/RPT-FIN-01/execute');
 
         $response->assertOk();
-        $this->assertEquals(70.0, $response->json('data.kpis.MET-INV-01'));
-        $this->assertEquals(30.0, $response->json('data.kpis.MET-INV-02'));
+        $this->assertSame(1000.0, (float) $response->json('data.totals.total_debit'));
+        $this->assertSame(1000.0, (float) $response->json('data.totals.total_credit'));
+        $this->assertTrue($response->json('data.totals.is_balanced'));
     }
 
-    public function test_inventory_valuation_uses_the_same_fifo_formula_as_the_cost_engine(): void
+    public function test_income_statement_revenue_matches_posted_journal_lines(): void
     {
-        $user = $this->userWithPermission('reports.inventory.view');
-        $warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $product = Product::factory()->create(['company_id' => $this->company->id]);
+        $this->setUpFinanceFixtures();
+        $user = $this->userWithPermission('reports.finance.view');
+
+        $response = $this->actingAs($user)->getJson('/api/reporting/reports/RPT-FIN-02/execute?statement_type=income_statement&date_from=2026-01-01&date_to=2026-01-31');
+
+        $response->assertOk();
+        $this->assertEquals(1000.0, $response->json('data.kpis.MET-FIN-01'));
+    }
+
+    public function test_ar_ap_aging_reads_from_finance_not_commerce(): void
+    {
+        $this->setUpFinanceFixtures();
+        $customer = Customer::factory()->create(['company_id' => $this->company->id]);
+        CustomerInvoice::query()->create([
+            'company_id' => $this->company->id, 'customer_id' => $customer->id, 'number' => 'INV-1',
+            'invoice_date' => '2026-01-10', 'document_type' => CustomerDocumentType::Invoice,
+            'status' => DocumentStatus::Posted, 'total' => 500,
+        ]);
         $supplier = Supplier::factory()->create(['company_id' => $this->company->id]);
-        InventoryReceiptLayer::query()->create([
-            'company_id' => $this->company->id, 'supplier_id' => $supplier->id, 'product_id' => $product->id,
-            'warehouse_id' => $warehouse->id, 'received_qty' => 10, 'remaining_qty' => 10,
-            'landed_unit_cost' => 25.0, 'receipt_date' => now()->toDateString(),
+        SupplierBill::query()->create([
+            'company_id' => $this->company->id, 'supplier_id' => $supplier->id, 'number' => 'BILL-1',
+            'bill_date' => '2026-01-10', 'document_type' => SupplierDocumentType::Bill,
+            'status' => DocumentStatus::Posted, 'total' => 350,
         ]);
+        $user = $this->userWithPermission('reports.finance.view');
 
-        $response = $this->actingAs($user)->getJson('/api/reporting/reports/RPT-INV-02/execute');
+        $response = $this->actingAs($user)->getJson('/api/reporting/reports/RPT-FIN-03/execute');
 
         $response->assertOk();
-        $this->assertEquals(250.0, $response->json('data.kpis.MET-INV-03'));
+        $this->assertEquals(500.0, $response->json('data.kpis.MET-FIN-02'));
+        $this->assertEquals(350.0, $response->json('data.kpis.MET-FIN-03'));
     }
 
-    public function test_delivery_performance_reads_delivery_stop_not_a_reconstructed_figure(): void
+    public function test_customer_outstanding_ar_reads_customer_ledger_entries(): void
     {
-        $user = $this->userWithPermission('reports.distribution.view');
-        $trip = Trip::query()->create(['company_id' => $this->company->id, 'trip_number' => 'T-1', 'name' => 'Trip 1', 'capacity' => 60]);
-        $order = $this->minimalOrder();
-        DeliveryStop::query()->create(['trip_id' => $trip->id, 'order_id' => $order, 'status' => DeliveryStopStatus::Delivered->value, 'attempted_at' => now(), 'completed_at' => now()->addMinutes(20), 'sequence' => 1]);
-        $order2 = $this->minimalOrder();
-        DeliveryStop::query()->create(['trip_id' => $trip->id, 'order_id' => $order2, 'status' => DeliveryStopStatus::Failed->value, 'attempted_at' => now(), 'sequence' => 2]);
+        $customer = Customer::factory()->create(['company_id' => $this->company->id]);
+        CustomerLedgerEntry::query()->create([
+            'company_id' => $this->company->id, 'customer_id' => $customer->id,
+            'entry_date' => '2026-01-10', 'entry_type' => CustomerLedgerEntryType::Invoice, 'amount' => 300,
+        ]);
+        $user = $this->userWithPermission('reports.customers.view', 'finance.ar.view');
 
-        $response = $this->actingAs($user)->getJson('/api/reporting/reports/RPT-DIST-02/execute');
+        $response = $this->actingAs($user)->getJson("/api/reporting/reports/RPT-CUST-03/execute?customer_id={$customer->id}");
 
         $response->assertOk();
-        $this->assertEquals(50.0, $response->json('data.kpis.MET-DIST-01'));
+        $this->assertEquals(300.0, $response->json('data.kpis.MET-FIN-02'));
+    }
+
+    public function test_supplier_statement_excludes_advances_from_outstanding_payable(): void
+    {
+        $supplier = Supplier::factory()->create(['company_id' => $this->company->id]);
+        SupplierLedgerEntry::query()->create([
+            'company_id' => $this->company->id, 'supplier_id' => $supplier->id,
+            'entry_date' => '2026-01-10', 'entry_type' => SupplierLedgerEntryType::Bill, 'amount' => 400,
+        ]);
+        SupplierLedgerEntry::query()->create([
+            'company_id' => $this->company->id, 'supplier_id' => $supplier->id,
+            'entry_date' => '2026-01-11', 'entry_type' => SupplierLedgerEntryType::Advance, 'amount' => -150,
+        ]);
+        $user = $this->userWithPermission('reports.procurement.view', 'finance.ap.view');
+
+        $response = $this->actingAs($user)->getJson("/api/reporting/reports/RPT-PROC-03/execute?supplier_id={$supplier->id}");
+
+        $response->assertOk();
+        // Advance is excluded from outstandingPayable() — only the bill counts.
+        $this->assertEquals(400.0, $response->json('data.kpis.MET-FIN-03'));
+    }
+
+    public function test_product_performance_reads_gross_sales_not_recognized_revenue(): void
+    {
+        $brand = Brand::factory()->create(['company_id' => $this->company->id]);
+        $product = Product::factory()->create(['company_id' => $this->company->id, 'brand_id' => $brand->id]);
+        $order = $this->minimalOrderWithLine($product->id, quantity: 4, unitPrice: 50);
+
+        $user = $this->userWithPermission('reports.products.view');
+        $response = $this->actingAs($user)->getJson('/api/reporting/reports/RPT-PROD-01/execute');
+
+        $response->assertOk();
+        $this->assertEquals(200.0, $response->json('data.kpis.MET-PROD-01') * 4);
+        $this->assertEquals(4.0, $response->json('data.kpis.MET-SALES-05'));
+    }
+
+    public function test_executive_overview_reuses_the_same_values_as_its_own_source_reports(): void
+    {
+        $this->setUpFinanceFixtures();
+        $brand = Brand::factory()->create(['company_id' => $this->company->id]);
+        $product = Product::factory()->create(['company_id' => $this->company->id, 'brand_id' => $brand->id]);
+        $this->minimalOrderWithLine($product->id, quantity: 2, unitPrice: 100);
+
+        $user = $this->userWithPermission('reports.sales.view', 'reports.executive.view');
+
+        $directResponse = $this->actingAs($user)->getJson('/api/reporting/reports/RPT-SALES-01/execute');
+        $directResponse->assertOk();
+        $composedResponse = $this->actingAs($user)->getJson('/api/reporting/reports/RPT-EXEC-01/execute');
+        $composedResponse->assertOk();
+
+        // §13 cross-report metric consistency: the SAME metric ID must be the SAME value
+        // whether read directly from its own report or via Executive's composition.
+        $this->assertNotNull($directResponse->json('data.kpis.MET-SALES-01'));
+        $this->assertEquals($directResponse->json('data.kpis.MET-SALES-01'), $composedResponse->json('data.kpis.MET-SALES-01'));
+    }
+
+    // ── D: MySQL hazard regressions ──────────────────────────────────────────
+
+    public function test_top_performers_executes_without_an_ambiguous_column_error(): void
+    {
+        $brand = Brand::factory()->create(['company_id' => $this->company->id]);
+        $product = Product::factory()->create(['company_id' => $this->company->id, 'brand_id' => $brand->id]);
+        $this->minimalOrderWithLine($product->id, quantity: 1, unitPrice: 10);
+
+        $user = $this->userWithPermission('reports.executive.view');
+        $response = $this->actingAs($user)->getJson('/api/reporting/reports/RPT-EXEC-02/execute');
+
+        $response->assertOk();
+    }
+
+    public function test_zero_sale_product_ranking_does_not_join_products_into_a_scoped_order_query(): void
+    {
+        Product::factory()->create(['company_id' => $this->company->id, 'is_active' => true]);
+        $user = $this->userWithPermission('reports.products.view');
+
+        $response = $this->actingAs($user)->getJson('/api/reporting/reports/RPT-PROD-02/execute?mode=zero_sale');
+
+        $response->assertOk();
+        $this->assertGreaterThanOrEqual(1, $response->json('data.totals.product_count'));
     }
 
     // ── E: read-only guarantee ───────────────────────────────────────────────
 
-    public function test_report_execution_produces_no_domain_mutation(): void
+    public function test_finance_report_execution_produces_no_domain_mutation(): void
     {
-        $user = $this->userWithPermission('reports.inventory.view', 'reports.procurement.view');
-        $warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $product = Product::factory()->create(['company_id' => $this->company->id]);
-        $item = InventoryItem::query()->create([
-            'company_id' => $this->company->id, 'warehouse_id' => $warehouse->id, 'product_id' => $product->id,
-            'on_hand_qty' => 50, 'reserved_qty' => 10,
-        ]);
+        $this->setUpFinanceFixtures();
+        $user = $this->userWithPermission('reports.finance.view');
 
-        $beforeItems = DB::table('inventory_items')->count();
-        $beforeUpdatedAt = $item->fresh()->updated_at;
+        $beforeLines = DB::table('finance_journal_lines')->count();
+        $beforeEntries = DB::table('finance_journal_entries')->count();
 
-        $this->actingAs($user)->getJson('/api/reporting/reports/RPT-INV-01/execute')->assertOk();
-        $this->actingAs($user)->getJson('/api/reporting/reports/RPT-INV-04/execute?warehouse_id='.$warehouse->id)->assertOk();
-        $this->actingAs($user)->getJson('/api/reporting/reports/RPT-PROC-01/execute')->assertOk();
+        $this->actingAs($user)->getJson('/api/reporting/reports/RPT-FIN-01/execute')->assertOk();
+        $this->actingAs($user)->getJson('/api/reporting/reports/RPT-FIN-03/execute')->assertOk();
 
-        $this->assertSame($beforeItems, DB::table('inventory_items')->count());
-        $this->assertEquals($beforeUpdatedAt, $item->fresh()->updated_at);
+        $this->assertSame($beforeLines, DB::table('finance_journal_lines')->count());
+        $this->assertSame($beforeEntries, DB::table('finance_journal_entries')->count());
     }
 
     // ── F: query count evidence ──────────────────────────────────────────────
 
-    public function test_stock_on_hand_uses_a_bounded_query_count_regardless_of_row_count(): void
+    public function test_product_performance_uses_a_bounded_query_count_regardless_of_row_count(): void
     {
-        $user = $this->userWithPermission('reports.inventory.view');
-        $warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
+        $user = $this->userWithPermission('reports.products.view');
+        $brand = Brand::factory()->create(['company_id' => $this->company->id]);
 
         foreach (range(1, 3) as $i) {
-            InventoryItem::query()->create(['company_id' => $this->company->id, 'warehouse_id' => $warehouse->id, 'product_id' => Product::factory()->create(['company_id' => $this->company->id])->id, 'on_hand_qty' => 10, 'reserved_qty' => 0]);
+            $product = Product::factory()->create(['company_id' => $this->company->id, 'brand_id' => $brand->id]);
+            $this->minimalOrderWithLine($product->id, quantity: 1, unitPrice: 10);
         }
         DB::enableQueryLog();
         DB::flushQueryLog();
-        $this->actingAs($user)->getJson('/api/reporting/reports/RPT-INV-01/execute?per_page=50')->assertOk();
+        $this->actingAs($user)->getJson('/api/reporting/reports/RPT-PROD-01/execute?per_page=50')->assertOk();
         $countFor3 = count(DB::getQueryLog());
 
         foreach (range(1, 12) as $i) {
-            InventoryItem::query()->create(['company_id' => $this->company->id, 'warehouse_id' => $warehouse->id, 'product_id' => Product::factory()->create(['company_id' => $this->company->id])->id, 'on_hand_qty' => 10, 'reserved_qty' => 0]);
+            $product = Product::factory()->create(['company_id' => $this->company->id, 'brand_id' => $brand->id]);
+            $this->minimalOrderWithLine($product->id, quantity: 1, unitPrice: 10);
         }
         DB::flushQueryLog();
-        $this->actingAs($user)->getJson('/api/reporting/reports/RPT-INV-01/execute?per_page=50')->assertOk();
+        $this->actingAs($user)->getJson('/api/reporting/reports/RPT-PROD-01/execute?per_page=50')->assertOk();
         $countFor15 = count(DB::getQueryLog());
         DB::disableQueryLog();
 
         $this->assertLessThanOrEqual($countFor3 + 2, $countFor15, 'Query count grew with row count — suspected N+1.');
     }
 
-    private function minimalOrder(): string
+    /** Creates one Confirmed-equivalent order + line, WITHOUT a cost snapshot (Gross-Sales-only fixture). */
+    private function minimalOrderWithLine(string $productId, int $quantity, float $unitPrice): string
     {
-        $customer = \Modules\Sales\Customers\Domain\Models\Customer::factory()->create(['company_id' => $this->company->id]);
+        $customer = Customer::factory()->create(['company_id' => $this->company->id]);
 
-        return \Modules\Commerce\Orders\Domain\Models\Order::query()->create([
+        $orderId = \Modules\Commerce\Orders\Domain\Models\Order::query()->create([
             'company_id' => $this->company->id, 'customer_id' => $customer->id, 'order_number' => 'ORD-'.uniqid(),
             'order_date' => now()->toDateString(), 'status' => 'delivered',
             'subtotal' => 0, 'total' => 0, 'shipping_total' => 0, 'discount_total' => 0, 'tax_total' => 0, 'discount_amount' => 0,
         ])->id;
+
+        DB::table('order_lines')->insert([
+            'id' => (string) Str::uuid(), 'order_id' => $orderId, 'product_id' => $productId,
+            'quantity' => $quantity, 'unit_price' => $unitPrice, 'line_total' => $quantity * $unitPrice,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        return $orderId;
     }
 }

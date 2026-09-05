@@ -6,13 +6,23 @@ namespace Modules\Reporting\Infrastructure\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Modules\Commerce\Orders\Application\Queries\OrderStatusPaymentMixQuery;
+use Modules\Commerce\Orders\Application\Queries\ProductProfitabilityQuery;
 use Modules\Commerce\Orders\Application\Queries\RequestedDeliveryPerformanceQuery;
 use Modules\Commerce\Orders\Application\Queries\SalesByDimensionQuery;
 use Modules\Commerce\Orders\Application\Queries\SalesOverviewQuery;
+use Modules\Finance\Ledger\Application\Queries\TrialBalanceReportQuery;
+use Modules\Finance\Payables\Application\Queries\SupplierStatementQuery;
+use Modules\Finance\Receivables\Application\Queries\CustomerOutstandingArQuery;
+use Modules\Finance\Reporting\Application\Queries\ArApAgingReportQuery;
+use Modules\Finance\Reporting\Application\Queries\FinancialStatementReportQuery;
+use Modules\Finance\Reporting\Application\Queries\PartyStatementReportQuery;
+use Modules\Finance\Reporting\Application\Queries\ProfitabilityAndClosingReportQuery;
 use Modules\Inventory\InventoryItems\Application\Queries\InventoryValuationQuery;
 use Modules\Inventory\InventoryItems\Application\Queries\ShortageAndZeroStockQuery;
 use Modules\Inventory\InventoryItems\Application\Queries\StockMovementsQuery;
 use Modules\Inventory\InventoryItems\Application\Queries\StockOnHandQuery;
+use Modules\Inventory\Products\Application\Queries\ProductPerformanceQuery;
+use Modules\Inventory\Products\Application\Queries\ProductRankingQuery;
 use Modules\Logistics\Distribution\Application\Queries\DeliveryPerformanceQuery;
 use Modules\Logistics\Distribution\Application\Queries\DriverDaySettlementQuery;
 use Modules\Logistics\Distribution\Application\Queries\DriverMonthlyStatementQuery;
@@ -25,6 +35,9 @@ use Modules\Operations\Preparation\Application\Queries\PreparationCompletionAndS
 use Modules\Operations\Preparation\Application\Queries\WaveOverviewQuery;
 use Modules\Purchasing\Suppliers\Application\Queries\PurchasingOverviewQuery;
 use Modules\Purchasing\Suppliers\Application\Queries\SupplierScorecardQuery;
+use Modules\Reporting\Application\Queries\ExecutiveOverviewQuery;
+use Modules\Reporting\Application\Queries\OperationalHealthSnapshotQuery;
+use Modules\Reporting\Application\Queries\TopPerformersQuery;
 use Modules\Reporting\Application\Services\ReportHandlerRegistry;
 use Modules\Sales\Customers\Application\Queries\Customer360ListQuery;
 use Modules\Sales\Customers\Application\Queries\CustomerOverviewQuery;
@@ -47,6 +60,12 @@ use Modules\Sales\Customers\Application\Queries\CustomerOverviewQuery;
  * TASK-ECOS-REPORTING-CROSS-DOMAIN-AND-FINANCIAL-REPORTS-004 — second tranche (16 handlers):
  * Inventory (4), Procurement (2), Preparation (3), Distribution (4), Drivers (3), joining
  * Task 3's original 6 (Sales x4, Customers x2) for 22 total registered handlers.
+ *
+ * TASK-ECOS-REPORTING-V1-FINAL-COVERAGE-AND-SOURCE-CLOSURE-005 — final tranche (13
+ * handlers), reaching 35/35: Executive (3, Reporting-owned Pattern-C composition — the one
+ * deliberate exception to "never inside Modules\Reporting itself"), Customers (1, Finance
+ * thin-proxy), Products (3), Procurement (1, Finance thin-proxy), Financial (5, Finance thin
+ * proxies) — for 35 total registered handlers.
  */
 final class ReportingServiceProvider extends ServiceProvider
 {
@@ -82,6 +101,23 @@ final class ReportingServiceProvider extends ServiceProvider
                 $app->make(DriverOperationalSummaryQuery::class),
                 $app->make(DriverDaySettlementQuery::class),
                 $app->make(DriverMonthlyStatementQuery::class),
+                // Task 5 — Products
+                $app->make(ProductPerformanceQuery::class),
+                $app->make(ProductRankingQuery::class),
+                $app->make(ProductProfitabilityQuery::class),
+                // Task 5 — Customers / Procurement (Finance thin proxies)
+                $app->make(CustomerOutstandingArQuery::class),
+                $app->make(SupplierStatementQuery::class),
+                // Task 5 — Financial (Finance thin proxies)
+                $app->make(TrialBalanceReportQuery::class),
+                $app->make(FinancialStatementReportQuery::class),
+                $app->make(ArApAgingReportQuery::class),
+                $app->make(PartyStatementReportQuery::class),
+                $app->make(ProfitabilityAndClosingReportQuery::class),
+                // Task 5 — Executive (Reporting-owned composition)
+                $app->make(OperationalHealthSnapshotQuery::class),
+                $app->make(TopPerformersQuery::class),
+                $app->make(ExecutiveOverviewQuery::class),
             ]);
         });
     }

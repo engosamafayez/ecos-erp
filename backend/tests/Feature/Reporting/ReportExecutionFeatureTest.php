@@ -127,6 +127,39 @@ final class ReportExecutionFeatureTest extends TestCase
                 'Modules/Sales/Customers/Infrastructure/Database/Migrations/2026_09_15_100001_create_order_block_overrides_table.php',
                 // Task 3 addition — this task's own Reporting permissions seed.
                 'Modules/Reporting/Infrastructure/Database/Migrations/2026_09_04_100000_seed_reporting_permissions_table.php',
+                // TASK-ECOS-REPORTING-V1-FINAL-COVERAGE-AND-SOURCE-CLOSURE-005 — Laravel's
+                // RefreshDatabaseState::$migrated flag is process-wide, not per-class: only
+                // the FIRST test class to run in a given PHPUnit invocation actually gets its
+                // migrateFreshUsing() executed, and every other RefreshDatabase test class in
+                // the same run reuses that same schema. Since this suite always runs alongside
+                // the Task 5 Feature test class, every Reporting Feature test class's migration
+                // list must be a superset covering Task 5's needs too, regardless of run order.
+                'Modules/Commerce/Orders/Infrastructure/Database/Migrations/2026_07_06_400000_create_order_financial_snapshots_table.php',
+                'Modules/Commerce/Orders/Infrastructure/Database/Migrations/2026_07_06_400001_create_order_line_snapshots_table.php',
+                'Modules/Commerce/Orders/Infrastructure/Database/Migrations/2026_07_06_400002_enhance_order_financial_snapshots_table.php',
+                'Modules/Commerce/Orders/Infrastructure/Database/Migrations/2026_07_06_400003_enhance_order_line_snapshots_table.php',
+                'Modules/Finance/Infrastructure/Database/Migrations/2026_08_10_100000_create_finance_fiscal_years_table.php',
+                'Modules/Finance/Infrastructure/Database/Migrations/2026_08_10_100001_create_finance_fiscal_periods_table.php',
+                'Modules/Finance/Infrastructure/Database/Migrations/2026_08_10_100002_create_finance_accounts_table.php',
+                'Modules/Finance/Infrastructure/Database/Migrations/2026_08_10_100003_create_finance_cost_centers_table.php',
+                'Modules/Finance/Infrastructure/Database/Migrations/2026_08_10_100006_create_finance_journal_entries_table.php',
+                'Modules/Finance/Infrastructure/Database/Migrations/2026_08_10_100007_create_finance_journal_lines_table.php',
+                'Modules/Finance/Infrastructure/Database/Migrations/2026_08_10_100011_seed_finance_permissions_table.php',
+                'Modules/Finance/Infrastructure/Database/Migrations/2026_08_10_100012_add_category_to_finance_accounts.php',
+                'Modules/Finance/Infrastructure/Database/Migrations/2026_08_10_100013_add_type_to_finance_journal_entries.php',
+                'Modules/Finance/Infrastructure/Database/Migrations/2026_08_11_100000_create_finance_customer_invoices_table.php',
+                'Modules/Finance/Infrastructure/Database/Migrations/2026_08_11_100002_create_finance_customer_receipts_table.php',
+                'Modules/Finance/Infrastructure/Database/Migrations/2026_08_11_100003_create_finance_receipt_allocations_table.php',
+                'Modules/Finance/Infrastructure/Database/Migrations/2026_08_11_100004_create_finance_customer_ledger_entries_table.php',
+                'Modules/Finance/Infrastructure/Database/Migrations/2026_08_11_100005_create_finance_supplier_bills_table.php',
+                'Modules/Finance/Infrastructure/Database/Migrations/2026_08_11_100007_create_finance_supplier_payments_table.php',
+                'Modules/Finance/Infrastructure/Database/Migrations/2026_08_11_100008_create_finance_payment_allocations_table.php',
+                'Modules/Finance/Infrastructure/Database/Migrations/2026_08_11_100009_create_finance_supplier_ledger_entries_table.php',
+                'Modules/Finance/Infrastructure/Database/Migrations/2026_08_11_100018_seed_finance_f2_permissions_table.php',
+                'Modules/Finance/Infrastructure/Database/Migrations/2026_08_25_100008_create_finance_vat_periods_table.php',
+                'Modules/Finance/Infrastructure/Database/Migrations/2026_08_25_100010_create_finance_control_exceptions_table.php',
+                'Modules/Finance/Infrastructure/Database/Migrations/2026_09_02_100000_add_contra_allocation_columns_to_finance_payment_allocations_table.php',
+                'Modules/Finance/Infrastructure/Database/Migrations/2026_09_02_100001_add_contra_allocation_columns_to_finance_receipt_allocations_table.php',
             ],
         ]);
     }
@@ -244,14 +277,21 @@ final class ReportExecutionFeatureTest extends TestCase
         $response->assertNotFound();
     }
 
-    public function test_cataloged_but_unwired_report_returns_501(): void
+    public function test_previously_unwired_report_now_executes_after_full_v1_coverage(): void
     {
-        // RPT-EXEC-01 is a real, is_v1 catalogue entry (Task 2) with no Task 3 handler.
+        // TASK-ECOS-REPORTING-V1-FINAL-COVERAGE-AND-SOURCE-CLOSURE-005 — RPT-EXEC-01 was
+        // this Task 3 test's own example of "a real, is_v1 catalogue entry with no handler
+        // yet" (asserting a 501). Task 5 wired all 35 catalogue entries, so that premise no
+        // longer holds for ANY real report ID in this system — the underlying 501 code path
+        // itself is still covered at the unit level (ReportExecutionServiceTest, with a
+        // synthetic unregistered handler), so this Feature-level test is repurposed to prove
+        // the positive: full V1 coverage means this specific report now executes cleanly.
         $user = $this->userWithPermission('reports.executive.view');
 
         $response = $this->actingAs($user)->getJson('/api/reporting/reports/RPT-EXEC-01/execute');
 
-        $response->assertStatus(501);
+        $response->assertOk();
+        $this->assertSame('RPT-EXEC-01', $response->json('data.report_id'));
     }
 
     // ── B: tenant isolation ──────────────────────────────────────────────────
