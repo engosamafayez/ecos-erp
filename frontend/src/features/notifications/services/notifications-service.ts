@@ -31,4 +31,12 @@ export const notificationsService = {
     );
     return data.data.updated;
   },
+
+  /** The permitted set, not everything — server-side still gated by ownership. */
+  async markReadSet(ids: string[]): Promise<number> {
+    const { data } = await api.post<ApiResponse<{ updated: number }>>('/notifications/mark-read', {
+      ids,
+    });
+    return data.data.updated;
+  },
 };

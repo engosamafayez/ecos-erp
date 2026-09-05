@@ -6,6 +6,7 @@ return [
     App\Providers\AppServiceProvider::class,
     Modules\Common\Snapshots\Providers\SnapshotServiceProvider::class,
     Modules\IAM\Infrastructure\Providers\IamServiceProvider::class,
+    Modules\Notifications\Infrastructure\Providers\NotificationsServiceProvider::class,
     Modules\Organization\Companies\Infrastructure\Providers\OrganizationServiceProvider::class,
     Modules\Organization\Branches\Infrastructure\Providers\BranchServiceProvider::class,
     Modules\Organization\Brands\Infrastructure\Providers\BrandServiceProvider::class,

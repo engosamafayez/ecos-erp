@@ -38,3 +38,12 @@ export function useMarkAllNotificationsRead() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: KEY }),
   });
 }
+
+/** The permitted set, not everything — see notificationsService.markReadSet. */
+export function useMarkNotificationsReadSet() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (ids: string[]) => notificationsService.markReadSet(ids),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: KEY }),
+  });
+}
