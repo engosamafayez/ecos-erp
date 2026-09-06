@@ -8,6 +8,8 @@ use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
+use Modules\Notifications\Domain\Contracts\NotificationDeliveryPolicyInterface;
+use Modules\Notifications\Domain\Enums\NotificationPriority;
 
 /**
  * The authenticated user's own notification feed.
@@ -115,6 +117,27 @@ final class NotificationController extends Controller
             ->update(['read_at' => now()]);
 
         return $this->success(['updated' => $updated]);
+    }
+
+    /**
+     * GET /api/notifications/attention-policy
+     *
+     * TASK-ECOS-NOTIFICATIONS-ATTENTION-EXPERIENCE-003 (ADR-047 §26.4-§26.8). Resolves,
+     * for the authenticated user, whether a popup/sound should accompany a newly-observed
+     * notification of each priority — MANDATORY SYSTEM POLICY > COMPANY DEFAULT > USER
+     * PREFERENCE (§14/§26.5). A small, rarely-changing map the frontend fetches once and
+     * applies client-side per notification, rather than a decision recomputed per row.
+     */
+    public function attentionPolicy(Request $request, NotificationDeliveryPolicyInterface $policy): JsonResponse
+    {
+        $user = $request->user();
+
+        $result = [];
+        foreach (NotificationPriority::cases() as $priority) {
+            $result[$priority->value] = $policy->resolveAttention($user, $priority)->toArray();
+        }
+
+        return $this->success($result);
     }
 
     /**

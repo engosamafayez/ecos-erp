@@ -18,10 +18,12 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { useFormatter } from '@/hooks/use-formatter';
+import { useNotificationAttention } from '@/features/notifications/hooks/use-notification-attention';
 import {
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
   useNotifications,
+  useUnreadNotificationCount,
 } from '@/features/notifications/hooks/use-notifications';
 import {
   toUiNotification,
@@ -150,10 +152,14 @@ export function NotificationCenter() {
   const feed = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
+  const unreadCount = useUnreadNotificationCount();
+
+  // The bell is this hook's single mount point app-wide (TASK-ECOS-NOTIFICATIONS-
+  // ATTENTION-EXPERIENCE-003) — it shares this component's own useNotifications() query
+  // cache rather than starting a second poll.
+  useNotificationAttention();
 
   const notifications = useMemo(() => (feed.data?.data ?? []).map(toUiNotification), [feed.data]);
-
-  const unreadCount = feed.data?.unread_count ?? 0;
 
   // Only sources actually present get a tab — an empty tab would advertise a
   // category the platform never produces.

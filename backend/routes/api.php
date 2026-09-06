@@ -447,6 +447,9 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     // TASK-ECOS-NOTIFICATIONS-FOUNDATION-002: "the permitted set", not "everything" —
     // same ownership gate as every verb above.
     Route::post('notifications/mark-read', [NotificationController::class, 'markSetRead']);
+    // TASK-ECOS-NOTIFICATIONS-ATTENTION-EXPERIENCE-003: the resolved popup/sound policy
+    // by priority for the caller — not the feed itself, so it is a distinct literal path.
+    Route::get('notifications/attention-policy', [NotificationController::class, 'attentionPolicy']);
 
     // AUTHZ: reuses permissions that were already seeded and already assigned to
     // roles — nothing invented. Reads stay open to any authenticated user, as

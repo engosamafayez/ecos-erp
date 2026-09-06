@@ -25,7 +25,10 @@ class NotificationDeliveryPolicyTest extends TestCase
 {
     public function test_in_app_is_always_mandatory_regardless_of_category_or_priority(): void
     {
-        $policy = new NotificationDeliveryPolicy();
+        // Resolved through the container, not `new` — Task 3 gave the policy real
+        // dependencies (company/user preference lookups); this method's own behavior is
+        // unaffected, but the class can no longer be constructed with zero arguments.
+        $policy = app(NotificationDeliveryPolicy::class);
 
         foreach (NotificationCategory::cases() as $category) {
             foreach (NotificationPriority::cases() as $priority) {

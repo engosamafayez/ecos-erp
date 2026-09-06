@@ -23,6 +23,30 @@ export function useNotifications(enabled = true) {
   });
 }
 
+/**
+ * The canonical unread count — one source, not a value every consumer re-derives from
+ * the feed inline. Shares `useNotifications()`'s query cache (same key), so this never
+ * issues a second network request.
+ */
+export function useUnreadNotificationCount(): number {
+  const feed = useNotifications();
+  return feed.data?.unread_count ?? 0;
+}
+
+/**
+ * The caller's resolved popup/sound policy by priority (ADR-047 §14/§26.4-§26.8).
+ * Preferences change far less often than the feed refreshes, so this polls on its own,
+ * much slower cadence rather than the feed's 60s interval — refetched on window refocus
+ * (the query default) so a preference change in another tab is picked up promptly.
+ */
+export function useAttentionPolicy() {
+  return useQuery({
+    queryKey: [...KEY, 'attention-policy'],
+    queryFn: () => notificationsService.attentionPolicy(),
+    staleTime: 5 * 60_000,
+  });
+}
+
 export function useMarkNotificationRead() {
   const queryClient = useQueryClient();
   return useMutation({

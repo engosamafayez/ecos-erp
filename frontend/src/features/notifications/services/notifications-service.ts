@@ -1,7 +1,7 @@
 import { api } from '@/lib/axios';
 import type { ApiResponse } from '@/types';
 
-import type { NotificationPage } from '../types/notification';
+import type { AttentionPolicyMap, NotificationPage } from '../types/notification';
 
 /**
  * The caller's own notification feed.
@@ -38,5 +38,14 @@ export const notificationsService = {
       ids,
     });
     return data.data.updated;
+  },
+
+  /**
+   * The caller's resolved popup/sound policy by priority (ADR-047 §14/§26.4-§26.8) —
+   * a small, rarely-changing map, not the feed itself.
+   */
+  async attentionPolicy(): Promise<AttentionPolicyMap> {
+    const { data } = await api.get<ApiResponse<AttentionPolicyMap>>('/notifications/attention-policy');
+    return data.data;
   },
 };

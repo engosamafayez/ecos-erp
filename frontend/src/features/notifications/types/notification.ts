@@ -51,6 +51,25 @@ export const NOTIFICATION_PRIORITIES = ['low', 'normal', 'high', 'critical'] as 
 
 export type NotificationPriority = (typeof NOTIFICATION_PRIORITIES)[number];
 
+/** ADR-047 §26.8 — mirrors the backend's SoundProfile enum. At most three, ever. */
+export const SOUND_PROFILES = ['normal', 'important', 'critical'] as const;
+
+export type SoundProfile = (typeof SOUND_PROFILES)[number];
+
+/**
+ * TASK-ECOS-NOTIFICATIONS-ATTENTION-EXPERIENCE-003 — the resolved popup/sound decision
+ * for one priority, already applying MANDATORY SYSTEM POLICY > COMPANY DEFAULT > USER
+ * PREFERENCE server-side (ADR-047 §14/§26.5). The client never re-derives this chain —
+ * it only applies the answer to a freshly-observed notification of that priority.
+ */
+export type AttentionSettings = {
+  popup: boolean;
+  sound: boolean;
+  sound_profile: SoundProfile | null;
+};
+
+export type AttentionPolicyMap = Record<NotificationPriority, AttentionSettings>;
+
 export type NotificationPage = {
   data: RawNotification[];
   unread_count: number;
