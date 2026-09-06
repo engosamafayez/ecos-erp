@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Crm;
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Modules\Crm\Customers\Domain\Enums\CustomerStatus;
 use Modules\Crm\Customers\Domain\Enums\CustomerType;
 use Modules\Crm\Customers\Domain\Exceptions\CustomerException;
@@ -14,7 +17,11 @@ use Modules\Crm\Customers\Domain\Services\CustomerMergeService;
 use Modules\Crm\Customers\Domain\Services\CustomerSearchService;
 use Modules\Crm\Customers\Domain\Services\CustomerService;
 use Modules\Crm\Customers\Domain\Services\DuplicateDetectionService;
+use Modules\Finance\Receivables\Domain\Enums\CustomerLedgerEntryType;
+use Modules\Finance\Receivables\Domain\Models\CustomerLedgerEntry;
 use Modules\Organization\Companies\Domain\Models\Company;
+use Modules\Sales\Customers\Domain\Models\CustomerBlock;
+use Modules\Sales\Customers\Domain\Services\BlockedCustomerPolicy;
 use Tests\TestCase;
 
 /**
@@ -199,6 +206,117 @@ class CustomerFoundationTest extends TestCase
         $this->assertSame('A', $profile['identity']['display_name']);
     }
 
+    // ═══ 360 COMPOSITION — Gate B (Finance / blocked / engagement panels) ═══════
+    //
+    // TASK-ECOS-CRM-CONTINUATION-AND-CUSTOMER360-GATE-B-002. The blocked-customer
+    // authority itself (BlockedCustomerPolicy/CustomerBlock) is NOT owned by CRM —
+    // it stays on Sales\Customers, read here exactly as the real authority exposes
+    // it (phone-first, company-scoped). See CustomerController's constructor note.
+
+    public function test_profile_endpoint_composes_finance_and_engagement_panels(): void
+    {
+        $company = Company::factory()->create();
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $customer = $this->service()->create((string) $company->id, CustomerType::Individual, [
+            'first_name' => 'Nadia', 'last_name' => 'Kamal', 'phone' => '01011119999',
+        ]);
+
+        CustomerLedgerEntry::create([
+            'company_id' => $company->id, 'customer_id' => $customer->id,
+            'entry_date' => now()->toDateString(), 'entry_type' => CustomerLedgerEntryType::Invoice,
+            'amount' => 500, 'description' => 'Invoice #1',
+        ]);
+        CustomerLedgerEntry::create([
+            'company_id' => $company->id, 'customer_id' => $customer->id,
+            'entry_date' => now()->toDateString(), 'entry_type' => CustomerLedgerEntryType::Receipt,
+            'amount' => -200, 'description' => 'Receipt #1',
+        ]);
+
+        DB::table('cep_conversations')->insert([
+            'id' => (string) Str::uuid(), 'conversation_uuid' => (string) Str::uuid(),
+            'provider' => 'whatsapp', 'customer_id' => $customer->id, 'company_id' => $company->id,
+            'started_at' => now()->subHour(), 'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->getJson("/api/crm/customers/{$customer->id}/profile");
+
+        $response->assertOk();
+        $data = $response->json('data');
+
+        $this->assertEquals(300.0, $data['finance']['balance']);
+        $this->assertFalse($data['blocked']['is_blocked']);
+        $this->assertNull($data['blocked']['reason']);
+        $this->assertSame(1, $data['engagement']['conversations_count']);
+        $this->assertNotNull($data['engagement']['last_conversation_at']);
+    }
+
+    public function test_profile_endpoint_reports_blocked_state_from_the_sales_authority(): void
+    {
+        $company = Company::factory()->create();
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $customer = $this->service()->create((string) $company->id, CustomerType::Individual, [
+            'first_name' => 'Blocked', 'last_name' => 'One', 'phone' => '01055554444',
+        ]);
+
+        CustomerBlock::create([
+            'company_id' => $company->id,
+            'normalized_phone' => app(BlockedCustomerPolicy::class)->normalize('01055554444'),
+            'is_active' => true,
+            'block_reason' => 'Repeated non-payment',
+            'blocked_at' => now(),
+        ]);
+
+        $response = $this->actingAs($user)->getJson("/api/crm/customers/{$customer->id}/profile");
+
+        $response->assertOk();
+        $data = $response->json('data');
+
+        $this->assertTrue($data['blocked']['is_blocked']);
+        $this->assertSame('Repeated non-payment', $data['blocked']['reason']);
+        $this->assertNotNull($data['blocked']['blocked_at']);
+    }
+
+    public function test_profile_endpoint_blocked_state_is_tenant_scoped(): void
+    {
+        $companyA = Company::factory()->create();
+        $companyB = Company::factory()->create();
+        $userA = User::factory()->create(['company_id' => $companyA->id]);
+        $customerA = $this->service()->create((string) $companyA->id, CustomerType::Individual, [
+            'first_name' => 'A', 'phone' => '01000000001',
+        ]);
+
+        // Same normalized phone, blocked only for company B — must not leak into A's profile.
+        CustomerBlock::create([
+            'company_id' => $companyB->id,
+            'normalized_phone' => app(BlockedCustomerPolicy::class)->normalize('01000000001'),
+            'is_active' => true,
+            'block_reason' => 'Different company',
+            'blocked_at' => now(),
+        ]);
+
+        $response = $this->actingAs($userA)->getJson("/api/crm/customers/{$customerA->id}/profile");
+
+        $response->assertOk();
+        $this->assertFalse($response->json('data.blocked.is_blocked'));
+    }
+
+    public function test_profile_endpoint_handles_no_finance_or_engagement_data_gracefully(): void
+    {
+        $company = Company::factory()->create();
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $customer = $this->service()->create((string) $company->id, CustomerType::Individual, ['first_name' => 'Quiet']);
+
+        $response = $this->actingAs($user)->getJson("/api/crm/customers/{$customer->id}/profile");
+
+        $response->assertOk();
+        $data = $response->json('data');
+
+        $this->assertEquals(0.0, $data['finance']['balance']);
+        $this->assertFalse($data['blocked']['is_blocked']);
+        $this->assertSame(0, $data['engagement']['conversations_count']);
+        $this->assertNull($data['engagement']['last_conversation_at']);
+    }
+
     // ═══ SECURITY ══════════════════════════════════════════════════════════════
 
     public function test_customer_routes_require_authentication(): void
@@ -209,9 +327,16 @@ class CustomerFoundationTest extends TestCase
 
     // ═══ ARCHITECTURE / SOURCE SCAN ════════════════════════════════════════════
 
-    public function test_customer_module_imports_no_operational_module(): void
+    public function test_customer_domain_imports_no_operational_module(): void
     {
-        $dir = base_path('Modules/Crm/Customers');
+        // Scoped to Domain, not the whole module: Customer360Service's own docblock
+        // promises no operational-module import, but Presentation is documented and
+        // expected to compose them (see CustomerController::profile()'s constructor
+        // comment) — that's the whole point of a controller, not a violation. The
+        // module-wide version of this check is tests/Architecture's still-unbuilt
+        // "modules must not depend on each other's internal namespaces" (see its
+        // README) — a different, not-yet-implemented fitness function.
+        $dir = base_path('Modules/Crm/Customers/Domain');
         $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dir));
 
         foreach ($it as $file) {

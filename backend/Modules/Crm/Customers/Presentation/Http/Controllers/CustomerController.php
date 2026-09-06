@@ -16,6 +16,10 @@ use Modules\Crm\Customers\Domain\Services\Customer360Service;
 use Modules\Crm\Customers\Domain\Services\CustomerSearchService;
 use Modules\Crm\Customers\Domain\Services\CustomerService;
 use Modules\Crm\Customers\Presentation\Http\Controllers\Concerns\ResolvesCustomerContext;
+use Modules\Crm\Engagement\Infrastructure\Timeline\ConversationTimelineSource;
+use Modules\Finance\Receivables\Domain\Services\CustomerLedgerService;
+use Modules\Sales\Customers\Domain\Models\CustomerBlock;
+use Modules\Sales\Customers\Domain\Services\BlockedCustomerPolicy;
 
 /**
  * The customer master — the single source of truth for identity. Create, edit,
@@ -32,6 +36,14 @@ class CustomerController extends Controller
         // Composed here, not inside Customer360Service: that service documents that
         // it imports no operational module and that the dependency never inverts.
         private readonly CustomerOrderMetricsService $orderMetrics,
+        private readonly CustomerLedgerService $ledger,
+        // Blocked-customer state's real, tested authority still lives on the legacy
+        // Sales\Customers module (TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-BLOCKED-
+        // CUSTOMERS-009) — Gate A's identity consolidation never claimed that
+        // capability. Read from it directly rather than re-implementing or
+        // relocating it; see TASK-ECOS-CRM-CONTINUATION-AND-CUSTOMER360-GATE-B-002.
+        private readonly BlockedCustomerPolicy $blockedCustomers,
+        private readonly ConversationTimelineSource $conversations,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -64,16 +76,58 @@ class CustomerController extends Controller
     {
         $companyId = $this->companyId($request);
         $customer = $this->customer($request, $id);
+        $customerId = (string) $customer->id;
+
+        $block = $this->activeBlockFor($customer, $companyId);
+        $conversations = $this->conversations->entries($companyId, $customerId);
 
         return response()->json([
             'data' => [
                 ...$this->profiles->profile($customer),
                 // Order-derived KPIs and purchased products come from canonical
                 // `orders`, never from the customer-intelligence profile.
-                'order_metrics' => $this->orderMetrics->forCustomer((string) $customer->id, $companyId),
-                'purchased_products' => $this->orderMetrics->purchasedProducts((string) $customer->id, $companyId),
+                'order_metrics' => $this->orderMetrics->forCustomer($customerId, $companyId),
+                'purchased_products' => $this->orderMetrics->purchasedProducts($customerId, $companyId),
+                // Accounting truth stays in Finance — never recomputed here.
+                'finance' => [
+                    'balance' => $this->ledger->balance($companyId, $customerId),
+                ],
+                // Read-only: the blocked-customer authority itself stays on
+                // Sales\Customers (see constructor note).
+                'blocked' => [
+                    'is_blocked' => $block !== null,
+                    'reason' => $block?->block_reason,
+                    'blocked_at' => $block?->blocked_at?->toIso8601String(),
+                    'blocked_by' => $block?->blocked_by,
+                ],
+                // Reads cep_conversations directly, same as the CRM timeline —
+                // no dependency on the CustomerEngagement module's own classes.
+                'engagement' => [
+                    'conversations_count' => count($conversations),
+                    'last_conversation_at' => ($conversations[0] ?? null)?->occurredAt?->toIso8601String(),
+                ],
             ],
         ]);
+    }
+
+    /**
+     * The active block for this customer, checked by phone then mobile — matching
+     * BlockedCustomerPolicy's own "customer_id OR either saved phone/mobile" match
+     * semantics (see its activeBlocksForCustomers docblock), just as a single-row
+     * lookup instead of a batch one.
+     */
+    private function activeBlockFor(Customer $customer, string $companyId): ?CustomerBlock
+    {
+        $phone = $this->blockedCustomers->normalize($customer->phone);
+        $block = $phone !== '' ? $this->blockedCustomers->activeBlockForPhone($companyId, $phone) : null;
+
+        if ($block !== null) {
+            return $block;
+        }
+
+        $mobile = $this->blockedCustomers->normalize($customer->mobile);
+
+        return $mobile !== '' && $mobile !== $phone ? $this->blockedCustomers->activeBlockForPhone($companyId, $mobile) : null;
     }
 
     public function store(Request $request): JsonResponse
