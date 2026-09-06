@@ -49,7 +49,12 @@ final class GetOrCreateDirectConversationAction extends BaseAction
             throw new InvalidArgumentException('A user cannot start a direct conversation with themself.');
         }
 
-        $this->authorizationGateway->authorize($actor, 'collaboration.conversations.create');
+        // inspect() (not authorize()): authorize()/can() do not carry the
+        // platform's is_system bypass, only inspect()/decision() do (ADR-038
+        // Part 1) — without this, an is_system actor is wrongly denied here.
+        if ($this->authorizationGateway->inspect($actor, 'collaboration.conversations.create')->isDenied()) {
+            throw new AuthorizationException('This action is unauthorized (collaboration.conversations.create).');
+        }
 
         // Scoped to the actor's own company: a cross-company id behaves exactly
         // like a nonexistent one, so no cross-tenant existence is ever leaked
