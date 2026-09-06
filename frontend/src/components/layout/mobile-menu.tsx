@@ -93,6 +93,18 @@ type MobileMenuProps = {
  *       same limited vertical space at once.
  *
  *   (3) Recent is now capped at 3 (was 5) — see `mobile-modules-launcher.tsx`.
+ *
+ * TASK-ECOS-MOBILE-NAVIGATION-WORLD-CLASS-DESIGN-CLOSURE-002 — a visual-only
+ * pass on top of the Bottom-Navigation-+-Fullscreen-Menu architecture and the
+ * Task 001 interaction fixes above, neither of which changed: this Drawer is
+ * still `inset-0`/`h-[100dvh]` (already fullscreen — nothing to restructure
+ * there), `activePanel` still gates Search/Account exactly as Task 001 left
+ * it. What changed is purely the identity panel's own surface treatment
+ * (`rounded-2xl bg-muted/40`, no border/shadow) to match the flatter list
+ * style now used throughout `mobile-modules-launcher.tsx`, and the title's
+ * type scale (`text-base`, up from `text-sm`) for a clearer screen-title vs.
+ * section-label hierarchy. See that file's own docblock for the primary
+ * navigation list's redesign (the bulk of this task's visual work).
  */
 export function MobileMenu({ open, onClose }: MobileMenuProps) {
   const { t } = useTranslation('common');
@@ -161,7 +173,13 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
               Dialog behavior puts it (the first focusable control here),
               never forced into search. */}
           <div className="flex h-12 shrink-0 items-center justify-between gap-1 border-b px-2">
-            <span className="px-2 text-sm font-semibold text-foreground">{t(($) => $.nav.menu)}</span>
+            {/* A screen TITLE, not a label — bumped a step above the section/
+                route labels below it so the hierarchy in task §15 actually
+                reads: title > section label > route label > metadata. The
+                header itself stays exactly the same height (task §14/§17
+                target the scrollable body's repeated rows, not this one
+                fixed, single-instance chrome row). */}
+            <span className="px-2 text-base font-semibold text-foreground">{t(($) => $.nav.menu)}</span>
             <div className="flex items-center gap-0.5">
               <Button
                 type="button"
@@ -196,8 +214,11 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
               the rest of the time. Same fields/controls as before nothing
               removed, just no longer an always-rendered summary row. */}
           {activePanel === 'identity' ? (
-            <div className="shrink-0 border-b bg-muted/20 p-3">
-              <div className="flex items-center gap-3 rounded-xl border bg-card p-2.5 text-start shadow-sm">
+            <div className="shrink-0 border-b p-3">
+              {/* Same flat, borderless treatment as the module list/search
+                  results below (task §4/§24) — a tinted region, not a
+                  bordered+shadowed card floating inside another container. */}
+              <div className="flex items-center gap-3 rounded-2xl bg-muted/40 p-3 text-start">
                 <Avatar className="size-9">
                   <AvatarFallback className="text-xs font-bold">{getInitials(name)}</AvatarFallback>
                 </Avatar>
@@ -209,7 +230,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
 
               <div className="mt-2 flex flex-col gap-2">
                 {email ? <p className="truncate px-1 text-xs text-muted-foreground">{email}</p> : null}
-                <div className="rounded-xl border bg-card p-2.5 shadow-sm">
+                <div className="rounded-2xl bg-muted/40 p-3">
                   <p className="mb-2 px-0.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                     {t(($) => $.nav.companyWarehouse)}
                   </p>

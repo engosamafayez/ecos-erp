@@ -30,6 +30,12 @@ type MobileBottomNavProps = {
  * every other slot are unchanged. It never gains an active/highlighted state:
  * it has no route of its own, so it must never falsely read as the current
  * page (§9) — unlike the pinned module icons to its left, which do.
+ *
+ * TASK-ECOS-MOBILE-NAVIGATION-WORLD-CLASS-DESIGN-CLOSURE-002 — added
+ * `env(safe-area-inset-bottom)` padding below the (unchanged) 64px tab row,
+ * so the home-indicator inset on notched devices no longer sits flush against
+ * (or overlaps) the icons/labels. Every slot, route, and the RBAC-driven
+ * pinned-module selection above are otherwise untouched.
  */
 export function MobileBottomNav({ onOpenMenu }: MobileBottomNavProps) {
   const { t } = useTranslation('common');
@@ -45,65 +51,72 @@ export function MobileBottomNav({ onOpenMenu }: MobileBottomNavProps) {
   return (
     <nav
       aria-label={t(($) => $.nav.mobileNavigation)}
-      className="fixed inset-x-0 bottom-0 z-40 flex h-16 items-stretch border-t bg-background/95 backdrop-blur-sm md:hidden"
+      // TASK-...-WORLD-CLASS-DESIGN-CLOSURE-002 — the tab row itself keeps its
+      // own fixed height; safe-area padding is added OUTSIDE it so the row's
+      // icons/labels stay vertically centered instead of getting pushed up by
+      // the home-indicator inset on notched devices (a native-app detail this
+      // bar was missing entirely before).
+      className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm md:hidden"
     >
-      {pinned.map((mod) => {
-        const Icon = mod.icon;
-        const path = mod.defaultPath;
-        const isActive = pathname === path || pathname.startsWith(path + '/');
-        const label = navLabel.group(mod.id);
-        return (
-          <Link
-            key={mod.id}
-            to={path}
-            aria-label={label}
-            aria-current={isActive ? 'page' : undefined}
-            className="flex flex-1 flex-col items-center justify-center gap-1 py-2"
-          >
-            <span
-              className={cn(
-                'flex items-center justify-center rounded-full px-3.5 py-1 transition-colors',
-                isActive && 'bg-primary/10',
-              )}
+      <div className="flex h-16 items-stretch">
+        {pinned.map((mod) => {
+          const Icon = mod.icon;
+          const path = mod.defaultPath;
+          const isActive = pathname === path || pathname.startsWith(path + '/');
+          const label = navLabel.group(mod.id);
+          return (
+            <Link
+              key={mod.id}
+              to={path}
+              aria-label={label}
+              aria-current={isActive ? 'page' : undefined}
+              className="flex flex-1 flex-col items-center justify-center gap-1 py-2"
             >
-              <Icon className={cn('size-5', isActive ? 'text-primary' : 'text-muted-foreground')} aria-hidden />
-            </span>
-            <span
-              className={cn(
-                'line-clamp-1 max-w-full break-all text-[10px] font-medium transition-colors',
-                isActive ? 'text-primary' : 'text-muted-foreground',
-              )}
-            >
-              {label}
-            </span>
-          </Link>
-        );
-      })}
+              <span
+                className={cn(
+                  'flex items-center justify-center rounded-full px-3.5 py-1 transition-colors',
+                  isActive && 'bg-primary/10',
+                )}
+              >
+                <Icon className={cn('size-5', isActive ? 'text-primary' : 'text-muted-foreground')} aria-hidden />
+              </span>
+              <span
+                className={cn(
+                  'line-clamp-1 max-w-full break-all text-[10px] font-medium transition-colors',
+                  isActive ? 'text-primary' : 'text-muted-foreground',
+                )}
+              >
+                {label}
+              </span>
+            </Link>
+          );
+        })}
 
-      {/* Search — now wired to GlobalSearch dialog via HeaderContext */}
-      <button
-        type="button"
-        onClick={openSearch}
-        aria-label={t(($) => $.common.search)}
-        className="flex flex-1 flex-col items-center justify-center gap-1 py-2 text-muted-foreground transition-colors active:text-foreground"
-      >
-        <span className="flex items-center justify-center rounded-full px-3.5 py-1">
-          <Search className="size-5" aria-hidden />
-        </span>
-        <span className="text-[10px] font-medium">{t(($) => $.common.search)}</span>
-      </button>
+        {/* Search — now wired to GlobalSearch dialog via HeaderContext */}
+        <button
+          type="button"
+          onClick={openSearch}
+          aria-label={t(($) => $.common.search)}
+          className="flex flex-1 flex-col items-center justify-center gap-1 py-2 text-muted-foreground transition-colors active:text-foreground"
+        >
+          <span className="flex items-center justify-center rounded-full px-3.5 py-1">
+            <Search className="size-5" aria-hidden />
+          </span>
+          <span className="text-[10px] font-medium">{t(($) => $.common.search)}</span>
+        </button>
 
-      <button
-        type="button"
-        onClick={onOpenMenu}
-        aria-label={t(($) => $.nav.modules)}
-        className="flex flex-1 flex-col items-center justify-center gap-1 py-2 text-muted-foreground transition-colors active:text-foreground"
-      >
-        <span className="flex items-center justify-center rounded-full px-3.5 py-1">
-          <Menu className="size-5" aria-hidden />
-        </span>
-        <span className="text-[10px] font-medium">{t(($) => $.nav.modules)}</span>
-      </button>
+        <button
+          type="button"
+          onClick={onOpenMenu}
+          aria-label={t(($) => $.nav.modules)}
+          className="flex flex-1 flex-col items-center justify-center gap-1 py-2 text-muted-foreground transition-colors active:text-foreground"
+        >
+          <span className="flex items-center justify-center rounded-full px-3.5 py-1">
+            <Menu className="size-5" aria-hidden />
+          </span>
+          <span className="text-[10px] font-medium">{t(($) => $.nav.modules)}</span>
+        </button>
+      </div>
     </nav>
   );
 }
