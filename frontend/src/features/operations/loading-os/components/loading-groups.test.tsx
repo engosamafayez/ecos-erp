@@ -91,6 +91,11 @@ function group(over: Partial<LoadingGroupSummary> = {}): LoadingGroupSummary {
     orders_count: 8,
     products_count: 2,
     transport: NO_TRANSPORT,
+    // TASK-...-WORKSPACE-READ-MODEL-004: null here means these fixtures exercise the
+    // pre-classification fallback in `executionStateOf()` (derived from
+    // `loading_assignment_status` alone) — intentional, not an oversight; a test for the
+    // NEW server-classified badges should pass an explicit `classification` override.
+    classification: null,
     ...over,
   };
 }
@@ -103,6 +108,8 @@ function detail(
   return {
     group: { slot_id: 's-1', code: 'DG-001', name: null, warehouse_id: 'w-1', window_id: 'win-1' },
     transport,
+    // Same fallback note as `group()` above.
+    classification: null,
     totals: totals ?? { required: 10, prepared: 10, loaded: 0, remaining: 10, over_prepared: 0 },
     products,
   };

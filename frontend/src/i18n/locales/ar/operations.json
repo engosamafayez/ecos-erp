@@ -87,7 +87,45 @@
       "quantityChangedRefresh": "تغيّرت الكمية أثناء فتح هذه الشاشة. حدّث الصفحة ثم أعد المحاولة.",
       "loadingCompleted": "اكتمل التحميل",
       "startLoadingDone": "تم بدء التحميل لهذه المجموعة بالفعل.",
-      "alreadyConfirmed": "هذه الكمية مؤكَّدة بالفعل. غيّرها لتأكيدها من جديد."
+      "alreadyConfirmed": "هذه الكمية مؤكَّدة بالفعل. غيّرها لتأكيدها من جديد.",
+      "needsReview": "تحتاج مراجعة",
+      "waitingDriverConfirmation": "بانتظار المندوب",
+      "executionNeedsReview": "الحالة المسجَّلة لا تتطابق مع أدلة التحميل — يحتاج الأمر إلى مراجعة من المشغّل قبل اعتباره مكتملاً فعليًا.",
+      "executionWaitingDriver": "توجد أدلة تحميل من المخزن؛ والمطلوب الآن هو تأكيد المندوب أو إعادة تأكيده."
+    },
+    "reasons": {
+      "pendingLoading": "لم يُحمَّل بعد",
+      "loadingInProgress": "التحميل جارٍ",
+      "adjustmentRequested": "طلب تعديل مفتوح",
+      "awaitingDriverConfirmation": "بانتظار تأكيد المندوب",
+      "awaitingDriverReconfirmation": "بانتظار إعادة تأكيد المندوب — تغيّرت الكمية بعد التأكيد",
+      "missingLoadingTasks": "لا توجد سجلات تحميل لهذه الشحنة",
+      "missingVehicleCustody": "لا يوجد سجل عهدة على المركبة للكمية المحمَّلة",
+      "quantityMismatch": "الكمية التي استلمها المندوب لا تطابق الكمية المؤكَّدة",
+      "inconsistentChildState": "مركبات هذه الجلسة لا تتفق جميعها على الحالة",
+      "truthfullyComplete": "مكتمل — تم التحقق من الأدلة",
+      "noActivity": "لا يوجد نشاط مسجَّل",
+      "cancelled": "ملغى"
+    },
+    "workspace": {
+      "tabs": {
+        "currentActionable": "الحالي",
+        "waitingDriverConfirmation": "بانتظار المندوب",
+        "completedHistory": "مكتمل / سجل",
+        "needsReview": "يحتاج مراجعة"
+      },
+      "overviewDescription": "جلسات التحميل التي لا تملك مجموعة حالية ضمن نافذة التخطيط اليوم — سواء كانت تاريخية أو مكتملة أو تحتاج مراجعة يدوية.",
+      "overviewEmpty": "لا يوجد شيء في هذا العرض.",
+      "columns": {
+        "session": "الجلسة",
+        "date": "التاريخ",
+        "status": "الحالة",
+        "assignments": "المركبات",
+        "reasons": "السبب"
+      },
+      "noAssignments": "لم تُعيَّن أي مركبة لهذه الجلسة قط.",
+      "tasksLabel": "عنصر محمَّل",
+      "unresolvedLabel": "غير محسوم"
     },
     "sessions": {
       "title": "جلسات التحميل",

@@ -4,9 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { useToast } from '@/components/ds/use-toast';
 
 import { loadingOsService } from '../services/loading-os-service';
+import type { LoadingWorkspaceBucket } from '../types/loading-os';
 
 const keys = {
   sessions: ['loading-os', 'sessions'] as const,
+  sessionsOverview: (warehouseId: string | null, bucket: LoadingWorkspaceBucket | undefined, page: number) =>
+    ['loading-os', 'sessions-overview', warehouseId, bucket ?? 'all', page] as const,
   assignments: (sessionId: string) => ['loading-os', 'assignments', sessionId] as const,
   allocations: (sessionId: string, assignmentId: string) =>
     ['loading-os', 'allocations', sessionId, assignmentId] as const,
@@ -114,6 +117,25 @@ export function useLoadingSessions() {
     queryKey: keys.sessions,
     queryFn: () => loadingOsService.listSessions(),
     staleTime: 15_000,
+  });
+}
+
+/**
+ * The LoadingSession-grain read model (TASK-...-WORKSPACE-READ-MODEL-004) — the
+ * Waiting/Completed-History/Needs-Review tabs' data source. `bucket === undefined`
+ * fetches every bucket (used for the tab strip's own counts).
+ */
+export function useLoadingSessionsOverview(
+  warehouseId: string | null,
+  bucket: LoadingWorkspaceBucket | undefined,
+  page: number,
+  perPage = 20,
+) {
+  return useQuery({
+    queryKey: keys.sessionsOverview(warehouseId, bucket, page),
+    queryFn: () => loadingOsService.getSessionsOverview({ warehouseId, bucket, page, perPage }),
+    staleTime: 15_000,
+    placeholderData: (previous) => previous,
   });
 }
 

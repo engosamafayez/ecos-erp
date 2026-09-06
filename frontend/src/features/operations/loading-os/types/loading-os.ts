@@ -159,6 +159,8 @@ export interface LoadingGroupSummary {
   orders_count: number;
   products_count: number;
   transport: LoadingGroupTransport;
+  /** Null when no loading assignment exists yet — nothing to classify. */
+  classification: LoadingWorkspaceClassification | null;
 }
 
 /** `no_planning_window` is a real answer, distinct from "no groups" (see the page). */
@@ -269,6 +271,81 @@ export interface LoadingGroupDetailResponse {
     window_id: string;
   };
   transport: LoadingGroupTransport;
+  /** Null when no loading assignment exists yet — nothing to classify. */
+  classification: LoadingWorkspaceClassification | null;
   totals: LoadingGroupTotals;
   products: LoadingGroupProduct[];
+}
+
+/*
+ * ── WORKSPACE READ-MODEL CLASSIFICATION (TASK-...-WORKSPACE-READ-MODEL-004) ──
+ *
+ * Server-authoritative presentation buckets, derived fresh on every read from the
+ * same canonical evidence (`VehicleAssignmentStatus`, `LoadingCustodyService::stateOf()`,
+ * `VehicleInventoryItem` existence) `DriverLoadingController::complete()` itself gates
+ * on. Never recomputed on the client — a screen that re-derived this from raw
+ * quantities/timestamps could disagree with the server, which is exactly the defect
+ * this task closes (the old `executionStateOf()` derivation this replaces).
+ */
+
+export type LoadingWorkspaceBucket =
+  | 'current_actionable'
+  | 'waiting_driver_confirmation'
+  | 'completed_history'
+  | 'needs_review';
+
+export type LoadingWorkspaceReasonCode =
+  | 'pending_loading'
+  | 'loading_in_progress'
+  | 'adjustment_requested'
+  | 'awaiting_driver_confirmation'
+  | 'awaiting_driver_reconfirmation'
+  | 'missing_loading_tasks'
+  | 'missing_vehicle_custody'
+  | 'quantity_mismatch'
+  | 'inconsistent_child_state'
+  | 'truthfully_complete'
+  | 'no_activity'
+  | 'cancelled';
+
+export interface LoadingWorkspaceClassification {
+  bucket: LoadingWorkspaceBucket;
+  reasons: LoadingWorkspaceReasonCode[];
+  task_count: number;
+  unresolved_task_count: number;
+}
+
+/** One child VehicleAssignment inside a classified LoadingSession. */
+export interface LoadingSessionOverviewChild extends LoadingWorkspaceClassification {
+  vehicle_assignment_id: string;
+  trip_id: number | null;
+  status: string;
+  /** Trip/vehicle/driver context for the page actually returned — see the endpoint's own docblock. */
+  transport: LoadingGroupTransport;
+}
+
+/** One row of the session-grain read model — GET /api/loading/sessions-overview. */
+export interface LoadingSessionOverviewRow {
+  session_id: string;
+  bucket: LoadingWorkspaceBucket;
+  reasons: LoadingWorkspaceReasonCode[];
+  assignments: LoadingSessionOverviewChild[];
+  session_number: string;
+  operational_date: string | null;
+  status: string;
+  warehouse_id: string;
+}
+
+export interface LoadingSessionOverviewMeta {
+  current_page: number;
+  per_page: number;
+  total: number;
+  last_page: number;
+}
+
+export interface LoadingSessionOverviewResponse {
+  data: LoadingSessionOverviewRow[];
+  meta: LoadingSessionOverviewMeta;
+  counts: Record<LoadingWorkspaceBucket, number>;
+  scan: { scanned: number; limit: number };
 }

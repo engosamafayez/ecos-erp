@@ -14,10 +14,14 @@ use Modules\Logistics\Distribution\Domain\Models\VirtualCapacitySlot;
 use Modules\Logistics\Distribution\Domain\Services\DistributionAggregationService;
 use Modules\Logistics\Distribution\Domain\Services\DistributionWindowService;
 use Modules\Logistics\Distribution\Domain\Services\GroupPreparationService;
+use Modules\Operations\Loading\Domain\Enums\LoadingWorkspaceBucket;
+use Modules\Operations\Loading\Domain\Models\LoadingSession;
 use Modules\Operations\Loading\Domain\Models\LoadingTask;
 use Modules\Operations\Loading\Domain\Models\LoadingTaskAdjustment;
 use Modules\Operations\Loading\Domain\Models\VehicleAssignment;
+use Modules\Operations\Loading\Domain\Models\VehicleInventoryItem;
 use Modules\Operations\Loading\Domain\Services\LoadingCustodyService;
+use Modules\Operations\Loading\Domain\Services\LoadingWorkspaceClassificationService;
 use Modules\Operations\Loading\Domain\Services\StaleQuantityException;
 use RuntimeException;
 
@@ -66,11 +70,21 @@ use RuntimeException;
  */
 final class GroupLoadingWorkspaceController extends Controller
 {
+    /**
+     * Bound on `sessionsOverview()`'s classification scan — see that method's docblock.
+     * Generous for this domain's real volume (a handful of LoadingSessions per
+     * company+warehouse per day); revisit only if a real deployment's Needs-Review/
+     * History queue genuinely needs to look back further than this many most-recent
+     * sessions in one page load.
+     */
+    private const OVERVIEW_SCAN_LIMIT = 200;
+
     public function __construct(
         private readonly DistributionWindowService $windows,
         private readonly DistributionAggregationService $aggregation,
         private readonly GroupPreparationService $groupPrep,
         private readonly LoadingCustodyService $custody,
+        private readonly LoadingWorkspaceClassificationService $classification,
     ) {}
 
     /**
@@ -230,7 +244,7 @@ final class GroupLoadingWorkspaceController extends Controller
         )));
 
         $tripBySlot = [];
-        $assignedTripIds = [];
+        $assignmentByTripId = [];
 
         if ($slotIds !== []) {
             $trips = Trip::query()
@@ -250,29 +264,46 @@ final class GroupLoadingWorkspaceController extends Controller
             }
 
             if ($trips->isNotEmpty()) {
-                // The STATUS is carried, not just the existence: a screen that knows only
-                // "an assignment exists" cannot tell loading-in-progress from
-                // loading-complete, and would state one while the other is true.
-                $assignedTripIds = VehicleAssignment::query()
+                // The full assignment (with its tasks) is loaded, not just the status
+                // column: a screen that knows only "an assignment exists" cannot tell
+                // loading-in-progress from loading-complete, and the read-model
+                // classification below needs the same rows to reuse the one custody
+                // authority rather than a second, cheaper-but-lossier projection.
+                $assignmentByTripId = VehicleAssignment::query()
                     ->whereIn('trip_id', $trips->pluck('id')->all())
-                    ->get(['trip_id', 'status'])
-                    ->mapWithKeys(static fn ($a): array => [
-                        (string) $a->trip_id => (string) ($a->status instanceof BackedEnum
-                            ? $a->status->value
-                            : $a->status),
-                    ])
+                    ->with('loadingTasks')
+                    ->get()
+                    ->keyBy(static fn (VehicleAssignment $a): string => (string) $a->trip_id)
                     ->all();
             }
         }
 
+        [$openAdjustmentsByTaskId, $custodyAssignmentIds] = $this->batchCustodyEvidence(
+            array_values($assignmentByTripId)
+        );
+
         $groups = array_map(
-            function (array $group) use ($tripBySlot, $assignedTripIds): array {
+            function (array $group) use ($tripBySlot, $assignmentByTripId, $openAdjustmentsByTaskId, $custodyAssignmentIds): array {
                 $trip = $tripBySlot[(string) ($group['slot_id'] ?? '')] ?? null;
+                $assignment = $trip === null ? null : ($assignmentByTripId[(string) $trip->id] ?? null);
 
                 return $group + [
                     'transport' => $this->presentTransport(
                         $trip,
-                        $trip === null ? null : ($assignedTripIds[(string) $trip->id] ?? null),
+                        $assignment === null ? null : (string) ($assignment->status instanceof BackedEnum
+                            ? $assignment->status->value
+                            : $assignment->status),
+                    ),
+                    // READ-MODEL CLASSIFICATION — TASK-...-WORKSPACE-READ-MODEL-004.
+                    // Server-authoritative; replaces ad hoc client-side derivation from
+                    // `loading_assignment_status` alone, which could not tell a genuinely
+                    // clean completion from one still awaiting driver reconfirmation or
+                    // missing custody entirely (Task 001/003's proven divergence).
+                    'classification' => $assignment === null ? null : $this->classification->classifyAssignment(
+                        $assignment,
+                        $assignment->loadingTasks,
+                        isset($custodyAssignmentIds[(string) $assignment->id]),
+                        $openAdjustmentsByTaskId,
                     ),
                 ];
             },
@@ -418,6 +449,13 @@ final class GroupLoadingWorkspaceController extends Controller
             }
         }
 
+        $assignmentClassification = $assignment === null ? null : $this->classification->classifyAssignment(
+            $assignment,
+            collect(array_values($taskByProduct)),
+            VehicleInventoryItem::query()->where('vehicle_assignment_id', $assignment->id)->exists(),
+            $openByTask,
+        );
+
         $prepared = $this->groupPrep->preparedByProduct($group->id);
 
         $products = [];
@@ -525,10 +563,202 @@ final class GroupLoadingWorkspaceController extends Controller
                         ? $assignment->status->value
                         : $assignment->status),
                 ),
+                // READ-MODEL CLASSIFICATION — see the batched equivalent in `groups()` and
+                // `LoadingWorkspaceClassificationService`'s own docblock. Per-product
+                // `workflow_state` above already tells the driver-confirmation story at
+                // product grain; this is the same evidence rolled up to the one badge an
+                // operator reads for "is this Group's loading truthfully done".
+                'classification' => $assignmentClassification,
                 'totals' => $totals,
                 'products' => $products,
             ],
         ]);
+    }
+
+    /**
+     * GET /api/loading/sessions-overview — the LoadingSession-grain read model this task
+     * (TASK-ECOS-OPERATIONS-LOADING-LIFECYCLE-CUSTODY-WORKSPACE-READ-MODEL-004) adds.
+     *
+     * ┌─ WHY THIS EXISTS ALONGSIDE `groups()`/`group()` ──────────────────────────┐
+     * │ Those two are Group-grain: one row per Trip/VehicleAssignment, bounded to  │
+     * │ whatever the CURRENT planning window resolves. A `LoadingSession` that has │
+     * │ no live Group in today's window — because the window moved past it, or     │
+     * │ because it was created with zero assignments and never touched again —     │
+     * │ never appears there at all (Task 001 §20's proven gap: the operator UI has  │
+     * │ no session-level visibility whatsoever). This endpoint is the first read    │
+     * │ in this subsystem keyed on `LoadingSession` itself, so a historical or       │
+     * │ anomalous session can be surfaced for audit/Needs-Review instead of being    │
+     * │ silently invisible (Task 003's proven "genuinely never started"/"marked      │
+     * │ complete with zero execution" sessions).                                   │
+     * └────────────────────────────────────────────────────────────────────────────┘
+     *
+     * BOUNDED, NOT UNBOUNDED. Classification is derived (not a SQL-filterable column),
+     * so a `bucket` filter is applied AFTER classifying a bounded, most-recent slice of
+     * sessions — never the full historical table, and never shipped unfiltered to the
+     * client for it to filter itself. `self::OVERVIEW_SCAN_LIMIT` documents that bound;
+     * see the report for the tradeoff this accepts.
+     */
+    public function sessionsOverview(Request $request): JsonResponse
+    {
+        $companyId = $this->companyId($request);
+        $warehouseId = $this->warehouseId($request);
+
+        $validated = $request->validate([
+            'bucket' => ['nullable', 'string', 'in:'.implode(',', array_map(
+                static fn (LoadingWorkspaceBucket $b): string => $b->value,
+                LoadingWorkspaceBucket::cases(),
+            ))],
+            'page' => ['nullable', 'integer', 'min:1'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $bucketFilter = $validated['bucket'] ?? null;
+        $page = (int) ($validated['page'] ?? 1);
+        $perPage = (int) ($validated['per_page'] ?? 20);
+
+        $sessions = LoadingSession::query()
+            ->where('company_id', $companyId)
+            ->when($warehouseId !== null, static fn ($q) => $q->where('warehouse_id', $warehouseId))
+            ->with('vehicleAssignments.loadingTasks')
+            ->orderByDesc('operational_date')
+            ->orderByDesc('created_at')
+            ->limit(self::OVERVIEW_SCAN_LIMIT)
+            ->get();
+
+        $classified = $sessions->map(function (LoadingSession $session): array {
+            $row = $this->classification->classifySession($session);
+
+            return $row + [
+                'session_number' => $session->session_number,
+                'operational_date' => $session->operational_date?->toDateString(),
+                'status' => (string) ($session->status instanceof BackedEnum
+                    ? $session->status->value
+                    : $session->status),
+                'warehouse_id' => (string) $session->warehouse_id,
+            ];
+        });
+
+        $counts = array_fill_keys(array_map(
+            static fn (LoadingWorkspaceBucket $b): string => $b->value,
+            LoadingWorkspaceBucket::cases(),
+        ), 0);
+
+        foreach ($classified as $row) {
+            $counts[$row['bucket']] = ($counts[$row['bucket']] ?? 0) + 1;
+        }
+
+        $filtered = $bucketFilter === null
+            ? $classified
+            : $classified->filter(static fn (array $row): bool => $row['bucket'] === $bucketFilter)->values();
+
+        $total = $filtered->count();
+        $lastPage = max(1, (int) ceil($total / $perPage));
+        $page = min($page, $lastPage);
+        $pageItems = $filtered->slice(($page - 1) * $perPage, $perPage)->values();
+
+        // Trip/vehicle/driver context — ONLY for the page actually returned, not the
+        // whole bounded scan, and reusing `presentTransport()` rather than a second
+        // projection, per the task's own "Manual Review Evidence Presentation" ask
+        // (Group/Trip/Driver/Vehicle alongside the classification, where available).
+        $tripIds = $pageItems
+            ->flatMap(static fn (array $item): array => array_column($item['assignments'], 'trip_id'))
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        $tripById = $tripIds === []
+            ? []
+            : Trip::query()
+                ->whereIn('id', $tripIds)
+                ->with(['driverVehicleAssignment.driver', 'driverVehicleAssignment.vehicle'])
+                ->get()
+                ->keyBy(static fn (Trip $t): int => (int) $t->id)
+                ->all();
+
+        $pageItems = $pageItems->map(function (array $item) use ($tripById): array {
+            $item['assignments'] = array_map(
+                function (array $child) use ($tripById): array {
+                    $trip = $child['trip_id'] === null ? null : ($tripById[(int) $child['trip_id']] ?? null);
+
+                    return $child + ['transport' => $this->presentTransport($trip, $child['status'])];
+                },
+                $item['assignments'],
+            );
+
+            return $item;
+        });
+
+        return response()->json([
+            'data' => [
+                // Same envelope shape as the existing paginated `/loading/sessions` read
+                // (`data.data` + `data.meta`) — see loading-os-service.ts's own comment on
+                // why that nesting is the established contract, not an accident to diverge from.
+                'data' => $pageItems,
+                'meta' => [
+                    'current_page' => $page,
+                    'per_page' => $perPage,
+                    'total' => $total,
+                    'last_page' => $lastPage,
+                ],
+                'counts' => $counts,
+                'scan' => [
+                    'scanned' => $sessions->count(),
+                    'limit' => self::OVERVIEW_SCAN_LIMIT,
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Batch, not per-assignment: one query for every open adjustment across every task
+     * under the given assignments, one for which assignments have any custody evidence
+     * at all — the same N+1-avoidance shape `group()` uses for its single assignment,
+     * extended to a list for `groups()`.
+     *
+     * @param  list<VehicleAssignment>  $assignments  each with `loadingTasks` eager-loaded
+     * @return array{0: array<string, LoadingTaskAdjustment>, 1: array<string, true>}
+     */
+    private function batchCustodyEvidence(array $assignments): array
+    {
+        if ($assignments === []) {
+            return [[], []];
+        }
+
+        $taskIds = [];
+
+        foreach ($assignments as $assignment) {
+            foreach ($assignment->loadingTasks as $task) {
+                $taskIds[] = (string) $task->id;
+            }
+        }
+
+        $openAdjustmentsByTaskId = [];
+
+        if ($taskIds !== []) {
+            foreach (
+                LoadingTaskAdjustment::query()
+                    ->whereIn('loading_task_id', $taskIds)
+                    ->where('status', LoadingTaskAdjustment::STATUS_OPEN)
+                    ->get() as $open
+            ) {
+                $openAdjustmentsByTaskId[(string) $open->loading_task_id] = $open;
+            }
+        }
+
+        $custodyAssignmentIds = array_flip(
+            VehicleInventoryItem::query()
+                ->whereIn('vehicle_assignment_id', array_map(
+                    static fn (VehicleAssignment $a): string => (string) $a->id,
+                    $assignments,
+                ))
+                ->distinct()
+                ->pluck('vehicle_assignment_id')
+                ->map(static fn ($id): string => (string) $id)
+                ->all()
+        );
+
+        return [$openAdjustmentsByTaskId, $custodyAssignmentIds];
     }
 
     /** The Group, fenced to the acting company. A foreign uuid 404s. */
