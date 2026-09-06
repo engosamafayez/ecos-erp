@@ -423,10 +423,17 @@ const ALL_MODULES: AppModule[] = [
     ],
   },
   {
+    // Reporting V1 (TASK-ECOS-REPORTING-V1-USER-VISIBLE-NAVIGATION-CLOSURE-010).
+    // One entry, matching the Executive Platform's own single-item shape — the
+    // 10 report categories live inside the Reporting landing page itself, not
+    // as separate sidebar items. Visibility is decided by the module gate
+    // below (MODULE_DOMAINS.reports, any `reports.*` permission); per-report
+    // execution is separately gated inside the page by that report's own
+    // `reports.<category>.view` permission.
     id: 'reports',
     icon: BarChart3,
     defaultPath: ROUTES.reports,
-    items: [],
+    items: [{ key: 'reports-board', path: ROUTES.reports, icon: BarChart3 }],
   },
   {
     id: 'administration',
@@ -503,7 +510,6 @@ const ALL_MODULES: AppModule[] = [
  *   • logistics      — the empty rail entry. Every Logistics workspace lives
  *                      under Shipping; this module carried no items, so it
  *                      rendered as a module with an empty sidebar
- *   • reports        — carries no items and no distinct destination
  *   • finance        — the module exists here with no items and its UI lives on
  *                      `platform-foundation`. Unhiding it on this branch would
  *                      surface an empty module, which is the orphan this EPIC
@@ -517,7 +523,6 @@ const HIDDEN_MODULE_IDS: ReadonlySet<ModuleId> = new Set<ModuleId>([
   'manufacturing',
   'engineering',
   'logistics',
-  'reports',
 ]);
 
 /** Navigation-visible modules (hidden ids filtered out for go-live scope). */

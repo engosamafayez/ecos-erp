@@ -81,6 +81,7 @@ export const NAMESPACES = [
   'dashboard',
   'finance',
   'executive',
+  'reporting',
 
   // ── Platform / Integrations ───────────────────────────────────────────────
   'sync-logs',

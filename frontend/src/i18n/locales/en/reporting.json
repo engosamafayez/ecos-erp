@@ -1,0 +1,33 @@
+{
+  "title": "Reports",
+  "subtitle": "Browse the reporting catalogue and run a report.",
+  "searchPlaceholder": "Search reports…",
+  "restrictedTooltip": "You don't have permission to view this report",
+  "empty": {
+    "title": "No reports found",
+    "description": "Try a different search term."
+  },
+  "categories": {
+    "executive": "Executive",
+    "sales": "Sales",
+    "customers": "Customers",
+    "products": "Products",
+    "inventory": "Inventory",
+    "procurement": "Procurement",
+    "preparation": "Preparation",
+    "distribution": "Distribution",
+    "drivers": "Drivers",
+    "finance": "Financial"
+  },
+  "detail": {
+    "loadingTitle": "Loading report…",
+    "notFoundTitle": "Report not found",
+    "notFoundDescription": "This report doesn't exist in the catalogue.",
+    "refresh": "Refresh",
+    "forbiddenTitle": "You don't have access to this report",
+    "forbiddenDescription": "This report requires the \"{{permission}}\" permission.",
+    "emptyTitle": "No data for this report",
+    "emptyDescription": "The report ran successfully but returned nothing to show.",
+    "period": "Period: {{from}} to {{to}}"
+  }
+}

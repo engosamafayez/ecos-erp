@@ -14,6 +14,9 @@ import { CompaniesPage } from '@/features/companies/pages/companies-page';
 import { DashboardPage } from '@/features/dashboard/pages/dashboard-page';
 // Executive Platform (EPIC-EXECUTIVE-UI-001) — aliased; Marketing also exports ExecutiveDashboardPage.
 import { ExecutiveDashboardPage as ExecutivePlatformPage } from '@/features/executive/pages/executive-dashboard-page';
+// Reporting V1 (TASK-ECOS-REPORTING-V1-USER-VISIBLE-NAVIGATION-CLOSURE-010)
+import { ReportingCataloguePage } from '@/features/reporting/pages/reporting-catalogue-page';
+import { ReportDetailPage } from '@/features/reporting/pages/report-detail-page';
 // Finance workspace (EPIC-FINANCE-UI-001)
 import { FinanceExecutivePage } from '@/features/finance/pages/finance-executive-page';
 import { ChartOfAccountsPage } from '@/features/finance/pages/chart-of-accounts-page';
@@ -243,7 +246,7 @@ import { ROUTES } from '@/router/routes';
 // ADMINISTRATION-WORKSPACE-003) — they were Coming Soon placeholders behind the sidebar's
 // existing "Users"/"Roles & Permissions" nav items; both now render the real
 // IamWorkspacePage instead, registered explicitly below alongside ROUTES.roleTemplates.
-const moduleRoutes = [ROUTES.sales, ROUTES.reports].map((path) => ({
+const moduleRoutes = [ROUTES.sales].map((path) => ({
   path,
   Component: ComingSoonPage,
 }));
@@ -325,6 +328,9 @@ export const router = createBrowserRouter(
             { path: ROUTES.collaborationWorkspace, Component: CollaborationWorkspacePage },
             // Executive Platform (EPIC-EXECUTIVE-UI-001)
             { path: ROUTES.executiveDashboard, Component: ExecutivePlatformPage },
+            // Reporting V1 (TASK-ECOS-REPORTING-V1-USER-VISIBLE-NAVIGATION-CLOSURE-010)
+            { path: ROUTES.reports, Component: ReportingCataloguePage },
+            { path: ROUTES.reportDetail, Component: ReportDetailPage },
             // Finance workspace (EPIC-FINANCE-UI-001). /accounting = Executive Finance.
             { path: ROUTES.accounting, Component: FinanceExecutivePage },
             { path: ROUTES.financeChartOfAccounts, Component: ChartOfAccountsPage },

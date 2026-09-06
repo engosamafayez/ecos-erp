@@ -1,0 +1,33 @@
+{
+  "title": "التقارير",
+  "subtitle": "تصفح دليل التقارير وشغّل أحد التقارير.",
+  "searchPlaceholder": "بحث في التقارير…",
+  "restrictedTooltip": "ليس لديك صلاحية لعرض هذا التقرير",
+  "empty": {
+    "title": "لم يتم العثور على تقارير",
+    "description": "جرّب كلمة بحث مختلفة."
+  },
+  "categories": {
+    "executive": "التنفيذي",
+    "sales": "المبيعات",
+    "customers": "العملاء",
+    "products": "المنتجات",
+    "inventory": "المخزون",
+    "procurement": "المشتريات",
+    "preparation": "التحضير",
+    "distribution": "التوزيع",
+    "drivers": "السائقون",
+    "finance": "المالية"
+  },
+  "detail": {
+    "loadingTitle": "جاري تحميل التقرير…",
+    "notFoundTitle": "التقرير غير موجود",
+    "notFoundDescription": "هذا التقرير غير موجود في الدليل.",
+    "refresh": "تحديث",
+    "forbiddenTitle": "ليس لديك صلاحية الوصول إلى هذا التقرير",
+    "forbiddenDescription": "يتطلب هذا التقرير صلاحية \"{{permission}}\".",
+    "emptyTitle": "لا توجد بيانات لهذا التقرير",
+    "emptyDescription": "تم تشغيل التقرير بنجاح لكنه لم يُرجع أي بيانات لعرضها.",
+    "period": "الفترة: من {{from}} إلى {{to}}"
+  }
+}

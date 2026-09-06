@@ -105,6 +105,7 @@ export const ROUTES = {
   hrEmployeePerformance: '/hr/performance/employees/:employeeId',
   hrDepartmentPerformance: '/hr/performance/departments/:departmentId',
   reports: '/reports',
+  reportDetail: '/reports/:reportId',
   settings: '/settings',
   // Claude Bridge
   claudeBridge:           '/claude-bridge',
