@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, LogOut, X } from 'lucide-react';
+import { LogOut, Search, User as UserIcon, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
@@ -66,6 +66,33 @@ type MobileMenuProps = {
  * default — to reveal email and the Company/Warehouse switchers underneath.
  * Nothing was removed: every field and control that existed before still
  * exists, one tap away, never buried behind a second screen or a nested menu.
+ *
+ * TASK-ECOS-MOBILE-MENU-NAVIGATION-FINAL-REMEDIATION-001 — three further,
+ * narrow fixes from a fresh User review, none a redesign:
+ *
+ *   (1) SEARCH NO LONGER AUTOFOCUSES. The Drawer used to override Radix's
+ *       `onOpenAutoFocus` to force focus (and therefore the software
+ *       keyboard) straight into the search input on every open — see the old
+ *       comment this replaced. That override is gone; opening the Drawer now
+ *       leaves focus exactly where Radix's own Dialog behavior puts it
+ *       (the first focusable header control), per the task's own instruction
+ *       to trust "the existing accessibility library" rather than invent a
+ *       replacement target. Search still works exactly as before — it is
+ *       simply no longer forced open on every Drawer open (see (2)).
+ *
+ *   (2) The summary row (which was STILL an always-rendered, one-line block
+ *       every time the Drawer opened, even collapsed) is replaced by a
+ *       compact `User` icon here in the header, alongside a matching
+ *       `Search` icon. Tapping either opens exactly the same content as
+ *       before — this file's identity/Company/Warehouse panel, or the
+ *       launcher's own search row+results — one tap away, nothing removed,
+ *       now costing ZERO height until the User actually asks for either.
+ *       `activePanel` replaces the old `contextExpanded` boolean with a
+ *       three-way switch (`'search' | 'identity' | null`) so opening one
+ *       compact panel closes the other rather than both trying to occupy the
+ *       same limited vertical space at once.
+ *
+ *   (3) Recent is now capped at 3 (was 5) — see `mobile-modules-launcher.tsx`.
  */
 export function MobileMenu({ open, onClose }: MobileMenuProps) {
   const { t } = useTranslation('common');
@@ -80,10 +107,18 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
   const email = user?.email ?? '';
   const role = t(($) => $.userMenu.role);
 
-  // Collapsed by default (§5) — the upper context area used to be a
-  // permanently-open stacked block; it now expands on demand instead of
-  // dominating the Drawer's vertical space every time it opens.
-  const [contextExpanded, setContextExpanded] = useState(false);
+  // Neither panel is open by default — both the search row and the identity
+  // card now cost zero height until the User taps their compact icon in the
+  // header. A single three-way switch (rather than two independent booleans)
+  // keeps the two mutually exclusive: opening one closes the other, so they
+  // never compete for the Drawer's limited vertical space at once. Because
+  // Radix unmounts `SheetPrimitive.Content` when the Drawer closes, this
+  // resets to `null` on every close automatically — reopening never restores
+  // a previously-open panel (or its focus) on its own, matching the task's
+  // own "do not automatically restore search focus on reopen" requirement.
+  const [activePanel, setActivePanel] = useState<'search' | 'identity' | null>(null);
+  const toggleSearch = () => setActivePanel((p) => (p === 'search' ? null : 'search'));
+  const toggleIdentity = () => setActivePanel((p) => (p === 'identity' ? null : 'identity'));
 
   async function handleLogout() {
     await logout();
@@ -116,56 +151,62 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
             'data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom',
             'data-[state=closed]:duration-300 data-[state=open]:duration-500',
           )}
-          onOpenAutoFocus={(e) => {
-            // Land focus on the search field (the launcher's most useful
-            // first action) instead of Radix's default of the first
-            // focusable element (which would be the close button).
-            e.preventDefault();
-            document.getElementById('mobile-menu-search')?.focus();
-          }}
         >
           <SheetPrimitive.Description className="sr-only">
             {t(($) => $.nav.menuDescription)}
           </SheetPrimitive.Description>
 
-          {/* Header — title + close only; the profile card below already
-              carries the "who/where" identity, so a duplicate brand mark here
-              would compete with it rather than support it. */}
-          <div className="flex h-12 shrink-0 items-center justify-between border-b px-4">
-            <span className="text-sm font-semibold text-foreground">{t(($) => $.nav.menu)}</span>
-            <SheetPrimitive.Close asChild>
-              <Button variant="ghost" size="icon" aria-label={t(($) => $.nav.closeMenu)}>
-                <X className="size-5" aria-hidden />
+          {/* Header — title, compact Search/Account actions, close. No
+              `onOpenAutoFocus` override: focus lands wherever Radix's own
+              Dialog behavior puts it (the first focusable control here),
+              never forced into search. */}
+          <div className="flex h-12 shrink-0 items-center justify-between gap-1 border-b px-2">
+            <span className="px-2 text-sm font-semibold text-foreground">{t(($) => $.nav.menu)}</span>
+            <div className="flex items-center gap-0.5">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={t(($) => $.nav.search)}
+                aria-pressed={activePanel === 'search'}
+                onClick={toggleSearch}
+              >
+                <Search className="size-5" aria-hidden />
               </Button>
-            </SheetPrimitive.Close>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={t(($) => $.userMenu.ariaLabel, { name })}
+                aria-expanded={activePanel === 'identity'}
+                onClick={toggleIdentity}
+              >
+                <UserIcon className="size-5" aria-hidden />
+              </Button>
+              <SheetPrimitive.Close asChild>
+                <Button variant="ghost" size="icon" aria-label={t(($) => $.nav.closeMenu)}>
+                  <X className="size-5" aria-hidden />
+                </Button>
+              </SheetPrimitive.Close>
+            </div>
           </div>
 
-          {/* Profile identity + Company/Warehouse context — a compact,
-              always-visible summary row that expands on demand (§5) instead
-              of a permanently-open stacked block. Collapsed, it costs one
-              row's worth of height; expanded, it reveals email and the
-              Company/Warehouse card exactly as before — nothing removed. */}
-          <div className="shrink-0 border-b bg-muted/20 p-3">
-            <button
-              type="button"
-              onClick={() => setContextExpanded((v) => !v)}
-              aria-expanded={contextExpanded}
-              className="flex w-full items-center gap-3 rounded-xl border bg-card p-2.5 text-start shadow-sm"
-            >
-              <Avatar className="size-9">
-                <AvatarFallback className="text-xs font-bold">{getInitials(name)}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-foreground">{name}</p>
-                <p className="truncate text-[11px] text-muted-foreground">{role}</p>
+          {/* Profile identity + Company/Warehouse context — revealed only by
+              the Account icon above (§ FINAL-REMEDIATION-001); zero height
+              the rest of the time. Same fields/controls as before nothing
+              removed, just no longer an always-rendered summary row. */}
+          {activePanel === 'identity' ? (
+            <div className="shrink-0 border-b bg-muted/20 p-3">
+              <div className="flex items-center gap-3 rounded-xl border bg-card p-2.5 text-start shadow-sm">
+                <Avatar className="size-9">
+                  <AvatarFallback className="text-xs font-bold">{getInitials(name)}</AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-foreground">{name}</p>
+                  <p className="truncate text-[11px] text-muted-foreground">{role}</p>
+                </div>
               </div>
-              <ChevronDown
-                className={cn('size-4 shrink-0 text-muted-foreground transition-transform', contextExpanded && 'rotate-180')}
-                aria-hidden
-              />
-            </button>
 
-            {contextExpanded ? (
               <div className="mt-2 flex flex-col gap-2">
                 {email ? <p className="truncate px-1 text-xs text-muted-foreground">{email}</p> : null}
                 <div className="rounded-xl border bg-card p-2.5 shadow-sm">
@@ -178,13 +219,17 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
                   </div>
                 </div>
               </div>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
 
           {/* Body — the grouped, accordion-style navigation list */}
           <div className="flex-1 overflow-hidden">
             {hasModules ? (
-              <MobileModulesLauncher activeModuleId={activeId} onNavigate={handleNavigate} />
+              <MobileModulesLauncher
+                activeModuleId={activeId}
+                onNavigate={handleNavigate}
+                searchOpen={activePanel === 'search'}
+              />
             ) : (
               <p className="p-6 text-center text-sm text-muted-foreground">
                 {t(($) => $.nav.noModuleMatches)}
