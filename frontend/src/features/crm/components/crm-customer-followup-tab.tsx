@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { usePermission } from '@/features/authorization';
 import {
   useCancelCrmTask,
   useCompleteCrmTask,
@@ -37,8 +38,10 @@ function fmtMoney(n: number | null | undefined) {
 
 function TaskRow({ task, customerId }: { task: CrmTask; customerId: string }) {
   const { t } = useTranslation('crm');
+  const { can } = usePermission();
   const complete = useCompleteCrmTask(customerId);
   const cancel = useCancelCrmTask(customerId);
+  const canManage = can('crm.engagement.task.manage');
 
   return (
     <li className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-3">
@@ -68,7 +71,7 @@ function TaskRow({ task, customerId }: { task: CrmTask; customerId: string }) {
           )}
         </div>
       </div>
-      {task.status === 'open' && (
+      {task.status === 'open' && canManage && (
         <div className="flex gap-1.5">
           <Button
             size="sm"
@@ -156,6 +159,7 @@ type Props = {
  */
 export function CrmCustomerFollowUpTab({ customerId, crm, finance, blocked, engagement }: Props) {
   const { t } = useTranslation('crm');
+  const { can } = usePermission();
   const { data: tasks, isLoading } = useCrmCustomerTasksQuery(customerId, true);
   const openTasks = (tasks ?? []).filter((task) => task.status === 'open');
 
@@ -210,7 +214,7 @@ export function CrmCustomerFollowUpTab({ customerId, crm, finance, blocked, enga
         )}
       </section>
 
-      <CreateFollowUpForm customerId={customerId} />
+      {can('crm.engagement.task.manage') && <CreateFollowUpForm customerId={customerId} />}
     </div>
   );
 }

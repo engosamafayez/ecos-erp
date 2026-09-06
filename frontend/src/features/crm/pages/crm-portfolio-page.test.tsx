@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import type { ReactNode } from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // TASK-ECOS-CRM-CUSTOMER-PORTFOLIO-AND-FOLLOWUP-003 — the CRM Portfolio had
 // no frontend at all before this task. These tests cover: real data render
@@ -23,6 +23,13 @@ vi.mock('react-i18next', () => ({
     t: (sel: unknown) => (typeof sel === 'function' ? String((sel as (p: unknown) => unknown)(pathProxy(''))) : String(sel)),
   }),
 }));
+
+// TASK-ECOS-CRM-OPERATIONAL-WIRING-IAM-AND-SOURCE-HARDENING-004 (§22/§29) —
+// permission-aware UX: defaults to authorized so existing render tests keep
+// their prior behavior; individual tests override mockCan to prove the
+// forbidden-mutation-hidden case.
+let mockCan: (permission: string) => boolean = () => true;
+vi.mock('@/features/authorization', () => ({ usePermission: () => ({ can: (p: string) => mockCan(p) }) }));
 
 vi.mock('@/components/data-grid/smart-toolbar', () => ({ SmartToolbar: () => <div data-testid="toolbar" /> }));
 vi.mock('@/components/data-grid/universal-data-grid', () => ({
@@ -139,6 +146,10 @@ function setup(over: Partial<{ rows: CrmPortfolioRow[]; loading: boolean; error:
 }
 
 describe('CrmPortfolioPage — real composed data, never a fabricated empty state', () => {
+  beforeEach(() => {
+    mockCan = () => true;
+  });
+
   it('renders the owner, next follow-up (overdue), blocked, balance and engagement facts — all server-computed', () => {
     setup();
     render(<CrmPortfolioPage />);
@@ -180,5 +191,26 @@ describe('CrmPortfolioPage — real composed data, never a fabricated empty stat
     render(<CrmPortfolioPage />);
 
     expect(screen.getByTestId('empty-state')).toBeInTheDocument();
+  });
+
+  // TASK-ECOS-CRM-OPERATIONAL-WIRING-IAM-AND-SOURCE-HARDENING-004 §22 — a
+  // viewer without crm.customers.update sees the same data, never the
+  // mutation control (not disabled — absent, per §22's own instruction).
+  it('hides the owner-assignment control for a user without crm.customers.update, while still showing the read data', () => {
+    mockCan = () => false;
+    setup();
+    render(<CrmPortfolioPage />);
+
+    expect(screen.getByText('portfolio.owner.unassigned')).toBeInTheDocument();
+    expect(screen.queryByText('portfolio.owner.assign')).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('portfolio.owner.idPlaceholder')).not.toBeInTheDocument();
+  });
+
+  it('shows the owner-assignment control for a user with crm.customers.update', () => {
+    mockCan = () => true;
+    setup();
+    render(<CrmPortfolioPage />);
+
+    expect(screen.getByText('portfolio.owner.assign')).toBeInTheDocument();
   });
 });

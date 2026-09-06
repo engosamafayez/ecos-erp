@@ -9,6 +9,7 @@ import type { StatusVariant } from '@/components/crud/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { usePermission } from '@/features/authorization';
 import { CrmCustomerDrawer } from '@/features/crm/components/crm-customer-drawer';
 import { useAssignSalesOwner, useCrmPortfolioQuery } from '@/features/crm/hooks/use-crm-portfolio';
 import type {
@@ -70,23 +71,34 @@ const PRIORITY_FILTERS: { value: CrmTaskPriority | 'all'; label: CrmLabel }[] = 
 
 function OwnerCell({ row }: { row: CrmPortfolioRow }) {
   const { t } = useTranslation('crm');
+  const { can } = usePermission();
   const [draft, setDraft] = useState('');
   const assign = useAssignSalesOwner();
+  // Assigning an owner is a customer-record update — same authority as the
+  // Customer 360 edit action (§6/§22: map only the permission the mutation
+  // actually consumes, never invent a broader one).
+  const canAssign = can('crm.customers.update');
 
   if (!row.is_unassigned) {
     return (
       <div className="flex flex-col">
         <span className="font-medium">{row.sales_owner_name}</span>
-        <button
-          type="button"
-          className="w-fit text-left text-xs text-muted-foreground underline-offset-2 hover:underline"
-          onClick={() => assign.mutate({ customerId: row.id, salesOwnerId: null })}
-          disabled={assign.isPending}
-        >
-          {t(($) => $.portfolio.owner.unassign)}
-        </button>
+        {canAssign && (
+          <button
+            type="button"
+            className="w-fit text-left text-xs text-muted-foreground underline-offset-2 hover:underline"
+            onClick={() => assign.mutate({ customerId: row.id, salesOwnerId: null })}
+            disabled={assign.isPending}
+          >
+            {t(($) => $.portfolio.owner.unassign)}
+          </button>
+        )}
       </div>
     );
+  }
+
+  if (!canAssign) {
+    return <Badge variant="outline">{t(($) => $.portfolio.owner.unassigned)}</Badge>;
   }
 
   return (

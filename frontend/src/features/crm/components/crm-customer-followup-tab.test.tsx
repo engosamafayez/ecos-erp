@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // TASK-ECOS-CRM-CUSTOMER-PORTFOLIO-AND-FOLLOWUP-003 — Customer 360's CRM
 // section is new. Covers: Gate B facts (finance/blocked/engagement) that had
@@ -22,6 +22,11 @@ vi.mock('react-i18next', () => ({
     t: (sel: unknown) => (typeof sel === 'function' ? String((sel as (p: unknown) => unknown)(pathProxy(''))) : String(sel)),
   }),
 }));
+
+// TASK-ECOS-CRM-OPERATIONAL-WIRING-IAM-AND-SOURCE-HARDENING-004 (§22/§29) —
+// defaults to authorized so existing render tests keep their prior behavior.
+let mockCan: (permission: string) => boolean = () => true;
+vi.mock('@/features/authorization', () => ({ usePermission: () => ({ can: (p: string) => mockCan(p) }) }));
 
 import {
   useCancelCrmTask,
@@ -97,6 +102,10 @@ const BASE_PROPS = {
 };
 
 describe('CrmCustomerFollowUpTab', () => {
+  beforeEach(() => {
+    mockCan = () => true;
+  });
+
   it('renders the owner, Finance balance and engagement recency — Gate B facts with no prior frontend consumer', () => {
     setup();
     render(<CrmCustomerFollowUpTab {...BASE_PROPS} />);
@@ -158,5 +167,21 @@ describe('CrmCustomerFollowUpTab', () => {
       expect.objectContaining({ task_type: 'follow_up', title: 'Send renewal quote' }),
       expect.anything(),
     );
+  });
+
+  // TASK-ECOS-CRM-OPERATIONAL-WIRING-IAM-AND-SOURCE-HARDENING-004 §22 — a
+  // viewer without crm.engagement.task.manage sees the follow-up data (and
+  // Gate B's facts) but no mutation control — never a disabled button, an
+  // absent one, matching §22's own instruction.
+  it('hides complete/cancel/create controls for a user without crm.engagement.task.manage, while still showing the data', () => {
+    mockCan = () => false;
+    setup();
+    render(<CrmCustomerFollowUpTab {...BASE_PROPS} />);
+
+    expect(screen.getByText('Call about renewal')).toBeInTheDocument();
+    expect(screen.getByText('Nadia Owner')).toBeInTheDocument();
+    expect(screen.queryByText('followUp.complete')).not.toBeInTheDocument();
+    expect(screen.queryByText('followUp.cancel')).not.toBeInTheDocument();
+    expect(screen.queryByText('followUp.create')).not.toBeInTheDocument();
   });
 });
