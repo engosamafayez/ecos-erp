@@ -32,6 +32,9 @@ import type {
   LoadingGroupSummary,
   LoadingGroupTransport,
   LoadingWorkflowState,
+  LoadingWorkspaceBucket,
+  LoadingWorkspaceClassification,
+  LoadingWorkspaceReasonCode,
 } from '../types/loading-os';
 
 /**
@@ -92,19 +95,50 @@ function qty(value: number): string {
  *
  * `unavailable` remains a real state, distinct from `planning` — a failed read is
  * never rendered as an absence.
+ *
+ * `waitingDriverConfirmation` and `needsReview` (TASK-...-WORKSPACE-READ-MODEL-004) are
+ * SERVER-DERIVED — never inferred from `loading_assignment_status` alone, which could not
+ * tell a genuinely clean completion from one still missing custody evidence or awaiting
+ * driver reconfirmation (the exact divergence Task 001/003 proved against real DEV data).
  */
-type ExecutionState = 'ready' | 'planning' | 'inProgress' | 'completed' | 'unavailable';
+type ExecutionState =
+  | 'ready'
+  | 'planning'
+  | 'inProgress'
+  | 'waitingDriverConfirmation'
+  | 'needsReview'
+  | 'completed'
+  | 'unavailable';
 
 function executionStateOf(
   transport: LoadingGroupTransport | undefined,
+  classification: LoadingWorkspaceClassification | null | undefined,
   isError: boolean,
 ): ExecutionState {
   if (isError || transport === undefined) {
     return 'unavailable';
   }
 
-  // Once an execution context exists it outranks readiness: the question is no longer
-  // "can this start" but "where has it got to".
+  // The server's own read-model classification outranks readiness once an execution
+  // context exists — the question is no longer "can this start" but "where has it
+  // truthfully got to", and that answer is never recomputed here from raw quantities.
+  if (classification !== null && classification !== undefined) {
+    switch (classification.bucket) {
+      case 'needs_review':
+        return 'needsReview';
+      case 'waiting_driver_confirmation':
+        return 'waitingDriverConfirmation';
+      case 'completed_history':
+        return 'completed';
+      default:
+        return 'inProgress';
+    }
+  }
+
+  // Fallback for a response with no classification — the two-state derivation this
+  // replaces. The live backend always populates `classification` in lockstep with
+  // `loading_assignment_status`, so this path exists only for a caller that has not
+  // been updated to supply one; it must not read as "an execution context is absent".
   if (transport.loading_assignment_status !== null) {
     return transport.loading_assignment_status === 'loading_complete' ? 'completed' : 'inProgress';
   }
@@ -114,7 +148,36 @@ function executionStateOf(
 
 /** Loading has an execution context — Start Loading must no longer invite a new one. */
 function hasStarted(state: ExecutionState): boolean {
-  return state === 'inProgress' || state === 'completed';
+  return (
+    state === 'inProgress' ||
+    state === 'waitingDriverConfirmation' ||
+    state === 'needsReview' ||
+    state === 'completed'
+  );
+}
+
+/**
+ * One badge tone per execution state, shared by the card and the detail panel. NeedsReview
+ * is deliberately `destructive` — it is the one state that must not blend in with a clean
+ * completion — and WaitingDriverConfirmation is `outline`, a normal expected step, not an
+ * alarm.
+ */
+function badgeVariantFor(state: ExecutionState): 'default' | 'secondary' | 'destructive' | 'outline' {
+  switch (state) {
+    case 'needsReview':
+      return 'destructive';
+    case 'waitingDriverConfirmation':
+      return 'outline';
+    // 'ready' and 'inProgress'/'completed' all read as "on track" — matches the original
+    // `state === 'ready' || hasStarted(state) ? 'default' : 'secondary'` exactly, for
+    // every state that predates this task.
+    case 'ready':
+    case 'inProgress':
+    case 'completed':
+      return 'default';
+    default:
+      return 'secondary';
+  }
 }
 
 /**
@@ -128,6 +191,10 @@ function useExecutionLabel(): (state: ExecutionState) => string {
     switch (state) {
       case 'completed':
         return t(($) => $.loadingOs.groups.loadingCompleted);
+      case 'needsReview':
+        return t(($) => $.loadingOs.groups.needsReview);
+      case 'waitingDriverConfirmation':
+        return t(($) => $.loadingOs.groups.waitingDriverConfirmation);
       case 'inProgress':
         return t(($) => $.loadingOs.groups.loadingInProgress);
       case 'ready':
@@ -136,6 +203,81 @@ function useExecutionLabel(): (state: ExecutionState) => string {
         return t(($) => $.loadingOs.groups.unknown);
       default:
         return t(($) => $.loadingOs.groups.planningOnly);
+    }
+  };
+}
+
+/**
+ * One label per read-model reason code — shared with the session-overview (Needs
+ * Review / History) tab so the same code always reads the same way everywhere.
+ * Exported: stable, machine-readable codes are never rendered as raw strings in any UI
+ * that consumes them (task §19).
+ */
+export function useReasonLabel(): (reason: LoadingWorkspaceReasonCode) => string {
+  const { t } = useTranslation('operations');
+
+  return (reason) => {
+    switch (reason) {
+      case 'pending_loading':
+        return t(($) => $.loadingOs.reasons.pendingLoading);
+      case 'loading_in_progress':
+        return t(($) => $.loadingOs.reasons.loadingInProgress);
+      case 'adjustment_requested':
+        return t(($) => $.loadingOs.reasons.adjustmentRequested);
+      case 'awaiting_driver_confirmation':
+        return t(($) => $.loadingOs.reasons.awaitingDriverConfirmation);
+      case 'awaiting_driver_reconfirmation':
+        return t(($) => $.loadingOs.reasons.awaitingDriverReconfirmation);
+      case 'missing_loading_tasks':
+        return t(($) => $.loadingOs.reasons.missingLoadingTasks);
+      case 'missing_vehicle_custody':
+        return t(($) => $.loadingOs.reasons.missingVehicleCustody);
+      case 'quantity_mismatch':
+        return t(($) => $.loadingOs.reasons.quantityMismatch);
+      case 'inconsistent_child_state':
+        return t(($) => $.loadingOs.reasons.inconsistentChildState);
+      case 'truthfully_complete':
+        return t(($) => $.loadingOs.reasons.truthfullyComplete);
+      case 'no_activity':
+        return t(($) => $.loadingOs.reasons.noActivity);
+      case 'cancelled':
+        return t(($) => $.loadingOs.reasons.cancelled);
+      default:
+        return reason;
+    }
+  };
+}
+
+/** One badge tone per read-model bucket — shared with the session-overview tabs. */
+export function bucketBadgeVariant(
+  bucket: LoadingWorkspaceBucket,
+): 'default' | 'secondary' | 'destructive' | 'outline' {
+  switch (bucket) {
+    case 'needs_review':
+      return 'destructive';
+    case 'waiting_driver_confirmation':
+      return 'outline';
+    case 'completed_history':
+      return 'secondary';
+    default:
+      return 'default';
+  }
+}
+
+/** One label per read-model bucket — the tab strip and any per-row bucket badge. */
+export function useBucketLabel(): (bucket: LoadingWorkspaceBucket) => string {
+  const { t } = useTranslation('operations');
+
+  return (bucket) => {
+    switch (bucket) {
+      case 'current_actionable':
+        return t(($) => $.loadingOs.workspace.tabs.currentActionable);
+      case 'waiting_driver_confirmation':
+        return t(($) => $.loadingOs.workspace.tabs.waitingDriverConfirmation);
+      case 'needs_review':
+        return t(($) => $.loadingOs.workspace.tabs.needsReview);
+      default:
+        return t(($) => $.loadingOs.workspace.tabs.completedHistory);
     }
   };
 }
@@ -224,7 +366,7 @@ export function LoadingGroupList({
         ) : null}
 
         {groups.map((group) => {
-          const state = executionStateOf(group.transport, false);
+          const state = executionStateOf(group.transport, group.classification, false);
           const zones =
             group.zone_names.length > 0
               ? group.zone_names.join(' · ')
@@ -247,10 +389,7 @@ export function LoadingGroupList({
                 {/* Readiness is about EXECUTION only. "Planning only" is a healthy,
                     fully visible Group — never an error. Once loading has started the
                     card says so, instead of still inviting a start. */}
-                <Badge
-                  variant={state === 'ready' || hasStarted(state) ? 'default' : 'secondary'}
-                  data-testid={`group-state-${group.code}`}
-                >
+                <Badge variant={badgeVariantFor(state)} data-testid={`group-state-${group.code}`}>
                   {executionLabel(state)}
                 </Badge>
               </div>
@@ -591,13 +730,14 @@ function AdjustmentReviewPanel({
 export function LoadingGroupDetail({ slotId }: { slotId: string }) {
   const { t } = useTranslation('operations');
   const executionLabel = useExecutionLabel();
+  const reasonLabel = useReasonLabel();
   const detail = useLoadingGroup(slotId);
   const startLoading = useStartLoading(slotId);
 
   const data = detail.data;
   const rows = data?.products ?? [];
   const totals = data?.totals;
-  const state = executionStateOf(data?.transport, detail.isError);
+  const state = executionStateOf(data?.transport, data?.classification, detail.isError);
 
   const trip = data?.transport.trip ?? null;
   const windowId = data?.group.window_id ?? null;
@@ -623,22 +763,33 @@ export function LoadingGroupDetail({ slotId }: { slotId: string }) {
         <CardHeader>
           <CardTitle className="flex flex-wrap items-center gap-2">
             <span>{data?.group.code ?? t(($) => $.loadingOs.groups.loading)}</span>
-            <Badge
-              variant={state === 'ready' || hasStarted(state) ? 'default' : 'secondary'}
-              data-testid="loading-group-state"
-            >
+            <Badge variant={badgeVariantFor(state)} data-testid="loading-group-state">
               {executionLabel(state)}
             </Badge>
           </CardTitle>
           <CardDescription data-testid="loading-group-execution">
-            {hasStarted(state)
-              ? t(($) => $.loadingOs.groups.startLoadingDone)
-              : state === 'ready'
-                ? t(($) => $.loadingOs.groups.executionReady)
-                : state === 'unavailable'
-                  ? t(($) => $.loadingOs.groups.executionUnknown)
-                  : t(($) => $.loadingOs.groups.executionBlocked)}
+            {state === 'needsReview'
+              ? t(($) => $.loadingOs.groups.executionNeedsReview)
+              : state === 'waitingDriverConfirmation'
+                ? t(($) => $.loadingOs.groups.executionWaitingDriver)
+                : hasStarted(state)
+                  ? t(($) => $.loadingOs.groups.startLoadingDone)
+                  : state === 'ready'
+                    ? t(($) => $.loadingOs.groups.executionReady)
+                    : state === 'unavailable'
+                      ? t(($) => $.loadingOs.groups.executionUnknown)
+                      : t(($) => $.loadingOs.groups.executionBlocked)}
           </CardDescription>
+          {/* WHY — the reason codes behind a NeedsReview/WaitingDriverConfirmation badge,
+              so an operator does not have to guess. Machine-readable codes translated for
+              display; never a raw internal string rendered directly (task §19). */}
+          {data?.classification &&
+          data.classification.reasons.length > 0 &&
+          (state === 'needsReview' || state === 'waitingDriverConfirmation') ? (
+            <p className="text-muted-foreground text-xs" data-testid="loading-group-reasons">
+              {data.classification.reasons.map((reason) => reasonLabel(reason)).join(' · ')}
+            </p>
+          ) : null}
         </CardHeader>
 
         <CardContent className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
@@ -724,7 +875,7 @@ export function LoadingGroupDetail({ slotId }: { slotId: string }) {
               badge says what is true instead.
             */}
             {alreadyOpen ? (
-              <Badge variant="default" data-testid="loading-group-started">
+              <Badge variant={badgeVariantFor(state)} data-testid="loading-group-started">
                 {executionLabel(state)}
               </Badge>
             ) : (

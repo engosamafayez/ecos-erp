@@ -6,6 +6,7 @@ namespace Modules\Operations\Loading\Application\Actions;
 
 use Illuminate\Support\Facades\DB;
 use Modules\Operations\Loading\Domain\Enums\LoadingTaskStatus;
+use Modules\Operations\Loading\Domain\Enums\VehicleAssignmentStatus;
 use Modules\Operations\Loading\Domain\Models\LoadingTask;
 use Modules\Operations\Loading\Domain\Models\VehicleAssignment;
 use Modules\Operations\Loading\Domain\Services\VehicleInventoryService;
@@ -148,6 +149,62 @@ final class LoadProductAction
                         // and an increment-with-negative aimed at a non-negative column
                         // reads like an accident waiting to underflow.
                         $assignment->decrement('loading_weight_kg', -$delta);
+                    }
+
+                    // TASK-...-IMPLEMENTATION-002-R1 — INVALIDATE THE STALE CONFIRMATION
+                    // ITSELF, NOT JUST THE ASSIGNMENT STATUS.
+                    //
+                    // ┌─ WHY 002's OWN APPROACH WAS NOT ENOUGH (CTO R1 review) ──────────┐
+                    // │ 002 left driver_confirmed_at / driver_confirmed_loaded_qty in      │
+                    // │ place and relied on isDriverConfirmationCurrent() (a DERIVED       │
+                    // │ comparison) plus reopening the assignment. That protects the ONE   │
+                    // │ gate that happens to call isDriverConfirmationCurrent() — but any   │
+                    // │ future/other reader that checks only "driver_confirmed_at IS NOT    │
+                    // │ NULL" would be misled, and an assignment still at Loading (not yet   │
+                    // │ complete) never got its stale task-level confirmation cleared at     │
+                    // │ all, since the reopen logic below only fires for an already-         │
+                    // │ complete assignment.                                                │
+                    // └──────────────────────────────────────────────────────────────────┘
+                    //
+                    // Clearing these four columns makes "no longer authoritative" a STORED
+                    // fact rather than something only correctly derived by one specific
+                    // caller. The driver's confirmation ceases to exist the moment the
+                    // warehouse number it was made against actually changes — applies
+                    // regardless of the assignment's current status, and only inside this
+                    // delta-guarded block, so a no-op resubmission never churns a fresh,
+                    // still-valid confirmation (R1 §9).
+                    if ($existing->driver_confirmed_at !== null) {
+                        $existing->update([
+                            'driver_confirmed_at' => null,
+                            'driver_confirmed_by' => null,
+                            'driver_received_qty' => null,
+                            'driver_confirmed_loaded_qty' => null,
+                        ]);
+                    }
+
+                    // REOPEN ON POST-COMPLETION CORRECTION (from 002, preserved). The task-
+                    // level fix above already makes the confirmation non-authoritative for
+                    // any reader; this additionally corrects the ASSIGNMENT's own status for
+                    // the specific case where it had already reached LoadingComplete, so a
+                    // shipment already marked done is truthfully reopened rather than left
+                    // claiming "done" while carrying an unconfirmed item underneath it.
+                    $lockedAssignment = VehicleAssignment::query()
+                        ->whereKey($assignment->id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($lockedAssignment !== null) {
+                        $assignmentStatus = $lockedAssignment->status instanceof VehicleAssignmentStatus
+                            ? $lockedAssignment->status
+                            : VehicleAssignmentStatus::from((string) $lockedAssignment->status);
+
+                        if ($assignmentStatus === VehicleAssignmentStatus::LoadingComplete) {
+                            $lockedAssignment->update([
+                                'status' => VehicleAssignmentStatus::Loading->value,
+                                'loading_completed_at' => null,
+                                'updated_by' => $loadedBy,
+                            ]);
+                        }
                     }
                 }
 

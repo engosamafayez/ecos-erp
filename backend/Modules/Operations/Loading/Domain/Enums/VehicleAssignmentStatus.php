@@ -20,7 +20,11 @@ enum VehicleAssignmentStatus: string
         return match ($this) {
             self::Pending => in_array($next, [self::Loading, self::Cancelled], true),
             self::Loading => in_array($next, [self::LoadingComplete, self::Cancelled], true),
-            self::LoadingComplete => in_array($next, [self::Dispatched, self::Cancelled], true),
+            // "-> Loading" (TASK-...-IMPLEMENTATION-002): a warehouse quantity
+            // correction after this assignment already completed reopens it, so the
+            // existing driver-confirmation gate is forced to run again before it can
+            // reach LoadingComplete a second time — see LoadProductAction.
+            self::LoadingComplete => in_array($next, [self::Loading, self::Dispatched, self::Cancelled], true),
             self::Dispatched => in_array($next, [self::Returning], true),
             self::Returning => in_array($next, [self::Reconciling], true),
             self::Reconciling => in_array($next, [self::Reconciled], true),

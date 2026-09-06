@@ -18,11 +18,13 @@ import {
 
 import { useOrganizationContext } from '@/features/organization/context/organization-context';
 
-import { LoadingGroupDetail, LoadingGroupList } from '../components/loading-groups';
+import { LoadingGroupDetail, LoadingGroupList, useBucketLabel } from '../components/loading-groups';
+import { LoadingSessionOverviewPanel } from '../components/loading-session-overview';
 import {
   useAllocations,
   useLoadingGroups,
   useLoadingSessions,
+  useLoadingSessionsOverview,
   useOpenReconciliation,
   useReconciliation,
   useRecordDelivery,
@@ -30,9 +32,20 @@ import {
   useVehicleAssignments,
   useVehicleInventory,
 } from '../hooks/use-loading-os';
-import type { AllocationRecord, ReconciliationLine } from '../types/loading-os';
+import type { AllocationRecord, LoadingWorkspaceBucket, ReconciliationLine } from '../types/loading-os';
 
 const EPS = 0.00005;
+
+/**
+ * The workspace's own top-level tabs (TASK-...-WORKSPACE-READ-MODEL-004).
+ *
+ * `'current'` is the EXISTING Group picker below, unchanged — it is already bounded to
+ * the live planning window, i.e. genuinely actionable work, so it does not need the new
+ * session-grain read model to answer "what is current". The other three ARE that read
+ * model: sessions with no live Group in today's window (a stale Draft, or one already
+ * past the loading phase) are otherwise invisible (Task 001 §20's proven gap).
+ */
+type WorkspaceTab = 'current' | Exclude<LoadingWorkspaceBucket, 'current_actionable'>;
 
 /**
  * Operator loading workspace — GROUP grain (TASK-LOADING-GROUP-GRAIN-SYNC-IMPLEMENTATION-001).
@@ -59,6 +72,12 @@ export function LoadingOsWorkspacePage() {
   const [slotId, setSlotId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [assignmentId, setAssignmentId] = useState<string | null>(null);
+  const [tab, setTab] = useState<WorkspaceTab>('current');
+  const bucketLabel = useBucketLabel();
+
+  // Counts ONLY — page 1 of every bucket, purely to label the tab strip. Each tab's own
+  // panel fetches its own page independently; this is not "load everything and filter".
+  const overviewCounts = useLoadingSessionsOverview(activeWarehouseId, undefined, 1);
 
   /*
    * The Groups read goes through the LOADING-side route (`/api/loading/groups`), not
@@ -91,6 +110,46 @@ export function LoadingOsWorkspacePage() {
         <p className="text-muted-foreground text-sm">{t($ => $.loadingOs.subtitle)}</p>
       </header>
 
+      {/*
+        WORKSPACE TABS — TASK-...-WORKSPACE-READ-MODEL-004.
+
+        A hand-rolled button strip with per-tab counts, matching the convention this
+        codebase already uses for tabs-plus-filters screens (ShippingOrdersPage) rather
+        than the Radix Tabs primitive, so an operator answers "what is loading now / what
+        is waiting for the driver / what has completed / what needs investigation" from
+        one glance without opening anything.
+      */}
+      <div className="flex flex-wrap gap-2" role="tablist">
+        {(['current', 'waiting_driver_confirmation', 'needs_review', 'completed_history'] as const).map(
+          (tabKey) => {
+            const count =
+              tabKey === 'current' ? groups.length : (overviewCounts.data?.counts[tabKey] ?? 0);
+
+            return (
+              <button
+                key={tabKey}
+                type="button"
+                role="tab"
+                aria-selected={tab === tabKey}
+                data-testid={`workspace-tab-${tabKey}`}
+                onClick={() => setTab(tabKey)}
+                className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                  tab === tabKey
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent'
+                }`}
+              >
+                {tabKey === 'current' ? t($ => $.loadingOs.workspace.tabs.currentActionable) : bucketLabel(tabKey)}
+                <span className="ms-1.5 tabular-nums opacity-80">{count}</span>
+              </button>
+            );
+          },
+        )}
+      </div>
+
+      {tab !== 'current' ? (
+        <LoadingSessionOverviewPanel bucket={tab} warehouseId={activeWarehouseId} />
+      ) : (
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[320px_1fr]">
         {/* Group picker (entry point) → session + assignment picker (execution) */}
         <div className="space-y-4">
@@ -187,6 +246,7 @@ export function LoadingOsWorkspacePage() {
           ) : null}
         </div>
       </div>
+      )}
     </div>
   );
 }

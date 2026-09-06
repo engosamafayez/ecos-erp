@@ -5,6 +5,8 @@ import type {
   LoadingGroupDetailResponse,
   LoadingGroupsResponse,
   LoadingSession,
+  LoadingSessionOverviewResponse,
+  LoadingWorkspaceBucket,
   ShiftReconciliation,
   ShipmentGroup,
   VehicleAssignment,
@@ -178,6 +180,32 @@ export const loadingOsService = {
   async getGroup(slotId: string): Promise<LoadingGroupDetailResponse> {
     const { data } = await apiClient.get<{ data: LoadingGroupDetailResponse }>(
       `${BASE}/groups/${slotId}`,
+    );
+    return data.data;
+  },
+
+  /**
+   * The LoadingSession-grain read model (TASK-...-WORKSPACE-READ-MODEL-004) — sessions
+   * with no live Group in the current window (historical/anomalous Draft rows included),
+   * server-classified into Current/Waiting/Completed-History/Needs-Review, paginated the
+   * same way as `listSessions()` (`data.data` + `data.meta`, same envelope contract).
+   */
+  async getSessionsOverview(params: {
+    bucket?: LoadingWorkspaceBucket;
+    warehouseId?: string | null;
+    page?: number;
+    perPage?: number;
+  }): Promise<LoadingSessionOverviewResponse> {
+    const { data } = await apiClient.get<{ data: LoadingSessionOverviewResponse }>(
+      `${BASE}/sessions-overview`,
+      {
+        params: {
+          bucket: params.bucket,
+          warehouse_id: params.warehouseId ?? undefined,
+          page: params.page,
+          per_page: params.perPage,
+        },
+      },
     );
     return data.data;
   },

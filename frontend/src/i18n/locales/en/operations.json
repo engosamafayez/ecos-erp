@@ -87,7 +87,45 @@
       "quantityChangedRefresh": "The quantity changed while this screen was open. Refresh and try again.",
       "loadingCompleted": "Loading completed",
       "startLoadingDone": "Loading has already been started for this group.",
-      "alreadyConfirmed": "This quantity is already confirmed. Change it to confirm again."
+      "alreadyConfirmed": "This quantity is already confirmed. Change it to confirm again.",
+      "needsReview": "Needs review",
+      "waitingDriverConfirmation": "Waiting on driver",
+      "executionNeedsReview": "The recorded status does not match the loading evidence — this needs an operator to check it before it is trusted as complete.",
+      "executionWaitingDriver": "Warehouse loading evidence exists; the open item is the driver's own confirmation or reconfirmation."
+    },
+    "reasons": {
+      "pendingLoading": "Not yet loaded",
+      "loadingInProgress": "Loading in progress",
+      "adjustmentRequested": "Adjustment requested",
+      "awaitingDriverConfirmation": "Awaiting driver confirmation",
+      "awaitingDriverReconfirmation": "Awaiting driver reconfirmation — quantity changed after confirmation",
+      "missingLoadingTasks": "No loading records exist for this shipment",
+      "missingVehicleCustody": "No vehicle custody record exists for the loaded quantity",
+      "quantityMismatch": "Driver-received quantity does not match the confirmed quantity",
+      "inconsistentChildState": "This session's vehicles do not all agree on status",
+      "truthfullyComplete": "Complete — evidence verified",
+      "noActivity": "No activity recorded",
+      "cancelled": "Cancelled"
+    },
+    "workspace": {
+      "tabs": {
+        "currentActionable": "Current",
+        "waitingDriverConfirmation": "Waiting on driver",
+        "completedHistory": "Completed / History",
+        "needsReview": "Needs review"
+      },
+      "overviewDescription": "Loading sessions with no live group in today's planning window — historical, completed, or needing manual review.",
+      "overviewEmpty": "Nothing in this view.",
+      "columns": {
+        "session": "Session",
+        "date": "Date",
+        "status": "Status",
+        "assignments": "Vehicles",
+        "reasons": "Why"
+      },
+      "noAssignments": "No vehicles were ever assigned to this session.",
+      "tasksLabel": "loaded items",
+      "unresolvedLabel": "unresolved"
     },
     "sessions": {
       "title": "Loading sessions",

@@ -1158,6 +1158,19 @@ Route::middleware('auth:sanctum')->prefix('loading')->group(function (): void {
         ->middleware('permission:operations.preparation.view');
 
     /*
+     * LoadingSession-grain read model — TASK-...-WORKSPACE-READ-MODEL-004.
+     *
+     * `groups`/`groups/{slot}` above are Group-grain, bounded to the current planning
+     * window — a LoadingSession with no live Group there (window moved past it, or it
+     * was never touched after creation) is otherwise invisible to the operator entirely.
+     * Same permission as the reads above: this is a read, and warehouse roles hold
+     * `operations.preparation.view`, not `loading.session.*` (see LoadingSessionController
+     * below, which is gated by policy instead — a separate, narrower audience).
+     */
+    Route::get('sessions-overview', [GroupLoadingWorkspaceController::class, 'sessionsOverview'])
+        ->middleware('permission:operations.preparation.view');
+
+    /*
      * Warehouse custody WRITES — TASK-...-CUSTODY-IMPLEMENTATION-001.
      *
      * `loading.session.operate` is the existing capability for operating a loading
