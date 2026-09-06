@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Logistics\Distribution\Domain\Services;
 
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Modules\Logistics\Distribution\Domain\Enums\TripStatus;
 use Modules\Logistics\Distribution\Domain\Events\TripDispatched;
@@ -137,7 +138,16 @@ class TripService
      * Assign an order to a trip.
      *
      * Enforces: the trip must be editable, must have capacity, and the order
-     * must not already sit on another trip (the unique index is the backstop).
+     * must not already have an ACTIVE (non-superseded) association with
+     * another trip. The app-level check below gives a friendly error message;
+     * the real backstop against a concurrent double-assignment is the DB-level
+     * unique index on the generated `active_order_id` column (see the
+     * `add_historical_attempt_semantics_to_trip_orders` migration) — a raw
+     * `lockForUpdate()` on a query that currently matches ZERO rows locks
+     * nothing, so two simultaneous first-time assignments for the same order
+     * could otherwise both pass this check (§8). The catch below turns that
+     * DB-level rejection into the same friendly exception instead of a raw
+     * QueryException reaching the caller.
      */
     public function assignOrder(
         Trip $trip,
@@ -151,7 +161,7 @@ class TripService
         }
 
         return DB::transaction(function () use ($trip, $orderId, $snapshot, $actorId, $assignmentType) {
-            $existing = TripOrder::where('order_id', $orderId)->lockForUpdate()->first();
+            $existing = TripOrder::query()->active()->where('order_id', $orderId)->lockForUpdate()->first();
 
             if ($existing !== null) {
                 $otherTrip = Trip::find($existing->trip_id);
@@ -189,18 +199,75 @@ class TripService
                 throw DistributionException::tripAtCapacity($trip->capacity);
             }
 
-            $tripOrder = $trip->tripOrders()->create([
-                'order_id' => $orderId,
-                'zone_code_snapshot' => $snapshot['zone_code'] ?? null,
-                'governorate_snapshot' => $snapshot['governorate'] ?? null,
-                'assignment_type' => $assignmentType,
-                'assigned_by' => $actorId,
-                'assigned_at' => now(),
-            ]);
+            try {
+                $tripOrder = $trip->tripOrders()->create([
+                    'order_id' => $orderId,
+                    'zone_code_snapshot' => $snapshot['zone_code'] ?? null,
+                    'governorate_snapshot' => $snapshot['governorate'] ?? null,
+                    'assignment_type' => $assignmentType,
+                    'assigned_by' => $actorId,
+                    'assigned_at' => now(),
+                ]);
+            } catch (QueryException $e) {
+                if (str_contains($e->getMessage(), 'distribution_trip_orders_active_order_unique')) {
+                    throw DistributionException::orderAlreadyOnAnotherTrip($orderId);
+                }
+
+                throw $e;
+            }
 
             $this->syncOrdersCount($trip);
 
             return $tripOrder;
+        });
+    }
+
+    /**
+     * Release an order's ACTIVE execution on this trip WITHOUT deleting it —
+     * the post-dispatch counterpart to removeOrder() (§9: "Post-dispatch
+     * retry is a different operation: close/release execution → preserve
+     * history → create future execution").
+     *
+     * Deliberately does NOT require `$trip->isEditable()`: that gate gives
+     * pre-dispatch editing (Planning/Loading) to an operator correcting a
+     * manifest, which is a different operation from closing a Dispatched
+     * trip's failed attempt. A trip's orders/custody stay otherwise
+     * immutable post-dispatch — this touches only the TripOrder link row.
+     *
+     * Idempotent: releasing an already-released row is a silent no-op (the
+     * listener that calls this reacts to a domain event and must tolerate a
+     * duplicate delivery without erroring or double-stamping the reason).
+     *
+     * @param  string  $reason  A FailureReason value (e.g. 'no_answer',
+     *                          'customer_rescheduled') or 'manual' for an
+     *                          operator-driven release — never a raw UI label.
+     */
+    public function releaseOrder(Trip $trip, string $orderId, string $reason, ?int $actorId = null): TripOrder
+    {
+        return DB::transaction(function () use ($trip, $orderId, $reason, $actorId) {
+            // Unscoped (tripOrderHistory, not tripOrders): tripOrders() now excludes
+            // superseded rows, so it would find nothing for an already-released order
+            // and this method could never tell "not found" apart from "already done".
+            /** @var TripOrder|null $tripOrder */
+            $tripOrder = $trip->tripOrderHistory()->where('order_id', $orderId)->lockForUpdate()->first();
+
+            if ($tripOrder === null) {
+                throw DistributionException::orderNotOnTrip($orderId, $trip->trip_number ?? (string) $trip->id);
+            }
+
+            if (! $tripOrder->isActive()) {
+                return $tripOrder; // already released — idempotent no-op, not an error
+            }
+
+            $tripOrder->update([
+                'superseded_at' => now(),
+                'release_reason' => $reason,
+                'released_by' => $actorId,
+            ]);
+
+            $this->syncOrdersCount($trip);
+
+            return $tripOrder->refresh();
         });
     }
 

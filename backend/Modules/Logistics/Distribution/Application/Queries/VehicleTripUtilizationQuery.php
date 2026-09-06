@@ -63,7 +63,12 @@ final class VehicleTripUtilizationQuery implements ReportHandlerInterface
         $tripCount = (clone $base)->count();
 
         $trips = (clone $base)
-            ->leftJoin('distribution_trip_orders as dto', 'dto.trip_id', '=', 'dt.id')
+            // Active-only (§10/§25): joined ON the condition, not a WHERE, so a trip with
+            // zero currently-active orders still reports order_count=0 rather than
+            // disappearing from a LEFT JOIN it no longer matches.
+            ->leftJoin('distribution_trip_orders as dto', function ($join): void {
+                $join->on('dto.trip_id', '=', 'dt.id')->whereNull('dto.superseded_at');
+            })
             ->selectRaw('dt.id, dt.trip_number, dt.capacity')
             ->selectRaw('COUNT(dto.order_id) as order_count')
             ->groupBy('dt.id', 'dt.trip_number', 'dt.capacity')

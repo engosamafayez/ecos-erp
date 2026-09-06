@@ -145,7 +145,22 @@ class Trip extends Model
 
     // ── Owned entities ────────────────────────────────────────────────────────
 
+    /**
+     * This trip's ACTIVE order assignments (not yet released/superseded).
+     *
+     * Scoped by default: every existing caller (remainingCapacity,
+     * dispatchBlockers, DeliveryService::generateStops, the trip detail
+     * payload) means "the orders this trip currently carries" — none of them
+     * ever intended to include a historical, released attempt that happens to
+     * share this trip_id. See tripOrderHistory() for the unscoped full record.
+     */
     public function tripOrders(): HasMany
+    {
+        return $this->hasMany(TripOrder::class, 'trip_id')->whereNull('superseded_at');
+    }
+
+    /** Every order association this trip has ever had, active or released — for audit/history views. */
+    public function tripOrderHistory(): HasMany
     {
         return $this->hasMany(TripOrder::class, 'trip_id');
     }

@@ -325,6 +325,9 @@ class GroupLoadingContextService
                     ->where('dwo.virtual_slot_id', '=', $group->id);
             })
             ->where('tor.trip_id', $trip->id)
+            // Active-only (§10/§25): a released/superseded attempt is history, not a
+            // live manifest row that could stray from the group.
+            ->whereNull('tor.superseded_at')
             ->whereNull('dwo.id')
             ->orderBy('o.order_number')
             ->pluck('o.order_number')
@@ -399,6 +402,9 @@ class GroupLoadingContextService
         $manifested = DB::table('distribution_trip_orders as tor')
             ->join('distribution_trips as t', 't.id', '=', 'tor.trip_id')
             ->where('t.virtual_slot_id', $group->id)
+            // Active-only (§10/§25): a released/superseded attempt no longer counts as
+            // "this Group's work reached a Trip" — only its live replacement does.
+            ->whereNull('tor.superseded_at')
             ->pluck('tor.order_id')
             ->map(static fn ($id): string => (string) $id)
             ->flip();

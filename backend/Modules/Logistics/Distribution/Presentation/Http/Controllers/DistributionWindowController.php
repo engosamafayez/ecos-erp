@@ -814,6 +814,9 @@ final class DistributionWindowController extends Controller
             ->join('distribution_trips as t', 't.id', '=', 'tor.trip_id')
             ->join('orders as o', 'o.id', '=', 'tor.order_id')
             ->whereIn('tor.trip_id', $trips->pluck('id')->all())
+            // Active-only (§10/§25): this manifest reflects CURRENT assignment, not
+            // every attempt this trip has ever recorded.
+            ->whereNull('tor.superseded_at')
             ->orderBy('o.order_number')
             ->get([
                 'tor.order_id',

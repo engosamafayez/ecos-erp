@@ -8,9 +8,11 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Modules\Commerce\Orders\Domain\Events\OrderGeographyChanged;
 use Modules\Logistics\Distribution\Application\Listeners\CloseWaveDistributionGroupsListener;
+use Modules\Logistics\Distribution\Application\Listeners\ReleaseOrderOnRetryableOutcomeListener;
 use Modules\Logistics\Distribution\Application\Listeners\SettleDriverTripMovementsOnTripSettled;
 use Modules\Logistics\Distribution\Application\Listeners\StartWaveDistributionGroupsListener;
 use Modules\Logistics\Distribution\Application\Listeners\SyncOrderGeographyListener;
+use Modules\Logistics\Distribution\Domain\Events\DeliveryStopCompleted;
 use Modules\Logistics\Distribution\Domain\Events\TripSettled;
 use Modules\Operations\Preparation\Domain\Events\WaveClosed;
 use Modules\Operations\Preparation\Domain\Events\WavePreparationStarted;
@@ -63,6 +65,15 @@ final class LogisticsDistributionServiceProvider extends ServiceProvider
          * TripSettled is dispatched with the standard helper, so Event::listen delivers it.
          */
         TripSettled::class => SettleDriverTripMovementsOnTripSettled::class,
+
+        /*
+         * TASK-ECOS-POST-DRIVER-RETURN-WAREHOUSE-RETURNS-FINAL-IMPLEMENTATION-002 §3/§4 — a
+         * canonically-closed, retryable delivery outcome (No Answer / Postponed) releases the
+         * stale Trip/Order association and bridges into Fulfillment, immediately — no wait for
+         * physical goods return. DeliveryStopCompleted is dispatched with the standard helper
+         * (DeliveryService::completeStop(), same module) so Event::listen delivers it.
+         */
+        DeliveryStopCompleted::class => ReleaseOrderOnRetryableOutcomeListener::class,
     ];
 
     public function boot(): void

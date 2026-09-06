@@ -204,6 +204,12 @@ final class MaterialDemandCalculator
         // being prepared now (ADR-027 §18.3). See postponedMemberMaterialReservations.
         $postponedReserved = $this->postponedMemberMaterialReservations($wave, $materialIds);
 
+        // Expected Driver Returns (§14/§21-26): physical custody currently outstanding on
+        // ANY open vehicle assignment at this warehouse, regardless of which order or trip
+        // put it there — see expectedDriverReturns() for why no Order/Trip join is needed
+        // or wanted (§12: "Do NOT derive them from the Order's newly assigned Trip").
+        $expectedReturns = $this->expectedDriverReturns($wave, $materialIds);
+
         foreach ($aggregates as $agg) {
             $required = round($agg['required_qty'], 4);
             $stockRow = $stockLevels[$agg['material_id']] ?? null;
@@ -300,6 +306,15 @@ final class MaterialDemandCalculator
                 ? min(100.0, round(($available / $required) * 100.0, 2))
                 : 100.0;
 
+            // Expected Driver Returns for THIS material, and the resulting projection.
+            // Deliberately does NOT touch $missing/$available above (§14: "Do not merge
+            // these into one misleading Available quantity") — Physical Shortage Now
+            // stays the real, unmodified physical figure; this is a SEPARATE, planning-only
+            // annotation of how much of that shortage may already be covered by goods
+            // currently on the road back to the warehouse.
+            $expectedReturn = $expectedReturns[$agg['material_id']] ?? 0.0;
+            $projectedShortageAfterReturns = max(0.0, $missing - $expectedReturn);
+
             // MISSING IS THE REAL PHYSICAL SHORTAGE — ALWAYS (owner decision, ADR-027 §18.4 v1.6).
             //
             // This previously overrode `$missing = 0.0; $coveragePct = 100.0;` whenever the
@@ -326,9 +341,12 @@ final class MaterialDemandCalculator
                 'required_qty' => $required,
                 'available_qty' => round($available, 4),
                 'reserved_qty' => round($reserved, 4),
-                'expected_today' => 0.0,
+                // Expected Driver Returns — see the assignment above. Reuses this
+                // existing-but-previously-hardcoded column rather than adding a new one.
+                'expected_today' => round($expectedReturn, 4),
                 'in_transit_qty' => 0.0,
                 'missing_qty' => round($missing, 4),
+                'projected_shortage_after_returns' => round($projectedShortageAfterReturns, 4),
                 'coverage_pct' => $coveragePct,
                 // Persisted so readiness (and the operator) can tell a BLOCKING shortage from
                 // one that is drawable on open credit. Previously computed and thrown away.
@@ -453,6 +471,66 @@ final class MaterialDemandCalculator
                 LedgerMovementType::Reservation->value,
             ))
             ->pluck('net', 'product_id')
+            ->map(static fn ($v): float => round((float) $v, 4))
+            ->all();
+    }
+
+    /**
+     * TASK-ECOS-POST-DRIVER-RETURN-WAREHOUSE-RETURNS-FINAL-IMPLEMENTATION-002 §12/§13/§14.
+     *
+     * "Expected Driver Returns" — physical custody currently sitting on ANY
+     * open vehicle assignment at this wave's warehouse, not yet physically
+     * received back (Loading's `Modules\Operations\Loading\Domain\Models\
+     * VehicleInventoryItem`, the canonical per-SKU per-vehicle custody ledger —
+     * see the architecture report §6/§13). Summed by `product_id` because
+     * `bill_of_material_lines.raw_material_id` references the SAME `products`
+     * table this join keys on — there is no separate "raw material" type in
+     * this schema, so a returned unit legitimately offsets a material's
+     * shortage whenever that same product is also consumed as a BOM
+     * ingredient elsewhere.
+     *
+     * TIED TO THE ORIGINATING OLD CUSTODY, NEVER TO AN ORDER'S NEW TRIP (§12):
+     * this is a pure `VehicleInventoryItem` aggregate, keyed only by
+     * warehouse + company + product. It does NOT join `Order`, `TripOrder` or
+     * `Trip` at all — it does not need to, and joining one would wrongly
+     * scope "goods on the road" to only the orders THIS wave happens to be
+     * replanning, when the true figure Purchasing/Preparation need is "how
+     * much of this material is out on ANY vehicle right now, full stop".
+     * A retryable release (ReleaseOrderOnRetryableOutcomeListener) changes
+     * nothing here — the goods do not move, so neither does this figure,
+     * until the warehouse actually runs ReceiveVehicleReturnAction.
+     *
+     * CANNOT DOUBLE-COUNT AGAINST `$onHand` ABOVE (§16: "no double-counting
+     * may occur at any step"): `inventory_items.on_hand_qty` and
+     * `vehicle_inventory_items.quantity_on_hand` are mutually exclusive
+     * locations for the same physical unit by construction — Loading's
+     * `TransferLoadedStockToVehicleAction` decrements the former (via the
+     * canonical `ShipStockAction`) at the exact moment it creates/increments
+     * the latter, and `ReceiveVehicleReturnAction` runs the reverse
+     * (`AdjustmentInAction`) only once, idempotently, when goods physically
+     * arrive back. A unit is in exactly one ledger at any moment, so summing
+     * this separately from `$onHand` never inflates availability — it only
+     * adds visibility into what `$onHand` cannot yet see.
+     *
+     * @param  list<string>  $materialIds
+     * @return array<string, float> material_id => total outstanding vehicle custody
+     */
+    private function expectedDriverReturns(PreparationWave $wave, array $materialIds): array
+    {
+        if ($materialIds === []) {
+            return [];
+        }
+
+        return DB::table('vehicle_inventory_items as vii')
+            ->join('vehicle_assignments as va', 'va.id', '=', 'vii.vehicle_assignment_id')
+            ->join('loading_sessions as ls', 'ls.id', '=', 'va.loading_session_id')
+            ->where('ls.warehouse_id', $wave->warehouse_id)
+            ->where('vii.company_id', $wave->company_id)
+            ->whereIn('vii.product_id', $materialIds)
+            ->where('vii.quantity_on_hand', '>', 0)
+            ->groupBy('vii.product_id')
+            ->selectRaw('vii.product_id, SUM(vii.quantity_on_hand) as total')
+            ->pluck('total', 'product_id')
             ->map(static fn ($v): float => round((float) $v, 4))
             ->all();
     }

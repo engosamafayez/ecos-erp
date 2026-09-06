@@ -542,7 +542,10 @@ final class DriverLoadingController extends Controller
         return [
             'shipment' => [
                 'driver_name' => Auth::user()?->name,
-                'orders_count' => DB::table('distribution_trip_orders')->where('trip_id', $trip->id)->count(),
+                'orders_count' => DB::table('distribution_trip_orders')
+                    ->where('trip_id', $trip->id)
+                    ->whereNull('superseded_at')
+                    ->count(),
                 'loading_complete' => $assignment !== null
                     && ($assignment->status instanceof VehicleAssignmentStatus
                         ? $assignment->status
