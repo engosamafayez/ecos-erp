@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { useState } from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -99,6 +99,13 @@ function renderMenu(initialPath = '/orders') {
 
 const moduleRow = (id: string) => screen.getByText(id).closest('button') as HTMLButtonElement;
 const childLink = (key: string) => screen.getByText(key).closest('a') as HTMLAnchorElement;
+// TASK-ECOS-MOBILE-MENU-NAVIGATION-FINAL-REMEDIATION-001 — the compact header
+// icons that replaced the always-visible search row and identity summary row.
+// The mocked `t()` above ignores interpolation args, so `userMenu.ariaLabel`'s
+// real `{{name}}` substitution never happens here — the accessible name is
+// simply the translation path itself, which is exactly what these match.
+const searchToggle = () => screen.getByRole('button', { name: 'nav.search' });
+const accountToggle = () => screen.getByRole('button', { name: 'userMenu.ariaLabel' });
 
 describe('MobileMenu — grouped accordion navigation list (single Drawer, no drill-in)', () => {
   it('lists every authorized module as a row, grouped by family', () => {
@@ -178,6 +185,7 @@ describe('MobileMenu — grouped accordion navigation list (single Drawer, no dr
 
   it('search finds a page inside an unexpanded module and navigates directly to it', () => {
     const { onClose } = renderMenu();
+    fireEvent.click(searchToggle()); // FINAL-REMEDIATION-001: search is opt-in, not always rendered
     fireEvent.change(screen.getByPlaceholderText('nav.searchModulesPlaceholder'), {
       target: { value: 'stock-ledger' },
     });
@@ -196,15 +204,80 @@ describe('MobileMenu — grouped accordion navigation list (single Drawer, no dr
   });
 });
 
-describe('MobileMenu — profile identity + logout (TASK-DRAWER-BOTTOM-TRIGGER-001)', () => {
-  it('shows the signed-in user\'s name', () => {
+// TASK-ECOS-MOBILE-MENU-NAVIGATION-FINAL-REMEDIATION-001 — search must never
+// autofocus (and therefore never pop the software keyboard) merely because
+// the Drawer opened; it must require an explicit tap on the compact Search
+// icon, and must focus correctly once that tap happens.
+describe('MobileMenu — search requires explicit activation (FINAL-REMEDIATION-001)', () => {
+  it('the search input does not exist in the document merely because the Drawer opened', () => {
     renderMenu();
+    expect(screen.queryByPlaceholderText('nav.searchModulesPlaceholder')).toBeNull();
+  });
+
+  it('tapping the Search icon reveals the input AND focuses it', () => {
+    renderMenu();
+    fireEvent.click(searchToggle());
+    expect(screen.getByPlaceholderText('nav.searchModulesPlaceholder')).toHaveFocus();
+  });
+
+  it('tapping the Search icon again hides the input', () => {
+    renderMenu();
+    fireEvent.click(searchToggle());
+    expect(screen.getByPlaceholderText('nav.searchModulesPlaceholder')).toBeInTheDocument();
+    fireEvent.click(searchToggle());
+    expect(screen.queryByPlaceholderText('nav.searchModulesPlaceholder')).toBeNull();
+  });
+
+  it('reopening the Drawer never restores a previously-open search or its focus', () => {
+    renderMenu();
+    fireEvent.click(searchToggle());
+    expect(screen.getByPlaceholderText('nav.searchModulesPlaceholder')).toBeInTheDocument();
+    fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' }); // closes the Drawer with search left open
+    fireEvent.click(screen.getByText('reopen'));
+    expect(screen.queryByPlaceholderText('nav.searchModulesPlaceholder')).toBeNull();
+  });
+
+  it('opening Search closes an already-open Account panel — the two never occupy the Drawer at once', () => {
+    renderMenu();
+    fireEvent.click(accountToggle());
+    expect(screen.getByTestId('company')).toBeInTheDocument();
+    fireEvent.click(searchToggle());
+    expect(screen.getByPlaceholderText('nav.searchModulesPlaceholder')).toBeInTheDocument();
+    expect(screen.queryByTestId('company')).toBeNull();
+  });
+});
+
+describe('MobileMenu — Recent is capped at exactly 3 (FINAL-REMEDIATION-001)', () => {
+  it('shows only the latest 3 destinations even after visiting 4', () => {
+    renderMenu();
+    fireEvent.click(moduleRow('dashboard')); // visit 1 (oldest), closes
+    fireEvent.click(screen.getByText('reopen'));
+    fireEvent.click(moduleRow('commerce'));
+    fireEvent.click(childLink('orders')); // visit 2, closes
+    fireEvent.click(screen.getByText('reopen'));
+    fireEvent.click(moduleRow('commerce'));
+    fireEvent.click(childLink('products')); // visit 3, closes
+    fireEvent.click(screen.getByText('reopen'));
+    fireEvent.click(moduleRow('inventory'));
+    fireEvent.click(childLink('stock-ledger')); // visit 4 (newest), closes
+    fireEvent.click(screen.getByText('reopen'));
+
+    const recentSection = screen.getByText('nav.recent').closest('div') as HTMLElement;
+    expect(within(recentSection).getAllByRole('button')).toHaveLength(3);
+  });
+});
+
+describe('MobileMenu — profile identity + logout (TASK-DRAWER-BOTTOM-TRIGGER-001)', () => {
+  it('shows the signed-in user\'s name once the Account icon is tapped', () => {
+    renderMenu();
+    fireEvent.click(accountToggle());
     expect(screen.getByText('Jane Doe')).toBeInTheDocument();
   });
 
   it('falls back to the canonical placeholder name when no user is loaded yet', () => {
     auth.user = null;
     renderMenu();
+    fireEvent.click(accountToggle());
     expect(screen.getByText('userMenu.fallbackName')).toBeInTheDocument();
   });
 
@@ -222,33 +295,42 @@ describe('MobileMenu — profile identity + logout (TASK-DRAWER-BOTTOM-TRIGGER-0
 // dominant, competing with the navigation list every time the Drawer opened.
 // It's now a compact summary row (name + role) that expands ON DEMAND to
 // reveal email and the Company/Warehouse card — nothing removed, one tap away.
-describe('MobileMenu — collapsible context area (§5: compact by default, not a permanently-open block)', () => {
-  const summaryRow = () => screen.getByText('Jane Doe').closest('button') as HTMLButtonElement;
-
-  it('starts collapsed — email and Company/Warehouse are not in the document until expanded', () => {
+describe('MobileMenu — collapsible identity panel (FINAL-REMEDIATION-001: a compact Account icon, not an always-visible summary row)', () => {
+  it('starts closed — name, email and Company/Warehouse are not in the document until the Account icon is tapped', () => {
     renderMenu();
+    expect(screen.queryByText('Jane Doe')).toBeNull();
     expect(screen.queryByText('jane@ecos.test')).toBeNull();
     expect(screen.queryByTestId('company')).toBeNull();
     expect(screen.queryByTestId('warehouse')).toBeNull();
-    expect(summaryRow()).toHaveAttribute('aria-expanded', 'false');
+    expect(accountToggle()).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('tapping the summary row expands it, revealing email and the Company/Warehouse controls', () => {
+  it('tapping the Account icon opens it, revealing name, email and the Company/Warehouse controls', () => {
     renderMenu();
-    fireEvent.click(summaryRow());
+    fireEvent.click(accountToggle());
+    expect(screen.getByText('Jane Doe')).toBeInTheDocument();
     expect(screen.getByText('jane@ecos.test')).toBeInTheDocument();
     expect(screen.getByTestId('company')).toBeInTheDocument();
     expect(screen.getByTestId('warehouse')).toBeInTheDocument();
-    expect(summaryRow()).toHaveAttribute('aria-expanded', 'true');
+    expect(accountToggle()).toHaveAttribute('aria-expanded', 'true');
   });
 
-  it('tapping the summary row again collapses it back — the capability is preserved, not removed', () => {
+  it('tapping the Account icon again closes it back — the capability is preserved, not removed', () => {
     renderMenu();
-    fireEvent.click(summaryRow());
+    fireEvent.click(accountToggle());
     expect(screen.getByTestId('company')).toBeInTheDocument();
-    fireEvent.click(summaryRow());
+    fireEvent.click(accountToggle());
     expect(screen.queryByTestId('company')).toBeNull();
     expect(screen.queryByTestId('warehouse')).toBeNull();
+  });
+
+  it('opening the Account panel closes an already-open Search panel — the two never occupy the Drawer at once', () => {
+    renderMenu();
+    fireEvent.click(searchToggle());
+    expect(screen.getByPlaceholderText('nav.searchModulesPlaceholder')).toBeInTheDocument();
+    fireEvent.click(accountToggle());
+    expect(screen.getByTestId('company')).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('nav.searchModulesPlaceholder')).toBeNull();
   });
 });
 

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronRight, Search } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router-dom';
@@ -14,9 +14,24 @@ import { useNavLabel } from './use-nav-label';
 type MobileModulesLauncherProps = {
   activeModuleId: ModuleId | null;
   onNavigate: (path: string) => void;
+  /**
+   * TASK-ECOS-MOBILE-MENU-NAVIGATION-FINAL-REMEDIATION-001 — owned by the
+   * parent Drawer's compact Search icon, not by this component: the search
+   * row below renders only while this is true, and only ever becomes true
+   * from that icon's own click handler, never on mount/open — search must
+   * require an explicit tap, and the fix belongs where the toggle lives.
+   */
+  searchOpen: boolean;
 };
 
 type PageHit = { module: AppModule; path: string; key: NavItemKey; icon: AppModule['icon'] };
+
+/** Requirement C: the Recent row shows exactly the latest 3 — not the up-to-5
+ * `useRecentNav` may still hold in storage. Applied at this read/view-model
+ * boundary (the fully resolved, display-ready list), not by rendering more
+ * rows and hiding them, and not by changing `useRecentNav`'s own storage cap
+ * or ordering — that authority is untouched. */
+const RECENT_DISPLAY_LIMIT = 3;
 
 /**
  * The Drawer's grouped navigation list (TASK-ECOS-MOBILE-NAVIGATION-DRAWER-
@@ -26,29 +41,60 @@ type PageHit = { module: AppModule; path: string; key: NavItemKey; icon: AppModu
  * whole navigation experience stays one Drawer, never a second screen.
  *
  * Same canonical data source as before — `useNavigation()` / `moduleNavLinks()`
- * — no new visibility rule, no new module, no new route. Search and Recent are
- * carried over unchanged (they already read the same authorized data and
- * already rendered as a row list, so they needed no restyle).
+ * — no new visibility rule, no new module, no new route. Search's own
+ * matching logic and result rendering, and Recent's own ordering/storage
+ * (`useRecentNav`), are unchanged (TASK-...-FINAL-REMEDIATION-001 only wraps
+ * search's VISIBILITY behind the parent's `searchOpen` prop and caps Recent's
+ * DISPLAY at `RECENT_DISPLAY_LIMIT` — neither touches how a result is found
+ * or how an entry becomes "recent").
  *
  * The one badge in the whole nav system (`usePriceReviewBadge`, already shown
  * on the desktop rail — see `app-sidebar.tsx`) is surfaced here too, on the
  * same `price-review` item, reusing the same query — not a new capability.
+ *
+ * TASK-ECOS-MOBILE-NAVIGATION-WORLD-CLASS-DESIGN-CLOSURE-002 — the previous
+ * per-family "card" treatment (`rounded-xl border bg-card ... shadow-sm`
+ * wrapping every family group, every Recent row, and every search result)
+ * read as a stack of dashboard panels rather than one calm navigation list —
+ * exactly the "oversized section containers"/"dashboard-like cards inside
+ * navigation" the User's fresh review named. Every one of those surfaces is
+ * now a flat, borderless, lightly-tinted region (`rounded-2xl bg-muted/40`,
+ * no border, no shadow) instead, and Recent is a compact horizontal chip row
+ * rather than 3 full-width bordered rows — deliberately lighter than the
+ * module list so it reads as secondary. None of this touched the data these
+ * surfaces render: `useNavigation()`, `moduleNavLinks()`, `useRecentNav()`,
+ * and the search matching logic are exactly as they were.
  */
 export function MobileModulesLauncher({
   activeModuleId,
   onNavigate,
+  searchOpen,
 }: MobileModulesLauncherProps) {
   const { t } = useTranslation('common');
   const navLabel = useNavLabel();
   const { modules } = useNavigation();
   const { recent, recordVisit } = useRecentNav();
   const [query, setQuery] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
   // Default-expand the module the User is currently inside, so opening the
   // Drawer shows "where am I" already unfolded (§9) — collapsed otherwise.
   const [expandedId, setExpandedId] = useState<ModuleId | null>(activeModuleId);
 
+  // Focus follows an explicit tap on the parent's Search icon (the `true`
+  // transition of `searchOpen`), never the Drawer's own mount/open — that is
+  // the entire fix for the reported autofocus/keyboard defect. Clearing the
+  // query on close means reopening search always starts fresh rather than
+  // showing stale results from a previous search.
+  useEffect(() => {
+    if (searchOpen) {
+      searchInputRef.current?.focus();
+    } else {
+      setQuery('');
+    }
+  }, [searchOpen]);
+
   const trimmed = query.trim().toLowerCase();
-  const searching = trimmed.length > 0;
+  const searching = searchOpen && trimmed.length > 0;
 
   const grouped = useMemo(() => {
     const byFamily = new Map<ModuleFamily, AppModule[]>();
@@ -91,7 +137,13 @@ export function MobileModulesLauncher({
         }
         return { path: entry.path, icon: mod.icon, primary: navLabel.group(mod.id), secondary: undefined };
       })
-      .filter((e): e is NonNullable<typeof e> => e !== null);
+      .filter((e): e is NonNullable<typeof e> => e !== null)
+      // Sliced AFTER resolving+filtering, not on the raw storage list, so a
+      // stale entry (a since-removed module) never displaces a genuinely
+      // valid one out of the visible top 3 — `useRecentNav`'s own ordering
+      // (most-recently-visited-first) is preserved exactly, just truncated
+      // for display.
+      .slice(0, RECENT_DISPLAY_LIMIT);
   }, [recent, modules, navLabel]);
 
   // Toggling a row in the grouped list itself — collapses if already open.
@@ -124,22 +176,28 @@ export function MobileModulesLauncher({
 
   return (
     <div className="flex h-full flex-col">
-      {/* Search */}
-      <div className="shrink-0 border-b p-3">
-        <div className="flex items-center gap-2.5 rounded-xl border bg-muted/40 px-3.5 py-3 transition-colors focus-within:border-primary/40 focus-within:bg-background">
-          <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-          <input
-            id="mobile-menu-search"
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t(($) => $.nav.searchModulesPlaceholder)}
-            aria-label={t(($) => $.nav.searchModulesPlaceholder)}
-            className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
-            autoComplete="off"
-          />
+      {/* Search — rendered only while the parent Drawer's Search icon has it
+          open; the input is focused by the effect above, not on mount. */}
+      {searchOpen ? (
+        <div className="shrink-0 border-b p-3">
+          {/* Borderless like every other surface in this redesign — the
+              focus ring alone (not an always-on border) signals "this is
+              interactive", consistent with the flatter treatment below. */}
+          <div className="flex items-center gap-2.5 rounded-2xl bg-muted/40 px-3.5 py-3 transition-colors focus-within:bg-background focus-within:ring-1 focus-within:ring-primary/40">
+            <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+            <input
+              ref={searchInputRef}
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t(($) => $.nav.searchModulesPlaceholder)}
+              aria-label={t(($) => $.nav.searchModulesPlaceholder)}
+              className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
+              autoComplete="off"
+            />
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div className="flex-1 overflow-y-auto p-3">
         {searching ? (
@@ -151,12 +209,18 @@ export function MobileModulesLauncher({
           />
         ) : (
           <>
+            {/* TASK-...-WORLD-CLASS-DESIGN-CLOSURE-002 — Recent is a compact,
+                horizontally-scrolling chip row, deliberately lighter than the
+                module list below it: it must read as secondary, never compete
+                with primary navigation for vertical space or visual weight
+                (task §10/§17). Still exactly the same 3 destinations, same
+                `onNavigate` — only the presentation shrank. */}
             {resolvedRecent.length > 0 ? (
-              <div className="mb-5">
+              <div className="mb-4">
                 <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {t(($) => $.nav.recent)}
                 </p>
-                <div className="flex flex-col gap-1.5">
+                <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5">
                   {resolvedRecent.map((entry) => {
                     const Icon = entry.icon;
                     return (
@@ -164,19 +228,14 @@ export function MobileModulesLauncher({
                         key={entry.path}
                         type="button"
                         onClick={() => onNavigate(entry.path)}
-                        className="flex min-h-11 items-center gap-3 rounded-xl border bg-card px-3 py-2.5 text-start shadow-sm transition-all hover:bg-accent/40 active:scale-[0.98]"
+                        className="flex h-11 shrink-0 items-center gap-2 rounded-full bg-muted/60 ps-2 pe-3.5 text-start transition-colors active:bg-accent/60"
                       >
-                        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted">
-                          <Icon className="size-4 text-muted-foreground" aria-hidden />
+                        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-background">
+                          <Icon className="size-3.5 text-muted-foreground" aria-hidden />
                         </span>
-                        <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                        <span className="max-w-28 truncate text-[13px] font-medium">
                           {entry.primary}
                         </span>
-                        {entry.secondary ? (
-                          <span className="shrink-0 truncate text-xs text-muted-foreground">
-                            {entry.secondary}
-                          </span>
-                        ) : null}
                       </button>
                     );
                   })}
@@ -184,12 +243,17 @@ export function MobileModulesLauncher({
               </div>
             ) : null}
 
+            {/* Module families — a flat, lightly-tinted grouped list (no
+                border/shadow "card" per group) so the primary navigation
+                reads as one calm, scannable list rather than a stack of
+                dashboard-style panels (task §4/§24: the exact treatment that
+                was previously identified as too heavy). */}
             {grouped.map(({ family, modules: familyModules }) => (
-              <div key={family} className="mb-5 last:mb-0">
+              <div key={family} className="mb-4 last:mb-0">
                 <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {t(($) => $.nav.families[family])}
                 </p>
-                <div className="flex flex-col gap-0.5 rounded-xl border bg-card p-1.5 shadow-sm">
+                <div className="flex flex-col gap-0.5 rounded-2xl bg-muted/40 p-1.5">
                   {familyModules.map((mod) => (
                     <ModuleRow
                       key={mod.id}
@@ -297,8 +361,11 @@ function ModuleRow({ module, isActiveModule, isExpanded, onToggle, onNavigateChi
                 }}
                 className={({ isActive }) =>
                   cn(
-                    'flex min-h-10 items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-all active:scale-[0.98]',
-                    isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'text-foreground hover:bg-accent/50',
+                    'flex min-h-10 items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors active:scale-[0.98]',
+                    // A restrained tint, not a solid fill — matches the parent
+                    // module row's own active treatment (task §12: "avoid
+                    // excessive background blocks" for current-route emphasis).
+                    isActive ? 'bg-primary/10 text-primary' : 'text-foreground hover:bg-accent/50',
                   )
                 }
               >
@@ -307,10 +374,10 @@ function ModuleRow({ module, isActiveModule, isExpanded, onToggle, onNavigateChi
                     <span
                       className={cn(
                         'flex size-6 shrink-0 items-center justify-center rounded-md',
-                        isActive ? 'bg-primary-foreground/15' : 'bg-muted',
+                        isActive ? 'bg-primary/15' : 'bg-muted',
                       )}
                     >
-                      <ItemIcon className={cn('size-3.5', isActive ? 'text-primary-foreground' : 'text-muted-foreground')} aria-hidden />
+                      <ItemIcon className={cn('size-3.5', isActive ? 'text-primary' : 'text-muted-foreground')} aria-hidden />
                     </span>
                     <span className="min-w-0 flex-1 truncate">{navLabel.item(item.key)}</span>
                     {item.key === 'price-review' ? <PriceReviewBadge /> : null}
@@ -347,7 +414,7 @@ function SearchResults({ moduleHits, pageHits, onSelectModule, onSelectPage }: S
   }
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-0.5 rounded-2xl bg-muted/40 p-1.5">
       {moduleHits.map((mod) => {
         const Icon = mod.icon;
         return (
@@ -355,12 +422,12 @@ function SearchResults({ moduleHits, pageHits, onSelectModule, onSelectPage }: S
             key={mod.id}
             type="button"
             onClick={() => onSelectModule(mod)}
-            className="flex min-h-11 items-center gap-3 rounded-xl border bg-card px-3 py-2.5 text-start shadow-sm transition-all hover:bg-accent/40 active:scale-[0.98]"
+            className="flex min-h-11 items-center gap-3 rounded-lg px-2.5 py-2.5 text-start transition-colors active:scale-[0.98] hover:bg-accent/50"
           >
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
               <Icon className="size-4 text-primary" aria-hidden />
             </span>
-            <span className="min-w-0 flex-1 truncate text-sm font-semibold">{navLabel.group(mod.id)}</span>
+            <span className="min-w-0 flex-1 truncate text-[15px] font-medium">{navLabel.group(mod.id)}</span>
             <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden data-flip-rtl />
           </button>
         );
@@ -370,9 +437,9 @@ function SearchResults({ moduleHits, pageHits, onSelectModule, onSelectPage }: S
           key={`${module.id}-${key}`}
           type="button"
           onClick={() => onSelectPage(module, key, path)}
-          className="flex min-h-11 items-center gap-3 rounded-xl border bg-card px-3 py-2.5 text-start shadow-sm transition-all hover:bg-accent/40 active:scale-[0.98]"
+          className="flex min-h-11 items-center gap-3 rounded-lg px-2.5 py-2.5 text-start transition-colors active:scale-[0.98] hover:bg-accent/50"
         >
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted">
             <Icon className="size-4 text-muted-foreground" aria-hidden />
           </span>
           <span className="min-w-0 flex-1 truncate text-sm font-medium">{navLabel.item(key)}</span>
