@@ -86,7 +86,7 @@ function OwnerCell({ row }: { row: CrmPortfolioRow }) {
         {canAssign && (
           <button
             type="button"
-            className="w-fit text-left text-xs text-muted-foreground underline-offset-2 hover:underline"
+            className="w-fit text-start text-xs text-muted-foreground underline-offset-2 hover:underline"
             onClick={() => assign.mutate({ customerId: row.id, salesOwnerId: null })}
             disabled={assign.isPending}
           >
