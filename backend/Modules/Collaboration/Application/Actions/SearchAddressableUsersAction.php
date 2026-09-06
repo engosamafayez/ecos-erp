@@ -91,7 +91,11 @@ final class SearchAddressableUsersAction extends BaseAction
             return $candidates->each(fn (User $u) => $u->setAttribute('is_driver', false))->values();
         }
 
-        $canMessageDrivers = $this->authorizationGateway->can($actor, self::DRIVER_MESSAGE_PERMISSION);
+        // inspect() (not can()): an is_system actor must reach the same driver
+        // visibility DriverMessagingAuthorizer grants it at write time (see that
+        // class's own docblock) — can()/authorize() do not carry the platform's
+        // is_system bypass, only inspect()/decision() do (ADR-038 Part 1).
+        $canMessageDrivers = $this->authorizationGateway->inspect($actor, self::DRIVER_MESSAGE_PERMISSION)->isAllowed();
 
         $inScopeDriverIds = $canMessageDrivers
             ? Driver::query()

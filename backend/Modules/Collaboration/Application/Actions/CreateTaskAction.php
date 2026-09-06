@@ -47,7 +47,12 @@ final class CreateTaskAction extends BaseAction
             throw new InvalidArgumentException('CreateTaskAction::execute expects (User $actor, CreateTaskData $data).');
         }
 
-        $this->authorizationGateway->authorize($actor, 'collaboration.tasks.create');
+        // inspect() (not authorize()): authorize()/can() do not carry the
+        // platform's is_system bypass, only inspect()/decision() do (ADR-038
+        // Part 1) — without this, an is_system actor is wrongly denied here.
+        if ($this->authorizationGateway->inspect($actor, 'collaboration.tasks.create')->isDenied()) {
+            throw new AuthorizationException('This action is unauthorized (collaboration.tasks.create).');
+        }
 
         // Defaults to self-assign (architecture report §12) when no assignee given.
         $assignee = User::query()

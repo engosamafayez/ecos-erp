@@ -57,8 +57,12 @@ final class DriverMessagingAuthorizer
             return;
         }
 
-        // Throws AuthorizationException itself on denial (IAM's own contract).
-        $this->authorizationGateway->authorize($actor, $permission);
+        // inspect(), not authorize()/can(): those two do not carry the platform's
+        // is_system bypass, only inspect()/decision() do (ADR-038 Part 1) —
+        // without this, an is_system actor is wrongly denied here.
+        if ($this->authorizationGateway->inspect($actor, $permission)->isDenied()) {
+            throw new AuthorizationException(sprintf('This action is unauthorized (%s).', $permission));
+        }
 
         $inScope = Driver::query()
             ->scopedTo($actor, self::SCOPE_RESOURCE)

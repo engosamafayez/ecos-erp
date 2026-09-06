@@ -6,6 +6,7 @@ namespace Modules\Collaboration\Application\Actions;
 
 use App\Core\Actions\BaseAction;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Modules\Collaboration\Application\Actions\Concerns\ManagesParticipants;
@@ -46,7 +47,12 @@ final class CreateGroupConversationAction extends BaseAction
             throw new InvalidArgumentException('CreateGroupConversationAction::execute expects (User $actor, string $title, array $participantUserIds, ?string $teamId).');
         }
 
-        $this->authorizationGateway->authorize($actor, 'collaboration.groups.create');
+        // inspect() (not authorize()): authorize()/can() do not carry the
+        // platform's is_system bypass, only inspect()/decision() do (ADR-038
+        // Part 1) — without this, an is_system actor is wrongly denied here.
+        if ($this->authorizationGateway->inspect($actor, 'collaboration.groups.create')->isDenied()) {
+            throw new AuthorizationException('This action is unauthorized (collaboration.groups.create).');
+        }
 
         // Scoped to the actor's own company, exactly like direct-conversation
         // target resolution — a foreign-company id is silently dropped rather
