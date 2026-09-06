@@ -14,7 +14,10 @@ use Modules\Organization\Companies\Domain\Models\Company;
 use Tests\TestCase;
 
 /**
- * TASK-ECOS-NOTIFICATIONS-ATTENTION-EXPERIENCE-003 (ADR-047 §14/§26.4-§26.8).
+ * TASK-ECOS-NOTIFICATIONS-ATTENTION-EXPERIENCE-003 (ADR-047 §14/§26.4-§26.8), extended by
+ * TASK-ECOS-NOTIFICATIONS-CENTER-PREFERENCES-AND-LIVE-DELIVERY-004 §10 (the `locked` flag
+ * the preferences UI depends on to show effective state truthfully rather than presenting
+ * a control the backend will silently ignore).
  *
  * Proves the three-tier precedence — MANDATORY SYSTEM POLICY > COMPANY DEFAULT > USER
  * PREFERENCE — governing the popup/sound attention layer, on top of Task 2's foundation.
@@ -58,17 +61,21 @@ class NotificationAttentionPolicyTest extends TestCase
         $this->assertFalse($low->popup);
         $this->assertFalse($low->sound);
         $this->assertNull($low->soundProfile);
+        $this->assertFalse($low->locked);
 
         $this->assertTrue($normal->popup);
         $this->assertFalse($normal->sound, 'NORMAL sound is "optional" — default off per §26.4.');
+        $this->assertFalse($normal->locked);
 
         $this->assertTrue($high->popup);
         $this->assertTrue($high->sound);
         $this->assertSame('important', $high->soundProfile->value);
+        $this->assertFalse($high->locked, 'HIGH is not mandatory by default — only CRITICAL, or a company override, locks it.');
 
         $this->assertTrue($critical->popup);
         $this->assertTrue($critical->sound);
         $this->assertSame('critical', $critical->soundProfile->value);
+        $this->assertTrue($critical->locked, 'CRITICAL is always mandatory — the preferences UI must show it as locked.');
     }
 
     // ── Sound preference precedence (non-mandatory priority) ───────────────────────
@@ -115,6 +122,7 @@ class NotificationAttentionPolicyTest extends TestCase
 
         $this->assertTrue($attention->popup, 'CRITICAL popup can never be disabled by user preference.');
         $this->assertTrue($attention->sound, 'CRITICAL sound can never be disabled by user preference.');
+        $this->assertTrue($attention->locked, 'The UI must be told this priority is locked, not left to infer it from the values alone.');
     }
 
     public function test_a_company_can_mark_a_non_critical_priority_mandatory_and_it_overrides_user_preference(): void
@@ -134,6 +142,7 @@ class NotificationAttentionPolicyTest extends TestCase
 
         $this->assertTrue($attention->popup, 'Company-mandated HIGH must override the user\'s own preference.');
         $this->assertTrue($attention->sound, 'Company-mandated HIGH must override the user\'s own preference.');
+        $this->assertTrue($attention->locked, 'A company-mandated priority must report itself as locked too, not just CRITICAL.');
     }
 
     // ── Company default (non-mandatory) is the fallback baseline ───────────────────
@@ -215,8 +224,11 @@ class NotificationAttentionPolicyTest extends TestCase
             $this->assertArrayHasKey('popup', $data[$priority]);
             $this->assertArrayHasKey('sound', $data[$priority]);
             $this->assertArrayHasKey('sound_profile', $data[$priority]);
+            $this->assertArrayHasKey('locked', $data[$priority]);
         }
 
+        $this->assertTrue($data['critical']['locked']);
+        $this->assertFalse($data['normal']['locked']);
         $this->assertTrue($data['critical']['popup']);
         $this->assertSame('critical', $data['critical']['sound_profile']);
     }

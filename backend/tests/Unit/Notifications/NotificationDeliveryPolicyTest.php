@@ -32,7 +32,8 @@ class NotificationDeliveryPolicyTest extends TestCase
 
         foreach (NotificationCategory::cases() as $category) {
             foreach (NotificationPriority::cases() as $priority) {
-                $notification = new class($category, $priority) implements ProvidesNotificationMetadataInterface {
+                $notification = new class($category, $priority) implements ProvidesNotificationMetadataInterface
+                {
                     use HasNotificationMetadata;
 
                     public function __construct(

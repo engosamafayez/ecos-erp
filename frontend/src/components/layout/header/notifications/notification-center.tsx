@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import {
   Bell,
   Boxes,
@@ -8,25 +9,31 @@ import {
   Info,
   Megaphone,
   Monitor,
-  Settings,
+  Settings as SettingsIcon,
   Truck,
   TriangleAlert,
+  Zap,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
+import { EmptyState, ErrorState, LoadingState, Pagination } from '@/components/crud';
 import { useFormatter } from '@/hooks/use-formatter';
+import { NotificationPreferencesButton } from '@/features/notifications/components/notification-preferences';
 import { useNotificationAttention } from '@/features/notifications/hooks/use-notification-attention';
 import {
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
-  useNotifications,
+  useNotificationCenterFeed,
   useUnreadNotificationCount,
 } from '@/features/notifications/hooks/use-notifications';
+import { resolveNotificationTarget } from '@/features/notifications/lib/resolve-notification-target';
 import {
   toUiNotification,
+  type NotificationPriority,
   type NotificationSeverity,
   type NotificationSource,
   type UiNotification,
@@ -40,9 +47,21 @@ import {
  * else: the message text is the producer's, the timestamp is the record's, and
  * a feed with no rows says so rather than filling the drawer.
  *
- * Filter tabs are derived from the sources present in the feed, not from a
+ * Filter tabs are derived from the sources present on the current page, not from a
  * fixed taxonomy. A notification from a module nobody has categorised still
  * appears, under `other`, instead of being dropped because no tab claimed it.
+ *
+ * TASK-ECOS-NOTIFICATIONS-CENTER-PREFERENCES-AND-LIVE-DELIVERY-004: this is the one
+ * user-facing Notification Center (no separate inbox page — ADR-047's Vanilla-Plus V1
+ * scope does not include the full Enterprise Inbox from `docs/ux/NOTIFICATION-UX-
+ * STANDARD.md` §6; that document's layout/badge conventions are reused here for styling
+ * only, not its Later-scoped feature set — labels, snooze, share, escalations, external
+ * channels, and Reverb realtime all remain out of scope per that ADR and this task's own
+ * instruction). Pagination now uses the project's own `Pagination` component/query-shape,
+ * and the list is driven by `useNotificationCenterFeed(page)` — a separate query from
+ * `useNotifications()` (unread count + attention detection) so browsing to page 2 never
+ * changes what the badge or the arrival-toast logic is watching (§14 — one unread-count
+ * authority, one persistent-notification authority).
  */
 
 const SOURCE_ICONS: Record<NotificationSource, LucideIcon> = {
@@ -50,7 +69,7 @@ const SOURCE_ICONS: Record<NotificationSource, LucideIcon> = {
   logistics: Truck,
   marketing: Megaphone,
   pos: Monitor,
-  system: Settings,
+  system: SettingsIcon,
   other: Bell,
 };
 
@@ -68,18 +87,63 @@ const SEVERITY_TONE: Record<NotificationSeverity, string> = {
   error: 'text-red-600',
 };
 
+/**
+ * ADR-047 §7 / `docs/ux/NOTIFICATION-UX-STANDARD.md` §4's locked badge convention —
+ * priority is presentation-only here (never inferred/upgraded client-side, §12): NORMAL
+ * gets no badge at all, matching the standard exactly.
+ */
+function PriorityBadge({ priority }: { priority: NotificationPriority | undefined }) {
+  const { t } = useTranslation('common');
+  if (!priority || priority === 'normal') return null;
+
+  const label = t(($) => $.notifications.priority[priority]);
+
+  if (priority === 'critical') {
+    return (
+      <Badge variant="destructive" className="gap-1">
+        <Zap className="size-3" aria-hidden />
+        {label}
+      </Badge>
+    );
+  }
+  if (priority === 'high') {
+    return (
+      <Badge variant="outline" className="gap-1 border-amber-300 text-amber-700 dark:text-amber-500">
+        {label}
+      </Badge>
+    );
+  }
+  // low
+  return (
+    <Badge variant="outline" className="text-muted-foreground/70">
+      {label}
+    </Badge>
+  );
+}
+
 function NotificationRow({
   notification,
   onMarkRead,
+  onNavigate,
 }: {
   notification: UiNotification;
   onMarkRead: (id: string) => void;
+  onNavigate: (path: string) => void;
 }) {
   const { t } = useTranslation('common');
   const fmt = useFormatter();
 
   const SourceIcon = SOURCE_ICONS[notification.source];
   const SeverityIcon = SEVERITY_ICONS[notification.severity];
+  const target = resolveNotificationTarget(notification);
+
+  // The category taxonomy (ADR-047 §6) is the more meaningful, action-oriented title
+  // once a producer supplies it; a row written before the schema extension (or by a
+  // producer that never migrated) has none and falls back to the source label exactly
+  // as before — never a crash, never a blank title.
+  const title = notification.category
+    ? t(($) => $.notifications.category[notification.category!])
+    : t(($) => $.notifications.source[notification.source]);
 
   return (
     <div
@@ -102,7 +166,7 @@ function NotificationRow({
         <div className="flex items-start justify-between gap-2">
           <p
             className={cn(
-              'flex items-center gap-1.5 text-sm leading-tight',
+              'flex flex-wrap items-center gap-1.5 text-sm leading-tight',
               notification.read ? 'font-medium' : 'font-semibold',
             )}
           >
@@ -110,7 +174,8 @@ function NotificationRow({
               className={cn('size-3.5 shrink-0', SEVERITY_TONE[notification.severity])}
               aria-hidden
             />
-            {t(($) => $.notifications.source[notification.source])}
+            {title}
+            <PriorityBadge priority={notification.priority} />
           </p>
 
           {!notification.read && (
@@ -129,6 +194,15 @@ function NotificationRow({
           <span className="text-[10px] text-muted-foreground/70">
             {notification.createdAt ? fmt.dateTime(notification.createdAt) : ''}
           </span>
+          {target && (
+            <button
+              type="button"
+              onClick={() => onNavigate(target)}
+              className="text-[10px] font-medium text-primary hover:text-primary/80"
+            >
+              {t(($) => $.notifications.viewDetails)}
+            </button>
+          )}
           {!notification.read && (
             <button
               type="button"
@@ -146,23 +220,36 @@ function NotificationRow({
 
 export function NotificationCenter() {
   const { t } = useTranslation('common');
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [activeSource, setActiveSource] = useState<NotificationSource | 'all'>('all');
+  const [page, setPage] = useState(1);
 
-  const feed = useNotifications();
+  const centerFeed = useNotificationCenterFeed(page);
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
   const unreadCount = useUnreadNotificationCount();
 
   // The bell is this hook's single mount point app-wide (TASK-ECOS-NOTIFICATIONS-
-  // ATTENTION-EXPERIENCE-003) — it shares this component's own useNotifications() query
-  // cache rather than starting a second poll.
+  // ATTENTION-EXPERIENCE-003) — it watches useNotifications()'s own query (always page 1),
+  // never this component's paginated browsing state.
   useNotificationAttention();
 
-  const notifications = useMemo(() => (feed.data?.data ?? []).map(toUiNotification), [feed.data]);
+  function selectSource(source: NotificationSource | 'all') {
+    setActiveSource(source);
+    // Changing filter/tab while deep into pagination would otherwise strand the user on
+    // a now-out-of-context page number. Reset directly in the event handler, not a
+    // reactive effect — this is a discrete user action, not state to synchronize.
+    setPage(1);
+  }
 
-  // Only sources actually present get a tab — an empty tab would advertise a
-  // category the platform never produces.
+  const notifications = useMemo(
+    () => (centerFeed.data?.data ?? []).map(toUiNotification),
+    [centerFeed.data],
+  );
+
+  // Only sources actually present on the current page get a tab — an empty tab would
+  // advertise a category the platform never produces (or simply isn't on this page).
   const sources = useMemo(() => {
     const seen = new Set<NotificationSource>();
     notifications.forEach((n) => seen.add(n.source));
@@ -171,6 +258,11 @@ export function NotificationCenter() {
 
   const visible =
     activeSource === 'all' ? notifications : notifications.filter((n) => n.source === activeSource);
+
+  function handleNavigate(path: string) {
+    setOpen(false);
+    navigate(path);
+  }
 
   return (
     <>
@@ -209,15 +301,18 @@ export function NotificationCenter() {
                   : t(($) => $.notifications.allCaughtUp)}
               </p>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => markAllRead.mutate()}
-              disabled={unreadCount === 0 || markAllRead.isPending}
-              className="h-7 text-xs"
-            >
-              {t(($) => $.notifications.markAllRead)}
-            </Button>
+            <div className="flex items-center gap-1">
+              <NotificationPreferencesButton />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => markAllRead.mutate()}
+                disabled={unreadCount === 0 || markAllRead.isPending}
+                className="h-7 text-xs"
+              >
+                {t(($) => $.notifications.markAllRead)}
+              </Button>
+            </div>
           </div>
 
           {sources.length > 1 && (
@@ -232,7 +327,7 @@ export function NotificationCenter() {
                   <button
                     key={source}
                     type="button"
-                    onClick={() => setActiveSource(source)}
+                    onClick={() => selectSource(source)}
                     aria-pressed={activeSource === source}
                     className={cn(
                       'flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
@@ -263,48 +358,43 @@ export function NotificationCenter() {
           )}
 
           <div className="flex-1 overflow-y-auto">
-            {feed.isLoading ? (
-              <p className="py-16 text-center text-sm text-muted-foreground">
-                {t(($) => $.loading)}
-              </p>
-            ) : feed.isError ? (
-              <p className="py-16 text-center text-sm text-destructive">
-                {t(($) => $.notifications.loadFailed)}
-              </p>
-            ) : visible.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-                <Bell className="size-10 text-muted-foreground/20" aria-hidden />
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {t(($) => $.notifications.empty)}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground/60">
-                    {t(($) => $.notifications.emptyHint)}
-                  </p>
+            {/* `data` first, on purpose: a transient background refetch failure must
+                keep showing the last-good page rather than replacing it with a blocking
+                error (TASK-ECOS-NOTIFICATIONS-CENTER-PREFERENCES-AND-LIVE-DELIVERY-004
+                §6/§8) — only the true "never loaded anything, and it failed" case earns
+                the full-page ErrorState below. */}
+            {centerFeed.data ? (
+              visible.length === 0 ? (
+                <EmptyState
+                  icon={Bell}
+                  title={t(($) => $.notifications.empty)}
+                  description={t(($) => $.notifications.emptyHint)}
+                />
+              ) : (
+                <div className="divide-y">
+                  {visible.map((notification) => (
+                    <NotificationRow
+                      key={notification.id}
+                      notification={notification}
+                      onMarkRead={(id) => markRead.mutate(id)}
+                      onNavigate={handleNavigate}
+                    />
+                  ))}
                 </div>
-              </div>
+              )
+            ) : centerFeed.isLoading ? (
+              <LoadingState />
             ) : (
-              <div className="divide-y">
-                {visible.map((notification) => (
-                  <NotificationRow
-                    key={notification.id}
-                    notification={notification}
-                    onMarkRead={(id) => markRead.mutate(id)}
-                  />
-                ))}
-              </div>
+              <ErrorState
+                description={t(($) => $.notifications.loadFailed)}
+                onRetry={() => centerFeed.refetch()}
+              />
             )}
           </div>
 
-          {/* The feed endpoint paginates; the drawer shows the most recent page.
-              There is no standalone notifications page, so nothing is linked to
-              rather than linking to a route that does not exist. */}
-          {(feed.data?.meta.total ?? 0) > notifications.length && (
-            <div className="shrink-0 border-t px-4 py-3 text-center text-xs text-muted-foreground">
-              {t(($) => $.notifications.showingRecent, {
-                shown: notifications.length,
-                total: feed.data?.meta.total ?? 0,
-              })}
+          {centerFeed.data && centerFeed.data.meta.lastPage > 1 && (
+            <div className="shrink-0 border-t px-4 py-3">
+              <Pagination meta={centerFeed.data.meta} onPageChange={setPage} />
             </div>
           )}
         </SheetContent>

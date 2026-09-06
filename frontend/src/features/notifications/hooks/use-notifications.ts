@@ -1,6 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { notificationsService } from '../services/notifications-service';
+import type { NotificationPreferences } from '../types/notification';
 
 /**
  * The notification feed.
@@ -31,6 +32,26 @@ export function useNotifications(enabled = true) {
 export function useUnreadNotificationCount(): number {
   const feed = useNotifications();
   return feed.data?.unread_count ?? 0;
+}
+
+/**
+ * TASK-ECOS-NOTIFICATIONS-CENTER-PREFERENCES-AND-LIVE-DELIVERY-004 — the Notification
+ * Center's own paginated browsing, deliberately a *different* query key from
+ * `useNotifications()`: the bell's unread count and Task 3's arrival-attention detection
+ * must always watch the single most-recent page regardless of what page the user has
+ * paginated to in the Center. Both still read the same backend endpoint/table (ADR-047
+ * §14 — one persistent authority) and both are invalidated together by every mark-read
+ * mutation below, via the shared `KEY` prefix.
+ *
+ * `placeholderData: keepPreviousData` keeps the current page's rows on screen while the
+ * next page loads, instead of flashing a loading state on every page change.
+ */
+export function useNotificationCenterFeed(page: number) {
+  return useQuery({
+    queryKey: [...KEY, 'center', page],
+    queryFn: () => notificationsService.list({ page }),
+    placeholderData: keepPreviousData,
+  });
 }
 
 /**
@@ -69,5 +90,26 @@ export function useMarkNotificationsReadSet() {
   return useMutation({
     mutationFn: (ids: string[]) => notificationsService.markReadSet(ids),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: KEY }),
+  });
+}
+
+/** `null` means the user has never set a preference — the UI falls back to the resolved defaults. */
+export function useNotificationPreferences() {
+  return useQuery({
+    queryKey: [...KEY, 'preferences'],
+    queryFn: () => notificationsService.getPreferences(),
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useUpdateNotificationPreferences() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: NotificationPreferences) => notificationsService.updatePreferences(payload),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: [...KEY, 'preferences'] }).then(() =>
+        // The effective per-priority table depends on the preference just written.
+        queryClient.invalidateQueries({ queryKey: [...KEY, 'attention-policy'] }),
+      ),
   });
 }

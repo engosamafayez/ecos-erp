@@ -76,6 +76,7 @@ final class NotificationDeliveryPolicy implements NotificationDeliveryPolicyInte
             popup: $popup,
             sound: $sound,
             soundProfile: $sound ? $this->soundProfileFor($priority) : null,
+            locked: $mandatory,
         );
     }
 

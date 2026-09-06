@@ -412,6 +412,8 @@
     "noMessage": "This notification carries no message.",
     "loadFailed": "Notifications could not be loaded.",
     "showingRecent": "Showing the {{shown}} most recent of {{total}}.",
+    "viewDetails": "View",
+    "settings": "Notification settings",
     "source": {
       "operations": "Operations",
       "logistics": "Logistics",
@@ -419,6 +421,35 @@
       "pos": "Point of Sale",
       "system": "System",
       "other": "Other"
+    },
+    "priority": {
+      "low": "Low",
+      "normal": "Normal",
+      "high": "High",
+      "critical": "Critical"
+    },
+    "category": {
+      "alert": "Alert",
+      "task": "Task",
+      "approval": "Approval",
+      "assignment": "Assignment",
+      "warning": "Warning",
+      "mention": "Mention",
+      "ai_notification": "AI Notification",
+      "exception": "Exception"
+    },
+    "preferences": {
+      "title": "Notification preferences",
+      "description": "Control popups and sound for new notifications. In-app notifications themselves are always delivered.",
+      "popupLabel": "Show popups",
+      "soundLabel": "Play sound",
+      "effectiveTitle": "What you'll actually get, by priority",
+      "columnPriority": "Priority",
+      "columnPopup": "Popup",
+      "columnSound": "Sound",
+      "locked": "Required by policy",
+      "lockedHint": "This priority is set by mandatory system or company policy and can't be changed here.",
+      "saveFailed": "Couldn't save your preferences. Please try again."
     }
   },
   "breadcrumb": "Breadcrumb",

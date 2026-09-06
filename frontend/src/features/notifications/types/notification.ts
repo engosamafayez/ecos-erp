@@ -66,9 +66,26 @@ export type AttentionSettings = {
   popup: boolean;
   sound: boolean;
   sound_profile: SoundProfile | null;
+  /**
+   * TASK-ECOS-NOTIFICATIONS-CENTER-PREFERENCES-AND-LIVE-DELIVERY-004 (ADR-047 §10/§26.5)
+   * — true when MANDATORY SYSTEM POLICY fixes this priority's popup/sound; the
+   * preferences UI must show it as non-editable rather than a control the backend
+   * silently ignores.
+   */
+  locked: boolean;
 };
 
 export type AttentionPolicyMap = Record<NotificationPriority, AttentionSettings>;
+
+/**
+ * The user-editable half of the precedence chain (ADR-047 §26.5) — global on/off, not
+ * per-priority: the per-priority *effective* result (including what mandatory policy
+ * fixes regardless of these) comes from {@link AttentionPolicyMap}, not from here.
+ */
+export type NotificationPreferences = {
+  popup_enabled?: boolean;
+  sound_enabled?: boolean;
+};
 
 export type NotificationPage = {
   data: RawNotification[];
@@ -115,6 +132,13 @@ export type UiNotification = {
    */
   priority?: NotificationPriority;
   category?: NotificationCategory;
+  /**
+   * TASK-ECOS-NOTIFICATIONS-CENTER-PREFERENCES-AND-LIVE-DELIVERY-004 (ADR-047 §8) — a
+   * typed reference, never a raw URL. Absent when the producer supplied none (true for
+   * every current producer). Whether it renders as an action is decided separately by
+   * `resolveNotificationTarget()` — an unrecognised `entityType` here is not an error.
+   */
+  deepLink?: { entityType: string; entityId: string; actionKey: string | null; route: string | null };
 };
 
 const SOURCE_BY_SEGMENT: Record<string, NotificationSource> = {
@@ -157,5 +181,15 @@ export function toUiNotification(raw: RawNotification): UiNotification {
     read: raw.read_at !== null,
     ...(raw.priority ? { priority: raw.priority } : {}),
     ...(raw.category ? { category: raw.category } : {}),
+    ...(raw.deep_link
+      ? {
+          deepLink: {
+            entityType: raw.deep_link.entity_type,
+            entityId: raw.deep_link.entity_id,
+            actionKey: raw.deep_link.action_key,
+            route: raw.deep_link.route,
+          },
+        }
+      : {}),
   };
 }
