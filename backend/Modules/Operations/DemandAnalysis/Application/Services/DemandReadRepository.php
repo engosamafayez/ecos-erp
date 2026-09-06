@@ -202,7 +202,8 @@ final class DemandReadRepository
                 ['preparation_wave_id', 'material_id'],
                 ['material_name', 'material_sku', 'required_qty', 'available_qty',
                     'reserved_qty', 'expected_today', 'in_transit_qty',
-                    'missing_qty', 'coverage_pct', 'allow_negative', 'data_hash', 'last_calculated_at', 'updated_at'],
+                    'missing_qty', 'projected_shortage_after_returns',
+                    'coverage_pct', 'allow_negative', 'data_hash', 'last_calculated_at', 'updated_at'],
             );
         }
     }

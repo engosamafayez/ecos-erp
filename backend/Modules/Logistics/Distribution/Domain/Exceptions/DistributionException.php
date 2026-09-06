@@ -44,6 +44,12 @@ class DistributionException extends RuntimeException
         return new self("That order is already assigned to trip {$tripNumber}. Remove it from that trip first.");
     }
 
+    /** Raised by TripService::releaseOrder() when the order has no association with this trip at all. */
+    public static function orderNotOnTrip(string $orderId, string $tripNumber): self
+    {
+        return new self("Order {$orderId} has no association with trip {$tripNumber}.");
+    }
+
     public static function dispatchBlocked(array $reasons): self
     {
         return new self('This trip cannot be dispatched: '.implode(' ', $reasons));

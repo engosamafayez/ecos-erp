@@ -540,6 +540,12 @@ final class WaveDemandController extends Controller
             'expected_today' => (float) $i->expected_today,
             'in_transit_qty' => (float) $i->in_transit_qty,
             'missing_qty' => (float) $i->missing_qty,
+            // TASK-...-FINAL-IMPLEMENTATION-002 §14/§21-26 — explicitly-named aliases so
+            // consumers never have to know `expected_today` is where Expected Driver
+            // Returns happens to live. `expected_today`/`in_transit_qty` above are left
+            // in place unchanged for any existing consumer of this endpoint.
+            'expected_driver_returns' => (float) $i->expected_today,
+            'projected_shortage_after_returns' => (float) $i->projected_shortage_after_returns,
             'coverage_pct' => (float) $i->coverage_pct,
             'last_calculated_at' => $i->last_calculated_at?->toIso8601String(),
         ])->values()->all());

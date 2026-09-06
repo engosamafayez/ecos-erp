@@ -27,6 +27,7 @@ use Modules\Operations\Preparation\Domain\Models\PreparationWave;
  * @property float $expected_today
  * @property float $in_transit_qty
  * @property float $missing_qty
+ * @property float $projected_shortage_after_returns
  * @property float $coverage_pct
  * @property string|null $data_hash
  * @property \Carbon\Carbon $last_calculated_at
@@ -51,6 +52,7 @@ final class WaveMaterialDemand extends Model
         'expected_today',
         'in_transit_qty',
         'missing_qty',
+        'projected_shortage_after_returns',
         'coverage_pct',
         // Whether this material is drawable on open credit. It does NOT reduce missing_qty
         // (that is always the real physical shortage) — it decides whether the shortage
@@ -67,6 +69,7 @@ final class WaveMaterialDemand extends Model
         'expected_today' => 'float',
         'in_transit_qty' => 'float',
         'missing_qty' => 'float',
+        'projected_shortage_after_returns' => 'float',
         'coverage_pct' => 'float',
         'allow_negative' => 'boolean',
         'last_calculated_at' => 'datetime',

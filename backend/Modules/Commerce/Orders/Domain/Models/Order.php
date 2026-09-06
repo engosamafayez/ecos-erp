@@ -399,6 +399,17 @@ class Order extends Model
      * the opposite direction. Distribution remains the sole writer of trip
      * assignment; this never queries beyond a single BelongsTo lookup.
      *
+     * Scoped to the ACTIVE (non-superseded) association — mirrors
+     * activeSessionOrder() above, the same "one live row out of a retained
+     * history" shape. TASK-...-FINAL-IMPLEMENTATION-002 §10/§11: since an
+     * order may now carry multiple historical Trip associations (one per
+     * retryable delivery attempt), an unscoped HasOne would resolve to
+     * Eloquent's arbitrary "first match" the moment a second (released) row
+     * exists. `whereNull('superseded_at')` keeps this relation meaning
+     * exactly what every current consumer (OrderResource's 'driver' field,
+     * the order list/detail eager-loads) already assumes it means: the
+     * order's CURRENT trip/driver, never a historical one.
+     *
      * @return HasOne<\Modules\Logistics\Distribution\Domain\Models\TripOrder, $this>
      */
     public function currentTripOrder(): HasOne
@@ -406,6 +417,20 @@ class Order extends Model
         return $this->hasOne(
             \Modules\Logistics\Distribution\Domain\Models\TripOrder::class,
             'order_id',
-        );
+        )->whereNull('superseded_at');
+    }
+
+    /**
+     * Every Trip association this order has ever had, active or released —
+     * for audit/history surfaces (§11: "Trip 1 remains visible/auditable").
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<\Modules\Logistics\Distribution\Domain\Models\TripOrder, $this>
+     */
+    public function tripOrderHistory(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(
+            \Modules\Logistics\Distribution\Domain\Models\TripOrder::class,
+            'order_id',
+        )->orderBy('assigned_at')->orderBy('id');
     }
 }
