@@ -6,6 +6,7 @@
     "new": "New Customer",
     "create": "Create customer",
     "edit": "Edit Customer",
+    "accountStatement": "Account Statement",
     "export": "Export",
     "merge": "Merge",
     "import": "Import"

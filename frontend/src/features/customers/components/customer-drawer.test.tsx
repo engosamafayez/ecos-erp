@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import type { Customer } from '@/features/customers/types/customer';
@@ -18,6 +19,12 @@ import type { Customer } from '@/features/customers/types/customer';
 const mockGet = vi.hoisted(() => vi.fn());
 const mockBlockHistory = vi.hoisted(() => vi.fn());
 const mockUnblock = vi.hoisted(() => vi.fn());
+const mockNavigate = vi.hoisted(() => vi.fn());
+
+vi.mock('react-router-dom', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('react-router-dom')>();
+  return { ...actual, useNavigate: () => mockNavigate };
+});
 
 vi.mock('@/features/customers/services/customers-service', () => ({
   customersService: {
@@ -118,7 +125,9 @@ function renderDrawer(customer: Customer, defaultTab?: string) {
 
   return render(
     <QueryClientProvider client={client}>
-      <CustomerDrawer customer={customer} open onOpenChange={() => {}} onEdit={() => {}} defaultTab={defaultTab} />
+      <MemoryRouter>
+        <CustomerDrawer customer={customer} open onOpenChange={() => {}} onEdit={() => {}} defaultTab={defaultTab} />
+      </MemoryRouter>
     </QueryClientProvider>,
   );
 }
@@ -221,5 +230,31 @@ describe('CustomerDrawer — Blocked Customer (TASK-...-BLOCKED-CUSTOMERS-009)',
     const dialog = await screen.findByRole('dialog');
     const { getByText } = within(dialog);
     expect(getByText('unblockAction').closest('button')).toBeDisabled();
+  });
+});
+
+describe('CustomerDrawer — Account Statement link (TASK-ECOS-CUSTOMER-SUPPLIER-LEDGER-LINKS-CLOSURE-001)', () => {
+  it('shows the Account Statement action when the viewer holds finance.ar.view', () => {
+    renderDrawer(baseCustomer());
+
+    expect(screen.getByText('accountStatement')).toBeInTheDocument();
+  });
+
+  it('hides the Account Statement action when the viewer lacks finance.ar.view', () => {
+    mockCan.mockImplementation((permission?: string) => permission !== 'finance.ar.view');
+    renderDrawer(baseCustomer());
+
+    expect(screen.queryByText('accountStatement')).not.toBeInTheDocument();
+  });
+
+  it('navigates to the existing canonical AR statement route, scoped to this customer', async () => {
+    const user = userEvent.setup();
+    renderDrawer(baseCustomer({ id: 'c-42' }));
+
+    await user.click(screen.getByText('accountStatement'));
+
+    // No second statement implementation is rendered here — this only navigates to
+    // the existing Accounts Receivable page/drawer with the customer id preserved.
+    expect(mockNavigate).toHaveBeenCalledWith('/accounting/receivables?customer_id=c-42');
   });
 });

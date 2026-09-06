@@ -281,6 +281,7 @@
   },
   "drawer360": {
     "editSupplier": "Edit Supplier",
+    "accountStatement": "Account Statement",
     "tabs": {
       "overview": "Overview",
       "products": "Products",

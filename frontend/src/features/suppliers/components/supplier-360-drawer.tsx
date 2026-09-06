@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import {
   Activity,
   AlertTriangle,
@@ -34,6 +35,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/components/ds/use-toast';
 import { api } from '@/lib/axios';
+import { usePermission } from '@/features/authorization';
+import { ROUTES } from '@/router/routes';
 import { useGoodsReceiptsQuery } from '@/features/goods-receipts/hooks/use-goods-receipts';
 import { useSupplierInvoicesQuery } from '@/features/supplier-invoices/hooks/use-supplier-invoices';
 import { usePurchaseOrdersQuery } from '@/features/purchase-orders/hooks/use-purchase-orders';
@@ -1312,6 +1315,8 @@ type TabId =
 
 export function Supplier360Drawer({ supplier, open, onOpenChange, onEdit, initialTab = 'overview' }: Props) {
   const { t } = useTranslation('suppliers');
+  const navigate = useNavigate();
+  const { can } = usePermission();
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
 
   // Re-target the tab whenever the drawer is opened (e.g. Activity action → timeline).
@@ -1358,10 +1363,29 @@ export function Supplier360Drawer({ supplier, open, onOpenChange, onEdit, initia
       title={supplier.name}
       description={supplier.code}
       footer={
-        <Button variant="outline" size="sm" onClick={() => onEdit(supplier)} className="gap-1.5">
-          <Pencil className="size-3.5" />
-          {t($ => $.drawer360.editSupplier)}
-        </Button>
+        <>
+          {/* TASK-ECOS-CUSTOMER-SUPPLIER-LEDGER-LINKS-CLOSURE-001 — links out to the
+              existing canonical Finance AP statement/ledger for this supplier (the
+              "financial" tab above is Procurement's own purchase analytics, a
+              different, pre-existing read model — this is not a duplicate of it).
+              Hidden (not merely disabled) unless the viewer holds the same
+              finance.ap.view permission that gates the Accounts Payable page itself. */}
+          {can('finance.ap.view') && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`${ROUTES.financePayables}?supplier_id=${supplier.id}`)}
+              className="gap-1.5"
+            >
+              <FileText className="size-3.5" />
+              {t($ => $.drawer360.accountStatement)}
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={() => onEdit(supplier)} className="gap-1.5">
+            <Pencil className="size-3.5" />
+            {t($ => $.drawer360.editSupplier)}
+          </Button>
+        </>
       }
     >
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabId)} className="flex flex-col h-full">

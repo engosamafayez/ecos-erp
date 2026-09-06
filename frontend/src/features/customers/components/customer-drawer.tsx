@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,7 @@ import { useOrdersQuery } from '@/features/orders/hooks/use-orders';
 import { usePermission } from '@/features/authorization/use-authorization';
 import { useCustomerBlockHistory, useCustomerQuery, useUnblockCustomer } from '../hooks/use-customers';
 import type { Customer } from '@/features/customers/types/customer';
+import { ROUTES } from '@/router/routes';
 
 type Props = {
   customer: Customer | null;
@@ -713,6 +715,8 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 export function CustomerDrawer({ customer, open, onOpenChange, onEdit, defaultTab }: Props) {
   const { t } = useTranslation('customers');
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+  const { can } = usePermission();
 
   const [activeTab, setActiveTab] = useState(defaultTab ?? 'summary');
 
@@ -814,6 +818,22 @@ export function CustomerDrawer({ customer, open, onOpenChange, onEdit, defaultTa
             </div>
 
             <div className="flex shrink-0 items-center gap-1">
+              {/* TASK-ECOS-CUSTOMER-SUPPLIER-LEDGER-LINKS-CLOSURE-001 — links out to the
+                  existing canonical Finance AR statement/ledger for this customer; no
+                  second statement implementation lives here. Hidden (not merely
+                  disabled) unless the viewer holds the same finance.ar.view permission
+                  that gates the Accounts Receivable page itself. */}
+              {can('finance.ar.view') && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 gap-1.5 text-xs"
+                  onClick={() => navigate(`${ROUTES.financeReceivables}?customer_id=${customer.id}`)}
+                >
+                  <FileText className="size-3" />
+                  {t($ => $.actions.accountStatement)}
+                </Button>
+              )}
               <Button
                 variant="outline"
                 size="sm"

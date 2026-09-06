@@ -281,6 +281,7 @@
   },
   "drawer360": {
     "editSupplier": "تعديل المورد",
+    "accountStatement": "كشف الحساب",
     "tabs": {
       "overview": "نظرة عامة",
       "products": "المنتجات",

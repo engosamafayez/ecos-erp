@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import { AlertTriangle, Coins, Users, Wallet } from 'lucide-react';
 
 import { UniversalDataGrid, type DataGridColumnDef } from '@/components/data-grid';
@@ -29,6 +30,11 @@ import { AP_AGING_BUCKETS, type ApAgingSupplierRow, type ApBill, type ApPayment 
  * finance.ap.advance.apply on the explicit, single-bill "Apply Supplier Advance" action —
  * TASK-ECOS-PROCUREMENT-SUPPLIERS-BATCH-01-FINAL-IMPLEMENTATION-CLOSURE-002 — added to the
  * Bills tab's own detail drawer, never an automatic sweep); EN/AR; responsive.
+ *
+ * TASK-ECOS-CUSTOMER-SUPPLIER-LEDGER-LINKS-CLOSURE-001 — also the destination for the
+ * Supplier 360 "Account Statement" action: an optional `?supplier_id=<uuid>` query
+ * param opens SupplierLedgerDrawer directly for that supplier on mount, reusing this
+ * exact page/permission gate/drawer rather than adding a second statement surface.
  */
 export function AccountsPayablePage() {
   const { t } = useTranslation('finance');
@@ -52,6 +58,16 @@ export function AccountsPayablePage() {
   const openLedger = (supplierId: string) => { setLedgerSupplier(supplierId); setLedgerOpen(true); };
   const openDetail = (id: string) => { setDetailId(id); setDetailOpen(true); };
   const openBillDetail = (id: string) => { setBillDetailId(id); setBillDetailOpen(true); };
+
+  // TASK-ECOS-CUSTOMER-SUPPLIER-LEDGER-LINKS-CLOSURE-001 — deep-link entry point from
+  // Supplier 360 ("Account Statement"): ?supplier_id=<uuid> opens this supplier's
+  // existing ledger drawer directly, without requiring the Aging tab drill-down.
+  const [searchParams] = useSearchParams();
+  const supplierIdParam = searchParams.get('supplier_id');
+  useEffect(() => {
+    if (supplierIdParam) openLedger(supplierIdParam);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supplierIdParam]);
 
   const metrics = useMemo<WorkspaceMetric[]>(() => {
     const totals = aging.data?.totals;

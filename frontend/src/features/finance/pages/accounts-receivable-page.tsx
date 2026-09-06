@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import { AlertTriangle, Coins, Users, Wallet } from 'lucide-react';
 
 import { UniversalDataGrid, type DataGridColumnDef } from '@/components/data-grid';
@@ -27,6 +28,11 @@ import { AGING_BUCKETS, type AgingCustomerRow, type ArInvoice, type ArReceipt } 
  * `source_type`/`source_id` on the receipt payload (see CustomerReceiptController::payload()).
  * IAM-gated by finance.ar.view (the drawer's own write actions are separately gated by
  * finance.allocation.manage / finance.journal.post); EN/AR; responsive.
+ *
+ * TASK-ECOS-CUSTOMER-SUPPLIER-LEDGER-LINKS-CLOSURE-001 — also the destination for the
+ * Customer 360 "Account Statement" action: an optional `?customer_id=<uuid>` query
+ * param opens CustomerLedgerDrawer directly for that customer on mount, reusing this
+ * exact page/permission gate/drawer rather than adding a second statement surface.
  */
 export function AccountsReceivablePage() {
   const { t } = useTranslation('finance');
@@ -44,6 +50,16 @@ export function AccountsReceivablePage() {
 
   const openLedger = (customerId: string) => { setLedgerCustomer(customerId); setLedgerOpen(true); };
   const openDetail = (id: string) => { setDetailId(id); setDetailOpen(true); };
+
+  // TASK-ECOS-CUSTOMER-SUPPLIER-LEDGER-LINKS-CLOSURE-001 — deep-link entry point from
+  // Customer 360 ("Account Statement"): ?customer_id=<uuid> opens this customer's
+  // existing ledger drawer directly, without requiring the Aging tab drill-down.
+  const [searchParams] = useSearchParams();
+  const customerIdParam = searchParams.get('customer_id');
+  useEffect(() => {
+    if (customerIdParam) openLedger(customerIdParam);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customerIdParam]);
 
   const metrics = useMemo<WorkspaceMetric[]>(() => {
     const totals = aging.data?.totals;
