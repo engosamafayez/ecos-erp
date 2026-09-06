@@ -11,6 +11,7 @@ import { usePermission } from '@/features/authorization';
 import { useFormatter } from '@/hooks/use-formatter';
 
 import { BillStatusBadge, PaymentStatusBadge, SupplierRef } from '../components/ap-badges';
+import { BillDetailDrawer } from '../components/bill-detail-drawer';
 import { PaymentDetailDrawer } from '../components/payment-detail-drawer';
 import { SupplierLedgerDrawer } from '../components/supplier-ledger-drawer';
 import { useApAging, useApBills, useApPayments } from '../hooks/use-finance-ap';
@@ -23,9 +24,11 @@ import { AP_AGING_BUCKETS, type ApAgingSupplierRow, type ApBill, type ApPayment 
  * Consumes the certified AP endpoints (aging, bills, payments, supplier ledger, allocation).
  * Values are shown exactly as returned — never recalculated in the browser. The AP API
  * exposes only `supplier_id` (no name); ids are shown verbatim (see the report's Finance ↔
- * vendor boundary). No backend changes; IAM-gated by finance.ap.view (the drawer's own write
- * actions are separately gated by finance.allocation.manage / finance.journal.post); EN/AR;
- * responsive.
+ * vendor boundary). IAM-gated by finance.ap.view (the drawers' own write actions are
+ * separately gated: finance.allocation.manage / finance.journal.post on payments,
+ * finance.ap.advance.apply on the explicit, single-bill "Apply Supplier Advance" action —
+ * TASK-ECOS-PROCUREMENT-SUPPLIERS-BATCH-01-FINAL-IMPLEMENTATION-CLOSURE-002 — added to the
+ * Bills tab's own detail drawer, never an automatic sweep); EN/AR; responsive.
  */
 export function AccountsPayablePage() {
   const { t } = useTranslation('finance');
@@ -40,9 +43,15 @@ export function AccountsPayablePage() {
   // survives a tab switch — the same reason SupplierLedgerDrawer sits here.
   const [detailId, setDetailId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  // TASK-ECOS-PROCUREMENT-SUPPLIERS-BATCH-01-FINAL-IMPLEMENTATION-CLOSURE-002 —
+  // the Bills tab's own detail drawer (hosts the explicit "Apply Supplier Advance"
+  // action). Hoisted for the same reason as detailId/detailOpen above.
+  const [billDetailId, setBillDetailId] = useState<string | null>(null);
+  const [billDetailOpen, setBillDetailOpen] = useState(false);
 
   const openLedger = (supplierId: string) => { setLedgerSupplier(supplierId); setLedgerOpen(true); };
   const openDetail = (id: string) => { setDetailId(id); setDetailOpen(true); };
+  const openBillDetail = (id: string) => { setBillDetailId(id); setBillDetailOpen(true); };
 
   const metrics = useMemo<WorkspaceMetric[]>(() => {
     const totals = aging.data?.totals;
@@ -83,7 +92,7 @@ export function AccountsPayablePage() {
             <AgingTab onDrill={openLedger} />
           </TabsContent>
           <TabsContent value="bills" className="mt-4">
-            <BillsTab />
+            <BillsTab onOpenDetail={openBillDetail} />
           </TabsContent>
           <TabsContent value="payments" className="mt-4">
             <PaymentsTab onOpenDetail={openDetail} />
@@ -93,6 +102,7 @@ export function AccountsPayablePage() {
 
       <SupplierLedgerDrawer supplierId={ledgerSupplier} open={ledgerOpen} onOpenChange={setLedgerOpen} />
       <PaymentDetailDrawer paymentId={detailId} open={detailOpen} onOpenChange={setDetailOpen} />
+      <BillDetailDrawer billId={billDetailId} open={billDetailOpen} onOpenChange={setBillDetailOpen} />
     </>
   );
 }
@@ -139,9 +149,10 @@ function AgingTab({ onDrill }: { onDrill: (supplierId: string) => void }) {
   );
 }
 
-// ── Bills (with the backend `outstanding` figure) ─────────────────────────────
+// ── Bills (with the backend `outstanding` figure; row opens the detail drawer,
+//    which hosts the explicit "Apply Supplier Advance" action) ────────────────
 
-function BillsTab() {
+function BillsTab({ onOpenDetail }: { onOpenDetail: (id: string) => void }) {
   const { t } = useTranslation('finance');
   const fmt = useFormatter();
   const bills = useApBills();
@@ -164,6 +175,7 @@ function BillsTab() {
       rowId={(b) => b.id}
       loading={bills.isLoading}
       error={bills.isError}
+      onRowClick={(b) => onOpenDetail(b.id)}
       emptyState={<p className="py-10 text-center text-sm text-muted-foreground">{t(($) => $.ap.bill.empty)}</p>}
     />
   );

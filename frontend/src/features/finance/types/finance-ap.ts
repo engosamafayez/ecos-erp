@@ -137,3 +137,16 @@ export type ApReversePostingResult = {
   reverses_journal_id: string | null;
   payment_id: string;
 };
+
+// ── Supplier advance application (explicit, single-bill, user-confirmed write) ──
+// Mirrors the certified SupplierBillController::applyAdvance() contract
+// (TASK-ECOS-PROCUREMENT-SUPPLIERS-BATCH-01-FINAL-IMPLEMENTATION-CLOSURE-002).
+// No automatic sweep: the caller always supplies one bill and one amount.
+
+export type ApApplyAdvanceResult = {
+  bill_id: string;
+  supplier_id: string;
+  amount_applied: number;
+  bill_outstanding: number;
+  available_advance: number;
+};

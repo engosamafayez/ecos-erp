@@ -12,7 +12,10 @@ use Illuminate\Validation\Rule;
 use Modules\Finance\Payables\Domain\Enums\SupplierDocumentType;
 use Modules\Finance\Payables\Domain\Models\SupplierBill;
 use Modules\Finance\Payables\Domain\Services\AccountsPayableService;
+use Modules\Finance\Payables\Domain\Services\SupplierLedgerService;
+use Modules\Finance\Payables\Domain\Services\SupplierOpeningBalanceService;
 use Modules\Finance\Presentation\Http\Controllers\Concerns\ResolvesFinanceContext;
+use Modules\Finance\Shared\Domain\Services\CommandIdempotencyGuard;
 
 /**
  * Supplier bills, credit notes and debit notes. Draft → post; a posted document
@@ -23,7 +26,12 @@ class SupplierBillController extends Controller
 {
     use ResolvesFinanceContext;
 
-    public function __construct(private readonly AccountsPayableService $ap) {}
+    public function __construct(
+        private readonly AccountsPayableService $ap,
+        private readonly SupplierOpeningBalanceService $advances,
+        private readonly SupplierLedgerService $ledger,
+        private readonly CommandIdempotencyGuard $idempotency,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -88,6 +96,56 @@ class SupplierBillController extends Controller
         $bill = $this->ap->postDocument($this->find($request, $uuid), $this->actorId($request));
 
         return response()->json(['data' => $this->payload($bill->load('lines'), true)]);
+    }
+
+    /**
+     * Apply part (or all) of the supplier's available advance to THIS posted bill —
+     * an explicit, single-bill, user-confirmed action
+     * (TASK-ECOS-PROCUREMENT-SUPPLIERS-BATCH-01-FINAL-IMPLEMENTATION-CLOSURE-002).
+     * No automatic sweep: both the target bill and the amount are chosen by the
+     * caller on every call — this must always be an operator-initiated request, never
+     * wired as a side effect of bill posting or any other lifecycle event.
+     *
+     * Eligibility (posted, positive amount, capped by both the supplier's own
+     * available advance and this bill's own outstanding) is enforced entirely inside
+     * {@see SupplierOpeningBalanceService::applyAdvanceToBill()} — not duplicated
+     * here, and not bypassable by omitting it from the UI. An `Idempotency-Key`
+     * header protects against a duplicate submission of the same command (double-
+     * click, browser/client retry), mirroring store()'s existing convention exactly;
+     * two genuinely concurrent requests are still independently serialized by that
+     * method's own row-level locking regardless of whether a key is supplied.
+     */
+    public function applyAdvance(Request $request, string $uuid): JsonResponse
+    {
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'gt:0'],
+        ]);
+
+        $bill = $this->find($request, $uuid);
+        $companyId = $this->companyId($request);
+        $amount = (float) $validated['amount'];
+
+        $result = $this->idempotency->execute(
+            companyId: $companyId,
+            commandType: 'ap.advance.apply',
+            idempotencyKey: $request->header('Idempotency-Key'),
+            payload: ['bill_id' => $bill->uuid, 'amount' => $amount],
+            command: fn () => $this->advances->applyAdvanceToBill($bill, $amount, $this->actorId($request)),
+            actorId: $this->actorId($request),
+        );
+
+        /** @var SupplierBill $settled */
+        $settled = $result->result;
+
+        return response()
+            ->json(['data' => [
+                'bill_id' => $settled->uuid,
+                'supplier_id' => $settled->supplier_id,
+                'amount_applied' => $amount,
+                'bill_outstanding' => $settled->outstanding(),
+                'available_advance' => $this->ledger->availableAdvance($companyId, (string) $settled->supplier_id),
+            ]], $result->wasReplayed ? 200 : 201)
+            ->header('Idempotent-Replay', $result->wasReplayed ? 'true' : 'false');
     }
 
     // ── Internals ─────────────────────────────────────────────────────────────

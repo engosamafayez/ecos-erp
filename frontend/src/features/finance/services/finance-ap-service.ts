@@ -5,6 +5,7 @@ import type {
   ApAging,
   ApAllocation,
   ApAllocationReversal,
+  ApApplyAdvanceResult,
   ApAutoAllocateResult,
   ApBill,
   ApBillParams,
@@ -74,6 +75,22 @@ export const financeApService = {
     const { data } = await api.post<ApiResponse<ApReversePostingResult>>(
       `/finance/ap/payments/${uuid}/reverse-posting`,
       { reason },
+    );
+    return data.data;
+  },
+
+  /**
+   * Apply part (or all) of the supplier's available advance to ONE posted bill — an
+   * explicit, single-bill, user-confirmed write (never an automatic sweep). The
+   * `idempotencyKey` guards against a duplicate submission of the same command
+   * (double-click, browser/client retry); callers must reuse the SAME key across
+   * retries of one logical confirmation and mint a fresh one for each new attempt.
+   */
+  async applyAdvance(uuid: string, amount: number, idempotencyKey: string): Promise<ApApplyAdvanceResult> {
+    const { data } = await api.post<ApiResponse<ApApplyAdvanceResult>>(
+      `/finance/ap/bills/${uuid}/apply-advance`,
+      { amount },
+      { headers: { 'Idempotency-Key': idempotencyKey } },
     );
     return data.data;
   },

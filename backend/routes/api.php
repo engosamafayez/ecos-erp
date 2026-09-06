@@ -2916,6 +2916,11 @@ Route::middleware('auth:sanctum')->prefix('finance')->group(function (): void {
                 ->middleware('permission:finance.ap.bill.create');
             Route::patch('/{uuid}/post', [FinanceSupplierBillController::class, 'post'])
                 ->middleware('permission:finance.ap.bill.post');
+            // TASK-ECOS-PROCUREMENT-SUPPLIERS-BATCH-01-FINAL-IMPLEMENTATION-CLOSURE-002 — explicit,
+            // single-bill, user-confirmed advance application. Dedicated permission (not bill.post):
+            // this does not post a bill, it settles a bill against an existing advance.
+            Route::post('/{uuid}/apply-advance', [FinanceSupplierBillController::class, 'applyAdvance'])
+                ->middleware('permission:finance.ap.advance.apply');
         });
 
         Route::prefix('payments')->group(function (): void {

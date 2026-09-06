@@ -451,6 +451,21 @@
       "autoAllocateFailed": "Auto-allocation could not be run.",
       "autoAllocateResult": "{{count}} allocation(s) created. {{remaining}} remaining unallocated.",
       "noAllocationHistory": "The API exposes no endpoint to list this payment's existing allocations, so its history cannot be shown and no single allocation can be reversed here."
+    },
+    "billDetail": {
+      "title": "Bill",
+      "notFound": "This bill could not be found in the current list (it may be older than the most recent 100).",
+      "journal": "Journal",
+      "apply": "Apply Supplier Advance",
+      "noAdvanceAvailable": "This supplier has no available advance to apply.",
+      "advanceTitle": "Apply Supplier Advance",
+      "advanceHint": "Review the figures below before confirming. The application is final and cannot be undone here.",
+      "availableAdvance": "Available Advance",
+      "amountToApply": "Amount to Apply",
+      "resultingOutstanding": "Resulting Bill Outstanding",
+      "remainingAdvance": "Remaining Advance After",
+      "confirmApply": "Confirm Application",
+      "applyFailed": "The advance could not be applied."
     }
   },
   "treasury": {

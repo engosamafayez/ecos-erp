@@ -168,8 +168,15 @@ return [
         // TASK-PROC-SUPPLIER-OPENING-BALANCE-001 — a dedicated posting permission for supplier
         // opening balances (NOT finance.ap.bill.post). Seeded via this catalogue (no migration);
         // the 'ap.opening' resource yields the 4-segment name finance.ap.opening.post.
+        //
+        // TASK-ECOS-PROCUREMENT-SUPPLIERS-BATCH-01-FINAL-IMPLEMENTATION-CLOSURE-002 — a dedicated
+        // permission for the explicit "Apply Supplier Advance" action (NOT finance.ap.bill.post
+        // and NOT finance.ap.opening.post — applying an advance to a bill is a distinct write from
+        // both posting a bill and posting an opening balance). The 'ap.advance' resource yields
+        // finance.ap.advance.apply.
         'finance' => [
             'ap.opening' => ['post'],
+            'ap.advance' => ['apply'],
         ],
 
         // TASK-ECOS-REPORTING-PLATFORM-FOUNDATION-002 — category-level Reporting
@@ -685,6 +692,7 @@ return [
             'finance.ap.bill' => ['create', 'post'],
             'finance.ap.payment' => ['create', 'approve'],
             'finance.ap.opening' => ['post'], // supplier opening-balance posting (dedicated)
+            'finance.ap.advance' => ['apply'], // supplier advance-to-bill application (dedicated)
             'finance.cash' => ['view', 'manage'],
             'finance.cash.session' => ['manage'],
             'finance.bank' => ['view', 'manage', 'reconcile'],
