@@ -132,7 +132,8 @@
       "orders": "Orders",
       "loyalty": "Loyalty",
       "permissions": "Permissions",
-      "products": "Products Purchased"
+      "products": "Products Purchased",
+      "crm": "CRM"
     },
     "overview": {
       "code": "Code",
@@ -330,5 +331,68 @@
     "refresh": "Refresh",
     "loading": "Loading…",
     "empty": "No data for this period"
+  },
+  "portfolio": {
+    "title": "Customer Portfolio",
+    "subtitle": "Every customer, its CRM owner, and its next follow-up",
+    "columns": {
+      "customer": "Customer",
+      "owner": "Owner",
+      "nextFollowUp": "Next Follow-Up",
+      "openCount": "Open",
+      "blocked": "Blocked",
+      "balance": "Balance",
+      "orders": "Orders",
+      "lastEngagement": "Last Engagement"
+    },
+    "filters": {
+      "unassignedOnly": "Unassigned only",
+      "blockedState": "Blocked state",
+      "allBlocked": "All customers",
+      "notBlocked": "Not blocked",
+      "dueState": "Due state",
+      "allQueues": "All due states",
+      "priority": "Priority",
+      "allPriorities": "All priorities"
+    },
+    "owner": {
+      "unassigned": "Unassigned",
+      "unassign": "Unassign",
+      "assign": "Assign",
+      "idPlaceholder": "User ID"
+    },
+    "queue": {
+      "overdue": "Overdue",
+      "dueToday": "Due Today",
+      "upcoming": "Upcoming",
+      "unscheduled": "Unscheduled"
+    },
+    "priority": {
+      "low": "Low",
+      "normal": "Normal",
+      "high": "High",
+      "urgent": "Urgent"
+    },
+    "followUp": {
+      "none": "No open follow-up"
+    },
+    "empty": {
+      "title": "No customers in the portfolio",
+      "body": "Customers will appear here as they are created."
+    }
+  },
+  "followUp": {
+    "owner": "CRM Owner",
+    "balance": "Finance Balance",
+    "lastEngagement": "Last Engagement",
+    "openFollowUps": "Open Follow-Ups",
+    "loading": "Loading follow-ups…",
+    "none": "No open follow-ups",
+    "complete": "Complete",
+    "cancel": "Cancel",
+    "newTitle": "New follow-up",
+    "newDue": "Due",
+    "create": "Add",
+    "unknownPriority": "Historical value outside the current approved priority set"
   }
 }

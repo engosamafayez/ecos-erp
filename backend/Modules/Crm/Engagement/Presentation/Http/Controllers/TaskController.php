@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Validation\Rule;
 use Modules\Crm\Customers\Presentation\Http\Controllers\Concerns\ResolvesCustomerContext;
+use Modules\Crm\Engagement\Domain\Enums\TaskPriority;
 use Modules\Crm\Engagement\Domain\Enums\TaskType;
 use Modules\Crm\Engagement\Domain\Models\CustomerTask;
 use Modules\Crm\Engagement\Domain\Services\TaskService;
@@ -42,7 +43,7 @@ class TaskController extends Controller
             'task_type' => ['nullable', Rule::in(TaskType::values())],
             'title' => ['required', 'string', 'max:200'],
             'description' => ['nullable', 'string'],
-            'priority' => ['nullable', Rule::in(['low', 'normal', 'high'])],
+            'priority' => ['nullable', Rule::in(TaskPriority::values())],
             'due_at' => ['nullable', 'date'],
             'scheduled_at' => ['nullable', 'date'],
             'location' => ['nullable', 'string', 'max:200'],
@@ -72,6 +73,18 @@ class TaskController extends Controller
         return response()->json(['data' => $this->payload($task)]);
     }
 
+    public function reschedule(Request $request, string $id, string $taskId): JsonResponse
+    {
+        $validated = $request->validate([
+            'due_at' => ['nullable', 'date'],
+            'scheduled_at' => ['nullable', 'date'],
+        ]);
+
+        $task = $this->tasks->reschedule($this->task($request, $id, $taskId), $validated, $this->actorId($request));
+
+        return response()->json(['data' => $this->payload($task)]);
+    }
+
     private function task(Request $request, string $id, string $taskId): CustomerTask
     {
         $customer = $this->customer($request, $id);
@@ -92,12 +105,18 @@ class TaskController extends Controller
             'title' => $t->title,
             'description' => $t->description,
             'status' => $t->status->value,
+            // Raw value always present; null only for a historical value outside
+            // the approved V1 set (§7/§8) — never silently coerced to 'normal'.
             'priority' => $t->priority,
+            'priority_valid' => $t->priorityEnum() !== null,
             'due_at' => $t->due_at?->toIso8601String(),
             'scheduled_at' => $t->scheduled_at?->toIso8601String(),
             'location' => $t->location,
             'assignee_id' => $t->assignee_id,
             'completed_at' => $t->completed_at?->toIso8601String(),
+            // Derived, never stored — see FollowUpQueueClassifier.
+            'queue' => $t->queue()?->value,
+            'is_overdue' => $t->isOverdue(),
         ];
     }
 }

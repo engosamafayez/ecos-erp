@@ -59,6 +59,7 @@ use Modules\Crm\Engagement\Presentation\Http\Controllers\ActivityController as C
 use Modules\Crm\Engagement\Presentation\Http\Controllers\TaskController as CrmTaskController;
 use Modules\Crm\Engagement\Presentation\Http\Controllers\TimelineController as CrmTimelineController;
 use Modules\Crm\Executive\Presentation\Http\Controllers\ExecutiveDashboardController as CrmExecutiveDashboardController;
+use Modules\Crm\Portfolio\Presentation\Http\Controllers\PortfolioController as CrmPortfolioController;
 use Modules\Crm\Executive\Presentation\Http\Controllers\ExecutivePerformanceController as CrmExecutivePerformanceController;
 use Modules\Crm\Executive\Presentation\Http\Controllers\ExecutiveReportController as CrmExecutiveReportController;
 use Modules\Crm\Intelligence\Presentation\Http\Controllers\CustomerAnalyticsController as CrmAnalyticsController;
@@ -666,6 +667,11 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
         ->middlewareFor('store', 'permission:crm.customers.create')
         ->middlewareFor('update', 'permission:crm.customers.update')
         ->middlewareFor('destroy', 'permission:crm.customers.delete');
+    // TASK-ECOS-CRM-CUSTOMER-PORTFOLIO-AND-FOLLOWUP-003 — the ratified CRM/Commercial
+    // owner write path. Same permission as update(): assigning an owner is an update
+    // to the customer record, not a separate authority.
+    Route::patch('customers/{customer}/sales-owner', [CustomerController::class, 'assignOwner'])
+        ->middleware('permission:crm.customers.update');
     Route::apiResource('customers.addresses', CustomerAddressController::class)->shallow()
         ->middlewareFor('store', 'permission:crm.customers.update')
         ->middlewareFor('update', 'permission:crm.customers.update')
@@ -3948,6 +3954,13 @@ Route::middleware('auth:sanctum')->prefix('crm/customers')->group(function (): v
     });
 });
 
+// ── CRM & Customer Service OS — Customer Portfolio (TASK-ECOS-CRM-CUSTOMER-
+// PORTFOLIO-AND-FOLLOWUP-003) ───────────────────────────────────────────────
+// A read model, not a new authority — same permission as the customer list.
+Route::middleware(['auth:sanctum', 'permission:crm.customers.view'])->group(function (): void {
+    Route::get('crm/portfolio', [CrmPortfolioController::class, 'index']);
+});
+
 // ── CRM & Customer Service OS — EPIC C2 · Customer Engagement ──────────────────
 // The append-only customer timeline. The CRM owns its activities & tasks and
 // READS every other interaction (conversations, orders, notes) live from the
@@ -3973,6 +3986,7 @@ Route::middleware('auth:sanctum')->prefix('crm/customers/{id}')->group(function 
         Route::post('/tasks', [CrmTaskController::class, 'store']);
         Route::patch('/tasks/{taskId}/complete', [CrmTaskController::class, 'complete']);
         Route::patch('/tasks/{taskId}/cancel', [CrmTaskController::class, 'cancel']);
+        Route::patch('/tasks/{taskId}/reschedule', [CrmTaskController::class, 'reschedule']);
     });
 });
 

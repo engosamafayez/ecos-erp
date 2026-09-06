@@ -7,6 +7,8 @@ import type {
   CrmCustomersQuery,
   CrmCustomersResult,
   CrmCustomerIntelligence,
+  CrmTask,
+  CrmTaskType,
   CrmTimelineEntry,
 } from '@/features/crm/types/crm-customer';
 import type {
@@ -89,5 +91,58 @@ export const crmCustomersService = {
   /** Archive is a state change, not a delete — the record stays for history. */
   async archive(id: string): Promise<void> {
     await api.patch(`/crm/customers/${id}/archive`);
+  },
+
+  // ── Follow-ups / tasks (TASK-ECOS-CRM-CUSTOMER-PORTFOLIO-AND-FOLLOWUP-003) ──
+
+  async tasks(customerId: string): Promise<CrmTask[]> {
+    const { data } = await api.get<ApiResponse<CrmTask[]>>(`/crm/customers/${customerId}/tasks`);
+    return data.data;
+  },
+
+  async createTask(
+    customerId: string,
+    payload: {
+      task_type?: CrmTaskType;
+      title: string;
+      description?: string | null;
+      priority?: string;
+      due_at?: string | null;
+      scheduled_at?: string | null;
+      location?: string | null;
+      assignee_id?: number | null;
+    },
+  ): Promise<CrmTask> {
+    const { data } = await api.post<ApiResponse<CrmTask>>(
+      `/crm/customers/${customerId}/tasks`,
+      payload,
+    );
+    return data.data;
+  },
+
+  async completeTask(customerId: string, taskId: string): Promise<CrmTask> {
+    const { data } = await api.patch<ApiResponse<CrmTask>>(
+      `/crm/customers/${customerId}/tasks/${taskId}/complete`,
+    );
+    return data.data;
+  },
+
+  async cancelTask(customerId: string, taskId: string): Promise<CrmTask> {
+    const { data } = await api.patch<ApiResponse<CrmTask>>(
+      `/crm/customers/${customerId}/tasks/${taskId}/cancel`,
+    );
+    return data.data;
+  },
+
+  async rescheduleTask(
+    customerId: string,
+    taskId: string,
+    payload: { due_at?: string | null; scheduled_at?: string | null },
+  ): Promise<CrmTask> {
+    const { data } = await api.patch<ApiResponse<CrmTask>>(
+      `/crm/customers/${customerId}/tasks/${taskId}/reschedule`,
+      payload,
+    );
+    return data.data;
   },
 };

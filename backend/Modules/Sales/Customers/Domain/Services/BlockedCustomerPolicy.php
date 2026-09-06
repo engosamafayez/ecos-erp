@@ -130,6 +130,72 @@ final class BlockedCustomerPolicy
     }
 
     /**
+     * Same batched lookup as {@see self::activeBlocksForCustomers()}, but for a
+     * caller holding plain identity data rather than a Sales\Customers Collection
+     * — e.g. CRM Portfolio (TASK-ECOS-CRM-CUSTOMER-PORTFOLIO-AND-FOLLOWUP-003
+     * §13), which resolves customers through the canonical `Crm\Customers` class
+     * (the same physical `customers` table, the same `phone`/`mobile` columns),
+     * never this module's own Customer class. Read-only, same match rules, same
+     * owning module — not a second policy.
+     *
+     * @param  list<array{id: string, phone: ?string, mobile: ?string}>  $identities
+     * @return array<string, CustomerBlock> keyed by customer_id
+     */
+    public function activeBlocksForIdentities(array $identities, string $companyId): array
+    {
+        $ids = [];
+
+        /** @var array<string, list<string>> normalized phone => customer ids sharing it */
+        $phoneToCustomerIds = [];
+        foreach ($identities as $identity) {
+            $id = (string) ($identity['id'] ?? '');
+            if ($id !== '') {
+                $ids[] = $id;
+            }
+
+            foreach ([$identity['phone'] ?? null, $identity['mobile'] ?? null] as $candidate) {
+                $normalized = $this->normalizer->normalize($candidate);
+                if ($normalized === '') {
+                    continue;
+                }
+                $phoneToCustomerIds[$normalized][] = $id;
+            }
+        }
+
+        $ids = array_values(array_unique($ids));
+
+        if ($ids === [] && $phoneToCustomerIds === []) {
+            return [];
+        }
+
+        $blocks = CustomerBlock::query()
+            ->where('company_id', $companyId)
+            ->where('is_active', true)
+            ->where(function ($query) use ($ids, $phoneToCustomerIds): void {
+                if ($ids !== []) {
+                    $query->orWhereIn('customer_id', $ids);
+                }
+                if ($phoneToCustomerIds !== []) {
+                    $query->orWhereIn('normalized_phone', array_keys($phoneToCustomerIds));
+                }
+            })
+            ->with(['blockedByUser:id,name,display_name'])
+            ->get();
+
+        $result = [];
+        foreach ($blocks as $block) {
+            if ($block->customer_id !== null) {
+                $result[(string) $block->customer_id] ??= $block;
+            }
+            foreach ($phoneToCustomerIds[$block->normalized_phone] ?? [] as $customerId) {
+                $result[$customerId] ??= $block;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * Candidate normalized phones for an Order, in the preference order §29
      * establishes: the Order's OWN recorded phone first, then its Customer's
      * phone/mobile as a fallback for Orders written before billing_phone was

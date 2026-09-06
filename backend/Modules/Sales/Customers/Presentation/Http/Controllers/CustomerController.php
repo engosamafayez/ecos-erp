@@ -12,7 +12,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 use Modules\Commerce\Orders\Domain\Services\CustomerOrderMetricsService;
+use Modules\Crm\Engagement\Domain\Enums\ActivityType;
+use Modules\Crm\Engagement\Domain\Services\ActivityService;
+use Modules\Sales\Customers\Application\Actions\AssignSalesOwnerAction;
 use Modules\Sales\Customers\Application\Actions\BlockCustomerOrPhoneAction;
 use Modules\Sales\Customers\Application\Actions\CreateCustomerAction;
 use Modules\Sales\Customers\Application\Actions\DeleteCustomerAction;
@@ -44,6 +48,9 @@ final class CustomerController extends Controller
         // TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-BLOCKED-CUSTOMERS-009 (§33) — the
         // single read authority for index()/show() block-state enrichment.
         private readonly BlockedCustomerPolicy $blockedPolicy,
+        // CRM's own append-only activity log — reused, not duplicated, for the
+        // ownership-change audit trail TASK-...-003 §24 requires (assignOwner()).
+        private readonly ActivityService $activities,
     ) {}
 
     public function index(Request $request, ListCustomersAction $action): JsonResponse
@@ -188,6 +195,55 @@ final class CustomerController extends Controller
         }
 
         $result = $action->execute($customer, CustomerDTO::fromArray($validated));
+
+        return $this->updated(new CustomerResource($result->data()), $result->message());
+    }
+
+    /**
+     * The single write path for the CRM/Commercial owner authority
+     * (`sales_owner_id`/`sales_owner_name` — TASK-ECOS-CRM-CUSTOMER-PORTFOLIO-
+     * AND-FOLLOWUP-003 §3/§4). Company scope is enforced twice: the customer
+     * lookup (via AssignSalesOwnerAction -> CurrentCompanyService, same as
+     * update()) and the candidate owner lookup below — a cross-company user id
+     * is rejected exactly like a cross-company customer id, never silently
+     * accepted.
+     */
+    public function assignOwner(Request $request, string $customer, AssignSalesOwnerAction $action): JsonResponse
+    {
+        $companyId = $this->currentCompany->id();
+
+        if ($companyId === null) {
+            return $this->error('A company context is required to assign an owner.', 422);
+        }
+
+        $validated = $request->validate([
+            'sales_owner_id' => ['nullable', Rule::exists('users', 'id')],
+        ]);
+
+        $owner = null;
+        $ownerId = $validated['sales_owner_id'] ?? null;
+
+        if ($ownerId !== null) {
+            $owner = User::query()->where('id', $ownerId)->where('company_id', $companyId)->first();
+
+            if ($owner === null) {
+                return $this->error(
+                    'The selected user is not valid for this company.',
+                    422,
+                    ['sales_owner_id' => ['invalid_company_owner']],
+                );
+            }
+        }
+
+        $result = $action->execute($customer, $owner?->id, $owner !== null ? ($owner->display_name ?? $owner->name) : null);
+
+        $this->activities->log($companyId, $customer, ActivityType::System, [
+            'subject' => $owner !== null
+                ? 'Sales owner assigned: '.($owner->display_name ?? $owner->name)
+                : 'Sales owner unassigned',
+            'related_type' => 'customer_ownership',
+            'actor_id' => $request->user()?->id,
+        ]);
 
         return $this->updated(new CustomerResource($result->data()), $result->message());
     }

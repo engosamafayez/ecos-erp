@@ -24,6 +24,7 @@ export const ROUTES = {
   customers: '/customers',
   crmCustomers: '/crm/customers',
   crmExecutive: '/crm/executive',
+  crmPortfolio: '/crm/portfolio',
   customerDetail: '/customers/:customerId',
   channels: '/channels',
   productMappings: '/product-mappings',

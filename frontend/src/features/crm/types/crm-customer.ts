@@ -148,6 +148,62 @@ export type CrmDocument = {
   size_bytes: number | null;
 };
 
+/** Read-only — the enforced authority lives on Sales\Customers (BlockedCustomerPolicy). */
+export type CrmBlockedState = {
+  is_blocked: boolean;
+  reason: string | null;
+  blocked_at: string | null;
+  blocked_by: string | null;
+};
+
+/** Read-only — Finance's CustomerLedgerService is the sole source; never recomputed here. */
+export type CrmFinanceSummary = {
+  balance: number;
+};
+
+/** Conversation recency only — CustomerEngagement owns the conversations themselves. */
+export type CrmEngagementSummary = {
+  conversations_count: number;
+  last_conversation_at: string | null;
+};
+
+export type CrmFollowUpQueue = 'overdue' | 'due_today' | 'upcoming' | 'unscheduled';
+
+export type CrmTaskPriority = 'low' | 'normal' | 'high' | 'urgent';
+
+export type CrmTaskStatus = 'open' | 'completed' | 'cancelled';
+
+export type CrmTaskType = 'task' | 'follow_up' | 'appointment' | 'meeting';
+
+/** A CRM actionable — mirrors CustomerTask via TaskController::payload(). */
+export type CrmTask = {
+  id: string;
+  task_type: CrmTaskType;
+  title: string;
+  description: string | null;
+  status: CrmTaskStatus;
+  /** Raw stored value — may be outside CrmTaskPriority for a historical row; see priority_valid. */
+  priority: string | null;
+  /** False for a historical value outside the approved V1 set — never silently shown as 'normal'. */
+  priority_valid: boolean;
+  due_at: string | null;
+  scheduled_at: string | null;
+  location: string | null;
+  assignee_id: number | null;
+  completed_at: string | null;
+  /** Derived server-side (FollowUpQueueClassifier) — null for a closed task. Never recompute in the client. */
+  queue: CrmFollowUpQueue | null;
+  is_overdue: boolean;
+};
+
+/** The bounded CRM section of Customer 360 — a summary, not the whole Portfolio (§18). */
+export type CrmPortfolioSection = {
+  owner: { id: string | null; name: string | null };
+  open_follow_ups_count: number;
+  next_follow_up: CrmTask | null;
+  recent_activity: { subject: string | null; occurred_at: string } | null;
+};
+
 export type CrmCustomerProfile = {
   identity: CrmCustomer;
   group: { id: string; name: string } | null;
@@ -162,6 +218,45 @@ export type CrmCustomerProfile = {
   order_metrics: CrmCustomerOrderMetrics;
   /** Aggregated server-side: Customer → Orders → Order Lines → Products. */
   purchased_products: CrmPurchasedProduct[];
+  finance: CrmFinanceSummary;
+  blocked: CrmBlockedState;
+  engagement: CrmEngagementSummary;
+  crm: CrmPortfolioSection;
+};
+
+// ── Portfolio ────────────────────────────────────────────────────────────────
+// GET /crm/portfolio — a read model over canonical Customers + CRM context,
+// NOT a separate aggregate. See PortfolioService::list().
+
+export type CrmPortfolioRow = {
+  id: string;
+  code: string | null;
+  name: string;
+  primary_phone: string | null;
+  sales_owner_id: string | null;
+  sales_owner_name: string | null;
+  is_unassigned: boolean;
+  blocked: CrmBlockedState;
+  finance: CrmFinanceSummary;
+  commerce: CrmCustomerOrderMetrics;
+  crm: CrmPortfolioSection;
+  engagement: CrmEngagementSummary;
+};
+
+export type CrmPortfolioQuery = {
+  search?: string;
+  sales_owner_id?: string;
+  unassigned?: boolean;
+  blocked?: boolean;
+  queue?: CrmFollowUpQueue;
+  priority?: CrmTaskPriority;
+  page?: number;
+  per_page?: number;
+};
+
+export type CrmPortfolioResult = {
+  data: CrmPortfolioRow[];
+  meta: CrmCustomersMeta;
 };
 
 // ── Timeline ─────────────────────────────────────────────────────────────────

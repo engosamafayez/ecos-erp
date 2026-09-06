@@ -8,6 +8,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Crm\Engagement\Domain\Enums\TaskStatus;
 use Modules\Crm\Engagement\Domain\Enums\TaskType;
+use Modules\Crm\Engagement\Domain\Exceptions\TaskException;
 use Modules\Crm\Engagement\Domain\Models\CustomerTask;
 
 /**
@@ -48,6 +49,10 @@ final class TaskService
 
     public function complete(CustomerTask $task, ?int $actorId = null): CustomerTask
     {
+        if (! $task->isOpen()) {
+            throw TaskException::notOpen($task->title);
+        }
+
         return DB::transaction(function () use ($task, $actorId): CustomerTask {
             $task->update([
                 'status' => TaskStatus::Completed->value,
@@ -63,9 +68,43 @@ final class TaskService
 
     public function cancel(CustomerTask $task, ?int $actorId = null): CustomerTask
     {
+        if (! $task->isOpen()) {
+            throw TaskException::notOpen($task->title);
+        }
+
         return DB::transaction(function () use ($task, $actorId): CustomerTask {
             $task->update(['status' => TaskStatus::Cancelled->value]);
             $this->activities->system((string) $task->company_id, (string) $task->customer_id, $task->task_type->label().' cancelled: '.$task->title, 'crm_task', (string) $task->id, $actorId);
+
+            return $task->refresh();
+        });
+    }
+
+    /**
+     * Reschedule an OPEN follow-up's due/scheduled timestamp (§6/§23) — the
+     * one write path for a due-date change, so overdue/due-today/upcoming
+     * classification (FollowUpQueueClassifier) is always computed from a
+     * value that went through this same guard.
+     *
+     * @param  array{due_at?: string|null, scheduled_at?: string|null}  $data
+     */
+    public function reschedule(CustomerTask $task, array $data, ?int $actorId = null): CustomerTask
+    {
+        if (! $task->isOpen()) {
+            throw TaskException::notOpen($task->title);
+        }
+
+        return DB::transaction(function () use ($task, $data, $actorId): CustomerTask {
+            $task->update([
+                'due_at' => array_key_exists('due_at', $data)
+                    ? (($data['due_at'] !== null) ? Carbon::parse($data['due_at']) : null)
+                    : $task->due_at,
+                'scheduled_at' => array_key_exists('scheduled_at', $data)
+                    ? (($data['scheduled_at'] !== null) ? Carbon::parse($data['scheduled_at']) : null)
+                    : $task->scheduled_at,
+            ]);
+
+            $this->activities->system((string) $task->company_id, (string) $task->customer_id, $task->task_type->label().' rescheduled: '.$task->title, 'crm_task', (string) $task->id, $actorId);
 
             return $task->refresh();
         });

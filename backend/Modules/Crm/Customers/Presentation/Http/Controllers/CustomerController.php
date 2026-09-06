@@ -17,6 +17,7 @@ use Modules\Crm\Customers\Domain\Services\CustomerSearchService;
 use Modules\Crm\Customers\Domain\Services\CustomerService;
 use Modules\Crm\Customers\Presentation\Http\Controllers\Concerns\ResolvesCustomerContext;
 use Modules\Crm\Engagement\Infrastructure\Timeline\ConversationTimelineSource;
+use Modules\Crm\Portfolio\Domain\Services\PortfolioService;
 use Modules\Finance\Receivables\Domain\Services\CustomerLedgerService;
 use Modules\Sales\Customers\Domain\Models\CustomerBlock;
 use Modules\Sales\Customers\Domain\Services\BlockedCustomerPolicy;
@@ -44,6 +45,11 @@ class CustomerController extends Controller
         // relocating it; see TASK-ECOS-CRM-CONTINUATION-AND-CUSTOMER360-GATE-B-002.
         private readonly BlockedCustomerPolicy $blockedCustomers,
         private readonly ConversationTimelineSource $conversations,
+        // CRM Portfolio's own composer, reused here so the "current/open
+        // follow-ups, next follow-up, priority, overdue" facts can never
+        // disagree between the Portfolio list and this profile (TASK-ECOS-
+        // CRM-CUSTOMER-PORTFOLIO-AND-FOLLOWUP-003 §15).
+        private readonly PortfolioService $portfolio,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -106,6 +112,11 @@ class CustomerController extends Controller
                     'conversations_count' => count($conversations),
                     'last_conversation_at' => ($conversations[0] ?? null)?->occurredAt?->toIso8601String(),
                 ],
+                // Additive CRM section (TASK-ECOS-CRM-CUSTOMER-PORTFOLIO-AND-
+                // FOLLOWUP-003 §15) — owner, open follow-ups, next follow-up,
+                // recent activity. Bounded on purpose: this stays a summary
+                // with an entry point into the Portfolio, not a duplicate of it.
+                'crm' => $this->portfolio->crmSectionFor($customer, $companyId),
             ],
         ]);
     }
