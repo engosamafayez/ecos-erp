@@ -64,6 +64,7 @@ import { BrandConfigHealthCard } from '@/features/orders/components/brand-config
 import { ProductBrowser } from '@/features/orders/components/product-browser';
 import {
   manualOrderSchema,
+  manualOrderCreateSchema,
   toManualPayload,
   type ManualOrderFormValues,
   type ManualOrderLineFormValues,
@@ -920,7 +921,10 @@ export function ManualOrderFormWorkspace({ mode = 'create', order, initialCustom
   );
 
   const form = useForm<ManualOrderFormValues>({
-    resolver: zodResolver(manualOrderSchema),
+    // Edit tolerates a legacy order with no governorate already saved; create
+    // enforces it (see manualOrderCreateSchema) — closes the most common
+    // trigger of the "Warehouse Not Assigned" regression.
+    resolver: zodResolver(isEdit ? manualOrderSchema : manualOrderCreateSchema),
     defaultValues: isEdit && order
       ? {
           channel_id:               order.channel_id ?? undefined,
@@ -1184,19 +1188,37 @@ export function ManualOrderFormWorkspace({ mode = 'create', order, initialCustom
     }
   }, [lookupResult, shippingCities]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-set initial status from brand entry policy when policy loads
-  useEffect(() => {
-    if (isEdit || !orderPolicy) return;
-    const mp = orderPolicy.source_entry_policies.manual;
-    const all = Array.isArray(mp) ? mp : [mp];
+  // The brand's configured entry-status choices, memoized once so both
+  // auto-defaulting effects below read the exact same resolution and can
+  // never disagree about what "the brand default" is.
+  const brandDefaultEntryStatus = useMemo(() => {
+    const mp = orderPolicy?.source_entry_policies.manual;
+    const all = Array.isArray(mp) ? mp : mp ? [mp] : [];
     const choices = all.filter((s) => !INTERNAL_STATUSES.has(s));
     const validChoices = choices.length > 0 ? choices : all;
-    const first = validChoices[0] ?? 'in_progress';
+    return { first: validChoices[0] ?? 'in_progress', validChoices };
+  }, [orderPolicy]);
+
+  // Auto-set initial status from brand entry policy when policy loads.
+  //
+  // BUG FIX (defect G): `orderPolicy` loads asynchronously (useBrandOrderPolicy),
+  // so this effect re-fires on its own, later, whenever the query resolves or the
+  // brand/channel changes — independent of the future-date effect below. Because
+  // 'scheduled' is deliberately never one of the brand's configured manual entry
+  // choices (it's a date-driven exception, not a policy choice — see
+  // CreateManualOrderAction::resolveManualOrderStatus()), the old unconditional
+  // `!validChoices.includes(current)` check treated an already-correct 'scheduled'
+  // default as invalid and silently clobbered it back to the brand default the
+  // moment the policy query resolved after the date effect had already run —
+  // which is exactly the "future order starts In Progress" regression.
+  useEffect(() => {
+    if (isEdit || !orderPolicy) return;
     const current = form.getValues('status');
-    if (!current || !validChoices.includes(current)) {
-      form.setValue('status', first);
+    if (isDeliveryFuture && current === 'scheduled') return;
+    if (!current || !brandDefaultEntryStatus.validChoices.includes(current)) {
+      form.setValue('status', brandDefaultEntryStatus.first);
     }
-  }, [orderPolicy, isEdit]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [orderPolicy, isEdit, isDeliveryFuture, brandDefaultEntryStatus]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // TASK-ECOS-COMMERCE-ORDERS-BATCH-02-SCHEDULED-LIFECYCLE-002 (§3/§10) — a
   // future delivery date should default a NEW order into Scheduled, without
@@ -1207,16 +1229,24 @@ export function ManualOrderFormWorkspace({ mode = 'create', order, initialCustom
   // auto-defaulted above). This effect only ever touches that SAME
   // auto-defaulted value — via setValue with no shouldDirty, exactly like the
   // effect above — so a status the operator picked themselves (shouldDirty:
-  // true on the Select's onValueChange below) is never overridden. Runs after
-  // the brand-policy effect above so it correctly wins when both fire together
-  // on initial load.
+  // true on the Select's onValueChange below) is never overridden.
+  //
+  // Also reverts to the brand default when the date is edited back from a
+  // future date to today/past, so "current/non-future date follows normal
+  // lifecycle" holds even after the operator changes their mind mid-form —
+  // the brand-policy effect above has no reason to fire again in that case
+  // (orderPolicy hasn't changed), so without this the status stayed stuck at
+  // 'scheduled' after the date that justified it was no longer future.
   useEffect(() => {
     if (isEdit) return;
     if (form.formState.dirtyFields.status) return;
-    if (isDeliveryFuture && form.getValues('status') !== 'scheduled') {
-      form.setValue('status', 'scheduled');
+    const current = form.getValues('status');
+    if (isDeliveryFuture) {
+      if (current !== 'scheduled') form.setValue('status', 'scheduled');
+    } else if (current === 'scheduled') {
+      form.setValue('status', brandDefaultEntryStatus.first);
     }
-  }, [isDeliveryFuture, isEdit]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isDeliveryFuture, isEdit, brandDefaultEntryStatus]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Background slot validation — only fires AFTER the user has explicitly selected a slot.
   // Silent when user hasn't touched the field (satisfies "no error on page load" requirement).

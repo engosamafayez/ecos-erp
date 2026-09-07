@@ -381,12 +381,21 @@ final class BranchAssignmentEngine
         return $earthRadius * 2 * atan2(sqrt($a), sqrt(1 - $a));
     }
 
-    /** No governorate/zone on the order — cannot resolve coverage. */
+    /**
+     * No governorate/zone on the order — cannot resolve coverage.
+     *
+     * BUG FIX (Awaiting Warehouse regression): previously recorded no reason at
+     * all, so an order that landed here showed only the generic "Warehouse Not
+     * Assigned" from ProcessOrderWorkflow with nothing more specific available
+     * anywhere — even after OrderResource started exposing
+     * warehouse_assignment_failure_reason, this branch had nothing to expose.
+     */
     private function markUnresolved(Order $order): void
     {
         $order->update([
-            'warehouse_assigned_at'     => now(),
-            'warehouse_assignment_source' => WarehouseAssignmentSource::Unassigned->value,
+            'warehouse_assigned_at'               => now(),
+            'warehouse_assignment_source'          => WarehouseAssignmentSource::Unassigned->value,
+            'warehouse_assignment_failure_reason'  => 'No Delivery Governorate Provided',
         ]);
     }
 

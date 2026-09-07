@@ -110,6 +110,11 @@ export const manualOrderSchema = z.object({
   customer_phone:           z.string().optional(),
   customer_secondary_phone: z.string().optional(),
   customer_notes:           z.string().optional(),
+  // Optional here (edit mode must tolerate a legacy/existing order that already
+  // has no governorate) — CREATE mode instead requires it via
+  // REQUIRED_ON_CREATE_SCHEMA in manual-order-form.tsx, matching
+  // StoreManualOrderRequest's `required` rule (creation-only; UpdateOrderRequest
+  // is unaffected).
   governorate:              z.string().optional(),
   city:                     z.string().optional(),
   area:                     z.string().optional(),
@@ -150,6 +155,17 @@ export const manualOrderSchema = z.object({
 
 export type ManualOrderFormValues    = z.infer<typeof manualOrderSchema>;
 export type ManualOrderLineFormValues = z.infer<typeof manualOrderLineSchema>;
+
+// BUG FIX (Awaiting Warehouse regression) — governorate is optional on
+// `manualOrderSchema` because EDIT mode must tolerate an existing order that
+// already has no governorate saved. CREATE mode has no such legacy order to
+// tolerate, and the form's own Governorate field is already labelled required
+// with no walk-in/no-address mode — so creation should actually enforce it,
+// matching StoreManualOrderRequest's backend rule. Use this schema (not
+// `manualOrderSchema`) for the create-mode resolver only.
+export const manualOrderCreateSchema = manualOrderSchema.extend({
+  governorate: z.string().min(1, 'Governorate is required.'),
+});
 
 export function toManualPayload(values: ManualOrderFormValues): ManualOrderPayload {
   return {

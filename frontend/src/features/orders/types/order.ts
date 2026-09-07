@@ -236,6 +236,10 @@ export type Order = {
    * demonstrably reserved order rendered "Assigned Warehouse: —".
    */
   assigned_warehouse?: { id: string; name: string; code: string | null } | null;
+  /** e.g. 'branch_coverage' | 'unassigned' | 'no_branch_coverage' | 'auto_policy' | 'manual_override' | 'channel_default'. */
+  warehouse_assignment_source?: string | null;
+  /** The specific reason assignment did not resolve (e.g. "No Branch Covers Destination") — prefer over the generic reservation_failure_reason when present. */
+  warehouse_assignment_failure_reason?: string | null;
   /**
    * Read-only reference into Distribution's Trip -> DriverVehicleAssignment -> Driver
    * chain. Null when the order has no active trip assignment; Commerce never writes
