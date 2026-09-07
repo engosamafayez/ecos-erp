@@ -13,10 +13,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * An order may accumulate MULTIPLE historical rows over time (one per
  * retryable delivery attempt), but at most one is ever ACTIVE: `superseded_at
- * IS NULL` (see `active(): Builder` below). The DB-level backstop is a STORED
+ * IS NULL` (see `active(): Builder` below). The DB-level backstop is a VIRTUAL
  * generated column, `active_order_id` (NULL once superseded), carrying a
  * UNIQUE index — see the `add_historical_attempt_semantics_to_trip_orders`
- * migration for why this replaces the old single-column unique(order_id).
+ * migration for why this replaces the old single-column unique(order_id), and
+ * for why the column is VIRTUAL rather than STORED.
  *
  * Releasing an order (TripService::releaseOrder()) sets `superseded_at` and
  * never deletes the row — the prior Trip/Driver/outcome context stays

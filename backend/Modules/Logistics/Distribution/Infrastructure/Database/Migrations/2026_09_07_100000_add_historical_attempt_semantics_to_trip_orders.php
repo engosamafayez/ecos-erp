@@ -27,11 +27,12 @@ use Illuminate\Support\Facades\Schema;
  * invariant has no "zero rows yet" case (a driver's pairing rows always
  * exist). Here the very FIRST assignment for an order also starts from zero
  * rows, so an app-only lock cannot close the race (nothing exists yet to
- * lock). A STORED generated column collapses every superseded row's key to
- * NULL — and SQL treats NULL as never equal to NULL for uniqueness — so MySQL
- * itself refuses a second concurrent INSERT for the same order while leaving
+ * lock). A generated column collapses every superseded row's key to NULL —
+ * and SQL treats NULL as never equal to NULL for uniqueness — so MySQL itself
+ * refuses a second concurrent INSERT for the same order while leaving
  * historical rows completely unconstrained. This is the same "simple,
- * portable, MySQL-native" bar the custody invariant was held to (§8).
+ * portable, MySQL-native" bar the custody invariant was held to (§8). See fix
+ * note 3 below for why this column is VIRTUAL rather than STORED.
  *
  * WHY THESE THREE COLUMNS AND NO OTHERS (§7 — "document exactly why every
  * schema field is required"):
@@ -74,6 +75,27 @@ use Illuminate\Support\Facades\Schema;
  *    custom/generic idempotency layer) so `up()` is safe to run once from a
  *    fully fresh schema, once from exactly the partially-applied state this
  *    task found on DEV, or a second time from a fully-applied state.
+ *
+ * 3. GENERATED COLUMN STORAGE MODE (the SECOND failure, reached only once fix
+ *    1 let the migration get this far — MySQL 1215 "Cannot add foreign key
+ *    constraint"): `order_id` carries `distribution_trip_orders_order_id_foreign
+ *    ... ON DELETE CASCADE` (the pre-existing, approved FK — unchanged here).
+ *    InnoDB forbids a STORED generated column from depending on a column whose
+ *    foreign key uses a cascading action (CASCADE/SET NULL on UPDATE or
+ *    DELETE), because a cascaded change is applied at the storage-engine level
+ *    and would leave a STORED value un-recomputed. Confirmed empirically in an
+ *    isolated scratch database: the identical `ADD COLUMN ... STORED` fails
+ *    with 1215 whenever `order_id`'s FK carries `ON DELETE CASCADE`, and
+ *    succeeds immediately once the column is declared VIRTUAL instead — with
+ *    the FK's cascade action untouched. VIRTUAL vs STORED is a physical
+ *    storage detail only: the expression, column name, and unique index are
+ *    unchanged, InnoDB still supports (and here carries) a UNIQUE index on a
+ *    VIRTUAL generated column, and the one-active-execution invariant was
+ *    re-verified against the VIRTUAL column in the same rehearsal (a second
+ *    concurrent active row for one order is rejected with 1062 on
+ *    `distribution_trip_orders_active_order_unique`; historical/superseded
+ *    rows remain unconstrained). No application code reads this column's
+ *    value directly — it exists solely to back the unique index.
  */
 return new class extends Migration
 {
@@ -112,12 +134,14 @@ return new class extends Migration
         // The NEW backstop: NULL while superseded (any number of historical rows
         // may share order_id), the real order_id while active (at most one row).
         // `orders.id` is a UUID (see the original migration's own comment), so this
-        // mirrors that type exactly.
+        // mirrors that type exactly. VIRTUAL, not STORED — see fix note 3 above:
+        // order_id's FK uses ON DELETE CASCADE, which InnoDB refuses to combine
+        // with a STORED (but not VIRTUAL) generated column that depends on it.
         if (! Schema::hasColumn('distribution_trip_orders', 'active_order_id')) {
             DB::statement(<<<'SQL'
                 ALTER TABLE distribution_trip_orders
                 ADD COLUMN active_order_id CHAR(36)
-                    GENERATED ALWAYS AS (CASE WHEN superseded_at IS NULL THEN order_id ELSE NULL END) STORED
+                    GENERATED ALWAYS AS (CASE WHEN superseded_at IS NULL THEN order_id ELSE NULL END) VIRTUAL
             SQL);
         }
 
