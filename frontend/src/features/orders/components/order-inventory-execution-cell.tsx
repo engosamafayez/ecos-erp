@@ -7,6 +7,16 @@ import type { ReservationStatus } from '../types/order'
 interface Props {
   reservationStatus: ReservationStatus | null | undefined
   failureReason?: string | null
+  /**
+   * BUG FIX (Awaiting Warehouse regression) — BranchAssignmentEngine persists a
+   * specific reason ("No Branch Covers Destination", "No Warehouse Serves Order
+   * Brands", "No Delivery Governorate Provided", ...) that `failureReason`
+   * (reservation_failure_reason) never carries — that field only ever holds the
+   * generic "Warehouse Not Assigned" string. Shown in preference to
+   * `failureReason` when present, computed once here so all four call sites
+   * (grid, drawer, detail page ×2) can never disagree about which reason wins.
+   */
+  warehouseAssignmentFailureReason?: string | null
 }
 
 interface StatusConfig {
@@ -68,8 +78,9 @@ const STATUS_CONFIG: Record<ReservationStatus, StatusConfig> = {
   },
 }
 
-export function OrderInventoryExecutionCell({ reservationStatus, failureReason }: Props) {
+export function OrderInventoryExecutionCell({ reservationStatus, failureReason, warehouseAssignmentFailureReason }: Props) {
   const { t } = useTranslation('orders');
+  const effectiveFailureReason = warehouseAssignmentFailureReason ?? failureReason;
 
   // No reservation state at all is NOT a state — it means no availability decision has
   // been taken yet, which today is only a Scheduled order awaiting its D-1 activation
@@ -84,7 +95,7 @@ export function OrderInventoryExecutionCell({ reservationStatus, failureReason }
   const config = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending
   const label = t($ => $.reservationBadge[status] as `reservationBadge.${ReservationStatus}`)
 
-  const showTooltip = (status === 'awaiting_stock' || status === 'partial_reserved' || status === 'failed' || status === 'pending') && failureReason
+  const showTooltip = (status === 'awaiting_stock' || status === 'partial_reserved' || status === 'failed' || status === 'pending') && effectiveFailureReason
 
   const badge = (
     <Badge
@@ -103,7 +114,7 @@ export function OrderInventoryExecutionCell({ reservationStatus, failureReason }
       <Tooltip>
         <TooltipTrigger asChild>{badge}</TooltipTrigger>
         <TooltipContent side="top" className="max-w-[220px] text-xs">
-          {failureReason}
+          {effectiveFailureReason}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

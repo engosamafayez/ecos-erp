@@ -311,6 +311,14 @@ final class OrderResource extends JsonResource
                 'name' => $this->assignedWarehouse->name,
                 'code' => $this->assignedWarehouse->code,
             ]),
+            // BUG FIX (Awaiting Warehouse regression) — BranchAssignmentEngine computes
+            // and persists a specific reason (e.g. "No Branch Covers Destination", "No
+            // Warehouse Serves Order Brands") whenever assignment fails, but neither
+            // field was ever exposed here — the UI only ever showed the generic
+            // "Warehouse Not Assigned" from reservation_failure_reason, hiding the
+            // actual, already-known cause.
+            'warehouse_assignment_source' => $this->warehouse_assignment_source,
+            'warehouse_assignment_failure_reason' => $this->warehouse_assignment_failure_reason,
             // A1 (TASK-ECOS-COMMERCE-ORDERS-CUSTOMERS-CLOSURE-001) — read-only reference
             // into Distribution's Trip -> DriverVehicleAssignment -> Driver chain. Null
             // when the order has no active trip assignment; Commerce never writes here.

@@ -22,7 +22,18 @@
     "linkCopied": "تم النسخ!",
     "deleteOrder": "حذف الطلب",
     "orderActions": "إجراءات الطلب",
-    "paymentAndProof": "الدفع والإثبات"
+    "paymentAndProof": "الدفع والإثبات",
+    "copySuccess": "تم نسخ {{count}} طلب إلى الحافظة",
+    "copyError": "تعذر النسخ إلى الحافظة",
+    "exportSuccess": "تم تصدير {{count}} طلب"
+  },
+  "exportFields": {
+    "brand": "العلامة التجارية",
+    "warehouse": "المستودع",
+    "paymentStatus": "حالة الدفع",
+    "productsTotal": "إجمالي المنتجات",
+    "shipping": "الشحن",
+    "remainingBalance": "الرصيد المتبقي"
   },
   "bulk": {
     "confirm": "تأكيد الطلبات",

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ds/use-toast';
 import { usePermission } from '@/features/authorization/use-authorization';
+import { extractApiErrorMessage } from '@/lib/api-error';
 import { cn } from '@/lib/utils';
 import {
   usePaymentProofActions,
@@ -51,7 +52,17 @@ export function PaymentProofSection({ orderId, paymentMethod, proofPolicy }: Pro
   const required = proofPolicy != null && paymentMethod != null
     ? proofPolicy[paymentMethod.toLowerCase()] === 'required'
     : false;
-  const fail = () => toast({ title: t(($) => $.orderDetail.proofActionFailed), variant: 'destructive' });
+  // BUG FIX (defect E): every failure — a 403 permission denial, a 422 validation
+  // error, a 404 cross-tenant mismatch, a 500 — previously rendered this exact
+  // same static string, which is what made "Could not upload payment proof" the
+  // entire diagnostic signal a user ever saw. `description` now carries the
+  // server's actual reason (e.g. the real validation message, or a permission
+  // error) alongside the localized title.
+  const fail = (err?: unknown) => toast({
+    title: t(($) => $.orderDetail.proofActionFailed),
+    description: err !== undefined ? extractApiErrorMessage(err) : undefined,
+    variant: 'destructive',
+  });
 
   // A7 — the server already enforces these permissions on the proof routes; the UI
   // mirrors them so an operator without the right is not shown a button that would 403.
@@ -63,7 +74,11 @@ export function PaymentProofSection({ orderId, paymentMethod, proofPolicy }: Pro
     const file = e.target.files?.[0];
     if (file) {
       upload.mutate(file, {
-        onError: () => toast({ title: t(($) => $.orderDetail.proofUploadFailed), variant: 'destructive' }),
+        onError: (err) => toast({
+          title: t(($) => $.orderDetail.proofUploadFailed),
+          description: extractApiErrorMessage(err),
+          variant: 'destructive',
+        }),
       });
     }
     e.target.value = '';

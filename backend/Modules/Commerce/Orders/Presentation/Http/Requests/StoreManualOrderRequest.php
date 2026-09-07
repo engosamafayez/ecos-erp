@@ -46,7 +46,15 @@ final class StoreManualOrderRequest extends FormRequest
             'payment_proof_path' => 'nullable|string|max:500',
 
             // ── Location / shipping ───────────────────────────────────────────
-            'governorate' => 'nullable|string|max:100',
+            // BUG FIX (Awaiting Warehouse regression) — was `nullable` while the
+            // manual order form's own Governorate field is marked required in the
+            // UI (no walk-in/no-address mode exists on this form). An order created
+            // with no governorate is untraceable to any BranchCoverageArea, so
+            // BranchAssignmentEngine::markUnresolved() silently left it unassigned
+            // with no recorded reason — the single most common trigger of
+            // "Warehouse Not Assigned" on an otherwise normal order. Validation now
+            // matches what the form already visually promises.
+            'governorate' => 'required|string|max:100',
             'governorate_id' => 'nullable|integer',
             'city' => 'nullable|string|max:100',
             'city_id' => 'nullable|integer',

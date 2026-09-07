@@ -339,6 +339,7 @@ function OrderHeader({
           <OrderInventoryExecutionCell
             reservationStatus={order.reservation_status}
             failureReason={order.reservation_failure_reason}
+            warehouseAssignmentFailureReason={order.warehouse_assignment_failure_reason}
           />
         )}
         {order.tracking_number ? (

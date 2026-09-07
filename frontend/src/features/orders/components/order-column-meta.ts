@@ -30,7 +30,12 @@ const COLUMN_STRUCTURE: ColumnStructure[] = [
   { key: 'shipping_company',    defaultVisible: false },
   { key: 'updated_at',          defaultVisible: true },
   { key: 'actions',             alwaysVisible: true  },
-  { key: 'delivery_window',     defaultVisible: false },
+  // Delivery Date (تاريخ التسليم) — must match order-column-defs.tsx's
+  // `defaultVisible: true`. This file seeds the persisted column-visibility
+  // state (useColumnVisibility reads from HERE, not from order-column-defs.tsx),
+  // so a `false` here silently hid the column for every user with no prior
+  // localStorage entry, regardless of what the column def itself declared.
+  { key: 'delivery_window',     defaultVisible: true },
 ];
 
 // Maps a column key to its i18n label — identical keys used in createOrderColumns().

@@ -39,6 +39,17 @@ import { OrderConfirmCustomerDialog } from '@/features/orders/components/order-c
 import { EmptyState } from '@/components/crud';
 import { toast } from '@/components/ds/use-toast';
 import { extractApiErrorMessage } from '@/lib/api-error';
+import { PrintTable } from '@/features/operations/components/print-table';
+import {
+  buildOrderRows,
+  orderFieldLabel,
+  rowsToCsv,
+  rowsToTsv,
+  ORDER_FIELD_GETTERS,
+  COPY_FIELD_KEYS,
+  PRINT_FIELD_KEYS,
+  EXPORT_FIELD_KEYS,
+} from '@/features/orders/utils/order-export-fields';
 import {
   useDeleteOrder,
   useOrderStatusKpis,
@@ -361,7 +372,11 @@ export function OrdersPage() {
         ? { field: sortField, direction: curr.direction === 'asc' ? 'desc' : 'asc' }
         : { field: sortField, direction: 'asc' },
     );
+    // Every other filter-changing handler clears selection (resetPage()); this
+    // one didn't, so a selection made before a sort silently pointed at rows
+    // that may no longer occupy the same page/position after re-sorting.
     setPage(1);
+    clearSelection();
   }
 
   function handleSearchCommit(value: string) {
@@ -379,23 +394,20 @@ export function OrdersPage() {
     navigate(`${ROUTES.orders}/${order.id}/edit`);
   }
 
-  // Part 11: Filter-aware CSV export of current page orders
+  // \u2500\u2500 Copy / Print / Export selection contract \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  // Defects A/B/C (user review): all three previously ignored selection and
+  // re-derived their own incomplete 9-field list from `orders` (whichever page
+  // happened to be loaded). All three now operate ONLY on the selected Order
+  // IDs when a selection exists \u2014 selectedOrders is already ID-derived (not
+  // row-position-derived, see useRowSelection) \u2014 and explicitly fall back to
+  // the current view (today's implicit behavior, now consistent and toasted)
+  // when nothing is selected.
+  const copyPrintExportOrders = selectedCount > 0 ? selectedOrders : orders;
+
   function handleExport() {
-    const header = ['Order #', 'Date', 'Customer', 'Status', 'Total', 'Payment', 'Channel', 'Phone', 'Governorate'];
-    const rows = orders.map((o) => [
-      o.order_number,
-      o.order_date ?? '',
-      o.customer?.name ?? '',
-      o.status,
-      String(o.total),
-      o.payment_method ?? '',
-      o.channel?.name ?? '',
-      o.billing_phone ?? o.customer?.phone ?? '',
-      o.governorate ?? '',
-    ]);
-    const csv = [header, ...rows]
-      .map((r) => r.map((v) => `"${v.replace(/"/g, '""')}"`).join(','))
-      .join('\n');
+    const rows = buildOrderRows(copyPrintExportOrders, EXPORT_FIELD_KEYS);
+    const headers = EXPORT_FIELD_KEYS.map((k) => orderFieldLabel(k, t));
+    const csv = rowsToCsv(headers, rows);
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -405,47 +417,27 @@ export function OrdersPage() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }
-
-  function buildCsvContent() {
-    const header = ['Order #', 'Date', 'Customer', 'Status', 'Total', 'Payment', 'Channel', 'Phone', 'Governorate'];
-    const rows = orders.map((o) => [
-      o.order_number,
-      o.order_date ?? '',
-      o.customer?.name ?? '',
-      o.status,
-      String(o.total),
-      o.payment_method ?? '',
-      o.channel?.name ?? '',
-      o.billing_phone ?? o.customer?.phone ?? '',
-      o.governorate ?? '',
-    ]);
-    return [header, ...rows]
-      .map((r) => r.map((v) => `"${v.replace(/"/g, '""')}"`).join(','))
-      .join('\n');
+    toast.success(t($ => $.actions.exportSuccess, { count: copyPrintExportOrders.length }));
   }
 
   function handleCopyToClipboard() {
-    void navigator.clipboard.writeText(buildCsvContent());
+    const rows = buildOrderRows(copyPrintExportOrders, COPY_FIELD_KEYS);
+    const headers = COPY_FIELD_KEYS.map((k) => orderFieldLabel(k, t));
+    // TSV, not CSV: pastes as real columns into Excel/Sheets, unlike quoted CSV
+    // (which pastes as one text blob), while still reading fine as plain text.
+    void navigator.clipboard.writeText(rowsToTsv(headers, rows)).then(
+      () => toast.success(t($ => $.actions.copySuccess, { count: copyPrintExportOrders.length })),
+      (err: unknown) => toast.error(t($ => $.actions.copyError), extractApiErrorMessage(err)),
+    );
   }
 
+  // A dedicated <PrintTable> (rendered below, `hidden` until printed) replaces
+  // the old popup-window/HTML-string approach \u2014 same working pattern already
+  // used by Operations (see print-table.tsx's own rationale: UniversalDataGrid's
+  // `lg:` breakpoints don't resolve under print media, so printing the grid
+  // directly produced a header with no rows).
   function handlePrint() {
-    const csv = buildCsvContent();
-    const lines = csv.split('\n');
-    const tableRows = lines
-      .map((line, i) => {
-        const cells = line.split(',').map((c) => c.replace(/^"|"$/g, '').replace(/""/g, '"'));
-        const tag = i === 0 ? 'th' : 'td';
-        return `<tr>${cells.map((c) => `<${tag} style="padding:4px 8px;border:1px solid #ddd">${c}</${tag}>`).join('')}</tr>`;
-      })
-      .join('');
-    const html = `<!doctype html><html><head><title>Orders</title><style>table{border-collapse:collapse;font-size:12px;font-family:sans-serif}th{background:#f5f5f5}</style></head><body><table>${tableRows}</table></body></html>`;
-    const win = window.open('', '_blank');
-    if (win) {
-      win.document.write(html);
-      win.document.close();
-      win.print();
-    }
+    window.print();
   }
 
   function clearAdvancedFilters() {
@@ -565,8 +557,17 @@ export function OrdersPage() {
     </span>
   );
 
+  // §5 print column set — computed here (not inlined in JSX) so it's built once
+  // per render rather than once per print, and stays visibly next to the field
+  // list it's derived from.
+  const printColumns = PRINT_FIELD_KEYS.map((key) => ({
+    header: orderFieldLabel(key, t),
+    cell: (o: Order) => ORDER_FIELD_GETTERS[key](o),
+  }));
+
   return (
-    <div className="flex h-full flex-col">
+    <>
+    <div className="flex h-full flex-col print:hidden">
       {/* ── Page header ── */}
       <div className="border-b bg-background px-6 py-4">
         <PageHeader
@@ -948,5 +949,18 @@ export function OrdersPage() {
         </DialogContent>
       </Dialog>
     </div>
+
+    {/* Print output (§5) — hidden on screen, shown only under print media;
+        independent of the Column Manager, so hiding a column on screen never
+        removes it from the printout. Same selection-or-current-view scope as
+        Copy/Export. */}
+    <PrintTable
+      title={t($ => $.title)}
+      subtitle={selectedCount > 0 ? `${selectedCount} selected` : undefined}
+      columns={printColumns}
+      rows={copyPrintExportOrders}
+      rowKey={(o) => o.id}
+    />
+    </>
   );
 }

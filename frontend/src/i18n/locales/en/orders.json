@@ -22,7 +22,18 @@
     "linkCopied": "Copied!",
     "deleteOrder": "Delete Order",
     "orderActions": "Order actions",
-    "paymentAndProof": "Payment & Proof"
+    "paymentAndProof": "Payment & Proof",
+    "copySuccess": "Copied {{count}} order(s) to clipboard",
+    "copyError": "Could not copy to clipboard",
+    "exportSuccess": "Exported {{count}} order(s)"
+  },
+  "exportFields": {
+    "brand": "Brand",
+    "warehouse": "Warehouse",
+    "paymentStatus": "Payment Status",
+    "productsTotal": "Products Total",
+    "shipping": "Shipping",
+    "remainingBalance": "Remaining Balance"
   },
   "bulk": {
     "confirm": "Confirm Orders",

@@ -245,8 +245,7 @@ function OrderActionsMenu({ order, callbacks }: { order: Order; callbacks: Order
 // Enterprise column order (ORDER_COLUMN_META is authoritative for display order):
 // ☐ Order | Customer | Status | Address | Zone | Location |
 // Confirmation | Items | Payment | Payment Proof | Total | Customer Notes |
-// Created | Sales Rep | Driver | Store | Attempts | Updated | Actions |
-// [hidden: Delivery Window]
+// Created | Sales Rep | Driver | Store | Attempts | Updated | Delivery Date | Actions
 
 export function createOrderColumns(
   callbacks: OrderColumnCallbacks,
@@ -429,6 +428,7 @@ export function createOrderColumns(
           <OrderInventoryExecutionCell
             reservationStatus={order.reservation_status}
             failureReason={order.reservation_failure_reason}
+            warehouseAssignmentFailureReason={order.warehouse_assignment_failure_reason}
           />
         </div>
       ),
