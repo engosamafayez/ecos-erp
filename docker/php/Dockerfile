@@ -82,6 +82,26 @@ WORKDIR /app
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci --prefer-offline
 
+# Cache-bust for Layer 2, below. The comment on that COPY has always assumed Docker's
+# content-hash cache reliably invalidates when any file under frontend/ changes — true on
+# a native Linux build context, but TASK-ECOS-IAM-FINAL-REMEDIATION-DIRECT-DEV-001 caught a
+# real instance where it did not: on this Windows/WSL2 + Docker Desktop host, a
+# `docker compose build` reported success while `COPY frontend/ ./` was silently served
+# from cache despite the source having genuinely changed (proved by grepping the built
+# bundle for code that could only exist post-change — absent). BUG-GL-009, cited just
+# below, is an earlier, independent incident of an image staying stale after a "successful"
+# build; this is the same failure mode from a different cause.
+#
+# `RUN` (unlike `COPY`) keys its cache on the literal command string, so a changing
+# `--build-arg FRONTEND_CACHEBUST=...` here breaks the layer chain unconditionally and
+# forces the COPY below — and `vite build` after it — to run fresh regardless of whatever
+# Docker's own content hashing concludes. Omit the build-arg and this is a no-op (default
+# `1`), so every existing call site (deploy.sh, CI, a plain `docker compose build`) is
+# unaffected; pass a fresh value (`$(date +%s)`, a commit SHA, …) whenever a build must be
+# guaranteed to reflect the current frontend/ tree.
+ARG FRONTEND_CACHEBUST=1
+RUN echo "frontend cachebust: ${FRONTEND_CACHEBUST}" > /tmp/.frontend-cachebust
+
 # Layer 2: build (invalidated when any source file changes)
 COPY frontend/ ./
 # `vite build`, NOT `npm run build` — the same call CI's Production build gate
