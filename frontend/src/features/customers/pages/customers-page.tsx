@@ -18,7 +18,9 @@ import { useEffect, useRef, useState, useMemo} from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { PhoneCell } from '@/components/ecos/phone-cell';
+import { toast } from '@/components/ds/use-toast';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { copyToClipboard } from '@/lib/clipboard';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -1202,6 +1204,55 @@ export type RowProps = {
   canUnblock: boolean;
 };
 
+/**
+ * TASK-ECOS-COMMERCE-CUSTOMERS-FINAL-USER-REVIEW-REMEDIATION-004.
+ *
+ * The Blocked badge alone doesn't say WHY — this reads the SAME `block_reason`/
+ * `blocked_at`/`blocked_by_name` the customer detail drawer's BlockedCard already
+ * shows (§33/§41 of BLOCKED-CUSTOMERS-009), just surfaced inline on the grid too,
+ * so a reason is visible without opening the drawer. A short, truncated preview is
+ * always visible; the popover (same primitive the Top Products cell above already
+ * uses) exposes the untruncated text — the underlying value is never truncated,
+ * only its rendering. Renders nothing for a non-blocked customer.
+ */
+function BlockedReasonHint({ customer }: { customer: Customer }) {
+  const { t } = useTranslation('customers');
+
+  if (!customer.is_blocked) {
+    return null;
+  }
+
+  const reason = customer.block_reason || t($ => $.blocked.noReasonRecorded);
+
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          onClick={(e) => e.stopPropagation()}
+          className="max-w-[12rem] truncate text-start text-[10px] text-red-600/80 transition-colors hover:text-red-700 hover:underline dark:text-red-400/80"
+        >
+          {reason}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-72 p-3 text-xs" onClick={(e) => e.stopPropagation()}>
+        <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          {t($ => $.blocked.reasonLabel)}
+        </p>
+        <p className="whitespace-pre-wrap break-words">{reason}</p>
+        {customer.blocked_by_name || customer.blocked_at ? (
+          <p className="mt-2 border-t pt-2 text-[11px] text-muted-foreground">
+            {customer.blocked_by_name ? `${t($ => $.drawer.blocked.blockedBy)}: ${customer.blocked_by_name}` : null}
+            {customer.blocked_at
+              ? `${customer.blocked_by_name ? ' · ' : ''}${new Date(customer.blocked_at).toLocaleString()}`
+              : null}
+          </p>
+        ) : null}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function CustomerRow({
   customer,
   isFocused,
@@ -1266,6 +1317,8 @@ function CustomerRow({
               call: t($ => $.phone.call),
               whatsapp: t($ => $.phone.whatsapp),
               copy: tCommon($ => $.common.copy),
+              copySuccessTitle: t($ => $.phone.copySuccess),
+              copyErrorTitle: t($ => $.phone.copyError),
             }}
           />
           {secondaryPhone ? (
@@ -1275,6 +1328,8 @@ function CustomerRow({
                 call: t($ => $.phone.call),
                 whatsapp: t($ => $.phone.whatsapp),
                 copy: tCommon($ => $.common.copy),
+                copySuccessTitle: t($ => $.phone.copySuccess),
+                copyErrorTitle: t($ => $.phone.copyError),
               }}
             />
           ) : null}
@@ -1419,41 +1474,47 @@ function CustomerRow({
 
       {/* Customer Intelligence */}
       <td className="px-4 py-3">
-        <div className="flex flex-wrap gap-1">
-          {customer.is_blocked ? (
-            <Badge
-              variant="secondary"
-              className="h-5 gap-1 px-1.5 text-[10px] text-red-700 bg-red-100 border-red-200 dark:text-red-400 dark:bg-red-950/50 dark:border-red-800"
-              title={customer.block_reason ?? undefined}
-            >
-              <Ban className="size-3" />
-              {t($ => $.blocked.badge)}
-            </Badge>
-          ) : null}
-          {customer.is_repeat_customer ? (
-            <Badge
-              variant="secondary"
-              className="h-5 gap-1 px-1.5 text-[10px] text-emerald-700 bg-emerald-100 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/50 dark:border-emerald-800"
-              title={t($ => $.intelligence.repeatHint, { count: REPEAT_ORDER_THRESHOLD })}
-            >
-              <Repeat className="size-3" />
-              {t($ => $.intelligence.repeat)}
-            </Badge>
-          ) : null}
-          {customer.notes ? (
-            <Badge
-              variant="secondary"
-              className="h-5 gap-1 px-1.5 text-[10px] text-amber-700 bg-amber-100 border-amber-200 dark:text-amber-400 dark:bg-amber-950/50 dark:border-amber-800"
-            >
-              <FileText className="size-3" />
-              {t($ => $.intelligence.hasNotes)}
-            </Badge>
-          ) : null}
-          {!customer.is_active ? (
-            <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
-              {t($ => $.tags.inactive)}
-            </Badge>
-          ) : null}
+        <div className="flex flex-col gap-1">
+          <div className="flex flex-wrap gap-1">
+            {customer.is_blocked ? (
+              <Badge
+                variant="secondary"
+                className="h-5 gap-1 px-1.5 text-[10px] text-red-700 bg-red-100 border-red-200 dark:text-red-400 dark:bg-red-950/50 dark:border-red-800"
+                title={customer.block_reason ?? undefined}
+              >
+                <Ban className="size-3" />
+                {t($ => $.blocked.badge)}
+              </Badge>
+            ) : null}
+            {customer.is_repeat_customer ? (
+              <Badge
+                variant="secondary"
+                className="h-5 gap-1 px-1.5 text-[10px] text-emerald-700 bg-emerald-100 border-emerald-200 dark:text-emerald-400 dark:bg-emerald-950/50 dark:border-emerald-800"
+                title={t($ => $.intelligence.repeatHint, { count: REPEAT_ORDER_THRESHOLD })}
+              >
+                <Repeat className="size-3" />
+                {t($ => $.intelligence.repeat)}
+              </Badge>
+            ) : null}
+            {customer.notes ? (
+              <Badge
+                variant="secondary"
+                className="h-5 gap-1 px-1.5 text-[10px] text-amber-700 bg-amber-100 border-amber-200 dark:text-amber-400 dark:bg-amber-950/50 dark:border-amber-800"
+              >
+                <FileText className="size-3" />
+                {t($ => $.intelligence.hasNotes)}
+              </Badge>
+            ) : null}
+            {!customer.is_active ? (
+              <Badge variant="secondary" className="h-5 px-1.5 text-[10px]">
+                {t($ => $.tags.inactive)}
+              </Badge>
+            ) : null}
+          </div>
+          {/* TASK-...-FINAL-USER-REVIEW-REMEDIATION-004 — the Blocked badge above says
+              THAT the customer is blocked; this says WHY, so it's visible without
+              opening the drawer. See BlockedReasonHint's own docblock. */}
+          <BlockedReasonHint customer={customer} />
         </div>
       </td>
 
@@ -1480,7 +1541,11 @@ function CustomerRow({
                 label: t($ => $.quickCard.copyPhone),
                 icon: Copy,
                 onSelect: () => {
-                  if (primaryPhone) void navigator.clipboard.writeText(primaryPhone);
+                  if (!primaryPhone) return;
+                  void copyToClipboard(primaryPhone).then((ok) => {
+                    if (ok) toast.success(t($ => $.phone.copySuccess));
+                    else toast.error(t($ => $.phone.copyError));
+                  });
                 },
                 disabled: !primaryPhone,
               },
@@ -1680,6 +1745,16 @@ export function CustomerMobileCard({
         ) : null}
       </button>
 
+      {/* TASK-...-FINAL-USER-REVIEW-REMEDIATION-004 — same reason preview/popover as
+          desktop's Intelligence cell (see BlockedReasonHint's own docblock). A sibling
+          of the button above, not a child of it: BlockedReasonHint renders its own
+          <button> trigger, and a <button> nested inside another <button> is invalid. */}
+      {customer.is_blocked ? (
+        <div className="mt-1 ps-7">
+          <BlockedReasonHint customer={customer} />
+        </div>
+      ) : null}
+
       {/* Footer — Call/WhatsApp/Copy (PhoneCell, unchanged shared component) + View Orders + overflow */}
       <div className="mt-2.5 flex items-center justify-between gap-2 ps-7">
         <div onClick={(e) => e.stopPropagation()}>
@@ -1689,6 +1764,8 @@ export function CustomerMobileCard({
               call: t($ => $.phone.call),
               whatsapp: t($ => $.phone.whatsapp),
               copy: tCommon($ => $.common.copy),
+              copySuccessTitle: t($ => $.phone.copySuccess),
+              copyErrorTitle: t($ => $.phone.copyError),
             }}
           />
         </div>
@@ -1712,7 +1789,13 @@ export function CustomerMobileCard({
                 key: 'copyPhone',
                 label: t($ => $.quickCard.copyPhone),
                 icon: Copy,
-                onSelect: () => { if (primaryPhone) void navigator.clipboard.writeText(primaryPhone); },
+                onSelect: () => {
+                  if (!primaryPhone) return;
+                  void copyToClipboard(primaryPhone).then((ok) => {
+                    if (ok) toast.success(t($ => $.phone.copySuccess));
+                    else toast.error(t($ => $.phone.copyError));
+                  });
+                },
                 disabled: !primaryPhone,
               },
               ...(customer.is_blocked

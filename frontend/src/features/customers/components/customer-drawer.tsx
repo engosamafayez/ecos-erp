@@ -29,6 +29,8 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Tabs } from '@/components/ds/tabs';
+import { toast } from '@/components/ds/use-toast';
+import { copyToClipboard } from '@/lib/clipboard';
 import { MobileDetailSection } from '@/components/mobile';
 import { useIsMobile } from '@/hooks/use-is-mobile';
 import { OrderStatusBadge } from '@/features/orders/components/order-status-badge';
@@ -60,9 +62,14 @@ function PhoneRow({
   const bare = phone.replace(/\D/g, '');
 
   const doCopy = () => {
-    void navigator.clipboard.writeText(phone).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+    void copyToClipboard(phone).then((ok) => {
+      if (ok) {
+        setCopied(true);
+        toast.success(t($ => $.phone.copySuccess));
+        setTimeout(() => setCopied(false), 1500);
+      } else {
+        toast.error(t($ => $.phone.copyError));
+      }
     });
   };
 
@@ -130,7 +137,7 @@ function BlockedCard({ customer }: { customer: Customer }) {
 
       {customer.is_blocked ? (
         <div className="flex flex-col gap-2 text-sm">
-          <InfoRow label={t($ => $.drawer.blocked.reason)} value={customer.block_reason ?? '—'} />
+          <InfoRow label={t($ => $.drawer.blocked.reason)} value={customer.block_reason || t($ => $.blocked.noReasonShort)} />
           {/* TASK-...-FINAL-UI-CLOSURE-014 (§5) — canonical actor identity, never a raw id. */}
           <InfoRow label={t($ => $.drawer.blocked.blockedBy)} value={customer.blocked_by_name ?? '—'} />
           <InfoRow

@@ -1,3 +1,5 @@
+import '@testing-library/jest-dom';
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -20,6 +22,18 @@ const mockGet = vi.hoisted(() => vi.fn());
 const mockBlockHistory = vi.hoisted(() => vi.fn());
 const mockUnblock = vi.hoisted(() => vi.fn());
 const mockNavigate = vi.hoisted(() => vi.fn());
+
+// TASK-ECOS-COMMERCE-CUSTOMERS-FINAL-USER-REVIEW-REMEDIATION-004 — Phone Copy.
+// Clipboard/toast wiring is unit-tested in isolation (clipboard.test.ts,
+// phone-cell.test.tsx); here only PhoneRow's own success/error feedback is under test.
+const mockCopyToClipboard = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/clipboard', () => ({ copyToClipboard: mockCopyToClipboard }));
+
+const mockToastSuccess = vi.hoisted(() => vi.fn());
+const mockToastError = vi.hoisted(() => vi.fn());
+vi.mock('@/components/ds/use-toast', () => ({
+  toast: { success: mockToastSuccess, error: mockToastError },
+}));
 
 vi.mock('react-router-dom', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router-dom')>();
@@ -136,6 +150,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockCan.mockReturnValue(true);
   mockBlockHistory.mockResolvedValue([]);
+  mockCopyToClipboard.mockResolvedValue(true);
 });
 
 describe('CustomerDrawer — Customer Intelligence', () => {
@@ -189,6 +204,20 @@ describe('CustomerDrawer — Blocked Customer (TASK-...-BLOCKED-CUSTOMERS-009)',
     expect(screen.getByText('unblockAction')).toBeInTheDocument();
   });
 
+  // TASK-ECOS-COMMERCE-CUSTOMERS-FINAL-USER-REVIEW-REMEDIATION-004 (§7) — a blocked
+  // customer with no recorded reason must say so, never a bare dash.
+  it('shows the "no reason recorded" fallback for a blocked customer with no reason', async () => {
+    renderDrawer(baseCustomer({
+      is_blocked: true,
+      block_reason: null,
+      blocked_at: '2026-08-01T10:00:00Z',
+      customer_block_id: 'block-1',
+    }));
+
+    expect(await screen.findByText('badge')).toBeInTheDocument();
+    expect(screen.getByText('noReasonShort')).toBeInTheDocument();
+  });
+
   it('hides the Unblock action for a read-only (unauthorized) user', async () => {
     mockCan.mockReturnValue(false);
     renderDrawer(baseCustomer({
@@ -230,6 +259,30 @@ describe('CustomerDrawer — Blocked Customer (TASK-...-BLOCKED-CUSTOMERS-009)',
     const dialog = await screen.findByRole('dialog');
     const { getByText } = within(dialog);
     expect(getByText('unblockAction').closest('button')).toBeDisabled();
+  });
+});
+
+describe('CustomerDrawer — Phone Copy (TASK-ECOS-COMMERCE-CUSTOMERS-FINAL-USER-REVIEW-REMEDIATION-004)', () => {
+  it('copies the phone and shows a success toast', async () => {
+    const user = userEvent.setup();
+    renderDrawer(baseCustomer({ phone: '0501112222' }), 'phones');
+
+    await user.click(await screen.findByTitle('copy'));
+
+    expect(mockCopyToClipboard).toHaveBeenCalledWith('0501112222');
+    expect(mockToastSuccess).toHaveBeenCalledWith('copySuccess');
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
+  it('shows an error toast when the copy genuinely fails (e.g. clipboard unavailable)', async () => {
+    mockCopyToClipboard.mockResolvedValue(false);
+    const user = userEvent.setup();
+    renderDrawer(baseCustomer({ phone: '0501112222' }), 'phones');
+
+    await user.click(await screen.findByTitle('copy'));
+
+    expect(mockToastError).toHaveBeenCalledWith('copyError');
+    expect(mockToastSuccess).not.toHaveBeenCalled();
   });
 });
 

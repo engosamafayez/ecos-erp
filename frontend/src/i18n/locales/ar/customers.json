@@ -130,6 +130,8 @@
     "whatsapp": "واتساب",
     "copy": "نسخ الرقم",
     "copied": "تم النسخ!",
+    "copySuccess": "تم نسخ رقم الهاتف",
+    "copyError": "تعذّر نسخ رقم الهاتف",
     "primary": "رئيسي",
     "secondary": "ثانوي",
     "more": "+{{count}} أكثر"
@@ -305,6 +307,9 @@
     "filter": "محظور",
     "notBlockedFilter": "غير محظور",
     "badge": "محظور",
+    "reasonLabel": "سبب الحظر",
+    "noReasonRecorded": "محظور — لم يتم تسجيل سبب",
+    "noReasonShort": "لم يتم تسجيل سبب",
     "blockAction": "حظر",
     "unblockAction": "إلغاء الحظر",
     "blockPhoneAction": "حظر رقم هاتف",
