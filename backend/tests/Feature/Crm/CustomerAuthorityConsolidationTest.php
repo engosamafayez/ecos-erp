@@ -18,6 +18,9 @@ use Modules\Crm\Customers\Domain\Services\CustomerService;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Modules\POS\Customer\Infrastructure\Gateways\SalesCustomerGateway;
 use Modules\Sales\Customers\Domain\Models\Customer as SalesCustomer;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use ReflectionProperty;
 use Tests\TestCase;
 
 /**
@@ -232,7 +235,7 @@ final class CustomerAuthorityConsolidationTest extends TestCase
     public function test_crm_module_tree_has_no_reference_to_the_legacy_sales_class(): void
     {
         $dir = base_path('Modules/Crm');
-        $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dir));
+        $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir));
 
         foreach ($it as $file) {
             if (! $file->isFile() || $file->getExtension() !== 'php') {
@@ -262,7 +265,7 @@ final class CustomerAuthorityConsolidationTest extends TestCase
         if (! is_dir($dir)) {
             $this->markTestSkipped('Modules/Finance not present in this checkout.');
         }
-        $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dir));
+        $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir));
 
         foreach ($it as $file) {
             if (! $file->isFile() || $file->getExtension() !== 'php') {
@@ -334,7 +337,7 @@ final class CustomerAuthorityConsolidationTest extends TestCase
         /** @var CustomerSyncJob $restored */
         $restored = unserialize(serialize($job));
 
-        $reflection = new \ReflectionProperty($restored, 'customer');
+        $reflection = new ReflectionProperty($restored, 'customer');
         $reflection->setAccessible(true);
         $restoredCustomer = $reflection->getValue($restored);
 
