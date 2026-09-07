@@ -59,7 +59,6 @@ use Modules\Crm\Engagement\Presentation\Http\Controllers\ActivityController as C
 use Modules\Crm\Engagement\Presentation\Http\Controllers\TaskController as CrmTaskController;
 use Modules\Crm\Engagement\Presentation\Http\Controllers\TimelineController as CrmTimelineController;
 use Modules\Crm\Executive\Presentation\Http\Controllers\ExecutiveDashboardController as CrmExecutiveDashboardController;
-use Modules\Crm\Portfolio\Presentation\Http\Controllers\PortfolioController as CrmPortfolioController;
 use Modules\Crm\Executive\Presentation\Http\Controllers\ExecutivePerformanceController as CrmExecutivePerformanceController;
 use Modules\Crm\Executive\Presentation\Http\Controllers\ExecutiveReportController as CrmExecutiveReportController;
 use Modules\Crm\Intelligence\Presentation\Http\Controllers\CustomerAnalyticsController as CrmAnalyticsController;
@@ -70,6 +69,7 @@ use Modules\Crm\Intelligence\Presentation\Http\Controllers\SegmentationControlle
 use Modules\Crm\Loyalty\Presentation\Http\Controllers\LoyaltyController as CrmLoyaltyController;
 use Modules\Crm\Loyalty\Presentation\Http\Controllers\PointsController as CrmPointsController;
 use Modules\Crm\Loyalty\Presentation\Http\Controllers\RewardController as CrmRewardController;
+use Modules\Crm\Portfolio\Presentation\Http\Controllers\PortfolioController as CrmPortfolioController;
 use Modules\Crm\Sales\Presentation\Http\Controllers\LeadController as CrmLeadController;
 use Modules\Crm\Sales\Presentation\Http\Controllers\OpportunityController as CrmOpportunityController;
 use Modules\Crm\Sales\Presentation\Http\Controllers\PipelineController as CrmPipelineController;

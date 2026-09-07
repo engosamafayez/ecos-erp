@@ -16,8 +16,8 @@ use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Commerce\Orders\Domain\Enums\ReservationStatus;
 use Modules\Commerce\Orders\Domain\Exceptions\UnauthorizedOrderStatusWriteException;
-use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Crm\Customers\Domain\Models\Customer;
+use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Operations\Fulfillment\Application\OrderStatusGuard;
 
 /**
