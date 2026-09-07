@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { AuthUser } from '@/features/auth/types';
@@ -45,6 +46,28 @@ vi.mock('@/features/operations/driver-mobile/hooks/use-driver-mobile', () => ({
   useDriverTrips: () => ({ data: mockTrips }),
 }));
 
+// D5 (TASK-ECOS-COMMERCE-IAM-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-005) — DriverShell
+// renders the real NotificationCenter (§7), whose hooks need a QueryClientProvider (added
+// below) AND a resolved service layer; a real axios call has no business running in this
+// component test, so it's stubbed the same way notification-center.test.tsx's own suite does.
+vi.mock('@/features/notifications/services/notifications-service', () => ({
+  notificationsService: {
+    list: vi.fn().mockResolvedValue({ data: [], unread_count: 0, meta: { page: 1, perPage: 25, total: 0, lastPage: 1 } }),
+    markRead: vi.fn(),
+    markAllRead: vi.fn(),
+    markReadSet: vi.fn(),
+    attentionPolicy: vi.fn().mockResolvedValue({
+      low: { popup: false, sound: false, sound_profile: null, locked: false },
+      normal: { popup: true, sound: false, sound_profile: null, locked: false },
+      high: { popup: true, sound: true, sound_profile: 'important', locked: false },
+      critical: { popup: true, sound: true, sound_profile: 'critical', locked: true },
+    }),
+    getPreferences: vi.fn().mockResolvedValue(null),
+    updatePreferences: vi.fn(),
+    typeCatalog: vi.fn().mockResolvedValue([]),
+  },
+}));
+
 import { DriverShell } from './driver-shell';
 import { EnterpriseAppShell } from './enterprise-app-shell';
 
@@ -61,15 +84,18 @@ function user(overrides: Partial<AuthUser>): AuthUser {
 
 describe('DriverShell', () => {
   function renderAt(path: string, content = 'PAGE') {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
     return render(
-      <MemoryRouter initialEntries={[path]}>
-        <Routes>
-          <Route element={<DriverShell />}>
-            <Route path="/driver/home" element={<div>{content}</div>} />
-            <Route path="/driver/orders" element={<div>{content}</div>} />
-          </Route>
-        </Routes>
-      </MemoryRouter>,
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={[path]}>
+          <Routes>
+            <Route element={<DriverShell />}>
+              <Route path="/driver/home" element={<div>{content}</div>} />
+              <Route path="/driver/orders" element={<div>{content}</div>} />
+            </Route>
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
     );
   }
 

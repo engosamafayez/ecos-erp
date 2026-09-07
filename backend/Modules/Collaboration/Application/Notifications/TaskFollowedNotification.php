@@ -12,10 +12,20 @@ final class TaskFollowedNotification extends Notification
 {
     public function __construct(private readonly InternalTask $task) {}
 
-    /** @return list<string> */
+    /**
+     * TASK-ECOS-COMMERCE-IAM-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-005 D2 — the
+     * shared producer contract's channel (Modules\Notifications\...\CoreDatabaseChannel),
+     * not Laravel's stock `database` channel: this is what actually makes the Notification
+     * Type Catalog's per-type on/off toggle (NotificationDeliveryPolicy::isTypeEnabledFor())
+     * take effect for this type. Same row shape either way — see CoreDatabaseChannel's own
+     * docblock (a notification not implementing ProvidesNotificationMetadataInterface
+     * still works, falling back to its defaults).
+     *
+     * @return list<string>
+     */
     public function via(mixed $notifiable): array
     {
-        return ['database'];
+        return ['notifications-core'];
     }
 
     /** @return array<string, mixed> */

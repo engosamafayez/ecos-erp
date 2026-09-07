@@ -7,6 +7,7 @@ namespace Modules\Notifications\Domain\Catalog;
 use Modules\Collaboration\Application\Notifications\MentionedNotification;
 use Modules\Collaboration\Application\Notifications\NewMessageNotification;
 use Modules\Collaboration\Application\Notifications\TaskAssignedNotification;
+use Modules\Collaboration\Application\Notifications\TaskFollowedNotification;
 use Modules\Collaboration\Application\Notifications\TaskStatusChangedNotification;
 use Modules\CostManagement\Application\Notifications\PricingReviewRequiredNotification;
 use Modules\Operations\Loading\Application\Notifications\DriverAssignedNotification;
@@ -25,7 +26,17 @@ use Modules\Operations\Preparation\Application\Notifications\WaveStartedNotifica
  * (Modules\Operations\Preparation) — both exist as classes but have zero production
  * dispatch sites anywhere in the codebase (confirmed by the same audit); cataloguing a
  * type a user could never actually receive would be exactly the "invented condition"
- * §8 says not to do.
+ * §8 says not to do. Same reasoning excludes `LargeSaleNotification`, referenced only in
+ * a commented-out line in Modules\POS\Application\Listeners\PosNotificationListener — the
+ * class does not even exist — and Marketing\ProviderPlatform's provider-health alerts,
+ * which today only `Log::channel('slack')->warning(...)` per that listener's own
+ * docblock ("The Notification OS is not yet implemented") rather than writing to the
+ * `notifications` table at all.
+ *
+ * TASK-ECOS-COMMERCE-IAM-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-005 D2 — a repeat
+ * whole-backend dispatch-site audit (`Notification::send(`, `->notify(`) found one more
+ * real, already-dispatched producer this catalog had missed: `TaskFollowedNotification`
+ * (Modules\Collaboration\Application\Actions\FollowTaskAction). Added below.
  *
  * This is the ONE place a new configurable notification type is registered — do not
  * duplicate this list in a migration, a frontend constant, or anywhere else.
@@ -136,6 +147,17 @@ final class NotificationTypeCatalog
                 userCanDisable: true,
                 hasDestination: false,
                 recipientAuthority: 'TransitionTaskStatusAction: whichever of {creator, assignee} did not perform the transition.',
+            ),
+            new NotificationTypeDefinition(
+                key: 'collaboration_task_followed',
+                notificationClass: TaskFollowedNotification::class,
+                module: 'collaboration',
+                nameAr: 'متابعة مهمة',
+                descriptionAr: 'يظهر عند إضافتك كمتابع لمهمة من قبل شخص آخر.',
+                defaultEnabled: true,
+                userCanDisable: true,
+                hasDestination: false,
+                recipientAuthority: 'FollowTaskAction: the newly-added follower, only when added by someone else (never on a self-follow).',
             ),
         ];
     }

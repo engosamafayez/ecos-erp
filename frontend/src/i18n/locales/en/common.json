@@ -461,7 +461,15 @@
       "locked": "Required by policy",
       "lockedHint": "This priority is set by mandatory system or company policy and can't be changed here.",
       "typesTitle": "What can notify you",
-      "saveFailed": "Couldn't save your preferences. Please try again."
+      "saveFailed": "Couldn't save your preferences. Please try again.",
+      "openSettingsPage": "Notification Settings",
+      "summaryTypesEnabled": "{{enabled}} of {{total}} notification types on",
+      "testSound": "Test sound",
+      "testSoundFailed": "Couldn't play the test sound — check your browser's sound or autoplay permissions."
+    },
+    "settingsPage": {
+      "title": "Notification Settings",
+      "description": "Manage delivery preferences and choose which notifications you receive, grouped by area."
     }
   },
   "breadcrumb": "Breadcrumb",

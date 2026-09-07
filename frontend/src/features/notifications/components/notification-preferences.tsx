@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Lock, Settings, Volume2, X } from 'lucide-react';
+import { ArrowUpRight, Check, Lock, Settings, Volume2, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -14,6 +14,7 @@ import {
   useNotificationTypeCatalog,
   useUpdateNotificationPreferences,
 } from '../hooks/use-notifications';
+import { playAttentionSound } from '../lib/notification-sound';
 import { NOTIFICATION_PRIORITIES, type NotificationTypeCatalogEntry } from '../types/notification';
 
 /** TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §8 — only modules that actually exist in the catalog. */
@@ -35,7 +36,18 @@ const MODULE_ORDER = ['pricing', 'preparation', 'driver', 'collaboration'] as co
  * (MANDATORY POLICY > COMPANY DEFAULT > USER PREFERENCE, ADR-047 §14/§26.5) — shown
  * truthfully, including which priorities are locked, never re-derived client-side.
  */
-export function NotificationPreferencesButton() {
+export function NotificationPreferencesButton({
+  onOpenFullSettings,
+}: {
+  /**
+   * D1 — the compact panel's "Notification Settings" button calls this. Owned by the
+   * caller (the bell's NotificationCenter, which already has a real Router context)
+   * rather than imported here, so this component and its panel never need
+   * react-router-dom themselves — matching this file's existing, deliberately
+   * router-free test setup.
+   */
+  onOpenFullSettings?: () => void;
+} = {}) {
   const { t } = useTranslation('common');
 
   return (
@@ -46,26 +58,46 @@ export function NotificationPreferencesButton() {
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80">
-        <NotificationPreferencesPanel />
+        {/* D1 — the bell's popover is QUICK CONTROLS ONLY: popup/sound/volume, a
+            concise summary, and a link to the full page. The per-priority table and
+            the full per-type toggle list now live only on that full page. */}
+        <NotificationPreferencesPanel compact onOpenFullSettings={onOpenFullSettings} />
       </PopoverContent>
     </Popover>
   );
 }
 
 /**
- * Exported (TASK-ECOS-NOTIFICATIONS-USER-REVIEW-VISIBILITY-REMEDIATION-009) so the
- * dedicated /me/preferences page can render the exact same editable controls +
- * effective-summary table as the bell's popover — one preference surface, two entry
- * points, never two implementations.
+ * Exported (TASK-ECOS-NOTIFICATIONS-USER-REVIEW-VISIBILITY-REMEDIATION-009) so both the
+ * bell's popover and a routed page can render the same editable controls — one
+ * preference authority, never two implementations.
  *
- * `hideHeader` lets the full page supply its own page-level title without rendering
- * this same title text twice — the popover (default, unchanged) still shows it.
+ * `hideHeader` lets a full page supply its own page-level title without rendering this
+ * same title text twice.
+ *
+ * D1 (TASK-ECOS-COMMERCE-IAM-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-005) — `compact`
+ * is the bell popover's QUICK CONTROLS ONLY mode: popup/sound/volume + Test Sound stay
+ * (every surface needs them), but the per-priority effective table and the full
+ * per-type toggle list are dropped in favor of one concise summary line and a button to
+ * the full Notification Settings page. Default (`compact=false`, unchanged) keeps
+ * rendering everything — used by that full page, and by the legacy /me/preferences
+ * page, which this task deliberately leaves alone (still works, per D1's own
+ * instruction not to break it).
  */
-export function NotificationPreferencesPanel({ hideHeader = false }: { hideHeader?: boolean } = {}) {
+export function NotificationPreferencesPanel({
+  hideHeader = false,
+  compact = false,
+  onOpenFullSettings,
+}: {
+  hideHeader?: boolean;
+  compact?: boolean;
+  onOpenFullSettings?: () => void;
+} = {}) {
   const { t } = useTranslation('common');
   const preferences = useNotificationPreferences();
   const policy = useAttentionPolicy();
   const update = useUpdateNotificationPreferences();
+  const catalog = useNotificationTypeCatalog();
 
   const popupEnabled = preferences.data?.popup_enabled ?? true;
   const soundEnabled = preferences.data?.sound_enabled ?? true;
@@ -95,6 +127,27 @@ export function NotificationPreferencesPanel({ hideHeader = false }: { hideHeade
       },
       { onError: () => toast.error(t(($) => $.notifications.preferences.saveFailed)) },
     );
+  }
+
+  /**
+   * D4 — a pure local preview: calls the SAME playback function/asset the real
+   * attention layer uses (never a second sound path), at the currently-SELECTED volume
+   * (the live drag draft, so moving the slider and testing feels connected even before
+   * release commits it). Never touches the Notification DB, unread count, or a popup —
+   * this only reaches the Web Audio API. Deliberately NOT gated on `soundEnabled`: a
+   * manual "let me hear it" action is reasonably useful even with ambient sound
+   * currently off (the judgement call D4 asks to record). `volume` here is always > 0
+   * while the button is enabled (see `disabled` below), so a `false` return means a
+   * genuine autoplay/permission/unsupported-API failure — the one bounded, helpful
+   * message this shows, never a silent no-op or a thrown error. At `volume=0` the
+   * function itself correctly reports success (a deliberately silent setting is not a
+   * failure) — so no error shows just because the slider happens to be at 0.
+   */
+  function testSound() {
+    const played = playAttentionSound('normal', volumeDraft);
+    if (!played) {
+      toast.error(t(($) => $.notifications.preferences.testSoundFailed));
+    }
   }
 
   return (
@@ -146,8 +199,43 @@ export function NotificationPreferencesPanel({ hideHeader = false }: { hideHeade
           onKeyUp={(e) => save({ sound_volume: Number((e.target as HTMLInputElement).value) })}
           className="ms-auto h-1.5 w-24 shrink-0 accent-primary disabled:opacity-40"
         />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={testSound}
+          disabled={preferences.isLoading}
+          className="h-7 shrink-0 px-2 text-xs"
+        >
+          {t(($) => $.notifications.preferences.testSound)}
+        </Button>
       </div>
 
+      {compact ? (
+        <div className="border-t pt-3">
+          {/* D1 — concise current-state summary, not the full per-priority table:
+              the bell popover is quick controls only. */}
+          <p className="text-muted-foreground text-xs">
+            {catalog.data && catalog.data.length > 0
+              ? t(($) => $.notifications.preferences.summaryTypesEnabled, {
+                  enabled: catalog.data.filter((entry) => entry.enabled).length,
+                  total: catalog.data.length,
+                })
+              : t(($) => $.notifications.preferences.description)}
+          </p>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => onOpenFullSettings?.()}
+            className="mt-1.5 h-7 gap-1 px-0 text-xs font-medium text-primary hover:bg-transparent hover:text-primary/80"
+          >
+            {t(($) => $.notifications.preferences.openSettingsPage)}
+            <ArrowUpRight className="size-3.5 rtl:-scale-x-100" aria-hidden />
+          </Button>
+        </div>
+      ) : (
+        <>
       <div className="border-t pt-3">
         <p className="text-muted-foreground text-xs font-medium">
           {t(($) => $.notifications.preferences.effectiveTitle)}
@@ -199,6 +287,8 @@ export function NotificationPreferencesPanel({ hideHeader = false }: { hideHeade
       <NotificationTypeToggles onToggle={(key, enabled) => save({
         type_overrides: { ...preferences.data?.type_overrides, [key]: enabled },
       })} />
+        </>
+      )}
     </div>
   );
 }

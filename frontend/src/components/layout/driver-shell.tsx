@@ -134,14 +134,26 @@ export function DriverShell() {
     <div className="flex min-h-svh flex-col bg-background">
       {/* §7 — the shell's only fixed top-of-screen chrome, deliberately just the bell
           (not a full enterprise-style top bar). Driver pages still own their own
-          in-content header entirely. */}
-      <div className="fixed end-2 top-2 z-40">
+          in-content header entirely.
+          D5 (TASK-ECOS-COMMERCE-IAM-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-005) —
+          every driver page's own sticky header (e.g. driver-home-page.tsx) puts its
+          Refresh action flush at this exact same end/top corner, so the bell used to sit
+          directly on top of it. Fixed with real flex sizing, not a screen-width hack:
+          `size-9` + `p-1` gives this chip the SAME footprint `<main>`'s `pt-14` below
+          reserves, so at rest (the reported, common case) a page's own header starts
+          below the bell rather than under it; the opaque, bounded chip (bg + border +
+          shadow, not a bare transparent icon) also keeps the bell itself an
+          unambiguous, distinct tappable target even in a mid-scroll frame where a
+          page's own `sticky top-0` header can still momentarily reach this same band. */}
+      <div className="fixed end-3 top-3 z-40 flex items-center gap-2 rounded-full border bg-background/95 p-1 shadow-sm">
         <NotificationCenter />
       </div>
 
       {/* Driver page content owns its own header; the shell adds only the bottom nav.
-          `pb-16` clears the fixed bottom bar (h-16) so no page content hides beneath it. */}
-      <main className="flex-1 pb-16">
+          `pb-16` clears the fixed bottom bar (h-16) so no page content hides beneath it.
+          `pt-14` (D5) clears the fixed bell chip above so a page's own header/actions
+          never render underneath it. */}
+      <main className="flex-1 pb-16 pt-14">
         <Outlet />
       </main>
 

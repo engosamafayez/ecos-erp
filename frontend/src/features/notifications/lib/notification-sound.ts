@@ -37,14 +37,22 @@ const BASE_PEAK_GAIN = 0.15;
  * volume — it only scales this function's own synthesized signal, exactly as required.
  * `sound_enabled` is a separate, caller-side concern (whether to invoke this function at
  * all); `volume <= 0` here just means "play nothing", never a crash.
+ *
+ * TASK-ECOS-COMMERCE-IAM-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-005 D4 — returns
+ * whether a real attempt was made (`true`) or the Web Audio API was unavailable/blocked
+ * (`false`), so a deliberate "Test Sound" caller can surface ONE bounded, helpful message
+ * on real failure instead of a silent no-op. Every existing fire-and-forget call site
+ * (the actual attention layer) simply ignores this return value — nothing about their
+ * behavior changes. `volume <= 0` still returns `true`: that is a correctly-honoured
+ * silent setting, never a failure to report.
  */
-export function playAttentionSound(profile: SoundProfile, volume = 1): void {
+export function playAttentionSound(profile: SoundProfile, volume = 1): boolean {
   const clampedVolume = Math.min(1, Math.max(0, volume));
-  if (clampedVolume <= 0) return;
+  if (clampedVolume <= 0) return true;
 
   try {
     const Ctx = resolveAudioContextCtor();
-    if (!Ctx) return;
+    if (!Ctx) return false;
 
     const ctx = new Ctx();
     const spec = PROFILE_SPEC[profile];
@@ -69,8 +77,12 @@ export function playAttentionSound(profile: SoundProfile, volume = 1): void {
 
     const totalSeconds = spec.beeps * (spec.beepSeconds + spec.gapSeconds);
     setTimeout(() => void ctx.close(), (totalSeconds + 0.2) * 1000);
+
+    return true;
   } catch {
     // Autoplay restriction, unsupported API, or a context already closed — never let a
-    // best-effort sound failure interrupt the caller (ADR-047 §26.9).
+    // best-effort sound failure interrupt the caller (ADR-047 §26.9); report it via the
+    // return value instead so a deliberate caller (e.g. "Test Sound") can act on it.
+    return false;
   }
 }

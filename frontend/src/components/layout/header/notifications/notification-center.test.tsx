@@ -300,4 +300,93 @@ describe('NotificationCenter', () => {
     expect(mockMarkRead).toHaveBeenCalledWith('n1');
     expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining('c1'));
   });
+
+  // ── D6 (TASK-ECOS-COMMERCE-IAM-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-005) ────
+
+  it('D6: clicking anywhere on the row (not just the "View" text) marks read and navigates — the shared contract applies to the whole row', async () => {
+    mockList.mockResolvedValue(
+      page({
+        unread_count: 1,
+        data: [row('n1', { read_at: null, deep_link: { entity_type: 'customer', entity_id: 'c1', action_key: null, route: null } })],
+        meta: { page: 1, perPage: 25, total: 1, lastPage: 1 },
+      }),
+    );
+    mockMarkRead.mockResolvedValue(undefined);
+
+    renderCenter();
+    await openDrawer();
+    const message = await screen.findByText('Message n1');
+
+    // Clicks the message text itself — never the "View" link — proving the ROW is the
+    // click target, not just that one nested button.
+    await userEvent.click(message);
+
+    expect(mockMarkRead).toHaveBeenCalledWith('n1');
+    expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining('c1'));
+  });
+
+  it('D6: a notification with no target marks read and stays on this sheet — no navigate attempt', async () => {
+    mockList.mockResolvedValue(
+      page({
+        unread_count: 1,
+        // No deep_link at all — resolveNotificationTarget() returns null for this row.
+        data: [row('n1', { read_at: null })],
+        meta: { page: 1, perPage: 25, total: 1, lastPage: 1 },
+      }),
+    );
+    mockMarkRead.mockResolvedValue(undefined);
+
+    renderCenter();
+    await openDrawer();
+    const message = await screen.findByText('Message n1');
+
+    // No "View" link renders at all when there is no target.
+    expect(screen.queryByText('viewDetails')).not.toBeInTheDocument();
+
+    await userEvent.click(message);
+
+    expect(mockMarkRead).toHaveBeenCalledWith('n1');
+    expect(mockNavigate).not.toHaveBeenCalled();
+    // Still open — never navigated away, so the Sheet content is still present.
+    expect(screen.getByText('Message n1')).toBeInTheDocument();
+  });
+
+  it('D6: an unrecognised entity_type (unregistered/invalid target) marks read, never crashes, and does not navigate', async () => {
+    mockList.mockResolvedValue(
+      page({
+        unread_count: 1,
+        data: [row('n1', { read_at: null, deep_link: { entity_type: 'some_unmapped_type', entity_id: 'x', action_key: null, route: null } })],
+        meta: { page: 1, perPage: 25, total: 1, lastPage: 1 },
+      }),
+    );
+    mockMarkRead.mockResolvedValue(undefined);
+
+    renderCenter();
+    await openDrawer();
+    const message = await screen.findByText('Message n1');
+
+    await userEvent.click(message);
+
+    expect(mockMarkRead).toHaveBeenCalledWith('n1');
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it('D6: clicking an already-read row still navigates but does not re-issue a mark-read request', async () => {
+    mockList.mockResolvedValue(
+      page({
+        unread_count: 0,
+        data: [row('n1', { read_at: '2026-09-05T00:00:00Z', deep_link: { entity_type: 'customer', entity_id: 'c1', action_key: null, route: null } })],
+        meta: { page: 1, perPage: 25, total: 1, lastPage: 1 },
+      }),
+    );
+
+    renderCenter();
+    await openDrawer();
+    const message = await screen.findByText('Message n1');
+
+    await userEvent.click(message);
+
+    expect(mockMarkRead).not.toHaveBeenCalled();
+    expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining('c1'));
+  });
 });
