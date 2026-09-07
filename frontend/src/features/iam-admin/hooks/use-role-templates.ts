@@ -87,6 +87,18 @@ export function useArchiveRoleTemplate(key: string) {
   });
 }
 
+/**
+ * Unbound variant for the Templates LIST row menu (User-review remediation, Batch 02, item F)
+ * — one hook instance serves every row. Same `roleTemplatesService.archive` call as above.
+ */
+export function useArchiveRoleTemplateByKey() {
+  const invalidate = useInvalidateTemplates();
+  return useMutation({
+    mutationFn: (key: string) => roleTemplatesService.archive(key),
+    onSuccess: invalidate,
+  });
+}
+
 export function useDeleteRoleTemplate(key: string) {
   const invalidate = useInvalidateTemplates();
   return useMutation({

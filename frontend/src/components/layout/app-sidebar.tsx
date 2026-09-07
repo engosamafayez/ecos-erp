@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { visibleModuleItems, type AppModule } from '@/config/module-navigation';
-import { usePermission } from '@/features/authorization';
+import { useAuthorization, usePermission } from '@/features/authorization';
 import { usePriceReviewBadge } from '@/features/cost-management/hooks/use-pricing-reviews';
 import { useLanguage } from '@/providers/language-context';
 import { useNavLabel } from './use-nav-label';
@@ -40,6 +40,7 @@ export function AppSidebar({
   const { t } = useTranslation('common');
   const navLabel = useNavLabel();
   const { can } = usePermission();
+  const { context } = useAuthorization();
 
   /**
    * §17 — the sidebar renders only the entries this user's PERMISSIONS allow.
@@ -52,7 +53,7 @@ export function AppSidebar({
    *
    * UX only — every route and every endpoint stays independently gated.
    */
-  const items = activeModule ? visibleModuleItems(activeModule.items, can) : [];
+  const items = activeModule ? visibleModuleItems(activeModule.items, can, context.navigationOverrides) : [];
 
   // A module whose every entry is hidden renders no sidebar at all, exactly as a module
   // with no entries always has.

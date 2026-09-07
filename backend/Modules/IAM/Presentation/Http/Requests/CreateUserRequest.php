@@ -16,11 +16,15 @@ use Illuminate\Validation\Rules\Password;
  * one Create User submission can produce a COMPLETE, usable account instead of a draft that
  * needs three more round trips:
  *
- *   password        — the initial credential (§10). EXACTLY the rule
- *                     AdminResetPasswordRequest applies: `confirmed` plus
- *                     Password::defaults(), the one canonical strength baseline (D5). Not
- *                     weakened, not a second rule; omit the field and behaviour is
- *                     unchanged.
+ *   password        — an EXPLICIT initial-credential override (§10). Validated with
+ *                     exactly the rule AdminResetPasswordRequest applies: `confirmed` plus
+ *                     Password::defaults(), the one canonical strength baseline (D5). The
+ *                     standard Create User UI never sends this any more (User-review
+ *                     remediation, Batch 02, item B) — omitting it makes
+ *                     UserController::store() ask UserIdentityService::createDraft() to
+ *                     generate a secure one itself, returned once in the create response
+ *                     as `generated_password`. This field stays validated only for a
+ *                     caller that legitimately needs to set its own.
  *   role_templates  — the roles to assign (§8). Assignment still runs through
  *                     UserRoleAssignmentService, so it is template-mediated, self-
  *                     authorizing and audited — never frontend-only state.

@@ -1,15 +1,21 @@
 import { useMemo, useState } from 'react';
-import { Copy, Plus } from 'lucide-react';
+import { Archive, Copy, Pencil, RotateCcw, Trash2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { EmptyState, EntityTable, ErrorState, PageHeader } from '@/components/crud';
+import { ConfirmDialog, EmptyState, EntityTable, ErrorState, PageHeader } from '@/components/crud';
 import { ActionMenu } from '@/components/crud/action-menu';
 import type { ActionMenuItem, ColumnDef } from '@/components/crud/types';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Can } from '@/features/authorization';
-import { useRolesQuery } from '@/features/iam-admin/hooks/use-roles';
+import {
+  useArchiveRoleByIdMutation,
+  useDeleteRoleMutation,
+  useRestoreRoleByIdMutation,
+  useRolesQuery,
+} from '@/features/iam-admin/hooks/use-roles';
 import type { RoleSummary } from '@/features/iam-admin/types/role';
 
 import { PermissionCatalogBrowser } from './permission-catalog-browser';
@@ -41,6 +47,9 @@ export function RolesPermissionsTab({
 }: {
   onOpenTemplate: (templateKey: string) => void;
 }) {
+  // Acknowledges the intentionally-unused prop the destructuring above renames (see this
+  // function's own docblock) — a no-op reference, not a behavior change.
+  void _onOpenTemplate;
   const { t } = useTranslation('iam-admin');
   const { t: tCommon } = useTranslation('common');
   const [includeArchived, setIncludeArchived] = useState(false);
@@ -48,6 +57,15 @@ export function RolesPermissionsTab({
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
   const [cloneTarget, setCloneTarget] = useState<{ id: string; name: string } | null>(null);
+  // User-review remediation (Batch 02, item F): Archive/Restore/Delete were only reachable
+  // from inside the detail drawer's Overview tab — an administrator scanning the row menu
+  // saw just "View"/"Clone" and had no reason to expect more existed. These reuse the exact
+  // same RoleAuthoringService-backed endpoints the drawer already calls.
+  const [archiveTarget, setArchiveTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const archiveRole = useArchiveRoleByIdMutation();
+  const restoreRole = useRestoreRoleByIdMutation();
+  const deleteRole = useDeleteRoleMutation();
 
   const columns = useMemo<ColumnDef<RoleSummary>[]>(
     () => [
@@ -134,7 +152,12 @@ export function RolesPermissionsTab({
             emptyState={<EmptyState title={t(($) => $.roles.empty)} />}
             rowActions={(row) => {
               const actions: ActionMenuItem[] = [
-                { key: 'view', label: tCommon(($) => $.actions.view), onSelect: () => setSelectedRoleId(row.id) },
+                {
+                  key: 'view',
+                  label: row.editable ? tCommon(($) => $.common.edit) : tCommon(($) => $.actions.view),
+                  icon: Pencil,
+                  onSelect: () => setSelectedRoleId(row.id),
+                },
                 {
                   key: 'clone',
                   label: t(($) => $.roles.cloneAction),
@@ -142,6 +165,32 @@ export function RolesPermissionsTab({
                   onSelect: () => setCloneTarget({ id: row.id, name: row.name }),
                 },
               ];
+              if (row.editable && !row.is_system) {
+                if (row.archived) {
+                  actions.push({
+                    key: 'restore',
+                    label: t(($) => $.roles.detail.restoreTrigger),
+                    icon: RotateCcw,
+                    onSelect: () => restoreRole.mutate(row.id),
+                  });
+                } else {
+                  actions.push({
+                    key: 'archive',
+                    label: t(($) => $.roles.detail.archiveTrigger),
+                    icon: Archive,
+                    onSelect: () => setArchiveTarget({ id: row.id, name: row.name }),
+                  });
+                }
+              }
+              if (row.editable && !row.is_system && (row.user_count ?? 0) === 0) {
+                actions.push({
+                  key: 'delete',
+                  label: t(($) => $.roles.detail.deleteTrigger),
+                  icon: Trash2,
+                  variant: 'destructive',
+                  onSelect: () => setDeleteTarget({ id: row.id, name: row.name }),
+                });
+              }
               return <ActionMenu items={actions} />;
             }}
           />
@@ -151,6 +200,29 @@ export function RolesPermissionsTab({
           <PermissionCatalogBrowser />
         </TabsContent>
       </Tabs>
+
+      <ConfirmDialog
+        open={archiveTarget !== null}
+        onOpenChange={(open) => !open && setArchiveTarget(null)}
+        title={t(($) => $.roles.detail.archiveConfirmTitle)}
+        description={archiveTarget ? t(($) => $.roles.detail.archiveConfirmDescription, { count: 0 }) : undefined}
+        loading={archiveRole.isPending}
+        onConfirm={() =>
+          archiveTarget &&
+          archiveRole.mutate({ id: archiveTarget.id }, { onSuccess: () => setArchiveTarget(null) })
+        }
+      />
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title={t(($) => $.roles.detail.deleteConfirmTitle)}
+        description={t(($) => $.roles.detail.deleteConfirmDescription)}
+        variant="destructive"
+        loading={deleteRole.isPending}
+        onConfirm={() =>
+          deleteTarget && deleteRole.mutate(deleteTarget.id, { onSuccess: () => setDeleteTarget(null) })
+        }
+      />
 
       <RoleCreateDrawer open={createOpen} onOpenChange={setCreateOpen} />
       <RoleDetailDrawer

@@ -1,3 +1,4 @@
+/// <reference types="@testing-library/jest-dom/vitest" />
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -124,9 +125,14 @@ describe('UserCreateDrawer', () => {
     expect(screen.getAllByRole('textbox')).toHaveLength(5);
   });
 
-  it('omits the initial password entirely when left blank — the historical unusable-random-password path', async () => {
+  // ── User-review remediation (Batch 02, item B): no manual password entry exists in this
+  // form at all any more — the server generates one and returns it once. These two tests
+  // replace the pre-remediation pair that typed into password/confirm inputs, which no
+  // longer exist (there is no `input[type="password"]` anywhere in this drawer).
+
+  it('never sends a password field — the server generates one automatically', async () => {
     const user = userEvent.setup();
-    mockCreate.mockResolvedValue({ id: 1 });
+    mockCreate.mockResolvedValue({ id: 1, generated_password: undefined });
     renderDrawer();
 
     const [nameInput, emailInput] = screen.getAllByRole('textbox');
@@ -138,39 +144,30 @@ describe('UserCreateDrawer', () => {
     const payload = mockCreate.mock.calls[0][0];
     expect(payload).not.toHaveProperty('password');
     expect(payload).not.toHaveProperty('password_confirmation');
+    expect(payload).not.toHaveProperty('require_password_change');
     expect(payload.activate).toBe(false);
     expect(payload.role_templates).toBeUndefined();
     expect(payload.organizations).toBeUndefined();
   });
 
-  it('includes the initial password and activate flag when the admin sets them', async () => {
+  it('shows the server-generated password exactly once, with a working Copy action, after a successful create', async () => {
     const user = userEvent.setup();
-    mockCreate.mockResolvedValue({ id: 1 });
-    const { container } = renderDrawer();
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText } });
+    mockCreate.mockResolvedValue({ id: 1, generated_password: 'Xk9#mQ2pLv7&Rz' });
+    renderDrawer();
 
     const [nameInput, emailInput] = screen.getAllByRole('textbox');
     await user.type(nameInput, 'Nour Ibrahim');
     await user.type(emailInput, 'nour@ecos.test');
-
-    // Password inputs carry type="password" and no accessible name of their own (matching
-    // the sibling identity fields' own lack of one in this codebase's FormField — see
-    // user-security-panel.test.tsx for the same positional convention on a password
-    // field); targeted by their DOM position via the render's own container instead.
-    const passwordInputs = container.querySelectorAll<HTMLInputElement>('input[type="password"]');
-    expect(passwordInputs).toHaveLength(2);
-    await user.type(passwordInputs[0], 'Str0ng!Passw0rd');
-    await user.type(passwordInputs[1], 'Str0ng!Passw0rd');
-
-    // The checkbox is nested INSIDE its own <label>...</label> (not FormField's
-    // htmlFor-to-wrapper-div pattern), so clicking the label text natively toggles it.
-    await user.click(screen.getByText('users.lifecycle.activateNow'));
     await user.click(screen.getByRole('button', { name: 'users.create.submit' }));
 
-    await waitFor(() => expect(mockCreate).toHaveBeenCalled());
-    const payload = mockCreate.mock.calls[0][0];
-    expect(payload.password).toBe('Str0ng!Passw0rd');
-    expect(payload.password_confirmation).toBe('Str0ng!Passw0rd');
-    expect(payload.activate).toBe(true);
+    expect(await screen.findByText('Xk9#mQ2pLv7&Rz')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'users.password.copy' }));
+    expect(writeText).toHaveBeenCalledWith('Xk9#mQ2pLv7&Rz');
+
+    await user.click(screen.getByRole('button', { name: 'users.password.generatedDone' }));
+    await waitFor(() => expect(screen.queryByText('Xk9#mQ2pLv7&Rz')).not.toBeInTheDocument());
   });
 
   // ── 33: 422-field-level ──────────────────────────────────────────────────────

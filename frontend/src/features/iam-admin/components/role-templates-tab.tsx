@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react';
-import { Copy, Plus } from 'lucide-react';
+import { Archive, Copy, Pencil, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { EmptyState, EntityTable, ErrorState, PageHeader } from '@/components/crud';
+import { ConfirmDialog, EmptyState, EntityTable, ErrorState, PageHeader } from '@/components/crud';
 import { ActionMenu } from '@/components/crud/action-menu';
 import type { ActionMenuItem, ColumnDef } from '@/components/crud/types';
 import { Badge } from '@/components/ui/badge';
 import { Can } from '@/features/authorization';
-import { useRoleTemplatesQuery } from '@/features/iam-admin/hooks/use-role-templates';
+import { useArchiveRoleTemplateByKey, useRoleTemplatesQuery } from '@/features/iam-admin/hooks/use-role-templates';
 import type { RoleTemplateSummary } from '@/features/iam-admin/types/role-template';
 
 import { TemplateCloneDialog } from './template-clone-dialog';
@@ -29,6 +29,12 @@ export function RoleTemplatesTab({
   const [createOpen, setCreateOpen] = useState(false);
   const [selectedKey, setSelectedKey] = useState<string | null>(focusKey ?? null);
   const [cloneTarget, setCloneTarget] = useState<RoleTemplateSummary | null>(null);
+  // User-review remediation (Batch 02, item F): Archive was only reachable from inside the
+  // detail drawer. Delete stays drawer-only — it needs the detailed `assignment_count` this
+  // list's summary rows don't carry, and the task prefers Archive over Delete wherever a
+  // reference might exist.
+  const [archiveTarget, setArchiveTarget] = useState<RoleTemplateSummary | null>(null);
+  const archiveTemplate = useArchiveRoleTemplateByKey();
 
   // focusKey is a prop, not just an initial value — a later "managed by template" click while
   // this tab is already mounted must re-open the drawer too, not only on first mount.
@@ -112,16 +118,40 @@ export function RoleTemplatesTab({
         emptyState={<EmptyState title={t(($) => $.roleTemplates.empty)} />}
         rowActions={(row) => {
           const actions: ActionMenuItem[] = [
-            { key: 'view', label: tCommon(($) => $.actions.view), onSelect: () => setSelectedKey(row.key) },
+            {
+              key: 'view',
+              label: row.is_system ? tCommon(($) => $.actions.view) : tCommon(($) => $.common.edit),
+              icon: Pencil,
+              onSelect: () => setSelectedKey(row.key),
+            },
+            {
+              key: 'clone',
+              label: t(($) => $.roleTemplates.cloneAction),
+              icon: Copy,
+              onSelect: () => setCloneTarget(row),
+            },
           ];
-          actions.push({
-            key: 'clone',
-            label: t(($) => $.roleTemplates.cloneAction),
-            icon: Copy,
-            onSelect: () => setCloneTarget(row),
-          });
+          if (!row.is_system) {
+            actions.push({
+              key: 'archive',
+              label: t(($) => $.roleTemplates.detail.archiveTrigger),
+              icon: Archive,
+              onSelect: () => setArchiveTarget(row),
+            });
+          }
           return <ActionMenu items={actions} />;
         }}
+      />
+
+      <ConfirmDialog
+        open={archiveTarget !== null}
+        onOpenChange={(open) => !open && setArchiveTarget(null)}
+        title={t(($) => $.roleTemplates.detail.archiveConfirmTitle)}
+        description={t(($) => $.roleTemplates.detail.archiveConfirmDescription)}
+        loading={archiveTemplate.isPending}
+        onConfirm={() =>
+          archiveTarget && archiveTemplate.mutate(archiveTarget.key, { onSuccess: () => setArchiveTarget(null) })
+        }
       />
 
       <TemplateCreateDrawer open={createOpen} onOpenChange={setCreateOpen} />

@@ -12,6 +12,31 @@ import { usePermissionCatalogQuery } from '@/features/iam-admin/hooks/use-roles'
 import type { PermissionEntry, PermissionGroupEntry, PermissionSensitivity } from '@/features/iam-admin/types/role';
 
 /**
+ * User-review remediation (Batch 02, item H): a module group was a flat list of every
+ * action on every resource in it — under "Sales & Orders" that reads as "View Orders",
+ * "Create Orders", "Update Orders", "Delete Orders", "View Sales customers" … repeating the
+ * word "Orders" four times in a row before the next resource even starts. Sub-grouping by
+ * `permission.resource` (already the exact business capability — "Orders", "Sales
+ * customers" …) makes the module → capability → action structure explicit instead of
+ * implicit, without touching a single backend permission key.
+ */
+function groupByResource(permissions: PermissionEntry[]): { resource: string; label_ar: string; label_en: string; permissions: PermissionEntry[] }[] {
+  const order: string[] = [];
+  const byResource = new Map<string, PermissionEntry[]>();
+  for (const permission of permissions) {
+    if (!byResource.has(permission.resource)) {
+      order.push(permission.resource);
+      byResource.set(permission.resource, []);
+    }
+    byResource.get(permission.resource)!.push(permission);
+  }
+  return order.map((resource) => {
+    const items = byResource.get(resource)!;
+    return { resource, label_ar: items[0].resource_label_ar, label_en: items[0].resource_label_en, permissions: items };
+  });
+}
+
+/**
  * The editable, grouped Permission Matrix
  * (TASK-ECOS-IAM-FINAL-REMEDIATION-DIRECT-DEV-001, §14 + §16).
  *
@@ -199,15 +224,27 @@ export function PermissionMatrix({
                   </div>
 
                   {!isCollapsed ? (
-                    <div className="grid gap-1 p-2 sm:grid-cols-2">
-                      {group.permissions.map((permission) => (
-                        <PermissionRow
-                          key={permission.name}
-                          permission={permission}
-                          checked={selected.has(permission.name)}
-                          readOnly={readOnly}
-                          onToggle={() => toggle(permission.name)}
-                        />
+                    <div className="flex flex-col gap-2 p-2">
+                      {groupByResource(group.permissions).map((res) => (
+                        <div key={res.resource} className="flex flex-col gap-1">
+                          {res.label_ar !== group.label_ar ? (
+                            <div className="text-muted-foreground flex items-center gap-1.5 px-1 text-xs font-medium">
+                              <span>{res.label_ar}</span>
+                              <span className="text-[10px] font-normal">({res.label_en})</span>
+                            </div>
+                          ) : null}
+                          <div className="grid gap-1 sm:grid-cols-2">
+                            {res.permissions.map((permission) => (
+                              <PermissionRow
+                                key={permission.name}
+                                permission={permission}
+                                checked={selected.has(permission.name)}
+                                readOnly={readOnly}
+                                onToggle={() => toggle(permission.name)}
+                              />
+                            ))}
+                          </div>
+                        </div>
                       ))}
                     </div>
                   ) : null}
@@ -232,7 +269,12 @@ function PermissionRow({
   readOnly: boolean;
   onToggle: () => void;
 }) {
-  const sensitivityStyle = sensitivityBadge(permission.sensitivity);
+  const { t } = useTranslation('iam-admin');
+  const sensitivityStyle = sensitivityBadge(
+    permission.sensitivity,
+    t(($) => $.permissions.criticalBadge),
+    t(($) => $.permissions.elevatedBadge),
+  );
 
   return (
     <label
@@ -265,17 +307,22 @@ function PermissionRow({
 
 function sensitivityBadge(
   level: PermissionSensitivity,
+  criticalLabel: string,
+  elevatedLabel: string,
 ): { label: string; className: string; icon: React.ReactNode } | null {
   if (level === 'critical') {
     return {
-      label: 'حرجة',
+      // Caller resolves these through the SAME i18n keys permission-catalog-browser.tsx
+      // already uses for this exact concept — this row-level badge was hardcoding its own
+      // Arabic text instead of them.
+      label: criticalLabel,
       className: 'border-red-400 text-red-600 dark:text-red-400',
       icon: <ShieldAlert className="size-3" />,
     };
   }
   if (level === 'elevated') {
     return {
-      label: 'حساسة',
+      label: elevatedLabel,
       className: 'border-amber-400 text-amber-600 dark:text-amber-400',
       icon: <ShieldQuestion className="size-3" />,
     };

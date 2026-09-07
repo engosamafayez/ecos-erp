@@ -46,6 +46,10 @@ export type AuthorizationContextDTO = {
   scopes?: Record<string, string>;
   policies?: string[];
   navigation?: string[];
+  /** Nav item key => 'visible' | 'hidden' (User-review remediation, Batch 02, item I). UX
+   *  policy only — see AuthorizationContextBuilder::mergeNavigationOverrides() on the
+   *  backend for the merge rule across a user's held roles. */
+  navigation_overrides?: Record<string, 'visible' | 'hidden'>;
   dashboard?: { profile?: string; hidden?: string[]; collapsed?: string[]; widgetOrder?: string[] };
   landing_page?: string | null;
   preferences?: Record<string, unknown>;
@@ -62,6 +66,7 @@ export type AuthorizationContext = {
   scopes: Record<string, DataScope>;
   policies: string[];
   navigation: string[];
+  navigationOverrides: Record<string, 'visible' | 'hidden'>;
   dashboard: { profile?: string; hidden: string[]; collapsed: string[]; widgetOrder: string[] };
   landingPage: string | null;
   preferences: Record<string, unknown>;
@@ -99,6 +104,7 @@ export const EMPTY_CONTEXT: AuthorizationContext = {
   scopes: {},
   policies: [],
   navigation: [],
+  navigationOverrides: {},
   dashboard: { hidden: [], collapsed: [], widgetOrder: [] },
   landingPage: null,
   preferences: {},
@@ -120,6 +126,7 @@ export function normalizeContext(dto: AuthorizationContextDTO | undefined | null
     scopes: (dto.scopes ?? {}) as Record<string, DataScope>,
     policies: dto.policies ?? [],
     navigation: dto.navigation ?? [],
+    navigationOverrides: dto.navigation_overrides ?? {},
     dashboard: {
       profile: dash.profile,
       hidden: dash.hidden ?? [],

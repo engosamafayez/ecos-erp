@@ -75,6 +75,9 @@ export type EmployeeLookupEntry = {
   linked_user_id: number | null;
 };
 
+/** Compact per-row role chip for the Users list (User-review remediation, item G). */
+export type UserRoleChip = Pick<UserTemplateAssignment, 'key' | 'name' | 'name_ar' | 'is_primary'>;
+
 export type UserSummary = {
   id: number;
   name: string;
@@ -89,6 +92,7 @@ export type UserSummary = {
   last_activity_at: string | null;
   trashed: boolean;
   lifecycle: UserLifecycleCapabilities;
+  roles: UserRoleChip[];
 };
 
 export type UserDetail = UserSummary & {
@@ -102,6 +106,12 @@ export type UserDetail = UserSummary & {
   employee: EmployeeLookupEntry | null;
   created_at: string | null;
   updated_at: string | null;
+  /**
+   * Present ONLY in the direct response to a successful create call (User-review
+   * remediation, Batch 02, item B) — the plaintext of a server-generated initial password,
+   * shown to the creator exactly once. Absent on every other read of this user, always.
+   */
+  generated_password?: string;
 };
 
 /** D2/D3: no company_id field — ownership is always server-derived. */
@@ -113,7 +123,12 @@ export type CreateUserPayload = {
   employee_number?: string;
   phone?: string;
   avatar_path?: string;
-  /** §10 — the initial credential. Omit to keep the old unusable-random-password behaviour. */
+  /**
+   * Explicit initial credential override — omitted by the standard Create User UI, which
+   * relies on the server auto-generating one instead (User-review remediation, Batch 02,
+   * item B) and returning it once via `CreateUserResult.generated_password`. Kept optional
+   * here only for a caller that legitimately needs to set its own.
+   */
   password?: string;
   password_confirmation?: string;
   require_password_change?: boolean;

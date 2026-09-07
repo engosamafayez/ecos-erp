@@ -1,3 +1,4 @@
+/// <reference types="@testing-library/jest-dom/vitest" />
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -113,6 +114,10 @@ const ACTIVE_USER: UserSummary = {
   last_activity_at: null,
   trashed: false,
   lifecycle: lifecycleFor('active'),
+  // User-review remediation (Batch 02, item G): `roles` is a new REQUIRED field the Users
+  // list now renders directly (a Roles column) — a fixture missing it would crash
+  // `row.roles.map(...)` at render, not just assert the wrong thing.
+  roles: [],
 };
 
 const ARCHIVED_USER: UserSummary = {
@@ -212,6 +217,23 @@ describe('UsersTab', () => {
     expect(await screen.findByText('users.lifecycle.restore')).toBeInTheDocument();
     expect(screen.queryByText('users.lifecycle.archive')).not.toBeInTheDocument();
     expect(screen.queryByText('users.lifecycle.deactivate')).not.toBeInTheDocument();
+  });
+
+  // ── User-review remediation (Batch 02, item G): Roles column ────────────────
+
+  it('shows each user\'s assigned role names as chips, and a "none" placeholder when unassigned', async () => {
+    mockList.mockResolvedValue(
+      listResult([
+        // eslint-disable-next-line ecos-i18n/no-arabic-literals -- mock API fixture value (role business name), never rendered through i18n
+        { ...ACTIVE_USER, roles: [{ key: 'cashier', name: 'Cashier', name_ar: 'أمين الصندوق', is_primary: true }] },
+        { ...ARCHIVED_USER, roles: [] },
+      ]),
+    );
+    renderTab();
+
+    // eslint-disable-next-line ecos-i18n/no-arabic-literals -- asserting on the mock fixture value above, not a hardcoded UI string
+    expect(await screen.findByText('أمين الصندوق')).toBeInTheDocument();
+    expect(screen.getByText('users.roles.none')).toBeInTheDocument();
   });
 
   // ── 30: 403-handled ──────────────────────────────────────────────────────────

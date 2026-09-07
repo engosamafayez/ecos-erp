@@ -2,7 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 
-import { ConfirmDialog, EntityDrawer, ErrorState, LoadingState } from '@/components/crud';
+import { EmptyState, ConfirmDialog, EntityDrawer, ErrorState, LoadingState } from '@/components/crud';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,6 +22,8 @@ import {
 import type { RoleDetail, UpdateRolePayload } from '@/features/iam-admin/types/role';
 
 import { PermissionMatrix } from './permission-matrix';
+import { RoleNavigationSettings } from './role-navigation-settings';
+import { UserStatusBadge } from './user-status-badge';
 
 /**
  * Role detail / editor (TASK-ECOS-IAM-FINAL-REMEDIATION-DIRECT-DEV-001, §11 + §14).
@@ -170,6 +172,13 @@ function RoleDetailContent({
         <TabsList>
           <TabsTrigger value="overview">{t(($) => $.roles.detail.tabs.overview)}</TabsTrigger>
           <TabsTrigger value="permissions">{t(($) => $.roles.detail.tabs.permissions)}</TabsTrigger>
+          <TabsTrigger value="users">
+            {t(($) => $.roles.detail.tabs.users)}
+            {role.user_count !== null ? ` (${role.user_count})` : ''}
+          </TabsTrigger>
+          {!role.is_system ? (
+            <TabsTrigger value="navigation">{t(($) => $.roles.detail.tabs.navigation)}</TabsTrigger>
+          ) : null}
         </TabsList>
 
         <TabsContent value="overview" className="flex flex-col gap-4 pt-4">
@@ -269,6 +278,16 @@ function RoleDetailContent({
             </Can>
           ) : null}
         </TabsContent>
+
+        <TabsContent value="users" className="pt-4">
+          <RoleUsersTab users={role.assigned_users} />
+        </TabsContent>
+
+        {!role.is_system ? (
+          <TabsContent value="navigation" className="pt-4">
+            <RoleNavigationSettings role={role} />
+          </TabsContent>
+        ) : null}
       </Tabs>
 
       <ConfirmDialog
@@ -304,6 +323,34 @@ function RoleDetailContent({
         loading={deleteRole.isPending}
         onConfirm={() => deleteRole.mutate(role.id, { onSuccess: onDeleted })}
       />
+    </div>
+  );
+}
+
+/**
+ * User-review remediation (Batch 02, item G): "For every Role: a visible list/tab/drawer of
+ * the Users assigned to that Role." Reuses `role.assigned_users` — already fetched with the
+ * role detail via the canonical `$role->users()` relation (RoleController::show(), capped at
+ * 200) — rather than a second request or a client-side inference.
+ */
+function RoleUsersTab({ users }: { users: RoleDetail['assigned_users'] }) {
+  const { t } = useTranslation('iam-admin');
+
+  if (users.length === 0) {
+    return <EmptyState title={t(($) => $.roles.detail.usersTab.empty)} />;
+  }
+
+  return (
+    <div className="flex max-h-[420px] flex-col gap-2 overflow-y-auto">
+      {users.map((user) => (
+        <div key={user.id} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2">
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate text-sm font-medium">{user.name}</span>
+            <span className="text-muted-foreground truncate text-xs">{user.username ?? user.email}</span>
+          </div>
+          <UserStatusBadge status={user.status} label={user.status_label} />
+        </div>
+      ))}
     </div>
   );
 }

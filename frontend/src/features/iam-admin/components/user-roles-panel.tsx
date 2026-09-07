@@ -6,13 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { EcosCombobox } from '@/components/ui/ecos-combobox';
 import { Can } from '@/features/authorization';
 import { useAssignTemplate, useRevokeTemplate } from '@/features/iam-admin/hooks/use-users';
 import { useRoleTemplatesQuery } from '@/features/iam-admin/hooks/use-role-templates';
@@ -117,19 +111,21 @@ export function UserRolesPanel({ user }: { user: UserDetail }) {
 
       <Can permission="iam.users.assign-role">
         <div className="flex items-center gap-2 border-t pt-4">
-          <Select value={selectedKey} onValueChange={setSelectedKey}>
-            <SelectTrigger className="flex-1">
-              <SelectValue placeholder={t(($) => $.users.roles.selectPlaceholder)} />
-            </SelectTrigger>
-            <SelectContent>
-              {assignable.map((template) => (
-                <SelectItem key={template.key} value={template.key}>
-                  {template.name_ar !== template.name ? `${template.name_ar} (${template.name})` : template.name}
-                  {template.is_system ? ` — ${t(($) => $.roleTemplates.systemBadge)}` : ''}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <EcosCombobox
+            className="flex-1"
+            value={selectedKey || null}
+            onChange={setSelectedKey}
+            loading={templatesQuery.isLoading}
+            placeholder={t(($) => $.users.roles.selectPlaceholder)}
+            searchPlaceholder={t(($) => $.users.roles.searchPlaceholder)}
+            emptyText={t(($) => $.users.roles.noneAvailable)}
+            options={assignable.map((template) => ({
+              value: template.key,
+              label: template.name_ar !== template.name
+                ? `${template.name_ar} (${template.name})${template.is_system ? ` — ${t(($) => $.roleTemplates.systemBadge)}` : ''}`
+                : `${template.name}${template.is_system ? ` — ${t(($) => $.roleTemplates.systemBadge)}` : ''}`,
+            }))}
+          />
           <Button type="button" onClick={handleAssign} disabled={!selectedKey || assignTemplate.isPending}>
             {t(($) => $.users.roles.assign)}
           </Button>

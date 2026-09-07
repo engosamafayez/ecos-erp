@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router-dom';
 
 import { cn } from '@/lib/utils';
-import { useNavigation, usePermission } from '@/features/authorization';
+import { useAuthorization, useNavigation, usePermission } from '@/features/authorization';
 import { usePriceReviewBadge } from '@/features/cost-management/hooks/use-pricing-reviews';
 import {
   moduleNavLinks,
@@ -86,16 +86,23 @@ export function MobileModulesLauncher({
   // Drawer shows "where am I" already unfolded (§9) — collapsed otherwise.
   const [expandedId, setExpandedId] = useState<ModuleId | null>(activeModuleId);
 
+  // Clearing the query on close means reopening search always starts fresh rather than
+  // showing stale results from a previous search. Adjusted during render (React's
+  // documented pattern for resetting state on a prop change, already used elsewhere in
+  // this codebase — e.g. role-detail-drawer.tsx) rather than in the effect below, which
+  // stays reserved for the one genuine imperative DOM action (focus).
+  const [prevSearchOpen, setPrevSearchOpen] = useState(searchOpen);
+  if (searchOpen !== prevSearchOpen) {
+    setPrevSearchOpen(searchOpen);
+    if (!searchOpen) setQuery('');
+  }
+
   // Focus follows an explicit tap on the parent's Search icon (the `true`
   // transition of `searchOpen`), never the Drawer's own mount/open — that is
-  // the entire fix for the reported autofocus/keyboard defect. Clearing the
-  // query on close means reopening search always starts fresh rather than
-  // showing stale results from a previous search.
+  // the entire fix for the reported autofocus/keyboard defect.
   useEffect(() => {
     if (searchOpen) {
       searchInputRef.current?.focus();
-    } else {
-      setQuery('');
     }
   }, [searchOpen]);
 
@@ -103,6 +110,8 @@ export function MobileModulesLauncher({
   // into every moduleNavLinks() call below so the accordion, page search and Recent list
   // cannot offer a page this role is not allowed to see.
   const { can } = usePermission();
+  const { context } = useAuthorization();
+  const navOverrides = context.navigationOverrides;
 
   const trimmed = query.trim().toLowerCase();
   const searching = searchOpen && trimmed.length > 0;
@@ -127,14 +136,14 @@ export function MobileModulesLauncher({
 
     const pageHits: PageHit[] = [];
     for (const mod of modules) {
-      for (const link of moduleNavLinks(mod.items, can)) {
+      for (const link of moduleNavLinks(mod.items, can, navOverrides)) {
         if (navLabel.item(link.key).toLowerCase().includes(trimmed)) {
           pageHits.push({ module: mod, path: link.path, key: link.key, icon: link.icon });
         }
       }
     }
     return { moduleHits, pageHits };
-  }, [searching, trimmed, modules, navLabel, can]);
+  }, [searching, trimmed, modules, navLabel, can, navOverrides]);
 
   const resolvedRecent = useMemo(() => {
     return recent
@@ -142,7 +151,7 @@ export function MobileModulesLauncher({
         const mod = modules.find((m) => m.id === entry.moduleId);
         if (!mod) return null;
         if (entry.itemKey) {
-          const link = moduleNavLinks(mod.items, can).find((l) => l.key === entry.itemKey);
+          const link = moduleNavLinks(mod.items, can, navOverrides).find((l) => l.key === entry.itemKey);
           if (!link) return null;
           return { path: entry.path, icon: link.icon, primary: navLabel.item(link.key), secondary: navLabel.group(mod.id) };
         }
@@ -155,11 +164,11 @@ export function MobileModulesLauncher({
       // (most-recently-visited-first) is preserved exactly, just truncated
       // for display.
       .slice(0, RECENT_DISPLAY_LIMIT);
-  }, [recent, modules, navLabel, can]);
+  }, [recent, modules, navLabel, can, navOverrides]);
 
   // Toggling a row in the grouped list itself — collapses if already open.
   function toggleModule(mod: AppModule) {
-    if (moduleNavLinks(mod.items, can).length < 2) {
+    if (moduleNavLinks(mod.items, can, navOverrides).length < 2) {
       recordVisit({ moduleId: mod.id, path: mod.defaultPath });
       onNavigate(mod.defaultPath);
     } else {
@@ -171,7 +180,7 @@ export function MobileModulesLauncher({
   // module in the grouped list (never a toggle: this is a fresh selection,
   // and the grouped list isn't even visible yet for a toggle to act on).
   function selectModuleFromSearch(mod: AppModule) {
-    if (moduleNavLinks(mod.items, can).length < 2) {
+    if (moduleNavLinks(mod.items, can, navOverrides).length < 2) {
       recordVisit({ moduleId: mod.id, path: mod.defaultPath });
       onNavigate(mod.defaultPath);
     } else {
@@ -313,10 +322,11 @@ function ModuleRow({ module, isActiveModule, isExpanded, onToggle, onNavigateChi
   const navLabel = useNavLabel();
   const { recordVisit } = useRecentNav();
   const { can } = usePermission();
+  const { context } = useAuthorization();
   const Icon = module.icon;
-  const isLeaf = moduleNavLinks(module.items, can).length < 2;
+  const isLeaf = moduleNavLinks(module.items, can, context.navigationOverrides).length < 2;
   // §17 — section headers drop with their last visible child, same rule as the sidebar.
-  const items = visibleModuleItems(module.items, can);
+  const items = visibleModuleItems(module.items, can, context.navigationOverrides);
 
   return (
     <div>
