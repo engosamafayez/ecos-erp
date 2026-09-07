@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\IAM\Application\Services;
 
+use App\Core\Exceptions\ValidationException;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Modules\IAM\Domain\Models\UserOrganizationAssignment;
@@ -161,10 +162,18 @@ class UserOrganizationAssignmentService
         $this->audit->log('organization_unassigned', $user, ['type' => $orgType, 'id' => $orgId], []);
     }
 
+    /**
+     * Dev defect fix (remediation-005): both checks below now throw ValidationException
+     * (422, field-keyed under `organizations`) instead of a bare \InvalidArgumentException,
+     * which had no render() mapping in bootstrap/app.php and surfaced to the admin as a raw
+     * "Server Error" 500 instead of a clean, actionable message.
+     */
     private function assertValidType(string $orgType): void
     {
         if (! in_array($orgType, self::TYPES, true)) {
-            throw new \InvalidArgumentException("Unknown organization unit type '{$orgType}'.");
+            $message = "Unknown organization unit type '{$orgType}'.";
+
+            throw new ValidationException(['organizations' => [$message]], $message);
         }
     }
 
@@ -176,9 +185,9 @@ class UserOrganizationAssignmentService
     private function assertEntityExists(string $orgType, ?string $orgId): void
     {
         if (! $this->directory->exists($orgType, $orgId)) {
-            throw new \InvalidArgumentException(
-                "No {$orgType} exists with the identifier '{$orgId}'. Organization scope must reference a real entity."
-            );
+            $message = "No {$orgType} exists with the identifier '{$orgId}'. Organization scope must reference a real entity.";
+
+            throw new ValidationException(['organizations' => [$message]], $message);
         }
     }
 

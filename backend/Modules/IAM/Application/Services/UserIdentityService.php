@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\IAM\Application\Services;
 
+use App\Core\Exceptions\ValidationException;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -148,6 +149,17 @@ class UserIdentityService
      */
     private function assertUniqueIdentity(array $data, ?User $ignore): void
     {
+        // Dev defect fix (remediation-005): these must throw ValidationException (422,
+        // field-keyed), not a bare \InvalidArgumentException. The latter has no render()
+        // mapping in bootstrap/app.php, so it fell through to Laravel's default handler and
+        // reached the admin as an unhelpful "Server Error" 500 instead of "email already
+        // taken" / "employee already linked to another user".
+        $messages = [
+            'email' => 'A user with this email already exists.',
+            'username' => 'A user with this username already exists.',
+            'employee_number' => 'This employee is already linked to another user account.',
+        ];
+
         foreach (['email', 'username', 'employee_number'] as $field) {
             if (empty($data[$field])) {
                 continue;
@@ -157,7 +169,7 @@ class UserIdentityService
                 ->when($ignore !== null, fn ($q) => $q->where('id', '!=', $ignore->getKey()))
                 ->exists();
             if ($exists) {
-                throw new \InvalidArgumentException("A user with this {$field} already exists.");
+                throw new ValidationException([$field => [$messages[$field]]], $messages[$field]);
             }
         }
 
@@ -175,10 +187,10 @@ class UserIdentityService
                 ->exists();
 
             if ($collides) {
-                throw new \InvalidArgumentException(
-                    "This {$submitted} is already in use as another user's {$conflicting}. ".
-                    'Email and username are both login identifiers, so they must not collide.'
-                );
+                $message = "This {$submitted} is already in use as another user's {$conflicting}. ".
+                    'Email and username are both login identifiers, so they must not collide.';
+
+                throw new ValidationException([$submitted => [$message]], $message);
             }
         }
     }
@@ -210,10 +222,10 @@ class UserIdentityService
         }
 
         if (! $this->employees->numberExists($data['employee_number'])) {
-            throw new \InvalidArgumentException(
-                "No employee exists with the number '{$data['employee_number']}'. ".
-                'Select an existing employee record instead of entering a number manually.'
-            );
+            $message = "No employee exists with the number '{$data['employee_number']}'. ".
+                'Select an existing employee record instead of entering a number manually.';
+
+            throw new ValidationException(['employee_number' => [$message]], $message);
         }
     }
 }
