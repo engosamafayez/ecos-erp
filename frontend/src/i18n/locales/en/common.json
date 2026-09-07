@@ -446,6 +446,7 @@
       "popupLabel": "Show popups",
       "soundLabel": "Play sound",
       "effectiveTitle": "What you'll actually get, by priority",
+      "effectiveReadOnlyHint": "Read-only — computed from the switches above, not independently editable.",
       "columnPriority": "Priority",
       "columnPopup": "Popup",
       "columnSound": "Sound",

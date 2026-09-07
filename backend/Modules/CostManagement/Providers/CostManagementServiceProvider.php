@@ -6,9 +6,11 @@ namespace Modules\CostManagement\Providers;
 
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
+use Modules\CostManagement\Application\Listeners\NotifyPricingReviewCreated;
 use Modules\CostManagement\Application\Services\CostCalculationEngine;
 use Modules\CostManagement\Application\Services\CostImpactEngine;
 use Modules\CostManagement\Domain\Events\FinishedProductCostChanged;
+use Modules\CostManagement\Domain\Events\PriceReviewCreated;
 use Modules\CostManagement\Domain\Services\CostCascadeService;
 use Modules\CostManagement\Domain\Services\MaterialCostService;
 use Modules\CostManagement\Domain\Services\PricingReviewService;
@@ -49,6 +51,14 @@ class CostManagementServiceProvider extends ServiceProvider
         Event::listen(
             FinishedProductCostChanged::class,
             [CostImpactEngine::class, 'handle'],
+        );
+
+        // TASK-ECOS-NOTIFICATIONS-USER-REVIEW-REMEDIATION-007: PriceReviewCreated fires
+        // only when upsertForProduct() opens a genuinely new review (see that method) —
+        // the correct, existing, already-tested signal for "a notification is due".
+        Event::listen(
+            PriceReviewCreated::class,
+            [NotifyPricingReviewCreated::class, 'handle'],
         );
     }
 }
