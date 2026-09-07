@@ -39,6 +39,7 @@ import { OrderConfirmCustomerDialog } from '@/features/orders/components/order-c
 import { EmptyState } from '@/components/crud';
 import { toast } from '@/components/ds/use-toast';
 import { extractApiErrorMessage } from '@/lib/api-error';
+import { copyToClipboard } from '@/lib/clipboard';
 import { PrintTable } from '@/features/operations/components/print-table';
 import {
   buildOrderRows,
@@ -47,7 +48,8 @@ import {
   rowsToTsv,
   ORDER_FIELD_GETTERS,
   COPY_FIELD_KEYS,
-  PRINT_FIELD_KEYS,
+  PRINT_PRIMARY_FIELD_KEYS,
+  PRINT_DETAIL_FIELD_KEYS,
   EXPORT_FIELD_KEYS,
 } from '@/features/orders/utils/order-export-fields';
 import {
@@ -79,6 +81,22 @@ import { ROUTES } from '@/router/routes';
 import { cn } from '@/lib/utils';
 
 const PER_PAGE = 20;
+
+// §5 print layout — explicit relative widths for PRINT_PRIMARY_FIELD_KEYS so the
+// printed table gets predictable, readable column proportions (address/customer
+// get more room than status/zone) instead of the browser's auto-layout squeeze.
+// Sums to 100%; keyed by OrderFieldKey but left as Record<string, string> so this
+// file doesn't need to import that type just for this one constant.
+const PRINT_COLUMN_WIDTH: Record<string, string> = {
+  order_number: '12%',
+  customer: '16%',
+  phone: '12%',
+  status: '10%',
+  delivery_date: '14%',
+  payment_method: '12%',
+  payment_status: '12%',
+  grand_total: '12%',
+};
 
 type StatusFilter = OrderStatus | 'all';
 
@@ -425,10 +443,19 @@ export function OrdersPage() {
     const headers = COPY_FIELD_KEYS.map((k) => orderFieldLabel(k, t));
     // TSV, not CSV: pastes as real columns into Excel/Sheets, unlike quoted CSV
     // (which pastes as one text blob), while still reading fine as plain text.
-    void navigator.clipboard.writeText(rowsToTsv(headers, rows)).then(
-      () => toast.success(t($ => $.actions.copySuccess, { count: copyPrintExportOrders.length })),
-      (err: unknown) => toast.error(t($ => $.actions.copyError), extractApiErrorMessage(err)),
-    );
+    // Goes through the shared copyToClipboard helper (not navigator.clipboard
+    // directly) — on a non-secure DEV origin `navigator.clipboard` is `undefined`,
+    // so calling `.writeText` on it throws synchronously instead of settling a
+    // rejected promise, which broke Copy for 1 or N selected rows with no toast
+    // at all. copyToClipboard carries the execCommand('copy') fallback already
+    // proven for this exact case (see lib/clipboard.ts).
+    void copyToClipboard(rowsToTsv(headers, rows)).then((ok) => {
+      if (ok) {
+        toast.success(t($ => $.actions.copySuccess, { count: copyPrintExportOrders.length }));
+      } else {
+        toast.error(t($ => $.actions.copyError));
+      }
+    });
   }
 
   // A dedicated <PrintTable> (rendered below, `hidden` until printed) replaces
@@ -559,11 +586,34 @@ export function OrdersPage() {
 
   // §5 print column set — computed here (not inlined in JSX) so it's built once
   // per render rather than once per print, and stays visibly next to the field
-  // list it's derived from.
-  const printColumns = PRINT_FIELD_KEYS.map((key) => ({
+  // list it's derived from. Only the compact PRIMARY fields become real table
+  // columns; the rest of PRINT_FIELD_KEYS renders per-row via renderPrintDetail
+  // below instead of squeezing 17 columns into one page.
+  const printColumns = PRINT_PRIMARY_FIELD_KEYS.map((key) => ({
     header: orderFieldLabel(key, t),
     cell: (o: Order) => ORDER_FIELD_GETTERS[key](o),
+    width: PRINT_COLUMN_WIDTH[key],
   }));
+
+  // Full-width line rendered under each printed row — address/items/notes read
+  // better wrapped across the whole page than squeezed into their own narrow
+  // column. Blank fields (e.g. no GPS captured) are simply omitted.
+  function renderPrintDetail(o: Order) {
+    return (
+      <div className="flex flex-wrap gap-x-4 gap-y-0.5">
+        {PRINT_DETAIL_FIELD_KEYS.map((key) => {
+          const value = ORDER_FIELD_GETTERS[key](o);
+          if (!value) return null;
+          return (
+            <span key={key}>
+              <span className="font-semibold">{orderFieldLabel(key, t)}: </span>
+              {value}
+            </span>
+          );
+        })}
+      </div>
+    );
+  }
 
   return (
     <>
@@ -960,6 +1010,8 @@ export function OrdersPage() {
       columns={printColumns}
       rows={copyPrintExportOrders}
       rowKey={(o) => o.id}
+      renderDetail={renderPrintDetail}
+      className="print-orders-table"
     />
     </>
   );

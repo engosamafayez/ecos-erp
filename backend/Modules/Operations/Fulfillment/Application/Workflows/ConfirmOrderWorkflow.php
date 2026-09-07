@@ -12,6 +12,7 @@ use Modules\Commerce\Orders\Domain\Enums\ReservationStatus;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Orders\Domain\Models\OrderEvent;
 use Modules\Commerce\Orders\Domain\Services\PaymentFulfillmentGate;
+use Modules\Commerce\Orders\Domain\Services\ScheduledFulfillmentGate;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentContext;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentResult;
 use Modules\Operations\Fulfillment\Domain\Contracts\FulfillmentWorkflowInterface;
@@ -48,6 +49,11 @@ final class ConfirmOrderWorkflow implements FulfillmentWorkflowInterface
         // consults; OnHold is a legal source here too (Confirm can be reached directly
         // from On Hold), so the same guard applies.
         private readonly BlockedCustomerPolicy $blockedCustomerPolicy,
+        // C3 (TASK-...-REMEDIATION-005) — same authority ProcessOrderWorkflow consults;
+        // see its own docblock. Closes the exact bug reported: a future-dated order
+        // that had already (incorrectly) reached e.g. `in_progress` was still
+        // confirmable, because this guard had no date awareness at all before.
+        private readonly ScheduledFulfillmentGate $scheduledGate,
     ) {}
 
     public function guard(FulfillmentContext $ctx): void
@@ -75,6 +81,19 @@ final class ConfirmOrderWorkflow implements FulfillmentWorkflowInterface
         if ($order->status === OrderStatus::OnHold && $this->blockedCustomerPolicy->isOrderBlocked($order)) {
             throw new WorkflowPreconditionException(
                 "Order [{$order->id}] cannot be confirmed: its Customer/phone is currently blocked. Grant a one-order override to proceed with just this Order.",
+            );
+        }
+
+        // C3 (TASK-...-REMEDIATION-005) — a future-dated order must remain Scheduled
+        // no matter what action is taken; Confirm is exactly one such action. This
+        // reads `requested_delivery_date` directly rather than trusting `status`,
+        // because the defect it closes is precisely an order whose `status` says
+        // something other than `scheduled` (e.g. `in_progress`) while its delivery
+        // date is still future — see ScheduledFulfillmentGate's own docblock.
+        if ($this->scheduledGate->isFutureDated($order)) {
+            throw new WorkflowPreconditionException(
+                "Order [{$order->id}] has a requested delivery date in the future and cannot be confirmed until "
+                .'then — its fulfillment status must remain Scheduled while the date is still future.',
             );
         }
 

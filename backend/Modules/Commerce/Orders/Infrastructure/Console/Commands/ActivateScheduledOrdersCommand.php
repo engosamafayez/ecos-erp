@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Commerce\Orders\Domain\Models\Order;
+use Modules\Commerce\Orders\Domain\Services\ScheduledFulfillmentGate;
 use Modules\Operations\Fulfillment\Application\FulfillmentEngine;
 use Modules\Operations\Fulfillment\Application\Workflows\ProcessOrderWorkflow;
 use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionException;
@@ -61,8 +62,13 @@ final class ActivateScheduledOrdersCommand extends Command
     public function handle(
         FulfillmentEngine $engine,
         ProcessOrderWorkflow $workflow,
+        // C3 (TASK-...-REMEDIATION-005) — THE single source of the D-1 threshold,
+        // also consulted by ProcessOrderWorkflow/ConfirmOrderWorkflow's guards, so
+        // this command's row selection and their precondition checks can never
+        // silently disagree (see the class docblock below and the gate's own).
+        ScheduledFulfillmentGate $scheduledGate,
     ): int {
-        $activationHorizon = now()->addDay()->toDateString();
+        $activationHorizon = $scheduledGate->activationHorizon();
         $dryRun = (bool) $this->option('dry-run');
         $force = (bool) $this->option('force');
         $companyId = $this->option('company');

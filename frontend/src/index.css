@@ -389,6 +389,26 @@ html[dir='rtl'] {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
+   Orders bulk print — dedicated named page.
+   The Orders list print (selected orders, or the current view when nothing is
+   selected) carries far more columns than a portrait A4/Letter page can hold
+   without squeezing every column into unreadable widths. `page: orders-print`
+   below opts ONLY that table into the `@page orders-print` landscape rule via
+   CSS's named-page mechanism — every other print flow in the app (POS receipts,
+   the single-order invoice print, Operations' own PrintTable usages) keeps the
+   default page size untouched. Browsers without named-page support simply fall
+   back to the default page box — graceful degradation, not a regression.
+   ───────────────────────────────────────────────────────────────────────────── */
+.print-orders-table {
+  page: orders-print;
+}
+
+@page orders-print {
+  size: landscape;
+  margin: 12mm;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
    .no-spinner — a number input without the Up/Down stepper.
    Opt-in utility, deliberately NOT a global `input[type=number]` rule: other
    screens may legitimately want the stepper. Used by the Prepared editor, where

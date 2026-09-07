@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Operations\Fulfillment\Application\Workflows;
 
-use DateTimeInterface;
 use Modules\Commerce\Orders\Application\Actions\ReserveOrderInventoryAction;
 use Modules\Commerce\Orders\Application\Actions\UpdateReservationStatusAction;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
@@ -13,6 +12,7 @@ use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Orders\Domain\Models\OrderEvent;
 use Modules\Commerce\Orders\Domain\Models\OrderReservationAudit;
 use Modules\Commerce\Orders\Domain\Services\PaymentFulfillmentGate;
+use Modules\Commerce\Orders\Domain\Services\ScheduledFulfillmentGate;
 use Modules\Inventory\InventoryItems\Domain\Models\InventoryItem;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentContext;
 use Modules\Operations\Fulfillment\Application\DTOs\FulfillmentResult;
@@ -58,6 +58,10 @@ final class ProcessOrderWorkflow implements FulfillmentWorkflowInterface
         // TASK-...-BLOCKED-CUSTOMERS-009 (§24/§32). The SAME single read authority
         // every blocked-customer integration point consults — see the guard below.
         private readonly BlockedCustomerPolicy $blockedCustomerPolicy,
+        // C3 (TASK-...-REMEDIATION-005) — THE single date-based authority; see its
+        // own docblock. Also consulted by ConfirmOrderWorkflow, so the two can never
+        // let a future-dated order slip past Scheduled through one but not the other.
+        private readonly ScheduledFulfillmentGate $scheduledGate,
     ) {}
 
     public function guard(FulfillmentContext $ctx): void
@@ -105,33 +109,26 @@ final class ProcessOrderWorkflow implements FulfillmentWorkflowInterface
             );
         }
 
-        // Scheduled orders must not enter the operational queue before their activation
-        // point. That point is D-1, not D: an order due tomorrow has to be picked,
-        // prepared and staged today, so waiting until the delivery date itself leaves no
-        // operational day to do it in.
+        // C3 (TASK-...-REMEDIATION-005) — a future-dated order must not enter the
+        // operational queue NO MATTER which status it currently holds, not only when
+        // that status happens to already be `scheduled`. Before this fix, an order
+        // that reached e.g. `in_progress` through some OTHER path while its delivery
+        // date was still in the future — PICK-AND-STAY at creation, or an Edit that
+        // pushed the date out with zero status re-evaluation — sailed straight
+        // through this guard, because the check used to run only when
+        // `status === Scheduled`. ScheduledFulfillmentGate reads
+        // `requested_delivery_date` directly, so it catches that case too.
         //
-        // The window opens at `requested_delivery_date - 1 day`, which is what
-        // ActivateScheduledOrdersCommand selects on. Both must agree — a command that
-        // selects an order this guard then rejects would log a skip every night forever.
-        if ($order->status === OrderStatus::Scheduled) {
-            // `requested_delivery_date` is cast `date:Y-m-d`, so this attribute is a
-            // Carbon instance and the cast format governs only serialisation. Casting it
-            // to string yields "Y-m-d H:i:s", and comparing THAT to a "Y-m-d" string is
-            // true for every date — "2026-08-15 00:00:00" > "2026-08-15" — so the guard
-            // rejected even an order whose window had already opened, and scheduled
-            // activation never once succeeded. Normalise to a day before comparing.
-            $rawDeliveryDate = $order->requested_delivery_date;
-            $deliveryDate = $rawDeliveryDate instanceof DateTimeInterface
-                ? $rawDeliveryDate->format('Y-m-d')
-                : (string) ($rawDeliveryDate ?? '');
-            $activationDate = now()->addDay()->toDateString();
-            $forceActivate = (bool) ($ctx->get('force_activate') ?? false);
+        // Confirmed is the one deliberate exception: reserving must not silently
+        // un-confirm an order (see the allow-list comment above — that invariant is
+        // unrelated to this fix and is preserved as-is).
+        $forceActivate = (bool) ($ctx->get('force_activate') ?? false);
 
-            if ($deliveryDate !== '' && $deliveryDate > $activationDate && ! $forceActivate) {
-                throw new WorkflowPreconditionException(
-                    "Order [{$order->id}] is Scheduled for [{$deliveryDate}] and cannot enter the operational queue before [{$activationDate}], one day prior. Pass force_activate=true to override.",
-                );
-            }
+        if ($order->status !== OrderStatus::Confirmed && $this->scheduledGate->isFutureDated($order, $forceActivate)) {
+            throw new WorkflowPreconditionException(
+                "Order [{$order->id}] has a requested delivery date in the future and cannot enter the operational "
+                ."queue before [{$this->scheduledGate->activationHorizon()}], one day prior. Pass force_activate=true to override.",
+            );
         }
     }
 
