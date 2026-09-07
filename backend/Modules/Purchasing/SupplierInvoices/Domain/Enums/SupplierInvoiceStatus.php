@@ -37,9 +37,16 @@ enum SupplierInvoiceStatus: string
         };
     }
 
+    /**
+     * A Failed invoice may be retried directly (no re-validation required): the underlying
+     * cause is almost always an external precondition (e.g. a missing goods-receipt anchor, or
+     * Finance account-role mapping not yet configured) that gets fixed OUTSIDE the invoice
+     * itself, not by editing it. Without this, a Failed invoice had no path back to Posted
+     * except Cancel — a dead end for a routinely-recoverable failure.
+     */
     public function canPost(): bool
     {
-        return $this === self::Validated;
+        return $this === self::Validated || $this === self::Failed;
     }
 
     public function canCancel(): bool

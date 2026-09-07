@@ -365,6 +365,18 @@
         "rising": "Rising",
         "falling": "Falling",
         "stable": "Stable"
+      },
+      "offerings": {
+        "sectionTitle": "Supplier Offerings",
+        "sectionSubtitle": "What this supplier can supply — a declaration, not purchase history or stock.",
+        "manage": "Manage Offerings",
+        "manageTitle": "Manage Offerings",
+        "description": "Choose which Raw Materials and Product Categories this supplier can provide. This does not affect purchase history or current stock.",
+        "empty": "No offerings assigned yet. Click \"Manage Offerings\" to add some.",
+        "save": "Save",
+        "saving": "Saving…",
+        "saved": "Offerings updated",
+        "cancel": "Cancel"
       }
     },
     "purchaseOrders": {
@@ -400,7 +412,30 @@
         "paymentCompletion": "Payment Completion",
         "avgPoValue": "Avg PO Value"
       },
-      "lastPurchase": "Last Purchase"
+      "lastPurchase": "Last Purchase",
+      "openingBalance": {
+        "ledgerTitle": "Accounts Payable Ledger",
+        "ledgerUnavailable": "Ledger position unavailable.",
+        "outstandingPayable": "Outstanding Payable",
+        "availableAdvance": "Available Advance",
+        "netBalance": "Net Balance",
+        "add": "Add Opening Balance",
+        "title": "Add Opening Balance",
+        "description": "Record a pre-existing balance for this supplier, posted through the canonical Accounts Payable ledger. This can only be recorded once per direction — a correction afterward goes through Finance's normal adjustment tooling.",
+        "direction": "Direction",
+        "companyOwesSupplier": "Company owes Supplier",
+        "companyOwesSupplierHint": "An unpaid balance carried over from before this supplier was added to ECOS.",
+        "supplierOwesCompany": "Supplier owes Company",
+        "supplierOwesCompanyHint": "An advance/prepayment already made to this supplier for undelivered supply.",
+        "amount": "Amount",
+        "effectiveDate": "Effective Date",
+        "reference": "Reference",
+        "note": "Note",
+        "cancel": "Cancel",
+        "save": "Post Opening Balance",
+        "saving": "Posting…",
+        "posted": "Opening balance posted"
+      }
     },
     "inventory": {
       "kpis": {

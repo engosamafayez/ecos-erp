@@ -6,6 +6,7 @@ namespace Modules\Purchasing\SupplierInvoices\Application\Services;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Modules\Finance\Integration\Domain\Services\AccountRoleResolver;
 use Modules\Finance\Integration\Domain\Services\RulePostingStrategy;
 use Modules\Finance\Payables\Domain\Models\SupplierBill;
@@ -21,6 +22,7 @@ use Modules\Purchasing\SupplierInvoices\Domain\Enums\SupplierInvoiceStatus;
 use Modules\Purchasing\SupplierInvoices\Domain\Models\SupplierInvoice;
 use Modules\Purchasing\SupplierInvoices\Domain\Models\SupplierInvoiceLine;
 use Modules\Purchasing\SupplierInvoices\Domain\Services\InvoiceReceiptAnchorService;
+use Modules\Purchasing\SupplierInvoices\Domain\Services\LandedCostAllocator;
 use RuntimeException;
 use Throwable;
 
@@ -67,62 +69,74 @@ final class PostSupplierInvoiceService
             throw new RuntimeException("Invoice {$invoice->invoice_number} cannot be posted (status: {$invoice->status->value}).");
         }
 
-        DB::transaction(function () use ($invoice): void {
-            // ── C-1: acquire the SHARED inbound synchronisation point, FIRST ──────
-            //
-            // The Goods Receipt path locks the `goods_receipts` row before it mutates
-            // anything. This path used to lock only the invoice, so the two documents
-            // synchronised on DIFFERENT rows and a receipt and its linked invoice could post
-            // the same physical delivery concurrently — two ledger rows, two FIFO layers.
-            //
-            // Resolving the inbound reference first and locking THAT row makes both paths
-            // block on the same mutex. A linked invoice posts under its receipt's reference,
-            // so it locks the receipt row — the very row the receipt path holds. An unlinked
-            // Mode 3 invoice IS its own inbound, so its own row (locked immediately below)
-            // is the synchronisation point. One physical inbound, one lock, either way.
-            //
-            // No new mechanism: same InnoDB row lock, same reference the certified
-            // InboundPostingGuard already defines. Nothing is matched heuristically.
-            [$refType, $refId] = $this->inboundGuard->referenceForInvoice(
-                $invoice->auto_receipt_id,
-                $invoice->id,
-            );
+        // `$log` is declared OUTSIDE the transaction and captured BY REFERENCE below so its
+        // latest value (whatever steps completed before a failure) is still readable from the
+        // catch block after the transaction has rolled back — see the bug note there.
+        $log = [];
 
-            $this->lockCanonicalInbound($refType, $refId);
-
-            // ── PART 3: re-read THIS invoice's posting state under the lock ───────
-            //
-            // `canPost()` was checked before the transaction opened, so two concurrent
-            // posts of the same invoice could both pass it. Re-asserting it here, after the
-            // lock, means the loser observes the winner's committed status and stands down
-            // through the existing workflow guard rather than posting a second time.
-            $locked = SupplierInvoice::query()
-                ->whereKey($invoice->getKey())
-                ->lockForUpdate()
-                ->first();
-
-            if ($locked === null || ! $locked->status->canPost()) {
-                throw new RuntimeException(
-                    "Invoice {$invoice->invoice_number} cannot be posted (status: "
-                    .($locked?->status->value ?? 'not found').').',
+        try {
+            DB::transaction(function () use ($invoice, &$log): void {
+                // ── C-1: acquire the SHARED inbound synchronisation point, FIRST ──────
+                //
+                // The Goods Receipt path locks the `goods_receipts` row before it mutates
+                // anything. This path used to lock only the invoice, so the two documents
+                // synchronised on DIFFERENT rows and a receipt and its linked invoice could post
+                // the same physical delivery concurrently — two ledger rows, two FIFO layers.
+                //
+                // Resolving the inbound reference first and locking THAT row makes both paths
+                // block on the same mutex. A linked invoice posts under its receipt's reference,
+                // so it locks the receipt row — the very row the receipt path holds. An unlinked
+                // Mode 3 invoice IS its own inbound, so its own row (locked immediately below)
+                // is the synchronisation point. One physical inbound, one lock, either way.
+                //
+                // No new mechanism: same InnoDB row lock, same reference the certified
+                // InboundPostingGuard already defines. Nothing is matched heuristically.
+                [$refType, $refId] = $this->inboundGuard->referenceForInvoice(
+                    $invoice->auto_receipt_id,
+                    $invoice->id,
                 );
-            }
 
-            $log = [];
+                $this->lockCanonicalInbound($refType, $refId);
 
-            $invoice->update([
-                'status' => SupplierInvoiceStatus::AutoProcessing,
-                'processing_started_at' => now(),
-                'posting_log' => [],
-                'posting_error' => null,
-            ]);
+                // ── PART 3: re-read THIS invoice's posting state under the lock ───────
+                //
+                // `canPost()` was checked before the transaction opened, so two concurrent
+                // posts of the same invoice could both pass it. Re-asserting it here, after the
+                // lock, means the loser observes the winner's committed status and stands down
+                // through the existing workflow guard rather than posting a second time.
+                $locked = SupplierInvoice::query()
+                    ->whereKey($invoice->getKey())
+                    ->lockForUpdate()
+                    ->first();
 
-            try {
+                if ($locked === null || ! $locked->status->canPost()) {
+                    throw new RuntimeException(
+                        "Invoice {$invoice->invoice_number} cannot be posted (status: "
+                        .($locked?->status->value ?? 'not found').').',
+                    );
+                }
+
+                $invoice->update([
+                    'status' => SupplierInvoiceStatus::AutoProcessing,
+                    'processing_started_at' => now(),
+                    'posting_log' => [],
+                    'posting_error' => null,
+                ]);
+
+                // NOTE: no inner try/catch here (there used to be one). Any Throwable from
+                // this point on is left to propagate straight out of this closure so
+                // DB::transaction() rolls back cleanly and COMPLETELY. The previous version
+                // wrote status=>Failed + posting_error/posting_log INSIDE this same
+                // transaction before re-throwing — but a write made right before an exception
+                // that rolls back its own transaction is itself rolled back, so that
+                // diagnostic write silently never survived. It is written for real in the
+                // catch block below, OUTSIDE this transaction, after the rollback completes.
+
                 // Step 1 — Load lines eagerly
                 $invoice->load(['lines.product', 'supplier', 'warehouse']);
                 $log[] = '[1/8] Lines loaded: '.$invoice->lines->count().' item(s)';
 
-                // Step 2 — Allocate landed costs proportionally across lines
+                // Step 2 — Allocate landed costs across lines (approved per-unit-quantity rule)
                 $this->allocateLandedCosts($invoice);
                 $log[] = '[2/8] Landed costs allocated (freight + additional)';
 
@@ -189,16 +203,35 @@ final class PostSupplierInvoiceService
                     'posting_log' => $log,
                 ]);
                 $log[] = '[8/8] Invoice posted successfully';
+            });
+        } catch (Throwable $e) {
+            // Server-side visibility: previously NOTHING was ever logged for a posting
+            // failure — the exception was caught at the HTTP controller boundary and turned
+            // straight into a response body, invisible to ops/support unless that one
+            // response happened to be captured. This is the root fix for "Posting failed"
+            // being an unactionable dead end.
+            Log::error('Supplier invoice posting failed', [
+                'invoice_id' => $invoice->id,
+                'invoice_number' => $invoice->invoice_number,
+                'company_id' => $invoice->company_id,
+                'exception' => get_class($e),
+                'message' => $e->getMessage(),
+            ]);
 
-            } catch (Throwable $e) {
-                $invoice->update([
-                    'status' => SupplierInvoiceStatus::Failed,
-                    'posting_error' => $e->getMessage(),
-                    'posting_log' => $log,
-                ]);
-                throw $e;
-            }
-        });
+            // Persisted in a FRESH write, deliberately OUTSIDE the transaction that was just
+            // rolled back. Re-fetching (rather than reusing the in-memory `$invoice`, which
+            // still holds the rolled-back `AutoProcessing` status and stale attributes) avoids
+            // writing stale in-memory state over whatever the rollback actually restored, and
+            // goes through the Eloquent instance (not a query-builder mass update) so the
+            // `posting_log` array cast still applies.
+            SupplierInvoice::query()->whereKey($invoice->getKey())->first()?->update([
+                'status' => SupplierInvoiceStatus::Failed,
+                'posting_error' => $e->getMessage(),
+                'posting_log' => $log,
+            ]);
+
+            throw $e;
+        }
     }
 
     /**
@@ -454,23 +487,46 @@ final class PostSupplierInvoiceService
         return $id === null ? null : (int) $id;
     }
 
+    /**
+     * §12/§13 — approved landed-cost rule:
+     *
+     *     allocated_extra_per_unit = (freight + additional_costs) / total_invoice_quantity
+     *     final_landed_unit_cost   = base_unit_price + allocated_extra_per_unit
+     *
+     * ONE uniform per-unit rate, driven by each line's QUANTITY SHARE of the invoice — not the
+     * previous implementation, which split freight/additional proportionally by each line's own
+     * `line_total` (a materially different, value-weighted number). Freight and additional
+     * costs are allocated independently of each other, both over the same quantity weights, via
+     * {@see LandedCostAllocator}, a deterministic largest-remainder allocator: this guarantees
+     * `sum(allocated_freight) === freight_amount` and `sum(allocated_additional_costs) ===
+     * additional_costs` EXACTLY, with no floating-point drift and no lost/invented money — see
+     * that class's docblock for the remainder rule. A line with zero/negative quantity is
+     * excluded from "total_invoice_quantity" and always receives 0 allocated extra cost.
+     */
     private function allocateLandedCosts(SupplierInvoice $invoice): void
     {
-        $totalSubtotal = (float) $invoice->subtotal;
+        $quantities = $invoice->lines
+            ->mapWithKeys(fn (SupplierInvoiceLine $line, int $key): array => [$key => max((float) $line->quantity, 0.0)])
+            ->all();
 
-        if ($totalSubtotal <= 0) {
+        if (array_sum($quantities) <= 0.0) {
             return;
         }
 
         $freight = (float) $invoice->freight_amount;
         $additional = (float) $invoice->additional_costs;
 
-        foreach ($invoice->lines as $line) {
+        $allocatedFreight = LandedCostAllocator::allocate($freight, $quantities);
+        $allocatedAdditional = LandedCostAllocator::allocate($additional, $quantities);
+
+        foreach ($invoice->lines as $key => $line) {
             /** @var SupplierInvoiceLine $line */
-            $ratio = (float) $line->line_total / $totalSubtotal;
-            $allocFrt = round($freight * $ratio, 4);
-            $allocAdd = round($additional * $ratio, 4);
-            $landed = round(((float) $line->unit_price + ($allocFrt + $allocAdd) / max((float) $line->quantity, 1)), 4);
+            $qty = $quantities[$key];
+            $allocFrt = $allocatedFreight[$key];
+            $allocAdd = $allocatedAdditional[$key];
+            $landed = $qty > 0.0
+                ? round((float) $line->unit_price + ($allocFrt + $allocAdd) / $qty, 4)
+                : round((float) $line->unit_price, 4);
 
             $line->update([
                 'allocated_freight' => $allocFrt,
