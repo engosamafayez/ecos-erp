@@ -52,43 +52,80 @@ use Illuminate\Support\Facades\Schema;
  * auto-increment — see the original migration's `$table->id()`) already give
  * a strictly deterministic historical order with zero new columns. Adding a
  * redundant counter would violate §7's "do NOT add fields blindly".
+ *
+ * TASK-ECOS-UNIFIED-PREFINAL-MIGRATION-REMEDIATION-AND-ROLLOUT-CONTINUATION-002
+ * — two fixes to this file, no change to the approved schema design above.
+ *
+ * 1. ORDERING DEFECT (the actual first-run failure — MySQL 1553): `order_id`
+ *    already carries `distribution_trip_orders_order_id_foreign` (→ orders.id).
+ *    InnoDB requires SOME index on a foreign-keyed column at all times, and
+ *    the old unique index was the ONLY one covering `order_id`. Dropping it
+ *    before the replacement plain index existed left that instant with none,
+ *    which MySQL correctly refuses. Fix: the plain `order_id` index is now
+ *    created FIRST, so the FK always has a supporting index; the old unique
+ *    index is dropped only afterward.
+ *
+ * 2. RESUMABILITY: `up()` partially succeeded on that failed first run (the
+ *    three new nullable columns + the released_by FK committed as one
+ *    ALTER before the ordering defect above was reached) but was never
+ *    recorded in the `migrations` table, so Laravel re-runs the WHOLE method
+ *    from the top on the next `migrate`. Every step is now individually
+ *    guarded with Laravel's own `Schema::hasColumn()`/`Schema::hasIndex()` (no
+ *    custom/generic idempotency layer) so `up()` is safe to run once from a
+ *    fully fresh schema, once from exactly the partially-applied state this
+ *    task found on DEV, or a second time from a fully-applied state.
  */
 return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('distribution_trip_orders', function (Blueprint $table): void {
-            $table->timestamp('superseded_at')->nullable()->after('assigned_at');
-            $table->string('release_reason', 50)->nullable()->after('superseded_at');
-            $table->foreignId('released_by')->nullable()->after('release_reason')
-                ->constrained('users')->nullOnDelete();
-        });
+        if (! Schema::hasColumn('distribution_trip_orders', 'superseded_at')) {
+            Schema::table('distribution_trip_orders', function (Blueprint $table): void {
+                $table->timestamp('superseded_at')->nullable()->after('assigned_at');
+                $table->string('release_reason', 50)->nullable()->after('superseded_at');
+                $table->foreignId('released_by')->nullable()->after('release_reason')
+                    ->constrained('users')->nullOnDelete();
+            });
+        }
 
-        // Drop the old "one Trip per Order, ever" backstop before it can conflict
-        // with the new one below — MySQL does not allow two unique indexes that
-        // would both reject the same insert to coexist meaningfully, and the old
-        // one is exactly what this migration is retiring.
-        Schema::table('distribution_trip_orders', function (Blueprint $table): void {
-            $table->dropUnique('distribution_trip_orders_order_unique');
-        });
+        // The replacement supporting index for `order_id` MUST exist before the
+        // old unique index (order_id's only index, and the one InnoDB is using to
+        // satisfy distribution_trip_orders_order_id_foreign) is ever dropped — see
+        // fix note 1 above. Created first, deliberately, not merely reordered
+        // cosmetically: this is the actual fix for the original 1553 error.
+        if (! Schema::hasIndex('distribution_trip_orders', 'distribution_trip_orders_order_id_index')) {
+            Schema::table('distribution_trip_orders', function (Blueprint $table): void {
+                // Non-unique lookup index: history queries (Order::tripOrderHistory(),
+                // reporting) still filter/join by order_id across every historical row.
+                $table->index('order_id', 'distribution_trip_orders_order_id_index');
+            });
+        }
+
+        // Drop the old "one Trip per Order, ever" backstop now that order_id's FK
+        // is already supported by the plain index created immediately above.
+        if (Schema::hasIndex('distribution_trip_orders', 'distribution_trip_orders_order_unique')) {
+            Schema::table('distribution_trip_orders', function (Blueprint $table): void {
+                $table->dropUnique('distribution_trip_orders_order_unique');
+            });
+        }
 
         // The NEW backstop: NULL while superseded (any number of historical rows
         // may share order_id), the real order_id while active (at most one row).
         // `orders.id` is a UUID (see the original migration's own comment), so this
         // mirrors that type exactly.
-        DB::statement(<<<'SQL'
-            ALTER TABLE distribution_trip_orders
-            ADD COLUMN active_order_id CHAR(36)
-                GENERATED ALWAYS AS (CASE WHEN superseded_at IS NULL THEN order_id ELSE NULL END) STORED
-        SQL);
+        if (! Schema::hasColumn('distribution_trip_orders', 'active_order_id')) {
+            DB::statement(<<<'SQL'
+                ALTER TABLE distribution_trip_orders
+                ADD COLUMN active_order_id CHAR(36)
+                    GENERATED ALWAYS AS (CASE WHEN superseded_at IS NULL THEN order_id ELSE NULL END) STORED
+            SQL);
+        }
 
-        Schema::table('distribution_trip_orders', function (Blueprint $table): void {
-            $table->unique('active_order_id', 'distribution_trip_orders_active_order_unique');
-
-            // Non-unique lookup index: history queries (Order::tripOrderHistory(),
-            // reporting) still filter/join by order_id across every historical row.
-            $table->index('order_id', 'distribution_trip_orders_order_id_index');
-        });
+        if (! Schema::hasIndex('distribution_trip_orders', 'distribution_trip_orders_active_order_unique')) {
+            Schema::table('distribution_trip_orders', function (Blueprint $table): void {
+                $table->unique('active_order_id', 'distribution_trip_orders_active_order_unique');
+            });
+        }
     }
 
     public function down(): void
