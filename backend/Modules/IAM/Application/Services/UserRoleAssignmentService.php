@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Modules\IAM\Application\Services;
 
 use App\Core\Company\TenantOwnershipResolver;
+use App\Core\Exceptions\ValidationException;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use InvalidArgumentException;
 use Modules\IAM\Domain\Contracts\PermissionServiceInterface;
 use Modules\IAM\Domain\Contracts\RoleCompositionInterface;
 use Modules\IAM\Domain\Contracts\RoleTemplateRepositoryInterface;
@@ -164,7 +164,12 @@ class UserRoleAssignmentService
 
         $model = $this->templates->findByKey($template);
         if ($model === null) {
-            throw new InvalidArgumentException("Unknown role template '{$template}'.");
+            // Dev defect fix (remediation-005): ValidationException (422), not a bare
+            // \InvalidArgumentException — see UserOrganizationAssignmentService's identical
+            // fix for why the latter surfaced as a raw "Server Error" 500.
+            $message = "Unknown role template '{$template}'.";
+
+            throw new ValidationException(['role_templates' => [$message]], $message);
         }
 
         return $model;
