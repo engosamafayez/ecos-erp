@@ -15,6 +15,11 @@ import type { UiNotification } from '../types/notification';
  */
 const KNOWN_ENTITY_ROUTES: Partial<Record<string, (entityId: string) => string>> = {
   customer: (id) => ROUTES.customerDetail.replace(':customerId', id),
+  // The Price Review Center (TASK-ECOS-NOTIFICATIONS-USER-REVIEW-REMEDIATION-007) has no
+  // per-record route today — a bulk-select list page only — so every review resolves to
+  // the same list surface regardless of `entityId` (same "don't fabricate a URL that
+  // doesn't exist" constraint `order` failed under investigation in Task 4).
+  'pricing-review': () => ROUTES.costManagementPriceReview,
 };
 
 /** @returns the route to navigate to, or null when this notification has no supported target. */

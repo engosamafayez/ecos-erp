@@ -446,6 +446,7 @@
       "popupLabel": "إظهار النوافذ المنبثقة",
       "soundLabel": "تشغيل الصوت",
       "effectiveTitle": "ما ستحصل عليه فعليًا، حسب الأولوية",
+      "effectiveReadOnlyHint": "للعرض فقط — محسوبة تلقائيًا من المفتاحين أعلاه، ولا يمكن تعديلها بشكل مستقل.",
       "columnPriority": "الأولوية",
       "columnPopup": "نافذة منبثقة",
       "columnSound": "صوت",

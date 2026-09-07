@@ -1,3 +1,5 @@
+import '@testing-library/jest-dom/vitest';
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -96,6 +98,34 @@ describe('NotificationPreferencesButton', () => {
     await waitFor(() =>
       expect(mockUpdatePreferences).toHaveBeenCalledWith({ popup_enabled: false, sound_enabled: false }),
     );
+  });
+
+  it('TASK-ECOS-NOTIFICATIONS-USER-REVIEW-REMEDIATION-007: renders an explicit read-only hint on the effective-summary table, and reflects popups-off/sound-on exactly as the server resolved it', async () => {
+    mockGetPreferences.mockResolvedValue({ popup_enabled: false, sound_enabled: true });
+    mockAttentionPolicy.mockResolvedValue({
+      low: { popup: false, sound: true, sound_profile: 'normal', locked: false },
+      normal: { popup: false, sound: true, sound_profile: 'normal', locked: false },
+      high: { popup: false, sound: true, sound_profile: 'important', locked: false },
+      critical: { popup: true, sound: true, sound_profile: 'critical', locked: true },
+    });
+
+    renderPanel();
+    await userEvent.click(screen.getByRole('button', { name: 'settings' }));
+
+    expect(await screen.findByText('effectiveReadOnlyHint')).toBeInTheDocument();
+
+    const [popupSwitch, soundSwitch] = await waitFor(() => {
+      const switches = screen.getAllByRole('switch');
+      expect(switches).toHaveLength(2);
+      return switches;
+    });
+    expect(popupSwitch).toHaveAttribute('data-state', 'unchecked');
+    expect(soundSwitch).toHaveAttribute('data-state', 'checked');
+
+    // Non-mandatory rows (low/normal/high) must show popup=X/sound=check; only the
+    // locked critical row is exempt — this is what the user-reported "inconsistent"
+    // table looked like before this task added the explicit read-only hint above.
+    expect(screen.getAllByLabelText('locked')).toHaveLength(1);
   });
 
   it('defaults both switches on when the user has never set a preference', async () => {

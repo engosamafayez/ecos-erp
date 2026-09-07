@@ -89,7 +89,10 @@ function NotificationPreferencesPanel() {
         <p className="text-muted-foreground text-xs font-medium">
           {t(($) => $.notifications.preferences.effectiveTitle)}
         </p>
-        <table className="mt-2 w-full text-xs">
+        <p className="text-muted-foreground/80 mt-0.5 text-[11px]">
+          {t(($) => $.notifications.preferences.effectiveReadOnlyHint)}
+        </p>
+        <table className="mt-2 w-full text-xs" role="presentation" aria-readonly="true">
           <thead>
             <tr className="text-muted-foreground">
               <th className="text-start font-medium">{t(($) => $.notifications.preferences.columnPriority)}</th>
