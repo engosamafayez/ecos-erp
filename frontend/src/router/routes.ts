@@ -113,6 +113,11 @@ export const ROUTES = {
   // admin-only Configuration OS; a personal, ownership-scoped preferences surface needs
   // its own destination so it isn't hidden behind Administration's permission gate.
   myPreferences: '/me/preferences',
+  // TASK-ECOS-COMMERCE-IAM-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-005 D1 — the
+  // full "Notification Settings" page (every real configurable notification type +
+  // global delivery controls); reached from the bell popover's now quick-controls-only
+  // panel. Same personal, ownership-scoped /me/ family as myPreferences above.
+  notificationSettings: '/me/notifications',
   // Claude Bridge
   claudeBridge:           '/claude-bridge',
   claudeBridgeTasks:      '/claude-bridge/tasks',

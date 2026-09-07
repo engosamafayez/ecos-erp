@@ -150,6 +150,7 @@ import { BudgetAnalysisPage } from '@/features/marketing/intelligence/pages/budg
 import { ReportsPage } from '@/features/marketing/intelligence/pages/reports-page';
 import { MarketingSettingsPage } from '@/features/marketing/pages/marketing-settings-page';
 import { MyPreferencesPage } from '@/features/notifications/pages/my-preferences-page';
+import { NotificationSettingsPage } from '@/features/notifications/pages/notification-settings-page';
 import { AutomationWorkspacePage } from '@/features/marketing/automation/pages/automation-workspace-page';
 import { WorkflowBuilderPage } from '@/features/marketing/automation/pages/workflow-builder-page';
 import { AudienceSegmentsPage } from '@/features/marketing/automation/pages/audience-segments-page';
@@ -653,6 +654,10 @@ export const router = createBrowserRouter(
             // organization/configuration permission gate and hide this from exactly the
             // ordinary users who need it.
             { path: ROUTES.myPreferences, Component: MyPreferencesPage },
+            // D1 (TASK-ECOS-COMMERCE-IAM-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-005)
+            // — same personal, gate-free registration as myPreferences directly above:
+            // every authenticated user may reach their own notification settings.
+            { path: ROUTES.notificationSettings, Component: NotificationSettingsPage },
             { path: '*', Component: NotFoundPage },
           ],
         },

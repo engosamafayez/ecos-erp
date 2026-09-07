@@ -9,13 +9,19 @@ use Modules\Collaboration\Domain\Enums\MessageType;
 use Modules\Collaboration\Domain\Models\Message;
 
 /**
- * Stock Laravel notification, `database` channel — the same pattern
- * `Operations\Preparation\ExceptionRaisedNotification` already uses; no
- * "Enterprise Notification Platform" exists to call into instead (verified
- * directly against source, not assumed from docs — see engineering report
- * §17). Sent to every OTHER active participant of the conversation except
- * anyone who was individually @mentioned (they get MentionedNotification
- * instead, never both — §16).
+ * Sent to every OTHER active participant of the conversation except anyone who was
+ * individually @mentioned (they get MentionedNotification instead, never both — §16).
+ *
+ * TASK-ECOS-COMMERCE-IAM-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-005 D2 — this
+ * class's own prior docblock said "Stock Laravel notification, `database` channel...
+ * no 'Enterprise Notification Platform' exists to call into instead", true when written
+ * but stale since: the shared producer contract's channel now exists
+ * (Modules\Notifications\...\CoreDatabaseChannel, TASK-ECOS-NOTIFICATIONS-FOUNDATION-002)
+ * and this type is in the Notification Type Catalog with `userCanDisable: true` — but
+ * routing through the stock `database` channel meant that toggle was silently never
+ * consulted (NotificationDeliveryPolicy::isTypeEnabledFor() runs inside
+ * CoreDatabaseChannel::send(), never Laravel's own DatabaseChannel). Fixed by moving
+ * onto the existing shared channel — not a second one.
  */
 final class NewMessageNotification extends Notification
 {
@@ -24,7 +30,7 @@ final class NewMessageNotification extends Notification
     /** @return list<string> */
     public function via(mixed $notifiable): array
     {
-        return ['database'];
+        return ['notifications-core'];
     }
 
     /** @return array<string, mixed> */

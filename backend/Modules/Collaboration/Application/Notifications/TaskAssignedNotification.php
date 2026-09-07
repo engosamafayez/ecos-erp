@@ -16,10 +16,17 @@ final class TaskAssignedNotification extends Notification
 {
     public function __construct(private readonly InternalTask $task) {}
 
-    /** @return list<string> */
+    /**
+     * TASK-ECOS-COMMERCE-IAM-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-005 D2 — the
+     * shared producer contract's channel, not Laravel's stock `database` one; see
+     * TaskFollowedNotification::via() for why (the catalog's per-type toggle otherwise
+     * silently has no effect on this type).
+     *
+     * @return list<string>
+     */
     public function via(mixed $notifiable): array
     {
-        return ['database'];
+        return ['notifications-core'];
     }
 
     /** @return array<string, mixed> */

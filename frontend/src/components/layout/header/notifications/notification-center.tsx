@@ -17,6 +17,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import { ROUTES } from '@/router/routes';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
@@ -125,12 +126,16 @@ function PriorityBadge({ priority }: { priority: NotificationPriority | undefine
 function NotificationRow({
   notification,
   onMarkRead,
-  onView,
+  onOpen,
 }: {
   notification: UiNotification;
   onMarkRead: (id: string) => void;
-  /** TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §4 — marks read AND navigates, in that order. */
-  onView: (id: string, path: string) => void;
+  /**
+   * D6 (TASK-ECOS-COMMERCE-IAM-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-005) — the
+   * ONE shared click contract, applied to the whole row (not just the "View" text): mark
+   * read, then navigate when a target exists. See NotificationCenter.openNotification.
+   */
+  onOpen: (notification: UiNotification) => void;
 }) {
   const { t } = useTranslation('common');
   const fmt = useFormatter();
@@ -149,8 +154,18 @@ function NotificationRow({
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpen(notification)}
+      onKeyDown={(e) => {
+        // Enter/Space — the two keys a role="button" element is expected to activate on.
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen(notification);
+        }
+      }}
       className={cn(
-        'group flex gap-3 px-4 py-3 transition-colors hover:bg-accent/40',
+        'group flex w-full cursor-pointer gap-3 px-4 py-3 text-start transition-colors hover:bg-accent/40',
         !notification.read && 'bg-primary/3',
       )}
     >
@@ -199,7 +214,13 @@ function NotificationRow({
           {target && (
             <button
               type="button"
-              onClick={() => onView(notification.id, target)}
+              // stopPropagation: this button sits inside the now-clickable row (D6) —
+              // without it, this click would also re-trigger the row's own onOpen,
+              // double-issuing the mark-read request and calling navigate() twice.
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpen(notification);
+              }}
               className="text-[10px] font-medium text-primary hover:text-primary/80"
             >
               {t(($) => $.notifications.viewDetails)}
@@ -208,7 +229,10 @@ function NotificationRow({
           {!notification.read && (
             <button
               type="button"
-              onClick={() => onMarkRead(notification.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onMarkRead(notification.id);
+              }}
               className="text-[10px] font-medium text-primary opacity-0 transition-opacity hover:text-primary/80 group-hover:opacity-100 focus-visible:opacity-100"
             >
               {t(($) => $.notifications.markRead)}
@@ -272,16 +296,37 @@ export function NotificationCenter() {
     activeSource === 'all' ? notifications : notifications.filter((n) => n.source === activeSource);
 
   /**
-   * §4 — every actionable notification: mark read, then update unread count/list
-   * (`markRead.mutate`'s own `onSuccess` invalidates the whole notifications query
-   * prefix, which is what actually removes this row from an active "Unread" tab), then
-   * navigate. Unconditional mark-read here is safe even if already read (the backend
-   * mutation is idempotent — `markAsRead()` on an already-read row is a no-op).
+   * D6 (TASK-ECOS-COMMERCE-IAM-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-005) — the
+   * ONE shared click contract for every notification, regardless of type: this is the
+   * only place that decides "mark read" + "where to" for a click, so no notification
+   * type ever gets its own hardcoded routing elsewhere. Target resolution goes through
+   * the SAME resolveNotificationTarget() the row already renders its "View" link from —
+   * never a second, independent routing decision for the same click.
+   *
+   * Sequencing: mark-read is issued (mutate() synchronously starts the request) BEFORE
+   * navigate() runs, in the same tick — never the reverse, which is the exact race this
+   * fix closes (navigating away before the request was even issued). `markRead`'s own
+   * `onSuccess` invalidates the whole notifications query prefix, which is what actually
+   * moves this row from Unread to Read; skipping the call entirely when already read
+   * avoids a pointless repeat request (the backend mutation is idempotent regardless —
+   * `markAsRead()` on an already-read row is a no-op — this is purely an efficiency
+   * guard, not a correctness one).
+   *
+   * No target: mark read (if needed) and stay on this sheet — no navigate attempt, so
+   * there is nothing to crash on. An unrecognised/invalid entityType already resolves to
+   * `null` here (resolveNotificationTarget's own allowlist), so that case is handled the
+   * same way — a safe no-navigate fallback, never a broken route.
    */
-  function handleView(id: string, path: string) {
-    markRead.mutate(id);
-    setOpen(false);
-    navigate(path);
+  function openNotification(notification: UiNotification) {
+    if (!notification.read) {
+      markRead.mutate(notification.id);
+    }
+
+    const target = resolveNotificationTarget(notification);
+    if (target) {
+      setOpen(false);
+      navigate(target);
+    }
   }
 
   return (
@@ -322,7 +367,12 @@ export function NotificationCenter() {
               </p>
             </div>
             <div className="flex items-center gap-1">
-              <NotificationPreferencesButton />
+              <NotificationPreferencesButton
+                onOpenFullSettings={() => {
+                  setOpen(false);
+                  navigate(ROUTES.notificationSettings);
+                }}
+              />
               <Button
                 variant="ghost"
                 size="sm"
@@ -419,7 +469,7 @@ export function NotificationCenter() {
                       key={notification.id}
                       notification={notification}
                       onMarkRead={(id) => markRead.mutate(id)}
-                      onView={handleView}
+                      onOpen={openNotification}
                     />
                   ))}
                 </div>

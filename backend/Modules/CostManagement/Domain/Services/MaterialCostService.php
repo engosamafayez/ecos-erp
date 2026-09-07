@@ -110,6 +110,56 @@ final class MaterialCostService
             }
         }
 
+        // TASK-ECOS-COMMERCE-IAM-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-005 D3 —
+        // the cascade above only ever reviews OTHER, downstream products that consume
+        // $material as a BOM ingredient (via `raw_material_id`); it never re-evaluates
+        // $material itself. A finished good with no recipe of its own has no
+        // recipe-derived product_cost to cascade (ProductCostCalculator::recalculate()
+        // returns null for it — "raw materials/consumables are priced via material_cost
+        // directly"), so under the cascade alone its OWN cost change never opens a
+        // review — confirmed root cause of a real report: editing such a product's cost
+        // directly produced no notification, no matter how long the user waited.
+        // Gated strictly to {finished good, no active recipe} so the primary,
+        // recipe-cascade path above — and every existing test covering it, including
+        // the raw-material "no recipe" case — is completely untouched: a recipe-bearing
+        // product's product_cost still only ever comes from its own recipe, and a true
+        // raw material/consumable still never gets a review of its own.
+        if ($material->product_type === Product::TYPE_FINISHED_GOOD && $material->activeRecipe()->doesntExist()) {
+            $companyId = $meta['company_id']
+                ?? Company::query()->orderBy('created_at')->value('id');
+
+            if ($companyId !== null) {
+                $roundedNewCost = round($newCost, 4);
+
+                // Reuses the exact upsert + event pair the downstream branch above
+                // already relies on (idempotent: a second call for the same still-open
+                // review updates it in place rather than duplicating it — see
+                // PricingReviewCascadeTest's own "no duplicate" coverage of this pattern).
+                $this->pricingReviews->upsertForProduct(
+                    product: $material,
+                    newProductCost: $roundedNewCost,
+                    previousProductCost: $previousCost,
+                    companyId: (string) $companyId,
+                    historyId: $history->id,
+                    triggerReason: 'material_cost_changed',
+                    triggerSource: $material->sku ?? $material->id,
+                );
+
+                FinishedProductCostChanged::dispatch(
+                    productId: $material->id,
+                    companyId: (string) $companyId,
+                    oldCost: $previousCost,
+                    newCost: $roundedNewCost,
+                    difference: $difference,
+                    differencePercent: $changePct ?? 0.0,
+                    triggerReason: PricingTriggerReason::MaterialCostChanged,
+                    triggerSource: $material->sku ?? $material->id,
+                    occurredAt: now()->toIso8601String(),
+                    costHistoryId: $history->id,
+                );
+            }
+        }
+
         return $history;
     }
 }
