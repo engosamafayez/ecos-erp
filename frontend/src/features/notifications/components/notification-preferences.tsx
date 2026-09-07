@@ -15,10 +15,13 @@ import {
 import { NOTIFICATION_PRIORITIES } from '../types/notification';
 
 /**
- * ADR-047 §26.1/§26.5 — "My Profile → Notification Preferences", scoped here to the
- * bell itself rather than a standalone Profile page (none exists yet; this task does
- * not add one — TASK-ECOS-NOTIFICATIONS-CENTER-PREFERENCES-AND-LIVE-DELIVERY-004 §19
- * "do not redesign the entire app shell").
+ * ADR-047 §26.1/§26.5 — "My Profile → Notification Preferences". Originally scoped to
+ * the bell itself only (no standalone page — TASK-ECOS-NOTIFICATIONS-CENTER-
+ * PREFERENCES-AND-LIVE-DELIVERY-004 §19 "do not redesign the entire app shell"); a real
+ * user could not find that popover-only surface (DEV review after Task 008), so
+ * TASK-ECOS-NOTIFICATIONS-USER-REVIEW-VISIBILITY-REMEDIATION-009 added a routed page
+ * (frontend/src/features/notifications/pages/my-preferences-page.tsx, ROUTES.myPreferences)
+ * that renders this exact same panel — never a second implementation.
  *
  * Exactly two editable controls exist because exactly two are backed by real storage
  * today (`user_preferences`, category `notifications`, `{popup_enabled, sound_enabled}`
@@ -44,7 +47,16 @@ export function NotificationPreferencesButton() {
   );
 }
 
-function NotificationPreferencesPanel() {
+/**
+ * Exported (TASK-ECOS-NOTIFICATIONS-USER-REVIEW-VISIBILITY-REMEDIATION-009) so the
+ * dedicated /me/preferences page can render the exact same editable controls +
+ * effective-summary table as the bell's popover — one preference surface, two entry
+ * points, never two implementations.
+ *
+ * `hideHeader` lets the full page supply its own page-level title without rendering
+ * this same title text twice — the popover (default, unchanged) still shows it.
+ */
+export function NotificationPreferencesPanel({ hideHeader = false }: { hideHeader?: boolean } = {}) {
   const { t } = useTranslation('common');
   const preferences = useNotificationPreferences();
   const policy = useAttentionPolicy();
@@ -61,12 +73,14 @@ function NotificationPreferencesPanel() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <p className="text-sm font-semibold">{t(($) => $.notifications.preferences.title)}</p>
-        <p className="text-muted-foreground mt-0.5 text-xs">
-          {t(($) => $.notifications.preferences.description)}
-        </p>
-      </div>
+      {!hideHeader && (
+        <div>
+          <p className="text-sm font-semibold">{t(($) => $.notifications.preferences.title)}</p>
+          <p className="text-muted-foreground mt-0.5 text-xs">
+            {t(($) => $.notifications.preferences.description)}
+          </p>
+        </div>
+      )}
 
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm">{t(($) => $.notifications.preferences.popupLabel)}</span>

@@ -107,6 +107,11 @@ export const ROUTES = {
   reports: '/reports',
   reportDetail: '/reports/:reportId',
   settings: '/settings',
+  // TASK-ECOS-NOTIFICATIONS-USER-REVIEW-VISIBILITY-REMEDIATION-009 — the user-menu's own
+  // "Preferences" item previously reused ROUTES.settings, which redirects to the
+  // admin-only Configuration OS; a personal, ownership-scoped preferences surface needs
+  // its own destination so it isn't hidden behind Administration's permission gate.
+  myPreferences: '/me/preferences',
   // Claude Bridge
   claudeBridge:           '/claude-bridge',
   claudeBridgeTasks:      '/claude-bridge/tasks',

@@ -89,7 +89,12 @@ export function UserMenu() {
           </span>
         </DropdownMenuItem>
 
-        <DropdownMenuItem onClick={() => navigate(ROUTES.settings)}>
+        {/* TASK-ECOS-NOTIFICATIONS-USER-REVIEW-VISIBILITY-REMEDIATION-009: this used to
+            reuse ROUTES.settings, which redirects to the admin-only Configuration OS —
+            a user without iam/organization/configuration permissions could not even see
+            that destination's module in the nav rail, let alone their own notification
+            preferences. ROUTES.myPreferences is personal/ownership-scoped and gate-free. */}
+        <DropdownMenuItem onClick={() => navigate(ROUTES.myPreferences)}>
           <Settings2 className="size-4" aria-hidden />
           {t(($) => $.userMenu.preferences)}
         </DropdownMenuItem>
