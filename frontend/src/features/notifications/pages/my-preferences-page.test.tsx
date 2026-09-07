@@ -110,8 +110,15 @@ describe('MyPreferencesPage', () => {
 
     await userEvent.click(popupSwitch);
 
+    // TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §6/§9 — full payload
+    // now always includes sound_volume/type_overrides too (PUT is a full replace).
     await waitFor(() =>
-      expect(mockUpdatePreferences).toHaveBeenCalledWith({ popup_enabled: false, sound_enabled: true }),
+      expect(mockUpdatePreferences).toHaveBeenCalledWith({
+        popup_enabled: false,
+        sound_enabled: true,
+        sound_volume: 1,
+        type_overrides: undefined,
+      }),
     );
   });
 });

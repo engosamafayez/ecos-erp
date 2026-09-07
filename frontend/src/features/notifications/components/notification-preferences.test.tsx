@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom/vitest';
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -19,12 +19,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 const mockGetPreferences = vi.hoisted(() => vi.fn());
 const mockUpdatePreferences = vi.hoisted(() => vi.fn());
 const mockAttentionPolicy = vi.hoisted(() => vi.fn());
+const mockTypeCatalog = vi.hoisted(() => vi.fn());
 
 vi.mock('@/features/notifications/services/notifications-service', () => ({
   notificationsService: {
     getPreferences: mockGetPreferences,
     updatePreferences: mockUpdatePreferences,
     attentionPolicy: mockAttentionPolicy,
+    typeCatalog: mockTypeCatalog,
   },
 }));
 
@@ -58,6 +60,10 @@ function renderPanel() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Every existing test below predates the catalog (§8) and doesn't care about it —
+  // default to empty so NotificationTypeToggles renders nothing rather than an
+  // unresolved/rejected query polluting those tests.
+  mockTypeCatalog.mockResolvedValue([]);
 });
 
 describe('NotificationPreferencesButton', () => {
@@ -95,8 +101,16 @@ describe('NotificationPreferencesButton', () => {
     const [popupSwitch] = screen.getAllByRole('switch');
     await userEvent.click(popupSwitch);
 
+    // TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §6/§9 — the payload now
+    // always carries sound_volume/type_overrides too (defaulting to the untouched
+    // current value), since PUT is a full replace and must never silently drop them.
     await waitFor(() =>
-      expect(mockUpdatePreferences).toHaveBeenCalledWith({ popup_enabled: false, sound_enabled: false }),
+      expect(mockUpdatePreferences).toHaveBeenCalledWith({
+        popup_enabled: false,
+        sound_enabled: false,
+        sound_volume: 1,
+        type_overrides: undefined,
+      }),
     );
   });
 
@@ -142,5 +156,82 @@ describe('NotificationPreferencesButton', () => {
 
     await waitFor(() => expect(screen.getAllByRole('switch')).toHaveLength(2));
     screen.getAllByRole('switch').forEach((s) => expect(s).toHaveAttribute('data-state', 'checked'));
+  });
+
+  // ── TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 ──────────────────────
+
+  it('§6: the volume slider commits on release, not on every drag tick, and defaults to full volume', async () => {
+    mockGetPreferences.mockResolvedValue({ popup_enabled: true, sound_enabled: true });
+    mockAttentionPolicy.mockResolvedValue({
+      low: { popup: false, sound: false, sound_profile: null, locked: false },
+      normal: { popup: true, sound: false, sound_profile: null, locked: false },
+      high: { popup: true, sound: true, sound_profile: 'important', locked: false },
+      critical: { popup: true, sound: true, sound_profile: 'critical', locked: true },
+    });
+    mockUpdatePreferences.mockResolvedValue(undefined);
+
+    renderPanel();
+    await userEvent.click(screen.getByRole('button', { name: 'settings' }));
+
+    const slider = await screen.findByRole('slider', { name: 'volumeLabel' });
+    expect(slider).toHaveValue('1');
+
+    fireEvent.change(slider, { target: { value: '0.5' } });
+    // A change alone (no mouseUp/keyUp yet) must not have committed anything.
+    expect(mockUpdatePreferences).not.toHaveBeenCalled();
+
+    fireEvent.mouseUp(slider);
+    await waitFor(() =>
+      expect(mockUpdatePreferences).toHaveBeenCalledWith(
+        expect.objectContaining({ sound_volume: 0.5 }),
+      ),
+    );
+  });
+
+  it('§8/§9: renders the catalog grouped by module and toggling one writes a merged type_overrides map, preserving popup/sound/volume', async () => {
+    mockGetPreferences.mockResolvedValue({ popup_enabled: true, sound_enabled: true, sound_volume: 0.8 });
+    mockAttentionPolicy.mockResolvedValue({
+      low: { popup: false, sound: false, sound_profile: null, locked: false },
+      normal: { popup: true, sound: false, sound_profile: null, locked: false },
+      high: { popup: true, sound: true, sound_profile: 'important', locked: false },
+      critical: { popup: true, sound: true, sound_profile: 'critical', locked: true },
+    });
+    // Mock label text stands in for the real catalog's Arabic name/description — this
+    // test only needs *some* stable string to assert on, not real i18n content.
+    mockTypeCatalog.mockResolvedValue([
+      {
+        key: 'wave_started', module: 'preparation', name_ar: 'Wave Started Label',
+        description_ar: 'Wave Started Desc', user_can_disable: true, has_destination: false, enabled: true,
+      },
+      {
+        key: 'pricing_review_required', module: 'pricing', name_ar: 'Pricing Review Label',
+        description_ar: 'Pricing Review Desc', user_can_disable: true, has_destination: true, enabled: false,
+      },
+    ]);
+    mockUpdatePreferences.mockResolvedValue(undefined);
+
+    renderPanel();
+    await userEvent.click(screen.getByRole('button', { name: 'settings' }));
+
+    expect(await screen.findByText('Wave Started Label')).toBeInTheDocument();
+    expect(screen.getByText('Pricing Review Label')).toBeInTheDocument();
+
+    // 2 popup/sound switches + 2 catalog switches.
+    await waitFor(() => expect(screen.getAllByRole('switch')).toHaveLength(4));
+    const waveStartedSwitch = screen.getByRole('switch', { name: 'Wave Started Label' });
+    expect(waveStartedSwitch).toHaveAttribute('data-state', 'checked');
+
+    await userEvent.click(waveStartedSwitch);
+
+    await waitFor(() =>
+      expect(mockUpdatePreferences).toHaveBeenCalledWith(
+        expect.objectContaining({
+          popup_enabled: true,
+          sound_enabled: true,
+          sound_volume: 0.8,
+          type_overrides: { wave_started: false },
+        }),
+      ),
+    );
   });
 });

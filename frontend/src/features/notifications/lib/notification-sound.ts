@@ -22,20 +22,33 @@ function resolveAudioContextCtor(): AudioContextCtor | undefined {
   );
 }
 
+/** TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §6 — the un-scaled peak gain. */
+const BASE_PEAK_GAIN = 0.15;
+
 /**
  * ADR-047 §26.9 — a best-effort attention signal, never canonical. Browser autoplay
  * policy may silently block this (no user gesture yet); an unsupported or already-closed
  * AudioContext must never throw into the caller. The persistent in-app notification
  * record — never this function — remains the sole source of truth regardless of whether
  * sound actually played.
+ *
+ * `volume` (§6, 0-1, default 1 — every pre-existing call site keeps today's exact
+ * loudness unchanged) scales the peak gain. This does not touch the system/device
+ * volume — it only scales this function's own synthesized signal, exactly as required.
+ * `sound_enabled` is a separate, caller-side concern (whether to invoke this function at
+ * all); `volume <= 0` here just means "play nothing", never a crash.
  */
-export function playAttentionSound(profile: SoundProfile): void {
+export function playAttentionSound(profile: SoundProfile, volume = 1): void {
+  const clampedVolume = Math.min(1, Math.max(0, volume));
+  if (clampedVolume <= 0) return;
+
   try {
     const Ctx = resolveAudioContextCtor();
     if (!Ctx) return;
 
     const ctx = new Ctx();
     const spec = PROFILE_SPEC[profile];
+    const peakGain = BASE_PEAK_GAIN * clampedVolume;
 
     for (let i = 0; i < spec.beeps; i++) {
       const startAt = ctx.currentTime + i * (spec.beepSeconds + spec.gapSeconds);
@@ -45,7 +58,7 @@ export function playAttentionSound(profile: SoundProfile): void {
       oscillator.type = 'sine';
       oscillator.frequency.value = spec.frequencyHz;
       // A short exponential decay reads as a "beep" rather than a click or a drone.
-      gain.gain.setValueAtTime(0.15, startAt);
+      gain.gain.setValueAtTime(peakGain, startAt);
       gain.gain.exponentialRampToValueAtTime(0.0001, startAt + spec.beepSeconds);
 
       oscillator.connect(gain);

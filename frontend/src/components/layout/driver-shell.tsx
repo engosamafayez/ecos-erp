@@ -22,6 +22,7 @@ import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/router/routes';
 import { useDriverTrips } from '@/features/operations/driver-mobile/hooks/use-driver-mobile';
+import { NotificationCenter } from '@/components/layout/header/notifications/notification-center';
 import type enDriverMobile from '@/i18n/locales/en/driver-mobile.json';
 
 /**
@@ -30,11 +31,19 @@ import type enDriverMobile from '@/i18n/locales/en/driver-mobile.json';
  * It is a SIBLING of the enterprise `AppShell`, not a child: `/driver/*` routes resolve
  * through this shell instead, so a driver never receives the ERP chrome. By construction this
  * file imports NO enterprise navigation — no `APP_MODULES`, `ModuleRail`, `AppSidebar`,
- * `MobileMenu`, `AppTopbar`, `MobileBottomNav`, company/warehouse switchers or global search —
- * so it *cannot* render an enterprise module. The security boundary is unchanged and lives on
- * the API (`permission:loading.driver.operate` + per-request ownership); this is the UX
- * boundary that keeps the two shells apart (post-login routing sends driver-only users here;
+ * `MobileMenu`, `AppTopbar`, company/warehouse switchers or global search — so it *cannot*
+ * render an enterprise module. The security boundary is unchanged and lives on the API
+ * (`permission:loading.driver.operate` + per-request ownership); this is the UX boundary
+ * that keeps the two shells apart (post-login routing sends driver-only users here;
  * `EnterpriseOnlyRoute` keeps them out of the ERP shell).
+ *
+ * TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §7 — the one deliberate
+ * exception: `NotificationCenter` (the same self-contained bell+Sheet the enterprise
+ * `AppTopbar` uses, never `AppTopbar` itself) as a small fixed top-right button, so a
+ * driver can actually see notifications addressed to their own user id — confirmed this
+ * shell rendered zero notification affordance before this task, which is exactly why
+ * drivers reported "I don't see notifications" despite the backend already answering
+ * their feed correctly.
  *
  * Navigation is a FIXED driver nav, not a permission-filtered module list: within the driver
  * app every destination belongs to the single `loading.driver.operate` capability, so there is
@@ -123,6 +132,13 @@ export function DriverShell() {
 
   return (
     <div className="flex min-h-svh flex-col bg-background">
+      {/* §7 — the shell's only fixed top-of-screen chrome, deliberately just the bell
+          (not a full enterprise-style top bar). Driver pages still own their own
+          in-content header entirely. */}
+      <div className="fixed end-2 top-2 z-40">
+        <NotificationCenter />
+      </div>
+
       {/* Driver page content owns its own header; the shell adds only the bottom nav.
           `pb-16` clears the fixed bottom bar (h-16) so no page content hides beneath it. */}
       <main className="flex-1 pb-16">

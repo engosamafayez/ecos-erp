@@ -453,6 +453,9 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     // TASK-ECOS-NOTIFICATIONS-ATTENTION-EXPERIENCE-003: the resolved popup/sound policy
     // by priority for the caller — not the feed itself, so it is a distinct literal path.
     Route::get('notifications/attention-policy', [NotificationController::class, 'attentionPolicy']);
+    // TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010: the canonical, grouped
+    // notification type catalog, merged with the caller's own per-type enabled state.
+    Route::get('notifications/type-catalog', [NotificationController::class, 'typeCatalog']);
 
     // AUTHZ: reuses permissions that were already seeded and already assigned to
     // roles — nothing invented. Reads stay open to any authenticated user, as

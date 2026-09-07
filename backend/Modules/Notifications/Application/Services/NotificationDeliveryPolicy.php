@@ -6,6 +6,7 @@ namespace Modules\Notifications\Application\Services;
 
 use Modules\Admin\Configuration\Domain\Services\ConfigurationManager;
 use Modules\Core\UserPreferences\Application\Services\UserPreferenceService;
+use Modules\Notifications\Domain\Catalog\NotificationTypeCatalog;
 use Modules\Notifications\Domain\Contracts\NotificationDeliveryPolicyInterface;
 use Modules\Notifications\Domain\Contracts\ProvidesNotificationMetadataInterface;
 use Modules\Notifications\Domain\Enums\NotificationPriority;
@@ -43,6 +44,19 @@ final class NotificationDeliveryPolicy implements NotificationDeliveryPolicyInte
     public function inAppIsMandatory(mixed $notifiable, ProvidesNotificationMetadataInterface $notification): bool
     {
         return true;
+    }
+
+    public function isTypeEnabledFor(mixed $notifiable, string $notificationClass): bool
+    {
+        $definition = NotificationTypeCatalog::findByNotificationClass($notificationClass);
+
+        if ($definition === null || ! $definition->userCanDisable) {
+            return true;
+        }
+
+        $overrides = $this->userPreferenceFor($notifiable)['type_overrides'] ?? [];
+
+        return (bool) ($overrides[$definition->key] ?? $definition->defaultEnabled);
     }
 
     /**

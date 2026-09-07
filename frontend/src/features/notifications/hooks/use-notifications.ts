@@ -3,6 +3,15 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import { notificationsService } from '../services/notifications-service';
 import type { NotificationPreferences } from '../types/notification';
 
+/** TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §5 — the workspace split. */
+export type NotificationReadFilter = 'all' | 'unread' | 'read';
+
+function unreadParamFor(filter: NotificationReadFilter): boolean | undefined {
+  if (filter === 'unread') return true;
+  if (filter === 'read') return false;
+  return undefined;
+}
+
 /**
  * The notification feed.
  *
@@ -16,10 +25,19 @@ export function useNotifications(enabled = true) {
   return useQuery({
     queryKey: [...KEY, 'list'],
     queryFn: () => notificationsService.list({ perPage: 50 }),
-    // The bell is always mounted; a background refresh keeps the unread count
-    // honest without the user reopening the drawer.
-    refetchInterval: 60_000,
-    staleTime: 30_000,
+    // TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §3 — was 60s with no
+    // focus-refetch (the app-wide default disables it), so a notification created while
+    // the tab was open-but-unfocused could take up to 60s *after refocusing* to appear.
+    // The bell is always mounted; a background refresh keeps the unread count honest
+    // without the user reopening the drawer. Backend delivery is already synchronous
+    // (confirmed: nothing in the notification pipeline implements ShouldQueue) — this is
+    // the one and only place the delay actually lived.
+    refetchInterval: 8_000,
+    // Refetches immediately the instant the tab regains focus, overriding the app-wide
+    // `refetchOnWindowFocus: false` default for this one query only — every other query
+    // in the app keeps its existing default unchanged.
+    refetchOnWindowFocus: true,
+    staleTime: 5_000,
     enabled,
   });
 }
@@ -45,11 +63,18 @@ export function useUnreadNotificationCount(): number {
  *
  * `placeholderData: keepPreviousData` keeps the current page's rows on screen while the
  * next page loads, instead of flashing a loading state on every page change.
+ *
+ * TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §5 — `filter` selects the
+ * Unread/Read/All tab, each its own cache entry (own pagination state; a page number
+ * means something different in each filter's result set). Every mark-read mutation
+ * below still invalidates the whole `KEY` prefix, so switching a row from Unread to
+ * Read correctly refetches all three variants without any filter-specific invalidation
+ * code.
  */
-export function useNotificationCenterFeed(page: number) {
+export function useNotificationCenterFeed(page: number, filter: NotificationReadFilter = 'all') {
   return useQuery({
-    queryKey: [...KEY, 'center', page],
-    queryFn: () => notificationsService.list({ page }),
+    queryKey: [...KEY, 'center', filter, page],
+    queryFn: () => notificationsService.list({ page, unread: unreadParamFor(filter) }),
     placeholderData: keepPreviousData,
   });
 }
@@ -108,8 +133,22 @@ export function useUpdateNotificationPreferences() {
     mutationFn: (payload: NotificationPreferences) => notificationsService.updatePreferences(payload),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: [...KEY, 'preferences'] }).then(() =>
-        // The effective per-priority table depends on the preference just written.
-        queryClient.invalidateQueries({ queryKey: [...KEY, 'attention-policy'] }),
+        Promise.all([
+          // The effective per-priority table depends on the preference just written.
+          queryClient.invalidateQueries({ queryKey: [...KEY, 'attention-policy'] }),
+          // §9 — a type_overrides change must be reflected immediately in the catalog's
+          // per-user `enabled` field, not just in the raw preference payload.
+          queryClient.invalidateQueries({ queryKey: [...KEY, 'type-catalog'] }),
+        ]),
       ),
+  });
+}
+
+/** §8 — the canonical, grouped notification type catalog, merged with the caller's own state. */
+export function useNotificationTypeCatalog() {
+  return useQuery({
+    queryKey: [...KEY, 'type-catalog'],
+    queryFn: () => notificationsService.typeCatalog(),
+    staleTime: 5 * 60_000,
   });
 }

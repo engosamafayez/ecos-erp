@@ -404,6 +404,7 @@
     "bell": "Notifications",
     "bellWithUnread": "Notifications — {{count}} unread",
     "unread": "Unread",
+    "read": "Read",
     "unreadCount": "{{count}} unread",
     "allCaughtUp": "All caught up",
     "markRead": "Mark read",
@@ -440,11 +441,18 @@
       "ai_notification": "AI Notification",
       "exception": "Exception"
     },
+    "moduleGroups": {
+      "pricing": "Pricing",
+      "preparation": "Preparation",
+      "driver": "Driver",
+      "collaboration": "Internal Collaboration"
+    },
     "preferences": {
       "title": "Notification preferences",
       "description": "Control popups and sound for new notifications. In-app notifications themselves are always delivered.",
       "popupLabel": "Show popups",
       "soundLabel": "Play sound",
+      "volumeLabel": "Sound volume",
       "effectiveTitle": "What you'll actually get, by priority",
       "effectiveReadOnlyHint": "Read-only — computed from the switches above, not independently editable.",
       "columnPriority": "Priority",
@@ -452,6 +460,7 @@
       "columnSound": "Sound",
       "locked": "Required by policy",
       "lockedHint": "This priority is set by mandatory system or company policy and can't be changed here.",
+      "typesTitle": "What can notify you",
       "saveFailed": "Couldn't save your preferences. Please try again."
     }
   },
