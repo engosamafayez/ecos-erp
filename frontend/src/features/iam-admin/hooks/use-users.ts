@@ -1,10 +1,11 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { usersService } from '@/features/iam-admin/services/users-service';
+import { iamDirectoriesService, usersService } from '@/features/iam-admin/services/users-service';
 import type {
   AssignOrganizationPayload,
   CreateUserPayload,
   LifecycleAction,
+  OrganizationScopeAssignmentInput,
   ResetPasswordPayload,
   UpdateUserPayload,
   UsersQuery,
@@ -58,6 +59,15 @@ export function useAssignOrganization(id: number) {
   const invalidate = useInvalidateUser();
   return useMutation({
     mutationFn: (payload: AssignOrganizationPayload) => usersService.assignOrganization(id, payload),
+    onSuccess: invalidate,
+  });
+}
+
+/** §9 — save the user's whole organization scope in one authorized, validated, audited call. */
+export function useSyncOrganizationScope(id: number) {
+  const invalidate = useInvalidateUser();
+  return useMutation({
+    mutationFn: (assignments: OrganizationScopeAssignmentInput[]) => usersService.syncOrganizationScope(id, assignments),
     onSuccess: invalidate,
   });
 }
@@ -116,5 +126,23 @@ export function useForceLogout(id: number) {
   return useMutation({
     mutationFn: () => usersService.forceLogout(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [USERS_KEY, 'sessions', id] }),
+  });
+}
+
+/** §9 — the canonical organization hierarchy for the scope picker. */
+export function useOrganizationDirectoryQuery(search: string) {
+  return useQuery({
+    queryKey: [USERS_KEY, 'org-directory', search],
+    queryFn: () => iamDirectoriesService.organization({ q: search || undefined }),
+    staleTime: 60_000,
+  });
+}
+
+/** §6 — searchable lookup over EXISTING employees for the employee link field. */
+export function useEmployeeDirectoryQuery(search: string, onlyUnlinked: boolean) {
+  return useQuery({
+    queryKey: [USERS_KEY, 'employee-directory', search, onlyUnlinked],
+    queryFn: () => iamDirectoriesService.employees({ q: search || undefined, only_unlinked: onlyUnlinked }),
+    staleTime: 30_000,
   });
 }

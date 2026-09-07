@@ -14,7 +14,10 @@ export type TemplateDefinition = {
 export type RoleTemplateSummary = {
   key: string;
   name: string;
+  /** Arabic business name (§5/§12) — falls back to `name` outside the approved catalogue. */
+  name_ar: string;
   description: string | null;
+  description_ar: string | null;
   category: string;
   status: RoleTemplateStatus;
   version: number;

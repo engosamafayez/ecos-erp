@@ -47,14 +47,24 @@ export function UserSecurityPanel({ user }: { user: UserDetail }) {
   const revokeSession = useRevokeSession(user.id);
   const forceLogout = useForceLogout(user.id);
 
-  const resetEligible = user.status !== 'archived' && user.status !== 'deleted';
+  /*
+   * TASK-ECOS-IAM-FINAL-REMEDIATION-DIRECT-DEV-001, §10: eligibility now reads the
+   * server-computed lifecycle flags directly (`UserStatus::allowsAdminPasswordSet()` /
+   * `allowsAdminPasswordReset()`) instead of a hardcoded `status !== 'archived' &&
+   * status !== 'deleted'` check. That old check is exactly what produced the dead end this
+   * task exists to fix: DRAFT read as "eligible" here while the backend refused it with
+   * "Cannot reset password while the account status is 'draft'" — a client/server
+   * disagreement, not a deliberate rule. `isInitial` distinguishes SETTING a first
+   * credential (Draft/Invited/Pending Activation) from RESETTING an existing one, purely
+   * for the button's own label; the backend enforces the real rule regardless.
+   */
+  const isInitial = user.lifecycle.can_set_initial_password;
+  const resetEligible = isInitial || user.lifecycle.can_reset_password;
 
   return (
     <div className="flex flex-col gap-6">
       <section className="flex flex-col gap-2">
         <h3 className="text-sm font-semibold">{t(($) => $.users.security.passwordTitle)}</h3>
-        {/* §7: ARCHIVED/DELETED show the reset action disabled with an explanatory note rather
-           than hiding it silently — restore must happen first (D1's ratified rule). */}
         {!resetEligible ? (
           <p className="text-muted-foreground text-xs">
             {user.status === 'archived'
@@ -62,12 +72,13 @@ export function UserSecurityPanel({ user }: { user: UserDetail }) {
               : t(($) => $.users.security.resetUnavailableDeleted)}
           </p>
         ) : null}
+        {isInitial ? <p className="text-muted-foreground text-xs">{t(($) => $.users.security.initialPasswordHint)}</p> : null}
         {user.status === 'suspended' || user.status === 'locked' ? (
           <p className="text-muted-foreground text-xs">{t(($) => $.users.security.resetKeepsStatus)}</p>
         ) : null}
         <Can permission="iam.users.reset-password">
           <Button type="button" variant="outline" disabled={!resetEligible} onClick={() => setResetOpen(true)} className="self-start">
-            {t(($) => $.users.security.resetTrigger)}
+            {isInitial ? t(($) => $.users.security.setInitialTrigger) : t(($) => $.users.security.resetTrigger)}
           </Button>
         </Can>
       </section>
@@ -124,7 +135,7 @@ export function UserSecurityPanel({ user }: { user: UserDetail }) {
         )}
       </section>
 
-      <ResetPasswordDialog userId={user.id} open={resetOpen} onOpenChange={setResetOpen} />
+      <ResetPasswordDialog userId={user.id} isInitial={isInitial} open={resetOpen} onOpenChange={setResetOpen} />
       <ConfirmDialog
         open={forceLogoutOpen}
         onOpenChange={setForceLogoutOpen}
@@ -140,10 +151,12 @@ export function UserSecurityPanel({ user }: { user: UserDetail }) {
 
 function ResetPasswordDialog({
   userId,
+  isInitial,
   open,
   onOpenChange,
 }: {
   userId: number;
+  isInitial: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -181,7 +194,7 @@ function ResetPasswordDialog({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t(($) => $.users.security.resetTitle)}</DialogTitle>
+          <DialogTitle>{isInitial ? t(($) => $.users.security.setInitialTitle) : t(($) => $.users.security.resetTitle)}</DialogTitle>
         </DialogHeader>
         {serverError ? (
           <Alert variant="destructive">
@@ -211,7 +224,11 @@ function ResetPasswordDialog({
               {tCommon(($) => $.common.cancel)}
             </Button>
             <Button type="submit" disabled={resetPassword.isPending}>
-              {resetPassword.isPending ? tCommon(($) => $.actions.working) : t(($) => $.users.security.resetSubmit)}
+              {resetPassword.isPending
+                ? tCommon(($) => $.actions.working)
+                : isInitial
+                  ? t(($) => $.users.security.setInitialSubmit)
+                  : t(($) => $.users.security.resetSubmit)}
             </Button>
           </DialogFooter>
         </form>

@@ -123,9 +123,38 @@ export type ModuleNavLink = {
    * `path`, so every other item behaves exactly as before.
    */
   subtree?: string;
+  /**
+   * Canonical permissions that make this ONE entry visible — ANY of them is enough
+   * (TASK-ECOS-IAM-FINAL-REMEDIATION-DIRECT-DEV-001, §17).
+   *
+   * WHY THIS EXISTS. Module visibility was already permission-driven (`isModuleVisible`),
+   * but sidebar ITEMS were not: every item of a visible module rendered for everyone. §17
+   * is written almost entirely in terms of individual pages — "HIDDEN COMPLETELY: Orders
+   * page, Customers page, Products page" for Warehouse Manager, "HIDE detailed
+   * Warehouse/Inventory pages" for Warehouse Workers, "Shipping Orders view/follow-up is
+   * REQUIRED" for Moderation but "Do NOT grant Distribution planning" — and none of that
+   * is expressible at module granularity. A role that needs one page inside a module had
+   * to be shown the whole module.
+   *
+   * The values are CANONICAL permission names, the same tokens the backend route
+   * middleware names, so a page's sidebar visibility and its API authorization can never
+   * disagree. Crucially this satisfies §18's "Do not hard-code these as role names": no
+   * entry mentions a role, only a capability.
+   *
+   * This is a UX boundary, not a security boundary — every route and every endpoint stays
+   * independently permission-gated. Omit the field and the item is always visible, so
+   * every entry that does not declare one behaves exactly as it did before.
+   */
+  permissions?: readonly string[];
 };
 
-/** A section header divider (not a clickable link). */
+/**
+ * A section header divider (not a clickable link).
+ *
+ * Sections are rendered only when at least one of the items that FOLLOW them (up to the
+ * next section) is visible — otherwise hiding a module's last two entries would leave a
+ * dangling header over nothing.
+ */
 export type ModuleNavSection = {
   key: NavItemKey;
   isSection: true;
@@ -146,6 +175,131 @@ export type AppModule = {
   defaultPath: string;
   items: ModuleNavItem[];
 };
+
+/**
+ * Per-item permission gates for §17's page-level visibility contract.
+ *
+ * ANY listed permission makes the entry visible. Every value is a CANONICAL token that
+ * already exists in the `permissions` catalogue and is the same one the corresponding
+ * backend route names — so an item can never appear for a user whose API calls it would
+ * then reject, and no entry names a role (§18).
+ */
+const GATE = {
+  'orders': ['sales.orders.view'],
+  'products': ['inventory.products.view'],
+  'customers': ['crm.customers.view'],
+  'inv-dashboard': ['inventory.stock.view'],
+  'raw-materials': ['inventory.raw_materials.view'],
+  'recipes': ['inventory.recipes.view'],
+  'price-review': ['cost.price_review.view', 'inventory.price_review.view'],
+  'stock-ledger': ['inventory.stock.view'],
+  'inventory-count': ['inventory.count.view'],
+  'waste-investigations': ['inventory.waste.view'],
+  'warehouse-liabilities': ['inventory.liabilities.view'],
+  'categories': ['inventory.categories.view'],
+  'units': ['inventory.units.view'],
+  'wave-workspace': ['preparation.waves.view', 'operations.preparation.view'],
+  'logistics-distribution-plan': ['logistics.distribution.view'],
+  'loading-workspace': ['loading.session.view'],
+  'shipping-orders': ['logistics.shipping.view'],
+  'driver-day-settlement': ['finance.driver.view'],
+  'logistics-shipping-companies': ['logistics.carriers.view'],
+  'logistics-vehicles': ['logistics.vehicles.view'],
+  'logistics-drivers': ['logistics.drivers.view'],
+  'egypt-geography': ['logistics.geography.view', 'geography.zones.view'],
+  'logistics-distribution-zones': ['geography.zones.view', 'logistics.geography.view'],
+  'logistics-carriers': ['logistics.carriers.view'],
+  'logistics-automation': ['dispatch.manage'],
+  'logistics-intelligence': ['delivery.analytics.view'],
+  'logistics-fuel-review': ['fleet.fuel.record', 'fleet.view'],
+  'logistics-fleet': ['fleet.view'],
+  'logistics-dispatch': ['dispatch.view'],
+  'logistics-dispatch-exec': ['dispatch.release'],
+  'logistics-dispatch-board': ['dispatch.monitoring.view'],
+  'logistics-operations': ['operations.view'],
+  'logistics-ops-dashboards': ['operations.view'],
+  'logistics-ops-alerts': ['operations.alert.manage'],
+  'logistics-ops-activity': ['operations.audit.view'],
+  'logistics-ops-readiness': ['operations.capacity.reserve', 'operations.view'],
+  'logistics-enterprise': ['operations.view'],
+  'logistics-delivery': ['delivery.view'],
+  'procurement-hub': ['purchasing.purchases.view'],
+  'suppliers': ['purchasing.suppliers.view'],
+  'purchases': ['purchasing.purchases.view'],
+  'supplier-invoices': ['purchasing.supplier_invoices.view'],
+  'receiving-center': ['purchasing.receiving.view'],
+  'supplier-returns': ['purchasing.supplier_returns.view'],
+  'finance-executive': ['finance.executive.workspace.view'],
+  'finance-coa': ['finance.coa.manage'],
+  'finance-journals': ['finance.journal.create', 'finance.journal.approve'],
+  'finance-statements': ['finance.reports.view'],
+  'finance-ar': ['finance.ar.view'],
+  'finance-ap': ['finance.ap.view'],
+  'finance-treasury': ['finance.cash.view', 'finance.bank.view'],
+  'finance-fiscal': ['finance.closing.workspace.view', 'finance.period.manage'],
+  'finance-budgets': ['finance.budget.view'],
+  'finance-tax': ['finance.tax.manage', 'finance.vat.view'],
+  'finance-expenses': ['finance.expense.view'],
+  'finance-costing': ['finance.cost_allocation.view', 'cost.cost_management.view'],
+  'crm-customers': ['crm.customers.view'],
+  'crm-executive': ['crm.executive.view'],
+  'omni-inbox': ['omnichannel.inbox.view'],
+  'omni-dashboard': ['omnichannel.inbox.view'],
+  'omni-providers': ['omnichannel.providers.view'],
+  'omni-macros': ['omnichannel.macros.view'],
+  'omni-routing': ['omnichannel.routing_rules.view'],
+  'mkt-dashboard': ['marketing.workspace.view'],
+  'mkt-initiatives': ['marketing.initiatives.view'],
+  'mkt-init-exec': ['marketing.initiatives.view'],
+  'mkt-campaigns': ['marketing.campaigns.view'],
+  'mkt-camp-dash': ['marketing.campaigns.view'],
+  'mkt-assets': ['marketing.assets.view'],
+  'mkt-connect': ['marketing.meta.view', 'marketing.providers.view'],
+  'studio': ['marketing.studio.view'],
+  'studio-dash': ['marketing.studio.view'],
+  'studio-gov': ['marketing.workspace.manage'],
+  'automation': ['marketing.automation.view'],
+  'automation-segs': ['marketing.segments.view'],
+  'automation-dash': ['marketing.automation.view'],
+  'automation-gov': ['marketing.workflows.view'],
+  'cep-inbox': ['cep.inbox.view'],
+  'cep-dashboard': ['cep.inbox.view'],
+  'cep-leads': ['cep.leads.view'],
+  'bae-journey': ['bae.attribution.view'],
+  'bae-timeline': ['bae.timeline.view'],
+  'hr-workforce': ['hr.workforce.view'],
+  'hr-employees': ['hr.employees.view'],
+  'hr-org-chart': ['hr.org.view'],
+  'hr-structure': ['hr.org.manage', 'hr.org.view'],
+  'hr-attendance': ['hr.attendance.view'],
+  'hr-leave': ['hr.leave.view'],
+  'hr-comp': ['hr.compensation.view'],
+  'hr-commission': ['hr.commission.view'],
+  'hr-explain': ['hr.compensation.view'],
+  'hr-perf': ['hr.performance.view'],
+  'hr-recruit': ['hr.recruitment.view'],
+  'hr-offers': ['hr.offers.view'],
+  'hr-tags': ['hr.recruitment.tags.manage'],
+  'hr-recruit-analytics': ['hr.recruitment.analytics.view'],
+  'hr-exits': ['hr.exit.view'],
+  'hr-exec': ['hr.executive.view'],
+  'hr-analytics': ['hr.analytics.view'],
+  'organization': ['organization.companies.view'],
+  'companies': ['organization.companies.view'],
+  'brands': ['organization.brands.view'],
+  'business-accounts': ['organization.business_accounts.view'],
+  'channels': ['sales.channels.view'],
+  'warehouses': ['inventory.warehouses.view'],
+  'branches': ['organization.branches.view'],
+  'branch-coverage': ['organization.branches.view'],
+  'teams': ['organization.teams.view'],
+  'iam-management': ['iam.users.view', 'iam.roles.view', 'iam.role-templates.view'],
+  'settings': ['configuration.settings.view'],
+  'configuration-os': ['configuration.settings.view', 'configuration.company.view'],
+  'product-mappings': ['sales.channels.view'],
+  'sync-logs': ['sales.channels.view'],
+  'reports-board': ['reports.sales.view', 'reports.inventory.view', 'reports.finance.view', 'reports.procurement.view', 'reports.distribution.view', 'reports.customers.view', 'reports.products.view', 'reports.preparation.view', 'reports.drivers.view', 'reports.executive.view'],
+} as const satisfies Record<string, readonly string[]>;
 
 const ALL_MODULES: AppModule[] = [
   {
@@ -189,9 +343,9 @@ const ALL_MODULES: AppModule[] = [
     icon: ShoppingBag,
     defaultPath: ROUTES.orders,
     items: [
-      { key: 'orders', path: ROUTES.orders, icon: ShoppingBag },
-      { key: 'products', path: ROUTES.products, icon: Package },
-      { key: 'customers', path: ROUTES.customers, icon: ShoppingCart },
+      { key: 'orders', path: ROUTES.orders, icon: ShoppingBag, permissions: GATE['orders'] },
+      { key: 'products', path: ROUTES.products, icon: Package, permissions: GATE['products'] },
+      { key: 'customers', path: ROUTES.customers, icon: ShoppingCart, permissions: GATE['customers'] },
     ],
   },
   {
@@ -199,19 +353,19 @@ const ALL_MODULES: AppModule[] = [
     icon: Package,
     defaultPath: ROUTES.inventoryDashboard,
     items: [
-      { key: 'inv-dashboard', path: ROUTES.inventoryDashboard, icon: LayoutDashboard },
-      { key: 'raw-materials', path: ROUTES.rawMaterials, icon: FlaskConical },
-      { key: 'recipes', path: ROUTES.recipes, icon: ListTree },
-      { key: 'price-review', path: ROUTES.costManagementPriceReview, icon: SearchCheck },
-      { key: 'stock-ledger', path: ROUTES.stockLedger, icon: BookOpen },
-      { key: 'inventory-count', path: ROUTES.inventoryCount, icon: ClipboardList },
-      { key: 'waste-investigations', path: ROUTES.wasteInvestigations, icon: AlertTriangle },
-      { key: 'warehouse-liabilities', path: ROUTES.warehouseLiabilities, icon: Shield },
+      { key: 'inv-dashboard', path: ROUTES.inventoryDashboard, icon: LayoutDashboard, permissions: GATE['inv-dashboard'] },
+      { key: 'raw-materials', path: ROUTES.rawMaterials, icon: FlaskConical, permissions: GATE['raw-materials'] },
+      { key: 'recipes', path: ROUTES.recipes, icon: ListTree, permissions: GATE['recipes'] },
+      { key: 'price-review', path: ROUTES.costManagementPriceReview, icon: SearchCheck, permissions: GATE['price-review'] },
+      { key: 'stock-ledger', path: ROUTES.stockLedger, icon: BookOpen, permissions: GATE['stock-ledger'] },
+      { key: 'inventory-count', path: ROUTES.inventoryCount, icon: ClipboardList, permissions: GATE['inventory-count'] },
+      { key: 'waste-investigations', path: ROUTES.wasteInvestigations, icon: AlertTriangle, permissions: GATE['waste-investigations'] },
+      { key: 'warehouse-liabilities', path: ROUTES.warehouseLiabilities, icon: Shield, permissions: GATE['warehouse-liabilities'] },
       // Phase 1.1 — Stock Transfers deferred; restore entry above to re-enable (PKG-TRANSFERS-001)
       // Master Data section
       { key: 'master-data-section', isSection: true },
-      { key: 'categories', path: ROUTES.inventoryCategories, icon: Tag },
-      { key: 'units', path: ROUTES.inventoryUnits, icon: Ruler },
+      { key: 'categories', path: ROUTES.inventoryCategories, icon: Tag, permissions: GATE['categories'] },
+      { key: 'units', path: ROUTES.inventoryUnits, icon: Ruler, permissions: GATE['units'] },
     ],
   },
   {
@@ -228,15 +382,15 @@ const ALL_MODULES: AppModule[] = [
       // tabs of the same PreparationWorkspaceLayout — not sidebar siblings. Declaring the
       // shell root /operations/preparation as the owned subtree keeps the Operations
       // contextual sidebar mounted across all three tabs and the nested Wave pages.
-      { key: 'wave-workspace', path: ROUTES.waveWorkspace, subtree: ROUTES.preparationWorkspace, icon: Layers2 },
+      { key: 'wave-workspace', path: ROUTES.waveWorkspace, subtree: ROUTES.preparationWorkspace, icon: Layers2, permissions: GATE['wave-workspace'] },
       // Points at the canonical Distribution Workspace redesign (not the retired zone-status
       // planning page); the /logistics/distribution/planning deep link redirects here.
-      { key: 'logistics-distribution-plan', path: ROUTES.logisticsDistributionWorkspace, icon: ListOrdered },
-      { key: 'loading-workspace', path: ROUTES.loadingOsWorkspace, icon: PackageCheck },
+      { key: 'logistics-distribution-plan', path: ROUTES.logisticsDistributionWorkspace, icon: ListOrdered, permissions: GATE['logistics-distribution-plan'] },
+      { key: 'loading-workspace', path: ROUTES.loadingOsWorkspace, icon: PackageCheck, permissions: GATE['loading-workspace'] },
       // TASK-ECOS-OPERATIONS-SHIPPING-ORDERS-IMPLEMENTATION-002 — Architecture-001 §32's
       // approved insertion point: immediately before Driver/Day Settlement.
-      { key: 'shipping-orders', path: ROUTES.shippingOrders, icon: Truck },
-      { key: 'driver-day-settlement', path: ROUTES.logisticsDriverSettlement, icon: Wallet },
+      { key: 'shipping-orders', path: ROUTES.shippingOrders, icon: Truck, permissions: GATE['shipping-orders'] },
+      { key: 'driver-day-settlement', path: ROUTES.logisticsDriverSettlement, icon: Wallet, permissions: GATE['driver-day-settlement'] },
     ],
   },
   {
@@ -256,18 +410,18 @@ const ALL_MODULES: AppModule[] = [
       // items reuse their existing keys (Distribution Zones still resolves to
       // /logistics/geography/distribution-zones; its legacy redirect is unchanged).
       { key: 'shipping-settings-section', isSection: true },
-      { key: 'logistics-shipping-companies', path: ROUTES.logisticsShippingCompanies, icon: Truck },
-      { key: 'logistics-vehicles', path: ROUTES.logisticsVehicles, icon: Truck },
-      { key: 'logistics-drivers', path: ROUTES.logisticsDrivers, icon: UsersIcon },
-      { key: 'egypt-geography', path: ROUTES.logisticsGeography, icon: Map },
-      { key: 'logistics-distribution-zones', path: ROUTES.logisticsDistributionZones, icon: Network },
+      { key: 'logistics-shipping-companies', path: ROUTES.logisticsShippingCompanies, icon: Truck, permissions: GATE['logistics-shipping-companies'] },
+      { key: 'logistics-vehicles', path: ROUTES.logisticsVehicles, icon: Truck, permissions: GATE['logistics-vehicles'] },
+      { key: 'logistics-drivers', path: ROUTES.logisticsDrivers, icon: UsersIcon, permissions: GATE['logistics-drivers'] },
+      { key: 'egypt-geography', path: ROUTES.logisticsGeography, icon: Map, permissions: GATE['egypt-geography'] },
+      { key: 'logistics-distribution-zones', path: ROUTES.logisticsDistributionZones, icon: Network, permissions: GATE['logistics-distribution-zones'] },
       { key: 'carriers-section', isSection: true },
-      { key: 'logistics-carriers', path: ROUTES.logisticsCarrierAccounts, icon: Truck },
-      { key: 'logistics-automation', path: ROUTES.logisticsAutomation, icon: GitBranch },
-      { key: 'logistics-intelligence', path: ROUTES.logisticsIntelligence, icon: Activity },
-      { key: 'logistics-fuel-review', path: ROUTES.logisticsFuelReview, icon: Gauge },
+      { key: 'logistics-carriers', path: ROUTES.logisticsCarrierAccounts, icon: Truck, permissions: GATE['logistics-carriers'] },
+      { key: 'logistics-automation', path: ROUTES.logisticsAutomation, icon: GitBranch, permissions: GATE['logistics-automation'] },
+      { key: 'logistics-intelligence', path: ROUTES.logisticsIntelligence, icon: Activity, permissions: GATE['logistics-intelligence'] },
+      { key: 'logistics-fuel-review', path: ROUTES.logisticsFuelReview, icon: Gauge, permissions: GATE['logistics-fuel-review'] },
       { key: 'fleet-section', isSection: true },
-      { key: 'logistics-fleet', path: ROUTES.logisticsFleet, icon: Gauge },
+      { key: 'logistics-fleet', path: ROUTES.logisticsFleet, icon: Gauge, permissions: GATE['logistics-fleet'] },
       // Service Areas (Network) is retired from the Shipping UI
       // (TASK-LOGISTICS-NAVIGATION-ARCHITECTURE-CLEANUP-002; audit verdict C — UI-redundant,
       // backend relevant). The `/logistics/network` route, ServiceArea/Network backend,
@@ -275,22 +429,23 @@ const ALL_MODULES: AppModule[] = [
       // removes the sidebar entry. Distribution Planning + Loading Workspace + Driver Day
       // Settlement now belong to the Operations module (approved ownership — CLEANUP-002 §5-6).
       { key: 'dispatch-section', isSection: true },
-      { key: 'logistics-dispatch', path: ROUTES.logisticsDispatch, icon: Radio },
-      { key: 'logistics-dispatch-exec', path: ROUTES.logisticsDispatchExecution, icon: Zap },
+      { key: 'logistics-dispatch', path: ROUTES.logisticsDispatch, icon: Radio, permissions: GATE['logistics-dispatch'] },
+      { key: 'logistics-dispatch-exec', path: ROUTES.logisticsDispatchExecution, icon: Zap, permissions: GATE['logistics-dispatch-exec'] },
       {
         key: 'logistics-dispatch-board',
         path: ROUTES.logisticsDispatchBoard,
         icon: LayoutDashboard,
+        permissions: GATE['logistics-dispatch-board'],
       },
       { key: 'operations-section', isSection: true },
-      { key: 'logistics-operations', path: ROUTES.logisticsOperations, icon: Activity },
-      { key: 'logistics-ops-dashboards', path: ROUTES.logisticsOpsDashboards, icon: Gauge },
-      { key: 'logistics-ops-alerts', path: ROUTES.logisticsOpsAlerts, icon: Bell },
-      { key: 'logistics-ops-activity', path: ROUTES.logisticsOpsActivity, icon: History },
-      { key: 'logistics-ops-readiness', path: ROUTES.logisticsOpsReadiness, icon: ShieldCheck },
-      { key: 'logistics-enterprise', path: ROUTES.logisticsEnterprise, icon: LayoutDashboard },
+      { key: 'logistics-operations', path: ROUTES.logisticsOperations, icon: Activity, permissions: GATE['logistics-operations'] },
+      { key: 'logistics-ops-dashboards', path: ROUTES.logisticsOpsDashboards, icon: Gauge, permissions: GATE['logistics-ops-dashboards'] },
+      { key: 'logistics-ops-alerts', path: ROUTES.logisticsOpsAlerts, icon: Bell, permissions: GATE['logistics-ops-alerts'] },
+      { key: 'logistics-ops-activity', path: ROUTES.logisticsOpsActivity, icon: History, permissions: GATE['logistics-ops-activity'] },
+      { key: 'logistics-ops-readiness', path: ROUTES.logisticsOpsReadiness, icon: ShieldCheck, permissions: GATE['logistics-ops-readiness'] },
+      { key: 'logistics-enterprise', path: ROUTES.logisticsEnterprise, icon: LayoutDashboard, permissions: GATE['logistics-enterprise'] },
       { key: 'delivery-section', isSection: true },
-      { key: 'logistics-delivery', path: ROUTES.logisticsDelivery, icon: MapPin },
+      { key: 'logistics-delivery', path: ROUTES.logisticsDelivery, icon: MapPin, permissions: GATE['logistics-delivery'] },
     ],
   },
   {
@@ -298,16 +453,16 @@ const ALL_MODULES: AppModule[] = [
     icon: Truck,
     defaultPath: ROUTES.procurementHub,
     items: [
-      { key: 'procurement-hub', path: ROUTES.procurementHub, icon: LayoutDashboard },
-      { key: 'suppliers', path: ROUTES.suppliers, icon: Truck },
+      { key: 'procurement-hub', path: ROUTES.procurementHub, icon: LayoutDashboard, permissions: GATE['procurement-hub'] },
+      { key: 'suppliers', path: ROUTES.suppliers, icon: Truck, permissions: GATE['suppliers'] },
       // REALIGNMENT-001 §19 — "Material Requests" is no longer part of the approved
       // purchasing journey, so it is not offered as a navigation entry point. The route,
       // page, backend record_type and all historic rows are deliberately UNTOUCHED (no data
       // loss, deep links still resolve); only this leaf is withdrawn from the menu.
-      { key: 'purchases', path: ROUTES.purchases, icon: ShoppingCart },
-      { key: 'supplier-invoices', path: ROUTES.supplierInvoices, icon: DollarSign },
-      { key: 'receiving-center', path: ROUTES.receivingCenter, icon: PackageOpen },
-      { key: 'supplier-returns', path: ROUTES.supplierReturns, icon: RotateCcw },
+      { key: 'purchases', path: ROUTES.purchases, icon: ShoppingCart, permissions: GATE['purchases'] },
+      { key: 'supplier-invoices', path: ROUTES.supplierInvoices, icon: DollarSign, permissions: GATE['supplier-invoices'] },
+      { key: 'receiving-center', path: ROUTES.receivingCenter, icon: PackageOpen, permissions: GATE['receiving-center'] },
+      { key: 'supplier-returns', path: ROUTES.supplierReturns, icon: RotateCcw, permissions: GATE['supplier-returns'] },
     ],
   },
   {
@@ -315,18 +470,18 @@ const ALL_MODULES: AppModule[] = [
     icon: DollarSign,
     defaultPath: ROUTES.accounting,
     items: [
-      { key: 'finance-executive', path: ROUTES.accounting, icon: LayoutDashboard },
-      { key: 'finance-coa', path: ROUTES.financeChartOfAccounts, icon: ListTree },
-      { key: 'finance-journals', path: ROUTES.financeJournals, icon: BookOpen },
-      { key: 'finance-statements', path: ROUTES.financeStatements, icon: BarChart3 },
-      { key: 'finance-ar', path: ROUTES.financeReceivables, icon: DollarSign },
-      { key: 'finance-ap', path: ROUTES.financePayables, icon: ShoppingCart },
-      { key: 'finance-treasury', path: ROUTES.financeCashBanking, icon: Wallet },
-      { key: 'finance-fiscal', path: ROUTES.financeFiscalClosing, icon: CalendarDays },
-      { key: 'finance-budgets', path: ROUTES.financeBudgets, icon: PiggyBank },
-      { key: 'finance-tax', path: ROUTES.financeTaxVat, icon: Percent },
-      { key: 'finance-expenses', path: ROUTES.financeExpenses, icon: Receipt },
-      { key: 'finance-costing', path: ROUTES.financeCosting, icon: TrendingUp },
+      { key: 'finance-executive', path: ROUTES.accounting, icon: LayoutDashboard, permissions: GATE['finance-executive'] },
+      { key: 'finance-coa', path: ROUTES.financeChartOfAccounts, icon: ListTree, permissions: GATE['finance-coa'] },
+      { key: 'finance-journals', path: ROUTES.financeJournals, icon: BookOpen, permissions: GATE['finance-journals'] },
+      { key: 'finance-statements', path: ROUTES.financeStatements, icon: BarChart3, permissions: GATE['finance-statements'] },
+      { key: 'finance-ar', path: ROUTES.financeReceivables, icon: DollarSign, permissions: GATE['finance-ar'] },
+      { key: 'finance-ap', path: ROUTES.financePayables, icon: ShoppingCart, permissions: GATE['finance-ap'] },
+      { key: 'finance-treasury', path: ROUTES.financeCashBanking, icon: Wallet, permissions: GATE['finance-treasury'] },
+      { key: 'finance-fiscal', path: ROUTES.financeFiscalClosing, icon: CalendarDays, permissions: GATE['finance-fiscal'] },
+      { key: 'finance-budgets', path: ROUTES.financeBudgets, icon: PiggyBank, permissions: GATE['finance-budgets'] },
+      { key: 'finance-tax', path: ROUTES.financeTaxVat, icon: Percent, permissions: GATE['finance-tax'] },
+      { key: 'finance-expenses', path: ROUTES.financeExpenses, icon: Receipt, permissions: GATE['finance-expenses'] },
+      { key: 'finance-costing', path: ROUTES.financeCosting, icon: TrendingUp, permissions: GATE['finance-costing'] },
     ],
   },
   {
@@ -334,29 +489,29 @@ const ALL_MODULES: AppModule[] = [
     icon: Megaphone,
     defaultPath: ROUTES.marketing,
     items: [
-      { key: 'mkt-dashboard', path: ROUTES.marketing, icon: LayoutDashboard },
-      { key: 'mkt-initiatives', path: ROUTES.marketingInitiatives, icon: Briefcase },
-      { key: 'mkt-init-exec', path: ROUTES.marketingInitiativeDash, icon: BarChart3 },
-      { key: 'mkt-campaigns', path: ROUTES.marketingCampaigns, icon: TrendingUp },
-      { key: 'mkt-camp-dash', path: ROUTES.marketingCampaignDash, icon: TrendingUp },
-      { key: 'mkt-assets', path: ROUTES.marketingAssets, icon: Zap },
-      { key: 'mkt-connect', path: ROUTES.marketingConnectMeta, icon: Link2 },
-      { key: 'studio', path: ROUTES.campaignStudio, icon: Layers },
-      { key: 'studio-dash', path: ROUTES.campaignStudioDashboard, icon: BarChart3 },
-      { key: 'studio-gov', path: ROUTES.campaignGovernance, icon: Shield },
+      { key: 'mkt-dashboard', path: ROUTES.marketing, icon: LayoutDashboard, permissions: GATE['mkt-dashboard'] },
+      { key: 'mkt-initiatives', path: ROUTES.marketingInitiatives, icon: Briefcase, permissions: GATE['mkt-initiatives'] },
+      { key: 'mkt-init-exec', path: ROUTES.marketingInitiativeDash, icon: BarChart3, permissions: GATE['mkt-init-exec'] },
+      { key: 'mkt-campaigns', path: ROUTES.marketingCampaigns, icon: TrendingUp, permissions: GATE['mkt-campaigns'] },
+      { key: 'mkt-camp-dash', path: ROUTES.marketingCampaignDash, icon: TrendingUp, permissions: GATE['mkt-camp-dash'] },
+      { key: 'mkt-assets', path: ROUTES.marketingAssets, icon: Zap, permissions: GATE['mkt-assets'] },
+      { key: 'mkt-connect', path: ROUTES.marketingConnectMeta, icon: Link2, permissions: GATE['mkt-connect'] },
+      { key: 'studio', path: ROUTES.campaignStudio, icon: Layers, permissions: GATE['studio'] },
+      { key: 'studio-dash', path: ROUTES.campaignStudioDashboard, icon: BarChart3, permissions: GATE['studio-dash'] },
+      { key: 'studio-gov', path: ROUTES.campaignGovernance, icon: Shield, permissions: GATE['studio-gov'] },
       // Marketing Automation Platform
-      { key: 'automation', path: ROUTES.automationWorkspace, icon: GitBranch },
-      { key: 'automation-segs', path: ROUTES.audienceSegments, icon: UsersIcon },
-      { key: 'automation-dash', path: ROUTES.automationDashboard, icon: Activity },
-      { key: 'automation-gov', path: ROUTES.automationGovernance, icon: Shield },
+      { key: 'automation', path: ROUTES.automationWorkspace, icon: GitBranch, permissions: GATE['automation'] },
+      { key: 'automation-segs', path: ROUTES.audienceSegments, icon: UsersIcon, permissions: GATE['automation-segs'] },
+      { key: 'automation-dash', path: ROUTES.automationDashboard, icon: Activity, permissions: GATE['automation-dash'] },
+      { key: 'automation-gov', path: ROUTES.automationGovernance, icon: Shield, permissions: GATE['automation-gov'] },
       { key: 'cep-section', isSection: true },
-      { key: 'cep-inbox', path: ROUTES.customerEngagement, icon: MessageSquare },
-      { key: 'cep-dashboard', path: ROUTES.cepDashboard, icon: LayoutDashboard },
-      { key: 'cep-leads', path: ROUTES.cepLeads, icon: UserPlus },
+      { key: 'cep-inbox', path: ROUTES.customerEngagement, icon: MessageSquare, permissions: GATE['cep-inbox'] },
+      { key: 'cep-dashboard', path: ROUTES.cepDashboard, icon: LayoutDashboard, permissions: GATE['cep-dashboard'] },
+      { key: 'cep-leads', path: ROUTES.cepLeads, icon: UserPlus, permissions: GATE['cep-leads'] },
       { key: 'bae-section-group', isSection: true },
       { key: 'bae-section', isSection: true },
-      { key: 'bae-journey', path: ROUTES.businessAttribution, icon: Activity },
-      { key: 'bae-timeline', path: ROUTES.baeTimeline, icon: BarChart3 },
+      { key: 'bae-journey', path: ROUTES.businessAttribution, icon: Activity, permissions: GATE['bae-journey'] },
+      { key: 'bae-timeline', path: ROUTES.baeTimeline, icon: BarChart3, permissions: GATE['bae-timeline'] },
     ],
   },
   {
@@ -364,8 +519,8 @@ const ALL_MODULES: AppModule[] = [
     icon: UsersIcon,
     defaultPath: ROUTES.crmCustomers,
     items: [
-      { key: 'crm-customers', path: ROUTES.crmCustomers, icon: UsersIcon },
-      { key: 'crm-executive', path: ROUTES.crmExecutive, icon: BarChart3 },
+      { key: 'crm-customers', path: ROUTES.crmCustomers, icon: UsersIcon, permissions: GATE['crm-customers'] },
+      { key: 'crm-executive', path: ROUTES.crmExecutive, icon: BarChart3, permissions: GATE['crm-executive'] },
     ],
   },
   {
@@ -379,12 +534,12 @@ const ALL_MODULES: AppModule[] = [
     icon: MessageCircle,
     defaultPath: ROUTES.omnichannelInbox,
     items: [
-      { key: 'omni-inbox', path: ROUTES.omnichannelInbox, icon: MessageCircle },
-      { key: 'omni-dashboard', path: ROUTES.omnichannelDashboard, icon: LayoutDashboard },
+      { key: 'omni-inbox', path: ROUTES.omnichannelInbox, icon: MessageCircle, permissions: GATE['omni-inbox'] },
+      { key: 'omni-dashboard', path: ROUTES.omnichannelDashboard, icon: LayoutDashboard, permissions: GATE['omni-dashboard'] },
       { key: 'omni-config', isSection: true },
-      { key: 'omni-providers', path: ROUTES.omnichannelProviders, icon: Wifi },
-      { key: 'omni-macros', path: ROUTES.omnichannelMacros, icon: Zap },
-      { key: 'omni-routing', path: ROUTES.omnichannelRouting, icon: GitBranch },
+      { key: 'omni-providers', path: ROUTES.omnichannelProviders, icon: Wifi, permissions: GATE['omni-providers'] },
+      { key: 'omni-macros', path: ROUTES.omnichannelMacros, icon: Zap, permissions: GATE['omni-macros'] },
+      { key: 'omni-routing', path: ROUTES.omnichannelRouting, icon: GitBranch, permissions: GATE['omni-routing'] },
     ],
   },
   {
@@ -399,27 +554,27 @@ const ALL_MODULES: AppModule[] = [
     icon: UsersIcon,
     defaultPath: ROUTES.hr,
     items: [
-      { key: 'hr-workforce', path: ROUTES.hr, icon: Gauge },
+      { key: 'hr-workforce', path: ROUTES.hr, icon: Gauge, permissions: GATE['hr-workforce'] },
       { key: 'hr-people', isSection: true },
-      { key: 'hr-employees', path: ROUTES.hrEmployees, icon: UsersIcon },
-      { key: 'hr-org-chart', path: ROUTES.hrOrganizationChart, icon: Network },
-      { key: 'hr-structure', path: ROUTES.hrStructure, icon: ListTree },
+      { key: 'hr-employees', path: ROUTES.hrEmployees, icon: UsersIcon, permissions: GATE['hr-employees'] },
+      { key: 'hr-org-chart', path: ROUTES.hrOrganizationChart, icon: Network, permissions: GATE['hr-org-chart'] },
+      { key: 'hr-structure', path: ROUTES.hrStructure, icon: ListTree, permissions: GATE['hr-structure'] },
       { key: 'hr-time', isSection: true },
-      { key: 'hr-attendance', path: ROUTES.hrAttendance, icon: ClipboardList },
-      { key: 'hr-leave', path: ROUTES.hrLeave, icon: CalendarDays },
+      { key: 'hr-attendance', path: ROUTES.hrAttendance, icon: ClipboardList, permissions: GATE['hr-attendance'] },
+      { key: 'hr-leave', path: ROUTES.hrLeave, icon: CalendarDays, permissions: GATE['hr-leave'] },
       { key: 'hr-pay', isSection: true },
-      { key: 'hr-comp', path: ROUTES.hrCompensation, icon: DollarSign },
-      { key: 'hr-commission', path: ROUTES.hrCommissionRules, icon: Zap },
-      { key: 'hr-explain', path: ROUTES.hrCompensationExplainability, icon: Search },
-      { key: 'hr-perf', path: ROUTES.hrPerformance, icon: TrendingUp },
+      { key: 'hr-comp', path: ROUTES.hrCompensation, icon: DollarSign, permissions: GATE['hr-comp'] },
+      { key: 'hr-commission', path: ROUTES.hrCommissionRules, icon: Zap, permissions: GATE['hr-commission'] },
+      { key: 'hr-explain', path: ROUTES.hrCompensationExplainability, icon: Search, permissions: GATE['hr-explain'] },
+      { key: 'hr-perf', path: ROUTES.hrPerformance, icon: TrendingUp, permissions: GATE['hr-perf'] },
       { key: 'hr-talent', isSection: true },
-      { key: 'hr-recruit', path: ROUTES.hrRecruitment, icon: UserPlus },
-      { key: 'hr-offers', path: ROUTES.hrOffers, icon: FileSignature },
-      { key: 'hr-tags', path: ROUTES.hrApplicantTags, icon: Tags },
-      { key: 'hr-recruit-analytics', path: ROUTES.hrRecruitmentAnalytics, icon: BarChart2 },
-      { key: 'hr-exits', path: ROUTES.hrExits, icon: DoorOpen },
-      { key: 'hr-exec', path: ROUTES.hrExecutive, icon: BarChart3 },
-      { key: 'hr-analytics', path: ROUTES.hrAnalytics, icon: BarChart2 },
+      { key: 'hr-recruit', path: ROUTES.hrRecruitment, icon: UserPlus, permissions: GATE['hr-recruit'] },
+      { key: 'hr-offers', path: ROUTES.hrOffers, icon: FileSignature, permissions: GATE['hr-offers'] },
+      { key: 'hr-tags', path: ROUTES.hrApplicantTags, icon: Tags, permissions: GATE['hr-tags'] },
+      { key: 'hr-recruit-analytics', path: ROUTES.hrRecruitmentAnalytics, icon: BarChart2, permissions: GATE['hr-recruit-analytics'] },
+      { key: 'hr-exits', path: ROUTES.hrExits, icon: DoorOpen, permissions: GATE['hr-exits'] },
+      { key: 'hr-exec', path: ROUTES.hrExecutive, icon: BarChart3, permissions: GATE['hr-exec'] },
+      { key: 'hr-analytics', path: ROUTES.hrAnalytics, icon: BarChart2, permissions: GATE['hr-analytics'] },
     ],
   },
   {
@@ -433,7 +588,7 @@ const ALL_MODULES: AppModule[] = [
     id: 'reports',
     icon: BarChart3,
     defaultPath: ROUTES.reports,
-    items: [{ key: 'reports-board', path: ROUTES.reports, icon: BarChart3 }],
+    items: [{ key: 'reports-board', path: ROUTES.reports, icon: BarChart3, permissions: GATE['reports-board'] }],
   },
   {
     id: 'administration',
@@ -441,24 +596,34 @@ const ALL_MODULES: AppModule[] = [
     defaultPath: ROUTES.organization,
     items: [
       { key: 'org-section', isSection: true },
-      { key: 'organization', path: ROUTES.organization, icon: Building2 },
-      { key: 'companies', path: ROUTES.companies, icon: Building2 },
-      { key: 'brands', path: ROUTES.brands, icon: Layers },
-      { key: 'business-accounts', path: ROUTES.businessAccounts, icon: Briefcase },
-      { key: 'channels', path: ROUTES.channels, icon: Globe },
-      { key: 'warehouses', path: ROUTES.warehouses, icon: Warehouse },
-      { key: 'branches', path: ROUTES.branches, icon: Building2 },
-      { key: 'branch-coverage', path: ROUTES.branchCoverage, icon: MapPin },
-      { key: 'teams', path: ROUTES.teams, icon: UsersIcon },
+      { key: 'organization', path: ROUTES.organization, icon: Building2, permissions: GATE['organization'] },
+      { key: 'companies', path: ROUTES.companies, icon: Building2, permissions: GATE['companies'] },
+      { key: 'brands', path: ROUTES.brands, icon: Layers, permissions: GATE['brands'] },
+      { key: 'business-accounts', path: ROUTES.businessAccounts, icon: Briefcase, permissions: GATE['business-accounts'] },
+      { key: 'channels', path: ROUTES.channels, icon: Globe, permissions: GATE['channels'] },
+      { key: 'warehouses', path: ROUTES.warehouses, icon: Warehouse, permissions: GATE['warehouses'] },
+      { key: 'branches', path: ROUTES.branches, icon: Building2, permissions: GATE['branches'] },
+      { key: 'branch-coverage', path: ROUTES.branchCoverage, icon: MapPin, permissions: GATE['branch-coverage'] },
+      { key: 'teams', path: ROUTES.teams, icon: UsersIcon, permissions: GATE['teams'] },
       { key: 'users-section', isSection: true },
-      { key: 'users', path: ROUTES.users, icon: UsersIcon },
-      { key: 'roles', path: ROUTES.roles, icon: Shield },
-      { key: 'settings', path: ROUTES.settings, icon: Settings },
+      // §4 — ONE IAM entry replacing the duplicate "Users" + "Roles & Permissions" pair.
+      // Both used to point at the SAME IamWorkspacePage, differing only in which of its
+      // three tabs opened, which is what made them read as two features. `subtree: '/admin'`
+      // keeps Users, Roles & Permissions and Role Templates all resolving to this module,
+      // so the contextual sidebar stays mounted while moving between the tabs.
+      {
+        key: 'iam-management',
+        path: ROUTES.users,
+        subtree: '/admin',
+        icon: Shield,
+        permissions: GATE['iam-management'],
+      },
+      { key: 'settings', path: ROUTES.settings, icon: Settings, permissions: GATE['settings'] },
       { key: 'config-section', isSection: true },
-      { key: 'configuration-os', path: ROUTES.configurationOs, icon: Cpu },
+      { key: 'configuration-os', path: ROUTES.configurationOs, icon: Cpu, permissions: GATE['configuration-os'] },
       { key: 'integrations-section', isSection: true },
-      { key: 'product-mappings', path: ROUTES.productMappings, icon: Link2 },
-      { key: 'sync-logs', path: ROUTES.syncLogs, icon: ArrowLeftRight },
+      { key: 'product-mappings', path: ROUTES.productMappings, icon: Link2, permissions: GATE['product-mappings'] },
+      { key: 'sync-logs', path: ROUTES.syncLogs, icon: ArrowLeftRight, permissions: GATE['sync-logs'] },
     ],
   },
   {
@@ -536,8 +701,68 @@ export const APP_MODULES: AppModule[] = ALL_MODULES.filter((m) => !HIDDEN_MODULE
  * Adapted to the current `ModuleNavItem` model (link | section); the preserved
  * pre-reconcile helper assumed an obsolete group/subtree model that no longer exists.
  */
-export function moduleNavLinks(items: ModuleNavItem[]): ModuleNavLink[] {
-  return items.filter((item): item is ModuleNavLink => !item.isSection);
+export function moduleNavLinks(
+  items: ModuleNavItem[],
+  /**
+   * Optional permission predicate (§17). When supplied, links the user may not see are
+   * excluded — so the mobile launcher's accordion, its page search and its Recent list all
+   * respect exactly the same page-level boundary the desktop sidebar does. Omitted, the
+   * behaviour is unchanged.
+   */
+  can?: (permission: string) => boolean,
+): ModuleNavLink[] {
+  const links = items.filter((item): item is ModuleNavLink => !item.isSection);
+
+  return can ? links.filter((link) => isNavItemVisible(link, can)) : links;
+}
+
+/** True when the current user may see this ONE sidebar link (ANY declared permission). */
+export function isNavItemVisible(item: ModuleNavItem, can: (permission: string) => boolean): boolean {
+  if (item.isSection) return true;
+  const required = item.permissions;
+  if (!required || required.length === 0) return true;
+  return required.some((permission) => can(permission));
+}
+
+/**
+ * The items of a module's sidebar the current user may actually see
+ * (TASK-ECOS-IAM-FINAL-REMEDIATION-DIRECT-DEV-001, §17).
+ *
+ * Pure, so it is testable without React and shared by the desktop sidebar and the mobile
+ * launcher — the two must never disagree about what a role can see.
+ *
+ * Section headers survive only when at least one link BETWEEN this header and the next one
+ * is visible. Without that, hiding a module's last group would leave a header floating
+ * above nothing — which reads as a broken page rather than a withheld one.
+ */
+export function visibleModuleItems(
+  items: ModuleNavItem[],
+  can: (permission: string) => boolean,
+): ModuleNavItem[] {
+  const kept: ModuleNavItem[] = [];
+
+  for (let index = 0; index < items.length; index += 1) {
+    const item = items[index];
+
+    if (!item.isSection) {
+      if (isNavItemVisible(item, can)) kept.push(item);
+      continue;
+    }
+
+    let hasVisibleChild = false;
+    for (let look = index + 1; look < items.length; look += 1) {
+      const next = items[look];
+      if (next.isSection) break;
+      if (isNavItemVisible(next, can)) {
+        hasVisibleChild = true;
+        break;
+      }
+    }
+
+    if (hasVisibleChild) kept.push(item);
+  }
+
+  return kept;
 }
 
 /** Find the module that owns a given pathname. */

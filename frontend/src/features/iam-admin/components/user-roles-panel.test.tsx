@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it, vi, beforeEach, beforeAll } from 'vitest';
 
-import type { UserDetail } from '@/features/iam-admin/types/user';
+import type { UserDetail, UserTemplateAssignment } from '@/features/iam-admin/types/user';
 import type { RoleTemplateSummary } from '@/features/iam-admin/types/role-template';
 
 /**
@@ -83,7 +83,15 @@ function template(overrides: Partial<RoleTemplateSummary> = {}): RoleTemplateSum
   return {
     key: 'cashier',
     name: 'Cashier',
+    // TASK-ECOS-IAM-FINAL-SOURCE-CAPTURE-INTEGRATION-DEV-CLOSURE-002: `name_ar` is now a
+    // required field (§5 — Arabic business name, falling back to `name` outside the
+    // approved catalogue, exactly as RoleTemplateController::serialize() does server-side).
+    // Defaulting it to `name` here reproduces that same fallback for a template with no
+    // Arabic business entry, so the dropdown renders plain "Cashier" — not
+    // "undefined (Cashier)" — matching every existing text assertion below unchanged.
+    name_ar: overrides.name ?? 'Cashier',
     description: null,
+    description_ar: null,
     category: 'sales',
     status: 'published',
     version: 1,
@@ -91,6 +99,22 @@ function template(overrides: Partial<RoleTemplateSummary> = {}): RoleTemplateSum
     is_composable: false,
     company_id: null,
     compiled: true,
+    ...overrides,
+  };
+}
+
+/**
+ * A user's held Role Template assignment. `name_ar`/`scope_expectation` are new REQUIRED
+ * fields (§5/§18) the panel now reads directly — an assignment object missing
+ * `scope_expectation` throws at render (`assignment.scope_expectation.length`), so this
+ * default keeps every existing assertion below working unchanged while the panel's new
+ * Arabic-name/scope-badge rendering has real, valid data to read.
+ */
+function assignment(overrides: Partial<UserTemplateAssignment> & { key: string; name: string }): UserTemplateAssignment {
+  return {
+    is_primary: false,
+    name_ar: overrides.name,
+    scope_expectation: [],
     ...overrides,
   };
 }
@@ -137,7 +161,7 @@ describe('UserRolesPanel', () => {
       template({ key: 'draft-role', name: 'Draft Role', status: 'draft' }),
       template({ key: 'sales-representative', name: 'Sales Rep', status: 'published' }),
     ]);
-    renderPanel(baseUser({ templates: [{ key: 'sales-representative', name: 'Sales Rep', is_primary: true }] }));
+    renderPanel(baseUser({ templates: [assignment({ key: 'sales-representative', name: 'Sales Rep', is_primary: true })] }));
 
     await user.click(screen.getByRole('combobox'));
     expect(await screen.findByText(/^Cashier/)).toBeInTheDocument();
@@ -150,7 +174,7 @@ describe('UserRolesPanel', () => {
   it('shows no revoke control when the actor lacks iam.users.revoke-role', async () => {
     mockCan.mockImplementation((permission: string) => permission !== 'iam.users.revoke-role');
     mockTemplatesList.mockResolvedValue([]);
-    renderPanel(baseUser({ templates: [{ key: 'cashier', name: 'Cashier', is_primary: true }] }));
+    renderPanel(baseUser({ templates: [assignment({ key: 'cashier', name: 'Cashier', is_primary: true })] }));
 
     await screen.findByText('Cashier');
     expect(screen.queryByRole('button', { name: 'users.roles.revoke' })).not.toBeInTheDocument();
@@ -160,7 +184,7 @@ describe('UserRolesPanel', () => {
     const user = userEvent.setup();
     mockTemplatesList.mockResolvedValue([]);
     mockRevokeTemplate.mockResolvedValue(baseUser());
-    renderPanel(baseUser({ templates: [{ key: 'cashier', name: 'Cashier', is_primary: true }] }));
+    renderPanel(baseUser({ templates: [assignment({ key: 'cashier', name: 'Cashier', is_primary: true })] }));
 
     await screen.findByText('Cashier');
     await user.click(screen.getByRole('button', { name: 'users.roles.revoke' }));
@@ -195,7 +219,7 @@ describe('UserRolesPanel', () => {
     mockAssignTemplate.mockResolvedValue(baseUser());
     mockUserGet
       .mockResolvedValueOnce(baseUser())
-      .mockResolvedValueOnce(baseUser({ templates: [{ key: 'cashier', name: 'Cashier', is_primary: true }] }));
+      .mockResolvedValueOnce(baseUser({ templates: [assignment({ key: 'cashier', name: 'Cashier', is_primary: true })] }));
 
     function Harness() {
       const query = useUserQuery(1);

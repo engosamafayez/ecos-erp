@@ -27,7 +27,10 @@ final class UpdateUserRequest extends FormRequest
             'name' => ['sometimes', 'string', 'max:255'],
             'display_name' => ['sometimes', 'nullable', 'string', 'max:255'],
             'email' => ['sometimes', 'email', 'max:255'],
-            'username' => ['sometimes', 'nullable', 'string', 'max:255'],
+            // §7 — same login-identifier shape as CreateUserRequest. Uniqueness (including
+            // against other users' emails) is enforced server-side in
+            // UserIdentityService::assertUniqueIdentity().
+            'username' => ['sometimes', 'nullable', 'string', 'min:3', 'max:255', 'regex:/^[A-Za-z0-9._\-]+$/'],
             'employee_number' => ['sometimes', 'nullable', 'string', 'max:255'],
             'phone' => ['sometimes', 'nullable', 'string', 'max:64'],
             'avatar_path' => ['sometimes', 'nullable', 'string', 'max:2048'],

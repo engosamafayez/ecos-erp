@@ -48,8 +48,9 @@ export function RoleTemplatesTab({
         key: 'name',
         header: t(($) => $.roleTemplates.columns.name),
         cell: (row) => (
-          <button type="button" onClick={() => setSelectedKey(row.key)} className="font-medium hover:underline">
-            {row.name}
+          <button type="button" onClick={() => setSelectedKey(row.key)} className="text-start hover:underline">
+            <span className="block font-medium">{row.name_ar}</span>
+            {row.name_ar !== row.name ? <span className="text-muted-foreground block text-xs">{row.name}</span> : null}
           </button>
         ),
       },

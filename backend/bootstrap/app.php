@@ -10,6 +10,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Modules\IAM\Domain\Exceptions\InvalidUserTransitionException;
+use Modules\IAM\Domain\Exceptions\RoleLifecycleException;
 use Modules\IAM\Domain\Exceptions\RoleTemplateInUseException;
 use Modules\IAM\Domain\Exceptions\SystemTemplateImmutableException;
 use Modules\IAM\Domain\Exceptions\UnknownTemplatePermissionException;
@@ -175,6 +176,17 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (RoleTemplateInUseException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return ApiResponse::error($e->getMessage(), 409);
+            }
+
+            return null;
+        });
+
+        // TASK-ECOS-IAM-FINAL-REMEDIATION-DIRECT-DEV-001, §11: Role lifecycle guard
+        // failures (system-role immutability, template-backed immutability, still-assigned
+        // on delete) — same 409 contract as the sibling IAM exceptions above.
+        $exceptions->render(function (RoleLifecycleException $e, Request $request) {
             if ($request->is('api/*')) {
                 return ApiResponse::error($e->getMessage(), 409);
             }

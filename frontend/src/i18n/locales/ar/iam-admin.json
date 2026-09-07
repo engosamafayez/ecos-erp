@@ -38,7 +38,9 @@
       "displayName": "اسم العرض",
       "username": "اسم المستخدم",
       "employeeNumber": "الرقم الوظيفي",
-      "phone": "الهاتف"
+      "phone": "الهاتف",
+      "usernameHint": "أحرف وأرقام ونقاط وشرطات وشرطات سفلية فقط — يُستخدم أيضًا لتسجيل الدخول.",
+      "employeeLink": "الموظف المرتبط"
     },
     "detail": {
       "title": "المستخدم",
@@ -57,24 +59,51 @@
       "lock": "قفل",
       "unlock": "فتح القفل",
       "archive": "أرشفة",
-      "restore": "استعادة"
+      "restore": "استعادة",
+      "activateNow": "التنشيط فورًا بعد الإنشاء",
+      "preActivationHint": "هذا الحساب لم يُنشَّط بعد. عيّن كلمة مرور واستخدم تنشيط لجعله قابلاً للاستخدام."
     },
     "lifecycleConfirm": {
       "genericError": "تعذر إتمام هذا الإجراء.",
-      "activate": { "title": "تفعيل المستخدم؟", "description": "سيتمكن المستخدم من تسجيل الدخول مرة أخرى." },
-      "suspend": { "title": "تعليق المستخدم؟", "description": "لن يتمكن المستخدم من تسجيل الدخول مؤقتًا." },
-      "deactivate": { "title": "إلغاء تفعيل المستخدم؟", "description": "سيتم وضع علامة على المستخدم كغير نشط ولن يتمكن من تسجيل الدخول." },
-      "lock": { "title": "قفل المستخدم؟", "description": "سيتم قفل المستخدم حتى يقوم أحد المسؤولين بفتح القفل." },
-      "unlock": { "title": "فتح قفل المستخدم؟", "description": "ستتم إعادة المستخدم إلى الحالة النشطة وسيتمكن من تسجيل الدخول." },
-      "archive": { "title": "أرشفة المستخدم؟", "description": "سيتم أرشفة الحساب. يمكن استعادته لاحقًا، لكن إعادة تعيين كلمة المرور تتطلب الاستعادة أولاً." },
-      "restore": { "title": "استعادة المستخدم؟", "description": "ستتم استعادة الحساب إلى الحالة النشطة." }
+      "activate": {
+        "title": "تفعيل المستخدم؟",
+        "description": "سيتمكن المستخدم من تسجيل الدخول مرة أخرى."
+      },
+      "suspend": {
+        "title": "تعليق المستخدم؟",
+        "description": "لن يتمكن المستخدم من تسجيل الدخول مؤقتًا."
+      },
+      "deactivate": {
+        "title": "إلغاء تفعيل المستخدم؟",
+        "description": "سيتم وضع علامة على المستخدم كغير نشط ولن يتمكن من تسجيل الدخول."
+      },
+      "lock": {
+        "title": "قفل المستخدم؟",
+        "description": "سيتم قفل المستخدم حتى يقوم أحد المسؤولين بفتح القفل."
+      },
+      "unlock": {
+        "title": "فتح قفل المستخدم؟",
+        "description": "ستتم إعادة المستخدم إلى الحالة النشطة وسيتمكن من تسجيل الدخول."
+      },
+      "archive": {
+        "title": "أرشفة المستخدم؟",
+        "description": "سيتم أرشفة الحساب. يمكن استعادته لاحقًا، لكن إعادة تعيين كلمة المرور تتطلب الاستعادة أولاً."
+      },
+      "restore": {
+        "title": "استعادة المستخدم؟",
+        "description": "ستتم استعادة الحساب إلى الحالة النشطة."
+      }
     },
     "roles": {
       "none": "لا توجد أدوار معيّنة.",
       "primary": "أساسي",
       "assign": "تعيين",
       "revoke": "إلغاء",
-      "selectPlaceholder": "اختر قالب دور…"
+      "selectPlaceholder": "اختر قالب دور…",
+      "title": "الأدوار",
+      "assignPlaceholder": "اختر قوالب الأدوار…",
+      "searchPlaceholder": "بحث في الأدوار…",
+      "noneAvailable": "لا توجد قوالب أدوار منشورة متاحة."
     },
     "organization": {
       "none": "لا توجد تعيينات تنظيمية.",
@@ -82,7 +111,14 @@
       "assign": "تعيين",
       "typePlaceholder": "النوع",
       "idPlaceholder": "المعرف (اختياري)",
-      "labelPlaceholder": "التسمية (اختياري)"
+      "labelPlaceholder": "التسمية (اختياري)",
+      "title": "النطاق التنظيمي",
+      "searchPlaceholder": "بحث عن شركات وعلامات تجارية ومخازن…",
+      "noLevelsAvailable": "لا توجد كيانات تنظيمية مُعدّة بعد.",
+      "noEntities": "لا توجد نتائج.",
+      "primaryToggle": "تعيين كأساسي",
+      "save": "حفظ النطاق التنظيمي",
+      "saving": "جارٍ الحفظ…"
     },
     "security": {
       "passwordTitle": "كلمة المرور",
@@ -101,15 +137,39 @@
       "revokeSession": "إلغاء",
       "forceLogoutTrigger": "تسجيل الخروج من كل مكان",
       "forceLogoutTitle": "إلغاء كل الجلسات؟",
-      "forceLogoutDescription": "سيؤدي هذا إلى تسجيل خروج المستخدم من كل جهاز."
+      "forceLogoutDescription": "سيؤدي هذا إلى تسجيل خروج المستخدم من كل جهاز.",
+      "initialPasswordHint": "هذا الحساب ليس له بيانات اعتماد بعد — هذا يعيّن كلمة مروره الأولى وليس إعادة تعيينها.",
+      "setInitialTrigger": "تعيين كلمة مرور أولية",
+      "setInitialTitle": "تعيين كلمة مرور أولية",
+      "setInitialSubmit": "تعيين كلمة المرور"
+    },
+    "password": {
+      "initialSectionTitle": "كلمة مرور أولية (اختياري)",
+      "initialSectionHint": "عيّن كلمة مرور الآن ليتمكن الحساب من تسجيل الدخول فورًا. اتركها فارغة لإبقائه غير قابل للاستخدام حتى تكتمل الدعوة.",
+      "initialPassword": "كلمة المرور الأولية",
+      "confirmPassword": "تأكيد كلمة المرور",
+      "requireChangeAtLogin": "طلب تغيير كلمة المرور عند أول تسجيل دخول"
+    },
+    "employee": {
+      "placeholder": "اختر موظفًا…",
+      "searchPlaceholder": "بحث في الموظفين…",
+      "loading": "جارٍ التحميل…",
+      "empty": "لا يوجد موظفون مطابقون.",
+      "alreadyLinked": "مرتبط بالفعل",
+      "clear": "مسح",
+      "notAvailable": "لا يوجد دليل موظفين متاح بعد."
     }
   },
   "roles": {
     "title": "الأدوار والصلاحيات",
-    "subtitle": "يتم تجميع الأدوار من قوالب الأدوار وتُعرض هنا للقراءة فقط.",
+    "subtitle": "إنشاء وتعديل واستنساخ الأدوار التجارية، وإدارة صلاحياتها مباشرة.",
     "empty": "لا توجد أدوار.",
     "systemBadge": "نظامي",
     "customBadge": "مخصص",
+    "businessCatalogBadge": "دور تجاري معتمد",
+    "archivedBadge": "مؤرشف",
+    "showArchived": "إظهار الأدوار المؤرشفة",
+    "cloneAction": "استنساخ",
     "tabs": {
       "roles": "الأدوار",
       "permissions": "دليل الصلاحيات"
@@ -120,18 +180,65 @@
       "template": "القالب",
       "userCount": "المستخدمون"
     },
+    "form": {
+      "genericError": "حدث خطأ ما. الرجاء المحاولة مرة أخرى."
+    },
+    "fields": {
+      "name": "الاسم",
+      "description": "الوصف",
+      "permissions": "الصلاحيات"
+    },
+    "create": {
+      "trigger": "دور جديد",
+      "title": "إنشاء دور",
+      "description": "إنشاء دور تجاري جديد واختيار صلاحياته.",
+      "submit": "إنشاء الدور",
+      "submitting": "جارٍ الإنشاء…"
+    },
+    "clone": {
+      "title": "استنساخ \"{{name}}\"",
+      "defaultName": "{{name}} (نسخة)",
+      "submit": "استنساخ الدور"
+    },
     "detail": {
       "title": "الدور",
-      "userCount": "مستخدم واحد معيّن",
-      "userCount_other": "{{count}} مستخدمين معيّنين",
-      "managedByTemplate": "تتم إدارته عبر قالب \"{{name}}\" — عدّل هناك",
+      "userCount": "مستخدم واحد مُسنَد",
+      "userCount_other": "{{count}} مستخدمين مُسنَدين",
+      "managedByTemplate": "تتم إدارته عبر القالب \"{{name}}\" — التعديل من هناك",
       "permissions": "الصلاحيات",
-      "noPermissions": "لا توجد صلاحيات لهذا الدور."
+      "noPermissions": "لا توجد صلاحيات لهذا الدور.",
+      "tabs": {
+        "overview": "نظرة عامة",
+        "permissions": "مصفوفة الصلاحيات"
+      },
+      "systemImmutable": "هذا دور نظامي ولا يمكن تعديله أو أرشفته أو حذفه. استنسخه لإجراء تعديلات.",
+      "templateImmutable": "هذا الدور مُجمَّع من قالب نظامي رسمي غير قابل للتعديل. استنسخه لإجراء تعديلات.",
+      "archivedNotice": "هذا الدور مؤرشف ومسحوب من قائمة الأدوار القابلة للتعيين. المستخدمون الحاليون يحتفظون به.",
+      "scopeExpectation": "النطاق التنظيمي المتوقع",
+      "assignedUsers": "المستخدمون المُسنَدون",
+      "cloneTrigger": "استنساخ",
+      "archiveTrigger": "أرشفة",
+      "restoreTrigger": "استعادة",
+      "deleteTrigger": "حذف",
+      "savePermissions": "حفظ الصلاحيات",
+      "archiveConfirmTitle": "أرشفة هذا الدور؟",
+      "archiveConfirmDescription": "هذا الدور مُسنَد حاليًا إلى {{count}} مستخدم. سيحتفظون به — الأرشفة فقط تسحب الدور من قائمة التعيين لأي تعيين جديد.",
+      "archiveReasonPlaceholder": "السبب (اختياري)",
+      "restoreConfirmTitle": "استعادة هذا الدور؟",
+      "deleteConfirmTitle": "حذف هذا الدور؟",
+      "deleteConfirmDescription": "سيتم حذف الدور نهائيًا. لا يمكن ذلك إلا إذا لم يكن أي مستخدم يحمله."
     }
   },
   "permissions": {
     "empty": "لا توجد صلاحيات.",
-    "searchPlaceholder": "البحث في الصلاحيات…"
+    "searchPlaceholder": "البحث في الصلاحيات…",
+    "sensitiveOnly": "الحساسة فقط",
+    "selectedCount": "تم اختيار {{count}}",
+    "noMatches": "لا توجد صلاحيات مطابقة لبحثك.",
+    "selectAll": "تحديد الكل",
+    "clearGroup": "مسح",
+    "criticalBadge": "حرجة",
+    "elevatedBadge": "حساسة"
   },
   "roleTemplates": {
     "title": "قوالب الأدوار",

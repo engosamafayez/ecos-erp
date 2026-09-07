@@ -42,16 +42,63 @@ enum UserStatus: string
     }
 
     /**
-     * May an administrator reset this account's password without first changing its lifecycle
-     * state? (D1, TASK-ECOS-IAM-SECURE-ADMIN-API-002 — CTO-ratified for ACTIVE/SUSPENDED/LOCKED/
-     * ARCHIVED/DELETED explicitly.) DRAFT/INVITED/PENDING_ACTIVATION are excluded here as a
-     * deliberate, documented extension of that rule: those states have no real credential yet —
-     * the invitation flow, not admin reset, is the canonical path to one. INACTIVE is treated
-     * like SUSPENDED/LOCKED — a temporary administrative hold on a real, provisioned account.
+     * May an administrator RESET this account's password? (D1,
+     * TASK-ECOS-IAM-SECURE-ADMIN-API-002 — CTO-ratified for ACTIVE/SUSPENDED/LOCKED/
+     * ARCHIVED/DELETED explicitly.) A reset replaces the credential of a real, provisioned
+     * account; INACTIVE is treated like SUSPENDED/LOCKED, a temporary administrative hold.
+     *
+     * Pre-activation states are deliberately NOT reset states — see
+     * allowsAdminPasswordSet(), which is the operation they actually need.
      */
     public function allowsAdminPasswordReset(): bool
     {
         return in_array($this, [self::ACTIVE, self::INACTIVE, self::SUSPENDED, self::LOCKED], true);
+    }
+
+    /**
+     * May an administrator SET this account's initial credential?
+     * (TASK-ECOS-IAM-FINAL-REMEDIATION-DIRECT-DEV-001, §10.)
+     *
+     * §10 records the defect precisely: a DRAFT user was "effectively stuck with View-only
+     * UX and password reset can produce: Cannot reset password while the account status is
+     * 'draft'." The original rule was not wrong about WHY — a pre-activation account has no
+     * real credential yet, so replacing one is meaningless — it was wrong about the
+     * conclusion, because it left the only path to a first credential behind the invitation
+     * flow, and an administrator provisioning an account directly never enters that flow.
+     * The result was an account that could be created and could never be used: the dead end.
+     *
+     * So the distinction is now explicit. SETTING a first credential is permitted for
+     * DRAFT / INVITED / PENDING_ACTIVATION; RESETTING an existing one is permitted for the
+     * provisioned states above. Both go through UserPasswordService, both are audited, and
+     * both apply the same password-strength rules — §10's "Do not weaken password security"
+     * is untouched: nothing here lowers a requirement, it only distinguishes the FIRST
+     * credential from a REPLACEMENT credential.
+     *
+     * ARCHIVED and DELETED remain excluded from both: restore is a separate, explicit,
+     * audited operation and must never happen implicitly as a side effect of a password
+     * change.
+     */
+    public function allowsAdminPasswordSet(): bool
+    {
+        return in_array($this, [self::DRAFT, self::INVITED, self::PENDING_ACTIVATION], true);
+    }
+
+    /**
+     * Either operation is available — the single question the HTTP layer needs to answer
+     * before it decides whether a password write is possible at all.
+     */
+    public function allowsAdminPasswordWrite(): bool
+    {
+        return $this->allowsAdminPasswordReset() || $this->allowsAdminPasswordSet();
+    }
+
+    /**
+     * Is this account awaiting activation? Drives the §10 "explicit, discoverable Activate
+     * action" in the UI, from the same authority the transition map uses.
+     */
+    public function isPreActivation(): bool
+    {
+        return in_array($this, [self::DRAFT, self::INVITED, self::PENDING_ACTIVATION], true);
     }
 
     /** Statuses this status may transition to. */

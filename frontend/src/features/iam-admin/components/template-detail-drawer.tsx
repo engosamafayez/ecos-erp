@@ -20,8 +20,8 @@ import {
 } from '@/features/iam-admin/hooks/use-role-templates';
 import type { RoleTemplateDetail, UpdateRoleTemplatePayload } from '@/features/iam-admin/types/role-template';
 
+import { PermissionMatrix } from './permission-matrix';
 import { TemplateApplyWorkflow } from './template-apply-workflow';
-import { TemplatePermissionsEditor } from './template-permissions-editor';
 
 export function TemplateDetailDrawer({
   templateKey,
@@ -39,8 +39,8 @@ export function TemplateDetailDrawer({
     <EntityDrawer
       open={open}
       onOpenChange={onOpenChange}
-      title={query.data?.name ?? t(($) => $.roleTemplates.detail.title)}
-      description={query.data?.description ?? undefined}
+      title={query.data?.name_ar ?? t(($) => $.roleTemplates.detail.title)}
+      description={query.data?.description_ar ?? query.data?.description ?? undefined}
     >
       {query.isLoading ? (
         <LoadingState />
@@ -153,15 +153,19 @@ function TemplateDetailContent({
                 onChange={(e) => setValues((v) => ({ ...v, description: e.target.value }))}
               />
             </FormField>
-            <FormField name="permissions" label={t(($) => $.roleTemplates.fields.permissions)}>
-              <TemplatePermissionsEditor
-                value={values.definition?.permissions ?? []}
-                onChange={(permissions) =>
-                  setValues((v) => ({ ...v, definition: { ...v.definition, permissions } }))
-                }
-              />
-            </FormField>
           </fieldset>
+
+          {/* §16 — the same grouped editable Permission Matrix the Roles editor uses. Kept
+             outside the metadata `fieldset` so its own read-only mode (system templates)
+             is expressed via `readOnly`, matching how the matrix is used everywhere else. */}
+          <div>
+            <p className="mb-1.5 text-sm font-medium">{t(($) => $.roleTemplates.fields.permissions)}</p>
+            <PermissionMatrix
+              value={values.definition?.permissions ?? []}
+              onChange={(permissions) => setValues((v) => ({ ...v, definition: { ...v.definition, permissions } }))}
+              readOnly={!editable}
+            />
+          </div>
 
           {editable ? (
             <Can permission="iam.role-templates.update">

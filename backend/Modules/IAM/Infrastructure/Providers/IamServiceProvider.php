@@ -29,9 +29,11 @@ use Modules\IAM\Domain\Contracts\RoleTemplateRepositoryInterface;
 use Modules\IAM\Domain\Contracts\ScopeResolverInterface;
 use Modules\IAM\Domain\Contracts\SensitiveFieldRegistryInterface;
 use Modules\IAM\Domain\Contracts\VisibilityResolverInterface;
+use Modules\IAM\Domain\Models\Role;
 use Modules\IAM\Domain\Models\RoleTemplate;
 use Modules\IAM\Infrastructure\Middleware\RequirePermissionMiddleware;
 use Modules\IAM\Infrastructure\Services\SanctumAuthService;
+use Modules\IAM\Presentation\Policies\RolePolicy;
 use Modules\IAM\Presentation\Policies\RoleTemplatePolicy;
 use Modules\IAM\Presentation\Policies\UserPolicy;
 
@@ -92,6 +94,13 @@ final class IamServiceProvider extends ServiceProvider
 
         // Role Template Admin API authorization (TASK-ECOS-IAM-SECURE-ADMIN-API-002, §14).
         Gate::policy(RoleTemplate::class, RoleTemplatePolicy::class);
+
+        // Role lifecycle authorization (TASK-ECOS-IAM-FINAL-REMEDIATION-DIRECT-DEV-001, §11).
+        // Reads were previously gated by route middleware alone because a read-only catalogue
+        // listing has no per-instance tenant logic. Now that Create/Edit/Clone/Archive/Delete
+        // exist, a Role DOES need per-instance authorization — resolved through the backing
+        // template's company, exactly as RoleTemplatePolicy does.
+        Gate::policy(Role::class, RolePolicy::class);
 
         // Data Scope Engine query macro (ADR-038, Part 3). Modules narrow a query to the
         // caller's data scope with `Model::query()->scopedTo($user, 'sales.orders')`

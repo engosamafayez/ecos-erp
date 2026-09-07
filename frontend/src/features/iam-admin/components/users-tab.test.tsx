@@ -55,11 +55,56 @@ vi.mock('@/features/iam-admin/services/users-service', () => ({
 
 import { UsersTab } from './users-tab';
 
+/**
+ * TASK-ECOS-IAM-FINAL-SOURCE-CAPTURE-INTEGRATION-DEV-CLOSURE-002: `UserSummary.lifecycle`
+ * is a new, REQUIRED field — `availableActions()` (users-tab.tsx) now reads it directly
+ * for EVERY row on every render (`lifecycle.can_activate`, …), not only behind a click, so
+ * a fixture missing it throws immediately (`Cannot read properties of undefined`), not
+ * merely asserts the wrong menu items. This mirrors the exact transition table
+ * `Modules\IAM\Domain\Enums\UserStatus` computes server-side, so each fixture's `lifecycle`
+ * is truthful for its `status` rather than hand-picked to make the test pass.
+ */
+type Status = UserSummary['status'];
+
+const ALLOWED_TRANSITIONS: Record<Status, Status[]> = {
+  draft: ['invited', 'active', 'archived', 'deleted'],
+  invited: ['pending_activation', 'active', 'suspended', 'archived', 'deleted'],
+  pending_activation: ['active', 'suspended', 'archived', 'deleted'],
+  active: ['inactive', 'suspended', 'locked', 'archived', 'deleted'],
+  inactive: ['active', 'suspended', 'archived', 'deleted'],
+  suspended: ['active', 'inactive', 'archived', 'deleted'],
+  locked: ['active', 'suspended', 'archived', 'deleted'],
+  archived: ['active', 'deleted'],
+  deleted: [],
+};
+
+function lifecycleFor(status: Status, trashed = false): UserSummary['lifecycle'] {
+  const canTransitionTo = (target: Status) => ALLOWED_TRANSITIONS[status].includes(target);
+  const isPreActivation = status === 'draft' || status === 'invited' || status === 'pending_activation';
+
+  return {
+    is_pre_activation: isPreActivation,
+    can_activate: canTransitionTo('active'),
+    can_suspend: canTransitionTo('suspended'),
+    can_deactivate: canTransitionTo('inactive'),
+    can_lock: canTransitionTo('locked'),
+    can_unlock: status === 'locked',
+    can_archive: canTransitionTo('archived'),
+    can_restore: status === 'archived' || trashed,
+    can_set_initial_password: isPreActivation,
+    can_reset_password: (['active', 'inactive', 'suspended', 'locked'] as Status[]).includes(status),
+    can_authenticate: status === 'active',
+    requires_password_change: false,
+    has_credential: !isPreActivation,
+  };
+}
+
 const ACTIVE_USER: UserSummary = {
   id: 1,
   name: 'Amina Khaled',
   display_name: 'Amina Khaled',
   email: 'amina@ecos.test',
+  username: null,
   employee_number: 'EMP-001',
   status: 'active',
   status_label: 'Active',
@@ -67,6 +112,7 @@ const ACTIVE_USER: UserSummary = {
   last_login_at: null,
   last_activity_at: null,
   trashed: false,
+  lifecycle: lifecycleFor('active'),
 };
 
 const ARCHIVED_USER: UserSummary = {
@@ -78,6 +124,7 @@ const ARCHIVED_USER: UserSummary = {
   status: 'archived',
   status_label: 'Archived',
   trashed: true,
+  lifecycle: lifecycleFor('archived', true),
 };
 
 function listResult(data: UserSummary[]): UsersListResult {
@@ -157,7 +204,11 @@ describe('UsersTab', () => {
     const secondRowButtons = screen.getAllByRole('button', { name: 'actions.openActions' });
     await user.click(secondRowButtons[secondRowButtons.length - 1]);
 
-    // Archived user: restore only.
+    // Archived user: restore is offered (an already-archived account can never be
+    // archived again, nor deactivated straight from archived); archive/deactivate are not.
+    // (`UserStatus::ARCHIVED->allowedTransitions()` also includes ACTIVE directly, so
+    // `activate` is legitimately offered alongside `restore` here too — both reach the
+    // same ACTIVE state — this test does not assert its absence.)
     expect(await screen.findByText('users.lifecycle.restore')).toBeInTheDocument();
     expect(screen.queryByText('users.lifecycle.archive')).not.toBeInTheDocument();
     expect(screen.queryByText('users.lifecycle.deactivate')).not.toBeInTheDocument();

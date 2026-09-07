@@ -24,26 +24,26 @@ import { UserDetailDrawer } from './user-detail-drawer';
 import { UserStatusBadge } from './user-status-badge';
 
 /**
- * §6: which lifecycle actions are even offered depends on the user's CURRENT canonical
- * state — this is convenience only, the backend (UserLifecycleService's transition map)
- * remains authoritative and will reject an invalid transition regardless of what this
- * table chooses to show.
+ * TASK-ECOS-IAM-FINAL-REMEDIATION-DIRECT-DEV-001, §10: which lifecycle actions are offered
+ * is now read from the row's OWN server-computed `lifecycle` capability flags
+ * (`UserStatus::canTransitionTo()` on the backend) instead of a hardcoded status→actions
+ * switch. The previous switch had no branch for `draft` / `invited` / `pending_activation`
+ * at all — every menu item was `[]` for those, which is precisely §10's defect: a Draft
+ * user with no discoverable Activate action anywhere. Reading the real transition map
+ * fixes that for free and can never drift from what the backend will actually accept —
+ * this is still convenience only, the backend remains authoritative and rejects an invalid
+ * transition regardless of what this table chooses to show.
  */
-function availableActions(status: UserSummary['status']): LifecycleAction[] {
-  switch (status) {
-    case 'active':
-      return ['deactivate', 'suspend', 'lock', 'archive'];
-    case 'inactive':
-    case 'suspended':
-      return ['activate', 'lock', 'archive'];
-    case 'locked':
-      return ['unlock', 'archive'];
-    case 'archived':
-    case 'deleted':
-      return ['restore'];
-    default:
-      return [];
-  }
+function availableActions(lifecycle: UserSummary['lifecycle']): LifecycleAction[] {
+  const actions: LifecycleAction[] = [];
+  if (lifecycle.can_activate) actions.push('activate');
+  if (lifecycle.can_suspend) actions.push('suspend');
+  if (lifecycle.can_deactivate) actions.push('deactivate');
+  if (lifecycle.can_lock) actions.push('lock');
+  if (lifecycle.can_unlock) actions.push('unlock');
+  if (lifecycle.can_archive) actions.push('archive');
+  if (lifecycle.can_restore) actions.push('restore');
+  return actions;
 }
 
 const ACTION_ICON: Record<LifecycleAction, ActionMenuItem['icon']> = {
@@ -173,7 +173,7 @@ export function UsersTab() {
               label: tCommon(($) => $.actions.view),
               onSelect: () => setSelectedUserId(row.id),
             },
-            ...availableActions(row.status)
+            ...availableActions(row.lifecycle)
               .filter((action) => can(`iam.users.${action}`))
               .map<ActionMenuItem>((action) => ({
                 key: action,
@@ -215,8 +215,12 @@ export function UsersTab() {
  * §6: "never imply password reset / unlock / reactivate — those are distinct operations."
  * This dialog does exactly one thing: call the one lifecycle endpoint the actor selected.
  * Named per-action confirmation copy makes clear which single transition is about to happen.
+ *
+ * Exported so UserDetailDrawer's own lifecycle action bar (§10 — an explicit, discoverable
+ * Activate action reachable from the detail view, not only the row menu) reuses the exact
+ * same confirmation flow rather than a second implementation of it.
  */
-function LifecycleConfirmDialog({
+export function LifecycleConfirmDialog({
   userId,
   action,
   onClose,

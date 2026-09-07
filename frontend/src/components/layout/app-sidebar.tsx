@@ -4,7 +4,8 @@ import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import type { AppModule } from '@/config/module-navigation';
+import { visibleModuleItems, type AppModule } from '@/config/module-navigation';
+import { usePermission } from '@/features/authorization';
 import { usePriceReviewBadge } from '@/features/cost-management/hooks/use-pricing-reviews';
 import { useLanguage } from '@/providers/language-context';
 import { useNavLabel } from './use-nav-label';
@@ -38,7 +39,24 @@ export function AppSidebar({
   const { dir } = useLanguage();
   const { t } = useTranslation('common');
   const navLabel = useNavLabel();
-  if (!activeModule || activeModule.items.length === 0) return null;
+  const { can } = usePermission();
+
+  /**
+   * §17 — the sidebar renders only the entries this user's PERMISSIONS allow.
+   *
+   * Module visibility was already permission-driven; items were not, so a role granted one
+   * page inside a module was shown every page in it. §17 is written page by page
+   * ("HIDDEN COMPLETELY: Orders page, Customers page, Products page"), so the boundary has
+   * to exist at this granularity. `can()` short-circuits to true for a system user, so
+   * Super Admin still sees everything (§17.1).
+   *
+   * UX only — every route and every endpoint stays independently gated.
+   */
+  const items = activeModule ? visibleModuleItems(activeModule.items, can) : [];
+
+  // A module whose every entry is hidden renders no sidebar at all, exactly as a module
+  // with no entries always has.
+  if (!activeModule || items.length === 0) return null;
 
   // In RTL the sidebar is at the inline-end (physical right), so chevron direction flips.
   const ExpandIcon  = dir === 'rtl' ? ChevronLeft  : ChevronRight;
@@ -87,7 +105,7 @@ export function AppSidebar({
         })}
         className="flex flex-col gap-0.5 overflow-y-auto p-2"
       >
-        {activeModule.items.map((item) => {
+        {items.map((item) => {
           if (item.isSection) {
             return (
               <div key={item.key} className="mb-1 mt-4 px-3 first:mt-0">

@@ -56,6 +56,17 @@ vi.mock('@/features/iam-admin/services/role-templates-service', () => ({
   },
 }));
 
+// TASK-ECOS-IAM-FINAL-SOURCE-CAPTURE-INTEGRATION-DEV-CLOSURE-002 (§16 of the prior IAM
+// remediation): the Definition tab now embeds the shared, grouped, editable
+// PermissionMatrix (§16 "use the SAME component as Roles") in place of the old flat
+// combobox editor — a genuinely new dependency on `GET /iam/permissions`, mocked here so
+// the drawer never makes a real network call.
+const mockPermissionCatalog = vi.hoisted(() => vi.fn());
+vi.mock('@/features/iam-admin/services/roles-service', () => ({
+  rolesService: { list: vi.fn(), get: vi.fn() },
+  permissionsService: { catalog: mockPermissionCatalog },
+}));
+
 import { TemplateDetailDrawer } from './template-detail-drawer';
 
 function templateDetail(overrides: Partial<RoleTemplateDetail> = {}): RoleTemplateDetail {
@@ -104,6 +115,46 @@ beforeEach(() => {
     permission_additions: [],
     permission_removals: [],
   });
+  mockPermissionCatalog.mockResolvedValue({
+    groups: [
+      {
+        module: 'pos',
+        label_ar: 'نقاط البيع',
+        label_en: 'Point of Sale',
+        sort: 1,
+        count: 2,
+        sensitive_count: 0,
+        permissions: [
+          {
+            name: 'pos.terminal.view',
+            module: 'pos',
+            module_label_ar: 'نقاط البيع',
+            module_label_en: 'Point of Sale',
+            resource: 'pos.terminal',
+            action: 'view',
+            label_ar: 'عرض نقطة البيع',
+            label_en: 'View POS terminal',
+            description_ar: '',
+            sensitivity: 'normal',
+          },
+          {
+            name: 'pos.terminal.operate',
+            module: 'pos',
+            module_label_ar: 'نقاط البيع',
+            module_label_en: 'Point of Sale',
+            resource: 'pos.terminal',
+            action: 'operate',
+            label_ar: 'تشغيل نقطة البيع',
+            label_en: 'Operate POS terminal',
+            description_ar: '',
+            sensitivity: 'normal',
+          },
+        ],
+      },
+    ],
+    total: 2,
+    sensitivity_levels: ['normal', 'elevated', 'critical'],
+  });
 });
 
 describe('TemplateDetailDrawer', () => {
@@ -129,6 +180,16 @@ describe('TemplateDetailDrawer', () => {
     expect(screen.queryByRole('button', { name: 'common.save' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'roleTemplates.detail.archiveTrigger' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'roleTemplates.detail.deleteTrigger' })).not.toBeInTheDocument();
+
+    // §16 — the shared, grouped, editable Permission Matrix cascades its own read-only
+    // state from the same `editable` flag: a system template's grants render as real
+    // checkboxes (so an admin can still SEE the compiled definition clearly), but every
+    // one of them is disabled, exactly like the fieldset above.
+    const checkboxes = await screen.findAllByRole('checkbox');
+    expect(checkboxes.length).toBeGreaterThan(0);
+    for (const box of checkboxes) {
+      expect(box).toBeDisabled();
+    }
   });
 
   // ── 18: custom-template-editable-versioned ──────────────────────────────────
@@ -151,6 +212,14 @@ describe('TemplateDetailDrawer', () => {
     await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
     expect(mockUpdate.mock.calls[0][0]).toBe('cashier');
     expect(mockUpdate.mock.calls[0][1].name).toBe('Cashier v2');
+
+    // §16 — the same shared Permission Matrix is fully interactive for a custom template:
+    // unlike the system-template case, none of its checkboxes are disabled.
+    const checkboxes = await screen.findAllByRole('checkbox');
+    expect(checkboxes.length).toBeGreaterThan(0);
+    for (const box of checkboxes) {
+      expect(box).not.toBeDisabled();
+    }
   });
 
   it('never mutates the definition on save alone — applying it is a separate, explicit action', async () => {

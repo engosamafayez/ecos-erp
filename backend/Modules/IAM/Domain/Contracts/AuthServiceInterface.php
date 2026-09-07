@@ -14,8 +14,15 @@ interface AuthServiceInterface
 {
     /**
      * Verify credentials and return the matching user, or null when invalid.
+     *
+     * $identifier is the LOGIN IDENTIFIER, not necessarily an email address
+     * (TASK-ECOS-IAM-FINAL-REMEDIATION-DIRECT-DEV-001, §7). The parameter was renamed from
+     * $email; the signature — one string, one string, nullable User — is unchanged, so
+     * every existing positional call site and every implementation keeps working. Which
+     * identifier columns are accepted is the implementation's decision, so this port stays
+     * framework- AND policy-agnostic.
      */
-    public function attemptCredentials(string $email, string $password): ?User;
+    public function attemptCredentials(string $identifier, string $password): ?User;
 
     /**
      * Issue an API access token for the given user.
