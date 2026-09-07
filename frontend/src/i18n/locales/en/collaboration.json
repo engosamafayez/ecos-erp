@@ -36,9 +36,26 @@
       "live": "Live",
       "polling": "Polling"
     },
+    "dateSeparators": {
+      "today": "Today",
+      "yesterday": "Yesterday"
+    },
+    "mute": {
+      "label": "Mute notifications",
+      "muted": "Muted"
+    },
+    "media": {
+      "mediaTab": "Media",
+      "linksTab": "Links",
+      "documentsTab": "Documents",
+      "emptyImages": "No media shared yet.",
+      "emptyLinks": "No links shared yet.",
+      "emptyDocuments": "No documents shared yet."
+    },
     "info": {
       "title": "Details",
       "participants": "Participants",
+      "owner": "Owner",
       "type": {
         "direct": "Direct message",
         "group": "Collaboration Group"
@@ -81,6 +98,9 @@
     "uploadFailed": "Couldn't upload the attachment.",
     "download": "Download",
     "createTask": "Create Task",
+    "sent": "Sent",
+    "seen": "Seen",
+    "seenBy": "Seen by {{names}}",
     "types": {
       "image": "[Image]",
       "file": "[File]",
@@ -97,6 +117,7 @@
     "micDenied": "Microphone access was denied. Allow microphone access in your browser to record a voice message.",
     "micUnavailable": "No microphone was found on this device.",
     "unsupported": "Voice recording isn't supported in this browser.",
+    "insecureContext": "Voice recording needs a secure connection (HTTPS) or localhost. Contact your administrator if you see this on a normal web address.",
     "recordingFailed": "Recording failed. Try again.",
     "playbackUnauthorized": "You don't have access to this voice message."
   },
@@ -107,7 +128,15 @@
     "noResults": "No results.",
     "error": "Search failed.",
     "openConversation": "Open conversation",
-    "openTask": "Open task"
+    "openTask": "Open task",
+    "inConversationTitle": "Search in conversation",
+    "inConversationPlaceholder": "Search in this conversation…",
+    "close": "Close",
+    "notInView": "That message is further back in the history — scroll up to find it."
+  },
+  "launcher": {
+    "ariaLabel": "Open Collaboration",
+    "ariaLabelUnread": "Open Collaboration, {{count}} unread"
   },
   "tasks": {
     "title": "Tasks",

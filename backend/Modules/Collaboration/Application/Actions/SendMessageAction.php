@@ -146,7 +146,11 @@ final class SendMessageAction extends BaseAction
      * notification for a message that was subsequently rolled back would be
      * worse than a missed one. A mentioned user gets ONLY the mention
      * notification, never also the generic one, for the same message
-     * (brief §16 — no duplicate notifications for the same event).
+     * (brief §16 — no duplicate notifications for the same event). Mute
+     * (architecture report §21) is purely a notification preference: a
+     * muted recipient still gets the broadcast/unread count like anyone
+     * else, just never the generic NewMessageNotification — an explicit
+     * @mention still notifies even while muted, the common chat convention.
      *
      * @param  list<int>  $activeParticipantIds
      * @param  list<int>  $mentionedUserIds
@@ -162,7 +166,15 @@ final class SendMessageAction extends BaseAction
         }
 
         $mentioned = User::query()->whereIn('id', array_intersect($recipientIds, $mentionedUserIds))->get();
-        $others = User::query()->whereIn('id', array_diff($recipientIds, $mentionedUserIds))->get();
+
+        $mutedUserIds = ConversationParticipant::query()
+            ->where('conversation_id', $conversation->id)
+            ->whereIn('user_id', $recipientIds)
+            ->whereNotNull('muted_at')
+            ->pluck('user_id')
+            ->all();
+
+        $others = User::query()->whereIn('id', array_diff($recipientIds, $mentionedUserIds, $mutedUserIds))->get();
 
         if ($mentioned->isNotEmpty()) {
             Notification::send($mentioned, new MentionedNotification($message));

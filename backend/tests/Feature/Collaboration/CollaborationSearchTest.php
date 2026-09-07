@@ -112,6 +112,46 @@ final class CollaborationSearchTest extends TestCase
             ->assertJsonCount(2, 'data');
     }
 
+    // In-conversation search (TASK-ECOS-INTERNAL-COLLABORATION-CHAT-FINAL-
+    // IMPLEMENTATION-002, architecture report §19): an optional `conversation_id`
+    // narrows to just that one conversation instead of every conversation the
+    // caller participates in — the exact inverse of scenario 30 above.
+    public function test_conversation_id_scopes_search_to_just_that_conversation(): void
+    {
+        $company = Company::factory()->create();
+        $actor = $this->employee($company);
+        $target = User::factory()->create(['company_id' => $company->id]);
+        $conversationA = $this->directConversation($company, $actor, $target);
+        $conversationB = $this->groupConversation($company, $actor, [$target]);
+
+        Message::factory()->create(['conversation_id' => $conversationA->id, 'sender_user_id' => $target->id, 'body' => 'budget review alpha']);
+        Message::factory()->create(['conversation_id' => $conversationB->id, 'sender_user_id' => $target->id, 'body' => 'budget review beta']);
+
+        $this->actingAsUnprivileged($actor)
+            ->getJson("/api/collaboration/search/messages?q=budget&conversation_id={$conversationA->id}")
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonFragment(['body' => 'budget review alpha']);
+    }
+
+    // A caller who isn't a participant of the specifically-named conversation is
+    // refused outright, never silently given zero results indistinguishable from
+    // "no matches" (mirrors GetConversationMessagesAction's own refusal shape).
+    public function test_conversation_id_search_is_forbidden_for_a_non_participant(): void
+    {
+        $company = Company::factory()->create();
+        $actor = $this->employee($company);
+        $target = User::factory()->create(['company_id' => $company->id]);
+        $conversation = $this->directConversation($company, $actor, $target);
+        $outsider = $this->employee($company);
+
+        Message::factory()->create(['conversation_id' => $conversation->id, 'sender_user_id' => $actor->id, 'body' => 'budget review outsider test']);
+
+        $this->actingAsUnprivileged($outsider)
+            ->getJson("/api/collaboration/search/messages?q=budget&conversation_id={$conversation->id}")
+            ->assertForbidden();
+    }
+
     // 31. PostgreSQL FTS query/index path is actually used (not a LIKE scan) —
     // proven by exercising websearch_to_tsquery's real behavior: stemming
     // ("shipments" query matches a stored "shipment") and a non-match for an

@@ -1,7 +1,7 @@
 import { api } from '@/lib/axios';
 import type { ApiResponse } from '@/types';
 
-import type { AddressableUser, Conversation, ConversationParticipant, Message } from '../types';
+import type { AddressableUser, Conversation, ConversationMediaItem, ConversationMediaType, ConversationParticipant, Message } from '../types';
 
 /**
  * Every canonical operation this calls is the exact backend authority built
@@ -106,15 +106,31 @@ export async function markConversationRead(conversationId: string, lastReadMessa
   });
 }
 
+export async function muteConversation(conversationId: string, muted: boolean): Promise<ConversationParticipant> {
+  const { data } = await api.patch<ApiResponse<ConversationParticipant>>(`/collaboration/conversations/${conversationId}/mute`, { muted });
+  return data.data;
+}
+
+/** WhatsApp-style conversation Media/Links/Documents aggregation — participation-gated,
+ *  same secure attachment authority every message attachment already uses. */
+export async function getConversationMedia(conversationId: string, type: ConversationMediaType, limit = 50): Promise<ConversationMediaItem[]> {
+  const { data } = await api.get<ApiResponse<ConversationMediaItem[]>>(`/collaboration/conversations/${conversationId}/media`, {
+    params: { type, limit },
+  });
+  return data.data;
+}
+
 /** Fetches attachment bytes through the authorized streaming endpoint — never a public URL. */
 export async function fetchMessageAttachmentBlob(messageId: string): Promise<Blob> {
   const { data } = await api.get(`/collaboration/messages/${messageId}/attachment`, { responseType: 'blob' });
   return data;
 }
 
-export async function searchMessages(query: string, limit = 20): Promise<Message[]> {
+/** `conversationId` omitted searches every conversation the caller participates in
+ *  (global search); given, it scopes to just that one (in-conversation search). */
+export async function searchMessages(query: string, limit = 20, conversationId?: string): Promise<Message[]> {
   const { data } = await api.get<ApiResponse<Message[]>>('/collaboration/search/messages', {
-    params: { q: query, limit },
+    params: { q: query, limit, conversation_id: conversationId },
   });
   return data.data;
 }

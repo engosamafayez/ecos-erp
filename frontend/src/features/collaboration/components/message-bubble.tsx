@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Download, FileText, ListPlus, Loader2, Reply } from 'lucide-react';
+import { Check, CheckCheck, Download, FileText, ListPlus, Loader2, Reply } from 'lucide-react';
 
 import { toast } from '@/components/ds/use-toast';
 import { cn } from '@/lib/utils';
 
 import { downloadMessageAttachment, useMessageAttachmentUrl } from '../hooks/use-secure-media';
 import type { Message } from '../types';
+import type { SeenState } from '../lib/read-receipts';
 
 function formatBytes(bytes: number | null): string {
   if (!bytes || bytes <= 0) return '';
@@ -22,25 +23,51 @@ function formatDuration(seconds: number | null | undefined): string {
 type Props = {
   message: Message;
   isOwn: boolean;
+  /** Same sender as the previous message, within a short window, same day
+   *  (architecture report §31) — collapses the repeated sender name/avatar
+   *  and tightens spacing, WhatsApp-style. Optional (default false, i.e. the
+   *  original ungrouped rendering) — only ConversationThread ever needs to
+   *  pass true, having already done the day/sender bucketing. */
+  isGrouped?: boolean;
+  /** Only ever set for `isOwn` messages — derived client-side from the other
+   *  participant(s)' read cursors (architecture report §22), no backend change. */
+  seenState?: SeenState | null;
+  /** Group-only, and only for the latest own message — see read-receipts.ts. */
+  seenByNames?: string[];
+  /** Briefly true right after an in-conversation search result is clicked. */
+  highlighted?: boolean;
   replyPreview?: { senderLabel: string; snippet: string } | null;
   onReply: (message: Message) => void;
   onCreateTask: (message: Message) => void;
+  bubbleRef?: (el: HTMLDivElement | null) => void;
 };
 
-export function MessageBubble({ message, isOwn, replyPreview, onReply, onCreateTask }: Props) {
+export function MessageBubble({
+  message,
+  isOwn,
+  isGrouped = false,
+  seenState,
+  seenByNames,
+  highlighted,
+  replyPreview,
+  onReply,
+  onCreateTask,
+  bubbleRef,
+}: Props) {
   const { t } = useTranslation('collaboration');
 
   return (
-    <div className={cn('group flex', isOwn ? 'justify-end' : 'justify-start')}>
-      <div className={cn('flex max-w-[75%] flex-col gap-1', isOwn ? 'items-end' : 'items-start')}>
-        {!isOwn && message.sender_name ? (
+    <div className={cn('group flex scroll-mt-16', isOwn ? 'justify-end' : 'justify-start', isGrouped ? 'mt-0.5' : 'mt-2.5')}>
+      <div ref={bubbleRef} className={cn('flex max-w-[75%] flex-col gap-1', isOwn ? 'items-end' : 'items-start')}>
+        {!isOwn && !isGrouped && message.sender_name ? (
           <span className="px-1 text-xs font-medium text-muted-foreground">{message.sender_name}</span>
         ) : null}
 
         <div
           className={cn(
-            'rounded-2xl px-3 py-2 text-sm',
+            'rounded-2xl px-3 py-2 text-sm transition-shadow',
             isOwn ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground',
+            highlighted ? 'ring-2 ring-offset-2 ring-primary' : null,
           )}
         >
           {replyPreview ? (
@@ -58,25 +85,38 @@ export function MessageBubble({ message, isOwn, replyPreview, onReply, onCreateT
           <MessageBody message={message} isOwn={isOwn} />
         </div>
 
-        <div className="flex items-center gap-2 px-1 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="flex items-center gap-1.5 px-1">
           <span className="text-[10px] text-muted-foreground">
             {new Date(message.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
           </span>
-          <button
-            type="button"
-            onClick={() => onReply(message)}
-            className="text-[10px] text-muted-foreground hover:text-foreground"
-          >
-            <Reply className="inline size-3" aria-hidden /> {t(($) => $.message.replyingTo)}
-          </button>
-          <button
-            type="button"
-            onClick={() => onCreateTask(message)}
-            className="text-[10px] text-muted-foreground hover:text-foreground"
-          >
-            <ListPlus className="inline size-3" aria-hidden /> {t(($) => $.message.createTask)}
-          </button>
+          {isOwn && seenState ? (
+            seenState === 'seen' ? (
+              <CheckCheck className="size-3 text-sky-500" aria-label={t(($) => $.message.seen)} />
+            ) : (
+              <Check className="size-3 text-muted-foreground" aria-label={t(($) => $.message.sent)} />
+            )
+          ) : null}
+          <span className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+            <button
+              type="button"
+              onClick={() => onReply(message)}
+              className="text-[10px] text-muted-foreground hover:text-foreground"
+            >
+              <Reply className="inline size-3" aria-hidden /> {t(($) => $.message.replyingTo)}
+            </button>
+            <button
+              type="button"
+              onClick={() => onCreateTask(message)}
+              className="text-[10px] text-muted-foreground hover:text-foreground"
+            >
+              <ListPlus className="inline size-3" aria-hidden /> {t(($) => $.message.createTask)}
+            </button>
+          </span>
         </div>
+
+        {isOwn && seenByNames && seenByNames.length > 0 ? (
+          <span className="px-1 text-[10px] text-muted-foreground">{t(($) => $.message.seenBy, { names: seenByNames.join(', ') })}</span>
+        ) : null}
       </div>
     </div>
   );

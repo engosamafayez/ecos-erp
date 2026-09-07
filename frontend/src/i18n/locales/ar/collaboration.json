@@ -36,9 +36,26 @@
       "live": "مباشر",
       "polling": "استطلاع دوري"
     },
+    "dateSeparators": {
+      "today": "اليوم",
+      "yesterday": "أمس"
+    },
+    "mute": {
+      "label": "كتم الإشعارات",
+      "muted": "مكتومة"
+    },
+    "media": {
+      "mediaTab": "الوسائط",
+      "linksTab": "الروابط",
+      "documentsTab": "المستندات",
+      "emptyImages": "لا توجد وسائط مشتركة بعد.",
+      "emptyLinks": "لا توجد روابط مشتركة بعد.",
+      "emptyDocuments": "لا توجد مستندات مشتركة بعد."
+    },
     "info": {
       "title": "التفاصيل",
       "participants": "المشاركون",
+      "owner": "المالك",
       "type": {
         "direct": "رسالة مباشرة",
         "group": "مجموعة تعاون"
@@ -81,6 +98,9 @@
     "uploadFailed": "تعذّر رفع المرفق.",
     "download": "تنزيل",
     "createTask": "إنشاء مهمة",
+    "sent": "أُرسلت",
+    "seen": "شوهدت",
+    "seenBy": "شاهدها {{names}}",
     "types": {
       "image": "[صورة]",
       "file": "[ملف]",
@@ -97,6 +117,7 @@
     "micDenied": "تم رفض الوصول إلى الميكروفون. يرجى السماح بالوصول إلى الميكروفون من متصفحك لتسجيل رسالة صوتية.",
     "micUnavailable": "لم يتم العثور على ميكروفون على هذا الجهاز.",
     "unsupported": "تسجيل الصوت غير مدعوم في هذا المتصفح.",
+    "insecureContext": "يتطلب تسجيل الصوت اتصالاً آمنًا (HTTPS) أو localhost. تواصل مع مسؤول النظام إذا ظهرت لك هذه الرسالة على عنوان ويب عادي.",
     "recordingFailed": "فشل التسجيل. حاول مرة أخرى.",
     "playbackUnauthorized": "ليس لديك صلاحية الوصول إلى هذه الرسالة الصوتية."
   },
@@ -107,7 +128,15 @@
     "noResults": "لا توجد نتائج.",
     "error": "فشل البحث.",
     "openConversation": "فتح المحادثة",
-    "openTask": "فتح المهمة"
+    "openTask": "فتح المهمة",
+    "inConversationTitle": "البحث في المحادثة",
+    "inConversationPlaceholder": "ابحث في هذه المحادثة…",
+    "close": "إغلاق",
+    "notInView": "هذه الرسالة أقدم في السجل — مرر لأعلى للعثور عليها."
+  },
+  "launcher": {
+    "ariaLabel": "فتح التعاون",
+    "ariaLabelUnread": "فتح التعاون، {{count}} غير مقروءة"
   },
   "tasks": {
     "title": "المهام",

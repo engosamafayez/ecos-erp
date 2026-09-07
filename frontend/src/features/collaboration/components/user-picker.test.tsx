@@ -53,9 +53,9 @@ function withSearch(over: Partial<{ query: string; setQuery: (q: string) => void
   } as unknown as ReturnType<typeof useUserSearch>);
 }
 
-const ALICE: AddressableUser = { id: 1, name: 'Alice', is_driver: false };
-const BOB: AddressableUser = { id: 2, name: 'Bob', is_driver: false };
-const SAM_DRIVER: AddressableUser = { id: 3, name: 'Sam', is_driver: true };
+const ALICE: AddressableUser = { id: 1, name: 'Alice', job_title: null, is_driver: false };
+const BOB: AddressableUser = { id: 2, name: 'Bob', job_title: null, is_driver: false };
+const SAM_DRIVER: AddressableUser = { id: 3, name: 'Sam', job_title: null, is_driver: true };
 
 describe('UserPicker', () => {
   beforeEach(() => {
@@ -99,7 +99,7 @@ describe('UserPicker', () => {
 
   it('keeps the currently selected value resolvable even if it fell out of the live results', () => {
     withSearch({ results: [ALICE] });
-    render(<UserPicker value={{ id: 99, name: 'Zed', is_driver: false }} onChange={vi.fn()} />);
+    render(<UserPicker value={{ id: 99, name: 'Zed', job_title: null, is_driver: false }} onChange={vi.fn()} />);
 
     expect(screen.getByText('Zed')).toBeInTheDocument();
     expect(screen.getByText('Alice')).toBeInTheDocument();

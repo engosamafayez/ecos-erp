@@ -46,6 +46,7 @@ const FAKE_CONVERSATION: Conversation = {
   last_message_at: null,
   unread_count: 0,
   my_role: 'member',
+  my_muted: false,
   created_at: '2026-09-01',
 };
 

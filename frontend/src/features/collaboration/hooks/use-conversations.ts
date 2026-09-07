@@ -6,6 +6,7 @@ import {
   getConversation,
   listConversations,
   markConversationRead,
+  muteConversation,
   removeParticipant,
   startDirectConversation,
 } from '../services/collaboration-service';
@@ -76,5 +77,20 @@ export function useMarkConversationRead(conversationId: string) {
   return useMutation({
     mutationFn: (lastReadMessageId?: string) => markConversationRead(conversationId, lastReadMessageId),
     onSuccess: () => qc.invalidateQueries({ queryKey: conversationsKey }),
+  });
+}
+
+/** Notification preference only (architecture report §21) — never a second
+ *  read/unread authority; invalidates both the single conversation and the
+ *  list so the muted indicator updates everywhere it's shown. */
+export function useMuteConversation(conversationId: string) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (muted: boolean) => muteConversation(conversationId, muted),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: conversationKey(conversationId) });
+      qc.invalidateQueries({ queryKey: conversationsKey });
+    },
   });
 }

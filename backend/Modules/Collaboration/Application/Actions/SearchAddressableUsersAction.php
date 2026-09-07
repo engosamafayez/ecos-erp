@@ -10,6 +10,7 @@ use Illuminate\Support\Collection;
 use InvalidArgumentException;
 use Modules\IAM\Application\Services\UserRepository;
 use Modules\IAM\Domain\Contracts\AuthorizationGatewayInterface;
+use Modules\IAM\Domain\Enums\UserStatus;
 use Modules\Logistics\Drivers\Domain\Models\Driver;
 
 /**
@@ -67,6 +68,12 @@ final class SearchAddressableUsersAction extends BaseAction
         $candidates = collect($this->users->search([
             'q' => $searchQuery,
             'company_id' => $actor->company_id,
+            // Architecture report §8/§16 (bucket B): UserRepository::query() already
+            // supports a status filter, this call site simply never passed it before —
+            // "active IAM users... as the primary source" means a draft/invited/
+            // inactive/suspended/locked/archived account should not surface as an
+            // addressable candidate even though it isn't soft-deleted.
+            'status' => UserStatus::ACTIVE->value,
         ], $limit)->items())
             ->reject(fn (User $u): bool => $u->id === $actor->id)
             ->values();
