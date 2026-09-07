@@ -6,6 +6,7 @@ namespace Modules\Collaboration\Application\Actions;
 
 use App\Core\Actions\BaseAction;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Collection;
 use InvalidArgumentException;
 use Modules\Collaboration\Domain\Models\ConversationParticipant;
@@ -37,6 +38,14 @@ use Modules\Collaboration\Domain\Services\SearchQueryExpander;
  * first place (brief §20 — never "search globally, filter after"). Tenant/
  * company isolation follows for free — a user can only ever be an active
  * participant of a conversation in their own company (Task 2).
+ *
+ * Optional single-conversation scoping (architecture report §19, TASK-ECOS-
+ * INTERNAL-COLLABORATION-CHAT-FINAL-IMPLEMENTATION-002): when a
+ * `$conversationId` is given, this narrows to that one conversation instead
+ * of gathering every conversation the caller participates in — the same
+ * search index and query shape, just a tighter `WHERE`, with its own
+ * explicit participation check (an actor who isn't a member of that specific
+ * conversation is refused outright, not silently given zero results).
  */
 final class SearchMessagesAction extends BaseAction
 {
@@ -44,28 +53,43 @@ final class SearchMessagesAction extends BaseAction
         private readonly SearchQueryExpander $queryExpander,
     ) {}
 
-    /** @param  mixed  ...$arguments  [User $user, string $query, int $limit] */
+    /** @param  mixed  ...$arguments  [User $user, string $query, int $limit, ?string $conversationId] */
     public function execute(mixed ...$arguments): Collection
     {
         $user = $arguments[0] ?? null;
         $searchQuery = $arguments[1] ?? null;
         $limit = $arguments[2] ?? 20;
+        $conversationId = $arguments[3] ?? null;
 
         if (! $user instanceof User || ! is_string($searchQuery) || trim($searchQuery) === '') {
-            throw new InvalidArgumentException('SearchMessagesAction::execute expects (User $user, string $query, int $limit).');
+            throw new InvalidArgumentException('SearchMessagesAction::execute expects (User $user, string $query, int $limit, ?string $conversationId).');
         }
 
-        $authorizedConversationIds = ConversationParticipant::query()
-            ->where('user_id', $user->id)
-            ->whereNull('left_at')
-            ->pluck('conversation_id');
+        if ($conversationId !== null) {
+            $isParticipant = ConversationParticipant::query()
+                ->where('conversation_id', $conversationId)
+                ->where('user_id', $user->id)
+                ->whereNull('left_at')
+                ->exists();
 
-        if ($authorizedConversationIds->isEmpty()) {
-            return new Collection;
+            if (! $isParticipant) {
+                throw new AuthorizationException('You are not a participant of this conversation.');
+            }
+
+            $conversationIds = collect([$conversationId]);
+        } else {
+            $conversationIds = ConversationParticipant::query()
+                ->where('user_id', $user->id)
+                ->whereNull('left_at')
+                ->pluck('conversation_id');
+
+            if ($conversationIds->isEmpty()) {
+                return new Collection;
+            }
         }
 
         return Message::query()
-            ->whereIn('conversation_id', $authorizedConversationIds)
+            ->whereIn('conversation_id', $conversationIds)
             ->whereRaw('MATCH(body) AGAINST(? IN BOOLEAN MODE)', [$this->queryExpander->toBooleanQueryString($searchQuery)])
             ->orderByDesc('created_at')
             ->limit($limit)

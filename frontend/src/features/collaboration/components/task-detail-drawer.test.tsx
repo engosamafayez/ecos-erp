@@ -54,7 +54,7 @@ vi.mock('@/components/ui/tabs', async () => {
 // task-detail-drawer imports UserPicker from the sibling './user-picker'.
 vi.mock('./user-picker', () => ({
   UserPicker: ({ onChange }: { onChange: (user: AddressableUser | null) => void }) => (
-    <button type="button" onClick={() => onChange({ id: 42, name: 'Picked User', is_driver: false })}>pick-user</button>
+    <button type="button" onClick={() => onChange({ id: 42, name: 'Picked User', job_title: null, is_driver: false })}>pick-user</button>
   ),
 }));
 

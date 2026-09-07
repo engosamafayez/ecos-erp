@@ -32,8 +32,9 @@ const GROUP: Conversation = {
   last_message_at: null,
   unread_count: 0,
   my_role: 'owner',
+  my_muted: false,
   participants: [
-    { id: 'p1', conversation_id: 'c1', user_id: 1, name: 'Current User', role: 'owner', joined_at: '2026-01-01', left_at: null, last_read_at: null, last_read_message_id: null },
+    { id: 'p1', conversation_id: 'c1', user_id: 1, name: 'Current User', role: 'owner', joined_at: '2026-01-01', left_at: null, last_read_at: null, last_read_message_id: null, muted_at: null },
   ],
   created_at: '2026-01-01',
 };
@@ -48,9 +49,10 @@ const DIRECT: Conversation = {
   last_message_at: null,
   unread_count: 0,
   my_role: 'member',
+  my_muted: false,
   participants: [
-    { id: 'p3', conversation_id: 'c2', user_id: 1, name: 'Current User', role: 'member', joined_at: '2026-01-01', left_at: null, last_read_at: null, last_read_message_id: null },
-    { id: 'p4', conversation_id: 'c2', user_id: 3, name: 'Jane Doe', role: 'member', joined_at: '2026-01-01', left_at: null, last_read_at: null, last_read_message_id: null },
+    { id: 'p3', conversation_id: 'c2', user_id: 1, name: 'Current User', role: 'member', joined_at: '2026-01-01', left_at: null, last_read_at: null, last_read_message_id: null, muted_at: null },
+    { id: 'p4', conversation_id: 'c2', user_id: 3, name: 'Jane Doe', role: 'member', joined_at: '2026-01-01', left_at: null, last_read_at: null, last_read_message_id: null, muted_at: null },
   ],
   created_at: '2026-01-01',
 };

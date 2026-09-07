@@ -28,6 +28,7 @@ final class ConversationResource extends JsonResource
             'last_message_at' => $this->last_message_at?->toIso8601String(),
             'unread_count' => $this->getAttribute('unread_count'),
             'my_role' => $myParticipant?->role?->value,
+            'my_muted' => (bool) $myParticipant?->muted_at,
             // Embedding fellow participants' names here leaks nothing new: reaching this
             // resource at all already required passing ConversationPolicy::view (active
             // participation) — seeing who else shares a conversation you're already in is

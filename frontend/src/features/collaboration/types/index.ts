@@ -16,6 +16,9 @@ export interface Conversation {
   last_message_at: string | null;
   unread_count: number | null;
   my_role: ParticipantRole | null;
+  /** The caller's own mute preference for this conversation — a notification-only
+   *  setting (architecture report §21); never affects unread_count or history. */
+  my_muted: boolean;
   /** Active participants only, resolved with names — present whenever the backend
    *  eager-loads them (every current endpoint does). Absent only if a future
    *  endpoint returns a bare Conversation without that relation loaded. */
@@ -60,13 +63,32 @@ export interface ConversationParticipant {
   left_at: string | null;
   last_read_at: string | null;
   last_read_message_id: string | null;
+  muted_at: string | null;
 }
 
 /** Result of the "somebody to newly address" search — GET /collaboration/search/users. */
 export interface AddressableUser {
   id: number;
   name: string;
+  /** Low-sensitivity display field only (architecture report §15) — the search
+   *  already matches against it; email/phone/role are still never returned. */
+  job_title: string | null;
   is_driver: boolean;
+}
+
+export type ConversationMediaType = 'image' | 'file' | 'link';
+
+/** One row of the conversation-info Media/Links/Documents tabs (architecture
+ *  report §20) — `id` is the underlying message's own id, so the same secure
+ *  attachment-fetch/download path messages already use applies unchanged. */
+export interface ConversationMediaItem {
+  id: string;
+  type: MessageType;
+  sender_name?: string | null;
+  created_at: string;
+  attachment: MessageAttachment | null;
+  url: string | null;
+  body: string | null;
 }
 
 export interface TaskActivityEntry {

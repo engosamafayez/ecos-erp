@@ -41,17 +41,22 @@ final class CollaborationSearchController extends Controller
         return $this->success(AddressableUserResource::collection($results));
     }
 
+    /** `conversation_id` is optional — omitted, this searches across every conversation
+     *  the caller participates in; given, it scopes to just that one (in-conversation
+     *  search, architecture report §19) with its own explicit participation check. */
     public function messages(Request $request, SearchMessagesAction $action): JsonResponse
     {
         $request->validate([
             'q' => ['required', 'string', 'min:1', 'max:200'],
             'limit' => ['sometimes', 'integer', 'min:1', 'max:100'],
+            'conversation_id' => ['sometimes', 'string', 'uuid'],
         ]);
 
         $results = $action->execute(
             $request->user(),
             (string) $request->query('q'),
             (int) $request->query('limit', 20),
+            $request->query('conversation_id'),
         );
 
         return $this->success(MessageResource::collection($results));

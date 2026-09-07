@@ -33,10 +33,15 @@ vi.mock('./user-picker', () => ({
   ),
 }));
 
-import { useAddParticipant, useRemoveParticipant } from '../hooks/use-conversations';
+import { useAddParticipant, useMuteConversation, useRemoveParticipant } from '../hooks/use-conversations';
 vi.mock('../hooks/use-conversations', () => ({
   useAddParticipant: vi.fn(),
   useRemoveParticipant: vi.fn(),
+  useMuteConversation: vi.fn(),
+}));
+
+vi.mock('../hooks/use-conversation-media', () => ({
+  useConversationMedia: vi.fn(() => ({ data: [], isLoading: false, isError: false })),
 }));
 
 import { ConversationInfoPanel } from './conversation-info-panel';
@@ -44,6 +49,7 @@ import type { Conversation } from '../types';
 
 const mockUseAdd = vi.mocked(useAddParticipant);
 const mockUseRemove = vi.mocked(useRemoveParticipant);
+const mockUseMute = vi.mocked(useMuteConversation);
 
 const OWNER_CONVERSATION: Conversation = {
   id: 'c1',
@@ -56,9 +62,10 @@ const OWNER_CONVERSATION: Conversation = {
   last_message_at: null,
   unread_count: 0,
   my_role: 'owner',
+  my_muted: false,
   participants: [
-    { id: 'p1', conversation_id: 'c1', user_id: 1, name: 'Me', role: 'owner', joined_at: '2026-01-01', left_at: null, last_read_at: null, last_read_message_id: null },
-    { id: 'p2', conversation_id: 'c1', user_id: 2, name: 'Other', role: 'member', joined_at: '2026-01-01', left_at: null, last_read_at: null, last_read_message_id: null },
+    { id: 'p1', conversation_id: 'c1', user_id: 1, name: 'Me', role: 'owner', joined_at: '2026-01-01', left_at: null, last_read_at: null, last_read_message_id: null, muted_at: null },
+    { id: 'p2', conversation_id: 'c1', user_id: 2, name: 'Other', role: 'member', joined_at: '2026-01-01', left_at: null, last_read_at: null, last_read_message_id: null, muted_at: null },
   ],
   created_at: '2026-01-01',
 };
@@ -73,6 +80,7 @@ function setupMutations() {
   const removeMutate = vi.fn();
   mockUseAdd.mockReturnValue({ mutate: addMutate, isPending: false } as unknown as ReturnType<typeof useAddParticipant>);
   mockUseRemove.mockReturnValue({ mutate: removeMutate, isPending: false } as unknown as ReturnType<typeof useRemoveParticipant>);
+  mockUseMute.mockReturnValue({ mutate: vi.fn(), isPending: false } as unknown as ReturnType<typeof useMuteConversation>);
   return { addMutate, removeMutate };
 }
 

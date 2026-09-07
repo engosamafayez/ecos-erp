@@ -46,8 +46,8 @@ import type { ConversationParticipant, Message } from '../types';
 const mockUseSendMessage = vi.mocked(useSendMessage);
 
 const PARTICIPANTS: ConversationParticipant[] = [
-  { id: 'p1', conversation_id: 'c1', user_id: 1, name: 'Current User', role: 'member', joined_at: '2026-01-01', left_at: null, last_read_at: null, last_read_message_id: null },
-  { id: 'p2', conversation_id: 'c1', user_id: 2, name: 'Jane Doe', role: 'member', joined_at: '2026-01-01', left_at: null, last_read_at: null, last_read_message_id: null },
+  { id: 'p1', conversation_id: 'c1', user_id: 1, name: 'Current User', role: 'member', joined_at: '2026-01-01', left_at: null, last_read_at: null, last_read_message_id: null, muted_at: null },
+  { id: 'p2', conversation_id: 'c1', user_id: 2, name: 'Jane Doe', role: 'member', joined_at: '2026-01-01', left_at: null, last_read_at: null, last_read_message_id: null, muted_at: null },
 ];
 
 const REPLY_TARGET: Message = {

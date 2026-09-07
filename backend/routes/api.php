@@ -24,6 +24,8 @@ use Modules\ClaudeBridge\Presentation\Http\Controllers\WorkerController as CbWor
 use Modules\ClaudeBridge\Presentation\Http\Middleware\VerifyWorkerToken;
 use Modules\Collaboration\Presentation\Http\Controllers\CollaborationSearchController;
 use Modules\Collaboration\Presentation\Http\Controllers\ConversationController;
+use Modules\Collaboration\Presentation\Http\Controllers\ConversationMediaController;
+use Modules\Collaboration\Presentation\Http\Controllers\ConversationMuteController;
 use Modules\Collaboration\Presentation\Http\Controllers\ConversationParticipantController;
 use Modules\Collaboration\Presentation\Http\Controllers\ConversationReadStateController;
 use Modules\Collaboration\Presentation\Http\Controllers\MessageAttachmentController;
@@ -4641,6 +4643,11 @@ Route::middleware('auth:sanctum')->prefix('collaboration')->group(function (): v
         ->middleware('throttle:60,1');
 
     Route::patch('conversations/{conversation}/read', [ConversationReadStateController::class, 'update']);
+    Route::patch('conversations/{conversation}/mute', [ConversationMuteController::class, 'update']);
+
+    // WhatsApp-style Media/Documents/Links aggregation (architecture report §20) —
+    // participation-gated exactly like every other conversation-scoped read.
+    Route::get('conversations/{conversation}/media', [ConversationMediaController::class, 'index']);
 
     // Foundation-proving endpoint only — see AttachOperationalContextAction.
     Route::post('context-links', [OperationalContextLinkController::class, 'store']);

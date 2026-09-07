@@ -25,6 +25,7 @@ final class ConversationParticipantResource extends JsonResource
             'left_at' => $this->left_at?->toIso8601String(),
             'last_read_at' => $this->last_read_at?->toIso8601String(),
             'last_read_message_id' => $this->last_read_message_id,
+            'muted_at' => $this->muted_at?->toIso8601String(),
         ];
     }
 }

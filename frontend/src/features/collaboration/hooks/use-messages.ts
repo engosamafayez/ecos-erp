@@ -29,10 +29,13 @@ export function useSendMessage(conversationId: string) {
   });
 }
 
-export function useSearchMessages(query: string) {
+/** `conversationId` omitted searches globally (unchanged, existing callers);
+ *  given, scopes the search to just that one conversation (architecture
+ *  report §19 in-conversation search). */
+export function useSearchMessages(query: string, conversationId?: string) {
   return useQuery({
-    queryKey: ['collaboration', 'search', 'messages', query],
-    queryFn: () => searchMessages(query),
+    queryKey: ['collaboration', 'search', 'messages', query, conversationId ?? null],
+    queryFn: () => searchMessages(query, 20, conversationId),
     enabled: query.trim().length > 0,
   });
 }

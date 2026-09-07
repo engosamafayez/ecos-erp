@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Users } from 'lucide-react';
+import { BellOff, Users } from 'lucide-react';
 
 import { Avatar, AvatarFallback, getInitials } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -36,7 +36,10 @@ export function ConversationListItem({ conversation, currentUserId, isActive, on
 
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <span className={cn('truncate text-sm', unread > 0 ? 'font-semibold' : 'font-medium')}>{title}</span>
+          <span className={cn('flex items-center gap-1 truncate text-sm', unread > 0 ? 'font-semibold' : 'font-medium')}>
+            {conversation.my_muted ? <BellOff className="size-3 shrink-0 text-muted-foreground" aria-label={t(($) => $.conversations.mute.muted)} /> : null}
+            <span className="truncate">{title}</span>
+          </span>
           {conversation.last_message_at ? (
             <span className="shrink-0 text-[10px] text-muted-foreground">
               {new Date(conversation.last_message_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}

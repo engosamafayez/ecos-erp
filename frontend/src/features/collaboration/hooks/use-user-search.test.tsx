@@ -50,7 +50,7 @@ describe('useUserSearch', () => {
   });
 
   it('queries with the trimmed value once 2+ characters have settled for 300ms, and exposes the resolved results', async () => {
-    const users: AddressableUser[] = [{ id: 1, name: 'Ali Hassan', is_driver: false }];
+    const users: AddressableUser[] = [{ id: 1, name: 'Ali Hassan', job_title: null, is_driver: false }];
     mockSearch.mockResolvedValue(users);
     const { result } = renderHook(() => useUserSearch(), { wrapper });
 

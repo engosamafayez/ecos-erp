@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Modules\IAM\Domain\Contracts\ScopeResolverInterface;
 use Modules\IAM\Domain\Enums\DataScope;
+use Modules\IAM\Domain\Enums\UserStatus;
 use Modules\IAM\Domain\ValueObjects\ScopeConstraint;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Tests\Feature\Collaboration\Concerns\CollaborationTestHelpers;
@@ -70,6 +71,26 @@ final class CollaborationUserSearchTest extends TestCase
 
         $this->actingAsUnprivileged($actor)
             ->getJson('/api/collaboration/search/users?q=Self+Searcher+Unique')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+    }
+
+    // TASK-ECOS-INTERNAL-COLLABORATION-CHAT-FINAL-IMPLEMENTATION-002 — architecture
+    // report §8/§16: "active IAM users... as the primary source" means a non-active
+    // account (draft/invited/inactive/suspended/locked/archived) must not surface as
+    // an addressable candidate, even though it isn't soft-deleted.
+    public function test_search_excludes_a_non_active_user_from_the_same_company(): void
+    {
+        $company = Company::factory()->create();
+        $actor = $this->employee($company);
+        User::factory()->create([
+            'company_id' => $company->id,
+            'name' => 'Inactive Person Zzz',
+            'status' => UserStatus::INACTIVE->value,
+        ]);
+
+        $this->actingAsUnprivileged($actor)
+            ->getJson('/api/collaboration/search/users?q=Inactive+Person+Zzz')
             ->assertOk()
             ->assertJsonCount(0, 'data');
     }

@@ -32,10 +32,13 @@ export function UserPicker({ value, onChange, placeholder, disabled, className, 
   // the search text moves on and they fall out of the live `results` page.
   const merged = value && !candidates.some((u) => u.id === value.id) ? [value, ...candidates] : candidates;
 
-  const options = merged.map((u) => ({
-    value: String(u.id),
-    label: u.is_driver ? `${u.name} · ${t(($) => $.tasks.context.driver)}` : u.name,
-  }));
+  const options = merged.map((u) => {
+    const base = u.job_title ? `${u.name} (${u.job_title})` : u.name;
+    return {
+      value: String(u.id),
+      label: u.is_driver ? `${base} · ${t(($) => $.tasks.context.driver)}` : base,
+    };
+  });
 
   return (
     <Combobox

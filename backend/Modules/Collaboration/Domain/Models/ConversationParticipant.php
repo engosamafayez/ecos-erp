@@ -21,6 +21,7 @@ use Modules\Collaboration\Infrastructure\Database\Factories\ConversationParticip
  * @property \Illuminate\Support\Carbon|null $left_at
  * @property \Illuminate\Support\Carbon|null $last_read_at
  * @property string|null $last_read_message_id
+ * @property \Illuminate\Support\Carbon|null $muted_at
  */
 class ConversationParticipant extends Model
 {
@@ -42,6 +43,7 @@ class ConversationParticipant extends Model
         'left_at',
         'last_read_at',
         'last_read_message_id',
+        'muted_at',
     ];
 
     /** @return array<string, string> */
@@ -52,6 +54,7 @@ class ConversationParticipant extends Model
             'joined_at' => 'datetime',
             'left_at' => 'datetime',
             'last_read_at' => 'datetime',
+            'muted_at' => 'datetime',
         ];
     }
 
@@ -76,6 +79,11 @@ class ConversationParticipant extends Model
     public function isActive(): bool
     {
         return $this->left_at === null;
+    }
+
+    public function isMuted(): bool
+    {
+        return $this->muted_at !== null;
     }
 
     protected static function newFactory(): ConversationParticipantFactory

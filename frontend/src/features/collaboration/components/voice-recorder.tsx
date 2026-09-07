@@ -9,7 +9,7 @@ type RecorderState =
   | { phase: 'requesting' }
   | { phase: 'recording'; startedAt: number }
   | { phase: 'preview'; blob: Blob; url: string; durationSeconds: number }
-  | { phase: 'error'; reason: 'denied' | 'unavailable' | 'unsupported' | 'failed' };
+  | { phase: 'error'; reason: 'denied' | 'unavailable' | 'unsupported' | 'insecureContext' | 'failed' };
 
 /** First MediaRecorder mime type this browser actually supports, or undefined to let it pick its own default. */
 function pickMimeType(): string | undefined {
@@ -35,8 +35,18 @@ export function VoiceRecorder({ onCancel, onSend }: { onCancel: () => void; onSe
   const createdUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+    // Checked first and separately from the getUserMedia/MediaRecorder existence
+    // check below (architecture report §16): on an insecure origin (plain HTTP,
+    // not localhost/127.0.0.1), `navigator.mediaDevices` is commonly `undefined`
+    // in Chrome/Edge — which the next check alone would misreport as "browser
+    // doesn't support this" even though it does, just not on this origin.
+    if (typeof window !== 'undefined' && window.isSecureContext === false) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time capability check against a browser global, not derivable from props/state during render
+      setState({ phase: 'error', reason: 'insecureContext' });
+      return;
+    }
+
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
       setState({ phase: 'error', reason: 'unsupported' });
       return;
     }
@@ -125,8 +135,9 @@ export function VoiceRecorder({ onCancel, onSend }: { onCancel: () => void; onSe
     const message = t(($) => $.voice[
       state.reason === 'denied' ? 'micDenied'
         : state.reason === 'unavailable' ? 'micUnavailable'
-          : state.reason === 'unsupported' ? 'unsupported'
-            : 'recordingFailed'
+          : state.reason === 'insecureContext' ? 'insecureContext'
+            : state.reason === 'unsupported' ? 'unsupported'
+              : 'recordingFailed'
     ]);
     return (
       <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
