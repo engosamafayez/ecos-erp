@@ -1,18 +1,24 @@
 import { Check, Copy, MessageCircle, Phone } from 'lucide-react';
 import { useState } from 'react';
 
+import { toast } from '@/components/ds/use-toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { copyToClipboard } from '@/lib/clipboard';
 
 export type PhoneCellLabels = {
   call?: string;
   whatsapp?: string;
   copy?: string;
   copied?: string;
+  /** Toast title shown after a successful Copy. */
+  copySuccessTitle?: string;
+  /** Toast title shown when Copy genuinely fails (clipboard unavailable/denied). */
+  copyErrorTitle?: string;
 };
 
 const DEFAULT_LABELS: Required<PhoneCellLabels> = {
@@ -20,6 +26,8 @@ const DEFAULT_LABELS: Required<PhoneCellLabels> = {
   whatsapp: 'WhatsApp',
   copy: 'Copy',
   copied: 'Copied!',
+  copySuccessTitle: 'Phone number copied',
+  copyErrorTitle: "Couldn't copy phone number",
 };
 
 type PhoneCellProps = {
@@ -54,9 +62,17 @@ export function PhoneCell({ phone, labels, variant = 'text', ariaLabel, classNam
   const digits = phone.replace(/\D/g, '');
 
   const handleCopy = () => {
-    void navigator.clipboard.writeText(phone).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+    // The row/menu's OWN `phone` prop is closed over here — never a shared/
+    // module-level value — so concurrently open menus for different rows can
+    // never copy each other's number.
+    void copyToClipboard(phone).then((ok) => {
+      if (ok) {
+        setCopied(true);
+        toast.success(l.copySuccessTitle);
+        setTimeout(() => setCopied(false), 1500);
+      } else {
+        toast.error(l.copyErrorTitle);
+      }
     });
   };
 

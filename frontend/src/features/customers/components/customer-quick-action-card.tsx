@@ -18,11 +18,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from '@/components/ds/use-toast';
 import { OrderStatusBadge } from '@/features/orders/components/order-status-badge';
 import { useOrdersQuery } from '@/features/orders/hooks/use-orders';
 import { TERMINAL_ORDER_STATUSES } from '@/features/orders/types/order';
 
 import type { Customer } from '@/features/customers/types/customer';
+import { copyToClipboard } from '@/lib/clipboard';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -69,7 +71,11 @@ export function CustomerQuickActionCard({
   const isReturning   = totalOrders !== null && totalOrders > 1;
 
   const handleCopyPhone = () => {
-    if (primaryPhone) void navigator.clipboard.writeText(primaryPhone);
+    if (!primaryPhone) return;
+    void copyToClipboard(primaryPhone).then((ok) => {
+      if (ok) toast.success(t($ => $.phone.copySuccess));
+      else toast.error(t($ => $.phone.copyError));
+    });
   };
 
   const handleCopyAddress = () => {

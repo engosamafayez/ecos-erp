@@ -1,3 +1,5 @@
+import '@testing-library/jest-dom';
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -24,6 +26,19 @@ const mockNavigate = vi.hoisted(() => vi.fn());
 const mockBlock = vi.hoisted(() => vi.fn());
 const mockBlockPhone = vi.hoisted(() => vi.fn());
 const mockUnblock = vi.hoisted(() => vi.fn());
+
+// TASK-ECOS-COMMERCE-CUSTOMERS-FINAL-USER-REVIEW-REMEDIATION-004 — Phone Copy.
+// The clipboard/toast wiring itself is unit-tested in isolation (clipboard.test.ts,
+// phone-cell.test.tsx); here only the row-scoping and success/error feedback wiring
+// is under test, so the browser Clipboard API and the toast store are both mocked.
+const mockCopyToClipboard = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/clipboard', () => ({ copyToClipboard: mockCopyToClipboard }));
+
+const mockToastSuccess = vi.hoisted(() => vi.fn());
+const mockToastError = vi.hoisted(() => vi.fn());
+vi.mock('@/components/ds/use-toast', () => ({
+  toast: { success: mockToastSuccess, error: mockToastError },
+}));
 
 vi.mock('@/features/customers/services/customers-service', () => ({
   customersService: {
@@ -166,6 +181,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockList.mockResolvedValue(result([customer()]));
   mockCan.mockReturnValue(true);
+  mockCopyToClipboard.mockResolvedValue(true);
 });
 
 describe('CustomersPage — Customer Intelligence', () => {
@@ -312,5 +328,131 @@ describe('CustomersPage — Blocked Customers (TASK-...-BLOCKED-CUSTOMERS-009)',
 
     await screen.findByText('Acme Corp');
     expect(screen.queryByText('blockPhoneAction')).not.toBeInTheDocument();
+  });
+});
+
+describe('CustomersPage — Block Reason visibility (TASK-ECOS-COMMERCE-CUSTOMERS-FINAL-USER-REVIEW-REMEDIATION-004)', () => {
+  it('shows a visible reason preview for a blocked customer with a recorded reason', async () => {
+    mockList.mockResolvedValue(result([
+      customer({ id: 'c1', is_blocked: true, block_reason: 'Fraud suspected' }),
+    ]));
+    renderPage();
+
+    expect(await screen.findByText('Fraud suspected')).toBeInTheDocument();
+  });
+
+  it('shows the "no reason recorded" fallback for a blocked customer with no reason', async () => {
+    mockList.mockResolvedValue(result([
+      customer({ id: 'c1', is_blocked: true, block_reason: null }),
+    ]));
+    renderPage();
+
+    expect(await screen.findByText('noReasonRecorded')).toBeInTheDocument();
+  });
+
+  it('shows no reason hint at all for a customer who is not blocked', async () => {
+    mockList.mockResolvedValue(result([
+      customer({ id: 'c1', is_blocked: false, block_reason: null }),
+    ]));
+    renderPage();
+
+    await screen.findByText('Acme Corp');
+    expect(screen.queryByText('noReasonRecorded')).not.toBeInTheDocument();
+  });
+
+  it('reveals the full reason plus blocked-by/blocked-at details in a popover on click', async () => {
+    const user = userEvent.setup();
+    mockList.mockResolvedValue(result([
+      customer({
+        id: 'c1',
+        is_blocked: true,
+        block_reason: 'Chargeback dispute filed twice this quarter after delivery confirmation',
+        blocked_by_name: 'Sara Ahmed',
+        blocked_at: '2026-08-01T10:00:00Z',
+      }),
+    ]));
+    renderPage();
+
+    await user.click(await screen.findByText(/Chargeback dispute/));
+
+    expect(await screen.findByText('reasonLabel')).toBeInTheDocument();
+    expect(screen.getByText(/Sara Ahmed/)).toBeInTheDocument();
+  });
+
+  it('never truncates the underlying reason data — the full string is present in the DOM', async () => {
+    const longReason = 'Repeated chargebacks across three separate orders, confirmed fraud by the payment gateway team after manual review.';
+    mockList.mockResolvedValue(result([
+      customer({ id: 'c1', is_blocked: true, block_reason: longReason }),
+    ]));
+    renderPage();
+
+    expect(await screen.findByText(longReason)).toBeInTheDocument();
+  });
+});
+
+describe('CustomersPage — Phone Copy (TASK-ECOS-COMMERCE-CUSTOMERS-FINAL-USER-REVIEW-REMEDIATION-004)', () => {
+  it('copies the row phone via the Actions menu and shows a success toast', async () => {
+    const user = userEvent.setup();
+    mockList.mockResolvedValue(result([
+      customer({ id: 'c1', name: 'Acme Corp', phone: '0501112222' }),
+    ]));
+    renderPage();
+
+    await screen.findByText('Acme Corp');
+    await user.click(screen.getByLabelText('Actions for Acme Corp'));
+    await user.click(await screen.findByText('copyPhone'));
+
+    await waitFor(() => expect(mockCopyToClipboard).toHaveBeenCalledWith('0501112222'));
+    await waitFor(() => expect(mockToastSuccess).toHaveBeenCalledWith('copySuccess'));
+    expect(mockToastError).not.toHaveBeenCalled();
+  });
+
+  it('shows an error toast when the copy genuinely fails (clipboard unavailable/denied)', async () => {
+    mockCopyToClipboard.mockResolvedValue(false);
+    const user = userEvent.setup();
+    mockList.mockResolvedValue(result([
+      customer({ id: 'c1', name: 'Acme Corp', phone: '0501112222' }),
+    ]));
+    renderPage();
+
+    await screen.findByText('Acme Corp');
+    await user.click(screen.getByLabelText('Actions for Acme Corp'));
+    await user.click(await screen.findByText('copyPhone'));
+
+    await waitFor(() => expect(mockToastError).toHaveBeenCalledWith('copyError'));
+    expect(mockToastSuccess).not.toHaveBeenCalled();
+  });
+
+  it('copies the correct row phone — no stale phone from a previously opened row menu', async () => {
+    const user = userEvent.setup();
+    mockList.mockResolvedValue(result([
+      customer({ id: 'c1', name: 'Acme Corp', phone: '0501110000' }),
+      customer({ id: 'c2', name: 'Beta LLC', phone: '0502220000' }),
+    ]));
+    renderPage();
+
+    await screen.findByText('Acme Corp');
+
+    await user.click(screen.getByLabelText('Actions for Beta LLC'));
+    await user.click(await screen.findByText('copyPhone'));
+    await waitFor(() => expect(mockCopyToClipboard).toHaveBeenLastCalledWith('0502220000'));
+
+    await user.click(screen.getByLabelText('Actions for Acme Corp'));
+    await user.click(await screen.findByText('copyPhone'));
+    await waitFor(() => expect(mockCopyToClipboard).toHaveBeenLastCalledWith('0501110000'));
+  });
+
+  it('does not attempt to copy when the customer has no phone on file', async () => {
+    const user = userEvent.setup();
+    mockList.mockResolvedValue(result([
+      customer({ id: 'c1', name: 'Acme Corp', phone: null }),
+    ]));
+    renderPage();
+
+    await screen.findByText('Acme Corp');
+    await user.click(screen.getByLabelText('Actions for Acme Corp'));
+    await user.click(await screen.findByText('copyPhone'));
+
+    expect(mockCopyToClipboard).not.toHaveBeenCalled();
   });
 });
