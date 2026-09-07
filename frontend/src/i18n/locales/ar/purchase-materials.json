@@ -361,6 +361,9 @@
       "selected": "محدد ({{count}})",
       "material": "المادة",
       "qty": "الكمية",
+      "groupProducts": "المنتجات",
+      "groupRawMaterials": "المواد الخام",
+      "groupPackagingMaterials": "مواد التعبئة والتغليف",
       "demandIntelligence": "ذكاء الطلب",
       "addAtLeastOne": "أضف مادة واحدة على الأقل للمتابعة."
     },

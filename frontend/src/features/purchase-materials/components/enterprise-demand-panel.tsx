@@ -1,4 +1,4 @@
-import { AlertCircle, AlertTriangle, ArrowUpRight, BarChart2, CheckCircle, Info, Loader2, Package, ShoppingCart, TrendingDown, TrendingUp } from 'lucide-react';
+import { AlertCircle, AlertTriangle, ArrowUpRight, CheckCircle, Info, Loader2, Package, ShoppingCart, TrendingDown, TrendingUp } from 'lucide-react';
 
 import { useProductDemandAnalysis } from '../hooks/use-purchase-materials';
 import type {
@@ -8,7 +8,6 @@ import type {
   DemandIntelligence,
   DemandTimelineEvent,
   InventoryHealth,
-  ProcurementIntelligence,
   ProcurementPanelRecommendation,
 } from '../types/purchase-material';
 
@@ -62,23 +61,6 @@ function TrendIcon({ trend }: { trend: string }) {
   if (trend === 'higher') return <TrendingUp className="size-3.5 text-amber-600" />;
   if (trend === 'lower')  return <TrendingDown className="size-3.5 text-blue-600" />;
   return <span className="size-3.5 inline-flex items-center justify-center"><span className="size-1.5 rounded-full bg-emerald-500" /></span>;
-}
-
-function PriceTrendBadge({ trend }: { trend: string | null }) {
-  if (!trend) return <span className="text-xs text-muted-foreground">—</span>;
-  const map = {
-    rising:  { cls: 'text-red-600', icon: TrendingUp, label: 'Rising' },
-    falling: { cls: 'text-emerald-600', icon: TrendingDown, label: 'Falling' },
-    stable:  { cls: 'text-blue-600', icon: BarChart2, label: 'Stable' },
-  };
-  const cfg = map[trend as keyof typeof map];
-  if (!cfg) return null;
-  const Icon = cfg.icon;
-  return (
-    <span className={`inline-flex items-center gap-0.5 text-xs font-medium ${cfg.cls}`}>
-      <Icon className="size-3" />{cfg.label}
-    </span>
-  );
 }
 
 function RecommendationCard({ rec }: { rec: ProcurementPanelRecommendation }) {
@@ -224,65 +206,6 @@ function CoverageIntelligenceSection({ coverage }: { coverage: CoverageIntellige
         <StatRow label="Max Stock" value={coverage.max_stock ?? '—'} />
         <StatRow label="Reorder Point" value={coverage.reorder_point ?? '—'} />
       </div>
-    </section>
-  );
-}
-
-// ── Section: Procurement Intelligence ────────────────────────────────────────
-
-function ProcurementIntelligenceSection({ proc }: { proc: ProcurementIntelligence }) {
-  return (
-    <section>
-      <SectionLabel>Procurement Intelligence</SectionLabel>
-      {proc.last_purchase && (
-        <div className="rounded-md border bg-background px-3 py-2 mb-2">
-          <p className="text-[10px] text-muted-foreground mb-0.5">Last Purchase</p>
-          <p className="font-medium text-sm">{proc.last_purchase.supplier_name ?? '—'}</p>
-          <div className="flex items-center justify-between text-xs text-muted-foreground mt-0.5">
-            <span>{fmtDate(proc.last_purchase.purchase_date)}</span>
-            {proc.last_purchase.last_price != null && (
-              <span className="font-mono font-semibold text-foreground">{fmt(proc.last_purchase.last_price, 2)}</span>
-            )}
-          </div>
-        </div>
-      )}
-      <div className="rounded-md border bg-background divide-y mb-2">
-        <StatRow label="Last Cost" value={proc.last_cost != null ? fmt(proc.last_cost, 2) : '—'} highlight />
-        <StatRow label="Avg Cost" value={proc.avg_cost != null ? fmt(proc.avg_cost, 2) : '—'} />
-        <StatRow label="Lowest Cost" value={proc.lowest_cost != null ? fmt(proc.lowest_cost, 2) : '—'} />
-        <StatRow label="Highest Cost" value={proc.highest_cost != null ? fmt(proc.highest_cost, 2) : '—'} />
-        <StatRow label="Price Trend" value={<PriceTrendBadge trend={proc.price_trend} />} />
-        <StatRow label="Purchase Frequency" value={proc.purchase_frequency != null ? `${fmt(proc.purchase_frequency, 1)}×/month` : '—'} />
-        <StatRow label="Lead Time" value={proc.lead_time_days != null ? `${proc.lead_time_days} days` : '—'} />
-        <StatRow label="MOQ" value={proc.moq != null ? fmt(proc.moq, 0) : '—'} />
-      </div>
-      {proc.alternative_suppliers.length > 0 && (
-        <>
-          <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1.5">
-            Alternative Suppliers ({proc.alternative_suppliers.length})
-          </p>
-          <div className="flex flex-col gap-1">
-            {proc.alternative_suppliers.map((s) => (
-              <div key={s.supplier_id} className="rounded-md border bg-background px-3 py-2 flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-xs leading-tight">{s.supplier_name}</p>
-                  {s.last_delivery_date && (
-                    <p className="text-muted-foreground text-[10px]">Last delivery: {fmtDate(s.last_delivery_date)}</p>
-                  )}
-                </div>
-                <div className="text-end">
-                  {s.last_price != null && (
-                    <p className="font-mono text-xs font-semibold">{fmt(s.last_price, 2)}</p>
-                  )}
-                  {s.lead_time_days != null && (
-                    <p className="text-muted-foreground text-[10px]">{s.lead_time_days}d lead time</p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
     </section>
   );
 }
@@ -439,7 +362,6 @@ function FullDemandPanel({ data, productId, showQuickActions }: {
       <InventoryHealthSection health={data.inventory_health} />
       <DemandIntelligenceSection demand={data.demand_intelligence} />
       <CoverageIntelligenceSection coverage={data.coverage_intelligence} />
-      <ProcurementIntelligenceSection proc={data.procurement_intelligence} />
       <RecommendationsSection recs={data.recommendations} />
       {data.timeline.length > 0 && <TimelineSection events={data.timeline} />}
       {showQuickActions && <QuickActions productId={productId} />}

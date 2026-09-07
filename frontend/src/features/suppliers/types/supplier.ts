@@ -11,7 +11,9 @@ export type SupplierCategory = {
 };
 
 export type SupplierCategoryPayload = {
-  code: string;
+  // Server-generated on create (§3) — only present when updating an existing category, to
+  // carry its own unchanged code back.
+  code?: string;
   name: string;
   name_ar?: string;
   is_active: boolean;

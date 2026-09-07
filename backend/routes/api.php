@@ -1001,6 +1001,10 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 */
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::get('supplier-invoices/stats', [SupplierInvoiceController::class, 'stats']);
+    // §9 (remediation-004) — eligible Goods Receipt Lines for the invoice line editor's anchor
+    // picker. Fixed-segment route registered ahead of the apiResource below so it is never
+    // swallowed by supplier-invoices/{supplierInvoice}.
+    Route::get('supplier-invoices/eligible-receipt-lines', [SupplierInvoiceController::class, 'eligibleReceiptLines']);
     Route::apiResource('supplier-invoices', SupplierInvoiceController::class)
         ->middlewareFor('store', 'permission:purchasing.supplier_invoices.create')
         ->middlewareFor('update', 'permission:purchasing.supplier_invoices.edit')

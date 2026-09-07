@@ -2,6 +2,7 @@ import { api } from '@/lib/axios';
 import type { ApiResponse } from '@/types';
 import type {
   CreateSupplierInvoicePayload,
+  EligibleReceiptLine,
   SupplierInvoice,
   SupplierInvoiceDocument,
   SupplierInvoicesQuery,
@@ -60,6 +61,19 @@ export const supplierInvoicesService = {
 
   async stats(): Promise<InvoiceStats> {
     const { data } = await api.get<ApiResponse<InvoiceStats>>('/supplier-invoices/stats');
+    return data.data;
+  },
+
+  // §9 (remediation-004) — eligible Goods Receipt Lines for the explicit anchor picker.
+  async eligibleReceiptLines(params: {
+    supplier_id: string;
+    product_id: string;
+    exclude_invoice_id?: string;
+  }): Promise<EligibleReceiptLine[]> {
+    const { data } = await api.get<ApiResponse<EligibleReceiptLine[]>>(
+      '/supplier-invoices/eligible-receipt-lines',
+      { params },
+    );
     return data.data;
   },
 

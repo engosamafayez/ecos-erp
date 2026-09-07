@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Modules\Purchasing\Suppliers\Presentation\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 
 final class StoreSupplierCategoryRequest extends FormRequest
 {
@@ -20,15 +18,10 @@ final class StoreSupplierCategoryRequest extends FormRequest
      */
     public function rules(): array
     {
-        $companyId = Auth::user()?->company_id;
-
         return [
-            'code' => [
-                'required',
-                'string',
-                'max:50',
-                Rule::unique('supplier_categories', 'code')->where(fn ($q) => $q->where('company_id', $companyId)),
-            ],
+            // §3 — code is always server-generated (CreateSupplierCategoryAction /
+            // SupplierCategoryCodeGeneratorService), never taken from client input, so it is
+            // deliberately not validated/accepted here any more.
             'name' => ['required', 'string', 'max:255'],
             'name_ar' => ['nullable', 'string', 'max:255'],
             'is_active' => ['boolean'],

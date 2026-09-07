@@ -76,6 +76,33 @@ final class InvoiceReceiptAnchorService
     }
 
     /**
+     * Resolved the same way the certified inbound path resolves it: the PO's own company,
+     * falling back to the receiving warehouse's.
+     */
+    private function anchorCompanyId(GoodsReceiptLine $anchor): string
+    {
+        $receipt = $anchor->goodsReceipt;
+
+        return (string) ($receipt?->purchaseOrder?->company_id ?? $receipt?->warehouse?->company_id ?? '');
+    }
+
+    /**
+     * D-1: the receipt's supplier — the legacy PO authority first, then the Purchase Material
+     * authority (a Purchase-Material-anchored receipt carries no purchase order, so reading the
+     * supplier from `purchaseOrder` alone would refuse every such line as a mismatch).
+     */
+    private function anchorSupplierId(GoodsReceiptLine $anchor): string
+    {
+        $receipt = $anchor->goodsReceipt;
+
+        return (string) (
+            $receipt?->purchaseOrder?->supplier_id
+            ?? $anchor->purchaseMaterialLine?->supplier_id
+            ?? ''
+        );
+    }
+
+    /**
      * Resolve the anchor for one invoice line and prove it may be settled by this invoice.
      *
      * Guard order is intentional: company first, so a foreign row is reported as not-found and
@@ -102,17 +129,13 @@ final class InvoiceReceiptAnchorService
             throw InvoiceAnchorValidationException::notFound($anchorId);
         }
 
-        $receipt = $anchor->goodsReceipt;
-
-        if ($receipt === null) {
+        if ($anchor->goodsReceipt === null) {
             throw InvoiceAnchorValidationException::notFound($anchorId);
         }
 
         // ── Company ───────────────────────────────────────────────────────────
-        // Resolved the same way the certified inbound path resolves it: the PO's own company,
-        // falling back to the receiving warehouse's. Reported as not-found so nothing about
-        // another tenant's document leaks through the error.
-        $anchorCompany = (string) ($receipt->purchaseOrder?->company_id ?? $receipt->warehouse?->company_id ?? '');
+        // Reported as not-found so nothing about another tenant's document leaks through the error.
+        $anchorCompany = $this->anchorCompanyId($anchor);
         $invoiceCompany = (string) ($invoice->company_id ?? $invoice->warehouse?->company_id ?? '');
 
         if ($anchorCompany === '' || $invoiceCompany === '' || $anchorCompany !== $invoiceCompany) {
@@ -120,24 +143,7 @@ final class InvoiceReceiptAnchorService
         }
 
         // ── Supplier ──────────────────────────────────────────────────────────
-        // D-1: the receipt's supplier, resolved the same way the company is resolved one guard
-        // above — the legacy authority first, then the Purchase Material authority.
-        //
-        // A Purchase-Material-anchored receipt carries NO purchase order, so reading the supplier
-        // from `purchaseOrder` alone yielded '' and refused EVERY such line as a supplier
-        // mismatch — the invoice could never be posted against a Purchase Material at all. The
-        // Purchase Material line is the certified supplier authority for those receipts (RD-1),
-        // so it answers here exactly as the warehouse answers for company.
-        //
-        // Legacy is untouched: a PO-anchored receipt still resolves through the purchase order,
-        // and the fallback is only consulted when there is no purchase order to ask. This adds no
-        // second supplier column and guesses nothing — a receipt line whose Purchase Material line
-        // has no supplier still yields '' and is still refused, exactly as before.
-        $anchorSupplier = (string) (
-            $receipt->purchaseOrder?->supplier_id
-            ?? $anchor->purchaseMaterialLine?->supplier_id
-            ?? ''
-        );
+        $anchorSupplier = $this->anchorSupplierId($anchor);
 
         if ($anchorSupplier === '' || $anchorSupplier !== (string) $invoice->supplier_id) {
             throw InvoiceAnchorValidationException::supplierMismatch($anchorId);
@@ -160,6 +166,48 @@ final class InvoiceReceiptAnchorService
         }
 
         return $anchor;
+    }
+
+    /**
+     * §9 (remediation-004) — list the Goods Receipt Lines a NEW or edited invoice line for this
+     * supplier+product may legally anchor to, so the UI can offer only real, eligible choices
+     * instead of asking the user to state an id blind. Reuses the exact identity guards {@see
+     * resolve()} enforces (company via {@see anchorCompanyId()}, supplier via {@see
+     * anchorSupplierId()}) plus the same {@see invoiceable()} ceiling — no parallel eligibility
+     * rule is introduced. Read-only; never itself sets an anchor.
+     *
+     * @return list<array{id: string, receipt_number: string|null, po_number: string|null, receipt_date: string|null, ordered_quantity: float, available_quantity: float, unit_price: float, landed_unit_cost: float|null}>
+     */
+    public function eligibleFor(string $companyId, string $supplierId, string $productId, ?string $excludeInvoiceId = null): array
+    {
+        if ($companyId === '' || $supplierId === '') {
+            return [];
+        }
+
+        return GoodsReceiptLine::query()
+            ->where('product_id', $productId)
+            ->with(['goodsReceipt.purchaseOrder', 'goodsReceipt.warehouse', 'purchaseMaterialLine'])
+            ->get()
+            ->filter(fn (GoodsReceiptLine $anchor): bool => $anchor->goodsReceipt !== null
+                && $this->anchorCompanyId($anchor) === $companyId
+                && $this->anchorSupplierId($anchor) === $supplierId)
+            ->map(function (GoodsReceiptLine $anchor) use ($excludeInvoiceId): array {
+                $receipt = $anchor->goodsReceipt;
+
+                return [
+                    'id' => (string) $anchor->id,
+                    'receipt_number' => $receipt?->receipt_number,
+                    'po_number' => $receipt?->purchaseOrder?->po_number,
+                    'receipt_date' => $receipt?->receipt_date?->toDateString(),
+                    'ordered_quantity' => (float) $anchor->ordered_quantity,
+                    'available_quantity' => $this->invoiceable($anchor, $excludeInvoiceId),
+                    'unit_price' => (float) $anchor->unit_price,
+                    'landed_unit_cost' => $anchor->landed_unit_cost !== null ? (float) $anchor->landed_unit_cost : null,
+                ];
+            })
+            ->filter(fn (array $row): bool => $row['available_quantity'] > 0.0001)
+            ->values()
+            ->all();
     }
 
     /**

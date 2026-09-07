@@ -20,6 +20,10 @@ export type InvoiceLineState = {
   unit_price: string;
   tax_rate: string;
   line_total: string;
+  // V-5 settlement anchor (§9, remediation-004) — the Goods Receipt Line this line explicitly
+  // settles. Null until the user picks one (or the line was created from a receipt); never
+  // inferred from product+qty.
+  goods_receipt_line_id: string | null;
 };
 
 // VAT defaults to 0% — ECOS tax/VAT policy is NOT activated (Tax/VAT architecture = DEFERRED).
@@ -32,6 +36,7 @@ export const EMPTY_LINE: InvoiceLineState = {
   unit_price: '',
   tax_rate: '0',
   line_total: '',
+  goods_receipt_line_id: null,
 };
 
 /** A fresh empty line of a given entity type (§4 — explicit Add Product / Add Raw Material). */
@@ -62,4 +67,24 @@ export function deriveUnitPrice(lineTotal: number, qty: number, taxRate: number)
   if (qty <= 0) return 0;
   const denom = qty * (1 + taxRate / 100);
   return denom > 0 ? round4(lineTotal / denom) : 0;
+}
+
+/**
+ * §14 — the approved landed-cost rule, mirrored here ONLY as a live, pre-post PREVIEW while the
+ * invoice is still being drafted: `allocated_extra_per_unit = (freight + additional) /
+ * total_invoice_qty`, one uniform per-unit rate shared by every line. This is deliberately NOT a
+ * competing accounting authority — the backend's `LandedCostAllocator` (cent-exact,
+ * largest-remainder allocation across lines) remains the sole persisted, binding value, stamped
+ * only once the invoice actually posts (`PostSupplierInvoiceService::allocateLandedCosts`).
+ * Once that persisted value exists on a line (`landedUnitCost` below), it always wins over this
+ * preview.
+ */
+export function extraPerUnitPreview(lines: readonly { quantity: string }[], freight: number, additionalCosts: number): number {
+  const totalQty = lines.reduce((s, l) => s + Math.max(parseNum(l.quantity), 0), 0);
+  return totalQty > 0 ? round4((freight + additionalCosts) / totalQty) : 0;
+}
+
+/** Final Unit Cost for one line — the real posted value once it exists, else the live preview. */
+export function finalUnitCostFor(unitPrice: number, extraPerUnit: number, landedUnitCost: number | null): number {
+  return landedUnitCost ?? round4(unitPrice + extraPerUnit);
 }

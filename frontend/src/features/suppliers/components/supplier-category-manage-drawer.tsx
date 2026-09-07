@@ -39,7 +39,6 @@ export function SupplierCategoryManageDrawer({ open, onOpenChange }: SupplierCat
   const updateCategory = useUpdateSupplierCategory();
   const deleteCategory = useDeleteSupplierCategory();
 
-  const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -80,10 +79,10 @@ export function SupplierCategoryManageDrawer({ open, onOpenChange }: SupplierCat
   function handleAdd() {
     setError(null);
     createCategory.mutate(
-      { code, name, is_active: true },
+      // §3 — code is server-generated; never sent from this form.
+      { name, is_active: true },
       {
         onSuccess: () => {
-          setCode('');
           setName('');
           toast.success(t($ => $.categorySelect.manage.added));
         },
@@ -115,17 +114,13 @@ export function SupplierCategoryManageDrawer({ open, onOpenChange }: SupplierCat
       <div className="flex flex-col gap-3">
         <div className="flex items-end gap-2">
           <div className="flex flex-1 flex-col gap-1.5">
-            <label className="text-xs text-muted-foreground">{t($ => $.categorySelect.manage.codeLabel)}</label>
-            <Input value={code} onChange={(e) => setCode(e.target.value)} className="font-mono" maxLength={50} />
-          </div>
-          <div className="flex flex-1 flex-col gap-1.5">
             <label className="text-xs text-muted-foreground">{t($ => $.categorySelect.manage.nameLabel)}</label>
             <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={255} />
           </div>
           <Button
             type="button"
             onClick={handleAdd}
-            disabled={createCategory.isPending || !code.trim() || !name.trim()}
+            disabled={createCategory.isPending || !name.trim()}
           >
             {t($ => $.categorySelect.manage.add)}
           </Button>

@@ -50,7 +50,6 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
 
   // Step 1 fields
   const [companyId, setCompanyId] = useState('');
-  const [channelId, setChannelId] = useState('');
   const [warehouseId, setWarehouseId] = useState('');
   const [priority, setPriority] = useState<PurchaseMaterialPriority>('normal');
   const [requiredDate, setRequiredDate] = useState('');
@@ -86,7 +85,6 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
   function handleClose() {
     setStep(1);
     setCompanyId('');
-    setChannelId('');
     setWarehouseId('');
     setPriority('normal');
     setRequiredDate('');
@@ -124,7 +122,9 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
       await create.mutateAsync({
         warehouse_id: warehouseId,
         company_id: companyId || null,
-        channel_id: channelId || null,
+        // Channel removed from the creation UX (§5) — Procurement never needs it; downstream
+        // canonical logic already treats a null channel as valid.
+        channel_id: null,
         priority,
         required_date: requiredDate || null,
         notes: notes || null,
@@ -178,22 +178,12 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
           {/* ── Step 1: General Information ─────────────────────────── */}
           {step === 1 && (
             <div className="flex flex-col gap-4 px-1 overflow-y-auto max-h-[60vh] py-1">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">{t($ => $.wizard.step1.company)}</label>
-                  <CompanySelect
-                    value={companyId || null}
-                    onChange={(v) => { setCompanyId(v ?? ''); setWarehouseId(''); }}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">{t($ => $.wizard.step1.channel)}</label>
-                  <Input
-                    placeholder={t($ => $.wizard.step1.channelPlaceholder)}
-                    value={channelId}
-                    onChange={(e) => setChannelId(e.target.value)}
-                  />
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium">{t($ => $.wizard.step1.company)}</label>
+                <CompanySelect
+                  value={companyId || null}
+                  onChange={(v) => { setCompanyId(v ?? ''); setWarehouseId(''); }}
+                />
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -268,7 +258,8 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                   </div>
                 </div>
 
-                {/* Search results */}
+                {/* Search results — grouped by canonical classification (§6) so Products,
+                    Raw Materials and Packaging Materials never appear as one mixed list. */}
                 <div className="border rounded-md overflow-hidden">
                   {pLoading ? (
                     <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
@@ -279,40 +270,59 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                       {t($ => $.wizard.step2.noProducts)}
                     </div>
                   ) : (
-                    <table className="w-full text-sm">
-                      <tbody>
-                        {products.map((p) => {
-                          const added = lines.some((l) => l.product_id === p.id);
-                          const focused = focusedProductId === p.id;
-                          return (
-                            <tr
-                              key={p.id}
-                              className={`border-b last:border-0 transition-colors cursor-pointer ${focused ? 'bg-primary/5' : 'hover:bg-muted/30'}`}
-                              onClick={() => setFocusedProductId(p.id)}
-                            >
-                              <td className="px-3 py-2">
-                                <p className="font-medium leading-tight">{p.name}</p>
-                                <p className="text-xs text-muted-foreground">{p.sku}</p>
-                              </td>
-                              <td className="px-3 py-2 text-end">
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant={added ? 'outline' : 'default'}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    added ? removeLine(p.id) : addProduct({ id: p.id, name: p.name, sku: p.sku });
-                                  }}
-                                >
-                                  {added ? <Minus className="size-3.5" /> : <Plus className="size-3.5" />}
-                                  {added ? t($ => $.wizard.step2.remove) : t($ => $.wizard.step2.add)}
-                                </Button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                    <>
+                      {(
+                        [
+                          ['finished_good', t($ => $.wizard.step2.groupProducts)],
+                          ['raw_material', t($ => $.wizard.step2.groupRawMaterials)],
+                          ['packaging_material', t($ => $.wizard.step2.groupPackagingMaterials)],
+                        ] as const
+                      ).map(([type, label]) => {
+                        const groupProducts = products.filter((p) => p.product_type === type);
+                        if (groupProducts.length === 0) return null;
+                        return (
+                          <div key={type} className="border-b last:border-0">
+                            <p className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/40">
+                              {label}
+                            </p>
+                            <table className="w-full text-sm">
+                              <tbody>
+                                {groupProducts.map((p) => {
+                                  const added = lines.some((l) => l.product_id === p.id);
+                                  const focused = focusedProductId === p.id;
+                                  return (
+                                    <tr
+                                      key={p.id}
+                                      className={`border-b last:border-0 transition-colors cursor-pointer ${focused ? 'bg-primary/5' : 'hover:bg-muted/30'}`}
+                                      onClick={() => setFocusedProductId(p.id)}
+                                    >
+                                      <td className="px-3 py-2">
+                                        <p className="font-medium leading-tight">{p.name}</p>
+                                        <p className="text-xs text-muted-foreground">{p.sku}</p>
+                                      </td>
+                                      <td className="px-3 py-2 text-end">
+                                        <Button
+                                          type="button"
+                                          size="sm"
+                                          variant={added ? 'outline' : 'default'}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            added ? removeLine(p.id) : addProduct({ id: p.id, name: p.name, sku: p.sku });
+                                          }}
+                                        >
+                                          {added ? <Minus className="size-3.5" /> : <Plus className="size-3.5" />}
+                                          {added ? t($ => $.wizard.step2.remove) : t($ => $.wizard.step2.add)}
+                                        </Button>
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        );
+                      })}
+                    </>
                   )}
                 </div>
 
@@ -405,12 +415,6 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                   <p className="text-xs text-muted-foreground">{t($ => $.wizard.step3.priority)}</p>
                   <p className="font-medium capitalize">{priority}</p>
                 </div>
-                {channelId && (
-                  <div>
-                    <p className="text-xs text-muted-foreground">{t($ => $.wizard.step3.channel)}</p>
-                    <p className="font-medium">{channelId}</p>
-                  </div>
-                )}
                 {requiredDate && (
                   <div>
                     <p className="text-xs text-muted-foreground">{t($ => $.wizard.step3.requiredBy)}</p>

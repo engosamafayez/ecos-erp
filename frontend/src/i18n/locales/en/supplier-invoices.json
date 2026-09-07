@@ -246,8 +246,17 @@
         "qty": "Qty",
         "unitPrice": "Unit Price",
         "vatPct": "VAT %",
+        "finalUnitCost": "Final Unit Cost",
         "total": "Total"
       }
+    },
+    "anchor": {
+      "label": "Goods Receipt Line",
+      "placeholder": "Not linked",
+      "selectProductFirst": "Select a product first",
+      "searchPlaceholder": "Search eligible receipt lines…",
+      "empty": "No eligible received quantity for this supplier/product",
+      "availableSuffix": "available"
     },
     "additionalCosts": {
       "freight": "Freight",

@@ -10,10 +10,14 @@ use Illuminate\Support\Facades\Auth;
 use InvalidArgumentException;
 use Modules\Purchasing\Suppliers\Application\DTO\SupplierCategoryDTO;
 use Modules\Purchasing\Suppliers\Domain\Contracts\SupplierCategoryRepositoryInterface;
+use Modules\Purchasing\Suppliers\Domain\Services\SupplierCategoryCodeGeneratorService;
 
 final class CreateSupplierCategoryAction extends BaseAction
 {
-    public function __construct(private readonly SupplierCategoryRepositoryInterface $categories) {}
+    public function __construct(
+        private readonly SupplierCategoryRepositoryInterface $categories,
+        private readonly SupplierCategoryCodeGeneratorService $codeGenerator,
+    ) {}
 
     public function execute(mixed ...$arguments): OperationResult
     {
@@ -25,6 +29,9 @@ final class CreateSupplierCategoryAction extends BaseAction
 
         $attributes = $dto->toArray();
         $attributes['company_id'] ??= Auth::user()?->company_id;
+        // §3 — always server-generated on create; a client-submitted code (there shouldn't be
+        // one any more, but an old/API caller might still send one) is never trusted.
+        $attributes['code'] = $this->codeGenerator->next((string) $attributes['company_id']);
 
         $category = $this->categories->create($attributes);
 

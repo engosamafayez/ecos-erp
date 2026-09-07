@@ -246,8 +246,17 @@
         "qty": "الكمية",
         "unitPrice": "سعر الوحدة",
         "vatPct": "نسبة ضريبة القيمة المضافة",
+        "finalUnitCost": "التكلفة النهائية للوحدة",
         "total": "الإجمالي"
       }
+    },
+    "anchor": {
+      "label": "سطر إذن الاستلام",
+      "placeholder": "غير مرتبط",
+      "selectProductFirst": "اختر منتجاً أولاً",
+      "searchPlaceholder": "بحث في أسطر الاستلام المؤهلة…",
+      "empty": "لا توجد كمية مستلمة مؤهلة لهذا المورد/المنتج",
+      "availableSuffix": "متاح"
     },
     "additionalCosts": {
       "freight": "الشحن",

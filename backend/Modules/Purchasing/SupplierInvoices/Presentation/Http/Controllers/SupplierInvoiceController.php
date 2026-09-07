@@ -15,6 +15,7 @@ use Modules\Purchasing\SupplierInvoices\Application\Services\SupplierInvoicePaym
 use Modules\Purchasing\SupplierInvoices\Domain\Enums\SupplierInvoiceStatus;
 use Modules\Purchasing\SupplierInvoices\Domain\Models\SupplierInvoice;
 use Modules\Purchasing\SupplierInvoices\Domain\Models\SupplierInvoiceLine;
+use Modules\Purchasing\SupplierInvoices\Domain\Services\InvoiceReceiptAnchorService;
 use Modules\Purchasing\SupplierInvoices\Presentation\Http\Requests\StoreSupplierInvoiceRequest;
 use Modules\Purchasing\SupplierInvoices\Presentation\Http\Resources\SupplierInvoiceResource;
 use Throwable;
@@ -26,7 +27,32 @@ final class SupplierInvoiceController extends Controller
     public function __construct(
         private readonly PostSupplierInvoiceService $postService,
         private readonly CurrentCompanyService $currentCompany,
+        private readonly InvoiceReceiptAnchorService $anchors,
     ) {}
+
+    /**
+     * §9 (remediation-004) — Goods Receipt Lines this supplier+product may anchor to, for the
+     * invoice line editor's explicit-link picker. `exclude_invoice_id` lets re-editing a saved
+     * invoice see its own already-anchored lines' full remaining quantity (excluding its own
+     * prior consumption), exactly as {@see InvoiceReceiptAnchorService::invoiceable()} does.
+     */
+    public function eligibleReceiptLines(Request $request): JsonResponse
+    {
+        $companyId = $this->currentCompany->id() ?? '';
+        $supplierId = (string) $request->query('supplier_id', '');
+        $productId = (string) $request->query('product_id', '');
+
+        if ($companyId === '' || $supplierId === '' || $productId === '') {
+            return $this->success([]);
+        }
+
+        return $this->success($this->anchors->eligibleFor(
+            $companyId,
+            $supplierId,
+            $productId,
+            $request->query('exclude_invoice_id') !== null ? (string) $request->query('exclude_invoice_id') : null,
+        ));
+    }
 
     public function index(Request $request): JsonResponse
     {

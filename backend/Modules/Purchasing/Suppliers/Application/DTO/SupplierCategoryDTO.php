@@ -21,7 +21,10 @@ final class SupplierCategoryDTO extends BaseDTO
     public static function fromArray(array $data): self
     {
         return new self(
-            code: (string) $data['code'],
+            // §3 — no longer accepted from the client on create (CreateSupplierCategoryAction
+            // always overwrites it via SupplierCategoryCodeGeneratorService); still readable
+            // here for update, where the caller sends the category's own existing code back.
+            code: (string) ($data['code'] ?? ''),
             name: (string) $data['name'],
             name_ar: self::nullableString($data, 'name_ar'),
             is_active: (bool) ($data['is_active'] ?? true),

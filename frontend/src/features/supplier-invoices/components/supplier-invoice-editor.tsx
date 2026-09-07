@@ -157,6 +157,7 @@ export function SupplierInvoiceEditor({ open, onOpenChange, invoiceId = null }: 
               unit_price: String(l.unit_price),
               tax_rate: String(l.tax_rate),
               line_total: String(l.line_total),
+              goods_receipt_line_id: l.goods_receipt_line_id,
             }))
           : [{ ...EMPTY_LINE }],
       );
@@ -206,6 +207,8 @@ export function SupplierInvoiceEditor({ open, onOpenChange, invoiceId = null }: 
         .filter((l) => l.product_id && num(l.quantity) > 0 && num(l.unit_price) >= 0)
         .map((l): SupplierInvoiceLinePayload => ({
           product_id: l.product_id,
+          // §9 — explicit only; never inferred from product+qty (InvoiceReceiptAnchorService).
+          goods_receipt_line_id: l.goods_receipt_line_id,
           quantity: num(l.quantity),
           unit_price: num(l.unit_price),
           tax_rate: num(l.tax_rate) || 0,
@@ -274,19 +277,24 @@ export function SupplierInvoiceEditor({ open, onOpenChange, invoiceId = null }: 
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="overflow-y-auto w-full sm:max-w-3xl lg:max-w-4xl">
-        <SheetHeader className="pb-4">
+      <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-3xl lg:max-w-4xl">
+        <SheetHeader className="border-b px-4 py-3 sm:px-6">
           <SheetTitle>{isEdit ? t($ => $.drawer.editTitle) : t($ => $.drawer.createTitle)}</SheetTitle>
           <p className="text-xs text-muted-foreground">{t($ => $.editor.commercialSubtitle)}</p>
         </SheetHeader>
 
-        {/* Receiving/inventory boundary — explanatory only. */}
-        <div className="mb-5 flex items-start gap-2 rounded-md border border-blue-200/60 bg-blue-50/50 dark:border-blue-900/40 dark:bg-blue-950/20 p-2.5">
-          <Info className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" />
-          <p className="text-[11px] text-blue-700 dark:text-blue-300">{t($ => $.editor.boundaryNote)}</p>
-        </div>
+        {/* §13 — header/scrollable-body/sticky-footer, the same EntityDrawer shell every other
+            ECOS drawer uses (frontend/src/components/crud/entity-drawer), reproduced in place
+            here rather than swapping components — this editor's conditional footer (Save vs
+            Retry-attachment) needs the same border-t/p-4 treatment either way. */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+          {/* Receiving/inventory boundary — explanatory only. */}
+          <div className="mb-5 flex items-start gap-2 rounded-md border border-blue-200/60 bg-blue-50/50 dark:border-blue-900/40 dark:bg-blue-950/20 p-2.5">
+            <Info className="w-3.5 h-3.5 text-blue-500 mt-0.5 shrink-0" />
+            <p className="text-[11px] text-blue-700 dark:text-blue-300">{t($ => $.editor.boundaryNote)}</p>
+          </div>
 
-        <div className="space-y-6">
+          <div className="space-y-6">
           {/* ── GENERAL INFORMATION ─────────────────────────────────────────────── */}
           <Section title={t($ => $.editor.sections.generalInfo)}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -379,7 +387,14 @@ export function SupplierInvoiceEditor({ open, onOpenChange, invoiceId = null }: 
 
           {/* ── ITEMS ───────────────────────────────────────────────────────────── */}
           <Section title={t($ => $.editor.sections.items)}>
-            <InvoiceLineEditor lines={lines} onLinesChange={setLines} />
+            <InvoiceLineEditor
+              lines={lines}
+              onLinesChange={setLines}
+              supplierId={supplierId}
+              freight={num(freight)}
+              additionalCosts={num(additional)}
+              invoiceId={invoiceId ?? undefined}
+            />
 
             {/* §5 — landed cost is SERVER-AUTHORITATIVE, computed only once the invoice posts
                 (PostSupplierInvoiceService::allocateLandedCosts, quantity-weighted, exact
@@ -428,11 +443,11 @@ export function SupplierInvoiceEditor({ open, onOpenChange, invoiceId = null }: 
               <div className="space-y-3">
                 <div>
                   <Label className="text-xs">{t($ => $.editor.additionalCosts.freight)}</Label>
-                  <Input type="number" min="0" step="0.01" value={freight} onChange={(e) => setFreight(e.target.value)} className="mt-1 h-9 text-sm text-end" />
+                  <Input type="number" min="0" step="0.01" value={freight} onChange={(e) => setFreight(e.target.value)} className="no-spinner mt-1 h-9 text-sm text-end" />
                 </div>
                 <div>
                   <Label className="text-xs">{t($ => $.editor.additionalCosts.additionalCosts)}</Label>
-                  <Input type="number" min="0" step="0.01" value={additional} onChange={(e) => setAdditional(e.target.value)} className="mt-1 h-9 text-sm text-end" />
+                  <Input type="number" min="0" step="0.01" value={additional} onChange={(e) => setAdditional(e.target.value)} className="no-spinner mt-1 h-9 text-sm text-end" />
                 </div>
               </div>
 
@@ -530,7 +545,7 @@ export function SupplierInvoiceEditor({ open, onOpenChange, invoiceId = null }: 
                       max={payableTotal}
                       value={amountPaid}
                       onChange={(e) => setAmountPaid(e.target.value)}
-                      className="mt-1 h-9 text-sm text-end"
+                      className="no-spinner mt-1 h-9 text-sm text-end"
                     />
                     {(num(amountPaid) <= 0 || num(amountPaid) >= payableTotal) && (
                       <p className="mt-1 text-[10px] text-destructive">{t($ => $.editor.payment.partialRangeHint)}</p>
@@ -573,10 +588,13 @@ export function SupplierInvoiceEditor({ open, onOpenChange, invoiceId = null }: 
               </div>
             </Section>
           )}
+          </div>
+        </div>
 
-          {/* ── ACTIONS ─────────────────────────────────────────────────────────── */}
+        {/* ── ACTIONS — sticky footer, outside the scrollable body (§13) ──────── */}
+        <div className="border-t p-4 sm:px-6">
           {invoiceCreatedAttachPending ? (
-            <div className="space-y-2 pt-2 border-t">
+            <div className="space-y-2">
               <div className="flex items-start gap-2 rounded-md border border-amber-300/60 bg-amber-50/50 dark:border-amber-900/40 dark:bg-amber-950/20 p-2.5">
                 <AlertTriangle className="w-3.5 h-3.5 text-amber-600 mt-0.5 shrink-0" />
                 <p className="text-[11px] text-amber-700 dark:text-amber-300">{t($ => $.editor.attachment.failedTitle)}</p>
@@ -590,7 +608,7 @@ export function SupplierInvoiceEditor({ open, onOpenChange, invoiceId = null }: 
               </div>
             </div>
           ) : (
-            <div className="flex gap-2 pt-2 border-t">
+            <div className="flex gap-2">
               <Button className="flex-1 gap-1.5" onClick={handleSave} disabled={saving || attaching || !editable}>
                 {saving || attaching ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                 {isEdit ? t($ => $.drawer.submitEdit) : t($ => $.drawer.submitCreate)}

@@ -45,6 +45,23 @@ export function useSupplierInvoice(id: string | null) {
   });
 }
 
+// §9 (remediation-004) — eligible Goods Receipt Lines for the invoice line editor's explicit
+// anchor picker. Disabled until both supplier and product are known (an anchor is meaningless
+// without both), matching the pattern other scoped option hooks in this editor already use.
+export function useEligibleReceiptLines(supplierId: string, productId: string, excludeInvoiceId?: string) {
+  const KEYS = useKeys();
+  return useQuery({
+    queryKey: [...KEYS.all, 'eligible-receipt-lines', supplierId, productId, excludeInvoiceId ?? ''],
+    queryFn: () => supplierInvoicesService.eligibleReceiptLines({
+      supplier_id: supplierId,
+      product_id: productId,
+      exclude_invoice_id: excludeInvoiceId,
+    }),
+    enabled: supplierId !== '' && productId !== '',
+    staleTime: 30_000,
+  });
+}
+
 export function useSupplierInvoiceStats() {
   const KEYS = useKeys();
   return useQuery({

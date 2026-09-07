@@ -361,6 +361,9 @@
       "selected": "Selected ({{count}})",
       "material": "Material",
       "qty": "Qty",
+      "groupProducts": "Products",
+      "groupRawMaterials": "Raw Materials",
+      "groupPackagingMaterials": "Packaging Materials",
       "demandIntelligence": "Demand Intelligence",
       "addAtLeastOne": "Add at least one material to continue."
     },

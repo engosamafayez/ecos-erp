@@ -19,9 +19,16 @@ vi.mock('react-i18next', () => ({
     i18n: { language: 'en' },
   }),
 }));
-// The server-search selector is exercised in its own test; stub it here to focus on line mechanics.
+// §14 — Final Unit Cost preview needs useFormatter(); this harness has no LanguageProvider, so
+// mock it the same way supplier-invoice-editor.test.tsx already does.
+vi.mock('@/hooks/use-formatter', () => ({ useFormatter: () => ({ money: (n: number) => `EGP ${n}`, currency: 'EGP' }) }));
+// The server-search selectors are exercised in their own tests; stub them here to focus on line
+// mechanics (neither talks to react-query, so no QueryClientProvider is needed in this harness).
 vi.mock('./product-line-select', () => ({
   ProductLineSelect: ({ entityType }: { entityType: string }) => <div data-testid={`product-select-${entityType}`} />,
+}));
+vi.mock('./goods-receipt-line-select', () => ({
+  GoodsReceiptLineSelect: () => <div data-testid="goods-receipt-line-select" />,
 }));
 
 import { InvoiceLineEditor } from './invoice-line-editor';
@@ -35,7 +42,7 @@ import {
 
 function Harness({ initial }: { initial: InvoiceLineState[] }) {
   const [lines, setLines] = useState<InvoiceLineState[]>(initial);
-  return <InvoiceLineEditor lines={lines} onLinesChange={setLines} />;
+  return <InvoiceLineEditor lines={lines} onLinesChange={setLines} supplierId="" freight={0} additionalCosts={0} />;
 }
 
 const LINE: InvoiceLineState = { ...EMPTY_LINE, product_id: 'p1', quantity: '10', unit_price: '20', tax_rate: '0', line_total: '200' };

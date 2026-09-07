@@ -113,6 +113,9 @@ export type SupplierInvoice = {
 
 export type SupplierInvoiceLinePayload = {
   product_id: string;
+  // V-5 settlement anchor (§9, remediation-004) — explicit only, never inferred; null for a
+  // Mode 3 line (the invoice itself is the inbound) or a draft raised before goods arrived.
+  goods_receipt_line_id?: string | null;
   description?: string | null;
   quantity: number;
   unit_price: number;
@@ -122,6 +125,18 @@ export type SupplierInvoiceLinePayload = {
   uom_name_snapshot?: string | null;
   uom_symbol_snapshot?: string | null;
   notes?: string | null;
+};
+
+/** One Goods Receipt Line this supplier+product may explicitly anchor an invoice line to (§9). */
+export type EligibleReceiptLine = {
+  id: string;
+  receipt_number: string | null;
+  po_number: string | null;
+  receipt_date: string | null;
+  ordered_quantity: number;
+  available_quantity: number;
+  unit_price: number;
+  landed_unit_cost: number | null;
 };
 
 export type CreateSupplierInvoicePayload = {
