@@ -156,6 +156,27 @@ describe('CreateTaskDialog', () => {
     expect(mutateMock.mock.calls[0][0]).toMatchObject({ assigneeUserId: 42 });
   });
 
+  it('renders the due field as a datetime-local input and submits an ISO due_at including the time', () => {
+    render(<CreateTaskDialog open={true} onOpenChange={() => {}} onCreated={() => {}} />);
+    fireEvent.change(screen.getByPlaceholderText('tasks.createDialog.titlePlaceholder'), { target: { value: 'Do the thing' } });
+
+    const dueInput = screen.getByText('tasks.createDialog.dueLabel').parentElement?.querySelector('input[type="datetime-local"]');
+    expect(dueInput).not.toBeNull();
+    fireEvent.change(dueInput as HTMLInputElement, { target: { value: '2026-09-20T14:30' } });
+
+    fireEvent.click(screen.getByText('tasks.createDialog.submit'));
+    const dueAt = mutateMock.mock.calls[0][0].dueAt as string;
+    expect(new Date(dueAt).getHours()).toBe(14);
+    expect(new Date(dueAt).getMinutes()).toBe(30);
+  });
+
+  it('submits dueAt null when no due date/time is entered', () => {
+    render(<CreateTaskDialog open={true} onOpenChange={() => {}} onCreated={() => {}} />);
+    fireEvent.change(screen.getByPlaceholderText('tasks.createDialog.titlePlaceholder'), { target: { value: 'Do the thing' } });
+    fireEvent.click(screen.getByText('tasks.createDialog.submit'));
+    expect(mutateMock.mock.calls[0][0]).toMatchObject({ dueAt: null });
+  });
+
   it('calls onCreated and closes the dialog when the mutation succeeds', () => {
     const onCreated = vi.fn();
     const onOpenChange = vi.fn();

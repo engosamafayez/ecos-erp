@@ -19,6 +19,7 @@ use Modules\Collaboration\Domain\Enums\TaskStatus;
 use Modules\Collaboration\Domain\Models\ConversationParticipant;
 use Modules\Collaboration\Domain\Models\InternalTask;
 use Modules\Collaboration\Domain\Models\Message;
+use Modules\Collaboration\Domain\Models\TaskBoardList;
 use Modules\Collaboration\Domain\Services\DriverMessagingAuthorizer;
 use Modules\IAM\Domain\Contracts\AuthorizationGatewayInterface;
 use Modules\Organization\Teams\Domain\Models\Team;
@@ -36,6 +37,7 @@ final class CreateTaskAction extends BaseAction
     public function __construct(
         private readonly AuthorizationGatewayInterface $authorizationGateway,
         private readonly DriverMessagingAuthorizer $driverMessagingAuthorizer,
+        private readonly EnsureDefaultTaskBoardListsAction $ensureDefaultLists,
     ) {}
 
     /** @param  mixed  ...$arguments  [User $actor, CreateTaskData $data] */
@@ -95,7 +97,27 @@ final class CreateTaskAction extends BaseAction
             $sourceSnapshot = $this->snapshotOf($sourceMessage);
         }
 
-        $task = DB::transaction(function () use ($actor, $data, $assignee, $teamId, $sourceConversationId, $sourceMessageId, $sourceSnapshot): InternalTask {
+        // TASK-ECOS-INTERNAL-COLLABORATION-TASKS-TRELLO-FINAL-CLOSURE-002 §3:
+        // every task must have a board placement so it renders on the board
+        // immediately. New cards always land in the first (lowest-position,
+        // non-archived) list — simple and stable regardless of whether that
+        // list is still named "To Do" or has been renamed/reordered by the
+        // company (brief §2 lists are freely renamable, so placement can no
+        // longer assume a fixed name<->status mapping the way the one-time
+        // backfill migration did).
+        $defaultList = $this->ensureDefaultLists->execute($actor)->first();
+
+        $task = DB::transaction(function () use ($actor, $data, $assignee, $teamId, $sourceConversationId, $sourceMessageId, $sourceSnapshot, $defaultList): InternalTask {
+            /** @var TaskBoardList|null $list */
+            $list = TaskBoardList::query()
+                ->where('id', $defaultList->id)
+                ->lockForUpdate()
+                ->first();
+
+            $boardPosition = 1 + (int) (InternalTask::query()
+                ->where('task_list_id', $list?->id)
+                ->max('board_position') ?? -1);
+
             $task = InternalTask::query()->create([
                 'company_id' => $actor->company_id,
                 'title' => $data->title,
@@ -115,6 +137,8 @@ final class CreateTaskAction extends BaseAction
                 'source_conversation_id' => $sourceConversationId,
                 'source_message_id' => $sourceMessageId,
                 'source_message_snapshot' => $sourceSnapshot,
+                'task_list_id' => $list?->id,
+                'board_position' => $boardPosition,
             ]);
 
             $this->logActivity($task, $actor->id, 'created');

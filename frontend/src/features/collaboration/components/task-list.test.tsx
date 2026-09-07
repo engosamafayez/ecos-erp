@@ -1,5 +1,4 @@
 import '@testing-library/jest-dom/vitest';
-import type { ReactNode } from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
@@ -18,17 +17,6 @@ vi.mock('react-i18next', () => ({
     t: (sel: unknown) => (typeof sel === 'function' ? String((sel as (p: unknown) => unknown)(pathProxy(''))) : String(sel)),
     i18n: { language: 'en', exists: () => true },
   }),
-}));
-
-// jsdom lacks the pointer-capture APIs Radix Select needs — TaskFilters uses Select internally.
-vi.mock('@/components/ui/select', () => ({
-  Select: ({ value, onValueChange, children }: { value: string; onValueChange: (v: string) => void; children: ReactNode }) => (
-    <select data-testid="select" value={value} onChange={(e) => onValueChange(e.target.value)}>{children}</select>
-  ),
-  SelectTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
-  SelectValue: () => null,
-  SelectContent: ({ children }: { children: ReactNode }) => <>{children}</>,
-  SelectItem: ({ value, children }: { value: string; children: ReactNode }) => <option value={value}>{children}</option>,
 }));
 
 const useTasksMock = vi.hoisted(() => vi.fn());
@@ -78,16 +66,22 @@ describe('TaskList', () => {
     useTasksMock.mockReset();
   });
 
+  it('passes the filters prop straight through to useTasks', () => {
+    mockUseTasks({ data: [] });
+    render(<TaskList filters={{ scope: 'mine', status: 'in_progress' }} activeTaskId={null} onSelect={() => {}} />);
+    expect(useTasksMock).toHaveBeenCalledWith({ scope: 'mine', status: 'in_progress' });
+  });
+
   it('shows the loading state while isLoading is true', () => {
     mockUseTasks({ isLoading: true });
-    render(<TaskList activeTaskId={null} onSelect={() => {}} onCreate={() => {}} />);
+    render(<TaskList filters={{ scope: 'mine' }} activeTaskId={null} onSelect={() => {}} />);
     expect(screen.getByText('loading')).toBeInTheDocument();
   });
 
   it('shows an error state with a retry button that calls refetch', () => {
     const refetch = vi.fn();
     mockUseTasks({ isError: true, refetch });
-    render(<TaskList activeTaskId={null} onSelect={() => {}} onCreate={() => {}} />);
+    render(<TaskList filters={{ scope: 'mine' }} activeTaskId={null} onSelect={() => {}} />);
     expect(screen.getByText('tasks.list.error')).toBeInTheDocument();
     fireEvent.click(screen.getByText('tasks.list.retry'));
     expect(refetch).toHaveBeenCalledTimes(1);
@@ -95,7 +89,7 @@ describe('TaskList', () => {
 
   it('shows an empty state when there are no tasks', () => {
     mockUseTasks({ data: [] });
-    render(<TaskList activeTaskId={null} onSelect={() => {}} onCreate={() => {}} />);
+    render(<TaskList filters={{ scope: 'mine' }} activeTaskId={null} onSelect={() => {}} />);
     expect(screen.getByText('tasks.list.empty.title')).toBeInTheDocument();
     expect(screen.getByText('tasks.list.empty.subtitle')).toBeInTheDocument();
   });
@@ -103,32 +97,12 @@ describe('TaskList', () => {
   it('renders one TaskListItem per task and calls onSelect with the clicked task', () => {
     const onSelect = vi.fn();
     mockUseTasks({ data: [TASK_1, TASK_2] });
-    render(<TaskList activeTaskId={null} onSelect={onSelect} onCreate={() => {}} />);
+    render(<TaskList filters={{ scope: 'mine' }} activeTaskId={null} onSelect={onSelect} />);
 
     expect(screen.getByText('Task One')).toBeInTheDocument();
     expect(screen.getByText('Task Two')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText('Task Two'));
     expect(onSelect).toHaveBeenCalledWith(TASK_2);
-  });
-
-  it('calls onCreate when "New Task" is clicked', () => {
-    const onCreate = vi.fn();
-    mockUseTasks({ data: [] });
-    render(<TaskList activeTaskId={null} onSelect={() => {}} onCreate={onCreate} />);
-    fireEvent.click(screen.getByText('tasks.create'));
-    expect(onCreate).toHaveBeenCalledTimes(1);
-  });
-
-  it('passes updated filters to useTasks when a filter changes', () => {
-    mockUseTasks({ data: [] });
-    render(<TaskList activeTaskId={null} onSelect={() => {}} onCreate={() => {}} />);
-
-    expect(useTasksMock).toHaveBeenLastCalledWith({ scope: 'mine' });
-
-    const statusSelect = screen.getAllByTestId('select')[1];
-    fireEvent.change(statusSelect, { target: { value: 'in_progress' } });
-
-    expect(useTasksMock).toHaveBeenLastCalledWith({ scope: 'mine', status: 'in_progress' });
   });
 });

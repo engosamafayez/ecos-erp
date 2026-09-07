@@ -118,7 +118,53 @@
     },
     "board": {
       "invalidMove": "That status change isn't allowed.",
-      "linkedConversation": "Linked to a conversation"
+      "linkedConversation": "Linked to a conversation",
+      "addList": "Add list",
+      "newListPlaceholder": "List name",
+      "addCard": "Add a card",
+      "moveTo": "Move to…",
+      "moveCardFailed": "Couldn't move the card.",
+      "renameList": "Rename list",
+      "archiveList": "Archive list",
+      "restoreList": "Restore list",
+      "archivedLists": "Archived lists",
+      "noArchivedLists": "No archived lists.",
+      "listNamePlaceholder": "List name"
+    },
+    "labels": {
+      "title": "Labels",
+      "add": "Add label",
+      "create": "Create label",
+      "namePlaceholder": "Label name",
+      "colorLabel": "Color",
+      "none": "No labels",
+      "colors": {
+        "gray": "Gray",
+        "red": "Red",
+        "orange": "Orange",
+        "yellow": "Yellow",
+        "green": "Green",
+        "blue": "Blue",
+        "purple": "Purple"
+      }
+    },
+    "checklist": {
+      "title": "Checklist",
+      "add": "Add checklist",
+      "titlePlaceholder": "Checklist title",
+      "addItem": "Add an item",
+      "itemPlaceholder": "Add an item…",
+      "delete": "Delete",
+      "empty": "No checklist items yet.",
+      "progress": "{{completed}}/{{total}}"
+    },
+    "followers": {
+      "title": "Followers",
+      "follow": "Follow",
+      "unfollow": "Unfollow",
+      "add": "Add follower",
+      "none": "No followers",
+      "you": "You"
     },
     "filters": {
       "scope": "Show",
@@ -160,7 +206,7 @@
       "creator": "Created by",
       "priority": "Priority",
       "status": "Status",
-      "due": "Due date",
+      "due": "Due date & time",
       "comments": "Comments",
       "attachments": "Attachments",
       "activity": "Activity",
@@ -179,6 +225,9 @@
       "edit": "Edit task",
       "loadFailed": "Couldn't load this task.",
       "forbidden": "You don't have access to this task.",
+      "people": "People",
+      "checklists": "Checklist",
+      "checklistProgress": "{{completed}}/{{total}}",
       "transitions": {
         "start": "Start",
         "complete": "Mark done",
@@ -195,7 +244,7 @@
       "assigneeLabel": "Assignee",
       "assigneeDefault": "Assign to myself",
       "priorityLabel": "Priority",
-      "dueLabel": "Due date",
+      "dueLabel": "Due date & time",
       "submit": "Create Task",
       "cancel": "Cancel",
       "success": "Task created",
@@ -208,7 +257,10 @@
       "priority_changed": "changed priority",
       "due_date_changed": "changed the due date",
       "comment_added": "commented",
-      "updated": "updated the task"
+      "updated": "updated the task",
+      "list_changed": "moved this card",
+      "label_added": "added a label",
+      "label_removed": "removed a label"
     },
     "context": {
       "order": "Order",

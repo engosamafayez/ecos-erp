@@ -122,7 +122,7 @@ export function CreateTaskDialog({ open, onOpenChange, onCreated, sourceMessage 
 
             <div className="flex flex-col gap-1.5">
               <Label>{t(($) => $.tasks.createDialog.dueLabel)}</Label>
-              <Input type="date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />
+              <Input type="datetime-local" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />
             </div>
           </div>
         </div>

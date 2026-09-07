@@ -7,8 +7,13 @@ import type {
   OperationalContextType,
   Task,
   TaskAttachment,
+  TaskBoardList,
+  TaskChecklist,
+  TaskChecklistItem,
   TaskComment,
   TaskFilters,
+  TaskLabel,
+  TaskLabelColor,
   TaskPriority,
   TaskStatus,
 } from '../types';
@@ -128,4 +133,114 @@ export async function attachOperationalContext(params: {
 export async function searchTasks(query: string, limit = 20): Promise<Task[]> {
   const { data } = await api.get<ApiResponse<Task[]>>('/collaboration/search/tasks', { params: { q: query, limit } });
   return data.data;
+}
+
+// ---- Board lists (organizational containers — never a second TaskStatus, see TaskBoardList) ----
+
+export async function listTaskBoardLists(): Promise<TaskBoardList[]> {
+  const { data } = await api.get<ApiResponse<TaskBoardList[]>>('/collaboration/task-lists');
+  return data.data;
+}
+
+export async function createTaskBoardList(name: string): Promise<TaskBoardList> {
+  const { data } = await api.post<ApiResponse<TaskBoardList>>('/collaboration/task-lists', { name });
+  return data.data;
+}
+
+export async function renameTaskBoardList(id: string, name: string): Promise<TaskBoardList> {
+  const { data } = await api.patch<ApiResponse<TaskBoardList>>(`/collaboration/task-lists/${id}`, { name });
+  return data.data;
+}
+
+export async function reorderTaskBoardLists(listIds: string[]): Promise<void> {
+  await api.patch('/collaboration/task-lists/reorder', { list_ids: listIds });
+}
+
+export async function archiveTaskBoardList(id: string): Promise<TaskBoardList> {
+  const { data } = await api.patch<ApiResponse<TaskBoardList>>(`/collaboration/task-lists/${id}/archive`);
+  return data.data;
+}
+
+export async function restoreTaskBoardList(id: string): Promise<TaskBoardList> {
+  const { data } = await api.patch<ApiResponse<TaskBoardList>>(`/collaboration/task-lists/${id}/restore`);
+  return data.data;
+}
+
+export async function moveTaskCard(taskId: string, taskListId: string, position: number): Promise<Task> {
+  const { data } = await api.patch<ApiResponse<Task>>(`/collaboration/tasks/${taskId}/move`, {
+    task_list_id: taskListId,
+    position,
+  });
+  return data.data;
+}
+
+// ---- Labels ----
+
+export async function listTaskLabels(): Promise<TaskLabel[]> {
+  const { data } = await api.get<ApiResponse<TaskLabel[]>>('/collaboration/task-labels');
+  return data.data;
+}
+
+export async function createTaskLabel(name: string, color: TaskLabelColor): Promise<TaskLabel> {
+  const { data } = await api.post<ApiResponse<TaskLabel>>('/collaboration/task-labels', { name, color });
+  return data.data;
+}
+
+export async function attachTaskLabel(taskId: string, labelId: string): Promise<Task> {
+  const { data } = await api.post<ApiResponse<Task>>(`/collaboration/tasks/${taskId}/labels/${labelId}`);
+  return data.data;
+}
+
+export async function detachTaskLabel(taskId: string, labelId: string): Promise<void> {
+  await api.delete(`/collaboration/tasks/${taskId}/labels/${labelId}`);
+}
+
+// ---- Checklists ----
+
+export async function listTaskChecklists(taskId: string): Promise<TaskChecklist[]> {
+  const { data } = await api.get<ApiResponse<TaskChecklist[]>>(`/collaboration/tasks/${taskId}/checklists`);
+  return data.data;
+}
+
+export async function createTaskChecklist(taskId: string, title: string): Promise<TaskChecklist> {
+  const { data } = await api.post<ApiResponse<TaskChecklist>>(`/collaboration/tasks/${taskId}/checklists`, { title });
+  return data.data;
+}
+
+export async function addTaskChecklistItem(taskId: string, checklistId: string, title: string): Promise<TaskChecklistItem> {
+  const { data } = await api.post<ApiResponse<TaskChecklistItem>>(
+    `/collaboration/tasks/${taskId}/checklists/${checklistId}/items`,
+    { title },
+  );
+  return data.data;
+}
+
+export async function updateTaskChecklistItem(
+  taskId: string,
+  checklistId: string,
+  itemId: string,
+  changes: Partial<{ title: string; is_completed: boolean }>,
+): Promise<TaskChecklistItem> {
+  const { data } = await api.patch<ApiResponse<TaskChecklistItem>>(
+    `/collaboration/tasks/${taskId}/checklists/${checklistId}/items/${itemId}`,
+    changes,
+  );
+  return data.data;
+}
+
+export async function deleteTaskChecklistItem(taskId: string, checklistId: string, itemId: string): Promise<void> {
+  await api.delete(`/collaboration/tasks/${taskId}/checklists/${checklistId}/items/${itemId}`);
+}
+
+// ---- Followers ----
+
+export async function followTask(taskId: string, userId?: number): Promise<Task> {
+  const { data } = await api.post<ApiResponse<Task>>(`/collaboration/tasks/${taskId}/followers`, {
+    user_id: userId,
+  });
+  return data.data;
+}
+
+export async function unfollowTask(taskId: string, userId: number): Promise<void> {
+  await api.delete(`/collaboration/tasks/${taskId}/followers/${userId}`);
 }

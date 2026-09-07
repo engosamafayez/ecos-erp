@@ -73,6 +73,18 @@ final class TransitionTaskStatusAction extends BaseAction
             Notification::send($recipient, new TaskStatusChangedNotification($task, $previousStatus));
         }
 
+        // TASK-ECOS-INTERNAL-COLLABORATION-TASKS-TRELLO-FINAL-CLOSURE-002 §27:
+        // followers reuse this exact same notification the creator/assignee
+        // already get — never a parallel watcher-notification engine — and
+        // never the actor or whoever was already notified as $recipient
+        // above (no duplicate delivery).
+        $alreadyNotified = array_filter([$actor->id, $recipient?->id]);
+        $followerIds = $task->followers()->whereNotIn('user_id', $alreadyNotified)->pluck('user_id');
+
+        if ($followerIds->isNotEmpty()) {
+            Notification::send(User::query()->whereIn('id', $followerIds)->get(), new TaskStatusChangedNotification($task, $previousStatus));
+        }
+
         TaskBroadcast::dispatch($task, 'status_changed');
 
         return $task;

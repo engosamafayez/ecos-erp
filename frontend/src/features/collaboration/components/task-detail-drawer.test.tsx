@@ -58,6 +58,19 @@ vi.mock('./user-picker', () => ({
   ),
 }));
 
+// The label/followers/checklist panels each get their own dedicated test file —
+// here they're black boxes, same posture as UserPicker above, so this file stays
+// focused on TaskDetailDrawer's own behavior (label row + remove, tab presence).
+vi.mock('./task-label-picker', () => ({
+  TaskLabelPicker: () => <button type="button">add-label</button>,
+}));
+vi.mock('./task-followers-panel', () => ({
+  TaskFollowersPanel: () => <div data-testid="followers-panel" />,
+}));
+vi.mock('./task-checklist-panel', () => ({
+  TaskChecklistPanel: () => <div data-testid="checklist-panel" />,
+}));
+
 vi.mock('@/components/ds/use-toast', () => ({
   toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() },
 }));
@@ -73,6 +86,7 @@ const mocks = vi.hoisted(() => ({
   useTask: vi.fn(),
   useTransitionTaskStatus: vi.fn(),
   useReassignTask: vi.fn(),
+  useDetachTaskLabel: vi.fn(),
   useTaskComments: vi.fn(),
   useAddTaskComment: vi.fn(),
   useTaskAttachments: vi.fn(),
@@ -86,6 +100,7 @@ vi.mock('../hooks/use-tasks', () => ({
   useTask: (id: string | null) => mocks.useTask(id),
   useTransitionTaskStatus: (id: string) => mocks.useTransitionTaskStatus(id),
   useReassignTask: (id: string) => mocks.useReassignTask(id),
+  useDetachTaskLabel: (id: string) => mocks.useDetachTaskLabel(id),
   useTaskComments: (id: string) => mocks.useTaskComments(id),
   useAddTaskComment: (id: string) => mocks.useAddTaskComment(id),
   useTaskAttachments: (id: string) => mocks.useTaskAttachments(id),
@@ -166,6 +181,7 @@ function renderDrawer(taskId: string | null) {
 
 let transitionMutate: ReturnType<typeof vi.fn>;
 let reassignMutate: ReturnType<typeof vi.fn>;
+let detachLabelMutate: ReturnType<typeof vi.fn>;
 let addCommentMutate: ReturnType<typeof vi.fn>;
 let addAttachmentMutate: ReturnType<typeof vi.fn>;
 let attachContextMutate: ReturnType<typeof vi.fn>;
@@ -181,6 +197,9 @@ beforeEach(() => {
 
   reassignMutate = vi.fn();
   mocks.useReassignTask.mockReturnValue({ mutate: reassignMutate, isPending: false });
+
+  detachLabelMutate = vi.fn();
+  mocks.useDetachTaskLabel.mockReturnValue({ mutate: detachLabelMutate, isPending: false });
 
   mocks.useTaskComments.mockReturnValue({ data: [], isLoading: false });
   addCommentMutate = vi.fn();
@@ -332,6 +351,41 @@ describe('TaskDetailDrawer', () => {
       renderDrawer('t1');
       expect(within(overviewRegion()).queryByText('tasks.detail.reassign')).not.toBeInTheDocument();
     });
+  });
+
+  // ── (g) Labels ───────────────────────────────────────────────────────────────
+  describe('labels', () => {
+    it('renders a badge per attached label and removes it via the label mutation on click', () => {
+      loadTask(makeTask({ labels: [{ id: 'l1', name: 'Urgent', color: 'red' }] }));
+      renderDrawer('t1');
+      const overview = overviewRegion();
+      expect(within(overview).getByText('Urgent')).toBeInTheDocument();
+
+      fireEvent.click(within(overview).getByLabelText('Urgent'));
+      expect(detachLabelMutate).toHaveBeenCalledWith('l1', expect.anything());
+    });
+
+    it('always renders the add-label control', () => {
+      loadTask(makeTask({ labels: [] }));
+      renderDrawer('t1');
+      expect(within(overviewRegion()).getByText('add-label')).toBeInTheDocument();
+    });
+  });
+
+  // ── (h) Followers panel ─────────────────────────────────────────────────────
+  it('renders the followers panel in the overview tab', () => {
+    loadTask(makeTask());
+    renderDrawer('t1');
+    expect(within(overviewRegion()).getByTestId('followers-panel')).toBeInTheDocument();
+  });
+
+  // ── (i) Checklist tab ───────────────────────────────────────────────────────
+  it('renders a checklist tab that mounts the checklist panel', () => {
+    loadTask(makeTask());
+    renderDrawer('t1');
+    expect(screen.getByText('tasks.detail.checklists')).toBeInTheDocument();
+    expect(document.querySelector('[data-tab-content="checklist"]')).not.toBeNull();
+    expect(within(document.querySelector('[data-tab-content="checklist"]') as HTMLElement).getByTestId('checklist-panel')).toBeInTheDocument();
   });
 
   // ── (d) Comments tab ────────────────────────────────────────────────────────

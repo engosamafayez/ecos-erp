@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Modules\Collaboration\Domain\Models;
 
+use App\Core\Documents\Document;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Modules\Collaboration\Domain\Enums\TaskPriority;
 use Modules\Collaboration\Domain\Enums\TaskStatus;
 use Modules\Collaboration\Infrastructure\Database\Factories\InternalTaskFactory;
@@ -38,6 +41,8 @@ use Modules\Organization\Teams\Domain\Models\Team;
  * @property string|null $source_conversation_id
  * @property string|null $source_message_id
  * @property string|null $source_message_snapshot
+ * @property string|null $task_list_id
+ * @property int $board_position
  */
 class InternalTask extends Model
 {
@@ -66,6 +71,8 @@ class InternalTask extends Model
         'source_conversation_id',
         'source_message_id',
         'source_message_snapshot',
+        'task_list_id',
+        'board_position',
     ];
 
     /** @return array<string, string> */
@@ -77,6 +84,7 @@ class InternalTask extends Model
             'due_at' => 'datetime',
             'completed_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'board_position' => 'integer',
         ];
     }
 
@@ -126,6 +134,50 @@ class InternalTask extends Model
     public function activity(): HasMany
     {
         return $this->hasMany(InternalTaskActivity::class, 'task_id')->orderByDesc('created_at');
+    }
+
+    /** @return BelongsTo<TaskBoardList, $this> */
+    public function list(): BelongsTo
+    {
+        return $this->belongsTo(TaskBoardList::class, 'task_list_id');
+    }
+
+    /** @return BelongsToMany<TaskLabel, $this> */
+    public function labels(): BelongsToMany
+    {
+        return $this->belongsToMany(TaskLabel::class, 'collaboration_task_label_task', 'task_id', 'label_id')
+            ->withPivot('created_at');
+    }
+
+    /** @return HasMany<TaskChecklist, $this> */
+    public function checklists(): HasMany
+    {
+        return $this->hasMany(TaskChecklist::class, 'task_id')->orderBy('position');
+    }
+
+    /** @return HasMany<TaskFollower, $this> */
+    public function followers(): HasMany
+    {
+        return $this->hasMany(TaskFollower::class, 'task_id');
+    }
+
+    /** @return HasManyThrough<TaskChecklistItem, TaskChecklist, $this> */
+    public function checklistItems(): HasManyThrough
+    {
+        return $this->hasManyThrough(TaskChecklistItem::class, TaskChecklist::class, 'task_id', 'checklist_id');
+    }
+
+    /**
+     * Same generic document authority every other module uses (brief §14 —
+     * reuse DocumentService's polymorphic `documents` table, never a
+     * dedicated TaskAttachment table). `subject_type` carries the discriminator
+     * string TaskAttachmentController already writes, not a class-name morph.
+     *
+     * @return HasMany<Document, $this>
+     */
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(Document::class, 'subject_id')->where('subject_type', 'CollaborationTask');
     }
 
     public function isOverdue(): bool

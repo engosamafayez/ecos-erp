@@ -20,7 +20,8 @@ final class TaskPolicy
 {
     public function view(User $user, InternalTask $task): bool
     {
-        return $this->sameCompany($user, $task) && $this->isOwnerOrAssignee($user, $task);
+        return $this->sameCompany($user, $task)
+            && ($this->isOwnerOrAssignee($user, $task) || $this->isFollower($user, $task));
     }
 
     public function update(User $user, InternalTask $task): bool
@@ -55,9 +56,59 @@ final class TaskPolicy
         return $this->view($user, $task);
     }
 
+    /**
+     * TASK-ECOS-INTERNAL-COLLABORATION-TASKS-TRELLO-FINAL-CLOSURE-002 §17/§23
+     * — moving a card between board lists, editing its checklist, and
+     * attaching/detaching a label are all collaborative "working on the
+     * task" actions, the same trust level as commenting or transitioning
+     * status — creator or assignee, not creator-only like update()/reassign().
+     */
+    public function moveCard(User $user, InternalTask $task): bool
+    {
+        return $this->view($user, $task);
+    }
+
+    public function manageChecklist(User $user, InternalTask $task): bool
+    {
+        return $this->view($user, $task);
+    }
+
+    public function manageLabels(User $user, InternalTask $task): bool
+    {
+        return $this->view($user, $task);
+    }
+
+    /**
+     * §16 — "add/remove follower where permitted": a user may always add or
+     * remove THEMSELVES (self-follow/unfollow, but only once they can
+     * already view the task — creator, assignee, or an existing follower);
+     * adding or removing SOMEONE ELSE as a follower is creator-only, the
+     * same ownership tier as reassign()/update() (deciding who else watches
+     * a task is closer to task ownership than to day-to-day task work).
+     */
+    public function manageFollower(User $actor, InternalTask $task, User $target): bool
+    {
+        if (! $this->sameCompany($actor, $task)) {
+            return false;
+        }
+
+        if ($actor->id === $target->id) {
+            return $this->isOwnerOrAssignee($actor, $task) || $this->isFollower($actor, $task);
+        }
+
+        return $task->creator_user_id === $actor->id;
+    }
+
     private function isOwnerOrAssignee(User $user, InternalTask $task): bool
     {
         return $task->creator_user_id === $user->id || $task->assignee_user_id === $user->id;
+    }
+
+    private function isFollower(User $user, InternalTask $task): bool
+    {
+        return $task->relationLoaded('followers')
+            ? $task->followers->contains('user_id', $user->id)
+            : $task->followers()->where('user_id', $user->id)->exists();
     }
 
     private function sameCompany(User $user, InternalTask $task): bool

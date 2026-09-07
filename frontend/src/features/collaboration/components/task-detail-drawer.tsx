@@ -18,6 +18,7 @@ import {
   useAddTaskAttachment,
   useAddTaskComment,
   useAttachTaskContext,
+  useDetachTaskLabel,
   useReassignTask,
   useTask,
   useTaskAttachments,
@@ -27,6 +28,10 @@ import {
 } from '../hooks/use-tasks';
 import { allowedTaskStatusTransitions } from '../lib/task-meta';
 import type { AddressableUser, OperationalContextType, TaskStatus } from '../types';
+import { TaskChecklistPanel } from './task-checklist-panel';
+import { TaskFollowersPanel } from './task-followers-panel';
+import { TaskLabelBadge } from './task-label-badge';
+import { TaskLabelPicker } from './task-label-picker';
 import { TaskPriorityBadge } from './task-priority-badge';
 import { TaskStatusBadge } from './task-status-badge';
 import { UserPicker } from './user-picker';
@@ -89,7 +94,9 @@ export function TaskDetailDrawer({ taskId, open, onOpenChange, onViewSourceConve
                 <TaskPriorityBadge priority={task.priority} />
                 {task.due_at ? (
                   <span className="text-xs text-muted-foreground">
-                    {t(($) => $.tasks.dueAt, { date: new Date(task.due_at).toLocaleDateString() })}
+                    {t(($) => $.tasks.dueAt, {
+                      date: new Date(task.due_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }),
+                    })}
                   </span>
                 ) : null}
               </div>
@@ -113,6 +120,9 @@ export function TaskDetailDrawer({ taskId, open, onOpenChange, onViewSourceConve
                 <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent px-3 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent">
                   {t(($) => $.tasks.detail.title)}
                 </TabsTrigger>
+                <TabsTrigger value="checklist" className="rounded-none border-b-2 border-transparent px-3 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent">
+                  {t(($) => $.tasks.detail.checklists)}
+                </TabsTrigger>
                 <TabsTrigger value="comments" className="rounded-none border-b-2 border-transparent px-3 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent">
                   {t(($) => $.tasks.detail.comments)}
                 </TabsTrigger>
@@ -127,6 +137,9 @@ export function TaskDetailDrawer({ taskId, open, onOpenChange, onViewSourceConve
               <ScrollArea className="flex-1">
                 <TabsContent value="overview" className="m-0 flex flex-col gap-4 p-5">
                   <OverviewTab task={task} isCreator={!!isCreator} onReassign={(user) => reassign.mutate(user.id, { onError: () => toast.error(t(($) => $.errors.generic)) })} onViewSourceConversation={onViewSourceConversation} />
+                </TabsContent>
+                <TabsContent value="checklist" className="m-0 p-5">
+                  <TaskChecklistPanel taskId={task.id} />
                 </TabsContent>
                 <TabsContent value="comments" className="m-0 p-5">
                   <CommentsTab taskId={task.id} />
@@ -161,11 +174,23 @@ function OverviewTab({
   const [reassigning, setReassigning] = useState(false);
   const contextLinks = useTaskContextLinks(task.id);
   const attachContext = useAttachTaskContext(task.id);
+  const detachLabel = useDetachTaskLabel(task.id);
   const [contextType, setContextType] = useState<OperationalContextType>('order');
   const [contextId, setContextId] = useState('');
 
   return (
     <div className="flex flex-col gap-4 text-sm">
+      <div className="flex flex-wrap items-center gap-1.5">
+        {(task.labels ?? []).map((label) => (
+          <TaskLabelBadge
+            key={label.id}
+            label={label}
+            onRemove={() => detachLabel.mutate(label.id, { onError: () => toast.error(t(($) => $.errors.generic)) })}
+          />
+        ))}
+        <TaskLabelPicker task={task} />
+      </div>
+
       <div>
         <p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">{t(($) => $.tasks.detail.description)}</p>
         <p className="whitespace-pre-wrap text-foreground/80">{task.description || <span className="italic text-muted-foreground">—</span>}</p>
@@ -195,6 +220,11 @@ function OverviewTab({
             </span>
           )}
         </div>
+      </div>
+
+      <div>
+        <p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">{t(($) => $.tasks.followers.title)}</p>
+        <TaskFollowersPanel task={task} />
       </div>
 
       {task.source_message_id ? (
@@ -385,6 +415,9 @@ function useActivityEventLabel(): (eventType: string) => string {
     due_date_changed: t(($) => $.tasks.activityEvents.due_date_changed),
     comment_added: t(($) => $.tasks.activityEvents.comment_added),
     updated: t(($) => $.tasks.activityEvents.updated),
+    list_changed: t(($) => $.tasks.activityEvents.list_changed),
+    label_added: t(($) => $.tasks.activityEvents.label_added),
+    label_removed: t(($) => $.tasks.activityEvents.label_removed),
   };
   return (eventType) => labels[eventType] ?? eventType;
 }
