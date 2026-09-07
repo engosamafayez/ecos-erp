@@ -15,10 +15,28 @@ function PopoverContent({
   className,
   align = 'center',
   sideOffset = 4,
+  container,
   ...props
-}: React.ComponentProps<typeof PopoverPrimitive.Content>) {
+}: React.ComponentProps<typeof PopoverPrimitive.Content> & {
+  /**
+   * Forwarded to the underlying Portal (TASK-ECOS-SYSTEM-WIDE-SEARCHABLE-SELECT-
+   * FOCUS-REMEDIATION-006, §4/§6). Defaults to Radix's own default
+   * (`document.body`) when omitted — every existing caller is unaffected.
+   *
+   * Pass the nearest ancestor Dialog/Sheet's own content node when this content
+   * holds a focusable/typeable control (a search input, a button) AND is
+   * rendered inside a Dialog/Sheet/Drawer: that dialog's `FocusScope` (trapped)
+   * redirects focus back inside itself the instant it sees focus land on
+   * anything outside its own DOM subtree — and Portal's default target,
+   * `document.body`, makes this content a DOM SIBLING of the dialog's own
+   * portalled content, never a descendant, so the redirect fires on every
+   * focus attempt in here. See ecos-combobox.tsx for the fully-documented
+   * root cause and the same fix applied there.
+   */
+  container?: HTMLElement | null;
+}) {
   return (
-    <PopoverPrimitive.Portal>
+    <PopoverPrimitive.Portal container={container}>
       <PopoverPrimitive.Content
         data-slot="popover-content"
         align={align}

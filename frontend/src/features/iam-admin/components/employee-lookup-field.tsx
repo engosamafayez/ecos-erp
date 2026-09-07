@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, ChevronsUpDown, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -35,6 +35,22 @@ export function EmployeeLookupField({
 }) {
   const { t } = useTranslation('iam-admin');
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  // TASK-ECOS-SYSTEM-WIDE-SEARCHABLE-SELECT-FOCUS-REMEDIATION-006 §4/§6 — same
+  // root cause and fix as EcosCombobox (see its own comment for the full
+  // mechanism): a Dialog/Sheet's FocusScope traps focus to its own DOM subtree,
+  // and this Popover's content otherwise portals to `document.body` — a DOM
+  // sibling, never a descendant — so the search input below could never hold
+  // focus while this field is used inside a Create/Edit User Sheet. Portal
+  // into the nearest ancestor dialog's own content node instead when one
+  // exists. Computed inside the effect below (an approved place to read a
+  // ref's current value), never during render.
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    if (open) {
+      setPortalContainer(triggerRef.current?.closest<HTMLElement>('[role="dialog"]') ?? null);
+    }
+  }, [open]);
   const [search, setSearch] = useState('');
   // §4 — every other server-searched selector in this codebase debounces the typed term
   // (ProductLineSelect, supplier/warehouse pickers); this one fired a request on every
@@ -62,7 +78,7 @@ export function EmployeeLookupField({
     <div className="flex items-center gap-2">
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button type="button" variant="outline" className="min-w-0 flex-1 justify-between font-normal">
+          <Button ref={triggerRef} type="button" variant="outline" className="min-w-0 flex-1 justify-between font-normal">
             <span className="truncate">
               {selected
                 ? `${selected.employee_number ?? ''} — ${selected.name}`
@@ -71,7 +87,7 @@ export function EmployeeLookupField({
             <ChevronsUpDown className="size-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[320px] p-0">
+        <PopoverContent container={portalContainer} className="w-[320px] p-0">
           <div className="border-b p-2">
             <Input
               autoFocus
