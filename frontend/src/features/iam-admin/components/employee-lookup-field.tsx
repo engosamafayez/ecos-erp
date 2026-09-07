@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Check, ChevronsUpDown, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -36,7 +36,15 @@ export function EmployeeLookupField({
   const { t } = useTranslation('iam-admin');
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const query = useEmployeeDirectoryQuery(search, currentEmployeeId == null);
+  // §4 — every other server-searched selector in this codebase debounces the typed term
+  // (ProductLineSelect, supplier/warehouse pickers); this one fired a request on every
+  // keystroke. Matches the same 250ms convention.
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search), 250);
+    return () => clearTimeout(id);
+  }, [search]);
+  const query = useEmployeeDirectoryQuery(debouncedSearch, currentEmployeeId == null);
 
   const selected = useMemo(
     () => query.data?.data.find((e) => e.employee_number === value) ?? null,
