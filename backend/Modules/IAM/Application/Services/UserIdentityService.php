@@ -55,32 +55,59 @@ class UserIdentityService
     ) {}
 
     /**
-     * @param  array<string,mixed>  $data
+     * @param  array<string,mixed>  $data  `auto_generate_password: true` (User-review
+     *                                     remediation, Batch 02, item B) asks this method to
+     *                                     mint a secure initial credential itself when no
+     *                                     explicit `password` was supplied — the normal
+     *                                     Create User path always sets it
+     *                                     (UserController::store()). Omitted entirely, this
+     *                                     method's default is UNCHANGED from before: the
+     *                                     historical unusable `Str::random(40)` placeholder,
+     *                                     which every existing direct caller of this method
+     *                                     (this class's docblock, and ~20 test fixtures) relies
+     *                                     on not suddenly becoming a real, usable credential.
      * @param  string  $companyId  server-derived tenant ownership (D2) — never taken from $data
+     * @param  string|null  $generatedPassword  out parameter: the plaintext this call minted,
+     *                                          when it did. Never logged, audited, or stored
+     *                                          anywhere but the single hashed `password`
+     *                                          column — the caller must show it to the actor
+     *                                          exactly once and then discard it.
      */
-    public function createDraft(array $data, string $companyId, ?int $actorId = null): User
-    {
+    public function createDraft(
+        array $data,
+        string $companyId,
+        ?int $actorId = null,
+        ?string &$generatedPassword = null,
+    ): User {
         $this->assertUniqueIdentity($data, null);
         $this->assertEmployeeLink($data);
 
+        $generatedPassword = null;
         $initialPassword = isset($data['password']) && is_string($data['password']) && $data['password'] !== ''
             ? $data['password']
             : null;
+
+        if ($initialPassword === null && ($data['auto_generate_password'] ?? false) === true) {
+            $initialPassword = UserPasswordService::generateInitial();
+            $generatedPassword = $initialPassword;
+        }
 
         $user = new User();
         $user->fill(array_intersect_key($data, array_flip(self::IDENTITY_FIELDS)));
         $user->company_id = $companyId;
 
-        // An administrator-set initial password, or the historical unusable random one.
+        // An administrator-set or auto-generated initial password, or the historical unusable
+        // random one when neither was requested.
         $user->password = Hash::make($initialPassword ?? Str::random(40));
         $user->status = UserStatus::DRAFT->value;
         $user->created_by = $actorId;
 
         if ($initialPassword !== null) {
             $user->password_changed_at = now();
-            // Force a change at first login by default — an administrator knows this
-            // password, so the user must replace it. Overridable, because a service or
-            // shared operational account legitimately should not be prompted.
+            // Force a change at first login by default — an administrator (or the generator
+            // acting on their behalf) knows this password, so the user must replace it.
+            // Overridable, because a service or shared operational account legitimately
+            // should not be prompted.
             $user->require_password_change = (bool) ($data['require_password_change'] ?? true);
         }
 

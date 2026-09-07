@@ -24,6 +24,10 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  *           still holds it. Archival never silently revokes access.
  * @property string|null $archived_reason
  * @property int|null $archived_by
+ * @property array<string,string>|null $navigation_overrides UX-only nav item visibility
+ *           overrides (User-review remediation, Batch 02, item I) — `key => 'visible' |
+ *           'hidden'`. Never consulted by any authorization check; a null map means every
+ *           item inherits the permission-gated default, unchanged from before this existed.
  */
 class Role extends Model
 {
@@ -42,6 +46,7 @@ class Role extends Model
         'archived_at',
         'archived_reason',
         'archived_by',
+        'navigation_overrides',
     ];
 
     /** @return array<string, string> */
@@ -50,6 +55,7 @@ class Role extends Model
         return [
             'is_system' => 'boolean',
             'archived_at' => 'datetime',
+            'navigation_overrides' => 'array',
         ];
     }
 

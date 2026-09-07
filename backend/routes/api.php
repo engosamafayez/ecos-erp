@@ -432,6 +432,11 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->prefix('iam')->group(func
             // §14 — the editable permission matrix save. Separate from the metadata PATCH so a
             // grant change is authorized, validated and audited AS a grant change.
             Route::put('permissions', [IamRoleController::class, 'updatePermissions'])->middleware('permission:iam.roles.update');
+            // User-review remediation (Batch 02, item I) — UX-only nav visibility overrides.
+            // Deliberately the SAME `iam.roles.update` permission as every other role edit,
+            // not a new one: this is not a distinct authorization capability, it is one more
+            // field on the role.
+            Route::put('navigation', [IamRoleController::class, 'updateNavigation'])->middleware('permission:iam.roles.update');
             Route::post('clone', [IamRoleController::class, 'cloneRole'])->middleware('permission:iam.roles.create');
             // Archive is the §11/§12 SAFE path — it withdraws the role from the assignable
             // catalogue without revoking it from anyone who currently holds it.

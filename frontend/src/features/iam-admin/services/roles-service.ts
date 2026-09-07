@@ -49,6 +49,12 @@ export const rolesService = {
     return data.data;
   },
 
+  /** User-review remediation (Batch 02, item I) — save nav item key => 'visible'|'hidden'. */
+  async updateNavigation(id: string, overrides: Record<string, string>): Promise<RoleDetail> {
+    const { data } = await api.put<ApiResponse<RoleDetail>>(`/iam/roles/${id}/navigation`, { overrides });
+    return data.data;
+  },
+
   async clone(id: string, name: string): Promise<RoleSummary> {
     const { data } = await api.post<ApiResponse<RoleSummary>>(`/iam/roles/${id}/clone`, { name });
     return data.data;

@@ -711,18 +711,36 @@ export function moduleNavLinks(
    * behaviour is unchanged.
    */
   can?: (permission: string) => boolean,
+  overrides?: Record<string, string>,
 ): ModuleNavLink[] {
   const links = items.filter((item): item is ModuleNavLink => !item.isSection);
 
-  return can ? links.filter((link) => isNavItemVisible(link, can)) : links;
+  return can ? links.filter((link) => isNavItemVisible(link, can, overrides)) : links;
 }
 
-/** True when the current user may see this ONE sidebar link (ANY declared permission). */
-export function isNavItemVisible(item: ModuleNavItem, can: (permission: string) => boolean): boolean {
+/**
+ * True when the current user may see this ONE sidebar link (ANY declared permission) AND
+ * the user's role navigation settings don't hide it (User-review remediation, Batch 02,
+ * item I/12).
+ *
+ * `overrides` defaults to `{}` — an absent third argument means "no overrides apply,"
+ * identical to this function's behavior before item I existed, so every pre-existing call
+ * site is unaffected.
+ *
+ * CRITICAL SECURITY PROPERTY (item I's own requirement, restated in code): the permission
+ * check runs FIRST and can only narrow further — `overrides` is checked with `&&`, never
+ * `||`, so a 'visible' override can never show an item the permission gate already refused.
+ * This function is UX only; nothing it returns is consulted by any route or API guard.
+ */
+export function isNavItemVisible(
+  item: ModuleNavItem,
+  can: (permission: string) => boolean,
+  overrides: Record<string, string> = {},
+): boolean {
   if (item.isSection) return true;
   const required = item.permissions;
-  if (!required || required.length === 0) return true;
-  return required.some((permission) => can(permission));
+  const permitted = !required || required.length === 0 || required.some((permission) => can(permission));
+  return permitted && overrides[item.key] !== 'hidden';
 }
 
 /**
@@ -739,6 +757,7 @@ export function isNavItemVisible(item: ModuleNavItem, can: (permission: string) 
 export function visibleModuleItems(
   items: ModuleNavItem[],
   can: (permission: string) => boolean,
+  overrides: Record<string, string> = {},
 ): ModuleNavItem[] {
   const kept: ModuleNavItem[] = [];
 
@@ -746,7 +765,7 @@ export function visibleModuleItems(
     const item = items[index];
 
     if (!item.isSection) {
-      if (isNavItemVisible(item, can)) kept.push(item);
+      if (isNavItemVisible(item, can, overrides)) kept.push(item);
       continue;
     }
 
@@ -754,7 +773,7 @@ export function visibleModuleItems(
     for (let look = index + 1; look < items.length; look += 1) {
       const next = items[look];
       if (next.isSection) break;
-      if (isNavItemVisible(next, can)) {
+      if (isNavItemVisible(next, can, overrides)) {
         hasVisibleChild = true;
         break;
       }

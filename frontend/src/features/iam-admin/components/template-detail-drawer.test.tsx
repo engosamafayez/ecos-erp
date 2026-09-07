@@ -1,3 +1,4 @@
+/// <reference types="@testing-library/jest-dom/vitest" />
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -73,8 +74,15 @@ function templateDetail(overrides: Partial<RoleTemplateDetail> = {}): RoleTempla
   return {
     key: 'cashier',
     name: 'Cashier',
+    // `name_ar`/`description_ar` are required fields (§5) this test predates having a
+    // fixture for — defaulted to the English value/null, reproducing the server's own
+    // fallback for a template with no Arabic business-catalogue entry (BusinessRoleCatalog::
+    // displayFor() returning null), which is exactly this fixture's `is_system: true`,
+    // non-catalogue "cashier" template.
+    name_ar: overrides.name ?? 'Cashier',
     // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- mock API fixture value (arbitrary role-template description content), never rendered through i18n
     description: 'POS operator',
+    description_ar: null,
     category: 'sales',
     status: 'published',
     version: 2,
@@ -119,6 +127,7 @@ beforeEach(() => {
     groups: [
       {
         module: 'pos',
+        // eslint-disable-next-line ecos-i18n/no-arabic-literals -- mock API fixture value (pre-existing, predates this task), never rendered through i18n
         label_ar: 'نقاط البيع',
         label_en: 'Point of Sale',
         sort: 1,
@@ -128,10 +137,18 @@ beforeEach(() => {
           {
             name: 'pos.terminal.view',
             module: 'pos',
+            // eslint-disable-next-line ecos-i18n/no-arabic-literals -- mock API fixture value (pre-existing, predates this task), never rendered through i18n
             module_label_ar: 'نقاط البيع',
             module_label_en: 'Point of Sale',
             resource: 'pos.terminal',
+            // User-review remediation (Batch 02, item H): `resource_label_ar`/`_en` are new
+            // required fields the matrix now groups permissions by, standing in for the
+            // resource's own business name the same way `module_label_ar` does for its module.
+            // eslint-disable-next-line ecos-i18n/no-arabic-literals -- mock API fixture value (resource business name), never rendered through i18n
+            resource_label_ar: 'الطرفية',
+            resource_label_en: 'Terminal',
             action: 'view',
+            // eslint-disable-next-line ecos-i18n/no-arabic-literals -- mock API fixture value (pre-existing, predates this task), never rendered through i18n
             label_ar: 'عرض نقطة البيع',
             label_en: 'View POS terminal',
             description_ar: '',
@@ -140,10 +157,15 @@ beforeEach(() => {
           {
             name: 'pos.terminal.operate',
             module: 'pos',
+            // eslint-disable-next-line ecos-i18n/no-arabic-literals -- mock API fixture value (pre-existing, predates this task), never rendered through i18n
             module_label_ar: 'نقاط البيع',
             module_label_en: 'Point of Sale',
             resource: 'pos.terminal',
+            // eslint-disable-next-line ecos-i18n/no-arabic-literals -- mock API fixture value (resource business name), never rendered through i18n
+            resource_label_ar: 'الطرفية',
+            resource_label_en: 'Terminal',
             action: 'operate',
+            // eslint-disable-next-line ecos-i18n/no-arabic-literals -- mock API fixture value (pre-existing, predates this task), never rendered through i18n
             label_ar: 'تشغيل نقطة البيع',
             label_en: 'Operate POS terminal',
             description_ar: '',

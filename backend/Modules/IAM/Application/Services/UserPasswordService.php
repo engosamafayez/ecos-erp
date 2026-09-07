@@ -7,6 +7,7 @@ namespace Modules\IAM\Application\Services;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Modules\IAM\Domain\Exceptions\UserSecurityRuleException;
 
 /**
@@ -45,6 +46,23 @@ use Modules\IAM\Domain\Exceptions\UserSecurityRuleException;
 class UserPasswordService
 {
     public function __construct(private readonly UserAuditService $audit) {}
+
+    /**
+     * A secure, usable initial credential (User-review remediation, Batch 02, item B).
+     *
+     * `Str::password()` (Laravel's own generator, not a bespoke one) mixes letters, numbers,
+     * and symbols and draws from `random_bytes()` — cryptographically secure, unlike
+     * `Str::random()`'s non-cryptographic default. 14 characters clears every rule
+     * `Password::defaults()` enforces elsewhere in this codebase with margin to spare.
+     *
+     * The ONLY caller is `UserIdentityService::createDraft()`, and only when it was asked to
+     * auto-generate; the plaintext returned here must never be logged or persisted anywhere
+     * but the single hashed `users.password` column.
+     */
+    public static function generateInitial(): string
+    {
+        return Str::password(14);
+    }
 
     /**
      * Reset another user's password as an administrator.

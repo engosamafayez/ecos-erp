@@ -131,6 +131,36 @@ class RoleAuthoringService
     }
 
     /**
+     * Save this role's per-item navigation VISIBILITY overrides (User-review remediation,
+     * Batch 02, item I). UX policy only — see the migration/model docblocks. Deliberately
+     * NOT routed through `editableTemplate()`/the compiler: this never touches a grant, a
+     * Role Template, or `role_permissions`, so none of that machinery applies. A system
+     * role is refused for the same reason `updateMetadata()` refuses one — an administrator
+     * customizing `super-admin`'s own menu would be surprising and is not what any part of
+     * this task asked for.
+     *
+     * @param  array<string,string>  $overrides  nav item key => 'visible' | 'hidden'
+     */
+    public function updateNavigationOverrides(Role $role, array $overrides, ?int $actorId = null): Role
+    {
+        if ($role->is_system) {
+            throw RoleLifecycleException::systemRoleImmutable((string) $role->slug);
+        }
+
+        $old = $role->navigation_overrides;
+        $role->navigation_overrides = $overrides === [] ? null : $overrides;
+        $role->save();
+
+        $this->audit->logRole('navigation_overrides_updated', $role, ['actor_id' => $actorId], [
+            'navigation_overrides' => $old,
+        ], [
+            'navigation_overrides' => $role->navigation_overrides,
+        ]);
+
+        return $role->refresh();
+    }
+
+    /**
      * Save the editable permission matrix (§14).
      *
      * The submitted list is the COMPLETE desired grant set — the matrix is a full picture,

@@ -103,6 +103,25 @@ export function UsersTab() {
         cell: (row) => row.employee_number ?? '—',
       },
       {
+        key: 'roles',
+        header: t(($) => $.users.columns.roles),
+        cell: (row) =>
+          row.roles.length === 0 ? (
+            <span className="text-muted-foreground text-xs">{t(($) => $.users.roles.none)}</span>
+          ) : (
+            <div className="flex flex-wrap gap-1">
+              {row.roles.map((role) => (
+                <span
+                  key={role.key ?? role.name}
+                  className="bg-secondary text-secondary-foreground inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium"
+                >
+                  {role.name_ar ?? role.name}
+                </span>
+              ))}
+            </div>
+          ),
+      },
+      {
         key: 'status',
         header: t(($) => $.users.columns.status),
         cell: (row) => <UserStatusBadge status={row.status} label={row.status_label} />,

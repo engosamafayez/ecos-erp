@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Check, Copy } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
@@ -8,6 +9,7 @@ import { EntityDrawer, EntityForm, FormField } from '@/components/crud';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useCreateUser } from '@/features/iam-admin/hooks/use-users';
@@ -60,6 +62,9 @@ export function UserCreateDrawer({ open, onOpenChange }: { open: boolean; onOpen
   const [roleTemplates, setRoleTemplates] = useState<string[]>([]);
   const [organizations, setOrganizations] = useState<NonNullable<CreateUserPayload['organizations']>>([]);
   const [activateNow, setActivateNow] = useState(false);
+  // User-review remediation (Batch 02, item B): the server generates the initial password
+  // and returns it once in the create response — held here just long enough to show it.
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
@@ -93,7 +98,12 @@ export function UserCreateDrawer({ open, onOpenChange }: { open: boolean; onOpen
       activate: activateNow,
     });
     createUser.mutate(payload, {
-      onSuccess: () => onOpenChange(false),
+      onSuccess: (created) => {
+        onOpenChange(false);
+        if (created.generated_password) {
+          setGeneratedPassword(created.generated_password);
+        }
+      },
       onError: (error) => {
         setServerError(extractMessage(error, genericError));
         setFieldErrors(extractFieldErrors(error));
@@ -102,7 +112,6 @@ export function UserCreateDrawer({ open, onOpenChange }: { open: boolean; onOpen
   };
 
   const employeeNumber = form.watch('employee_number');
-  const password = form.watch('password');
 
   return (
     <EntityDrawer
@@ -164,39 +173,13 @@ export function UserCreateDrawer({ open, onOpenChange }: { open: boolean; onOpen
 
         <Separator />
 
-        {/* §10 — the initial credential. Optional: leave blank to keep the historical
-           unusable-random-password behaviour, resolved later through the invitation flow. */}
-        <div className="flex flex-col gap-1">
+        {/* User-review remediation (Batch 02, item B): no password field to fill in — a
+           secure initial password is generated automatically and shown once, right after
+           this form succeeds. */}
+        <div className="bg-muted/40 flex flex-col gap-1 rounded-md border px-3 py-2">
           <p className="text-sm font-medium">{t(($) => $.users.password.initialSectionTitle)}</p>
-          <p className="text-muted-foreground text-xs">{t(($) => $.users.password.initialSectionHint)}</p>
+          <p className="text-muted-foreground text-xs">{t(($) => $.users.password.autoGenerateHint)}</p>
         </div>
-        <FormField
-          name="password"
-          label={t(($) => $.users.password.initialPassword)}
-          optional
-          error={form.formState.errors.password?.message ?? fieldErrors.password}
-        >
-          <Input type="password" autoComplete="new-password" {...form.register('password')} />
-        </FormField>
-        {password ? (
-          <>
-            <FormField
-              name="password_confirmation"
-              label={t(($) => $.users.password.confirmPassword)}
-              required
-              error={form.formState.errors.password_confirmation?.message}
-            >
-              <Input type="password" autoComplete="new-password" {...form.register('password_confirmation')} />
-            </FormField>
-            <label className="flex items-center gap-2 text-sm">
-              <Checkbox
-                checked={form.watch('require_password_change') ?? true}
-                onCheckedChange={(checked) => form.setValue('require_password_change', checked)}
-              />
-              {t(($) => $.users.password.requireChangeAtLogin)}
-            </label>
-          </>
-        ) : null}
 
         <Separator />
 
@@ -222,6 +205,53 @@ export function UserCreateDrawer({ open, onOpenChange }: { open: boolean; onOpen
           {t(($) => $.users.lifecycle.activateNow)}
         </label>
       </EntityForm>
+
+      <GeneratedPasswordDialog password={generatedPassword} onClose={() => setGeneratedPassword(null)} />
     </EntityDrawer>
+  );
+}
+
+/**
+ * User-review remediation (Batch 02, item B): shows the server-generated initial password
+ * exactly once, immediately after a successful create — never fetched again, never logged.
+ */
+function GeneratedPasswordDialog({ password, onClose }: { password: string | null; onClose: () => void }) {
+  const { t } = useTranslation('iam-admin');
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    if (!password) return;
+    try {
+      await navigator.clipboard.writeText(password);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard access can be denied by the browser; the password stays visible and
+      // selectable either way, so this is not a dead end.
+    }
+  }
+
+  return (
+    <Dialog open={password !== null} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{t(($) => $.users.password.generatedTitle)}</DialogTitle>
+          <DialogDescription>{t(($) => $.users.password.generatedHint)}</DialogDescription>
+        </DialogHeader>
+
+        <div className="flex items-center gap-2 rounded-md border px-3 py-2">
+          <code className="flex-1 select-all font-mono text-sm">{password}</code>
+          <Button type="button" variant="outline" size="icon" onClick={handleCopy} aria-label={t(($) => $.users.password.copy)}>
+            {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+          </Button>
+        </div>
+
+        <DialogFooter>
+          <Button type="button" onClick={onClose}>
+            {t(($) => $.users.password.generatedDone)}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

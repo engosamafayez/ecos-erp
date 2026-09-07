@@ -67,6 +67,15 @@ export function useUpdateRolePermissionsMutation(id: string) {
   });
 }
 
+/** User-review remediation (Batch 02, item I) — save this role's nav visibility overrides. */
+export function useUpdateRoleNavigationMutation(id: string) {
+  const invalidate = useInvalidateRoles();
+  return useMutation({
+    mutationFn: (overrides: Record<string, string>) => rolesService.updateNavigation(id, overrides),
+    onSuccess: () => invalidate(id),
+  });
+}
+
 export function useCloneRoleMutation(id: string) {
   const invalidate = useInvalidateRoles();
   return useMutation({
@@ -88,6 +97,29 @@ export function useRestoreRoleMutation(id: string) {
   return useMutation({
     mutationFn: () => rolesService.restore(id),
     onSuccess: () => invalidate(id),
+  });
+}
+
+/**
+ * Unbound archive/restore, id supplied per-call — for the Roles LIST row menu (User-review
+ * remediation, Batch 02, item F), where one hook instance serves every row rather than one
+ * per row. `useArchiveRoleMutation(id)`/`useRestoreRoleMutation(id)` above stay unchanged for
+ * the detail drawer, which already binds a single role's id up front. Same `rolesService`
+ * call either way — no second write path.
+ */
+export function useArchiveRoleByIdMutation() {
+  const invalidate = useInvalidateRoles();
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) => rolesService.archive(id, reason),
+    onSuccess: () => invalidate(),
+  });
+}
+
+export function useRestoreRoleByIdMutation() {
+  const invalidate = useInvalidateRoles();
+  return useMutation({
+    mutationFn: (id: string) => rolesService.restore(id),
+    onSuccess: () => invalidate(),
   });
 }
 

@@ -1,3 +1,4 @@
+/// <reference types="@testing-library/jest-dom/vitest" />
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -73,8 +74,29 @@ function baseUser(overrides: Partial<UserDetail> = {}): UserDetail {
     hire_date: null,
     templates: [],
     organizations: [],
+    employee: null,
     created_at: null,
     updated_at: null,
+    // `lifecycle`/`roles` are required fields this fixture predates (§10/item G) — a fixed,
+    // valid-for-'active' shape, matching the same fields' truthful computation in
+    // user-security-panel.test.tsx/users-tab.test.tsx, since every test in this file uses
+    // the default 'active' status and never asserts on lifecycle/roles directly.
+    lifecycle: {
+      is_pre_activation: false,
+      can_activate: false,
+      can_suspend: true,
+      can_deactivate: true,
+      can_lock: true,
+      can_unlock: false,
+      can_archive: true,
+      can_restore: false,
+      can_set_initial_password: false,
+      can_reset_password: true,
+      can_authenticate: true,
+      requires_password_change: false,
+      has_credential: true,
+    },
+    roles: [],
     ...overrides,
   };
 }
@@ -124,12 +146,11 @@ function renderPanel(user: UserDetail) {
   return { client, ...render(<QueryClientProvider client={client}><UserRolesPanel user={user} /></QueryClientProvider>) };
 }
 
-// jsdom implements neither API; Radix Select's pointer-based item selection needs them.
-// Environment shims only — the component and its logic run exactly as in the browser.
+// User-review remediation (Batch 02, item C): the role selector is now `EcosCombobox`
+// (Radix Popover + a plain <button role="option"> per row), not Radix Select — jsdom still
+// lacks `scrollIntoView`, which the combobox's keyboard-navigation effect calls.
+// Environment shim only — the component and its logic run exactly as in the browser.
 beforeAll(() => {
-  Element.prototype.hasPointerCapture = vi.fn(() => false);
-  Element.prototype.setPointerCapture = vi.fn();
-  Element.prototype.releasePointerCapture = vi.fn();
   Element.prototype.scrollIntoView = vi.fn();
 });
 
@@ -147,7 +168,7 @@ describe('UserRolesPanel', () => {
     mockAssignTemplate.mockResolvedValue(baseUser());
     renderPanel(baseUser());
 
-    await user.click(screen.getByRole('combobox'));
+    await user.click(screen.getByRole('button', { name: 'users.roles.selectPlaceholder' }));
     await user.click(await screen.findByText(/^Cashier/));
     await user.click(screen.getByRole('button', { name: 'users.roles.assign' }));
 
@@ -163,7 +184,7 @@ describe('UserRolesPanel', () => {
     ]);
     renderPanel(baseUser({ templates: [assignment({ key: 'sales-representative', name: 'Sales Rep', is_primary: true })] }));
 
-    await user.click(screen.getByRole('combobox'));
+    await user.click(screen.getByRole('button', { name: 'users.roles.selectPlaceholder' }));
     expect(await screen.findByText(/^Cashier/)).toBeInTheDocument();
     expect(screen.queryByText(/^Draft Role/)).not.toBeInTheDocument();
     expect(screen.queryByText(/^Sales Rep/, { selector: '[role="option"]' })).not.toBeInTheDocument();
@@ -199,7 +220,7 @@ describe('UserRolesPanel', () => {
     mockTemplatesList.mockResolvedValue([template({ key: 'cashier', name: 'Cashier' })]);
     renderPanel(baseUser());
 
-    await user.click(screen.getByRole('combobox'));
+    await user.click(screen.getByRole('button', { name: 'users.roles.selectPlaceholder' }));
     const options = await screen.findAllByRole('option');
     expect(options).toHaveLength(1);
     expect(options[0]).toHaveTextContent('Cashier');
@@ -235,7 +256,7 @@ describe('UserRolesPanel', () => {
 
     await waitFor(() => expect(screen.getByText('users.roles.none')).toBeInTheDocument());
 
-    await user.click(screen.getByRole('combobox'));
+    await user.click(screen.getByRole('button', { name: 'users.roles.selectPlaceholder' }));
     await user.click(await screen.findByText(/^Cashier/));
     await user.click(screen.getByRole('button', { name: 'users.roles.assign' }));
 

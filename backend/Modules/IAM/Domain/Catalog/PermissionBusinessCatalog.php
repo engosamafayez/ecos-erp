@@ -635,6 +635,14 @@ final class PermissionBusinessCatalog
             'module_label_en' => $moduleMeta['en'],
             'module_sort' => $moduleMeta['sort'],
             'resource' => $resource,
+            // User-review remediation (Batch 02, item H): the resource's OWN business name,
+            // standalone — so the UI can group a module's permissions by capability
+            // ("Orders", "Sales customers", "Sales channels" …) instead of a flat list that
+            // reads like the same word ("Sales & Orders" → "Orders" → "Orders" → "Orders" …)
+            // repeated once per CRUD action. Falls back to the resource key itself so an
+            // unmapped resource still renders a distinct group rather than none at all.
+            'resource_label_ar' => $resourceMeta['ar'] ?? $resource,
+            'resource_label_en' => $resourceMeta['en'] ?? $resource,
             'action' => $action,
             'label_ar' => $labelAr,
             'label_en' => $labelEn,

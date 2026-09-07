@@ -17,6 +17,7 @@
     "columns": {
       "identity": "User",
       "employeeNumber": "Employee #",
+      "roles": "Roles",
       "status": "Status",
       "lastActivity": "Last activity"
     },
@@ -116,6 +117,7 @@
       "searchPlaceholder": "Search companies, brands, warehouses…",
       "noLevelsAvailable": "No organization entities are configured yet.",
       "noEntities": "None found.",
+      "selectCompanyHint": "Select a company to continue.",
       "primaryToggle": "Mark as primary",
       "save": "Save organization scope",
       "saving": "Saving…"
@@ -144,11 +146,16 @@
       "setInitialSubmit": "Set password"
     },
     "password": {
-      "initialSectionTitle": "Initial password (optional)",
+      "initialSectionTitle": "Initial password",
       "initialSectionHint": "Set a password now so this account can sign in immediately. Leave blank to keep it unusable until an invitation is completed.",
+      "autoGenerateHint": "A secure initial password will be generated automatically and shown once, right after this account is created.",
       "initialPassword": "Initial password",
       "confirmPassword": "Confirm password",
-      "requireChangeAtLogin": "Require a password change at first login"
+      "requireChangeAtLogin": "Require a password change at first login",
+      "generatedTitle": "Initial password generated",
+      "generatedHint": "Copy this now — it will not be shown again. The account must change it at first login.",
+      "copy": "Copy",
+      "generatedDone": "Done"
     },
     "employee": {
       "placeholder": "Select an employee…",
@@ -209,7 +216,23 @@
       "noPermissions": "This role has no permissions.",
       "tabs": {
         "overview": "Overview",
-        "permissions": "Permission Matrix"
+        "permissions": "Permission Matrix",
+        "users": "Users",
+        "navigation": "Menu and navigation"
+      },
+      "usersTab": {
+        "empty": "No user currently holds this role."
+      },
+      "navigation": {
+        "hint": "Menu visibility is UX only — it can hide an item this role's permissions would otherwise show, or show one otherwise omitted, but it never changes what the backend actually authorizes.",
+        "overridesCount": "{{count}} override",
+        "overridesCount_other": "{{count}} overrides",
+        "inherit": "Inherit",
+        "visible": "Visible",
+        "hidden": "Hidden",
+        "save": "Save navigation",
+        "saving": "Saving…",
+        "previewTitle": "This role will see"
       },
       "systemImmutable": "This is a system role and cannot be edited, archived or deleted. Clone it to make changes.",
       "templateImmutable": "This role is compiled from an official ECOS system template, which is immutable. Clone it to make changes.",

@@ -14,10 +14,12 @@ use Modules\IAM\Application\Services\RoleAuthoringService;
 use Modules\IAM\Domain\Catalog\BusinessRoleCatalog;
 use Modules\IAM\Domain\Catalog\PermissionBusinessCatalog;
 use Modules\IAM\Domain\Enums\RoleCategory;
+use Modules\IAM\Domain\Enums\UserStatus;
 use Modules\IAM\Domain\Exceptions\RoleLifecycleException;
 use Modules\IAM\Domain\Models\Role;
 use Modules\IAM\Presentation\Http\Requests\CloneRoleRequest;
 use Modules\IAM\Presentation\Http\Requests\CreateRoleRequest;
+use Modules\IAM\Presentation\Http\Requests\UpdateRoleNavigationRequest;
 use Modules\IAM\Presentation\Http\Requests\UpdateRolePermissionsRequest;
 use Modules\IAM\Presentation\Http\Requests\UpdateRoleRequest;
 
@@ -93,14 +95,20 @@ final class RoleController extends Controller
                 ->values()->all(),
             'definition' => $role->roleTemplate?->definition,
             'editable' => $this->isEditable($role),
+            // User-review remediation (Batch 02, item G): "a visible list/tab/drawer of the
+            // Users assigned to that Role" — `username`/`status_label` added so the drawer's
+            // Users tab can show them without a second round trip or reinventing the status
+            // label the Users list already computes via UserStatus::label().
             'assigned_users' => $role->users()
-                ->select('users.id', 'users.name', 'users.email', 'users.status')
+                ->select('users.id', 'users.name', 'users.email', 'users.username', 'users.status')
                 ->limit(200)->get()
                 ->map(fn ($u) => [
                     'id' => $u->getKey(),
                     'name' => $u->name,
                     'email' => $u->email,
+                    'username' => $u->username,
                     'status' => $u->status,
+                    'status_label' => UserStatus::from($u->status)->label(),
                 ])->values()->all(),
         ]);
     }
@@ -138,6 +146,20 @@ final class RoleController extends Controller
         return $this->updated($this->serialize($role->loadCount('users')) + [
             'permissions' => $role->permissions()->pluck('name')->values()->all(),
         ]);
+    }
+
+    /** User-review remediation (Batch 02, item I) — save the nav visibility overrides. */
+    public function updateNavigation(UpdateRoleNavigationRequest $request, Role $role): JsonResponse
+    {
+        Gate::authorize('update', $role);
+
+        $role = $this->authoring->updateNavigationOverrides(
+            $role,
+            $request->validated('overrides'),
+            $request->user()?->getKey(),
+        );
+
+        return $this->updated($this->serialize($role->loadCount('users')));
     }
 
     public function cloneRole(CloneRoleRequest $request, Role $role): JsonResponse
@@ -240,6 +262,10 @@ final class RoleController extends Controller
             'archived_reason' => $role->archived_reason,
             'user_count' => $role->users_count ?? null,
             'editable' => $this->isEditable($role),
+            // User-review remediation (Batch 02, item I) — nav item key => 'visible'|'hidden'.
+            // Never null in the response even when the column is: an absent key always means
+            // "inherit" either way, so the frontend can treat `{}` and `null` identically.
+            'navigation_overrides' => $role->navigation_overrides ?? [],
             'scope_expectation' => $businessKey !== null
                 ? BusinessRoleCatalog::scopeExpectationFor($businessKey)
                 : [],

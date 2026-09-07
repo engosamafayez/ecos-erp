@@ -8,6 +8,7 @@
  * by RoleAuthoringService, which authors the backing template and calls the one canonical
  * compiler. See RoleController.php's docblock.
  */
+import type { UserLifecycleStatus } from '@/features/iam-admin/types/user';
 
 export type RoleTemplateLink = {
   key: string;
@@ -40,13 +41,21 @@ export type RoleSummary = {
   /** Org-unit types §18 expects an administrator to assign for a holder of this role. */
   scope_expectation: string[];
   template: RoleTemplateLink | null;
+  /**
+   * Nav item key => 'visible' | 'hidden' (User-review remediation, Batch 02, item I). UX
+   * policy only — a key absent from this map means "inherit" (the existing permission
+   * gate alone decides). Never widens what `AuthorizationGateway` actually permits.
+   */
+  navigation_overrides: Record<string, 'visible' | 'hidden'>;
 };
 
 export type RoleAssignedUser = {
   id: number;
   name: string;
   email: string;
-  status: string;
+  username: string | null;
+  status: UserLifecycleStatus;
+  status_label: string;
 };
 
 export type RoleDetail = RoleSummary & {
@@ -84,6 +93,9 @@ export type PermissionEntry = {
   module_label_ar: string;
   module_label_en: string;
   resource: string;
+  /** The resource's own business name (e.g. "Orders") — User-review remediation, item H. */
+  resource_label_ar: string;
+  resource_label_en: string;
   action: string;
   label_ar: string;
   label_en: string;

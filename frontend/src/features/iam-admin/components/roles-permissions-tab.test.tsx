@@ -1,3 +1,4 @@
+/// <reference types="@testing-library/jest-dom/vitest" />
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -73,6 +74,10 @@ vi.mock('@/features/iam-admin/services/roles-service', () => ({
     archive: mockRoleArchive,
     restore: mockRoleRestore,
     remove: mockRoleRemove,
+    // Set up by RoleNavigationSettings (role-detail-drawer.tsx's Navigation tab) whenever a
+    // non-system role's detail is rendered — not exercised by name below, but a real
+    // function here rather than undefined keeps the mutation hook safe to instantiate.
+    updateNavigation: vi.fn(),
   },
   permissionsService: { catalog: mockPermissionCatalog },
 }));
@@ -96,6 +101,10 @@ function role(overrides: Partial<RoleSummary> = {}): RoleSummary {
     editable: false,
     scope_expectation: [],
     template: { key: 'cashier', name: 'Cashier', is_system: true, status: 'published' },
+    // User-review remediation (Batch 02, item I): `navigation_overrides` is a new required
+    // field the role-detail Navigation tab reads — an empty map reproduces "inherit
+    // everything", the correct default for a role this fixture never configured otherwise.
+    navigation_overrides: {},
     ...overrides,
   };
 }
@@ -122,6 +131,7 @@ const CATALOG: PermissionCatalog = {
   groups: [
     {
       module: 'pos',
+      // eslint-disable-next-line ecos-i18n/no-arabic-literals -- mock API fixture value (pre-existing, predates this task), never rendered through i18n
       label_ar: 'نقاط البيع',
       label_en: 'Point of Sale',
       sort: 1,
@@ -131,10 +141,17 @@ const CATALOG: PermissionCatalog = {
         {
           name: 'pos.terminal.view',
           module: 'pos',
+          // eslint-disable-next-line ecos-i18n/no-arabic-literals -- mock API fixture value (pre-existing, predates this task), never rendered through i18n
           module_label_ar: 'نقاط البيع',
           module_label_en: 'Point of Sale',
           resource: 'pos.terminal',
+          // User-review remediation (Batch 02, item H): new required fields — see
+          // template-detail-drawer.test.tsx's identical fixture for the full rationale.
+          // eslint-disable-next-line ecos-i18n/no-arabic-literals -- mock API fixture value (resource business name), never rendered through i18n
+          resource_label_ar: 'الطرفية',
+          resource_label_en: 'Terminal',
           action: 'view',
+          // eslint-disable-next-line ecos-i18n/no-arabic-literals -- mock API fixture value (pre-existing, predates this task), never rendered through i18n
           label_ar: 'عرض نقطة البيع',
           label_en: 'View POS terminal',
           description_ar: '',
@@ -143,10 +160,15 @@ const CATALOG: PermissionCatalog = {
         {
           name: 'pos.terminal.operate',
           module: 'pos',
+          // eslint-disable-next-line ecos-i18n/no-arabic-literals -- mock API fixture value (pre-existing, predates this task), never rendered through i18n
           module_label_ar: 'نقاط البيع',
           module_label_en: 'Point of Sale',
           resource: 'pos.terminal',
+          // eslint-disable-next-line ecos-i18n/no-arabic-literals -- mock API fixture value (resource business name), never rendered through i18n
+          resource_label_ar: 'الطرفية',
+          resource_label_en: 'Terminal',
           action: 'operate',
+          // eslint-disable-next-line ecos-i18n/no-arabic-literals -- mock API fixture value (pre-existing, predates this task), never rendered through i18n
           label_ar: 'تشغيل نقطة البيع',
           label_en: 'Operate POS terminal',
           description_ar: '',
@@ -201,7 +223,9 @@ describe('RolesPermissionsTab', () => {
     // Permissions is the drawer's default tab — the matrix's own two checkboxes are the
     // proof the compiled grant set actually reached the UI (labels come from the mocked
     // catalog above, not the raw canonical keys, matching §13's redesign).
+    // eslint-disable-next-line ecos-i18n/no-arabic-literals -- asserting on the mock fixture value above (pre-existing, predates this task), not a hardcoded UI string
     expect(await screen.findByText('عرض نقطة البيع')).toBeInTheDocument();
+    // eslint-disable-next-line ecos-i18n/no-arabic-literals -- asserting on the mock fixture value above (pre-existing, predates this task), not a hardcoded UI string
     expect(screen.getByText('تشغيل نقطة البيع')).toBeInTheDocument();
   });
 
@@ -392,6 +416,7 @@ describe('RolesPermissionsTab', () => {
 
     await user.click(await screen.findByText('roles.tabs.permissions'));
 
+    // eslint-disable-next-line ecos-i18n/no-arabic-literals -- asserting on the mock fixture value above (pre-existing, predates this task), not a hardcoded UI string
     expect(await screen.findByText('عرض نقطة البيع')).toBeInTheDocument();
     // Raw canonical key still visible as SECONDARY technical detail (§13), not the leading label.
     expect(screen.getByText('pos.terminal.view')).toBeInTheDocument();

@@ -154,8 +154,18 @@ final class UserController extends Controller
         $validated = $request->validated();
         $actorId = $request->user()?->getKey();
 
-        $user = DB::transaction(function () use ($validated, $companyId, $actorId, $request): User {
-            $user = $this->identity->createDraft($validated, $companyId, $actorId);
+        // User-review remediation (Batch 02, item B): the administrator no longer invents an
+        // initial password — omit `password` entirely (the normal path) and one is generated
+        // securely, server-side, unless a caller explicitly supplied its own (kept for the
+        // rare integration that still wants to set one itself; never surfaced in the UI).
+        $hasExplicitPassword = isset($validated['password']) && is_string($validated['password']) && $validated['password'] !== '';
+        if (! $hasExplicitPassword) {
+            $validated['auto_generate_password'] = true;
+        }
+
+        $generatedPassword = null;
+        $user = DB::transaction(function () use ($validated, $companyId, $actorId, $request, &$generatedPassword): User {
+            $user = $this->identity->createDraft($validated, $companyId, $actorId, $generatedPassword);
 
             $templates = array_values(array_filter((array) ($validated['role_templates'] ?? [])));
             $primary = $validated['primary_role_template'] ?? null;
@@ -184,7 +194,14 @@ final class UserController extends Controller
             return $user;
         });
 
-        return $this->created($this->serialize($user->refresh(), detailed: true));
+        $payload = $this->serialize($user->refresh(), detailed: true);
+        if ($generatedPassword !== null) {
+            // Shown to the authorized creator exactly once, in this single create response.
+            // Never persisted in plaintext, never logged, never returned by any read endpoint.
+            $payload['generated_password'] = $generatedPassword;
+        }
+
+        return $this->created($payload);
     }
 
     public function update(UpdateUserRequest $request, User $user): JsonResponse
@@ -412,6 +429,25 @@ final class UserController extends Controller
             'last_login_at' => $user->last_login_at?->toIso8601String(),
             'last_activity_at' => $user->last_activity_at?->toIso8601String(),
             'trashed' => $user->trashed(),
+
+            // User-review remediation (Batch 02, item G): the administrator must see assigned
+            // roles directly on the Users list, not only after opening the detail drawer.
+            // `templateAssignments.template` is already eager-loaded by UserRepository::query()
+            // for every list call, so reading the loaded relation here (never a fresh query)
+            // costs nothing extra per row.
+            'roles' => $user->relationLoaded('templateAssignments')
+                ? $user->templateAssignments->map(function ($a) {
+                    $key = $a->template?->key;
+                    $display = $key !== null ? BusinessRoleCatalog::displayFor($key) : null;
+
+                    return [
+                        'key' => $key,
+                        'name' => $a->template?->name,
+                        'name_ar' => $display['name_ar'] ?? $a->template?->name,
+                        'is_primary' => (bool) $a->is_primary,
+                    ];
+                })->values()->all()
+                : [],
 
             // §10 — lifecycle capability flags, read from the canonical UserStatus authority
             // so the UI cannot drift from what the backend will actually allow. This is what
