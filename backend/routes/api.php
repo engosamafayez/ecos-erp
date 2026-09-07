@@ -174,6 +174,8 @@ use Modules\Logistics\Distribution\Presentation\Http\Controllers\DistributionPla
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\DistributionWindowController;
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\DistributionZoneController;
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\DriverDaySettlementController;
+use Modules\Logistics\Distribution\Presentation\Http\Controllers\SettlementController;
+use Modules\Logistics\Distribution\Presentation\Http\Controllers\CashHandoverController;
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\DriverLoadingController;
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\DriverReportsController;
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\DriverRuntimeController;
@@ -2133,7 +2135,43 @@ Route::middleware('auth:sanctum')->prefix('logistics/distribution')->group(funct
 
     // Returns (product + custody, unified)
 
-    // Settlement
+    // ── Settlement (RESTORED — see ROUTES-PATCH-NOTES.md §1. Route registrations for
+    // this controller were missing from canonical; the controller itself, the
+    // frontend TripSettlementTab, and its service/hook were all already correct and
+    // unmodified by this task) ──────────────────────────────────────────────────
+    Route::get('/trips/{tripId}/payments', [SettlementController::class, 'payments'])
+        ->middleware('permission:logistics.distribution.view');
+    Route::post('/trips/{tripId}/stops/{stopId}/payments', [SettlementController::class, 'recordPayment'])
+        ->middleware('permission:logistics.distribution.update');
+    Route::patch('/trips/{tripId}/payments/{paymentId}/verify', [SettlementController::class, 'verifyPayment'])
+        ->middleware('permission:logistics.distribution.update');
+    Route::patch('/trips/{tripId}/payments/{paymentId}/reject', [SettlementController::class, 'rejectPayment'])
+        ->middleware('permission:logistics.distribution.update');
+
+    Route::get('/trips/{tripId}/settlement', [SettlementController::class, 'show'])
+        ->middleware('permission:logistics.distribution.view');
+    Route::post('/trips/{tripId}/settlement', [SettlementController::class, 'open'])
+        ->middleware('permission:logistics.distribution.update');
+    Route::patch('/trips/{tripId}/settlement/submit-cash', [SettlementController::class, 'submitCash'])
+        ->middleware('permission:logistics.distribution.update');
+    Route::patch('/trips/{tripId}/settlement/reconcile', [SettlementController::class, 'reconcile'])
+        ->middleware('permission:logistics.distribution.update');
+    Route::patch('/trips/{tripId}/settlement/dispute', [SettlementController::class, 'dispute'])
+        ->middleware('permission:logistics.distribution.update');
+    Route::patch('/trips/{tripId}/settlement/finalize', [SettlementController::class, 'finalize'])
+        ->middleware('permission:logistics.distribution.update');
+    Route::get('/trips/{tripId}/financial-summary', [SettlementController::class, 'summary'])
+        ->middleware('permission:logistics.distribution.view');
+
+    // ── Cash Handover (NEW — TASK-ECOS-DRIVER-SETTLEMENT-TREASURY-FINAL-
+    // IMPLEMENTATION-002). Treasury's second-actor physical-cash confirmation.
+    // Same permission pair as every other Trip mutation/read in this file
+    // (comment at the pre-existing `finalizeGroup` route: "the permission every
+    // existing Trip mutation already carries"). No new permission created. ──────
+    Route::get('/trips/{tripId}/cash-handover', [CashHandoverController::class, 'show'])
+        ->middleware('permission:logistics.distribution.view');
+    Route::post('/trips/{tripId}/cash-handover/confirm', [CashHandoverController::class, 'confirm'])
+        ->middleware('permission:logistics.distribution.update');
 
     // Per-driver / per-day settlement rollup (read-only aggregation over the trip
     // settlement engine — TASK-OPERATIONS-DRIVER-DAY-SETTLEMENT-UI-001). No new engine,

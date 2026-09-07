@@ -111,4 +111,47 @@ class DistributionException extends RuntimeException
     {
         return new self('This settlement is finalized and can no longer be changed.');
     }
+
+    // ── Cash Handover (TASK-ECOS-DRIVER-SETTLEMENT-TREASURY-FINAL-IMPLEMENTATION-002) ──
+
+    public static function cashHandoverAmountInvalid(): self
+    {
+        return new self('The physically received cash amount must be zero or greater.');
+    }
+
+    public static function cashHandoverTripMissing(): self
+    {
+        return new self('This settlement has no trip to hand over cash against.');
+    }
+
+    /**
+     * Covers every reason a caller-supplied cash account is unusable: it does not
+     * exist, belongs to another company, or is inactive. Reported identically
+     * (never distinguished) so a foreign account cannot be probed for existence —
+     * the same fail-closed principle SettlementController::resolveTrip() documents.
+     */
+    public static function cashHandoverAccountInvalid(): self
+    {
+        return new self('The selected cash account does not exist, is inactive, or is not available to this company.');
+    }
+
+    /**
+     * Raised when a second confirmation attempt for an already-confirmed settlement
+     * supplies a DIFFERENT received amount than the one already on record. A
+     * repeat with the SAME amount is not an error — see
+     * CashHandoverService::assertSameOrRefuse() — this is only for a genuine conflict.
+     */
+    public static function cashHandoverAlreadyConfirmed(): self
+    {
+        return new self(
+            'A cash handover has already been confirmed for this settlement with a different amount. '
+            .'A confirmed handover cannot be corrected in place — raise a reversal through Finance '
+            .'if the confirmed amount was wrong.',
+        );
+    }
+
+    public static function cashHandoverRaceUnresolved(): self
+    {
+        return new self('A concurrent cash handover confirmation could not be reconciled. Retry the request.');
+    }
 }

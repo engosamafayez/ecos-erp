@@ -1,0 +1,25 @@
+{
+  "_instructions": "Merge the object at 'trips.settlement.cashHandover' below into the EXISTING frontend/src/i18n/locales/ar/logistics.json, under the existing 'trips.settlement' object, keeping EN/AR key parity (this codebase enforces that parity as a quality gate — see prior task reports). Do not add the '_instructions' key itself.",
+  "trips": {
+    "settlement": {
+      "cashHandover": {
+        "title": "تسليم النقدية للخزينة",
+        "description": "قم بعد المبلغ النقدي الفعلي المستلم من السائق وأكّد التسليم. سيتم ترحيل هذا المبلغ إلى حساب الخزينة النقدي الخاص بالشركة.",
+        "expectedCash": "النقدية المتوقعة (النظام)",
+        "driverDeclaredCash": "النقدية المصرّح بها من السائق",
+        "receivedCashInput": "النقدية المستلمة فعليًا",
+        "receivedCash": "النقدية المستلمة",
+        "difference": "الفرق",
+        "previewDifference": "معاينة الفرق",
+        "destinationAccount": "حساب الخزينة النقدي المستلم",
+        "selectAccount": "اختر حساب الخزينة",
+        "notes": "ملاحظات (اختياري)",
+        "confirm": "تأكيد التسليم",
+        "confirmed": "تم التأكيد",
+        "confirmedAt": "وقت التأكيد",
+        "confirmFailed": "تعذّر تأكيد التسليم. تحقق من المبلغ والحساب المحدد وصلاحياتك، ثم حاول مرة أخرى.",
+        "notAvailable": "غير متاح"
+      }
+    }
+  }
+}

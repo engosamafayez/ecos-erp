@@ -22,6 +22,7 @@ import {
   useTripSettlement,
 } from '../hooks/use-trip-settlement';
 import type { SettlementStatus } from '../types/trip-settlement';
+import { CashHandoverPanel } from './cash-handover-panel';
 
 type LogisticsLabel = ($: typeof enLogistics) => string;
 
@@ -51,13 +52,20 @@ function Stat({ label, value }: { label: string; value: ReactNode }) {
 }
 
 /**
- * Settlement — lifecycle, driver cash, reconciliation, disputes and approval.
+ * Settlement — lifecycle, driver cash, Treasury cash handover, reconciliation,
+ * disputes and approval.
  *
  * Every figure shown is computed by the backend from the payment ledger. The
  * discrepancy in particular is the domain's, not a subtraction done here: the
  * settlement decides what counts toward cash expected, and re-deriving it in
  * the browser would produce a second number that disagrees under the exact
  * conditions that matter.
+ *
+ * CashHandoverPanel (TASK-ECOS-DRIVER-SETTLEMENT-TREASURY-FINAL-
+ * IMPLEMENTATION-002) is the only addition in this file — inserted between
+ * the driver's declaration and the reconcile/dispute/finalize actions, since
+ * Treasury confirming physical receipt is the operational step that belongs
+ * between those two. No existing section below was restructured or removed.
  */
 export function TripSettlementTab({ tripId }: { tripId: string }) {
   const { t, i18n } = useTranslation('logistics');
@@ -296,6 +304,12 @@ export function TripSettlementTab({ tripId }: { tripId: string }) {
           )}
         </section>
       )}
+
+      {/* NEW — TASK-ECOS-DRIVER-SETTLEMENT-TREASURY-FINAL-IMPLEMENTATION-002.
+          Treasury's second-actor physical cash confirmation. Deliberately its own
+          section, after the driver's declaration and before reconcile/dispute/
+          finalize — the operational order this money actually moves in. */}
+      <CashHandoverPanel tripId={tripId} />
 
       {canWrite && !settlement.is_final && (
         <section className="flex flex-col gap-3 rounded-md border p-3">
