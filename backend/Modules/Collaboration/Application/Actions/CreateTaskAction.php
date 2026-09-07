@@ -15,6 +15,7 @@ use Modules\Collaboration\Application\DTO\CreateTaskData;
 use Modules\Collaboration\Application\Events\TaskBroadcast;
 use Modules\Collaboration\Application\Notifications\TaskAssignedNotification;
 use Modules\Collaboration\Domain\Enums\MessageType;
+use Modules\Collaboration\Domain\Enums\TaskStatus;
 use Modules\Collaboration\Domain\Models\ConversationParticipant;
 use Modules\Collaboration\Domain\Models\InternalTask;
 use Modules\Collaboration\Domain\Models\Message;
@@ -103,6 +104,13 @@ final class CreateTaskAction extends BaseAction
                 'assignee_user_id' => $assignee->id,
                 'team_id' => $teamId,
                 'priority' => $data->priority,
+                // Matches the column's DB default ('todo') explicitly: create()
+                // only populates the in-memory model from what is passed here —
+                // relying on the DB-level default left $task->status null on the
+                // freshly-created instance (no DB round-trip refresh happens
+                // before the controller serializes it), crashing TaskResource's
+                // `$this->status->value` on every task creation.
+                'status' => TaskStatus::Todo,
                 'due_at' => $data->dueAt,
                 'source_conversation_id' => $sourceConversationId,
                 'source_message_id' => $sourceMessageId,
