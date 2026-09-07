@@ -232,8 +232,19 @@ final class CustomerAuthorityConsolidationTest extends TestCase
 
     // ═══ 7. CRM SATELLITES (1) ════════════════════════════════════════════════════
 
-    public function test_crm_module_tree_has_no_reference_to_the_legacy_sales_class(): void
+    public function test_crm_module_tree_has_no_reference_to_the_legacy_sales_customer_class(): void
     {
+        // TASK-ECOS-CRM-FINAL-SOURCE-CLOSURE-CURRENT-CANONICAL-RECONCILIATION-005 —
+        // narrowed to the specific legacy Customer class this test actually guards
+        // against, not the whole Modules\Sales\Customers namespace. Gate B
+        // (TASK-ECOS-CRM-CONTINUATION-AND-CUSTOMER360-GATE-B-002) deliberately
+        // brought in BlockedCustomerPolicy/CustomerBlock/PhoneNormalizer — still
+        // owned by Sales\Customers, reused rather than duplicated — into both
+        // Crm\Customers\CustomerController and Crm\Portfolio\PortfolioService; that
+        // is the same ratified, documented reuse CustomerFoundationTest's own
+        // test_customer_domain_imports_no_operational_module already accounts for
+        // (see its docblock). Neither file references the legacy Customer *class*
+        // this test is actually about.
         $dir = base_path('Modules/Crm');
         $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir));
 
@@ -242,8 +253,13 @@ final class CustomerAuthorityConsolidationTest extends TestCase
                 continue;
             }
             $source = (string) file_get_contents($file->getPathname());
+            // Trailing ";" boundary: "Domain\Models\Customer" is also a literal
+            // prefix of "Domain\Models\CustomerBlock" (Gate B's own ratified
+            // import, see the docblock above) — a bare substring check would
+            // false-positive on it. The legacy class import always ends the
+            // `use` statement right after "Customer", never mid-identifier.
             $this->assertStringNotContainsString(
-                'Modules\\Sales\\Customers', $source,
+                'Modules\\Sales\\Customers\\Domain\\Models\\Customer;', $source,
                 basename($file->getPathname()).' — every CRM satellite (Sales/Leads, Engagement timeline, Loyalty) must already reference only the canonical Crm Customer class.',
             );
         }

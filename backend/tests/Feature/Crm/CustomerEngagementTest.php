@@ -19,6 +19,8 @@ use Modules\Crm\Engagement\Domain\Services\CustomerJourneyService;
 use Modules\Crm\Engagement\Domain\Services\TaskService;
 use Modules\Crm\Engagement\Domain\Services\TimelineService;
 use Modules\Organization\Companies\Domain\Models\Company;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use Tests\TestCase;
 
 /**
@@ -110,7 +112,7 @@ class CustomerEngagementTest extends TestCase
     public function test_an_order_is_read_into_the_timeline(): void
     {
         DB::table('orders')->insert([
-            'id' => (string) Str::uuid(), 'customer_id' => $this->cid(), 'order_number' => 'ORD-'.substr((string) Str::uuid(), 0, 8),
+            'id' => (string) Str::uuid(), 'customer_id' => $this->cid(), 'company_id' => $this->companyId, 'order_number' => 'ORD-'.substr((string) Str::uuid(), 0, 8),
             'order_date' => Carbon::now()->subDay()->toDateString(), 'status' => 'delivered', 'subtotal' => 100, 'total' => 100,
             'created_at' => Carbon::now()->subDay(), 'updated_at' => Carbon::now()->subDay(),
         ]);
@@ -166,7 +168,7 @@ class CustomerEngagementTest extends TestCase
     {
         app(ActivityService::class)->log($this->companyId, $this->cid(), ActivityType::Call, ['subject' => 'c', 'occurred_at' => Carbon::now()->subDays(5)]);
         DB::table('orders')->insert([
-            'id' => (string) Str::uuid(), 'customer_id' => $this->cid(), 'order_number' => 'ORD-'.substr((string) Str::uuid(), 0, 8),
+            'id' => (string) Str::uuid(), 'customer_id' => $this->cid(), 'company_id' => $this->companyId, 'order_number' => 'ORD-'.substr((string) Str::uuid(), 0, 8),
             'order_date' => Carbon::now()->subDays(3)->toDateString(), 'status' => 'delivered', 'subtotal' => 50, 'total' => 50,
             'created_at' => Carbon::now()->subDays(3), 'updated_at' => Carbon::now()->subDays(3),
         ]);
@@ -198,7 +200,7 @@ class CustomerEngagementTest extends TestCase
     public function test_engagement_module_reads_but_does_not_import_other_modules(): void
     {
         $dir = base_path('Modules/Crm/Engagement');
-        $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dir));
+        $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir));
 
         foreach ($it as $file) {
             if (! $file->isFile() || $file->getExtension() !== 'php') {
