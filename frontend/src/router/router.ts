@@ -148,6 +148,7 @@ import { PerformanceTrendsPage } from '@/features/marketing/intelligence/pages/p
 import { BudgetAnalysisPage } from '@/features/marketing/intelligence/pages/budget-analysis-page';
 import { ReportsPage } from '@/features/marketing/intelligence/pages/reports-page';
 import { MarketingSettingsPage } from '@/features/marketing/pages/marketing-settings-page';
+import { MyPreferencesPage } from '@/features/notifications/pages/my-preferences-page';
 import { AutomationWorkspacePage } from '@/features/marketing/automation/pages/automation-workspace-page';
 import { WorkflowBuilderPage } from '@/features/marketing/automation/pages/workflow-builder-page';
 import { AudienceSegmentsPage } from '@/features/marketing/automation/pages/audience-segments-page';
@@ -641,6 +642,14 @@ export const router = createBrowserRouter(
             // placeholder while the real workspace lived elsewhere. Redirect so
             // the existing link resolves instead of dead-ending.
             { path: ROUTES.settings, loader: () => redirect(ROUTES.configurationOs) },
+            // TASK-ECOS-NOTIFICATIONS-USER-REVIEW-VISIBILITY-REMEDIATION-009 — personal,
+            // ownership-scoped (no module/permission gate: every authenticated user may
+            // reach their own preferences, matching /me/preferences/{category}'s own
+            // auth:sanctum-only backend contract). Deliberately not nested under
+            // moduleRoutes/Administration, which would inherit that module's iam/
+            // organization/configuration permission gate and hide this from exactly the
+            // ordinary users who need it.
+            { path: ROUTES.myPreferences, Component: MyPreferencesPage },
             { path: '*', Component: NotFoundPage },
           ],
         },
