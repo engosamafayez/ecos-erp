@@ -16,11 +16,11 @@ use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Orders\Domain\Services\PaymentFulfillmentGate;
 use Modules\Commerce\Shipping\Domain\Services\ShippingValidationService;
 use Modules\Commerce\Synchronization\Application\Services\WooCommerceOrderStatusTranslator;
+use Modules\Crm\Customers\Domain\Models\Customer;
 use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\Logistics\Geography\Domain\Models\City;
 use Modules\Logistics\Geography\Domain\Models\Governorate;
 use Modules\Organization\Brands\Domain\Models\Brand;
-use Modules\Sales\Customers\Domain\Models\Customer;
 use Modules\Sales\Customers\Domain\Services\BlockedCustomerPolicy;
 use Modules\Sales\Customers\Domain\Services\PhoneNormalizer;
 use RuntimeException;
@@ -341,6 +341,23 @@ final class WooCommerceOrderImporter
         });
 
         return [$customer, true];
+    }
+
+    private function nextCustomerCode(): string
+    {
+        $last = Customer::query()
+            ->withTrashed()
+            ->where('code', 'like', 'CUS-%')
+            ->orderByRaw("CAST(REPLACE(code, 'CUS-', '') AS UNSIGNED) DESC")
+            ->value('code');
+
+        if ($last === null) {
+            return 'CUS-001';
+        }
+
+        $current = (int) str_replace('CUS-', '', (string) $last);
+
+        return 'CUS-'.str_pad((string) ($current + 1), 3, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -701,22 +718,5 @@ final class WooCommerceOrderImporter
         ]);
 
         return OrderStatus::OnHold->value;
-    }
-
-    private function nextCustomerCode(): string
-    {
-        $last = Customer::query()
-            ->withTrashed()
-            ->where('code', 'like', 'CUS-%')
-            ->orderByRaw("CAST(REPLACE(code, 'CUS-', '') AS UNSIGNED) DESC")
-            ->value('code');
-
-        if ($last === null) {
-            return 'CUS-001';
-        }
-
-        $current = (int) str_replace('CUS-', '', (string) $last);
-
-        return 'CUS-'.str_pad((string) ($current + 1), 3, '0', STR_PAD_LEFT);
     }
 }

@@ -360,6 +360,10 @@ return [
             'inventory.categories' => ['view'],
             'inventory.products' => ['view'],
             'crm.customers' => ['view', 'create', 'update', 'delete', 'block', 'unblock', 'override_block'],
+            // TASK-ECOS-CRM-OPERATIONAL-WIRING-IAM-AND-SOURCE-HARDENING-004 — this role
+            // already owns full crm.customers write access; CRM follow-up/activity work
+            // on those same customer records is the same operational scope, not a new one.
+            'crm.engagement' => ['view', 'log', 'task.manage'],
             'sales.channels' => ['view'],
             'sales.orders' => ['view', 'create', 'update', 'fulfill', 'override_price', 'proof_view', 'proof_upload'],
             'sales.fulfillments' => ['view', 'create', 'update'],
@@ -486,6 +490,10 @@ return [
             'inventory.products' => ['view'],
             'inventory.categories' => ['view'],
             'crm.customers' => ['view', 'create', 'update', 'delete', 'block', 'unblock', 'override_block'],
+            // TASK-ECOS-CRM-OPERATIONAL-WIRING-IAM-AND-SOURCE-HARDENING-004 — this role
+            // already owns full crm.customers write access; CRM follow-up/activity work
+            // on those same customer records is the same operational scope, not a new one.
+            'crm.engagement' => ['view', 'log', 'task.manage'],
             'sales.channels' => ['view', 'create', 'update', 'delete', 'sync'],
             'sales.orders' => ['view', 'create', 'update', 'delete', 'fulfill', 'override_price', 'proof_view', 'proof_upload'],
             'sales.fulfillments' => ['view', 'create', 'update', 'delete'],
@@ -500,6 +508,10 @@ return [
             // No 'override_block' here (§35/§36): overriding a fulfillment hold is a
             // supervisory exception, reserved for company-admin/sales/sales-manager.
             'crm.customers' => ['view', 'create', 'update', 'block', 'unblock'],
+            // TASK-ECOS-CRM-OPERATIONAL-WIRING-IAM-AND-SOURCE-HARDENING-004 — this role
+            // already owns full crm.customers write access; CRM follow-up/activity work
+            // on those same customer records is the same operational scope, not a new one.
+            'crm.engagement' => ['view', 'log', 'task.manage'],
             'sales.channels' => ['view'],
             'sales.orders' => ['view', 'create', 'update', 'fulfill', 'proof_view', 'proof_upload'],
             'sales.fulfillments' => ['view', 'create'],
@@ -509,6 +521,11 @@ return [
         'customer-service' => [
             'inventory.products' => ['view'],
             'crm.customers' => ['view', 'create', 'update', 'block', 'unblock'],
+            // TASK-ECOS-CRM-OPERATIONAL-WIRING-IAM-AND-SOURCE-HARDENING-004 — this role
+            // already owns crm.customers write access plus the customer-communication
+            // inbox (cep.inbox/omnichannel.inbox below); CRM follow-up/activity work on
+            // those same customers is the same operational scope, not a new one.
+            'crm.engagement' => ['view', 'log', 'task.manage'],
             'sales.orders' => ['view', 'update'],
             'sales.fulfillments' => ['view'],
             'cep.inbox' => ['view', 'manage'],

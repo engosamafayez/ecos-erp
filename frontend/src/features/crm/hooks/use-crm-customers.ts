@@ -135,3 +135,73 @@ export function useCrmCustomerIntelligenceQuery(id: string | null, enabled: bool
     enabled: Boolean(id) && enabled,
   });
 }
+
+// ── Follow-ups / tasks (TASK-ECOS-CRM-CUSTOMER-PORTFOLIO-AND-FOLLOWUP-003) ────
+
+export function useCrmCustomerTasksQuery(id: string | null, enabled: boolean) {
+  const companyId = useCompanyScope();
+
+  return useQuery({
+    queryKey: ['company', companyId, CRM_CUSTOMERS_KEY, id, 'tasks'],
+    queryFn: () => crmCustomersService.tasks(id as string),
+    enabled: Boolean(id) && enabled,
+  });
+}
+
+function useInvalidateCustomerAndPortfolio(companyId: string, customerId: string) {
+  const queryClient = useQueryClient();
+
+  return () => {
+    void queryClient.invalidateQueries({
+      queryKey: ['company', companyId, CRM_CUSTOMERS_KEY, customerId],
+    });
+    void queryClient.invalidateQueries({ queryKey: ['company', companyId, 'crm-portfolio'] });
+  };
+}
+
+export function useCreateCrmTask(customerId: string) {
+  const companyId = useCompanyScope();
+  const invalidate = useInvalidateCustomerAndPortfolio(companyId, customerId);
+
+  return useMutation({
+    mutationFn: (payload: Parameters<typeof crmCustomersService.createTask>[1]) =>
+      crmCustomersService.createTask(customerId, payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useCompleteCrmTask(customerId: string) {
+  const companyId = useCompanyScope();
+  const invalidate = useInvalidateCustomerAndPortfolio(companyId, customerId);
+
+  return useMutation({
+    mutationFn: (taskId: string) => crmCustomersService.completeTask(customerId, taskId),
+    onSuccess: invalidate,
+  });
+}
+
+export function useCancelCrmTask(customerId: string) {
+  const companyId = useCompanyScope();
+  const invalidate = useInvalidateCustomerAndPortfolio(companyId, customerId);
+
+  return useMutation({
+    mutationFn: (taskId: string) => crmCustomersService.cancelTask(customerId, taskId),
+    onSuccess: invalidate,
+  });
+}
+
+export function useRescheduleCrmTask(customerId: string) {
+  const companyId = useCompanyScope();
+  const invalidate = useInvalidateCustomerAndPortfolio(companyId, customerId);
+
+  return useMutation({
+    mutationFn: ({
+      taskId,
+      payload,
+    }: {
+      taskId: string;
+      payload: { due_at?: string | null; scheduled_at?: string | null };
+    }) => crmCustomersService.rescheduleTask(customerId, taskId, payload),
+    onSuccess: invalidate,
+  });
+}

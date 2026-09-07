@@ -132,7 +132,8 @@
       "orders": "الطلبات",
       "loyalty": "الولاء",
       "permissions": "الصلاحيات",
-      "products": "المنتجات المشتراة"
+      "products": "المنتجات المشتراة",
+      "crm": "إدارة علاقات العملاء"
     },
     "overview": {
       "code": "الكود",
@@ -330,5 +331,68 @@
     "refresh": "تحديث",
     "loading": "جارٍ التحميل…",
     "empty": "لا توجد بيانات لهذه الفترة"
+  },
+  "portfolio": {
+    "title": "محفظة العملاء",
+    "subtitle": "كل عميل، مسؤول علاقات العملاء الخاص به، ومتابعته التالية",
+    "columns": {
+      "customer": "العميل",
+      "owner": "المسؤول",
+      "nextFollowUp": "المتابعة التالية",
+      "openCount": "مفتوحة",
+      "blocked": "محظور",
+      "balance": "الرصيد",
+      "orders": "الطلبات",
+      "lastEngagement": "آخر تفاعل"
+    },
+    "filters": {
+      "unassignedOnly": "غير مُسند فقط",
+      "blockedState": "حالة الحظر",
+      "allBlocked": "كل العملاء",
+      "notBlocked": "غير محظور",
+      "dueState": "حالة الاستحقاق",
+      "allQueues": "كل حالات الاستحقاق",
+      "priority": "الأولوية",
+      "allPriorities": "كل الأولويات"
+    },
+    "owner": {
+      "unassigned": "غير مُسند",
+      "unassign": "إلغاء الإسناد",
+      "assign": "إسناد",
+      "idPlaceholder": "معرّف المستخدم"
+    },
+    "queue": {
+      "overdue": "متأخر",
+      "dueToday": "مستحق اليوم",
+      "upcoming": "قادم",
+      "unscheduled": "غير مجدول"
+    },
+    "priority": {
+      "low": "منخفضة",
+      "normal": "عادية",
+      "high": "مرتفعة",
+      "urgent": "عاجلة"
+    },
+    "followUp": {
+      "none": "لا توجد متابعة مفتوحة"
+    },
+    "empty": {
+      "title": "لا يوجد عملاء في المحفظة",
+      "body": "سيظهر العملاء هنا عند إنشائهم."
+    }
+  },
+  "followUp": {
+    "owner": "مسؤول علاقات العملاء",
+    "balance": "رصيد الحسابات",
+    "lastEngagement": "آخر تفاعل",
+    "openFollowUps": "المتابعات المفتوحة",
+    "loading": "جارٍ تحميل المتابعات…",
+    "none": "لا توجد متابعات مفتوحة",
+    "complete": "إتمام",
+    "cancel": "إلغاء",
+    "newTitle": "متابعة جديدة",
+    "newDue": "الاستحقاق",
+    "create": "إضافة",
+    "unknownPriority": "قيمة تاريخية خارج مجموعة الأولويات المعتمدة حاليًا"
   }
 }

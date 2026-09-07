@@ -520,6 +520,7 @@ const ALL_MODULES: AppModule[] = [
     defaultPath: ROUTES.crmCustomers,
     items: [
       { key: 'crm-customers', path: ROUTES.crmCustomers, icon: UsersIcon, permissions: GATE['crm-customers'] },
+      { key: 'crm-portfolio', path: ROUTES.crmPortfolio, icon: ListChecks },
       { key: 'crm-executive', path: ROUTES.crmExecutive, icon: BarChart3, permissions: GATE['crm-executive'] },
     ],
   },

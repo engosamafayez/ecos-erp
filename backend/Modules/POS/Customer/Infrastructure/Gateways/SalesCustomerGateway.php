@@ -6,10 +6,10 @@ namespace Modules\POS\Customer\Infrastructure\Gateways;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use Modules\Crm\Customers\Domain\Models\Customer;
 use Modules\POS\Customer\Domain\Contracts\CustomerGatewayInterface;
 use Modules\POS\Customer\Domain\Exceptions\CustomerNotFoundException;
 use Modules\POS\Customer\Domain\ValueObjects\CustomerSnapshot;
-use Modules\Sales\Customers\Domain\Models\Customer;
 
 final class SalesCustomerGateway implements CustomerGatewayInterface
 {

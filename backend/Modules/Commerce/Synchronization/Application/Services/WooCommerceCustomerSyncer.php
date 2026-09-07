@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Commerce\Synchronization\Application\Services;
 
-use Modules\Sales\Customers\Domain\Models\Customer;
+use Modules\Crm\Customers\Domain\Models\Customer;
 
 /**
  * Handles inbound WooCommerce → ECOS customer synchronization.

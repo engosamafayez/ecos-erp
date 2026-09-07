@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { usePermission } from '@/features/authorization';
 import { CrmCustomerAnalyticsTab } from '@/features/crm/components/crm-customer-analytics-tab';
+import { CrmCustomerFollowUpTab } from '@/features/crm/components/crm-customer-followup-tab';
 import {
   useCrmCustomerActivitiesQuery,
   useCrmCustomerIntelligenceQuery,
@@ -80,7 +81,8 @@ type Props = {
   customerId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onEdit: (profile: CrmCustomerProfile) => void;
+  /** Omitted by consumers that only need the CRM/follow-up context (e.g. the Portfolio page). */
+  onEdit?: (profile: CrmCustomerProfile) => void;
 };
 
 // ── Small presentational pieces (module scope: never redeclared per render) ───
@@ -385,6 +387,21 @@ export function CrmCustomerDrawer({ customerId, open, onOpenChange, onEdit }: Pr
       label: t(($) => $.analytics.tab),
       content: <CrmCustomerAnalyticsTab data={intelligence} isLoading={intelligenceLoading} />,
     },
+    {
+      key: 'crm',
+      label: t(($) => $.drawer.tabs.crm),
+      badge: profile?.crm.open_follow_ups_count || undefined,
+      content:
+        profile && customerId ? (
+          <CrmCustomerFollowUpTab
+            customerId={customerId}
+            crm={profile.crm}
+            finance={profile.finance}
+            blocked={profile.blocked}
+            engagement={profile.engagement}
+          />
+        ) : null,
+    },
     // Named, with the exact contract each needs. A disabled tab that says what
     // is missing is honest; an empty one implies the data exists and failed to
     // load.
@@ -451,7 +468,7 @@ export function CrmCustomerDrawer({ customerId, open, onOpenChange, onEdit }: Pr
             {t(($) => $.drawer.close)}
           </Button>
           {/* Hidden without the permission rather than shown disabled. */}
-          {profile && can('crm.customers.update') && (
+          {profile && onEdit && can('crm.customers.update') && (
             <Button onClick={() => onEdit(profile)}>{t(($) => $.drawer.edit)}</Button>
           )}
         </div>

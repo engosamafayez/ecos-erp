@@ -25,6 +25,32 @@ final class CustomerLedgerService
     }
 
     /**
+     * Balances for many customers — ONE aggregate query, never one per row.
+     * Added for CRM Portfolio (TASK-ECOS-CRM-CUSTOMER-PORTFOLIO-AND-FOLLOWUP-003
+     * §13): a list surface must never call {@see self::balance()} per customer.
+     * A customer absent from the result has no ledger entries — treat as 0.0,
+     * matching balance()'s own SUM-of-nothing-is-zero behavior.
+     *
+     * @param  list<string>  $customerIds
+     * @return array<string, float> keyed by customer_id
+     */
+    public function balances(array $customerIds, string $companyId): array
+    {
+        if ($customerIds === []) {
+            return [];
+        }
+
+        return CustomerLedgerEntry::query()
+            ->where('company_id', $companyId)
+            ->whereIn('customer_id', $customerIds)
+            ->selectRaw('customer_id, SUM(amount) as balance')
+            ->groupBy('customer_id')
+            ->get()
+            ->mapWithKeys(fn ($row) => [(string) $row->customer_id => round((float) $row->balance, 4)])
+            ->all();
+    }
+
+    /**
      * The running transaction history for a customer: every entry in order, each
      * with the running balance after it. Optionally bounded to a date window.
      *
