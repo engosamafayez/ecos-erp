@@ -214,9 +214,19 @@
       "nameLabel": "Name",
       "add": "Add",
       "added": "Category added.",
+      "updated": "Category updated.",
       "deleted": "Category deleted.",
+      "archived": "Category archived.",
+      "restored": "Category restored.",
       "loading": "Loading categories…",
-      "empty": "No categories yet — add your first one above."
+      "empty": "No categories yet — add your first one above.",
+      "edit": "Edit",
+      "save": "Save",
+      "cancel": "Cancel",
+      "archive": "Archive",
+      "restore": "Restore",
+      "delete": "Delete",
+      "archivedBadge": "Archived"
     }
   },
   "wizard": {

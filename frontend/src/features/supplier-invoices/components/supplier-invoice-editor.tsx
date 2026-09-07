@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useFormatter } from '@/hooks/use-formatter';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, CheckCircle2, Info, Link2, Loader2, Paperclip, Save, Send, Upload, X } from 'lucide-react';
@@ -75,8 +75,20 @@ export function SupplierInvoiceEditor({ open, onOpenChange, invoiceId = null }: 
   const { t } = useTranslation('supplier-invoices');
   const { activeCompanyId } = useOrganizationContext();
   const { data: companyOptions = [] } = useCompanyOptions();
-  const { data: supplierOptions = [] } = useSupplierOptions();
-  const { data: warehouseOptions = [] } = useWarehouseOptions();
+
+  // §1 — server-side search + real error surfacing, matching the proven pattern already used
+  // by this same editor's own Product/Raw-Material line selector (ProductLineSelect). The
+  // underlying hooks already support `search`; only this call site was still capping at a
+  // one-shot fetch with no search term and no error visibility.
+  const [supplierQuery, setSupplierQuery] = useState('');
+  const [supplierSearch, setSupplierSearch] = useState('');
+  useEffect(() => { const id = setTimeout(() => setSupplierSearch(supplierQuery), 250); return () => clearTimeout(id); }, [supplierQuery]);
+  const { data: supplierOptions = [], isFetching: supplierLoading, isError: supplierError, refetch: refetchSuppliers } = useSupplierOptions(supplierSearch);
+
+  const [warehouseQuery, setWarehouseQuery] = useState('');
+  const [warehouseSearch, setWarehouseSearch] = useState('');
+  useEffect(() => { const id = setTimeout(() => setWarehouseSearch(warehouseQuery), 250); return () => clearTimeout(id); }, [warehouseQuery]);
+  const { data: warehouseOptions = [], isFetching: warehouseLoading, isError: warehouseError, refetch: refetchWarehouses } = useWarehouseOptions(warehouseSearch);
 
   const isEdit = invoiceId !== null;
   const { data: invoice } = useSupplierInvoice(open ? invoiceId : null);
@@ -287,13 +299,33 @@ export function SupplierInvoiceEditor({ open, onOpenChange, invoiceId = null }: 
               <div>
                 <Label className="text-xs">{t($ => $.editor.fields.supplier)}</Label>
                 <div className="mt-1">
-                  <Combobox options={supplierOptions} value={supplierId} onChange={setSupplierId} placeholder={t($ => $.editor.placeholders.selectSupplier)} />
+                  <Combobox
+                    options={supplierOptions}
+                    value={supplierId}
+                    onChange={setSupplierId}
+                    onSearchChange={setSupplierQuery}
+                    filterClientSide={false}
+                    loading={supplierLoading}
+                    isError={supplierError}
+                    onRetry={refetchSuppliers}
+                    placeholder={t($ => $.editor.placeholders.selectSupplier)}
+                  />
                 </div>
               </div>
               <div>
                 <Label className="text-xs">{t($ => $.editor.fields.warehouse)}</Label>
                 <div className="mt-1">
-                  <Combobox options={warehouseOptions} value={warehouseId} onChange={setWarehouseId} placeholder={t($ => $.editor.placeholders.selectWarehouse)} />
+                  <Combobox
+                    options={warehouseOptions}
+                    value={warehouseId}
+                    onChange={setWarehouseId}
+                    onSearchChange={setWarehouseQuery}
+                    filterClientSide={false}
+                    loading={warehouseLoading}
+                    isError={warehouseError}
+                    onRetry={refetchWarehouses}
+                    placeholder={t($ => $.editor.placeholders.selectWarehouse)}
+                  />
                 </div>
               </div>
               <div>
