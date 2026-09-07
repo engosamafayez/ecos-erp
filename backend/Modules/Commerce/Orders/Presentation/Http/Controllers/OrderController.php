@@ -35,6 +35,7 @@ use Modules\Commerce\Orders\Domain\Models\OrderFinancialSnapshot;
 use Modules\Commerce\Orders\Domain\Models\OrderNote;
 use Modules\Commerce\Orders\Domain\Services\CustomerOrderMetricsService;
 use Modules\Commerce\Orders\Domain\Services\PaymentFulfillmentGate;
+use Modules\Commerce\Orders\Domain\Services\ScheduledFulfillmentGate;
 use Modules\Commerce\Orders\Presentation\Http\Requests\PatchOrderRequest;
 use Modules\Commerce\Orders\Presentation\Http\Requests\StoreManualOrderRequest;
 use Modules\Commerce\Orders\Presentation\Http\Requests\StoreOrderRequest;
@@ -57,6 +58,7 @@ final class OrderController extends Controller
         private readonly CustomerOrderMetricsService $orderMetrics,
         private readonly OrderRepositoryInterface $orders,
         private readonly PaymentFulfillmentGate $paymentGate,
+        private readonly ScheduledFulfillmentGate $scheduledGate,
     ) {}
 
     public function index(Request $request, ListOrdersAction $action): JsonResponse
@@ -434,6 +436,16 @@ final class OrderController extends Controller
      * may be confirmed by phone and stay Scheduled — ConfirmOrderWorkflow does not
      * admit Scheduled as a source, and only the Order's own due-date activation
      * trigger may ever advance it.
+     *
+     * C3 (TASK-...-REMEDIATION-005) — the same protection now also applies when the
+     * Order's `status` is NOT `scheduled` but its requested_delivery_date is still in
+     * the future (e.g. an order created directly In Progress with a future date, or
+     * edited into one afterwards) — see ScheduledFulfillmentGate. That case is folded
+     * into `$shouldAutoConfirm` below rather than left to `$confirmWorkflow->guard()`
+     * to reject, because guard() runs BEFORE the transaction that records
+     * confirmation_result: letting it throw here would also block recording the
+     * customer-contact fact itself, which must stay unconditional exactly like the
+     * Scheduled case above.
      */
     public function confirmCustomer(
         Request $request,
@@ -478,7 +490,8 @@ final class OrderController extends Controller
         ];
 
         $shouldAutoConfirm = $validated['result'] === 'confirmed'
-            && in_array($model->status, $preExecutionStatuses, true);
+            && in_array($model->status, $preExecutionStatuses, true)
+            && ! $this->scheduledGate->isFutureDated($model);
 
         // Guard outside transaction — precondition failure is a cheap fast-fail
         if ($shouldAutoConfirm) {

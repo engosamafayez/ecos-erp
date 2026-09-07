@@ -119,6 +119,29 @@ export const PRINT_FIELD_KEYS: OrderFieldKey[] = [
   'payment_method', 'payment_status', 'payment_proof_status', 'grand_total', 'customer_notes',
 ];
 
+// ── Print layout: primary row vs. full-width detail line ──────────────────────
+// All 17 PRINT_FIELD_KEYS still print — nothing is dropped — but rendering them
+// as 17 same-width table columns is what made the printout unusable (long
+// addresses squeezed into tiny columns). PRINT_PRIMARY_FIELD_KEYS are the
+// compact identifying/status/financial fields shown as real table columns;
+// everything else in PRINT_FIELD_KEYS (address, items, notes, ...) is derived
+// as the "detail" set and rendered as one wrapped, full-width line per order
+// instead (see PrintTable's `renderDetail`).
+
+/** Compact fields shown as actual print-table columns. */
+export const PRINT_PRIMARY_FIELD_KEYS: OrderFieldKey[] = [
+  'order_number', 'customer', 'phone', 'status', 'delivery_date',
+  'payment_method', 'payment_status', 'grand_total',
+];
+
+/** Everything else in PRINT_FIELD_KEYS — rendered as a full-width detail line
+ *  so long content (address, items, notes) gets real width instead of its own
+ *  narrow column. Derived, not hand-maintained, so a future edit to
+ *  PRINT_FIELD_KEYS can never silently drop a field from the printout. */
+export const PRINT_DETAIL_FIELD_KEYS: OrderFieldKey[] = PRINT_FIELD_KEYS.filter(
+  (k) => !PRINT_PRIMARY_FIELD_KEYS.includes(k),
+);
+
 /** §6 minimum: full superset, adds Brand, Products Total, Shipping, Remaining Balance, Created date. */
 export const EXPORT_FIELD_KEYS: OrderFieldKey[] = [
   'order_number', 'customer', 'phone', 'status', 'channel', 'brand', 'warehouse',

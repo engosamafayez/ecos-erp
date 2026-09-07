@@ -28,7 +28,19 @@ export const paymentProofService = {
   async upload(orderId: string, file: File): Promise<PaymentProof> {
     const fd = new FormData();
     fd.append('file', file);
-    const { data } = await api.post<{ data: PaymentProof }>(`/orders/${orderId}/payment-proofs`, fd);
+    // `api`'s shared default is `Content-Type: application/json` (lib/axios.ts) — correct
+    // for the overwhelming majority of calls, which are JSON. But axios's own
+    // transformRequest checks that header BEFORE deciding how to send a FormData body:
+    // if it already looks like JSON, axios serializes the FormData's fields to a JSON
+    // string instead of sending it as multipart, so the file's bytes never leave the
+    // browser — the backend then correctly (if confusingly) reports "The file field is
+    // required", because no file ever arrived. `undefined` here clears the header for
+    // just this call (not 'multipart/form-data' — that string has no boundary param,
+    // which the browser then never fills in once the header is explicitly present) so
+    // the browser generates the multipart Content-Type, boundary included, itself.
+    const { data } = await api.post<{ data: PaymentProof }>(`/orders/${orderId}/payment-proofs`, fd, {
+      headers: { 'Content-Type': undefined },
+    });
     return data.data;
   },
 
