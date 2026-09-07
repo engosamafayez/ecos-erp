@@ -708,6 +708,7 @@ function InventoryCard({ order }: { order: Order }) {
             <OrderInventoryExecutionCell
               reservationStatus={order.reservation_status}
               failureReason={order.reservation_failure_reason}
+              warehouseAssignmentFailureReason={order.warehouse_assignment_failure_reason}
             />
           </Field>
           <Field label={t($ => $.orderDetail.reservedAt)}>{fmtDateTime(order.inventory_reserved_at)}</Field>
