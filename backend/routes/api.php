@@ -648,25 +648,49 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 | Sales — Customers (protected)
 |--------------------------------------------------------------------------
 */
+// CD-04 (TASK-ECOS-COMMERCE-PRE-USER-REVIEW-REMEDIATION-002 §5) — READ AUTHORIZATION.
+// Customer reads were authentication-only: `crm.customers.view` and `sales.customers.export`
+// were both already defined in config/permissions.php AND granted to roles, but attached to
+// no route, so any authenticated tenant user could list customers, look one up by phone, read
+// block history, and — worst of the set — pull the FULL CUSTOMER EXPORT (PII), a capability
+// deliberately restricted to 8 roles in the catalog.
+//
+// Wired following the already-approved Suppliers pattern in this same file ("Read-authorization
+// was open: purchasing.suppliers.view is granted to roles but was attached to no route…"),
+// using `middlewareFor('index'|'show', …)` and existing tokens only. No new permission is
+// invented. Super-admin semantics are preserved automatically: RequirePermissionMiddleware
+// asks AuthorizationGateway::decision(), which allows any is_system role unconditionally.
+//
+// `crm.customers.view` is chosen over `sales.customers.view` deliberately: it matches the
+// write verbs already on these routes (crm.customers.create/update/delete), and its grant set
+// (19 roles) is a superset of `sales.customers.view` (13), so no role loses access it had.
+// Export keeps its OWN, stricter token — the ordinary-view vs sensitive-read distinction §5
+// requires.
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
-    Route::get('customers/search-by-phone', [CustomerController::class, 'searchByPhone']);
+    Route::get('customers/search-by-phone', [CustomerController::class, 'searchByPhone'])->middleware('permission:crm.customers.view');
     // TASK-...-FINAL-UI-CLOSURE-014 (§10/§11/§15) — registered before the apiResource's
     // {customer} routes, same reason as search-by-phone: otherwise "export"/"sales-owners"
     // would be swallowed as a {customer} id.
-    Route::get('customers/export', [CustomerController::class, 'export']);
-    Route::get('customers/sales-owners', [CustomerController::class, 'salesOwnerOptions']);
+    // Sensitive read — bulk PII egress. Gated on its own export permission, NOT on
+    // crm.customers.view: reading one customer and exporting the whole book are different rights.
+    Route::get('customers/export', [CustomerController::class, 'export'])->middleware('permission:sales.customers.export');
+    Route::get('customers/sales-owners', [CustomerController::class, 'salesOwnerOptions'])->middleware('permission:crm.customers.view');
     // TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-BLOCKED-CUSTOMERS-009 (§11/§12/§35).
     // block-phone is registered before the apiResource's {customer} routes so it
     // is never swallowed by them.
     Route::post('customers/block-phone', [CustomerController::class, 'blockPhone'])->middleware('permission:crm.customers.block');
     Route::post('customers/{customer}/block', [CustomerController::class, 'block'])->middleware('permission:crm.customers.block');
     Route::post('customers/{customer}/unblock', [CustomerController::class, 'unblock'])->middleware('permission:crm.customers.unblock');
-    Route::get('customers/{customer}/block-history', [CustomerController::class, 'blockHistory']);
+    Route::get('customers/{customer}/block-history', [CustomerController::class, 'blockHistory'])->middleware('permission:crm.customers.view');
     Route::apiResource('customers', CustomerController::class)
+        ->middlewareFor('index', 'permission:crm.customers.view')
+        ->middlewareFor('show', 'permission:crm.customers.view')
         ->middlewareFor('store', 'permission:crm.customers.create')
         ->middlewareFor('update', 'permission:crm.customers.update')
         ->middlewareFor('destroy', 'permission:crm.customers.delete');
     Route::apiResource('customers.addresses', CustomerAddressController::class)->shallow()
+        ->middlewareFor('index', 'permission:crm.customers.view')
+        ->middlewareFor('show', 'permission:crm.customers.view')
         ->middlewareFor('store', 'permission:crm.customers.update')
         ->middlewareFor('update', 'permission:crm.customers.update')
         ->middlewareFor('destroy', 'permission:crm.customers.update');
@@ -678,7 +702,15 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
+    // CD-04 (REMEDIATION-002 §5) — channel reads were authentication-only while
+    // `sales.channels.view` existed and was granted to 14 roles but attached to no route.
+    // Combined with CD-03's missing tenant scope this meant any authenticated user could
+    // enumerate every company's store configuration. Both halves are now closed: this
+    // permission decides WHETHER you may read channels, the Channel model's `tenant` global
+    // scope decides WHICH channels you see.
     Route::apiResource('channels', ChannelController::class)
+        ->middlewareFor('index', 'permission:sales.channels.view')
+        ->middlewareFor('show', 'permission:sales.channels.view')
         ->middlewareFor('store', 'permission:sales.channels.create')
         ->middlewareFor('update', 'permission:sales.channels.update')
         ->middlewareFor('destroy', 'permission:sales.channels.delete');
@@ -687,16 +719,24 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
         Route::post('channels/{channel}/import-products', [ProductImportController::class, 'importProducts'])->middleware('permission:sales.channels.sync');
         Route::post('channels/{channel}/import-orders', [OrderImportController::class, 'importOrders'])->middleware('permission:sales.channels.sync');
     });
+    // Product mappings are channel configuration; reads take the channel view verb, matching
+    // the channel update verb their writes already take.
     Route::apiResource('product-mappings', ProductMappingController::class)
+        ->middlewareFor('index', 'permission:sales.channels.view')
+        ->middlewareFor('show', 'permission:sales.channels.view')
         ->middlewareFor('store', 'permission:sales.channels.update')
         ->middlewareFor('update', 'permission:sales.channels.update')
         ->middlewareFor('destroy', 'permission:sales.channels.update');
-    Route::get('orders/statuses', [OrderController::class, 'orderStatuses']);
-    Route::get('orders/filter/payment-methods', [OrderController::class, 'paymentMethods']);
-    Route::get('orders/filter/shipping-companies', [OrderController::class, 'shippingCompanies']);
+    // CD-04 (REMEDIATION-002 §5) — order reads. `sales.orders.view` existed and was granted
+    // to 19 roles but attached to no route. Every role holding `sales.orders.create` (12) is
+    // inside that 19, so no order-creating role loses the pricing/status lookups the New Order
+    // form depends on.
+    Route::get('orders/statuses', [OrderController::class, 'orderStatuses'])->middleware('permission:sales.orders.view');
+    Route::get('orders/filter/payment-methods', [OrderController::class, 'paymentMethods'])->middleware('permission:sales.orders.view');
+    Route::get('orders/filter/shipping-companies', [OrderController::class, 'shippingCompanies'])->middleware('permission:sales.orders.view');
     Route::post('orders/manual', [OrderController::class, 'storeManual'])->middleware('permission:sales.orders.create');
     Route::post('orders/maps/resolve-url', [OrderController::class, 'resolveMapsUrl'])->middleware('permission:sales.orders.update');
-    Route::get('orders/pricing/product/{productId}', [OrderController::class, 'productPricing']);
+    Route::get('orders/pricing/product/{productId}', [OrderController::class, 'productPricing'])->middleware('permission:sales.orders.view');
     Route::patch('orders/{order}/quick-update', [OrderController::class, 'quickUpdate'])->middleware('permission:sales.orders.update');
     Route::patch('orders/{order}/zone', [OrderController::class, 'updateZone'])->middleware('permission:sales.orders.update');
     // Resolve the order's map point: captured coords, else server-side geocode of the
@@ -707,12 +747,21 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     // TASK-ECOS-COMMERCE-CUSTOMERS-BATCH-02-BLOCKED-CUSTOMERS-009 (§25/§35) — its own
     // permission, distinct from sales.orders.* / operations.fulfillment.manage.
     Route::post('orders/{order}/block-override', [OrderController::class, 'blockOverride'])->middleware('permission:crm.customers.override_block');
-    Route::get('orders/{order}/activities', [OrderController::class, 'activities']);
+    Route::get('orders/{order}/activities', [OrderController::class, 'activities'])->middleware('permission:sales.orders.view');
     Route::post('orders/{order}/notes', [OrderController::class, 'addNote'])->middleware('permission:sales.orders.update');
     Route::patch('orders/{order}/notes/{note}', [OrderController::class, 'updateNote'])->middleware('permission:sales.orders.update');
     Route::delete('orders/{order}/notes/{note}', [OrderController::class, 'deleteNote'])->middleware('permission:sales.orders.update');
-    Route::get('orders/{order}/snapshot', [OrderController::class, 'financialSnapshot']);
+    // Sensitive read — the immutable financial snapshot plus its business-context snapshot
+    // and integrity hash. Gated on `sales.orders.view` rather than a new dedicated token:
+    // OrderResource already exposes this order's grand_total, paid_amount, outstanding_amount
+    // and COGS/margin fields to the same permission, so the snapshot is not more sensitive
+    // than the detail it snapshots, and §5 forbids inventing new permission machinery. If the
+    // owner wants snapshot reads separated from order reads, that is a permission-catalog
+    // decision, recorded as a remaining user decision rather than taken here.
+    Route::get('orders/{order}/snapshot', [OrderController::class, 'financialSnapshot'])->middleware('permission:sales.orders.view');
     Route::apiResource('orders', OrderController::class)
+        ->middlewareFor('index', 'permission:sales.orders.view')
+        ->middlewareFor('show', 'permission:sales.orders.view')
         ->middlewareFor('store', 'permission:sales.orders.create')
         ->middlewareFor('update', 'permission:sales.orders.update')
         ->middlewareFor('destroy', 'permission:sales.orders.delete');
@@ -735,14 +784,16 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     // CR-PREP-001: Warehouse assignment
     Route::post('orders/{order}/assign-warehouse', [WarehouseAssignmentController::class, 'assignWarehouse'])->middleware('permission:sales.orders.update');
     Route::post('orders/{order}/override-warehouse', [WarehouseAssignmentController::class, 'overrideWarehouse'])->middleware('permission:sales.orders.update');
-    Route::get('orders/{order}/assignment-history', [WarehouseAssignmentController::class, 'assignmentHistory']);
+    Route::get('orders/{order}/assignment-history', [WarehouseAssignmentController::class, 'assignmentHistory'])->middleware('permission:sales.orders.view');
     Route::apiResource('fulfillments', FulfillmentController::class)
+        ->middlewareFor('index', 'permission:sales.fulfillments.view')
+        ->middlewareFor('show', 'permission:sales.fulfillments.view')
         ->middlewareFor('store', 'permission:sales.fulfillments.create')
         ->middlewareFor('update', 'permission:sales.fulfillments.update')
         ->middlewareFor('destroy', 'permission:sales.fulfillments.delete');
     Route::post('fulfillments/{fulfillment}/fulfill', [FulfillmentController::class, 'fulfill'])->middleware('permission:sales.fulfillments.update');
     Route::post('fulfillments/{fulfillment}/cancel', [FulfillmentController::class, 'cancel'])->middleware('permission:sales.fulfillments.update');
-    Route::get('stock-sync-logs', [StockSyncController::class, 'index']);
+    Route::get('stock-sync-logs', [StockSyncController::class, 'index'])->middleware('permission:sales.channels.view');
     Route::post('channels/{channel}/sync-stock', [StockSyncController::class, 'syncStock'])->middleware('permission:sales.channels.sync');
 });
 

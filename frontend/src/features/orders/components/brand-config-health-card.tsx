@@ -10,12 +10,15 @@ type CheckItem = {
   label: string;
 };
 
+// CD-01 (TASK-ECOS-COMMERCE-PRE-USER-REVIEW-REMEDIATION-002 §2) — this list mirrors the
+// reconciled readiness contract in `BrandDeliveryController::health()`. "Delivery Zones"
+// and "Shipping Pricing" were removed: they reported legacy tables the New Order form does
+// not read, and neither blocks order creation. Adding a row back here without a matching
+// backend check would render a permanently-failing item.
 const CHECKS: CheckItem[] = [
   { key: 'channels',           label: 'Sales Channels' },
   { key: 'delivery_geography', label: 'Delivery Geography' },
-  { key: 'delivery_zones',     label: 'Delivery Zones' },
   { key: 'delivery_windows',   label: 'Delivery Windows' },
-  { key: 'shipping_rules',     label: 'Shipping Pricing' },
 ];
 
 type Props = {

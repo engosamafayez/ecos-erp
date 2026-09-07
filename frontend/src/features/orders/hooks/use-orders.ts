@@ -9,8 +9,6 @@ import type {
   OrderActivity,
   OrderStatus,
   OrdersQuery,
-  ShippingCalcResult,
-  ShippingPricingRule,
   ShippingQuotePayload,
   ShippingQuoteResult,
 } from '@/features/orders/types/order';
@@ -168,22 +166,18 @@ export function useResolveOrderLocation(orderId: string, enabled: boolean) {
   });
 }
 
-export function useAllShippingRules() {
-  return useQuery<ShippingPricingRule[]>({
-    queryKey: ['shipping-rules-all'],
-    queryFn: () => ordersService.listShippingRules(),
-    staleTime: 5 * 60_000,
-  });
-}
-
-export function useCalculateShipping(params: { governorate: string; city?: string; area?: string }) {
-  return useQuery<ShippingCalcResult>({
-    queryKey: ['shipping-calc', params.governorate, params.city ?? '', params.area ?? ''],
-    queryFn: () => ordersService.calculateShipping(params),
-    enabled: Boolean(params.governorate),
-    staleTime: 60_000,
-  });
-}
+// CD-29 (TASK-ECOS-COMMERCE-PRE-USER-REVIEW-REMEDIATION-002 §7) — `useAllShippingRules`
+// and `useCalculateShipping` were removed with the unrouted Shipping Pricing page they were
+// the sole consumers of. They called GET /shipping-pricing and /shipping-pricing/calculate,
+// neither of which exists in backend/routes (confirmed absent from the live DEV
+// `route:list`), so both were permanently 404. They also introduced two company-unscoped
+// cache identities (`shipping-rules-all`, `shipping-calc`) for a resource that has none.
+//
+// The CANONICAL shipping-pricing authority is untouched and lives elsewhere:
+//   - configuration: Admin > Configuration > Brand -> BrandShippingRuleController
+//     (/configuration/brands/{brandId}/shipping-rules)
+//   - order-time quote: `useShippingQuote()` below -> POST /shipping/quote ->
+//     ShippingValidationService (brand_governorate_settings / brand_city_settings)
 
 export function useDeleteOrder() {
   const { activeCompanyId } = useOrganizationContext();

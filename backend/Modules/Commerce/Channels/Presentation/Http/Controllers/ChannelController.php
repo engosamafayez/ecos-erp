@@ -22,6 +22,22 @@ final class ChannelController extends Controller
 {
     use HasApiResponse;
 
+    /**
+     * CD-03 (TASK-ECOS-COMMERCE-PRE-USER-REVIEW-REMEDIATION-002 §4).
+     *
+     * `company_id` below is a NARROWING FILTER ONLY and carries no authority. The tenant
+     * boundary is enforced by the `tenant` global scope on the Channel model
+     * (TenantOwnershipResolver), which every query in this controller passes through — so
+     * omitting the parameter no longer widens the result to all companies, and supplying
+     * another company's id can only intersect to an empty set for an unprivileged actor.
+     * For an is_system actor the scope stands down (existing IAM authority) and the
+     * parameter keeps working as the cross-company selector it already was.
+     *
+     * It is deliberately NOT replaced by `CurrentCompanyService::id()` here: that would
+     * state the boundary a second time in the read path, and two sources answering "which
+     * company owns this row?" is precisely the RC-6 defect class TenantOwnershipResolver
+     * exists to prevent.
+     */
     public function index(Request $request, ListChannelsAction $action): JsonResponse
     {
         $filters = [

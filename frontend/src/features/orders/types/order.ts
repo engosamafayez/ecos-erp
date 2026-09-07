@@ -483,22 +483,9 @@ export type OrdersResult = {
 export type OrderStatusCounts = Partial<Record<OrderStatus | 'all', number>>;
 
 // ── Shipping pricing rules ────────────────────────────────────────────────────
-export type ShippingPricingRule = {
-  id: string;
-  company_id: string | null;
-  governorate: string;
-  city: string | null;
-  area: string | null;
-  standard_cost: number;
-  express_cost: number | null;
-  is_active: boolean;
-};
-
-export type ShippingCalcResult = {
-  found: boolean;
-  standard_cost: number | null;
-  matched_level: string | null;
-};
+// CD-29 (REMEDIATION-002 §7) — `ShippingPricingRule` and `ShippingCalcResult` were removed
+// with the unrouted Shipping Pricing page and its two 404 service methods. The canonical
+// order-time shipping contract is `ShippingQuotePayload` / `ShippingQuoteResult` below.
 
 // ── Product pricing (approved price for manual orders) ────────────────────────
 export type ProductPricingResult = {

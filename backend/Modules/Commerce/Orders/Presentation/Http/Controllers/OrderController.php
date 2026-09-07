@@ -577,11 +577,19 @@ final class OrderController extends Controller
             $query->where('module', $module);
         }
 
+        // CD-24 (TASK-ECOS-COMMERCE-PRE-USER-REVIEW-REMEDIATION-002 §3, same defect class
+        // as CD-02). PostgreSQL-only `ilike` on a MySQL 8.4 platform — invalid SQL. This
+        // branch is currently unreachable from the UI (`useOrderActivities` never sends a
+        // `search` param), so it was a latent 500 rather than a live one, but it is the
+        // identical operator bug in the same module and is corrected with CD-02 rather than
+        // left armed behind an endpoint that already accepts the parameter.
+        // Case-insensitivity is retained by the `_ci` column collation — see the note on
+        // EloquentChannelRepository::paginate().
         if ($search = $request->query('search')) {
             $query->where(function ($q) use ($search) {
-                $q->where('description', 'ilike', "%{$search}%")
-                    ->orWhere('event_type', 'ilike', "%{$search}%")
-                    ->orWhere('actor_name', 'ilike', "%{$search}%");
+                $q->where('description', 'like', "%{$search}%")
+                    ->orWhere('event_type', 'like', "%{$search}%")
+                    ->orWhere('actor_name', 'like', "%{$search}%");
             });
         }
 
