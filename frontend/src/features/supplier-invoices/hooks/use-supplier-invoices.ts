@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import axios from 'axios';
 import { toast } from '@/components/ds/use-toast';
 
 import { supplierInvoicesService } from '@/features/supplier-invoices/services/supplier-invoices-service';
@@ -7,6 +8,13 @@ import type {
   SupplierInvoicesQuery,
 } from '@/features/supplier-invoices/types/supplier-invoice';
 import { useOrganizationContext } from '@/features/organization/context/organization-context';
+
+/** Real backend message when there is one, instead of a generic guess. */
+function extractMessage(error: unknown, fallback: string): string {
+  return axios.isAxiosError(error) && typeof error.response?.data?.message === 'string'
+    ? error.response.data.message
+    : fallback;
+}
 
 function useKeys() {
   const { activeCompanyId } = useOrganizationContext();
@@ -56,7 +64,7 @@ export function useCreateSupplierInvoice() {
       qc.invalidateQueries({ queryKey: KEYS.all });
       toast.success('Supplier invoice created');
     },
-    onError: () => toast.error('Failed to create invoice'),
+    onError: (error) => toast.error(extractMessage(error, 'Failed to create invoice')),
   });
 }
 
@@ -71,7 +79,7 @@ export function useUpdateSupplierInvoice(id: string) {
       qc.invalidateQueries({ queryKey: KEYS.all });
       toast.success('Invoice updated');
     },
-    onError: () => toast.error('Failed to update invoice'),
+    onError: (error) => toast.error(extractMessage(error, 'Failed to update invoice')),
   });
 }
 
@@ -85,7 +93,7 @@ export function useDeleteSupplierInvoice() {
       qc.invalidateQueries({ queryKey: KEYS.all });
       toast.success('Invoice deleted');
     },
-    onError: () => toast.error('Failed to delete invoice'),
+    onError: (error) => toast.error(extractMessage(error, 'Failed to delete invoice')),
   });
 }
 
@@ -99,7 +107,7 @@ export function useValidateSupplierInvoice() {
       qc.invalidateQueries({ queryKey: KEYS.all });
       toast.success('Invoice validated — ready to post');
     },
-    onError: () => toast.error('Validation failed'),
+    onError: (error) => toast.error(extractMessage(error, 'Validation failed')),
   });
 }
 
@@ -109,11 +117,14 @@ export function usePostSupplierInvoice() {
 
   return useMutation({
     mutationFn: (id: string) => supplierInvoicesService.post(id),
+    // The backend now returns a specific, actionable reason on failure (e.g. a missing
+    // goods-receipt anchor, or an unmapped Finance account role) — surface it instead of a
+    // dead-end generic string.
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.all });
-      toast.success('Invoice posted — inventory updated');
+      toast.success('Invoice posted successfully');
     },
-    onError: () => toast.error('Posting failed'),
+    onError: (error) => toast.error(extractMessage(error, 'Posting failed')),
   });
 }
 
@@ -127,7 +138,7 @@ export function useCancelSupplierInvoice() {
       qc.invalidateQueries({ queryKey: KEYS.all });
       toast.success('Invoice cancelled');
     },
-    onError: () => toast.error('Failed to cancel invoice'),
+    onError: (error) => toast.error(extractMessage(error, 'Failed to cancel invoice')),
   });
 }
 

@@ -3126,19 +3126,6 @@ Route::middleware('auth:sanctum')->prefix('finance')->group(function (): void {
                 ->middleware('permission:finance.allocation.manage');
         });
 
-        // Invoice-anchored "Pay Supplier Invoice" — the canonical Finance use case
-        // a Procurement surface deep-links into. It resolves the invoice's payable
-        // ('SI-'.<invoice id>) and drives the existing AP authorities. Approve and
-        // post stay on the generic /payments endpoints above: initiating a payment
-        // here (finance.ap.payment.create) can never approve or post it, so the
-        // maker/checker identity gate is preserved by construction.
-        Route::prefix('supplier-invoices')->group(function (): void {
-            Route::post('/{invoiceId}/payments', [FinanceSupplierInvoicePaymentController::class, 'initiate'])
-                ->middleware('permission:finance.ap.payment.create');
-            Route::post('/{invoiceId}/payments/{uuid}/settle', [FinanceSupplierInvoicePaymentController::class, 'settle'])
-                ->middleware('permission:finance.allocation.manage');
-        });
-
         Route::middleware('permission:finance.ap.view')->group(function (): void {
             Route::get('/aging', [FinanceSupplierLedgerController::class, 'aging']);
             Route::get('/suppliers/{supplierId}/ledger', [FinanceSupplierLedgerController::class, 'history']);

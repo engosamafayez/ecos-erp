@@ -19,7 +19,8 @@ export function SupplierCategorySelect({
   className,
 }: SupplierCategorySelectProps) {
   const { t } = useTranslation('suppliers');
-  const { data, isLoading } = useSupplierCategoriesQuery(true);
+  const { t: tCommon } = useTranslation('common');
+  const { data, isLoading, isError, refetch } = useSupplierCategoriesQuery(true);
 
   const options = (data ?? []).map((c) => ({
     value: c.id,
@@ -34,6 +35,10 @@ export function SupplierCategorySelect({
       loading={isLoading}
       placeholder={placeholder ?? t($ => $.wizard.fields.categoryPlaceholder)}
       emptyText={t($ => $.categorySelect.empty)}
+      isError={isError}
+      errorText={tCommon($ => $.errors.generic)}
+      retryLabel={tCommon($ => $.error.retry)}
+      onRetry={() => void refetch()}
       disabled={disabled}
       className={className}
     />

@@ -31,6 +31,16 @@ export type EcosMultiComboboxProps = {
   /** When false, the caller supplies already-filtered (e.g. server-searched) options; the
    *  built-in client-side label filter is skipped. Defaults to true (unchanged behaviour). */
   filterClientSide?: boolean;
+  /** When true, the options list renders an error state (with an optional retry
+   *  action) instead of the generic empty-text branch — lets a caller distinguish
+   *  "no results" from "the request failed" (opt-in, defaults to false). */
+  isError?: boolean;
+  /** Text shown in the error state. Defaults to a generic message. */
+  errorText?: string;
+  /** Label for the retry action shown in the error state (only rendered when `onRetry` is set). */
+  retryLabel?: string;
+  /** Called when the user clicks the retry action in the error state. */
+  onRetry?: () => void;
 };
 
 /**
@@ -54,6 +64,10 @@ export function EcosMultiCombobox({
   className,
   onSearchChange,
   filterClientSide = true,
+  isError = false,
+  errorText = "Couldn't load options",
+  retryLabel = 'Retry',
+  onRetry,
 }: EcosMultiComboboxProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -91,6 +105,23 @@ export function EcosMultiCombobox({
     const el = listRef.current.children[activeIndex] as HTMLElement | undefined;
     el?.scrollIntoView({ block: 'nearest' });
   }, [activeIndex]);
+
+  // Mouse-wheel scrolling on the listbox is blocked when this popover is opened
+  // from inside a Radix Dialog/Sheet: the portalled content is a DOM sibling of
+  // the Dialog's react-remove-scroll wrapper (not a descendant, not a shard), so
+  // the wrapper's wheel-blocking kicks in and native overflow scroll never fires.
+  // Fix: don't depend on native scroll at all — drive scrollTop ourselves from a
+  // non-passive listener attached directly to the listbox element.
+  useEffect(() => {
+    const el = listRef.current;
+    if (!open || !el) return;
+    function handleWheel(e: WheelEvent) {
+      el!.scrollTop += e.deltaY;
+      e.preventDefault();
+    }
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, [open]);
 
   function toggle(optionValue: string) {
     onChange(
@@ -205,6 +236,19 @@ export function EcosMultiCombobox({
           >
             {loading ? (
               <p className="text-muted-foreground px-2 py-1.5 text-sm">{loadingText}</p>
+            ) : isError ? (
+              <div className="flex flex-col items-center gap-1.5 px-2 py-3 text-center">
+                <p className="text-muted-foreground text-sm">{errorText}</p>
+                {onRetry ? (
+                  <button
+                    type="button"
+                    onClick={onRetry}
+                    className="text-primary text-xs font-medium underline-offset-2 hover:underline"
+                  >
+                    {retryLabel}
+                  </button>
+                ) : null}
+              </div>
             ) : filtered.length === 0 ? (
               <p className="text-muted-foreground px-2 py-1.5 text-sm">{emptyText}</p>
             ) : (

@@ -1,7 +1,7 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useFormatter } from '@/hooks/use-formatter';
 import { useTranslation } from 'react-i18next';
-import { AlertTriangle, CheckCircle2, Info, Link2, Loader2, Paperclip, Save, Upload, X } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Info, Link2, Loader2, Paperclip, Save, Send, Upload, X } from 'lucide-react';
 import { toast } from '@/components/ds/use-toast';
 
 import { Combobox } from '@/components/crud';
@@ -21,6 +21,7 @@ import { useSupplierOptions } from '@/features/purchase-orders/hooks/use-supplie
 import { useWarehouseOptions } from '@/features/goods-receipts/hooks/use-warehouse-options';
 import {
   useCreateSupplierInvoice,
+  usePostSupplierInvoice,
   useSupplierInvoice,
   useUpdateSupplierInvoice,
   useValidateSupplierInvoice,
@@ -39,6 +40,8 @@ import { InvoiceLineEditor } from '@/features/supplier-invoices/components/invoi
 import { InvoiceAttachments } from '@/features/supplier-invoices/components/invoice-attachments';
 
 const PAYMENT_METHODS = ['bank_transfer', 'cheque', 'cash'] as const;
+const PAYMENT_OPTIONS = ['pay_later', 'paid_in_full', 'partial'] as const;
+type PaymentOption = (typeof PAYMENT_OPTIONS)[number];
 
 const num = (s: string): number => {
   const v = parseFloat(s);
@@ -72,14 +75,27 @@ export function SupplierInvoiceEditor({ open, onOpenChange, invoiceId = null }: 
   const { t } = useTranslation('supplier-invoices');
   const { activeCompanyId } = useOrganizationContext();
   const { data: companyOptions = [] } = useCompanyOptions();
-  const { data: supplierOptions = [] } = useSupplierOptions();
-  const { data: warehouseOptions = [] } = useWarehouseOptions();
+
+  // §1 — server-side search + real error surfacing, matching the proven pattern already used
+  // by this same editor's own Product/Raw-Material line selector (ProductLineSelect). The
+  // underlying hooks already support `search`; only this call site was still capping at a
+  // one-shot fetch with no search term and no error visibility.
+  const [supplierQuery, setSupplierQuery] = useState('');
+  const [supplierSearch, setSupplierSearch] = useState('');
+  useEffect(() => { const id = setTimeout(() => setSupplierSearch(supplierQuery), 250); return () => clearTimeout(id); }, [supplierQuery]);
+  const { data: supplierOptions = [], isFetching: supplierLoading, isError: supplierError, refetch: refetchSuppliers } = useSupplierOptions(supplierSearch);
+
+  const [warehouseQuery, setWarehouseQuery] = useState('');
+  const [warehouseSearch, setWarehouseSearch] = useState('');
+  useEffect(() => { const id = setTimeout(() => setWarehouseSearch(warehouseQuery), 250); return () => clearTimeout(id); }, [warehouseQuery]);
+  const { data: warehouseOptions = [], isFetching: warehouseLoading, isError: warehouseError, refetch: refetchWarehouses } = useWarehouseOptions(warehouseSearch);
 
   const isEdit = invoiceId !== null;
   const { data: invoice } = useSupplierInvoice(open ? invoiceId : null);
   const createMutation = useCreateSupplierInvoice();
   const updateMutation = useUpdateSupplierInvoice(invoiceId ?? '');
   const validateMutation = useValidateSupplierInvoice();
+  const postMutation = usePostSupplierInvoice();
   const saving = createMutation.isPending || updateMutation.isPending;
 
   const companyName = companyOptions.find((c) => c.value === activeCompanyId)?.label ?? null;
@@ -94,6 +110,13 @@ export function SupplierInvoiceEditor({ open, onOpenChange, invoiceId = null }: 
   const [additional, setAdditional] = useState('0');
   const [notes, setNotes] = useState('');
   const [lines, setLines] = useState<InvoiceLineState[]>([{ ...EMPTY_LINE }]);
+  // §4 — payment INTENT captured on the invoice screen for clarity only. Never sent as an
+  // authoritative amount: actual settlement happens exclusively through the canonical Finance
+  // AP payment authority (Finance → Accounts Payable), and only after this invoice successfully
+  // posts. Maker/checker segregation there means the same user who creates a payment can never
+  // approve/post it, so this control cannot and does not attempt to fully self-settle.
+  const [paymentOption, setPaymentOption] = useState<PaymentOption>('pay_later');
+  const [amountPaid, setAmountPaid] = useState('0');
 
   // Create-time attachment (§1–§3): the file is staged in form state and uploaded AFTER the invoice
   // is created (the canonical DocumentService needs the new invoice id). `createdId` marks that the
@@ -112,6 +135,8 @@ export function SupplierInvoiceEditor({ open, onOpenChange, invoiceId = null }: 
     setCreatedId(null);
     setAttachError(false);
     setAttaching(false);
+    setPaymentOption('pay_later');
+    setAmountPaid('0');
     if (isEdit && invoice) {
       setSupplierId(invoice.supplier?.id ?? '');
       setWarehouseId(invoice.warehouse?.id ?? '');
@@ -155,8 +180,16 @@ export function SupplierInvoiceEditor({ open, onOpenChange, invoiceId = null }: 
   const grandTotal = itemsTotal + num(freight) + num(additional);
   const editable = !isEdit || invoice?.status === 'draft' || invoice?.status === 'failed';
   const canValidate = isEdit && invoice?.status === 'draft';
+  // Mirrors the backend's SupplierInvoiceStatus::canPost() — Validated or Failed (a Failed
+  // invoice may be retried directly once its underlying cause is fixed elsewhere).
+  const canPost = isEdit && (invoice?.status === 'validated' || invoice?.status === 'failed');
   const payment = invoice?.payment;
   const receiptLinks = invoice?.receipt_links ?? [];
+
+  const payableTotal = payment?.total ?? grandTotal;
+  const amountPaidPreview =
+    paymentOption === 'pay_later' ? 0 : paymentOption === 'paid_in_full' ? payableTotal : num(amountPaid);
+  const remainingPreview = Math.max(payableTotal - amountPaidPreview, 0);
 
   function buildPayload(): CreateSupplierInvoicePayload {
     return {
@@ -232,6 +265,11 @@ export function SupplierInvoiceEditor({ open, onOpenChange, invoiceId = null }: 
     validateMutation.mutate(invoiceId, { onSuccess: () => onOpenChange(false) });
   }
 
+  function handlePost() {
+    if (!invoiceId) return;
+    postMutation.mutate(invoiceId, { onSuccess: () => onOpenChange(false) });
+  }
+
   const invoiceCreatedAttachPending = createdId !== null && attachError;
 
   return (
@@ -261,13 +299,33 @@ export function SupplierInvoiceEditor({ open, onOpenChange, invoiceId = null }: 
               <div>
                 <Label className="text-xs">{t($ => $.editor.fields.supplier)}</Label>
                 <div className="mt-1">
-                  <Combobox options={supplierOptions} value={supplierId} onChange={setSupplierId} placeholder={t($ => $.editor.placeholders.selectSupplier)} />
+                  <Combobox
+                    options={supplierOptions}
+                    value={supplierId}
+                    onChange={setSupplierId}
+                    onSearchChange={setSupplierQuery}
+                    filterClientSide={false}
+                    loading={supplierLoading}
+                    isError={supplierError}
+                    onRetry={refetchSuppliers}
+                    placeholder={t($ => $.editor.placeholders.selectSupplier)}
+                  />
                 </div>
               </div>
               <div>
                 <Label className="text-xs">{t($ => $.editor.fields.warehouse)}</Label>
                 <div className="mt-1">
-                  <Combobox options={warehouseOptions} value={warehouseId} onChange={setWarehouseId} placeholder={t($ => $.editor.placeholders.selectWarehouse)} />
+                  <Combobox
+                    options={warehouseOptions}
+                    value={warehouseId}
+                    onChange={setWarehouseId}
+                    onSearchChange={setWarehouseQuery}
+                    filterClientSide={false}
+                    loading={warehouseLoading}
+                    isError={warehouseError}
+                    onRetry={refetchWarehouses}
+                    placeholder={t($ => $.editor.placeholders.selectWarehouse)}
+                  />
                 </div>
               </div>
               <div>
@@ -322,6 +380,46 @@ export function SupplierInvoiceEditor({ open, onOpenChange, invoiceId = null }: 
           {/* ── ITEMS ───────────────────────────────────────────────────────────── */}
           <Section title={t($ => $.editor.sections.items)}>
             <InvoiceLineEditor lines={lines} onLinesChange={setLines} />
+
+            {/* §5 — landed cost is SERVER-AUTHORITATIVE, computed only once the invoice posts
+                (PostSupplierInvoiceService::allocateLandedCosts, quantity-weighted, exact
+                reconciliation to Freight+Additional). Nothing here is estimated client-side;
+                these columns only appear once the real, persisted values exist. */}
+            {isEdit && invoice && invoice.lines.some((l) => l.landed_unit_cost !== null) && (
+              <div className="overflow-x-auto rounded-lg border">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b bg-muted/40">
+                      <th className="px-3 py-2 text-start font-medium text-muted-foreground">{t($ => $.editor.landedCost.item)}</th>
+                      <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.editor.landedCost.qty)}</th>
+                      <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.editor.landedCost.baseUnitPrice)}</th>
+                      <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.editor.landedCost.extraPerUnit)}</th>
+                      <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.editor.landedCost.finalUnitCost)}</th>
+                      <th className="px-3 py-2 text-end font-medium text-muted-foreground">{t($ => $.editor.landedCost.finalLineTotal)}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoice.lines.map((l) => {
+                      const finalUnitCost = l.landed_unit_cost ?? l.unit_price;
+                      const extraPerUnit = l.landed_unit_cost !== null ? l.landed_unit_cost - l.unit_price : 0;
+                      return (
+                        <tr key={l.id} className="border-b last:border-0">
+                          <td className="px-3 py-2">{l.product ? `${l.product.sku} — ${l.product.name}` : '—'}</td>
+                          <td className="px-3 py-2 text-end tabular-nums">{l.quantity}</td>
+                          <td className="px-3 py-2 text-end tabular-nums">{fmt.money(l.unit_price)}</td>
+                          <td className="px-3 py-2 text-end tabular-nums">{fmt.money(extraPerUnit)}</td>
+                          <td className="px-3 py-2 text-end tabular-nums font-medium">{fmt.money(finalUnitCost)}</td>
+                          <td className="px-3 py-2 text-end tabular-nums font-medium">{fmt.money(finalUnitCost * l.quantity)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {(!isEdit || !invoice || invoice.lines.every((l) => l.landed_unit_cost === null)) && (num(freight) > 0 || num(additional) > 0) && (
+              <p className="text-[11px] text-muted-foreground">{t($ => $.editor.landedCost.pendingPostHint)}</p>
+            )}
           </Section>
 
           {/* ── INVOICE TOTALS ──────────────────────────────────────────────────── */}
@@ -403,8 +501,54 @@ export function SupplierInvoiceEditor({ open, onOpenChange, invoiceId = null }: 
                 </div>
               </div>
             ) : (
-              <div className="rounded-lg border border-dashed p-3 text-xs text-muted-foreground">
-                {t($ => $.editor.payment.notYetAvailable)}
+              <div className="space-y-3 rounded-lg border p-3">
+                <Label className="text-xs">{t($ => $.editor.payment.option)}</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  {PAYMENT_OPTIONS.map((opt) => (
+                    <label
+                      key={opt}
+                      className={`flex items-center gap-2 rounded-md border p-2 text-xs cursor-pointer ${paymentOption === opt ? 'border-primary bg-primary/5' : ''}`}
+                    >
+                      <input
+                        type="radio"
+                        name="payment-option"
+                        checked={paymentOption === opt}
+                        onChange={() => setPaymentOption(opt)}
+                      />
+                      {t($ => $.editor.payment.options[opt])}
+                    </label>
+                  ))}
+                </div>
+
+                {paymentOption === 'partial' && (
+                  <div>
+                    <Label className="text-xs">{t($ => $.editor.payment.amountPaid)}</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      max={payableTotal}
+                      value={amountPaid}
+                      onChange={(e) => setAmountPaid(e.target.value)}
+                      className="mt-1 h-9 text-sm text-end"
+                    />
+                    {(num(amountPaid) <= 0 || num(amountPaid) >= payableTotal) && (
+                      <p className="mt-1 text-[10px] text-destructive">{t($ => $.editor.payment.partialRangeHint)}</p>
+                    )}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3 pt-1 border-t">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{t($ => $.editor.payment.amountPaid)}</p>
+                    <p className="text-sm tabular-nums font-medium">{fmt.money(amountPaidPreview)}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{t($ => $.editor.payment.remaining)}</p>
+                    <p className="text-sm tabular-nums font-medium">{fmt.money(remainingPreview)}</p>
+                  </div>
+                </div>
+                <p className="text-[10px] text-muted-foreground">{t($ => $.editor.payment.recordedSeparately)}</p>
               </div>
             )}
           </Section>
@@ -455,6 +599,12 @@ export function SupplierInvoiceEditor({ open, onOpenChange, invoiceId = null }: 
                 <Button variant="outline" className="gap-1.5" onClick={handleValidate} disabled={validateMutation.isPending}>
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   {t($ => $.detail.validate)}
+                </Button>
+              )}
+              {canPost && (
+                <Button variant="outline" className="gap-1.5" onClick={handlePost} disabled={postMutation.isPending}>
+                  {postMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                  {t($ => $.editor.buttons.post)}
                 </Button>
               )}
               <Button variant="outline" onClick={() => onOpenChange(false)}>{t($ => $.editor.buttons.cancel)}</Button>

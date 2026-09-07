@@ -52,6 +52,9 @@ import {
   useUploadSupplierDocument,
 } from '@/features/suppliers/hooks/use-supplier-analytics';
 import { ProcurementHealthBadge } from '@/features/suppliers/components/procurement-health-badge';
+import { ManageSupplierOfferingsDrawer } from '@/features/suppliers/components/manage-supplier-offerings-drawer';
+import { AddOpeningBalanceDrawer } from '@/features/suppliers/components/add-opening-balance-drawer';
+import { useSupplierFinancialSummary } from '@/features/suppliers/hooks/use-suppliers';
 import { useFormatter } from '@/hooks/use-formatter';
 import type { SupplierAnalytics, SupplierDocument, SupplierPriceHistoryEntry, SupplierProductDemand, ProcurementHealthResult } from '@/features/suppliers/types/supplier-analytics';
 import type { Supplier } from '@/features/suppliers/types/supplier';
@@ -490,11 +493,72 @@ function ProductDemandTable({ supplierId }: { supplierId: string }) {
   );
 }
 
-function ProductsTab({ supplierId }: { supplierId: string }) {
+/**
+ * §5 — what this supplier CAN supply (a capability declaration), distinct from Purchase
+ * Demand/History (what has actually been bought, how often) and Current Stock (what's
+ * physically on hand right now from this supplier). Reads `supplier.raw_materials` /
+ * `supplier.product_categories`, already eager-loaded on the Supplier detail fetch — no new
+ * endpoint.
+ */
+function SupplierOfferingsSection({ supplier, onManage }: { supplier: Supplier; onManage: () => void }) {
+  const { t } = useTranslation('suppliers');
+  const rawMaterials = supplier.raw_materials ?? [];
+  const productCategories = supplier.product_categories ?? [];
+  const hasAny = rawMaterials.length > 0 || productCategories.length > 0;
+
+  return (
+    <div className="border-b">
+      <div className="flex items-start justify-between gap-4 px-4 py-3">
+        <div>
+          <h3 className="text-xs font-semibold uppercase tracking-wide">{t($ => $.drawer360.products.offerings.sectionTitle)}</h3>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">{t($ => $.drawer360.products.offerings.sectionSubtitle)}</p>
+        </div>
+        <Button variant="outline" size="sm" className="h-7 shrink-0 gap-1.5 text-xs" onClick={onManage}>
+          <Pencil className="size-3.5" />{t($ => $.drawer360.products.offerings.manage)}
+        </Button>
+      </div>
+      <div className="px-4 pb-4">
+        {!hasAny ? (
+          <p className="text-sm text-muted-foreground">{t($ => $.drawer360.products.offerings.empty)}</p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {rawMaterials.length > 0 && (
+              <div>
+                <p className="text-[11px] text-muted-foreground mb-1.5">{t($ => $.capabilities.rawMaterials.label)}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {rawMaterials.map((m) => (
+                    <span key={m.id} className="inline-flex items-center rounded bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+                      {m.name} <span className="ms-1 font-mono text-muted-foreground">({m.sku})</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {productCategories.length > 0 && (
+              <div>
+                <p className="text-[11px] text-muted-foreground mb-1.5">{t($ => $.capabilities.productCategories.label)}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {productCategories.map((c) => (
+                    <span key={c.id} className="inline-flex items-center rounded bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+                      {c.name} <span className="ms-1 font-mono text-muted-foreground">({c.code})</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ProductsTab({ supplier, onManageOfferings }: { supplier: Supplier; onManageOfferings: () => void }) {
   return (
     <div className="flex flex-col">
-      <ProductDemandTable supplierId={supplierId} />
-      <SupplierStockTable supplierId={supplierId} />
+      <SupplierOfferingsSection supplier={supplier} onManage={onManageOfferings} />
+      <ProductDemandTable supplierId={supplier.id} />
+      <SupplierStockTable supplierId={supplier.id} />
     </div>
   );
 }
@@ -746,10 +810,12 @@ function GoodsReceiptsTab({ supplierId }: { supplierId: string }) {
 
 // ── Financial Tab ─────────────────────────────────────────────────────────────
 
-function FinancialTab({ supplierId }: { supplierId: string }) {
+function FinancialTab({ supplier, onAddOpeningBalance }: { supplier: Supplier; onAddOpeningBalance: () => void }) {
   const { t } = useTranslation('suppliers');
   const { money } = useFormatter();
+  const supplierId = supplier.id;
   const { data, isLoading, isError } = useSupplierAnalytics(supplierId);
+  const { data: ledger, isLoading: ledgerLoading } = useSupplierFinancialSummary(supplierId);
 
   if (isLoading) return <div className="p-6"><LoadingState /></div>;
   if (isError) return <div className="p-6"><ErrorState /></div>;
@@ -816,6 +882,39 @@ function FinancialTab({ supplierId }: { supplierId: string }) {
           <p className="text-2xl font-semibold tabular-nums">
             {data.last_purchase_date ? data.last_purchase_date.slice(0, 10) : '—'}
           </p>
+        </CardContent>
+      </Card>
+
+      {/* §6 — the canonical AP-ledger position, distinct from the purchase-history-derived
+          KPIs above. Backed by SupplierLedgerService via GET /suppliers/{id}/financial-summary. */}
+      <Card>
+        <CardHeader className="pb-2 flex-row items-center justify-between space-y-0">
+          <CardTitle className="text-sm">{t($ => $.drawer360.financial.openingBalance.ledgerTitle)}</CardTitle>
+          <Button variant="outline" size="sm" className="h-7 gap-1.5 text-xs" onClick={onAddOpeningBalance}>
+            <CreditCard className="size-3.5" />{t($ => $.drawer360.financial.openingBalance.add)}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {ledgerLoading ? (
+            <LoadingState />
+          ) : ledger ? (
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground">{t($ => $.drawer360.financial.openingBalance.outstandingPayable)}</p>
+                <p className="text-lg font-semibold">{money(ledger.outstanding_payable)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">{t($ => $.drawer360.financial.openingBalance.availableAdvance)}</p>
+                <p className="text-lg font-semibold">{money(ledger.available_advance)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">{t($ => $.drawer360.financial.openingBalance.netBalance)}</p>
+                <p className="text-lg font-semibold">{money(ledger.net_balance)}</p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">{t($ => $.drawer360.financial.openingBalance.ledgerUnavailable)}</p>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -1318,6 +1417,8 @@ export function Supplier360Drawer({ supplier, open, onOpenChange, onEdit, initia
   const navigate = useNavigate();
   const { can } = usePermission();
   const [activeTab, setActiveTab] = useState<TabId>(initialTab);
+  const [manageOfferingsOpen, setManageOfferingsOpen] = useState(false);
+  const [openingBalanceOpen, setOpeningBalanceOpen] = useState(false);
 
   // Re-target the tab whenever the drawer is opened (e.g. Activity action → timeline).
   //
@@ -1406,11 +1507,11 @@ export function Supplier360Drawer({ supplier, open, onOpenChange, onEdit, initia
 
         <div className="flex-1 overflow-auto">
           <TabsContent value="overview"        className="m-0"><OverviewTab supplier={supplier} supplierId={supplier.id} /></TabsContent>
-          <TabsContent value="products"        className="m-0"><ProductsTab supplierId={supplier.id} /></TabsContent>
+          <TabsContent value="products"        className="m-0"><ProductsTab supplier={supplier} onManageOfferings={() => setManageOfferingsOpen(true)} /></TabsContent>
           <TabsContent value="purchase-orders" className="m-0"><PurchaseOrdersTab supplierId={supplier.id} /></TabsContent>
           <TabsContent value="invoices"        className="m-0"><SupplierInvoicesTab supplierId={supplier.id} /></TabsContent>
           <TabsContent value="goods-receipts"  className="m-0"><GoodsReceiptsTab supplierId={supplier.id} /></TabsContent>
-          <TabsContent value="financial"       className="m-0"><FinancialTab supplierId={supplier.id} /></TabsContent>
+          <TabsContent value="financial"       className="m-0"><FinancialTab supplier={supplier} onAddOpeningBalance={() => setOpeningBalanceOpen(true)} /></TabsContent>
           <TabsContent value="inventory"       className="m-0"><InventoryTab supplierId={supplier.id} /></TabsContent>
           <TabsContent value="price-history"   className="m-0"><PriceHistoryTab supplierId={supplier.id} /></TabsContent>
           <TabsContent value="performance"     className="m-0"><PerformanceTab supplierId={supplier.id} /></TabsContent>
@@ -1418,6 +1519,17 @@ export function Supplier360Drawer({ supplier, open, onOpenChange, onEdit, initia
           <TabsContent value="timeline"        className="m-0"><TimelineTab supplierId={supplier.id} /></TabsContent>
         </div>
       </Tabs>
+
+      <ManageSupplierOfferingsDrawer
+        supplier={supplier}
+        open={manageOfferingsOpen}
+        onOpenChange={setManageOfferingsOpen}
+      />
+      <AddOpeningBalanceDrawer
+        supplier={supplier}
+        open={openingBalanceOpen}
+        onOpenChange={setOpeningBalanceOpen}
+      />
     </PageDrawer>
   );
 }

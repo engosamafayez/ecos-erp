@@ -195,6 +195,20 @@ final class SupplierInvoiceController extends Controller
 
     public function post(SupplierInvoice $supplierInvoice): JsonResponse
     {
+        // Idempotent-retry short-circuit: a client that retries a Post click after the FIRST
+        // attempt already succeeded (slow response, double-click, network hiccup) would
+        // otherwise hit PostSupplierInvoiceService's canPost() guard and get back a confusing
+        // 422 "cannot be posted (status: posted)" for what is, from the user's point of view,
+        // a successful retry. Recognising that specific case here and returning the SAME
+        // success shape makes retries safe and legible without weakening anything: no new
+        // posting attempt is made, no financial entry is touched.
+        if ($supplierInvoice->status === SupplierInvoiceStatus::Posted) {
+            return $this->success(
+                new SupplierInvoiceResource($supplierInvoice->fresh(['supplier', 'warehouse', 'lines.product'])),
+                'Invoice already posted',
+            );
+        }
+
         try {
             $this->postService->execute($supplierInvoice);
         } catch (Throwable $e) {

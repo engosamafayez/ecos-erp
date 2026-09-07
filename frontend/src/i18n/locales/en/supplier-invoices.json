@@ -276,12 +276,31 @@
         "partially_paid": "Partially Paid",
         "paid": "Paid"
       },
-      "derivedNote": "Paid and Remaining are derived from recorded supplier payments and cannot be edited here."
+      "derivedNote": "Paid and Remaining are derived from recorded supplier payments and cannot be edited here.",
+      "option": "Payment Option",
+      "options": {
+        "pay_later": "Pay Later",
+        "paid_in_full": "Paid in Full",
+        "partial": "Partial Payment"
+      },
+      "amountPaid": "Amount Paid",
+      "partialRangeHint": "Amount paid must be greater than 0 and less than the invoice total.",
+      "recordedSeparately": "This only records your intent. The actual payment is posted through Finance → Accounts Payable after this invoice is posted, and requires a separate approver."
     },
     "buttons": {
       "cancel": "Cancel",
       "create": "Create Invoice",
-      "creating": "Creating…"
+      "creating": "Creating…",
+      "post": "Post Invoice"
+    },
+    "landedCost": {
+      "item": "Item",
+      "qty": "Qty",
+      "baseUnitPrice": "Base Unit Price",
+      "extraPerUnit": "Allocated Extra Cost / Unit",
+      "finalUnitCost": "Final Landed Unit Cost",
+      "finalLineTotal": "Final Landed Line Total",
+      "pendingPostHint": "Freight and additional costs will be allocated evenly per unit across all items once this invoice is posted."
     },
     "toast": {
       "supplierRequired": "Supplier is required",

@@ -529,7 +529,7 @@ export function SuppliersPage() {
             primaryAction={{ label: t($ => $.actions.new), icon: Plus, onClick: () => setWizardOpen(true) }}
             secondaryActions={[
               { key: 'export', label: t($ => $.exportCsv), icon: Download, onClick: () => exportCsv(items), hideOnMobile: true },
-              { key: 'manage-categories', label: t($ => $.categorySelect.manage.title), icon: Tag, onClick: () => setManageCategoriesOpen(true), hideOnMobile: true },
+              { key: 'manage-categories', label: t($ => $.categorySelect.manage.title), icon: Tag, onClick: () => setManageCategoriesOpen(true) },
             ]}
             bulkActions={
               selection.selectedCount > 0

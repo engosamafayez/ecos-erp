@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
-import { Trash2 } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 
 import { EntityDrawer } from '@/components/crud';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -12,7 +12,9 @@ import {
   useCreateSupplierCategory,
   useDeleteSupplierCategory,
   useSupplierCategoriesQuery,
+  useUpdateSupplierCategory,
 } from '@/features/suppliers/hooks/use-supplier-categories';
+import type { SupplierCategory } from '@/features/suppliers/types/supplier';
 
 type SupplierCategoryManageDrawerProps = {
   open: boolean;
@@ -34,11 +36,46 @@ export function SupplierCategoryManageDrawer({ open, onOpenChange }: SupplierCat
   const { t } = useTranslation('suppliers');
   const { data: categories, isLoading } = useSupplierCategoriesQuery(false);
   const createCategory = useCreateSupplierCategory();
+  const updateCategory = useUpdateSupplierCategory();
   const deleteCategory = useDeleteSupplierCategory();
 
   const [code, setCode] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  // §2 — inline edit, since a separate edit page/drawer would be heavier than this small
+  // lookup needs. Archive reuses the same update mutation (toggling is_active) as a safer
+  // alternative to delete when a category is still assigned to suppliers (delete is now
+  // guarded server-side and returns a clear error in that case).
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editCode, setEditCode] = useState('');
+  const [editName, setEditName] = useState('');
+
+  function startEdit(c: SupplierCategory) {
+    setEditingId(c.id);
+    setEditCode(c.code);
+    setEditName(c.name);
+  }
+
+  function saveEdit(id: string) {
+    updateCategory.mutate(
+      { id, payload: { code: editCode, name: editName, is_active: true } },
+      {
+        onSuccess: () => { setEditingId(null); toast.success(t($ => $.categorySelect.manage.updated)); },
+        onError: (err) => toast.error(extractMessage(err)),
+      },
+    );
+  }
+
+  function toggleArchive(c: SupplierCategory) {
+    updateCategory.mutate(
+      { id: c.id, payload: { code: c.code, name: c.name, is_active: !c.is_active } },
+      {
+        onSuccess: () => toast.success(c.is_active ? t($ => $.categorySelect.manage.archived) : t($ => $.categorySelect.manage.restored)),
+        onError: (err) => toast.error(extractMessage(err)),
+      },
+    );
+  }
 
   function handleAdd() {
     setError(null);
@@ -102,20 +139,51 @@ export function SupplierCategoryManageDrawer({ open, onOpenChange }: SupplierCat
           ) : (
             (categories ?? []).map((c) => (
               <div key={c.id} className="flex items-center justify-between gap-2 p-3">
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium">{c.name}</span>
-                  <span className="font-mono text-xs text-muted-foreground">{c.code}</span>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="text-destructive hover:text-destructive"
-                  onClick={() => handleDelete(c.id)}
-                  disabled={deleteCategory.isPending}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
+                {editingId === c.id ? (
+                  <>
+                    <div className="flex flex-1 items-center gap-2">
+                      <Input value={editCode} onChange={(e) => setEditCode(e.target.value)} className="w-28 font-mono" maxLength={50} />
+                      <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="flex-1" maxLength={255} />
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button type="button" size="sm" onClick={() => saveEdit(c.id)} disabled={updateCategory.isPending || !editCode.trim() || !editName.trim()}>
+                        {t($ => $.categorySelect.manage.save)}
+                      </Button>
+                      <Button type="button" size="sm" variant="ghost" onClick={() => setEditingId(null)}>
+                        {t($ => $.categorySelect.manage.cancel)}
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className={`flex flex-col ${c.is_active ? '' : 'opacity-50'}`}>
+                      <span className="text-sm font-medium">
+                        {c.name}
+                        {!c.is_active && <span className="ms-1.5 rounded bg-muted px-1.5 py-0.5 text-[10px] font-normal uppercase text-muted-foreground">{t($ => $.categorySelect.manage.archivedBadge)}</span>}
+                      </span>
+                      <span className="font-mono text-xs text-muted-foreground">{c.code}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button type="button" variant="ghost" size="icon" onClick={() => startEdit(c)} aria-label={t($ => $.categorySelect.manage.edit)}>
+                        <Pencil className="size-4" />
+                      </Button>
+                      <Button type="button" variant="ghost" size="sm" className="text-xs" onClick={() => toggleArchive(c)} disabled={updateCategory.isPending}>
+                        {c.is_active ? t($ => $.categorySelect.manage.archive) : t($ => $.categorySelect.manage.restore)}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => handleDelete(c.id)}
+                        disabled={deleteCategory.isPending}
+                        aria-label={t($ => $.categorySelect.manage.delete)}
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </div>
+                  </>
+                )}
               </div>
             ))
           )}
