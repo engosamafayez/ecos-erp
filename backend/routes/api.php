@@ -31,8 +31,14 @@ use Modules\Collaboration\Presentation\Http\Controllers\MessageController as Col
 use Modules\Collaboration\Presentation\Http\Controllers\OperationalContextLinkController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskAssignmentController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskAttachmentController;
+use Modules\Collaboration\Presentation\Http\Controllers\TaskBoardListController;
+use Modules\Collaboration\Presentation\Http\Controllers\TaskCardController;
+use Modules\Collaboration\Presentation\Http\Controllers\TaskChecklistController;
+use Modules\Collaboration\Presentation\Http\Controllers\TaskChecklistItemController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskCommentController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskController;
+use Modules\Collaboration\Presentation\Http\Controllers\TaskFollowerController;
+use Modules\Collaboration\Presentation\Http\Controllers\TaskLabelController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskStatusController;
 use Modules\Commerce\Channels\Presentation\Http\Controllers\ChannelController;
 use Modules\Commerce\Connectors\Presentation\Http\Controllers\ConnectorController;
@@ -4802,6 +4808,46 @@ Route::middleware('auth:sanctum')->prefix('collaboration')->group(function (): v
         ->middleware('throttle:60,1');
     Route::get('tasks/{task}/attachments/{document}', [TaskAttachmentController::class, 'show']);
     Route::get('tasks/{task}/context-links', [OperationalContextLinkController::class, 'indexForTask']);
+
+    // TASK-ECOS-INTERNAL-COLLABORATION-TASKS-TRELLO-FINAL-CLOSURE-002 — Board
+    // LISTS (organizational containers, never a second TaskStatus authority
+    // — see TaskBoardList's docblock). Read is open to any company member;
+    // mutations reuse the same `collaboration.tasks.create` permission task
+    // creation already carries (brief §23 — no new permission token).
+    Route::get('task-lists', [TaskBoardListController::class, 'index']);
+    Route::post('task-lists', [TaskBoardListController::class, 'store'])
+        ->middleware('permission:collaboration.tasks.create');
+    Route::patch('task-lists/reorder', [TaskBoardListController::class, 'reorder'])
+        ->middleware('permission:collaboration.tasks.create');
+    Route::patch('task-lists/{list}', [TaskBoardListController::class, 'update'])
+        ->middleware('permission:collaboration.tasks.create');
+    Route::patch('task-lists/{list}/archive', [TaskBoardListController::class, 'archive'])
+        ->middleware('permission:collaboration.tasks.create');
+    Route::patch('task-lists/{list}/restore', [TaskBoardListController::class, 'restore'])
+        ->middleware('permission:collaboration.tasks.create');
+
+    // Card placement — ownership-gated inside MoveTaskCardAction (creator/assignee), same tier as status transitions.
+    Route::patch('tasks/{task}/move', [TaskCardController::class, 'move']);
+
+    // Labels — company-scoped catalog + per-task attach/detach.
+    Route::get('task-labels', [TaskLabelController::class, 'index']);
+    Route::post('task-labels', [TaskLabelController::class, 'store'])
+        ->middleware('permission:collaboration.tasks.create');
+    Route::post('tasks/{task}/labels/{label}', [TaskLabelController::class, 'attach']);
+    Route::delete('tasks/{task}/labels/{label}', [TaskLabelController::class, 'detach']);
+
+    // Checklists.
+    Route::get('tasks/{task}/checklists', [TaskChecklistController::class, 'index']);
+    Route::post('tasks/{task}/checklists', [TaskChecklistController::class, 'store']);
+    Route::post('tasks/{task}/checklists/{checklist}/items', [TaskChecklistItemController::class, 'store']);
+    Route::patch('tasks/{task}/checklists/{checklist}/items/{item}', [TaskChecklistItemController::class, 'update']);
+    Route::delete('tasks/{task}/checklists/{checklist}/items/{item}', [TaskChecklistItemController::class, 'destroy']);
+    Route::patch('tasks/{task}/checklists/{checklist}/items/reorder', [TaskChecklistItemController::class, 'reorder']);
+
+    // Followers/watchers — DISTINCT from the primary assignee (brief §5/§16).
+    Route::post('tasks/{task}/followers', [TaskFollowerController::class, 'store']);
+    Route::delete('tasks/{task}/followers/{userId}', [TaskFollowerController::class, 'destroy'])
+        ->whereNumber('userId');
 
     Route::get('search/tasks', [CollaborationSearchController::class, 'tasks'])
         ->middleware('throttle:30,1');

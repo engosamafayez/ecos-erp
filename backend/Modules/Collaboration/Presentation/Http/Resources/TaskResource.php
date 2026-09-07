@@ -36,9 +36,45 @@ final class TaskResource extends JsonResource
             'source_message_id' => $this->source_message_id,
             'source_message_snapshot' => $this->sourceSnapshotFor($request),
             'activity' => $this->whenLoaded('activity', fn () => TaskActivityResource::collection($this->activity)),
+            // Board placement (organizational only, TASK-ECOS-INTERNAL-
+            // COLLABORATION-TASKS-TRELLO-FINAL-CLOSURE-002 §1) — never a
+            // second status authority; `status` above remains canonical.
+            'task_list_id' => $this->task_list_id,
+            'board_position' => $this->board_position,
+            'list_name' => $this->whenLoaded('list', fn () => $this->list?->name),
+            'labels' => $this->whenLoaded('labels', fn () => TaskLabelResource::collection($this->labels)),
+            'checklists' => $this->whenLoaded('checklists', fn () => TaskChecklistResource::collection($this->checklists)),
+            'checklist_progress' => $this->checklistProgress(),
+            'followers' => $this->whenLoaded('followers', fn () => TaskFollowerResource::collection($this->followers)),
+            'followers_count' => $this->whenCounted('followers'),
+            'comments_count' => $this->whenCounted('comments'),
+            'attachments_count' => $this->whenCounted('attachments'),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
+    }
+
+    /**
+     * Prefers the cheap `withCount` aggregates the list endpoint already
+     * loads; falls back to counting loaded `checklists.items` on the detail
+     * endpoint, which eager-loads the full checklist tree instead. Never
+     * both loaded and counted redundantly.
+     *
+     * @return array{completed: int, total: int}|null
+     */
+    private function checklistProgress(): ?array
+    {
+        if ($this->checklist_items_total !== null) {
+            return ['completed' => (int) $this->checklist_items_completed, 'total' => (int) $this->checklist_items_total];
+        }
+
+        if ($this->relationLoaded('checklists')) {
+            $items = $this->checklists->flatMap(fn ($checklist) => $checklist->items);
+
+            return ['completed' => $items->where('is_completed', true)->count(), 'total' => $items->count()];
+        }
+
+        return null;
     }
 
     /**

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft, Search } from 'lucide-react';
+import { ArrowLeft, Plus, Search } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,9 +18,10 @@ import { NewDirectDialog } from '../components/new-direct-dialog';
 import { NewGroupDialog } from '../components/new-group-dialog';
 import { TaskBoard } from '../components/task-board';
 import { TaskDetailDrawer } from '../components/task-detail-drawer';
+import { TaskFilters } from '../components/task-filters';
 import { TaskList } from '../components/task-list';
 import { useConversation } from '../hooks/use-conversations';
-import type { Conversation, Message, Task } from '../types';
+import type { Conversation, Message, Task, TaskFilters as TaskFiltersValue } from '../types';
 
 type WorkspaceTab = 'conversations' | 'tasks';
 type TaskView = 'board' | 'list';
@@ -52,6 +53,7 @@ export function CollaborationWorkspacePage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
   const [taskView, setTaskView] = useState<TaskView>('board');
+  const [taskFilters, setTaskFilters] = useState<TaskFiltersValue>({ scope: 'mine' });
   const [sourceMessage, setSourceMessage] = useState<{ id: string; body: string | null } | null>(null);
 
   function setTab(next: WorkspaceTab) {
@@ -191,46 +193,47 @@ export function CollaborationWorkspacePage() {
         </TabsContent>
 
         <TabsContent value="tasks" className="m-0 flex min-h-0 flex-1 flex-col">
-          <div className="flex justify-end px-3 pt-2">
-            <div className="inline-flex rounded-md border p-0.5">
-              <Button
-                size="sm"
-                variant={taskView === 'board' ? 'secondary' : 'ghost'}
-                className="h-7 px-2.5 text-xs"
-                onClick={() => setTaskView('board')}
-              >
-                {t(($) => $.tasks.view.board)}
-              </Button>
-              <Button
-                size="sm"
-                variant={taskView === 'list' ? 'secondary' : 'ghost'}
-                className="h-7 px-2.5 text-xs"
-                onClick={() => setTaskView('list')}
-              >
-                {t(($) => $.tasks.view.list)}
-              </Button>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex shrink-0 rounded-md border p-0.5">
+                <Button
+                  size="sm"
+                  variant={taskView === 'board' ? 'secondary' : 'ghost'}
+                  className="h-7 px-2.5 text-xs"
+                  onClick={() => setTaskView('board')}
+                >
+                  {t(($) => $.tasks.view.board)}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={taskView === 'list' ? 'secondary' : 'ghost'}
+                  className="h-7 px-2.5 text-xs"
+                  onClick={() => setTaskView('list')}
+                >
+                  {t(($) => $.tasks.view.list)}
+                </Button>
+              </div>
+              <TaskFilters value={taskFilters} onChange={setTaskFilters} />
             </div>
+
+            <Button
+              size="sm"
+              className="shrink-0 gap-1.5"
+              onClick={() => {
+                setSourceMessage(null);
+                setCreateTaskOpen(true);
+              }}
+            >
+              <Plus className="size-3.5" />
+              {t(($) => $.tasks.create)}
+            </Button>
           </div>
 
           <div className="min-h-0 flex-1">
             {taskView === 'board' ? (
-              <TaskBoard
-                activeTaskId={taskId}
-                onSelect={selectTask}
-                onCreate={() => {
-                  setSourceMessage(null);
-                  setCreateTaskOpen(true);
-                }}
-              />
+              <TaskBoard filters={taskFilters} activeTaskId={taskId} onSelect={selectTask} />
             ) : (
-              <TaskList
-                activeTaskId={taskId}
-                onSelect={selectTask}
-                onCreate={() => {
-                  setSourceMessage(null);
-                  setCreateTaskOpen(true);
-                }}
-              />
+              <TaskList filters={taskFilters} activeTaskId={taskId} onSelect={selectTask} />
             )}
           </div>
         </TabsContent>

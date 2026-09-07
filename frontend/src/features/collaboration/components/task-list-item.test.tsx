@@ -98,4 +98,53 @@ describe('TaskListItem', () => {
     rerender(<TaskListItem task={BASE_TASK} isActive={false} onSelect={() => {}} />);
     expect(screen.getByRole('button')).not.toHaveAttribute('aria-current');
   });
+
+  it('renders label badges when the task has labels', () => {
+    render(
+      <TaskListItem
+        task={{ ...BASE_TASK, labels: [{ id: 'l1', name: 'Urgent', color: 'red' }] }}
+        isActive={false}
+        onSelect={() => {}}
+      />,
+    );
+    expect(screen.getByText('Urgent')).toBeInTheDocument();
+  });
+
+  it('renders no label badges when the task has no labels', () => {
+    render(<TaskListItem task={{ ...BASE_TASK, labels: [] }} isActive={false} onSelect={() => {}} />);
+    expect(screen.queryByText('Urgent')).not.toBeInTheDocument();
+  });
+
+  it('renders checklist progress only when the checklist has items', () => {
+    const { rerender } = render(
+      <TaskListItem
+        task={{ ...BASE_TASK, checklist_progress: { completed: 2, total: 4 } }}
+        isActive={false}
+        onSelect={() => {}}
+      />,
+    );
+    expect(screen.getByText('tasks.checklist.progress')).toBeInTheDocument();
+
+    rerender(
+      <TaskListItem
+        task={{ ...BASE_TASK, checklist_progress: { completed: 0, total: 0 } }}
+        isActive={false}
+        onSelect={() => {}}
+      />,
+    );
+    expect(screen.queryByText('tasks.checklist.progress')).not.toBeInTheDocument();
+  });
+
+  it('renders comments, attachments, and follower counts when present', () => {
+    render(
+      <TaskListItem
+        task={{ ...BASE_TASK, comments_count: 3, attachments_count: 2, followers_count: 1 }}
+        isActive={false}
+        onSelect={() => {}}
+      />,
+    );
+    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(screen.getByText('1')).toBeInTheDocument();
+  });
 });

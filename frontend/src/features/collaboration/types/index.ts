@@ -5,6 +5,7 @@ export type TaskStatus = 'todo' | 'in_progress' | 'done' | 'cancelled';
 export type TaskPriority = 'low' | 'normal' | 'high' | 'urgent';
 export type OperationalContextType = 'order' | 'distribution_group' | 'trip' | 'driver';
 export type AttachedToType = 'conversation' | 'message' | 'task';
+export type TaskLabelColor = 'gray' | 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple';
 
 export interface Conversation {
   id: string;
@@ -79,6 +80,41 @@ export interface TaskActivityEntry {
   created_at: string;
 }
 
+/** A Trello-style board LIST (organizational container) — never a second
+ *  TaskStatus authority. Canonical lifecycle stays on Task.status. */
+export interface TaskBoardList {
+  id: string;
+  name: string;
+  position: number;
+  archived_at: string | null;
+}
+
+export interface TaskLabel {
+  id: string;
+  name: string;
+  color: TaskLabelColor;
+}
+
+export interface TaskChecklistItem {
+  id: string;
+  title: string;
+  is_completed: boolean;
+  position: number;
+}
+
+export interface TaskChecklist {
+  id: string;
+  title: string;
+  position: number;
+  items: TaskChecklistItem[];
+}
+
+/** Watcher, DISTINCT from the primary assignee. */
+export interface TaskFollower {
+  user_id: number;
+  name?: string | null;
+}
+
 export interface Task {
   id: string;
   company_id: string;
@@ -103,6 +139,19 @@ export interface Task {
    *  alone; `source_message_id` non-null + this null means "unavailable". */
   source_message_snapshot: string | null;
   activity?: TaskActivityEntry[];
+  /** Board placement — organizational only, see TaskBoardList. Always present on
+   *  a real API response; optional here only so existing fixtures/tests that
+   *  predate the Trello board don't all need updating for an unrelated field. */
+  task_list_id?: string | null;
+  board_position?: number;
+  list_name?: string | null;
+  labels?: TaskLabel[];
+  checklists?: TaskChecklist[];
+  checklist_progress?: { completed: number; total: number } | null;
+  followers?: TaskFollower[];
+  followers_count?: number;
+  comments_count?: number;
+  attachments_count?: number;
   created_at: string;
   updated_at: string;
 }

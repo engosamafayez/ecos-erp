@@ -61,14 +61,14 @@ final class TaskController extends Controller
 
         $task = $action->execute($request->user(), $data);
 
-        return $this->created(new TaskResource($task->load(['activity.actor', 'creator', 'assignee'])));
+        return $this->created(new TaskResource($task->load(self::DETAIL_RELATIONS)));
     }
 
     public function show(Request $request, InternalTask $task): JsonResponse
     {
         $this->authorize('view', $task);
 
-        return $this->success(new TaskResource($task->load(['activity.actor', 'creator', 'assignee'])));
+        return $this->success(new TaskResource($task->load(self::DETAIL_RELATIONS)));
     }
 
     public function update(UpdateTaskRequest $request, InternalTask $task, UpdateTaskAction $action): JsonResponse
@@ -83,6 +83,12 @@ final class TaskController extends Controller
 
         $task = $action->execute($request->user(), $task, $changes);
 
-        return $this->updated(new TaskResource($task->load(['creator', 'assignee'])));
+        return $this->updated(new TaskResource($task->load(self::DETAIL_RELATIONS)));
     }
+
+    /** @var list<string> */
+    private const DETAIL_RELATIONS = [
+        'activity.actor', 'creator', 'assignee', 'list', 'labels',
+        'checklists.items', 'followers.user',
+    ];
 }

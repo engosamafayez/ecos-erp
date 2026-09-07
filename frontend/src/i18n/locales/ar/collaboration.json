@@ -118,7 +118,53 @@
     },
     "board": {
       "invalidMove": "لا يُسمح بتغيير الحالة هذا.",
-      "linkedConversation": "مرتبطة بمحادثة"
+      "linkedConversation": "مرتبطة بمحادثة",
+      "addList": "إضافة قائمة",
+      "newListPlaceholder": "اسم القائمة",
+      "addCard": "إضافة بطاقة",
+      "moveTo": "نقل إلى…",
+      "moveCardFailed": "تعذّر نقل البطاقة.",
+      "renameList": "إعادة تسمية القائمة",
+      "archiveList": "أرشفة القائمة",
+      "restoreList": "استعادة القائمة",
+      "archivedLists": "القوائم المؤرشفة",
+      "noArchivedLists": "لا توجد قوائم مؤرشفة.",
+      "listNamePlaceholder": "اسم القائمة"
+    },
+    "labels": {
+      "title": "الوسوم",
+      "add": "إضافة وسم",
+      "create": "إنشاء وسم",
+      "namePlaceholder": "اسم الوسم",
+      "colorLabel": "اللون",
+      "none": "لا توجد وسوم",
+      "colors": {
+        "gray": "رمادي",
+        "red": "أحمر",
+        "orange": "برتقالي",
+        "yellow": "أصفر",
+        "green": "أخضر",
+        "blue": "أزرق",
+        "purple": "بنفسجي"
+      }
+    },
+    "checklist": {
+      "title": "قائمة التحقق",
+      "add": "إضافة قائمة تحقق",
+      "titlePlaceholder": "عنوان قائمة التحقق",
+      "addItem": "إضافة عنصر",
+      "itemPlaceholder": "أضف عنصرًا…",
+      "delete": "حذف",
+      "empty": "لا توجد عناصر بعد.",
+      "progress": "{{completed}}/{{total}}"
+    },
+    "followers": {
+      "title": "المتابعون",
+      "follow": "متابعة",
+      "unfollow": "إلغاء المتابعة",
+      "add": "إضافة متابع",
+      "none": "لا يوجد متابعون",
+      "you": "أنت"
     },
     "filters": {
       "scope": "عرض",
@@ -160,7 +206,7 @@
       "creator": "أنشأها",
       "priority": "الأولوية",
       "status": "الحالة",
-      "due": "موعد الاستحقاق",
+      "due": "موعد الاستحقاق ووقته",
       "comments": "التعليقات",
       "attachments": "المرفقات",
       "activity": "السجل",
@@ -179,6 +225,9 @@
       "edit": "تعديل المهمة",
       "loadFailed": "تعذّر تحميل هذه المهمة.",
       "forbidden": "ليس لديك صلاحية الوصول إلى هذه المهمة.",
+      "people": "الأشخاص",
+      "checklists": "قائمة التحقق",
+      "checklistProgress": "{{completed}}/{{total}}",
       "transitions": {
         "start": "بدء",
         "complete": "تحديد كمكتملة",
@@ -195,7 +244,7 @@
       "assigneeLabel": "المسندة إلى",
       "assigneeDefault": "إسناد لنفسي",
       "priorityLabel": "الأولوية",
-      "dueLabel": "موعد الاستحقاق",
+      "dueLabel": "موعد الاستحقاق ووقته",
       "submit": "إنشاء المهمة",
       "cancel": "إلغاء",
       "success": "تم إنشاء المهمة",
@@ -208,7 +257,10 @@
       "priority_changed": "غيّر الأولوية",
       "due_date_changed": "غيّر موعد الاستحقاق",
       "comment_added": "علّق",
-      "updated": "حدّث المهمة"
+      "updated": "حدّث المهمة",
+      "list_changed": "نقل هذه البطاقة",
+      "label_added": "أضاف وسمًا",
+      "label_removed": "أزال وسمًا"
     },
     "context": {
       "order": "طلب",
