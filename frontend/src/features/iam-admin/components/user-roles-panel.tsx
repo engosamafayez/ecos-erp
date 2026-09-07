@@ -76,12 +76,26 @@ export function UserRolesPanel({ user }: { user: UserDetail }) {
               key={assignment.key ?? assignment.name}
               className="flex items-center justify-between rounded-md border px-3 py-2"
             >
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">{assignment.name}</span>
-                {assignment.is_primary ? (
-                  <Badge variant="outline" className="text-xs">
-                    {t(($) => $.users.roles.primary)}
-                  </Badge>
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-medium">{assignment.name_ar ?? assignment.name}</span>
+                  {assignment.name_ar && assignment.name_ar !== assignment.name ? (
+                    <span className="text-muted-foreground text-xs">{assignment.name}</span>
+                  ) : null}
+                  {assignment.is_primary ? (
+                    <Badge variant="outline" className="text-xs">
+                      {t(($) => $.users.roles.primary)}
+                    </Badge>
+                  ) : null}
+                </div>
+                {assignment.scope_expectation.length > 0 ? (
+                  <div className="flex flex-wrap gap-1">
+                    {assignment.scope_expectation.map((type) => (
+                      <Badge key={type} variant="outline" className="text-[10px]">
+                        {type}
+                      </Badge>
+                    ))}
+                  </div>
                 ) : null}
               </div>
               <Can permission="iam.users.revoke-role">
@@ -110,8 +124,8 @@ export function UserRolesPanel({ user }: { user: UserDetail }) {
             <SelectContent>
               {assignable.map((template) => (
                 <SelectItem key={template.key} value={template.key}>
-                  {template.name}
-                  {template.is_system ? ` (${t(($) => $.roleTemplates.systemBadge)})` : ''}
+                  {template.name_ar !== template.name ? `${template.name_ar} (${template.name})` : template.name}
+                  {template.is_system ? ` — ${t(($) => $.roleTemplates.systemBadge)}` : ''}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -48,14 +48,62 @@ vi.mock('@/features/iam-admin/services/users-service', () => ({
 
 import { UserSecurityPanel } from './user-security-panel';
 
+/**
+ * TASK-ECOS-IAM-FINAL-SOURCE-CAPTURE-INTEGRATION-DEV-CLOSURE-002: `UserDetail.lifecycle` is
+ * a new, REQUIRED field — the panel now reads `user.lifecycle.can_set_initial_password` /
+ * `.can_reset_password` directly (§10/§13) instead of deriving eligibility from `status`
+ * itself, so a mock object missing it would throw at render (`Cannot read properties of
+ * undefined`), not merely assert the wrong thing. This mirrors the exact transition table
+ * `Modules\IAM\Domain\Enums\UserStatus` computes server-side
+ * (`allowedTransitions()` / `allowsAdminPasswordSet()` / `allowsAdminPasswordReset()`), so a
+ * status passed into `baseUser()` always carries a truthful, backend-consistent
+ * `lifecycle` object by default — exactly what `UserController::serialize()` would return
+ * for that status — while still allowing a test to override individual flags directly.
+ */
+type Status = UserDetail['status'];
+
+const ALLOWED_TRANSITIONS: Record<Status, Status[]> = {
+  draft: ['invited', 'active', 'archived', 'deleted'],
+  invited: ['pending_activation', 'active', 'suspended', 'archived', 'deleted'],
+  pending_activation: ['active', 'suspended', 'archived', 'deleted'],
+  active: ['inactive', 'suspended', 'locked', 'archived', 'deleted'],
+  inactive: ['active', 'suspended', 'archived', 'deleted'],
+  suspended: ['active', 'inactive', 'archived', 'deleted'],
+  locked: ['active', 'suspended', 'archived', 'deleted'],
+  archived: ['active', 'deleted'],
+  deleted: [],
+};
+
+function lifecycleFor(status: Status, trashed = false): UserDetail['lifecycle'] {
+  const canTransitionTo = (target: Status) => ALLOWED_TRANSITIONS[status].includes(target);
+  const isPreActivation = status === 'draft' || status === 'invited' || status === 'pending_activation';
+
+  return {
+    is_pre_activation: isPreActivation,
+    can_activate: canTransitionTo('active'),
+    can_suspend: canTransitionTo('suspended'),
+    can_deactivate: canTransitionTo('inactive'),
+    can_lock: canTransitionTo('locked'),
+    can_unlock: status === 'locked',
+    can_archive: canTransitionTo('archived'),
+    can_restore: status === 'archived' || trashed,
+    can_set_initial_password: isPreActivation,
+    can_reset_password: (['active', 'inactive', 'suspended', 'locked'] as Status[]).includes(status),
+    can_authenticate: status === 'active',
+    requires_password_change: false,
+    has_credential: !isPreActivation,
+  };
+}
+
 function baseUser(overrides: Partial<UserDetail> = {}): UserDetail {
+  const status = overrides.status ?? 'active';
   return {
     id: 1,
     name: 'Amina Khaled',
     display_name: 'Amina Khaled',
     email: 'amina@ecos.test',
     employee_number: 'EMP-001',
-    status: 'active',
+    status,
     status_label: 'Active',
     company_id: 'company-1',
     last_login_at: null,
@@ -69,8 +117,10 @@ function baseUser(overrides: Partial<UserDetail> = {}): UserDetail {
     hire_date: null,
     templates: [],
     organizations: [],
+    employee: null,
     created_at: null,
     updated_at: null,
+    lifecycle: lifecycleFor(status, overrides.trashed ?? false),
     ...overrides,
   };
 }
@@ -113,6 +163,33 @@ describe('UserSecurityPanel', () => {
     await user.type(inputs[0], 'N3wPassw0rd!');
     await user.type(inputs[1], 'N3wPassw0rd!');
     await user.click(within(dialog).getByRole('button', { name: 'users.security.resetSubmit' }));
+
+    await waitFor(() => expect(mockResetPassword).toHaveBeenCalledTimes(1));
+    expect(mockResetPassword).toHaveBeenCalledWith(1, { password: 'N3wPassw0rd!', password_confirmation: 'N3wPassw0rd!' });
+  });
+
+  // ── §10/§13: distinct initial-password vs reset-password semantics ──────────
+
+  it('offers "Set initial password" (never "Reset password") for a Draft user, and calls the same endpoint', async () => {
+    const user = userEvent.setup();
+    mockResetPassword.mockResolvedValue(undefined);
+    renderPanel(baseUser({ status: 'draft', status_label: 'Draft' }));
+
+    // §10's own fix: a Draft account is no longer a dead end — the panel must offer a
+    // working credential action, worded for what it actually is (a first credential, not
+    // a reset of a nonexistent one), not the old hard refusal.
+    expect(await screen.findByText('users.security.initialPasswordHint')).toBeInTheDocument();
+    const trigger = screen.getByRole('button', { name: 'users.security.setInitialTrigger' });
+    expect(trigger).not.toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'users.security.resetTrigger' })).not.toBeInTheDocument();
+
+    await user.click(trigger);
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText('users.security.setInitialTitle')).toBeInTheDocument();
+    const inputs = within(dialog).getAllByDisplayValue('');
+    await user.type(inputs[0], 'N3wPassw0rd!');
+    await user.type(inputs[1], 'N3wPassw0rd!');
+    await user.click(within(dialog).getByRole('button', { name: 'users.security.setInitialSubmit' }));
 
     await waitFor(() => expect(mockResetPassword).toHaveBeenCalledTimes(1));
     expect(mockResetPassword).toHaveBeenCalledWith(1, { password: 'N3wPassw0rd!', password_confirmation: 'N3wPassw0rd!' });

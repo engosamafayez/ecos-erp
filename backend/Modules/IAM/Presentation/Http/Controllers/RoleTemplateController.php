@@ -233,10 +233,18 @@ final class RoleTemplateController extends Controller
      */
     private function serialize(RoleTemplate $template, bool $detailed = false): array
     {
+        // §5/§12: Arabic business name/description for a template that is part of the
+        // approved fourteen-role catalogue (keyed `business-*`), so the role-assignment
+        // picker and the templates list can lead with Arabic without a second lookup. A
+        // custom or non-catalogue template falls back to its own stored name.
+        $display = \Modules\IAM\Domain\Catalog\BusinessRoleCatalog::displayFor($template->key);
+
         $base = [
             'key' => $template->key,
             'name' => $template->name,
+            'name_ar' => $display['name_ar'] ?? $template->name,
             'description' => $template->description,
+            'description_ar' => $display['description_ar'] ?? $template->description,
             'category' => $template->category,
             'status' => $template->status,
             'version' => $template->version,

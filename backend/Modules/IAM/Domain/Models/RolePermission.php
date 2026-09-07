@@ -33,7 +33,16 @@ class RolePermission extends Pivot
 
     protected $keyType = 'string';
 
-    public $timestamps = false;
+    /**
+     * TASK-ECOS-IAM-FINAL-REMEDIATION-DIRECT-DEV-001: was `false`, matching the table's
+     * original `created_at`-only shape. `role_permissions` now has `updated_at` too (see
+     * migration 2026_12_28_000002) — added because Laravel's own pivot hydration
+     * (AsPivot::hasTimestampAttributes()) forces timestamps on for ANY fetched row that
+     * has `created_at`, regardless of this property, so declaring `false` was already not
+     * honoured on the update path. Declaring `true` now just matches what the framework
+     * does in practice, with a schema that actually supports it.
+     */
+    public $timestamps = true;
 
     /** @var list<string> */
     protected $fillable = [

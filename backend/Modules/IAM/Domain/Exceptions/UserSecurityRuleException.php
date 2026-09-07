@@ -36,12 +36,20 @@ final class UserSecurityRuleException extends RuntimeException
     }
 
     /** D1: ARCHIVED requires restore first; DELETED has no reset path. */
+    /**
+     * TASK-ECOS-IAM-FINAL-REMEDIATION-DIRECT-DEV-001, §10 asks for "clear error messaging"
+     * and "no dead-end Draft account". The pre-activation branch is gone from here because
+     * those states are no longer refused — UserStatus::allowsAdminPasswordSet() permits
+     * setting a FIRST credential for them. What remains are the two genuinely terminal
+     * states, and each now says what to do instead rather than only what failed.
+     */
     public static function cannotResetPasswordInStatus(UserStatus $status): self
     {
         $message = match ($status) {
-            UserStatus::ARCHIVED => 'Cannot reset password for an archived user — restore the account first.',
-            UserStatus::DELETED => 'Cannot reset password for a deleted user.',
-            default => "Cannot reset password while the account status is '{$status->value}'.",
+            UserStatus::ARCHIVED => 'Cannot set a password for an archived user — restore the account first, then set the password.',
+            UserStatus::DELETED => 'Cannot set a password for a deleted user — restore the account first.',
+            default => "Cannot set a password while the account status is '{$status->value}'. ".
+                'Activate, restore or unlock the account first.',
         };
 
         return new self($message);

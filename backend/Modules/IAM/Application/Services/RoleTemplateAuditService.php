@@ -44,9 +44,17 @@ class RoleTemplateAuditService
     }
 
     /**
+     * $old/$new are appended AFTER $metadata deliberately: every pre-existing positional
+     * call site passes at most three arguments, so adding them here cannot change the
+     * meaning of any existing call. They are needed by RoleAuthoringService — §11 requires
+     * role lifecycle changes to be audited, and "audited" for an edit means recording what
+     * changed, not only that something did.
+     *
      * @param  array<string,mixed>  $metadata
+     * @param  array<string,mixed>  $old
+     * @param  array<string,mixed>  $new
      */
-    public function logRole(string $action, Role $role, array $metadata = []): void
+    public function logRole(string $action, Role $role, array $metadata = [], array $old = [], array $new = []): void
     {
         $this->audit->record(
             action: 'role.'.$action,
@@ -54,8 +62,8 @@ class RoleTemplateAuditService
             entityId: (string) $role->getKey(),
             companyId: null,
             userId: Auth::id(),
-            oldValues: [],
-            newValues: [],
+            oldValues: $old,
+            newValues: $new,
             metadata: $metadata,
         );
     }

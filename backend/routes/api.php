@@ -346,6 +346,29 @@ Route::prefix('auth')->group(function (): void {
 */
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->prefix('iam')->group(function (): void {
 
+    /*
+     | Directories — TASK-ECOS-IAM-FINAL-REMEDIATION-DIRECT-DEV-001 §6/§9.
+     |
+     | Two read-only lookups the Create/Edit User workflow needs: existing EMPLOYEES (so the
+     | employee link is a selection, not a typed number) and the canonical ORGANIZATION
+     | hierarchy (so scope is entity selection, not a raw type/id triple).
+     |
+     | Both are gated on `iam.users.view` — the minimum token an administrator who can open
+     | the user drawer already holds. Neither proxies the owning module's endpoint, because
+     | each of those is gated on its own `hr.employees.view` / `organization.*` /
+     | `inventory.warehouses.view` permission and requiring an IAM admin to additionally hold
+     | seven unrelated module permissions to fill in a picker would force permission
+     | inflation onto the IAM role. Both read the canonical tables and write nothing —
+     | see EmployeeDirectory / OrganizationScopeDirectory for the full reasoning.
+     |
+     | Declared BEFORE the `users/{user}` group so `users/directory/...` can never be
+     | swallowed by the `{user}` route-model binding.
+     */
+    Route::prefix('users/directory')->middleware('permission:iam.users.view')->group(function (): void {
+        Route::get('employees', [IamUserController::class, 'employeeDirectory']);
+        Route::get('organization', [IamUserController::class, 'organizationDirectory']);
+    });
+
     // ── Users ───────────────────────────────────────────────────────────────
     Route::prefix('users')->group(function (): void {
         Route::get('/', [IamUserController::class, 'index']);
@@ -355,6 +378,12 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->prefix('iam')->group(func
             Route::get('/', [IamUserController::class, 'show']);
             Route::patch('/', [IamUserController::class, 'update'])->middleware('permission:iam.users.update');
             Route::put('organization', [IamUserController::class, 'assignOrganization'])->middleware('permission:iam.users.assign-org');
+            // §9 — entity-driven multi-select scope save. Same permission as the single
+            // assignment above (`iam.users.assign-org`): it is the same authority over the
+            // same resource, expressed for the whole set instead of one row at a time. The
+            // single-assignment route stays for compatibility and for the org-unit types with
+            // no canonical table (department / cost_center).
+            Route::put('organization-scope', [IamUserController::class, 'syncOrganizationScope'])->middleware('permission:iam.users.assign-org');
             Route::put('templates/{templateKey}', [IamUserController::class, 'assignTemplate'])->middleware('permission:iam.users.assign-role');
             Route::delete('templates/{templateKey}', [IamUserController::class, 'revokeTemplate'])->middleware('permission:iam.users.revoke-role');
             Route::post('activate', [IamUserController::class, 'activate'])->middleware('permission:iam.users.activate');
@@ -374,10 +403,43 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->prefix('iam')->group(func
         });
     });
 
-    // ── Roles (read-only — §7/§11: writes go through Role Templates) ─────────
-    Route::prefix('roles')->middleware('permission:iam.roles.view')->group(function (): void {
-        Route::get('/', [IamRoleController::class, 'index']);
-        Route::get('{role}', [IamRoleController::class, 'show']);
+    /*
+     | Roles — TASK-ECOS-IAM-FINAL-REMEDIATION-DIRECT-DEV-001 §11/§14.
+     |
+     | Previously read-only, because writing `role_permissions` from here would have been a
+     | second role-mutation path outside RoleTemplateCompiler's fail-closed validation. That
+     | reasoning is intact: NONE of the write routes below touch `role_permissions`. Each
+     | delegates to RoleAuthoringService, which authors the backing Role Template and then
+     | calls the ONE canonical compiler — the same door UserRoleAssignmentService and
+     | RoleTemplateController already use. §15 holds: templates stay presets, and runtime
+     | authorization is still User -> Role -> canonical permissions.
+     |
+     | Every route names its own EXISTING permission token (iam.roles.view / .create /
+     | .update / .delete — all four already seeded, none invented). Per-instance tenant
+     | ownership and the system-role invariant are enforced by RolePolicy via
+     | Gate::authorize() in the controller, and re-asserted independently inside
+     | RoleAuthoringService so a future caller that forgets the Gate still cannot mutate a
+     | protected role.
+     */
+    Route::prefix('roles')->group(function (): void {
+        Route::get('/', [IamRoleController::class, 'index'])->middleware('permission:iam.roles.view');
+        Route::post('/', [IamRoleController::class, 'store'])->middleware('permission:iam.roles.create');
+
+        Route::prefix('{role}')->group(function (): void {
+            Route::get('/', [IamRoleController::class, 'show'])->middleware('permission:iam.roles.view');
+            Route::patch('/', [IamRoleController::class, 'update'])->middleware('permission:iam.roles.update');
+            // §14 — the editable permission matrix save. Separate from the metadata PATCH so a
+            // grant change is authorized, validated and audited AS a grant change.
+            Route::put('permissions', [IamRoleController::class, 'updatePermissions'])->middleware('permission:iam.roles.update');
+            Route::post('clone', [IamRoleController::class, 'cloneRole'])->middleware('permission:iam.roles.create');
+            // Archive is the §11/§12 SAFE path — it withdraws the role from the assignable
+            // catalogue without revoking it from anyone who currently holds it.
+            Route::post('archive', [IamRoleController::class, 'archive'])->middleware('permission:iam.roles.update');
+            Route::post('restore', [IamRoleController::class, 'restore'])->middleware('permission:iam.roles.update');
+            // Refused for a system role, a role still assigned to any user, and a role backed
+            // by an immutable ECOS system template (RoleLifecycleException -> 409).
+            Route::delete('/', [IamRoleController::class, 'destroy'])->middleware('permission:iam.roles.delete');
+        });
     });
 
     // ── Permissions (read-only catalog — §8/§13) ──────────────────────────────

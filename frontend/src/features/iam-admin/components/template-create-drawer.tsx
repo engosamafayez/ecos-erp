@@ -11,7 +11,7 @@ import { FormField } from '@/components/ui/forms/form-field';
 import { useCreateRoleTemplate } from '@/features/iam-admin/hooks/use-role-templates';
 import type { CreateRoleTemplatePayload } from '@/features/iam-admin/types/role-template';
 
-import { TemplatePermissionsEditor } from './template-permissions-editor';
+import { PermissionMatrix } from './permission-matrix';
 
 const EMPTY: CreateRoleTemplatePayload = {
   key: '',
@@ -100,12 +100,19 @@ export function TemplateCreateDrawer({ open, onOpenChange }: { open: boolean; on
             onChange={(e) => setValues((v) => ({ ...v, description: e.target.value }))}
           />
         </FormField>
-        <FormField name="permissions" label={t(($) => $.roleTemplates.fields.permissions)}>
-          <TemplatePermissionsEditor
+        {/*
+          §16 — the SAME grouped editable Permission Matrix component the Roles editor uses
+          (search + scrolling fixed, module grouping, Arabic labels/descriptions). Not
+          wrapped in the free-height `FormField` layout the fields above use: the matrix
+          manages its own bounded scroll region internally.
+        */}
+        <div>
+          <p className="mb-1.5 text-sm font-medium">{t(($) => $.roleTemplates.fields.permissions)}</p>
+          <PermissionMatrix
             value={values.definition.permissions ?? []}
             onChange={(permissions) => setValues((v) => ({ ...v, definition: { ...v.definition, permissions } }))}
           />
-        </FormField>
+        </div>
       </div>
     </EntityDrawer>
   );

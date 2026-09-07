@@ -25,7 +25,7 @@ final class AuthController extends Controller
 
     public function login(LoginRequest $request, LoginAction $action): JsonResponse
     {
-        /** @var array{email: string, password: string, remember?: bool} $data */
+        /** @var array{identifier?: string, email?: string, username?: string, password: string, remember?: bool} $data */
         $data = $request->validated();
 
         $result = $action->execute(LoginDTO::fromArray($data), $request->ip(), $request->userAgent());

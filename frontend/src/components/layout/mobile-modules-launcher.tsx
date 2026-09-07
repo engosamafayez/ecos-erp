@@ -4,9 +4,15 @@ import { useTranslation } from 'react-i18next';
 import { NavLink } from 'react-router-dom';
 
 import { cn } from '@/lib/utils';
-import { useNavigation } from '@/features/authorization';
+import { useNavigation, usePermission } from '@/features/authorization';
 import { usePriceReviewBadge } from '@/features/cost-management/hooks/use-pricing-reviews';
-import { moduleNavLinks, type AppModule, type ModuleId, type NavItemKey } from '@/config/module-navigation';
+import {
+  moduleNavLinks,
+  visibleModuleItems,
+  type AppModule,
+  type ModuleId,
+  type NavItemKey,
+} from '@/config/module-navigation';
 import { useRecentNav } from '@/hooks/use-recent-nav';
 import { FAMILY_ORDER, familyOf, type ModuleFamily } from './mobile-module-families';
 import { useNavLabel } from './use-nav-label';
@@ -93,6 +99,11 @@ export function MobileModulesLauncher({
     }
   }, [searchOpen]);
 
+  // §17 — the same page-level permission boundary the desktop sidebar applies. Threaded
+  // into every moduleNavLinks() call below so the accordion, page search and Recent list
+  // cannot offer a page this role is not allowed to see.
+  const { can } = usePermission();
+
   const trimmed = query.trim().toLowerCase();
   const searching = searchOpen && trimmed.length > 0;
 
@@ -116,14 +127,14 @@ export function MobileModulesLauncher({
 
     const pageHits: PageHit[] = [];
     for (const mod of modules) {
-      for (const link of moduleNavLinks(mod.items)) {
+      for (const link of moduleNavLinks(mod.items, can)) {
         if (navLabel.item(link.key).toLowerCase().includes(trimmed)) {
           pageHits.push({ module: mod, path: link.path, key: link.key, icon: link.icon });
         }
       }
     }
     return { moduleHits, pageHits };
-  }, [searching, trimmed, modules, navLabel]);
+  }, [searching, trimmed, modules, navLabel, can]);
 
   const resolvedRecent = useMemo(() => {
     return recent
@@ -131,7 +142,7 @@ export function MobileModulesLauncher({
         const mod = modules.find((m) => m.id === entry.moduleId);
         if (!mod) return null;
         if (entry.itemKey) {
-          const link = moduleNavLinks(mod.items).find((l) => l.key === entry.itemKey);
+          const link = moduleNavLinks(mod.items, can).find((l) => l.key === entry.itemKey);
           if (!link) return null;
           return { path: entry.path, icon: link.icon, primary: navLabel.item(link.key), secondary: navLabel.group(mod.id) };
         }
@@ -144,11 +155,11 @@ export function MobileModulesLauncher({
       // (most-recently-visited-first) is preserved exactly, just truncated
       // for display.
       .slice(0, RECENT_DISPLAY_LIMIT);
-  }, [recent, modules, navLabel]);
+  }, [recent, modules, navLabel, can]);
 
   // Toggling a row in the grouped list itself — collapses if already open.
   function toggleModule(mod: AppModule) {
-    if (moduleNavLinks(mod.items).length < 2) {
+    if (moduleNavLinks(mod.items, can).length < 2) {
       recordVisit({ moduleId: mod.id, path: mod.defaultPath });
       onNavigate(mod.defaultPath);
     } else {
@@ -160,7 +171,7 @@ export function MobileModulesLauncher({
   // module in the grouped list (never a toggle: this is a fresh selection,
   // and the grouped list isn't even visible yet for a toggle to act on).
   function selectModuleFromSearch(mod: AppModule) {
-    if (moduleNavLinks(mod.items).length < 2) {
+    if (moduleNavLinks(mod.items, can).length < 2) {
       recordVisit({ moduleId: mod.id, path: mod.defaultPath });
       onNavigate(mod.defaultPath);
     } else {
@@ -301,8 +312,11 @@ type ModuleRowProps = {
 function ModuleRow({ module, isActiveModule, isExpanded, onToggle, onNavigateChild }: ModuleRowProps) {
   const navLabel = useNavLabel();
   const { recordVisit } = useRecentNav();
+  const { can } = usePermission();
   const Icon = module.icon;
-  const isLeaf = moduleNavLinks(module.items).length < 2;
+  const isLeaf = moduleNavLinks(module.items, can).length < 2;
+  // §17 — section headers drop with their last visible child, same rule as the sidebar.
+  const items = visibleModuleItems(module.items, can);
 
   return (
     <div>
@@ -339,7 +353,7 @@ function ModuleRow({ module, isActiveModule, isExpanded, onToggle, onNavigateChi
 
       {!isLeaf && isExpanded ? (
         <div className="ms-[19px] flex flex-col gap-0.5 border-s ps-3.5 py-1">
-          {module.items.map((item) => {
+          {items.map((item) => {
             if (item.isSection) {
               return (
                 <p

@@ -628,10 +628,11 @@ export const router = createBrowserRouter(
             { path: ROUTES.engineeringAiSupervisor, Component: AIEngineeringWorkspacePage },
             { path: ROUTES.engineeringRepair, Component: RepairSessionsPage },
             { path: ROUTES.engineeringWorkspace, Component: EnterpriseWorkspacePage },
-            // IAM Administration Workspace (TASK-ECOS-IAM-ADMINISTRATION-WORKSPACE-003) — one
-            // shared page, three routes, matching the sidebar's existing "Users"/
-            // "Roles & Permissions" nav items (ROUTES.roleTemplates has no nav entry of its
-            // own by design — reached via the in-page tab or a "managed by template" link).
+            // IAM Management (TASK-ECOS-IAM-FINAL-REMEDIATION-DIRECT-DEV-001, §4) — one
+            // shared page, three routes, now behind ONE sidebar entry ("IAM Management")
+            // instead of the duplicate "Users" + "Roles & Permissions" pair that pointed at
+            // this same page. The three routes are kept: each tab stays independently
+            // deep-linkable and bookmarkable, and existing links keep resolving.
             { path: ROUTES.users, Component: IamWorkspacePage },
             { path: ROUTES.roles, Component: IamWorkspacePage },
             { path: ROUTES.roleTemplates, Component: IamWorkspacePage },

@@ -43,7 +43,7 @@ final class LoginAction extends BaseAction
             throw new InvalidArgumentException('LoginAction::execute expects a LoginDTO.');
         }
 
-        $user = $this->authService->attemptCredentials($dto->email, $dto->password);
+        $user = $this->authService->attemptCredentials($dto->identifier, $dto->password);
 
         if ($user === null) {
             throw new InvalidCredentialsException;

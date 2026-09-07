@@ -18,6 +18,12 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string|null $description
  * @property bool $is_system When true, the role bypasses all permission checks.
  *                           Never hardcode role slugs for the bypass — check is_system.
+ * @property \Illuminate\Support\Carbon|null $archived_at Management state only
+ *           (TASK-ECOS-IAM-FINAL-REMEDIATION-DIRECT-DEV-001 §11/§12): an archived role is
+ *           withdrawn from the assignable catalogue but keeps resolving for any user who
+ *           still holds it. Archival never silently revokes access.
+ * @property string|null $archived_reason
+ * @property int|null $archived_by
  */
 class Role extends Model
 {
@@ -33,6 +39,9 @@ class Role extends Model
         'slug',
         'description',
         'is_system',
+        'archived_at',
+        'archived_reason',
+        'archived_by',
     ];
 
     /** @return array<string, string> */
@@ -40,7 +49,14 @@ class Role extends Model
     {
         return [
             'is_system' => 'boolean',
+            'archived_at' => 'datetime',
         ];
+    }
+
+    /** Withdrawn from the assignable catalogue (§11) — still valid for current holders. */
+    public function isArchived(): bool
+    {
+        return $this->archived_at !== null;
     }
 
     /** @return BelongsToMany<Permission, $this> */

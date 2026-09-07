@@ -3,7 +3,10 @@ import type { ApiResponse } from '@/types';
 import type {
   AssignOrganizationPayload,
   CreateUserPayload,
+  EmployeeDirectoryResult,
   LifecycleAction,
+  OrganizationDirectoryResult,
+  OrganizationScopeAssignmentInput,
   ResetPasswordPayload,
   UpdateUserPayload,
   UserDetail,
@@ -41,6 +44,15 @@ export const usersService = {
 
   async assignOrganization(id: number, payload: AssignOrganizationPayload): Promise<UserDetail> {
     const { data } = await api.put<ApiResponse<UserDetail>>(`/iam/users/${id}/organization`, payload);
+    return data.data;
+  },
+
+  /**
+   * §9 — save the whole organization scope in one call. `assignments` is the COMPLETE
+   * desired set; anything not listed is withdrawn.
+   */
+  async syncOrganizationScope(id: number, assignments: OrganizationScopeAssignmentInput[]): Promise<UserDetail> {
+    const { data } = await api.put<ApiResponse<UserDetail>>(`/iam/users/${id}/organization-scope`, { assignments });
     return data.data;
   },
 
@@ -82,6 +94,25 @@ export const usersService = {
 
   async forceLogout(id: number): Promise<{ revoked: number }> {
     const { data } = await api.post<ApiResponse<{ revoked: number }>>(`/iam/users/${id}/sessions/force-logout`);
+    return data.data;
+  },
+};
+
+/**
+ * §6/§9 — the two read-only directories the Create/Edit User workflow consumes: existing
+ * EMPLOYEES (so the employee link is a selection, never a typed number) and the canonical
+ * ORGANIZATION hierarchy (so scope is entity selection, never a raw type/id triple). Both
+ * read straight from EmployeeDirectory / OrganizationScopeDirectory on the backend and write
+ * nothing — see UserController::employeeDirectory()/organizationDirectory().
+ */
+export const iamDirectoriesService = {
+  async employees(params: { q?: string; only_unlinked?: boolean; limit?: number } = {}): Promise<EmployeeDirectoryResult> {
+    const { data } = await api.get<ApiResponse<EmployeeDirectoryResult>>('/iam/users/directory/employees', { params });
+    return data.data;
+  },
+
+  async organization(params: { q?: string; limit?: number } = {}): Promise<OrganizationDirectoryResult> {
+    const { data } = await api.get<ApiResponse<OrganizationDirectoryResult>>('/iam/users/directory/organization', { params });
     return data.data;
   },
 };

@@ -74,9 +74,19 @@ class UserPasswordService
         // AFTER authorization (matching the existing order-matters-only-for-clarity convention
         // above) and BEFORE any mutation. Archived/Deleted are rejected outright — restore is a
         // separate, explicit, audited operation; this method must never perform it implicitly.
-        if (! $target->statusEnum()->allowsAdminPasswordReset()) {
+        //
+        // TASK-ECOS-IAM-FINAL-REMEDIATION-DIRECT-DEV-001 §10: the gate is now
+        // allowsAdminPasswordWrite(), the union of "may reset an existing credential" and
+        // "may set a first credential". DRAFT / INVITED / PENDING_ACTIVATION pass through the
+        // second branch — that is the fix for the dead-end account, and it is a lifecycle
+        // distinction, not a relaxation: ARCHIVED and DELETED are still refused, and the
+        // password strength rules applied by the caller (AdminResetPasswordRequest) are
+        // unchanged for every state.
+        if (! $target->statusEnum()->allowsAdminPasswordWrite()) {
             throw UserSecurityRuleException::cannotResetPasswordInStatus($target->statusEnum());
         }
+
+        $isInitialCredential = $target->statusEnum()->allowsAdminPasswordSet();
 
         // The `password` cast is `hashed`, which skips values that are already hashed, so this
         // is the same single-hash path `UserInvitationService` and `UserIdentityService` use.
@@ -90,12 +100,14 @@ class UserPasswordService
 
         // The raw password and its hash are both excluded from the audit payload. Only the
         // timestamp is recorded, matching how every other IAM user operation audits.
+        // The action name distinguishes a first credential from a replacement so the audit
+        // trail answers "was this account provisioned, or was someone's password changed?".
         $this->audit->log(
-            'password_reset',
+            $isInitialCredential ? 'password_initialised' : 'password_reset',
             $target,
             [],
             ['password_changed_at' => $target->password_changed_at?->toIso8601String()],
-            ['actor_id' => $actorId],
+            ['actor_id' => $actorId, 'status' => $target->statusEnum()->value],
         );
 
         return $target->refresh();

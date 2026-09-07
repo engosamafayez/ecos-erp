@@ -38,7 +38,9 @@
       "displayName": "Display name",
       "username": "Username",
       "employeeNumber": "Employee number",
-      "phone": "Phone"
+      "phone": "Phone",
+      "usernameHint": "Letters, numbers, dots, dashes and underscores only — also usable to sign in.",
+      "employeeLink": "Linked employee"
     },
     "detail": {
       "title": "User",
@@ -57,24 +59,51 @@
       "lock": "Lock",
       "unlock": "Unlock",
       "archive": "Archive",
-      "restore": "Restore"
+      "restore": "Restore",
+      "activateNow": "Activate immediately after creation",
+      "preActivationHint": "This account has not been activated yet. Set a password and use Activate to make it usable."
     },
     "lifecycleConfirm": {
       "genericError": "This action couldn't be completed.",
-      "activate": { "title": "Activate user?", "description": "The user will be able to sign in again." },
-      "suspend": { "title": "Suspend user?", "description": "The user will be temporarily unable to sign in." },
-      "deactivate": { "title": "Deactivate user?", "description": "The user will be marked inactive and unable to sign in." },
-      "lock": { "title": "Lock user?", "description": "The user will be locked out until an administrator unlocks the account." },
-      "unlock": { "title": "Unlock user?", "description": "The user will be restored to active and able to sign in." },
-      "archive": { "title": "Archive user?", "description": "The account will be archived. It can be restored later, but a password reset requires restoring first." },
-      "restore": { "title": "Restore user?", "description": "The account will be restored to active." }
+      "activate": {
+        "title": "Activate user?",
+        "description": "The user will be able to sign in again."
+      },
+      "suspend": {
+        "title": "Suspend user?",
+        "description": "The user will be temporarily unable to sign in."
+      },
+      "deactivate": {
+        "title": "Deactivate user?",
+        "description": "The user will be marked inactive and unable to sign in."
+      },
+      "lock": {
+        "title": "Lock user?",
+        "description": "The user will be locked out until an administrator unlocks the account."
+      },
+      "unlock": {
+        "title": "Unlock user?",
+        "description": "The user will be restored to active and able to sign in."
+      },
+      "archive": {
+        "title": "Archive user?",
+        "description": "The account will be archived. It can be restored later, but a password reset requires restoring first."
+      },
+      "restore": {
+        "title": "Restore user?",
+        "description": "The account will be restored to active."
+      }
     },
     "roles": {
       "none": "No roles assigned.",
       "primary": "Primary",
       "assign": "Assign",
       "revoke": "Revoke",
-      "selectPlaceholder": "Select a role template…"
+      "selectPlaceholder": "Select a role template…",
+      "title": "Roles",
+      "assignPlaceholder": "Select role templates…",
+      "searchPlaceholder": "Search roles…",
+      "noneAvailable": "No published role templates available."
     },
     "organization": {
       "none": "No organization assignments.",
@@ -82,7 +111,14 @@
       "assign": "Assign",
       "typePlaceholder": "Type",
       "idPlaceholder": "ID (optional)",
-      "labelPlaceholder": "Label (optional)"
+      "labelPlaceholder": "Label (optional)",
+      "title": "Organization scope",
+      "searchPlaceholder": "Search companies, brands, warehouses…",
+      "noLevelsAvailable": "No organization entities are configured yet.",
+      "noEntities": "None found.",
+      "primaryToggle": "Mark as primary",
+      "save": "Save organization scope",
+      "saving": "Saving…"
     },
     "security": {
       "passwordTitle": "Password",
@@ -101,15 +137,39 @@
       "revokeSession": "Revoke",
       "forceLogoutTrigger": "Force logout everywhere",
       "forceLogoutTitle": "Revoke all sessions?",
-      "forceLogoutDescription": "This will sign the user out on every device."
+      "forceLogoutDescription": "This will sign the user out on every device.",
+      "initialPasswordHint": "This account has no credential yet — this sets its first password rather than resetting one.",
+      "setInitialTrigger": "Set initial password",
+      "setInitialTitle": "Set initial password",
+      "setInitialSubmit": "Set password"
+    },
+    "password": {
+      "initialSectionTitle": "Initial password (optional)",
+      "initialSectionHint": "Set a password now so this account can sign in immediately. Leave blank to keep it unusable until an invitation is completed.",
+      "initialPassword": "Initial password",
+      "confirmPassword": "Confirm password",
+      "requireChangeAtLogin": "Require a password change at first login"
+    },
+    "employee": {
+      "placeholder": "Select an employee…",
+      "searchPlaceholder": "Search employees…",
+      "loading": "Loading…",
+      "empty": "No matching employees.",
+      "alreadyLinked": "Already linked",
+      "clear": "Clear",
+      "notAvailable": "No employee directory is available yet."
     }
   },
   "roles": {
     "title": "Roles & Permissions",
-    "subtitle": "Roles are compiled from Role Templates and shown here read-only.",
+    "subtitle": "Create, edit and clone business roles, and manage their permission grants directly.",
     "empty": "No roles found.",
     "systemBadge": "System",
     "customBadge": "Custom",
+    "businessCatalogBadge": "Business role",
+    "archivedBadge": "Archived",
+    "showArchived": "Show archived roles",
+    "cloneAction": "Clone",
     "tabs": {
       "roles": "Roles",
       "permissions": "Permission catalog"
@@ -120,18 +180,65 @@
       "template": "Template",
       "userCount": "Users"
     },
+    "form": {
+      "genericError": "Something went wrong. Please try again."
+    },
+    "fields": {
+      "name": "Name",
+      "description": "Description",
+      "permissions": "Permissions"
+    },
+    "create": {
+      "trigger": "New Role",
+      "title": "Create Role",
+      "description": "Create a new business role and choose its permissions.",
+      "submit": "Create Role",
+      "submitting": "Creating…"
+    },
+    "clone": {
+      "title": "Clone \"{{name}}\"",
+      "defaultName": "{{name}} (Copy)",
+      "submit": "Clone Role"
+    },
     "detail": {
       "title": "Role",
       "userCount": "{{count}} user assigned",
       "userCount_other": "{{count}} users assigned",
       "managedByTemplate": "Managed by template \"{{name}}\" — edit there",
       "permissions": "Permissions",
-      "noPermissions": "This role has no permissions."
+      "noPermissions": "This role has no permissions.",
+      "tabs": {
+        "overview": "Overview",
+        "permissions": "Permission Matrix"
+      },
+      "systemImmutable": "This is a system role and cannot be edited, archived or deleted. Clone it to make changes.",
+      "templateImmutable": "This role is compiled from an official ECOS system template, which is immutable. Clone it to make changes.",
+      "archivedNotice": "This role is archived and withdrawn from the assignable catalogue. Users who already hold it keep it.",
+      "scopeExpectation": "Expected organization scope",
+      "assignedUsers": "Assigned users",
+      "cloneTrigger": "Clone",
+      "archiveTrigger": "Archive",
+      "restoreTrigger": "Restore",
+      "deleteTrigger": "Delete",
+      "savePermissions": "Save Permissions",
+      "archiveConfirmTitle": "Archive this role?",
+      "archiveConfirmDescription": "This role is currently held by {{count}} user(s). They will keep it — archiving only removes the role from the assignable catalogue for new assignments.",
+      "archiveReasonPlaceholder": "Reason (optional)",
+      "restoreConfirmTitle": "Restore this role?",
+      "deleteConfirmTitle": "Delete this role?",
+      "deleteConfirmDescription": "This permanently deletes the role. Only possible when no user holds it."
     }
   },
   "permissions": {
     "empty": "No permissions found.",
-    "searchPlaceholder": "Search permissions…"
+    "searchPlaceholder": "Search permissions…",
+    "sensitiveOnly": "Sensitive only",
+    "selectedCount": "{{count}} selected",
+    "noMatches": "No permissions match your search.",
+    "selectAll": "Select all",
+    "clearGroup": "Clear",
+    "criticalBadge": "Critical",
+    "elevatedBadge": "Sensitive"
   },
   "roleTemplates": {
     "title": "Role Templates",

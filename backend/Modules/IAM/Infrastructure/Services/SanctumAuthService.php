@@ -18,10 +18,44 @@ final class SanctumAuthService implements AuthServiceInterface
 {
     private ?int $lastTokenId = null;
 
-    public function attemptCredentials(string $email, string $password): ?User
+    /**
+     * TASK-ECOS-IAM-FINAL-REMEDIATION-DIRECT-DEV-001, §7: username is now a valid login
+     * identifier alongside email.
+     *
+     * This is an EXTENSION of the existing lookup, not a second authentication flow. There
+     * is still exactly one credential path: resolve one account from one identifier, then
+     * Hash::check, then the lifecycle gate. Only the resolution step widened, from
+     * `where('email', …)` to "email OR username".
+     *
+     * Three details that keep it safe:
+     *
+     *  • `whereNotNull('username')` — `users.username` is nullable, and most rows have it
+     *    null. Without this guard an empty-string identifier could match on
+     *    `username = ''`; with it, a null username can never be an identifier.
+     *
+     *  • Uniqueness is enforced at the source, not here. `users.username` and
+     *    `users.email` each carry a UNIQUE index, and
+     *    UserIdentityService::assertUniqueIdentity() additionally rejects a username that
+     *    collides with any other user's email (and vice versa) — so this OR can resolve at
+     *    most one account. `first()` is not papering over an ambiguity; the ambiguity is
+     *    prevented on write.
+     *
+     *  • Ordering is deterministic and email-first, so even in the presence of legacy data
+     *    that predates the cross-field check, an exact email match always wins over a
+     *    username match rather than the result depending on table order.
+     */
+    public function attemptCredentials(string $identifier, string $password): ?User
     {
         /** @var User|null $user */
-        $user = User::query()->where('email', $email)->first();
+        $user = User::query()
+            ->where(function ($query) use ($identifier): void {
+                $query->where('email', $identifier)
+                    ->orWhere(function ($q) use ($identifier): void {
+                        $q->whereNotNull('username')->where('username', $identifier);
+                    });
+            })
+            ->orderByRaw('CASE WHEN email = ? THEN 0 ELSE 1 END', [$identifier])
+            ->first();
 
         if ($user === null || ! Hash::check($password, (string) $user->password)) {
             return null;
