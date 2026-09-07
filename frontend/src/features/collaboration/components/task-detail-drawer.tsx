@@ -237,7 +237,12 @@ function OverviewTab({
                 ))}
               </SelectContent>
             </Select>
-            <Input value={contextId} onChange={(e) => setContextId(e.target.value)} className="h-8 flex-1 text-xs" placeholder="ID" />
+            <Input
+              value={contextId}
+              onChange={(e) => setContextId(e.target.value)}
+              className="h-8 flex-1 text-xs"
+              placeholder={t(($) => $.tasks.detail.contextIdPlaceholder)}
+            />
             <Button
               size="icon"
               variant="outline"

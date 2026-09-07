@@ -9,6 +9,7 @@ use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Collaboration\Application\Actions\CreateGroupConversationAction;
+use Modules\Collaboration\Application\Actions\GetConversationForUserAction;
 use Modules\Collaboration\Application\Actions\GetOrCreateDirectConversationAction;
 use Modules\Collaboration\Application\Actions\ListConversationsForUserAction;
 use Modules\Collaboration\Domain\Exceptions\CollaborationException;
@@ -56,10 +57,12 @@ final class ConversationController extends Controller
         return $this->created(new ConversationResource($conversation->load('activeParticipants.user')));
     }
 
-    public function show(Request $request, Conversation $conversation): JsonResponse
+    public function show(Request $request, Conversation $conversation, GetConversationForUserAction $action): JsonResponse
     {
         $this->authorize('view', $conversation);
 
-        return $this->success(new ConversationResource($conversation->load('activeParticipants.user')));
+        $conversation = $action->execute($request->user(), $conversation->load('activeParticipants.user'));
+
+        return $this->success(new ConversationResource($conversation));
     }
 }

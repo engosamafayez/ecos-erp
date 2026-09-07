@@ -26,6 +26,16 @@
       "title": "Select a conversation",
       "subtitle": "Choose a conversation from the list, or start a new one."
     },
+    "detail": {
+      "error": "Couldn't load this conversation.",
+      "notFound": "This conversation isn't available.",
+      "notFoundSubtitle": "It may have been removed, or you may no longer have access to it.",
+      "retry": "Retry"
+    },
+    "realtime": {
+      "live": "Live",
+      "polling": "Polling"
+    },
     "info": {
       "title": "Details",
       "participants": "Participants",
@@ -102,6 +112,14 @@
   "tasks": {
     "title": "Tasks",
     "create": "New Task",
+    "view": {
+      "board": "Board",
+      "list": "List"
+    },
+    "board": {
+      "invalidMove": "That status change isn't allowed.",
+      "linkedConversation": "Linked to a conversation"
+    },
     "filters": {
       "scope": "Show",
       "scopeMine": "My tasks",
@@ -147,6 +165,7 @@
       "attachments": "Attachments",
       "activity": "Activity",
       "context": "Linked to",
+      "contextIdPlaceholder": "ID",
       "sourceMessage": "Started from a message",
       "sourceUnavailable": "Source message unavailable",
       "viewSource": "View in conversation",

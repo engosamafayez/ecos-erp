@@ -25,7 +25,7 @@ type UserPickerProps = {
  */
 export function UserPicker({ value, onChange, placeholder, disabled, className, excludeIds = [] }: UserPickerProps) {
   const { t } = useTranslation('collaboration');
-  const { setQuery, results, isSearching } = useUserSearch();
+  const { setQuery, results, isSearching, isError } = useUserSearch();
 
   const candidates = results.filter((u) => !excludeIds.includes(u.id));
   // Keeps the currently selected person resolvable in the trigger label even after
@@ -47,7 +47,7 @@ export function UserPicker({ value, onChange, placeholder, disabled, className, 
       loading={isSearching}
       placeholder={placeholder ?? t(($) => $.conversations.newDirectDialog.recipientPlaceholder)}
       searchPlaceholder={t(($) => $.conversations.newDirectDialog.recipientPlaceholder)}
-      emptyText={t(($) => $.search.noResults)}
+      emptyText={isError ? t(($) => $.search.error) : t(($) => $.search.noResults)}
       disabled={disabled}
       className={className}
     />

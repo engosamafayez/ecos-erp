@@ -73,7 +73,10 @@ export function ConversationThread({ conversation, onOpenInfo, onCreateTaskFromM
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-medium">{title}</p>
         </div>
-        <span title={realtime === 'connected' ? 'Live' : 'Polling'} className="text-muted-foreground">
+        <span
+          title={realtime === 'connected' ? t(($) => $.conversations.realtime.live) : t(($) => $.conversations.realtime.polling)}
+          className="text-muted-foreground"
+        >
           {realtime === 'connected' ? <Wifi className="size-3.5" /> : <WifiOff className="size-3.5" />}
         </span>
         <Button variant="ghost" size="icon" className="size-8" onClick={onOpenInfo} aria-label={t(($) => $.conversations.info.title)}>

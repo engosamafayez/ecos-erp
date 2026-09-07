@@ -96,6 +96,22 @@ export function useTransitionTaskStatus(taskId: string) {
   });
 }
 
+/** Same transition endpoint as useTransitionTaskStatus, not bound to one task id up
+ *  front — for the Board view, where any card in any column can be the target of a
+ *  drop. Callers must still only request a status allowedTaskStatusTransitions()
+ *  permits from the task's current status; the backend is the final authority. */
+export function useMoveTaskStatus() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ taskId, status }: { taskId: string; status: TaskStatus }) => transitionTaskStatus(taskId, status),
+    onSuccess: (_, { taskId }) => {
+      qc.invalidateQueries({ queryKey: taskKey(taskId) });
+      invalidateTaskLists(qc);
+    },
+  });
+}
+
 export function useTaskComments(taskId: string) {
   return useQuery({
     queryKey: commentsKey(taskId),

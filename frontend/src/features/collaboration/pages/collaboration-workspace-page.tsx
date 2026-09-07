@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
-import { Search } from 'lucide-react';
+import axios from 'axios';
+import { ArrowLeft, Search } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { EmptyState } from '@/components/crud';
+import { EmptyState, LoadingState } from '@/components/crud';
 import { cn } from '@/lib/utils';
 
 import { CollaborationSearch } from '../components/collaboration-search';
@@ -15,31 +16,42 @@ import { ConversationThread } from '../components/conversation-thread';
 import { CreateTaskDialog } from '../components/create-task-dialog';
 import { NewDirectDialog } from '../components/new-direct-dialog';
 import { NewGroupDialog } from '../components/new-group-dialog';
+import { TaskBoard } from '../components/task-board';
 import { TaskDetailDrawer } from '../components/task-detail-drawer';
 import { TaskList } from '../components/task-list';
 import { useConversation } from '../hooks/use-conversations';
 import type { Conversation, Message, Task } from '../types';
 
 type WorkspaceTab = 'conversations' | 'tasks';
+type TaskView = 'board' | 'list';
 
 /** Conversations + Tasks live as tabs of ONE workspace route, state-driven by query
  *  params — not two separate routes — so a task's "view in conversation" link and a
  *  message's "create task" flow can deep-link cleanly without a route change. */
 export function CollaborationWorkspacePage() {
   const { t } = useTranslation('collaboration');
+  const { t: tCommon } = useTranslation('common');
   const [searchParams, setSearchParams] = useSearchParams();
 
   const tab: WorkspaceTab = searchParams.get('tab') === 'tasks' ? 'tasks' : 'conversations';
   const conversationId = searchParams.get('conversationId');
   const taskId = searchParams.get('taskId');
 
-  const { data: activeConversation } = useConversation(conversationId);
+  const {
+    data: activeConversation,
+    isLoading: isConversationLoading,
+    isError: isConversationError,
+    error: conversationError,
+    refetch: refetchConversation,
+  } = useConversation(conversationId);
+  const isConversationNotFound = axios.isAxiosError(conversationError) && conversationError.response?.status === 404;
 
   const [infoOpen, setInfoOpen] = useState(false);
   const [newDirectOpen, setNewDirectOpen] = useState(false);
   const [newGroupOpen, setNewGroupOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
+  const [taskView, setTaskView] = useState<TaskView>('board');
   const [sourceMessage, setSourceMessage] = useState<{ id: string; body: string | null } | null>(null);
 
   function setTab(next: WorkspaceTab) {
@@ -117,7 +129,7 @@ export function CollaborationWorkspacePage() {
 
         <TabsContent value="conversations" className="m-0 min-h-0 flex-1">
           <div className="flex h-full">
-            <div className={cn('w-full flex-col border-e md:flex md:w-80', activeConversation ? 'hidden' : 'flex')}>
+            <div className={cn('w-full flex-col border-e md:flex md:w-80', conversationId ? 'hidden' : 'flex')}>
               <ConversationList
                 activeConversationId={conversationId}
                 onSelect={selectConversation}
@@ -126,7 +138,43 @@ export function CollaborationWorkspacePage() {
               />
             </div>
 
-            {activeConversation ? (
+            {!conversationId ? (
+              <div className="hidden flex-1 items-center justify-center md:flex">
+                <EmptyState title={t(($) => $.conversations.empty.title)} description={t(($) => $.conversations.empty.subtitle)} />
+              </div>
+            ) : isConversationLoading ? (
+              <div className="flex min-w-0 flex-1 flex-col">
+                <div className="flex items-center gap-3 border-b px-4 py-2.5 md:hidden">
+                  <Button variant="ghost" size="icon" className="size-8 shrink-0" onClick={clearConversation} aria-label={tCommon(($) => $.actions.back)}>
+                    <ArrowLeft className="size-4" />
+                  </Button>
+                </div>
+                <div className="flex flex-1 items-center justify-center">
+                  <LoadingState />
+                </div>
+              </div>
+            ) : isConversationError ? (
+              <div className="flex min-w-0 flex-1 flex-col">
+                <div className="flex items-center gap-3 border-b px-4 py-2.5 md:hidden">
+                  <Button variant="ghost" size="icon" className="size-8 shrink-0" onClick={clearConversation} aria-label={tCommon(($) => $.actions.back)}>
+                    <ArrowLeft className="size-4" />
+                  </Button>
+                </div>
+                <div className="flex flex-1 items-center justify-center">
+                  <EmptyState
+                    title={isConversationNotFound ? t(($) => $.conversations.detail.notFound) : t(($) => $.conversations.detail.error)}
+                    description={isConversationNotFound ? t(($) => $.conversations.detail.notFoundSubtitle) : undefined}
+                    action={
+                      isConversationNotFound ? undefined : (
+                        <Button size="sm" variant="outline" onClick={() => refetchConversation()}>
+                          {t(($) => $.conversations.detail.retry)}
+                        </Button>
+                      )
+                    }
+                  />
+                </div>
+              </div>
+            ) : activeConversation ? (
               <div className="flex min-w-0 flex-1 flex-col">
                 <ConversationThread
                   conversation={activeConversation}
@@ -138,23 +186,53 @@ export function CollaborationWorkspacePage() {
                   }}
                 />
               </div>
-            ) : (
-              <div className="hidden flex-1 items-center justify-center md:flex">
-                <EmptyState title={t(($) => $.conversations.empty.title)} description={t(($) => $.conversations.empty.subtitle)} />
-              </div>
-            )}
+            ) : null}
           </div>
         </TabsContent>
 
-        <TabsContent value="tasks" className="m-0 min-h-0 flex-1">
-          <TaskList
-            activeTaskId={taskId}
-            onSelect={selectTask}
-            onCreate={() => {
-              setSourceMessage(null);
-              setCreateTaskOpen(true);
-            }}
-          />
+        <TabsContent value="tasks" className="m-0 flex min-h-0 flex-1 flex-col">
+          <div className="flex justify-end px-3 pt-2">
+            <div className="inline-flex rounded-md border p-0.5">
+              <Button
+                size="sm"
+                variant={taskView === 'board' ? 'secondary' : 'ghost'}
+                className="h-7 px-2.5 text-xs"
+                onClick={() => setTaskView('board')}
+              >
+                {t(($) => $.tasks.view.board)}
+              </Button>
+              <Button
+                size="sm"
+                variant={taskView === 'list' ? 'secondary' : 'ghost'}
+                className="h-7 px-2.5 text-xs"
+                onClick={() => setTaskView('list')}
+              >
+                {t(($) => $.tasks.view.list)}
+              </Button>
+            </div>
+          </div>
+
+          <div className="min-h-0 flex-1">
+            {taskView === 'board' ? (
+              <TaskBoard
+                activeTaskId={taskId}
+                onSelect={selectTask}
+                onCreate={() => {
+                  setSourceMessage(null);
+                  setCreateTaskOpen(true);
+                }}
+              />
+            ) : (
+              <TaskList
+                activeTaskId={taskId}
+                onSelect={selectTask}
+                onCreate={() => {
+                  setSourceMessage(null);
+                  setCreateTaskOpen(true);
+                }}
+              />
+            )}
+          </div>
         </TabsContent>
       </Tabs>
 

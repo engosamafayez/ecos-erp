@@ -25,7 +25,7 @@ export function useUserSearch() {
 
   const enabled = debounced.length >= MIN_QUERY_LENGTH;
 
-  const { data, isFetching } = useQuery({
+  const { data, isFetching, isError, refetch } = useQuery({
     queryKey: ['collaboration', 'search', 'users', debounced],
     queryFn: () => searchAddressableUsers(debounced),
     enabled,
@@ -37,5 +37,7 @@ export function useUserSearch() {
     results: data ?? [],
     isSearching: enabled && isFetching,
     isQueryTooShort: query.trim().length > 0 && !enabled,
+    isError: enabled && isError,
+    retry: refetch,
   };
 }

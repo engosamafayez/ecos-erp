@@ -26,6 +26,16 @@
       "title": "اختر محادثة",
       "subtitle": "اختر محادثة من القائمة، أو ابدأ محادثة جديدة."
     },
+    "detail": {
+      "error": "تعذّر تحميل هذه المحادثة.",
+      "notFound": "هذه المحادثة غير متاحة.",
+      "notFoundSubtitle": "ربما تمت إزالتها، أو لم يعد بإمكانك الوصول إليها.",
+      "retry": "إعادة المحاولة"
+    },
+    "realtime": {
+      "live": "مباشر",
+      "polling": "استطلاع دوري"
+    },
     "info": {
       "title": "التفاصيل",
       "participants": "المشاركون",
@@ -102,6 +112,14 @@
   "tasks": {
     "title": "المهام",
     "create": "مهمة جديدة",
+    "view": {
+      "board": "اللوحة",
+      "list": "القائمة"
+    },
+    "board": {
+      "invalidMove": "لا يُسمح بتغيير الحالة هذا.",
+      "linkedConversation": "مرتبطة بمحادثة"
+    },
     "filters": {
       "scope": "عرض",
       "scopeMine": "مهامي",
@@ -147,6 +165,7 @@
       "attachments": "المرفقات",
       "activity": "السجل",
       "context": "مرتبطة بـ",
+      "contextIdPlaceholder": "المعرّف",
       "sourceMessage": "أُنشئت من رسالة",
       "sourceUnavailable": "الرسالة المصدر غير متاحة",
       "viewSource": "عرض في المحادثة",
