@@ -11,8 +11,6 @@ import type {
   OrdersResult,
   ProductPricingResult,
   ResolvedOrderLocation,
-  ShippingCalcResult,
-  ShippingPricingRule,
   ShippingQuotePayload,
   ShippingQuoteResult,
 } from '@/features/orders/types/order';
@@ -88,17 +86,9 @@ export const ordersService = {
     return data.data;
   },
 
-  async listShippingRules(): Promise<ShippingPricingRule[]> {
-    const { data } = await api.get<ApiResponse<ShippingPricingRule[]>>('/shipping-pricing');
-    return data.data;
-  },
-
-  async calculateShipping(
-    params: { governorate: string; city?: string; area?: string },
-  ): Promise<ShippingCalcResult> {
-    const { data } = await api.get<ApiResponse<ShippingCalcResult>>('/shipping-pricing/calculate', { params });
-    return data.data;
-  },
+  // CD-29 (REMEDIATION-002 §7) — listShippingRules()/calculateShipping() removed: they
+  // targeted /shipping-pricing endpoints that do not exist in backend/routes. See the note
+  // in use-orders.ts for the canonical shipping-pricing authority.
 
   async getBrandOrderPolicy(brandId: string): Promise<BrandOrderPolicy> {
     const { data } = await api.get<ApiResponse<{ settings: BrandOrderPolicy }>>(`/configuration/brands/${brandId}/policies/order`);

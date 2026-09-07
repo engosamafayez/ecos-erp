@@ -68,8 +68,24 @@ export const brandsService = {
     return [];
   },
 
+  /**
+   * CD-01 / CD-38 (TASK-ECOS-COMMERCE-PRE-USER-REVIEW-REMEDIATION-002 §2).
+   *
+   * The path was `/brands/{id}/config-health`; the route registered in backend/routes/api.php
+   * is `brands/{brand}/configuration-health` (confirmed against the live DEV `route:list`).
+   * The two never matched, so this request always 404'd and `useBrandConfigHealth` always
+   * resolved to `undefined` — which the manual order form reads as "no health data yet" and
+   * therefore does NOT block on (`showContentSections` tests `!configHealth`). The readiness
+   * gate has consequently been DORMANT, not merely mis-scoped.
+   *
+   * Corrected on the CLIENT side rather than by renaming the route: the registered path is
+   * the server contract, this was its only caller, and nothing referenced the client's
+   * spelling. This fix is only safe alongside the reconciled `health()` authority in
+   * BrandDeliveryController — activating the gate as it previously stood would have blocked
+   * New Order outright, because it asserted three legacy tables that are empty.
+   */
   async getBrandConfigHealth(brandId: string): Promise<BrandConfigHealth> {
-    const { data } = await api.get<ApiResponse<BrandConfigHealth>>(`/brands/${brandId}/config-health`);
+    const { data } = await api.get<ApiResponse<BrandConfigHealth>>(`/brands/${brandId}/configuration-health`);
     return data.data;
   },
 

@@ -1250,7 +1250,7 @@
   },
   "src/features/orders/components/brand-config-health-card.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 9
+      "count": 7
     }
   },
   "src/features/orders/components/manual-order-form.tsx": {
@@ -1379,11 +1379,6 @@
       "count": 1
     },
     "react-hooks/set-state-in-effect": {
-      "count": 1
-    }
-  },
-  "src/features/orders/pages/shipping-pricing-page.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
       "count": 1
     }
   },

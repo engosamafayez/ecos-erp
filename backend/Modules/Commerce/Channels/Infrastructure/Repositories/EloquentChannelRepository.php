@@ -19,12 +19,27 @@ final class EloquentChannelRepository implements ChannelRepositoryInterface
     {
         $query = Channel::query()->with(self::EAGER);
 
+        // CD-02 (TASK-ECOS-COMMERCE-PRE-USER-REVIEW-REMEDIATION-002 §3). `ilike` is a
+        // PostgreSQL-only operator; the platform runs MySQL 8.4, where Laravel's grammar
+        // emits it verbatim and MySQL rejects the statement outright (SQLSTATE 42000 /
+        // 1064) — so typing anything into the Channels search box returned a 500.
+        //
+        // `like` is the project-standard operator (207 uses across backend/Modules vs 42
+        // legacy `ilike`), including every sibling Commerce repository:
+        // EloquentOrderRepository, EloquentProductMappingRepository and
+        // EloquentFulfillmentRepository all search with `like`.
+        //
+        // Case-insensitivity is PRESERVED, not lost: the schema is case-insensitive by
+        // collation (`ecos_dev` default `utf8mb4_0900_ai_ci`; `channels.name`
+        // `utf8mb4_unicode_ci` — both `_ci`), so `like` already matches case-insensitively.
+        // No DB-specific branching is introduced. No index behaviour changes either: a
+        // leading-wildcard `%term%` predicate is unindexable under both operators.
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
             $query->where(function (Builder $builder) use ($search): void {
                 $builder
-                    ->where('name', 'ilike', "%{$search}%")
-                    ->orWhere('store_url', 'ilike', "%{$search}%");
+                    ->where('name', 'like', "%{$search}%")
+                    ->orWhere('store_url', 'like', "%{$search}%");
             });
         }
 

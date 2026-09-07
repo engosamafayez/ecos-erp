@@ -270,13 +270,21 @@ export type BrandDeliveryTimeSlotPayload = {
   is_active?: boolean;
 };
 
+/**
+ * Brand configuration readiness for manual order creation.
+ *
+ * CD-01 (TASK-ECOS-COMMERCE-PRE-USER-REVIEW-REMEDIATION-002 §2): `delivery_zones` and
+ * `shipping_rules` were removed. They asserted legacy tables the New Order form does not
+ * read, and neither is a blocking dependency of order creation — see the rationale on
+ * `BrandDeliveryController::health()`. `delivery_geography` is now satisfied by the brand
+ * shipping engine (`brand_governorate_settings`) with the legacy geography table as a
+ * fallback, matching the form's own resolution order.
+ */
 export type BrandConfigHealth = {
   is_ready: boolean;
   checks: {
     channels: boolean;
     delivery_geography: boolean;
-    delivery_zones: boolean;
     delivery_windows: boolean;
-    shipping_rules: boolean;
   };
 };

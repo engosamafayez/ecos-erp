@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Commerce\Channels\Domain\Models;
 
+use App\Core\Company\TenantOwnershipResolver;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -56,6 +58,77 @@ class Channel extends Model
     public $incrementing = false;
 
     protected $keyType = 'string';
+
+    /**
+     * CD-03 (TASK-ECOS-COMMERCE-PRE-USER-REVIEW-REMEDIATION-002 §4) — tenant isolation.
+     *
+     * Channels had NO tenant scope of any kind, so `Channel::find($id)` (via
+     * EloquentChannelRepository::findById(), reached by GET /api/channels/{id}) returned any
+     * company's channel, and GET /api/channels returned every company's channels whenever the
+     * caller simply omitted the `company_id` query parameter — a parameter that was the only
+     * thing narrowing the list, and that came from caller input rather than from authenticated
+     * context.
+     *
+     * Same contract as Order and Warehouse (TASK-GOLIVE-RC6-REPAIR-001), resolved through the
+     * one canonical authority, TenantOwnershipResolver — no new tenancy mechanism:
+     *
+     *   - no actor (console, queue workers, seeders, migrations) → no filter. This is what
+     *     keeps the PUBLIC, signature-verified WooCommerce webhook routes working: they carry
+     *     no `auth:sanctum` actor, so `appliesTo()` is false and route-model binding still
+     *     resolves the channel. Tenancy for that path is derived from the channel itself
+     *     (WooCommerceOrderImporter::resolveCompanyId(), which throws rather than importing an
+     *     untenanted order), so nothing is loosened by not filtering here.
+     *   - `isUnrestricted()` (an is_system role, the platform's documented privilege flag) →
+     *     no filter. Super-admin cross-company semantics come from existing IAM authority and
+     *     nowhere else.
+     *   - a null company for an unprivileged actor CLOSES the query (`1 = 0`) rather than
+     *     removing the filter — the RC-6 fail-open lesson.
+     *
+     * Channels carry no `company_id` column; ownership is `channels.brand_id → brands.company_id`,
+     * the platform's existing convention for channel tenancy (already relied on by
+     * WooCommerceOrderImporter::resolveCompanyId() and by the repository's own brand filter).
+     * The scope is therefore a `whereExists` against `brands` rather than a column predicate.
+     * A raw subquery is used deliberately in preference to `whereHas('brand', …)`: it cannot
+     * re-enter another model's global scopes from inside this one, and it joins on the `brands`
+     * primary key.
+     *
+     * A channel whose `brand_id` is NULL resolves to no company and is therefore invisible to
+     * every tenant. That is intentional and fail-closed, matching the importer's stance that an
+     * un-owned integration row is not a lesser row but one no tenant control can see.
+     * `channels.brand_id` is `required` in both the create and update requests, so no HTTP path
+     * produces such a row.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('tenant', static function (Builder $query): void {
+            $tenant = app(TenantOwnershipResolver::class);
+
+            if (! $tenant->appliesTo()) {
+                return;
+            }
+
+            if ($tenant->isUnrestricted()) {
+                return;
+            }
+
+            $companyId = $tenant->companyId();
+
+            if ($companyId === null) {
+                $query->whereRaw('1 = 0');
+
+                return;
+            }
+
+            $table = $query->getModel()->getTable();
+
+            $query->whereExists(static function ($sub) use ($companyId, $table): void {
+                $sub->selectRaw('1')
+                    ->from('brands')
+                    ->whereColumn('brands.id', "{$table}.brand_id")
+                    ->where('brands.company_id', $companyId);
+            });
+        });
+    }
 
     /**
      * @var list<string>
