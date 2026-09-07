@@ -27,11 +27,26 @@ use Illuminate\Support\Facades\Schema;
  * invariant has no "zero rows yet" case (a driver's pairing rows always
  * exist). Here the very FIRST assignment for an order also starts from zero
  * rows, so an app-only lock cannot close the race (nothing exists yet to
- * lock). A STORED generated column collapses every superseded row's key to
- * NULL — and SQL treats NULL as never equal to NULL for uniqueness — so MySQL
- * itself refuses a second concurrent INSERT for the same order while leaving
+ * lock). A generated column collapses every superseded row's key to NULL —
+ * and SQL treats NULL as never equal to NULL for uniqueness — so MySQL itself
+ * refuses a second concurrent INSERT for the same order while leaving
  * historical rows completely unconstrained. This is the same "simple,
  * portable, MySQL-native" bar the custody invariant was held to (§8).
+ *
+ * VIRTUAL, NOT STORED (FAST-CLOSURE CORRECTION). `order_id` carries
+ * `->cascadeOnDelete()` against `orders.id` (see the original migration).
+ * MySQL/InnoDB raises ER_CANNOT_ADD_FOREIGN_BASE_COL_STORED
+ * ("Cannot add foreign key on the base column of a stored generated column")
+ * for exactly this shape: a cascading FK (CASCADE/SET NULL on UPDATE or
+ * DELETE) on a column that is also a base column of a STORED generated
+ * column on the same table — because a cascade would need to rewrite the
+ * materialized value, which InnoDB does not support. A VIRTUAL generated
+ * column is never materialized (computed on read), so no such rewrite is
+ * ever needed and the restriction does not apply — while still fully
+ * supporting a secondary UNIQUE index in InnoDB (supported since MySQL
+ * 5.7.8, unchanged in 8.0). The uniqueness guarantee itself — NULL never
+ * equals NULL — is identical either way; only where MySQL stores the
+ * computed value differs. No business-logic or query-behavior change.
  *
  * WHY THESE THREE COLUMNS AND NO OTHERS (§7 — "document exactly why every
  * schema field is required"):
@@ -75,11 +90,14 @@ return new class extends Migration
         // The NEW backstop: NULL while superseded (any number of historical rows
         // may share order_id), the real order_id while active (at most one row).
         // `orders.id` is a UUID (see the original migration's own comment), so this
-        // mirrors that type exactly.
+        // mirrors that type exactly. VIRTUAL, not STORED — order_id carries an
+        // ON DELETE CASCADE foreign key, and MySQL/InnoDB refuses a STORED
+        // generated column whose base column has a cascading FK action
+        // (ER_CANNOT_ADD_FOREIGN_BASE_COL_STORED) — see this file's docblock.
         DB::statement(<<<'SQL'
             ALTER TABLE distribution_trip_orders
             ADD COLUMN active_order_id CHAR(36)
-                GENERATED ALWAYS AS (CASE WHEN superseded_at IS NULL THEN order_id ELSE NULL END) STORED
+                GENERATED ALWAYS AS (CASE WHEN superseded_at IS NULL THEN order_id ELSE NULL END) VIRTUAL
         SQL);
 
         Schema::table('distribution_trip_orders', function (Blueprint $table): void {
