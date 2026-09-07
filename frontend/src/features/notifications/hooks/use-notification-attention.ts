@@ -6,7 +6,7 @@ import { toast } from '@/components/ds/use-toast';
 import { findNewlyArrivedIds } from '../lib/diff-new-notifications';
 import { playAttentionSound } from '../lib/notification-sound';
 import { toUiNotification, type NotificationPriority, type RawNotification } from '../types/notification';
-import { useAttentionPolicy, useNotifications } from './use-notifications';
+import { useAttentionPolicy, useNotificationPreferences, useNotifications } from './use-notifications';
 
 const TOAST_TYPE_BY_PRIORITY: Record<NotificationPriority, 'info' | 'warning' | 'error'> = {
   low: 'info',
@@ -34,7 +34,12 @@ export function useNotificationAttention(): void {
   const { t } = useTranslation('common');
   const feed = useNotifications();
   const policy = useAttentionPolicy();
+  const preferences = useNotificationPreferences();
   const knownIds = useRef<Set<string> | null>(null);
+  // TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §6 — defaults to full
+  // volume, matching every existing call site's un-scaled loudness until the user
+  // explicitly turns it down.
+  const soundVolume = preferences.data?.sound_volume ?? 1;
 
   useEffect(() => {
     const rows = feed.data?.data;
@@ -69,8 +74,8 @@ export function useNotificationAttention(): void {
       }
 
       if (attention.sound && attention.sound_profile) {
-        playAttentionSound(attention.sound_profile);
+        playAttentionSound(attention.sound_profile, soundVolume);
       }
     });
-  }, [feed.data, policy.data, t]);
+  }, [feed.data, policy.data, soundVolume, t]);
 }

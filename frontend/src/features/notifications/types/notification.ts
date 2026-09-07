@@ -85,6 +85,29 @@ export type AttentionPolicyMap = Record<NotificationPriority, AttentionSettings>
 export type NotificationPreferences = {
   popup_enabled?: boolean;
   sound_enabled?: boolean;
+  /** TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §6 — 0 (silent) to 1 (full). */
+  sound_volume?: number;
+  /**
+   * §9 — per-catalog-type ON/OFF, keyed by {@link NotificationTypeCatalogEntry.key}.
+   * A key absent here falls back to that type's own `default_enabled`. This can only
+   * narrow delivery, never widen authorization — enforced server-side, not here.
+   */
+  type_overrides?: Record<string, boolean>;
+};
+
+/**
+ * §8 — one entry of the canonical, backend-authoritative Notification Type Catalog
+ * (GET /api/notifications/type-catalog), already merged with the caller's own current
+ * per-type enabled state. Never hardcode this list on the frontend.
+ */
+export type NotificationTypeCatalogEntry = {
+  key: string;
+  module: string;
+  name_ar: string;
+  description_ar: string;
+  user_can_disable: boolean;
+  has_destination: boolean;
+  enabled: boolean;
 };
 
 export type NotificationPage = {

@@ -31,4 +31,18 @@ interface NotificationDeliveryPolicyInterface
      * remains governed exclusively by {@see inAppIsMandatory()}.
      */
     public function resolveAttention(mixed $notifiable, NotificationPriority $priority): NotificationAttention;
+
+    /**
+     * TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §9 — a NARROWING-ONLY
+     * gate on top of recipient authorization, never a substitute for it: by the time this
+     * is consulted, the caller has already decided $notifiable is an authorized recipient
+     * (e.g. via AuthorizationGateway, or a directly-resolved actor/assignee) — this method
+     * may only turn that into "and don't actually deliver it", never add a recipient who
+     * wasn't already one. Types absent from the catalog, or marked non-disableable there,
+     * always return true (unchanged V1 behavior). Checked in CoreDatabaseChannel::send()
+     * before the row is created, for every notification regardless of whether it
+     * implements ProvidesNotificationMetadataInterface (several real producers —
+     * Collaboration's — do not).
+     */
+    public function isTypeEnabledFor(mixed $notifiable, string $notificationClass): bool;
 }

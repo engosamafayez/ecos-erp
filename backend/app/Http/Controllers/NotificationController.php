@@ -8,6 +8,7 @@ use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
+use Modules\Notifications\Domain\Catalog\NotificationTypeCatalog;
 use Modules\Notifications\Domain\Contracts\NotificationDeliveryPolicyInterface;
 use Modules\Notifications\Domain\Enums\NotificationPriority;
 
@@ -55,8 +56,16 @@ final class NotificationController extends Controller
         // second-precision timestamp still sort the same way on every request.
         $query = $user->notifications()->getQuery()->orderByDesc('id');
 
-        if ($request->boolean('unread')) {
-            $query->whereNull('read_at');
+        // TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §5 — the Unread/Read
+        // workspace split needs both directions; `unread` previously only ever meant
+        // "true or absent" (whereNull). `?unread=0` now means "read only", the symmetric
+        // case, added without touching the pre-existing "absent = both" behavior.
+        if ($request->has('unread')) {
+            if ($request->boolean('unread')) {
+                $query->whereNull('read_at');
+            } else {
+                $query->whereNotNull('read_at');
+            }
         }
 
         $paginator = $query->paginate($perPage, ['*'], 'page', (int) $request->query('page', 1));
@@ -136,6 +145,35 @@ final class NotificationController extends Controller
         foreach (NotificationPriority::cases() as $priority) {
             $result[$priority->value] = $policy->resolveAttention($user, $priority)->toArray();
         }
+
+        return $this->success($result);
+    }
+
+    /**
+     * GET /api/notifications/type-catalog
+     *
+     * TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §8/§9. The canonical,
+     * backend-authoritative list of configurable notification types — grouped by
+     * business module — merged with the authenticated user's own current per-type
+     * enabled state, so the Preferences page needs exactly one request to render both
+     * "what exists" and "what's on for me". The frontend never hardcodes this list.
+     */
+    public function typeCatalog(Request $request, NotificationDeliveryPolicyInterface $policy): JsonResponse
+    {
+        $user = $request->user();
+
+        $result = array_map(
+            fn ($definition): array => [
+                'key' => $definition->key,
+                'module' => $definition->module,
+                'name_ar' => $definition->nameAr,
+                'description_ar' => $definition->descriptionAr,
+                'user_can_disable' => $definition->userCanDisable,
+                'has_destination' => $definition->hasDestination,
+                'enabled' => $policy->isTypeEnabledFor($user, $definition->notificationClass),
+            ],
+            NotificationTypeCatalog::all(),
+        );
 
         return $this->success($result);
     }

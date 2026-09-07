@@ -20,6 +20,10 @@ const KNOWN_ENTITY_ROUTES: Partial<Record<string, (entityId: string) => string>>
   // the same list surface regardless of `entityId` (same "don't fabricate a URL that
   // doesn't exist" constraint `order` failed under investigation in Task 4).
   'pricing-review': () => ROUTES.costManagementPriceReview,
+  // TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §7 — same constraint:
+  // /driver/loading is the driver's own loading workspace, a list, not a per-assignment
+  // page, so every assignment resolves to that same list regardless of `entityId`.
+  'driver-assignment': () => ROUTES.driverLoading,
 };
 
 /** @returns the route to navigate to, or null when this notification has no supported target. */

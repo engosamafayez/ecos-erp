@@ -3,7 +3,12 @@ import { isAxiosError } from 'axios';
 import { api } from '@/lib/axios';
 import type { ApiResponse } from '@/types';
 
-import type { AttentionPolicyMap, NotificationPage, NotificationPreferences } from '../types/notification';
+import type {
+  AttentionPolicyMap,
+  NotificationPage,
+  NotificationPreferences,
+  NotificationTypeCatalogEntry,
+} from '../types/notification';
 
 const PREFERENCES_CATEGORY = 'notifications';
 
@@ -14,12 +19,17 @@ const PREFERENCES_CATEGORY = 'notifications';
  * company parameter to pass, and none should be added: ownership is the gate.
  */
 export const notificationsService = {
+  /**
+   * `unread: true` -> unread only, `false` -> read only (TASK-ECOS-NOTIFICATIONS-FINAL-
+   * USER-REVIEW-REMEDIATION-010 §5), `undefined`/omitted -> both. Distinguishing `false`
+   * from "not passed" matters here, so this never collapses it to `undefined`.
+   */
   async list(params: { page?: number; perPage?: number; unread?: boolean } = {}) {
     const { data } = await api.get<ApiResponse<NotificationPage>>('/notifications', {
       params: {
         page: params.page,
         per_page: params.perPage,
-        unread: params.unread ? 1 : undefined,
+        unread: params.unread === undefined ? undefined : params.unread ? 1 : 0,
       },
     });
     return data.data;
@@ -75,5 +85,14 @@ export const notificationsService = {
   /** PUT is a full replace (Core/UserPreferences semantics) — always send the complete payload. */
   async updatePreferences(payload: NotificationPreferences): Promise<void> {
     await api.put(`/me/preferences/${PREFERENCES_CATEGORY}`, { payload });
+  },
+
+  /**
+   * The canonical, backend-authoritative notification type catalog (§8), merged with
+   * the caller's own current per-type enabled state — never hardcoded on the frontend.
+   */
+  async typeCatalog(): Promise<NotificationTypeCatalogEntry[]> {
+    const { data } = await api.get<ApiResponse<NotificationTypeCatalogEntry[]>>('/notifications/type-catalog');
+    return data.data;
   },
 };

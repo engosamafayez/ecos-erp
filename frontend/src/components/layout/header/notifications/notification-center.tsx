@@ -29,6 +29,7 @@ import {
   useMarkNotificationRead,
   useNotificationCenterFeed,
   useUnreadNotificationCount,
+  type NotificationReadFilter,
 } from '@/features/notifications/hooks/use-notifications';
 import { resolveNotificationTarget } from '@/features/notifications/lib/resolve-notification-target';
 import {
@@ -124,11 +125,12 @@ function PriorityBadge({ priority }: { priority: NotificationPriority | undefine
 function NotificationRow({
   notification,
   onMarkRead,
-  onNavigate,
+  onView,
 }: {
   notification: UiNotification;
   onMarkRead: (id: string) => void;
-  onNavigate: (path: string) => void;
+  /** TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §4 — marks read AND navigates, in that order. */
+  onView: (id: string, path: string) => void;
 }) {
   const { t } = useTranslation('common');
   const fmt = useFormatter();
@@ -197,7 +199,7 @@ function NotificationRow({
           {target && (
             <button
               type="button"
-              onClick={() => onNavigate(target)}
+              onClick={() => onView(notification.id, target)}
               className="text-[10px] font-medium text-primary hover:text-primary/80"
             >
               {t(($) => $.notifications.viewDetails)}
@@ -222,13 +224,23 @@ export function NotificationCenter() {
   const { t } = useTranslation('common');
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  // TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §5 — Unread/Read, at
+  // least; "Unread" is the default landing tab since that's what a user opening the
+  // bell almost always wants to see first.
+  const [readFilter, setReadFilter] = useState<NotificationReadFilter>('unread');
   const [activeSource, setActiveSource] = useState<NotificationSource | 'all'>('all');
   const [page, setPage] = useState(1);
 
-  const centerFeed = useNotificationCenterFeed(page);
+  const centerFeed = useNotificationCenterFeed(page, readFilter);
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
   const unreadCount = useUnreadNotificationCount();
+
+  function selectReadFilter(filter: NotificationReadFilter) {
+    setReadFilter(filter);
+    setActiveSource('all');
+    setPage(1);
+  }
 
   // The bell is this hook's single mount point app-wide (TASK-ECOS-NOTIFICATIONS-
   // ATTENTION-EXPERIENCE-003) — it watches useNotifications()'s own query (always page 1),
@@ -259,7 +271,15 @@ export function NotificationCenter() {
   const visible =
     activeSource === 'all' ? notifications : notifications.filter((n) => n.source === activeSource);
 
-  function handleNavigate(path: string) {
+  /**
+   * §4 — every actionable notification: mark read, then update unread count/list
+   * (`markRead.mutate`'s own `onSuccess` invalidates the whole notifications query
+   * prefix, which is what actually removes this row from an active "Unread" tab), then
+   * navigate. Unconditional mark-read here is safe even if already read (the backend
+   * mutation is idempotent — `markAsRead()` on an already-read row is a no-op).
+   */
+  function handleView(id: string, path: string) {
+    markRead.mutate(id);
     setOpen(false);
     navigate(path);
   }
@@ -313,6 +333,28 @@ export function NotificationCenter() {
                 {t(($) => $.notifications.markAllRead)}
               </Button>
             </div>
+          </div>
+
+          {/* TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §5 — the
+              Unread/Read workspace split, independent of (and above) the existing
+              per-source filter tabs below. */}
+          <div className="flex shrink-0 gap-1 border-b px-3 py-2">
+            {(['unread', 'read'] as const).map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                onClick={() => selectReadFilter(filter)}
+                aria-pressed={readFilter === filter}
+                className={cn(
+                  'rounded-full px-2.5 py-1 text-xs font-medium transition-colors',
+                  readFilter === filter
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                )}
+              >
+                {filter === 'unread' ? t(($) => $.notifications.unread) : t(($) => $.notifications.read)}
+              </button>
+            ))}
           </div>
 
           {sources.length > 1 && (
@@ -377,7 +419,7 @@ export function NotificationCenter() {
                       key={notification.id}
                       notification={notification}
                       onMarkRead={(id) => markRead.mutate(id)}
-                      onNavigate={handleNavigate}
+                      onView={handleView}
                     />
                   ))}
                 </div>

@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Modules\Operations\Loading\Infrastructure\Providers;
 
 use App\Core\FeatureFlags\FeatureFlagService;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Modules\Operations\Loading\Application\Actions\AllocatePoolToSessionAction;
+use Modules\Operations\Loading\Application\Listeners\NotifyDriverAssigned;
 use Modules\Operations\Loading\Application\Services\AllocationPolicyService;
 use Modules\Operations\Loading\Application\Services\AutoAllocationService;
+use Modules\Operations\Loading\Domain\Events\DriverAssigned;
 use Modules\Operations\Loading\Domain\Models\AllocationRecord;
 use Modules\Operations\Loading\Domain\Models\LoadingSession;
 use Modules\Operations\Loading\Domain\Models\VehicleAssignment;
@@ -50,5 +53,10 @@ final class LoadingServiceProvider extends ServiceProvider
         Gate::policy(LoadingSession::class, LoadingSessionPolicy::class);
         Gate::policy(VehicleAssignment::class, VehicleAssignmentPolicy::class);
         Gate::policy(AllocationRecord::class, AllocationRecordPolicy::class);
+
+        // TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §7 — DriverAssigned
+        // already fired from AssignDriverAction with no listener; the assigned driver
+        // never learned of it. This is the fix, not a new business rule.
+        Event::listen(DriverAssigned::class, [NotifyDriverAssigned::class, 'handle']);
     }
 }

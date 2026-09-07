@@ -256,4 +256,48 @@ describe('NotificationCenter', () => {
     // paginated query never feeds the unread-count authority.
     expect(screen.getByText('unreadCount:5')).toBeInTheDocument();
   });
+
+  // ── TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §5 ───────────────────
+
+  it('§5: defaults to the Unread tab, and switching to Read re-queries with unread=false', async () => {
+    mockList.mockImplementation(({ unread }: { unread?: boolean } = {}) =>
+      Promise.resolve(
+        unread === false
+          ? page({ data: [row('n-read', { read_at: '2026-09-05T00:00:00Z' })], meta: { page: 1, perPage: 25, total: 1, lastPage: 1 } })
+          : page({ data: [row('n-unread', { read_at: null })], meta: { page: 1, perPage: 25, total: 1, lastPage: 1 } }),
+      ),
+    );
+
+    renderCenter();
+    await openDrawer();
+    await screen.findByText('Message n-unread');
+    expect(mockList).toHaveBeenCalledWith(expect.objectContaining({ unread: true }));
+
+    await userEvent.click(screen.getByText('read'));
+
+    await waitFor(() => expect(screen.getByText('Message n-read')).toBeInTheDocument());
+    expect(mockList).toHaveBeenCalledWith(expect.objectContaining({ unread: false }));
+  });
+
+  // ── TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §4 ───────────────────
+
+  it('§4: clicking View marks the notification read AND navigates, in one action', async () => {
+    mockList.mockResolvedValue(
+      page({
+        unread_count: 1,
+        data: [row('n1', { read_at: null, deep_link: { entity_type: 'customer', entity_id: 'c1', action_key: null, route: null } })],
+        meta: { page: 1, perPage: 25, total: 1, lastPage: 1 },
+      }),
+    );
+    mockMarkRead.mockResolvedValue(undefined);
+
+    renderCenter();
+    await openDrawer();
+    await screen.findByText('Message n1');
+
+    await userEvent.click(screen.getByText('viewDetails'));
+
+    expect(mockMarkRead).toHaveBeenCalledWith('n1');
+    expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining('c1'));
+  });
 });

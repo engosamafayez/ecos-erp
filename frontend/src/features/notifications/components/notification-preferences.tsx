@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Lock, Settings, X } from 'lucide-react';
+import { Check, Lock, Settings, Volume2, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -10,9 +11,13 @@ import { toast } from '@/components/ds/use-toast';
 import {
   useAttentionPolicy,
   useNotificationPreferences,
+  useNotificationTypeCatalog,
   useUpdateNotificationPreferences,
 } from '../hooks/use-notifications';
-import { NOTIFICATION_PRIORITIES } from '../types/notification';
+import { NOTIFICATION_PRIORITIES, type NotificationTypeCatalogEntry } from '../types/notification';
+
+/** TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §8 — only modules that actually exist in the catalog. */
+const MODULE_ORDER = ['pricing', 'preparation', 'driver', 'collaboration'] as const;
 
 /**
  * ADR-047 §26.1/§26.5 — "My Profile → Notification Preferences". Originally scoped to
@@ -64,11 +69,32 @@ export function NotificationPreferencesPanel({ hideHeader = false }: { hideHeade
 
   const popupEnabled = preferences.data?.popup_enabled ?? true;
   const soundEnabled = preferences.data?.sound_enabled ?? true;
+  const soundVolume = preferences.data?.sound_volume ?? 1;
 
-  function save(next: { popup_enabled: boolean; sound_enabled: boolean }) {
-    update.mutate(next, {
-      onError: () => toast.error(t(($) => $.notifications.preferences.saveFailed)),
-    });
+  // Local draft while dragging — committing on every `onChange` tick would fire a PUT
+  // per pixel of drag; this fires exactly one, on release/keyup. Resyncing the draft
+  // when the server value changes is done during render (React's own recommended
+  // "adjusting state when a prop changes" pattern), not in an effect — an effect here
+  // would commit the stale draft to the screen for one frame before correcting it.
+  const [volumeDraft, setVolumeDraft] = useState(soundVolume);
+  const [lastSyncedVolume, setLastSyncedVolume] = useState(soundVolume);
+  if (soundVolume !== lastSyncedVolume) {
+    setLastSyncedVolume(soundVolume);
+    setVolumeDraft(soundVolume);
+  }
+
+  /** Always sends the complete payload — PUT /me/preferences/{category} is a full replace. */
+  function save(patch: Partial<NonNullable<typeof preferences.data>>) {
+    update.mutate(
+      {
+        popup_enabled: popupEnabled,
+        sound_enabled: soundEnabled,
+        sound_volume: soundVolume,
+        type_overrides: preferences.data?.type_overrides,
+        ...patch,
+      },
+      { onError: () => toast.error(t(($) => $.notifications.preferences.saveFailed)) },
+    );
   }
 
   return (
@@ -87,7 +113,7 @@ export function NotificationPreferencesPanel({ hideHeader = false }: { hideHeade
         <Switch
           checked={popupEnabled}
           disabled={preferences.isLoading}
-          onCheckedChange={(checked) => save({ popup_enabled: checked, sound_enabled: soundEnabled })}
+          onCheckedChange={(checked) => save({ popup_enabled: checked })}
         />
       </div>
       <div className="flex items-center justify-between gap-2">
@@ -95,7 +121,30 @@ export function NotificationPreferencesPanel({ hideHeader = false }: { hideHeade
         <Switch
           checked={soundEnabled}
           disabled={preferences.isLoading}
-          onCheckedChange={(checked) => save({ popup_enabled: popupEnabled, sound_enabled: checked })}
+          onCheckedChange={(checked) => save({ sound_enabled: checked })}
+        />
+      </div>
+
+      {/* TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §6 — volume, not the
+          system/device volume: this only scales playAttentionSound()'s own synthesized
+          gain. Disabled (not hidden) while sound itself is off, so the control's own
+          state is never lost/reset by toggling sound back on. */}
+      <div className="flex items-center gap-2">
+        <Volume2 className="text-muted-foreground size-4 shrink-0" aria-hidden />
+        <span className="text-sm">{t(($) => $.notifications.preferences.volumeLabel)}</span>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.05}
+          value={volumeDraft}
+          disabled={preferences.isLoading || !soundEnabled}
+          aria-label={t(($) => $.notifications.preferences.volumeLabel)}
+          onChange={(e) => setVolumeDraft(Number(e.target.value))}
+          onMouseUp={(e) => save({ sound_volume: Number((e.target as HTMLInputElement).value) })}
+          onTouchEnd={(e) => save({ sound_volume: Number((e.target as HTMLInputElement).value) })}
+          onKeyUp={(e) => save({ sound_volume: Number((e.target as HTMLInputElement).value) })}
+          className="ms-auto h-1.5 w-24 shrink-0 accent-primary disabled:opacity-40"
         />
       </div>
 
@@ -145,6 +194,70 @@ export function NotificationPreferencesPanel({ hideHeader = false }: { hideHeade
             })}
           </tbody>
         </table>
+      </div>
+
+      <NotificationTypeToggles onToggle={(key, enabled) => save({
+        type_overrides: { ...preferences.data?.type_overrides, [key]: enabled },
+      })} />
+    </div>
+  );
+}
+
+/**
+ * TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §8/§9/§10 — the canonical
+ * catalog, grouped by business module, one ON/OFF per real condition. Never a
+ * frontend-hardcoded list: entirely driven by GET /api/notifications/type-catalog.
+ * Arabic name/description are primary; the technical key is secondary/debug-only.
+ */
+function NotificationTypeToggles({ onToggle }: { onToggle: (key: string, enabled: boolean) => void }) {
+  const { t } = useTranslation('common');
+  const catalog = useNotificationTypeCatalog();
+
+  if (!catalog.data || catalog.data.length === 0) return null;
+
+  const byModule = new Map<string, NotificationTypeCatalogEntry[]>();
+  catalog.data.forEach((entry) => {
+    const list = byModule.get(entry.module) ?? [];
+    list.push(entry);
+    byModule.set(entry.module, list);
+  });
+
+  const orderedModules = [
+    ...MODULE_ORDER.filter((m) => byModule.has(m)),
+    ...[...byModule.keys()].filter((m) => !(MODULE_ORDER as readonly string[]).includes(m)),
+  ];
+
+  return (
+    <div className="border-t pt-3">
+      <p className="text-muted-foreground text-xs font-medium">
+        {t(($) => $.notifications.preferences.typesTitle)}
+      </p>
+      <div className="mt-2 flex flex-col gap-3">
+        {orderedModules.map((moduleKey) => (
+          <div key={moduleKey}>
+            <p className="text-muted-foreground/80 text-[11px] font-semibold uppercase tracking-wide">
+              {t(($) => $.notifications.moduleGroups[moduleKey as keyof typeof $.notifications.moduleGroups])}
+            </p>
+            <div className="mt-1 flex flex-col gap-2">
+              {byModule.get(moduleKey)!.map((entry) => (
+                <div key={entry.key} className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm">{entry.name_ar}</p>
+                    <p className="text-muted-foreground mt-0.5 text-[11px]">{entry.description_ar}</p>
+                    <p className="text-muted-foreground/60 mt-0.5 text-[10px]" dir="ltr">{entry.key}</p>
+                  </div>
+                  <Switch
+                    checked={entry.enabled}
+                    disabled={!entry.user_can_disable}
+                    onCheckedChange={(checked) => onToggle(entry.key, checked)}
+                    aria-label={entry.name_ar}
+                    className="mt-0.5 shrink-0"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

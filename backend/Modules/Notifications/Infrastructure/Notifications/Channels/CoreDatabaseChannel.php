@@ -40,6 +40,15 @@ final class CoreDatabaseChannel
             return null; // unreachable in V1; see NotificationDeliveryPolicy.
         }
 
+        // TASK-ECOS-NOTIFICATIONS-FINAL-USER-REVIEW-REMEDIATION-010 §9 — a per-type user
+        // preference, checked regardless of $metadata (several real producers, e.g.
+        // Collaboration's, don't implement the metadata interface at all, and this must
+        // still apply to them). Purely narrowing: the recipient here was already decided
+        // authorized by the caller before send() was ever invoked.
+        if (! $this->deliveryPolicy->isTypeEnabledFor($notifiable, get_class($notification))) {
+            return null;
+        }
+
         $dedupeKey = $metadata?->notificationDedupeKey($notifiable);
 
         if ($dedupeKey !== null && $this->alreadyDelivered($notifiable, $dedupeKey)) {
