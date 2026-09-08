@@ -1305,6 +1305,12 @@ final class DistributionAggregationService
                 'code' => $s['code'],
                 'name' => $s['name'],
                 'zone_ids' => $s['zone_ids'],
+                // Travels alongside zone_ids (same order, same source —
+                // zonesBySlot() via slotSummaries()) so a client scoping the Map
+                // to one Group can name an owned Zone even when it has no
+                // currently-plotted Order of its own (see mapData()'s own
+                // per-Zone loop below, which only emits a Zone an Order sits in).
+                'zone_names' => $s['zone_names'],
                 'orders_count' => $s['orders_count'],
                 'capacity_orders' => $s['capacity_orders'],
                 'remaining_orders' => $s['remaining_orders'],

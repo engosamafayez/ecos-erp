@@ -378,9 +378,32 @@ export function DistributionMapTab({
   const map: MapData | undefined = useMemo(() => {
     if (!data || !focusGroupId) return data;
     const grp = data.groups.find((g) => g.slot_id === focusGroupId);
-    const zoneIds = new Set(grp?.zone_ids ?? []);
+    const zoneIds = grp?.zone_ids ?? [];
     const scopedOrders = data.orders.filter((o) => o.slot_id === focusGroupId);
-    const scopedZones = data.zones.filter((z) => zoneIds.has(z.zone_id));
+
+    // mapData() only emits a Zone that at least one Order in the WHOLE window
+    // currently sits in (TASK-...-009's own zero-order-zone backfill lives only
+    // in slotZoneBreakdown(), not here) — so an owned Zone with no currently-
+    // plotted Order has no entry in `data.zones` at all. Left as a plain filter,
+    // this Group's own "Map & Group Details" zone list would then show FEWER
+    // zones than the same Group's header/Zones tab for that exact reason.
+    // Backfilled here, from the SAME pivot-sourced zone_ids/zone_names this
+    // Group's header already uses, so the two can no longer disagree.
+    const byZoneId = new Map(data.zones.map((z): [number, MapZone] => [z.zone_id, z]));
+    const scopedZones: MapZone[] = zoneIds.map((id, i) => byZoneId.get(id) ?? {
+      zone_id: id,
+      zone_code: null,
+      zone_name: grp?.zone_names?.[i] ?? null,
+      color: null,
+      order_count: 0,
+      plotted_count: 0,
+      slot_ids: grp ? [grp.slot_id] : [],
+      latitude: null,
+      longitude: null,
+      centroid_source: null,
+      has_location: false,
+    });
+
     const plotted = scopedOrders.filter((o) => o.has_location).length;
     const zonesPlotted = scopedZones.filter((z) => z.has_location).length;
     return {

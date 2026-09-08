@@ -313,10 +313,8 @@ export function DistributionWorkspacePage() {
   const realZones = useMemo(() => zones.filter((z) => z.zone_id !== null), [zones]);
 
   const reviewZones = useMemo<ReviewZone[]>(() => {
-    const groupByZone = new Map<number, SlotSummary>();
-    for (const g of slots) {
-      for (const zid of g.zone_ids) groupByZone.set(zid, g);
-    }
+    const slotById = new Map<string, SlotSummary>();
+    for (const g of slots) slotById.set(g.slot_id, g);
 
     const byZone = new Map<number, ReviewZone>();
     const slotIdsByZone = new Map<number, Set<string>>();
@@ -326,20 +324,19 @@ export function DistributionWorkspacePage() {
 
       let z = byZone.get(o.zone_id);
       if (!z) {
-        const g = groupByZone.get(o.zone_id) ?? null;
         z = {
           zone_id: o.zone_id,
           zone_code: null,
           zone_name: o.zone_name,
-          virtual_slot_id: g?.slot_id ?? null,
+          virtual_slot_id: null,
           order_count: 0,
           total_value: 0,
           spans_slots: false,
           products_count: 0,
           paid_orders: 0,
           unpaid_orders: 0,
-          group_code: g?.code ?? null,
-          group_name: g?.name ?? null,
+          group_code: null,
+          group_name: null,
         };
         byZone.set(o.zone_id, z);
         slotIdsByZone.set(o.zone_id, new Set());
@@ -353,11 +350,30 @@ export function DistributionWorkspacePage() {
     }
 
     return [...byZone.values()]
-      .map((z) => ({
-        ...z,
-        unpaid_orders: z.order_count - z.paid_orders,
-        spans_slots: (slotIdsByZone.get(z.zone_id as number)?.size ?? 0) > 1,
-      }))
+      .map((z) => {
+        // Group attribution comes from the ORDERS actually sitting in this zone
+        // (their own virtual_slot_id — the same field ZonesReviewTable's rows
+        // already key on), never from "whichever Group's pivot currently claims
+        // this zone". The pivot can point at a Group that owns the zone going
+        // forward while holding none of its current orders (zone-reclaim drift,
+        // TASK-...-009 §11), which previously made this card's single group
+        // label disagree with the very order rows rendered underneath it.
+        const slotIds = [...(slotIdsByZone.get(z.zone_id as number) ?? [])];
+        const spansSlots = slotIds.length > 1;
+        // Exactly one distinct Group among the actual orders — the accurate,
+        // unambiguous case. Zero (orders not yet in any Group) or more than one
+        // (spansSlots) are both left honestly unresolved rather than guessing.
+        const soleGroup = slotIds.length === 1 ? (slotById.get(slotIds[0]) ?? null) : null;
+
+        return {
+          ...z,
+          unpaid_orders: z.order_count - z.paid_orders,
+          spans_slots: spansSlots,
+          virtual_slot_id: soleGroup?.slot_id ?? null,
+          group_code: soleGroup?.code ?? null,
+          group_name: soleGroup?.name ?? null,
+        };
+      })
       .sort((a, b) => b.order_count - a.order_count);
   }, [orders, slots]);
 
