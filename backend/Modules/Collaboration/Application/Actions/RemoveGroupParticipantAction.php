@@ -63,5 +63,10 @@ final class RemoveGroupParticipantAction extends BaseAction
             ->firstOrFail();
 
         $targetRow->update(['left_at' => now()]);
+
+        // A bare `return;` does not satisfy a declared `mixed` return type
+        // (confirmed the hard way: PHP rejects it as "none returned") —
+        // unlike `void`/undeclared returns, `mixed` requires an actual value.
+        return null;
     }
 }

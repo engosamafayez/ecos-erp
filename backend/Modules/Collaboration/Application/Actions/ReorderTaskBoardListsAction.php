@@ -54,5 +54,10 @@ final class ReorderTaskBoardListsAction extends BaseAction
                 $lists->get($listId)?->update(['position' => $index]);
             }
         });
+
+        // A bare `return;` does not satisfy a declared `mixed` return type
+        // (confirmed the hard way: PHP rejects it as "none returned") —
+        // unlike `void`/undeclared returns, `mixed` requires an actual value.
+        return null;
     }
 }
