@@ -69,6 +69,11 @@ export function TripsWorkspacePage() {
   // current page/filter to open correctly.
   const [searchParams, setSearchParams] = useSearchParams();
   const urlTripId = searchParams.get('tripId');
+  // TASK-ECOS-SHIPPING-OS-REDESIGN-004 §9/§20 — Live Driver Map and Shipping
+  // Orders' Route History links deep-link straight to the drawer's new tab
+  // via `?tripId=&tab=`. Read once at open time, same as `urlTripId`; the
+  // drawer only consumes it as its initial tab (see TripDrawer's own prop).
+  const urlTab = searchParams.get('tab');
   const [detailId, setDetailIdState] = useState<string | null>(urlTripId);
   const [detailOpen, setDetailOpenState] = useState(urlTripId !== null);
   const [formOpen, setFormOpen] = useState(false);
@@ -84,6 +89,10 @@ export function TripsWorkspacePage() {
         } else {
           params.set('tripId', id);
         }
+        // A tab deep-link only applies to the trip it was set for — never
+        // carry it into a different trip opened afterwards (e.g. a plain row
+        // click, which must always start at Overview).
+        params.delete('tab');
         return params;
       },
       { replace: true },
@@ -287,11 +296,12 @@ export function TripsWorkspacePage() {
       </WorkspacePage>
 
       <TripDrawer
-        key={`${detailId ?? 'none'}-${String(detailOpen)}`}
+        key={`${detailId ?? 'none'}-${String(detailOpen)}-${urlTab ?? 'overview'}`}
         tripId={detailId}
         open={detailOpen}
         onOpenChange={setDetailOpen}
         onEdit={openEdit}
+        initialTab={urlTab ?? undefined}
       />
 
       {/* Remounted per target and per open/close so the form always starts from

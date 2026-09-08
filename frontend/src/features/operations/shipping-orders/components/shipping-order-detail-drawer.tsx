@@ -71,16 +71,30 @@ export function ShippingOrderDetailDrawer({
                       })}
                     </span>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 gap-1 text-xs"
-                    onClick={() => navigate(`${ROUTES.logisticsTrips}?tripId=${order.trip?.id}`)}
-                    data-testid="shipping-order-open-trip"
-                  >
-                    {t($ => $.drawer.openTrip)}
-                    <ArrowUpRight className="size-3" />
-                  </Button>
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 gap-1 text-xs"
+                      onClick={() => navigate(`${ROUTES.logisticsTrips}?tripId=${order.trip?.id}`)}
+                      data-testid="shipping-order-open-trip"
+                    >
+                      {t($ => $.drawer.openTrip)}
+                      <ArrowUpRight className="size-3" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 gap-1 text-xs"
+                      onClick={() =>
+                        navigate(`${ROUTES.logisticsTrips}?tripId=${order.trip?.id}&tab=location-history`)
+                      }
+                      data-testid="shipping-order-route-history"
+                    >
+                      {t($ => $.drawer.routeHistory)}
+                      <Route className="size-3" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ) : (

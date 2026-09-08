@@ -20,6 +20,7 @@ import { TripExceptionsTab } from './trip-exceptions-tab';
 import { TripOrdersTab } from './trip-orders-tab';
 import { TripReturnsTab } from './trip-returns-tab';
 import { TripRoutingTab } from '@/features/logistics/routing/components/trip-routing-tab';
+import { TripLocationHistoryTab } from '@/features/logistics/live-driver-map/components/trip-location-history-tab';
 import { TripPaymentsTab } from './trip-payments-tab';
 import { TripSettlementTab } from './trip-settlement-tab';
 import { TripStatusBadge } from './trip-status-badge';
@@ -194,17 +195,23 @@ export function TripDrawer({
   open,
   onOpenChange,
   onEdit,
+  initialTab,
 }: {
   tripId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: (trip: Trip) => void;
+  /** Deep-link support (TASK-ECOS-SHIPPING-OS-REDESIGN-004 §9/§20) — open straight to
+   * a specific tab, e.g. from the Live Driver Map or Shipping Orders' Route History
+   * link. Only read once at mount; see the state initializer below. */
+  initialTab?: string;
 }) {
   const { t, i18n } = useTranslation('logistics');
   const { can } = usePermission();
   // The parent remounts this drawer per trip and per open/close, so the tab
-  // simply starts at overview — there is no prior state to reset.
-  const [tab, setTab] = useState('overview');
+  // simply starts at `initialTab` (falling back to overview) — there is no
+  // prior state to reset.
+  const [tab, setTab] = useState(initialTab ?? 'overview');
   const { data: trip, isLoading } = useTrip(open ? tripId : null);
 
   const dateTime = (value: string | null) =>
@@ -257,6 +264,9 @@ export function TripDrawer({
             </TabsTrigger>
             <TabsTrigger value="returns">{t(($) => $.trips.execution.tabs.returns)}</TabsTrigger>
             <TabsTrigger value="routing">{t(($) => $.trips.routing.tab)}</TabsTrigger>
+            <TabsTrigger value="location-history">
+              {t(($) => $.trips.locationHistory.tab)}
+            </TabsTrigger>
             <TabsTrigger value="payments">
               {t(($) => $.trips.settlement.tabs.payments)}
             </TabsTrigger>
@@ -454,6 +464,10 @@ export function TripDrawer({
 
           <TabsContent value="routing">
             <TripRoutingTab tripId={trip.id} />
+          </TabsContent>
+
+          <TabsContent value="location-history">
+            <TripLocationHistoryTab tripId={trip.id} />
           </TabsContent>
 
           <TabsContent value="payments">

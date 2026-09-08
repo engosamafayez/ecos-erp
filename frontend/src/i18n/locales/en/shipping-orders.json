@@ -31,6 +31,7 @@
     "execution": "Execution",
     "stopPosition": "Stop {{sequence}} of {{total}}",
     "openTrip": "Open Trip",
+    "routeHistory": "Route History",
     "noTrip": "Not yet assigned to a Trip.",
     "customer": "Customer",
     "building": "Bldg. {{value}}",

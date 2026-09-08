@@ -193,6 +193,7 @@ use Modules\Logistics\Distribution\Presentation\Http\Controllers\DriverTripExpen
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\DriverTripMovementReviewController;
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\GroupLoadingWorkspaceController;
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\GroupTemplateController;
+use Modules\Logistics\Distribution\Presentation\Http\Controllers\LiveMapController;
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\SettlementController;
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\TripController as LogisticsTripController;
 use Modules\Logistics\Drivers\Presentation\Http\Controllers\DriverController;
@@ -2273,6 +2274,15 @@ Route::middleware('auth:sanctum')->prefix('logistics/distribution')->group(funct
     Route::post('/trips/{id}/custody', [LogisticsTripController::class, 'addCustody'])->middleware('permission:logistics.distribution.update');
     Route::patch('/trips/{id}/custody/{custodyId}/confirm', [LogisticsTripController::class, 'confirmCustody'])->middleware('permission:logistics.distribution.update');
     Route::delete('/trips/{id}/custody/{custodyId}', [LogisticsTripController::class, 'removeCustody'])->middleware('permission:logistics.distribution.update');
+
+    // Live Driver Map / Route History — TASK-ECOS-SHIPPING-OS-REDESIGN-004 §8/§13.
+    // Explicitly gated (unlike this group's plain `auth:sanctum` baseline above):
+    // location data is more sensitive than a generic Trip list, same reasoning
+    // TASK-DRIVER-02 already applied to the financial reads below (§22).
+    Route::get('/live-map', [LiveMapController::class, 'index'])
+        ->middleware('permission:logistics.distribution.view');
+    Route::get('/trips/{id}/location-history', [LiveMapController::class, 'history'])
+        ->middleware('permission:logistics.distribution.view');
 
     // Delivery execution
     // TASK-DRIVER-02 — these seven reads were bare `auth:sanctum`. Every one of them is

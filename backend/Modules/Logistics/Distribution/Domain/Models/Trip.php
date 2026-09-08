@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Logistics\Distribution\Domain\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -195,6 +196,16 @@ class Trip extends Model
         return $this->hasOne(TripSettlement::class, 'trip_id');
     }
 
+    /**
+     * The most recent GPS sample for this trip, if any — TASK-ECOS-SHIPPING-OS-
+     * REDESIGN-004 §8/§27. `latestOfMany()` compiles to ONE correlated subquery
+     * join for the whole result set when eager-loaded, never one query per trip.
+     */
+    public function latestLocationPing(): HasOne
+    {
+        return $this->hasOne(DriverLocationPing::class, 'trip_id')->latestOfMany('recorded_at');
+    }
+
     // ── Domain logic ──────────────────────────────────────────────────────────
 
     public function isEditable(): bool
@@ -224,6 +235,33 @@ class Trip extends Model
         return $this->driver_accepted_products
             && $this->driver_accepted_custody
             && $this->driver_accepted_equipment;
+    }
+
+    /**
+     * The canonical custody+execution boundary GPS tracking activates on —
+     * TASK-ECOS-SHIPPING-OS-REDESIGN-004 §3. Driver assignment alone is not
+     * enough: full custody acceptance AND an on-the-road status must both
+     * hold. Not a new "tracking active" lifecycle — both halves are existing
+     * canonical facts. Mirrored at the query level by scopeTrackable() for
+     * bulk reads, built from the same two primitives, so the two cannot
+     * silently disagree.
+     */
+    public function isTrackable(): bool
+    {
+        return $this->hasFullDriverAcceptance() && $this->status->isOnTheRoad();
+    }
+
+    /** Query-level mirror of isTrackable() — see that method's docblock. */
+    public function scopeTrackable(Builder $query): Builder
+    {
+        return $query
+            ->where('driver_accepted_products', true)
+            ->where('driver_accepted_custody', true)
+            ->where('driver_accepted_equipment', true)
+            ->whereIn('status', array_map(
+                static fn (TripStatus $s): string => $s->value,
+                array_filter(TripStatus::cases(), static fn (TripStatus $s): bool => $s->isOnTheRoad()),
+            ));
     }
 
     /**

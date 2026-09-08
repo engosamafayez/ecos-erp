@@ -31,6 +31,7 @@
     "execution": "التنفيذ",
     "stopPosition": "المحطة {{sequence}} من {{total}}",
     "openTrip": "فتح الرحلة",
+    "routeHistory": "سجل المسار",
     "noTrip": "لم يتم تعيينه لرحلة بعد.",
     "customer": "العميل",
     "building": "مبنى {{value}}",

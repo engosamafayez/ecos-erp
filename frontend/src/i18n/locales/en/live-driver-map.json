@@ -1,39 +1,39 @@
 {
   "pageTitle": "Live Driver Map",
   "pageSubtitle": "Shows where drivers are while they're out on a trip",
-  "gap": {
-    "badge": "Not yet available",
-    "heading": "Live tracking isn't available yet",
-    "body": "This page is meant to show where each driver is while a trip is on the road. That requires driver apps to continuously send their location during a delivery run — and today, they don't. Right now the system only records a handful of one-time locations, like where a stop was completed or where a trip began and ended. There's no ongoing stream of positions to plot on a map."
+  "loading": "Loading live positions…",
+  "error": "The live map could not be loaded.",
+  "retry": "Retry",
+  "empty": {
+    "heading": "No trips are trackable right now",
+    "body": "A trip appears here once the driver has confirmed full custody of the load and the trip is on the road."
   },
-  "ready": {
-    "heading": "Where tracking will start",
-    "body": "One part of this is already solid and working today: the moment a dispatcher hands a trip's goods to a driver and the driver confirms receiving them, the system records that handover precisely. That moment — custody accepted — is the natural starting line for live tracking. Once location data starts flowing, this is the point where a driver will first appear on this map."
+  "search": {
+    "placeholder": "Search driver, vehicle or trip number"
   },
-  "technical": {
-    "toggle": "Technical detail",
-    "body": "The trip GPS-submission route that looks like it should power this validates incoming location data and discards it without saving — nothing is stored. There's no location-history record behind it either, only isolated coordinates tied to specific delivery events, like a stop or a trip's start and end point. The driver custody-acceptance boundary — the trip status this page already treats as \"Custody Accepted\" — is fully built and is the right trigger for tracking to begin once location data exists."
+  "list": {
+    "title": "Active Trips",
+    "count": "{{count}} on the road"
   },
-  "filters": {
-    "sectionLabel": "Map filters",
-    "previewBadge": "Preview — not yet interactive",
-    "status": {
-      "all": "All Drivers",
-      "onRoute": "On Route",
-      "atStop": "At Stop",
-      "returning": "Returning",
-      "delayed": "Delayed"
-    },
-    "fields": {
-      "driver": { "label": "Driver", "placeholder": "All drivers" },
-      "vehicle": { "label": "Vehicle", "placeholder": "All vehicles" },
-      "trip": { "label": "Trip", "placeholder": "All trips" },
-      "zone": { "label": "Zone", "placeholder": "All zones" },
-      "branch": { "label": "Branch", "placeholder": "All branches" },
-      "date": { "label": "Date" }
-    }
+  "freshness": {
+    "fresh": "Live",
+    "stale": "Stale",
+    "unknown": "No location"
   },
-  "canvas": {
-    "caption": "The live map will render here once driver location data is available"
+  "stopProgress": "{{completed}} of {{total}} stops",
+  "hasException": "Exception reported",
+  "detail": {
+    "title": "Trip Detail",
+    "driver": "Driver",
+    "vehicle": "Vehicle",
+    "trip": "Trip",
+    "lastUpdate": "Last Update",
+    "openTrip": "Open Trip",
+    "openInShippingOrders": "Open in Shipping Orders",
+    "routeHistory": "Route History",
+    "close": "Close"
+  },
+  "map": {
+    "fitAll": "Fit all"
   }
 }
