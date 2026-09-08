@@ -85,6 +85,12 @@ class Message extends Model
         return $this->hasMany(MessageMention::class);
     }
 
+    /** @return HasMany<MessageReaction, $this> */
+    public function reactions(): HasMany
+    {
+        return $this->hasMany(MessageReaction::class);
+    }
+
     /**
      * Not a real FK relation — `Document.subject_type`/`subject_id` is the
      * generic string-keyed reference the whole platform uses (§17). At most

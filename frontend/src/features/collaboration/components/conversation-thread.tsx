@@ -10,7 +10,7 @@ import { useAuthStore } from '@/features/auth/store/auth-store';
 
 import { useMarkConversationRead } from '../hooks/use-conversations';
 import { useMessageTypeLabel } from '../hooks/use-message-type-label';
-import { useMessages } from '../hooks/use-messages';
+import { useMessages, useRemoveMessageReaction, useSetMessageReaction } from '../hooks/use-messages';
 import { useRealtimeStatus } from '../hooks/use-realtime-status';
 import { conversationDisplayTitle } from '../lib/conversation-display';
 import { groupMessagesForDisplay } from '../lib/message-grouping';
@@ -37,6 +37,8 @@ export function ConversationThread({ conversation, onOpenInfo, onCreateTaskFromM
   const mediaTypeLabel = useMessageTypeLabel();
   const { data: messages = [], isLoading } = useMessages(conversation.id);
   const markRead = useMarkConversationRead(conversation.id);
+  const setReaction = useSetMessageReaction(conversation.id);
+  const removeReaction = useRemoveMessageReaction(conversation.id);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
@@ -62,13 +64,21 @@ export function ConversationThread({ conversation, onOpenInfo, onCreateTaskFromM
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastMessageId]);
 
-  function replyPreviewFor(message: Message) {
+  /**
+   * `id: null` means the reply points at a real message that just isn't in
+   * the currently-loaded window (cursor-paginated) — handled safely with an
+   * honest "unavailable" snippet rather than silently hiding the whole quote
+   * block, and the click-to-jump affordance is simply omitted in that case.
+   */
+  function replyPreviewFor(message: Message): { id: string | null; senderLabel: string; snippet: string } | null {
     if (!message.reply_to_message_id) return null;
     const original = byId.get(message.reply_to_message_id);
-    if (!original) return null;
+    if (!original) {
+      return { id: null, senderLabel: '', snippet: t(($) => $.message.originalUnavailable) };
+    }
     const senderLabel = original.sender_user_id === currentUserId ? t(($) => $.conversations.list.you).trim() : (original.sender_name ?? '');
     const snippet = original.body ?? mediaTypeLabel(original.type);
-    return { senderLabel, snippet };
+    return { id: original.id, senderLabel, snippet };
   }
 
   function jumpToMessage(messageId: string) {
@@ -174,7 +184,10 @@ export function ConversationThread({ conversation, onOpenInfo, onCreateTaskFromM
                   highlighted={highlightedId === item.message.id}
                   replyPreview={replyPreviewFor(item.message)}
                   onReply={setReplyingTo}
+                  onJumpToReply={jumpToMessage}
                   onCreateTask={onCreateTaskFromMessage}
+                  onSetReaction={(emoji) => setReaction.mutate({ messageId: item.message.id, emoji })}
+                  onRemoveReaction={() => removeReaction.mutate(item.message.id)}
                   bubbleRef={(el) => {
                     if (el) bubbleRefs.current.set(item.message.id, el);
                     else bubbleRefs.current.delete(item.message.id);

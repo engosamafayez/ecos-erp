@@ -6,6 +6,16 @@
       "tasks": "المهام"
     }
   },
+  "emojiCategories": {
+    "smileys": "وجوه تعبيرية",
+    "gestures": "إيماءات",
+    "hearts": "قلوب",
+    "animals": "حيوانات",
+    "food": "طعام",
+    "activities": "أنشطة",
+    "objects": "أشياء",
+    "symbols": "رموز"
+  },
   "conversations": {
     "title": "المحادثات",
     "newDirect": "رسالة جديدة",
@@ -87,8 +97,11 @@
   "message": {
     "typePlaceholder": "اكتب رسالة…",
     "send": "إرسال",
+    "reply": "رد",
     "replyingTo": "الرد على",
     "cancelReply": "إلغاء الرد",
+    "originalUnavailable": "الرسالة الأصلية غير متاحة",
+    "emoji": "إيموجي",
     "mention": "إشارة",
     "attachImage": "إرفاق صورة",
     "attachFile": "إرفاق ملف",

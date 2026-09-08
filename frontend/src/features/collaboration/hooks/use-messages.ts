@@ -1,6 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { listMessages, searchMessages, sendMessage, type SendMessagePayload } from '../services/collaboration-service';
+import {
+  listMessages,
+  removeMessageReaction,
+  searchMessages,
+  sendMessage,
+  setMessageReaction,
+  type SendMessagePayload,
+} from '../services/collaboration-service';
 import { useRealtimeStatus } from './use-realtime-status';
 
 const messagesKey = (conversationId: string) => ['collaboration', 'conversations', conversationId, 'messages'] as const;
@@ -26,6 +33,27 @@ export function useSendMessage(conversationId: string) {
       qc.invalidateQueries({ queryKey: messagesKey(conversationId) });
       qc.invalidateQueries({ queryKey: ['collaboration', 'conversations'] });
     },
+  });
+}
+
+/** Reacting again with a different emoji replaces the previous one (server-side upsert,
+ *  one reaction per user per message) — both hooks take the owning conversationId purely
+ *  to invalidate that conversation's message list, mirroring useSendMessage. */
+export function useSetMessageReaction(conversationId: string) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ messageId, emoji }: { messageId: string; emoji: string }) => setMessageReaction(messageId, emoji),
+    onSuccess: () => qc.invalidateQueries({ queryKey: messagesKey(conversationId) }),
+  });
+}
+
+export function useRemoveMessageReaction(conversationId: string) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (messageId: string) => removeMessageReaction(messageId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: messagesKey(conversationId) }),
   });
 }
 

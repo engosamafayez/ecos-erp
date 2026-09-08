@@ -30,7 +30,7 @@ export function AppShell() {
     <CompanyProvider>
     <HeaderProvider>
       <CommandProvider>
-      <div className="flex min-h-svh flex-col">
+      <div className="flex h-svh flex-col">
         <AppTopbar onOpenSidebar={() => setTabletSidebarOpen(true)} />
 
         <div className="flex flex-1 overflow-hidden">
@@ -49,7 +49,7 @@ export function AppShell() {
           )}
 
           {/* Main content */}
-          <div className="flex min-w-0 flex-1 flex-col bg-background">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col bg-background">
             <main className="flex-1 overflow-y-auto p-4 pb-[calc(1rem+3.5rem)] sm:p-6 sm:pb-[calc(1.5rem+3.5rem)] md:pb-6">
               <Outlet />
             </main>

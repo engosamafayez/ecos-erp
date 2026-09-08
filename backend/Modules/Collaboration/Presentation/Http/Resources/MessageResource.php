@@ -34,6 +34,20 @@ final class MessageResource extends JsonResource
                 ->map(fn ($mention) => ['id' => $mention->mentioned_user_id, 'name' => $mention->mentionedUser?->name])
                 ->values()),
             'attachment' => $this->attachmentPayload(),
+            // §13 — aggregated per emoji (count + the viewer's own state), never
+            // per-reactor identities; requires `reactions` eager-loaded.
+            'reactions' => $this->whenLoaded('reactions', function () use ($request) {
+                $viewerId = $request->user()?->id;
+
+                return $this->reactions
+                    ->groupBy('emoji')
+                    ->map(fn ($group, $emoji) => [
+                        'emoji' => $emoji,
+                        'count' => $group->count(),
+                        'reacted_by_me' => $viewerId !== null && $group->contains('user_id', $viewerId),
+                    ])
+                    ->values();
+            }),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

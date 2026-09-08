@@ -6,6 +6,16 @@
       "tasks": "Tasks"
     }
   },
+  "emojiCategories": {
+    "smileys": "Smileys",
+    "gestures": "Gestures",
+    "hearts": "Hearts",
+    "animals": "Animals",
+    "food": "Food",
+    "activities": "Activities",
+    "objects": "Objects",
+    "symbols": "Symbols"
+  },
   "conversations": {
     "title": "Conversations",
     "newDirect": "New Message",
@@ -87,8 +97,11 @@
   "message": {
     "typePlaceholder": "Type a message…",
     "send": "Send",
+    "reply": "Reply",
     "replyingTo": "Replying to",
     "cancelReply": "Cancel reply",
+    "originalUnavailable": "Original message unavailable",
+    "emoji": "Emoji",
     "mention": "Mention",
     "attachImage": "Attach image",
     "attachFile": "Attach file",

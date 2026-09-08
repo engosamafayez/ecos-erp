@@ -35,7 +35,7 @@ final class MessageController extends Controller
             $request->query('before_message_id'),
             (int) $request->query('limit', 50),
             $request->query('after_message_id'),
-        )->load(['mentions.mentionedUser', 'sender']);
+        )->load(['mentions.mentionedUser', 'sender', 'reactions']);
 
         return $this->success(MessageResource::collection($messages));
     }

@@ -6,8 +6,9 @@ import { toast } from '@/components/ds/use-toast';
 import { cn } from '@/lib/utils';
 
 import { downloadMessageAttachment, useMessageAttachmentUrl } from '../hooks/use-secure-media';
-import type { Message } from '../types';
+import type { Message, MessageReaction } from '../types';
 import type { SeenState } from '../lib/read-receipts';
+import { EmojiPicker } from './emoji-picker';
 
 function formatBytes(bytes: number | null): string {
   if (!bytes || bytes <= 0) return '';
@@ -36,9 +37,13 @@ type Props = {
   seenByNames?: string[];
   /** Briefly true right after an in-conversation search result is clicked. */
   highlighted?: boolean;
-  replyPreview?: { senderLabel: string; snippet: string } | null;
+  /** `id: null` = the original exists but isn't loaded right now — shown as an honest, non-clickable placeholder. */
+  replyPreview?: { id: string | null; senderLabel: string; snippet: string } | null;
   onReply: (message: Message) => void;
+  onJumpToReply: (messageId: string) => void;
   onCreateTask: (message: Message) => void;
+  onSetReaction: (emoji: string) => void;
+  onRemoveReaction: () => void;
   bubbleRef?: (el: HTMLDivElement | null) => void;
 };
 
@@ -51,7 +56,10 @@ export function MessageBubble({
   highlighted,
   replyPreview,
   onReply,
+  onJumpToReply,
   onCreateTask,
+  onSetReaction,
+  onRemoveReaction,
   bubbleRef,
 }: Props) {
   const { t } = useTranslation('collaboration');
@@ -71,19 +79,15 @@ export function MessageBubble({
           )}
         >
           {replyPreview ? (
-            <div
-              className={cn(
-                'mb-1.5 rounded-md border-s-2 px-2 py-1 text-xs opacity-80',
-                isOwn ? 'border-s-primary-foreground/40' : 'border-s-primary/40',
-              )}
-            >
-              <p className="font-medium">{replyPreview.senderLabel}</p>
-              <p className="truncate">{replyPreview.snippet}</p>
-            </div>
+            <ReplyQuote isOwn={isOwn} preview={replyPreview} onJumpToReply={onJumpToReply} />
           ) : null}
 
           <MessageBody message={message} isOwn={isOwn} />
         </div>
+
+        {message.reactions && message.reactions.length > 0 ? (
+          <ReactionBar reactions={message.reactions} onSetReaction={onSetReaction} onRemoveReaction={onRemoveReaction} />
+        ) : null}
 
         <div className="flex items-center gap-1.5 px-1">
           <span className="text-[10px] text-muted-foreground">
@@ -96,13 +100,13 @@ export function MessageBubble({
               <Check className="size-3 text-muted-foreground" aria-label={t(($) => $.message.sent)} />
             )
           ) : null}
-          <span className="flex items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+          <span className="flex items-center gap-2 opacity-70 transition-opacity md:opacity-0 md:group-hover:opacity-100">
             <button
               type="button"
               onClick={() => onReply(message)}
               className="text-[10px] text-muted-foreground hover:text-foreground"
             >
-              <Reply className="inline size-3" aria-hidden /> {t(($) => $.message.replyingTo)}
+              <Reply className="inline size-3" aria-hidden /> {t(($) => $.message.reply)}
             </button>
             <button
               type="button"
@@ -111,6 +115,7 @@ export function MessageBubble({
             >
               <ListPlus className="inline size-3" aria-hidden /> {t(($) => $.message.createTask)}
             </button>
+            <EmojiPicker onSelect={onSetReaction} triggerClassName="size-5 [&_span]:text-xs" />
           </span>
         </div>
 
@@ -118,6 +123,72 @@ export function MessageBubble({
           <span className="px-1 text-[10px] text-muted-foreground">{t(($) => $.message.seenBy, { names: seenByNames.join(', ') })}</span>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+/** Clicking the quote scrolls to and briefly highlights the original message when it's
+ *  loaded (`id` set); a not-currently-loaded original renders as a plain, non-clickable
+ *  placeholder rather than a dead button. */
+function ReplyQuote({
+  isOwn,
+  preview,
+  onJumpToReply,
+}: {
+  isOwn: boolean;
+  preview: { id: string | null; senderLabel: string; snippet: string };
+  onJumpToReply: (messageId: string) => void;
+}) {
+  const className = cn(
+    'mb-1.5 w-full rounded-md border-s-2 px-2 py-1 text-start text-xs opacity-80',
+    isOwn ? 'border-s-primary-foreground/40' : 'border-s-primary/40',
+  );
+  const content = (
+    <>
+      {preview.senderLabel ? <p className="font-medium">{preview.senderLabel}</p> : null}
+      <p className="truncate">{preview.snippet}</p>
+    </>
+  );
+
+  if (!preview.id) {
+    return <div className={cn(className, 'italic')}>{content}</div>;
+  }
+
+  return (
+    <button type="button" onClick={() => onJumpToReply(preview.id!)} className={cn(className, 'block hover:opacity-100')}>
+      {content}
+    </button>
+  );
+}
+
+/** One pill per distinct emoji (server-aggregated); clicking your own active
+ *  pill removes it, clicking any other pill sets/switches your reaction to
+ *  that emoji (§13 — one reaction per user per message, upsert semantics). */
+function ReactionBar({
+  reactions,
+  onSetReaction,
+  onRemoveReaction,
+}: {
+  reactions: MessageReaction[];
+  onSetReaction: (emoji: string) => void;
+  onRemoveReaction: () => void;
+}) {
+  return (
+    <div className="mt-1 flex flex-wrap gap-1">
+      {reactions.map((reaction) => (
+        <button
+          key={reaction.emoji}
+          type="button"
+          onClick={() => (reaction.reacted_by_me ? onRemoveReaction() : onSetReaction(reaction.emoji))}
+          className={cn(
+            'flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-xs leading-none transition-colors',
+            reaction.reacted_by_me ? 'border-primary bg-primary/10' : 'border-border bg-background/60 hover:bg-accent',
+          )}
+        >
+          <span>{reaction.emoji}</span>
+          <span className="text-[10px] text-muted-foreground tabular-nums">{reaction.count}</span>
+        </button>
+      ))}
     </div>
   );
 }

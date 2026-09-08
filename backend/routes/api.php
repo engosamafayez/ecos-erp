@@ -29,6 +29,7 @@ use Modules\Collaboration\Presentation\Http\Controllers\ConversationMuteControll
 use Modules\Collaboration\Presentation\Http\Controllers\ConversationParticipantController;
 use Modules\Collaboration\Presentation\Http\Controllers\ConversationReadStateController;
 use Modules\Collaboration\Presentation\Http\Controllers\MessageAttachmentController;
+use Modules\Collaboration\Presentation\Http\Controllers\MessageReactionController;
 use Modules\Collaboration\Presentation\Http\Controllers\MessageController as CollaborationMessageController;
 use Modules\Collaboration\Presentation\Http\Controllers\OperationalContextLinkController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskAssignmentController;
@@ -4788,6 +4789,10 @@ Route::middleware('auth:sanctum')->prefix('collaboration')->group(function (): v
     // Task 3 — media/voice playback, secure by conversation participation
     // alone (MessageAttachmentController), never by document id or path.
     Route::get('messages/{message}/attachment', [MessageAttachmentController::class, 'show']);
+
+    // Reactions (remediation-010 §13) — one per user per message (upsert on store).
+    Route::post('messages/{message}/reactions', [MessageReactionController::class, 'store']);
+    Route::delete('messages/{message}/reactions', [MessageReactionController::class, 'destroy']);
 
     // Task 3 — PostgreSQL full-text search, participant-scoped (SearchMessagesAction).
     Route::get('search/messages', [CollaborationSearchController::class, 'messages'])

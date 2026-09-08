@@ -100,6 +100,16 @@ export async function sendMessage(conversationId: string, payload: SendMessagePa
   return data.data;
 }
 
+export async function setMessageReaction(messageId: string, emoji: string): Promise<Message> {
+  const { data } = await api.post<ApiResponse<Message>>(`/collaboration/messages/${messageId}/reactions`, { emoji });
+  return data.data;
+}
+
+export async function removeMessageReaction(messageId: string): Promise<Message> {
+  const { data } = await api.delete<ApiResponse<Message>>(`/collaboration/messages/${messageId}/reactions`);
+  return data.data;
+}
+
 export async function markConversationRead(conversationId: string, lastReadMessageId?: string): Promise<void> {
   await api.patch(`/collaboration/conversations/${conversationId}/read`, {
     last_read_message_id: lastReadMessageId ?? null,

@@ -39,6 +39,13 @@ export interface MentionedUser {
   name: string | null;
 }
 
+/** Aggregated per emoji — never per-reactor identities (architecture report §13). */
+export interface MessageReaction {
+  emoji: string;
+  count: number;
+  reacted_by_me: boolean;
+}
+
 export interface Message {
   id: string;
   conversation_id: string;
@@ -51,6 +58,7 @@ export interface Message {
   /** Richer sibling of `mentioned_user_ids` carrying resolved names — additive, same data. */
   mentioned_users?: MentionedUser[];
   attachment: MessageAttachment | null;
+  reactions?: MessageReaction[];
   created_at: string;
 }
 

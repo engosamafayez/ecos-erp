@@ -10,6 +10,7 @@ import { useAuthStore } from '@/features/auth/store/auth-store';
 import { useMessageTypeLabel } from '../hooks/use-message-type-label';
 import { useSendMessage } from '../hooks/use-messages';
 import type { ConversationParticipant, Message } from '../types';
+import { EmojiPicker } from './emoji-picker';
 import { VoiceRecorder } from './voice-recorder';
 
 const IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif';
@@ -33,6 +34,26 @@ export function MessageComposer({ conversationId, participants, replyingTo, onCa
   const [recording, setRecording] = useState(false);
   const imageRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  /** Inserts at the caret where practical (§12); falls back to appending if the
+   *  textarea node isn't resolvable yet. Never sends — text only, cursor restored
+   *  right after the inserted emoji so typing can continue immediately. */
+  function insertEmoji(emoji: string) {
+    const el = textareaRef.current;
+    if (!el) {
+      setText((current) => current + emoji);
+      return;
+    }
+    const start = el.selectionStart ?? text.length;
+    const end = el.selectionEnd ?? text.length;
+    setText(text.slice(0, start) + emoji + text.slice(end));
+    requestAnimationFrame(() => {
+      el.focus();
+      const caret = start + emoji.length;
+      el.setSelectionRange(caret, caret);
+    });
+  }
 
   const mentionCandidates = useMemo(
     () => participants.filter((p) => p.user_id !== currentUserId && p.name),
@@ -131,6 +152,7 @@ export function MessageComposer({ conversationId, participants, replyingTo, onCa
         <Button type="button" variant="ghost" size="icon" className="size-9 shrink-0" onClick={() => setRecording(true)} aria-label={t(($) => $.message.recordVoice)}>
           <Mic className="size-4" />
         </Button>
+        <EmojiPicker onSelect={insertEmoji} />
 
         <div className="relative flex-1">
           {mentionMatches.length > 0 ? (
@@ -149,6 +171,7 @@ export function MessageComposer({ conversationId, participants, replyingTo, onCa
           ) : null}
 
           <Textarea
+            ref={textareaRef}
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={onKeyDown}
