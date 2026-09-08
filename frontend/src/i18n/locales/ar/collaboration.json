@@ -152,13 +152,24 @@
       "newListPlaceholder": "اسم القائمة",
       "addCard": "إضافة بطاقة",
       "moveTo": "نقل إلى…",
+      "moveUp": "نقل لأعلى",
+      "moveDown": "نقل لأسفل",
       "moveCardFailed": "تعذّر نقل البطاقة.",
       "renameList": "إعادة تسمية القائمة",
       "archiveList": "أرشفة القائمة",
+      "archiveTask": "أرشفة المهمة",
       "restoreList": "استعادة القائمة",
       "archivedLists": "القوائم المؤرشفة",
       "noArchivedLists": "لا توجد قوائم مؤرشفة.",
       "listNamePlaceholder": "اسم القائمة"
+    },
+    "archive": {
+      "title": "الأرشيف",
+      "tasks": "المهام المؤرشفة",
+      "noTasks": "لا توجد مهام مؤرشفة.",
+      "restoreTask": "استعادة المهمة",
+      "restored": "تمت استعادة المهمة.",
+      "archivedAt": "أُرشفت {{date}}"
     },
     "labels": {
       "title": "الوسوم",

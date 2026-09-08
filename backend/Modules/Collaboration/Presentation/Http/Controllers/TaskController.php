@@ -8,8 +8,10 @@ use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\Collaboration\Application\Actions\ArchiveTaskAction;
 use Modules\Collaboration\Application\Actions\CreateTaskAction;
 use Modules\Collaboration\Application\Actions\ListMyTasksAction;
+use Modules\Collaboration\Application\Actions\RestoreTaskAction;
 use Modules\Collaboration\Application\Actions\UpdateTaskAction;
 use Modules\Collaboration\Application\DTO\CreateTaskData;
 use Modules\Collaboration\Domain\Enums\TaskPriority;
@@ -30,6 +32,10 @@ final class TaskController extends Controller
             'scope' => $request->query('scope', 'mine'),
             'overdue' => $request->boolean('overdue'),
             'team_id' => $request->query('team_id'),
+            // §5 — default excludes archived tasks (the normal Board/List
+            // views); the new Archive view passes archived=1 to see only
+            // archived ones. Never both in one response.
+            'archived' => $request->boolean('archived'),
         ];
 
         if ($request->filled('status')) {
@@ -84,6 +90,20 @@ final class TaskController extends Controller
         $task = $action->execute($request->user(), $task, $changes);
 
         return $this->updated(new TaskResource($task->load(self::DETAIL_RELATIONS)));
+    }
+
+    public function archive(Request $request, InternalTask $task, ArchiveTaskAction $action): JsonResponse
+    {
+        $task = $action->execute($request->user(), $task);
+
+        return $this->updated(new TaskResource($task));
+    }
+
+    public function restore(Request $request, InternalTask $task, RestoreTaskAction $action): JsonResponse
+    {
+        $task = $action->execute($request->user(), $task);
+
+        return $this->updated(new TaskResource($task->load('list')));
     }
 
     /** @var list<string> */

@@ -22,7 +22,7 @@ use Modules\Collaboration\Domain\Models\InternalTask;
 final class ListMyTasksAction extends BaseAction
 {
     /**
-     * @param  mixed  ...$arguments  [User $user, array{scope?: string, status?: TaskStatus, priority?: TaskPriority, overdue?: bool, team_id?: string} $filters]
+     * @param  mixed  ...$arguments  [User $user, array{scope?: string, status?: TaskStatus, priority?: TaskPriority, overdue?: bool, team_id?: string, archived?: bool} $filters]
      */
     public function execute(mixed ...$arguments): Collection
     {
@@ -78,6 +78,14 @@ final class ListMyTasksAction extends BaseAction
 
         if (! empty($filters['team_id'])) {
             $query->where('team_id', $filters['team_id']);
+        }
+
+        // §5 — the normal Board/List views never see archived tasks unless
+        // explicitly asked for (the new Archive view passes archived=true).
+        if (! empty($filters['archived'])) {
+            $query->whereNotNull('archived_at');
+        } else {
+            $query->whereNull('archived_at');
         }
 
         return $query->orderByRaw('due_at IS NULL, due_at ASC')

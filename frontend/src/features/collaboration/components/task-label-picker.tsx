@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
 
@@ -34,18 +34,34 @@ export function TaskLabelPicker({ task }: { task: Task }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [color, setColor] = useState<TaskLabelColor>('blue');
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  // TASK-ECOS-SYSTEM-WIDE-SEARCHABLE-SELECT-FOCUS-REMEDIATION-006 §4/§6 — same
+  // root cause and fix as EmployeeLookupField (see its own comment for the
+  // full mechanism): this Popover is nested inside the Task Detail Sheet, and
+  // its content otherwise portals to `document.body` — a DOM sibling of the
+  // Sheet's own content, never a descendant — so the Sheet's own focus trap
+  // yanked focus straight back out of the "Label Name" input on every
+  // keystroke. Portal into the nearest ancestor dialog's content node instead
+  // when one exists. Computed inside the effect below (an approved place to
+  // read a ref's current value), never during render.
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    if (open) {
+      setPortalContainer(triggerRef.current?.closest<HTMLElement>('[role="dialog"]') ?? null);
+    }
+  }, [open]);
 
   const attachedIds = new Set((task.labels ?? []).map((l) => l.id));
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button size="sm" variant="outline" className="h-7 gap-1 text-xs">
+        <Button ref={triggerRef} size="sm" variant="outline" className="h-7 gap-1 text-xs">
           <Plus className="size-3.5" />
           {t(($) => $.tasks.labels.add)}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-64">
+      <PopoverContent container={portalContainer} align="start" className="w-64">
         <p className="mb-2 text-xs font-medium text-muted-foreground">{t(($) => $.tasks.labels.title)}</p>
         <div className="flex flex-col gap-1">
           {labels.map((label) => {

@@ -26,8 +26,19 @@ export async function listTasks(filters: TaskFilters = {}): Promise<Task[]> {
       priority: filters.priority,
       overdue: filters.overdue ? 1 : undefined,
       team_id: filters.team_id,
+      archived: filters.archived ? 1 : undefined,
     },
   });
+  return data.data;
+}
+
+export async function archiveTask(id: string): Promise<Task> {
+  const { data } = await api.patch<ApiResponse<Task>>(`/collaboration/tasks/${id}/archive`);
+  return data.data;
+}
+
+export async function restoreTask(id: string): Promise<Task> {
+  const { data } = await api.patch<ApiResponse<Task>>(`/collaboration/tasks/${id}/restore`);
   return data.data;
 }
 

@@ -4809,6 +4809,9 @@ Route::middleware('auth:sanctum')->prefix('collaboration')->group(function (): v
         ->middleware(['permission:collaboration.tasks.create', 'throttle:60,1']);
     Route::get('tasks/{task}', [TaskController::class, 'show']);
     Route::patch('tasks/{task}', [TaskController::class, 'update']);
+    // Archive/restore (§5) — creator-only, never a delete (TaskPolicy::archive/restore).
+    Route::patch('tasks/{task}/archive', [TaskController::class, 'archive']);
+    Route::patch('tasks/{task}/restore', [TaskController::class, 'restore']);
     Route::patch('tasks/{task}/assignee', [TaskAssignmentController::class, 'update']);
     Route::patch('tasks/{task}/status', [TaskStatusController::class, 'update']);
 

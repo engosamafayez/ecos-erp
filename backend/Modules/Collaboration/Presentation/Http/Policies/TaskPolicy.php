@@ -34,6 +34,17 @@ final class TaskPolicy
         return $this->update($user, $task);
     }
 
+    /** §5 — archive/restore, same creator-only tier as update()/reassign() (a structural decision about the task). */
+    public function archive(User $user, InternalTask $task): bool
+    {
+        return $this->update($user, $task);
+    }
+
+    public function restore(User $user, InternalTask $task): bool
+    {
+        return $this->update($user, $task);
+    }
+
     public function transitionStatus(User $user, InternalTask $task): bool
     {
         return $this->view($user, $task);

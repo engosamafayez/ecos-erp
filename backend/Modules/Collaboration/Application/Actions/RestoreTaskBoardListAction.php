@@ -26,7 +26,17 @@ final class RestoreTaskBoardListAction extends BaseAction
             throw new AuthorizationException('This board list does not belong to your company.');
         }
 
-        $list->update(['archived_at' => null]);
+        // Always append at the end of the currently-active lists rather than
+        // trusting the list's stale pre-archive position: a list may have sat
+        // archived long enough for that position to now collide with an
+        // active list's (remediation-010 §3 — "no duplicate/list-order
+        // corruption"; nothing previously recomputed this on restore).
+        $position = 1 + (int) (TaskBoardList::query()
+            ->where('company_id', $actor->company_id)
+            ->whereNull('archived_at')
+            ->max('position') ?? -1);
+
+        $list->update(['archived_at' => null, 'position' => $position]);
 
         return $list;
     }

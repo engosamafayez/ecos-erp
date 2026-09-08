@@ -155,6 +155,7 @@ export interface Task {
   is_overdue: boolean;
   completed_at: string | null;
   cancelled_at: string | null;
+  archived_at?: string | null;
   source_conversation_id: string | null;
   source_message_id: string | null;
   /** Null both when there is no source message AND when the viewer lacks
@@ -212,4 +213,6 @@ export interface TaskFilters {
   priority?: TaskPriority;
   overdue?: boolean;
   team_id?: string;
+  /** §5 — omit/false for the normal Board/List views; true for the Archive view. */
+  archived?: boolean;
 }

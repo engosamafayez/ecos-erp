@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, type DragEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   AlertTriangle,
+  Archive,
   CheckSquare,
+  GripVertical,
   MessageSquareText,
   MoreHorizontal,
   Paperclip,
@@ -29,10 +31,12 @@ import { EmptyState, LoadingState } from '@/components/crud';
 import { cn } from '@/lib/utils';
 
 import {
+  useArchiveTask,
   useArchiveTaskBoardList,
   useCreateTaskBoardList,
   useMoveTaskCard,
   useRenameTaskBoardList,
+  useReorderTaskBoardLists,
   useTaskBoardLists,
   useTasks,
 } from '../hooks/use-tasks';
@@ -47,23 +51,41 @@ type Props = {
   onSelect: (task: Task) => void;
 };
 
+/** A drag-in-progress card's intended drop position within one column. */
+type CardDropTarget = { listId: string; index: number };
+
+const LIST_DND_TYPE = 'application/x-ecos-task-list-id';
+
 /**
  * Trello-style board: one column per company-customizable TaskBoardList
  * (brief §1/§2) — never a second TaskStatus authority; the canonical
  * lifecycle badge is still shown on every card. Drag/drop uses the native
  * HTML5 DnD API (no new dependency, brief §2 — lightweight, not a Jira
- * replacement) and only ever calls the same moveTaskCard endpoint the
- * per-card "Move to…" menu uses — never a client-only placement write. That
- * menu is the accessible non-drag way to move a card (brief §20/§22);
- * opening a card remains the accessible way to change its canonical status.
+ * replacement).
+ *
+ * Two independent drag kinds share this component, disambiguated by a
+ * distinct dataTransfer MIME type (`LIST_DND_TYPE` vs the card path's plain
+ * `text/plain`) so a column's dragover/drop handlers never confuse a list
+ * reorder with a card move: readable during `dragover` via `types` (values
+ * are only readable at `drop`, a native DnD restriction).
+ *
+ * Card position is always precise now — every drop (drag or the "Move
+ * to…"/"Move up"/"Move down" non-drag actions) computes an explicit target
+ * index and calls the same moveTaskCard endpoint, never a client-only
+ * placement write. Opening a card remains the accessible way to change its
+ * canonical status.
  */
 export function TaskBoard({ filters, activeTaskId, onSelect }: Props) {
   const { t } = useTranslation('collaboration');
   const { data: lists = [], isLoading: listsLoading, isError: listsError, refetch: refetchLists } = useTaskBoardLists();
   const { data: tasks = [], isLoading: tasksLoading, isError: tasksError, refetch: refetchTasks } = useTasks(filters);
   const moveCard = useMoveTaskCard();
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [dragOverListId, setDragOverListId] = useState<string | null>(null);
+  const archiveTask = useArchiveTask();
+  const reorderLists = useReorderTaskBoardLists();
+  const [draggingCardId, setDraggingCardId] = useState<string | null>(null);
+  const [cardDropTarget, setCardDropTarget] = useState<CardDropTarget | null>(null);
+  const [draggingListId, setDraggingListId] = useState<string | null>(null);
+  const [listDragOverId, setListDragOverId] = useState<string | null>(null);
   const [addingList, setAddingList] = useState(false);
   const [newListName, setNewListName] = useState('');
   const createList = useCreateTaskBoardList();
@@ -71,12 +93,32 @@ export function TaskBoard({ filters, activeTaskId, onSelect }: Props) {
   const isLoading = listsLoading || tasksLoading;
   const isError = listsError || tasksError;
 
-  function handleDrop(task: Task, targetList: TaskBoardList, position: number) {
-    setDragOverListId(null);
-    setDraggingId(null);
+  function moveTaskTo(task: Task, targetList: TaskBoardList, position: number) {
+    setCardDropTarget(null);
+    setDraggingCardId(null);
     moveCard.mutate(
       { taskId: task.id, taskListId: targetList.id, position },
       { onError: () => toast.error(t(($) => $.tasks.board.moveCardFailed)) },
+    );
+  }
+
+  function dropList(targetList: TaskBoardList) {
+    setListDragOverId(null);
+    const draggedId = draggingListId;
+    setDraggingListId(null);
+    if (!draggedId || draggedId === targetList.id) return;
+
+    const fromIndex = activeLists.findIndex((l) => l.id === draggedId);
+    const toIndex = activeLists.findIndex((l) => l.id === targetList.id);
+    if (fromIndex === -1 || toIndex === -1) return;
+
+    const reordered = [...activeLists];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
+
+    reorderLists.mutate(
+      reordered.map((l) => l.id),
+      { onError: () => toast.error(t(($) => $.errors.generic)) },
     );
   }
 
@@ -105,48 +147,96 @@ export function TaskBoard({ filters, activeTaskId, onSelect }: Props) {
   const activeLists = lists.filter((list) => !list.archived_at);
 
   return (
-    <div className="flex h-full gap-3 overflow-x-auto p-3">
+    <div className="flex h-full gap-3 overflow-x-auto bg-muted/20 p-3">
       {activeLists.map((list) => {
         const columnTasks = tasks
           .filter((task) => task.task_list_id === list.id)
           .sort((a, b) => (a.board_position ?? 0) - (b.board_position ?? 0));
-        const isDropTarget = dragOverListId === list.id;
+        const isCardDropTarget = cardDropTarget?.listId === list.id;
+        const isListDropTarget = listDragOverId === list.id && draggingListId !== null && draggingListId !== list.id;
 
         return (
           <div
             key={list.id}
             className={cn(
-              'flex w-64 shrink-0 flex-col gap-2 rounded-lg border bg-muted/30 p-2',
-              isDropTarget && 'ring-2 ring-primary',
+              'flex w-64 shrink-0 flex-col gap-2 rounded-lg border bg-card p-2 shadow-sm transition-shadow',
+              isCardDropTarget && 'ring-2 ring-primary',
+              isListDropTarget && 'ring-2 ring-offset-2 ring-primary/70',
+              draggingListId === list.id && 'opacity-50',
             )}
             onDragOver={(e) => {
               e.preventDefault();
-              setDragOverListId(list.id);
+              if (e.dataTransfer.types.includes(LIST_DND_TYPE)) {
+                setListDragOverId(list.id);
+                return;
+              }
+              // Card drag over empty column space (below the last card): land at the end.
+              if (cardDropTarget?.listId !== list.id) {
+                setCardDropTarget({ listId: list.id, index: columnTasks.length });
+              }
             }}
-            onDragLeave={() => setDragOverListId((current) => (current === list.id ? null : current))}
+            onDragLeave={(e) => {
+              if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+              setListDragOverId((current) => (current === list.id ? null : current));
+              setCardDropTarget((current) => (current?.listId === list.id ? null : current));
+            }}
             onDrop={(e) => {
               e.preventDefault();
+              const listId = e.dataTransfer.getData(LIST_DND_TYPE);
+              if (listId) {
+                dropList(list);
+                return;
+              }
               const taskId = e.dataTransfer.getData('text/plain');
               const task = tasks.find((t) => t.id === taskId);
-              if (task) handleDrop(task, list, columnTasks.length);
+              if (task) moveTaskTo(task, list, cardDropTarget?.index ?? columnTasks.length);
+              setCardDropTarget(null);
             }}
           >
-            <BoardListHeader list={list} count={columnTasks.length} />
+            <BoardListHeader
+              list={list}
+              count={columnTasks.length}
+              onDragStart={() => setDraggingListId(list.id)}
+              onDragEnd={() => {
+                setDraggingListId(null);
+                setListDragOverId(null);
+              }}
+            />
 
-            <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
-              {columnTasks.map((task) => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  lists={activeLists}
-                  isActive={task.id === activeTaskId}
-                  isDragging={draggingId === task.id}
-                  onSelect={() => onSelect(task)}
-                  onDragStart={() => setDraggingId(task.id)}
-                  onDragEnd={() => setDraggingId(null)}
-                  onMoveTo={(targetList) => handleDrop(task, targetList, 0)}
-                />
+            <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto">
+              {columnTasks.map((task, index) => (
+                <div key={task.id} className="flex flex-col">
+                  <DropIndicator show={isCardDropTarget && cardDropTarget?.index === index} />
+                  <TaskCard
+                    task={task}
+                    lists={activeLists}
+                    isActive={task.id === activeTaskId}
+                    isDragging={draggingCardId === task.id}
+                    isFirst={index === 0}
+                    isLast={index === columnTasks.length - 1}
+                    onSelect={() => onSelect(task)}
+                    onDragStart={() => setDraggingCardId(task.id)}
+                    onDragEnd={() => {
+                      setDraggingCardId(null);
+                      setCardDropTarget(null);
+                    }}
+                    onDragOverCard={(e) => {
+                      e.stopPropagation();
+                      if (!draggingCardId || draggingCardId === task.id) return;
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const before = e.clientY < rect.top + rect.height / 2;
+                      setCardDropTarget({ listId: list.id, index: before ? index : index + 1 });
+                    }}
+                    onMoveTo={(targetList) => moveTaskTo(task, targetList, tasks.filter((x) => x.task_list_id === targetList.id).length)}
+                    onMoveUp={() => moveTaskTo(task, list, index - 1)}
+                    onMoveDown={() => moveTaskTo(task, list, index + 1)}
+                    onArchive={() =>
+                      archiveTask.mutate(task.id, { onError: () => toast.error(t(($) => $.errors.generic)) })
+                    }
+                  />
+                </div>
               ))}
+              <DropIndicator show={isCardDropTarget && cardDropTarget?.index === columnTasks.length} />
             </div>
           </div>
         );
@@ -155,7 +245,7 @@ export function TaskBoard({ filters, activeTaskId, onSelect }: Props) {
       <div className="w-64 shrink-0">
         {addingList ? (
           <form
-            className="flex flex-col gap-2 rounded-lg border bg-muted/30 p-2"
+            className="flex flex-col gap-2 rounded-lg border bg-card p-2 shadow-sm"
             onSubmit={(e) => {
               e.preventDefault();
               const name = newListName.trim();
@@ -199,7 +289,21 @@ export function TaskBoard({ filters, activeTaskId, onSelect }: Props) {
   );
 }
 
-function BoardListHeader({ list, count }: { list: TaskBoardList; count: number }) {
+function DropIndicator({ show }: { show: boolean }) {
+  return <div className={cn('mx-1 rounded-full bg-primary transition-all', show ? 'my-1 h-0.5' : 'h-0')} />;
+}
+
+function BoardListHeader({
+  list,
+  count,
+  onDragStart,
+  onDragEnd,
+}: {
+  list: TaskBoardList;
+  count: number;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+}) {
   const { t } = useTranslation('collaboration');
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(list.name);
@@ -233,8 +337,18 @@ function BoardListHeader({ list, count }: { list: TaskBoardList; count: number }
   }
 
   return (
-    <div className="flex items-center justify-between px-1 pt-1">
-      <button type="button" className="truncate text-sm font-semibold hover:underline" onClick={() => setEditing(true)}>
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData(LIST_DND_TYPE, list.id);
+        e.dataTransfer.effectAllowed = 'move';
+        onDragStart();
+      }}
+      onDragEnd={onDragEnd}
+      className="flex cursor-grab items-center justify-between gap-1 rounded-md px-1 pt-1 active:cursor-grabbing"
+    >
+      <GripVertical className="size-3.5 shrink-0 text-muted-foreground/60" aria-hidden="true" />
+      <button type="button" className="min-w-0 flex-1 truncate text-start text-sm font-semibold hover:underline" onClick={() => setEditing(true)}>
         {list.name}
       </button>
       <div className="flex items-center gap-1">
@@ -264,21 +378,34 @@ function TaskCard({
   lists,
   isActive,
   isDragging,
+  isFirst,
+  isLast,
   onSelect,
   onDragStart,
   onDragEnd,
+  onDragOverCard,
   onMoveTo,
+  onMoveUp,
+  onMoveDown,
+  onArchive,
 }: {
   task: Task;
   lists: TaskBoardList[];
   isActive: boolean;
   isDragging: boolean;
+  isFirst: boolean;
+  isLast: boolean;
   onSelect: () => void;
   onDragStart: () => void;
   onDragEnd: () => void;
+  onDragOverCard: (e: DragEvent<HTMLDivElement>) => void;
   onMoveTo: (list: TaskBoardList) => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  onArchive: () => void;
 }) {
   const { t } = useTranslation('collaboration');
+  const assigneeCount = 1 + (task.additional_assignees?.length ?? 0);
 
   return (
     <div
@@ -286,14 +413,19 @@ function TaskCard({
       data-testid={`task-card-${task.id}`}
       onDragStart={(e) => {
         e.dataTransfer.setData('text/plain', task.id);
+        e.dataTransfer.effectAllowed = 'move';
         onDragStart();
       }}
       onDragEnd={onDragEnd}
+      onDragOver={(e) => {
+        e.preventDefault();
+        onDragOverCard(e);
+      }}
       aria-current={isActive ? 'true' : undefined}
       className={cn(
-        'group flex flex-col gap-1.5 rounded-md border bg-background px-2.5 py-2 shadow-sm transition-opacity',
-        isActive && 'border-primary',
-        isDragging && 'opacity-50',
+        'group flex cursor-grab flex-col gap-1.5 rounded-md border bg-background px-2.5 py-2 shadow-sm transition-opacity active:cursor-grabbing',
+        isActive && 'border-primary ring-1 ring-primary',
+        isDragging && 'opacity-40',
       )}
     >
       {task.labels && task.labels.length > 0 ? (
@@ -324,6 +456,12 @@ function TaskCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem disabled={isFirst} onSelect={onMoveUp}>
+                {t(($) => $.tasks.board.moveUp)}
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled={isLast} onSelect={onMoveDown}>
+                {t(($) => $.tasks.board.moveDown)}
+              </DropdownMenuItem>
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>{t(($) => $.tasks.board.moveTo)}</DropdownMenuSubTrigger>
                 <DropdownMenuSubContent>
@@ -336,6 +474,10 @@ function TaskCard({
               </DropdownMenuSub>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={onSelect}>{t(($) => $.tasks.detail.title)}</DropdownMenuItem>
+              <DropdownMenuItem onSelect={onArchive}>
+                <Archive className="me-2 size-3.5" />
+                {t(($) => $.tasks.board.archiveTask)}
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -384,9 +526,19 @@ function TaskCard({
         </div>
 
         {task.assignee_name ? (
-          <Avatar className="size-5" title={task.assignee_name}>
-            <AvatarFallback className="text-[10px]">{getInitials(task.assignee_name)}</AvatarFallback>
-          </Avatar>
+          <div className="flex -space-x-1.5 rtl:space-x-reverse">
+            <Avatar className="size-5 border border-background" title={task.assignee_name}>
+              <AvatarFallback className="text-[10px]">{getInitials(task.assignee_name)}</AvatarFallback>
+            </Avatar>
+            {assigneeCount > 1 ? (
+              <span
+                className="flex size-5 items-center justify-center rounded-full border border-background bg-muted text-[9px] font-medium text-muted-foreground"
+                title={task.additional_assignees?.map((a) => a.name).join(', ')}
+              >
+                +{assigneeCount - 1}
+              </span>
+            ) : null}
+          </div>
         ) : null}
       </div>
     </div>

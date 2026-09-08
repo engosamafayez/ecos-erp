@@ -5,6 +5,7 @@ import {
   addTaskAttachment,
   addTaskChecklistItem,
   addTaskComment,
+  archiveTask,
   archiveTaskBoardList,
   attachOperationalContext,
   attachTaskLabel,
@@ -29,6 +30,7 @@ import {
   removeTaskAssignee,
   renameTaskBoardList,
   reorderTaskBoardLists,
+  restoreTask,
   restoreTaskBoardList,
   searchTasks,
   transitionTaskStatus,
@@ -36,7 +38,7 @@ import {
   updateTask,
   updateTaskChecklistItem,
 } from '../services/tasks-service';
-import type { AttachedToType, OperationalContextType, TaskFilters, TaskLabelColor, TaskStatus } from '../types';
+import type { AttachedToType, OperationalContextType, TaskBoardList, TaskFilters, TaskLabelColor, TaskStatus } from '../types';
 import { useRealtimeStatus } from './use-realtime-status';
 
 const tasksKey = (filters: TaskFilters) => ['collaboration', 'tasks', filters] as const;
@@ -189,6 +191,31 @@ export function useAttachTaskContext(taskId: string) {
   });
 }
 
+/** Not bound to one task id up front — the Board's per-card menu and the Archive view both archive whichever card they're acting on. */
+export function useArchiveTask() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (taskId: string) => archiveTask(taskId),
+    onSuccess: (_, taskId) => {
+      qc.invalidateQueries({ queryKey: taskKey(taskId) });
+      invalidateTaskLists(qc);
+    },
+  });
+}
+
+export function useRestoreTask() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (taskId: string) => restoreTask(taskId),
+    onSuccess: (_, taskId) => {
+      qc.invalidateQueries({ queryKey: taskKey(taskId) });
+      invalidateTaskLists(qc);
+    },
+  });
+}
+
 export function useSearchTasks(query: string) {
   return useQuery({
     queryKey: ['collaboration', 'search', 'tasks', query],
@@ -221,12 +248,39 @@ export function useRenameTaskBoardList() {
   });
 }
 
+/**
+ * Optimistic reorder with rollback-on-failure (brief §3 — "optimistic UI
+ * allowed only with rollback on failure"): the board reflects the new order
+ * immediately on drop, snaps back to the pre-drag order if the mutation
+ * fails, and always reconciles with the server afterward regardless.
+ */
 export function useReorderTaskBoardLists() {
   const qc = useQueryClient();
 
   return useMutation({
     mutationFn: (listIds: string[]) => reorderTaskBoardLists(listIds),
-    onSuccess: () => qc.invalidateQueries({ queryKey: boardListsKey }),
+    onMutate: async (listIds) => {
+      await qc.cancelQueries({ queryKey: boardListsKey });
+      const previous = qc.getQueryData<TaskBoardList[]>(boardListsKey);
+
+      if (previous) {
+        const byId = new Map(previous.map((list) => [list.id, list]));
+        const reordered = listIds
+          .map((id, index) => {
+            const list = byId.get(id);
+            return list ? { ...list, position: index } : null;
+          })
+          .filter((list): list is TaskBoardList => list !== null);
+        const untouched = previous.filter((list) => !listIds.includes(list.id));
+        qc.setQueryData(boardListsKey, [...reordered, ...untouched]);
+      }
+
+      return { previous };
+    },
+    onError: (_error, _listIds, context) => {
+      if (context?.previous) qc.setQueryData(boardListsKey, context.previous);
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: boardListsKey }),
   });
 }
 

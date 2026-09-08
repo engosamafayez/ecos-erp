@@ -152,13 +152,24 @@
       "newListPlaceholder": "List name",
       "addCard": "Add a card",
       "moveTo": "Move to…",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
       "moveCardFailed": "Couldn't move the card.",
       "renameList": "Rename list",
       "archiveList": "Archive list",
+      "archiveTask": "Archive task",
       "restoreList": "Restore list",
       "archivedLists": "Archived lists",
       "noArchivedLists": "No archived lists.",
       "listNamePlaceholder": "List name"
+    },
+    "archive": {
+      "title": "Archive",
+      "tasks": "Archived tasks",
+      "noTasks": "No archived tasks.",
+      "restoreTask": "Restore task",
+      "restored": "Task restored.",
+      "archivedAt": "Archived {{date}}"
     },
     "labels": {
       "title": "Labels",

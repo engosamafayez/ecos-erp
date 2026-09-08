@@ -43,6 +43,7 @@ use Modules\Organization\Teams\Domain\Models\Team;
  * @property string|null $source_message_snapshot
  * @property string|null $task_list_id
  * @property int $board_position
+ * @property \Illuminate\Support\Carbon|null $archived_at
  */
 class InternalTask extends Model
 {
@@ -73,6 +74,7 @@ class InternalTask extends Model
         'source_message_snapshot',
         'task_list_id',
         'board_position',
+        'archived_at',
     ];
 
     /** @return array<string, string> */
@@ -85,6 +87,7 @@ class InternalTask extends Model
             'completed_at' => 'datetime',
             'cancelled_at' => 'datetime',
             'board_position' => 'integer',
+            'archived_at' => 'datetime',
         ];
     }
 
@@ -199,6 +202,11 @@ class InternalTask extends Model
         return $this->due_at !== null
             && $this->due_at->isPast()
             && ! in_array($this->status, [TaskStatus::Done, TaskStatus::Cancelled], true);
+    }
+
+    public function isArchived(): bool
+    {
+        return $this->archived_at !== null;
     }
 
     protected static function newFactory(): InternalTaskFactory

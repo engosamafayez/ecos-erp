@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { ArrowLeft, Plus, Search } from 'lucide-react';
+import { Archive, ArrowLeft, Plus, Search } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,6 +16,7 @@ import { ConversationThread } from '../components/conversation-thread';
 import { CreateTaskDialog } from '../components/create-task-dialog';
 import { NewDirectDialog } from '../components/new-direct-dialog';
 import { NewGroupDialog } from '../components/new-group-dialog';
+import { TaskArchiveSheet } from '../components/task-archive-sheet';
 import { TaskBoard } from '../components/task-board';
 import { TaskDetailDrawer } from '../components/task-detail-drawer';
 import { TaskFilters } from '../components/task-filters';
@@ -52,6 +53,7 @@ export function CollaborationWorkspacePage() {
   const [newGroupOpen, setNewGroupOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
   const [taskView, setTaskView] = useState<TaskView>('board');
   const [taskFilters, setTaskFilters] = useState<TaskFiltersValue>({ scope: 'mine' });
   const [sourceMessage, setSourceMessage] = useState<{ id: string; body: string | null } | null>(null);
@@ -216,17 +218,23 @@ export function CollaborationWorkspacePage() {
               <TaskFilters value={taskFilters} onChange={setTaskFilters} />
             </div>
 
-            <Button
-              size="sm"
-              className="shrink-0 gap-1.5"
-              onClick={() => {
-                setSourceMessage(null);
-                setCreateTaskOpen(true);
-              }}
-            >
-              <Plus className="size-3.5" />
-              {t(($) => $.tasks.create)}
-            </Button>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setArchiveOpen(true)}>
+                <Archive className="size-3.5" />
+                {t(($) => $.tasks.archive.title)}
+              </Button>
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={() => {
+                  setSourceMessage(null);
+                  setCreateTaskOpen(true);
+                }}
+              >
+                <Plus className="size-3.5" />
+                {t(($) => $.tasks.create)}
+              </Button>
+            </div>
           </div>
 
           <div className="min-h-0 flex-1">
@@ -253,6 +261,11 @@ export function CollaborationWorkspacePage() {
         open={!!taskId}
         onOpenChange={(open) => { if (!open) closeTask(); }}
         onViewSourceConversation={openConversationById}
+      />
+      <TaskArchiveSheet
+        open={archiveOpen}
+        onOpenChange={setArchiveOpen}
+        onOpenTask={(id) => { setArchiveOpen(false); openTaskById(id); }}
       />
       <CollaborationSearch
         open={searchOpen}

@@ -37,6 +37,7 @@ final class TaskResource extends JsonResource
             'is_overdue' => $this->isOverdue(),
             'completed_at' => $this->completed_at?->toIso8601String(),
             'cancelled_at' => $this->cancelled_at?->toIso8601String(),
+            'archived_at' => $this->archived_at?->toIso8601String(),
             'source_conversation_id' => $this->source_conversation_id,
             'source_message_id' => $this->source_message_id,
             'source_message_snapshot' => $this->sourceSnapshotFor($request),
