@@ -8,6 +8,7 @@ use App\Core\Actions\BaseAction;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Modules\Collaboration\Application\Actions\Concerns\LogsTaskActivity;
 use Modules\Collaboration\Application\Events\TaskBroadcast;
@@ -65,7 +66,13 @@ final class AddTaskAssigneeAction extends BaseAction
         }
 
         if (! $task->additionalAssignees()->where('user_id', $target->id)->exists()) {
-            $task->additionalAssignees()->attach($target->id, ['created_at' => now()]);
+            // BelongsToMany::attach() writes only the two FK columns plus
+            // whatever's in this array — it never populates a pivot's own
+            // surrogate key (that requires a pivot model, which this
+            // deliberately-plain pivot table doesn't have, matching
+            // collaboration_task_label_task's own convention). Under strict
+            // MySQL this column has no default, so it must be supplied here.
+            $task->additionalAssignees()->attach($target->id, ['id' => (string) Str::orderedUuid(), 'created_at' => now()]);
 
             $this->logActivity($task, $actor->id, 'assignee_added', null, (string) $target->id);
 

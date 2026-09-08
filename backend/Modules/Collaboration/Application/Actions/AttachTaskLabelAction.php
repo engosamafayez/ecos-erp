@@ -7,6 +7,7 @@ namespace Modules\Collaboration\Application\Actions;
 use App\Core\Actions\BaseAction;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Modules\Collaboration\Application\Actions\Concerns\LogsTaskActivity;
 use Modules\Collaboration\Domain\Models\InternalTask;
@@ -39,7 +40,17 @@ final class AttachTaskLabelAction extends BaseAction
         }
 
         if (! $task->labels()->where('label_id', $label->id)->exists()) {
-            $task->labels()->attach($label->id, ['created_at' => now()]);
+            // Pre-existing bug found while implementing remediation-010 §7
+            // (multiple assignees): collaboration_task_label_task has its own
+            // UUID primary key but no DB default for it, and plain
+            // BelongsToMany::attach() never populates a pivot's surrogate key
+            // — under strict MySQL this INSERT has always failed with "Field
+            // 'id' doesn't have a default value" (reproduced against a real
+            // MySQL instance; confirmed unrelated to and pre-existing this
+            // task). Supplying it explicitly here fixes both this call site
+            // and the identical one this task's own AddTaskAssigneeAction
+            // uses for the same reason.
+            $task->labels()->attach($label->id, ['id' => (string) Str::orderedUuid(), 'created_at' => now()]);
             $this->logActivity($task, $actor->id, 'label_added', null, $label->name);
         }
 
