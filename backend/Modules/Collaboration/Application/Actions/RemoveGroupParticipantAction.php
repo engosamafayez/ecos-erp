@@ -20,8 +20,15 @@ use Modules\Collaboration\Domain\Models\ConversationParticipant;
  */
 final class RemoveGroupParticipantAction extends BaseAction
 {
-    /** @param  mixed  ...$arguments  [User $actor, Conversation $conversation, int $targetUserId] */
-    public function execute(mixed ...$arguments): void
+    /**
+     * `mixed`, not `void` (same pre-existing Liskov-violation bug found and
+     * fixed across this module while implementing remediation-010 — see
+     * ReorderTaskBoardListsAction's docblock for the full explanation; this
+     * endpoint has always fatally 500'd).
+     *
+     * @param  mixed  ...$arguments  [User $actor, Conversation $conversation, int $targetUserId]
+     */
+    public function execute(mixed ...$arguments): mixed
     {
         [$actor, $conversation, $targetUserId] = $arguments;
 

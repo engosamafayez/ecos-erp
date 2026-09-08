@@ -18,8 +18,17 @@ final class ReorderTaskChecklistItemsAction extends BaseAction
 {
     public function __construct(private readonly TaskPolicy $policy) {}
 
-    /** @param  mixed  ...$arguments  [User $actor, InternalTask $task, TaskChecklist $checklist, list<string> $orderedItemIds] */
-    public function execute(mixed ...$arguments): void
+    /**
+     * `mixed`, not `void` (same pre-existing Liskov-violation bug found and
+     * fixed across this module while implementing remediation-010 — see
+     * ReorderTaskBoardListsAction's docblock for the full explanation; this
+     * endpoint has always fatally 500'd — also explains why the checklist
+     * item reorder UI, per this task's own research, was never built:
+     * the backend it would have called never worked either).
+     *
+     * @param  mixed  ...$arguments  [User $actor, InternalTask $task, TaskChecklist $checklist, list<string> $orderedItemIds]
+     */
+    public function execute(mixed ...$arguments): mixed
     {
         $actor = $arguments[0] ?? null;
         $task = $arguments[1] ?? null;

@@ -18,8 +18,18 @@ use Modules\Collaboration\Domain\Models\TaskBoardList;
  */
 final class ReorderTaskBoardListsAction extends BaseAction
 {
-    /** @param  mixed  ...$arguments  [User $actor, list<string> $orderedListIds] */
-    public function execute(mixed ...$arguments): void
+    /**
+     * Declared `mixed`, not `void` (confirmed pre-existing bug, found running
+     * this task's focused tests for real: `void` here is a fatal Liskov
+     * violation against BaseAction::execute(): mixed, so this class could
+     * never even be loaded — every call to this endpoint has always 500'd,
+     * regardless of the missing frontend wiring remediation-010 §3 also
+     * fixes). No caller ever used a return value, so this stays a bare
+     * `return;` (implicitly `null`, a valid `mixed`).
+     *
+     * @param  mixed  ...$arguments  [User $actor, list<string> $orderedListIds]
+     */
+    public function execute(mixed ...$arguments): mixed
     {
         $actor = $arguments[0] ?? null;
         $orderedListIds = $arguments[1] ?? null;
