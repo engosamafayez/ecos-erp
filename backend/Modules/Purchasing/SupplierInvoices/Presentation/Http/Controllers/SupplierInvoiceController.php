@@ -11,8 +11,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Inventory\InventoryItems\Domain\Services\GoodsInwardAuthority;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
+use Modules\Purchasing\SupplierInvoices\Application\Services\InvoiceReceivingLinkService;
 use Modules\Purchasing\SupplierInvoices\Application\Services\PostSupplierInvoiceService;
 use Modules\Purchasing\SupplierInvoices\Application\Services\SupplierInvoicePaymentSummary;
+use Modules\Purchasing\SupplierInvoices\Application\Services\SupplierInvoiceReceivingSummary;
 use Modules\Purchasing\SupplierInvoices\Domain\Enums\SupplierInvoiceStatus;
 use Modules\Purchasing\SupplierInvoices\Domain\Models\SupplierInvoice;
 use Modules\Purchasing\SupplierInvoices\Domain\Models\SupplierInvoiceLine;
@@ -30,6 +32,7 @@ final class SupplierInvoiceController extends Controller
         private readonly CurrentCompanyService $currentCompany,
         private readonly InvoiceReceiptAnchorService $anchors,
         private readonly GoodsInwardAuthority $inwardAuthority,
+        private readonly InvoiceReceivingLinkService $receivingLink,
     ) {}
 
     /**
@@ -138,13 +141,37 @@ final class SupplierInvoiceController extends Controller
         $invoice->recalculateTotals();
         $invoice->save();
 
+        $this->syncLinkedReceipt($invoice);
+
         $invoice->load(['supplier', 'warehouse', 'lines.product']);
 
         return $this->success(new SupplierInvoiceResource($invoice), 'Supplier invoice created', 201);
     }
 
-    public function show(SupplierInvoice $supplierInvoice, SupplierInvoicePaymentSummary $payments): JsonResponse
+    /**
+     * §2–§6 — invoice-first flow: creating (or, while still safe, editing) a Supplier Invoice
+     * automatically creates/syncs its linked Goods Receipt work item. Company scope mirrors
+     * validate()'s own: only where Goods Receipt is this company's goods-inward authority
+     * (Mode 1) does an invoice need a receipt to settle against at all — a Mode 3 company's
+     * invoice IS the inbound authority and needs none, exactly as before this task.
+     */
+    private function syncLinkedReceipt(SupplierInvoice $invoice): void
     {
+        $invoice->loadMissing('warehouse');
+        $companyId = (string) ($invoice->company_id ?? $invoice->warehouse?->company_id ?? '');
+
+        if ($companyId === '' || ! $this->inwardAuthority->receiptMayPost($companyId)) {
+            return;
+        }
+
+        $this->receivingLink->sync($invoice);
+    }
+
+    public function show(
+        SupplierInvoice $supplierInvoice,
+        SupplierInvoicePaymentSummary $payments,
+        SupplierInvoiceReceivingSummary $receiving,
+    ): JsonResponse {
         $supplierInvoice->load([
             'supplier', 'warehouse', 'lines.product',
             'lines.goodsReceiptLine.goodsReceipt.purchaseOrder',
@@ -155,6 +182,8 @@ final class SupplierInvoiceController extends Controller
         $data['payment'] = $payments->for($supplierInvoice);
         // §15–§17 — read-only ordered → received → invoiced linkage where the V-5 anchor exists.
         $data['receipt_links'] = $this->receiptLinks($supplierInvoice);
+        // TASK-...-014 §7/§10/§20 — the invoice-first receiving/reconciliation read-model.
+        $data['receiving'] = $receiving->for($supplierInvoice);
 
         return $this->success($data);
     }
@@ -200,6 +229,8 @@ final class SupplierInvoiceController extends Controller
         $this->syncLines($supplierInvoice, $request->validated('lines'));
         $supplierInvoice->recalculateTotals();
         $supplierInvoice->save();
+
+        $this->syncLinkedReceipt($supplierInvoice);
 
         $supplierInvoice->load(['supplier', 'warehouse', 'lines.product']);
 

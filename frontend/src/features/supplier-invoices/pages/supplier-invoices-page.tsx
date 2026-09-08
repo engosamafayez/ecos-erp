@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useFormatter } from '@/hooks/use-formatter';
 import {
@@ -46,6 +47,8 @@ import {
 import { SupplierInvoiceEditor } from '@/features/supplier-invoices/components/supplier-invoice-editor';
 import { InvoiceAttachments } from '@/features/supplier-invoices/components/invoice-attachments';
 import { PaymentSummaryCard } from '@/features/supplier-invoices/components/payment-summary-card';
+import { ReceivingSummaryCard } from '@/features/supplier-invoices/components/receiving-summary-card';
+import { ROUTES } from '@/router/routes';
 import type {
   SupplierInvoice,
   SupplierInvoiceStatus,
@@ -79,6 +82,13 @@ function InvoiceDetailDrawer({
   const cancelMutation   = useCancelSupplierInvoice();
   const { t } = useTranslation('supplier-invoices');
   const fmt = useFormatter();
+  const navigate = useNavigate();
+
+  // TASK-...-014 — the backend's own validate()/post() gate on this same signal (ready_to_post
+  // mirrors InvoiceReceiptAnchorService's own guard); this only surfaces it earlier, never bypasses it.
+  const receivingBlocksPost = Boolean(
+    invoice?.receiving && invoice.receiving.status !== 'not_applicable' && !invoice.receiving.ready_to_post,
+  );
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -134,7 +144,7 @@ function InvoiceDetailDrawer({
                     size="sm"
                     className="gap-1.5 bg-green-600 hover:bg-green-700"
                     onClick={() => postMutation.mutate(invoice.id)}
-                    disabled={postMutation.isPending}
+                    disabled={postMutation.isPending || receivingBlocksPost}
                   >
                     {postMutation.isPending
                       ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -163,6 +173,16 @@ function InvoiceDetailDrawer({
                   <div>
                     <p className="text-xs font-medium text-red-800">{t($ => $.detail.postingError)}</p>
                     <p className="text-xs text-red-600 mt-0.5">{invoice.posting_error}</p>
+                  </div>
+                </div>
+              )}
+
+              {invoice.status === 'validated' && receivingBlocksPost && (
+                <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-medium text-amber-800">{t($ => $.detail.receiving.blockedTitle)}</p>
+                    <p className="text-xs text-amber-600 mt-0.5">{t($ => $.detail.receiving.blockedMessage)}</p>
                   </div>
                 </div>
               )}
@@ -228,35 +248,45 @@ function InvoiceDetailDrawer({
                 </div>
               </div>
 
-              {invoice.receipt_links && invoice.receipt_links.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium text-gray-500 mb-2 uppercase flex items-center gap-1.5">
-                    <Link2 className="w-3.5 h-3.5" />
-                    {t($ => $.detail.receiptLinks.title)}
-                  </p>
-                  <div className="space-y-2">
-                    {invoice.receipt_links.map((link) => (
-                      <div key={link.line_id} className="p-3 border rounded-lg text-xs space-y-1.5">
-                        <div className="flex justify-between gap-2">
-                          <span className="font-medium truncate">{link.product ?? '—'}</span>
-                          <span className="font-mono text-gray-400 shrink-0">
-                            {link.receipt_number ?? '—'}{link.po_number ? ` · ${link.po_number}` : ''}
-                          </span>
+              {invoice.receiving && invoice.receiving.status !== 'not_applicable' ? (
+                <ReceivingSummaryCard
+                  receiving={invoice.receiving}
+                  onOpenReceipt={(receiptId) => navigate(`${ROUTES.goodsReceipts}/${receiptId}`)}
+                />
+              ) : (
+                invoice.receipt_links && invoice.receipt_links.length > 0 && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-500 mb-2 uppercase flex items-center gap-1.5">
+                      <Link2 className="w-3.5 h-3.5" />
+                      {t($ => $.detail.receiptLinks.title)}
+                    </p>
+                    <div className="space-y-2">
+                      {invoice.receipt_links.map((link) => (
+                        <div key={link.line_id} className="p-3 border rounded-lg text-xs space-y-1.5">
+                          <div className="flex justify-between gap-2">
+                            <span className="font-medium truncate">{link.product ?? '—'}</span>
+                            <span className="font-mono text-gray-400 shrink-0">
+                              {link.receipt_number ?? '—'}{link.po_number ? ` · ${link.po_number}` : ''}
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2 tabular-nums">
+                            <div><span className="text-gray-400">{t($ => $.detail.receiptLinks.ordered)}: </span>{link.ordered_qty ?? '—'}</div>
+                            <div><span className="text-gray-400">{t($ => $.detail.receiptLinks.received)}: </span>{link.received_qty ?? '—'}</div>
+                            <div><span className="text-gray-400">{t($ => $.detail.receiptLinks.invoiced)}: </span>{link.invoiced_qty}</div>
+                          </div>
                         </div>
-                        <div className="grid grid-cols-3 gap-2 tabular-nums">
-                          <div><span className="text-gray-400">{t($ => $.detail.receiptLinks.ordered)}: </span>{link.ordered_qty ?? '—'}</div>
-                          <div><span className="text-gray-400">{t($ => $.detail.receiptLinks.received)}: </span>{link.received_qty ?? '—'}</div>
-                          <div><span className="text-gray-400">{t($ => $.detail.receiptLinks.invoiced)}: </span>{link.invoiced_qty}</div>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )
               )}
 
               <InvoiceAttachments invoiceId={invoice.id} />
 
-              {(invoice.auto_purchase_id || invoice.auto_receipt_id) && (
+              {/* TASK-...-014 — the linked receipt already has its own identity + status + "Open
+                  Receipt" link in ReceivingSummaryCard above; showing its raw id here too would be
+                  a duplicate, id-only panel, so it's suppressed whenever that card is rendered. */}
+              {(invoice.auto_purchase_id || (invoice.auto_receipt_id && !(invoice.receiving && invoice.receiving.status !== 'not_applicable'))) && (
                 <div>
                   <p className="text-xs font-medium text-gray-500 mb-2 uppercase">
                     {t($ => $.detail.autoDocuments)}
@@ -269,7 +299,7 @@ function InvoiceDetailDrawer({
                         <span className="text-xs text-gray-400 font-mono">{invoice.auto_purchase_id.slice(0, 8)}…</span>
                       </div>
                     )}
-                    {invoice.auto_receipt_id && (
+                    {invoice.auto_receipt_id && !(invoice.receiving && invoice.receiving.status !== 'not_applicable') && (
                       <div className="flex items-center gap-2 text-sm">
                         <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
                         <span className="text-gray-600">{t($ => $.detail.goodsReceiptCreated)}</span>
@@ -309,10 +339,16 @@ export function SupplierInvoicesPage() {
   const [sort, setSort]               = useState<{ field: string; direction: 'asc' | 'desc' }>({
     field: 'created_at', direction: 'desc',
   });
-  const [selectedId, setSelectedId]   = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedId, setSelectedId]   = useState<string | null>(() => searchParams.get('open'));
   const [editor, setEditor]           = useState<{ open: boolean; invoiceId: string | null }>({ open: false, invoiceId: null });
   const [deleting, setDeleting]       = useState<SupplierInvoice | null>(null);
   const openEditor = (invoiceId: string | null) => setEditor({ open: true, invoiceId });
+
+  useEffect(() => {
+    if (!searchParams.get('open')) return;
+    setSearchParams((prev) => { prev.delete('open'); return prev; }, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   const params = useMemo(() => ({
     search:   search || undefined,

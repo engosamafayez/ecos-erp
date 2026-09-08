@@ -26,6 +26,9 @@ final class GoodsReceiptLineResource extends JsonResource
         return [
             'id' => $this->id,
             'purchase_order_line_id' => $this->purchase_order_line_id,
+            'purchase_material_line_id' => $this->purchase_material_line_id,
+            // TASK-...-014 — set only on a receipt line auto-created from a Supplier Invoice line.
+            'supplier_invoice_line_id' => $this->supplier_invoice_line_id,
             'product_id' => $this->product_id,
             'product' => $this->whenLoaded('product', fn () => [
                 'id' => $this->product->id,

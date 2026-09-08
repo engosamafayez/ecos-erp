@@ -1,5 +1,6 @@
 import { api } from '@/lib/axios';
 import type {
+  ConfirmReceiptQuantityLine,
   GoodsReceipt,
   GoodsReceiptPayload,
   GoodsReceiptsQuery,
@@ -42,6 +43,15 @@ export const goodsReceiptsService = {
 
   async post(id: string): Promise<GoodsReceipt> {
     const { data } = await api.post<ApiResponse<GoodsReceipt>>(`/goods-receipts/${id}/post`);
+    return data.data;
+  },
+
+  /** TASK-...-014 — record actual accepted quantities on an invoice-first Draft receipt. */
+  async confirmQuantities(id: string, lines: ConfirmReceiptQuantityLine[]): Promise<GoodsReceipt> {
+    const { data } = await api.post<ApiResponse<GoodsReceipt>>(
+      `/goods-receipts/${id}/confirm-quantities`,
+      { lines },
+    );
     return data.data;
   },
 };

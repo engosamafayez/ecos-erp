@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Purchasing\SupplierInvoices\Domain\Services;
 
+use Modules\Purchasing\GoodsReceipts\Domain\Enums\GoodsReceiptStatus;
 use Modules\Purchasing\GoodsReceipts\Domain\Models\GoodsReceiptLine;
 use Modules\Purchasing\SupplierInvoices\Domain\Enums\SupplierInvoiceStatus;
 use Modules\Purchasing\SupplierInvoices\Domain\Exceptions\InvoiceAnchorValidationException;
@@ -73,6 +74,45 @@ final class InvoiceReceiptAnchorService
     public function invoiceable(GoodsReceiptLine $anchor, ?string $excludeInvoiceId = null): float
     {
         return round($this->received($anchor) - $this->alreadyInvoiced((string) $anchor->id, $excludeInvoiceId), 4);
+    }
+
+    /**
+     * TASK-...-014 — the accepted/reconciled quantity for an invoice line, derived by summing
+     * `net_received_quantity` over every POSTED Goods Receipt line that names this invoice line as
+     * its origin (`goods_receipt_lines.supplier_invoice_line_id`) — never a stored counter, so a
+     * follow-up partial receipt against the same line still aggregates correctly instead of
+     * requiring anything here to be updated.
+     *
+     * Falls back to the invoice line's own declared `quantity` when no such receipt line exists —
+     * i.e. a legacy, manually-anchored (pre-invoice-first) invoice line, where `quantity` already
+     * IS the settled amount by convention (the user typed it after seeing what was received). This
+     * keeps the fallback exactly as accurate as it always was for that flow; nothing changes for it.
+     */
+    public function reconciledQuantity(SupplierInvoiceLine $line): float
+    {
+        $sum = GoodsReceiptLine::query()
+            ->join('goods_receipts as gr', 'gr.id', '=', 'goods_receipt_lines.goods_receipt_id')
+            ->where('goods_receipt_lines.supplier_invoice_line_id', $line->id)
+            ->where('gr.status', 'posted')
+            ->sum('goods_receipt_lines.net_received_quantity');
+
+        if ((float) $sum > 0.0 || $this->hasAnyInvoiceOriginatedReceiptLine($line)) {
+            return round((float) $sum, 4);
+        }
+
+        return round((float) $line->quantity, 4);
+    }
+
+    /**
+     * True when at least one Goods Receipt line (posted or not) names this invoice line as its
+     * origin — i.e. this IS an invoice-first line, even if receiving has not posted anything yet
+     * (reconciled = 0 is then the correct, honest answer, not a fallback to the invoiced quantity).
+     */
+    private function hasAnyInvoiceOriginatedReceiptLine(SupplierInvoiceLine $line): bool
+    {
+        return GoodsReceiptLine::query()
+            ->where('supplier_invoice_line_id', $line->id)
+            ->exists();
     }
 
     /**
@@ -154,6 +194,16 @@ final class InvoiceReceiptAnchorService
             throw InvoiceAnchorValidationException::productMismatch($anchorId);
         }
 
+        // ── Receiving must be posted (TASK-...-014) ──────────────────────────
+        // The anchor's `landed_unit_cost` is only ever stamped by PostGoodsReceiptAction,
+        // at the moment stock actually moves. An unposted receipt — including an
+        // invoice-first receipt whose quantities were merely confirmed but not yet
+        // posted — has moved nothing and stamped nothing, so clearing GRNI against it now
+        // would value the settlement at zero. Refused, not defaulted.
+        if ($anchor->goodsReceipt?->status !== GoodsReceiptStatus::Posted) {
+            throw InvoiceAnchorValidationException::receiptNotYetPosted($anchorId);
+        }
+
         // ── Quantity ──────────────────────────────────────────────────────────
         // An invoice may settle only what was physically received and not already settled. This
         // is the Supplier Return ceiling (SR-2) applied to the payable side; it is what stops the
@@ -224,13 +274,21 @@ final class InvoiceReceiptAnchorService
         $rows = [];
 
         foreach ($invoice->lines as $line) {
-            $qty = (float) $line->quantity;
-
-            if ($qty <= 0) {
+            if ((float) $line->quantity <= 0) {
                 continue;
             }
 
             $anchor = $this->resolve($invoice, $line, (string) $invoice->id);
+
+            // TASK-...-014 — the RECONCILED quantity settles the payable, not the originally
+            // declared one: "Invoice must not financially settle 100 unless [the warehouse]
+            // accepted 100." For a legacy, manually-anchored line this is exactly
+            // `$line->quantity` (unchanged behaviour — see reconciledQuantity()'s own docblock).
+            $qty = $this->reconciledQuantity($line);
+
+            if ($qty <= 0) {
+                continue;
+            }
 
             $receiptValue = $this->receiptValuation($anchor, $qty);
             $invoiceValue = round($qty * (float) $line->unit_price, 4);

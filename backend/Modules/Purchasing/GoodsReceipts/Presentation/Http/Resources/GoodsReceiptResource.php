@@ -89,6 +89,27 @@ final class GoodsReceiptResource extends JsonResource
             'posted_by' => $this->posted_by,
             'posted_at' => $this->posted_at?->toIso8601String(),
 
+            // TASK-...-014 — invoice-first origin. `is_invoice_originated` lets the frontend
+            // decide whether to show the confirm-quantities flow instead of the generic PO/PM
+            // edit form (which cannot represent this anchor type at all — see the action's own
+            // docblock). `supplier_invoice` is the reverse link (Goods Receipt → Open Supplier
+            // Invoice), derived from whichever line carries the anchor — every line on an
+            // invoice-originated receipt names the SAME invoice, by construction.
+            'is_invoice_originated' => $this->whenLoaded(
+                'lines',
+                fn (): bool => $this->lines->contains(fn ($line) => $line->supplier_invoice_line_id !== null),
+            ),
+            'supplier_invoice' => $this->whenLoaded('lines', function () {
+                $invoice = $this->lines
+                    ->map(fn ($line) => $line->supplierInvoiceLine?->supplierInvoice)
+                    ->first(fn ($inv) => $inv !== null);
+
+                return $invoice === null ? null : [
+                    'id' => $invoice->id,
+                    'invoice_number' => $invoice->invoice_number,
+                ];
+            }),
+
             // Lines
             'lines' => GoodsReceiptLineResource::collection($this->whenLoaded('lines')),
 

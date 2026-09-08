@@ -84,7 +84,14 @@ final class EloquentGoodsReceiptRepository implements GoodsReceiptRepositoryInte
 
     public function findById(string $id): ?GoodsReceipt
     {
-        return GoodsReceipt::query()->with(['purchaseOrder.lines.product', 'warehouse', 'lines.product'])->find($id);
+        return GoodsReceipt::query()->with([
+            'purchaseOrder.lines.product',
+            'warehouse',
+            'lines.product',
+            // TASK-...-014 — the reverse invoice-first link, so GoodsReceiptResource can expose
+            // is_invoice_originated / supplier_invoice without an N+1 per line.
+            'lines.supplierInvoiceLine.supplierInvoice',
+        ])->find($id);
     }
 
     public function create(array $attributes, array $lines): GoodsReceipt

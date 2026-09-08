@@ -26,6 +26,8 @@ final class GoodsReceiptLineDTO extends BaseDTO
         // them with ArgumentCountError — appending an optional one keeps the legacy PO contract
         // byte-compatible while the Purchase branch passes it explicitly.
         public readonly ?string $purchase_material_line_id = null,
+        // TASK-...-014: the invoice-first anchor, same append-only reasoning as above.
+        public readonly ?string $supplier_invoice_line_id = null,
     ) {}
 
     /**
@@ -39,6 +41,7 @@ final class GoodsReceiptLineDTO extends BaseDTO
         return new self(
             purchase_order_line_id: self::nullableString($data, 'purchase_order_line_id'),
             purchase_material_line_id: self::nullableString($data, 'purchase_material_line_id'),
+            supplier_invoice_line_id: self::nullableString($data, 'supplier_invoice_line_id'),
             product_id: (string) $data['product_id'],
             ordered_quantity: (float) $data['ordered_quantity'],
             received_quantity: $net,

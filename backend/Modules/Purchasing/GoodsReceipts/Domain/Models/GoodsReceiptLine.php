@@ -12,6 +12,7 @@ use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\Purchasing\GoodsReceipts\Infrastructure\Database\Factories\GoodsReceiptLineFactory;
 use Modules\Purchasing\PurchaseMaterials\Domain\Models\PurchaseMaterialLine;
 use Modules\Purchasing\PurchaseOrders\Domain\Models\PurchaseOrderLine;
+use Modules\Purchasing\SupplierInvoices\Domain\Models\SupplierInvoiceLine;
 
 /**
  * A single line in a goods receipt.
@@ -19,6 +20,7 @@ use Modules\Purchasing\PurchaseOrders\Domain\Models\PurchaseOrderLine;
  * @property string $id
  * @property string $goods_receipt_id
  * @property string $purchase_order_line_id
+ * @property string|null $supplier_invoice_line_id The invoice line this receipt line was auto-created from (invoice-first flow). Null on PO/Purchase-anchored lines.
  * @property string $product_id
  * @property string|null $uom_id_snapshot UUID of the product's unit at receipt time (immutable)
  * @property string|null $uom_name_snapshot Unit name at receipt time (immutable)
@@ -56,6 +58,9 @@ class GoodsReceiptLine extends Model
         // Part 1: the Purchase-Material anchor. Exactly one of this and
         // purchase_order_line_id is set on any line (enforced in the request + action).
         'purchase_material_line_id',
+        // TASK-...-014: the invoice-first anchor. Set instead of the two above when this
+        // line was auto-created directly from a Supplier Invoice line (no PO/Purchase).
+        'supplier_invoice_line_id',
         'product_id',
         'uom_id_snapshot',
         'uom_name_snapshot',
@@ -117,6 +122,17 @@ class GoodsReceiptLine extends Model
     public function purchaseMaterialLine(): BelongsTo
     {
         return $this->belongsTo(PurchaseMaterialLine::class, 'purchase_material_line_id');
+    }
+
+    /**
+     * The Supplier Invoice line this receipt line was auto-created from (TASK-...-014).
+     * Null on legacy PO- or Purchase-Material-anchored receipt lines.
+     *
+     * @return BelongsTo<SupplierInvoiceLine, $this>
+     */
+    public function supplierInvoiceLine(): BelongsTo
+    {
+        return $this->belongsTo(SupplierInvoiceLine::class, 'supplier_invoice_line_id');
     }
 
     /**

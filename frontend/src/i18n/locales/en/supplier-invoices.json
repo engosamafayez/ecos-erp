@@ -166,6 +166,25 @@
       "derivedNote": "Derived from recorded supplier payments — not editable here.",
       "apNote": "Payments are recorded and managed in Accounts Payable."
     },
+    "receiving": {
+      "title": "Receiving Status",
+      "receiptNumber": "Goods Receipt",
+      "openReceipt": "Open Receipt",
+      "expected": "Invoiced",
+      "accepted": "Accepted",
+      "variance": "Variance",
+      "landedCost": "Landed cost: {{value}}",
+      "noLines": "No receiving lines yet.",
+      "notReadyHint": "Posting is blocked until the linked goods receipt is posted.",
+      "blockedTitle": "Waiting on receiving",
+      "blockedMessage": "This invoice can't be posted until the linked goods receipt is confirmed and posted.",
+      "statuses": {
+        "not_applicable": "Not applicable",
+        "awaiting": "Awaiting receiving",
+        "partially_received": "Partially received",
+        "reconciled": "Reconciled"
+      }
+    },
     "receiptLinks": {
       "title": "Received Against",
       "ordered": "Ordered",

@@ -934,6 +934,9 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
         ->middlewareFor('update', 'permission:purchasing.goods_receipts.update')
         ->middlewareFor('destroy', 'permission:purchasing.goods_receipts.delete');
     Route::post('goods-receipts/{goodsReceipt}/post', [GoodsReceiptController::class, 'post'])->middleware('permission:purchasing.goods_receipts.update');
+    // TASK-...-014 — confirm actual accepted quantities on an invoice-first receipt before
+    // posting. Same warehouse-receiving permission as post(); distinct from invoice authority.
+    Route::post('goods-receipts/{goodsReceipt}/confirm-quantities', [GoodsReceiptController::class, 'confirmQuantities'])->middleware('permission:purchasing.goods_receipts.update');
 
     // Receiving Center — Purchase-Order-driven receiving queue
     // (TASK-PROCUREMENT-PO-DRIVEN-RECEIVING-CENTER-001). Reads receivable POs and delegates the

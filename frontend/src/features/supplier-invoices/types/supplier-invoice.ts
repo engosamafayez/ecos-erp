@@ -63,6 +63,35 @@ export type SupplierInvoiceReceiptLink = {
   invoiced_qty: number;
 };
 
+/**
+ * The invoice-first receiving/reconciliation read-model (TASK-...-014) — DERIVED, never
+ * editable on the invoice. `not_applicable` means this invoice has no auto-created receipt
+ * (a legacy, manually-anchored invoice, or a Mode-3 company where none is needed).
+ */
+export type SupplierInvoiceReceivingStatus = 'not_applicable' | 'awaiting' | 'partially_received' | 'reconciled';
+
+export type SupplierInvoiceReceivingLine = {
+  line_id: string;
+  product_id: string;
+  product_name: string | null;
+  sku: string | null;
+  expected_qty: number;
+  accepted_qty: number;
+  variance: number;
+  unit_price: number;
+  final_landed_unit_cost: number | null;
+};
+
+export type SupplierInvoiceReceiving = {
+  status: SupplierInvoiceReceivingStatus;
+  receipt_id: string | null;
+  receipt_number: string | null;
+  receipt_status: string | null;
+  /** Mirrors what the backend will itself enforce at validate()/post() — never a bypass. */
+  ready_to_post: boolean;
+  lines: SupplierInvoiceReceivingLine[];
+};
+
 /** An invoice attachment record (the canonical documents table; §3). */
 export type SupplierInvoiceDocument = {
   id: string;
@@ -107,6 +136,7 @@ export type SupplierInvoice = {
   // Present on the detail (show) payload only — derived read-models (§9–§17).
   payment?: SupplierInvoicePayment;
   receipt_links?: SupplierInvoiceReceiptLink[];
+  receiving?: SupplierInvoiceReceiving;
   created_at: string | null;
   updated_at: string | null;
 };
