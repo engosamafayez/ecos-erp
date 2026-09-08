@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Purchasing\PurchaseMaterials\Domain\Models;
 
 use App\Core\Company\TenantOwnershipResolver;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -33,9 +34,12 @@ use Modules\Purchasing\PurchaseMaterials\Domain\Enums\PurchaseMaterialStatus;
  * @property PurchaseMaterialPriority $priority
  * @property string|null $requested_by
  * @property string|null $assigned_buyer
+ * @property int|null $assigned_buyer_id
+ * @property string|null $held_from_status
  * @property \Illuminate\Support\Carbon|null $required_date
  * @property \Illuminate\Support\Carbon|null $submitted_at
  * @property \Illuminate\Support\Carbon|null $approved_at
+ * @property \Illuminate\Support\Carbon|null $completed_at
  * @property numeric-string $estimated_value
  * @property numeric-string $approved_value
  * @property numeric-string $purchased_value
@@ -68,9 +72,12 @@ class PurchaseMaterial extends Model
         'priority',
         'requested_by',
         'assigned_buyer',
+        'assigned_buyer_id',
+        'held_from_status',
         'required_date',
         'submitted_at',
         'approved_at',
+        'completed_at',
         'estimated_value',
         'approved_value',
         'purchased_value',
@@ -132,6 +139,7 @@ class PurchaseMaterial extends Model
             'required_date' => 'date',
             'submitted_at' => 'datetime',
             'approved_at' => 'datetime',
+            'completed_at' => 'datetime',
             'estimated_value' => 'decimal:2',
             'approved_value' => 'decimal:2',
             'purchased_value' => 'decimal:2',
@@ -161,5 +169,11 @@ class PurchaseMaterial extends Model
     public function lines(): HasMany
     {
         return $this->hasMany(PurchaseMaterialLine::class);
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function buyer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assigned_buyer_id');
     }
 }

@@ -50,7 +50,30 @@ export type PurchaseMaterialLine = {
   required_qty: number;
   received_qty: number;
   remaining_qty: number;
+  /** agreed_qty >= requested_qty — TASK-...-011 §7/§9. */
+  is_fully_ordered: boolean;
 };
+
+/** TASK-...-011 §9: summary shape used by the Ordered / Not Yet Ordered popovers. */
+export type PurchaseMaterialLineSummary = {
+  id: string;
+  product_id: string;
+  product_name: string | null;
+  sku: string | null;
+  requested_qty: number;
+  ordered_qty: number;
+  remaining_to_order: number;
+};
+
+/** Action tokens PurchaseMaterialStatus::availableActions() can emit — single source of truth. */
+export type PurchaseMaterialAction =
+  | 'submit'
+  | 'select_supplier'
+  | 'approve'
+  | 'reject'
+  | 'hold'
+  | 'resume'
+  | 'cancel';
 
 export type PurchaseMaterial = {
   id: string;
@@ -65,13 +88,20 @@ export type PurchaseMaterial = {
   warehouse: { id: string; name: string } | null;
   status: PurchaseMaterialStatus;
   status_label: string;
+  held_from_status: PurchaseMaterialStatus | null;
+  /** Single source of truth for which actions this request accepts right now. */
+  available_actions: PurchaseMaterialAction[];
   priority: PurchaseMaterialPriority;
   priority_label: string;
   requested_by: string | null;
   assigned_buyer: string | null;
+  assigned_buyer_id: number | null;
+  buyer: { id: number; name: string; job_title: string | null } | null;
+  is_unowned: boolean;
   required_date: string | null;
   submitted_at: string | null;
   approved_at: string | null;
+  completed_at: string | null;
   estimated_value: number;
   approved_value: number;
   purchased_value: number;
@@ -85,6 +115,12 @@ export type PurchaseMaterial = {
   clarification_requested_by: string | null;
   items_count: number;
   total_requested_qty: number;
+  /** Fully-ordered lines / total lines * 100 — TASK-...-011 §7. Present when lines are loaded. */
+  execution_percent?: number;
+  ordered_items_count?: number;
+  not_yet_ordered_items_count?: number;
+  ordered_items?: PurchaseMaterialLineSummary[];
+  not_yet_ordered_items?: PurchaseMaterialLineSummary[];
   lines?: PurchaseMaterialLine[];
   created_at: string | null;
   updated_at: string | null;
@@ -99,6 +135,11 @@ export type PurchaseMaterialsQuery = {
   company_id?: string;
   channel_id?: string;
   assigned_buyer?: string;
+  /** FK-based ownership filter — pass 'me' to resolve against the authenticated user server-side. */
+  assigned_buyer_id?: number | 'me';
+  unowned?: boolean;
+  overdue?: boolean;
+  required_soon?: boolean;
   date_from?: string;
   date_to?: string;
   sort_by?: string;
@@ -150,12 +191,23 @@ export type PurchaseMaterialStats = {
     approved: number;
     purchasing: number;
     receiving: number;
+    completed: number;
+    on_hold: number;
+    rejected: number;
+    cancelled: number;
+    open_total: number;
+  };
+  /** Ownership / SLA workload — TASK-...-011 §17/§18, scoped to open requests only. */
+  workload: {
+    unowned_count: number;
+    overdue_count: number;
+    required_soon_count: number;
+    ordered_lines: number;
+    not_yet_ordered_lines: number;
   };
   financial: {
-    total_estimated_value: number;
-    total_approved_value: number;
-    total_purchased_value: number;
-    outstanding_value: number;
+    /** Derived (requested qty x current product cost) across open requests — never a stored, always-0 column. */
+    estimated_value_open: number;
   };
   by_priority: {
     urgent: number;

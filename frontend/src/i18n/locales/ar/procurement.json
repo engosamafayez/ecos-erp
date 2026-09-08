@@ -81,8 +81,15 @@
       "waitingApproval": "في انتظار الاعتماد",
       "purchasesInReview": "مشتريات قيد المراجعة"
     },
+    "purchasingWorkload": "عبء عمل المشتريات",
     "financialOverview": "النظرة المالية العامة",
     "kpis": {
+      "unowned": "غير مُسنَد",
+      "unownedSub": "بلا مشترٍ بعد",
+      "overdue": "متأخر",
+      "overdueSub": "تجاوز التاريخ المطلوب",
+      "requiredSoon": "مطلوب قريباً",
+      "requiredSoonSub": "خلال 3 أيام",
       "approvedPurchases": "المشتريات المعتمدة",
       "readyToExecute": "جاهزة للتنفيذ",
       "invoiceValuePosted": "قيمة الفواتير (مرحَّلة)",

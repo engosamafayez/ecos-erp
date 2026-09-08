@@ -9,6 +9,12 @@ use Modules\Purchasing\PurchaseMaterials\Domain\Models\PurchaseMaterial;
 
 final class GetPurchaseMaterialStatsAction
 {
+    private const OPEN_STATUSES = [
+        'draft', 'under_review', 'waiting_supplier_selection', 'approved', 'purchasing', 'receiving', 'on_hold',
+    ];
+
+    private const TERMINAL_STATUSES = ['completed', 'cancelled', 'rejected'];
+
     public function execute(?string $companyId = null, ?string $warehouseId = null, ?string $recordType = null): array
     {
         $query = PurchaseMaterial::query();
@@ -29,21 +35,14 @@ final class GetPurchaseMaterialStatsAction
             $query->where('record_type', $recordType);
         }
 
-        // Status counts
+        // Status counts — TASK-...-011 §17/§19: completed/rejected/on_hold/cancelled were silently
+        // dropped from the operational breakdown before, so a request could vanish from every KPI
+        // the moment it left the "in progress" states without appearing to have gone anywhere.
         $byCounts = (clone $query)
             ->select('status', DB::raw('COUNT(*) as count'))
             ->groupBy('status')
             ->pluck('count', 'status')
             ->toArray();
-
-        // Financial totals
-        $financials = (clone $query)
-            ->selectRaw(
-                'COALESCE(SUM(estimated_value), 0) as total_estimated,
-                 COALESCE(SUM(CASE WHEN status IN (\'approved\', \'purchasing\', \'receiving\', \'completed\') THEN approved_value ELSE 0 END), 0) as total_approved,
-                 COALESCE(SUM(CASE WHEN status IN (\'purchasing\', \'receiving\', \'completed\') THEN purchased_value ELSE 0 END), 0) as total_purchased',
-            )
-            ->first();
 
         // Priority counts
         $byPriority = (clone $query)
@@ -52,8 +51,40 @@ final class GetPurchaseMaterialStatsAction
             ->pluck('count', 'priority')
             ->toArray();
 
-        $totalApproved = (float) ($financials?->total_approved ?? 0);
-        $totalPurchased = (float) ($financials?->total_purchased ?? 0);
+        $openIds = (clone $query)->whereIn('status', self::OPEN_STATUSES)->pluck('id');
+
+        // Ownership / SLA workload — TASK-...-011 §5/§17/§18. Scoped to OPEN requests only: a
+        // completed or cancelled request being "unowned" or "overdue" is not actionable workload.
+        $unownedCount = (clone $query)->whereIn('status', self::OPEN_STATUSES)
+            ->whereNull('assigned_buyer_id')->count();
+
+        $overdueCount = (clone $query)->whereIn('status', self::OPEN_STATUSES)
+            ->whereNotNull('required_date')->where('required_date', '<', now()->toDateString())->count();
+
+        $requiredSoonCount = (clone $query)->whereIn('status', self::OPEN_STATUSES)
+            ->whereNotNull('required_date')
+            ->whereBetween('required_date', [now()->toDateString(), now()->addDays(3)->toDateString()])
+            ->count();
+
+        // Ordering workload across open requests — one grouped query over lines, not one query
+        // per request (§20's N+1 guard). A line counts as "ordered" only once its full requested
+        // quantity is committed, matching PurchaseMaterialReceivingService::isFullyOrdered().
+        $lineOrdering = $openIds->isEmpty() ? (object) ['ordered' => 0, 'not_yet_ordered' => 0] : DB::table('purchase_material_lines')
+            ->whereIn('purchase_material_id', $openIds)
+            ->selectRaw(
+                'SUM(CASE WHEN COALESCE(agreed_qty, 0) >= requested_qty THEN 1 ELSE 0 END) as ordered,
+                 SUM(CASE WHEN COALESCE(agreed_qty, 0) < requested_qty THEN 1 ELSE 0 END) as not_yet_ordered',
+            )
+            ->first();
+
+        // Real derived value (requested qty x current product cost) across open requests — the
+        // stored estimated_value/approved_value/purchased_value columns are never written by any
+        // Action (confirmed by repo-wide search), so they are intentionally NOT surfaced as a
+        // reconciled Hub KPI; this is the one honest value figure this endpoint exposes.
+        $estimatedValue = $openIds->isEmpty() ? 0.0 : (float) DB::table('purchase_material_lines as pml')
+            ->join('products as p', 'p.id', '=', 'pml.product_id')
+            ->whereIn('pml.purchase_material_id', $openIds)
+            ->sum(DB::raw('pml.requested_qty * COALESCE(p.average_cost, 0)'));
 
         return [
             'operational' => [
@@ -63,12 +94,21 @@ final class GetPurchaseMaterialStatsAction
                 'approved' => (int) ($byCounts['approved'] ?? 0),
                 'purchasing' => (int) ($byCounts['purchasing'] ?? 0),
                 'receiving' => (int) ($byCounts['receiving'] ?? 0),
+                'completed' => (int) ($byCounts['completed'] ?? 0),
+                'on_hold' => (int) ($byCounts['on_hold'] ?? 0),
+                'rejected' => (int) ($byCounts['rejected'] ?? 0),
+                'cancelled' => (int) ($byCounts['cancelled'] ?? 0),
+                'open_total' => $openIds->count(),
+            ],
+            'workload' => [
+                'unowned_count' => $unownedCount,
+                'overdue_count' => $overdueCount,
+                'required_soon_count' => $requiredSoonCount,
+                'ordered_lines' => (int) ($lineOrdering->ordered ?? 0),
+                'not_yet_ordered_lines' => (int) ($lineOrdering->not_yet_ordered ?? 0),
             ],
             'financial' => [
-                'total_estimated_value' => (float) ($financials?->total_estimated ?? 0),
-                'total_approved_value' => $totalApproved,
-                'total_purchased_value' => $totalPurchased,
-                'outstanding_value' => max(0.0, $totalApproved - $totalPurchased),
+                'estimated_value_open' => round($estimatedValue, 2),
             ],
             'by_priority' => [
                 'urgent' => (int) ($byPriority['urgent'] ?? 0),

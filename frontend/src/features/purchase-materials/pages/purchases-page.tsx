@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Truck } from 'lucide-react';
 
@@ -10,8 +11,9 @@ import { toast } from '@/components/ds/use-toast';
 import { useWarehouseOptions } from '@/features/products/hooks/use-warehouse-options';
 import { CompanySelect } from '@/features/branches/components/company-select';
 
-import { PurchaseMaterialStatusBadge } from '../components/purchase-material-status-badge';
 import { PurchaseMaterialPriorityBadge } from '../components/purchase-material-priority-badge';
+import { PurchaseMaterialActionMenu } from '../components/purchase-material-action-menu';
+import { PurchaseMaterialOrderingPopover } from '../components/purchase-material-ordering-popover';
 import { CreatePurchaseMaterialWizard } from '../components/create-purchase-material-wizard';
 import { PurchaseMaterialDrawer } from '../components/purchase-material-drawer';
 import {
@@ -71,18 +73,34 @@ function fmtCurrency(n: number): string {
 
 const PER_PAGE = 15;
 
+const VALID_STATUSES = new Set<string>([
+  'draft', 'under_review', 'waiting_supplier_selection', 'approved',
+  'purchasing', 'receiving', 'completed', 'on_hold', 'rejected', 'cancelled',
+]);
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function PurchasesPage() {
   const { t } = useTranslation('purchase-materials');
   const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
 
-  const [statusFilter, setStatusFilter] = useState<PurchaseMaterialStatus | 'all'>('all');
+  // Deep-links from the Procurement Hub (e.g. ?status=approved, ?unowned=1) — read once on
+  // mount as the initial filter state. TASK-...-011 §18: these were previously dead — this page
+  // never read the URL at all, so every Hub card landed on the unfiltered "All" view.
+  const [searchParams] = useSearchParams();
+  const initialStatus = searchParams.get('status');
+
+  const [statusFilter, setStatusFilter] = useState<PurchaseMaterialStatus | 'all'>(
+    initialStatus && VALID_STATUSES.has(initialStatus) ? (initialStatus as PurchaseMaterialStatus) : 'all',
+  );
   const [priorityFilter, setPriorityFilter] = useState<PurchaseMaterialPriority | 'all'>('all');
   const [search, setSearch] = useState('');
   const [warehouseFilter, setWarehouseFilter] = useState('');
   const [companyFilter, setCompanyFilter] = useState('');
   const [buyerFilter, setBuyerFilter] = useState('');
+  const [unownedFilter, setUnownedFilter] = useState(searchParams.get('unowned') === '1');
+  const [overdueFilter, setOverdueFilter] = useState(searchParams.get('overdue') === '1');
+  const [requiredSoonFilter, setRequiredSoonFilter] = useState(searchParams.get('required_soon') === '1');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [page, setPage] = useState(1);
@@ -115,12 +133,18 @@ export function PurchasesPage() {
       warehouse_id: warehouseFilter || undefined,
       company_id: companyFilter || undefined,
       assigned_buyer: buyerFilter || undefined,
+      unowned: unownedFilter,
+      overdue: overdueFilter,
+      required_soon: requiredSoonFilter,
       date_from: dateFrom || undefined,
       date_to: dateTo || undefined,
       per_page: PER_PAGE,
       page,
     }),
-    [statusFilter, priorityFilter, search, warehouseFilter, companyFilter, buyerFilter, dateFrom, dateTo, page],
+    [
+      statusFilter, priorityFilter, search, warehouseFilter, companyFilter, buyerFilter,
+      unownedFilter, overdueFilter, requiredSoonFilter, dateFrom, dateTo, page,
+    ],
   );
 
   const { data, isLoading, isFetching } = usePurchaseMaterialsQuery(params);
@@ -143,6 +167,9 @@ export function PurchasesPage() {
     setWarehouseFilter('');
     setCompanyFilter('');
     setBuyerFilter('');
+    setUnownedFilter(false);
+    setOverdueFilter(false);
+    setRequiredSoonFilter(false);
     setDateFrom('');
     setDateTo('');
     setPage(1);
@@ -165,7 +192,7 @@ export function PurchasesPage() {
   }
 
   const op = stats?.operational;
-  const fin = stats?.financial;
+  const workload = stats?.workload;
 
   const opKpis: Array<{ id: string; label: string; value: number; color: string; status: PurchaseMaterialStatus }> = [
     { id: 'draft', label: t($ => $.purchasesPage.kpis.draft), value: op?.draft ?? 0, color: 'text-slate-700', status: 'draft' },
@@ -176,11 +203,26 @@ export function PurchasesPage() {
     { id: 'receiving', label: t($ => $.purchasesPage.kpis.receiving), value: op?.receiving ?? 0, color: 'text-teal-700', status: 'receiving' },
   ];
 
-  const finKpis: Array<{ id: string; label: string; value: number; color: string }> = [
-    { id: 'totalRequested', label: t($ => $.purchasesPage.kpis.totalRequested), value: fin?.total_estimated_value ?? 0, color: 'text-slate-700' },
-    { id: 'approvedValue', label: t($ => $.purchasesPage.kpis.approvedValue), value: fin?.total_approved_value ?? 0, color: 'text-emerald-700' },
-    { id: 'purchasedValue', label: t($ => $.purchasesPage.kpis.purchasedValue), value: fin?.total_purchased_value ?? 0, color: 'text-cyan-700' },
-    { id: 'outstanding', label: t($ => $.purchasesPage.kpis.outstanding), value: fin?.outstanding_value ?? 0, color: 'text-amber-700' },
+  // TASK-...-011 §17/§19: replaces the old "Financial" row, which summed estimated_value /
+  // approved_value / purchased_value — columns no Action has ever written, so every card there
+  // permanently read 0. These three are real, clickable workload filters instead.
+  const workloadKpis: Array<{ id: string; label: string; value: number; color: string; onClick: () => void; active: boolean }> = [
+    {
+      id: 'unowned', label: t($ => $.purchasesPage.kpis.unowned), value: workload?.unowned_count ?? 0, color: 'text-amber-700',
+      onClick: () => { setUnownedFilter((v) => !v); setPage(1); }, active: unownedFilter,
+    },
+    {
+      id: 'overdue', label: t($ => $.purchasesPage.kpis.overdue), value: workload?.overdue_count ?? 0, color: 'text-red-700',
+      onClick: () => { setOverdueFilter((v) => !v); setPage(1); }, active: overdueFilter,
+    },
+    {
+      id: 'requiredSoon', label: t($ => $.purchasesPage.kpis.requiredSoon), value: workload?.required_soon_count ?? 0, color: 'text-orange-700',
+      onClick: () => { setRequiredSoonFilter((v) => !v); setPage(1); }, active: requiredSoonFilter,
+    },
+    {
+      id: 'notYetOrdered', label: t($ => $.purchasesPage.kpis.notYetOrderedLines), value: workload?.not_yet_ordered_lines ?? 0, color: 'text-cyan-700',
+      onClick: () => {}, active: false,
+    },
   ];
 
   return (
@@ -221,14 +263,18 @@ export function PurchasesPage() {
 
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-              {t($ => $.purchasesPage.financial)}
+              {t($ => $.purchasesPage.workload)}
             </p>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {finKpis.map(({ id, label, value, color }) => (
-                <Card key={id} className="border shadow-none">
+              {workloadKpis.map(({ id, label, value, color, onClick, active }) => (
+                <Card
+                  key={id}
+                  className={`border shadow-none cursor-pointer hover:border-primary/40 transition-colors ${active ? 'border-primary ring-1 ring-primary/30' : ''}`}
+                  onClick={onClick}
+                >
                   <CardContent className="pt-3 pb-2.5 px-3">
                     <p className="text-[10px] text-muted-foreground leading-tight">{label}</p>
-                    <p className={`text-xl font-bold tabular-nums ${color}`}>{fmtCurrency(value)}</p>
+                    <p className={`text-xl font-bold tabular-nums ${color}`}>{value}</p>
                   </CardContent>
                 </Card>
               ))}
@@ -306,7 +352,7 @@ export function PurchasesPage() {
               <Input type="date" className="h-8 w-36 text-sm" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} />
             </div>
 
-            {(search || statusFilter !== 'all' || priorityFilter !== 'all' || warehouseFilter || companyFilter || buyerFilter || dateFrom || dateTo) && (
+            {(search || statusFilter !== 'all' || priorityFilter !== 'all' || warehouseFilter || companyFilter || buyerFilter || unownedFilter || overdueFilter || requiredSoonFilter || dateFrom || dateTo) && (
               <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={resetFilters}>
                 {t($ => $.purchasesPage.filters.clearFilters)}
               </Button>
@@ -328,7 +374,7 @@ export function PurchasesPage() {
                     <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.buyer)}</th>
                     <th className="px-3 py-3 text-center font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.items)}</th>
                     <th className="px-3 py-3 text-end font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.estValue)}</th>
-                    <th className="px-3 py-3 text-end font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.approvedValue)}</th>
+                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.progress)}</th>
                     <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.priority)}</th>
                     <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.requiredBy)}</th>
                     <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.status)}</th>
@@ -378,8 +424,14 @@ export function PurchasesPage() {
                         <td className="px-3 py-2.5 text-muted-foreground">
                           {purchase.warehouse?.name ?? '—'}
                         </td>
-                        <td className="px-3 py-2.5 text-muted-foreground text-xs">
-                          {purchase.assigned_buyer ?? '—'}
+                        <td className="px-3 py-2.5 text-xs">
+                          {purchase.buyer ? (
+                            <span className="text-muted-foreground">{purchase.buyer.name}</span>
+                          ) : (
+                            <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800">
+                              {t($ => $.purchasesPage.unowned)}
+                            </span>
+                          )}
                         </td>
                         <td className="px-3 py-2.5 text-center tabular-nums">
                           {purchase.items_count}
@@ -387,8 +439,27 @@ export function PurchasesPage() {
                         <td className="px-3 py-2.5 text-end font-mono text-xs tabular-nums">
                           {purchase.estimated_value > 0 ? fmtCurrency(purchase.estimated_value) : '—'}
                         </td>
-                        <td className="px-3 py-2.5 text-end font-mono text-xs tabular-nums">
-                          {purchase.approved_value > 0 ? fmtCurrency(purchase.approved_value) : '—'}
+                        <td className="px-3 py-2.5">
+                          {purchase.execution_percent !== undefined ? (
+                            <div className="flex items-center gap-1.5 w-32">
+                              <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+                                <div
+                                  className="h-full rounded-full bg-emerald-500"
+                                  style={{ width: `${Math.min(100, Math.max(0, purchase.execution_percent))}%` }}
+                                />
+                              </div>
+                              <span className="text-[10px] font-mono text-muted-foreground shrink-0" onClick={(e) => e.stopPropagation()}>
+                                <PurchaseMaterialOrderingPopover
+                                  count={purchase.ordered_items_count ?? 0}
+                                  items={purchase.ordered_items ?? []}
+                                  emptyLabel={t($ => $.purchasesPage.orderingPopover.emptyOrdered)}
+                                />
+                                /{purchase.items_count}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
                         </td>
                         <td className="px-3 py-2.5">
                           <PurchaseMaterialPriorityBadge priority={purchase.priority} />
@@ -396,8 +467,8 @@ export function PurchasesPage() {
                         <td className="px-3 py-2.5 text-muted-foreground text-xs">
                           {fmtDate(purchase.required_date)}
                         </td>
-                        <td className="px-3 py-2.5">
-                          <PurchaseMaterialStatusBadge status={purchase.status} />
+                        <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
+                          <PurchaseMaterialActionMenu material={purchase} />
                         </td>
                         <td className="px-3 py-2.5 text-muted-foreground text-xs">
                           {fmtDate(purchase.updated_at)}

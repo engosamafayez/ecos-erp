@@ -1,4 +1,24 @@
 {
+  "common": {
+    "status": {
+      "draft": "Draft",
+      "under_review": "Under Review",
+      "waiting_supplier_selection": "Awaiting Supplier",
+      "approved": "Approved",
+      "purchasing": "Purchasing",
+      "receiving": "Receiving",
+      "completed": "Completed",
+      "rejected": "Rejected",
+      "on_hold": "On Hold",
+      "cancelled": "Cancelled"
+    },
+    "priority": {
+      "low": "Low",
+      "normal": "Normal",
+      "high": "High",
+      "urgent": "Urgent"
+    }
+  },
   "title": "Purchase Materials",
   "subtitle": "Manage raw material purchase orders and supplier deliveries.",
   "search": "Search by material, supplier, or PO number…",
@@ -265,6 +285,8 @@
     },
     "operations": "OPERATIONS",
     "financial": "FINANCIAL",
+    "workload": "WORKLOAD",
+    "unowned": "Unowned",
     "kpis": {
       "draft": "Draft",
       "underReview": "Under Review",
@@ -275,7 +297,27 @@
       "totalRequested": "Total Requested",
       "approvedValue": "Approved Value",
       "purchasedValue": "Purchased Value",
-      "outstanding": "Outstanding"
+      "outstanding": "Outstanding",
+      "unowned": "Unowned",
+      "overdue": "Overdue",
+      "requiredSoon": "Required Soon",
+      "notYetOrderedLines": "Lines Not Yet Ordered"
+    },
+    "orderingPopover": {
+      "emptyOrdered": "No lines fully ordered yet."
+    },
+    "actionMenu": {
+      "actions": {
+        "submit": "Submit for Review",
+        "select_supplier": "Select Supplier",
+        "approve": "Approve",
+        "reject": "Reject",
+        "hold": "Hold",
+        "resume": "Resume",
+        "cancel": "Cancel"
+      },
+      "toastSuccess": "{{action}} succeeded.",
+      "toastFailed": "Action failed."
     },
     "columns": {
       "requestNo": "Purchase No.",
@@ -289,6 +331,7 @@
       "requestedQty": "Requested Qty",
       "estValue": "Est. Value",
       "approvedValue": "Approved Value",
+      "progress": "Ordering Progress",
       "priority": "Priority",
       "requiredBy": "Required By",
       "status": "Status",
@@ -432,7 +475,10 @@
         "lines": "Lines",
         "totalQty": "Total Qty",
         "estimatedValue": "Estimated Value"
-      }
+      },
+      "unowned": "Unowned",
+      "orderingProgress": "Ordering Progress",
+      "orderingSummary": "{{ordered}} of {{total}} lines fully ordered"
     },
     "requestedItems": {
       "empty": "No lines in this request.",
@@ -535,6 +581,7 @@
       "approve": "Approve",
       "reject": "Reject",
       "hold": "Hold",
+      "resume": "Resume",
       "cancel": "Cancel",
       "rejectReasonPlaceholder": "Rejection reason (optional)…",
       "confirmRejection": "Confirm Rejection"
@@ -544,6 +591,7 @@
       "approved": "Request approved.",
       "rejected": "Request rejected.",
       "hold": "Request put on hold.",
+      "resumed": "Request resumed.",
       "cancelled": "Request cancelled.",
       "actionFailed": "Action failed.",
       "buyerAssigned": "Buyer assigned.",

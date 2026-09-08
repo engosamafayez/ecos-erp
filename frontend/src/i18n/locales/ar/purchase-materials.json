@@ -1,4 +1,24 @@
 {
+  "common": {
+    "status": {
+      "draft": "مسودة",
+      "under_review": "قيد المراجعة",
+      "waiting_supplier_selection": "في انتظار المورد",
+      "approved": "معتمد",
+      "purchasing": "جارٍ الشراء",
+      "receiving": "جارٍ الاستلام",
+      "completed": "مكتمل",
+      "rejected": "مرفوض",
+      "on_hold": "معلق",
+      "cancelled": "ملغى"
+    },
+    "priority": {
+      "low": "منخفضة",
+      "normal": "عادية",
+      "high": "عالية",
+      "urgent": "عاجل"
+    }
+  },
   "title": "مشتريات المواد الخام",
   "subtitle": "إدارة أوامر شراء المواد الخام وتسليمات الموردين.",
   "search": "بحث بالمادة أو المورد أو رقم الأمر…",
@@ -265,6 +285,8 @@
     },
     "operations": "العمليات",
     "financial": "مالي",
+    "workload": "عبء العمل",
+    "unowned": "غير مُسنَد",
     "kpis": {
       "draft": "مسودة",
       "underReview": "قيد المراجعة",
@@ -275,7 +297,27 @@
       "totalRequested": "إجمالي المطلوب",
       "approvedValue": "القيمة المعتمدة",
       "purchasedValue": "القيمة المشتراة",
-      "outstanding": "المستحق"
+      "outstanding": "المستحق",
+      "unowned": "غير مُسنَد",
+      "overdue": "متأخر",
+      "requiredSoon": "مطلوب قريباً",
+      "notYetOrderedLines": "بنود لم تُطلب بعد"
+    },
+    "orderingPopover": {
+      "emptyOrdered": "لا توجد بنود مطلوبة بالكامل بعد."
+    },
+    "actionMenu": {
+      "actions": {
+        "submit": "إرسال للمراجعة",
+        "select_supplier": "اختيار المورد",
+        "approve": "اعتماد",
+        "reject": "رفض",
+        "hold": "تعليق",
+        "resume": "استئناف",
+        "cancel": "إلغاء"
+      },
+      "toastSuccess": "تم: {{action}}.",
+      "toastFailed": "فشل تنفيذ الإجراء."
     },
     "columns": {
       "requestNo": "رقم الشراء",
@@ -289,6 +331,7 @@
       "requestedQty": "الكمية المطلوبة",
       "estValue": "القيمة التقديرية",
       "approvedValue": "القيمة المعتمدة",
+      "progress": "تقدم الشراء",
       "priority": "الأولوية",
       "requiredBy": "مطلوب بحلول",
       "status": "الحالة",
@@ -432,7 +475,10 @@
         "lines": "البنود",
         "totalQty": "إجمالي الكمية",
         "estimatedValue": "القيمة التقديرية"
-      }
+      },
+      "unowned": "غير مُسنَد",
+      "orderingProgress": "تقدم الشراء",
+      "orderingSummary": "{{ordered}} من {{total}} بنود مطلوبة بالكامل"
     },
     "requestedItems": {
       "empty": "لا توجد بنود في هذا الطلب.",
@@ -535,6 +581,7 @@
       "approve": "اعتماد",
       "reject": "رفض",
       "hold": "تعليق",
+      "resume": "استئناف",
       "cancel": "إلغاء",
       "rejectReasonPlaceholder": "سبب الرفض (اختياري)…",
       "confirmRejection": "تأكيد الرفض"
@@ -544,6 +591,7 @@
       "approved": "تم اعتماد الطلب.",
       "rejected": "تم رفض الطلب.",
       "hold": "تم تعليق الطلب.",
+      "resumed": "تم استئناف الطلب.",
       "cancelled": "تم إلغاء الطلب.",
       "actionFailed": "فشل تنفيذ الإجراء.",
       "buyerAssigned": "تم تعيين المشتري.",

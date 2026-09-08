@@ -106,6 +106,7 @@ function line(over: Partial<PurchaseMaterialLine> = {}): PurchaseMaterialLine {
     required_qty: 100,
     received_qty: 0,
     remaining_qty: 100,
+    is_fully_ordered: false,
     ...over,
   };
 }

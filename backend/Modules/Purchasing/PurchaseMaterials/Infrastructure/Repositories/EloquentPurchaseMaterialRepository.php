@@ -18,7 +18,7 @@ final class EloquentPurchaseMaterialRepository implements PurchaseMaterialReposi
 
     public function paginate(array $filters): LengthAwarePaginator
     {
-        $query = PurchaseMaterial::query()->with(['company', 'warehouse', 'channel', 'lines.product']);
+        $query = PurchaseMaterial::query()->with(['company', 'warehouse', 'channel', 'buyer', 'lines.product', 'lines.supplier']);
 
         // Inline aggregates for list columns
         $query->withCount('lines as items_count')
@@ -70,6 +70,31 @@ final class EloquentPurchaseMaterialRepository implements PurchaseMaterialReposi
             $query->where('assigned_buyer', $buyer);
         }
 
+        // Canonical-identity ownership filter (TASK-...-011 §5/§18) — distinct from the legacy
+        // free-text `assigned_buyer` match above, which stays only for callers still on it.
+        $buyerId = trim((string) ($filters['assigned_buyer_id'] ?? ''));
+        if ($buyerId !== '') {
+            $query->where('assigned_buyer_id', $buyerId);
+        }
+
+        if (! empty($filters['unowned'])) {
+            $query->whereNull('assigned_buyer_id');
+        }
+
+        // "Required soon" mirrors the Hub card definition: not yet fulfilled, due within the next
+        // 3 days (including already-overdue, so the card and this filter never disagree).
+        if (! empty($filters['required_soon'])) {
+            $query->whereNotIn('status', ['completed', 'cancelled', 'rejected'])
+                ->whereNotNull('required_date')
+                ->where('required_date', '<=', now()->addDays(3)->toDateString());
+        }
+
+        if (! empty($filters['overdue'])) {
+            $query->whereNotIn('status', ['completed', 'cancelled', 'rejected'])
+                ->whereNotNull('required_date')
+                ->where('required_date', '<', now()->toDateString());
+        }
+
         $dateFrom = trim((string) ($filters['date_from'] ?? ''));
         if ($dateFrom !== '') {
             $query->where('required_date', '>=', $dateFrom);
@@ -94,7 +119,7 @@ final class EloquentPurchaseMaterialRepository implements PurchaseMaterialReposi
     public function findById(string $id): ?PurchaseMaterial
     {
         return PurchaseMaterial::query()
-            ->with(['company', 'warehouse', 'channel', 'lines.product'])
+            ->with(['company', 'warehouse', 'channel', 'buyer', 'lines.product', 'lines.supplier'])
             ->find($id);
     }
 

@@ -116,7 +116,7 @@ export function PurchaseMaterialsPage() {
   }
 
   const op = stats?.operational;
-  const fin = stats?.financial;
+  const workload = stats?.workload;
 
   const opKpis: Array<{ id: string; label: string; value: number; color: string; status: PurchaseMaterialStatus }> = [
     { id: 'draft', label: t($ => $.requestsPage.kpis.draft), value: op?.draft ?? 0, color: 'text-slate-700', status: 'draft' },
@@ -127,11 +127,14 @@ export function PurchaseMaterialsPage() {
     { id: 'receiving', label: t($ => $.requestsPage.kpis.receiving), value: op?.receiving ?? 0, color: 'text-teal-700', status: 'receiving' },
   ];
 
+  // This page is unrouted (superseded by PurchasesPage) — kept compiling against the current
+  // stats shape rather than deleted outright, since removing an unrouted file is a separate
+  // cleanup decision from this task's scope.
   const finKpis: Array<{ id: string; label: string; value: number; color: string }> = [
-    { id: 'totalRequested', label: t($ => $.requestsPage.kpis.totalRequested), value: fin?.total_estimated_value ?? 0, color: 'text-slate-700' },
-    { id: 'approvedValue', label: t($ => $.requestsPage.kpis.approvedValue), value: fin?.total_approved_value ?? 0, color: 'text-emerald-700' },
-    { id: 'purchasedValue', label: t($ => $.requestsPage.kpis.purchasedValue), value: fin?.total_purchased_value ?? 0, color: 'text-cyan-700' },
-    { id: 'outstanding', label: t($ => $.requestsPage.kpis.outstanding), value: fin?.outstanding_value ?? 0, color: 'text-amber-700' },
+    { id: 'unowned', label: t($ => $.requestsPage.kpis.totalRequested), value: workload?.unowned_count ?? 0, color: 'text-slate-700' },
+    { id: 'overdue', label: t($ => $.requestsPage.kpis.approvedValue), value: workload?.overdue_count ?? 0, color: 'text-emerald-700' },
+    { id: 'requiredSoon', label: t($ => $.requestsPage.kpis.purchasedValue), value: workload?.required_soon_count ?? 0, color: 'text-cyan-700' },
+    { id: 'openTotal', label: t($ => $.requestsPage.kpis.outstanding), value: op?.open_total ?? 0, color: 'text-amber-700' },
   ];
 
   return (

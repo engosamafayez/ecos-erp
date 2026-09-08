@@ -16,7 +16,7 @@ type ListEnvelope = { items: PurchaseMaterial[]; meta: PurchaseMaterialsResult['
 export const purchaseMaterialsService = {
   async list(params: PurchaseMaterialsQuery = {}): Promise<PurchaseMaterialsResult> {
     const filtered = Object.fromEntries(
-      Object.entries(params).filter(([, v]) => v !== undefined && v !== '' && v !== 'all'),
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== '' && v !== 'all' && v !== false),
     );
     const { data } = await api.get<ApiResponse<ListEnvelope>>('/purchase-materials', { params: filtered });
     return { items: data.data.items, meta: data.data.meta };
@@ -66,9 +66,15 @@ export const purchaseMaterialsService = {
     return data.data;
   },
 
-  async assignBuyer(id: string, buyerName: string): Promise<PurchaseMaterial> {
+  async resume(id: string): Promise<PurchaseMaterial> {
+    const { data } = await api.post<ApiResponse<PurchaseMaterial>>(`/purchase-materials/${id}/resume`);
+    return data.data;
+  },
+
+  /** Explicit reassignment by canonical IAM user id — TASK-...-011 §5. */
+  async assignBuyer(id: string, buyerId: number): Promise<PurchaseMaterial> {
     const { data } = await api.post<ApiResponse<PurchaseMaterial>>(`/purchase-materials/${id}/assign-buyer`, {
-      buyer_name: buyerName,
+      buyer_id: buyerId,
     });
     return data.data;
   },

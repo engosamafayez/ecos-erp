@@ -39,6 +39,7 @@ class PurchaseMaterialLineResource extends JsonResource
             'agreed_qty' => $this->agreed_qty !== null ? (float) $this->agreed_qty : null,
             'lead_time_days' => $this->lead_time_days,
             'supplier_selected_at' => $this->supplier_selected_at?->toIso8601String(),
+            'is_fully_ordered' => app(PurchaseMaterialReceivingService::class)->isFullyOrdered($this->resource),
 
             // ── Receiving position (TASK-PROC-PURCHASING-PHASE2-PART1) ───────────
             // ONE definition, computed by PurchaseMaterialReceivingService, so no screen can

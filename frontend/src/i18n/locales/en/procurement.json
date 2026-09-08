@@ -81,8 +81,15 @@
       "waitingApproval": "Waiting approval",
       "purchasesInReview": "Purchases in Review"
     },
+    "purchasingWorkload": "Purchasing Workload",
     "financialOverview": "Financial Overview",
     "kpis": {
+      "unowned": "Unowned",
+      "unownedSub": "No buyer yet",
+      "overdue": "Overdue",
+      "overdueSub": "Past required date",
+      "requiredSoon": "Required Soon",
+      "requiredSoonSub": "Due within 3 days",
       "approvedPurchases": "Approved Purchases",
       "readyToExecute": "Ready to execute",
       "invoiceValuePosted": "Invoice Value (posted)",

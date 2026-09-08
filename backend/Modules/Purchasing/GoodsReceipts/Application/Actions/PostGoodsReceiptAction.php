@@ -24,6 +24,7 @@ use Modules\Purchasing\GoodsReceipts\Domain\Exceptions\PurchaseOrderCancelledExc
 use Modules\Purchasing\GoodsReceipts\Domain\Exceptions\PurchaseOrderClosedException;
 use Modules\Purchasing\GoodsReceipts\Domain\Models\GoodsReceipt;
 use Modules\Purchasing\GoodsReceipts\Domain\Models\GoodsReceiptLine;
+use Modules\Purchasing\PurchaseMaterials\Application\Actions\AdvancePurchaseMaterialWorkflowAction;
 use Modules\Purchasing\PurchaseMaterials\Domain\Models\PurchaseMaterialLine;
 use Modules\Purchasing\PurchaseMaterials\Domain\Services\PurchaseMaterialReceivingService;
 use Modules\Purchasing\PurchaseOrders\Domain\Enums\PurchaseOrderStatus;
@@ -46,6 +47,7 @@ final class PostGoodsReceiptAction extends BaseAction
         private readonly GoodsInwardAuthority $inwardAuthority,
         // The ONE definition of Required / Received / Remaining for a Purchase line (RD-2/RD-3).
         private readonly PurchaseMaterialReceivingService $receivingQuantities,
+        private readonly AdvancePurchaseMaterialWorkflowAction $advancePurchaseMaterialWorkflow,
     ) {}
 
     public function execute(mixed ...$arguments): OperationResult
@@ -146,6 +148,7 @@ final class PostGoodsReceiptAction extends BaseAction
             ->all();
 
         DB::transaction(function () use ($receipt, $activeLines, $po, $companyId, $extraPerUnit, $preReceiptQtys, $postsInventory): void {
+            $affectedPurchaseMaterialIds = [];
 
             // ── Guard 1c (locked): close the check-then-act window — D-INB-03 ──
             //
@@ -213,6 +216,8 @@ final class PostGoodsReceiptAction extends BaseAction
                             $netQty,
                         );
                     }
+
+                    $affectedPurchaseMaterialIds[(string) $pmLine->purchase_material_id] = true;
 
                     continue;
                 }
@@ -298,6 +303,22 @@ final class PostGoodsReceiptAction extends BaseAction
                 'status' => GoodsReceiptStatus::Posted->value,
                 'posted_at' => now(),
             ]);
+
+            // ── Step 4b: advance Purchase Material status ─────────────────────
+            // TASK-ECOS-PROCUREMENT-PURCHASE-REQUESTS-AND-HUB-FINAL-REMEDIATION-011 §10 — the
+            // "Part 2" Step 3's comment always deferred. Purchase-anchored lines only, one call
+            // per distinct request touched by this receipt (not per line). Conservative by design:
+            // AdvancePurchaseMaterialWorkflowAction only ever moves Approved/Purchasing/Receiving
+            // forward and leaves every other status (including OnHold/Rejected/Cancelled) alone.
+            //
+            // MUST run after Step 4, not before: PurchaseMaterialReceivingService::receivedGross()
+            // only counts lines whose `goods_receipts.status = 'posted'` — this receipt does not
+            // satisfy that yet until the update directly above has run, so recomputing any earlier
+            // would silently exclude the very receipt just posted and leave the request one
+            // receipt "behind" until something else happened to touch it again.
+            foreach (array_keys($affectedPurchaseMaterialIds) as $purchaseMaterialId) {
+                $this->advancePurchaseMaterialWorkflow->execute($purchaseMaterialId);
+            }
 
             // ── Step 5: create receipt layers + update product cost intel ─────
             //

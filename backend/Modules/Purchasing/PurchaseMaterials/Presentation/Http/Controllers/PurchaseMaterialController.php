@@ -19,6 +19,7 @@ use Modules\Purchasing\PurchaseMaterials\Application\Actions\GetPurchaseMaterial
 use Modules\Purchasing\PurchaseMaterials\Application\Actions\HoldPurchaseMaterialAction;
 use Modules\Purchasing\PurchaseMaterials\Application\Actions\ListPurchaseMaterialsAction;
 use Modules\Purchasing\PurchaseMaterials\Application\Actions\RejectPurchaseMaterialAction;
+use Modules\Purchasing\PurchaseMaterials\Application\Actions\ResumePurchaseMaterialAction;
 use Modules\Purchasing\PurchaseMaterials\Application\Actions\SelectLineSupplierAction;
 use Modules\Purchasing\PurchaseMaterials\Application\Actions\SubmitPurchaseMaterialAction;
 use Modules\Purchasing\PurchaseMaterials\Application\Actions\UpdatePurchaseMaterialAction;
@@ -34,6 +35,13 @@ final class PurchaseMaterialController extends Controller
 
     public function index(Request $request, ListPurchaseMaterialsAction $action): JsonResponse
     {
+        // "me" resolves against the authenticated actor rather than trusting a client-supplied id,
+        // so ?assigned_buyer_id=me cannot be used to probe another user's queue.
+        $buyerId = $request->query('assigned_buyer_id');
+        if ($buyerId === 'me') {
+            $buyerId = $request->user()?->id;
+        }
+
         $filters = [
             'search' => $request->query('search'),
             'record_type' => $request->query('record_type'),
@@ -43,6 +51,10 @@ final class PurchaseMaterialController extends Controller
             'company_id' => $request->query('company_id'),
             'channel_id' => $request->query('channel_id'),
             'assigned_buyer' => $request->query('assigned_buyer'),
+            'assigned_buyer_id' => $buyerId,
+            'unowned' => $request->boolean('unowned'),
+            'overdue' => $request->boolean('overdue'),
+            'required_soon' => $request->boolean('required_soon'),
             'date_from' => $request->query('date_from'),
             'date_to' => $request->query('date_to'),
             'sort_by' => $request->query('sort_by', 'created_at'),
@@ -133,6 +145,13 @@ final class PurchaseMaterialController extends Controller
         return $this->updated(new PurchaseMaterialResource($result->data()), $result->message());
     }
 
+    public function resume(string $purchaseMaterial, Request $request, ResumePurchaseMaterialAction $action): JsonResponse
+    {
+        $result = $action->execute($purchaseMaterial, $request);
+
+        return $this->updated(new PurchaseMaterialResource($result->data()), $result->message());
+    }
+
     public function stats(Request $request, GetPurchaseMaterialStatsAction $action): JsonResponse
     {
         $stats = $action->execute(
@@ -146,9 +165,9 @@ final class PurchaseMaterialController extends Controller
 
     public function assignBuyer(string $purchaseMaterial, Request $request, AssignBuyerAction $action): JsonResponse
     {
-        $request->validate(['buyer_name' => ['required', 'string', 'max:255']]);
+        $request->validate(['buyer_id' => ['required', 'integer', 'exists:users,id']]);
 
-        $result = $action->execute($purchaseMaterial, (string) $request->input('buyer_name'), $request);
+        $result = $action->execute($purchaseMaterial, (int) $request->input('buyer_id'), $request);
 
         return $this->updated(new PurchaseMaterialResource($result->data()), $result->message());
     }

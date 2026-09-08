@@ -5,14 +5,18 @@ import {
   Clock,
   Loader2,
   PauseCircle,
+  PlayCircle,
   Send,
   ShoppingCart,
   Truck,
+  UserCheck,
   XCircle,
 } from 'lucide-react';
 
 import { Combobox, ErrorState, LoadingState } from '@/components/crud';
 import { useSupplierOptions } from '@/features/purchase-orders/hooks/use-supplier-options';
+import { UserPicker } from '@/features/collaboration/components/user-picker';
+import type { AddressableUser } from '@/features/collaboration/types';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -32,10 +36,11 @@ import {
   useProductProcurementPanel,
   usePurchaseMaterialQuery,
   useRejectPurchaseMaterial,
+  useResumePurchaseMaterial,
   useSelectLineSupplier,
   useSubmitPurchaseMaterial,
 } from '../hooks/use-purchase-materials';
-import type { PurchaseMaterial, PurchaseMaterialLine } from '../types/purchase-material';
+import type { PurchaseMaterial, PurchaseMaterialAction, PurchaseMaterialLine } from '../types/purchase-material';
 import { PurchaseMaterialStatusBadge } from './purchase-material-status-badge';
 import { PurchaseMaterialPriorityBadge } from './purchase-material-priority-badge';
 import { PurchaseMaterialReceivingTab } from './purchase-material-receiving-tab';
@@ -73,6 +78,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function OverviewTab({ material }: { material: PurchaseMaterial }) {
   const { t } = useTranslation('purchase-materials');
+  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
   return (
     <div className="flex flex-col gap-5 text-sm">
       <div className="grid grid-cols-2 gap-x-6 gap-y-3">
@@ -90,16 +96,43 @@ function OverviewTab({ material }: { material: PurchaseMaterial }) {
         </Field>
         <Field label={t($ => $.purchaseDrawer.overview.fields.requiredBy)}>{fmt(material.required_date)}</Field>
         <Field label={t($ => $.purchaseDrawer.overview.fields.requestedBy)}>{material.requested_by ?? '—'}</Field>
-        {material.assigned_buyer && (
-          <Field label={t($ => $.purchaseDrawer.overview.fields.assignedBuyer)}>
+        <Field label={t($ => $.purchaseDrawer.overview.fields.assignedBuyer)}>
+          {material.buyer ? (
             <span className="flex items-center gap-1.5">
               <Truck className="size-3.5 text-muted-foreground" />
-              {material.assigned_buyer}
+              {material.buyer.name}
             </span>
-          </Field>
-        )}
+          ) : (
+            <span className="text-amber-600 dark:text-amber-500 text-xs font-normal">
+              {t($ => $.purchaseDrawer.overview.unowned)}
+            </span>
+          )}
+        </Field>
         <Field label={t($ => $.purchaseDrawer.overview.fields.createdDate)}>{fmt(material.created_at)}</Field>
       </div>
+
+      {material.execution_percent !== undefined && (
+        <div>
+          <SectionLabel>{t($ => $.purchaseDrawer.overview.orderingProgress)}</SectionLabel>
+          <div className="rounded-lg border bg-muted/20 px-3 py-2.5">
+            <div className="flex items-center justify-between text-xs mb-1.5">
+              <span className="text-muted-foreground">
+                {tAny('purchaseDrawer.overview.orderingSummary', {
+                  ordered: material.ordered_items_count ?? 0,
+                  total: (material.ordered_items_count ?? 0) + (material.not_yet_ordered_items_count ?? 0),
+                })}
+              </span>
+              <span className="font-mono font-semibold tabular-nums">{fmtNum(material.execution_percent, 0)}%</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full rounded-full bg-emerald-500 transition-all"
+                style={{ width: `${Math.min(100, Math.max(0, material.execution_percent))}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {material.notes && (
         <div>
@@ -270,13 +303,15 @@ function DemandAnalysisTab({ material }: { material: PurchaseMaterial }) {
 
 function ProcurementReviewTab({ material }: { material: PurchaseMaterial }) {
   const { t } = useTranslation('purchase-materials');
-  const [buyerName, setBuyerName] = useState(material.assigned_buyer ?? '');
+  const [candidate, setCandidate] = useState<AddressableUser | null>(
+    material.buyer ? { id: material.buyer.id, name: material.buyer.name, job_title: material.buyer.job_title, is_driver: false } : null,
+  );
   const assignBuyer = useAssignBuyer(material.id);
 
   async function handleAssignBuyer() {
-    if (!buyerName.trim()) return;
+    if (!candidate) return;
     try {
-      await assignBuyer.mutateAsync(buyerName.trim());
+      await assignBuyer.mutateAsync(candidate.id);
       toast.success(t($ => $.purchaseDrawer.toast.buyerAssigned));
     } catch {
       toast.error(t($ => $.purchaseDrawer.toast.buyerFailed));
@@ -288,20 +323,25 @@ function ProcurementReviewTab({ material }: { material: PurchaseMaterial }) {
       <div>
         <SectionLabel>{t($ => $.purchaseDrawer.review.assignBuyer)}</SectionLabel>
         <div className="flex gap-2">
-          <input
-            className="flex-1 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            placeholder={t($ => $.purchaseDrawer.review.buyerPlaceholder)}
-            value={buyerName}
-            onChange={(e) => setBuyerName(e.target.value)}
-          />
-          <Button size="sm" disabled={!buyerName.trim() || assignBuyer.isPending} onClick={() => void handleAssignBuyer()}>
+          <div className="flex-1">
+            <UserPicker
+              value={candidate}
+              onChange={setCandidate}
+              placeholder={t($ => $.purchaseDrawer.review.buyerPlaceholder)}
+            />
+          </div>
+          <Button
+            size="sm"
+            disabled={!candidate || candidate.id === material.assigned_buyer_id || assignBuyer.isPending}
+            onClick={() => void handleAssignBuyer()}
+          >
             {assignBuyer.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
             {t($ => $.purchaseDrawer.review.assignButton)}
           </Button>
         </div>
-        {material.assigned_buyer && (
+        {material.buyer && (
           <p className="text-xs text-muted-foreground mt-1.5">
-            {t($ => $.purchaseDrawer.review.currentlyAssigned)}<span className="font-medium text-foreground">{material.assigned_buyer}</span>
+            {t($ => $.purchaseDrawer.review.currentlyAssigned)}<span className="font-medium text-foreground">{material.buyer.name}</span>
           </p>
         )}
       </div>
@@ -645,6 +685,7 @@ export function PurchaseMaterialDrawer({ id, open, onOpenChange }: Props) {
   const rejectMutation = useRejectPurchaseMaterial();
   const holdMutation = useHoldPurchaseMaterial();
   const cancelMutation = useCancelPurchaseMaterial();
+  const resumeMutation = useResumePurchaseMaterial();
 
   const TABS: Array<{ id: Tab; label: string }> = [
     { id: 'overview', label: t($ => $.purchaseDrawer.tabs.overview) },
@@ -667,7 +708,7 @@ export function PurchaseMaterialDrawer({ id, open, onOpenChange }: Props) {
     onOpenChange(false);
   }
 
-  async function handleAction(action: 'submit' | 'approve' | 'reject' | 'hold' | 'cancel') {
+  async function handleAction(action: 'submit' | 'approve' | 'reject' | 'hold' | 'cancel' | 'resume') {
     if (!id) return;
     try {
       if (action === 'submit') {
@@ -684,6 +725,9 @@ export function PurchaseMaterialDrawer({ id, open, onOpenChange }: Props) {
       } else if (action === 'hold') {
         await holdMutation.mutateAsync(id);
         toast.success(t($ => $.purchaseDrawer.toast.hold));
+      } else if (action === 'resume') {
+        await resumeMutation.mutateAsync(id);
+        toast.success(t($ => $.purchaseDrawer.toast.resumed));
       } else if (action === 'cancel') {
         await cancelMutation.mutateAsync(id);
         toast.success(t($ => $.purchaseDrawer.toast.cancelled));
@@ -698,6 +742,7 @@ export function PurchaseMaterialDrawer({ id, open, onOpenChange }: Props) {
     approveMutation.isPending ||
     rejectMutation.isPending ||
     holdMutation.isPending ||
+    resumeMutation.isPending ||
     cancelMutation.isPending;
 
   return (
@@ -715,6 +760,12 @@ export function PurchaseMaterialDrawer({ id, open, onOpenChange }: Props) {
                   </SheetDescription>
                 </div>
                 <div className="flex items-center gap-2">
+                  {material.is_unowned && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800">
+                      <UserCheck className="size-3" />
+                      {t($ => $.purchaseDrawer.overview.unowned)}
+                    </span>
+                  )}
                   <PurchaseMaterialPriorityBadge priority={material.priority} />
                   <PurchaseMaterialStatusBadge status={material.status} />
                 </div>
@@ -730,50 +781,64 @@ export function PurchaseMaterialDrawer({ id, open, onOpenChange }: Props) {
 
         {material && (
           <>
-            {/* Action bar */}
-            {(material.status === 'draft' ||
-              material.status === 'under_review' ||
-              material.status === 'waiting_supplier_selection') && (
-              <div className="flex flex-wrap gap-2 px-6 py-3 border-b bg-muted/30 shrink-0">
-                {material.status === 'draft' && (
-                  <Button size="sm" disabled={isBusy} onClick={() => void handleAction('submit')}>
-                    {submitMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
-                    <Send className="size-3.5 mr-1.5" />
-                    {t($ => $.purchaseDrawer.actions.submitForReview)}
-                  </Button>
-                )}
-                {(material.status === 'under_review' || material.status === 'waiting_supplier_selection') && (
-                  <>
+            {/* Action bar — driven by the backend's own available_actions (TASK-...-011 §6): the
+                exact same list PurchaseMaterialStatus::availableActions() computes, so this bar
+                can never offer a button the server will then refuse. */}
+            {(() => {
+              const actions: PurchaseMaterialAction[] = material.available_actions;
+              const has = (a: PurchaseMaterialAction) => actions.includes(a);
+              if (actions.length === 0) return null;
+              return (
+                <div className="flex flex-wrap gap-2 px-6 py-3 border-b bg-muted/30 shrink-0">
+                  {has('submit') && (
+                    <Button size="sm" disabled={isBusy} onClick={() => void handleAction('submit')}>
+                      {submitMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
+                      <Send className="size-3.5 mr-1.5" />
+                      {t($ => $.purchaseDrawer.actions.submitForReview)}
+                    </Button>
+                  )}
+                  {has('approve') && (
                     <Button size="sm" disabled={isBusy} onClick={() => void handleAction('approve')}>
                       {approveMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
                       <CheckCircle className="size-3.5 mr-1.5" />
                       {t($ => $.purchaseDrawer.actions.approve)}
                     </Button>
+                  )}
+                  {has('reject') && (
                     <Button size="sm" variant="outline" disabled={isBusy} onClick={() => setShowRejectInput((v) => !v)}>
                       <XCircle className="size-3.5 mr-1.5" />
                       {t($ => $.purchaseDrawer.actions.reject)}
                     </Button>
+                  )}
+                  {has('hold') && (
                     <Button size="sm" variant="outline" disabled={isBusy} onClick={() => void handleAction('hold')}>
                       {holdMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
                       <PauseCircle className="size-3.5 mr-1.5" />
                       {t($ => $.purchaseDrawer.actions.hold)}
                     </Button>
-                  </>
-                )}
-                {(material.status === 'draft' || material.status === 'under_review') && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-destructive hover:text-destructive"
-                    disabled={isBusy}
-                    onClick={() => void handleAction('cancel')}
-                  >
-                    {cancelMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
-                    {t($ => $.purchaseDrawer.actions.cancel)}
-                  </Button>
-                )}
-              </div>
-            )}
+                  )}
+                  {has('resume') && (
+                    <Button size="sm" variant="outline" disabled={isBusy} onClick={() => void handleAction('resume')}>
+                      {resumeMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
+                      <PlayCircle className="size-3.5 mr-1.5" />
+                      {t($ => $.purchaseDrawer.actions.resume)}
+                    </Button>
+                  )}
+                  {has('cancel') && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
+                      disabled={isBusy}
+                      onClick={() => void handleAction('cancel')}
+                    >
+                      {cancelMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
+                      {t($ => $.purchaseDrawer.actions.cancel)}
+                    </Button>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Reject reason */}
             {showRejectInput && (

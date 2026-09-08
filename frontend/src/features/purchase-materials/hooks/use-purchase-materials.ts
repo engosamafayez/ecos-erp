@@ -108,11 +108,15 @@ export function useCancelPurchaseMaterial() {
   return usePmAction((id) => purchaseMaterialsService.cancel(id));
 }
 
+export function useResumePurchaseMaterial() {
+  return usePmAction((id) => purchaseMaterialsService.resume(id));
+}
+
 export function useAssignBuyer(materialId: string) {
   const KEYS = useKeys();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (buyerName: string) => purchaseMaterialsService.assignBuyer(materialId, buyerName),
+    mutationFn: (buyerId: number) => purchaseMaterialsService.assignBuyer(materialId, buyerId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.detail(materialId) });
       qc.invalidateQueries({ queryKey: KEYS.root });

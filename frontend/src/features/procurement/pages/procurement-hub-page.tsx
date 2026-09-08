@@ -15,6 +15,7 @@ import {
   ShoppingCart,
   TrendingUp,
   Truck,
+  UserX,
   Zap,
 } from 'lucide-react';
 
@@ -23,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { usePurchaseMaterialStats } from '@/features/purchase-materials/hooks/use-purchase-materials';
+import { useReceivingQueue } from '@/features/receiving-center/hooks/use-receiving';
 import { useSupplierReturnStats } from '@/features/supplier-returns/hooks/use-supplier-returns';
 import { useSupplierInvoiceStats } from '@/features/supplier-invoices/hooks/use-supplier-invoices';
 import { ROUTES } from '@/router/routes';
@@ -136,6 +138,9 @@ export function ProcurementHubPage() {
   const { data: pmStats, isLoading: pmLoading } = usePurchaseMaterialStats();
   const { data: returnStats } = useSupplierReturnStats();
   const { data: invoiceStats } = useSupplierInvoiceStats();
+  // kpis.awaiting is a real aggregate, independent of the page of rows fetched — per_page: 1
+  // keeps this a lightweight "just give me the count" call, not a full queue fetch.
+  const { data: receivingQueue } = useReceivingQueue({ scope: 'active', per_page: 1 });
 
   const alerts = useMemo(() => {
     const list: AlertItemProps[] = [];
@@ -218,7 +223,7 @@ export function ProcurementHubPage() {
           </button>
 
           <button
-            onClick={() => navigate(`${ROUTES.purchases}?status=pending_approval`)}
+            onClick={() => navigate(`${ROUTES.purchases}?status=approved`)}
             className="p-4 bg-white rounded-lg border border-gray-200 text-start hover:border-amber-300 hover:shadow-sm transition-all"
           >
             <div className="flex items-center justify-between mb-1">
@@ -235,7 +240,7 @@ export function ProcurementHubPage() {
           >
             <div className="flex items-center justify-between mb-1">
               <PackageOpen className="w-4 h-4 text-green-500" />
-              <Badge variant="secondary" className="text-xs">—</Badge>
+              <Badge variant="secondary" className="text-xs">{receivingQueue ? receivingQueue.kpis.awaiting : '…'}</Badge>
             </div>
             <p className="text-sm font-medium text-gray-900">{t($ => $.hub.workQueue.receiving)}</p>
             <p className="text-xs text-gray-400">{t($ => $.hub.workQueue.goodsToReceive)}</p>
@@ -260,17 +265,58 @@ export function ProcurementHubPage() {
           {/* Left column — KPIs + Alerts */}
           <div className="lg:col-span-2 space-y-6">
 
-            {/* KPI Cards */}
+            {/* Purchasing Workload — TASK-...-011 §17: operational Purchasing KPIs, grounded in
+                PurchaseMaterial data (GetPurchaseMaterialStatsAction), each a working drilldown
+                into the Purchases table's own filters. Not a Finance dashboard. */}
+            <div>
+              <h2 className="text-sm font-medium text-gray-700 mb-3">{t($ => $.hub.purchasingWorkload)}</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <button className="text-start" onClick={() => navigate(`${ROUTES.purchases}?unowned=1`)}>
+                  <KpiCard
+                    label={t($ => $.hub.kpis.unowned)}
+                    value={pmStats ? pmStats.workload.unowned_count : '—'}
+                    sub={t($ => $.hub.kpis.unownedSub)}
+                    icon={UserX}
+                    color="orange"
+                  />
+                </button>
+                <button className="text-start" onClick={() => navigate(`${ROUTES.purchases}?overdue=1`)}>
+                  <KpiCard
+                    label={t($ => $.hub.kpis.overdue)}
+                    value={pmStats ? pmStats.workload.overdue_count : '—'}
+                    sub={t($ => $.hub.kpis.overdueSub)}
+                    icon={AlertTriangle}
+                    color="red"
+                  />
+                </button>
+                <button className="text-start" onClick={() => navigate(`${ROUTES.purchases}?required_soon=1`)}>
+                  <KpiCard
+                    label={t($ => $.hub.kpis.requiredSoon)}
+                    value={pmStats ? pmStats.workload.required_soon_count : '—'}
+                    sub={t($ => $.hub.kpis.requiredSoonSub)}
+                    icon={Clock}
+                    color="yellow"
+                  />
+                </button>
+                <button className="text-start" onClick={() => navigate(`${ROUTES.purchases}?status=approved`)}>
+                  <KpiCard
+                    label={t($ => $.hub.kpis.approvedPurchases)}
+                    value={pmStats ? `${pmStats.operational?.approved ?? 0}` : '—'}
+                    sub={t($ => $.hub.kpis.readyToExecute)}
+                    icon={ShoppingCart}
+                    color="blue"
+                  />
+                </button>
+              </div>
+            </div>
+
+            {/* Financial — Supplier Invoices / Returns only. Purchase Materials never surfaces a
+                value KPI here: estimated_value/approved_value/purchased_value are columns no
+                Action has ever written (confirmed repo-wide), so a "total requested value" card
+                would always read a false 0 — see the remediation report's KPI classification. */}
             <div>
               <h2 className="text-sm font-medium text-gray-700 mb-3">{t($ => $.hub.financialOverview)}</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <KpiCard
-                  label={t($ => $.hub.kpis.approvedPurchases)}
-                  value={pmStats ? `${pmStats.operational?.approved ?? 0}` : '—'}
-                  sub={t($ => $.hub.kpis.readyToExecute)}
-                  icon={ShoppingCart}
-                  color="blue"
-                />
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <KpiCard
                   label={t($ => $.hub.kpis.invoiceValuePosted)}
                   value={invoiceStats ? fmt.moneyCompact(invoiceStats.total_value) : '—'}
@@ -446,7 +492,7 @@ export function ProcurementHubPage() {
                       <TrendingUp className="w-4 h-4 text-green-500" />
                       <span className="text-xs text-gray-700">{t($ => $.hub.performance.totalPurchases)}</span>
                     </div>
-                    <span className="text-sm font-semibold text-gray-900">{pmStats ? (pmStats.operational?.draft ?? 0) + (pmStats.operational?.under_review ?? 0) + (pmStats.operational?.approved ?? 0) : '—'}</span>
+                    <span className="text-sm font-semibold text-gray-900">{pmStats ? pmStats.operational.open_total : '—'}</span>
                   </div>
                   <Separator />
                   <div className="flex items-center justify-between">

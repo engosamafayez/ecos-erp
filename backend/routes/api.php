@@ -968,6 +968,8 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
         ->post('purchase-materials/{purchaseMaterial}/reject', [PurchaseMaterialController::class, 'reject']);
     Route::middleware('permission:purchasing.materials.review')
         ->post('purchase-materials/{purchaseMaterial}/hold', [PurchaseMaterialController::class, 'hold']);
+    Route::middleware('permission:purchasing.materials.review')
+        ->post('purchase-materials/{purchaseMaterial}/resume', [PurchaseMaterialController::class, 'resume']);
     Route::middleware('permission:purchasing.materials.cancel')
         ->post('purchase-materials/{purchaseMaterial}/cancel', [PurchaseMaterialController::class, 'cancel']);
     Route::middleware('permission:purchasing.materials.review')

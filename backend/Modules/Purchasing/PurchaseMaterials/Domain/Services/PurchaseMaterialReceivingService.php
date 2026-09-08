@@ -64,6 +64,26 @@ final class PurchaseMaterialReceivingService
     }
 
     /**
+     * Whether the line's full REQUESTED quantity — the original demand, not the negotiated
+     * agreed_qty ceiling — has been physically received. TASK-...-011 §10: a Purchase Material
+     * only reaches Completed when the actual requested quantity is fulfilled, not merely whatever
+     * a partial order happened to commit to.
+     */
+    public function isRequestFulfilled(PurchaseMaterialLine $line): bool
+    {
+        return $this->receivedGross((string) $line->id) >= round((float) $line->requested_qty, 4);
+    }
+
+    /**
+     * Whether the line's full requested quantity has been committed to a supplier —
+     * TASK-...-011 §7/§9's "execution %" and Ordered/Not-Yet-Ordered classification.
+     */
+    public function isFullyOrdered(PurchaseMaterialLine $line): bool
+    {
+        return round((float) ($line->agreed_qty ?? 0), 4) >= round((float) $line->requested_qty, 4);
+    }
+
+    /**
      * Gross received for many lines at once — one grouped read, so a list or drawer never
      * issues a query per row.
      *
