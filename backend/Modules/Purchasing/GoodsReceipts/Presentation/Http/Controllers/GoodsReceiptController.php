@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\StockSync\Application\Actions\SyncStockAction;
+use Modules\Purchasing\GoodsReceipts\Application\Actions\ConfirmReceiptQuantitiesAction;
 use Modules\Purchasing\GoodsReceipts\Application\Actions\CreateGoodsReceiptAction;
 use Modules\Purchasing\GoodsReceipts\Application\Actions\DeleteGoodsReceiptAction;
 use Modules\Purchasing\GoodsReceipts\Application\Actions\GetGoodsReceiptAction;
@@ -18,6 +19,7 @@ use Modules\Purchasing\GoodsReceipts\Application\Actions\ListGoodsReceiptsAction
 use Modules\Purchasing\GoodsReceipts\Application\Actions\PostGoodsReceiptAction;
 use Modules\Purchasing\GoodsReceipts\Application\Actions\UpdateGoodsReceiptAction;
 use Modules\Purchasing\GoodsReceipts\Application\DTO\GoodsReceiptDTO;
+use Modules\Purchasing\GoodsReceipts\Presentation\Http\Requests\ConfirmReceiptQuantitiesRequest;
 use Modules\Purchasing\GoodsReceipts\Presentation\Http\Requests\StoreGoodsReceiptRequest;
 use Modules\Purchasing\GoodsReceipts\Presentation\Http\Requests\UpdateGoodsReceiptRequest;
 use Modules\Purchasing\GoodsReceipts\Presentation\Http\Resources\GoodsReceiptResource;
@@ -96,6 +98,22 @@ final class GoodsReceiptController extends Controller
         $result = $action->execute($goodsReceipt);
 
         return $this->deleted($result->message() ?? 'Goods receipt deleted successfully.');
+    }
+
+    /**
+     * TASK-...-014 — record the warehouse's actual accepted quantity against an
+     * invoice-first receipt's still-Draft lines. Never touches inventory (Post does that,
+     * unchanged) and never reachable for PO-/Purchase-Material-anchored receipts (§ scope
+     * note on the action itself).
+     */
+    public function confirmQuantities(
+        ConfirmReceiptQuantitiesRequest $request,
+        string $goodsReceipt,
+        ConfirmReceiptQuantitiesAction $action,
+    ): JsonResponse {
+        $result = $action->execute($goodsReceipt, $request->validated('lines'));
+
+        return $this->updated(new GoodsReceiptResource($result->data()), $result->message());
     }
 
     public function post(string $goodsReceipt, PostGoodsReceiptAction $postAction, SyncStockAction $syncAction): JsonResponse

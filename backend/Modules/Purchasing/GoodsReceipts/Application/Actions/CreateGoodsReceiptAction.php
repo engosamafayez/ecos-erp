@@ -41,11 +41,18 @@ final class CreateGoodsReceiptAction extends BaseAction
         // (purchase-material) receipt — never both. The two branches share everything
         // downstream: the same repository, the same posting action, the same certified
         // inventory path. Only the source of ordered quantity, price and supplier differs.
-        $isPurchaseMaterialAnchored = $this->isPurchaseMaterialAnchored($dto);
+        //
+        // TASK-...-014: a THIRD, equally exclusive anchor — a Supplier Invoice line,
+        // auto-creating the receipt work item the invoice-first flow needs. Its ordered
+        // quantity/price come from the invoice line itself (no PO, no Purchase); its
+        // company comes from the receiving warehouse, exactly like the other two
+        // branches' own fallback.
+        $isInvoiceAnchored = $this->isInvoiceAnchored($dto);
+        $isPurchaseMaterialAnchored = ! $isInvoiceAnchored && $this->isPurchaseMaterialAnchored($dto);
 
         $po = null;
 
-        if (! $isPurchaseMaterialAnchored) {
+        if (! $isPurchaseMaterialAnchored && ! $isInvoiceAnchored) {
             $po = PurchaseOrder::query()->find($dto->purchase_order_id);
 
             if (! $po instanceof PurchaseOrder) {
@@ -91,9 +98,13 @@ final class CreateGoodsReceiptAction extends BaseAction
             // own backfill migration defines it, falling back to the receiving warehouse.
             // Purchase-anchored receipts have no PO, so ownership comes from the Purchase
             // itself, falling back to the receiving warehouse exactly as the PO branch does.
-            'company_id' => $isPurchaseMaterialAnchored
-                ? ($this->purchaseMaterialCompanyId($pmLines) ?? $this->warehouseCompanyId($dto->warehouse_id))
-                : ($po?->company_id ?? $this->warehouseCompanyId($dto->warehouse_id)),
+            // Invoice-anchored receipts have neither — the receiving warehouse (the SAME
+            // warehouse the invoice itself names) is the only, and always-correct, source.
+            'company_id' => match (true) {
+                $isInvoiceAnchored => $this->warehouseCompanyId($dto->warehouse_id),
+                $isPurchaseMaterialAnchored => $this->purchaseMaterialCompanyId($pmLines) ?? $this->warehouseCompanyId($dto->warehouse_id),
+                default => $po?->company_id ?? $this->warehouseCompanyId($dto->warehouse_id),
+            },
             'receipt_date' => $dto->receipt_date,
             'status' => GoodsReceiptStatus::Draft->value,
             'notes' => $dto->notes,
@@ -142,6 +153,7 @@ final class CreateGoodsReceiptAction extends BaseAction
             return [
                 'purchase_order_line_id' => $line->purchase_order_line_id,
                 'purchase_material_line_id' => $line->purchase_material_line_id,
+                'supplier_invoice_line_id' => $line->supplier_invoice_line_id,
                 'product_id' => $line->product_id,
                 'uom_id_snapshot' => $unit?->id,
                 'uom_name_snapshot' => $unit?->name,
@@ -167,7 +179,9 @@ final class CreateGoodsReceiptAction extends BaseAction
      *
      * Mixing the two anchors on one receipt is refused rather than silently resolved: a
      * receipt whose lines came from two different ordering documents has no single
-     * supplier, no single company and no coherent ordered quantity.
+     * supplier, no single company and no coherent ordered quantity. Only called once
+     * {@see isInvoiceAnchored()} has already confirmed no line names a Supplier Invoice,
+     * so this keeps its original, unmodified two-way check.
      */
     private function isPurchaseMaterialAnchored(GoodsReceiptDTO $dto): bool
     {
@@ -188,6 +202,34 @@ final class CreateGoodsReceiptAction extends BaseAction
         }
 
         return $withPm > 0;
+    }
+
+    /**
+     * TASK-...-014 — true when this receipt is raised against Supplier Invoice lines
+     * (the invoice-first flow's auto-created receipt). Checked FIRST, ahead of
+     * {@see isPurchaseMaterialAnchored()}, so a receipt mixing an invoice anchor with
+     * either legacy anchor is refused here rather than slipping past the older method's
+     * own two-way check.
+     */
+    private function isInvoiceAnchored(GoodsReceiptDTO $dto): bool
+    {
+        $withInvoice = 0;
+        $withOther = 0;
+
+        foreach ($dto->lines as $line) {
+            if ($line->supplier_invoice_line_id !== null) {
+                $withInvoice++;
+            }
+            if ($line->purchase_order_line_id !== null || $line->purchase_material_line_id !== null) {
+                $withOther++;
+            }
+        }
+
+        if ($withInvoice > 0 && $withOther > 0) {
+            throw PurchaseMaterialReceivingException::mixedAnchors();
+        }
+
+        return $withInvoice > 0;
     }
 
     /**

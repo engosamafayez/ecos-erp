@@ -30,6 +30,7 @@ use Modules\Purchasing\PurchaseMaterials\Domain\Services\PurchaseMaterialReceivi
 use Modules\Purchasing\PurchaseOrders\Domain\Enums\PurchaseOrderStatus;
 use Modules\Purchasing\PurchaseOrders\Domain\Exceptions\InvalidPurchaseOrderStatusException;
 use Modules\Purchasing\PurchaseOrders\Domain\Models\PurchaseOrderLine;
+use Modules\Purchasing\SupplierInvoices\Domain\Models\SupplierInvoiceLine;
 
 /**
  * Posts a Goods Receipt, triggering inventory updates via ReceiveStockAction.
@@ -195,6 +196,43 @@ final class PostGoodsReceiptAction extends BaseAction
             foreach ($activeLines as $line) {
                 /** @var GoodsReceiptLine $line */
                 $netQty = $line->effectiveReceivedQty();
+
+                // TASK-...-014 — the invoice-first branch. Same rule as the other two:
+                // cumulative received may never exceed the ordered quantity, compared here
+                // against the invoice line's OWN declared quantity (there is no PO/Purchase
+                // line to compare against). Cumulative received is derived by summing every
+                // OTHER posted receipt line naming this same invoice line — never a stored
+                // counter — exactly mirroring the Purchase-Material branch immediately below,
+                // so a second, later receipt against the same invoice line (a follow-up
+                // partial delivery) still aggregates correctly instead of double-counting.
+                if ($line->supplier_invoice_line_id !== null) {
+                    $invoiceLine = SupplierInvoiceLine::query()
+                        ->lockForUpdate()
+                        ->find($line->supplier_invoice_line_id);
+
+                    if ($invoiceLine === null) {
+                        throw new GoodsReceiptNotFoundException((string) $line->supplier_invoice_line_id);
+                    }
+
+                    $invoicedQty = (float) $invoiceLine->quantity;
+                    $alreadyReceived = (float) GoodsReceiptLine::query()
+                        ->join('goods_receipts as gr', 'gr.id', '=', 'goods_receipt_lines.goods_receipt_id')
+                        ->where('goods_receipt_lines.supplier_invoice_line_id', $invoiceLine->id)
+                        ->where('goods_receipt_lines.id', '!=', $line->id)
+                        ->where('gr.status', GoodsReceiptStatus::Posted->value)
+                        ->sum('goods_receipt_lines.net_received_quantity');
+
+                    if (round($alreadyReceived + $netQty, 4) > round($invoicedQty, 4)) {
+                        throw new OverReceiptException(
+                            $invoiceLine->supplierInvoice?->invoice_number ?? (string) $invoiceLine->supplier_invoice_id,
+                            $invoicedQty,
+                            $alreadyReceived,
+                            $netQty,
+                        );
+                    }
+
+                    continue;
+                }
 
                 if ($line->purchase_material_line_id !== null) {
                     $pmLine = PurchaseMaterialLine::query()
