@@ -199,6 +199,23 @@ export const distributionWorkspaceService = {
   },
 
   /**
+   * TASK-ECOS-SHIPPING-OS-REDESIGN-003 §6 — the same per-Group Trip data
+   * `getGroupTrips` returns (vehicle/driver/status), for every Group in the
+   * window in one call. Built for Dispatch & Execution's Assignment tab,
+   * which needs every Group's assignment state at once rather than one
+   * request per Group. Keyed by slot_id, one real GroupTrip[] per Group —
+   * never flattened to a single vehicle/driver, since a Group can own more
+   * than one Trip (capacity-forced split).
+   */
+  async getSlotsTransportSummary(windowId: string): Promise<Record<string, GroupTrip[]>> {
+    const { data } = await apiClient.get<{ data: Record<string, GroupTrip[]> }>(
+      `${BASE}/windows/${windowId}/slots/transport-summary`,
+    );
+
+    return data.data;
+  },
+
+  /**
    * Finalize the Group into its Trip(s).
    *
    * IDEMPOTENT: a second call returns the Trips the first produced rather than

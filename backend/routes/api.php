@@ -2094,6 +2094,13 @@ Route::middleware('auth:sanctum')->prefix('logistics/distribution')->group(funct
         ->middleware('permission:logistics.distribution.view');
     Route::get('/windows/{window}/slots', [DistributionWindowController::class, 'slots'])
         ->middleware('permission:logistics.distribution.view');
+    // TASK-ECOS-SHIPPING-OS-REDESIGN-003 §6 — bulk per-Group vehicle/driver/trip-
+    // state for the Dispatch & Execution Assignment tab. Registered before any
+    // `{slot}`-wildcard route at the same depth is irrelevant here (none exist —
+    // every slots/{slot}/... route below has a further segment), but kept next to
+    // its sibling window-level reads (orders/products/overflows) for readability.
+    Route::get('/windows/{window}/slots/transport-summary', [DistributionWindowController::class, 'slotsTransportSummary'])
+        ->middleware('permission:logistics.distribution.view');
     Route::get('/windows/{window}/orders', [DistributionWindowController::class, 'orders'])
         ->middleware('permission:logistics.distribution.view');
     Route::get('/windows/{window}/products', [DistributionWindowController::class, 'products'])

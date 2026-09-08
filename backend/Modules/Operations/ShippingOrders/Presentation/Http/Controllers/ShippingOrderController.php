@@ -146,6 +146,16 @@ final class ShippingOrderController extends Controller
                     ->where('driver_id', $driverId);
             });
         }
+
+        // TASK-ECOS-SHIPPING-OS-REDESIGN-003 §15 — precise cross-surface deep links
+        // (Dispatch & Execution's Active Trips -> "this trip's shipping orders")
+        // need an exact-Trip filter, not the closest existing proxy (driver_id, which
+        // would show that driver's OTHER trips' orders too). `trip.id` is already the
+        // joined alias every other trip-derived filter above uses.
+        $tripId = $request->query('trip_id');
+        if (is_string($tripId) && $tripId !== '') {
+            $query->where('trip.id', $tripId);
+        }
     }
 
     /** §26 — Order Number, Customer Name/Number, Driver Name/Number. */

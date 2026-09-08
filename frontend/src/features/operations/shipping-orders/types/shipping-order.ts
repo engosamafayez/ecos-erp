@@ -34,6 +34,14 @@ export type ShippingOrder = {
   shipping_classification: ShippingOrderClassification | null;
   shipping_company: { type: 'internal' | 'external'; name: string | null };
   driver: { name: string; code: string } | null;
+  /**
+   * TASK-ECOS-SHIPPING-OS-REDESIGN-003 §12 — concise execution context. Null
+   * until this order's DeliveryStop has a real Trip (the LEFT JOIN in
+   * ShippingOrderReadModel — see ShippingOrderResource::resolveTrip()), which
+   * can be true even for a row this page shows (population only requires a
+   * DeliveryStop, not yet a Trip).
+   */
+  trip: { id: string; number: string; stop_sequence: number; stop_total: number } | null;
   address: {
     shipping_address: string | null;
     building: string | null;
@@ -61,6 +69,12 @@ export type ShippingOrdersQuery = {
   driver_id?: string;
   payment_status?: ShippingOrderPaymentStatus;
   search?: string;
+  /**
+   * TASK-ECOS-SHIPPING-OS-REDESIGN-003 §15 — precise cross-surface deep link
+   * ("this exact Trip's shipping orders"), not exposed as a visible filter
+   * control (no raw-ID picker in the UI) — set only via a deep link's `?trip_id=`.
+   */
+  trip_id?: string;
 };
 
 export type ShippingOrdersResponse = {

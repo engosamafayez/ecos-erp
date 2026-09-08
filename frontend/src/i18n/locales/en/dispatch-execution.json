@@ -28,8 +28,15 @@
     }
   },
   "assignment": {
-    "title": "Vehicle/driver assignment is a per-Group action",
-    "explain": "The Groups list above has no vehicle or driver field to filter on — that assignment is made and shown one Group at a time in the Distribution Workspace. Open it to see which Groups still need a vehicle and driver."
+    "description": "Vehicle and driver assignment per Group, most unassigned first. Assigning is done in the Distribution Workspace — this view is real-time visibility only.",
+    "loadError": "Assignment status could not be loaded.",
+    "noTripYet": "No Trip yet",
+    "needsAssignment": "Needs assignment",
+    "assigned": "Assigned",
+    "columns": {
+      "tripStatus": "Trip Status",
+      "blocker": "Status"
+    }
   },
   "loading": {
     "description": "Loading sessions currently in progress, most unresolved first.",
@@ -57,11 +64,17 @@
     "openWorkspace": "Open Trips Workspace",
     "empty": "No trips are on the road right now.",
     "loadError": "Active trips could not be loaded.",
+    "notAvailable": "—",
+    "exceptions": "{{count}} exception",
+    "openTrip": "Open Trip",
+    "viewOrders": "View Orders",
+    "settlementPending": "{{count}} trips awaiting driver settlement",
+    "openSettlement": "Open Settlement",
     "columns": {
       "tripNumber": "Trip",
       "driver": "Driver",
       "vehicle": "Vehicle",
-      "orders": "Orders",
+      "stops": "Stops (done/total)",
       "status": "Status"
     }
   }

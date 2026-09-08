@@ -24,7 +24,18 @@
     "shippingStatus": "حالة الشحن",
     "shippingCompany": "شركة الشحن",
     "driver": "المندوب",
-    "address": "العنوان"
+    "address": "العنوان",
+    "trip": "الرحلة"
+  },
+  "drawer": {
+    "execution": "التنفيذ",
+    "stopPosition": "المحطة {{sequence}} من {{total}}",
+    "openTrip": "فتح الرحلة",
+    "noTrip": "لم يتم تعيينه لرحلة بعد.",
+    "customer": "العميل",
+    "building": "مبنى {{value}}",
+    "floor": "الطابق {{value}}",
+    "apartment": "شقة {{value}}"
   },
   "internalFleet": "أسطول داخلي",
   "viewLocation": "عرض الموقع",

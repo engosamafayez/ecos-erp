@@ -103,7 +103,14 @@ export function LoadingBucketTab({
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">{description}</p>
-        <OpenWorkspaceLink to={ROUTES.loadingOsWorkspace} label={t($ => $.openFullWorkspace)} />
+        {/* TASK-ECOS-SHIPPING-OS-REDESIGN-003 §5 — land on the exact bucket, not
+            the workspace's own default tab. Loading Workspace's tab key for
+            'current_actionable' is the bare 'current' (see its own WorkspaceTab
+            type); every other bucket value is used as-is. */}
+        <OpenWorkspaceLink
+          to={`${ROUTES.loadingOsWorkspace}?tab=${bucket === 'current_actionable' ? 'current' : bucket}`}
+          label={t($ => $.openFullWorkspace)}
+        />
       </div>
 
       {noWindow ? (

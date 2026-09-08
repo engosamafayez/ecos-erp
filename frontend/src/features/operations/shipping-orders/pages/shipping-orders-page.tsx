@@ -13,6 +13,7 @@ import { useOrganizationContext } from '@/features/organization/context/organiza
 import { cn } from '@/lib/utils';
 
 import { createShippingOrderColumns } from '../components/shipping-order-column-defs';
+import { ShippingOrderDetailDrawer } from '../components/shipping-order-detail-drawer';
 import { useShippingOrdersQuery } from '../hooks/use-shipping-orders';
 import type {
   ShippingOrder,
@@ -79,6 +80,14 @@ export function ShippingOrdersPage() {
   const [page, setPage] = useState(1);
   const perPage = 20;
 
+  // TASK-ECOS-SHIPPING-OS-REDESIGN-003 §15 — a precise incoming deep link
+  // ("this exact Trip's shipping orders", e.g. from Dispatch & Execution's
+  // Active Trips). Read-only context, not a visible filter control — no raw
+  // Trip-id picker is added to the toolbar.
+  const tripId = searchParams.get('trip_id') ?? undefined;
+
+  const [selectedOrder, setSelectedOrder] = useState<ShippingOrder | null>(null);
+
   const { data: brandOptions = [] } = useBrandOptions(activeCompanyId ?? null);
   const { data: shippingCompaniesData } = useShippingCompanies({ status: 'active', per_page: 200 });
   const shippingCompanyOptions = shippingCompaniesData?.data.map((c) => ({ value: String(c.id), label: c.name })) ?? [];
@@ -96,6 +105,7 @@ export function ShippingOrdersPage() {
     shipping_company_id: shippingCompanyId || undefined,
     driver_id: driverId || undefined,
     payment_status: paymentStatus || undefined,
+    trip_id: tripId,
   });
 
   const items: ShippingOrder[] = data?.items ?? [];
@@ -203,6 +213,7 @@ export function ShippingOrdersPage() {
         skeletonRows={8}
         emptyState={<EmptyState title={t($ => $.table.empty)} />}
         errorState={<ErrorState />}
+        onRowClick={setSelectedOrder}
         pagination={{
           meta: {
             page: data?.meta.current_page ?? page,
@@ -211,6 +222,14 @@ export function ShippingOrdersPage() {
             lastPage: data?.meta.last_page ?? 1,
           },
           onPageChange: setPage,
+        }}
+      />
+
+      <ShippingOrderDetailDrawer
+        order={selectedOrder}
+        open={selectedOrder !== null}
+        onOpenChange={(open) => {
+          if (!open) setSelectedOrder(null);
         }}
       />
     </div>

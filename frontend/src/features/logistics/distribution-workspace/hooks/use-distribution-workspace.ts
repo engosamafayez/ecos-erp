@@ -41,6 +41,9 @@ const KEYS = {
   // workspace refreshes as one surface, as it always has.
   groupTrips: (windowId: string, slotId: string) =>
     [...KEYS.all, 'group-trips', windowId, slotId] as const,
+  // Same root: bulk per-Group transport data is a projection of the same
+  // window state groupTrips reads one Group at a time.
+  transportSummary: (windowId: string) => [...KEYS.all, 'transport-summary', windowId] as const,
   // Same root once more: assigning a vehicle changes the Group's operational
   // state, its Trip and its remaining capacity together.
   groupFleet: (windowId: string, slotId: string) =>
@@ -165,6 +168,20 @@ export function useGroupTrips(
     queryKey: KEYS.groupTrips(windowId ?? '', slotId ?? ''),
     queryFn: () => distributionWorkspaceService.getGroupTrips(windowId as string, slotId as string),
     enabled: Boolean(windowId) && Boolean(slotId) && enabled,
+  });
+}
+
+/**
+ * TASK-ECOS-SHIPPING-OS-REDESIGN-003 §6 — bulk per-Group vehicle/driver/trip
+ * state for the Dispatch & Execution Assignment tab. See
+ * `getSlotsTransportSummary`'s own docblock for why this is a real, bounded,
+ * single-request read rather than fanning `useGroupTrips` out per Group.
+ */
+export function useSlotsTransportSummary(windowId: string | undefined, enabled = true) {
+  return useQuery({
+    queryKey: KEYS.transportSummary(windowId ?? ''),
+    queryFn: () => distributionWorkspaceService.getSlotsTransportSummary(windowId as string),
+    enabled: Boolean(windowId) && enabled,
   });
 }
 

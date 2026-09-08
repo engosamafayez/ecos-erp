@@ -46,6 +46,22 @@ final class ShippingOrderReadModel
         SQL;
 
     /**
+     * TASK-ECOS-SHIPPING-OS-REDESIGN-003 §12 — "stop position/progress" for the
+     * table's concise execution-context column. Total stops sharing this row's
+     * own Trip — a correlated scalar subquery, same shape/cost as every other
+     * subquery in this class (one extra evaluation per already-bounded page
+     * row, not a second query and not an N+1 per row). NULL (not 0) when the
+     * stop has no trip yet, matching this class's existing convention of never
+     * turning "not applicable" into a fabricated zero.
+     */
+    private const TRIP_STOPS_TOTAL_SQL = <<<'SQL'
+        (CASE WHEN ds.trip_id IS NULL THEN NULL ELSE (
+            SELECT COUNT(*) FROM distribution_delivery_stops dst
+            WHERE dst.trip_id = ds.trip_id
+        ) END)
+        SQL;
+
+    /**
      * The page's "operational day" — the Trip's own execution milestone, never
      * `orders.created_at` (task 002 §27; TASK-...-SOURCE-CLOSURE-003 §20 re-confirms
      * no single canonical "Trip execution date" column exists, so this progressive
@@ -151,13 +167,15 @@ final class ShippingOrderReadModel
             ->selectRaw(
                 'orders.*, '
                 .'ds.id as ds_id, ds.status as ds_status, ds.gps_lat as ds_gps_lat, ds.gps_lng as ds_gps_lng, '
-                .'ds.trip_id as ds_trip_id, '
+                .'ds.trip_id as ds_trip_id, ds.sequence as ds_sequence, '
+                .'trip.id as trip_uuid, trip.trip_number as trip_number, '
                 .'trip.driver_vehicle_assignment_id as trip_driver_vehicle_assignment_id, '
                 .'trip.shipping_company_id as trip_shipping_company_id, '
                 .'trip.type as trip_type, trip.trip_started_at as trip_started_at, '
                 .'('.self::LATEST_ACTION_TYPE_SQL.') as latest_action_type, '
                 .'('.self::LATEST_REASON_SQL.') as latest_reason, '
                 .self::CUSTODY_SQL.' as custody_confirmed, '
+                .'('.self::TRIP_STOPS_TOTAL_SQL.') as trip_stops_total, '
                 .'('.self::classificationSql().') as shipping_classification',
             )
             // TASK-...-SOURCE-CLOSURE-003 §21 — pagination must be deterministic; the

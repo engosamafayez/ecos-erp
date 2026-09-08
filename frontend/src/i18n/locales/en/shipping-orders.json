@@ -24,7 +24,18 @@
     "shippingStatus": "Shipping Status",
     "shippingCompany": "Shipping Company",
     "driver": "Driver",
-    "address": "Address"
+    "address": "Address",
+    "trip": "Trip"
+  },
+  "drawer": {
+    "execution": "Execution",
+    "stopPosition": "Stop {{sequence}} of {{total}}",
+    "openTrip": "Open Trip",
+    "noTrip": "Not yet assigned to a Trip.",
+    "customer": "Customer",
+    "building": "Bldg. {{value}}",
+    "floor": "Floor {{value}}",
+    "apartment": "Apt. {{value}}"
   },
   "internalFleet": "Own Fleet",
   "viewLocation": "View Location",
