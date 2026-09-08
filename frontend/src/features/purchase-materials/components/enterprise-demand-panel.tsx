@@ -4,7 +4,6 @@ import { AlertCircle, AlertTriangle, ArrowUpRight, CheckCircle, Info, Loader2, P
 import { useProductDemandAnalysis } from '../hooks/use-purchase-materials';
 import type {
   BusinessImpact,
-  CoverageIntelligence,
   DemandAnalysisData,
   DemandIntelligence,
   DemandTimelineEvent,
@@ -32,15 +31,6 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-function StatRow({ label, value, highlight = false }: { label: string; value: React.ReactNode; highlight?: boolean }) {
-  return (
-    <div className="flex items-center justify-between py-1 border-b border-border/40 last:border-0">
-      <span className="text-xs text-muted-foreground">{label}</span>
-      <span className={`text-xs font-medium ${highlight ? 'text-foreground' : 'text-muted-foreground'}`}>{value}</span>
-    </div>
-  );
-}
-
 function StatBox({ label, value, highlight = false }: { label: string; value: React.ReactNode; highlight?: boolean }) {
   return (
     <div className={`rounded-md border px-2 py-1.5 text-center ${highlight ? 'bg-background border-primary/30' : 'bg-background'}`}>
@@ -50,24 +40,7 @@ function StatBox({ label, value, highlight = false }: { label: string; value: Re
   );
 }
 
-// ── Risk / Trend indicators ────────────────────────────────────────────────────
-
-function RiskBadge({ risk }: { risk: string }) {
-  const { t } = useTranslation('purchase-materials');
-  const config: Record<string, string> = {
-    critical: 'bg-red-100 text-red-700 border-red-200',
-    high:     'bg-orange-100 text-orange-700 border-orange-200',
-    medium:   'bg-amber-100 text-amber-700 border-amber-200',
-    low:      'bg-emerald-100 text-emerald-700 border-emerald-200',
-    unknown:  'bg-slate-100 text-slate-600 border-slate-200',
-  };
-  const tAny = t as (key: string) => string;
-  return (
-    <span className={`inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium border uppercase tracking-wide ${config[risk] ?? config['unknown']}`}>
-      {tAny(`wizard.step2.demandPanel.risk.${risk}`)}
-    </span>
-  );
-}
+// ── Trend indicator ─────────────────────────────────────────────────────────────
 
 function TrendIndicator({ trend }: { trend: string }) {
   const { t } = useTranslation('purchase-materials');
@@ -98,34 +71,29 @@ function RecommendationCard({ rec }: { rec: ProcurementPanelRecommendation }) {
 }
 
 // ── Section: Business Impact ───────────────────────────────────────────────────
-// Real, query-backed fields only. `open_orders` / `backordered_qty` were removed
-// here — DemandAnalysisService hardcodes both to null pending dedicated tracking
-// tables, so they rendered as a permanent "—" no matter the product.
+// Trimmed to the 3 stat-box figures only (§7 remediation-012-A): Carrying
+// Warehouses / Total Inventory Value / Reserved Qty / Stockout Date were real but
+// not decision-relevant for "how much should I request" and are gone from this
+// wizard. The backend service/columns are untouched — Inventory/Dashboard/
+// Preparation OS still read them.
 
 function BusinessImpactSection({ bi }: { bi: BusinessImpact }) {
   const { t } = useTranslation('purchase-materials');
   return (
     <section>
       <SectionLabel>{t($ => $.wizard.step2.demandPanel.sections.businessImpact)}</SectionLabel>
-      <div className="grid grid-cols-3 gap-1.5 mb-2">
+      <div className="grid grid-cols-3 gap-1.5">
         <StatBox label={t($ => $.wizard.step2.demandPanel.stats.salesLast7d)} value={fmt(bi.sales_last_7d, 0)} />
         <StatBox label={t($ => $.wizard.step2.demandPanel.stats.salesLast30d)} value={fmt(bi.sales_last_30d, 0)} />
         <StatBox label={t($ => $.wizard.step2.demandPanel.stats.revenueLast30d)} value={bi.revenue_last_30d != null ? fmt(bi.revenue_last_30d, 0) : '—'} />
-      </div>
-      <div className="rounded-md border bg-background divide-y">
-        <StatRow label={t($ => $.wizard.step2.demandPanel.stats.carryingWarehouses)} value={bi.warehouses_carrying} highlight />
-        <StatRow label={t($ => $.wizard.step2.demandPanel.stats.totalInventoryValue)} value={bi.total_inventory_value > 0 ? fmt(bi.total_inventory_value, 0) : '—'} highlight />
-        <StatRow label={t($ => $.wizard.step2.demandPanel.stats.reservedQty)} value={fmt(bi.reserved_qty, 0)} />
       </div>
     </section>
   );
 }
 
 // ── Section: Inventory Health ──────────────────────────────────────────────────
-// In Transit / Damaged / Expired / Near Expiry / Quarantine were removed — none of
-// them are backed by a real column or query yet (DemandAnalysisService hardcodes
-// them to 0/null with a "requires ... tracking" comment), so they never showed
-// anything but a permanent "—". Incoming is real and is promoted into the stat grid.
+// Trimmed to On Hand / Reserved / Available + the health bar (§7 remediation-012-A)
+// — Incoming was real but dropped as not decision-relevant enough to keep here.
 
 function InventoryHealthSection({ health }: { health: InventoryHealth }) {
   const { t } = useTranslation('purchase-materials');
@@ -137,11 +105,10 @@ function InventoryHealthSection({ health }: { health: InventoryHealth }) {
   return (
     <section>
       <SectionLabel>{t($ => $.wizard.step2.demandPanel.sections.inventoryHealth)}</SectionLabel>
-      <div className="grid grid-cols-2 gap-1.5 mb-2">
+      <div className="grid grid-cols-3 gap-1.5 mb-2">
         <StatBox label={t($ => $.wizard.step2.demandPanel.stats.onHand)} value={fmt(health.on_hand, 0)} />
         <StatBox label={t($ => $.wizard.step2.demandPanel.stats.reserved)} value={fmt(health.reserved, 0)} />
         <StatBox label={t($ => $.wizard.step2.demandPanel.stats.available)} value={fmt(health.available, 0)} highlight />
-        <StatBox label={t($ => $.wizard.step2.demandPanel.stats.incoming)} value={health.incoming > 0 ? fmt(health.incoming, 0) : '—'} highlight={health.incoming > 0} />
       </div>
       {total > 0 && (
         <div className="flex items-center gap-2">
@@ -158,7 +125,9 @@ function InventoryHealthSection({ health }: { health: InventoryHealth }) {
 }
 
 // ── Section: Demand Intelligence ──────────────────────────────────────────────
-// Every field here is a real aggregate over StockMovement rows — nothing removed.
+// Trimmed to Daily / Weekly / Monthly + trend (§7 remediation-012-A) — 90d Rolling
+// Avg / Peak Consumption / Volatility were real but judged too granular to be
+// decision-relevant for this specific screen.
 
 function DemandIntelligenceSection({ demand }: { demand: DemandIntelligence }) {
   const { t } = useTranslation('purchase-materials');
@@ -168,50 +137,23 @@ function DemandIntelligenceSection({ demand }: { demand: DemandIntelligence }) {
         <SectionLabel>{t($ => $.wizard.step2.demandPanel.sections.demandIntelligence)}</SectionLabel>
         <TrendIndicator trend={demand.trend} />
       </div>
-      <div className="grid grid-cols-3 gap-1.5 mb-2">
+      <div className="grid grid-cols-3 gap-1.5">
         <StatBox label={t($ => $.wizard.step2.demandPanel.stats.daily)} value={fmt(demand.daily_avg, 2)} />
         <StatBox label={t($ => $.wizard.step2.demandPanel.stats.weekly)} value={fmt(demand.weekly_avg, 1)} />
         <StatBox label={t($ => $.wizard.step2.demandPanel.stats.monthly)} value={fmt(demand.monthly_avg, 0)} />
       </div>
-      <div className="rounded-md border bg-background divide-y">
-        <StatRow label={t($ => $.wizard.step2.demandPanel.stats.rolling90dAvg)} value={fmt(demand.rolling_90d_avg, 2)} />
-        <StatRow label={t($ => $.wizard.step2.demandPanel.stats.peakConsumption)} value={fmt(demand.peak_consumption, 2)} />
-        <StatRow label={t($ => $.wizard.step2.demandPanel.stats.volatility)} value={demand.volatility != null ? fmt(demand.volatility, 2) : '—'} />
-      </div>
     </section>
   );
 }
 
-// ── Section: Coverage Intelligence ────────────────────────────────────────────
-// Safety Stock / Min Stock / Max Stock / Reorder Point were removed — hardcoded
-// null pending a stock-level config table (same DemandAnalysisService comment as
-// above). Current Coverage / risk / both dates are real, derived from real
-// on-hand and consumption figures.
-
-function CoverageIntelligenceSection({ coverage }: { coverage: CoverageIntelligence }) {
-  const { t } = useTranslation('purchase-materials');
-  const tAny = t as (key: string, opts?: Record<string, unknown>) => string;
-  return (
-    <section>
-      <SectionLabel>{t($ => $.wizard.step2.demandPanel.sections.coverageIntelligence)}</SectionLabel>
-      <div className="flex items-center justify-between rounded-md border bg-background px-3 py-2 mb-2">
-        <div>
-          <p className="text-[10px] text-muted-foreground">{t($ => $.wizard.step2.demandPanel.stats.currentCoverage)}</p>
-          <p className="font-semibold text-base tabular-nums">
-            {coverage.current_coverage_days != null
-              ? tAny('wizard.step2.demandPanel.stats.days', { count: Math.round(coverage.current_coverage_days * 10) / 10 })
-              : '—'}
-          </p>
-        </div>
-        <RiskBadge risk={coverage.risk} />
-      </div>
-      <div className="rounded-md border bg-background divide-y">
-        <StatRow label={t($ => $.wizard.step2.demandPanel.stats.stockoutDate)} value={fmtDate(coverage.stockout_date)} highlight={coverage.risk === 'critical' || coverage.risk === 'high'} />
-        <StatRow label={t($ => $.wizard.step2.demandPanel.stats.suggestedPurchaseDate)} value={fmtDate(coverage.suggested_purchase_date)} />
-      </div>
-    </section>
-  );
-}
+// Coverage Intelligence section removed entirely (§7 remediation-012-A) — every
+// field it showed (Current Coverage, Stockout Date, Suggested Purchase Date,
+// Safety/Min/Max Stock, Reorder Point) was explicitly flagged for removal from
+// this wizard. Safety/Min/Max Stock and Reorder Point were never real to begin
+// with (DemandAnalysisService hardcodes them null pending a stock-level config
+// table that doesn't exist); Current Coverage/both dates were real but are still
+// gone from this screen per that same instruction. DemandAnalysisService and the
+// CoverageIntelligence type are untouched for other consumers.
 
 // ── Section: Recommendations ──────────────────────────────────────────────────
 
@@ -370,7 +312,6 @@ function FullDemandPanel({ data, productId, showQuickActions }: {
       <BusinessImpactSection bi={data.business_impact} />
       <InventoryHealthSection health={data.inventory_health} />
       <DemandIntelligenceSection demand={data.demand_intelligence} />
-      <CoverageIntelligenceSection coverage={data.coverage_intelligence} />
       <RecommendationsSection recs={data.recommendations} />
       {data.timeline.length > 0 && <TimelineSection events={data.timeline} />}
       {showQuickActions && <QuickActions productId={productId} />}
