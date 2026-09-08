@@ -149,7 +149,11 @@
   },
   "launcher": {
     "ariaLabel": "Open Collaboration",
-    "ariaLabelUnread": "Open Collaboration, {{count}} unread"
+    "ariaLabelUnread": "Open Collaboration, {{count}} unread",
+    "quickChatTitle": "Chat",
+    "openFullChat": "Open Full Chat",
+    "back": "Back to conversations",
+    "openFullChatForThis": "Open Full Chat to do this."
   },
   "tasks": {
     "title": "Tasks",

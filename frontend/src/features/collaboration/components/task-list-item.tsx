@@ -17,8 +17,8 @@ export function TaskListItem({ task, isActive, onSelect }: { task: Task; isActiv
       onClick={onSelect}
       aria-current={isActive ? 'true' : undefined}
       className={cn(
-        'flex w-full flex-col gap-1.5 rounded-md border px-3 py-2.5 text-start transition-colors',
-        isActive ? 'border-primary bg-accent' : 'hover:bg-accent/50',
+        'flex w-full flex-col gap-1.5 rounded-md border bg-card px-3 py-2.5 text-start shadow-sm transition-colors',
+        isActive ? 'border-primary ring-1 ring-primary' : 'hover:bg-accent/50',
       )}
     >
       {task.labels && task.labels.length > 0 ? (

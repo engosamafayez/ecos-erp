@@ -21,8 +21,11 @@ import { ConversationListItem } from './conversation-list-item';
 type Props = {
   activeConversationId: string | null;
   onSelect: (conversation: Conversation) => void;
-  onNewDirect: () => void;
-  onNewGroup: () => void;
+  /** Omit both to hide the add-conversation control entirely (e.g. the Quick Chat
+   *  drawer, which is deliberately minimal — starting a new conversation there would
+   *  need to navigate away, and only the explicit "Open Full Chat" action may do that). */
+  onNewDirect?: () => void;
+  onNewGroup?: () => void;
 };
 
 export function ConversationList({ activeConversationId, onSelect, onNewDirect, onNewGroup }: Props) {
@@ -38,8 +41,8 @@ export function ConversationList({ activeConversationId, onSelect, onNewDirect, 
   }, [conversations, query, currentUserId]);
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2 border-b p-3">
+    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
+      <div className="flex items-center gap-2 border-b border-sidebar-border p-3">
         <div className="relative flex-1">
           <Search className="absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input
@@ -49,23 +52,29 @@ export function ConversationList({ activeConversationId, onSelect, onNewDirect, 
             className="h-8 ps-8 text-sm"
           />
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button size="icon" variant="outline" className="size-8 shrink-0" aria-label={t(($) => $.conversations.newDirect)}>
-              <Plus className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onSelect={onNewDirect} className="gap-2">
-              <MessageSquarePlus className="size-4" />
-              {t(($) => $.conversations.newDirect)}
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={onNewGroup} className="gap-2">
-              <UsersRound className="size-4" />
-              {t(($) => $.conversations.newGroup)}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {onNewDirect || onNewGroup ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="icon" variant="outline" className="size-8 shrink-0" aria-label={t(($) => $.conversations.newDirect)}>
+                <Plus className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {onNewDirect ? (
+                <DropdownMenuItem onSelect={onNewDirect} className="gap-2">
+                  <MessageSquarePlus className="size-4" />
+                  {t(($) => $.conversations.newDirect)}
+                </DropdownMenuItem>
+              ) : null}
+              {onNewGroup ? (
+                <DropdownMenuItem onSelect={onNewGroup} className="gap-2">
+                  <UsersRound className="size-4" />
+                  {t(($) => $.conversations.newGroup)}
+                </DropdownMenuItem>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null}
       </div>
 
       <div className="flex-1 overflow-y-auto p-2">

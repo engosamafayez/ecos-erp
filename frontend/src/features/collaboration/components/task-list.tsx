@@ -18,7 +18,7 @@ export function TaskList({ filters, activeTaskId, onSelect }: Props) {
   const { data: tasks = [], isLoading, isError, refetch } = useTasks(filters);
 
   return (
-    <div className="h-full overflow-y-auto p-3">
+    <div className="h-full overflow-y-auto bg-muted/20 p-3">
       {isLoading ? (
         <LoadingState />
       ) : isError ? (

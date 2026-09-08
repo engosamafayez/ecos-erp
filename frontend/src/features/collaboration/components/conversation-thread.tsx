@@ -155,7 +155,7 @@ export function ConversationThread({ conversation, onOpenInfo, onCreateTaskFromM
         <ConversationSearchPanel conversationId={conversation.id} onClose={() => setSearchOpen(false)} onJumpToMessage={jumpToMessage} />
       ) : null}
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto bg-muted/30 p-4 dark:bg-black/10">
         {isLoading ? (
           <LoadingState />
         ) : messages.length === 0 ? (

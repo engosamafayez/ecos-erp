@@ -126,7 +126,7 @@ export function MessageComposer({ conversationId, participants, replyingTo, onCa
   }
 
   return (
-    <div className="border-t p-3">
+    <div className="border-t bg-background p-3">
       {replyingTo ? (
         <div className="mb-2 flex items-center gap-2 rounded-md bg-muted px-3 py-1.5 text-xs">
           <span className="flex-1 truncate">

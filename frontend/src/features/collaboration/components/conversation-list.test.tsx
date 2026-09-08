@@ -157,4 +157,11 @@ describe('ConversationList', () => {
     fireEvent.click(screen.getByText('conversations.newGroup'));
     expect(onNewGroup).toHaveBeenCalledTimes(1);
   });
+
+  it('hides the add-conversation control entirely when onNewDirect/onNewGroup are both omitted (Quick Chat)', () => {
+    withConversations();
+    render(<ConversationList activeConversationId={null} onSelect={vi.fn()} />);
+    expect(screen.queryByLabelText('conversations.newDirect')).not.toBeInTheDocument();
+    expect(screen.queryByText('conversations.newGroup')).not.toBeInTheDocument();
+  });
 });

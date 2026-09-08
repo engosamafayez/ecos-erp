@@ -149,7 +149,11 @@
   },
   "launcher": {
     "ariaLabel": "فتح التعاون",
-    "ariaLabelUnread": "فتح التعاون، {{count}} غير مقروءة"
+    "ariaLabelUnread": "فتح التعاون، {{count}} غير مقروءة",
+    "quickChatTitle": "الدردشة",
+    "openFullChat": "فتح الدردشة الكاملة",
+    "back": "العودة إلى المحادثات",
+    "openFullChatForThis": "افتح الدردشة الكاملة للقيام بذلك."
   },
   "tasks": {
     "title": "المهام",
