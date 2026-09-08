@@ -280,20 +280,66 @@ class SupplierInvoiceCommercialContractTest extends TestCase
 
     public function test_invoice_validation_creates_no_goods_receipt_and_moves_no_inventory(): void
     {
-        $invoice = $this->createInvoice();
+        // GR-ANCHOR-REMEDIATION-004-R1 — this company defaults to Mode 1 (Goods Receipt is
+        // the inbound authority), so Validate now requires every positive-quantity line to
+        // carry a real, eligible anchor (the exact defect this ticket fixes). The fixture
+        // anchors the line so this test keeps proving its own actual invariant — approval
+        // creates no Goods Receipt and moves no inventory — on an invoice that is genuinely
+        // posting-ready, instead of on one Post would have refused anyway.
+        $po = PurchaseOrder::factory()->approved()->create([
+            'company_id' => $this->company->id,
+            'warehouse_id' => $this->warehouse->id,
+            'supplier_id' => $this->supplier->id,
+        ]);
+        $receipt = GoodsReceipt::factory()->create([
+            'company_id' => $this->company->id,
+            'warehouse_id' => $this->warehouse->id,
+            'purchase_order_id' => $po->id,
+        ]);
+        $receiptLine = GoodsReceiptLine::factory()->create([
+            'goods_receipt_id' => $receipt->id,
+            'product_id' => $this->product->id,
+            'ordered_quantity' => 10,
+            'net_received_quantity' => 10,
+        ]);
+
+        $invoice = $this->createInvoice(lines: [[
+            'product_id' => $this->product->id,
+            'quantity' => 10,
+            'unit_price' => 20,
+            'tax_rate' => 15,
+            'goods_receipt_line_id' => $receiptLine->id,
+        ]]);
 
         $this->actingAs($this->user)->postJson("/api/supplier-invoices/{$invoice->id}/validate")
             ->assertOk()
             ->assertJsonPath('data.status', SupplierInvoiceStatus::Validated->value);
 
         // Approval is a commercial state change only — no physical receipt, no stock movement.
-        $this->assertSame(0, GoodsReceipt::query()->withoutGlobalScopes()->count());
+        // (The one above is the pre-existing PO/receipt fixture the anchor itself needed.)
+        $this->assertSame(1, GoodsReceipt::query()->withoutGlobalScopes()->count());
         $this->assertFalse(
             InventoryItem::query()
                 ->where('warehouse_id', $this->warehouse->id)
                 ->where('product_id', $this->product->id)
                 ->exists(),
         );
+    }
+
+    public function test_validate_rejects_a_mode1_invoice_with_a_line_missing_its_receipt_anchor(): void
+    {
+        // GR-ANCHOR-REMEDIATION-004-R1 §7/B — the actual reported defect: a line with no
+        // anchor must never be declared "ready to post" by Validate, since Post would
+        // immediately refuse it.
+        $invoice = $this->createInvoice();
+
+        $response = $this->actingAs($this->user)
+            ->postJson("/api/supplier-invoices/{$invoice->id}/validate")
+            ->assertStatus(422);
+
+        $this->assertStringContainsString('not ready to post', $response->json('message'));
+        $this->assertStringNotContainsString((string) $invoice->lines()->firstOrFail()->id, $response->json('message'));
+        $this->assertSame(SupplierInvoiceStatus::Draft, $invoice->refresh()->status);
     }
 
     // ── PO → GR → Invoice linkage (§15–§17), read-only ───────────────────────────
@@ -394,5 +440,113 @@ class SupplierInvoiceCommercialContractTest extends TestCase
             'invoice_date' => '2026-08-02',
             'lines' => [['product_id' => $this->product->id, 'quantity' => 2, 'unit_price' => 10]],
         ])->assertForbidden();
+    }
+
+    // ── GR-ANCHOR-REMEDIATION-004-R1 §6/§7 — persistence + revalidation contract ──
+
+    /** @return array{0: SupplierInvoice, 1: GoodsReceiptLine} */
+    private function anchoredInvoice(): array
+    {
+        $po = PurchaseOrder::factory()->approved()->create([
+            'company_id' => $this->company->id,
+            'warehouse_id' => $this->warehouse->id,
+            'supplier_id' => $this->supplier->id,
+        ]);
+        $receipt = GoodsReceipt::factory()->create([
+            'company_id' => $this->company->id,
+            'warehouse_id' => $this->warehouse->id,
+            'purchase_order_id' => $po->id,
+        ]);
+        $receiptLine = GoodsReceiptLine::factory()->create([
+            'goods_receipt_id' => $receipt->id,
+            'product_id' => $this->product->id,
+            'ordered_quantity' => 10,
+            'net_received_quantity' => 10,
+        ]);
+
+        $invoice = $this->createInvoice(lines: [[
+            'product_id' => $this->product->id,
+            'quantity' => 10,
+            'unit_price' => 20,
+            'tax_rate' => 0,
+            'goods_receipt_line_id' => $receiptLine->id,
+        ]]);
+
+        return [$invoice, $receiptLine];
+    }
+
+    public function test_g_editing_an_unrelated_field_does_not_drop_the_receipt_anchor(): void
+    {
+        [$invoice, $receiptLine] = $this->anchoredInvoice();
+
+        // Same line/anchor resent unchanged; only the header ref changes.
+        $this->actingAs($this->user)->putJson("/api/supplier-invoices/{$invoice->id}", [
+            'supplier_id' => $this->supplier->id,
+            'warehouse_id' => $this->warehouse->id,
+            'invoice_date' => '2026-08-01',
+            'supplier_invoice_ref' => 'SUP-REF-EDITED',
+            'lines' => [[
+                'product_id' => $this->product->id,
+                'quantity' => 10,
+                'unit_price' => 20,
+                'tax_rate' => 0,
+                'goods_receipt_line_id' => $receiptLine->id,
+            ]],
+        ])->assertOk();
+
+        $reloaded = $this->actingAs($this->user)->getJson("/api/supplier-invoices/{$invoice->id}")->assertOk();
+
+        $this->assertSame('SUP-REF-EDITED', $reloaded->json('data.supplier_invoice_ref'));
+        $this->assertSame($receiptLine->id, $reloaded->json('data.lines.0.goods_receipt_line_id'));
+    }
+
+    public function test_h_changing_the_line_item_leaves_a_stale_anchor_that_revalidation_catches(): void
+    {
+        [$invoice, $receiptLine] = $this->anchoredInvoice();
+        $otherProduct = Product::factory()->create();
+
+        // The product changes; the anchor from the OLD product is resent unchanged (the UI
+        // failing to clear a now-incompatible picker selection is exactly what this proves
+        // against). Request-level validation only checks the anchor row exists and is
+        // tenant-scoped — never a product/supplier cross-check — so this persists.
+        $this->actingAs($this->user)->putJson("/api/supplier-invoices/{$invoice->id}", [
+            'supplier_id' => $this->supplier->id,
+            'warehouse_id' => $this->warehouse->id,
+            'invoice_date' => '2026-08-01',
+            'lines' => [[
+                'product_id' => $otherProduct->id,
+                'quantity' => 10,
+                'unit_price' => 20,
+                'tax_rate' => 0,
+                'goods_receipt_line_id' => $receiptLine->id,
+            ]],
+        ])->assertOk();
+
+        // It must NOT remain silently valid: the stale anchor is refused the moment the
+        // invoice is (re)validated, never inferred away or ignored.
+        $response = $this->actingAs($this->user)
+            ->postJson("/api/supplier-invoices/{$invoice->id}/validate")
+            ->assertStatus(422);
+
+        $this->assertStringContainsString('different product', $response->json('message'));
+        $this->assertSame(SupplierInvoiceStatus::Draft, $invoice->refresh()->status);
+    }
+
+    public function test_i_a_historical_failed_invoice_is_not_silently_repaired_on_retry(): void
+    {
+        // Simulates the exact aftermath of the reported defect: an invoice that reached
+        // Failed with a line still missing its anchor. Retrying Post must refuse it again,
+        // identically — no inference, no silent backfill, audit trail intact.
+        $invoice = $this->createInvoice();
+        $invoice->update(['status' => SupplierInvoiceStatus::Failed, 'posting_error' => 'prior failure']);
+
+        $response = $this->actingAs($this->user)
+            ->postJson("/api/supplier-invoices/{$invoice->id}/post")
+            ->assertStatus(422);
+
+        $this->assertStringContainsString('no goods receipt anchor', $response->json('message'));
+        $invoice->refresh();
+        $this->assertSame(SupplierInvoiceStatus::Failed, $invoice->status);
+        $this->assertNull($invoice->lines()->firstOrFail()->goods_receipt_line_id, 'An anchor was fabricated on retry.');
     }
 }

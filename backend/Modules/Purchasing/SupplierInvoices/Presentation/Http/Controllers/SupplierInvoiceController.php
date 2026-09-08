@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\Inventory\InventoryItems\Domain\Services\GoodsInwardAuthority;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Purchasing\SupplierInvoices\Application\Services\PostSupplierInvoiceService;
 use Modules\Purchasing\SupplierInvoices\Application\Services\SupplierInvoicePaymentSummary;
@@ -28,6 +29,7 @@ final class SupplierInvoiceController extends Controller
         private readonly PostSupplierInvoiceService $postService,
         private readonly CurrentCompanyService $currentCompany,
         private readonly InvoiceReceiptAnchorService $anchors,
+        private readonly GoodsInwardAuthority $inwardAuthority,
     ) {}
 
     /**
@@ -214,9 +216,56 @@ final class SupplierInvoiceController extends Controller
             return $this->error('Invoice must have at least one line', 422);
         }
 
+        // GR-ANCHOR-REMEDIATION-004-R1 §7 — this UI's own copy already treats "Validated" as
+        // "ready to post" (see the frontend success toast), and PostSupplierInvoiceService
+        // independently refuses any Mode-1 line with no stated receipt anchor. Checking the
+        // SAME thing here — via the same InvoiceReceiptAnchorService::resolve() Post itself
+        // calls, never a re-implemented guard — is what makes "validated, then refused at
+        // Post" impossible. Mode 3 companies never anchor to a receipt at all (see that
+        // service's own Mode-3 payable path), so this is skipped there exactly as Post skips it.
+        $supplierInvoice->loadMissing(['lines.product', 'warehouse']);
+        $companyId = (string) ($supplierInvoice->company_id ?? $supplierInvoice->warehouse?->company_id ?? '');
+
+        if ($this->inwardAuthority->receiptMayPost($companyId)) {
+            $problems = [];
+
+            foreach ($supplierInvoice->lines as $index => $line) {
+                if ((float) $line->quantity <= 0) {
+                    continue;
+                }
+
+                try {
+                    $this->anchors->resolve($supplierInvoice, $line, (string) $supplierInvoice->id);
+                } catch (Throwable $e) {
+                    // §8 — business-readable, never a bare UUID, for the common "nobody picked
+                    // one yet" case. Other guards (wrong supplier/product/quantity) are already
+                    // specific and out of this ticket's scope; their existing message is kept.
+                    $problems[] = $line->goods_receipt_line_id === null
+                        ? sprintf('Line %d (%s) has no goods receipt line selected.', $index + 1, $this->lineLabel($line))
+                        : sprintf('Line %d (%s): %s', $index + 1, $this->lineLabel($line), $e->getMessage());
+                }
+            }
+
+            if ($problems !== []) {
+                return $this->error('Invoice is not ready to post — '.implode(' ', $problems), 422);
+            }
+        }
+
         $supplierInvoice->update(['status' => SupplierInvoiceStatus::Validated]);
 
         return $this->success(new SupplierInvoiceResource($supplierInvoice->fresh()));
+    }
+
+    /** Business-readable line identity for actionable validation errors — never a bare UUID. */
+    private function lineLabel(SupplierInvoiceLine $line): string
+    {
+        $product = $line->product;
+
+        if ($product?->sku) {
+            return $product->sku.' — '.$product->name;
+        }
+
+        return $product?->name ?? $line->description ?? ('line '.$line->id);
     }
 
     public function post(SupplierInvoice $supplierInvoice): JsonResponse
