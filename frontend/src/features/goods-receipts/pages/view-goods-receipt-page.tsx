@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GoodsReceiptHeaderFields } from '@/features/goods-receipts/components/goods-receipt-header-fields';
 import { GoodsReceiptLinesEditor } from '@/features/goods-receipts/components/goods-receipt-lines-editor';
+import { ConfirmReceiptQuantitiesForm } from '@/features/goods-receipts/components/confirm-receipt-quantities-form';
 import { toFormValues } from '@/features/goods-receipts/components/goods-receipt-form-schema';
 import type { GoodsReceiptFormValues } from '@/features/goods-receipts/components/goods-receipt-form-schema';
 import {
@@ -56,7 +57,7 @@ export function ViewGoodsReceiptPage() {
   });
 
   const poLineInfos = (receipt?.lines ?? []).map((l) => ({
-    id: l.purchase_order_line_id,
+    id: l.purchase_order_line_id ?? '',
     productName: l.product?.name ?? '—',
     productSku: l.product?.sku ?? '',
     unitPrice: l.unit_price,
@@ -99,13 +100,18 @@ export function ViewGoodsReceiptPage() {
           actions={
             isDraft ? (
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => navigate(`${ROUTES.goodsReceipts}/${receipt.id}/edit`)}
-                >
-                  <Pencil className="size-4" />
-                  {tCommon($ => $.common.edit)}
-                </Button>
+                {/* TASK-...-014 — the generic Edit form is shaped around a Purchase Order and
+                    cannot represent this receipt's invoice-first anchor at all (it would 422 on
+                    save); ConfirmReceiptQuantitiesForm below is this receipt's own edit path. */}
+                {!receipt.is_invoice_originated && (
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate(`${ROUTES.goodsReceipts}/${receipt.id}/edit`)}
+                  >
+                    <Pencil className="size-4" />
+                    {tCommon($ => $.common.edit)}
+                  </Button>
+                )}
                 <Button variant="outline" onClick={() => setConfirmPost(true)}>
                   <Send className="size-4" />
                   {t($ => $.actions.post)}
@@ -128,6 +134,28 @@ export function ViewGoodsReceiptPage() {
             <GoodsReceiptHeaderFields readOnly />
           </CardContent>
         </Card>
+
+        {/* TASK-...-014 — reverse navigation: Goods Receipt -> Open Supplier Invoice. */}
+        {receipt.supplier_invoice && (
+          <Card>
+            <CardContent className="flex items-center justify-between gap-4 pt-6">
+              <div>
+                <p className="text-muted-foreground text-xs uppercase tracking-wide">
+                  {t($ => $.detail.linkedInvoice.label)}
+                </p>
+                <p className="text-sm font-medium mt-0.5">{receipt.supplier_invoice.invoice_number}</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`${ROUTES.supplierInvoices}?open=${receipt.supplier_invoice!.id}`)}
+              >
+                <ExternalLink className="size-4" />
+                {t($ => $.detail.linkedInvoice.open)}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Invoice attachment shortcut when posted */}
         {receipt.invoice_attachment_url && (
@@ -242,7 +270,11 @@ export function ViewGoodsReceiptPage() {
             <CardTitle>{t($ => $.detail.lineItems)}</CardTitle>
           </CardHeader>
           <CardContent>
-            <GoodsReceiptLinesEditor readOnly poLineInfos={poLineInfos} />
+            {receipt.is_invoice_originated && isDraft ? (
+              <ConfirmReceiptQuantitiesForm receipt={receipt} />
+            ) : (
+              <GoodsReceiptLinesEditor readOnly poLineInfos={poLineInfos} />
+            )}
           </CardContent>
         </Card>
 

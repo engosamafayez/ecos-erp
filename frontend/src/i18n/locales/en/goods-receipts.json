@@ -98,11 +98,26 @@
     "removePhoto": "Remove photo",
     "notesPlaceholder": "Line notes…"
   },
+  "confirmQuantities": {
+    "hint": "Enter the quantities actually received against this supplier invoice. This never changes the original invoiced quantity — only what was accepted into the warehouse.",
+    "expectedQty": "Invoiced Qty",
+    "acceptedQty": "Accepted Qty",
+    "variance": "Variance",
+    "exceedsExpected": "Accepted quantity cannot exceed the invoiced quantity.",
+    "empty": "No lines to receive.",
+    "noPermission": "You do not have permission to record received quantities.",
+    "submit": "Confirm Received Quantities",
+    "success": "Received quantities confirmed."
+  },
   "detail": {
     "title": "Goods Receipt",
     "receiptInfo": "Receipt Information",
     "receiptDetails": "Receipt Details",
     "lineItems": "Lines",
+    "linkedInvoice": {
+      "label": "Source Supplier Invoice",
+      "open": "Open Invoice"
+    },
     "purchaseOrder": "Purchase Order",
     "warehouse": "Warehouse",
     "receiptDate": "Receipt Date",

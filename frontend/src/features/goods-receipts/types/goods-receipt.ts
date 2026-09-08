@@ -18,7 +18,10 @@ export type GoodsReceiptLineProduct = {
 
 export type GoodsReceiptLine = {
   id: string;
-  purchase_order_line_id: string;
+  purchase_order_line_id: string | null;
+  purchase_material_line_id: string | null;
+  /** Set only when this line was auto-created from a Supplier Invoice line (TASK-...-014). */
+  supplier_invoice_line_id: string | null;
   product_id: string;
   product: GoodsReceiptLineProduct | null;
   uom_id_snapshot: string | null;
@@ -53,11 +56,20 @@ export type GoodsReceiptWarehouse = {
   name: string;
 };
 
+/** The Supplier Invoice a receipt was auto-created from (TASK-...-014) — reverse navigation only. */
+export type GoodsReceiptSupplierInvoice = {
+  id: string;
+  invoice_number: string;
+};
+
 export type GoodsReceipt = {
   id: string;
   receipt_number: string;
-  purchase_order_id: string;
+  purchase_order_id: string | null;
   purchase_order: GoodsReceiptPO | null;
+  /** True when at least one line was auto-created from a Supplier Invoice line (TASK-...-014). */
+  is_invoice_originated: boolean;
+  supplier_invoice: GoodsReceiptSupplierInvoice | null;
   warehouse_id: string;
   warehouse: GoodsReceiptWarehouse | null;
   receipt_date: string;
@@ -130,6 +142,12 @@ export type GoodsReceiptPayload = {
   payment_terms_days?: number | null;
   payment_due_date?: string | null;
   lines: GoodsReceiptLinePayload[];
+};
+
+/** One line's accepted quantity, submitted to POST /goods-receipts/{id}/confirm-quantities (TASK-...-014). */
+export type ConfirmReceiptQuantityLine = {
+  line_id: string;
+  accepted_qty: number;
 };
 
 export type GoodsReceiptSortField = 'receipt_number' | 'receipt_date' | 'status' | 'created_at';

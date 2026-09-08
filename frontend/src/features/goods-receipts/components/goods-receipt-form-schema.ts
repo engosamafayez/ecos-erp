@@ -87,7 +87,7 @@ export function toFormValues(receipt?: GoodsReceipt | null): GoodsReceiptFormVal
     payment_due_date: receipt?.payment_due_date ?? '',
     lines:
       receipt?.lines.map((l) => ({
-        purchase_order_line_id: l.purchase_order_line_id,
+        purchase_order_line_id: l.purchase_order_line_id ?? '',
         product_id: l.product_id,
         uom_symbol_snapshot: l.uom_symbol_snapshot ?? null,
         ordered_quantity: l.ordered_quantity,

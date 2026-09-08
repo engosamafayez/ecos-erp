@@ -1,7 +1,11 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { goodsReceiptsService } from '@/features/goods-receipts/services/goods-receipts-service';
-import type { GoodsReceiptPayload, GoodsReceiptsQuery } from '@/features/goods-receipts/types/goods-receipt';
+import type {
+  ConfirmReceiptQuantityLine,
+  GoodsReceiptPayload,
+  GoodsReceiptsQuery,
+} from '@/features/goods-receipts/types/goods-receipt';
 import { useOrganizationContext } from '@/features/organization/context/organization-context';
 
 export const GR_KEY = 'goods-receipts';
@@ -63,6 +67,18 @@ export function usePostGoodsReceipt() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => goodsReceiptsService.post(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['company', companyId, GR_KEY] }),
+  });
+}
+
+/** TASK-...-014 — record actual accepted quantities on an invoice-first Draft receipt. */
+export function useConfirmReceiptQuantities() {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, lines }: { id: string; lines: ConfirmReceiptQuantityLine[] }) =>
+      goodsReceiptsService.confirmQuantities(id, lines),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['company', companyId, GR_KEY] }),
   });
 }

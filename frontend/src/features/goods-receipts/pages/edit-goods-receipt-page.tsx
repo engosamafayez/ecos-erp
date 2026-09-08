@@ -50,7 +50,7 @@ export function EditGoodsReceiptPage() {
   const poLineInfos = useMemo<PoLineInfo[]>(() => {
     if (overridePoLineInfos !== null) return overridePoLineInfos;
     return (receipt?.lines ?? []).map((l) => ({
-      id: l.purchase_order_line_id,
+      id: l.purchase_order_line_id ?? '',
       productName: l.product?.name ?? '—',
       productSku: l.product?.sku ?? '',
       unitPrice: l.unit_price,
