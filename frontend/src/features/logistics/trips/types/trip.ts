@@ -117,6 +117,10 @@ export type Trip = {
 
   trip_orders_count?: number;
   stops_count?: number;
+  /** Stops that have left the two unsettled statuses (pending/in_progress) — i.e. the
+   * driver has attempted them, any outcome. See TripController::index() for the exact
+   * server-side definition (TASK-ECOS-SHIPPING-OS-REDESIGN-002). */
+  stops_completed_count?: number;
   custody_count?: number;
   exceptions_count?: number;
 

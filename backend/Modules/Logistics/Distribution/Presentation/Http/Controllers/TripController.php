@@ -80,7 +80,17 @@ class TripController extends Controller
             // Tenant fix (Part 21). company_id remains an accepted FILTER below, but
             // it can now only narrow within the acting company — never widen beyond it.
             ->where('company_id', $this->companyId())
-            ->withCount(['tripOrders', 'stops', 'custodyItems', 'exceptions'])
+            ->withCount([
+                'tripOrders', 'stops', 'custodyItems', 'exceptions',
+                // TASK-ECOS-SHIPPING-OS-REDESIGN-002 §8/§12 — Control Tower's Active
+                // Execution needs "stops completed / total" without a second query per
+                // trip or a client-side fetch-then-filter. "Completed" here means the
+                // stop has left the two unsettled DeliveryStopStatus values (pending,
+                // in_progress) — i.e. the driver has attempted it, whatever the outcome
+                // (delivered/partial/failed/returned/skipped all count) — a read of the
+                // existing enum's own states, not a new business rule/threshold.
+                'stops as stops_completed_count' => fn ($q) => $q->whereNotIn('status', ['pending', 'in_progress']),
+            ])
             ->with(['shippingCompany', 'driverVehicleAssignment.driver', 'driverVehicleAssignment.vehicle'])
             ->latest('id');
 
@@ -337,7 +347,10 @@ class TripController extends Controller
 
     private function loadTrip(string $id): Trip
     {
-        return Trip::withCount(['tripOrders', 'stops', 'custodyItems', 'exceptions'])
+        return Trip::withCount([
+            'tripOrders', 'stops', 'custodyItems', 'exceptions',
+            'stops as stops_completed_count' => fn ($q) => $q->whereNotIn('status', ['pending', 'in_progress']),
+        ])
             ->with([
                 'shippingCompany',
                 'driverVehicleAssignment.driver',

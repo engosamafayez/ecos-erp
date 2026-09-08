@@ -101,7 +101,14 @@ function ExecutiveTab() {
           </div>
           <div className="space-y-2">
             <StatusBadge status={data.health.overall_status} />
-            {data.is_quiet && (
+            {/* TASK-ECOS-SHIPPING-OS-REDESIGN-002 §16 — `is_quiet` (zero critical
+                alerts/escalations) and `overall_status` (degraded/not_ready can be
+                driven by unrelated causes, e.g. unhealthy pools) are independent
+                fields and can genuinely disagree. Showing "the operation is
+                healthy" next to a Degraded/Not ready badge is exactly the
+                contradictory messaging the task calls out by name — gate the
+                quiet message on the status agreeing with it. */}
+            {data.is_quiet && data.health.overall_status === 'ready' && (
               <p className="text-sm text-emerald-600">
                 The operation is healthy — nothing needs a person right now.
               </p>

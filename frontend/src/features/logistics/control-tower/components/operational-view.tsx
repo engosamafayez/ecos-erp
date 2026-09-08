@@ -10,8 +10,6 @@ import {
   PackageCheck,
   Phone,
   RotateCcw,
-  Route,
-  ShieldAlert,
   Truck,
   UserCheck,
   Wallet,
@@ -23,7 +21,8 @@ import { ROUTES } from '@/router/routes';
 import type { ExceptionSeverity } from '@/features/logistics/operations/types/operations';
 
 import { KpiTileCard, type KpiTileCardProps } from './kpi-tile-card';
-import { NeedsAttentionSection, NEEDS_ATTENTION_SECTION_ID } from './needs-attention-section';
+import { NeedsAttentionSection } from './needs-attention-section';
+import { ActiveExecutionSection } from './active-execution-section';
 import { useControlTowerKpis, type KpiQueryState } from '../hooks/use-control-tower-kpis';
 
 type SeverityFilter = ExceptionSeverity | 'all';
@@ -39,10 +38,16 @@ function tileStatus(kpi: KpiQueryState): KpiTileCardProps['status'] {
 /**
  * Primary "Operational" view — the default Control Tower landing surface.
  *
- * A grid of KPI tiles (real counts where a clean canonical source exists,
- * honest deep-link-only cards where it does not) plus the Needs Attention
- * panel. Every tile navigates to the EXISTING full page that owns the
- * underlying action — Control Tower recreates none of it.
+ * TASK-ECOS-SHIPPING-OS-REDESIGN-002 §5: an explicit operational hierarchy,
+ * Needs Attention FIRST (the task's own "most important section" — §6),
+ * then Ready/Waiting, Active Execution, Failures/Exceptions, and a Returns &
+ * Settlement summary. Every tile/section either shows a real count from an
+ * existing canonical endpoint or an honest deep-link-only card — never a
+ * fabricated number (see `use-control-tower-kpis.ts` for the exact source of
+ * every field). Deep links route through the most PRECISE surface available
+ * — a `?tab=`/`?classification=` on Dispatch & Execution, Returns &
+ * Settlement or Shipping Orders wherever that target supports one (task
+ * §11), not a generic module home.
  */
 export function OperationalView() {
   const { t } = useTranslation('control-tower');
@@ -51,14 +56,7 @@ export function OperationalView() {
 
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>('all');
 
-  function focusNeedsAttention(severity: SeverityFilter) {
-    setSeverityFilter(severity);
-    document
-      .getElementById(NEEDS_ATTENTION_SECTION_ID)
-      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
-  const tiles: KpiTileCardProps[] = [
+  const readyWaitingTiles: KpiTileCardProps[] = [
     {
       label: t(($) => $.kpis.readyForDistribution.label),
       icon: Package,
@@ -68,6 +66,9 @@ export function OperationalView() {
         tileStatus(kpis.readyForDistribution) === 'unavailable'
           ? t(($) => $.kpis.readyForDistribution.noWindowCaption)
           : t(($) => $.kpis.readyForDistribution.hint),
+      // No Dispatch & Execution tab covers pre-Group eligible orders — this
+      // is genuinely Distribution Workspace's own first step (task §11 asks
+      // for the MOST precise surface; here that IS the direct workspace).
       onClick: () => navigate(ROUTES.logisticsDistributionWorkspace),
       testId: 'kpi-ready-for-distribution',
     },
@@ -76,7 +77,7 @@ export function OperationalView() {
       icon: Truck,
       status: 'unavailable',
       caption: t(($) => $.kpis.groupsWaitingVehicle.caption),
-      onClick: () => navigate(ROUTES.logisticsDistributionWorkspace),
+      onClick: () => navigate(`${ROUTES.shippingDispatchExecution}?tab=assignment`),
       testId: 'kpi-groups-waiting-vehicle',
     },
     {
@@ -84,7 +85,7 @@ export function OperationalView() {
       icon: UserCheck,
       status: 'unavailable',
       caption: t(($) => $.kpis.groupsWaitingDriver.caption),
-      onClick: () => navigate(ROUTES.logisticsDistributionWorkspace),
+      onClick: () => navigate(`${ROUTES.shippingDispatchExecution}?tab=assignment`),
       testId: 'kpi-groups-waiting-driver',
     },
     {
@@ -93,7 +94,7 @@ export function OperationalView() {
       status: tileStatus(kpis.loadingInProgress),
       value: kpis.loadingInProgress.value,
       caption: t(($) => $.kpis.loadingInProgress.hint),
-      onClick: () => navigate(ROUTES.loadingOsWorkspace),
+      onClick: () => navigate(`${ROUTES.shippingDispatchExecution}?tab=loading`),
       testId: 'kpi-loading-in-progress',
     },
     {
@@ -102,25 +103,19 @@ export function OperationalView() {
       status: tileStatus(kpis.readyForDriverHandover),
       value: kpis.readyForDriverHandover.value,
       caption: t(($) => $.kpis.readyForHandover.hint),
-      onClick: () => navigate(ROUTES.loadingOsWorkspace),
+      onClick: () => navigate(`${ROUTES.shippingDispatchExecution}?tab=handover`),
       testId: 'kpi-ready-for-handover',
     },
-    {
-      label: t(($) => $.kpis.tripsActive.label),
-      icon: Route,
-      status: tileStatus(kpis.tripsActive),
-      value: kpis.tripsActive.value,
-      caption: t(($) => $.kpis.tripsActive.hint),
-      onClick: () => navigate(ROUTES.logisticsTrips),
-      testId: 'kpi-trips-active',
-    },
+  ];
+
+  const failureTiles: KpiTileCardProps[] = [
     {
       label: t(($) => $.kpis.deliveriesFailedToday.label),
       icon: XCircle,
       status: tileStatus(kpis.deliveriesFailedToday),
       value: kpis.deliveriesFailedToday.value,
       caption: t(($) => $.kpis.deliveriesFailedToday.hint),
-      onClick: () => navigate(ROUTES.shippingOrders),
+      onClick: () => navigate(`${ROUTES.shippingOrders}?classification=cancelled`),
       tone: 'danger',
       testId: 'kpi-deliveries-failed-today',
     },
@@ -130,7 +125,7 @@ export function OperationalView() {
       status: tileStatus(kpis.noAnswer),
       value: kpis.noAnswer.value,
       caption: t(($) => $.kpis.noAnswer.hint),
-      onClick: () => navigate(ROUTES.shippingOrders),
+      onClick: () => navigate(`${ROUTES.shippingOrders}?classification=no_answer`),
       tone: 'warning',
       testId: 'kpi-no-answer',
     },
@@ -140,7 +135,7 @@ export function OperationalView() {
       status: tileStatus(kpis.postponed),
       value: kpis.postponed.value,
       caption: t(($) => $.kpis.postponed.hint),
-      onClick: () => navigate(ROUTES.shippingOrders),
+      onClick: () => navigate(`${ROUTES.shippingOrders}?classification=postponed`),
       tone: 'warning',
       testId: 'kpi-postponed',
     },
@@ -149,16 +144,22 @@ export function OperationalView() {
       icon: RotateCcw,
       status: tileStatus(kpis.retriesRequired),
       value: kpis.retriesRequired.value,
+      // Sum of two classifications (postponed + no_answer) — no single tab
+      // filter represents an OR of both, so this links to the unfiltered
+      // list rather than picking one and silently hiding the other.
       caption: t(($) => $.kpis.retriesRequired.hint),
       onClick: () => navigate(ROUTES.shippingOrders),
       testId: 'kpi-retries-required',
     },
+  ];
+
+  const returnsSettlementTiles: KpiTileCardProps[] = [
     {
       label: t(($) => $.kpis.returnsExpected.label),
       icon: MapPin,
       status: 'unavailable',
       caption: t(($) => $.kpis.returnsExpected.caption),
-      onClick: () => navigate(ROUTES.logisticsTrips),
+      onClick: () => navigate(`${ROUTES.shippingReturnsSettlement}?tab=expected-returns`),
       testId: 'kpi-returns-expected',
     },
     {
@@ -166,7 +167,7 @@ export function OperationalView() {
       icon: Warehouse,
       status: 'unavailable',
       caption: t(($) => $.kpis.returnsAwaitingReceipt.caption),
-      onClick: () => navigate(ROUTES.logisticsTrips),
+      onClick: () => navigate(`${ROUTES.shippingReturnsSettlement}?tab=warehouse-receipt`),
       testId: 'kpi-returns-awaiting-receipt',
     },
     {
@@ -175,7 +176,7 @@ export function OperationalView() {
       status: tileStatus(kpis.driversAwaitingSettlement),
       value: kpis.driversAwaitingSettlement.value,
       caption: t(($) => $.kpis.driversAwaitingSettlement.hint),
-      onClick: () => navigate(ROUTES.logisticsDriverSettlement),
+      onClick: () => navigate(`${ROUTES.shippingReturnsSettlement}?tab=driver-settlement`),
       testId: 'kpi-drivers-awaiting-settlement',
     },
     {
@@ -183,42 +184,66 @@ export function OperationalView() {
       icon: HandCoins,
       status: 'unavailable',
       caption: t(($) => $.kpis.cashHandoverPending.caption),
-      onClick: () => navigate(ROUTES.logisticsTrips),
+      onClick: () => navigate(`${ROUTES.shippingReturnsSettlement}?tab=cash-handover`),
       testId: 'kpi-cash-handover-pending',
-    },
-    {
-      label: t(($) => $.kpis.criticalBlockers.label),
-      icon: ShieldAlert,
-      status: tileStatus(kpis.criticalBlockers),
-      value: kpis.criticalBlockers.value,
-      caption: t(($) => $.kpis.criticalBlockers.hint),
-      onClick: () => focusNeedsAttention('critical'),
-      tone: 'danger',
-      testId: 'kpi-critical-blockers',
     },
   ];
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h2 className="text-lg font-semibold">{t(($) => $.kpis.sectionTitle)}</h2>
-        <div
-          className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-          data-testid="control-tower-kpi-grid"
-        >
-          {tiles.map((tile) => (
-            <KpiTileCard key={tile.testId} {...tile} />
-          ))}
-        </div>
-      </div>
-
+      {/* A — Needs Attention (§6, primary) */}
       <NeedsAttentionSection
         alerts={kpis.alerts.items}
         isLoading={kpis.alerts.isLoading}
         isError={kpis.alerts.isError}
         severityFilter={severityFilter}
         onSeverityFilterChange={setSeverityFilter}
+        health={kpis.health}
+        loadingNeedsReview={kpis.loadingNeedsReview}
       />
+
+      {/* B — Ready / Waiting (§7) */}
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">{t(($) => $.sections.readyWaiting)}</h2>
+        <div
+          className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"
+          data-testid="control-tower-ready-waiting-grid"
+        >
+          {readyWaitingTiles.map((tile) => (
+            <KpiTileCard key={tile.testId} {...tile} />
+          ))}
+        </div>
+      </section>
+
+      {/* C — Active Execution (§8) */}
+      <ActiveExecutionSection tripsActive={kpis.tripsActive} />
+
+      {/* D — Failures / Exceptions (§9) */}
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">{t(($) => $.sections.failuresExceptions)}</h2>
+        <div
+          className="grid grid-cols-2 gap-3 sm:grid-cols-4"
+          data-testid="control-tower-failures-grid"
+        >
+          {failureTiles.map((tile) => (
+            <KpiTileCard key={tile.testId} {...tile} />
+          ))}
+        </div>
+      </section>
+
+      {/* E — Returns & Settlement summary (§10) — summarizes and deep-links only;
+          the dedicated Returns & Settlement workspace owns the real implementation. */}
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">{t(($) => $.sections.returnsSettlement)}</h2>
+        <div
+          className="grid grid-cols-2 gap-3 sm:grid-cols-4"
+          data-testid="control-tower-returns-settlement-grid"
+        >
+          {returnsSettlementTiles.map((tile) => (
+            <KpiTileCard key={tile.testId} {...tile} />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

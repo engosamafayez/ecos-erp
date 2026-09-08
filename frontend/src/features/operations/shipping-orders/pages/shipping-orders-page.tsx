@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import { Search } from 'lucide-react';
 
 import { PageHeader, EmptyState, ErrorState } from '@/components/crud';
@@ -39,7 +40,35 @@ export function ShippingOrdersPage() {
   const { t } = useTranslation('shipping-orders');
   const { activeCompanyId } = useOrganizationContext();
 
-  const [tab, setTab] = useState<Tab>('all');
+  // TASK-ECOS-SHIPPING-OS-REDESIGN-002 §11 — Control Tower's Failures/
+  // Exceptions tiles need a precise deep link straight to a classification
+  // (e.g. `?classification=no_answer`) instead of always landing on 'all'.
+  // Same `?<param>=` pattern already used by the other five workspaces
+  // (TASK-ECOS-SHIPPING-OS-REDESIGN-001), scoped to this page's own semantic
+  // name rather than the generic `tab` those use, since "classification" is
+  // this page's own vocabulary (task §13 — Shipping Orders keeps its own
+  // classification authority; this is that authority's query key, not a
+  // second one).
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get('classification');
+  const isValidTab = (value: string | null): value is Tab =>
+    value === 'all' || (SHIPPING_ORDER_CLASSIFICATIONS as readonly string[]).includes(value ?? '');
+  const [tab, setTabState] = useState<Tab>(isValidTab(requestedTab) ? requestedTab : 'all');
+  function setTab(next: Tab) {
+    setTabState(next);
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (next === 'all') {
+          params.delete('classification');
+        } else {
+          params.set('classification', next);
+        }
+        return params;
+      },
+      { replace: true },
+    );
+  }
   const [search, setSearch] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');

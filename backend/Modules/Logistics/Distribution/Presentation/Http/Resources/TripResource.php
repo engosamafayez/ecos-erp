@@ -116,6 +116,13 @@ class TripResource extends JsonResource
 
             'trip_orders_count' => $this->whenCounted('tripOrders'),
             'stops_count' => $this->whenCounted('stops'),
+            // Not whenCounted('stops_completed_count') — that helper always appends
+            // '_count' to the key you pass it (looks for `{key}_count`), which is correct
+            // for a plain relation name but wrong here: the controller's custom count
+            // alias ('stops as stops_completed_count') already IS the exact attribute
+            // name. A direct property read degrades to null exactly like whenCounted()
+            // does when the count wasn't requested (e.g. show()'s other read paths).
+            'stops_completed_count' => $this->stops_completed_count ?? null,
             'custody_count' => $this->whenCounted('custodyItems'),
             'exceptions_count' => $this->whenCounted('exceptions'),
 

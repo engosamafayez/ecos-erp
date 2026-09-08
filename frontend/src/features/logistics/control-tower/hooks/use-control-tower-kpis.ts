@@ -7,8 +7,9 @@ import { useLoadingSessionsOverview } from '@/features/operations/loading-os/hoo
 import { useTripStats } from '@/features/logistics/trips/hooks/use-trips';
 import { useShippingOrdersQuery } from '@/features/operations/shipping-orders/hooks/use-shipping-orders';
 import { useDriverSettlementBoard } from '@/features/operations/driver-settlement/hooks/use-driver-settlement';
-import { useAlerts } from '@/features/logistics/operations/hooks/use-operations';
+import { useAlerts, useHealthOverview } from '@/features/logistics/operations/hooks/use-operations';
 import type { OperationalAlert } from '@/features/logistics/operations/types/operations';
+import type { LoadingSessionOverviewRow } from '@/features/operations/loading-os/types/loading-os';
 
 /**
  * TASK-ECOS-SHIPPING-OS-REDESIGN-001 — Control Tower data layer.
@@ -138,6 +139,23 @@ export function useControlTowerKpis() {
       shippingCounts !== undefined ? shippingCounts.postponed + shippingCounts.no_answer : null,
   };
 
+  // ── Loading Needs Review ─────────────────────────────────────────────────
+  // TASK-ECOS-SHIPPING-OS-REDESIGN-002 §6. `LoadingWorkspaceBucket.NeedsReview`
+  // is a REAL backend-computed exception bucket (LoadingWorkspaceClassificationService),
+  // not an invented threshold — it fires on missing loading tasks, missing
+  // vehicle custody, or a quantity mismatch (real reason codes, see
+  // LoadingWorkspaceReasonCode). `loadingOverview.counts.needs_review` above
+  // gives the true total; a SEPARATE bucket-filtered call (not a client-side
+  // filter of the mixed/paginated general listing, which could miss rows off
+  // its first page) fetches a bounded, real preview of the actual sessions.
+  const loadingNeedsReviewRows = useLoadingSessionsOverview(
+    activeWarehouseId,
+    'needs_review',
+    1,
+    5,
+  );
+  const needsReviewSessions: LoadingSessionOverviewRow[] = loadingNeedsReviewRows.data?.data ?? [];
+
   // ── Returns Expected / Returns Awaiting Warehouse Receipt — NO COUNT ────
   // Verified: `TripReturn` has no operator-facing list endpoint — only
   // `GET /driver/trips/{tripId}/returns` (driver-scoped). No cross-trip
@@ -160,18 +178,26 @@ export function useControlTowerKpis() {
   // Verified: `TripCashHandover` has no list endpoint, only per-trip
   // show/confirm. Deep-link-only, same honest treatment as Returns.
 
-  // ── Needs Attention / Critical Operational Blockers ─────────────────────
+  // ── Needs Attention list ─────────────────────────────────────────────────
   // The exact `useAlerts` hook backing the (now-redirected) Alert Center's
   // Live tab — GET-based, already severity-ranked server-side, unpaginated
-  // (the full current alert set), so the "critical" count and the rendered
-  // list can never disagree with each other.
+  // (the full current alert set).
   const alertsQuery = useAlerts();
   const alerts: OperationalAlert[] = alertsQuery.data ?? [];
-  const criticalBlockers: KpiQueryState = {
-    isLoading: alertsQuery.isLoading,
-    isError: alertsQuery.isError,
-    value: alertsQuery.data ? alerts.filter((a) => a.severity === 'critical').length : null,
-  };
+
+  // ── Operation health headline ────────────────────────────────────────────
+  // TASK-ECOS-SHIPPING-OS-REDESIGN-002 §6/§12: `critical_alerts` is a real
+  // backend-computed field (HealthOverview.headline, ExceptionSummary
+  // underneath) — reused directly instead of re-deriving "how many alerts are
+  // critical" via a client-side `.filter()` over the alerts list, per §12's
+  // instruction not to perform business classification in React when a
+  // backend authority already computes the same fact. `is_quiet` is the
+  // operations module's own truthful "nothing to do" signal (its docblock:
+  // "A healthy operation shows an operator nothing to do") — reused verbatim
+  // for the Needs Attention empty state rather than inferring "quiet" from
+  // `alerts.length === 0` ourselves. Already-polling canonical behavior
+  // (refetchInterval: 30s, set on the hook itself) — no new polling added.
+  const healthOverview = useHealthOverview();
 
   return {
     readyForDistribution,
@@ -183,11 +209,21 @@ export function useControlTowerKpis() {
     postponed,
     retriesRequired,
     driversAwaitingSettlement,
-    criticalBlockers,
     alerts: {
       items: alerts,
       isLoading: alertsQuery.isLoading,
       isError: alertsQuery.isError,
+    },
+    health: {
+      data: healthOverview.data ?? null,
+      isLoading: healthOverview.isLoading,
+      isError: healthOverview.isError,
+    },
+    loadingNeedsReview: {
+      count: loadingOverview.data?.counts.needs_review ?? null,
+      sessions: needsReviewSessions,
+      isLoading: loadingOverview.isLoading || loadingNeedsReviewRows.isLoading,
+      isError: loadingOverview.isError || loadingNeedsReviewRows.isError,
     },
   };
 }
