@@ -792,8 +792,25 @@ final class DistributionAggregationService
             $q->where('o.status', $filters['order_status']);
         }
 
+        // `orders.payment_status` exists but is never written (confirmed dead in
+        // TASK-ECOS-SHIPPING-AND-DRIVER-APP-USER-REVIEW-REMEDIATION-001) — filtering
+        // on it silently returned zero rows for every value. Payment status is
+        // always DERIVED from deposit_amount vs total (PaymentState::fromAmounts,
+        // the same rule this method already uses for the `payment_state` OUTPUT
+        // field below) — mirrored here as SQL so filtering and display can never
+        // disagree.
         if (($filters['payment_status'] ?? null) !== null) {
-            $q->where('o.payment_status', $filters['payment_status']);
+            $paymentStatus = $filters['payment_status'];
+            if ($paymentStatus === PaymentState::Paid->value) {
+                $q->whereColumn('o.deposit_amount', '>=', 'o.total');
+            } elseif ($paymentStatus === PaymentState::PartiallyPaid->value) {
+                $q->where('o.deposit_amount', '>', 0)
+                    ->whereColumn('o.deposit_amount', '<', 'o.total');
+            } elseif ($paymentStatus === PaymentState::Unpaid->value) {
+                $q->where(function ($sub) {
+                    $sub->whereNull('o.deposit_amount')->orWhere('o.deposit_amount', '<=', 0);
+                });
+            }
         }
 
         // Matched against the stored value as-is. `orders.payment_method` has no
@@ -1055,6 +1072,7 @@ final class DistributionAggregationService
                 'o.order_number',
                 'o.status as order_status',
                 'o.payment_status',
+                'o.deposit_amount',
                 'o.total',
                 'o.created_at as received_at',
                 'o.billing_phone',
@@ -1082,6 +1100,15 @@ final class DistributionAggregationService
                 'zone_name' => $r->zone_name,
                 'order_status' => $r->order_status,
                 'payment_status' => $r->payment_status,
+                // `payment_status` above is the dead column (kept only for output
+                // shape stability); this is the same DERIVED value orders() emits
+                // as `payment_state` — lateOrders() previously exposed no correct
+                // payment signal at all (TASK-ECOS-SHIPPING-AND-DRIVER-APP-USER-
+                // REVIEW-REMEDIATION-001).
+                'payment_state' => PaymentState::fromAmounts(
+                    (float) ($r->deposit_amount ?? 0),
+                    (float) $r->total,
+                )->value,
                 'total' => (float) $r->total,
                 'received_at' => $r->received_at,
                 'cutoff_at' => $cutoff instanceof DateTimeInterface

@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { useDriverStops, useDriverTrips } from '../hooks/use-driver-mobile';
 import { DeliveryStopCard } from '../components/delivery-stop-card';
 import { groupStopsByZone } from '../lib/orders-grouping';
+import { selectCurrentTrip } from '../lib/trip-lifecycle';
 import type { DeliveryStop } from '../types/driver-mobile';
 
 type FilterTab = 'all' | 'pending' | 'delivered' | 'failed';
@@ -47,12 +48,10 @@ export function DriverOrdersPage() {
 
   const { data: trips, isLoading: tripsLoading, isError: tripsError, refetch: refetchTrips } = useDriverTrips();
 
-  // The current delivery shipment: prefer the active trip that already has stops
-  // (delivery materialised), else the most recent active trip.
-  const currentTrip = useMemo(() => {
-    const list = trips ?? [];
-    return list.find((trip) => (trip.stops_count ?? 0) > 0) ?? list[0] ?? null;
-  }, [trips]);
+  // The current delivery shipment — the ONE shared "which trip is current"
+  // rule (trip-lifecycle.ts), so this page can never resolve a different trip
+  // than Home/Loading/the Map/the Shell.
+  const currentTrip = useMemo(() => selectCurrentTrip(trips), [trips]);
 
   const { data: stops, isLoading: stopsLoading, isError: stopsError, refetch: refetchStops } = useDriverStops(currentTrip?.id ?? '');
 

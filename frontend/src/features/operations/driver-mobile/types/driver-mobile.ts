@@ -216,14 +216,15 @@ export const STOP_STATUS_COLORS: Record<DeliveryStopStatus, string> = {
   skipped:     'bg-gray-100 text-gray-500',
 };
 
-export const EXCEPTION_TYPE_LABELS: Record<ExceptionType, string> = {
-  damaged:       'Damaged Item',
-  missing:       'Missing Item',
-  wrong_product: 'Wrong Product',
-  complaint:     'Customer Complaint',
-  packaging:     'Packaging Issue',
-  other:         'Other',
-};
+/** Ordered for display — Select options and the type filter both iterate this, not object-key order. */
+export const EXCEPTION_TYPES: readonly ExceptionType[] = [
+  'damaged',
+  'missing',
+  'wrong_product',
+  'complaint',
+  'packaging',
+  'other',
+];
 
 export const SETTLEMENT_STATUS_LABELS: Record<SettlementStatus, string> = {
   draft:     'Draft',

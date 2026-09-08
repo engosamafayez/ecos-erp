@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ROUTES } from '@/router/routes';
 
-import { BLOCKED_STATES, COMPLETED_STATES, ON_THE_ROAD, UNRESOLVED_LOADING } from '../lib/trip-lifecycle';
+import { BLOCKED_STATES, COMPLETED_STATES, ON_THE_ROAD, selectCurrentTrip, UNRESOLVED_LOADING } from '../lib/trip-lifecycle';
 import {
   buildAttention,
   buildCollectionSummary,
@@ -80,7 +80,7 @@ export function DriverHomePage() {
   const user = useAuthStore((s) => s.user);
 
   const { data: trips, isLoading, isError, isFetching, refetch } = useDriverTrips();
-  const currentTrip = useMemo<DriverTrip | null>(() => (trips && trips.length > 0 ? trips[0] : null), [trips]);
+  const currentTrip = useMemo<DriverTrip | null>(() => selectCurrentTrip(trips), [trips]);
 
   const { data: manifest } = useDriverLoading();
   const { data: stops } = useDriverStops(currentTrip?.id ?? '');

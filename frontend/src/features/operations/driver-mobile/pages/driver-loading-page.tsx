@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ROUTES } from '@/router/routes';
-import { BLOCKED_STATES, hasTripDeparted } from '../lib/trip-lifecycle';
+import { BLOCKED_STATES, hasTripDeparted, selectCurrentTrip } from '../lib/trip-lifecycle';
 import {
   useCompleteShipmentLoading,
   useConfirmReceivedProduct,
@@ -277,7 +277,7 @@ export function DriverLoadingPage() {
   const showSkeleton = noManifest && !isError && (isFetching || isLoading);
   const showError = isError || (noManifest && !showSkeleton);
 
-  const currentTrip = trips?.[0] ?? null;
+  const currentTrip = selectCurrentTrip(trips);
   // "Ready to Start Delivery" reuses the canonical trip departure authority — no new endpoint
   // (TASK-DRIVER-APP-OPERATIONAL-FLOW-VNEXT-001 §16/§18).
   const startTrip = useStartTrip(currentTrip?.id ?? '');

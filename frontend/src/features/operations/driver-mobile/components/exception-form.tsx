@@ -1,8 +1,8 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -10,84 +10,66 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { EXCEPTION_TYPE_LABELS } from '../types/driver-mobile';
+import { EXCEPTION_TYPES } from '../types/driver-mobile';
 import type { ExceptionType } from '../types/driver-mobile';
 
 interface ExceptionFormProps {
-  onSubmit: (payload: { exception_type: ExceptionType; description: string; photos: string[] }) => void;
+  onSubmit: (payload: { exception_type: ExceptionType; description: string }) => void;
   onCancel: () => void;
   isLoading?: boolean;
 }
 
+/**
+ * TASK-ECOS-SHIPPING-AND-DRIVER-APP-USER-REVIEW-REMEDIATION-001: the "Photos (URLs)"
+ * field this form previously had was a client-supplied free-text path — the exact
+ * insecure pattern the canonical POD/payment-proof uploads deliberately moved away
+ * from — and the backend (`DriverRuntimeController::raiseException()`) validates but
+ * never persists `photos` anyway. Dropped rather than wired up as-is; a real photo
+ * capture for exceptions is a separate, secure-upload feature, not a form-field fix.
+ */
 export function ExceptionForm({ onSubmit, onCancel, isLoading }: ExceptionFormProps) {
-  const [exType, setExType]         = useState<ExceptionType>('damaged');
-  const [description, setDesc]      = useState('');
-  const [photos, setPhotos]         = useState<string[]>(['']);
+  const { t } = useTranslation('driver-mobile');
+  const [exType, setExType]     = useState<ExceptionType>('damaged');
+  const [description, setDesc]  = useState('');
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    onSubmit({
-      exception_type: exType,
-      description,
-      photos: photos.filter(Boolean),
-    });
+    onSubmit({ exception_type: exType, description });
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <Label>Exception Type *</Label>
+        <Label>{t(($) => $.exceptionForm.type)}</Label>
         <Select value={exType} onValueChange={(v) => setExType(v as ExceptionType)}>
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {Object.entries(EXCEPTION_TYPE_LABELS).map(([k, v]) => (
-              <SelectItem key={k} value={k}>{v}</SelectItem>
+            {EXCEPTION_TYPES.map((k) => (
+              <SelectItem key={k} value={k}>{t(($) => $.exceptionForm.types[k])}</SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
 
       <div className="space-y-1.5">
-        <Label>Description *</Label>
+        <Label>{t(($) => $.exceptionForm.description)}</Label>
         <Textarea
           value={description}
           onChange={(e) => setDesc(e.target.value)}
-          placeholder="Exception description..."
+          placeholder={t(($) => $.exceptionForm.descriptionPlaceholder)}
           rows={3}
           required
         />
       </div>
 
-      <div className="space-y-2">
-        <Label>Photos (URLs)</Label>
-        {photos.map((photo, idx) => (
-          <Input
-            key={idx}
-            value={photo}
-            onChange={(e) =>
-              setPhotos((prev) => prev.map((p, i) => (i === idx ? e.target.value : p)))
-            }
-            placeholder={`Photo URL ${idx + 1}...`}
-          />
-        ))}
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setPhotos((prev) => [...prev, ''])}
-        >
-          + Add Photo
-        </Button>
-      </div>
-
       <div className="flex gap-2">
         <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
-          Cancel
+          {t(($) => $.exceptionForm.cancel)}
         </Button>
         <Button type="submit" className="flex-1" disabled={isLoading}>
-          {isLoading ? 'Saving...' : 'Report Exception'}
+          {isLoading ? t(($) => $.exceptionForm.saving) : t(($) => $.exceptionForm.submit)}
         </Button>
       </div>
     </form>

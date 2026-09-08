@@ -185,7 +185,14 @@ function DetailsFields({
   disabled?: boolean;
 }) {
   const { t } = useTranslation('logistics');
-  const { data: carriers } = useShippingCompanies({ status: 'active', per_page: 100 });
+  // Only carriers mapped to the operator's company are assignable — offering any
+  // other would fail the driver's fail-closed carrier validation on save (the
+  // same rule the Vehicle form already applies to this identical picker).
+  const { data: carriers } = useShippingCompanies({
+    status: 'active',
+    per_page: 100,
+    assignable_only: true,
+  });
   const set = (k: keyof DriverFormState) => (v: string) => setForm((p) => ({ ...p, [k]: v }));
 
   return (
