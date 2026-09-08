@@ -51,7 +51,12 @@ final class RestoreTaskAction extends BaseAction
                 : null;
 
             if ($list === null || $list->archived_at !== null) {
-                $list = $this->ensureDefaultLists->execute($actor)->first();
+                // EnsureDefaultTaskBoardListsAction deliberately returns
+                // every list, archived included (the board-lists GET endpoint
+                // needs that for the Archive view) — a bare ->first() here
+                // would happily re-home the task onto the very list that was
+                // just confirmed archived above, if it's also lowest-position.
+                $list = $this->ensureDefaultLists->execute($actor)->first(fn (TaskBoardList $l): bool => $l->archived_at === null);
             }
 
             $position = 1 + (int) (InternalTask::query()

@@ -105,7 +105,13 @@ final class CreateTaskAction extends BaseAction
         // company (brief §2 lists are freely renamable, so placement can no
         // longer assume a fixed name<->status mapping the way the one-time
         // backfill migration did).
-        $defaultList = $this->ensureDefaultLists->execute($actor)->first();
+        // Pre-existing latent bug found and fixed while implementing
+        // remediation-010 §5 (Archive): EnsureDefaultTaskBoardListsAction
+        // deliberately returns every list, archived included, so a bare
+        // ->first() here could place a brand-new task straight into an
+        // archived list whenever a company happens to archive its
+        // lowest-position list (e.g. archiving the original "To Do").
+        $defaultList = $this->ensureDefaultLists->execute($actor)->first(fn (TaskBoardList $list): bool => $list->archived_at === null);
 
         $task = DB::transaction(function () use ($actor, $data, $assignee, $teamId, $sourceConversationId, $sourceMessageId, $sourceSnapshot, $defaultList): InternalTask {
             /** @var TaskBoardList|null $list */

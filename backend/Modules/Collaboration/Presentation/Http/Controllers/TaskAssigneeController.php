@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use InvalidArgumentException;
 use Modules\Collaboration\Application\Actions\AddTaskAssigneeAction;
 use Modules\Collaboration\Application\Actions\RemoveTaskAssigneeAction;
 use Modules\Collaboration\Domain\Models\InternalTask;
@@ -29,7 +30,14 @@ final class TaskAssigneeController extends Controller
         $data = $request->validate(['user_id' => ['required', 'integer', 'exists:users,id']]);
         $target = User::query()->findOrFail($data['user_id']);
 
-        $task = $action->execute($request->user(), $task, $target);
+        // The "already the primary assignee" duplicate-guard is a real,
+        // user-triggerable state conflict, not a programming error — surface
+        // it as 422, not an uncaught-exception 500.
+        try {
+            $task = $action->execute($request->user(), $task, $target);
+        } catch (InvalidArgumentException $e) {
+            return $this->error($e->getMessage(), 422);
+        }
 
         return $this->updated(new TaskResource($task->load('additionalAssignees')));
     }

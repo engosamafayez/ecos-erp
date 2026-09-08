@@ -36,6 +36,14 @@ final class CollaborationTaskAssigneeTest extends TestCase
         // Not viewable before being assigned at all.
         $this->actingAsUnprivileged($actor)->getJson("/api/collaboration/tasks/{$taskId}")->assertForbidden();
 
+        // Self-assign mirrors TaskPolicy::manageFollower's self-tier exactly
+        // (§7 — "identical trust tier to manageFollower"): the actor must
+        // already have SOME standing on the task (creator/assignee/follower)
+        // before they can add themselves — a total stranger cannot, by
+        // design, insert themselves into an arbitrary company task. The
+        // creator grants that standing here via follower first.
+        $this->actingAsUnprivileged($creator)->postJson("/api/collaboration/tasks/{$taskId}/followers", ['user_id' => $actor->id])->assertOk();
+
         $this->actingAsUnprivileged($actor)
             ->postJson("/api/collaboration/tasks/{$taskId}/assignees", ['user_id' => $actor->id])
             ->assertOk()
