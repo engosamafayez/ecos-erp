@@ -107,7 +107,9 @@ class PurchaseMaterialResource extends JsonResource
     {
         if ($this->orderingSplitCache === null) {
             $service = app(PurchaseMaterialReceivingService::class);
-            $this->orderingSplitCache = $this->lines->partition(fn ($line) => $service->isFullyOrdered($line));
+            // partition() returns a Collection of the two inner Collections, not a plain array —
+            // ->all() unwraps the outer Collection to match $orderingSplitCache's declared type.
+            $this->orderingSplitCache = $this->lines->partition(fn ($line) => $service->isFullyOrdered($line))->all();
         }
 
         return $this->orderingSplitCache;
