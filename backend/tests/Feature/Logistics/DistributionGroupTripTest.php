@@ -324,6 +324,91 @@ class DistributionGroupTripTest extends TestCase
         self::assertSame([], $rows, 'an unfiltered list must not leak another company\'s trips');
     }
 
+    // ── Transport Summary (TASK-ECOS-SHIPPING-OS-REDESIGN-003 §6) ──────────────
+    // Dispatch & Execution's Assignment tab needs every Group's Trip/vehicle/
+    // driver state at once. These tests protect the bulk endpoint against the
+    // exact failure modes its own docblock calls out: silently dropping a
+    // Group with zero Trips, flattening a capacity-split Group's multiple
+    // Trips into one, and leaking across tenants.
+
+    public function test_transport_summary_returns_every_groups_trips_in_one_call(): void
+    {
+        $a = $this->groupWithOrders('DG-TS1', 2);
+        $this->finalize($a)->assertOk();
+        $b = $this->groupWithOrders('DG-TS2', 3);
+        $this->finalize($b)->assertOk();
+
+        $windowId = $this->windowId();
+        $rows = $this->actingAs($this->userFor())
+            ->getJson(self::BASE."/windows/{$windowId}/slots/transport-summary")
+            ->assertOk()
+            ->json('data');
+
+        self::assertArrayHasKey($a['id'], $rows);
+        self::assertArrayHasKey($b['id'], $rows);
+        self::assertCount(1, $rows[$a['id']]);
+        self::assertCount(1, $rows[$b['id']]);
+        self::assertSame(2, (int) $rows[$a['id']][0]['orders_count']);
+        self::assertSame(3, (int) $rows[$b['id']][0]['orders_count']);
+        // No vehicle/driver assignment happened — Finalize alone must never
+        // imply one (task §9's custody rule starts even later than this).
+        self::assertNull($rows[$a['id']][0]['vehicle']);
+        self::assertNull($rows[$a['id']][0]['driver']);
+    }
+
+    public function test_transport_summary_includes_a_group_with_zero_trips(): void
+    {
+        // Never finalized — a real, common "still planning" Group. Its key must
+        // still be present with an empty list, not silently absent (the
+        // endpoint's own docblock: a missing key would force the frontend to
+        // guess whether that means "no trips" or "the request failed for it").
+        $empty = $this->group($this->warehouseA, 'DG-TS3');
+
+        $windowId = $this->windowId();
+        $rows = $this->actingAs($this->userFor())
+            ->getJson(self::BASE."/windows/{$windowId}/slots/transport-summary")
+            ->assertOk()
+            ->json('data');
+
+        self::assertArrayHasKey($empty['id'], $rows);
+        self::assertSame([], $rows[$empty['id']]);
+    }
+
+    public function test_transport_summary_reflects_a_capacity_split_as_multiple_trips(): void
+    {
+        // Mirrors test_trip_capacity_forces_a_split_and_never_duplicates_an_order
+        // above — the same real split, read through the NEW bulk endpoint this
+        // time, to prove it does not flatten a Group's Trips down to one.
+        $group = $this->groupWithOrders('DG-TS4', 61);
+        $this->finalize($group)->assertOk();
+
+        $windowId = $this->windowId();
+        $rows = $this->actingAs($this->userFor())
+            ->getJson(self::BASE."/windows/{$windowId}/slots/transport-summary")
+            ->assertOk()
+            ->json('data');
+
+        self::assertCount(2, $rows[$group['id']], 'a capacity-forced split must appear as two Trips, not one');
+        self::assertSame(60, (int) $rows[$group['id']][0]['orders_count']);
+        self::assertSame(1, (int) $rows[$group['id']][1]['orders_count']);
+    }
+
+    public function test_transport_summary_is_scoped_to_the_acting_company(): void
+    {
+        $group = $this->groupWithOrders('DG-TS5', 2);
+        $this->finalize($group)->assertOk();
+
+        $windowId = $this->windowId();
+        $outsider = User::factory()->create(['company_id' => Company::factory()->create()->id]);
+
+        // NOT FOUND, never an empty-but-200 body — a foreign window must read as
+        // non-existent, the same contract every sibling window-scoped read uses
+        // (see test_a_foreign_tenant_can_neither_finalize_nor_read_a_group_trip).
+        $this->actingAs($outsider)
+            ->getJson(self::BASE."/windows/{$windowId}/slots/transport-summary")
+            ->assertNotFound();
+    }
+
     // ── Fixtures ──────────────────────────────────────────────────────────────
 
     private function tripBase(): string

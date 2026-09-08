@@ -94,31 +94,28 @@ import { PreparationWorkspaceLayout } from '@/features/operations/components/pre
 import { PosPage } from '@/features/pos/pages/pos-page';
 import { ConfigurationOsPage } from '@/features/admin/configuration/pages/configuration-os-page';
 import { BrandConfigurationPage } from '@/features/admin/configuration/pages/brand-configuration-page';
-import { EgyptGeographyPage } from '@/features/logistics/geography/pages/egypt-geography-page';
-import { DistributionZonesPage } from '@/features/logistics/distribution-zones/pages/distribution-zones-page';
 import { DistributionWorkspacePage } from '@/features/logistics/distribution-workspace/pages/distribution-workspace-page';
 import { DriverSettlementWorkspacePage } from '@/features/operations/driver-settlement/pages/driver-settlement-workspace-page';
 import { DriverSettlementDetailPage } from '@/features/operations/driver-settlement/pages/driver-settlement-detail-page';
 import { TripsWorkspacePage } from '@/features/logistics/trips/pages/trips-workspace-page';
-import { CarrierAccountsPage } from '@/features/logistics/carriers/pages/carrier-accounts-page';
-import { AutomationMonitoringPage } from '@/features/logistics/automation/pages/automation-monitoring-page';
-import { LogisticsIntelligencePage } from '@/features/logistics/intelligence/pages/logistics-intelligence-page';
-import { FuelReviewPage } from '@/features/logistics/fleet/pages/fuel-review-page';
-import { DispatchBoardPage } from '@/features/logistics/dispatch/pages/dispatch-board-page';
-import { ShippingCompaniesPage } from '@/features/logistics/shipping-companies/pages/shipping-companies-page';
-import { DriversPage } from '@/features/logistics/drivers/pages/drivers-page';
-import { VehiclesPage } from '@/features/logistics/vehicles/pages/vehicles-page';
-import { DeliveryPage } from '@/features/logistics/delivery/pages/delivery-page';
-import { FleetDashboardPage } from '@/features/logistics/fleet/pages/fleet-dashboard-page';
 import { ServiceAreasPage } from '@/features/logistics/network/pages/service-areas-page';
-import { DispatchCommandCenterPage } from '@/features/logistics/dispatch/pages/dispatch-command-center-page';
-import { OperationsCenterPage } from '@/features/logistics/operations/pages/operations-center-page';
-import { DispatchExecutionPage } from '@/features/logistics/dispatch/pages/dispatch-execution-page';
-import { OperationalDashboardsPage } from '@/features/logistics/operations/pages/operational-dashboards-page';
-import { AlertCenterPage } from '@/features/logistics/operations/pages/alert-center-page';
 import { ActivityCenterPage } from '@/features/logistics/operations/pages/activity-center-page';
-import { EnterpriseReadinessPage } from '@/features/logistics/operations/pages/enterprise-readiness-page';
-import { EnterpriseWorkspacePage as LogisticsEnterpriseWorkspacePage } from '@/features/logistics/operations/pages/enterprise-workspace-page';
+// Shipping OS Redesign (TASK-ECOS-SHIPPING-OS-REDESIGN-001) — six approved primary
+// workspaces. Nineteen former direct-route imports (Vehicles/Drivers/Shipping Companies/
+// Carrier Accounts/Fuel/Distribution Zones/Egypt Geography/Automation/Fleet Dashboard/
+// Command Center/Operations Center/old Execution/Dashboards/Alert Center/Enterprise
+// Readiness/Enterprise Workspace/Intelligence/Dispatch Board/Delivery) were removed from
+// this file — their routes now redirect (see the route table below) and, where a workspace
+// composes them live, the same page components are imported directly inside that
+// workspace's own feature folder instead of being routed here. No component was deleted.
+// Distribution Board's own direct import (TASK-ECOS-DISTRIBUTION-FINAL-SOURCE-CLOSURE-002,
+// landed separately) is dropped here too: its backend no longer exists and its route
+// below already redirects to the canonical Distribution Workspace.
+import { ControlTowerPage as ShippingControlTowerPage } from '@/features/logistics/control-tower/pages/control-tower-page';
+import { DispatchExecutionPage as ShippingDispatchExecutionPage } from '@/features/logistics/dispatch-execution/pages/dispatch-execution-page';
+import { LiveDriverMapPage as ShippingLiveDriverMapPage } from '@/features/logistics/live-driver-map/pages/live-driver-map-page';
+import { ReturnsSettlementPage as ShippingReturnsSettlementPage } from '@/features/logistics/returns-settlement/pages/returns-settlement-page';
+import { FleetConfigurationPage as ShippingFleetConfigurationPage } from '@/features/logistics/fleet-configuration/pages/fleet-configuration-page';
 import { LoadingDashboardPage } from '@/features/operations/distribution-board/pages/loading-dashboard-page';
 import { LoadingWorkspacePage } from '@/features/operations/distribution-board/pages/loading-workspace-page';
 // Canonical GROUP-grain Loading Execution workspace (Stack B, /api/loading/groups).
@@ -474,39 +471,75 @@ export const router = createBrowserRouter(
             { path: ROUTES.dispatchGate, Component: DispatchGatePage },
             { path: `${ROUTES.dispatchGate}/:tripId`, Component: DispatchGateWorkspacePage },
             // Logistics OS
-            { path: ROUTES.logisticsGeography, Component: EgyptGeographyPage },
-            { path: ROUTES.logisticsDistributionZones, Component: DistributionZonesPage },
+            // Shipping OS Redesign (TASK-ECOS-SHIPPING-OS-REDESIGN-001) — the six approved
+            // primary Shipping workspaces (nav order in module-navigation.ts). Full old→new
+            // reconciliation matrix: E:\ECOS\reports\TASK-ECOS-SHIPPING-OS-REDESIGN-001-REPORT.md
+            { path: ROUTES.shippingControlTower, Component: ShippingControlTowerPage },
+            { path: ROUTES.shippingDispatchExecution, Component: ShippingDispatchExecutionPage },
+            { path: ROUTES.shippingLiveDriverMap, Component: ShippingLiveDriverMapPage },
+            { path: ROUTES.shippingReturnsSettlement, Component: ShippingReturnsSettlementPage },
+            { path: ROUTES.shippingFleetConfiguration, Component: ShippingFleetConfigurationPage },
+            // Fleet & Configuration's tabs render Geography/Zones/Carriers/Automation/Fuel/
+            // Companies/Drivers/Vehicles/Fleet directly (same components, imported inside that
+            // workspace's own feature folder) — old standalone routes redirect, no functionality
+            // lost, no component deleted.
+            { path: ROUTES.logisticsGeography, loader: () => redirect(`${ROUTES.shippingFleetConfiguration}?tab=geography`) },
+            { path: ROUTES.logisticsDistributionZones, loader: () => redirect(`${ROUTES.shippingFleetConfiguration}?tab=zones`) },
             // Distribution Planning = the canonical Distribution Workspace redesign (Group-first:
             // Eligible Orders → Window → Group + Loading Prep → Vehicle/Driver → Review/Finalize),
             // backed by the current canonical DistributionWindowController (/logistics/distribution/*).
+            // Kept live, unredirected: Dispatch & Execution deep-links into it (full multi-step
+            // workspace, not re-embedded as a compact tab — task §4 domain-authority separation).
             { path: ROUTES.logisticsDistributionWorkspace, Component: DistributionWorkspacePage },
             // The old zone-status planning page is retired as the primary workspace; its deep link
             // redirects to the canonical workspace. The DistributionPlanningController + its
             // /logistics/distribution/planning API remain untouched (CTO retirement decision pending).
             { path: ROUTES.logisticsDistributionPlanning, loader: () => redirect(ROUTES.logisticsDistributionWorkspace) },
-            // Driver-Day-Settlement — the enterprise-side settlement workspace + per-assignment detail.
+            // Driver-Day-Settlement — the enterprise-side settlement workspace + per-assignment
+            // detail. Kept live, unredirected: Returns & Settlement deep-links into it.
             { path: ROUTES.logisticsDriverSettlement, Component: DriverSettlementWorkspacePage },
             { path: ROUTES.logisticsDriverSettlementDetail, Component: DriverSettlementDetailPage },
+            // Trips Workspace — previously orphaned (no nav entry anywhere in the app). Now
+            // reachable via Dispatch & Execution's Active Trips tab and Returns & Settlement's
+            // Returning-to-Warehouse/Discrepancies/Cash-Handover tabs. Kept live, unredirected.
             { path: ROUTES.logisticsTrips, Component: TripsWorkspacePage },
-            { path: ROUTES.logisticsCarrierAccounts, Component: CarrierAccountsPage },
-            { path: ROUTES.logisticsAutomation, Component: AutomationMonitoringPage },
-            { path: ROUTES.logisticsIntelligence, Component: LogisticsIntelligencePage },
-            { path: ROUTES.logisticsFuelReview, Component: FuelReviewPage },
-            { path: ROUTES.logisticsDispatchBoard, Component: DispatchBoardPage },
-            { path: ROUTES.logisticsShippingCompanies, Component: ShippingCompaniesPage },
-            { path: ROUTES.logisticsDrivers, Component: DriversPage },
-            { path: ROUTES.logisticsVehicles, Component: VehiclesPage },
-            { path: ROUTES.logisticsDelivery, Component: DeliveryPage },
-            { path: ROUTES.logisticsFleet, Component: FleetDashboardPage },
+            { path: ROUTES.logisticsCarrierAccounts, loader: () => redirect(`${ROUTES.shippingFleetConfiguration}?tab=carriers`) },
+            { path: ROUTES.logisticsAutomation, loader: () => redirect(`${ROUTES.shippingFleetConfiguration}?tab=automation`) },
+            // Intelligence → Control Tower's secondary Executive/Analytics tab (task §7 — must
+            // not dominate the main operational view).
+            { path: ROUTES.logisticsIntelligence, loader: () => redirect(`${ROUTES.shippingControlTower}?tab=analytics`) },
+            { path: ROUTES.logisticsFuelReview, loader: () => redirect(`${ROUTES.shippingFleetConfiguration}?tab=fuel`) },
+            // Dispatch Board → the new unified Dispatch & Execution workspace (task §3).
+            { path: ROUTES.logisticsDispatchBoard, loader: () => redirect(ROUTES.shippingDispatchExecution) },
+            { path: ROUTES.logisticsShippingCompanies, loader: () => redirect(`${ROUTES.shippingFleetConfiguration}?tab=companies`) },
+            { path: ROUTES.logisticsDrivers, loader: () => redirect(`${ROUTES.shippingFleetConfiguration}?tab=drivers`) },
+            { path: ROUTES.logisticsVehicles, loader: () => redirect(`${ROUTES.shippingFleetConfiguration}?tab=vehicles`) },
+            // Delivery & Tracking's own content (out-for-delivery/failed/SLA-breached/returning
+            // exceptions) is superseded by Shipping Orders' classification tabs (the same
+            // assigned/out-for-delivery/delivered/postponed/no-answer/cancelled exception set,
+            // backend-authoritative) plus Control Tower's Needs Attention deep links. Not named
+            // in the task's own consolidation table (§3) — a judgment call made during full
+            // reconciliation ("reconcile ALL current Shipping pages" — §3); page file untouched.
+            { path: ROUTES.logisticsDelivery, loader: () => redirect(ROUTES.shippingControlTower) },
+            { path: ROUTES.logisticsFleet, loader: () => redirect(`${ROUTES.shippingFleetConfiguration}?tab=fleet`) },
             { path: ROUTES.logisticsNetwork, Component: ServiceAreasPage },
-            { path: ROUTES.logisticsDispatch, Component: DispatchCommandCenterPage },
-            { path: ROUTES.logisticsOperations, Component: OperationsCenterPage },
-            { path: ROUTES.logisticsDispatchExecution, Component: DispatchExecutionPage },
-            { path: ROUTES.logisticsOpsDashboards, Component: OperationalDashboardsPage },
-            { path: ROUTES.logisticsOpsAlerts, Component: AlertCenterPage },
+            // Command Center → Control Tower (task §3).
+            { path: ROUTES.logisticsDispatch, loader: () => redirect(ROUTES.shippingControlTower) },
+            // Operations Center → Control Tower (task §3 — reconciles into Control Tower).
+            { path: ROUTES.logisticsOperations, loader: () => redirect(ROUTES.shippingControlTower) },
+            // Execution (old) → the new unified Dispatch & Execution workspace (task §3).
+            { path: ROUTES.logisticsDispatchExecution, loader: () => redirect(ROUTES.shippingDispatchExecution) },
+            // Dashboards / Enterprise Readiness → Control Tower's Executive/Analytics tab.
+            { path: ROUTES.logisticsOpsDashboards, loader: () => redirect(`${ROUTES.shippingControlTower}?tab=analytics`) },
+            // Alert Center → Control Tower's Needs Attention tab (task §3/§6).
+            { path: ROUTES.logisticsOpsAlerts, loader: () => redirect(`${ROUTES.shippingControlTower}?tab=attention`) },
+            // Activity & Audit is deliberately NOT redirected — task §3 makes it a contextual
+            // history/audit surface, not primary navigation. Stays live at its own URL, linked
+            // contextually from Control Tower's Analytics tab.
             { path: ROUTES.logisticsOpsActivity, Component: ActivityCenterPage },
-            { path: ROUTES.logisticsOpsReadiness, Component: EnterpriseReadinessPage },
-            { path: ROUTES.logisticsEnterprise, Component: LogisticsEnterpriseWorkspacePage },
+            { path: ROUTES.logisticsOpsReadiness, loader: () => redirect(`${ROUTES.shippingControlTower}?tab=analytics`) },
+            // Enterprise Workspace → Control Tower's Executive/Analytics tab (task §3/§7).
+            { path: ROUTES.logisticsEnterprise, loader: () => redirect(`${ROUTES.shippingControlTower}?tab=analytics`) },
             // Marketing OS
             { path: ROUTES.marketing, Component: MarketingDashboardPage },
             { path: ROUTES.marketingAssets, Component: MarketingAssetsPage },

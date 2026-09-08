@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 
 import { useNavLabel } from '@/components/layout/use-nav-label';
 import { WorkspaceBreadcrumbs } from '@/components/workspace/breadcrumbs/workspace-breadcrumbs';
@@ -72,7 +73,37 @@ export function LoadingOsWorkspacePage() {
   const [slotId, setSlotId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [assignmentId, setAssignmentId] = useState<string | null>(null);
-  const [tab, setTab] = useState<WorkspaceTab>('current');
+
+  // TASK-ECOS-SHIPPING-OS-REDESIGN-002 §11 — Control Tower and Dispatch &
+  // Execution need a precise deep link straight to a bucket (e.g. Needs
+  // Review) instead of always landing on 'current'. The tab strip's own
+  // click-to-switch behavior is unchanged; this only adds a URL-readable
+  // initial value and keeps the URL in sync so the link is shareable/
+  // bookmarkable, matching the pattern already used by every other
+  // TASK-ECOS-SHIPPING-OS-REDESIGN-001 workspace (`?tab=`).
+  const [searchParams, setSearchParams] = useSearchParams();
+  const WORKSPACE_TABS = ['current', 'waiting_driver_confirmation', 'needs_review', 'completed_history'] as const;
+  function isWorkspaceTab(value: string | null): value is WorkspaceTab {
+    return (WORKSPACE_TABS as readonly string[]).includes(value ?? '');
+  }
+  const [tab, setTabState] = useState<WorkspaceTab>(
+    isWorkspaceTab(searchParams.get('tab')) ? (searchParams.get('tab') as WorkspaceTab) : 'current',
+  );
+  function setTab(next: WorkspaceTab) {
+    setTabState(next);
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (next === 'current') {
+          params.delete('tab');
+        } else {
+          params.set('tab', next);
+        }
+        return params;
+      },
+      { replace: true },
+    );
+  }
   const bucketLabel = useBucketLabel();
 
   // Counts ONLY — page 1 of every bucket, purely to label the tab strip. Each tab's own

@@ -1,0 +1,78 @@
+{
+  "pageTitle": "Returns & Settlement",
+  "pageSubtitle": "Driver returns, warehouse receipt, discrepancies, and settlement — consolidated in one place, with honest links to where each engine's real detail already lives.",
+  "tabs": {
+    "expectedReturns": "Expected Returns",
+    "returningToWarehouse": "Returning to Warehouse",
+    "warehouseReceipt": "Warehouse Receipt",
+    "discrepancies": "Discrepancies",
+    "driverSettlement": "Driver Settlement",
+    "cashHandover": "Cash Handover"
+  },
+  "expectedReturns": {
+    "title": "No aggregate comparison endpoint yet",
+    "description": "Comparing Expected Driver Returns against Physical Warehouse Stock, Current Shortage, and Projected Shortage needs one backend read-model that adds them all up together over TripReturn. That endpoint doesn't exist today — only a driver-scoped read of their own trip's returns does — so this tab won't guess at a shortage number. Every real return is still visible per trip.",
+    "note": "Gap for a future task: a dedicated operator-facing aggregate endpoint over TripReturn (expected vs. confirmed vs. shortage, across trips).",
+    "action": "View Returns per Trip"
+  },
+  "returningToWarehouse": {
+    "heading": "Trips Returning to Warehouse",
+    "headingDescription": "Trips marked Completed — every delivery stop is finished but settlement hasn't started. The backend has no single \"returning\" status, so this is the closest one-status reading; trips already in settlement show up in the Driver Settlement tab instead.",
+    "viewAll": "Open Trips Workspace",
+    "columns": {
+      "trip": "Trip",
+      "driver": "Driver",
+      "vehicle": "Vehicle",
+      "orders": "Orders",
+      "finishedAt": "Finished",
+      "status": "Status"
+    },
+    "empty": {
+      "title": "No trips returning right now",
+      "description": "No trip is currently Completed and awaiting return processing."
+    },
+    "error": {
+      "title": "Couldn't load trips",
+      "description": "The trip list didn't load. Try again, or open the full Trips Workspace."
+    }
+  },
+  "warehouseReceipt": {
+    "title": "Warehouse receipt happens in the Loading Workspace",
+    "description": "Warehouse receipt isn't its own model — it's recorded per vehicle assignment (quantity accepted / damaged, receipt time) inside the reconciliation the Loading Workspace already runs. There's no endpoint that lists receipts across trips, so this tab links straight to where the real numbers are entered and confirmed.",
+    "note": "Gap for a future task: a cross-trip warehouse-receipt list/aggregate endpoint.",
+    "action": "Open Loading Workspace"
+  },
+  "discrepancies": {
+    "title": "Discrepancies live in two places today",
+    "description": "Damaged/short quantities are recorded two ways: reconciliation variance per vehicle assignment (Loading Workspace) and driver-declared return discrepancies per trip (Trips Workspace). Neither exposes a combined, cross-trip list, and merging them here would mean inventing that aggregation ourselves — so both real sources are linked instead.",
+    "note": "Gap for a future task: one cross-trip discrepancy list/endpoint that already unifies both sources server-side.",
+    "primaryAction": "Open Loading Workspace",
+    "secondaryAction": "Open Trips Workspace"
+  },
+  "driverSettlement": {
+    "heading": "Active Driver Settlements",
+    "headingDescription": "Live from the canonical Driver Day Settlement rollup — nothing here is recalculated.",
+    "viewAll": "Open Driver Settlement",
+    "review": "Review",
+    "columns": {
+      "driver": "Driver / Trip",
+      "cashPosition": "Cash Position",
+      "expected": "Expected",
+      "status": "Status"
+    },
+    "empty": {
+      "title": "No active settlements",
+      "description": "No driver currently has an open custody or day settlement."
+    },
+    "error": {
+      "title": "Couldn't load driver settlements",
+      "description": "The settlement board didn't load. Try again, or open the full Driver Settlement workspace."
+    }
+  },
+  "cashHandover": {
+    "title": "Cash handover is confirmed per trip",
+    "description": "Treasury's physical cash handover has no list endpoint — only a per-trip read and a per-trip confirm action exist. Open a trip in the Trips Workspace to see or confirm its cash handover on the Settlement tab.",
+    "note": "Gap for a future task: a cross-trip cash-handover list/aggregate endpoint.",
+    "action": "Open Trips Workspace"
+  }
+}

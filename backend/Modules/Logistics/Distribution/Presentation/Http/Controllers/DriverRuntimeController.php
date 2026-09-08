@@ -25,6 +25,7 @@ use Modules\Logistics\Distribution\Domain\Enums\TripStatus;
 use Modules\Logistics\Distribution\Domain\Exceptions\DistributionException;
 use Modules\Logistics\Distribution\Domain\Models\DeliveryStop;
 use Modules\Logistics\Distribution\Domain\Models\DistributionZone;
+use Modules\Logistics\Distribution\Domain\Models\DriverLocationPing;
 use Modules\Logistics\Distribution\Domain\Models\Trip;
 use Modules\Logistics\Distribution\Domain\Services\DeliveryService;
 use Modules\Logistics\Distribution\Domain\Services\OrderZoneResolver;
@@ -240,19 +241,51 @@ final class DriverRuntimeController extends Controller
     }
 
     /**
-     * GPS breadcrumb. There is no canonical per-trip breadcrumb store in Distribution
-     * (Section §5c of the design), so this accepts and validates the fix but does not
-     * persist it — a real breadcrumb table is a separate contract. 204, no body.
+     * GPS breadcrumb. TASK-ECOS-SHIPPING-OS-REDESIGN-004 §3/§13-§16 — persists a
+     * DriverLocationPing, but ONLY while this trip is inside the canonical
+     * custody+execution boundary (Trip::isTrackable()); driver assignment alone
+     * is not enough. Outside that boundary the fix is still validated (so the
+     * client gets a clean 204, same contract as before this task) but discarded
+     * — a trip that is merely assigned, or already closed, gets no history rows.
+     * Deduplicated against distribution.tracking.min_sample_interval_seconds so
+     * the device's own reporting cadence cannot flood the table (§16) — this is
+     * the ONLY write path for location samples (§15); no second endpoint.
      */
     public function gps(Request $request, string $tripId): JsonResponse
     {
-        $this->ownedTrip($tripId); // ownership + validation only
-        $request->validate([
+        $trip = $this->ownedTrip($tripId);
+        $validated = $request->validate([
             'lat' => ['required', 'numeric', 'between:-90,90'],
             'lng' => ['required', 'numeric', 'between:-180,180'],
             'speed' => ['nullable', 'numeric'],
             'accuracy' => ['nullable', 'numeric'],
         ]);
+
+        if ($trip->isTrackable()) {
+            $minIntervalSeconds = (int) config('distribution.tracking.min_sample_interval_seconds');
+            $now = now();
+
+            $lastPing = DriverLocationPing::query()
+                ->where('trip_id', $trip->id)
+                ->latest('recorded_at')
+                ->first();
+
+            $dueForSample = $lastPing === null
+                || $lastPing->recorded_at->copy()->addSeconds($minIntervalSeconds)->lte($now);
+
+            if ($dueForSample) {
+                DriverLocationPing::create([
+                    'company_id' => $trip->company_id,
+                    'driver_id' => $this->driver()->id,
+                    'trip_id' => $trip->id,
+                    'latitude' => $validated['lat'],
+                    'longitude' => $validated['lng'],
+                    'accuracy_meters' => $validated['accuracy'] ?? null,
+                    'speed_kph' => $validated['speed'] ?? null,
+                    'recorded_at' => $now,
+                ]);
+            }
+        }
 
         return response()->json(null, 204);
     }

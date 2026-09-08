@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, Clock, Package, Plus, Route, Truck } from 'lucide-react';
 
 import { Pagination } from '@/components/crud';
@@ -59,10 +60,49 @@ export function TripsWorkspacePage() {
   const [type, setType] = useState<TripType | ''>('');
   const [page, setPage] = useState(1);
 
-  const [detailId, setDetailId] = useState<string | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
+  // TASK-ECOS-SHIPPING-OS-REDESIGN-003 §15 — Shipping Orders / Dispatch &
+  // Execution need to deep-link straight to one trip's detail, not just the
+  // list. Same `?<param>=` pattern already used elsewhere in this redesign
+  // (Shipping Orders' `?classification=`, Loading Workspace's `?tab=`).
+  // `TripDrawer` already fetches its own detail by id (see its own
+  // implementation), so a URL-supplied id needs no row already loaded in the
+  // current page/filter to open correctly.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlTripId = searchParams.get('tripId');
+  // TASK-ECOS-SHIPPING-OS-REDESIGN-004 §9/§20 — Live Driver Map and Shipping
+  // Orders' Route History links deep-link straight to the drawer's new tab
+  // via `?tripId=&tab=`. Read once at open time, same as `urlTripId`; the
+  // drawer only consumes it as its initial tab (see TripDrawer's own prop).
+  const urlTab = searchParams.get('tab');
+  const [detailId, setDetailIdState] = useState<string | null>(urlTripId);
+  const [detailOpen, setDetailOpenState] = useState(urlTripId !== null);
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Trip | null>(null);
+
+  function setDetailId(id: string | null) {
+    setDetailIdState(id);
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (id === null) {
+          params.delete('tripId');
+        } else {
+          params.set('tripId', id);
+        }
+        // A tab deep-link only applies to the trip it was set for — never
+        // carry it into a different trip opened afterwards (e.g. a plain row
+        // click, which must always start at Overview).
+        params.delete('tab');
+        return params;
+      },
+      { replace: true },
+    );
+  }
+
+  function setDetailOpen(open: boolean) {
+    setDetailOpenState(open);
+    if (!open) setDetailId(null);
+  }
 
   const stats = useTripStats(activeCompanyId ?? undefined);
   const { data, isFetching, isError, refetch } = useTrips({
@@ -256,11 +296,12 @@ export function TripsWorkspacePage() {
       </WorkspacePage>
 
       <TripDrawer
-        key={`${detailId ?? 'none'}-${String(detailOpen)}`}
+        key={`${detailId ?? 'none'}-${String(detailOpen)}-${urlTab ?? 'overview'}`}
         tripId={detailId}
         open={detailOpen}
         onOpenChange={setDetailOpen}
         onEdit={openEdit}
+        initialTab={urlTab ?? undefined}
       />
 
       {/* Remounted per target and per open/close so the form always starts from

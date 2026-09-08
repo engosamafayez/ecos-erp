@@ -1,0 +1,39 @@
+{
+  "pageTitle": "Live Driver Map",
+  "pageSubtitle": "Shows where drivers are while they're out on a trip",
+  "loading": "Loading live positions…",
+  "error": "The live map could not be loaded.",
+  "retry": "Retry",
+  "empty": {
+    "heading": "No trips are trackable right now",
+    "body": "A trip appears here once the driver has confirmed full custody of the load and the trip is on the road."
+  },
+  "search": {
+    "placeholder": "Search driver, vehicle or trip number"
+  },
+  "list": {
+    "title": "Active Trips",
+    "count": "{{count}} on the road"
+  },
+  "freshness": {
+    "fresh": "Live",
+    "stale": "Stale",
+    "unknown": "No location"
+  },
+  "stopProgress": "{{completed}} of {{total}} stops",
+  "hasException": "Exception reported",
+  "detail": {
+    "title": "Trip Detail",
+    "driver": "Driver",
+    "vehicle": "Vehicle",
+    "trip": "Trip",
+    "lastUpdate": "Last Update",
+    "openTrip": "Open Trip",
+    "openInShippingOrders": "Open in Shipping Orders",
+    "routeHistory": "Route History",
+    "close": "Close"
+  },
+  "map": {
+    "fitAll": "Fit all"
+  }
+}

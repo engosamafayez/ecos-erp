@@ -120,6 +120,31 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Driver live tracking — TASK-ECOS-SHIPPING-OS-REDESIGN-004 §6/§16
+    |--------------------------------------------------------------------------
+    |
+    | No prior configured tracking cadence exists anywhere in the platform
+    | (confirmed by audit — DriverRuntimeController::gps() never persisted a
+    | sample before this task, so there was nothing to derive a cadence
+    | from). These are the two small named values that task introduces,
+    | rather than a literal buried in a controller:
+    |
+    |   stale_after_seconds        — a location ping OLDER than this is
+    |                                 shown as Stale, never as "live".
+    |   min_sample_interval_seconds — the write path silently drops a new
+    |                                 ping for the same Trip if the last
+    |                                 stored one is more recent than this —
+    |                                 bounded, controllable sampling (§16),
+    |                                 not persisting every device jitter.
+    |
+    */
+    'tracking' => [
+        'stale_after_seconds' => (int) env('DISTRIBUTION_TRACKING_STALE_AFTER_SECONDS', 180),
+        'min_sample_interval_seconds' => (int) env('DISTRIBUTION_TRACKING_MIN_SAMPLE_INTERVAL_SECONDS', 20),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Redistribution suggestions
     |--------------------------------------------------------------------------
     |

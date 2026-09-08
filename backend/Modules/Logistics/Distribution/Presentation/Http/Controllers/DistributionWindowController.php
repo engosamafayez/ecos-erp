@@ -754,6 +754,62 @@ final class DistributionWindowController extends Controller
     }
 
     /**
+     * GET /windows/{window}/slots/transport-summary
+     *
+     * TASK-ECOS-SHIPPING-OS-REDESIGN-003 §6 — the same per-Group transport data
+     * `groupTrips()` already returns (vehicle/driver/status/orders), for every
+     * Group in the window in ONE query instead of the one-request-per-Group
+     * `groupTrips()` requires. Built for the Dispatch & Execution Assignment
+     * tab, which needs to show every Group's assignment state at once without
+     * fanning out a request per Group.
+     *
+     * Slot scoping is NOT re-derived here — it calls the exact same
+     * `slotSummaries()` the Groups list (`slots()` above) already uses, so the
+     * set of Groups this endpoint answers for can never drift from what the
+     * Groups tab itself shows (same warehouse/wave/closed_at filtering).
+     *
+     * A Group can own more than one Trip (capacity-forced split — see the
+     * migration note on `distribution_trips.virtual_slot_id`: "1 Group ->
+     * 1..N Trips"), so this returns the real list per Group rather than
+     * flattening to a single vehicle/driver — same shape `presentGroupTrips()`
+     * already produces for one Group, just keyed by slot_id here.
+     */
+    public function slotsTransportSummary(Request $request, string $window): JsonResponse
+    {
+        $w = $this->window($request, $window);
+        $companyId = $this->companyId($request);
+        $warehouseId = $this->warehouseId($request);
+
+        $slots = $this->aggregation->slotSummaries(
+            $w->id,
+            $warehouseId,
+            $this->activeWaveId($companyId, $warehouseId),
+            $warehouseId === null ? $this->aggregation->governingPreparationWavesByCompany($companyId) : null,
+        );
+        $slotIds = array_column($slots, 'slot_id');
+
+        $tripsBySlot = Trip::query()
+            ->whereIn('virtual_slot_id', $slotIds)
+            ->with(['driverVehicleAssignment.driver', 'driverVehicleAssignment.vehicle'])
+            ->withCount('tripOrders')
+            ->orderBy('id')
+            ->get()
+            ->groupBy('virtual_slot_id');
+
+        $bySlot = [];
+        foreach ($slotIds as $slotId) {
+            // Present every slot, including ones with zero Trips yet — an absent
+            // key would force the frontend to guess whether "missing" means "no
+            // trips" or "request failed for this one", which it should never have
+            // to do.
+            $slotTrips = $tripsBySlot->get($slotId, collect());
+            $bySlot[(string) $slotId] = $this->presentGroupTrips($slotTrips->all());
+        }
+
+        return response()->json(['data' => $bySlot]);
+    }
+
+    /**
      * GET /windows/{window}/slots/{slot}/reconciliation
      *
      * ┌─ WHY THIS EXISTS ────────────────────────────────────────────────────────┐

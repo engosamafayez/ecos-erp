@@ -51,6 +51,7 @@ final class ShippingOrderResource extends JsonResource
             'shipping_classification' => $classification?->value,
             'shipping_company' => $this->resolveShippingCompany(),
             'driver' => $this->resolveDriver(),
+            'trip' => $this->resolveTrip(),
             'address' => [
                 'shipping_address' => $this->shipping_address,
                 'building' => $this->building,
@@ -134,5 +135,36 @@ final class ShippingOrderResource extends JsonResource
         $code = $this->getAttribute('driver_code');
 
         return $name !== null ? ['name' => $name, 'code' => $code] : null;
+    }
+
+    /**
+     * TASK-ECOS-SHIPPING-OS-REDESIGN-003 §12 — concise execution context ("Trip,
+     * stop position/progress"). `trip_uuid`/`trip_number`/`ds_sequence`/
+     * `trip_stops_total` are all read from the SAME joined query this resource's
+     * other trip-derived fields already use (`ShippingOrderReadModel::baseQuery()`)
+     * — no new join. Null, not a fabricated placeholder, before this order has
+     * reached a real Trip (Architecture-001 §4/§5's own population boundary —
+     * this can only be non-null for a row this page shows at all, since the page's
+     * eligibility already requires a DeliveryStop, but the Trip itself can still be
+     * null this early — see the LEFT JOIN in `joinedQuery()`).
+     *
+     * @return array{id: string, number: string, stop_sequence: int, stop_total: int}|null
+     */
+    private function resolveTrip(): ?array
+    {
+        $id = $this->getAttribute('trip_uuid');
+        $number = $this->getAttribute('trip_number');
+        $stopsTotal = $this->getAttribute('trip_stops_total');
+
+        if ($id === null || $number === null || $stopsTotal === null) {
+            return null;
+        }
+
+        return [
+            'id' => $id,
+            'number' => $number,
+            'stop_sequence' => (int) $this->getAttribute('ds_sequence'),
+            'stop_total' => (int) $stopsTotal,
+        ];
     }
 }

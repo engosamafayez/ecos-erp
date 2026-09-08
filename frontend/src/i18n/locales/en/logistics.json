@@ -2549,6 +2549,34 @@
         "completed": "Completed",
         "cancelled": "Cancelled"
       }
+    },
+    "locationHistory": {
+      "tab": "Route History",
+      "title": "Route History",
+      "subtitle": "Recorded GPS samples for this trip's execution.",
+      "loading": "Loading route history…",
+      "error": "Route history could not be loaded.",
+      "retry": "Retry",
+      "noSamples": "No GPS samples were recorded for this trip.",
+      "noSamplesHint": "Recording only starts once the driver has confirmed full custody and the trip is on the road.",
+      "sampleCount": "{{count}} recorded point(s)",
+      "truncatedNote": "Showing the first {{count}} points — the full history is longer.",
+      "startedAt": "Started",
+      "finishedAt": "Finished",
+      "replay": {
+        "play": "Play",
+        "pause": "Pause",
+        "restart": "Restart",
+        "speed": "Speed"
+      },
+      "stops": {
+        "title": "Stops",
+        "noLocation": "No location"
+      },
+      "exceptions": {
+        "title": "Exceptions on route"
+      },
+      "gapNote": "Gaps in the path reflect real reporting gaps — nothing is invented between recorded points."
     }
   },
   "carriers": {

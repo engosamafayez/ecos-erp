@@ -67,6 +67,23 @@ export function createShippingOrderColumns(t: TFunction<'shipping-orders'>): Dat
       cell: (o) => <ShippingOrderStatusBadge classification={o.shipping_classification} />,
     },
     {
+      // TASK-ECOS-SHIPPING-OS-REDESIGN-003 §12 — concise execution context (Trip +
+      // stop position), from the SAME joined read model every other column already
+      // reads (ShippingOrderResource::resolveTrip()) — not a second data source.
+      // Deliberately terse (one line, no extra chrome): full Trip detail and the
+      // "Open Trip" deep link live in the row drawer, per this section's own "use
+      // row details/drawer for lower-priority information" guidance.
+      key: 'trip',
+      label: t($ => $.columns.trip),
+      defaultVisible: true,
+      cell: (o) => o.trip ? (
+        <span className="text-xs">
+          <span className="font-mono font-medium">{o.trip.number}</span>
+          <span className="text-muted-foreground"> · {o.trip.stop_sequence}/{o.trip.stop_total}</span>
+        </span>
+      ) : <span className="text-xs text-muted-foreground">—</span>,
+    },
+    {
       key: 'shipping_company',
       label: t($ => $.columns.shippingCompany),
       defaultVisible: true,

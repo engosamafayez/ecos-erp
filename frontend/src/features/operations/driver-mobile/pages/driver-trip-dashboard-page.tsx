@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/dialog';
 import { ROUTES } from '@/router/routes';
 import { useDriverTrip, useFinishTrip, useDriverLoading } from '../hooks/use-driver-mobile';
+import { useGpsReporting } from '../hooks/use-gps-reporting';
 import { BLOCKED_STATES, COMPLETED_STATES, ON_THE_ROAD, UNRESOLVED_LOADING } from '../lib/trip-lifecycle';
 
 /**
@@ -57,6 +58,14 @@ export function DriverTripDashboardPage() {
   // Trip.status. (Same read Driver Home consumes, so the two cannot disagree.)
   const { data: manifest } = useDriverLoading();
   const finishMutation = useFinishTrip(tripId);
+
+  // TASK-ECOS-SHIPPING-OS-REDESIGN-004 §15/§23 — reporting is active exactly
+  // while the canonical trip status is on-the-road, the SAME ON_THE_ROAD
+  // check `onRoad` below uses. Called unconditionally (Rules of Hooks) ahead
+  // of the loading/error/not-found returns below; `trip` is simply undefined
+  // until it loads, so reporting starts false and turns on once real data
+  // says the trip is trackable — never before.
+  useGpsReporting(tripId, trip !== undefined && ON_THE_ROAD.includes(trip.status));
 
   const [finishDialogOpen, setFinishDialogOpen] = useState(false);
 

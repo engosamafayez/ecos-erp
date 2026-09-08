@@ -21,7 +21,6 @@ import {
   Link2,
   ListOrdered,
   ListTree,
-  Map,
   Gauge,
   MapPin,
   Megaphone,
@@ -38,7 +37,6 @@ import {
   Bell,
   History,
   PackageOpen,
-  Radio,
   RotateCcw,
   Zap,
   Ruler,
@@ -223,6 +221,14 @@ const GATE = {
   'logistics-ops-readiness': ['operations.capacity.reserve', 'operations.view'],
   'logistics-enterprise': ['operations.view'],
   'logistics-delivery': ['delivery.view'],
+  // Shipping OS Redesign (TASK-ECOS-SHIPPING-OS-REDESIGN-001) — six approved workspaces.
+  // Each reuses the permission(s) already gating the canonical pages/data it composes;
+  // no new permission slug was invented for this task.
+  'shipping-control-tower': ['operations.view'],
+  'shipping-dispatch-execution': ['logistics.distribution.view', 'loading.session.view'],
+  'shipping-live-driver-map': ['logistics.distribution.view'],
+  'shipping-returns-settlement': ['finance.driver.view', 'logistics.distribution.view'],
+  'shipping-fleet-configuration': ['logistics.vehicles.view', 'logistics.drivers.view'],
   'procurement-hub': ['purchasing.purchases.view'],
   'suppliers': ['purchasing.suppliers.view'],
   'purchases': ['purchasing.purchases.view'],
@@ -396,56 +402,35 @@ const ALL_MODULES: AppModule[] = [
   {
     id: 'shipping',
     icon: PackageCheck,
-    // TASK-LOGISTICS-NAVIGATION-ARCHITECTURE-CLEANUP-002 — Shipping lands on its first
-    // canonical Shipping-owned page, Shipping Companies. Distribution Planning / Loading /
-    // Driver Day Settlement are OPERATIONS surfaces and must NOT be Shipping's default.
-    // (The legacy Fulfillments UI stays retired — no `fulfillments` item — and its backend,
-    // tables, data and `sales.fulfillments.*` permissions remain untouched.)
-    defaultPath: ROUTES.logisticsShippingCompanies,
+    // TASK-ECOS-SHIPPING-OS-REDESIGN-001 — approved final Shipping information architecture.
+    // Replaces the prior 20-entry sidebar (5 sections: Settings/Carriers/Fleet/Dispatch/
+    // Operations/Delivery) with the six approved primary workspaces. Control Tower is the
+    // new landing page (management-by-exception), not Shipping Companies.
+    //
+    // Every removed nav entry below still resolves — either the underlying page is now
+    // composed live inside one of the six workspaces (Fleet & Configuration's tabs embed
+    // Vehicles/Drivers/Shipping Companies/Carrier Accounts/Fuel/Zones/Geography/Automation
+    // verbatim), or its old URL redirects to the workspace that absorbed it (see the
+    // "Shipping OS Redesign" redirect block in router.ts for the exact old→new map). No
+    // page, route, backend authority or permission was deleted — see
+    // E:\ECOS\reports\TASK-ECOS-SHIPPING-OS-REDESIGN-001-REPORT.md for the full
+    // old-page → new-workspace reconciliation matrix.
+    //
+    // Activity & Audit (`logistics-ops-activity`) is deliberately NOT redirected — per the
+    // task's own instruction it becomes a contextual history/audit surface rather than
+    // primary navigation, and stays linked from Control Tower's Analytics tab instead.
+    // Distribution Workspace, Loading Workspace, Trips Workspace and Day Settlement are
+    // deliberately NOT redirected either — they remain the full-depth canonical authorities
+    // that Dispatch & Execution / Returns & Settlement deep-link into (UI consolidation does
+    // not mean domain-authority consolidation — task §4).
+    defaultPath: ROUTES.shippingControlTower,
     items: [
-      // TASK-SHIPPING-NAVIGATION-SETTINGS-REORGANIZATION-001 — the "الإعدادات" (Settings)
-      // section groups the configuration surfaces in the mandated order:
-      // Companies · Vehicles · Drivers · Geography · Distribution Zones. Only navigation
-      // grouping/order changed — routes, pages and permissions are untouched, and the
-      // items reuse their existing keys (Distribution Zones still resolves to
-      // /logistics/geography/distribution-zones; its legacy redirect is unchanged).
-      { key: 'shipping-settings-section', isSection: true },
-      { key: 'logistics-shipping-companies', path: ROUTES.logisticsShippingCompanies, icon: Truck, permissions: GATE['logistics-shipping-companies'] },
-      { key: 'logistics-vehicles', path: ROUTES.logisticsVehicles, icon: Truck, permissions: GATE['logistics-vehicles'] },
-      { key: 'logistics-drivers', path: ROUTES.logisticsDrivers, icon: UsersIcon, permissions: GATE['logistics-drivers'] },
-      { key: 'egypt-geography', path: ROUTES.logisticsGeography, icon: Map, permissions: GATE['egypt-geography'] },
-      { key: 'logistics-distribution-zones', path: ROUTES.logisticsDistributionZones, icon: Network, permissions: GATE['logistics-distribution-zones'] },
-      { key: 'carriers-section', isSection: true },
-      { key: 'logistics-carriers', path: ROUTES.logisticsCarrierAccounts, icon: Truck, permissions: GATE['logistics-carriers'] },
-      { key: 'logistics-automation', path: ROUTES.logisticsAutomation, icon: GitBranch, permissions: GATE['logistics-automation'] },
-      { key: 'logistics-intelligence', path: ROUTES.logisticsIntelligence, icon: Activity, permissions: GATE['logistics-intelligence'] },
-      { key: 'logistics-fuel-review', path: ROUTES.logisticsFuelReview, icon: Gauge, permissions: GATE['logistics-fuel-review'] },
-      { key: 'fleet-section', isSection: true },
-      { key: 'logistics-fleet', path: ROUTES.logisticsFleet, icon: Gauge, permissions: GATE['logistics-fleet'] },
-      // Service Areas (Network) is retired from the Shipping UI
-      // (TASK-LOGISTICS-NAVIGATION-ARCHITECTURE-CLEANUP-002; audit verdict C — UI-redundant,
-      // backend relevant). The `/logistics/network` route, ServiceArea/Network backend,
-      // `network_*` tables, `network.*` permissions and data are all untouched — this only
-      // removes the sidebar entry. Distribution Planning + Loading Workspace + Driver Day
-      // Settlement now belong to the Operations module (approved ownership — CLEANUP-002 §5-6).
-      { key: 'dispatch-section', isSection: true },
-      { key: 'logistics-dispatch', path: ROUTES.logisticsDispatch, icon: Radio, permissions: GATE['logistics-dispatch'] },
-      { key: 'logistics-dispatch-exec', path: ROUTES.logisticsDispatchExecution, icon: Zap, permissions: GATE['logistics-dispatch-exec'] },
-      {
-        key: 'logistics-dispatch-board',
-        path: ROUTES.logisticsDispatchBoard,
-        icon: LayoutDashboard,
-        permissions: GATE['logistics-dispatch-board'],
-      },
-      { key: 'operations-section', isSection: true },
-      { key: 'logistics-operations', path: ROUTES.logisticsOperations, icon: Activity, permissions: GATE['logistics-operations'] },
-      { key: 'logistics-ops-dashboards', path: ROUTES.logisticsOpsDashboards, icon: Gauge, permissions: GATE['logistics-ops-dashboards'] },
-      { key: 'logistics-ops-alerts', path: ROUTES.logisticsOpsAlerts, icon: Bell, permissions: GATE['logistics-ops-alerts'] },
-      { key: 'logistics-ops-activity', path: ROUTES.logisticsOpsActivity, icon: History, permissions: GATE['logistics-ops-activity'] },
-      { key: 'logistics-ops-readiness', path: ROUTES.logisticsOpsReadiness, icon: ShieldCheck, permissions: GATE['logistics-ops-readiness'] },
-      { key: 'logistics-enterprise', path: ROUTES.logisticsEnterprise, icon: LayoutDashboard, permissions: GATE['logistics-enterprise'] },
-      { key: 'delivery-section', isSection: true },
-      { key: 'logistics-delivery', path: ROUTES.logisticsDelivery, icon: MapPin, permissions: GATE['logistics-delivery'] },
+      { key: 'shipping-control-tower', path: ROUTES.shippingControlTower, icon: LayoutDashboard, permissions: GATE['shipping-control-tower'] },
+      { key: 'shipping-orders', path: ROUTES.shippingOrders, icon: Truck, permissions: GATE['shipping-orders'] },
+      { key: 'shipping-dispatch-execution', path: ROUTES.shippingDispatchExecution, icon: Zap, permissions: GATE['shipping-dispatch-execution'] },
+      { key: 'shipping-live-driver-map', path: ROUTES.shippingLiveDriverMap, icon: MapPin, permissions: GATE['shipping-live-driver-map'] },
+      { key: 'shipping-returns-settlement', path: ROUTES.shippingReturnsSettlement, icon: Wallet, permissions: GATE['shipping-returns-settlement'] },
+      { key: 'shipping-fleet-configuration', path: ROUTES.shippingFleetConfiguration, icon: Gauge, permissions: GATE['shipping-fleet-configuration'] },
     ],
   },
   {
