@@ -119,7 +119,6 @@ import { AlertCenterPage } from '@/features/logistics/operations/pages/alert-cen
 import { ActivityCenterPage } from '@/features/logistics/operations/pages/activity-center-page';
 import { EnterpriseReadinessPage } from '@/features/logistics/operations/pages/enterprise-readiness-page';
 import { EnterpriseWorkspacePage as LogisticsEnterpriseWorkspacePage } from '@/features/logistics/operations/pages/enterprise-workspace-page';
-import { DistributionBoardPage } from '@/features/operations/distribution-board/pages/distribution-board-page';
 import { LoadingDashboardPage } from '@/features/operations/distribution-board/pages/loading-dashboard-page';
 import { LoadingWorkspacePage } from '@/features/operations/distribution-board/pages/loading-workspace-page';
 // Canonical GROUP-grain Loading Execution workspace (Stack B, /api/loading/groups).
@@ -458,7 +457,12 @@ export const router = createBrowserRouter(
             { path: ROUTES.configurationOs, Component: ConfigurationOsPage },
             { path: ROUTES.configurationBrand, Component: BrandConfigurationPage },
             // Distribution OS
-            { path: ROUTES.distributionBoard, Component: DistributionBoardPage },
+            // Distribution Board's backend (/api/distribution/*) no longer exists in
+            // routes/api.php — every one of its calls 404s unconditionally. Retired the
+            // same way logisticsDistributionPlanning was below: redirect the stale nav
+            // entry/deep link to the canonical workspace rather than leave a broken page
+            // reachable from navigation. (TASK-ECOS-DISTRIBUTION-FINAL-SOURCE-CLOSURE-002)
+            { path: ROUTES.distributionBoard, loader: () => redirect(ROUTES.logisticsDistributionWorkspace) },
             { path: `${ROUTES.loadingWorkspace}/:tripId/loading`, Component: LoadingWorkspacePage },
             // Loading OS
             { path: ROUTES.loadingOsDashboard, Component: LoadingDashboardPage },

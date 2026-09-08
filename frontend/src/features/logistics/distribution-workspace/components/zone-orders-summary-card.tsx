@@ -57,16 +57,20 @@ export function ZoneOrdersSummaryCard({
           <MapPin className="size-4 text-muted-foreground" aria-hidden />
           <div>
             <h2 className="font-semibold">{zoneName}</h2>
-            <span className="text-xs text-muted-foreground">
-              {groupLabel
-                ? t(($) => $.distributionWorkspace.zonePanel.group, { code: groupLabel })
-                : t(($) => $.distributionWorkspace.zonePanel.noGroup)}
-            </span>
             {spansSlots ? (
+              // A single group_code/name is never emitted while orders span more
+              // than one Group (see reviewZones) — showing "No group" alongside
+              // this warning would itself be a false, self-contradicting claim.
               <span className="block text-xs text-amber-600">
                 {t(($) => $.distributionWorkspace.zonePanel.spansGroups)}
               </span>
-            ) : null}
+            ) : (
+              <span className="text-xs text-muted-foreground">
+                {groupLabel
+                  ? t(($) => $.distributionWorkspace.zonePanel.group, { code: groupLabel })
+                  : t(($) => $.distributionWorkspace.zonePanel.noGroup)}
+              </span>
+            )}
           </div>
         </div>
         {onViewOrders ? (

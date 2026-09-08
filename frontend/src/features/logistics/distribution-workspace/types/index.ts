@@ -691,6 +691,8 @@ export type MapGroup = {
   code: string;
   name: string | null;
   zone_ids: number[];
+  /** Same order/length as zone_ids — lets a Group-scoped view name an owned Zone with no plotted Orders of its own. */
+  zone_names: string[];
   orders_count: number;
   capacity_orders: number | null;
   remaining_orders: number | null;
