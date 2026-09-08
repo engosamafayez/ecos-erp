@@ -521,7 +521,11 @@ function OrderNeedingDecision({
         </span>
         <Badge variant="outline">{order.order_status}</Badge>
         <Badge variant={order.payment_state === 'paid' ? 'secondary' : 'outline'}>
-          {order.payment_state}
+          {order.payment_state === 'paid'
+            ? t(($) => $.distributionWorkspace.payment.paid)
+            : order.payment_state === 'partially_paid'
+              ? t(($) => $.distributionWorkspace.payment.partiallyPaid)
+              : t(($) => $.distributionWorkspace.payment.unpaid)}
         </Badge>
       </div>
 

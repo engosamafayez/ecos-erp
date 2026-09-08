@@ -241,7 +241,10 @@
   "labels": {
     "delivered": "تم التسليم",
     "inProgress": "قيد التنفيذ",
-    "failedDelivery": "فشل التسليم"
+    "failedDelivery": "فشل التسليم",
+    "pending": "قيد الانتظار",
+    "returned": "تم الإرجاع",
+    "skipped": "تم التخطي"
   },
   "availability": {
     "available": "متاح",
@@ -389,7 +392,17 @@
     "locationUnavailable": "الموقع غير متاح",
     "itemsCount_one": "منتج واحد",
     "itemsCount_other": "{{count}} منتجات",
-    "itemsCount": "{{count}} منتجات"
+    "itemsCount": "{{count}} منتجات",
+    "reportException": "الإبلاغ عن استثناء",
+    "exceptionsPage": {
+      "title": "الاستثناءات",
+      "resolved": "تم الحل",
+      "open": "مفتوح",
+      "empty": "لا توجد استثناءات مُبلَّغ عنها.",
+      "addTitle": "إضافة استثناء",
+      "addHint": "للإبلاغ عن استثناء، افتح نقطة التسليم المعنية واستخدم زر الاستثناء.",
+      "goToStops": "الذهاب إلى نقاط التسليم"
+    }
   },
   "map": {
     "title": "خريطة المسار",
@@ -834,6 +847,22 @@
       "cancel": "إلغاء",
       "submit": "حفظ المصروف",
       "saving": "جارٍ الحفظ…"
+    }
+  },
+  "exceptionForm": {
+    "type": "نوع الاستثناء *",
+    "description": "الوصف *",
+    "descriptionPlaceholder": "وصف الاستثناء…",
+    "cancel": "إلغاء",
+    "submit": "الإبلاغ عن الاستثناء",
+    "saving": "جارٍ الحفظ…",
+    "types": {
+      "damaged": "صنف تالف",
+      "missing": "صنف مفقود",
+      "wrong_product": "منتج خاطئ",
+      "complaint": "شكوى عميل",
+      "packaging": "مشكلة في التغليف",
+      "other": "أخرى"
     }
   }
 }

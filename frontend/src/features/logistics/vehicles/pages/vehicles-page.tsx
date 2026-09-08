@@ -200,6 +200,7 @@ const STATUS_FILTERS = [
   { key: 'all', label: 'All' },
   { key: 'available', label: 'Available' },
   { key: 'assigned', label: 'Assigned' },
+  { key: 'in_delivery', label: 'In Delivery' },
   { key: 'maintenance', label: 'Maintenance' },
   { key: 'out_of_service', label: 'Out of Service' },
   { key: 'archived', label: 'Archived' },
@@ -295,6 +296,7 @@ export function VehiclesPage() {
               >
                 {s.key === 'available' && <CheckCircle className="mr-1 h-3 w-3" />}
                 {s.key === 'assigned' && <UserCheck className="mr-1 h-3 w-3" />}
+                {s.key === 'in_delivery' && <Truck className="mr-1 h-3 w-3" />}
                 {s.key === 'maintenance' && <Wrench className="mr-1 h-3 w-3" />}
                 {s.key === 'out_of_service' && <XCircle className="mr-1 h-3 w-3" />}
                 {s.key === 'archived' && <Archive className="mr-1 h-3 w-3" />}

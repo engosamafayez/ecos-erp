@@ -6,6 +6,7 @@ namespace Modules\Operations\ShippingOrders\Presentation\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Commerce\Orders\Domain\Enums\PaymentState;
 use Modules\Logistics\Distribution\Domain\Enums\TripType;
 use Modules\Operations\ShippingOrders\Domain\Services\ShippingOrderReadModel;
 
@@ -38,7 +39,15 @@ final class ShippingOrderResource extends JsonResource
                 'code' => $this->customer->code,
             ] : null),
             'order_value' => $this->resolveOrderValue(),
-            'payment_status' => $this->payment_state,
+            // `orders.payment_state` does not exist and `orders.payment_status`
+            // exists but is never written (both confirmed dead in TASK-ECOS-
+            // SHIPPING-AND-DRIVER-APP-USER-REVIEW-REMEDIATION-001) — payment status
+            // is always DERIVED from deposit_amount vs total, the same authority
+            // OrderResource/DistributionAggregationService already use for display.
+            'payment_status' => PaymentState::fromAmounts(
+                (float) ($this->deposit_amount ?? 0),
+                (float) $this->total,
+            )->value,
             'shipping_classification' => $classification?->value,
             'shipping_company' => $this->resolveShippingCompany(),
             'driver' => $this->resolveDriver(),

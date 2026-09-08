@@ -22,6 +22,7 @@ import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/router/routes';
 import { useDriverTrips } from '@/features/operations/driver-mobile/hooks/use-driver-mobile';
+import { selectCurrentTrip } from '@/features/operations/driver-mobile/lib/trip-lifecycle';
 import { NotificationCenter } from '@/components/layout/header/notifications/notification-center';
 import type enDriverMobile from '@/i18n/locales/en/driver-mobile.json';
 
@@ -118,10 +119,10 @@ export function DriverShell() {
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Resolve the driver's current trip so the "From current trip" section can offer its execution
-  // screens (Returns / Exceptions) without exposing raw :tripId routes. Same selection rule the
-  // Orders page uses; empty when the driver has no active trip.
+  // screens (Returns / Exceptions) without exposing raw :tripId routes. The ONE shared
+  // "which trip is current" rule (trip-lifecycle.ts); empty when the driver has no active trip.
   const { data: trips } = useDriverTrips();
-  const currentTrip = (trips ?? []).find((trp) => (trp.stops_count ?? 0) > 0) ?? (trips ?? [])[0] ?? null;
+  const currentTrip = selectCurrentTrip(trips);
   const tripLinks = currentTrip
     ? TRIP_NAV.map((item) => ({ ...item, to: item.path.replace(':tripId', String(currentTrip.id)) }))
     : [];

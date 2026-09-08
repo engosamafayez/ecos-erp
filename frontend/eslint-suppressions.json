@@ -907,7 +907,7 @@
   },
   "src/features/logistics/vehicles/pages/vehicles-page.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 25
+      "count": 26
     }
   },
   "src/features/marketing/automation/pages/workflow-builder-page.tsx": {
@@ -1203,11 +1203,6 @@
       "count": 1
     }
   },
-  "src/features/operations/driver-mobile/components/exception-form.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 6
-    }
-  },
   "src/features/operations/driver-mobile/components/proof-of-delivery-form.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
       "count": 6
@@ -1231,11 +1226,6 @@
   "src/features/operations/driver-mobile/pages/driver-custody-return-page.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
       "count": 10
-    }
-  },
-  "src/features/operations/driver-mobile/pages/driver-exceptions-page.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 8
     }
   },
   "src/features/operations/driver-mobile/pages/driver-settlement-page.tsx": {
@@ -1264,11 +1254,6 @@
     },
     "react-refresh/only-export-components": {
       "count": 3
-    }
-  },
-  "src/features/orders/components/order-area-cell.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 7
     }
   },
   "src/features/orders/components/order-column-defs.tsx": {
@@ -1300,11 +1285,6 @@
   "src/features/orders/components/order-detail-drawer.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
       "count": 4
-    }
-  },
-  "src/features/orders/components/order-distribution-stage-banner.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 6
     }
   },
   "src/features/orders/components/order-form-schema.ts": {
@@ -1343,24 +1323,9 @@
       "count": 1
     }
   },
-  "src/features/orders/components/order-quick-actions.tsx": {
-    "@typescript-eslint/no-unused-vars": {
-      "count": 1
-    }
-  },
-  "src/features/orders/components/order-workflow-actions-panel.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 8
-    }
-  },
   "src/features/orders/components/order-zone-editor.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 1
-    }
-  },
-  "src/features/orders/hooks/use-order-distribution-stage.ts": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 3
     }
   },
   "src/features/orders/pages/order-detail-page.tsx": {

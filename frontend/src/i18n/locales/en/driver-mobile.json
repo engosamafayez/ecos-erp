@@ -217,7 +217,10 @@
   "labels": {
     "delivered": "Delivered",
     "inProgress": "In Progress",
-    "failedDelivery": "Failed delivery"
+    "failedDelivery": "Failed delivery",
+    "pending": "Pending",
+    "returned": "Returned",
+    "skipped": "Skipped"
   },
   "availability": {
     "available": "Available",
@@ -361,7 +364,17 @@
     "locationUnavailable": "Location not available",
     "itemsCount_one": "{{count}} item",
     "itemsCount_other": "{{count}} items",
-    "itemsCount": "{{count}} items"
+    "itemsCount": "{{count}} items",
+    "reportException": "Report an exception",
+    "exceptionsPage": {
+      "title": "Exceptions",
+      "resolved": "Resolved",
+      "open": "Open",
+      "empty": "No exceptions reported.",
+      "addTitle": "Add Exception",
+      "addHint": "To report an exception, open the relevant delivery stop and use the exception button.",
+      "goToStops": "Go to Stops"
+    }
   },
   "map": {
     "title": "Route Map",
@@ -794,6 +807,22 @@
       "cancel": "Cancel",
       "submit": "Save expense",
       "saving": "Saving…"
+    }
+  },
+  "exceptionForm": {
+    "type": "Exception type *",
+    "description": "Description *",
+    "descriptionPlaceholder": "Exception description…",
+    "cancel": "Cancel",
+    "submit": "Report exception",
+    "saving": "Saving…",
+    "types": {
+      "damaged": "Damaged item",
+      "missing": "Missing item",
+      "wrong_product": "Wrong product",
+      "complaint": "Customer complaint",
+      "packaging": "Packaging issue",
+      "other": "Other"
     }
   }
 }

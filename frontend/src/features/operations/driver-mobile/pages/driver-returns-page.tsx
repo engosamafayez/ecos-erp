@@ -49,7 +49,7 @@ export function DriverReturnsPage() {
         </Button>
         <h1 className="font-semibold text-base flex-1">{t(($) => $.returns.title)}</h1>
         <Button size="sm" variant="outline" onClick={() => setSheetOpen(true)}>
-          <PlusCircle className="mr-1.5 h-4 w-4" />
+          <PlusCircle className="me-1.5 h-4 w-4" />
           {t(($) => $.returns.add)}
         </Button>
       </div>
@@ -93,7 +93,7 @@ export function DriverReturnsPage() {
                 <p className="text-xs">
                   {t(($) => $.returns.warehouseReceived, { qty: ret.warehouse_confirmed_qty })}
                   {ret.discrepancy_qty !== null && ret.discrepancy_qty !== 0 && (
-                    <span className="text-red-600 ml-1">{t(($) => $.returns.discrepancy, { qty: ret.discrepancy_qty })}</span>
+                    <span className="text-red-600 ms-1">{t(($) => $.returns.discrepancy, { qty: ret.discrepancy_qty })}</span>
                   )}
                 </p>
               )}

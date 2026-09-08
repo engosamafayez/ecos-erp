@@ -721,7 +721,11 @@ export function OrdersAwaitingGroup({
               <Badge variant="outline">{order.order_status}</Badge>
               {order.payment_state ? (
                 <Badge variant={order.payment_state === 'paid' ? 'secondary' : 'outline'}>
-                  {order.payment_state}
+                  {order.payment_state === 'paid'
+                    ? t(($) => $.distributionWorkspace.payment.paid)
+                    : order.payment_state === 'partially_paid'
+                      ? t(($) => $.distributionWorkspace.payment.partiallyPaid)
+                      : t(($) => $.distributionWorkspace.payment.unpaid)}
                 </Badge>
               ) : null}
               <Badge variant="destructive">

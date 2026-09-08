@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, PlusCircle, CheckCircle, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,9 +14,9 @@ import {
 import { ROUTES } from '@/router/routes';
 import { useTripExceptions } from '../hooks/use-driver-mobile';
 import type { DeliveryException } from '../types/driver-mobile';
-import { EXCEPTION_TYPE_LABELS } from '../types/driver-mobile';
 
 export function DriverExceptionsPage() {
+  const { t, i18n } = useTranslation('driver-mobile');
   const { tripId = '' } = useParams<{ tripId: string }>();
   const navigate = useNavigate();
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -33,10 +34,10 @@ export function DriverExceptionsPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="font-semibold text-base flex-1">Exceptions</h1>
+        <h1 className="font-semibold text-base flex-1">{t(($) => $.stop.exceptionsPage.title)}</h1>
         <Button size="sm" variant="outline" onClick={() => setSheetOpen(true)}>
-          <PlusCircle className="mr-1.5 h-4 w-4" />
-          Add
+          <PlusCircle className="me-1.5 h-4 w-4" />
+          {t(($) => $.returns.add)}
         </Button>
       </div>
 
@@ -50,30 +51,30 @@ export function DriverExceptionsPage() {
             <div key={ex.id} className="rounded-lg border p-3 space-y-1.5">
               <div className="flex items-start justify-between gap-2">
                 <Badge variant="secondary" className="text-xs">
-                  {EXCEPTION_TYPE_LABELS[ex.exception_type] ?? ex.exception_type}
+                  {t(($) => $.exceptionForm.types[ex.exception_type])}
                 </Badge>
                 {ex.resolved_at ? (
                   <span className="flex items-center gap-1 text-xs text-green-600">
                     <CheckCircle className="h-3.5 w-3.5" />
-                    Resolved
+                    {t(($) => $.stop.exceptionsPage.resolved)}
                   </span>
                 ) : (
                   <span className="flex items-center gap-1 text-xs text-amber-600">
                     <AlertTriangle className="h-3.5 w-3.5" />
-                    Open
+                    {t(($) => $.stop.exceptionsPage.open)}
                   </span>
                 )}
               </div>
               <p className="text-sm">{ex.description}</p>
               <p className="text-xs text-muted-foreground">
-                {new Date(ex.created_at).toLocaleString('ar-EG')}
+                {new Date(ex.created_at).toLocaleString(i18n.language)}
               </p>
             </div>
           ))
         ) : (
           <div className="text-center py-12 text-muted-foreground">
             <AlertTriangle className="h-10 w-10 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">No exceptions reported.</p>
+            <p className="text-sm">{t(($) => $.stop.exceptionsPage.empty)}</p>
           </div>
         )}
       </div>
@@ -82,10 +83,10 @@ export function DriverExceptionsPage() {
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent side="bottom">
           <SheetHeader>
-            <SheetTitle>Add Exception</SheetTitle>
+            <SheetTitle>{t(($) => $.stop.exceptionsPage.addTitle)}</SheetTitle>
           </SheetHeader>
           <p className="text-sm text-muted-foreground mt-4">
-            To report an exception, open the relevant delivery stop and use the exception button.
+            {t(($) => $.stop.exceptionsPage.addHint)}
           </p>
           <Button
             className="w-full mt-4"
@@ -94,7 +95,7 @@ export function DriverExceptionsPage() {
               navigate(ROUTES.driverTripStops.replace(':tripId', tripId));
             }}
           >
-            Go to Stops
+            {t(($) => $.stop.exceptionsPage.goToStops)}
           </Button>
         </SheetContent>
       </Sheet>

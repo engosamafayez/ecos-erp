@@ -17,6 +17,7 @@ import { useToast } from '@/components/ds/use-toast';
 import { cn } from '@/lib/utils';
 import { ROUTES } from '@/router/routes';
 import {
+  useCreateException,
   useDriverStopDetail,
   useDriverTrip,
   useSubmitDeliveryAction,
@@ -30,11 +31,12 @@ import { acceptsDeliveryExecution } from '../lib/trip-lifecycle';
 import type { StopDeliveryLine } from '../services/driver-mobile-service';
 import { DeliveryActionForm } from '../components/delivery-action-form';
 import { DeliveryProofUploadForm } from '../components/delivery-proof-upload-form';
+import { ExceptionForm } from '../components/exception-form';
 import { PaymentProofUploadForm } from '../components/payment-proof-upload-form';
 import { StopStatusBadge } from '../components/stop-status-badge';
 import type { DeliveryActionType, StopOrderLine } from '../types/driver-mobile';
 
-type SheetMode = 'action' | 'payment-proof' | 'delivery-proof' | 'change-method' | null;
+type SheetMode = 'action' | 'payment-proof' | 'delivery-proof' | 'change-method' | 'exception' | null;
 
 // The five canonical order payment methods (§5) — the ONLY selectable values; no aliases.
 const CANONICAL_METHODS = ['cod', 'instapay', 'mobile_wallet', 'credit_card', 'bank_transfer'] as const;
@@ -71,6 +73,7 @@ export function DriverStopDetailPage() {
   const podMutation     = useUploadDeliveryProof(tripId, stopId);
   const deliverMutation = useSubmitStopDelivery(tripId, stopId);
   const changeMethodMutation = useChangePaymentMethod(tripId, stopId);
+  const exceptionMutation = useCreateException(stopId);
   const { toast } = useToast();
 
   const [sheetMode,   setSheetMode]   = useState<SheetMode>(null);
@@ -362,7 +365,7 @@ export function DriverStopDetailPage() {
                   className="h-6 px-2 text-xs"
                   onClick={openChangeMethod}
                 >
-                  <Pencil className="mr-1 h-3 w-3" />
+                  <Pencil className="me-1 h-3 w-3" />
                   {t(($) => $.stop.changeMethod.button)}
                 </Button>
               )}
@@ -413,7 +416,7 @@ export function DriverStopDetailPage() {
             className="w-full"
             onClick={() => setSheetMode('payment-proof')}
           >
-            <Upload className="mr-2 h-4 w-4" />
+            <Upload className="me-2 h-4 w-4" />
             {t(($) => $.stop.paymentProof.button)}
           </Button>
         )}
@@ -493,8 +496,23 @@ export function DriverStopDetailPage() {
             className="w-full"
             onClick={() => setSheetMode('delivery-proof')}
           >
-            <Upload className="mr-2 h-4 w-4" />
+            <Upload className="me-2 h-4 w-4" />
             {t(($) => $.stop.deliveryProof.button)}
+          </Button>
+        )}
+
+        {/* Report an exception (damaged/missing/wrong product/complaint/packaging/other) —
+            a distinct concept from the failed-delivery OUTCOMES above (§11): an exception
+            does not resolve the stop, it flags a problem the operator needs to see, so it is
+            available any time after Start Delivery rather than gated to 'in_progress' only. */}
+        {deliveryStarted && (
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => setSheetMode('exception')}
+          >
+            <AlertTriangle className="me-2 h-4 w-4" />
+            {t(($) => $.stop.reportException)}
           </Button>
         )}
       </div>
@@ -510,6 +528,27 @@ export function DriverStopDetailPage() {
             isLoading={actionMutation.isPending}
             onSubmit={(payload) => {
               actionMutation.mutate(payload, {
+                onSuccess: () => setSheetMode(null),
+              });
+            }}
+            onCancel={() => setSheetMode(null)}
+          />
+        </SheetContent>
+      </Sheet>
+
+      {/* Exception sheet — TASK-ECOS-SHIPPING-AND-DRIVER-APP-USER-REVIEW-REMEDIATION-001:
+          the form, the hook, and the backend endpoint already existed; this is the missing
+          link that actually opens the form from stop context (the Exceptions list page has
+          always pointed here). */}
+      <Sheet open={sheetMode === 'exception'} onOpenChange={(o) => !o && setSheetMode(null)}>
+        <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto">
+          <SheetHeader className="mb-4">
+            <SheetTitle>{t(($) => $.stop.reportException)}</SheetTitle>
+          </SheetHeader>
+          <ExceptionForm
+            isLoading={exceptionMutation.isPending}
+            onSubmit={(payload) => {
+              exceptionMutation.mutate(payload, {
                 onSuccess: () => setSheetMode(null),
               });
             }}

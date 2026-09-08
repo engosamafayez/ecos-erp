@@ -10,6 +10,7 @@ use App\Traits\HasApiResponse;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\Commerce\Orders\Domain\Enums\PaymentState;
 use Modules\Logistics\Drivers\Domain\Models\DriverVehicleAssignment;
 use Modules\Logistics\ShippingCompanies\Domain\Models\ShippingCompany;
 use Modules\Operations\ShippingOrders\Domain\Enums\ShippingOrderClassification;
@@ -133,9 +134,24 @@ final class ShippingOrderController extends Controller
             $query->where('trip.shipping_company_id', $shippingCompanyId);
         }
 
+        // Payment status is never a stored column — `orders.payment_state` does not
+        // exist and `orders.payment_status` exists but is never written (both
+        // confirmed dead in TASK-ECOS-SHIPPING-AND-DRIVER-APP-USER-REVIEW-
+        // REMEDIATION-001). It is always DERIVED from deposit_amount vs total
+        // (Modules\Commerce\Orders\Domain\Enums\PaymentState::fromAmounts()), the
+        // same authority OrderResource/EloquentOrderRepository already use — so the
+        // filter mirrors EloquentOrderRepository's own established SQL shape rather
+        // than inventing a second one.
         $paymentStatus = $request->query('payment_status');
-        if (is_string($paymentStatus) && $paymentStatus !== '') {
-            $query->where('orders.payment_state', $paymentStatus);
+        if ($paymentStatus === PaymentState::Paid->value) {
+            $query->whereColumn('orders.deposit_amount', '>=', 'orders.total');
+        } elseif ($paymentStatus === PaymentState::PartiallyPaid->value) {
+            $query->where('orders.deposit_amount', '>', 0)
+                ->whereColumn('orders.deposit_amount', '<', 'orders.total');
+        } elseif ($paymentStatus === PaymentState::Unpaid->value) {
+            $query->where(function (Builder $q) {
+                $q->whereNull('orders.deposit_amount')->orWhere('orders.deposit_amount', '<=', 0);
+            });
         }
 
         $driverId = $request->query('driver_id');
@@ -148,7 +164,15 @@ final class ShippingOrderController extends Controller
         }
     }
 
-    /** §26 — Order Number, Customer Name/Number, Driver Name/Number. */
+    /**
+     * §26 — Order Number, Customer Name/Number, Driver Name/Number. Also matches
+     * the shipping address and address notes (TASK-ECOS-SHIPPING-AND-DRIVER-APP-
+     * USER-REVIEW-REMEDIATION-001) — both are fully columned and already
+     * serialized to this page, but were reachable by no filter or search anywhere
+     * on this surface; folded into the existing free-text search rather than
+     * adding a second control for what a coordinator already thinks of as "find
+     * this order".
+     */
     private function applySearch(Builder $query, Request $request): void
     {
         $search = trim((string) $request->query('search', ''));
@@ -159,6 +183,8 @@ final class ShippingOrderController extends Controller
         $query->where(function (Builder $q) use ($search) {
             $like = '%'.$search.'%';
             $q->where('orders.order_number', 'like', $like)
+                ->orWhere('orders.shipping_address', 'like', $like)
+                ->orWhere('orders.address_notes', 'like', $like)
                 ->orWhereHas('customer', fn (Builder $c) => $c->where('name', 'like', $like)->orWhere('code', 'like', $like))
                 ->orWhereIn('trip.driver_vehicle_assignment_id', function ($sub) use ($like) {
                     $sub->select('logistics_driver_vehicle_assignments.id')

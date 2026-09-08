@@ -121,7 +121,7 @@ export function DriverWalletPage() {
 
             {/* Monthly statement (§12) — a permanent read-model surface. */}
             <Button variant="outline" className="w-full" onClick={() => navigate(ROUTES.driverStatement)}>
-              <FileText className="mr-2 h-4 w-4" aria-hidden="true" />
+              <FileText className="me-2 h-4 w-4" aria-hidden="true" />
               {t(($) => $.wallet.statementLink)}
             </Button>
 

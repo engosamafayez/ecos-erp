@@ -10,6 +10,8 @@
  * no lifecycle decision; it only names the groups the UI already reasoned about inline.
  */
 
+import type { DriverTrip } from '../types/driver-mobile';
+
 /** The trip has physically left the warehouse — custody is locked, loading is over. */
 export const ON_THE_ROAD: readonly string[] = ['dispatched', 'out_for_delivery', 'in_progress'];
 
@@ -53,4 +55,24 @@ export function hasTripDeparted(status: string | null | undefined): boolean {
  */
 export function acceptsDeliveryExecution(status: string | null | undefined): boolean {
   return status != null && ON_THE_ROAD.includes(status);
+}
+
+/**
+ * The ONE "which trip is the driver's current work" rule (TASK-ECOS-SHIPPING-
+ * AND-DRIVER-APP-USER-REVIEW-REMEDIATION-001). `/driver/trips` can return more
+ * than one non-closed trip (e.g. a just-created next load alongside a trip
+ * still mid-delivery). Before this fix, Home and Loading each independently
+ * picked the NEWEST trip while Orders, the Map, and the Shell independently
+ * picked the newest trip that actually HAS stops — two different rules that
+ * could resolve to two different trips, so Home could report "loading" or
+ * "no work" while a different trip still had real, unresolved deliveries.
+ * Every screen now calls this one function instead of re-deriving its own
+ * rule — the same "do not implement a second lifecycle map" doctrine this
+ * file already applies to trip/loading status.
+ */
+export function selectCurrentTrip(trips: readonly DriverTrip[] | null | undefined): DriverTrip | null {
+  if (!trips || trips.length === 0) {
+    return null;
+  }
+  return trips.find((trip) => (trip.stops_count ?? 0) > 0) ?? trips[0] ?? null;
 }

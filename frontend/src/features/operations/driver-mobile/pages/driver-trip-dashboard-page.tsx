@@ -201,7 +201,7 @@ export function DriverTripDashboardPage() {
                 done={loadedCount > 0 && pendingConfirmations === 0}
               />
               {pendingConfirmations > 0 && (
-                <p className="pl-6 text-xs text-amber-600">
+                <p className="ps-6 text-xs text-amber-600">
                   {t(($) => $.dashboard.readiness.awaiting, { count: pendingConfirmations })}
                 </p>
               )}
@@ -235,7 +235,7 @@ export function DriverTripDashboardPage() {
                   className="w-full h-12 text-base font-semibold"
                   onClick={() => go(ROUTES.driverLoading)}
                 >
-                  <Package className="mr-2 h-5 w-5" />
+                  <Package className="me-2 h-5 w-5" />
                   {t(($) => $.dashboard.goToDeparture)}
                 </Button>
               </div>
@@ -257,7 +257,7 @@ export function DriverTripDashboardPage() {
                   </div>
                 </div>
                 <Button className="w-full" variant="default" onClick={() => go(ROUTES.driverLoading)}>
-                  <Package className="mr-2 h-4 w-4" />
+                  <Package className="me-2 h-4 w-4" />
                   {t(($) => $.dashboard.goToLoading)}
                 </Button>
               </div>
@@ -297,7 +297,7 @@ export function DriverTripDashboardPage() {
                 onClick={() => setFinishDialogOpen(true)}
                 disabled={finishMutation.isPending}
               >
-                <CheckCircle className="mr-2 h-4 w-4" />
+                <CheckCircle className="me-2 h-4 w-4" />
                 {t(($) => $.dashboard.finishTrip)}
               </Button>
             )}
@@ -311,12 +311,12 @@ export function DriverTripDashboardPage() {
               className="w-full"
               onClick={() => go(ROUTES.driverTripSettlement.replace(':tripId', tripId))}
             >
-              <DollarSign className="mr-2 h-4 w-4" />
+              <DollarSign className="me-2 h-4 w-4" />
               {t(($) => $.dashboard.settlement)}
             </Button>
             <div className="grid grid-cols-2 gap-2">
               <Button variant="outline" onClick={() => go(ROUTES.driverTripReturns.replace(':tripId', tripId))}>
-                <RotateCcw className="mr-2 h-4 w-4" />
+                <RotateCcw className="me-2 h-4 w-4" />
                 {t(($) => $.dashboard.returns)}
               </Button>
               <Button variant="outline" onClick={() => go(ROUTES.driverTripCustody.replace(':tripId', tripId))}>
@@ -337,7 +337,7 @@ export function DriverTripDashboardPage() {
               className="w-full"
               onClick={() => go(ROUTES.driverTripSettlement.replace(':tripId', tripId))}
             >
-              <DollarSign className="mr-2 h-4 w-4" />
+              <DollarSign className="me-2 h-4 w-4" />
               {t(($) => $.dashboard.settlement)}
             </Button>
           </div>
