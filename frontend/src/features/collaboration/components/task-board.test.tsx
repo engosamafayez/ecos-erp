@@ -51,6 +51,8 @@ const mocks = vi.hoisted(() => ({
   useCreateTaskBoardList: vi.fn(),
   useRenameTaskBoardList: vi.fn(),
   useArchiveTaskBoardList: vi.fn(),
+  useReorderTaskBoardLists: vi.fn(),
+  useArchiveTask: vi.fn(),
 }));
 vi.mock('../hooks/use-tasks', () => ({
   useTaskBoardLists: () => mocks.useTaskBoardLists(),
@@ -59,6 +61,8 @@ vi.mock('../hooks/use-tasks', () => ({
   useCreateTaskBoardList: () => mocks.useCreateTaskBoardList(),
   useRenameTaskBoardList: () => mocks.useRenameTaskBoardList(),
   useArchiveTaskBoardList: () => mocks.useArchiveTaskBoardList(),
+  useReorderTaskBoardLists: () => mocks.useReorderTaskBoardLists(),
+  useArchiveTask: () => mocks.useArchiveTask(),
 }));
 
 import { TaskBoard } from './task-board';
@@ -116,6 +120,8 @@ beforeEach(() => {
   mocks.useRenameTaskBoardList.mockReturnValue({ mutate: vi.fn(), isPending: false });
   archiveListMutate = vi.fn();
   mocks.useArchiveTaskBoardList.mockReturnValue({ mutate: archiveListMutate, isPending: false });
+  mocks.useReorderTaskBoardLists.mockReturnValue({ mutate: vi.fn(), isPending: false });
+  mocks.useArchiveTask.mockReturnValue({ mutate: vi.fn(), isPending: false });
 });
 
 describe('TaskBoard', () => {

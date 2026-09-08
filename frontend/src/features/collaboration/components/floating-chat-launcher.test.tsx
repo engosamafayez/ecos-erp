@@ -42,7 +42,7 @@ vi.mock('./conversation-thread', () => ({
     <div>
       <span>thread-open</span>
       <button type="button" onClick={onOpenInfo}>trigger-info</button>
-      <button type="button" onClick={() => onCreateTaskFromMessage({} as never)}>trigger-create-task</button>
+      <button type="button" onClick={() => onCreateTaskFromMessage()}>trigger-create-task</button>
     </div>
   ),
 }));

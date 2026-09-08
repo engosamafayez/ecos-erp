@@ -67,6 +67,9 @@ vi.mock('./task-label-picker', () => ({
 vi.mock('./task-followers-panel', () => ({
   TaskFollowersPanel: () => <div data-testid="followers-panel" />,
 }));
+vi.mock('./task-assignees-panel', () => ({
+  TaskAssigneesPanel: () => <div data-testid="assignees-panel" />,
+}));
 vi.mock('./task-checklist-panel', () => ({
   TaskChecklistPanel: () => <div data-testid="checklist-panel" />,
 }));
