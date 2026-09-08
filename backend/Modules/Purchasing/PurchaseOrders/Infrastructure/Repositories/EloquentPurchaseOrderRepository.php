@@ -95,9 +95,15 @@ final class EloquentPurchaseOrderRepository implements PurchaseOrderRepositoryIn
 
     public function nextPoNumber(): string
     {
+        // lockForUpdate() is a no-op outside an explicit transaction (autocommit releases it
+        // immediately) but becomes a real row lock when called from inside
+        // CreatePurchaseOrderAction's transaction, which is what closes the two-concurrent-
+        // creates race — see EloquentPurchaseMaterialRepository::nextRequestNumber() for the
+        // identical, already-proven pattern this mirrors.
         $last = PurchaseOrder::query()
             ->withTrashed()
             ->orderByRaw("CAST(REPLACE(po_number, 'PO-', '') AS UNSIGNED) DESC")
+            ->lockForUpdate()
             ->value('po_number');
 
         if ($last === null) {

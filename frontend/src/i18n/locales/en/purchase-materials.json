@@ -304,7 +304,8 @@
       "notYetOrderedLines": "Lines Not Yet Ordered"
     },
     "orderingPopover": {
-      "emptyOrdered": "No lines fully ordered yet."
+      "emptyOrdered": "No lines fully ordered yet.",
+      "emptyNotYetOrdered": "Every line is fully ordered."
     },
     "actionMenu": {
       "actions": {
@@ -328,6 +329,8 @@
       "requestedBy": "Requested By",
       "buyer": "Buyer",
       "items": "Items",
+      "orderedItems": "Ordered Items",
+      "notYetOrdered": "Not Yet Ordered",
       "requestedQty": "Requested Qty",
       "estValue": "Est. Value",
       "approvedValue": "Approved Value",

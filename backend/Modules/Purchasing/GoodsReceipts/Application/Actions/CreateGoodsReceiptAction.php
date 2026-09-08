@@ -6,6 +6,7 @@ namespace Modules\Purchasing\GoodsReceipts\Application\Actions;
 
 use App\Core\Actions\BaseAction;
 use App\Core\Responses\OperationResult;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -26,6 +27,9 @@ use Modules\Purchasing\PurchaseOrders\Domain\Models\PurchaseOrderLine;
 
 final class CreateGoodsReceiptAction extends BaseAction
 {
+    /** Bounded retries for the receipt_number collision handled in {@see createWithUniqueNumber()}. */
+    private const MAX_NUMBER_ATTEMPTS = 3;
+
     public function __construct(private readonly GoodsReceiptRepositoryInterface $receipts) {}
 
     public function execute(mixed ...$arguments): OperationResult
@@ -88,7 +92,6 @@ final class CreateGoodsReceiptAction extends BaseAction
         }
 
         $attributes = [
-            'receipt_number' => $this->receipts->nextReceiptNumber(),
             'purchase_order_id' => $dto->purchase_order_id,
             'warehouse_id' => $dto->warehouse_id,
             // B-2. `company_id` was added to this table nullable, backfilled once, and then
@@ -169,9 +172,38 @@ final class CreateGoodsReceiptAction extends BaseAction
             ];
         }, $dto->lines);
 
-        $receipt = $this->receipts->create($attributes, $lines);
+        $receipt = $this->createWithUniqueNumber($attributes, $lines);
 
         return OperationResult::success($receipt, 'Goods receipt created successfully.');
+    }
+
+    /**
+     * receipt_number is a MAX+1 read (EloquentGoodsReceiptRepository::nextReceiptNumber())
+     * against a DB-level unique index, so two concurrent creates that both read the same
+     * "last" number would otherwise both attempt the same next number — the second insert
+     * fails the unique constraint. Wrapping generation + insert in one transaction makes the
+     * read take a real row lock (see nextReceiptNumber()'s lockForUpdate()), serializing
+     * concurrent callers. The bounded retry covers the one window locking cannot: the very
+     * first row ever. Mirrors CreatePurchaseMaterialAction's already-proven pattern exactly.
+     */
+    private function createWithUniqueNumber(array $attributesWithoutNumber, array $lines, int $attempt = 1): GoodsReceipt
+    {
+        try {
+            return DB::transaction(function () use ($attributesWithoutNumber, $lines) {
+                $attributes = ['receipt_number' => $this->receipts->nextReceiptNumber()] + $attributesWithoutNumber;
+
+                return $this->receipts->create($attributes, $lines);
+            });
+        } catch (QueryException $e) {
+            $isDuplicateReceiptNumber = (string) $e->getCode() === '23000'
+                && str_contains($e->getMessage(), 'goods_receipts_receipt_number_unique');
+
+            if ($isDuplicateReceiptNumber && $attempt < self::MAX_NUMBER_ATTEMPTS) {
+                return $this->createWithUniqueNumber($attributesWithoutNumber, $lines, $attempt + 1);
+            }
+
+            throw $e;
+        }
     }
 
     /**

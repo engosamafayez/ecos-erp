@@ -304,7 +304,8 @@
       "notYetOrderedLines": "بنود لم تُطلب بعد"
     },
     "orderingPopover": {
-      "emptyOrdered": "لا توجد بنود مطلوبة بالكامل بعد."
+      "emptyOrdered": "لا توجد بنود مطلوبة بالكامل بعد.",
+      "emptyNotYetOrdered": "تم طلب جميع البنود بالكامل."
     },
     "actionMenu": {
       "actions": {
@@ -328,6 +329,8 @@
       "requestedBy": "طلب بواسطة",
       "buyer": "المشتري",
       "items": "البنود",
+      "orderedItems": "البنود المطلوبة",
+      "notYetOrdered": "لم تُطلب بعد",
       "requestedQty": "الكمية المطلوبة",
       "estValue": "القيمة التقديرية",
       "approvedValue": "القيمة المعتمدة",

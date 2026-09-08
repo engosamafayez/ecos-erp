@@ -372,7 +372,8 @@ export function PurchasesPage() {
                     <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.company)}</th>
                     <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.warehouse)}</th>
                     <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.buyer)}</th>
-                    <th className="px-3 py-3 text-center font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.items)}</th>
+                    <th className="px-3 py-3 text-center font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.orderedItems)}</th>
+                    <th className="px-3 py-3 text-center font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.notYetOrdered)}</th>
                     <th className="px-3 py-3 text-end font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.estValue)}</th>
                     <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.progress)}</th>
                     <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.priority)}</th>
@@ -385,13 +386,13 @@ export function PurchasesPage() {
                 <tbody>
                   {isLoading ? (
                     <tr>
-                      <td colSpan={13} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                      <td colSpan={14} className="px-4 py-12 text-center text-sm text-muted-foreground">
                         {t($ => $.purchasesPage.loading)}
                       </td>
                     </tr>
                   ) : items.length === 0 ? (
                     <tr>
-                      <td colSpan={13} className="px-4 py-12 text-center">
+                      <td colSpan={14} className="px-4 py-12 text-center">
                         <Truck className="mx-auto mb-3 h-8 w-8 text-muted-foreground/30" />
                         <p className="text-sm text-muted-foreground">
                           {search || statusFilter !== 'all'
@@ -433,8 +434,19 @@ export function PurchasesPage() {
                             </span>
                           )}
                         </td>
-                        <td className="px-3 py-2.5 text-center tabular-nums">
-                          {purchase.items_count}
+                        <td className="px-3 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
+                          <PurchaseMaterialOrderingPopover
+                            count={purchase.ordered_items_count ?? 0}
+                            items={purchase.ordered_items ?? []}
+                            emptyLabel={t($ => $.purchasesPage.orderingPopover.emptyOrdered)}
+                          />
+                        </td>
+                        <td className="px-3 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
+                          <PurchaseMaterialOrderingPopover
+                            count={purchase.not_yet_ordered_items_count ?? 0}
+                            items={purchase.not_yet_ordered_items ?? []}
+                            emptyLabel={t($ => $.purchasesPage.orderingPopover.emptyNotYetOrdered)}
+                          />
                         </td>
                         <td className="px-3 py-2.5 text-end font-mono text-xs tabular-nums">
                           {purchase.estimated_value > 0 ? fmtCurrency(purchase.estimated_value) : '—'}
@@ -448,13 +460,8 @@ export function PurchasesPage() {
                                   style={{ width: `${Math.min(100, Math.max(0, purchase.execution_percent))}%` }}
                                 />
                               </div>
-                              <span className="text-[10px] font-mono text-muted-foreground shrink-0" onClick={(e) => e.stopPropagation()}>
-                                <PurchaseMaterialOrderingPopover
-                                  count={purchase.ordered_items_count ?? 0}
-                                  items={purchase.ordered_items ?? []}
-                                  emptyLabel={t($ => $.purchasesPage.orderingPopover.emptyOrdered)}
-                                />
-                                /{purchase.items_count}
+                              <span className="text-[10px] font-mono text-muted-foreground shrink-0">
+                                {Math.round(purchase.execution_percent)}%
                               </span>
                             </div>
                           ) : (

@@ -118,9 +118,19 @@ final class EloquentGoodsReceiptRepository implements GoodsReceiptRepositoryInte
 
     public function nextReceiptNumber(): string
     {
+        // receipt_number is globally unique (no company_id in the DB index) but GoodsReceipt
+        // carries a tenant global scope — without lifting it, two different companies each
+        // creating their first receipt would both see "no last receipt" and both pick
+        // GR-00001, colliding across tenants the moment either later became visible to the
+        // other (e.g. a system/unrestricted actor). lockForUpdate() is a no-op outside an
+        // explicit transaction but becomes a real row lock inside CreateGoodsReceiptAction's,
+        // closing the same two-concurrent-creates race already fixed for Purchase Materials'
+        // nextRequestNumber() (see EloquentPurchaseMaterialRepository) — identical pattern.
         $last = GoodsReceipt::query()
+            ->withoutGlobalScope('tenant')
             ->withTrashed()
             ->orderByRaw("CAST(REPLACE(receipt_number, 'GR-', '') AS UNSIGNED) DESC")
+            ->lockForUpdate()
             ->value('receipt_number');
 
         if ($last === null) {
