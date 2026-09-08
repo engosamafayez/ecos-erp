@@ -127,7 +127,7 @@ function ReceivingLineRow({ line, supplierLabel, value, onChange, disabled }: Li
             max={remaining}
             step="0.0001"
             disabled={disabled || remaining <= 0}
-            className={`w-full mt-0.5 rounded-md border bg-transparent px-2 py-1.5 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 ${
+            className={`no-spinner w-full mt-0.5 rounded-md border bg-transparent px-2 py-1.5 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 ${
               invalid
                 ? 'border-destructive focus-visible:ring-destructive'
                 : 'border-input focus-visible:ring-ring'

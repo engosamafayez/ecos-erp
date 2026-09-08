@@ -16,7 +16,9 @@ import { Input } from '@/components/ui/input';
 import { CompanySelect } from '@/features/branches/components/company-select';
 import { warehousesService } from '@/features/warehouses/services/warehouses-service';
 import { productsService } from '@/features/products/services/products-service';
+import type { ProductType } from '@/features/products/types/product';
 import { toast } from '@/components/ds/use-toast';
+import { extractApiErrorMessage } from '@/lib/api-error';
 import { useCreatePurchaseMaterial } from '../hooks/use-purchase-materials';
 import { EnterpriseDemandPanel } from './enterprise-demand-panel';
 import type { PurchaseMaterialLinePayload, PurchaseMaterialPriority } from '../types/purchase-material';
@@ -31,9 +33,17 @@ type Props = {
 type LineItem = PurchaseMaterialLinePayload & {
   _name: string;
   _sku: string;
+  _type: ProductType;
 };
 
 const TOTAL_STEPS = 3;
+
+/** Shared with the search-results grouping so a material never changes group between picking and review. */
+const PRODUCT_GROUPS: ReadonlyArray<{ type: ProductType; labelKey: 'groupProducts' | 'groupRawMaterials' | 'groupPackagingMaterials' }> = [
+  { type: 'finished_good', labelKey: 'groupProducts' },
+  { type: 'raw_material', labelKey: 'groupRawMaterials' },
+  { type: 'packaging_material', labelKey: 'groupPackagingMaterials' },
+];
 
 export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 'material_request', sourceType }: Props) {
   const { t } = useTranslation('purchase-materials');
@@ -95,14 +105,14 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
     onOpenChange(false);
   }
 
-  function addProduct(product: { id: string; name: string; sku: string }) {
+  function addProduct(product: { id: string; name: string; sku: string; product_type: ProductType }) {
     if (lines.find((l) => l.product_id === product.id)) {
       setFocusedProductId(product.id);
       return;
     }
     setLines((prev) => [
       ...prev,
-      { product_id: product.id, requested_qty: 1, unit_label: null, notes: null, _name: product.name, _sku: product.sku },
+      { product_id: product.id, requested_qty: 1, unit_label: null, notes: null, _name: product.name, _sku: product.sku, _type: product.product_type },
     ]);
     setFocusedProductId(product.id);
   }
@@ -139,8 +149,8 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
       });
       toast.success(t($ => $.wizard.toast.success));
       handleClose();
-    } catch {
-      toast.error(t($ => $.wizard.toast.failed));
+    } catch (err) {
+      toast.error(extractApiErrorMessage(err));
     }
   }
 
@@ -177,7 +187,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
         <div className="flex-1 overflow-hidden">
           {/* ── Step 1: General Information ─────────────────────────── */}
           {step === 1 && (
-            <div className="flex flex-col gap-4 px-1 overflow-y-auto max-h-[60vh] py-1">
+            <div className="flex flex-col gap-4 px-1 overflow-y-auto h-full py-1">
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium">{t($ => $.wizard.step1.company)}</label>
                 <CompanySelect
@@ -242,7 +252,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
 
           {/* ── Step 2: Requested Materials + Demand Panel ──────────── */}
           {step === 2 && (
-            <div className="flex gap-4 h-full max-h-[60vh]">
+            <div className="flex gap-4 h-full">
               {/* Left: product picker + selected lines */}
               <div className="flex flex-col gap-3 flex-1 overflow-y-auto pr-2">
                 <div className="flex flex-col gap-1.5">
@@ -271,19 +281,13 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                     </div>
                   ) : (
                     <>
-                      {(
-                        [
-                          ['finished_good', t($ => $.wizard.step2.groupProducts)],
-                          ['raw_material', t($ => $.wizard.step2.groupRawMaterials)],
-                          ['packaging_material', t($ => $.wizard.step2.groupPackagingMaterials)],
-                        ] as const
-                      ).map(([type, label]) => {
+                      {PRODUCT_GROUPS.map(({ type, labelKey }) => {
                         const groupProducts = products.filter((p) => p.product_type === type);
                         if (groupProducts.length === 0) return null;
                         return (
                           <div key={type} className="border-b last:border-0">
                             <p className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/40">
-                              {label}
+                              {t(($) => $.wizard.step2[labelKey])}
                             </p>
                             <table className="w-full text-sm">
                               <tbody>
@@ -307,7 +311,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                                           variant={added ? 'outline' : 'default'}
                                           onClick={(e) => {
                                             e.stopPropagation();
-                                            added ? removeLine(p.id) : addProduct({ id: p.id, name: p.name, sku: p.sku });
+                                            added ? removeLine(p.id) : addProduct({ id: p.id, name: p.name, sku: p.sku, product_type: p.product_type });
                                           }}
                                         >
                                           {added ? <Minus className="size-3.5" /> : <Plus className="size-3.5" />}
@@ -326,7 +330,8 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                   )}
                 </div>
 
-                {/* Selected lines */}
+                {/* Selected lines — grouped the same way as the search results (§3) so a
+                    working list of Products + Raw Materials never reads as one blended list. */}
                 {lines.length > 0 && (
                   <div className="flex flex-col gap-2">
                     <p className="text-sm font-medium text-muted-foreground">
@@ -341,40 +346,51 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                             <th className="px-3 py-1.5 w-8" />
                           </tr>
                         </thead>
-                        <tbody>
-                          {lines.map((line) => (
-                            <tr
-                              key={line.product_id}
-                              className={`border-t cursor-pointer transition-colors ${focusedProductId === line.product_id ? 'bg-primary/5' : 'hover:bg-muted/20'}`}
-                              onClick={() => setFocusedProductId(line.product_id)}
-                            >
-                              <td className="px-3 py-1.5">
-                                <p className="font-medium leading-tight text-sm">{line._name}</p>
-                                <p className="text-xs text-muted-foreground">{line._sku}</p>
-                              </td>
-                              <td className="px-3 py-1.5">
-                                <Input
-                                  type="number"
-                                  min={0.0001}
-                                  step={0.01}
-                                  value={line.requested_qty}
-                                  onChange={(e) => updateQty(line.product_id, parseFloat(e.target.value) || 1)}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="h-7 text-center w-full"
-                                />
-                              </td>
-                              <td className="px-3 py-1.5 text-center">
-                                <button
-                                  type="button"
-                                  onClick={(e) => { e.stopPropagation(); removeLine(line.product_id); }}
-                                  className="text-muted-foreground hover:text-destructive transition-colors"
+                        {PRODUCT_GROUPS.map(({ type, labelKey }) => {
+                          const groupLines = lines.filter((l) => l._type === type);
+                          if (groupLines.length === 0) return null;
+                          return (
+                            <tbody key={type} className="border-t">
+                              <tr>
+                                <td colSpan={3} className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground bg-muted/20">
+                                  {t(($) => $.wizard.step2[labelKey])}
+                                </td>
+                              </tr>
+                              {groupLines.map((line) => (
+                                <tr
+                                  key={line.product_id}
+                                  className={`border-t cursor-pointer transition-colors ${focusedProductId === line.product_id ? 'bg-primary/5' : 'hover:bg-muted/20'}`}
+                                  onClick={() => setFocusedProductId(line.product_id)}
                                 >
-                                  <Minus className="size-3.5" />
-                                </button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
+                                  <td className="px-3 py-1.5">
+                                    <p className="font-medium leading-tight text-sm">{line._name}</p>
+                                    <p className="text-xs text-muted-foreground">{line._sku}</p>
+                                  </td>
+                                  <td className="px-3 py-1.5">
+                                    <Input
+                                      type="number"
+                                      min={0.0001}
+                                      step={0.01}
+                                      value={line.requested_qty}
+                                      onChange={(e) => updateQty(line.product_id, parseFloat(e.target.value) || 1)}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="no-spinner h-7 text-center w-full"
+                                    />
+                                  </td>
+                                  <td className="px-3 py-1.5 text-center">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => { e.stopPropagation(); removeLine(line.product_id); }}
+                                      className="text-muted-foreground hover:text-destructive transition-colors"
+                                    >
+                                      <Minus className="size-3.5" />
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          );
+                        })}
                       </table>
                     </div>
                   </div>
@@ -388,8 +404,10 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                 )}
               </div>
 
-              {/* Right: Enterprise Demand Panel */}
-              <div className="w-64 shrink-0 border-l pl-4 overflow-y-auto">
+              {/* Right: Enterprise Demand Panel — this is the ONLY scroll container for the
+                  column (§2): EnterpriseDemandPanel's own root no longer scrolls, so the
+                  panel never shows a second, nested scrollbar inside this one. */}
+              <div className="w-64 shrink-0 border-l pl-4 pr-1 overflow-y-auto">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
                   {t($ => $.wizard.step2.demandIntelligence)}
                 </p>
@@ -405,7 +423,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
 
           {/* ── Step 3: Review ──────────────────────────────────────── */}
           {step === 3 && (
-            <div className="flex flex-col gap-4 px-1 overflow-y-auto max-h-[60vh] py-1">
+            <div className="flex flex-col gap-4 px-1 overflow-y-auto h-full py-1">
               <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
                 <div>
                   <p className="text-xs text-muted-foreground">{t($ => $.wizard.step3.warehouse)}</p>

@@ -482,7 +482,7 @@ function SupplierSelectionLineRow({ line, materialId }: { line: PurchaseMaterial
             type="number"
             min="0"
             step="0.01"
-            className="w-full mt-0.5 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="no-spinner w-full mt-0.5 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             placeholder="0.00"
             value={agreedPrice}
             onChange={(e) => setAgreedPrice(e.target.value)}
@@ -494,7 +494,7 @@ function SupplierSelectionLineRow({ line, materialId }: { line: PurchaseMaterial
             type="number"
             min="0"
             step="0.0001"
-            className="w-full mt-0.5 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="no-spinner w-full mt-0.5 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             placeholder={fmtNum(line.requested_qty, 4).replace(/\.?0+$/, '')}
             value={agreedQty}
             onChange={(e) => setAgreedQty(e.target.value)}
@@ -505,7 +505,7 @@ function SupplierSelectionLineRow({ line, materialId }: { line: PurchaseMaterial
           <input
             type="number"
             min="0"
-            className="w-full mt-0.5 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="no-spinner w-full mt-0.5 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             placeholder="—"
             value={leadTime}
             onChange={(e) => setLeadTime(e.target.value)}

@@ -408,7 +408,63 @@
       "groupRawMaterials": "المواد الخام",
       "groupPackagingMaterials": "مواد التعبئة والتغليف",
       "demandIntelligence": "ذكاء الطلب",
-      "addAtLeastOne": "أضف مادة واحدة على الأقل للمتابعة."
+      "addAtLeastOne": "أضف مادة واحدة على الأقل للمتابعة.",
+      "demandPanel": {
+        "selectPrompt": "اختر مادة لعرض ذكاء الطلب وتوصيات الشراء.",
+        "loading": "جارٍ التحميل…",
+        "failedToLoad": "تعذّر تحميل بيانات الطلب.",
+        "sections": {
+          "businessImpact": "الأثر التجاري",
+          "inventoryHealth": "حالة المخزون",
+          "demandIntelligence": "ذكاء الطلب",
+          "coverageIntelligence": "تغطية المخزون",
+          "recommendations": "التوصيات",
+          "timeline": "الجدول الزمني"
+        },
+        "stats": {
+          "salesLast7d": "المبيعات (7 أيام)",
+          "salesLast30d": "المبيعات (30 يوماً)",
+          "revenueLast30d": "الإيرادات (30 يوماً)",
+          "carryingWarehouses": "المستودعات الحاملة",
+          "totalInventoryValue": "إجمالي قيمة المخزون",
+          "reservedQty": "الكمية المحجوزة",
+          "onHand": "المتوفر",
+          "reserved": "المحجوز",
+          "available": "المتاح",
+          "incoming": "الوارد",
+          "availablePct": "{{pct}}% متاح",
+          "daily": "يومي",
+          "weekly": "أسبوعي",
+          "monthly": "شهري",
+          "rolling90dAvg": "متوسط 90 يوماً المتحرك",
+          "peakConsumption": "أعلى استهلاك",
+          "volatility": "التذبذب",
+          "currentCoverage": "التغطية الحالية",
+          "days": "{{count}} يوم",
+          "stockoutDate": "تاريخ نفاد المخزون",
+          "suggestedPurchaseDate": "تاريخ الشراء المقترح"
+        },
+        "trend": {
+          "normal": "اتجاه طبيعي",
+          "higher": "أعلى من المتوسط",
+          "lower": "أقل من المتوسط"
+        },
+        "risk": {
+          "critical": "حرج",
+          "high": "مرتفع",
+          "medium": "متوسط",
+          "low": "منخفض",
+          "unknown": "غير معروف"
+        },
+        "noIssues": "لا توجد مشكلات. المخزون في حالة جيدة.",
+        "recommendationsCount": "التوصيات ({{count}})",
+        "quickActions": {
+          "title": "إجراءات سريعة",
+          "viewProduct": "عرض المنتج",
+          "stockLedger": "دفتر المخزون",
+          "purchaseHistory": "سجل المشتريات"
+        }
+      }
     },
     "step3": {
       "warehouse": "المستودع",

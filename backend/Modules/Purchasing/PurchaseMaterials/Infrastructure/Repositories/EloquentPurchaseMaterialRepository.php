@@ -155,10 +155,17 @@ final class EloquentPurchaseMaterialRepository implements PurchaseMaterialReposi
         // request_number alone. The tenant global scope must be lifted here or a
         // company-restricted actor would only scan their own rows and restart the
         // sequence, colliding across companies. See PurchaseMaterialNumberGenerationTest.
+        //
+        // lockForUpdate() is a no-op outside an explicit transaction (autocommit releases
+        // it immediately, which is what the standalone calls in
+        // PurchaseMaterialNumberGenerationTest do) but becomes a real row lock when called
+        // from inside CreatePurchaseMaterialAction's transaction, which is what actually
+        // closes the two-concurrent-creates race documented there.
         $last = PurchaseMaterial::query()
             ->withoutGlobalScope('tenant')
             ->withTrashed()
             ->orderByRaw("CAST(REPLACE(request_number, 'PM-', '') AS UNSIGNED) DESC")
+            ->lockForUpdate()
             ->value('request_number');
 
         if ($last === null) {

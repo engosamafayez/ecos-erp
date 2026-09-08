@@ -408,7 +408,63 @@
       "groupRawMaterials": "Raw Materials",
       "groupPackagingMaterials": "Packaging Materials",
       "demandIntelligence": "Demand Intelligence",
-      "addAtLeastOne": "Add at least one material to continue."
+      "addAtLeastOne": "Add at least one material to continue.",
+      "demandPanel": {
+        "selectPrompt": "Select a material to view demand intelligence and procurement recommendations.",
+        "loading": "Loading…",
+        "failedToLoad": "Failed to load demand data.",
+        "sections": {
+          "businessImpact": "Business Impact",
+          "inventoryHealth": "Inventory Health",
+          "demandIntelligence": "Demand Intelligence",
+          "coverageIntelligence": "Coverage Intelligence",
+          "recommendations": "Recommendations",
+          "timeline": "Timeline"
+        },
+        "stats": {
+          "salesLast7d": "Sales 7d",
+          "salesLast30d": "Sales 30d",
+          "revenueLast30d": "Revenue 30d",
+          "carryingWarehouses": "Carrying Warehouses",
+          "totalInventoryValue": "Total Inventory Value",
+          "reservedQty": "Reserved Qty",
+          "onHand": "On Hand",
+          "reserved": "Reserved",
+          "available": "Available",
+          "incoming": "Incoming",
+          "availablePct": "{{pct}}% available",
+          "daily": "Daily",
+          "weekly": "Weekly",
+          "monthly": "Monthly",
+          "rolling90dAvg": "90d Rolling Avg",
+          "peakConsumption": "Peak Consumption",
+          "volatility": "Volatility",
+          "currentCoverage": "Current Coverage",
+          "days": "{{count}} days",
+          "stockoutDate": "Stockout Date",
+          "suggestedPurchaseDate": "Suggested Purchase Date"
+        },
+        "trend": {
+          "normal": "Normal Trend",
+          "higher": "Above Average",
+          "lower": "Below Average"
+        },
+        "risk": {
+          "critical": "critical",
+          "high": "high",
+          "medium": "medium",
+          "low": "low",
+          "unknown": "unknown"
+        },
+        "noIssues": "No issues. Inventory is in good shape.",
+        "recommendationsCount": "Recommendations ({{count}})",
+        "quickActions": {
+          "title": "Quick Actions",
+          "viewProduct": "View Product",
+          "stockLedger": "Stock Ledger",
+          "purchaseHistory": "Purchase History"
+        }
+      }
     },
     "step3": {
       "warehouse": "Warehouse",
