@@ -88,7 +88,7 @@ final class TaskController extends Controller
 
     /** @var list<string> */
     private const DETAIL_RELATIONS = [
-        'activity.actor', 'creator', 'assignee', 'list', 'labels',
+        'activity.actor', 'creator', 'assignee', 'additionalAssignees', 'list', 'labels',
         'checklists.items', 'followers.user',
     ];
 }

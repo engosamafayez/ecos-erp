@@ -195,6 +195,14 @@
       "none": "No followers",
       "you": "You"
     },
+    "assignees": {
+      "title": "Additional assignees",
+      "assignMe": "Assign me",
+      "add": "Add assignee",
+      "remove": "Remove assignee",
+      "none": "No additional assignees",
+      "you": "You"
+    },
     "filters": {
       "scope": "Show",
       "scopeMine": "My tasks",

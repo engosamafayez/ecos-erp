@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
+  addTaskAssignee,
   addTaskAttachment,
   addTaskChecklistItem,
   addTaskComment,
@@ -25,6 +26,7 @@ import {
   listTasks,
   moveTaskCard,
   reassignTask,
+  removeTaskAssignee,
   renameTaskBoardList,
   reorderTaskBoardLists,
   restoreTaskBoardList,
@@ -368,6 +370,32 @@ export function useUnfollowTask(taskId: string) {
 
   return useMutation({
     mutationFn: (userId: number) => unfollowTask(taskId, userId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: taskKey(taskId) });
+      invalidateTaskLists(qc);
+    },
+  });
+}
+
+// ---- Additional assignees ----
+
+export function useAddTaskAssignee(taskId: string) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (userId: number) => addTaskAssignee(taskId, userId),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: taskKey(taskId) });
+      invalidateTaskLists(qc);
+    },
+  });
+}
+
+export function useRemoveTaskAssignee(taskId: string) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: (userId: number) => removeTaskAssignee(taskId, userId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: taskKey(taskId) });
       invalidateTaskLists(qc);

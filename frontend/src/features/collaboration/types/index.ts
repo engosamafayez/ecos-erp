@@ -146,6 +146,8 @@ export interface Task {
   creator_name?: string | null;
   assignee_user_id: number;
   assignee_name?: string | null;
+  /** Additional assignees, ALONGSIDE (never replacing) the primary assignee above. */
+  additional_assignees?: { id: number; name: string; job_title: string | null }[];
   team_id: string | null;
   priority: TaskPriority;
   status: TaskStatus;

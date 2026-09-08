@@ -99,9 +99,34 @@ final class TaskPolicy
         return $task->creator_user_id === $actor->id;
     }
 
+    /**
+     * TASK-ECOS-INTERNAL-COLLABORATION-FINAL-USER-REVIEW-REMEDIATION-010 §7 —
+     * additional assignees, identical trust tier to manageFollower(): a user
+     * may always add/remove THEMSELVES once they can already work on the
+     * task; adding/removing SOMEONE ELSE is creator-only.
+     */
+    public function manageAssignees(User $actor, InternalTask $task, User $target): bool
+    {
+        return $this->manageFollower($actor, $task, $target);
+    }
+
+    /**
+     * §7 — an additional assignee gets the same "working on the task" tier
+     * as the primary assignee (view/comment/transition/move-card/manage-
+     * checklist/manage-labels/self-follow) everywhere this helper is used.
+     * Creator-only actions (update/reassign, or adding/removing SOMEONE ELSE
+     * via manageFollower/manageAssignees) are untouched — they check
+     * `creator_user_id` directly, never through this helper.
+     */
     private function isOwnerOrAssignee(User $user, InternalTask $task): bool
     {
-        return $task->creator_user_id === $user->id || $task->assignee_user_id === $user->id;
+        if ($task->creator_user_id === $user->id || $task->assignee_user_id === $user->id) {
+            return true;
+        }
+
+        return $task->relationLoaded('additionalAssignees')
+            ? $task->additionalAssignees->contains('id', $user->id)
+            : $task->additionalAssignees()->where('user_id', $user->id)->exists();
     }
 
     private function isFollower(User $user, InternalTask $task): bool

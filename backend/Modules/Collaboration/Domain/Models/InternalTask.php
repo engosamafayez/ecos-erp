@@ -149,6 +149,20 @@ class InternalTask extends Model
             ->withPivot('created_at');
     }
 
+    /**
+     * Additional assignees, ALONGSIDE (never replacing) the primary
+     * `assignee_user_id`/`assignee()` above — see AddTaskAssigneeAction's
+     * docblock. Purely additive: a user already the primary assignee is
+     * never also duplicated in here (enforced at the Action layer).
+     *
+     * @return BelongsToMany<User, $this>
+     */
+    public function additionalAssignees(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'collaboration_task_additional_assignees', 'task_id', 'user_id')
+            ->withPivot('created_at');
+    }
+
     /** @return HasMany<TaskChecklist, $this> */
     public function checklists(): HasMany
     {

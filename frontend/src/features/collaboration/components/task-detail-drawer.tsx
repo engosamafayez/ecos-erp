@@ -28,6 +28,7 @@ import {
 } from '../hooks/use-tasks';
 import { allowedTaskStatusTransitions } from '../lib/task-meta';
 import type { AddressableUser, OperationalContextType, TaskStatus } from '../types';
+import { TaskAssigneesPanel } from './task-assignees-panel';
 import { TaskChecklistPanel } from './task-checklist-panel';
 import { TaskFollowersPanel } from './task-followers-panel';
 import { TaskLabelBadge } from './task-label-badge';
@@ -220,6 +221,11 @@ function OverviewTab({
             </span>
           )}
         </div>
+      </div>
+
+      <div>
+        <p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">{t(($) => $.tasks.assignees.title)}</p>
+        <TaskAssigneesPanel task={task} />
       </div>
 
       <div>

@@ -244,3 +244,14 @@ export async function followTask(taskId: string, userId?: number): Promise<Task>
 export async function unfollowTask(taskId: string, userId: number): Promise<void> {
   await api.delete(`/collaboration/tasks/${taskId}/followers/${userId}`);
 }
+
+// ---- Additional assignees (supplementary to, never replacing, the primary assignee) ----
+
+export async function addTaskAssignee(taskId: string, userId: number): Promise<Task> {
+  const { data } = await api.post<ApiResponse<Task>>(`/collaboration/tasks/${taskId}/assignees`, { user_id: userId });
+  return data.data;
+}
+
+export async function removeTaskAssignee(taskId: string, userId: number): Promise<void> {
+  await api.delete(`/collaboration/tasks/${taskId}/assignees/${userId}`);
+}

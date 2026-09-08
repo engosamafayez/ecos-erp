@@ -35,7 +35,7 @@ final class ListMyTasksAction extends BaseAction
 
         $query = InternalTask::query()
             ->where('company_id', $user->company_id)
-            ->with(['creator', 'assignee', 'list', 'labels'])
+            ->with(['creator', 'assignee', 'additionalAssignees', 'list', 'labels'])
             ->withCount([
                 'comments',
                 'attachments',
@@ -47,10 +47,18 @@ final class ListMyTasksAction extends BaseAction
         $query->where(function ($q) use ($user, $filters): void {
             $scope = $filters['scope'] ?? 'mine';
 
+            // §7 — "assigned to me" (and default "mine") also includes tasks
+            // where the user is only an additional assignee, not just the
+            // primary one; otherwise being added would be functionally
+            // invisible in the requester's own task list.
+            $isAdditionalAssignee = fn ($aq) => $aq->where('user_id', $user->id);
+
             match ($scope) {
                 'created' => $q->where('creator_user_id', $user->id),
-                'assigned' => $q->where('assignee_user_id', $user->id),
-                default => $q->where('creator_user_id', $user->id)->orWhere('assignee_user_id', $user->id),
+                'assigned' => $q->where('assignee_user_id', $user->id)->orWhereHas('additionalAssignees', $isAdditionalAssignee),
+                default => $q->where('creator_user_id', $user->id)
+                    ->orWhere('assignee_user_id', $user->id)
+                    ->orWhereHas('additionalAssignees', $isAdditionalAssignee),
             };
         });
 

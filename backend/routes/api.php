@@ -39,6 +39,7 @@ use Modules\Collaboration\Presentation\Http\Controllers\TaskChecklistController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskChecklistItemController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskCommentController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskController;
+use Modules\Collaboration\Presentation\Http\Controllers\TaskAssigneeController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskFollowerController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskLabelController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskStatusController;
@@ -4858,6 +4859,12 @@ Route::middleware('auth:sanctum')->prefix('collaboration')->group(function (): v
     // Followers/watchers — DISTINCT from the primary assignee (brief §5/§16).
     Route::post('tasks/{task}/followers', [TaskFollowerController::class, 'store']);
     Route::delete('tasks/{task}/followers/{userId}', [TaskFollowerController::class, 'destroy'])
+        ->whereNumber('userId');
+
+    // Additional assignees — supplementary to (never replacing) the primary
+    // assignee above (remediation-010 §7). Same ownership tier as followers.
+    Route::post('tasks/{task}/assignees', [TaskAssigneeController::class, 'store']);
+    Route::delete('tasks/{task}/assignees/{userId}', [TaskAssigneeController::class, 'destroy'])
         ->whereNumber('userId');
 
     Route::get('search/tasks', [CollaborationSearchController::class, 'tasks'])

@@ -9,6 +9,7 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use Modules\Collaboration\Domain\Models\InternalTask;
 
 /**
@@ -30,16 +31,24 @@ final class TaskBroadcast implements ShouldBroadcast
         public readonly string $eventType,
     ) {}
 
-    /** @return list<PrivateChannel> */
+    /**
+     * Queried fresh rather than read off `$this->task`'s in-memory relations
+     * (§7 — additional assignees): a queued broadcast job may restore the
+     * model without whatever relations happened to be loaded when it was
+     * dispatched, so this stays correct regardless of that.
+     *
+     * @return list<PrivateChannel>
+     */
     public function broadcastOn(): array
     {
-        $channels = [new PrivateChannel("collaboration.user.{$this->task->assignee_user_id}")];
+        $userIds = DB::table('collaboration_task_additional_assignees')
+            ->where('task_id', $this->task->id)
+            ->pluck('user_id')
+            ->push($this->task->assignee_user_id)
+            ->push($this->task->creator_user_id)
+            ->unique();
 
-        if ($this->task->creator_user_id !== $this->task->assignee_user_id) {
-            $channels[] = new PrivateChannel("collaboration.user.{$this->task->creator_user_id}");
-        }
-
-        return $channels;
+        return $userIds->map(fn ($id) => new PrivateChannel("collaboration.user.{$id}"))->values()->all();
     }
 
     public function broadcastAs(): string

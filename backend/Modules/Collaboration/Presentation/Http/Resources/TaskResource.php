@@ -25,6 +25,11 @@ final class TaskResource extends JsonResource
             'creator_name' => $this->whenLoaded('creator', fn () => $this->creator?->name),
             'assignee_user_id' => $this->assignee_user_id,
             'assignee_name' => $this->whenLoaded('assignee', fn () => $this->assignee?->name),
+            // Additional assignees (§7) — supplementary to, never a
+            // replacement for, the primary assignee fields above.
+            'additional_assignees' => $this->whenLoaded('additionalAssignees', fn () => $this->additionalAssignees
+                ->map(fn ($user) => ['id' => $user->id, 'name' => $user->name, 'job_title' => $user->job_title])
+                ->all()),
             'team_id' => $this->team_id,
             'priority' => $this->priority->value,
             'status' => $this->status->value,

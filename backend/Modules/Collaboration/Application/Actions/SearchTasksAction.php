@@ -44,7 +44,9 @@ final class SearchTasksAction extends BaseAction
 
         return InternalTask::query()
             ->where('company_id', $user->company_id)
-            ->where(fn ($q) => $q->where('creator_user_id', $user->id)->orWhere('assignee_user_id', $user->id))
+            ->where(fn ($q) => $q->where('creator_user_id', $user->id)
+                ->orWhere('assignee_user_id', $user->id)
+                ->orWhereHas('additionalAssignees', fn ($aq) => $aq->where('user_id', $user->id)))
             ->with(['creator', 'assignee'])
             ->whereRaw('MATCH(title, description) AGAINST(? IN BOOLEAN MODE)', [$this->queryExpander->toBooleanQueryString($searchQuery)])
             ->orderByDesc('created_at')
