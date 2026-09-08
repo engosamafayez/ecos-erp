@@ -209,6 +209,16 @@ export const ROUTES = {
   logisticsDriverSettlement:       '/logistics/operations/driver-settlement',
   logisticsDriverSettlementDetail: '/logistics/operations/driver-settlement/:assignmentId',
   logisticsEnterprise:           '/logistics/enterprise',
+  // Shipping OS Redesign (TASK-ECOS-SHIPPING-OS-REDESIGN-001) — the six approved primary
+  // Shipping workspaces. These are new consolidation shells; every underlying authority
+  // (Distribution Group, Loading, Trip, Delivery, Returns, Settlement, Fleet, Drivers,
+  // Carriers, Geography, Automation) is unchanged and still independently reachable at
+  // its own existing route (see router.ts redirect map for what folded vs. stayed live).
+  shippingControlTower:        '/logistics/control-tower',
+  shippingDispatchExecution:   '/logistics/dispatch-execution',
+  shippingLiveDriverMap:       '/logistics/live-driver-map',
+  shippingReturnsSettlement:   '/logistics/returns-settlement',
+  shippingFleetConfiguration:  '/logistics/fleet-configuration',
   // Marketing OS
   marketing:              '/marketing',
   marketingAssets:        '/marketing/assets',

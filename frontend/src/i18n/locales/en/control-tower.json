@@ -1,0 +1,105 @@
+{
+  "pageTitle": "Control Tower",
+  "subtitle": "Management by exception — real counts from the existing Shipping workspaces, one click from action.",
+  "tabs": {
+    "operational": "Operational",
+    "analytics": "Executive & Analytics"
+  },
+  "kpis": {
+    "sectionTitle": "Operational Snapshot",
+    "readyForDistribution": {
+      "label": "Ready for Distribution",
+      "hint": "Orders in today's window, eligible for grouping",
+      "noWindowCaption": "No active planning window right now — open Distribution Workspace to check"
+    },
+    "groupsWaitingVehicle": {
+      "label": "Groups Waiting for Vehicle",
+      "caption": "Open Distribution Workspace to see which groups still need a vehicle — no cross-group total is available yet"
+    },
+    "groupsWaitingDriver": {
+      "label": "Groups Waiting for Driver",
+      "caption": "Open Distribution Workspace to see which groups still need a driver — no cross-group total is available yet"
+    },
+    "loadingInProgress": {
+      "label": "Loading in Progress",
+      "hint": "Sessions the warehouse still has an action pending on"
+    },
+    "readyForHandover": {
+      "label": "Ready for Driver Handover",
+      "hint": "Loaded and waiting on the driver to confirm"
+    },
+    "tripsActive": {
+      "label": "Trips Active",
+      "hint": "Dispatched, out for delivery or in progress"
+    },
+    "deliveriesFailedToday": {
+      "label": "Deliveries Failed Today",
+      "hint": "Cancelled shipping orders"
+    },
+    "noAnswer": {
+      "label": "No Answer",
+      "hint": "Customer did not answer"
+    },
+    "postponed": {
+      "label": "Postponed",
+      "hint": "Delivery postponed by the customer or driver"
+    },
+    "retriesRequired": {
+      "label": "Retries Required",
+      "hint": "Postponed + No Answer — both retryable outcomes"
+    },
+    "returnsExpected": {
+      "label": "Returns Expected",
+      "caption": "Visible per trip in Trips Workspace — a cross-trip total isn't available yet"
+    },
+    "returnsAwaitingReceipt": {
+      "label": "Returns Awaiting Warehouse Receipt",
+      "caption": "Visible per trip in Trips Workspace — a cross-trip total isn't available yet"
+    },
+    "driversAwaitingSettlement": {
+      "label": "Drivers Awaiting Settlement",
+      "hint": "Active custodies not yet settled"
+    },
+    "cashHandoverPending": {
+      "label": "Cash Handover Pending",
+      "caption": "Visible per trip in Trips Workspace — a cross-trip total isn't available yet"
+    },
+    "criticalBlockers": {
+      "label": "Critical Operational Blockers",
+      "hint": "Critical-severity items in Needs Attention below"
+    }
+  },
+  "needsAttention": {
+    "title": "Needs Attention",
+    "subtitle": "Live operational alerts, most severe first",
+    "severity": {
+      "all": "All",
+      "critical": "Critical",
+      "warning": "Warning",
+      "info": "Info"
+    },
+    "errorTitle": "Couldn't load alerts",
+    "empty": {
+      "title": "Nothing needs attention",
+      "hint": "No open operational alerts right now."
+    },
+    "occurrences": "{{count}}×",
+    "overdue": "Overdue",
+    "ageMinutes": "Open {{minutes}}m",
+    "unacknowledgedFor": " · Unacknowledged {{minutes}}m",
+    "acknowledged": " · Acknowledged",
+    "escalationLevel": " · Escalation L{{level}}",
+    "open": "Open"
+  },
+  "analytics": {
+    "sectionTitle": "Executive & Analytics",
+    "sectionHint": "Secondary reporting surfaces, folded in from the previous standalone pages.",
+    "activityLink": "Open Activity & Audit log",
+    "tabs": {
+      "enterpriseWorkspace": "Enterprise Workspace",
+      "dashboards": "Dashboards",
+      "intelligence": "Intelligence",
+      "readiness": "Enterprise Readiness"
+    }
+  }
+}

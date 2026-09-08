@@ -1,0 +1,68 @@
+{
+  "pageTitle": "Dispatch & Execution",
+  "pageSubtitle": "A coordination view across Groups, Loading and Trips — deep actions stay on their own workspace.",
+  "openFullWorkspace": "Open full workspace",
+  "tabs": {
+    "groups": "Groups",
+    "assignment": "Assignment",
+    "loading": "Loading",
+    "handover": "Ready for Handover",
+    "trips": "Active Trips"
+  },
+  "common": {
+    "notAssigned": "Not assigned"
+  },
+  "groups": {
+    "description": "Distribution Groups in the current window, most operationally relevant first.",
+    "noWindow": "No Distribution window is open right now.",
+    "empty": "No Distribution Groups in the current window.",
+    "loadError": "Groups could not be loaded.",
+    "overCapacity": "Over capacity",
+    "nearCapacity": "Near capacity",
+    "columns": {
+      "code": "Group",
+      "name": "Name",
+      "zones": "Zones",
+      "orders": "Orders",
+      "status": "Status"
+    }
+  },
+  "assignment": {
+    "title": "Vehicle/driver assignment is a per-Group action",
+    "explain": "The Groups list above has no vehicle or driver field to filter on — that assignment is made and shown one Group at a time in the Distribution Workspace. Open it to see which Groups still need a vehicle and driver."
+  },
+  "loading": {
+    "description": "Loading sessions currently in progress, most unresolved first.",
+    "empty": "Nothing is currently loading."
+  },
+  "handover": {
+    "description": "Loaded vehicles waiting on the driver's own confirmation.",
+    "empty": "No vehicles are waiting on driver confirmation."
+  },
+  "loadingGroups": {
+    "noWindow": "No loading window is open right now.",
+    "loadError": "Loading groups could not be loaded.",
+    "columns": {
+      "code": "Group",
+      "zones": "Zones",
+      "orders": "Orders",
+      "vehicle": "Vehicle",
+      "driver": "Driver",
+      "state": "State"
+    }
+  },
+  "trips": {
+    "bannerTitle": "Trips Workspace",
+    "description": "Full stop-by-stop trip detail, custody and settlement live in the Trips Workspace.",
+    "openWorkspace": "Open Trips Workspace",
+    "empty": "No trips are on the road right now.",
+    "loadError": "Active trips could not be loaded.",
+    "columns": {
+      "tripNumber": "Trip",
+      "driver": "Driver",
+      "vehicle": "Vehicle",
+      "orders": "Orders",
+      "status": "Status"
+    }
+  }
+}

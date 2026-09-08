@@ -72,6 +72,11 @@ export const NAMESPACES = [
   'logistics',
   'driver-mobile',
   'shipping-orders',
+  'control-tower',
+  'dispatch-execution',
+  'live-driver-map',
+  'returns-settlement',
+  'fleet-configuration',
 
   // ── Internal Collaboration & Tasks ────────────────────────────────────────
   'collaboration',

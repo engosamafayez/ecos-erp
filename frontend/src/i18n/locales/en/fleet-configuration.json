@@ -1,0 +1,14 @@
+{
+  "pageTitle": "Fleet Configuration",
+  "tabs": {
+    "vehicles": "Vehicles",
+    "drivers": "Drivers",
+    "companies": "Shipping Companies",
+    "carriers": "Carrier Accounts",
+    "fuel": "Fuel Review",
+    "zones": "Distribution Zones",
+    "geography": "Egypt Geography",
+    "automation": "Automation",
+    "fleet": "Fleet Dashboard"
+  }
+}
