@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import {
   Archive,
   ArchiveRestore,
@@ -79,15 +80,17 @@ function apiErrorMessage(err: unknown, fallback: string): string {
 }
 
 function TypeBadge({ type }: { type: ShippingCompanyType }) {
+  const { t } = useTranslation('logistics');
+
   return type === 'internal' ? (
     <Badge variant="secondary" className="gap-1 text-xs">
       <Warehouse className="size-3" />
-      Internal Fleet
+      {t(($) => $.shippingCompanies.drawer.typeInternalFleet)}
     </Badge>
   ) : (
     <Badge variant="outline" className="gap-1 text-xs">
       <Truck className="size-3" />
-      External Provider
+      {t(($) => $.shippingCompanies.drawer.typeExternalProvider)}
     </Badge>
   );
 }
@@ -143,21 +146,23 @@ function CompanyFormFields({
   isCreate: boolean;
   disabled?: boolean;
 }) {
+  const { t } = useTranslation('logistics');
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="sc-name">Company Name *</Label>
+          <Label htmlFor="sc-name">{t(($) => $.shippingCompanies.drawer.companyName)} *</Label>
           <Input
             id="sc-name"
             value={form.name}
             disabled={disabled}
-            placeholder="e.g. Bosta"
+            placeholder={t(($) => $.shippingCompanies.drawer.companyNamePlaceholder)}
             onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="sc-code">Code *</Label>
+          <Label htmlFor="sc-code">{t(($) => $.common.code)} *</Label>
           <Input
             id="sc-code"
             value={form.code}
@@ -171,34 +176,34 @@ function CompanyFormFields({
 
       {isCreate ? (
         <div className="space-y-1.5">
-          <Label>Type *</Label>
+          <Label>{t(($) => $.common.type)} *</Label>
           <Select
             value={form.type}
             onValueChange={(v) => setForm((p) => ({ ...p, type: v as ShippingCompanyType }))}
           >
             <SelectTrigger disabled={disabled}>
-              <SelectValue placeholder="Select type" />
+              <SelectValue placeholder={t(($) => $.shippingCompanies.drawer.selectType)} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="external">External Provider (Bosta, Aramex…)</SelectItem>
-              <SelectItem value="internal">Internal Fleet (own vehicles)</SelectItem>
+              <SelectItem value="external">{t(($) => $.shippingCompanies.drawer.typeExternalOption)}</SelectItem>
+              <SelectItem value="internal">{t(($) => $.shippingCompanies.drawer.typeInternalOption)}</SelectItem>
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground">
-            Type cannot be changed after creation.
+            {t(($) => $.shippingCompanies.drawer.typeLockedNote)}
           </p>
         </div>
       ) : (
         <div className="flex items-center gap-2">
-          <Label className="text-muted-foreground">Type</Label>
+          <Label className="text-muted-foreground">{t(($) => $.common.type)}</Label>
           <TypeBadge type={form.type} />
-          <span className="text-xs text-muted-foreground">— locked after creation</span>
+          <span className="text-xs text-muted-foreground">{t(($) => $.shippingCompanies.drawer.typeLockedSuffix)}</span>
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor="sc-contact">Contact Person</Label>
+          <Label htmlFor="sc-contact">{t(($) => $.shippingCompanies.drawer.contactPerson)}</Label>
           <Input
             id="sc-contact"
             value={form.contact_person}
@@ -207,7 +212,7 @@ function CompanyFormFields({
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="sc-phone">Phone</Label>
+          <Label htmlFor="sc-phone">{t(($) => $.common.phone)}</Label>
           <Input
             id="sc-phone"
             value={form.phone}
@@ -219,7 +224,7 @@ function CompanyFormFields({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="sc-email">Email</Label>
+        <Label htmlFor="sc-email">{t(($) => $.shippingCompanies.drawer.email)}</Label>
         <Input
           id="sc-email"
           type="email"
@@ -231,7 +236,7 @@ function CompanyFormFields({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="sc-address">Address</Label>
+        <Label htmlFor="sc-address">{t(($) => $.common.address)}</Label>
         <Input
           id="sc-address"
           value={form.address}
@@ -241,7 +246,7 @@ function CompanyFormFields({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="sc-notes">Notes</Label>
+        <Label htmlFor="sc-notes">{t(($) => $.common.notes)}</Label>
         <Textarea
           id="sc-notes"
           value={form.notes}
@@ -254,8 +259,8 @@ function CompanyFormFields({
       {isCreate && (
         <div className="flex items-center justify-between rounded-lg border px-3 py-2.5">
           <div>
-            <p className="text-sm font-medium">Active</p>
-            <p className="text-xs text-muted-foreground">Company is available for assignments</p>
+            <p className="text-sm font-medium">{t(($) => $.common.active)}</p>
+            <p className="text-xs text-muted-foreground">{t(($) => $.shippingCompanies.drawer.activeHint)}</p>
           </div>
           <Switch
             checked={form.is_active}
@@ -287,6 +292,7 @@ const EMPTY_CONTRACT: ContractFormState = {
 };
 
 function ContractsTab({ company }: { company: ShippingCompany }) {
+  const { t } = useTranslation('logistics');
   const { toast } = useToast();
   const createContract = useCreateShippingContract();
   const updateContract = useUpdateShippingContract();
@@ -322,7 +328,7 @@ function ContractsTab({ company }: { company: ShippingCompany }) {
 
   async function handleSave() {
     if (!form.name.trim()) {
-      toast({ title: 'Contract name is required.', variant: 'destructive' });
+      toast({ title: t(($) => $.shippingCompanies.drawer.contracts.nameRequired), variant: 'destructive' });
       return;
     }
     const payload: ShippingContractPayload = {
@@ -335,23 +341,23 @@ function ContractsTab({ company }: { company: ShippingCompany }) {
     try {
       if (editing) {
         await updateContract.mutateAsync({ companyId: company.id, contractId: editing.id, payload });
-        toast({ title: 'Contract updated.' });
+        toast({ title: t(($) => $.shippingCompanies.drawer.contracts.updated) });
       } else {
         await createContract.mutateAsync({ companyId: company.id, payload });
-        toast({ title: 'Contract added.' });
+        toast({ title: t(($) => $.shippingCompanies.drawer.contracts.added) });
       }
       setFormOpen(false);
     } catch (err) {
-      toast({ title: apiErrorMessage(err, 'Saving the contract failed.'), variant: 'destructive' });
+      toast({ title: apiErrorMessage(err, t(($) => $.shippingCompanies.drawer.contracts.saveFailed)), variant: 'destructive' });
     }
   }
 
   async function handleActivate(contract: ShippingContract) {
     try {
       await activateContract.mutateAsync({ companyId: company.id, contractId: contract.id });
-      toast({ title: `"${contract.name}" is now the active contract.` });
+      toast({ title: t(($) => $.shippingCompanies.drawer.contracts.activatedToast, { name: contract.name }) });
     } catch (err) {
-      toast({ title: apiErrorMessage(err, 'Activation failed.'), variant: 'destructive' });
+      toast({ title: apiErrorMessage(err, t(($) => $.shippingCompanies.drawer.contracts.activateFailed)), variant: 'destructive' });
     }
   }
 
@@ -362,9 +368,9 @@ function ContractsTab({ company }: { company: ShippingCompany }) {
         contractId: contract.id,
         payload: { status: 'inactive' },
       });
-      toast({ title: `Contract "${contract.name}" archived (inactive).` });
+      toast({ title: t(($) => $.shippingCompanies.drawer.contracts.deactivatedToast, { name: contract.name }) });
     } catch (err) {
-      toast({ title: apiErrorMessage(err, 'Deactivation failed.'), variant: 'destructive' });
+      toast({ title: apiErrorMessage(err, t(($) => $.shippingCompanies.drawer.contracts.deactivateFailed)), variant: 'destructive' });
     }
   }
 
@@ -372,9 +378,9 @@ function ContractsTab({ company }: { company: ShippingCompany }) {
     if (!deleteTarget) return;
     try {
       await deleteContract.mutateAsync({ companyId: company.id, contractId: deleteTarget.id });
-      toast({ title: `Contract "${deleteTarget.name}" deleted.` });
+      toast({ title: t(($) => $.shippingCompanies.drawer.contracts.deletedToast, { name: deleteTarget.name }) });
     } catch (err) {
-      toast({ title: apiErrorMessage(err, 'Delete failed.'), variant: 'destructive' });
+      toast({ title: apiErrorMessage(err, t(($) => $.shippingCompanies.drawer.contracts.deleteFailed)), variant: 'destructive' });
     } finally {
       setDeleteTarget(null);
     }
@@ -385,38 +391,42 @@ function ContractsTab({ company }: { company: ShippingCompany }) {
       {isArchived && (
         <Alert>
           <AlertDescription className="text-sm">
-            This company is archived — new contracts cannot be added.
+            {t(($) => $.shippingCompanies.drawer.contracts.archivedNotice)}
           </AlertDescription>
         </Alert>
       )}
 
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {contracts.length} contract{contracts.length !== 1 ? 's' : ''} — one may be active at a time.
+          {t(($) => $.shippingCompanies.drawer.contracts.count, { count: contracts.length })}
         </p>
         {!formOpen && (
           <Button size="sm" className="gap-1.5" onClick={openCreateForm} disabled={isArchived}>
             <Plus className="size-3.5" />
-            Add Contract
+            {t(($) => $.shippingCompanies.drawer.contracts.add)}
           </Button>
         )}
       </div>
 
       {formOpen && (
         <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
-          <p className="text-sm font-semibold">{editing ? 'Edit Contract' : 'New Contract'}</p>
+          <p className="text-sm font-semibold">
+            {editing
+              ? t(($) => $.shippingCompanies.drawer.contracts.editTitle)
+              : t(($) => $.shippingCompanies.drawer.contracts.newTitle)}
+          </p>
           <div className="space-y-1.5">
-            <Label htmlFor="ct-name">Contract Name *</Label>
+            <Label htmlFor="ct-name">{t(($) => $.shippingCompanies.drawer.contracts.nameLabel)} *</Label>
             <Input
               id="ct-name"
               value={form.name}
-              placeholder="e.g. 2026 Master Agreement"
+              placeholder={t(($) => $.shippingCompanies.drawer.contracts.namePlaceholder)}
               onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="ct-start">Start Date</Label>
+              <Label htmlFor="ct-start">{t(($) => $.shippingCompanies.drawer.contracts.startDate)}</Label>
               <Input
                 id="ct-start"
                 type="date"
@@ -425,7 +435,7 @@ function ContractsTab({ company }: { company: ShippingCompany }) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="ct-end">End Date</Label>
+              <Label htmlFor="ct-end">{t(($) => $.shippingCompanies.drawer.contracts.endDate)}</Label>
               <Input
                 id="ct-end"
                 type="date"
@@ -436,16 +446,16 @@ function ContractsTab({ company }: { company: ShippingCompany }) {
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="ct-terms">Payment Terms</Label>
+            <Label htmlFor="ct-terms">{t(($) => $.shippingCompanies.drawer.contracts.paymentTerms)}</Label>
             <Input
               id="ct-terms"
               value={form.payment_terms}
-              placeholder="e.g. Net 30, COD weekly settlement"
+              placeholder={t(($) => $.shippingCompanies.drawer.contracts.paymentTermsPlaceholder)}
               onChange={(e) => setForm((p) => ({ ...p, payment_terms: e.target.value }))}
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="ct-notes">Notes</Label>
+            <Label htmlFor="ct-notes">{t(($) => $.common.notes)}</Label>
             <Textarea
               id="ct-notes"
               rows={2}
@@ -455,11 +465,11 @@ function ContractsTab({ company }: { company: ShippingCompany }) {
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <Button variant="ghost" size="sm" onClick={() => setFormOpen(false)} disabled={saving}>
-              Cancel
+              {t(($) => $.common.cancel)}
             </Button>
             <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1.5">
               {saving && <Loader2 className="size-3.5 animate-spin" />}
-              {editing ? 'Save Changes' : 'Add Contract'}
+              {editing ? t(($) => $.common.saveChanges) : t(($) => $.shippingCompanies.drawer.contracts.add)}
             </Button>
           </div>
         </div>
@@ -468,9 +478,9 @@ function ContractsTab({ company }: { company: ShippingCompany }) {
       {contracts.length === 0 && !formOpen ? (
         <div className="flex flex-col items-center justify-center rounded-lg border py-12 text-center">
           <FileText className="mb-2 size-8 text-muted-foreground/30" />
-          <p className="text-sm font-medium">No contracts yet</p>
+          <p className="text-sm font-medium">{t(($) => $.shippingCompanies.drawer.contracts.emptyTitle)}</p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Add the commercial agreement terms for this carrier.
+            {t(($) => $.shippingCompanies.drawer.contracts.emptyHint)}
           </p>
         </div>
       ) : (
@@ -489,15 +499,15 @@ function ContractsTab({ company }: { company: ShippingCompany }) {
                     {contract.status === 'active' && (
                       <Badge className="gap-1 bg-emerald-600 text-xs hover:bg-emerald-600">
                         <CheckCircle className="size-3" />
-                        Active
+                        {t(($) => $.common.active)}
                       </Badge>
                     )}
                     {contract.is_expired && (
-                      <Badge variant="destructive" className="text-xs">Expired</Badge>
+                      <Badge variant="destructive" className="text-xs">{t(($) => $.shippingCompanies.drawer.contracts.expired)}</Badge>
                     )}
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    {contract.start_date ?? '—'} → {contract.end_date ?? 'open-ended'}
+                    {contract.start_date ?? '—'} → {contract.end_date ?? t(($) => $.shippingCompanies.drawer.contracts.openEnded)}
                     {contract.payment_terms ? ` · ${contract.payment_terms}` : ''}
                   </p>
                   {contract.notes && (
@@ -514,7 +524,7 @@ function ContractsTab({ company }: { company: ShippingCompany }) {
                       disabled={activateContract.isPending}
                     >
                       <CheckCircle className="size-3" />
-                      Activate
+                      {t(($) => $.shippingCompanies.drawer.contracts.activate)}
                     </Button>
                   ) : (
                     <Button
@@ -525,7 +535,7 @@ function ContractsTab({ company }: { company: ShippingCompany }) {
                       disabled={updateContract.isPending}
                     >
                       <XCircle className="size-3" />
-                      Deactivate
+                      {t(($) => $.shippingCompanies.drawer.contracts.deactivate)}
                     </Button>
                   )}
                   <Button
@@ -554,18 +564,18 @@ function ContractsTab({ company }: { company: ShippingCompany }) {
       <AlertDialog open={deleteTarget !== null} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Contract</AlertDialogTitle>
+            <AlertDialogTitle>{t(($) => $.shippingCompanies.drawer.contracts.deleteTitle)}</AlertDialogTitle>
             <AlertDialogDescription>
-              Delete <strong>{deleteTarget?.name}</strong>? This action cannot be undone.
+              {t(($) => $.shippingCompanies.drawer.contracts.deleteBodyPrefix)} <strong>{deleteTarget?.name}</strong>{t(($) => $.shippingCompanies.drawer.contracts.deleteBodySuffix)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t(($) => $.common.cancel)}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {t(($) => $.common.delete)}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -577,6 +587,7 @@ function ContractsTab({ company }: { company: ShippingCompany }) {
 // ── Company Mapping Tab ────────────────────────────────────────────────────────
 
 function CompanyMappingTab({ company }: { company: ShippingCompany }) {
+  const { t } = useTranslation('logistics');
   const { toast } = useToast();
   const createMapping = useCreateShippingMapping();
   const deleteMapping = useDeleteShippingMapping();
@@ -599,47 +610,46 @@ function CompanyMappingTab({ company }: { company: ShippingCompany }) {
     try {
       await createMapping.mutateAsync({ companyId: company.id, ecosCompanyId: selectedCompanyId });
       setSelectedCompanyId('');
-      toast({ title: 'Company linked.' });
+      toast({ title: t(($) => $.shippingCompanies.drawer.mapping.linked) });
     } catch (err) {
-      toast({ title: apiErrorMessage(err, 'Linking failed.'), variant: 'destructive' });
+      toast({ title: apiErrorMessage(err, t(($) => $.shippingCompanies.drawer.mapping.linkFailed)), variant: 'destructive' });
     }
   }
 
   async function handleUnlink(mappingId: number, name: string | null | undefined) {
     try {
       await deleteMapping.mutateAsync({ companyId: company.id, mappingId });
-      toast({ title: `${name ?? 'Company'} unlinked.` });
+      toast({ title: t(($) => $.shippingCompanies.drawer.mapping.unlinked, { name: name ?? t(($) => $.shippingCompanies.drawer.mapping.companyFallback) }) });
     } catch (err) {
-      toast({ title: apiErrorMessage(err, 'Unlinking failed.'), variant: 'destructive' });
+      toast({ title: apiErrorMessage(err, t(($) => $.shippingCompanies.drawer.mapping.unlinkFailed)), variant: 'destructive' });
     }
   }
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Link this carrier to the ECOS companies it ships for. Orders from a linked company can be
-        assigned to this carrier.
+        {t(($) => $.shippingCompanies.drawer.mapping.intro)}
       </p>
 
       {isArchived ? (
         <Alert>
           <AlertDescription className="text-sm">
-            This company is archived — new company links cannot be added.
+            {t(($) => $.shippingCompanies.drawer.mapping.archivedNotice)}
           </AlertDescription>
         </Alert>
       ) : (
         <div className="flex items-end gap-2">
           <div className="flex-1 space-y-1.5">
-            <Label>ECOS Company</Label>
+            <Label>{t(($) => $.shippingCompanies.drawer.mapping.ecosCompanyLabel)}</Label>
             <Select value={selectedCompanyId} onValueChange={setSelectedCompanyId}>
               <SelectTrigger disabled={companiesLoading || available.length === 0}>
                 <SelectValue
                   placeholder={
                     companiesLoading
-                      ? 'Loading companies…'
+                      ? t(($) => $.shippingCompanies.drawer.mapping.loadingCompanies)
                       : available.length === 0
-                        ? 'All companies are already linked'
-                        : 'Select a company to link'
+                        ? t(($) => $.shippingCompanies.drawer.mapping.allLinked)
+                        : t(($) => $.shippingCompanies.drawer.mapping.selectToLink)
                   }
                 />
               </SelectTrigger>
@@ -662,7 +672,7 @@ function CompanyMappingTab({ company }: { company: ShippingCompany }) {
             ) : (
               <Link2 className="size-3.5" />
             )}
-            Link
+            {t(($) => $.shippingCompanies.drawer.mapping.link)}
           </Button>
         </div>
       )}
@@ -670,9 +680,9 @@ function CompanyMappingTab({ company }: { company: ShippingCompany }) {
       {mappings.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border py-12 text-center">
           <Building2 className="mb-2 size-8 text-muted-foreground/30" />
-          <p className="text-sm font-medium">No linked companies</p>
+          <p className="text-sm font-medium">{t(($) => $.shippingCompanies.drawer.mapping.emptyTitle)}</p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            This carrier is not yet assigned to any ECOS company.
+            {t(($) => $.shippingCompanies.drawer.mapping.emptyHint)}
           </p>
         </div>
       ) : (
@@ -696,7 +706,7 @@ function CompanyMappingTab({ company }: { company: ShippingCompany }) {
                 disabled={deleteMapping.isPending}
               >
                 <Trash2 className="size-3" />
-                Unlink
+                {t(($) => $.shippingCompanies.drawer.mapping.unlink)}
               </Button>
             </div>
           ))}
@@ -717,6 +727,7 @@ export function ShippingCompanyDrawer({
   onOpenChange: (open: boolean) => void;
   editCompany: ShippingCompany | null;
 }) {
+  const { t } = useTranslation('logistics');
   const { toast } = useToast();
   const isCreate = editCompany === null;
 
@@ -769,20 +780,20 @@ export function ShippingCompanyDrawer({
 
   async function handleSave() {
     if (!form.name.trim() || !form.code.trim()) {
-      toast({ title: 'Name and Code are required.', variant: 'destructive' });
+      toast({ title: t(($) => $.shippingCompanies.drawer.nameCodeRequired), variant: 'destructive' });
       return;
     }
     try {
       if (isCreate) {
         await createCompany.mutateAsync(toPayload(form, true));
-        toast({ title: `Shipping company "${form.name}" created.` });
+        toast({ title: t(($) => $.shippingCompanies.drawer.createdToast, { name: form.name }) });
         onOpenChange(false);
       } else {
         await updateCompany.mutateAsync({ id: editCompany.id, payload: toPayload(form, false) });
-        toast({ title: 'Changes saved.' });
+        toast({ title: t(($) => $.shippingCompanies.drawer.changesSaved) });
       }
     } catch (err) {
-      toast({ title: apiErrorMessage(err, 'Saving failed.'), variant: 'destructive' });
+      toast({ title: apiErrorMessage(err, t(($) => $.shippingCompanies.drawer.savingFailed)), variant: 'destructive' });
     }
   }
 
@@ -793,27 +804,27 @@ export function ShippingCompanyDrawer({
       toast({
         title:
           status === 'archived'
-            ? 'Company archived.'
+            ? t(($) => $.shippingCompanies.drawer.archivedToast)
             : status === 'active'
-              ? 'Company activated.'
-              : 'Company deactivated.',
+              ? t(($) => $.shippingCompanies.drawer.activatedToast)
+              : t(($) => $.shippingCompanies.drawer.deactivatedToast),
       });
       if (status === 'archived') setArchiveConfirm(false);
     } catch (err) {
-      toast({ title: apiErrorMessage(err, 'Status change failed.'), variant: 'destructive' });
+      toast({ title: apiErrorMessage(err, t(($) => $.shippingCompanies.drawer.statusChangeFailed)), variant: 'destructive' });
     }
   }
 
   const statusBadge =
     company &&
     (company.status === 'active' ? (
-      <Badge className="bg-emerald-600 text-xs hover:bg-emerald-600">Active</Badge>
+      <Badge className="bg-emerald-600 text-xs hover:bg-emerald-600">{t(($) => $.common.active)}</Badge>
     ) : company.status === 'inactive' ? (
-      <Badge variant="secondary" className="text-xs">Inactive</Badge>
+      <Badge variant="secondary" className="text-xs">{t(($) => $.common.inactive)}</Badge>
     ) : (
       <Badge variant="outline" className="gap-1 text-xs text-muted-foreground">
         <Archive className="size-3" />
-        Archived
+        {t(($) => $.shippingCompanies.status.archived)}
       </Badge>
     ));
 
@@ -822,11 +833,11 @@ export function ShippingCompanyDrawer({
       <PageDrawer
         open={open}
         onOpenChange={onOpenChange}
-        title={isCreate ? 'New Shipping Company' : (company?.name ?? 'Shipping Company')}
+        title={isCreate ? t(($) => $.shippingCompanies.drawer.newTitle) : (company?.name ?? t(($) => $.shippingCompanies.drawer.fallbackTitle))}
         description={
           isCreate
-            ? 'Register an internal fleet or external shipping provider.'
-            : `${company?.code ?? ''} — manage details, contracts and company links.`
+            ? t(($) => $.shippingCompanies.drawer.createDescription)
+            : t(($) => $.shippingCompanies.drawer.editDescription, { code: company?.code ?? '' })
         }
         size="xl"
       >
@@ -840,17 +851,17 @@ export function ShippingCompanyDrawer({
 
           {isCreate ? (
             <>
-              <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+              <div className="min-h-0 flex-1 overflow-y-auto pe-1">
                 <CompanyFormFields form={form} setForm={setForm} isCreate disabled={saving} />
               </div>
               <Separator className="my-4" />
               <div className="flex shrink-0 justify-end gap-2">
                 <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>
-                  Cancel
+                  {t(($) => $.common.cancel)}
                 </Button>
                 <Button onClick={handleSave} disabled={saving} className="gap-1.5">
                   {saving && <Loader2 className="size-4 animate-spin" />}
-                  Create Company
+                  {t(($) => $.shippingCompanies.drawer.createCompany)}
                 </Button>
               </div>
             </>
@@ -863,9 +874,9 @@ export function ShippingCompanyDrawer({
           ) : (
             <Tabs value={tab} onValueChange={setTab} className="flex min-h-0 flex-1 flex-col">
               <TabsList className="grid w-full shrink-0 grid-cols-3">
-                <TabsTrigger value="details">Details</TabsTrigger>
+                <TabsTrigger value="details">{t(($) => $.shippingCompanies.drawer.tabs.details)}</TabsTrigger>
                 <TabsTrigger value="contracts" className="gap-1.5">
-                  Contracts
+                  {t(($) => $.shippingCompanies.drawer.tabs.contracts)}
                   {company?.contracts_count != null && company.contracts_count > 0 && (
                     <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
                       {company.contracts_count}
@@ -873,7 +884,7 @@ export function ShippingCompanyDrawer({
                   )}
                 </TabsTrigger>
                 <TabsTrigger value="companies" className="gap-1.5">
-                  Companies
+                  {t(($) => $.shippingCompanies.drawer.tabs.companies)}
                   {company?.companies_count != null && company.companies_count > 0 && (
                     <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
                       {company.companies_count}
@@ -882,7 +893,7 @@ export function ShippingCompanyDrawer({
                 </TabsTrigger>
               </TabsList>
 
-              <div className="min-h-0 flex-1 overflow-y-auto pt-4 pr-1">
+              <div className="min-h-0 flex-1 overflow-y-auto pt-4 pe-1">
                 <TabsContent value="details" className="mt-0 space-y-4">
                   <CompanyFormFields
                     form={form}
@@ -904,7 +915,7 @@ export function ShippingCompanyDrawer({
                           disabled={setStatus.isPending}
                         >
                           <ArchiveRestore className="size-3.5" />
-                          Restore from Archive
+                          {t(($) => $.shippingCompanies.drawer.actions.restoreFromArchive)}
                         </Button>
                       ) : (
                         <>
@@ -917,7 +928,7 @@ export function ShippingCompanyDrawer({
                               disabled={setStatus.isPending}
                             >
                               <XCircle className="size-3.5" />
-                              Deactivate
+                              {t(($) => $.shippingCompanies.drawer.actions.deactivate)}
                             </Button>
                           ) : (
                             <Button
@@ -928,7 +939,7 @@ export function ShippingCompanyDrawer({
                               disabled={setStatus.isPending}
                             >
                               <CheckCircle className="size-3.5" />
-                              Activate
+                              {t(($) => $.shippingCompanies.drawer.actions.activate)}
                             </Button>
                           )}
                           <Button
@@ -939,7 +950,7 @@ export function ShippingCompanyDrawer({
                             disabled={setStatus.isPending}
                           >
                             <Archive className="size-3.5" />
-                            Archive
+                            {t(($) => $.shippingCompanies.drawer.actions.archive)}
                           </Button>
                         </>
                       )}
@@ -947,7 +958,7 @@ export function ShippingCompanyDrawer({
                     {company?.status !== 'archived' && (
                       <Button onClick={handleSave} disabled={saving} className="gap-1.5">
                         {saving && <Loader2 className="size-4 animate-spin" />}
-                        Save Changes
+                        {t(($) => $.common.saveChanges)}
                       </Button>
                     )}
                   </div>
@@ -969,20 +980,18 @@ export function ShippingCompanyDrawer({
       <AlertDialog open={archiveConfirm} onOpenChange={setArchiveConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Archive Shipping Company</AlertDialogTitle>
+            <AlertDialogTitle>{t(($) => $.shippingCompanies.drawer.archiveDialog.title)}</AlertDialogTitle>
             <AlertDialogDescription>
-              Archive <strong>{company?.name}</strong>? Archived companies are hidden from the
-              default list and cannot receive new contracts or company links. You can restore it
-              later.
+              {t(($) => $.shippingCompanies.drawer.archiveDialog.bodyPrefix)} <strong>{company?.name}</strong>{t(($) => $.shippingCompanies.drawer.archiveDialog.bodySuffix)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t(($) => $.common.cancel)}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => handleSetStatus('archived')}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Archive
+              {t(($) => $.shippingCompanies.drawer.actions.archive)}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -8,6 +8,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import { useOrderStatusLabels } from '@/features/orders/hooks/use-order-labels';
+import type { OrderStatus } from '@/features/orders/types/order';
 
 import type { DistributionOrder, MapOrder } from '../types';
 
@@ -36,6 +38,7 @@ export function MapClusterPanel({
   onOpenOrder: (order: MapOrder) => void;
 }) {
   const { t } = useTranslation('logistics');
+  const { statusLabel } = useOrderStatusLabels();
 
   const open = orders !== null && orders.length > 0;
   const count = orders?.length ?? 0;
@@ -76,7 +79,7 @@ export function MapClusterPanel({
                   </div>
                   {status ? (
                     <Badge variant="outline" className="shrink-0">
-                      {status}
+                      {statusLabel[status as OrderStatus] ?? status}
                     </Badge>
                   ) : null}
                 </button>

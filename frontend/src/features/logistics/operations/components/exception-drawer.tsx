@@ -32,7 +32,7 @@ import {
   useSuppressException,
 } from '../hooks/use-operations';
 import type { ExceptionResolution, NoteType } from '../types/operations';
-import { ExceptionStatusBadge, SeverityIcon, SourceBadge } from './operations-badges';
+import { ExceptionStatusBadge, SeverityIcon, SourceBadge, useExceptionCategoryLabel, useExceptionSourceLabel } from './operations-badges';
 
 import type enLogistics from '@/i18n/locales/en/logistics.json';
 
@@ -289,6 +289,8 @@ export function ExceptionDrawer({
   onOpenChange: (open: boolean) => void;
 }) {
   const { t } = useTranslation('logistics');
+  const categoryLabel = useExceptionCategoryLabel();
+  const sourceLabel = useExceptionSourceLabel();
   const { toast } = useToast();
   const { data: exception, isLoading } = useException(exceptionId);
   const [resolution, setResolution] = useState<ExceptionResolution>('handled_elsewhere');
@@ -307,7 +309,7 @@ export function ExceptionDrawer({
       open={open}
       onOpenChange={onOpenChange}
       title={exception?.title ?? t($ => $.operations.exceptionDrawer.title)}
-      description={exception ? `${exception.source_label} · ${exception.category_label}` : ''}
+      description={exception ? `${sourceLabel(exception.source)} · ${categoryLabel(exception.category)}` : ''}
       size="2xl"
     >
       {isLoading || !exception ? (
@@ -317,7 +319,7 @@ export function ExceptionDrawer({
           <div className="flex flex-wrap items-center gap-2">
             <SeverityIcon severity={exception.severity} />
             <ExceptionStatusBadge status={exception.status} />
-            <SourceBadge source={exception.source} label={exception.source_label} />
+            <SourceBadge source={exception.source} />
             {exception.is_recurring && (
               <Badge variant="outline" className="gap-1 text-[10px]">
                 <Repeat2 className="size-2.5" />

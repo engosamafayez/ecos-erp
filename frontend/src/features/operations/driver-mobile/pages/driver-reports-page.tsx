@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { ROUTES } from '@/router/routes';
 
 import { ReportPeriodFilter } from '../components/report-period-filter';
+import { StopStatusBadge } from '../components/stop-status-badge';
 import {
   useDriverAdvances,
   useDriverExpenses,
@@ -19,6 +20,7 @@ import {
   useDriverOrdersReport,
   useDriverShortages,
 } from '../hooks/use-driver-mobile';
+import type { DeliveryStopStatus } from '../types/driver-mobile';
 import type { DriverMovementsReport, ReportPeriodValue } from '../types/reports';
 
 type Tab = 'orders' | 'goods' | 'shortage' | 'advances' | 'expenses';
@@ -39,7 +41,7 @@ export function DriverReportsPage() {
       <div className="sticky top-0 z-10 border-b bg-background">
         <div className="flex items-center gap-3 px-4 py-3">
           <Button variant="ghost" size="icon" aria-label={t(($) => $.nav.home)} onClick={() => navigate(ROUTES.driverHome)}>
-            <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+            <ArrowLeft className="h-5 w-5 rtl:rotate-180" aria-hidden="true" />
           </Button>
           <h1 className="flex items-center gap-2 text-base font-semibold">
             <BarChart3 className="h-5 w-5" aria-hidden="true" />
@@ -134,7 +136,7 @@ function OrdersTab({ period }: { period: ReportPeriodValue }) {
                   </p>
                 </div>
                 <div className="shrink-0 text-end">
-                  <Badge variant="outline" className="text-[10px]">{row.outcome}</Badge>
+                  <StopStatusBadge status={row.outcome as DeliveryStopStatus} className="text-[10px]" />
                   {row.order_value !== null && (
                     <p className="mt-1 text-xs tabular-nums">{money(row.order_value)}</p>
                   )}
@@ -145,11 +147,11 @@ function OrdersTab({ period }: { period: ReportPeriodValue }) {
           {data.meta.last_page > 1 && (
             <div className="flex items-center justify-between pt-1 text-xs">
               <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                <ChevronLeft className="h-4 w-4 rtl:rotate-180" aria-hidden="true" />
               </Button>
               <span className="text-muted-foreground">{data.meta.current_page} / {data.meta.last_page}</span>
               <Button variant="outline" size="sm" disabled={page >= data.meta.last_page} onClick={() => setPage((p) => p + 1)}>
-                <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                <ChevronRight className="h-4 w-4 rtl:rotate-180" aria-hidden="true" />
               </Button>
             </div>
           )}

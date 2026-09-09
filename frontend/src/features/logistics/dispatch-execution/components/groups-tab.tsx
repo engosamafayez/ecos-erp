@@ -66,7 +66,7 @@ export function GroupsTab() {
       cell: (g) => (
         <div className="flex flex-wrap items-center gap-1.5">
           <Badge variant="secondary" className="capitalize">
-            {g.status}
+            {t($ => $.groups.statusDraft)}
           </Badge>
           {g.is_over_capacity ? (
             <Badge variant="destructive">{t($ => $.groups.overCapacity)}</Badge>

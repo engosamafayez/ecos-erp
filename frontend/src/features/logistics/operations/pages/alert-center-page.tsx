@@ -101,7 +101,7 @@ function LiveTab({ onOpen }: { onOpen: (id: string) => void }) {
                 >
                   <div className="flex flex-wrap items-center gap-1.5">
                     <span className="text-sm font-medium">{alert.title}</span>
-                    <SourceBadge source={alert.source} label={alert.source} />
+                    <SourceBadge source={alert.source} />
                     {alert.rule && (
                       <Badge variant="outline" className="text-[10px]">
                         {alert.rule}
@@ -210,7 +210,7 @@ function HistoryTab({ onOpen }: { onOpen: (id: string) => void }) {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className="text-sm font-medium">{exception.title}</span>
-                      <SourceBadge source={exception.source} label={exception.source_label} />
+                      <SourceBadge source={exception.source} />
                       <ExceptionStatusBadge status={exception.status} />
                     </div>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">

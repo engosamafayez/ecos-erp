@@ -1,11 +1,7 @@
-import { useTranslation } from 'react-i18next';
-
 import { Badge } from '@/components/ui/badge';
-import type enLogistics from '@/i18n/locales/en/logistics.json';
 
 import type { TripStatus } from '../types/trip';
-
-type LogisticsLabel = ($: typeof enLogistics) => string;
+import { useTripStatusLabel } from '../lib/trip-status-label';
 
 /**
  * Status colours follow the operational meaning of the state, not its position
@@ -27,36 +23,6 @@ const STATUS_CLASS: Record<TripStatus, string> = {
   closed: 'bg-muted text-muted-foreground',
   cancelled: 'bg-muted text-muted-foreground line-through',
 };
-
-/**
- * Every trip status has its own translated label, so the backend's English
- * `status_label` is never rendered — it is a fallback for surfaces that have no
- * translation layer, and using it here would leak English into Arabic.
- */
-const STATUS_LABEL: Record<TripStatus, LogisticsLabel> = {
-  planning: ($) => $.trips.status.planning,
-  loading: ($) => $.trips.status.loading,
-  loading_completed: ($) => $.trips.status.loading_completed,
-  driver_accepted: ($) => $.trips.status.driver_accepted,
-  dispatch_blocked: ($) => $.trips.status.dispatch_blocked,
-  ready_for_dispatch: ($) => $.trips.status.ready_for_dispatch,
-  dispatched: ($) => $.trips.status.dispatched,
-  out_for_delivery: ($) => $.trips.status.out_for_delivery,
-  in_progress: ($) => $.trips.status.in_progress,
-  completed: ($) => $.trips.status.completed,
-  settlement_pending: ($) => $.trips.status.settlement_pending,
-  closed: ($) => $.trips.status.closed,
-  cancelled: ($) => $.trips.status.cancelled,
-};
-
-/**
- * Kept module-private: a file that exports both a hook and a component breaks
- * Fast Refresh, and this label is only ever needed by the badge itself.
- */
-function useTripStatusLabel() {
-  const { t } = useTranslation('logistics');
-  return (status: TripStatus) => t(STATUS_LABEL[status]);
-}
 
 export function TripStatusBadge({ status }: { status: TripStatus }) {
   const label = useTripStatusLabel();

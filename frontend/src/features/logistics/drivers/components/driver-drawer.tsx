@@ -1148,20 +1148,18 @@ export function DriverDrawer({
       <AlertDialog open={archiveConfirm} onOpenChange={setArchiveConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Archive Driver</AlertDialogTitle>
+            <AlertDialogTitle>{t($ => $.drivers.archiveDialog.title)}</AlertDialogTitle>
             <AlertDialogDescription>
-              Archive <strong>{driver?.full_name}</strong>? Any assigned vehicle is released back to
-              the pool. Archived drivers are hidden from the default list and cannot be assigned
-              vehicles or documents. Drivers are never deleted, so this can be undone.
+              {t($ => $.drivers.archiveDialog.bodyPrefix)} <strong>{driver?.full_name}</strong>{t($ => $.drivers.archiveDialog.bodySuffix)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t($ => $.common.cancel)}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => handleSetStatus('archived')}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Archive
+              {t($ => $.drivers.actions.archive)}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -226,13 +226,6 @@ export const EXCEPTION_TYPES: readonly ExceptionType[] = [
   'other',
 ];
 
-export const SETTLEMENT_STATUS_LABELS: Record<SettlementStatus, string> = {
-  draft:     'Draft',
-  submitted: 'Submitted',
-  verified:  'Verified',
-  closed:    'Closed',
-};
-
 export const SETTLEMENT_STATUS_COLORS: Record<SettlementStatus, string> = {
   draft:     'bg-gray-100 text-gray-700',
   submitted: 'bg-blue-100 text-blue-700',

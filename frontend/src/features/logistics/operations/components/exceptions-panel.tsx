@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 import { useAlerts, useExceptionSummary, useExceptions } from '../hooks/use-operations';
 import type { ExceptionSeverity } from '../types/operations';
-import { ExceptionStatusBadge, SeverityIcon, SourceBadge } from './operations-badges';
+import { ExceptionStatusBadge, SeverityIcon, SourceBadge, useExceptionCategoryLabel } from './operations-badges';
 import { ExceptionDrawer } from './exception-drawer';
 import type enLogistics from '@/i18n/locales/en/logistics.json';
 
@@ -40,6 +40,7 @@ type SeverityFilterKey = (typeof SEVERITY_FILTERS)[number]['key'];
  */
 export function ExceptionsPanel() {
   const { t } = useTranslation('logistics');
+  const categoryLabel = useExceptionCategoryLabel();
   const [severity, setSeverity] = useState<SeverityFilterKey>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -116,7 +117,7 @@ export function ExceptionsPanel() {
                     <div className="flex flex-wrap items-center gap-1.5">
                       <span className="text-sm font-medium">{exception.title}</span>
                       {/* Where the fix actually lives. */}
-                      <SourceBadge source={exception.source} label={exception.source_label} />
+                      <SourceBadge source={exception.source} />
                       <ExceptionStatusBadge status={exception.status} />
                       {exception.is_recurring && (
                         <Badge variant="outline" className="gap-1 text-[10px]">
@@ -136,7 +137,7 @@ export function ExceptionsPanel() {
                       </p>
                     )}
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      {exception.category_label} ·{' '}
+                      {categoryLabel(exception.category)} ·{' '}
                       {t($ => $.operations.exceptions.openMinutes, { minutes: exception.age_minutes })}
                       {exception.unacknowledged_minutes !== null
                         ? ` · ${t($ => $.operations.exceptions.unlookedAtMinutes, {

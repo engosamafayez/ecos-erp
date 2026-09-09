@@ -187,7 +187,7 @@ export function DriverStopDetailPage() {
           size="icon"
           onClick={() => navigate(ROUTES.driverTripStops.replace(':tripId', tripId))}
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
         </Button>
         <div className="flex-1 min-w-0">
           <h1 className="font-semibold text-base">{t(($) => $.stop.sequence, { sequence: stop.sequence })}</h1>

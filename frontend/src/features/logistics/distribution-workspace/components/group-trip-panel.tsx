@@ -15,6 +15,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useRemoveTripOrder } from '@/features/logistics/trips/hooks/use-trip-execution';
+import { useTripStatusLabel } from '@/features/logistics/trips/lib/trip-status-label';
+import type { TripStatus } from '@/features/logistics/trips/types/trip';
+import { useOrderStatusLabels } from '@/features/orders/hooks/use-order-labels';
+import type { OrderStatus } from '@/features/orders/types/order';
 
 import { TripReadinessPanel } from './trip-readiness-panel';
 
@@ -496,6 +500,7 @@ function OrderNeedingDecision({
   onToggle: () => void;
 }) {
   const { t } = useTranslation('logistics');
+  const { statusLabel } = useOrderStatusLabels();
   const move = useMoveOrderToSlot();
 
   const destinations = siblings.filter((candidate) => candidate.slot_id !== group.slot_id);
@@ -519,7 +524,9 @@ function OrderNeedingDecision({
         <span className="font-medium" dir="ltr">
           {order.order_number}
         </span>
-        <Badge variant="outline">{order.order_status}</Badge>
+        <Badge variant="outline">
+          {statusLabel[order.order_status as OrderStatus] ?? order.order_status}
+        </Badge>
         <Badge variant={order.payment_state === 'paid' ? 'secondary' : 'outline'}>
           {order.payment_state === 'paid'
             ? t(($) => $.distributionWorkspace.payment.paid)
@@ -780,6 +787,7 @@ function TripIntegrityException({
 
 function TripCard({ trip, groupCode }: { trip: GroupTrip; groupCode: string }) {
   const { t } = useTranslation('logistics');
+  const tripStatusLabel = useTripStatusLabel();
   const notAssigned = t(($) => $.distributionWorkspace.trip.notAssigned);
 
   return (
@@ -795,7 +803,7 @@ function TripCard({ trip, groupCode }: { trip: GroupTrip; groupCode: string }) {
         <span className="font-semibold" dir="ltr">
           {trip.trip_number}
         </span>
-        <Badge variant="secondary">{trip.status}</Badge>
+        <Badge variant="secondary">{tripStatusLabel(trip.status as TripStatus)}</Badge>
       </div>
 
       {/* Compact KPI row — Orders / Remaining / Vehicle / Driver / Capacity.

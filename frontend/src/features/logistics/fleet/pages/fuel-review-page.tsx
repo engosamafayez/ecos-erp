@@ -14,7 +14,31 @@ import { Button } from '@/components/ui/button';
 
 import { FuelTransactionDrawer } from '../components/fuel-transaction-drawer';
 import { useFuelTransactions } from '../hooks/use-fleet';
-import type { FuelTransaction } from '../types/fleet';
+import type { FuelTransaction, FuelTransactionStatus } from '../types/fleet';
+import type enLogistics from '@/i18n/locales/en/logistics.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of key
+ * strings can never type-check. The selector is the same expression the
+ * compiler validates at an inline call site, kept in the table.
+ */
+type LogisticsLabel = ($: typeof enLogistics) => string;
+
+/**
+ * Every fuel transaction status has its own translated label, so the
+ * backend's English `status_label` is never rendered directly — that would
+ * leak English into an otherwise-Arabic UI.
+ */
+const FUEL_STATUS_LABEL: Record<FuelTransactionStatus, LogisticsLabel> = {
+  captured: ($) => $.fleet.review.statusValues.captured,
+  validated: ($) => $.fleet.review.statusValues.validated,
+  reconciled: ($) => $.fleet.review.statusValues.reconciled,
+  disputed: ($) => $.fleet.review.statusValues.disputed,
+  written_off: ($) => $.fleet.review.statusValues.written_off,
+  rejected: ($) => $.fleet.review.statusValues.rejected,
+};
 
 /**
  * Fuel review.
@@ -86,7 +110,7 @@ export function FuelReviewPage() {
         label: t(($) => $.fleet.review.status),
         cell: (row) => (
           <span className="flex items-center gap-2">
-            <Badge variant="secondary">{row.status_label}</Badge>
+            <Badge variant="secondary">{t(FUEL_STATUS_LABEL[row.status])}</Badge>
             {row.has_anomaly && (
               <Badge variant="outline" className="text-[10px] text-amber-600 dark:text-amber-400">
                 <AlertTriangle className="me-1 h-3 w-3" />

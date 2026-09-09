@@ -22,6 +22,8 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useOrderStatusLabels } from '@/features/orders/hooks/use-order-labels';
+import type { OrderStatus } from '@/features/orders/types/order';
 
 import {
   useChangeOrderZone,
@@ -67,6 +69,7 @@ export function MapOrderPanel({
 }) {
   const { t } = useTranslation('logistics');
   const { toast } = useToast();
+  const { statusLabel } = useOrderStatusLabels();
 
   const open = order !== null;
 
@@ -221,7 +224,7 @@ export function MapOrderPanel({
             <span className="truncate">{order?.order_number ?? order?.order_id ?? ''}</span>
             {detail ? (
               <Badge variant="outline" className="shrink-0">
-                {detail.order_status}
+                {statusLabel[detail.order_status as OrderStatus] ?? detail.order_status}
               </Badge>
             ) : null}
           </SheetTitle>

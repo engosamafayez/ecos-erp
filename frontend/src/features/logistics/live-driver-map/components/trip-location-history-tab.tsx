@@ -25,6 +25,22 @@ const STOP_STATUS_LABEL: Record<string, LogisticsLabel> = {
 };
 
 /**
+ * `exception_type` is backend-validated only as a free string (max:100), not a
+ * closed enum — the driver's exception-report form just curates its input to
+ * these known values today. Known values get a real Arabic label; anything
+ * else (legacy data, a future value) still renders as the raw string rather
+ * than silently disappearing.
+ */
+const EXCEPTION_TYPE_LABEL: Record<string, LogisticsLabel> = {
+  damaged: ($) => $.trips.locationHistory.exceptions.type.damaged,
+  missing: ($) => $.trips.locationHistory.exceptions.type.missing,
+  wrong_product: ($) => $.trips.locationHistory.exceptions.type.wrong_product,
+  complaint: ($) => $.trips.locationHistory.exceptions.type.complaint,
+  packaging: ($) => $.trips.locationHistory.exceptions.type.packaging,
+  other: ($) => $.trips.locationHistory.exceptions.type.other,
+};
+
+/**
  * TASK-ECOS-SHIPPING-OS-REDESIGN-004 §17-§20 — Route History + Replay, as a
  * TripDrawer tab (§20: "no competing history pages" — this is the ONE
  * surface; Live Map and Shipping Orders deep-link into it via
@@ -152,7 +168,11 @@ export function TripLocationHistoryTab({ tripId }: { tripId: string }) {
                   className="flex items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs"
                 >
                   <AlertTriangle className="size-3.5 shrink-0 text-destructive" aria-hidden />
-                  <span className="flex-1">{exception.exception_type}</span>
+                  <span className="flex-1">
+                    {EXCEPTION_TYPE_LABEL[exception.exception_type]
+                      ? t(EXCEPTION_TYPE_LABEL[exception.exception_type])
+                      : exception.exception_type}
+                  </span>
                   <span className="text-muted-foreground">{dateTime(exception.reported_at)}</span>
                 </li>
               ))}

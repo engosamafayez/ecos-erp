@@ -45,7 +45,7 @@ export function DriverReturnsPage() {
           aria-label={t(($) => $.nav.home)}
           onClick={() => navigate(ROUTES.driverTrip.replace(':tripId', tripId))}
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
         </Button>
         <h1 className="font-semibold text-base flex-1">{t(($) => $.returns.title)}</h1>
         <Button size="sm" variant="outline" onClick={() => setSheetOpen(true)}>

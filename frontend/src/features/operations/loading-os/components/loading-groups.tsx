@@ -248,6 +248,91 @@ export function useReasonLabel(): (reason: LoadingWorkspaceReasonCode) => string
   };
 }
 
+/**
+ * One label per Trip status (`TripStatus`, mirroring `logistics/trips`' own
+ * `TRIP_STATUS_LABEL`) — shared by the Group detail's transport line and the
+ * session-overview's per-assignment evidence line, so a Trip embedded in either
+ * loading read never renders its backend status raw.
+ */
+export function useLoadingTripStatusLabel(): (status: string) => string {
+  const { t } = useTranslation('operations');
+
+  return (status) => {
+    switch (status) {
+      case 'planning':
+        return t(($) => $.loadingOs.tripStatus.planning);
+      case 'loading':
+        return t(($) => $.loadingOs.tripStatus.loading);
+      case 'loading_completed':
+        return t(($) => $.loadingOs.tripStatus.loadingCompleted);
+      case 'driver_accepted':
+        return t(($) => $.loadingOs.tripStatus.driverAccepted);
+      case 'dispatch_blocked':
+        return t(($) => $.loadingOs.tripStatus.dispatchBlocked);
+      case 'ready_for_dispatch':
+        return t(($) => $.loadingOs.tripStatus.readyForDispatch);
+      case 'dispatched':
+        return t(($) => $.loadingOs.tripStatus.dispatched);
+      case 'out_for_delivery':
+        return t(($) => $.loadingOs.tripStatus.outForDelivery);
+      case 'in_progress':
+        return t(($) => $.loadingOs.tripStatus.inProgress);
+      case 'completed':
+        return t(($) => $.loadingOs.tripStatus.completed);
+      case 'settlement_pending':
+        return t(($) => $.loadingOs.tripStatus.settlementPending);
+      case 'closed':
+        return t(($) => $.loadingOs.tripStatus.closed);
+      case 'cancelled':
+        return t(($) => $.loadingOs.tripStatus.cancelled);
+      default:
+        return status;
+    }
+  };
+}
+
+/**
+ * One label per loading session status (`LoadingSessionStatus`) — shared by the workspace
+ * page's session picker and the session-overview table, so a `LoadingSession` never renders
+ * its backend status raw in either place. `default` is a defensive fallback only, for a value
+ * outside the known set; every real status these screens can receive has its own translated
+ * case.
+ */
+export function useLoadingSessionStatusLabel(): (status: string) => string {
+  const { t } = useTranslation('operations');
+
+  return (status) => {
+    switch (status) {
+      case 'draft':
+        return t(($) => $.loadingOs.sessionStatus.draft);
+      case 'ready':
+        return t(($) => $.loadingOs.sessionStatus.ready);
+      case 'open':
+        return t(($) => $.loadingOs.sessionStatus.open);
+      case 'loading':
+        return t(($) => $.loadingOs.sessionStatus.loading);
+      case 'loading_complete':
+        return t(($) => $.loadingOs.sessionStatus.loadingComplete);
+      case 'allocating':
+        return t(($) => $.loadingOs.sessionStatus.allocating);
+      case 'allocated':
+        return t(($) => $.loadingOs.sessionStatus.allocated);
+      case 'dispatching':
+        return t(($) => $.loadingOs.sessionStatus.dispatching);
+      case 'dispatched':
+        return t(($) => $.loadingOs.sessionStatus.dispatched);
+      case 'reconciling':
+        return t(($) => $.loadingOs.sessionStatus.reconciling);
+      case 'closed':
+        return t(($) => $.loadingOs.sessionStatus.closed);
+      case 'cancelled':
+        return t(($) => $.loadingOs.sessionStatus.cancelled);
+      default:
+        return status;
+    }
+  };
+}
+
 /** One badge tone per read-model bucket — shared with the session-overview tabs. */
 export function bucketBadgeVariant(
   bucket: LoadingWorkspaceBucket,
@@ -731,6 +816,7 @@ export function LoadingGroupDetail({ slotId }: { slotId: string }) {
   const { t } = useTranslation('operations');
   const executionLabel = useExecutionLabel();
   const reasonLabel = useReasonLabel();
+  const tripStatusLabel = useLoadingTripStatusLabel();
   const detail = useLoadingGroup(slotId);
   const startLoading = useStartLoading(slotId);
 
@@ -810,7 +896,7 @@ export function LoadingGroupDetail({ slotId }: { slotId: string }) {
               label={t(($) => $.loadingOs.groups.trip)}
               value={
                 data?.transport.trip
-                  ? `${data.transport.trip.trip_number} · ${data.transport.trip.status}`
+                  ? `${data.transport.trip.trip_number} · ${tripStatusLabel(data.transport.trip.status)}`
                   : null
               }
               state={state}

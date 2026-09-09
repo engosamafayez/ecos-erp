@@ -65,7 +65,7 @@ export function DriverMapPage() {
           size="icon"
           onClick={() => navigate(ROUTES.driverTrip.replace(':tripId', tripId))}
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
         </Button>
         <h1 className="font-semibold text-base">{t(($) => $.map.title)}</h1>
       </div>

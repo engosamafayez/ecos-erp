@@ -6,6 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UniversalDataGrid } from '@/components/data-grid/universal-data-grid';
 import type { DataGridColumnDef } from '@/components/data-grid/types';
 import { useFormatter } from '@/hooks/use-formatter';
+import { useTripStatusLabel } from '@/features/logistics/trips/lib/trip-status-label';
+import type { TripStatus } from '@/features/logistics/trips/types/trip';
 
 import { DistributionMapTab } from './distribution-map-tab';
 import { GroupTripPanel } from './group-trip-panel';
@@ -37,6 +39,16 @@ import type { DistributionOrder, SlotSummary, ZoneSummary } from '../types';
  * mutation invalidates that query so the details reflect the saved pairing without a
  * reload. Nothing invents a KPI or business rule.
  */
+
+/**
+ * A Distribution Group's own status. One state exists today ('draft') — kept as a
+ * map rather than an inline check so a status the backend adds later appears here
+ * without reshaping the lookup. Mirrors the identical map in
+ * distribution-groups-panel.tsx (same field, same folder).
+ */
+const GROUP_STATUS_LABEL: Record<string, (($: typeof import('@/i18n/locales/en/logistics.json')) => string)> = {
+  draft: ($) => $.distributionWorkspace.groups.status.draft,
+};
 
 /** One label → value row in the Group Details panel. */
 function DetailRow({ label, value }: { label: string; value: string | number }) {
@@ -74,6 +86,7 @@ export function GroupDetailSection({
 }) {
   const { t } = useTranslation('logistics');
   const { money } = useFormatter();
+  const tripStatusLabel = useTripStatusLabel();
 
   // Orders belonging to THIS group (by slot membership) — the scoped table source.
   const groupOrders = orders.filter((o) => o.virtual_slot_id === group.slot_id);
@@ -110,7 +123,7 @@ export function GroupDetailSection({
       ? (trip.vehicle.plate_number ?? trip.vehicle.name ?? '—')
       : notAssigned;
   const driverLabel = tripUnknown ? '—' : (trip?.driver?.full_name ?? notAssigned);
-  const tripLabel = tripUnknown ? '—' : trip ? trip.status : '—';
+  const tripLabel = tripUnknown ? '—' : trip ? tripStatusLabel(trip.status as TripStatus) : '—';
 
   return (
     <Card className="mt-6 space-y-4 p-4" data-testid={`group-detail-${group.code}`}>
@@ -122,7 +135,7 @@ export function GroupDetailSection({
         ) : null}
         <span className="text-sm text-muted-foreground">{zoneTitle}</span>
         <Badge variant="secondary" className="capitalize">
-          {group.status}
+          {GROUP_STATUS_LABEL[group.status] ? t(GROUP_STATUS_LABEL[group.status]) : group.status}
         </Badge>
       </div>
 

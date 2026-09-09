@@ -15,6 +15,7 @@ import type enLogistics from '@/i18n/locales/en/logistics.json';
 
 import { useSetTripStatus, useTrip, useTripDispatchReadiness } from '../hooks/use-trips';
 import type { Trip, TripStatus, TripType } from '../types/trip';
+import { useTripStatusLabel } from '../lib/trip-status-label';
 import { TripCustodyTab } from './trip-custody-tab';
 import { TripExceptionsTab } from './trip-exceptions-tab';
 import { TripOrdersTab } from './trip-orders-tab';
@@ -67,6 +68,7 @@ function YesNo({ value }: { value: boolean }) {
  */
 function StatusTransition({ trip }: { trip: Trip }) {
   const { t } = useTranslation('logistics');
+  const statusLabel = useTripStatusLabel();
   const setStatus = useSetTripStatus();
   const [target, setTarget] = useState<TripStatus | ''>('');
   const [reason, setReason] = useState('');
@@ -116,7 +118,7 @@ function StatusTransition({ trip }: { trip: Trip }) {
           <option value="">—</option>
           {trip.allowed_transitions.map((transition) => (
             <option key={transition.value} value={transition.value}>
-              {transition.label}
+              {statusLabel(transition.value)}
             </option>
           ))}
         </select>
@@ -207,6 +209,7 @@ export function TripDrawer({
   initialTab?: string;
 }) {
   const { t, i18n } = useTranslation('logistics');
+  const statusLabel = useTripStatusLabel();
   const { can } = usePermission();
   // The parent remounts this drawer per trip and per open/close, so the tab
   // simply starts at `initialTab` (falling back to overview) — there is no
@@ -223,7 +226,7 @@ export function TripDrawer({
       open={open}
       onOpenChange={onOpenChange}
       title={trip ? `${trip.trip_number} — ${trip.name}` : t(($) => $.trips.drawer.title)}
-      description={trip?.status_label}
+      description={trip ? statusLabel(trip.status) : undefined}
       size="xl"
       footer={
         trip && trip.is_editable && can('logistics.distribution.update') ? (

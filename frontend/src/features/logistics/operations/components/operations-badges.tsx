@@ -14,6 +14,7 @@ import type enLogistics from '@/i18n/locales/en/logistics.json';
  */
 type LogisticsLabel = ($: typeof enLogistics) => string;
 import type {
+  ExceptionCategory,
   ExceptionSeverity,
   ExceptionSource,
   ExceptionStatus,
@@ -140,19 +141,64 @@ export function SeverityIcon({ severity }: { severity: ExceptionSeverity }) {
   return <Info className="size-3.5 shrink-0 text-muted-foreground" />;
 }
 
+const SOURCE: Record<ExceptionSource, LogisticsLabel> = {
+  fleet: ($) => $.operations.badges.source.fleet,
+  drivers: ($) => $.operations.badges.source.drivers,
+  network: ($) => $.operations.badges.source.network,
+  dispatch: ($) => $.operations.badges.source.dispatch,
+  routing: ($) => $.operations.badges.source.routing,
+  carriers: ($) => $.operations.badges.source.carriers,
+  distribution: ($) => $.operations.badges.source.distribution,
+  delivery: ($) => $.operations.badges.source.delivery,
+  operations: ($) => $.operations.badges.source.operations,
+};
+
+const CATEGORY: Record<ExceptionCategory, LogisticsLabel> = {
+  resource: ($) => $.operations.badges.category.resource,
+  capacity: ($) => $.operations.badges.category.capacity,
+  dispatch: ($) => $.operations.badges.category.dispatch,
+  routing: ($) => $.operations.badges.category.routing,
+  execution: ($) => $.operations.badges.category.execution,
+  carrier: ($) => $.operations.badges.category.carrier,
+  integration: ($) => $.operations.badges.category.integration,
+  policy: ($) => $.operations.badges.category.policy,
+};
+
+/**
+ * What kind of problem an exception is — distinct from `SourceBadge` (which
+ * module owns the fix). Exposed as a hook (not a component, since callers mix
+ * it into plain text rather than a badge) so it never renders the backend's
+ * raw `category_label` string directly.
+ */
+export function useExceptionCategoryLabel() {
+  const { t } = useTranslation('logistics');
+  return (category: ExceptionCategory) => t(CATEGORY[category]);
+}
+
+/** Same translated map `SourceBadge` renders, exposed for plain-text (non-badge) uses. */
+export function useExceptionSourceLabel() {
+  const { t } = useTranslation('logistics');
+  return (source: ExceptionSource) => t(SOURCE[source]);
+}
+
 /**
  * Which module owns the fact behind an exception.
  *
  * Always shown, because Operations cannot clear another module's fact — an
- * operator needs to know where the fix actually lives before trying.
+ * operator needs to know where the fix actually lives before trying. The
+ * label is always derived from the `source` enum through the translated map
+ * above — never a caller-supplied string, since every call site historically
+ * passed the backend's own raw English source value here (leaking English
+ * into an otherwise-Arabic UI).
  */
-export function SourceBadge({ source, label }: { source: ExceptionSource; label?: string }) {
+export function SourceBadge({ source }: { source: ExceptionSource }) {
+  const { t } = useTranslation('logistics');
   const isOurs = source === 'operations';
 
   return (
     <Badge variant="outline" className={`gap-1 text-[10px] ${isOurs ? '' : 'border-amber-500'}`}>
       {!isOurs && <Lock className="size-2.5" />}
-      {label ?? source}
+      {t(SOURCE[source])}
     </Badge>
   );
 }

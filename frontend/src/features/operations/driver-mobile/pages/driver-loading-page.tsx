@@ -377,7 +377,7 @@ export function DriverLoadingPage() {
             aria-label={t(($) => $.loadingScreen.back)}
             onClick={() => navigate(ROUTES.driverHome)}
           >
-            <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+            <ArrowLeft className="h-5 w-5 rtl:rotate-180" aria-hidden="true" />
           </Button>
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-base font-semibold leading-tight">{t(($) => $.loadingScreen.headerTitle)}</h1>
@@ -539,7 +539,7 @@ export function DriverLoadingPage() {
                       data-testid="driver-ready-to-start-delivery"
                       onClick={handleReadyToStartDelivery}
                     >
-                      <PackageCheck className="mr-2 h-5 w-5 rtl:ml-2 rtl:mr-0" aria-hidden="true" />
+                      <PackageCheck className="me-2 h-5 w-5" aria-hidden="true" />
                       {departing ? t(($) => $.loadingScreen.departing) : t(($) => $.loadingScreen.readyToStartDelivery)}
                     </Button>
                   )}

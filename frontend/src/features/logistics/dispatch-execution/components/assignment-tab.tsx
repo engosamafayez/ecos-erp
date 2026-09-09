@@ -12,6 +12,8 @@ import {
 } from '@/features/logistics/distribution-workspace/hooks/use-distribution-workspace';
 import type { GroupTrip } from '@/features/logistics/distribution-workspace/types';
 import type { SlotSummary } from '@/features/logistics/distribution-workspace/types';
+import { TripStatusBadge } from '@/features/logistics/trips/components/trip-status-badge';
+import type { TripStatus } from '@/features/logistics/trips/types/trip';
 import { ROUTES } from '@/router/routes';
 
 import { OpenWorkspaceLink } from './open-workspace-link';
@@ -115,9 +117,7 @@ export function AssignmentTab() {
         trips.length === 0 ? (
           <span className="text-muted-foreground">{t($ => $.assignment.noTripYet)}</span>
         ) : (
-          <Badge variant="secondary" className="capitalize">
-            {trips[0].status.replace(/_/g, ' ')}
-          </Badge>
+          <TripStatusBadge status={trips[0].status as TripStatus} />
         ),
     },
     {

@@ -22,9 +22,34 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 
 import { useVehicleStats, useVehicles } from '../hooks/use-vehicles';
-import type { Vehicle, VehicleStatus } from '../types/vehicle';
+import type { Vehicle, VehicleStatus, VehicleType } from '../types/vehicle';
 import { VehicleDrawer } from '../components/vehicle-drawer';
 import { VehicleStatusBadge } from '../components/vehicle-status-badge';
+import type enLogistics from '@/i18n/locales/en/logistics.json';
+
+/**
+ * A label held as an i18next selector rather than a key string.
+ *
+ * Selector mode has no type for a key chosen at runtime, so a table of key
+ * strings can never type-check. The selector is the same expression the
+ * compiler validates at an inline call site, kept in the table.
+ */
+type LogisticsLabel = ($: typeof enLogistics) => string;
+
+/**
+ * Every vehicle type has its own translated label, so the backend's English
+ * `type_label` is never rendered directly — that would leak English into an
+ * otherwise-Arabic UI.
+ */
+const VEHICLE_TYPE_LABEL: Record<VehicleType, LogisticsLabel> = {
+  motorcycle: ($) => $.vehicles.type.motorcycle,
+  car: ($) => $.vehicles.type.car,
+  van: ($) => $.vehicles.type.van,
+  pickup: ($) => $.vehicles.type.pickup,
+  small_truck: ($) => $.vehicles.type.small_truck,
+  medium_truck: ($) => $.vehicles.type.medium_truck,
+  large_truck: ($) => $.vehicles.type.large_truck,
+};
 
 // ── Table Skeleton ─────────────────────────────────────────────────────────────
 
@@ -147,13 +172,13 @@ function VehiclesTable({
                 </td>
 
                 <td className="px-3 py-2.5">
-                  <Badge variant="outline" className="text-xs">{vehicle.type_label}</Badge>
+                  <Badge variant="outline" className="text-xs">{t(VEHICLE_TYPE_LABEL[vehicle.type])}</Badge>
                 </td>
 
                 <td className="px-3 py-2.5 text-end tabular-nums">
-                  <p className="text-sm">{vehicle.capacity_orders} orders</p>
+                  <p className="text-sm">{t(($) => $.vehicles.table.capacityOrders, { count: vehicle.capacity_orders })}</p>
                   {vehicle.capacity_weight_kg != null && (
-                    <p className="text-xs text-muted-foreground">{vehicle.capacity_weight_kg} kg</p>
+                    <p className="text-xs text-muted-foreground">{t(($) => $.vehicles.table.capacityWeightKg, { value: vehicle.capacity_weight_kg })}</p>
                   )}
                 </td>
 
@@ -161,7 +186,7 @@ function VehiclesTable({
                   {vehicle.current_driver ? (
                     <span className="text-xs">{vehicle.current_driver.full_name}</span>
                   ) : (
-                    <span className="text-xs text-muted-foreground">Unassigned</span>
+                    <span className="text-xs text-muted-foreground">{t(($) => $.common.unassigned)}</span>
                   )}
                 </td>
 
@@ -173,10 +198,10 @@ function VehiclesTable({
                   {vehicle.can_be_dispatched === false ? (
                     <Badge variant="destructive" className="gap-1 text-xs">
                       <ShieldAlert className="size-3" />
-                      Blocked
+                      {t(($) => $.vehicles.table.blocked)}
                     </Badge>
                   ) : (
-                    <span className="text-xs text-muted-foreground">Ready</span>
+                    <span className="text-xs text-muted-foreground">{t(($) => $.vehicles.table.ready)}</span>
                   )}
                 </td>
 
@@ -196,27 +221,28 @@ function VehiclesTable({
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
-const STATUS_FILTERS = [
-  { key: 'all', label: 'All' },
-  { key: 'available', label: 'Available' },
-  { key: 'assigned', label: 'Assigned' },
-  { key: 'in_delivery', label: 'In Delivery' },
-  { key: 'maintenance', label: 'Maintenance' },
-  { key: 'out_of_service', label: 'Out of Service' },
-  { key: 'archived', label: 'Archived' },
-] as const;
+const STATUS_FILTERS: { key: 'all' | 'available' | 'assigned' | 'in_delivery' | 'maintenance' | 'out_of_service' | 'archived'; labelKey: LogisticsLabel }[] = [
+  { key: 'all', labelKey: ($) => $.common.all },
+  { key: 'available', labelKey: ($) => $.common.available },
+  { key: 'assigned', labelKey: ($) => $.common.assigned },
+  { key: 'in_delivery', labelKey: ($) => $.vehicles.status.inDelivery },
+  { key: 'maintenance', labelKey: ($) => $.vehicles.status.maintenance },
+  { key: 'out_of_service', labelKey: ($) => $.vehicles.status.outOfService },
+  { key: 'archived', labelKey: ($) => $.vehicles.status.archived },
+];
 
 type StatusFilterKey = (typeof STATUS_FILTERS)[number]['key'];
 
-const EXPIRY_FILTERS = [
-  { key: 'all', label: 'Any document' },
-  { key: 'expired', label: 'Expired' },
-  { key: 'expiring', label: 'Expiring soon' },
-] as const;
+const EXPIRY_FILTERS: { key: 'all' | 'expired' | 'expiring'; labelKey: LogisticsLabel }[] = [
+  { key: 'all', labelKey: ($) => $.vehicles.filters.anyDocument },
+  { key: 'expired', labelKey: ($) => $.vehicles.documents.expired },
+  { key: 'expiring', labelKey: ($) => $.vehicles.filters.expiringSoon },
+];
 
 type ExpiryFilterKey = (typeof EXPIRY_FILTERS)[number]['key'];
 
 export function VehiclesPage() {
+  const { t } = useTranslation('logistics');
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilterKey>('all');
   const [expiryFilter, setExpiryFilter] = useState<ExpiryFilterKey>('all');
@@ -251,20 +277,20 @@ export function VehiclesPage() {
   }
 
   const metrics = [
-    { id: 'total',     icon: Truck,       label: 'Total Vehicles',    value: stats?.total_vehicles    ?? 0, isLoading: !stats },
-    { id: 'available', icon: CheckCircle, label: 'Available',         value: stats?.available         ?? 0, isLoading: !stats, colorClass: 'text-emerald-600' },
-    { id: 'assigned',  icon: UserCheck,   label: 'Assigned',          value: stats?.assigned          ?? 0, isLoading: !stats, colorClass: 'text-blue-600' },
-    { id: 'maint',     icon: Wrench,      label: 'Maintenance',       value: stats?.maintenance       ?? 0, isLoading: !stats, colorClass: 'text-amber-600' },
-    { id: 'expiring',  icon: ShieldAlert, label: 'Expiring Licences', value: stats?.expiring_licenses ?? 0, isLoading: !stats, colorClass: 'text-amber-600' },
-    { id: 'oos',       icon: XCircle,     label: 'Out of Service',    value: stats?.out_of_service    ?? 0, isLoading: !stats, colorClass: 'text-destructive' },
+    { id: 'total',     icon: Truck,       label: t(($) => $.vehicles.metrics.total),           value: stats?.total_vehicles    ?? 0, isLoading: !stats },
+    { id: 'available', icon: CheckCircle, label: t(($) => $.common.available),                 value: stats?.available         ?? 0, isLoading: !stats, colorClass: 'text-emerald-600' },
+    { id: 'assigned',  icon: UserCheck,   label: t(($) => $.common.assigned),                  value: stats?.assigned          ?? 0, isLoading: !stats, colorClass: 'text-blue-600' },
+    { id: 'maint',     icon: Wrench,      label: t(($) => $.vehicles.status.maintenance),      value: stats?.maintenance       ?? 0, isLoading: !stats, colorClass: 'text-amber-600' },
+    { id: 'expiring',  icon: ShieldAlert, label: t(($) => $.vehicles.metrics.expiringLicenses), value: stats?.expiring_licenses ?? 0, isLoading: !stats, colorClass: 'text-amber-600' },
+    { id: 'oos',       icon: XCircle,     label: t(($) => $.vehicles.status.outOfService),      value: stats?.out_of_service    ?? 0, isLoading: !stats, colorClass: 'text-destructive' },
   ];
 
   return (
     <>
       <WorkspaceHeader
-        breadcrumbs={[{ label: 'Logistics OS' }, { label: 'Vehicles' }]}
-        title="Vehicles"
-        description="Manage the enterprise fleet — capacity, documents, maintenance and driver assignment"
+        breadcrumbs={[{ label: t(($) => $.vehicles.breadcrumbRoot) }, { label: t(($) => $.vehicles.title) }]}
+        title={t(($) => $.vehicles.title)}
+        description={t(($) => $.vehicles.description)}
         metrics={metrics}
       />
 
@@ -272,7 +298,7 @@ export function VehiclesPage() {
         toolbar={
           <div className="px-4 sm:px-6">
             <SmartToolbar
-              primaryAction={{ label: 'New Vehicle', icon: Plus, onClick: openCreate }}
+              primaryAction={{ label: t(($) => $.vehicles.newVehicle), icon: Plus, onClick: openCreate }}
               onRefresh={() => refetch()}
               isFetching={isFetching}
             />
@@ -281,7 +307,7 @@ export function VehiclesPage() {
         quickFilters={
           <div className="flex flex-wrap items-center gap-2 px-4 py-2 sm:px-6">
             <Input
-              placeholder="Search by plate, code, name, manufacturer or VIN…"
+              placeholder={t(($) => $.vehicles.searchPlaceholder)}
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="h-8 max-w-sm text-sm"
@@ -294,13 +320,13 @@ export function VehiclesPage() {
                 className="h-8 text-xs"
                 onClick={() => { setStatusFilter(s.key); setPage(1); }}
               >
-                {s.key === 'available' && <CheckCircle className="mr-1 h-3 w-3" />}
-                {s.key === 'assigned' && <UserCheck className="mr-1 h-3 w-3" />}
-                {s.key === 'in_delivery' && <Truck className="mr-1 h-3 w-3" />}
-                {s.key === 'maintenance' && <Wrench className="mr-1 h-3 w-3" />}
-                {s.key === 'out_of_service' && <XCircle className="mr-1 h-3 w-3" />}
-                {s.key === 'archived' && <Archive className="mr-1 h-3 w-3" />}
-                {s.label}
+                {s.key === 'available' && <CheckCircle className="me-1 h-3 w-3" />}
+                {s.key === 'assigned' && <UserCheck className="me-1 h-3 w-3" />}
+                {s.key === 'in_delivery' && <Truck className="me-1 h-3 w-3" />}
+                {s.key === 'maintenance' && <Wrench className="me-1 h-3 w-3" />}
+                {s.key === 'out_of_service' && <XCircle className="me-1 h-3 w-3" />}
+                {s.key === 'archived' && <Archive className="me-1 h-3 w-3" />}
+                {t(s.labelKey)}
               </Button>
             ))}
             <span className="mx-1 h-4 w-px bg-border" />
@@ -312,8 +338,8 @@ export function VehiclesPage() {
                 className="h-8 text-xs"
                 onClick={() => { setExpiryFilter(e.key); setPage(1); }}
               >
-                {e.key === 'expired' && <ShieldAlert className="mr-1 h-3 w-3" />}
-                {e.label}
+                {e.key === 'expired' && <ShieldAlert className="me-1 h-3 w-3" />}
+                {t(e.labelKey)}
               </Button>
             ))}
           </div>

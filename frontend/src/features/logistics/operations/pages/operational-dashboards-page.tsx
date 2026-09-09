@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Activity, Gauge, Layers, Truck, Users } from 'lucide-react';
 
 import { WorkspaceHeader } from '@/components/workspace/header/workspace-header';
@@ -15,8 +16,8 @@ import {
   useKpiDashboard,
 } from '../hooks/use-operations-analytics';
 
-function pct(value: number | null | undefined): string {
-  if (value === null || value === undefined) return 'No data yet';
+function pct(value: number | null | undefined, noData: string): string {
+  if (value === null || value === undefined) return noData;
   return `${Math.round(value * 100)}%`;
 }
 
@@ -60,8 +61,14 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
  * "in use right now ÷ available right now", never a projection.
  */
 function UtilisationBar({ value }: { value: number | null }) {
+  const { t } = useTranslation('logistics');
+
   if (value === null) {
-    return <p className="text-sm text-muted-foreground">No assignable resources to measure.</p>;
+    return (
+      <p className="text-sm text-muted-foreground">
+        {t(($) => $.operations.operationalDashboards.noAssignableResources)}
+      </p>
+    );
   }
 
   const capped = Math.min(1, Math.max(0, value));
@@ -69,7 +76,7 @@ function UtilisationBar({ value }: { value: number | null }) {
   return (
     <div>
       <div className="mb-1 flex items-center justify-between text-xs">
-        <span className="text-muted-foreground">In use now</span>
+        <span className="text-muted-foreground">{t(($) => $.operations.operationalDashboards.inUseNow)}</span>
         <span className="tabular-nums">{Math.round(value * 100)}%</span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-muted">
@@ -83,6 +90,7 @@ function UtilisationBar({ value }: { value: number | null }) {
 }
 
 function FleetTab() {
+  const { t } = useTranslation('logistics');
   const { data, isLoading } = useFleetDashboard();
 
   if (isLoading || !data) return <Skeleton className="h-64 w-full" />;
@@ -90,25 +98,34 @@ function FleetTab() {
   return (
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-4">
-        <Card label="Total vehicles" value={data.total_vehicles} />
-        <Card label="Assignable" value={data.assignable} tone="good" />
-        <Card label="Unfit" value={data.unfit} tone={data.unfit > 0 ? 'warn' : undefined} />
-        <Card label="In use now" value={data.in_use_now} />
+        <Card label={t(($) => $.operations.operationalDashboards.fleet.totalVehicles)} value={data.total_vehicles} />
+        <Card
+          label={t(($) => $.operations.operationalDashboards.fleet.assignable)}
+          value={data.assignable}
+          tone="good"
+        />
+        <Card
+          label={t(($) => $.operations.operationalDashboards.fleet.unfit)}
+          value={data.unfit}
+          tone={data.unfit > 0 ? 'warn' : undefined}
+        />
+        <Card label={t(($) => $.operations.operationalDashboards.inUseNow)} value={data.in_use_now} />
       </div>
 
-      <Panel title="Fleet utilisation (snapshot)">
+      <Panel title={t(($) => $.operations.operationalDashboards.panel.fleetUtilisation)}>
         <UtilisationBar value={data.utilisation_now} />
         <p className="mt-2 text-xs text-muted-foreground">
-          {data.idle_assignable} assignable vehicle{data.idle_assignable === 1 ? '' : 's'} idle
-          right now.
+          {t(($) => $.operations.operationalDashboards.fleet.idleNote, { count: data.idle_assignable })}
         </p>
       </Panel>
 
       {/* BO-1: an idle vehicle nobody noticed is pure loss. Named, not counted. */}
-      <Panel title={`Idle vehicles (${data.idle_vehicles.length})`}>
+      <Panel
+        title={t(($) => $.operations.operationalDashboards.fleet.idleTitle, { count: data.idle_vehicles.length })}
+      >
         {data.idle_vehicles.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            Every assignable vehicle is working.
+            {t(($) => $.operations.operationalDashboards.fleet.allWorking)}
           </p>
         ) : (
           <div className="flex flex-wrap gap-2">
@@ -125,6 +142,7 @@ function FleetTab() {
 }
 
 function DriverTab() {
+  const { t } = useTranslation('logistics');
   const { data, isLoading } = useDriverDashboard();
 
   if (isLoading || !data) return <Skeleton className="h-64 w-full" />;
@@ -132,28 +150,33 @@ function DriverTab() {
   return (
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-4">
-        <Card label="Total drivers" value={data.total_drivers} />
-        <Card label="Available" value={data.available} tone="good" />
+        <Card label={t(($) => $.operations.operationalDashboards.driver.totalDrivers)} value={data.total_drivers} />
         <Card
-          label="Unavailable"
+          label={t(($) => $.operations.operationalDashboards.driver.available)}
+          value={data.available}
+          tone="good"
+        />
+        <Card
+          label={t(($) => $.operations.operationalDashboards.driver.unavailable)}
           value={data.unavailable}
           tone={data.unavailable > 0 ? 'warn' : undefined}
         />
-        <Card label="In use now" value={data.in_use_now} />
+        <Card label={t(($) => $.operations.operationalDashboards.inUseNow)} value={data.in_use_now} />
       </div>
 
-      <Panel title="Driver utilisation (snapshot)">
+      <Panel title={t(($) => $.operations.operationalDashboards.panel.driverUtilisation)}>
         <UtilisationBar value={data.utilisation_now} />
         <p className="mt-2 text-xs text-muted-foreground">
-          {data.idle_available} available driver{data.idle_available === 1 ? '' : 's'} idle right
-          now.
+          {t(($) => $.operations.operationalDashboards.driver.idleNote, { count: data.idle_available })}
         </p>
       </Panel>
 
-      <Panel title={`Idle drivers (${data.idle_drivers.length})`}>
+      <Panel
+        title={t(($) => $.operations.operationalDashboards.driver.idleTitle, { count: data.idle_drivers.length })}
+      >
         {data.idle_drivers.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            Every available driver is working.
+            {t(($) => $.operations.operationalDashboards.driver.allWorking)}
           </p>
         ) : (
           <div className="flex flex-wrap gap-2">
@@ -170,27 +193,52 @@ function DriverTab() {
 }
 
 function CapacityTab() {
+  const { t } = useTranslation('logistics');
   const { data, isLoading } = useCapacityDashboard();
 
   if (isLoading || !data) return <Skeleton className="h-64 w-full" />;
 
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <Panel title="Slots today (owned by Network)">
+      <Panel title={t(($) => $.operations.operationalDashboards.panel.slotsToday)}>
         <div className="space-y-1.5 text-xs">
-          <Row label="Slots" value={data.slots.slot_count} />
-          <Row label="Average utilisation" value={pct(data.slots.avg_utilisation)} />
-          <Row label="Near capacity" value={data.slots.at_warn_threshold} />
-          <Row label="Exhausted" value={data.slots.exhausted} />
+          <Row label={t(($) => $.operations.operationalDashboards.capacity.slots)} value={data.slots.slot_count} />
+          <Row
+            label={t(($) => $.operations.operationalDashboards.capacity.averageUtilisation)}
+            value={pct(data.slots.avg_utilisation, t(($) => $.common.noDataYet))}
+          />
+          <Row
+            label={t(($) => $.operations.operationalDashboards.capacity.nearCapacity)}
+            value={data.slots.at_warn_threshold}
+          />
+          <Row
+            label={t(($) => $.operations.operationalDashboards.capacity.exhausted)}
+            value={data.slots.exhausted}
+          />
         </div>
       </Panel>
-      <Panel title="Our reservations">
+      <Panel title={t(($) => $.operations.operationalDashboards.panel.ourReservations)}>
         <div className="space-y-1.5 text-xs">
-          <Row label="Requested" value={data.reservations.requested} />
-          <Row label="Currently holding" value={data.reservations.currently_holding} />
-          <Row label="Confirmed" value={data.reservations.confirmed} />
-          <Row label="Refused" value={data.reservations.refused} />
-          <Row label="Refusal rate" value={pct(data.reservations.refusal_rate)} />
+          <Row
+            label={t(($) => $.operations.operationalDashboards.capacity.requested)}
+            value={data.reservations.requested}
+          />
+          <Row
+            label={t(($) => $.operations.operationalDashboards.capacity.currentlyHolding)}
+            value={data.reservations.currently_holding}
+          />
+          <Row
+            label={t(($) => $.operations.operationalDashboards.capacity.confirmed)}
+            value={data.reservations.confirmed}
+          />
+          <Row
+            label={t(($) => $.operations.operationalDashboards.capacity.refused)}
+            value={data.reservations.refused}
+          />
+          <Row
+            label={t(($) => $.operations.operationalDashboards.capacity.refusalRate)}
+            value={pct(data.reservations.refusal_rate, t(($) => $.common.noDataYet))}
+          />
         </div>
       </Panel>
     </div>
@@ -198,6 +246,7 @@ function CapacityTab() {
 }
 
 function DispatchTab() {
+  const { t } = useTranslation('logistics');
   const { data, isLoading } = useDispatchDashboard();
 
   if (isLoading || !data) return <Skeleton className="h-64 w-full" />;
@@ -205,36 +254,61 @@ function DispatchTab() {
   return (
     <div className="space-y-4">
       <div className="grid gap-4 md:grid-cols-4">
-        <Card label="Active sessions" value={data.kpis.sessions_active} tone="good" />
-        <Card label="Confirmed" value={data.kpis.allocations_confirmed} />
-        <Card label="Confirmation rate" value={pct(data.kpis.confirmation_rate)} />
-        <Card label="Automatic share" value={pct(data.kpis.automatic_share)} />
+        <Card
+          label={t(($) => $.operations.operationalDashboards.dispatch.activeSessions)}
+          value={data.kpis.sessions_active}
+          tone="good"
+        />
+        <Card
+          label={t(($) => $.operations.operationalDashboards.dispatch.confirmed)}
+          value={data.kpis.allocations_confirmed}
+        />
+        <Card
+          label={t(($) => $.operations.operationalDashboards.dispatch.confirmationRate)}
+          value={pct(data.kpis.confirmation_rate, t(($) => $.common.noDataYet))}
+        />
+        <Card
+          label={t(($) => $.operations.operationalDashboards.dispatch.automaticShare)}
+          value={pct(data.kpis.automatic_share, t(($) => $.common.noDataYet))}
+        />
       </div>
       <div className="grid gap-4 md:grid-cols-2">
-        <Panel title="Queue">
+        <Panel title={t(($) => $.operations.operationalDashboards.panel.queue)}>
           <div className="space-y-1.5 text-xs">
-            <Row label="Depth" value={data.queue.depth} />
-            <Row label="Needs action" value={data.queue.needs_action} />
-            <Row label="Stuck" value={data.queue.stuck} />
+            <Row label={t(($) => $.operations.operationalDashboards.dispatch.depth)} value={data.queue.depth} />
             <Row
-              label="Average wait"
+              label={t(($) => $.operations.operationalDashboards.dispatch.needsAction)}
+              value={data.queue.needs_action}
+            />
+            <Row label={t(($) => $.operations.operationalDashboards.dispatch.stuck)} value={data.queue.stuck} />
+            <Row
+              label={t(($) => $.operations.operationalDashboards.dispatch.averageWait)}
               value={
-                data.queue.avg_wait_minutes !== null ? `${data.queue.avg_wait_minutes} min` : '—'
+                data.queue.avg_wait_minutes !== null
+                  ? t(($) => $.operations.operationalDashboards.minutesValue, {
+                      minutes: data.queue.avg_wait_minutes,
+                    })
+                  : '—'
               }
             />
           </div>
         </Panel>
-        <Panel title="Cycle time">
+        <Panel title={t(($) => $.operations.operationalDashboards.panel.cycleTime)}>
           <div className="space-y-1.5 text-xs">
             <Row
-              label="Average session"
+              label={t(($) => $.operations.operationalDashboards.dispatch.averageSession)}
               value={
                 data.kpis.avg_session_minutes !== null
-                  ? `${data.kpis.avg_session_minutes} min`
-                  : 'No data yet'
+                  ? t(($) => $.operations.operationalDashboards.minutesValue, {
+                      minutes: data.kpis.avg_session_minutes,
+                    })
+                  : t(($) => $.common.noDataYet)
               }
             />
-            <Row label="Attempted" value={data.kpis.allocations_attempted} />
+            <Row
+              label={t(($) => $.operations.operationalDashboards.dispatch.attempted)}
+              value={data.kpis.allocations_attempted}
+            />
           </div>
         </Panel>
       </div>
@@ -243,6 +317,7 @@ function DispatchTab() {
 }
 
 function KpiTab() {
+  const { t } = useTranslation('logistics');
   const { data, isLoading } = useKpiDashboard();
 
   if (isLoading || !data) return <Skeleton className="h-64 w-full" />;
@@ -251,54 +326,79 @@ function KpiTab() {
     <div className="space-y-4">
       {data.is_quiet && (
         <div className="rounded-lg border border-emerald-600/30 bg-emerald-600/5 p-4 text-sm text-emerald-700 dark:text-emerald-400">
-          The operation is healthy — nothing needs a person right now.
+          {t(($) => $.operations.operationalDashboards.kpi.quietMessage)}
         </div>
       )}
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card
-          label="Critical alerts"
+          label={t(($) => $.operations.operationalDashboards.kpi.criticalAlerts)}
           value={data.headline.critical_alerts}
           tone={data.headline.critical_alerts > 0 ? 'bad' : undefined}
         />
         <Card
-          label="Needs attention"
+          label={t(($) => $.operations.operationalDashboards.kpi.needsAttention)}
           value={data.headline.open_exceptions}
           tone={data.headline.open_exceptions > 0 ? 'warn' : undefined}
         />
         <Card
-          label="Unhealthy pools"
+          label={t(($) => $.operations.operationalDashboards.kpi.unhealthyPools)}
           value={data.headline.unhealthy_pools}
           tone={data.headline.unhealthy_pools > 0 ? 'warn' : undefined}
         />
-        <Card label="Can field today" value={data.headline.fieldable_units} tone="good" />
         <Card
-          label="Exhausted slots"
+          label={t(($) => $.operations.operationalDashboards.kpi.canFieldToday)}
+          value={data.headline.fieldable_units}
+          tone="good"
+        />
+        <Card
+          label={t(($) => $.operations.operationalDashboards.kpi.exhaustedSlots)}
           value={data.headline.exhausted_capacity_slots}
           tone={data.headline.exhausted_capacity_slots > 0 ? 'warn' : undefined}
         />
         <Card
-          label="Overdue escalations"
+          label={t(($) => $.operations.operationalDashboards.kpi.overdueEscalations)}
           value={data.headline.overdue_escalations}
           tone={data.headline.overdue_escalations > 0 ? 'bad' : undefined}
         />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Panel title="Pools">
+        <Panel title={t(($) => $.operations.operationalDashboards.panel.pools)}>
           <div className="space-y-1.5 text-xs">
-            <Row label="Total" value={data.pools.total} />
-            <Row label="Unhealthy" value={data.pools.unhealthy} />
-            <Row label="Available vehicles" value={data.pools.available_vehicles} />
-            <Row label="Available drivers" value={data.pools.available_drivers} />
+            <Row label={t(($) => $.operations.operationalDashboards.pools.total)} value={data.pools.total} />
+            <Row
+              label={t(($) => $.operations.operationalDashboards.pools.unhealthy)}
+              value={data.pools.unhealthy}
+            />
+            <Row
+              label={t(($) => $.operations.operationalDashboards.pools.availableVehicles)}
+              value={data.pools.available_vehicles}
+            />
+            <Row
+              label={t(($) => $.operations.operationalDashboards.pools.availableDrivers)}
+              value={data.pools.available_drivers}
+            />
           </div>
         </Panel>
-        <Panel title="Dispatch">
+        <Panel title={t(($) => $.operations.operationalDashboards.panel.dispatch)}>
           <div className="space-y-1.5 text-xs">
-            <Row label="Active sessions" value={data.dispatch.sessions_active} />
-            <Row label="Confirmed" value={data.dispatch.allocations_confirmed} />
-            <Row label="Confirmation rate" value={pct(data.dispatch.confirmation_rate)} />
-            <Row label="Automatic share" value={pct(data.dispatch.automatic_share)} />
+            <Row
+              label={t(($) => $.operations.operationalDashboards.dispatch.activeSessions)}
+              value={data.dispatch.sessions_active}
+            />
+            <Row
+              label={t(($) => $.operations.operationalDashboards.dispatch.confirmed)}
+              value={data.dispatch.allocations_confirmed}
+            />
+            <Row
+              label={t(($) => $.operations.operationalDashboards.dispatch.confirmationRate)}
+              value={pct(data.dispatch.confirmation_rate, t(($) => $.common.noDataYet))}
+            />
+            <Row
+              label={t(($) => $.operations.operationalDashboards.dispatch.automaticShare)}
+              value={pct(data.dispatch.automatic_share, t(($) => $.common.noDataYet))}
+            />
           </div>
         </Panel>
       </div>
@@ -322,14 +422,18 @@ function Row({ label, value }: { label: string; value: string | number }) {
  * utilisation figure is a snapshot; nothing here forecasts.
  */
 export function OperationalDashboardsPage() {
+  const { t } = useTranslation('logistics');
   const { refetch, isFetching } = useKpiDashboard();
 
   return (
     <>
       <WorkspaceHeader
-        breadcrumbs={[{ label: 'Logistics OS' }, { label: 'Operations' }]}
-        title="Operational Dashboards"
-        description="Fleet, driver, capacity and dispatch utilisation — operational metrics only"
+        breadcrumbs={[
+          { label: t(($) => $.operations.operationalDashboards.breadcrumbRoot) },
+          { label: t(($) => $.operations.operationalDashboards.breadcrumbSection) },
+        ]}
+        title={t(($) => $.operations.operationalDashboards.title)}
+        description={t(($) => $.operations.operationalDashboards.description)}
         metrics={[]}
       />
 
@@ -344,24 +448,24 @@ export function OperationalDashboardsPage() {
           <Tabs defaultValue="kpi" className="w-full">
             <TabsList>
               <TabsTrigger value="kpi">
-                <Activity className="mr-1 size-3.5" />
-                KPI
+                <Activity className="me-1 size-3.5" />
+                {t(($) => $.operations.operationalDashboards.tabKpi)}
               </TabsTrigger>
               <TabsTrigger value="fleet">
-                <Truck className="mr-1 size-3.5" />
-                Fleet
+                <Truck className="me-1 size-3.5" />
+                {t(($) => $.operations.operationalDashboards.tabFleet)}
               </TabsTrigger>
               <TabsTrigger value="drivers">
-                <Users className="mr-1 size-3.5" />
-                Drivers
+                <Users className="me-1 size-3.5" />
+                {t(($) => $.operations.operationalDashboards.tabDrivers)}
               </TabsTrigger>
               <TabsTrigger value="capacity">
-                <Gauge className="mr-1 size-3.5" />
-                Capacity
+                <Gauge className="me-1 size-3.5" />
+                {t(($) => $.operations.operationalDashboards.tabCapacity)}
               </TabsTrigger>
               <TabsTrigger value="dispatch">
-                <Layers className="mr-1 size-3.5" />
-                Dispatch
+                <Layers className="me-1 size-3.5" />
+                {t(($) => $.operations.operationalDashboards.tabDispatch)}
               </TabsTrigger>
             </TabsList>
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,12 +12,13 @@ interface CustodyReturnListProps {
 }
 
 export function CustodyReturnList({ returns, onConfirm, isConfirming }: CustodyReturnListProps) {
+  const { t } = useTranslation('driver-mobile');
   const [qtys, setQtys] = useState<Record<number, string>>({});
 
   if (returns.length === 0) {
     return (
       <p className="text-center text-sm text-muted-foreground py-8">
-        No custody items recorded yet.
+        {t(($) => $.custodyReturnPage.list.empty)}
       </p>
     );
   }
@@ -31,7 +33,10 @@ export function CustodyReturnList({ returns, onConfirm, isConfirming }: CustodyR
               <div>
                 <p className="font-medium text-sm">{item.custody_type}</p>
                 <p className="text-xs text-muted-foreground">
-                  Dispatched: {item.dispatched_qty} · Returned: {item.returned_qty ?? '—'}
+                  {t(($) => $.custodyReturnPage.list.dispatchedReturned, {
+                    dispatched: item.dispatched_qty,
+                    returned: item.returned_qty ?? '—',
+                  })}
                 </p>
               </div>
               {confirmed ? (
@@ -46,7 +51,7 @@ export function CustodyReturnList({ returns, onConfirm, isConfirming }: CustodyR
                 <Input
                   type="number"
                   min="0"
-                  placeholder="Confirmed Qty"
+                  placeholder={t(($) => $.custodyReturnPage.list.confirmedPlaceholder)}
                   value={qtys[item.id] ?? ''}
                   onChange={(e) => setQtys((prev) => ({ ...prev, [item.id]: e.target.value }))}
                   className="h-8 text-sm"
@@ -59,13 +64,13 @@ export function CustodyReturnList({ returns, onConfirm, isConfirming }: CustodyR
                     if (!isNaN(q)) onConfirm(item.id, q);
                   }}
                 >
-                  Confirm
+                  {t(($) => $.custodyReturnPage.list.confirm)}
                 </Button>
               </div>
             )}
 
             {item.driver_liable && (
-              <p className="text-xs text-red-600 font-medium">Driver is liable for the shortage</p>
+              <p className="text-xs text-red-600 font-medium">{t(($) => $.custodyReturnPage.list.liableForShortage)}</p>
             )}
           </div>
         );
