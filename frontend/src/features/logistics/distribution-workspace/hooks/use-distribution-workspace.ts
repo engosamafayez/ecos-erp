@@ -6,11 +6,7 @@ import { ORDERS_KEY } from '@/features/orders/hooks/use-orders';
 import { useOrganizationContext } from '@/features/organization/context/organization-context';
 
 import { distributionWorkspaceService } from '../services/distribution-workspace-service';
-import type {
-  ApplyGroupTemplatePayload,
-  SaveGroupTemplatePayload,
-  UpdateGroupPayload,
-} from '../types';
+import type { SaveGroupTemplatePayload, UpdateGroupPayload } from '../types';
 
 /**
  * TASK-SHIPPING-DISTRIBUTION-WORKSPACE-UI-E2E-001
@@ -334,7 +330,14 @@ export function useCreateDistributionGroup() {
     mutationFn: async (vars: {
       windowId: string;
       warehouseId: string;
-      code: string;
+      /**
+       * Optional — omitted, the server assigns the next collision-safe `DG-###`
+       * itself (DistributionWindowController::createSlotWithSafeCode()). Still
+       * accepted as an explicit preference for a caller that wants a specific
+       * code; a preference that collides is refused rather than silently
+       * replaced.
+       */
+      code?: string;
       name?: string;
       /** null / omitted = no maximum. Order count only. */
       capacityOrders?: number | null;
@@ -614,26 +617,6 @@ export function useArchiveGroupTemplate() {
   });
 }
 
-/**
- * Apply a template — creates a Group.
- *
- * Invalidates the root because a new Group changes the Groups tab, the zone
- * board (its zones are now taken), the capacity figures and the map together.
- */
-export function useApplyGroupTemplate() {
-  const invalidate = useInvalidateWorkspace();
-
-  return useMutation({
-    mutationFn: (vars: {
-      windowId: string;
-      templateId: string;
-      payload: ApplyGroupTemplatePayload;
-    }) =>
-      distributionWorkspaceService.applyGroupTemplate(
-        vars.windowId,
-        vars.templateId,
-        vars.payload,
-      ),
-    onSuccess: invalidate,
-  });
-}
+// There is no `useApplyGroupTemplate` any more. A Group is generated
+// automatically from each template when its operational Wave starts — see
+// distribution-workspace-service.ts for the removed endpoint this used to call.

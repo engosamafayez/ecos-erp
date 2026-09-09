@@ -678,11 +678,7 @@ export function DistributionWorkspacePage() {
             </TabsContent>
 
             <TabsContent value="templates" className="mt-3">
-              <DistributionTemplatesTab
-                windowId={currentWindow?.id}
-                warehouseId={activeWarehouseId}
-                active={tab === 'templates'}
-              />
+              <DistributionTemplatesTab active={tab === 'templates'} />
             </TabsContent>
 
             {/* ── Zones — the authoritative Zone review surface, unchanged ────── */}

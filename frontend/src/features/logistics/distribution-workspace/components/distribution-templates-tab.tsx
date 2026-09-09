@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { Info, Pencil, Plus, Trash2, Wand2 } from 'lucide-react';
+import { Info, Pencil, Plus, Trash2 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,13 @@ import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -21,9 +28,9 @@ import {
 
 import { useDistributionZones } from '@/features/logistics/distribution-zones/hooks/use-distribution-zones';
 import { useDrivers } from '@/features/logistics/drivers/hooks/use-drivers';
+import { useVehicles } from '@/features/logistics/vehicles/hooks/use-vehicles';
 
 import {
-  useApplyGroupTemplate,
   useArchiveGroupTemplate,
   useGroupTemplates,
   useSaveGroupTemplate,
@@ -33,20 +40,23 @@ import type { GroupTemplate } from '../types';
 /**
  * Templates — reusable Distribution Group CONFIGURATION.
  *
- * A template is a name, a set of zones and a maximum order count. That is all it
- * can be: there is no orders field, no vehicle, no driver, no trip, no loading
- * state and no prepared quantity, because the table has no column for any of them.
- * Applying one creates a NEW group with those settings and copies nothing else —
- * orders arrive in the new group the same way they arrive in every group, because
- * its zones are attached to it.
+ * A template is a name, a set of zones, a maximum order count, and optional
+ * Preferred Driver / Preferred Vehicle preferences. It still holds no orders
+ * field, no trip, no loading state and no prepared quantity, and no
+ * ASSIGNMENT of any kind: Preferred Driver/Vehicle are a best-effort
+ * preference, attempted automatically — never guaranteed — only when a Group
+ * is generated from this template, used just when the driver/vehicle is
+ * canonically available at that moment and silently skipped otherwise; the
+ * Group is created either way. They are NOT the plural, passive "Recommended
+ * Drivers" list (`driver_ids`), which is never auto-applied.
  *
- * EDITABLE BEFORE CREATION. Apply opens a form pre-filled from the template so the
- * operator can change the name, the zones and the limit before the group exists.
- * The template supplies defaults, not decisions.
+ * THERE IS NO MANUAL "APPLY" STEP. A Group is created automatically from each
+ * template when its operational Wave starts — this tab only manages the
+ * template itself (create, edit, archive). The old per-template "Use
+ * template" action and the endpoint that backed it are both gone.
  *
- * The warehouse is NOT a template field. A group's owner is always chosen
- * explicitly, so it comes from the workspace's current warehouse selection and the
- * server re-verifies it against the tenant.
+ * The warehouse is NOT a template field. A Group's warehouse is decided when
+ * the Wave starts, never chosen here.
  */
 
 /** Empty box means "no limit", which is not the same as a limit of zero. */
@@ -89,9 +99,8 @@ function ZonePicker({
   /**
    * zone id -> owning template name, excluding this template.
    *
-   * Optional because APPLYING a template creates a Group, and Group zone selection is
-   * not constrained by which Template owns a Zone — exclusivity is a Template-
-   * configuration rule. That call site passes nothing and behaves exactly as before.
+   * Optional in the type, but the Template create/edit form — the only caller
+   * now that the manual "Apply" flow is gone — always supplies it.
    */
   ownership?: Map<number, string>;
   currentTemplateId?: string;
@@ -168,6 +177,9 @@ function ZonePicker({
 }
 
 type DriverOption = { id: number; name: string; code: string; mobile: string };
+
+/** The tenant's Vehicles, for the Preferred Vehicle single-select. Label is the backend's own display string (plate + name/model). */
+type VehicleOption = { id: number; label: string };
 
 /**
  * RECOMMENDED DRIVERS — an operator-chosen multi-select of SUGGESTIONS.
@@ -288,6 +300,7 @@ function TemplateForm({
   template,
   zones,
   drivers,
+  vehicles,
   ownership,
   onDone,
   onCancel,
@@ -295,8 +308,10 @@ function TemplateForm({
   /** undefined = creating. */
   template: GroupTemplate | undefined;
   zones: ZoneOption[];
-  /** The tenant's eligible Drivers, for the Recommended Drivers multi-select. */
+  /** The tenant's eligible Drivers, for the Recommended Drivers multi-select AND the Preferred Driver single-select. */
   drivers: DriverOption[];
+  /** The tenant's Vehicles, for the Preferred Vehicle single-select. */
+  vehicles: VehicleOption[];
   /** zone id -> owning template name, already excluding this template. */
   ownership: Map<number, string>;
   onDone: () => void;
@@ -316,6 +331,14 @@ function TemplateForm({
   const [zoneIds, setZoneIds] = useState<number[]>(template?.zone_ids ?? []);
   // Recommended Drivers — loaded from the template when editing; suggestions only.
   const [driverIds, setDriverIds] = useState<number[]>(template?.driver_ids ?? []);
+  // Preferred Driver / Vehicle — SINGULAR and INDEPENDENT of each other and of
+  // Recommended Drivers above. null = no preference.
+  const [preferredDriverId, setPreferredDriverId] = useState<number | null>(
+    template?.preferred_driver_id ?? null,
+  );
+  const [preferredVehicleId, setPreferredVehicleId] = useState<number | null>(
+    template?.preferred_vehicle_id ?? null,
+  );
   const [error, setError] = useState<string | null>(null);
 
   const parsed = parseLimit(limit);
@@ -362,6 +385,11 @@ function TemplateForm({
           // Recommended Drivers — suggestions only; the server stores the exact ids
           // and never applies them to a Group.
           driver_ids: driverIds,
+          // Preferred Driver / Vehicle — sent as either an id or an explicit null,
+          // exactly like capacity_orders above: the field on screen always holds a
+          // concrete decision, so there is never an "omit" case here.
+          preferred_driver_id: preferredDriverId,
+          preferred_vehicle_id: preferredVehicleId,
           // Sent ONLY when there is something to move and the operator said yes.
           ...(toMove.length > 0 && moveConfirmed ? { move_zones: true } : {}),
         },
@@ -415,6 +443,72 @@ function TemplateForm({
             {t(($) => $.distributionWorkspace.templates.maxOrdersHint)}
           </p>
         </div>
+      </div>
+
+      {/*
+        PREFERRED DRIVER / VEHICLE — SINGULAR and ACTUALLY ATTEMPTED, unlike the
+        plural, passive Recommended Drivers picker further down. Each is optional
+        and independent of the other; neither is guaranteed even when set, which
+        is why one caption below covers both rather than promising an assignment.
+      */}
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="template-preferred-driver">
+            {t(($) => $.distributionWorkspace.templates.preferredDriverLabel)}
+          </Label>
+          <Select
+            value={preferredDriverId === null ? 'none' : String(preferredDriverId)}
+            onValueChange={(v) => setPreferredDriverId(v === 'none' ? null : Number(v))}
+          >
+            <SelectTrigger
+              id="template-preferred-driver"
+              data-testid="template-preferred-driver-select"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">
+                {t(($) => $.distributionWorkspace.templates.preferredNone)}
+              </SelectItem>
+              {drivers.map((d) => (
+                <SelectItem key={d.id} value={String(d.id)}>
+                  {d.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="template-preferred-vehicle">
+            {t(($) => $.distributionWorkspace.templates.preferredVehicleLabel)}
+          </Label>
+          <Select
+            value={preferredVehicleId === null ? 'none' : String(preferredVehicleId)}
+            onValueChange={(v) => setPreferredVehicleId(v === 'none' ? null : Number(v))}
+          >
+            <SelectTrigger
+              id="template-preferred-vehicle"
+              data-testid="template-preferred-vehicle-select"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">
+                {t(($) => $.distributionWorkspace.templates.preferredNone)}
+              </SelectItem>
+              {vehicles.map((v) => (
+                <SelectItem key={v.id} value={String(v.id)}>
+                  {v.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <p className="text-xs text-muted-foreground sm:col-span-2">
+          {t(($) => $.distributionWorkspace.templates.preferredHint)}
+        </p>
       </div>
 
       <div className="mt-3 space-y-1.5">
@@ -496,167 +590,12 @@ function TemplateForm({
   );
 }
 
-function ApplyForm({
-  template,
-  zones,
-  windowId,
-  warehouseId,
-  onDone,
-  onCancel,
-}: {
-  template: GroupTemplate;
-  zones: ZoneOption[];
-  windowId: string | undefined;
-  warehouseId: string | null;
-  onDone: () => void;
-  onCancel: () => void;
-}) {
-  const { t } = useTranslation('logistics');
-  const apply = useApplyGroupTemplate();
+// There is no more `ApplyForm`. Templates apply automatically at Wave start —
+// see the file-level doc comment above — so the manual "Use template" form,
+// its warehouse/window guards and its own submit path are gone along with the
+// endpoint they called.
 
-  const [code, setCode] = useState('');
-  const [name, setName] = useState(template.name);
-  const [limit, setLimit] = useState(
-    template.capacity_orders === null ? '' : String(template.capacity_orders),
-  );
-  const [zoneIds, setZoneIds] = useState<number[]>(template.zone_ids);
-  const [error, setError] = useState<string | null>(null);
-
-  const parsed = parseLimit(limit);
-  const invalid = Number.isNaN(parsed) || code.trim() === '';
-
-  if (!warehouseId) {
-    return (
-      <Card className="p-4">
-        <p className="text-sm text-amber-700">
-          {t(($) => $.distributionWorkspace.templates.applyNoWarehouse)}
-        </p>
-      </Card>
-    );
-  }
-
-  if (!windowId) {
-    return (
-      <Card className="p-4">
-        <p className="text-sm text-amber-700">
-          {t(($) => $.distributionWorkspace.templates.applyNoWindow)}
-        </p>
-      </Card>
-    );
-  }
-
-  // Captured AFTER the two guards above. `submit` is a hoisted declaration, so
-  // TypeScript cannot carry the narrowing from those early returns into it —
-  // these consts are what make the non-null contract explicit rather than
-  // asserted away with `!`.
-  const targetWindowId: string = windowId;
-  const targetWarehouseId: string = warehouseId;
-
-  async function submit() {
-    setError(null);
-
-    try {
-      await apply.mutateAsync({
-        windowId: targetWindowId,
-        templateId: template.id,
-        payload: {
-          warehouse_id: targetWarehouseId,
-          code: code.trim(),
-          name: name.trim() === '' ? null : name.trim(),
-          capacity_orders: parsed,
-          zone_ids: zoneIds,
-        },
-      });
-      onDone();
-    } catch (e) {
-      setError(errorMessage(e, t(($) => $.distributionWorkspace.templates.applyFailed)));
-    }
-  }
-
-  return (
-    <Card className="p-4" data-testid="template-apply-form">
-      <h4 className="font-medium">
-        {t(($) => $.distributionWorkspace.templates.applyTitle, { name: template.name })}
-      </h4>
-      <p className="mt-1 text-sm text-muted-foreground">
-        {t(($) => $.distributionWorkspace.templates.applyHint)}
-      </p>
-
-      <div className="mt-3 grid gap-3 sm:grid-cols-3">
-        <div className="space-y-1.5">
-          <Label htmlFor="apply-code">
-            {t(($) => $.distributionWorkspace.templates.applyCodeLabel)}
-          </Label>
-          <Input
-            id="apply-code"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder={t(($) => $.distributionWorkspace.templates.applyCodePlaceholder)}
-            data-testid="apply-code-input"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="apply-name">
-            {t(($) => $.distributionWorkspace.templates.nameLabel)}
-          </Label>
-          <Input id="apply-name" value={name} onChange={(e) => setName(e.target.value)} />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="apply-limit">
-            {t(($) => $.distributionWorkspace.templates.maxOrdersLabel)}
-          </Label>
-          <Input
-            id="apply-limit"
-            type="number"
-            min={1}
-            step={1}
-            inputMode="numeric"
-            value={limit}
-            onChange={(e) => setLimit(e.target.value)}
-            placeholder={t(($) => $.distributionWorkspace.templates.notSet)}
-            data-testid="apply-limit-input"
-          />
-        </div>
-      </div>
-
-      <div className="mt-3 space-y-1.5">
-        <Label>{t(($) => $.distributionWorkspace.templates.zonesLabel)}</Label>
-        <ZonePicker
-          zones={zones}
-          selected={zoneIds}
-          onToggle={(id) =>
-            setZoneIds((prev) =>
-              prev.includes(id) ? prev.filter((z) => z !== id) : [...prev, id],
-            )
-          }
-        />
-      </div>
-
-      {error ? <p className="mt-2 text-sm text-destructive">{error}</p> : null}
-
-      <div className="mt-4 flex gap-2">
-        <Button onClick={submit} disabled={invalid || apply.isPending} data-testid="apply-submit">
-          {t(($) => $.distributionWorkspace.templates.applyCreate)}
-        </Button>
-        <Button variant="ghost" onClick={onCancel}>
-          {t(($) => $.distributionWorkspace.templates.cancel)}
-        </Button>
-      </div>
-    </Card>
-  );
-}
-
-export function DistributionTemplatesTab({
-  windowId,
-  warehouseId,
-  active,
-}: {
-  windowId: string | undefined;
-  warehouseId: string | null;
-  active: boolean;
-}) {
+export function DistributionTemplatesTab({ active }: { active: boolean }) {
   const { t } = useTranslation('logistics');
 
   const { data: templateData, isLoading } = useGroupTemplates(active);
@@ -696,14 +635,24 @@ export function DistributionTemplatesTab({
   // `ready_for_dispatch` the rollup emptied and the picker offered nothing.
   const { data: zonesResult } = useDistributionZones({ status: 'active', per_page: 100 });
 
-  // The tenant's eligible Drivers for the Recommended Drivers picker — the canonical
-  // `logistics_drivers` read, tenant-scoped by the server. Default status excludes
-  // archived, matching what the server accepts as a recommendation.
+  // The tenant's eligible Drivers for the Recommended Drivers picker AND the
+  // Preferred Driver single-select — the SAME canonical `logistics_drivers`
+  // read, tenant-scoped by the server, fetched once and reused for both.
+  // Default status excludes archived, matching what the server accepts as a
+  // recommendation.
   const { data: driversResult } = useDrivers({ per_page: 100 });
 
-  const [mode, setMode] = useState<
-    { kind: 'idle' } | { kind: 'edit'; template?: GroupTemplate } | { kind: 'apply'; template: GroupTemplate }
-  >({ kind: 'idle' });
+  // The tenant's Vehicles for the Preferred Vehicle single-select — the same
+  // canonical `logistics_vehicles` read the Vehicles management screen itself
+  // uses (`useVehicles`), tenant-scoped by the server. Default status excludes
+  // archived, matching the Recommended Drivers convention above; a template is
+  // reusable configuration, so this is not narrowed to vehicles "available"
+  // right now the way a live Group assignment would be.
+  const { data: vehiclesResult } = useVehicles({ per_page: 100 });
+
+  const [mode, setMode] = useState<{ kind: 'idle' } | { kind: 'edit'; template?: GroupTemplate }>({
+    kind: 'idle',
+  });
   const [error, setError] = useState<string | null>(null);
 
   // Active zones, newest label preference English → Arabic → code, matching the
@@ -720,6 +669,11 @@ export function DistributionTemplatesTab({
     name: d.full_name,
     code: d.driver_code,
     mobile: d.mobile ?? '',
+  }));
+
+  const vehicleOptions: VehicleOption[] = (vehiclesResult?.data ?? []).map((v) => ({
+    id: v.id,
+    label: v.label,
   }));
 
   /** Recommended driver names for the list cell: "Ahmed · Mohamed +2". */
@@ -788,6 +742,7 @@ export function DistributionTemplatesTab({
                   <TableHead>{t(($) => $.distributionWorkspace.templates.colZones)}</TableHead>
                   <TableHead>{t(($) => $.distributionWorkspace.templates.colMax)}</TableHead>
                   <TableHead>{t(($) => $.distributionWorkspace.templates.colDrivers)}</TableHead>
+                  <TableHead>{t(($) => $.distributionWorkspace.templates.colPreferred)}</TableHead>
                   <TableHead />
                 </TableRow>
               </TableHeader>
@@ -848,17 +803,38 @@ export function DistributionTemplatesTab({
                       </span>
                     </TableCell>
 
+                    {/*
+                      Preferred Driver / Vehicle — SINGULAR and ACTUALLY ATTEMPTED at
+                      Group-generation time, unlike the plural, passive Recommended
+                      Drivers cell above. Shown by NAME, looked up client-side from the
+                      same driver/vehicle option lists the pickers use — the read shape
+                      carries only the id.
+                    */}
+                    <TableCell className="text-muted-foreground">
+                      <div className="space-y-0.5 text-xs" data-testid={`template-preferred-${tpl.name}`}>
+                        <div>
+                          <span className="font-medium text-foreground">
+                            {t(($) => $.common.driver)}:
+                          </span>{' '}
+                          {tpl.preferred_driver_id === null
+                            ? t(($) => $.distributionWorkspace.templates.preferredNone)
+                            : (driverOptions.find((d) => d.id === tpl.preferred_driver_id)?.name ??
+                              `#${tpl.preferred_driver_id}`)}
+                        </div>
+                        <div>
+                          <span className="font-medium text-foreground">
+                            {t(($) => $.common.vehicle)}:
+                          </span>{' '}
+                          {tpl.preferred_vehicle_id === null
+                            ? t(($) => $.distributionWorkspace.templates.preferredNone)
+                            : (vehicleOptions.find((v) => v.id === tpl.preferred_vehicle_id)?.label ??
+                              `#${tpl.preferred_vehicle_id}`)}
+                        </div>
+                      </div>
+                    </TableCell>
+
                     <TableCell className="text-end">
                       <div className="flex justify-end gap-1">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setMode({ kind: 'apply', template: tpl })}
-                          data-testid={`template-apply-${tpl.name}`}
-                        >
-                          <Wand2 className="me-1.5 size-3.5" aria-hidden />
-                          {t(($) => $.distributionWorkspace.templates.apply)}
-                        </Button>
                         <Button
                           size="sm"
                           variant="ghost"
@@ -893,17 +869,7 @@ export function DistributionTemplatesTab({
           template={mode.template}
           zones={zoneOptions}
           drivers={driverOptions}
-          onDone={() => setMode({ kind: 'idle' })}
-          onCancel={() => setMode({ kind: 'idle' })}
-        />
-      ) : null}
-
-      {mode.kind === 'apply' ? (
-        <ApplyForm
-          template={mode.template}
-          zones={zoneOptions}
-          windowId={windowId}
-          warehouseId={warehouseId}
+          vehicles={vehicleOptions}
           onDone={() => setMode({ kind: 'idle' })}
           onCancel={() => setMode({ kind: 'idle' })}
         />
