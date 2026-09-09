@@ -1006,7 +1006,7 @@ export function OrdersPage() {
         Copy/Export. */}
     <PrintTable
       title={t($ => $.title)}
-      subtitle={selectedCount > 0 ? `${selectedCount} selected` : undefined}
+      subtitle={selectedCount > 0 ? t($ => $.actions.printSelected, { count: selectedCount }) : undefined}
       columns={printColumns}
       rows={copyPrintExportOrders}
       rowKey={(o) => o.id}

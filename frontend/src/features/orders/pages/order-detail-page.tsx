@@ -4,6 +4,7 @@ import { useIsMobile } from '@/hooks/use-is-mobile';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@/components/ds/use-toast';
+import { copyToClipboard } from '@/lib/clipboard';
 import { extractApiErrorMessage } from '@/lib/api-error';
 import {
   Activity,
@@ -595,13 +596,13 @@ function AddressCard({ order }: { order: Order }) {
                   </Button>
                 ) : null}
                 {mapsUrl ? (
-                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => void navigator.clipboard.writeText(mapsUrl)}>
+                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => void copyToClipboard(mapsUrl)}>
                     <Copy className="size-3" />
                     {t($ => $.orderDetail.copyLink)}
                   </Button>
                 ) : null}
                 {coordsText ? (
-                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => void navigator.clipboard.writeText(coordsText)}>
+                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => void copyToClipboard(coordsText)}>
                     <Copy className="size-3" />
                     {t($ => $.orderDetail.copyCoords)}
                   </Button>

@@ -475,9 +475,11 @@ function AddressesTab({ customer }: { customer: Customer }) {
 
   const doCopy = () => {
     if (!fullAddress) return;
-    void navigator.clipboard.writeText(fullAddress).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+    void copyToClipboard(fullAddress).then((ok) => {
+      if (ok) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }
     });
   };
 

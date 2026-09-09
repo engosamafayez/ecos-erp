@@ -86,6 +86,7 @@ import {
   useOrderWorkflowTransition,
   useResolveOrderLocation,
 } from '@/features/orders/hooks/use-orders';
+import { copyToClipboard } from '@/lib/clipboard';
 import { getMediaUrl } from '@/lib/media';
 import { cn } from '@/lib/utils';
 
@@ -430,8 +431,8 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
     order.apartment || order.landmark
   );
 
-  const copyAddress  = () => void navigator.clipboard.writeText(fullAddress || '—');
-  const copyMapsLink = () => void navigator.clipboard.writeText(mapsUrl ?? fullAddress ?? '—');
+  const copyAddress  = () => void copyToClipboard(fullAddress || '—');
+  const copyMapsLink = () => void copyToClipboard(mapsUrl ?? fullAddress ?? '—');
 
   const internalNoteContent = [order.notes, order.internal_notes]
     .filter(Boolean).join('\n\n') || null;
@@ -1381,7 +1382,7 @@ function ShippingTab({ order, t }: { order: Order; t: OrdersT }) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => void navigator.clipboard.writeText(fullAddress)}
+              onClick={() => void copyToClipboard(fullAddress)}
             >
               <Copy className="size-3.5" />
               {t($ => $.drawer.shipping.copyAddress)}
@@ -1391,7 +1392,7 @@ function ShippingTab({ order, t }: { order: Order; t: OrdersT }) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => void navigator.clipboard.writeText(coordsStr)}
+              onClick={() => void copyToClipboard(coordsStr)}
             >
               <Navigation className="size-3.5" />
               {t($ => $.drawer.shipping.copyCoordinates)}
@@ -1519,7 +1520,7 @@ function LocationTab({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => void navigator.clipboard.writeText(`https://www.google.com/maps?q=${point.lat},${point.lng}`)}
+              onClick={() => void copyToClipboard(`https://www.google.com/maps?q=${point.lat},${point.lng}`)}
             >
               <MapPin className="size-3.5" />
               {t($ => $.address.copyLink)}

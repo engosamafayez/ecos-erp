@@ -25,7 +25,8 @@
     "paymentAndProof": "الدفع والإثبات",
     "copySuccess": "تم نسخ {{count}} طلب إلى الحافظة",
     "copyError": "تعذر النسخ إلى الحافظة",
-    "exportSuccess": "تم تصدير {{count}} طلب"
+    "exportSuccess": "تم تصدير {{count}} طلب",
+    "printSelected": "{{count}} محدد"
   },
   "exportFields": {
     "brand": "العلامة التجارية",

@@ -32,7 +32,7 @@ export function AppTopbar({ onOpenSidebar }: AppTopbarProps) {
   const { t } = useTranslation('common');
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 backdrop-blur-sm px-3 sm:px-4">
+    <header className="no-print sticky top-0 z-40 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 backdrop-blur-sm px-3 sm:px-4">
 
       {/* ── Left: Brand + sidebar toggle ── */}
       <BrandLogo />

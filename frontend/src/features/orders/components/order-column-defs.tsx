@@ -18,6 +18,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { copyToClipboard } from '@/lib/clipboard';
 import { cn } from '@/lib/utils';
 
 import { OrderAddressCell } from './order-address-cell';
@@ -150,9 +151,12 @@ function OrderActionsMenu({ order, callbacks }: { order: Order; callbacks: Order
   const digits = phone?.replace(/\D/g, '') ?? '';
 
   function copyOrder() {
-    void navigator.clipboard.writeText(`${window.location.origin}/app/orders/${order.id}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    void copyToClipboard(`${window.location.origin}/app/orders/${order.id}`).then((ok) => {
+      if (ok) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }
+    });
   }
 
   return (

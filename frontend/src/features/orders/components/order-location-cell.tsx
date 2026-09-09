@@ -25,6 +25,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { copyToClipboard } from '@/lib/clipboard';
 import { cn } from '@/lib/utils';
 
 import type { Order } from '../types/order';
@@ -182,15 +183,21 @@ export function OrderLocationCell({ order, onEdit: _onEdit, onDelete }: Props) {
   const setBy   = loc!.set_by ?? null;
 
   function copyCoords() {
-    void navigator.clipboard.writeText(`${latStr}, ${lngStr}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    void copyToClipboard(`${latStr}, ${lngStr}`).then((ok) => {
+      if (ok) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }
+    });
   }
 
   function copyMapsUrl() {
-    void navigator.clipboard.writeText(order.google_maps_url ?? mapsUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    void copyToClipboard(order.google_maps_url ?? mapsUrl).then((ok) => {
+      if (ok) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }
+    });
   }
 
   function deleteLocation() {

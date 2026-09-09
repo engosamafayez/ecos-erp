@@ -39,6 +39,7 @@ import {
 
 import { useTranslation } from 'react-i18next';
 
+import { copyToClipboard } from '@/lib/clipboard';
 import { cn } from '@/lib/utils';
 import { FormField, PageHeader } from '@/components/crud';
 import { Combobox } from '@/components/crud/combobox';
@@ -2196,7 +2197,7 @@ export function ManualOrderFormWorkspace({ mode = 'create', order, initialCustom
                                   <div className="flex items-center gap-3">
                                     <button
                                       type="button"
-                                      onClick={() => void navigator.clipboard.writeText(`${currentLat.toFixed(6)}, ${currentLng.toFixed(6)}`)}
+                                      onClick={() => void copyToClipboard(`${currentLat.toFixed(6)}, ${currentLng.toFixed(6)}`)}
                                       className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
                                       title="Copy coordinates"
                                     >

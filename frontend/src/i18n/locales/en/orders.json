@@ -25,7 +25,8 @@
     "paymentAndProof": "Payment & Proof",
     "copySuccess": "Copied {{count}} order(s) to clipboard",
     "copyError": "Could not copy to clipboard",
-    "exportSuccess": "Exported {{count}} order(s)"
+    "exportSuccess": "Exported {{count}} order(s)",
+    "printSelected": "{{count}} selected"
   },
   "exportFields": {
     "brand": "Brand",

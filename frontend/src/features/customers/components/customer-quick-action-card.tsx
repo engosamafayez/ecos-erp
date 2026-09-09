@@ -79,7 +79,7 @@ export function CustomerQuickActionCard({
   };
 
   const handleCopyAddress = () => {
-    if (fullAddress) void navigator.clipboard.writeText(fullAddress);
+    if (fullAddress) void copyToClipboard(fullAddress);
   };
 
   return (

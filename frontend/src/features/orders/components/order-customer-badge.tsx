@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useCustomerOrderStats } from '@/features/orders/hooks/use-orders';
 import type { Order } from '@/features/orders/types/order';
+import { copyToClipboard } from '@/lib/clipboard';
 import { cn } from '@/lib/utils';
 
 type Props = { order: Order };
@@ -76,9 +77,11 @@ export function OrderCustomerBadge({ order }: Props) {
 
   function handleCopy() {
     if (!primaryPhone) return;
-    void navigator.clipboard.writeText(primaryPhone).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+    void copyToClipboard(primaryPhone).then((ok) => {
+      if (ok) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }
     });
   }
 

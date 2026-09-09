@@ -53,7 +53,7 @@ export function FloatingChatLauncher() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label={unread > 0 ? t(($) => $.launcher.ariaLabelUnread, { count: unread }) : t(($) => $.launcher.ariaLabel)}
-        className="fixed bottom-20 end-4 z-30 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105 hover:opacity-95 md:bottom-6"
+        className="no-print fixed bottom-20 end-4 z-30 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform hover:scale-105 hover:opacity-95 md:bottom-6"
       >
         <MessageCircle className="size-6" aria-hidden />
         {unread > 0 ? (
