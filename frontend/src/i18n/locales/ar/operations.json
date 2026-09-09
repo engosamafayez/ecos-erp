@@ -125,7 +125,21 @@
       },
       "noAssignments": "لم تُعيَّن أي مركبة لهذه الجلسة قط.",
       "tasksLabel": "عنصر محمَّل",
-      "unresolvedLabel": "غير محسوم"
+      "unresolvedLabel": "غير محسوم",
+      "audit": {
+        "wave": "الموجة",
+        "group": "المجموعة",
+        "acceptedQty": "استلام المندوب",
+        "unacceptedReturnedQty": "غير مقبول / مرتجع",
+        "closedAt": "وقت الإغلاق",
+        "cancellationReason": "سبب الإلغاء",
+        "orders": "الطلبات",
+        "noOrders": "لا توجد طلبات",
+        "ordersCount": "{{count}} طلب",
+        "returnedToPool": "أُعيد إلى المجمّع",
+        "releasedCount": "{{count}} أُعيد إلى المجمّع",
+        "showLess": "عرض أقل"
+      }
     },
     "sessions": {
       "title": "جلسات التحميل",

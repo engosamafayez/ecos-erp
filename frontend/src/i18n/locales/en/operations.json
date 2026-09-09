@@ -125,7 +125,21 @@
       },
       "noAssignments": "No vehicles were ever assigned to this session.",
       "tasksLabel": "loaded items",
-      "unresolvedLabel": "unresolved"
+      "unresolvedLabel": "unresolved",
+      "audit": {
+        "wave": "Wave",
+        "group": "Group",
+        "acceptedQty": "Driver accepted",
+        "unacceptedReturnedQty": "Unaccepted / returned",
+        "closedAt": "Closed at",
+        "cancellationReason": "Cancellation reason",
+        "orders": "Orders",
+        "noOrders": "No orders",
+        "ordersCount": "{{count}} orders",
+        "returnedToPool": "Returned to pool",
+        "releasedCount": "{{count}} returned to pool",
+        "showLess": "Show less"
+      }
     },
     "sessions": {
       "title": "Loading sessions",
