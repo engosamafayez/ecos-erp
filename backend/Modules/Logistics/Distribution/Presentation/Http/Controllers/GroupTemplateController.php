@@ -7,10 +7,8 @@ namespace Modules\Logistics\Distribution\Presentation\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\DB;
 use Modules\Logistics\Distribution\Domain\Exceptions\DistributionException;
 use Modules\Logistics\Distribution\Domain\Models\DistributionGroupTemplate;
-use Modules\Logistics\Distribution\Domain\Models\DistributionWindow;
 use Modules\Logistics\Distribution\Domain\Services\GroupTemplateService;
 
 /**
@@ -74,6 +72,11 @@ final class GroupTemplateController extends Controller
             // (tenant + not archived) is enforced in the service.
             'driver_ids' => ['array'],
             'driver_ids.*' => ['integer', 'min:1'],
+            // Preferred Driver/Vehicle — attempted at generation time, never
+            // guaranteed. Eligibility (tenant + not archived) is enforced in the
+            // service, same as the fields above.
+            'preferred_driver_id' => ['nullable', 'integer', 'min:1'],
+            'preferred_vehicle_id' => ['nullable', 'integer', 'min:1'],
             // The operator's confirmation of the Move dialog, and nothing else. Absent or
             // false, a Zone owned by another template is refused rather than stolen.
             'move_zones' => ['sometimes', 'boolean'],
@@ -88,6 +91,8 @@ final class GroupTemplateController extends Controller
                 $this->actorId($request),
                 $request->boolean('move_zones'),
                 array_map('intval', $validated['driver_ids'] ?? []),
+                $validated['preferred_driver_id'] ?? null,
+                $validated['preferred_vehicle_id'] ?? null,
             );
         } catch (DistributionException $e) {
             return $this->rejected($e);
@@ -107,6 +112,8 @@ final class GroupTemplateController extends Controller
             'zone_ids.*' => ['integer', 'min:1'],
             'driver_ids' => ['sometimes', 'array'],
             'driver_ids.*' => ['integer', 'min:1'],
+            'preferred_driver_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
+            'preferred_vehicle_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
             'move_zones' => ['sometimes', 'boolean'],
         ]);
 
@@ -128,6 +135,10 @@ final class GroupTemplateController extends Controller
                 array_key_exists('driver_ids', $validated)
                     ? array_map('intval', $validated['driver_ids'])
                     : null,
+                $validated['preferred_driver_id'] ?? null,
+                array_key_exists('preferred_driver_id', $validated),
+                $validated['preferred_vehicle_id'] ?? null,
+                array_key_exists('preferred_vehicle_id', $validated),
             );
         } catch (DistributionException $e) {
             return $this->rejected($e);
@@ -142,80 +153,6 @@ final class GroupTemplateController extends Controller
         $this->templates->archive($this->template($request, $template));
 
         return response()->json(null, 204);
-    }
-
-    /**
-     * Apply a template — create a NEW Group from its configuration.
-     *
-     * The overrides exist because §12 requires the operator to be able to adjust
-     * name, Zones and maximum BEFORE the Group exists. The template supplies
-     * defaults, not decisions.
-     *
-     * `warehouse_id` is required and is verified against the tenant here, exactly as
-     * `storeSlot` does: a Group's owner is explicit and is never inferred from the
-     * template, the zones or the selected warehouse elsewhere in the UI.
-     */
-    public function apply(Request $request, string $window, string $template): JsonResponse
-    {
-        $companyId = $this->companyId($request);
-
-        $w = DistributionWindow::query()
-            ->where('id', $window)
-            ->where('company_id', $companyId)
-            ->first();
-
-        if ($w === null) {
-            abort(404);
-        }
-
-        $model = $this->template($request, $template);
-
-        $validated = $request->validate([
-            'warehouse_id' => ['required', 'uuid'],
-            'code' => ['required', 'string', 'max:50'],
-            'name' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'capacity_orders' => ['sometimes', 'nullable', 'integer', 'min:1'],
-            'zone_ids' => ['sometimes', 'array'],
-            'zone_ids.*' => ['integer', 'min:1'],
-        ]);
-
-        // The warehouse must belong to the acting company, or a caller could name
-        // another tenant's warehouse and create a Group pointing at it. Reported as
-        // not-found so a foreign warehouse is not confirmed to exist.
-        $ownsWarehouse = DB::table('warehouses')
-            ->where('id', $validated['warehouse_id'])
-            ->where('company_id', $companyId)
-            ->exists();
-
-        if (! $ownsWarehouse) {
-            abort(404, 'Warehouse not found.');
-        }
-
-        try {
-            $group = $this->templates->applyToNewGroup(
-                $w,
-                $model,
-                (string) $validated['warehouse_id'],
-                (string) $validated['code'],
-                $validated['name'] ?? null,
-                $validated['capacity_orders'] ?? null,
-                array_key_exists('capacity_orders', $validated),
-                array_key_exists('zone_ids', $validated)
-                    ? array_map('intval', $validated['zone_ids'])
-                    : null,
-            );
-        } catch (DistributionException $e) {
-            return $this->rejected($e);
-        }
-
-        return response()->json(['data' => [
-            'slot_id' => $group->id,
-            'code' => $group->code,
-            'name' => $group->name,
-            'warehouse_id' => $group->warehouse_id,
-            'capacity_orders' => $group->capacity_orders,
-            'applied_from_template_id' => $model->id,
-        ]], 201);
     }
 
     // ── Presentation ─────────────────────────────────────────────────────────
@@ -239,6 +176,10 @@ final class GroupTemplateController extends Controller
             // Recommended Drivers — suggestions only. Ids, plus a count for the list.
             'driver_ids' => $template->recommendedDriverIds(),
             'drivers_count' => count($template->recommendedDriverIds()),
+            // Preferred Driver/Vehicle — attempted automatically at generation time,
+            // never guaranteed. Null means no preference.
+            'preferred_driver_id' => $template->preferred_driver_id,
+            'preferred_vehicle_id' => $template->preferred_vehicle_id,
             'created_at' => $template->created_at?->toIso8601String(),
             'updated_at' => $template->updated_at?->toIso8601String(),
         ];

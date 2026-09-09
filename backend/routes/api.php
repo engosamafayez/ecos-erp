@@ -2243,8 +2243,11 @@ Route::middleware('auth:sanctum')->prefix('logistics/distribution')->group(funct
         ->middleware('permission:logistics.distribution.update');
     Route::delete('/group-templates/{template}', [GroupTemplateController::class, 'destroy'])
         ->middleware('permission:logistics.distribution.delete');
-    Route::post('/windows/{window}/group-templates/{template}/apply', [GroupTemplateController::class, 'apply'])
-        ->middleware('permission:logistics.distribution.create');
+    // TASK-ECOS-OPERATIONS-DISTRIBUTION-AND-LOADING-FINAL-022 §D — the manual
+    // "apply a template" endpoint is removed: templates now apply automatically at
+    // Wave start (DailyGroupLifecycleService::sweepWave(), unchanged by this task).
+    // GroupTemplateService::applyToNewGroup() is still the shared method that path
+    // calls; only this HTTP-triggered entry point into it is gone.
 });
 
 // ── Logistics OS — Distribution: Trips / Delivery / Settlement (TASK-LOG-004B) ──

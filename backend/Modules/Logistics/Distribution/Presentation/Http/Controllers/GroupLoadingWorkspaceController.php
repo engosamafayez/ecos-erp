@@ -9,7 +9,9 @@ use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\DB;
 use Modules\Logistics\Distribution\Domain\Models\Trip;
+use Modules\Logistics\Distribution\Domain\Models\TripOrder;
 use Modules\Logistics\Distribution\Domain\Models\VirtualCapacitySlot;
 use Modules\Logistics\Distribution\Domain\Services\DistributionAggregationService;
 use Modules\Logistics\Distribution\Domain\Services\DistributionWindowService;
@@ -23,6 +25,7 @@ use Modules\Operations\Loading\Domain\Models\VehicleInventoryItem;
 use Modules\Operations\Loading\Domain\Services\LoadingCustodyService;
 use Modules\Operations\Loading\Domain\Services\LoadingWorkspaceClassificationService;
 use Modules\Operations\Loading\Domain\Services\StaleQuantityException;
+use Modules\Operations\Preparation\Domain\Models\PreparationWave;
 use RuntimeException;
 
 /**
@@ -625,18 +628,30 @@ final class GroupLoadingWorkspaceController extends Controller
             ->limit(self::OVERVIEW_SCAN_LIMIT)
             ->get();
 
-        $classified = $sessions->map(function (LoadingSession $session): array {
-            $row = $this->classification->classifySession($session);
+        // TASK-ECOS-OPERATIONS-DISTRIBUTION-AND-LOADING-FINAL-022 §G — classifySession()
+        // now returns null for a genuinely never-started (Draft, zero-activity) session:
+        // "Completed/History contains only terminal/finalized sessions. NO Draft." A null
+        // is filtered out here, before bucket counting, so it is excluded from every
+        // bucket and every count — not silently recategorised into one it does not belong in.
+        $classified = $sessions
+            ->map(function (LoadingSession $session): ?array {
+                $row = $this->classification->classifySession($session);
 
-            return $row + [
-                'session_number' => $session->session_number,
-                'operational_date' => $session->operational_date?->toDateString(),
-                'status' => (string) ($session->status instanceof BackedEnum
-                    ? $session->status->value
-                    : $session->status),
-                'warehouse_id' => (string) $session->warehouse_id,
-            ];
-        });
+                if ($row === null) {
+                    return null;
+                }
+
+                return $row + [
+                    'session_number' => $session->session_number,
+                    'operational_date' => $session->operational_date?->toDateString(),
+                    'status' => (string) ($session->status instanceof BackedEnum
+                        ? $session->status->value
+                        : $session->status),
+                    'warehouse_id' => (string) $session->warehouse_id,
+                ];
+            })
+            ->filter()
+            ->values();
 
         $counts = array_fill_keys(array_map(
             static fn (LoadingWorkspaceBucket $b): string => $b->value,
@@ -676,12 +691,98 @@ final class GroupLoadingWorkspaceController extends Controller
                 ->keyBy(static fn (Trip $t): int => (int) $t->id)
                 ->all();
 
-        $pageItems = $pageItems->map(function (array $item) use ($tripById): array {
-            $item['assignments'] = array_map(
-                function (array $child) use ($tripById): array {
-                    $trip = $child['trip_id'] === null ? null : ($tripById[(int) $child['trip_id']] ?? null);
+        // TASK-ECOS-OPERATIONS-DISTRIBUTION-AND-LOADING-FINAL-022 §G — Wave, Group and
+        // Orders, resolved HERE rather than inside LoadingWorkspaceClassificationService:
+        // that service is Loading-domain only (VehicleAssignment/LoadingTask) and knows
+        // nothing of Trip/Group/Wave — this controller already crosses that boundary for
+        // `transport` (Trip -> driverVehicleAssignment -> driver/vehicle), so the same
+        // boundary is the right place for Trip -> Group -> Wave and Trip -> its Orders too.
+        // Batched from the same bounded page of trips, never a second per-child query.
+        $groupIds = collect($tripById)
+            ->pluck('virtual_slot_id')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
 
-                    return $child + ['transport' => $this->presentTransport($trip, $child['status'])];
+        $groupById = [];
+
+        foreach ($groupIds === [] ? [] : VirtualCapacitySlot::query()->whereIn('id', $groupIds)->get() as $g) {
+            $groupById[(string) $g->id] = $g;
+        }
+
+        $waveIds = collect($groupById)
+            ->pluck('preparation_wave_id')
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        $waveById = [];
+
+        foreach ($waveIds === [] ? [] : PreparationWave::query()->whereIn('id', $waveIds)->get() as $w) {
+            $waveById[(string) $w->id] = $w;
+        }
+
+        // The full history, not just the currently-active association: a cancelled
+        // Trip's orders are RELEASED (superseded_at set), which is exactly the audit
+        // fact History needs to show, not hide.
+        $tripOrdersByTripId = $tripIds === []
+            ? collect()
+            : TripOrder::query()->whereIn('trip_id', $tripIds)->get()
+                ->groupBy(static fn (TripOrder $to): string => (string) $to->trip_id);
+
+        $orderIds = $tripOrdersByTripId
+            ->flatten()
+            ->map(static fn (TripOrder $to): string => (string) $to->order_id)
+            ->unique()
+            ->values()
+            ->all();
+
+        $orderById = [];
+
+        foreach ($orderIds === [] ? [] : DB::table('orders')->whereIn('id', $orderIds)->get(['id', 'order_number']) as $o) {
+            $orderById[(string) $o->id] = $o;
+        }
+
+        $pageItems = $pageItems->map(function (array $item) use ($tripById, $groupById, $waveById, $tripOrdersByTripId, $orderById): array {
+            $item['assignments'] = array_map(
+                function (array $child) use ($tripById, $groupById, $waveById, $tripOrdersByTripId, $orderById): array {
+                    $trip = $child['trip_id'] === null ? null : ($tripById[(int) $child['trip_id']] ?? null);
+                    $group = $trip?->virtual_slot_id === null ? null : ($groupById[(string) $trip->virtual_slot_id] ?? null);
+                    $wave = $group?->preparation_wave_id === null ? null : ($waveById[(string) $group->preparation_wave_id] ?? null);
+
+                    $orders = $trip === null
+                        ? []
+                        : $tripOrdersByTripId->get((string) $trip->id, collect())
+                            ->map(static function (TripOrder $tripOrder) use ($orderById): array {
+                                $order = $orderById[(string) $tripOrder->order_id] ?? null;
+
+                                return [
+                                    'order_id' => (string) $tripOrder->order_id,
+                                    'order_number' => $order->order_number ?? null,
+                                    // Superseded = released back to the pool (§E/§F) —
+                                    // the Order is no longer executing on THIS trip.
+                                    'released' => $tripOrder->superseded_at !== null,
+                                ];
+                            })
+                            ->values()
+                            ->all();
+
+                    return $child + [
+                        'transport' => $this->presentTransport($trip, $child['status']),
+                        'group' => $group === null ? null : [
+                            'id' => (string) $group->id,
+                            'code' => $group->code,
+                            'name' => $group->name,
+                        ],
+                        'wave' => $wave === null ? null : [
+                            'id' => (string) $wave->id,
+                            'wave_number' => $wave->wave_number,
+                            'planning_date' => $wave->planning_date?->toDateString(),
+                        ],
+                        'orders' => $orders,
+                    ];
                 },
                 $item['assignments'],
             );

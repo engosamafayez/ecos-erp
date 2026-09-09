@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Operations\Loading\Domain\Services;
 
 use Illuminate\Support\Collection;
+use Modules\Operations\Loading\Domain\Enums\LoadingSessionStatus;
 use Modules\Operations\Loading\Domain\Enums\LoadingWorkspaceBucket;
 use Modules\Operations\Loading\Domain\Enums\LoadingWorkspaceReasonCode;
 use Modules\Operations\Loading\Domain\Enums\VehicleAssignmentStatus;
@@ -202,22 +203,42 @@ final class LoadingWorkspaceClassificationService
      * Bucket priority, most severe first: any child NeedsReview makes the whole session
      * NeedsReview (a real problem is never hidden under a sibling's clean status); else
      * any child WaitingDriverConfirmation; else any child CurrentActionable; else
-     * CompletedHistory (either every child is truthfully complete/cancelled, or there are
-     * no children at all — "zero assignments" is reported as `NoActivity`, deliberately
-     * NOT vacuous completion, mirroring `advanceIfComplete()`'s own "not started" rule).
+     * CompletedHistory (every child is truthfully complete/cancelled).
+     *
+     * ZERO ASSIGNMENTS RETURNS NULL UNLESS THE SESSION ITSELF REACHED A TERMINAL
+     * STATE (TASK-ECOS-OPERATIONS-DISTRIBUTION-AND-LOADING-FINAL-022 §G). A
+     * session with no children and a non-terminal status (Draft, almost always —
+     * `CreateLoadingSessionAction`'s own starting state, before anything has
+     * happened) is "not started", not "vacuously complete": it is not
+     * actionable, not waiting, not a problem, and — the specific defect this
+     * task closes — NOT history. §G requires "Completed/History contains only
+     * terminal/finalized sessions. NO Draft", so it is excluded from every
+     * bucket rather than forced into CompletedHistory the way it was before.
+     * The one legitimate exception is a session explicitly cancelled/closed
+     * before any assignment was ever created — genuinely terminal despite
+     * having nothing under it, so it still reports `NoActivity` and still
+     * belongs in history.
      *
      * @return array{
      *     session_id:string, bucket:string, reasons:list<string>,
      *     assignments:list<array<string, mixed>>
-     * }
+     * }|null null means "exclude from every bucket" — see above.
      */
-    public function classifySession(LoadingSession $session): array
+    public function classifySession(LoadingSession $session): ?array
     {
         $assignments = $session->relationLoaded('vehicleAssignments')
             ? $session->vehicleAssignments
             : $session->vehicleAssignments()->with('loadingTasks')->get();
 
         if ($assignments->isEmpty()) {
+            $status = $session->status instanceof LoadingSessionStatus
+                ? $session->status
+                : LoadingSessionStatus::from((string) $session->status);
+
+            if (! $status->isTerminal()) {
+                return null;
+            }
+
             return [
                 'session_id' => (string) $session->id,
                 'bucket' => LoadingWorkspaceBucket::CompletedHistory->value,
@@ -274,12 +295,36 @@ final class LoadingWorkspaceClassificationService
 
             $bucketsSeen[$classification['bucket']] = true;
 
+            // TASK-ECOS-OPERATIONS-DISTRIBUTION-AND-LOADING-FINAL-022 §G — raw
+            // audit facts alongside the classification, not folded into
+            // classifyAssignment()'s own bucket/reasons contract (that stays
+            // exactly as `groups()`/`group()` already depend on it). Quantities
+            // are summed from `loadingTasks`, already loaded for classification —
+            // no second query.
+            $loadedQuantity = (float) $tasks->sum(static fn (LoadingTask $t): float => (float) $t->quantity_loaded);
+            $acceptedQuantity = (float) $tasks->sum(
+                static fn (LoadingTask $t): float => $t->driver_confirmed_loaded_qty !== null
+                    ? (float) $t->driver_confirmed_loaded_qty
+                    : 0.0,
+            );
+
             $childResults[] = [
                 'vehicle_assignment_id' => (string) $assignment->id,
                 'trip_id' => $assignment->trip_id,
                 'status' => $assignment->status instanceof VehicleAssignmentStatus
                     ? $assignment->status->value
                     : (string) $assignment->status,
+                'loaded_quantity' => $loadedQuantity,
+                'accepted_quantity' => $acceptedQuantity,
+                // Never negative: a driver cannot "accept" more than was loaded, so a
+                // negative value here would signal a data defect, not a real return.
+                'unaccepted_returned_quantity' => max(0.0, $loadedQuantity - $acceptedQuantity),
+                // The one moment this execution actually ended, whichever of the two
+                // terminal paths it took — null while still open.
+                'closed_at' => ($assignment->cancelled_at ?? $assignment->reconciled_at)?->toIso8601String(),
+                // Only ever meaningful for a Cancelled assignment (successful
+                // completion needs no reason) — null otherwise.
+                'cancellation_reason' => $assignment->cancellation_reason,
             ] + $classification;
         }
 

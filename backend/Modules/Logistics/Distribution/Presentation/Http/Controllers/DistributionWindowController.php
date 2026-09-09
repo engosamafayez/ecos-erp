@@ -113,6 +113,15 @@ final class DistributionWindowController extends Controller
      */
     private const STATE_OVERFLOW_APPROVED = 'overflow_approved';
 
+    /**
+     * Bound on `createSlotWithSafeCode()`'s regenerate-and-retry loop for a
+     * SERVER-GENERATED code — see that method. Purely a defence against a
+     * concurrent create landing between this request's read and its write;
+     * the generator's own scoping is what actually prevents the collision, so
+     * this bound is never expected to be exhausted in practice.
+     */
+    private const MAX_CODE_GENERATION_ATTEMPTS = 5;
+
     public function __construct(
         private readonly DistributionWindowService $windows,
         private readonly DistributionCollectionService $collection,
@@ -1582,6 +1591,16 @@ final class DistributionWindowController extends Controller
      * Template id) makes a manual Group subject to the identical close-on-wave-end
      * lifecycle a Template-created Group already has, with no new engine and no
      * change to an existing historical row.
+     *
+     * TASK-OPERATIONS-DISTRIBUTION-LOADING-FINAL-022 — `code` is now OPTIONAL and,
+     * whether supplied or generated, authoritative server-side. The Groups panel used
+     * to guess `DG-{n+1}` from `groups.length` — the Groups it could currently SEE
+     * (open, this warehouse) — and send that verbatim. `dist_slots_window_code_unique`
+     * guards the whole Window: every warehouse, every Wave, closed or not. A closed
+     * Wave's Group, or a sibling warehouse's Group, could already hold that guess, and
+     * the `create()` below had no try/catch — an uncaught `QueryException` (MySQL 1062)
+     * became a raw 500, because `bootstrap/app.php` renders no response for it either.
+     * See `createSlotWithSafeCode()` for the fix.
      */
     public function storeSlot(Request $request, string $window): JsonResponse
     {
@@ -1594,7 +1613,13 @@ final class DistributionWindowController extends Controller
             // selected somewhere else. A group created without an owner is the
             // cross-warehouse defect this Part exists to close.
             'warehouse_id' => ['required', 'uuid'],
-            'code' => ['required', 'string', 'max:50'],
+            // OPTIONAL. Omitted (or null), `createSlotWithSafeCode()` assigns the
+            // next `DG-###` the whole Window has not already used. Still accepted as
+            // an explicit caller preference — existing API consumers and test
+            // fixtures that name a Group deliberately — but a preference that
+            // COLLIDES is refused (see `groupCodeAlreadyInUse()`), never silently
+            // swapped for a code the caller did not ask for.
+            'code' => ['sometimes', 'nullable', 'string', 'max:50'],
             'name' => ['nullable', 'string', 'max:100'],
             'capacity_orders' => ['nullable', 'integer', 'min:0'],
             'capacity_stops' => ['nullable', 'integer', 'min:0'],
@@ -1615,14 +1640,130 @@ final class DistributionWindowController extends Controller
             abort(404, 'Warehouse not found.');
         }
 
-        $slot = VirtualCapacitySlot::query()->create([
+        $requestedCode = $validated['code'] ?? null;
+        unset($validated['code']);
+
+        $attributes = [
             'company_id' => $w->company_id,
             'distribution_window_id' => $w->id,
             'preparation_wave_id' => $this->activeWaveId((string) $w->company_id, $validated['warehouse_id']),
             ...$validated,
-        ]);
+        ];
+
+        try {
+            $slot = $this->createSlotWithSafeCode((string) $w->id, $attributes, $requestedCode);
+        } catch (DistributionException $e) {
+            return $this->rejected($e);
+        }
 
         return response()->json(['data' => $slot], 201);
+    }
+
+    /**
+     * Insert a Virtual Capacity Slot with a `code` that CANNOT collide with any
+     * other row already in this Window — the exact scope
+     * `dist_slots_window_code_unique` guards, regardless of warehouse, Wave, or
+     * whether that row has since closed.
+     *
+     * TWO CALLERS, TWO CONTRACTS:
+     *
+     *   - `$requestedCode` given: an explicit caller preference. Tried VERBATIM
+     *     exactly once. If it collides this is `groupCodeAlreadyInUse()` — a clean
+     *     rejection, never a silent substitution of a code the caller did not ask
+     *     for (and retrying with the SAME code would only collide again).
+     *
+     *   - `$requestedCode` null (the normal manual-create path since the panel no
+     *     longer guesses one): `nextGroupCode()` computes the next free `DG-###`
+     *     from this Window's OWN rows. THE RETRY HERE IS FOR THE RACE, NOT THE
+     *     GUESS — once the read is scoped correctly the generated code cannot
+     *     lose to anything already committed; the only way it still collides is a
+     *     second request computing the same "next" code in the gap between this
+     *     method's read and its write. That is exactly the race
+     *     `DailyGroupLifecycleService::ensureGroupForTemplate()` already defends
+     *     against on the Template path — recover by trying again rather than
+     *     failing the request, bounded so a genuine anomaly cannot loop forever.
+     *
+     * @param  array<string, mixed>  $attributes  every VirtualCapacitySlot column except `code`
+     */
+    private function createSlotWithSafeCode(
+        string $windowId,
+        array $attributes,
+        ?string $requestedCode,
+    ): VirtualCapacitySlot {
+        if ($requestedCode !== null) {
+            try {
+                return VirtualCapacitySlot::query()->create([...$attributes, 'code' => $requestedCode]);
+            } catch (\Illuminate\Database\QueryException $e) {
+                if (! $this->isGroupCodeCollision($e)) {
+                    throw $e;
+                }
+
+                throw DistributionException::groupCodeAlreadyInUse($requestedCode);
+            }
+        }
+
+        for ($attempt = 0; $attempt < self::MAX_CODE_GENERATION_ATTEMPTS; $attempt++) {
+            try {
+                return VirtualCapacitySlot::query()->create([
+                    ...$attributes,
+                    'code' => $this->nextGroupCode($windowId),
+                ]);
+            } catch (\Illuminate\Database\QueryException $e) {
+                if (! $this->isGroupCodeCollision($e)) {
+                    throw $e;
+                }
+
+                // Lost the race against a concurrent create that took this exact
+                // code first. Loop and recompute from what is now committed.
+            }
+        }
+
+        throw DistributionException::groupCodeGenerationFailed();
+    }
+
+    /**
+     * The next `DG-###` this Window has not already used — by ANY Group in it.
+     *
+     * THE SAME SCOPE AS THE CONSTRAINT. `dist_slots_window_code_unique` is keyed
+     * on (window, code) alone, so this reads (window, code) alone: no
+     * `warehouse_id` filter and no `whereNull('closed_at')`. Scoping the guess to
+     * anything narrower than the guard it must satisfy is exactly how the bug
+     * this method replaces was introduced — the panel's old guess only counted
+     * the Groups it could currently SEE.
+     *
+     * Non-numeric codes (an explicit caller preference like `DG-EMPTY`, or a
+     * Template-created `MORNING-20260901-ABCD`) contribute nothing to the max —
+     * they cannot collide with a numeric `DG-###` guess anyway — so they are
+     * read and simply skipped rather than excluded by query, keeping this one
+     * query correct for every row regardless of how its code was made.
+     */
+    private function nextGroupCode(string $windowId): string
+    {
+        $max = 0;
+
+        foreach (
+            VirtualCapacitySlot::query()
+                ->where('distribution_window_id', $windowId)
+                ->pluck('code') as $code
+        ) {
+            if (preg_match('/^DG-(\d+)$/', (string) $code, $matches) === 1) {
+                $max = max($max, (int) $matches[1]);
+            }
+        }
+
+        return 'DG-'.str_pad((string) ($max + 1), 3, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * TRUE only for the one SQLSTATE 23000 this method is allowed to recover
+     * from: `dist_slots_window_code_unique` itself, identified by name so an
+     * unrelated integrity violation on the same insert is never mistaken for a
+     * code collision and swallowed.
+     */
+    private function isGroupCodeCollision(\Illuminate\Database\QueryException $e): bool
+    {
+        return $e->getCode() === '23000'
+            && str_contains($e->getMessage(), 'dist_slots_window_code_unique');
     }
 
     /**
