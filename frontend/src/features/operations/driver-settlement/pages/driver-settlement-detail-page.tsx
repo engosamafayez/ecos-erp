@@ -28,6 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useFormatter } from '@/hooks/use-formatter';
 import { usePermission } from '@/features/authorization';
 import { useToast } from '@/components/ds/use-toast';
@@ -75,7 +76,7 @@ type OrderFilter = 'all' | 'delivered' | 'failed' | 'partial' | 'returned';
  */
 export function DriverSettlementDetailPage() {
   const { t } = useTranslation('logistics');
-  const { money } = useFormatter();
+  const { money, dateTime } = useFormatter();
   const navigate = useNavigate();
   const { can } = usePermission();
   const { toast } = useToast();
@@ -180,6 +181,9 @@ export function DriverSettlementDetailPage() {
     !blockers.includes('reconciliation_not_opened') &&
     !blockers.includes('unresolved_variance');
   const closingReady = data.closing_readiness.ready;
+  // Treasury has confirmed at least one of this driver's Trip cash handovers for the day.
+  // `false` here is a real "not yet confirmed" fact, not an absence of data (§ Change 2).
+  const cashHandoverConfirmed = data.cash_handover.confirmed_count > 0;
 
   const na = t(($) => $.driverSettlement.notAvailable);
   const moneyOrNa = (v: number | null | undefined): string => (v === null || v === undefined ? na : money(v));
@@ -461,6 +465,39 @@ export function DriverSettlementDetailPage() {
                 </dl>
               </section>
             </div>
+
+            {/* Cash Handover — Treasury's confirmation of this driver's Trip cash handovers
+                (read-only rollup; the confirmation action itself lives on the Trip). A missing
+                confirmation must never look like a confirmed zero, so the "not yet confirmed"
+                state is explicit rather than a blank or $0.00 (Change 2, §ECOS-023). */}
+            <section className="rounded-lg border p-3">
+              <SectionTitle text={t(($) => $.driverSettlement.detail.cashHandover.title)} />
+              <div className="flex flex-wrap items-center gap-3">
+                <StatusPill
+                  label={t(($) => $.driverSettlement.detail.cashHandover.statusLabel)}
+                  ok={cashHandoverConfirmed}
+                  okText={t(($) => $.driverSettlement.detail.cashHandover.confirmed)}
+                  badText={t(($) => $.driverSettlement.detail.cashHandover.notYetConfirmed)}
+                />
+                <dl className="min-w-[240px] flex-1 divide-y text-sm">
+                  <SummaryRow
+                    label={t(($) => $.driverSettlement.detail.cashHandover.totalConfirmed)}
+                    value={cashHandoverConfirmed ? money(data.cash_handover.total_received_cash) : na}
+                    muted={!cashHandoverConfirmed}
+                    strong={cashHandoverConfirmed}
+                  />
+                  <SummaryRow
+                    label={t(($) => $.driverSettlement.detail.cashHandover.tripsConfirmed)}
+                    value={`${data.cash_handover.confirmed_count} / ${data.cash_handover.total_confirmed_trips}`}
+                  />
+                  <SummaryRow
+                    label={t(($) => $.driverSettlement.detail.cashHandover.lastConfirmedAt)}
+                    value={data.cash_handover.last_confirmed_at ? dateTime(data.cash_handover.last_confirmed_at) : na}
+                    muted={!data.cash_handover.last_confirmed_at}
+                  />
+                </dl>
+              </div>
+            </section>
 
             {/* Settlement status — canonical states only; no new closing condition (§23). */}
             <section className="rounded-lg border p-3">
@@ -784,20 +821,39 @@ export function DriverSettlementDetailPage() {
             {/* The chips carry the canonical outcome COUNTS, so Partial / Failed / Returned stay
                 on the page after the KPI consolidation — no canonical figure was dropped (§15). */}
             <div className="flex flex-wrap items-center gap-1.5">
-              {(['all', 'delivered', 'partial', 'failed', 'returned'] as OrderFilter[]).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setOrderFilter(f)}
-                  className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                    orderFilter === f
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {f === 'all' ? t(($) => $.driverSettlement.filterAll) : t(($) => $.driverSettlement.orderStatus[f])}
-                  <span className="ms-1.5 tabular-nums opacity-70">{outcomeCount[f]}</span>
-                </button>
-              ))}
+              {(['all', 'delivered', 'partial', 'failed', 'returned'] as OrderFilter[]).map((f) => {
+                const label = f === 'all' ? t(($) => $.driverSettlement.filterAll) : t(($) => $.driverSettlement.orderStatus[f]);
+                const cls = `rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                  orderFilter === f
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:text-foreground'
+                }`;
+                const button = (
+                  <button onClick={() => setOrderFilter(f)} className={cls}>
+                    {label}
+                    <span className="ms-1.5 tabular-nums opacity-70">{outcomeCount[f]}</span>
+                  </button>
+                );
+
+                // Failed breaks down by reason (overview.failed_breakdown) — a hover detail
+                // so the chip row keeps its existing width/density (Change 2, §ECOS-023).
+                const fb = f === 'failed' ? data.overview.failed_breakdown : undefined;
+                if (!fb || data.overview.failed === 0) {
+                  return <span key={f}>{button}</span>;
+                }
+                return (
+                  <TooltipProvider key={f} delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>{button}</TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs space-y-0.5">
+                        <p>{t(($) => $.driverSettlement.detail.failedBreakdown.noAnswer)}: {fb.no_answer}</p>
+                        <p>{t(($) => $.driverSettlement.detail.failedBreakdown.postponed)}: {fb.postponed}</p>
+                        <p>{t(($) => $.driverSettlement.detail.failedBreakdown.other)}: {fb.other}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                );
+              })}
             </div>
             <OrdersTable
               rows={data.orders.filter((o) => orderFilter === 'all' || o.status === orderFilter)}

@@ -14,6 +14,7 @@ use Modules\Logistics\Drivers\Domain\Models\DriverVehicleAssignment;
 use Modules\Logistics\Drivers\Domain\Services\DriverVehicleAssignmentService;
 use Modules\Logistics\Drivers\Domain\Services\FleetIdentityResolver;
 use Modules\Logistics\Vehicles\Domain\Models\Vehicle;
+use Modules\Operations\Loading\Domain\Enums\DriverAssignmentStatus;
 use Modules\Operations\Loading\Domain\Enums\VehicleAssignmentStatus;
 use RuntimeException;
 
@@ -100,6 +101,19 @@ class GroupVehicleAssignmentService
         if ($this->loadingBusyVehicleUuids([$vehicle->uuid]) !== []) {
             throw FleetAssignmentException::vehicleBusyInLoading(
                 $vehicle->plate_number ?? (string) $vehicle->id,
+            );
+        }
+
+        // TASK-ECOS-OPERATIONS-DISTRIBUTION-AND-LOADING-FINAL-022 §C — the driver-side
+        // counterpart to the vehicle check above. Was missing entirely: a Driver could
+        // be paired to a new Group while already committed to an active Operations\
+        // Loading driver assignment on a different Vehicle. Read directly from
+        // DriverAssignmentStatus's own terminal states, not derived through a linked
+        // Trip: unlike vehicle_assignments, nothing documents driver_assignments as
+        // capable of getting stuck short of its own terminal states.
+        if ($this->loadingBusyDriverUuids([$driver->uuid]) !== []) {
+            throw FleetAssignmentException::driverBusyInLoading(
+                $driver->full_name ?? (string) $driver->id,
             );
         }
 
@@ -278,6 +292,39 @@ class GroupVehicleAssignmentService
             })
             ->distinct()
             ->pluck('va.vehicle_id')
+            ->all();
+    }
+
+    /**
+     * Driver uuids (from the given candidate set) currently committed to an active
+     * Operations\Loading `driver_assignments` row — the driver-side counterpart to
+     * `loadingBusyVehicleUuids()` above (TASK-...-FINAL-022 §C).
+     *
+     * Reads `DriverAssignmentStatus` directly rather than deferring to a linked
+     * Trip: that enum already defines its own terminal set (Reconciled/Cancelled/
+     * Reassigned via `isTerminal()`) and nothing in this codebase documents a
+     * driver_assignments row getting stuck short of one of those, unlike the
+     * documented `vehicle_assignments`-stuck-at-LoadingComplete defect that forced
+     * `loadingBusyVehicleUuids()` to defer to the Trip instead.
+     *
+     * @param  list<string>  $driverUuids
+     * @return list<string>
+     */
+    public function loadingBusyDriverUuids(array $driverUuids): array
+    {
+        if ($driverUuids === []) {
+            return [];
+        }
+
+        return DB::table('driver_assignments')
+            ->whereIn('driver_id', $driverUuids)
+            ->whereNotIn('status', [
+                DriverAssignmentStatus::Reconciled->value,
+                DriverAssignmentStatus::Cancelled->value,
+                DriverAssignmentStatus::Reassigned->value,
+            ])
+            ->distinct()
+            ->pluck('driver_id')
             ->all();
     }
 

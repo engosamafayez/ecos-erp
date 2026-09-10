@@ -125,7 +125,21 @@
       },
       "noAssignments": "No vehicles were ever assigned to this session.",
       "tasksLabel": "loaded items",
-      "unresolvedLabel": "unresolved"
+      "unresolvedLabel": "unresolved",
+      "audit": {
+        "wave": "Wave",
+        "group": "Group",
+        "acceptedQty": "Driver accepted",
+        "unacceptedReturnedQty": "Unaccepted / returned",
+        "closedAt": "Closed at",
+        "cancellationReason": "Cancellation reason",
+        "orders": "Orders",
+        "noOrders": "No orders",
+        "ordersCount": "{{count}} orders",
+        "returnedToPool": "Returned to pool",
+        "releasedCount": "{{count}} returned to pool",
+        "showLess": "Show less"
+      }
     },
     "sessions": {
       "title": "Loading sessions",
@@ -142,7 +156,8 @@
     "toasts": {
       "deliveryRecorded": "Delivery recorded.",
       "reconciliationRefreshed": "Reconciliation refreshed.",
-      "returnRecorded": "Return recorded."
+      "returnRecorded": "Return recorded.",
+      "returnReceived": "Return received into warehouse stock."
     },
     "labels": {
       "loaded": "Loaded",
@@ -177,7 +192,17 @@
       "colCountedBack": "Counted back",
       "colVariance": "Variance",
       "colRecordReturn": "Record return",
-      "save": "Save"
+      "save": "Save",
+      "colReceipt": "Warehouse receipt",
+      "receiveExpectedHint": "Expected: {{expected}}",
+      "receiveAccepted": "Accepted (good)",
+      "receiveDamaged": "Damaged",
+      "receiveDamageReasonPlaceholder": "Damage reason (optional)",
+      "receiveAction": "Confirm receipt",
+      "receiving": "Receiving…",
+      "receivedFull": "Fully received into warehouse stock",
+      "receivedPartial": "{{remaining}} still in vehicle custody — not yet received",
+      "receiveFailed": "Warehouse receipt failed."
     },
     "sessionStatus": {
       "draft": "Draft",
@@ -516,7 +541,9 @@
         "expectedIncoming": "Expected Incoming",
         "uncovered": "Uncovered",
         "warehouse": "Warehouse",
-        "available": "Available"
+        "available": "Available",
+        "expectedDriverReturns": "Expected Driver Returns",
+        "projectedShortage": "Projected Shortage"
       },
       "priority": {
         "critical": "Critical",
@@ -544,6 +571,8 @@
       "expectedIncomingSaved": "Saved",
       "expectedIncomingSave": "Save",
       "expectedIncomingCancel": "Discard",
+      "expectedDriverReturnsHint": "Goods still with a driver from a closed delivery attempt, not yet received into the warehouse (planning only — not on-hand or reservable stock).",
+      "projectedShortageHint": "Required − Available − Expected Driver Returns, floored at zero. More accurate than Missing Qty, but still planning until the return is physically received.",
       "coverageCovered": "Covered",
       "coverageUncovered": "Uncovered"
     },

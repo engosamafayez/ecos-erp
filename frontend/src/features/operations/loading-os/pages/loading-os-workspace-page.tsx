@@ -28,6 +28,7 @@ import {
   useLoadingSessions,
   useLoadingSessionsOverview,
   useOpenReconciliation,
+  useReceiveReturn,
   useReconciliation,
   useRecordDelivery,
   useRecordReturn,
@@ -533,29 +534,34 @@ function ReconciliationPanel({
                 {t($ => $.loadingOs.reconciliation.variance)}: {data.total_variance}
               </Badge>
             </div>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t($ => $.loadingOs.allocations.colSku)}</TableHead>
-                  <TableHead className="text-end">{t($ => $.loadingOs.labels.loaded)}</TableHead>
-                  <TableHead className="text-end">{t($ => $.loadingOs.labels.delivered)}</TableHead>
-                  <TableHead className="text-end">{t($ => $.loadingOs.reconciliation.colExpectedBack)}</TableHead>
-                  <TableHead className="text-end">{t($ => $.loadingOs.reconciliation.colCountedBack)}</TableHead>
-                  <TableHead className="text-end">{t($ => $.loadingOs.reconciliation.colVariance)}</TableHead>
-                  <TableHead className="text-end">{t($ => $.loadingOs.reconciliation.colRecordReturn)}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.lines.map((line) => (
-                  <ReconciliationRow
-                    key={line.id}
-                    sessionId={sessionId}
-                    assignmentId={assignmentId}
-                    line={line}
-                  />
-                ))}
-              </TableBody>
-            </Table>
+            {/* Wide table (now 8 columns) scrolls inside its own container so the page
+                never scrolls horizontally, matching loading-groups.tsx's products table. */}
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{t($ => $.loadingOs.allocations.colSku)}</TableHead>
+                    <TableHead className="text-end">{t($ => $.loadingOs.labels.loaded)}</TableHead>
+                    <TableHead className="text-end">{t($ => $.loadingOs.labels.delivered)}</TableHead>
+                    <TableHead className="text-end">{t($ => $.loadingOs.reconciliation.colExpectedBack)}</TableHead>
+                    <TableHead className="text-end">{t($ => $.loadingOs.reconciliation.colCountedBack)}</TableHead>
+                    <TableHead className="text-end">{t($ => $.loadingOs.reconciliation.colVariance)}</TableHead>
+                    <TableHead className="text-end">{t($ => $.loadingOs.reconciliation.colRecordReturn)}</TableHead>
+                    <TableHead className="text-end">{t($ => $.loadingOs.reconciliation.colReceipt)}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.lines.map((line) => (
+                    <ReconciliationRow
+                      key={line.id}
+                      sessionId={sessionId}
+                      assignmentId={assignmentId}
+                      line={line}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         )}
       </CardContent>
@@ -608,6 +614,171 @@ function ReconciliationRow({
           </Button>
         </div>
       </TableCell>
+      <TableCell>
+        <WarehouseReceiptCell sessionId={sessionId} assignmentId={assignmentId} line={line} />
+      </TableCell>
     </TableRow>
+  );
+}
+
+/**
+ * Warehouse return receipt — the ADDITIVE action this task adds alongside "Record
+ * return" above. That action only DECLARES the counted-back quantity for variance
+ * tracking and has no stock effect; this one is the only inventory-moving act for a
+ * vehicle return (`POST .../reconciliation/lines/{lineId}/receive`,
+ * `ReceiveVehicleReturnAction`). It does not require "Record return" to have run
+ * first — the receive action records the canonical actual-return itself — so this
+ * is offered unconditionally as a follow-on step next to it, never a replacement.
+ *
+ * ┌─ WHY "RECEIVED" IS LOCAL STATE, NOT A SERVER FIELD ───────────────────────┐
+ * │ `VehicleShiftReconciliationLineResource` (the read model backing this whole  │
+ * │ panel) does not serialize `quantity_accepted` / `quantity_damaged` /         │
+ * │ `warehouse_receipt_at`, even though the line model carries them — only the   │
+ * │ totals (`quantity_returned_actual`, `variance`) move. So THIS component's    │
+ * │ own successful mutation is the only source of "already received" and of the  │
+ * │ accepted/damaged split; a page reload re-shows the form. That is safe        │
+ * │ because the backend is itself idempotent: resubmitting the SAME split is a   │
+ * │ no-op 200, and a DIFFERENT split on an already-received line is refused with  │
+ * │ a 422 whose message is surfaced verbatim below — never silently reprocessed. │
+ * └────────────────────────────────────────────────────────────────────────────┘
+ *
+ * Shape mirrors cash-handover-panel.tsx (pre-confirm editable form → post-confirm
+ * permanent read-only block) for consistency with the app's other physical
+ * second-actor confirmation flow.
+ */
+function WarehouseReceiptCell({
+  sessionId,
+  assignmentId,
+  line,
+}: {
+  sessionId: string;
+  assignmentId: string;
+  line: ReconciliationLine;
+}) {
+  const { t } = useTranslation('operations');
+  const receive = useReceiveReturn(sessionId, assignmentId);
+
+  const [acceptedValue, setAcceptedValue] = useState('');
+  const [damagedValue, setDamagedValue] = useState('');
+  const [damageReason, setDamageReason] = useState('');
+
+  const acceptedNum = Number(acceptedValue);
+  const damagedNum = Number(damagedValue);
+  const canReceive =
+    acceptedValue.trim() !== '' &&
+    damagedValue.trim() !== '' &&
+    Number.isFinite(acceptedNum) &&
+    Number.isFinite(damagedNum) &&
+    acceptedNum >= 0 &&
+    damagedNum >= 0;
+
+  // Set only once THIS row's own call has succeeded — see the docblock above for
+  // why the server's read model cannot supply this instead.
+  const received = receive.isSuccess ? receive.variables : null;
+
+  // Server-recomputed, fresh from the mutation's own response — never re-derived
+  // here. Once received, this is exactly "expected − accepted − damaged", i.e.
+  // whatever is still outstanding in vehicle custody.
+  const remaining = line.variance;
+  const fullyReceived = Math.abs(remaining) <= EPS;
+
+  if (received) {
+    return (
+      <div className="space-y-1 text-end" data-testid={`receipt-${line.id}`}>
+        <Badge variant={fullyReceived ? 'default' : 'destructive'}>
+          {fullyReceived
+            ? t($ => $.loadingOs.reconciliation.receivedFull)
+            : t($ => $.loadingOs.reconciliation.receivedPartial, { remaining })}
+        </Badge>
+        <p className="text-muted-foreground text-xs">
+          {t($ => $.loadingOs.reconciliation.receiveAccepted)}: {received.quantityAccepted}
+          {received.quantityDamaged > 0 ? (
+            <>
+              {' · '}
+              {t($ => $.loadingOs.reconciliation.receiveDamaged)}: {received.quantityDamaged}
+            </>
+          ) : null}
+        </p>
+        {received.damageReason ? (
+          <p className="text-muted-foreground text-xs">{received.damageReason}</p>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <p className="text-muted-foreground text-xs">
+        {t($ => $.loadingOs.reconciliation.receiveExpectedHint, {
+          expected: line.quantity_returned_expected,
+        })}
+      </p>
+      <div className="flex items-center justify-end gap-1.5">
+        <Input
+          type="number"
+          min={0}
+          step="0.001"
+          value={acceptedValue}
+          onChange={(e) => setAcceptedValue(e.target.value)}
+          disabled={receive.isPending}
+          className="h-8 w-20"
+          aria-label={t($ => $.loadingOs.reconciliation.receiveAccepted)}
+          placeholder={t($ => $.loadingOs.reconciliation.receiveAccepted)}
+          data-testid={`receive-accepted-${line.id}`}
+        />
+        <Input
+          type="number"
+          min={0}
+          step="0.001"
+          value={damagedValue}
+          onChange={(e) => setDamagedValue(e.target.value)}
+          disabled={receive.isPending}
+          className="h-8 w-20"
+          aria-label={t($ => $.loadingOs.reconciliation.receiveDamaged)}
+          placeholder={t($ => $.loadingOs.reconciliation.receiveDamaged)}
+          data-testid={`receive-damaged-${line.id}`}
+        />
+      </div>
+      {Number(damagedValue) > 0 ? (
+        <Input
+          type="text"
+          maxLength={1000}
+          value={damageReason}
+          onChange={(e) => setDamageReason(e.target.value)}
+          disabled={receive.isPending}
+          className="h-8 w-44"
+          placeholder={t($ => $.loadingOs.reconciliation.receiveDamageReasonPlaceholder)}
+          data-testid={`receive-damage-reason-${line.id}`}
+        />
+      ) : null}
+      <Button
+        size="sm"
+        disabled={!canReceive || receive.isPending}
+        data-testid={`receive-${line.id}`}
+        onClick={() =>
+          receive.mutate({
+            lineId: line.id,
+            quantityAccepted: acceptedNum,
+            quantityDamaged: damagedNum,
+            damageReason: damageReason.trim() || undefined,
+          })
+        }
+      >
+        {receive.isPending
+          ? t($ => $.loadingOs.reconciliation.receiving)
+          : t($ => $.loadingOs.reconciliation.receiveAction)}
+      </Button>
+
+      {/* The backend's own refusal, verbatim (a conflicting re-receipt, an
+          over-receipt, an approved shift) — never swallowed into a generic
+          toast. Matches the (mutation.error as ...).response?.data?.message
+          pattern already used three times in loading-groups.tsx. */}
+      {receive.isError ? (
+        <p className="text-destructive text-xs" data-testid={`receive-error-${line.id}`}>
+          {(receive.error as { response?: { data?: { message?: string } } })?.response?.data
+            ?.message ?? t($ => $.loadingOs.reconciliation.receiveFailed)}
+        </p>
+      ) : null}
+    </div>
   );
 }

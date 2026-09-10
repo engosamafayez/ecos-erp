@@ -1,8 +1,6 @@
 import { api as apiClient } from '@/lib/axios';
 
 import type {
-  AppliedGroupTemplate,
-  ApplyGroupTemplatePayload,
   BatchMoveResult,
   CollectResult,
   CurrentWindowResponse,
@@ -331,11 +329,19 @@ export const distributionWorkspaceService = {
    * Capacities are deliberately NOT sent: vehicle capacity is a later phase, and
    * a null dimension means "not constrained on this axis" — which is not the same
    * as a capacity of zero.
+   *
+   * `code` is OPTIONAL. Omitted, the backend assigns the next `DG-###` that is
+   * safe against every Group already in this window — any warehouse, any wave,
+   * closed or not. Counting only the groups this panel can currently see and
+   * guessing from that count (the previous behaviour here) is a narrower scope
+   * than the backend's uniqueness guard, which is exactly how a collision (and
+   * an HTTP 500) used to happen; the server no longer trusts a guess like that.
    */
   async createGroup(
     windowId: string,
     warehouseId: string,
-    code: string,
+    /** An explicit preference, not a guess. Omit and let the server assign one. */
+    code?: string,
     name?: string,
     /**
      * The Group's maximum order count. `null`/omitted means NO LIMIT, which is
@@ -350,7 +356,7 @@ export const distributionWorkspaceService = {
       `${BASE}/windows/${windowId}/slots`,
       {
         warehouse_id: warehouseId,
-        code,
+        code: code || undefined,
         name: name || null,
         capacity_orders: capacityOrders ?? null,
       },
@@ -559,22 +565,8 @@ export const distributionWorkspaceService = {
     await apiClient.delete(`${BASE}/group-templates/${templateId}`);
   },
 
-  /**
-   * Create a NEW Group from a template — configuration only.
-   *
-   * Nothing runtime is copied: no orders, no vehicle, no driver, no trip, no
-   * loading state. Orders appear in the new group the same way they appear in
-   * every other group, because its zones are attached to it.
-   */
-  async applyGroupTemplate(
-    windowId: string,
-    templateId: string,
-    payload: ApplyGroupTemplatePayload,
-  ): Promise<AppliedGroupTemplate> {
-    const { data } = await apiClient.post<{ data: AppliedGroupTemplate }>(
-      `${BASE}/windows/${windowId}/group-templates/${templateId}/apply`,
-      payload,
-    );
-    return data.data;
-  },
+  // There is no `applyGroupTemplate` any more. A Group is generated
+  // automatically from each template when its operational Wave starts, and
+  // the route this method called (`POST .../group-templates/{id}/apply`) has
+  // been removed server-side along with its controller action.
 };

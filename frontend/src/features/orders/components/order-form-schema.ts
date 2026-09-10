@@ -9,6 +9,7 @@ const ORDER_STATUSES: [OrderStatus, ...OrderStatus[]] = [
   'ready_for_dispatch',
   'out_for_delivery',
   'delivered',
+  'final_cash',
   'awaiting_payment',
   'awaiting_stock',
   'scheduled',

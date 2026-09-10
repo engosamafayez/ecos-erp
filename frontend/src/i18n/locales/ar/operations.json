@@ -125,7 +125,21 @@
       },
       "noAssignments": "لم تُعيَّن أي مركبة لهذه الجلسة قط.",
       "tasksLabel": "عنصر محمَّل",
-      "unresolvedLabel": "غير محسوم"
+      "unresolvedLabel": "غير محسوم",
+      "audit": {
+        "wave": "الموجة",
+        "group": "المجموعة",
+        "acceptedQty": "استلام المندوب",
+        "unacceptedReturnedQty": "غير مقبول / مرتجع",
+        "closedAt": "وقت الإغلاق",
+        "cancellationReason": "سبب الإلغاء",
+        "orders": "الطلبات",
+        "noOrders": "لا توجد طلبات",
+        "ordersCount": "{{count}} طلب",
+        "returnedToPool": "أُعيد إلى المجمّع",
+        "releasedCount": "{{count}} أُعيد إلى المجمّع",
+        "showLess": "عرض أقل"
+      }
     },
     "sessions": {
       "title": "جلسات التحميل",
@@ -142,7 +156,8 @@
     "toasts": {
       "deliveryRecorded": "تم تسجيل التسليم.",
       "reconciliationRefreshed": "تم تحديث التسوية.",
-      "returnRecorded": "تم تسجيل الإرجاع."
+      "returnRecorded": "تم تسجيل الإرجاع.",
+      "returnReceived": "تم استلام المرتجع في مخزون المستودع."
     },
     "labels": {
       "loaded": "المحمّل",
@@ -177,7 +192,17 @@
       "colCountedBack": "المعدود",
       "colVariance": "الفرق",
       "colRecordReturn": "تسجيل الإرجاع",
-      "save": "حفظ"
+      "save": "حفظ",
+      "colReceipt": "استلام المستودع",
+      "receiveExpectedHint": "المتوقع: {{expected}}",
+      "receiveAccepted": "مقبول (سليم)",
+      "receiveDamaged": "تالف",
+      "receiveDamageReasonPlaceholder": "سبب التلف (اختياري)",
+      "receiveAction": "تأكيد الاستلام",
+      "receiving": "جارٍ الاستلام…",
+      "receivedFull": "تم استلامه بالكامل في مخزون المستودع",
+      "receivedPartial": "{{remaining}} لا يزال في عهدة المركبة — لم يُستلم بعد",
+      "receiveFailed": "فشل استلام المرتجع."
     },
     "sessionStatus": {
       "draft": "مسودة",
@@ -516,7 +541,9 @@
         "expectedIncoming": "الوارد المتوقع",
         "uncovered": "غير المغطّى",
         "warehouse": "المخزن",
-        "available": "المتاح"
+        "available": "المتاح",
+        "expectedDriverReturns": "مرتجعات السائق المتوقعة",
+        "projectedShortage": "العجز المتوقع"
       },
       "priority": {
         "critical": "حرج",
@@ -544,6 +571,8 @@
       "expectedIncomingSaved": "تم الحفظ",
       "expectedIncomingSave": "حفظ",
       "expectedIncomingCancel": "تجاهل",
+      "expectedDriverReturnsHint": "بضاعة ما زالت مع السائق من محاولة توصيل مغلقة، لم تُستلم بعد في المخزن (تخطيط فقط — ليست مخزونًا متاحًا أو قابلاً للحجز).",
+      "projectedShortageHint": "المطلوب − المتاح − مرتجعات السائق المتوقعة، بحد أدنى صفر. أدق من الكمية المفقودة، لكنه يبقى تخطيطًا حتى يُستلم المرتجع فعليًا.",
       "coverageCovered": "مُغطّى",
       "coverageUncovered": "غير مُغطّى"
     },

@@ -733,6 +733,19 @@ export type GroupTemplate = {
    */
   driver_ids: number[];
   drivers_count: number;
+  /**
+   * The ONE Driver ATTEMPTED automatically when a Group is generated from this
+   * template — DIFFERENT from `driver_ids` (Recommended Drivers), which is a
+   * plural, passive, human-facing suggestion list that is never auto-applied.
+   *
+   * null = no preference. Even when set, this is best-effort only: the server
+   * uses this Driver just when it is canonically available at the moment the
+   * Group is generated, and silently skips it otherwise — the Group is
+   * created either way.
+   */
+  preferred_driver_id: number | null;
+  /** Same contract as `preferred_driver_id`, for the Vehicle. */
+  preferred_vehicle_id: number | null;
   created_at: string | null;
   updated_at: string | null;
 };
@@ -805,6 +818,14 @@ export type SaveGroupTemplatePayload = {
    */
   driver_ids?: number[];
   /**
+   * The Driver to attempt automatically when a Group is generated from this
+   * template. Absent leaves it unchanged (edit); `null` explicitly clears it —
+   * the same absent-vs-null contract `capacity_orders` already carries.
+   */
+  preferred_driver_id?: number | null;
+  /** Same absent-vs-null contract as `preferred_driver_id`, for the Vehicle. */
+  preferred_vehicle_id?: number | null;
+  /**
    * The operator's confirmation of the Move dialog — nothing else sets it.
    *
    * Absent or false, the server REFUSES a Zone owned by another Template. True, it
@@ -814,25 +835,7 @@ export type SaveGroupTemplatePayload = {
   move_zones?: boolean;
 };
 
-/**
- * Applying a template. Every field overrides the template's own value, because
- * the operator must be able to adjust name, zones and limit BEFORE the group
- * exists. `warehouse_id` has no template default by design: a Group's owner is
- * always chosen explicitly.
- */
-export type ApplyGroupTemplatePayload = {
-  warehouse_id: string;
-  code: string;
-  name?: string | null;
-  capacity_orders?: number | null;
-  zone_ids?: number[];
-};
-
-export type AppliedGroupTemplate = {
-  slot_id: string;
-  code: string;
-  name: string | null;
-  warehouse_id: string;
-  capacity_orders: number | null;
-  applied_from_template_id: string;
-};
+// Templates no longer have a manual "apply" step — a Group is generated
+// automatically from each template when its operational Wave starts, and the
+// `POST .../group-templates/{template}/apply` route this file used to type is
+// gone along with it. See distribution-workspace-service.ts.

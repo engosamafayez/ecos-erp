@@ -156,6 +156,43 @@ export const loadingOsService = {
   },
 
   /**
+   * Warehouse return receipt (TASK-OPERATIONAL-FULFILLMENT-RETURNS-RECONCILIATION-001).
+   *
+   * THE ONLY call in this file with an inventory effect for a vehicle return —
+   * `recordReturn` above only declares the counted-back quantity for variance
+   * tracking and never touches stock. This one moves the accepted split into real
+   * warehouse stock via the canonical Inventory `AdjustmentInAction`, entirely
+   * server-side; nothing is computed here.
+   *
+   * Backend: `VehicleShiftReconciliationController::receiveReturn()` /
+   * `ReceiveVehicleReturnAction::execute()`. The warehouse operator splits what
+   * physically came back into `quantity_accepted` (good, restocked) and
+   * `quantity_damaged` (kept out of good stock); `damage_reason` is optional.
+   * Absolute, not additive — the server derives shortage itself
+   * (expected − accepted − damaged) and never zeroes an unconfirmed remainder.
+   *
+   * Idempotent: resubmitting the SAME split for an already-received line is a
+   * no-op 200; a DIFFERENT split on an already-received line is refused with a
+   * 422 ("...already has a warehouse receipt..."). Note that the read model
+   * (`VehicleShiftReconciliationLineResource`) does not echo back
+   * quantity_accepted / quantity_damaged / warehouse_receipt_at — only the totals
+   * (`quantity_returned_actual`, `variance`) move — so a caller that wants to show
+   * the accepted/damaged split after the fact must remember what it submitted.
+   */
+  async receiveReturn(
+    sessionId: string,
+    assignmentId: string,
+    lineId: string,
+    payload: { quantity_accepted: number; quantity_damaged: number; damage_reason?: string | null },
+  ): Promise<ShiftReconciliation> {
+    const { data } = await apiClient.post<{ data: ShiftReconciliation }>(
+      `${BASE}/sessions/${sessionId}/assignments/${assignmentId}/reconciliation/lines/${lineId}/receive`,
+      payload,
+    );
+    return data.data;
+  },
+
+  /**
    * The operative cycle's Groups — the workspace's entry point.
    *
    * A Group is listed because it holds loading-eligible orders. Vehicle, Driver, Trip

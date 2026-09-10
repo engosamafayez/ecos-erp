@@ -12,22 +12,33 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 /**
  * A reusable Distribution Group CONFIGURATION — never a Group, never a snapshot.
  *
- * What it holds: a name, a maximum order count, and the Zones a Group made from it
- * should start with. That is the whole of it.
+ * What it holds: a name, a maximum order count, the Zones a Group made from it
+ * should start with, and — TASK-...-FINAL-022 §C — an OPTIONAL preferred Driver and
+ * preferred Vehicle to ATTEMPT at generation time. That is the whole of it.
  *
  * What it deliberately cannot hold — and why the model has no such relations:
  *   • orders / assignments   `distribution_window_orders` is the only claim on an
  *                            Order's membership, and it is per-Window.
- *   • vehicle / driver       Logistics owns fleet identity
- *                            (`driver_vehicle_assignments`).
+ *   • the Group's ACTUAL     Logistics owns fleet identity
+ *     driver / vehicle       (`driver_vehicle_assignments`); a Group's real,
+ *                            current driver/vehicle is reached ONLY through its
+ *                            Trip's `driver_vehicle_assignment_id`, never from here.
  *   • trip                   `distribution_trips` is produced by Finalize.
  *   • prepared quantities    `distribution_group_product_preparation` owns Prepared.
  *   • window / wave          a template outlives every operational cycle.
  *
- * Applying a template COPIES these values into a new Group and then has nothing
- * further to do with it. There is no link back: editing a template later must not
- * reach into a Group that was already created from it, and archiving one must not
- * disturb any live plan. That is why no `template_id` column exists on
+ * PREFERRED DRIVER/VEHICLE ARE NOT THE EXCEPTION TO THE RULE ABOVE — they are a
+ * PREFERENCE fed into the same canonical `GroupVehicleAssignmentService::assign()`
+ * a human uses, attempted once at generation time and discarded silently when not
+ * canonically available (see `GroupTemplateService::attemptPreferredAssignment()`).
+ * They never become a second source of truth for "who is running this Group": that
+ * question still has exactly one answer, the Trip's ledger reference, unchanged.
+ * Contrast with `recommendedDrivers` below — plural, passive, never attempted.
+ *
+ * Applying a template COPIES name/capacity/zones into a new Group and then has
+ * nothing further to do with it. There is no link back: editing a template later
+ * must not reach into a Group that was already created from it, and archiving one
+ * must not disturb any live plan. That is why no `template_id` column exists on
  * `distribution_virtual_slots` — a template is not a Group's owner or its source of
  * truth, only its starting point.
  *
@@ -39,6 +50,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string $company_id
  * @property string $name
  * @property int|null $capacity_orders
+ * @property int|null $preferred_driver_id
+ * @property int|null $preferred_vehicle_id
  * @property int|null $created_by
  * @property int|null $updated_by
  */
@@ -59,6 +72,10 @@ class DistributionGroupTemplate extends Model
         // NULL means unconstrained, never zero — the same contract as
         // VirtualCapacitySlot::$capacity_orders, which this column populates.
         'capacity_orders',
+        // A PREFERENCE, attempted at generation time and never guaranteed — see the
+        // class docblock. NULL means "no preference", independently for each.
+        'preferred_driver_id',
+        'preferred_vehicle_id',
         'created_by',
         'updated_by',
     ];
@@ -68,6 +85,8 @@ class DistributionGroupTemplate extends Model
     {
         return [
             'capacity_orders' => 'integer',
+            'preferred_driver_id' => 'integer',
+            'preferred_vehicle_id' => 'integer',
             'created_by' => 'integer',
             'updated_by' => 'integer',
         ];

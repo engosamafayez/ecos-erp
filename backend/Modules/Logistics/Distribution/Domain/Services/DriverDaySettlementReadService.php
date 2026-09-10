@@ -8,6 +8,7 @@ use DateTimeInterface;
 use Illuminate\Support\Collection;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Orders\Domain\Models\PaymentProof;
+use Modules\Logistics\Delivery\Domain\Enums\FailureReason;
 use Modules\Logistics\Distribution\Domain\Enums\DeliveryStopStatus;
 use Modules\Logistics\Distribution\Domain\Enums\DriverTripMovementCategory;
 use Modules\Logistics\Distribution\Domain\Enums\DriverTripMovementDirection;
@@ -19,6 +20,7 @@ use Modules\Logistics\Distribution\Domain\Models\DeliveryStop;
 use Modules\Logistics\Distribution\Domain\Models\DriverTripMovement;
 use Modules\Logistics\Distribution\Domain\Models\PaymentCollection;
 use Modules\Logistics\Distribution\Domain\Models\Trip;
+use Modules\Logistics\Distribution\Domain\Models\TripCashHandover;
 use Modules\Logistics\Distribution\Domain\Models\TripReturn;
 use Modules\Operations\Loading\Domain\Enums\ReconciliationStatus;
 use Modules\Operations\Loading\Domain\Models\VehicleAssignment;
@@ -345,6 +347,12 @@ class DriverDaySettlementReadService
         $deliveredCount = $stops->filter(fn (DeliveryStop $s): bool => $s->status === DeliveryStopStatus::Delivered)->count();
         $partialCount = $stops->filter(fn (DeliveryStop $s): bool => $s->status === DeliveryStopStatus::Partial)->count();
         $failedCount = $stops->filter(fn (DeliveryStop $s): bool => $s->status === DeliveryStopStatus::Failed)->count();
+        // TASK-ECOS-OPERATIONS-PREPARATION-DRIVER-EOD-FINAL-023 §I — the business
+        // vocabulary (No Answer / Postponed / Cancelled) is a breakdown of the ONE
+        // canonical `Failed` bucket above, additive and read-only: it does not
+        // change `$failedCount` or introduce a second delivery-outcome status, it
+        // only resolves each Failed stop's own latest recorded FailureReason.
+        $failedBreakdown = $this->failedOutcomeBreakdown($stops);
 
         // The reconciliation / custody grain (operations assignments for these trips).
         $recon = $this->reconciliationForTrips($companyId, $tripIds);
@@ -421,6 +429,14 @@ class DriverDaySettlementReadService
         $cashCollected = round((float) array_sum(array_column($summaries, 'cash_collected')), 2);
         $netCash = round($cashCollected + $movements['approved_cash_in'] - $movements['approved_expenses'], 2);
 
+        // TASK-ECOS-OPERATIONS-PREPARATION-DRIVER-EOD-FINAL-023 §G/§I — Treasury's
+        // physical cash-handover confirmation (CashHandoverService::confirmReceipt(),
+        // trip-grain) had NO visibility at all at this driver-day grain before this
+        // task. Additive and read-only: sums whatever confirmed TripCashHandover rows
+        // exist for this driver-day's trips. A trip with no handover yet is simply
+        // absent from the sum — never assumed zero-meaning-"nothing owed".
+        $cashHandover = $this->cashHandoverSummary($tripIds);
+
         // Per-order money split, folded out of the collections already loaded above (no new query).
         $byOrder = $this->collectionsByOrder($allNonRejected);
 
@@ -439,6 +455,8 @@ class DriverDaySettlementReadService
                 'delivered' => $deliveredCount,
                 'partial' => $partialCount,
                 'failed' => $failedCount,
+                // §I — business-vocabulary breakdown of $failedCount; always sums back to it.
+                'failed_breakdown' => $failedBreakdown,
                 'returns' => $returns->count(),
                 'delivery_pct' => $this->deliveryPct($deliveredCount, $ordersCount),
                 'trips' => $trips->count(),
@@ -455,6 +473,8 @@ class DriverDaySettlementReadService
                 'cash_in' => $movements['approved_cash_in'],
                 'net_cash' => $netCash,
             ],
+            // §G/§I — Treasury's physical handover confirmation, at this driver-day grain.
+            'cash_handover' => $cashHandover,
             'movements' => $movements,
             'collections' => $this->collectionsBreakdown($allNonRejected, $summaries, $deliveredSales, $actualCash, $stops),
             'custody_summary' => $recon['summary'],
@@ -540,6 +560,75 @@ class DriverDaySettlementReadService
                 'confirmed' => $r->isConfirmed(),
             ])->values()->all(),
             'goods_remaining' => $this->goodsRemaining($companyId, $tripIds),
+        ];
+    }
+
+    // ── TASK-ECOS-OPERATIONS-PREPARATION-DRIVER-EOD-FINAL-023 §G/§I ─────────────
+
+    /**
+     * The business-vocabulary breakdown of the canonical `Failed` DeliveryStopStatus
+     * bucket, by each stop's own latest recorded {@see FailureReason}. Additive and
+     * read-only — does not change `DeliveryStopStatus` or `$failedCount`, only
+     * resolves what a Failed stop's reason already says.
+     *
+     * `no_answer` = FailureReason::NoAnswer; `postponed` = FailureReason::
+     * CustomerRescheduled (the closest canonical analogue — same mapping
+     * {@see \Modules\Logistics\Distribution\Application\Listeners\ReleaseOrderOnRetryableOutcomeListener}
+     * already uses); `other` = every other reason (CustomerRefused, ProductDamaged,
+     * WrongItem, ItemMissing, ...) or a Failed stop with no resolvable reason at all.
+     *
+     * @param  Collection<int, DeliveryStop>  $stops
+     * @return array{no_answer: int, postponed: int, other: int}
+     */
+    private function failedOutcomeBreakdown(Collection $stops): array
+    {
+        $failed = $stops->filter(fn (DeliveryStop $s): bool => $s->status === DeliveryStopStatus::Failed);
+
+        $breakdown = ['no_answer' => 0, 'postponed' => 0, 'other' => 0];
+
+        foreach ($failed as $stop) {
+            $latestAction = $stop->actions()->first(); // DeliveryStop::actions() is already ->latest()
+            $reason = $latestAction?->reason !== null ? FailureReason::tryFrom($latestAction->reason) : null;
+
+            $breakdown[match ($reason) {
+                FailureReason::NoAnswer => 'no_answer',
+                FailureReason::CustomerRescheduled => 'postponed',
+                default => 'other',
+            }]++;
+        }
+
+        return $breakdown;
+    }
+
+    /**
+     * Treasury's confirmed physical cash-handover(s) for this driver-day's trips —
+     * `CashHandoverService::confirmReceipt()`'s own {@see TripCashHandover} rows,
+     * simply summed/counted at this grain. Never derives or assumes a handover:
+     * a trip with none yet is absent from `trip_ids_confirmed`, not counted as zero.
+     *
+     * @param  list<int>  $tripIds
+     * @return array{confirmed_count: int, total_confirmed_trips: int, total_received_cash: float, trip_ids_confirmed: list<int>, last_confirmed_at: ?string}
+     */
+    private function cashHandoverSummary(array $tripIds): array
+    {
+        if ($tripIds === []) {
+            return [
+                'confirmed_count' => 0,
+                'total_confirmed_trips' => 0,
+                'total_received_cash' => 0.0,
+                'trip_ids_confirmed' => [],
+                'last_confirmed_at' => null,
+            ];
+        }
+
+        $handovers = TripCashHandover::query()->whereIn('trip_id', $tripIds)->get();
+
+        return [
+            'confirmed_count' => $handovers->count(),
+            'total_confirmed_trips' => $handovers->count(),
+            'total_received_cash' => round((float) $handovers->sum('received_cash'), 2),
+            'trip_ids_confirmed' => $handovers->pluck('trip_id')->map(static fn ($id): int => (int) $id)->values()->all(),
+            'last_confirmed_at' => $handovers->max('created_at')?->toIso8601String(),
         ];
     }
 

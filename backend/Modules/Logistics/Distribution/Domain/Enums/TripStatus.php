@@ -137,6 +137,22 @@ enum TripStatus: string
         return in_array($this, [self::Dispatched, self::OutForDelivery, self::InProgress], true);
     }
 
+    /**
+     * The status VALUES {@see isOnTheRoad()} would call true, for query builders —
+     * derived, never a second hand-listed set. Added for TASK-ECOS-OPERATIONS-
+     * PREPARATION-DRIVER-EOD-FINAL-023 §A: "Expected Driver Returns" must exclude
+     * custody on a trip that might still deliver successfully.
+     *
+     * @return list<string>
+     */
+    public static function onTheRoadValues(): array
+    {
+        return array_values(array_map(
+            static fn (self $c): string => $c->value,
+            array_filter(self::cases(), static fn (self $c): bool => $c->isOnTheRoad()),
+        ));
+    }
+
     /** Deliveries may only be recorded against a trip that is on the road. */
     public function acceptsDeliveryExecution(): bool
     {

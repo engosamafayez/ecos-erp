@@ -11,8 +11,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Inventory\Products\Domain\Models\Product;
+use Modules\Logistics\Distribution\Domain\Exceptions\DistributionException;
+use Modules\Logistics\Distribution\Domain\Models\DistributionGroupTemplate;
+use Modules\Logistics\Distribution\Domain\Models\DistributionWindow;
 use Modules\Logistics\Distribution\Domain\Models\VirtualCapacitySlot;
 use Modules\Logistics\Distribution\Domain\Services\DistributionWindowService;
+use Modules\Logistics\Distribution\Domain\Services\GroupTemplateService;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Modules\Sales\Customers\Domain\Models\Customer;
@@ -811,6 +815,109 @@ class DistributionWorkspaceFinalizationTest extends TestCase
     }
 
     // ─────────────────────────────────────────────────────────────────────────
+    // 2B — MANUAL GROUP CODE SAFETY (TASK-OPERATIONS-DISTRIBUTION-LOADING-FINAL-022)
+    //
+    // `dist_slots_window_code_unique` guards the WHOLE window: every warehouse,
+    // every wave, closed or not. The manual-create panel used to guess its next
+    // code from `groups.length` — the groups it could currently SEE (open, this
+    // warehouse) — and an uncaught QueryException on that guess's collision was
+    // a raw HTTP 500. These prove the server-assigned code cannot collide with
+    // any of those "invisible to the panel" rows, and that a caller-supplied
+    // code which genuinely collides is refused cleanly rather than crashing.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * A closed Wave's Group is never deleted — `DailyGroupLifecycleService::
+     * closeWave()` only stamps `closed_at` — so its code stays reserved forever.
+     * A manual create that no longer sends a `code` (the fixed panel's contract)
+     * must still land on a code the closed Group has not already taken.
+     */
+    public function test_a_manual_group_is_created_safely_after_an_earlier_closed_groups_code(): void
+    {
+        $window = $this->currentWindowId();
+
+        // An earlier Wave's Group in THIS window, now closed — its code is not
+        // reclaimed, exactly like DailyGroupLifecycleService::closeWave() leaves it.
+        $earlier = $this->groupIn($window, $this->warehouse, 'DG-001');
+        VirtualCapacitySlot::query()->where('id', $earlier)->update(['closed_at' => now()]);
+
+        // The fixed panel sends no `code` at all — the server assigns one.
+        $created = $this->actingAs($this->userFor())
+            ->postJson(self::BASE."/windows/{$window}/slots", [
+                'warehouse_id' => $this->warehouse->id,
+            ])
+            ->assertStatus(201)->json('data');
+
+        self::assertSame('DG-002', $created['code'], 'must skip the closed groups taken code');
+
+        // Sequential manual creates keep advancing safely, not just the first one.
+        $second = $this->actingAs($this->userFor())
+            ->postJson(self::BASE."/windows/{$window}/slots", [
+                'warehouse_id' => $this->warehouse->id,
+            ])
+            ->assertStatus(201)->json('data');
+
+        self::assertSame('DG-003', $second['code']);
+    }
+
+    /**
+     * The old guess was ALSO scoped to one warehouse's visible groups, but the
+     * uniqueness the server enforces spans every warehouse in the window. Two
+     * warehouses each creating their "first" manual Group must not collide.
+     */
+    public function test_manual_groups_in_two_warehouses_of_one_window_do_not_collide(): void
+    {
+        $window = $this->currentWindowId();
+
+        $first = $this->actingAs($this->userFor())
+            ->postJson(self::BASE."/windows/{$window}/slots", ['warehouse_id' => $this->warehouse->id])
+            ->assertStatus(201)->json('data');
+
+        $second = $this->actingAs($this->userFor())
+            ->postJson(self::BASE."/windows/{$window}/slots", ['warehouse_id' => $this->otherWarehouse->id])
+            ->assertStatus(201)->json('data');
+
+        self::assertNotSame($first['code'], $second['code']);
+        self::assertSame($this->warehouse->id, $first['warehouse_id']);
+        self::assertSame($this->otherWarehouse->id, $second['warehouse_id']);
+    }
+
+    /**
+     * A caller-supplied `code` is still honoured verbatim — existing API
+     * consumers and fixtures that name a Group deliberately are unaffected —
+     * but one that genuinely collides (even against a Group in a DIFFERENT
+     * warehouse of the same window) is refused with a clean 422, never the raw
+     * 500 an uncaught QueryException produced before this fix.
+     */
+    public function test_an_explicit_duplicate_group_code_is_rejected_cleanly(): void
+    {
+        $window = $this->currentWindowId();
+
+        $this->actingAs($this->userFor())
+            ->postJson(self::BASE."/windows/{$window}/slots", [
+                'warehouse_id' => $this->warehouse->id,
+                'code' => 'DG-DUPE',
+            ])
+            ->assertStatus(201);
+
+        $this->actingAs($this->userFor())
+            ->postJson(self::BASE."/windows/{$window}/slots", [
+                'warehouse_id' => $this->otherWarehouse->id,
+                'code' => 'DG-DUPE',
+            ])
+            ->assertStatus(422);
+
+        self::assertSame(
+            1,
+            DB::table('distribution_virtual_slots')
+                ->where('distribution_window_id', $window)
+                ->where('code', 'DG-DUPE')
+                ->count(),
+            'the rejected duplicate must not have inserted a second row',
+        );
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
     // 3 — MAP
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -961,26 +1068,45 @@ class DistributionWorkspaceFinalizationTest extends TestCase
         self::assertSoftDeleted('distribution_group_templates', ['id' => $template['id']]);
     }
 
-    /** §18.13 — apply: the configuration is copied onto a new Group. */
+    /**
+     * §18.13 — apply: the configuration is copied onto a new Group.
+     *
+     * TASK-ECOS-OPERATIONS-DISTRIBUTION-AND-LOADING-FINAL-022 §D removed the manual
+     * HTTP "apply" endpoint — templates now apply only automatically, at Wave
+     * start. This test (and its siblings below) now call the still-live shared
+     * method, `GroupTemplateService::applyToNewGroup()`, directly, so the
+     * configuration-copy contract it proves stays covered without the deleted
+     * route. `DailyGroupLifecycleService::sweepWave()` exercises the exact same
+     * method for the automatic path, in `DistributionDailyGroupWaveLifecycleTest`
+     * and `DistributionWaveTriggersAndBoardIsolationTest`.
+     */
     public function test_applying_a_template_creates_a_group_with_its_configuration(): void
     {
-        $window = $this->currentWindowId();
-        $template = $this->createTemplate('Cairo Core', 25, [$this->zoneMaadi, $this->zoneNasr]);
+        $windowId = $this->currentWindowId();
+        $window = DistributionWindow::findOrFail($windowId);
+        $template = DistributionGroupTemplate::findOrFail(
+            $this->createTemplate('Cairo Core', 25, [$this->zoneMaadi, $this->zoneNasr])['id'],
+        );
 
-        $group = $this->actingAs($this->userFor())
-            ->postJson(self::BASE."/windows/{$window}/group-templates/{$template['id']}/apply", [
-                'warehouse_id' => $this->warehouse->id,
-                'code' => 'DG-FROM-TPL',
-            ])->assertStatus(201)->json('data');
+        $group = app(GroupTemplateService::class)->applyToNewGroup(
+            $window,
+            $template,
+            $this->warehouse->id,
+            'DG-FROM-TPL',
+            nameOverride: null,
+            capacityOverride: null,
+            capacityProvided: false,
+            zoneIdsOverride: null,
+        );
 
-        self::assertSame('DG-FROM-TPL', $group['code']);
-        self::assertSame('Cairo Core', $group['name']);
-        self::assertSame(25, $group['capacity_orders']);
+        self::assertSame('DG-FROM-TPL', $group->code);
+        self::assertSame('Cairo Core', $group->name);
+        self::assertSame(25, $group->capacity_orders);
 
         self::assertEqualsCanonicalizing(
             [$this->zoneMaadi, $this->zoneNasr],
             DB::table('distribution_slot_zones')
-                ->where('virtual_slot_id', $group['slot_id'])
+                ->where('virtual_slot_id', $group->id)
                 ->pluck('distribution_zone_id')->map(fn ($id) => (int) $id)->all(),
         );
     }
@@ -988,25 +1114,30 @@ class DistributionWorkspaceFinalizationTest extends TestCase
     /** Apply accepts overrides, because the operator edits before creating. */
     public function test_applying_a_template_accepts_overrides(): void
     {
-        $window = $this->currentWindowId();
-        $template = $this->createTemplate('Base', 25, [$this->zoneMaadi, $this->zoneNasr]);
+        $windowId = $this->currentWindowId();
+        $window = DistributionWindow::findOrFail($windowId);
+        $template = DistributionGroupTemplate::findOrFail(
+            $this->createTemplate('Base', 25, [$this->zoneMaadi, $this->zoneNasr])['id'],
+        );
 
-        $group = $this->actingAs($this->userFor())
-            ->postJson(self::BASE."/windows/{$window}/group-templates/{$template['id']}/apply", [
-                'warehouse_id' => $this->warehouse->id,
-                'code' => 'DG-OVR',
-                'name' => 'Renamed On Apply',
-                'capacity_orders' => 7,
-                'zone_ids' => [$this->zoneNasr],
-            ])->assertStatus(201)->json('data');
+        $group = app(GroupTemplateService::class)->applyToNewGroup(
+            $window,
+            $template,
+            $this->warehouse->id,
+            'DG-OVR',
+            nameOverride: 'Renamed On Apply',
+            capacityOverride: 7,
+            capacityProvided: true,
+            zoneIdsOverride: [$this->zoneNasr],
+        );
 
-        self::assertSame('Renamed On Apply', $group['name']);
-        self::assertSame(7, $group['capacity_orders']);
+        self::assertSame('Renamed On Apply', $group->name);
+        self::assertSame(7, $group->capacity_orders);
 
         self::assertSame(
             [$this->zoneNasr],
             DB::table('distribution_slot_zones')
-                ->where('virtual_slot_id', $group['slot_id'])
+                ->where('virtual_slot_id', $group->id)
                 ->pluck('distribution_zone_id')->map(fn ($id) => (int) $id)->all(),
         );
 
@@ -1025,7 +1156,8 @@ class DistributionWorkspaceFinalizationTest extends TestCase
      */
     public function test_applying_a_template_copies_no_runtime_state(): void
     {
-        [$window, $existingGroup] = $this->groupWithOrders(2, capacity: null);
+        [$windowId, $existingGroup] = $this->groupWithOrders(2, capacity: null);
+        $window = DistributionWindow::findOrFail($windowId);
 
         // Real runtime rows on the existing group, so "copied nothing" is a claim
         // with something to copy.
@@ -1034,14 +1166,16 @@ class DistributionWorkspaceFinalizationTest extends TestCase
             // Both NOT NULL with no default — the table records the tenant and the
             // window the prepared quantity belongs to, and neither is optional.
             'company_id' => $this->company->id,
-            'distribution_window_id' => $window,
+            'distribution_window_id' => $windowId,
             'virtual_slot_id' => $existingGroup,
             'product_id' => Product::factory()->create()->id,
             'prepared_qty' => 4,
             'created_at' => now(), 'updated_at' => now(),
         ]);
 
-        $template = $this->createTemplate('Clean', 9, [$this->zoneNasr]);
+        $template = DistributionGroupTemplate::findOrFail(
+            $this->createTemplate('Clean', 9, [$this->zoneNasr])['id'],
+        );
 
         $before = [
             'assignments' => DB::table('distribution_window_orders')->orderBy('id')->get()->toJson(),
@@ -1049,11 +1183,16 @@ class DistributionWorkspaceFinalizationTest extends TestCase
             'prepared' => DB::table('distribution_group_product_preparation')->orderBy('id')->get()->toJson(),
         ];
 
-        $group = $this->actingAs($this->userFor())
-            ->postJson(self::BASE."/windows/{$window}/group-templates/{$template['id']}/apply", [
-                'warehouse_id' => $this->warehouse->id,
-                'code' => 'DG-CLEAN',
-            ])->assertStatus(201)->json('data');
+        $group = app(GroupTemplateService::class)->applyToNewGroup(
+            $window,
+            $template,
+            $this->warehouse->id,
+            'DG-CLEAN',
+            nameOverride: null,
+            capacityOverride: null,
+            capacityProvided: false,
+            zoneIdsOverride: null,
+        );
 
         self::assertSame(
             $before['trips'],
@@ -1074,8 +1213,10 @@ class DistributionWorkspaceFinalizationTest extends TestCase
             'apply must not create an assignment',
         );
 
-        // And the new Group holds no vehicle or driver, because it cannot.
-        $row = DB::table('distribution_virtual_slots')->where('id', $group['slot_id'])->first();
+        // And the new Group holds no vehicle or driver, because it cannot — unless a
+        // Preferred Driver/Vehicle canonically applied (§C, exercised separately in
+        // DistributionGroupTemplatePreferredAssignmentTest); this template set none.
+        $row = DB::table('distribution_virtual_slots')->where('id', $group->id)->first();
         self::assertObjectNotHasProperty('vehicle_id', $row);
         self::assertObjectNotHasProperty('driver_id', $row);
     }
@@ -1106,10 +1247,18 @@ class DistributionWorkspaceFinalizationTest extends TestCase
             ->where('id', $mine['id'])->value('name'));
     }
 
-    /** A template may not be applied into another tenant's window. */
+    /**
+     * A template may not be applied into another tenant's window —
+     * `GroupTemplateService::applyToNewGroup()`'s own cross-company guard, still
+     * live and still the only thing enforcing this now that the HTTP endpoint
+     * (which independently 404'd on a foreign window before ever reaching the
+     * service) is gone.
+     */
     public function test_a_template_cannot_be_applied_into_a_foreign_window(): void
     {
-        $template = $this->createTemplate('Local', 5, [$this->zoneMaadi]);
+        $template = DistributionGroupTemplate::findOrFail(
+            $this->createTemplate('Local', 5, [$this->zoneMaadi])['id'],
+        );
 
         $foreignWindow = (string) Str::uuid();
         DB::table('distribution_windows')->insert([
@@ -1122,25 +1271,18 @@ class DistributionWorkspaceFinalizationTest extends TestCase
             'created_at' => now(), 'updated_at' => now(),
         ]);
 
-        $this->actingAs($this->userFor())
-            ->postJson(self::BASE."/windows/{$foreignWindow}/group-templates/{$template['id']}/apply", [
-                'warehouse_id' => $this->warehouse->id,
-                'code' => 'DG-NOPE',
-            ])->assertStatus(404);
-    }
+        $this->expectException(DistributionException::class);
 
-    /** A template cannot name another tenant's warehouse. */
-    public function test_apply_refuses_a_warehouse_outside_the_tenant(): void
-    {
-        $window = $this->currentWindowId();
-        $template = $this->createTemplate('Local', 5, [$this->zoneMaadi]);
-        $foreignWarehouse = Warehouse::factory()->create(['company_id' => $this->otherCompany->id]);
-
-        $this->actingAs($this->userFor())
-            ->postJson(self::BASE."/windows/{$window}/group-templates/{$template['id']}/apply", [
-                'warehouse_id' => $foreignWarehouse->id,
-                'code' => 'DG-NOPE',
-            ])->assertStatus(404);
+        app(GroupTemplateService::class)->applyToNewGroup(
+            DistributionWindow::findOrFail($foreignWindow),
+            $template,
+            $this->warehouse->id,
+            'DG-NOPE',
+            nameOverride: null,
+            capacityOverride: null,
+            capacityProvided: false,
+            zoneIdsOverride: null,
+        );
     }
 
     /** Template writes sit behind the existing permissions — no new ones. */

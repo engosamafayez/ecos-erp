@@ -7,10 +7,10 @@ namespace Modules\Commerce\Orders\Domain\Enums;
 /**
  * Canonical Order Status lifecycle — ADR-042 (Order FSM V3 Canonical).
  *
- * Primary flow:  In Progress → Confirmed → Ready for Dispatch → Out for Delivery → Delivered
+ * Primary flow:  In Progress → Confirmed → Ready for Dispatch → Out for Delivery → Delivered → Final Cash
  * Entry states:  In Progress (normal) / Scheduled (future-dated) / Awaiting Payment
  * Exception:     Awaiting Payment / Awaiting Stock / Scheduled / On Hold
- * Terminal:      Delivered / Cancelled / Returned
+ * Terminal:      Delivered / Final Cash / Cancelled / Returned
  *
  * ADR-042 supersedes the vocabulary installed by TASK-ORDERS-LIFECYCLE-ARCH-002:
  *   - `new` is REMOVED. Normal orders are created directly at In Progress.
@@ -19,6 +19,16 @@ namespace Modules\Commerce\Orders\Domain\Enums;
  * Historical `new` rows are normalised to `in_progress` by
  * 2026_08_13_100000_supersede_order_lifecycle_v3_canonical, which MUST run in the
  * same deploy as this file — see ADR-042 §11.
+ *
+ * TASK-ECOS-OPERATIONS-PREPARATION-DRIVER-EOD-FINAL-023 §C/§K — `FinalCash` is the
+ * first-ever sanctioned edge OUT of `Delivered`. Reached only through
+ * `CompleteOrderWorkflow` (repurposed from its previous no-op `Delivered -> Delivered`
+ * shape — it was already the one workflow this system reserved for "financial
+ * completion," per `FulfillmentController`'s own prior comment, just never given
+ * anything to actually do), and only after `CashHandoverService::confirmReceipt()`
+ * has recorded the driver's Trip's ACTUAL physical cash handover through the
+ * canonical Finance `CashService`. Distinct from `TripSettlement`/`SettlementService`
+ * (the driver's own declared reconciliation) — see `TripCashHandoverConfirmed`.
  */
 enum OrderStatus: string
 {
@@ -28,6 +38,7 @@ enum OrderStatus: string
     case ReadyForDispatch = 'ready_for_dispatch';
     case OutForDelivery = 'out_for_delivery';
     case Delivered = 'delivered';
+    case FinalCash = 'final_cash';
 
     // ── Exception States ──────────────────────────────────────────────────
     case AwaitingPayment = 'awaiting_payment';
@@ -47,6 +58,7 @@ enum OrderStatus: string
             self::ReadyForDispatch => 'Ready for Dispatch',
             self::OutForDelivery => 'Out for Delivery',
             self::Delivered => 'Delivered',
+            self::FinalCash => 'Final Cash',
             self::AwaitingPayment => 'Awaiting Payment',
             self::AwaitingStock => 'Awaiting Stock',
             self::Scheduled => 'Scheduled',
@@ -58,11 +70,23 @@ enum OrderStatus: string
 
     /**
      * Terminal: order has reached its final business state.
-     * Delivered = fulfilled; Cancelled = explicitly ended; Returned = return processed.
+     * Delivered = fulfilled; Final Cash = fulfilled AND cash-settled; Cancelled =
+     * explicitly ended; Returned = return processed.
+     *
+     * §C/§K: `Delivered` DELIBERATELY STAYS in this set even though it now has one
+     * sanctioned outgoing edge (-> FinalCash). Every existing consumer of
+     * `isTerminal()` (e.g. `CancelOrderWorkflow`'s "already terminal" refusal) is
+     * asking "is this order still open to NORMAL fulfilment/cancellation action" —
+     * a Delivered order is correctly "closed" to all of that, cash-settlement is not
+     * one of the operations `isTerminal()` gates, and `CompleteOrderWorkflow`'s own
+     * guard checks `status === Delivered` directly rather than consulting this
+     * predicate. Removing Delivered here to make FinalCash the "one true terminal"
+     * state would be a wider, unaudited behavioural change to every existing
+     * consumer — deliberately not done in this task.
      */
     public function isTerminal(): bool
     {
-        return in_array($this, [self::Delivered, self::Cancelled, self::Returned], true);
+        return in_array($this, [self::Delivered, self::FinalCash, self::Cancelled, self::Returned], true);
     }
 
     /**
@@ -114,6 +138,7 @@ enum OrderStatus: string
             self::ReadyForDispatch,
             self::OutForDelivery,
             self::Delivered,
+            self::FinalCash,
         ], true);
     }
 
@@ -264,6 +289,7 @@ enum OrderStatus: string
             self::ReadyForDispatch,
             self::OutForDelivery,
             self::Delivered,
+            self::FinalCash,
             self::Returned,
             self::OnHold,
             self::Cancelled,

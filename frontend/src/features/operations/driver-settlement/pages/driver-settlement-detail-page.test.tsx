@@ -18,7 +18,13 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 vi.mock('@/hooks/use-formatter', () => ({
-  useFormatter: () => ({ money: (v: number) => `EGP ${v}`, currency: 'EGP', number: (v: number) => String(v), percent: (v: number) => `${v}%` }),
+  useFormatter: () => ({
+    money: (v: number) => `EGP ${v}`,
+    currency: 'EGP',
+    number: (v: number) => String(v),
+    percent: (v: number) => `${v}%`,
+    dateTime: (v: string) => `dt:${v}`,
+  }),
 }));
 vi.mock('react-router-dom', () => ({
   useNavigate: () => vi.fn(),
@@ -58,7 +64,8 @@ function baseDetail(over: Partial<DaySettlementDriverDetail> = {}): DaySettlemen
     driver: { id: 7, name: 'Ahmed Samir', vehicle_id: 3, vehicle_plate: 'ABC-123' },
     settlement_status: 'under_review',
     closing_stage: 'ready_for_closing',
-    overview: { orders: 18, delivered: 17, partial: 0, failed: 1, returns: 1, delivery_pct: 94, trips: 1 },
+    overview: { orders: 18, delivered: 17, partial: 0, failed: 1, failed_breakdown: { no_answer: 1, postponed: 0, other: 0 }, returns: 1, delivery_pct: 94, trips: 1 },
+    cash_handover: { confirmed_count: 0, total_confirmed_trips: 1, total_received_cash: 0, trip_ids_confirmed: [], last_confirmed_at: null },
     financial: { cash_expected: 4850, approved_transfers: 1200, actual_cash: 4850, difference: 0, is_balanced: true, cash_collected: 4850, expenses: 0, cash_in: 0, net_cash: 4850 },
     movements: { available: true, items: [], pending_count: 0, approved_expenses: 0, approved_cash_in: 0, expenses_by_category: {} },
     collections: {
@@ -142,5 +149,32 @@ describe('DriverSettlementDetailPage', () => {
     mockDetail.mockReturnValue({ data: undefined, isLoading: false, isError: true, refetch: vi.fn() });
     render(<DriverSettlementDetailPage />);
     expect(screen.getByText('driverSettlement.loadError')).toBeInTheDocument();
+  });
+
+  // Change 2 (TASK-ECOS-OPERATIONS-PREPARATION-DRIVER-EOD-FINAL-023) — cash_handover is a new
+  // read-only rollup of Treasury's Trip cash-handover confirmations. A missing confirmation
+  // must render as an explicit "not yet confirmed" state, never a blank or a confirmed-looking
+  // zero — this is the behaviour under test here, not just that the numbers appear.
+  it('shows cash handover as not yet confirmed when Treasury has not confirmed any trip', () => {
+    withDetail(baseDetail());
+    render(<DriverSettlementDetailPage />);
+    expect(screen.getByText('driverSettlement.detail.cashHandover.notYetConfirmed')).toBeInTheDocument();
+    expect(screen.queryByText('driverSettlement.detail.cashHandover.confirmed')).not.toBeInTheDocument();
+  });
+
+  it('shows the confirmed cash handover total and last-confirmed time once Treasury confirms', () => {
+    withDetail(baseDetail({
+      cash_handover: {
+        confirmed_count: 1,
+        total_confirmed_trips: 1,
+        total_received_cash: 3333,
+        trip_ids_confirmed: [501],
+        last_confirmed_at: '2026-08-24T15:30:00Z',
+      },
+    }));
+    render(<DriverSettlementDetailPage />);
+    expect(screen.getByText('driverSettlement.detail.cashHandover.confirmed')).toBeInTheDocument();
+    expect(screen.getByText('EGP 3333')).toBeInTheDocument();
+    expect(screen.getByText('dt:2026-08-24T15:30:00Z')).toBeInTheDocument();
   });
 });

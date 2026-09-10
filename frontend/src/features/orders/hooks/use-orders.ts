@@ -431,7 +431,11 @@ export function useCustomerOrderStats(customerId: string | null) {
 
       return {
         total: result.meta.total,
-        completed: items.filter((o) => o.status === 'delivered').length,
+        // final_cash is delivered + Treasury-confirmed cash handover (a strictly later
+        // terminal state reached only from delivered, never a different outcome) — a
+        // customer's "completed" count must not silently shrink as an order advances
+        // from delivered to final_cash.
+        completed: items.filter((o) => o.status === 'delivered' || o.status === 'final_cash').length,
         cancelled: items.filter((o) => o.status === 'cancelled').length,
         totalSpend,
         lastOrderDate: items[0]?.order_date ?? null,

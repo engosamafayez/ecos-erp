@@ -265,15 +265,16 @@ export function DistributionGroupsPanel({
   function submit() {
     if (!windowId || !warehouseId || selection.length === 0) return;
 
-    // The group number is derived from how many groups already exist; the backend's
-    // unique index on (window, code) is what actually guarantees it.
-    const code = `DG-${String(groups.length + 1).padStart(3, '0')}`;
-
+    // No `code` is guessed here anymore: counting only the groups THIS panel can
+    // currently see (open, this warehouse) is not the same scope the backend's
+    // unique index guards (the whole window — every warehouse, every wave, closed
+    // or not), so a guess built from that count could collide with a group the
+    // panel simply cannot see. The server now assigns the next safe code itself;
+    // the created group's own code comes back on the refreshed list.
     create.mutate(
       {
         windowId,
         warehouseId,
-        code,
         name: name.trim() || undefined,
         capacityOrders: parsedMaxOrders,
         zoneIds: selection.map((z) => z.zone_id as number),

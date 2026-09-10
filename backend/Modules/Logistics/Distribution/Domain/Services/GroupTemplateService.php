@@ -6,13 +6,19 @@ namespace Modules\Logistics\Distribution\Domain\Services;
 
 use DateTimeInterface;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Modules\Logistics\Distribution\Domain\Exceptions\DistributionException;
 use Modules\Logistics\Distribution\Domain\Models\DistributionGroupTemplate;
 use Modules\Logistics\Distribution\Domain\Models\DistributionWindow;
 use Modules\Logistics\Distribution\Domain\Models\DistributionZone;
 use Modules\Logistics\Distribution\Domain\Models\VirtualCapacitySlot;
+use Modules\Logistics\Drivers\Domain\Exceptions\FleetAssignmentException;
 use Modules\Logistics\Drivers\Domain\Models\Driver;
+use Modules\Logistics\Drivers\Domain\Models\DriverVehicleAssignment;
+use Modules\Logistics\Vehicles\Domain\Enums\VehicleStatus;
+use Modules\Logistics\Vehicles\Domain\Models\Vehicle;
 use Modules\Operations\Preparation\Application\Services\WaveEngine\WaveManager;
+use Throwable;
 
 /**
  * Distribution Group Templates — reusable Group CONFIGURATION.
@@ -54,6 +60,7 @@ final class GroupTemplateService
     public function __construct(
         private readonly ManualAssignmentService $manual,
         private readonly WaveManager $waves,
+        private readonly GroupVehicleAssignmentService $fleetAssignment,
     ) {}
 
     /**
@@ -100,12 +107,16 @@ final class GroupTemplateService
         ?int $actorId,
         bool $moveZones = false,
         array $driverIds = [],
+        ?int $preferredDriverId = null,
+        ?int $preferredVehicleId = null,
     ): DistributionGroupTemplate {
         $this->assertNameFree($companyId, $name, null);
         $zoneIds = $this->assertZonesUsable($zoneIds);
         $driverIds = $this->assertDriversUsable($driverIds);
+        $preferredDriverId = $this->assertPreferredDriverUsable($preferredDriverId);
+        $preferredVehicleId = $this->assertPreferredVehicleUsable($companyId, $preferredVehicleId);
 
-        return DB::transaction(function () use ($companyId, $name, $capacityOrders, $zoneIds, $driverIds, $actorId, $moveZones): DistributionGroupTemplate {
+        return DB::transaction(function () use ($companyId, $name, $capacityOrders, $zoneIds, $driverIds, $preferredDriverId, $preferredVehicleId, $actorId, $moveZones): DistributionGroupTemplate {
             // Exclusivity is settled INSIDE the transaction, under the Zone row lock —
             // see claimZones(). Deciding it before the transaction would let two
             // concurrent requests both read "free" and both insert.
@@ -115,6 +126,8 @@ final class GroupTemplateService
                 'company_id' => $companyId,
                 'name' => $name,
                 'capacity_orders' => $capacityOrders,
+                'preferred_driver_id' => $preferredDriverId,
+                'preferred_vehicle_id' => $preferredVehicleId,
                 'created_by' => $actorId,
                 'updated_by' => $actorId,
             ]);
@@ -149,6 +162,10 @@ final class GroupTemplateService
         ?int $actorId,
         bool $moveZones = false,
         ?array $driverIds = null,
+        ?int $preferredDriverId = null,
+        bool $preferredDriverProvided = false,
+        ?int $preferredVehicleId = null,
+        bool $preferredVehicleProvided = false,
     ): DistributionGroupTemplate {
         if ($name !== null) {
             $this->assertNameFree($template->company_id, $name, $template->id);
@@ -162,7 +179,15 @@ final class GroupTemplateService
             $driverIds = $this->assertDriversUsable($driverIds);
         }
 
-        return DB::transaction(function () use ($template, $name, $capacityOrders, $capacityProvided, $zoneIds, $driverIds, $actorId, $moveZones): DistributionGroupTemplate {
+        if ($preferredDriverProvided) {
+            $preferredDriverId = $this->assertPreferredDriverUsable($preferredDriverId);
+        }
+
+        if ($preferredVehicleProvided) {
+            $preferredVehicleId = $this->assertPreferredVehicleUsable($template->company_id, $preferredVehicleId);
+        }
+
+        return DB::transaction(function () use ($template, $name, $capacityOrders, $capacityProvided, $zoneIds, $driverIds, $preferredDriverId, $preferredDriverProvided, $preferredVehicleId, $preferredVehicleProvided, $actorId, $moveZones): DistributionGroupTemplate {
             if ($zoneIds !== null) {
                 $this->claimZones($template->company_id, $template->id, $zoneIds, $moveZones);
             }
@@ -178,6 +203,16 @@ final class GroupTemplateService
             // out would silently clear it.
             if ($capacityProvided) {
                 $patch['capacity_orders'] = $capacityOrders;
+            }
+
+            // Same absent-vs-null contract as capacity: sending null clears the
+            // preference, omitting the key leaves it exactly as it was.
+            if ($preferredDriverProvided) {
+                $patch['preferred_driver_id'] = $preferredDriverId;
+            }
+
+            if ($preferredVehicleProvided) {
+                $patch['preferred_vehicle_id'] = $preferredVehicleId;
             }
 
             $template->forceFill($patch)->save();
@@ -317,8 +352,104 @@ final class GroupTemplateService
                 $this->manual->assignZoneToSlot($window, $zoneId, $group, $enforceCapacity);
             }
 
+            // §C — attempt the template's Preferred Driver/Vehicle LAST, after the
+            // Group and its Zones fully exist. Never allowed to fail the Group's
+            // creation: a preference that turns out unavailable is silently skipped,
+            // never a reason to refuse the Group itself.
+            $this->attemptPreferredAssignment($group, $template);
+
             return $group->refresh();
         });
+    }
+
+    /**
+     * §C — attempt the template's Preferred Driver/Vehicle on a freshly generated
+     * Group. PREFERENCE NEVER OVERRIDES AVAILABILITY: any failure here — wrong
+     * tenant, not dispatchable, already engaged on another Trip, busy in active
+     * Operations\Loading work, over capacity, or simply "no preference set" — is
+     * swallowed and leaves the Group exactly as it would be with no preference at
+     * all (open Driver/Vehicle selection, assignable normally afterward).
+     *
+     * REUSES `GroupVehicleAssignmentService::assign()` — the one place every
+     * availability rule in this codebase already lives (dispatchability, Loading-
+     * busy, pairing-engaged-elsewhere, capacity, tenant). This method adds no
+     * second availability check; it only decides WHICH driver+vehicle reference
+     * pair to try.
+     *
+     * ONE-SIDED PREFERENCES FALL BACK TO THE REAL LEDGER, NEVER TO A GUESS. A
+     * template naming only a Driver (or only a Vehicle) is completed with that
+     * entity's OWN CURRENT active pairing (`driver_vehicle_assignments`), if it has
+     * one — never an invented partner. No active pairing on that side means nothing
+     * to try, so the attempt is skipped rather than assigning a lone half.
+     */
+    private function attemptPreferredAssignment(VirtualCapacitySlot $group, DistributionGroupTemplate $template): void
+    {
+        $driverId = $template->preferred_driver_id;
+        $vehicleId = $template->preferred_vehicle_id;
+
+        if ($driverId === null && $vehicleId === null) {
+            return;
+        }
+
+        if ($driverId === null) {
+            $driverId = $this->activePairedDriverId($vehicleId);
+        }
+
+        if ($vehicleId === null) {
+            $vehicleId = $this->activePairedVehicleId($driverId);
+        }
+
+        if ($driverId === null || $vehicleId === null) {
+            // One side named, the other has no current pairing to fall back on —
+            // there is no pair to try.
+            return;
+        }
+
+        try {
+            $this->fleetAssignment->assign($group, (string) $vehicleId, (string) $driverId);
+        } catch (FleetAssignmentException $e) {
+            // Expected, routine outcome — "not canonically available right now" is
+            // not an error in this flow, it is the preference simply not applying.
+            Log::info('distribution.group_template.preferred_assignment_skipped', [
+                'group_id' => $group->id,
+                'template_id' => $template->id,
+                'preferred_driver_id' => $driverId,
+                'preferred_vehicle_id' => $vehicleId,
+                'reason' => $e->getMessage(),
+            ]);
+        } catch (Throwable $e) {
+            // Anything outside the named business-rejection type is unexpected —
+            // logged loudly, but still never allowed to fail Group generation.
+            Log::warning('distribution.group_template.preferred_assignment_failed', [
+                'group_id' => $group->id,
+                'template_id' => $template->id,
+                'preferred_driver_id' => $driverId,
+                'preferred_vehicle_id' => $vehicleId,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /** The Driver's current active pairing's Vehicle id, or null if it has none. */
+    private function activePairedVehicleId(int $driverId): ?int
+    {
+        $assignment = DriverVehicleAssignment::query()
+            ->where('driver_id', $driverId)
+            ->whereNotNull('active_flag')
+            ->first();
+
+        return $assignment === null ? null : (int) $assignment->vehicle_id;
+    }
+
+    /** The Vehicle's current active pairing's Driver id, or null if it has none. */
+    private function activePairedDriverId(int $vehicleId): ?int
+    {
+        $assignment = DriverVehicleAssignment::query()
+            ->where('vehicle_id', $vehicleId)
+            ->whereNotNull('active_flag')
+            ->first();
+
+        return $assignment === null ? null : (int) $assignment->driver_id;
     }
 
     /**
@@ -573,6 +704,67 @@ final class GroupTemplateService
         }
 
         return $unique;
+    }
+
+    /**
+     * Validate a preferred Driver id against the tenant's own Drivers. Same
+     * eligibility as a recommended Driver (tenant + not archived) — a preference
+     * for a foreign or archived Driver is rejected at save time rather than
+     * silently never applying.
+     */
+    private function assertPreferredDriverUsable(?int $driverId): ?int
+    {
+        if ($driverId === null) {
+            return null;
+        }
+
+        $usable = Driver::query()
+            ->whereKey($driverId)
+            ->where('status', '!=', Driver::STATUS_ARCHIVED)
+            ->exists();
+
+        if (! $usable) {
+            throw new DistributionException(
+                "Preferred driver #{$driverId} does not exist, is archived, or belongs to another company.",
+            );
+        }
+
+        return $driverId;
+    }
+
+    /**
+     * Validate a preferred Vehicle id against the tenant's own Vehicles.
+     *
+     * Tenant-scoped explicitly (`company_id`), matching `assertPreferredDriverUsable`
+     * — `Vehicle`'s own global scope already applies too, but this call runs outside
+     * an authenticated request context exactly as often as it runs inside one (the
+     * automatic Wave sweep), and that scope is a documented no-op when unauthenticated
+     * (see `Vehicle::class` tenant scope docblock), so it is not relied on alone here.
+     *
+     * NOT `canBeDispatched()` — that is a live, moment-to-moment availability fact
+     * re-checked at generation time by `GroupVehicleAssignmentService::assign()`, not
+     * a save-time eligibility gate. A vehicle in Maintenance today may be the right
+     * preference for a template that runs again next week.
+     */
+    private function assertPreferredVehicleUsable(string $companyId, ?int $vehicleId): ?int
+    {
+        if ($vehicleId === null) {
+            return null;
+        }
+
+        $usable = Vehicle::query()
+            ->whereKey($vehicleId)
+            ->where('company_id', $companyId)
+            ->where('status', '!=', VehicleStatus::Archived->value)
+            ->exists();
+
+        if (! $usable) {
+            throw new DistributionException(
+                "Preferred vehicle #{$vehicleId} does not exist, is archived, or belongs to another company.",
+            );
+        }
+
+        return $vehicleId;
     }
 
     /**

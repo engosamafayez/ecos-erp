@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, Check, Download, Loader2, PackageX, Pencil, Printer, Waves, X } from 'lucide-react';
+import { AlertTriangle, Check, Download, Info, Loader2, PackageX, Pencil, Printer, Waves, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { SmartToolbar } from '@/components/data-grid/smart-toolbar';
@@ -265,6 +265,19 @@ function MaterialMobileCard({
         <Row label={t($ => $.wave.missingMaterials.columns.available)} value={fmt(material.available_qty)} />
         <Row label={t($ => $.wave.missingMaterials.columns.missingQty)} value={fmt(material.missing_qty)} valueClass="text-red-700 dark:text-red-400 font-semibold" />
         <Row label={t($ => $.wave.missingMaterials.columns.uncovered)} value={fmt(uncovered)} valueClass="text-amber-700 dark:text-amber-400 font-semibold" />
+        {/* Driver-returns pair (planning only — see ColumnHeaderHint on desktop for the
+            same caveat). Read-only, so plain Rows like the figures above rather than the
+            editable Expected Incoming control below. */}
+        <Row
+          label={t($ => $.wave.missingMaterials.columns.expectedDriverReturns)}
+          value={fmt(material.expected_driver_returns_qty)}
+          valueClass="text-indigo-700 dark:text-indigo-400"
+        />
+        <Row
+          label={t($ => $.wave.missingMaterials.columns.projectedShortage)}
+          value={fmt(material.projected_shortage_after_returns_qty)}
+          valueClass="text-rose-800 dark:text-rose-300 font-bold"
+        />
       </div>
 
       <div className="flex items-center justify-between gap-2 pt-0.5">
@@ -286,6 +299,21 @@ function Row({ label, value, valueClass }: { label: string; value: React.ReactNo
       <span className="text-[11px] text-muted-foreground">{label}</span>
       <span className={`tabular-nums ${valueClass ?? ''}`}>{value}</span>
     </div>
+  );
+}
+
+/**
+ * Column header + a native-tooltip caption, same lightweight affordance this page already
+ * uses elsewhere (e.g. the Expected Incoming edit hint) rather than a new UI dependency.
+ * Used for the two driver-returns columns so the "planning only, not on-hand" caveat is
+ * visible without adding a permanent line of text to every row.
+ */
+function ColumnHeaderHint({ label, hint }: { label: string; hint: string }) {
+  return (
+    <span className="inline-flex items-center gap-1" title={hint}>
+      {label}
+      <Info className="h-3 w-3 opacity-50" aria-hidden="true" />
+    </span>
   );
 }
 
@@ -361,6 +389,48 @@ export function WaveMissingMaterialsPage() {
       cell: (m) => (
         <span className="tabular-nums font-semibold text-amber-700 dark:text-amber-400">
           {fmt(m.uncovered_shortage_qty)}
+        </span>
+      ),
+    },
+    {
+      key: 'expected_driver_returns_qty',
+      label: t($ => $.wave.missingMaterials.columns.expectedDriverReturns),
+      align: 'end',
+      defaultVisible: true,
+      header: (
+        <ColumnHeaderHint
+          label={t($ => $.wave.missingMaterials.columns.expectedDriverReturns)}
+          hint={t($ => $.wave.missingMaterials.expectedDriverReturnsHint)}
+        />
+      ),
+      // Goods from CLOSED prior delivery attempts still physically on a driver/vehicle —
+      // NOT yet received by the warehouse. PLANNING INFORMATION ONLY, same guarantee as
+      // Expected Incoming above: never on-hand, never reservable, never counted as stock.
+      // It only feeds Projected Shortage below; it never reduces Missing Qty or Uncovered.
+      cell: (m) => (
+        <span className="tabular-nums text-indigo-700 dark:text-indigo-400">
+          {fmt(m.expected_driver_returns_qty)}
+        </span>
+      ),
+    },
+    {
+      key: 'projected_shortage_after_returns_qty',
+      label: t($ => $.wave.missingMaterials.columns.projectedShortage),
+      align: 'end',
+      defaultVisible: true,
+      header: (
+        <ColumnHeaderHint
+          label={t($ => $.wave.missingMaterials.columns.projectedShortage)}
+          hint={t($ => $.wave.missingMaterials.projectedShortageHint)}
+        />
+      ),
+      // Canonical, most-accurate shortage once Expected Driver Returns is factored in:
+      // max(0, Required - Available - Expected Driver Returns), computed server-side.
+      // Additive only — Missing Qty and Uncovered above are unchanged and stay authoritative
+      // for their own definitions.
+      cell: (m) => (
+        <span className="inline-flex items-center rounded-md bg-rose-50 px-2 py-0.5 text-sm font-bold tabular-nums text-rose-800 dark:bg-rose-950/40 dark:text-rose-300">
+          {fmt(m.projected_shortage_after_returns_qty)}
         </span>
       ),
     },

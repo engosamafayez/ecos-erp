@@ -9,6 +9,12 @@ const STATUS_CLASS: Record<OrderStatus, string> = {
   ready_for_dispatch: 'bg-violet-100 text-violet-800 dark:bg-violet-900/30 dark:text-violet-400',
   out_for_delivery:  'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400',
   delivered:         'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+  // Final Cash — reached only from Delivered, once Treasury confirms the driver's cash
+  // handover (backend OrderStatus::isTerminal()). Same success family as Delivered
+  // (not a new visual language), one shade over to emerald so the two remain
+  // distinguishable at a glance — the same convention this map already uses for
+  // returned vs awaiting_stock (both orange, different shades).
+  final_cash:        'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400',
   // ── Exception States ──────────────────────────────────────────────────────
   awaiting_payment:  'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
   awaiting_stock:    'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',

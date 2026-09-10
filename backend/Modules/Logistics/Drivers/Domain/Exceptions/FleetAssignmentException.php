@@ -109,4 +109,18 @@ class FleetAssignmentException extends RuntimeException
             $vehicle,
         ));
     }
+
+    /**
+     * TASK-ECOS-OPERATIONS-DISTRIBUTION-AND-LOADING-FINAL-022 §C — the driver-side
+     * counterpart to `vehicleBusyInLoading()` (see
+     * `GroupVehicleAssignmentService::loadingBusyDriverUuids()`).
+     */
+    public static function driverBusyInLoading(string $driver): self
+    {
+        return new self(sprintf(
+            'Driver %s is currently committed to active loading work. '
+            .'Refresh and choose another driver.',
+            $driver,
+        ));
+    }
 }

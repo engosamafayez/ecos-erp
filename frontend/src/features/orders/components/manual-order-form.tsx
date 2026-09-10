@@ -99,6 +99,7 @@ const STATUS_LABELS: Record<string, string> = {
   ready_for_dispatch: 'Ready for Dispatch',
   out_for_delivery:  'Out for Delivery',
   delivered:         'Delivered',
+  final_cash:        'Final Cash',
   awaiting_payment:  'Awaiting Payment',
   awaiting_stock:    'Awaiting Stock',
   scheduled:         'Scheduled',
@@ -862,8 +863,8 @@ export function ManualOrderFormWorkspace({ mode = 'create', order, initialCustom
   // Structural lock: unlocked set is exactly ADR-042 §2.2 — in_progress, scheduled,
   // awaiting_payment. Everything from `confirmed` onward is locked.
   const isStructurallyLocked = isEdit && order != null && !['in_progress', 'scheduled', 'awaiting_payment'].includes(order.status);
-  // Terminal: Delivered/Cancelled/Returned are fully read-only.
-  const isTerminal = isEdit && order != null && ['delivered', 'cancelled', 'returned'].includes(order.status);
+  // Terminal: Delivered/Final Cash/Cancelled/Returned are fully read-only.
+  const isTerminal = isEdit && order != null && ['delivered', 'final_cash', 'cancelled', 'returned'].includes(order.status);
 
   const [serverError, setServerError] = useState<string | null>(null);
   const [slotError, setSlotError] = useState<string | null>(null);

@@ -7,7 +7,9 @@ namespace Modules\Logistics\Distribution\Infrastructure\Providers;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Modules\Commerce\Orders\Domain\Events\OrderGeographyChanged;
+use Modules\Logistics\Distribution\Application\Listeners\CloseWaveDeliveryAttemptsListener;
 use Modules\Logistics\Distribution\Application\Listeners\CloseWaveDistributionGroupsListener;
+use Modules\Logistics\Distribution\Application\Listeners\CloseWaveLoadingCustodyListener;
 use Modules\Logistics\Distribution\Application\Listeners\ReleaseOrderOnRetryableOutcomeListener;
 use Modules\Logistics\Distribution\Application\Listeners\SettleDriverTripMovementsOnTripSettled;
 use Modules\Logistics\Distribution\Application\Listeners\StartWaveDistributionGroupsListener;
@@ -83,5 +85,19 @@ final class LogisticsDistributionServiceProvider extends ServiceProvider
         foreach (self::LISTENERS as $event => $listener) {
             Event::listen($event, $listener);
         }
+
+        // TASK-ECOS-OPERATIONS-DISTRIBUTION-AND-LOADING-FINAL-022 §E/§F — a SECOND
+        // listener on WaveClosed. Registered directly rather than added to the
+        // LISTENERS map above: that map is `array<event, ONE listener>`, and
+        // WaveClosed already has an entry (CloseWaveDistributionGroupsListener).
+        // Laravel itself supports any number of listeners per event; only this
+        // file's own convenience-map shape does not, so this one exception is
+        // registered explicitly instead of forcing the map into a second shape
+        // for its only user.
+        Event::listen(WaveClosed::class, CloseWaveLoadingCustodyListener::class);
+
+        // TASK-ECOS-OPERATIONS-PREPARATION-DRIVER-EOD-FINAL-023 §D/§E — a THIRD
+        // listener on the same event, for the same "one value per map key" reason.
+        Event::listen(WaveClosed::class, CloseWaveDeliveryAttemptsListener::class);
     }
 }

@@ -12,6 +12,7 @@ use Modules\Commerce\Orders\Application\Listeners\HandlePreparationWaveClosed;
 use Modules\Commerce\Orders\Application\Listeners\HandlePreparationWaveCompleted;
 use Modules\Commerce\Orders\Application\Listeners\HandlePreparationWavePreparationStarted;
 use Modules\Commerce\Orders\Application\Listeners\HandlePreparationWaveStarted;
+use Modules\Commerce\Orders\Application\Listeners\HandleTripCashHandoverConfirmed;
 use Modules\Commerce\Orders\Application\Listeners\ProjectDeliveredQuantityFromAllocation;
 use Modules\Commerce\Orders\Application\Listeners\ProjectReturnedQuantityFromCustomerReturn;
 use Modules\Commerce\Orders\Application\Listeners\RetryReservationOnStockAvailableListener;
@@ -27,6 +28,7 @@ use Modules\Inventory\DomainEvents\Events\InventoryStockAdjusted;
 use Modules\Inventory\DomainEvents\Events\InventoryStockReceived;
 use Modules\Inventory\DomainEvents\Events\InventoryStockReleased;
 use Modules\Inventory\DomainEvents\Events\ProductNegativeStockEnabled;
+use Modules\Logistics\Distribution\Domain\Events\TripCashHandoverConfirmed;
 use Modules\Operations\Fulfillment\Domain\Events\OrderReturnedEvent;
 use Modules\Operations\Loading\Domain\Events\ProductDeliveryRecorded;
 use Modules\Operations\Preparation\Domain\Events\WarehouseAssigned;
@@ -71,6 +73,11 @@ final class OrderServiceProvider extends ServiceProvider
         // until now nothing on the order side listened for it: a wave could end with no
         // consequence whatsoever for the orders it held. This is the carry-over decision.
         $events->listen(WaveClosed::class, HandlePreparationWaveClosed::class);
+        // TASK-ECOS-OPERATIONS-PREPARATION-DRIVER-EOD-FINAL-023 §C/§K — Treasury's
+        // physical cash-handover confirmation is the ONLY authority allowed to move a
+        // Delivered order to Final Cash. Distribution announces the fact; Orders
+        // decides what it means for its own aggregate — same direction as WaveClosed.
+        $events->listen(TripCashHandoverConfirmed::class, HandleTripCashHandoverConfirmed::class);
         // §7/§8 — every canonical Inventory event that RAISES availability re-evaluates
         // the orders it could unblock. These are the existing Inventory domain events on
         // the existing bus; nothing new is published. Release matters as much as receipt:

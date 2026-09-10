@@ -154,4 +154,30 @@ class DistributionException extends RuntimeException
     {
         return new self('A concurrent cash handover confirmation could not be reconciled. Retry the request.');
     }
+
+    // ── Manual Group creation (TASK-OPERATIONS-DISTRIBUTION-LOADING-FINAL-022) ──
+
+    /**
+     * Raised when a CALLER-SUPPLIED `code` collides with a Group that already
+     * exists anywhere in the same Window — another warehouse, another Wave, or
+     * one that has since closed. `dist_slots_window_code_unique` is keyed on
+     * (window, code) alone, so a caller who insists on a specific code that is
+     * already taken is refused rather than silently handed a different one.
+     */
+    public static function groupCodeAlreadyInUse(string $code): self
+    {
+        return new self("Group code \"{$code}\" is already used in this window. Choose a different code.");
+    }
+
+    /**
+     * Raised only if every regeneration attempt of a SERVER-GENERATED code still
+     * lost the race against a concurrent create. Expected to be effectively
+     * unreachable: the generator already reads the same (window, code) scope the
+     * unique index guards, so a collision means as many concurrent creates as
+     * there are attempts landed in the same window at once.
+     */
+    public static function groupCodeGenerationFailed(): self
+    {
+        return new self('Could not assign a Distribution Group code after several attempts. Please retry.');
+    }
 }

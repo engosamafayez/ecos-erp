@@ -1603,6 +1603,7 @@ const WORKFLOW_TARGET_ICON: Record<string, React.ComponentType<{ className?: str
   preparing:        ArrowRightCircle,
   out_for_delivery: Truck,
   delivered:        CheckCircle2,
+  final_cash:       CheckCircle2,
   completed:        CheckCircle2,
   cancelled:        XCircle,
   awaiting_stock:   Box,

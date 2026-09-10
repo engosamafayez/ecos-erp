@@ -315,6 +315,34 @@ export interface LoadingWorkspaceClassification {
   unresolved_task_count: number;
 }
 
+/**
+ * One order behind a `LoadingSessionOverviewChild` execution.
+ *
+ * `released` is true when the order was freed back to the pool before the driver took
+ * custody of it — e.g. an automatic Wave-closure sweep that ran before acceptance. This
+ * is the order-level fact behind the session's own `unaccepted_returned_quantity`.
+ */
+export interface LoadingSessionOverviewOrderRef {
+  order_id: string;
+  order_number: string | null;
+  released: boolean;
+}
+
+/** The Distribution Group a `LoadingSessionOverviewChild` execution's Trip was drawn from. */
+export interface LoadingSessionOverviewGroupRef {
+  id: string;
+  code: string;
+  name: string | null;
+}
+
+/** The Wave a `LoadingSessionOverviewChild` execution's Group was planned under. */
+export interface LoadingSessionOverviewWaveRef {
+  id: string;
+  wave_number: string;
+  /** YYYY-MM-DD, or null. */
+  planning_date: string | null;
+}
+
 /** One child VehicleAssignment inside a classified LoadingSession. */
 export interface LoadingSessionOverviewChild extends LoadingWorkspaceClassification {
   vehicle_assignment_id: string;
@@ -322,6 +350,32 @@ export interface LoadingSessionOverviewChild extends LoadingWorkspaceClassificat
   status: string;
   /** Trip/vehicle/driver context for the page actually returned — see the endpoint's own docblock. */
   transport: LoadingGroupTransport;
+
+  /*
+   * ── AUDIT DETAIL ──────────────────────────────────────────────────────────
+   * Present on every bucket's rows, but rendered today only by the Completed/History
+   * tab (loading-session-overview.tsx) — the one place an operator needs to reconstruct
+   * exactly what happened on a closed execution: Wave, Group, Orders, the three
+   * loaded/accepted/returned quantities, closure time, and the terminal reason.
+   */
+  group: LoadingSessionOverviewGroupRef | null;
+  wave: LoadingSessionOverviewWaveRef | null;
+  orders: LoadingSessionOverviewOrderRef[];
+  loaded_quantity: number;
+  /** What the driver actually confirmed. */
+  accepted_quantity: number;
+  /** loaded_quantity - accepted_quantity, never negative. */
+  unaccepted_returned_quantity: number;
+  /** ISO 8601 — cancelled_at or reconciled_at, whichever actually ended this execution. Null while still open. */
+  closed_at: string | null;
+  /**
+   * Only meaningful when `status === 'cancelled'`. Free-form, not a fixed enum — known
+   * values today include `wave_closed_not_loaded` and `wave_closed_loaded_not_accepted`
+   * (an automatic Wave-closure sweep) plus pre-existing manual-cancellation reasons, but
+   * other flows can introduce new ones over time. Render as-is (lightly humanized);
+   * never map it through a translation table that would silently fall behind.
+   */
+  cancellation_reason: string | null;
 }
 
 /** One row of the session-grain read model — GET /api/loading/sessions-overview. */
