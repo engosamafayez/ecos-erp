@@ -6,6 +6,29 @@ export type SupplierInvoiceStatus =
   | 'failed'
   | 'cancelled';
 
+/**
+ * TASK-...-020 §5/§6 — presentation-only projection combining `status` with `receiving.status`
+ * into the user-approved vocabulary (never a second status engine; `status` above is still the
+ * real, authoritative value). "processing" covers the rare case a client reads mid-transaction
+ * (SupplierInvoiceStatus.AutoProcessing never durably commits outside PostSupplierInvoiceService's
+ * own transaction, so this is effectively never observed in practice, but is handled truthfully
+ * rather than mis-bucketed).
+ */
+export type SupplierInvoiceDisplayStatus =
+  | 'draft'
+  | 'commercially_approved'
+  | 'partial_received'
+  | 'fully_received'
+  | 'processing'
+  | 'posted'
+  | 'failed'
+  | 'cancelled';
+
+/** Server-computed from SupplierInvoiceStatus alone (§5/§6) — drives both the row action menu
+ *  and the "next action" hint beside the status badge; never re-derived from the raw status
+ *  string on the frontend. */
+export type SupplierInvoiceAction = 'edit' | 'validate' | 'post' | 'cancel' | 'delete';
+
 export type SupplierInvoiceLine = {
   id: string;
   product_id: string;
@@ -110,6 +133,8 @@ export type SupplierInvoice = {
   status: SupplierInvoiceStatus;
   status_label: string;
   status_color: string;
+  display_status: SupplierInvoiceDisplayStatus;
+  available_actions: SupplierInvoiceAction[];
   invoice_date: string;
   due_date: string | null;
   delivery_date: string | null;
@@ -137,6 +162,9 @@ export type SupplierInvoice = {
   payment?: SupplierInvoicePayment;
   receipt_links?: SupplierInvoiceReceiptLink[];
   receiving?: SupplierInvoiceReceiving;
+  // §12/§13 — only present on show(): true only when Validated AND nothing has been accepted
+  // against the linked receipt yet (partial acceptance is a variance case, never Cancelled).
+  can_reject_receiving?: boolean;
   created_at: string | null;
   updated_at: string | null;
 };

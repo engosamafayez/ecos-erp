@@ -25,10 +25,10 @@ import {
   Pagination,
 } from '@/components/crud';
 import type { ColumnDef } from '@/components/crud/types';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Sheet,
   SheetContent,
@@ -39,6 +39,7 @@ import {
   useCancelSupplierInvoice,
   useDeleteSupplierInvoice,
   usePostSupplierInvoice,
+  useRejectInvoiceReceiving,
   useSupplierInvoice,
   useSupplierInvoiceStats,
   useSupplierInvoicesQuery,
@@ -48,20 +49,12 @@ import { SupplierInvoiceEditor } from '@/features/supplier-invoices/components/s
 import { InvoiceAttachments } from '@/features/supplier-invoices/components/invoice-attachments';
 import { PaymentSummaryCard } from '@/features/supplier-invoices/components/payment-summary-card';
 import { ReceivingSummaryCard } from '@/features/supplier-invoices/components/receiving-summary-card';
+import { SupplierInvoiceStatusBadge } from '@/features/supplier-invoices/components/supplier-invoice-status-badge';
 import { ROUTES } from '@/router/routes';
 import type {
   SupplierInvoice,
   SupplierInvoiceStatus,
 } from '@/features/supplier-invoices/types/supplier-invoice';
-
-const STATUS_COLORS: Record<SupplierInvoiceStatus, string> = {
-  draft:           'bg-gray-100 text-gray-700',
-  validated:       'bg-blue-100 text-blue-800',
-  auto_processing: 'bg-yellow-100 text-yellow-800',
-  posted:          'bg-green-100 text-green-800',
-  failed:          'bg-red-100 text-red-700',
-  cancelled:       'bg-red-100 text-red-700',
-};
 
 const PER_PAGE = 15;
 
@@ -80,9 +73,15 @@ function InvoiceDetailDrawer({
   const validateMutation = useValidateSupplierInvoice();
   const postMutation     = usePostSupplierInvoice();
   const cancelMutation   = useCancelSupplierInvoice();
+  const rejectReceivingMutation = useRejectInvoiceReceiving();
   const { t } = useTranslation('supplier-invoices');
   const fmt = useFormatter();
   const navigate = useNavigate();
+
+  // §12/§13 — Warehouse Full Rejection: a reason is required, so this is a small dialog rather
+  // than a one-click destructive button like plain Cancel.
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
 
   // TASK-...-014 — the backend's own validate()/post() gate on this same signal (ready_to_post
   // mirrors InvoiceReceiptAnchorService's own guard); this only surfaces it earlier, never bypasses it.
@@ -107,16 +106,16 @@ function InvoiceDetailDrawer({
                     {invoice.supplier?.name ?? '—'} · {invoice.invoice_date}
                   </p>
                 </div>
-                <Badge
-                  className={`${STATUS_COLORS[invoice.status]} border-0 text-xs flex-shrink-0`}
-                  variant="secondary"
-                >
-                  {invoice.status_label}
-                </Badge>
+                <SupplierInvoiceStatusBadge
+                  displayStatus={invoice.display_status}
+                  availableActions={invoice.available_actions}
+                  showNextAction
+                  className="flex-shrink-0"
+                />
               </div>
 
               <div className="flex gap-2 pt-2 flex-wrap">
-                {(invoice.status === 'draft' || invoice.status === 'failed') && (
+                {invoice.available_actions.includes('edit') && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -127,7 +126,7 @@ function InvoiceDetailDrawer({
                     {t($ => $.detail.edit)}
                   </Button>
                 )}
-                {invoice.status === 'draft' && (
+                {invoice.available_actions.includes('validate') && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -139,7 +138,7 @@ function InvoiceDetailDrawer({
                     {t($ => $.detail.validate)}
                   </Button>
                 )}
-                {invoice.status === 'validated' && (
+                {invoice.available_actions.includes('post') && (
                   <Button
                     size="sm"
                     className="gap-1.5 bg-green-600 hover:bg-green-700"
@@ -153,7 +152,7 @@ function InvoiceDetailDrawer({
                     {t($ => $.detail.postToInventory)}
                   </Button>
                 )}
-                {['draft', 'validated', 'failed'].includes(invoice.status) && (
+                {invoice.available_actions.includes('cancel') && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -163,6 +162,17 @@ function InvoiceDetailDrawer({
                   >
                     <XCircle className="w-3.5 h-3.5" />
                     {t($ => $.detail.cancel)}
+                  </Button>
+                )}
+                {invoice.can_reject_receiving && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 text-red-600"
+                    onClick={() => setRejectDialogOpen(true)}
+                  >
+                    <XCircle className="w-3.5 h-3.5" />
+                    {t($ => $.detail.rejectReceiving.action)}
                   </Button>
                 )}
               </div>
@@ -323,6 +333,33 @@ function InvoiceDetailDrawer({
                 </div>
               )}
             </div>
+
+            <ConfirmDialog
+              open={rejectDialogOpen}
+              onOpenChange={(open) => { setRejectDialogOpen(open); if (!open) setRejectReason(''); }}
+              title={t($ => $.detail.rejectReceiving.dialogTitle)}
+              variant="destructive"
+              confirmLabel={t($ => $.detail.rejectReceiving.action)}
+              confirmDisabled={rejectReason.trim().length < 3}
+              loading={rejectReceivingMutation.isPending}
+              onConfirm={() => {
+                rejectReceivingMutation.mutate(
+                  { id: invoice.id, reason: rejectReason },
+                  { onSuccess: () => { setRejectDialogOpen(false); setRejectReason(''); } },
+                );
+              }}
+              description={
+                <div className="space-y-3">
+                  <p>{t($ => $.detail.rejectReceiving.dialogDescription)}</p>
+                  <Textarea
+                    value={rejectReason}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                    placeholder={t($ => $.detail.rejectReceiving.reasonPlaceholder)}
+                    rows={3}
+                  />
+                </div>
+              }
+            />
           </>
         )}
       </SheetContent>
@@ -433,16 +470,15 @@ export function SupplierInvoicesPage() {
       header: t($ => $.page.columns.status),
       cell: (inv) => (
         <div className="flex items-center gap-2">
-          <Badge
-            className={`${STATUS_COLORS[inv.status]} border-0 text-xs`}
-            variant="secondary"
-          >
-            {inv.status === 'auto_processing' && (
-              <Loader2 className="w-3 h-3 animate-spin mr-1" />
-            )}
-            {inv.status_label}
-          </Badge>
-          {inv.status === 'validated' && (
+          <SupplierInvoiceStatusBadge
+            displayStatus={inv.display_status}
+            availableActions={inv.available_actions}
+            showNextAction
+          />
+          {inv.display_status === 'processing' && (
+            <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+          )}
+          {inv.available_actions.includes('post') && (
             <Button
               size="sm"
               className="h-6 px-2 text-xs bg-green-600 hover:bg-green-700 gap-1"
@@ -549,7 +585,10 @@ export function SupplierInvoicesPage() {
                       icon: FileText,
                       onSelect: () => setSelectedId(inv.id),
                     },
-                    ...(inv.status === 'draft' || inv.status === 'failed' ? [
+                    // TASK-...-020 §5 — every item below is gated on the server-computed
+                    // `available_actions`, never a re-derived guess from the raw status string,
+                    // so the table can never offer a transition the backend would reject.
+                    ...(inv.available_actions.includes('edit') ? [
                       {
                         key: 'edit',
                         label: t($ => $.page.actions.edit) as string,
@@ -557,7 +596,7 @@ export function SupplierInvoicesPage() {
                         onSelect: () => openEditor(inv.id),
                       },
                     ] : []),
-                    ...(inv.status === 'draft' ? [
+                    ...(inv.available_actions.includes('validate') ? [
                       {
                         key: 'validate',
                         label: t($ => $.page.actions.validate) as string,
@@ -565,7 +604,7 @@ export function SupplierInvoicesPage() {
                         onSelect: () => validateMutation.mutate(inv.id),
                       },
                     ] : []),
-                    ...(inv.status === 'validated' ? [
+                    ...(inv.available_actions.includes('post') ? [
                       {
                         key: 'post',
                         label: t($ => $.page.actions.post) as string,
@@ -573,7 +612,7 @@ export function SupplierInvoicesPage() {
                         onSelect: () => handlePost(inv.id),
                       },
                     ] : []),
-                    ...(['draft', 'validated', 'failed'].includes(inv.status) ? [
+                    ...(inv.available_actions.includes('cancel') ? [
                       {
                         key: 'cancel',
                         label: t($ => $.page.actions.cancel) as string,
@@ -582,7 +621,7 @@ export function SupplierInvoicesPage() {
                         onSelect: () => cancelMutation.mutate(inv.id),
                       },
                     ] : []),
-                    ...(inv.status === 'draft' ? [
+                    ...(inv.available_actions.includes('delete') ? [
                       {
                         key: 'delete',
                         label: t($ => $.page.actions.delete) as string,

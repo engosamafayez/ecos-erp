@@ -13,12 +13,14 @@ use Modules\Inventory\InventoryItems\Domain\Services\GoodsInwardAuthority;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Purchasing\SupplierInvoices\Application\Services\InvoiceReceivingLinkService;
 use Modules\Purchasing\SupplierInvoices\Application\Services\PostSupplierInvoiceService;
+use Modules\Purchasing\SupplierInvoices\Application\Services\RejectInvoiceReceivingService;
 use Modules\Purchasing\SupplierInvoices\Application\Services\SupplierInvoicePaymentSummary;
 use Modules\Purchasing\SupplierInvoices\Application\Services\SupplierInvoiceReceivingSummary;
 use Modules\Purchasing\SupplierInvoices\Domain\Enums\SupplierInvoiceStatus;
 use Modules\Purchasing\SupplierInvoices\Domain\Models\SupplierInvoice;
 use Modules\Purchasing\SupplierInvoices\Domain\Models\SupplierInvoiceLine;
 use Modules\Purchasing\SupplierInvoices\Domain\Services\InvoiceReceiptAnchorService;
+use Modules\Purchasing\SupplierInvoices\Presentation\Http\Requests\RejectInvoiceReceivingRequest;
 use Modules\Purchasing\SupplierInvoices\Presentation\Http\Requests\StoreSupplierInvoiceRequest;
 use Modules\Purchasing\SupplierInvoices\Presentation\Http\Resources\SupplierInvoiceResource;
 use Throwable;
@@ -33,6 +35,7 @@ final class SupplierInvoiceController extends Controller
         private readonly InvoiceReceiptAnchorService $anchors,
         private readonly GoodsInwardAuthority $inwardAuthority,
         private readonly InvoiceReceivingLinkService $receivingLink,
+        private readonly RejectInvoiceReceivingService $rejectReceivingService,
     ) {}
 
     /**
@@ -59,10 +62,14 @@ final class SupplierInvoiceController extends Controller
         ));
     }
 
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, SupplierInvoiceReceivingSummary $receiving): JsonResponse
     {
         $query = SupplierInvoice::query()
-            ->with(['supplier', 'warehouse'])
+            // TASK-...-020 §6/§17 — display_status needs the receiving bucket for every row,
+            // not just show(); eager-loading here keeps that ONE batched query per page (not
+            // per-row N+1) — the exact same read-model, never a cheaper/second approximation
+            // that could drift from what the detail drawer shows for the same invoice.
+            ->with(['supplier', 'warehouse', 'autoReceipt', 'lines.product', 'lines.goodsReceiptLine.goodsReceipt'])
             ->latest('invoice_date');
 
         // Company isolation: scope to the authenticated user's company via warehouse
@@ -97,8 +104,15 @@ final class SupplierInvoiceController extends Controller
         $perPage = (int) $request->query('per_page', 15);
         $paginator = $query->paginate($perPage);
 
+        $items = collect($paginator->items())->map(function (SupplierInvoice $invoice) use ($receiving): array {
+            $data = (new SupplierInvoiceResource($invoice))->toArray(request());
+            $data['display_status'] = $invoice->status->displayBucket($receiving->for($invoice)['status']);
+
+            return $data;
+        })->all();
+
         return $this->success([
-            'items' => SupplierInvoiceResource::collection($paginator->items()),
+            'items' => $items,
             'meta' => [
                 'current_page' => $paginator->currentPage(),
                 'per_page' => $paginator->perPage(),
@@ -184,6 +198,16 @@ final class SupplierInvoiceController extends Controller
         $data['receipt_links'] = $this->receiptLinks($supplierInvoice);
         // TASK-...-014 §7/§10/§20 — the invoice-first receiving/reconciliation read-model.
         $data['receiving'] = $receiving->for($supplierInvoice);
+        // TASK-...-020 §5/§6 — combines invoice status with the receiving read-model above
+        // into the user-approved vocabulary; never a second status engine — $supplierInvoice
+        // ->status is untouched, this is a label only, exactly as PurchaseMaterial's own
+        // displayBucket()/displayStatus() precedent.
+        $data['display_status'] = $supplierInvoice->status->displayBucket($data['receiving']['status']);
+        // TASK-...-020 §12/§13 — Warehouse Full Rejection is offered only before ANY quantity
+        // has been accepted against the linked receipt; once even one unit is accepted this is
+        // a partial-receipt/variance case instead, never collapsed into Cancelled (§13).
+        $data['can_reject_receiving'] = $supplierInvoice->status === SupplierInvoiceStatus::Validated
+            && $data['receiving']['status'] === SupplierInvoiceReceivingSummary::AWAITING;
 
         return $this->success($data);
     }
@@ -221,9 +245,25 @@ final class SupplierInvoiceController extends Controller
 
     public function update(StoreSupplierInvoiceRequest $request, SupplierInvoice $supplierInvoice): JsonResponse
     {
-        if (! in_array($supplierInvoice->status, [SupplierInvoiceStatus::Draft, SupplierInvoiceStatus::Failed])) {
+        if (! $supplierInvoice->status->canEdit()) {
             return $this->error('Only draft or failed invoices can be edited', 422);
         }
+
+        // TASK-...-020 — discovered while reconciling this lifecycle: syncLines() below hard-
+        // deletes every existing line, but a Mode-1 invoice's auto-linked receipt lines carry a
+        // RESTRICT-on-delete FK back to them (added by TASK-...-014's own follow-on migration).
+        // Without this guard, editing ANY Mode-1 Draft invoice that already has its (normal,
+        // automatic) linked receipt would throw a raw database error. Refuse cleanly instead —
+        // same "nothing physical yet" rule the receiving link service already enforces on its
+        // own side — and unlink before syncLines() runs so the delete no longer conflicts with
+        // it; syncLinkedReceipt() (below, unchanged) rebuilds fresh receipt lines afterward.
+        if (! $this->receivingLink->canRewriteLines($supplierInvoice)) {
+            return $this->error(
+                'This invoice\'s items can no longer be edited — receiving has already started against the linked goods receipt.',
+                422,
+            );
+        }
+        $this->receivingLink->unlinkBeforeLineRewrite($supplierInvoice);
 
         $supplierInvoice->update($request->safe()->except('lines'));
         $this->syncLines($supplierInvoice, $request->validated('lines'));
@@ -239,7 +279,7 @@ final class SupplierInvoiceController extends Controller
 
     public function validate(SupplierInvoice $supplierInvoice): JsonResponse
     {
-        if ($supplierInvoice->status !== SupplierInvoiceStatus::Draft) {
+        if (! $supplierInvoice->status->canValidate()) {
             return $this->error('Only draft invoices can be validated', 422);
         }
 
@@ -247,56 +287,20 @@ final class SupplierInvoiceController extends Controller
             return $this->error('Invoice must have at least one line', 422);
         }
 
-        // GR-ANCHOR-REMEDIATION-004-R1 §7 — this UI's own copy already treats "Validated" as
-        // "ready to post" (see the frontend success toast), and PostSupplierInvoiceService
-        // independently refuses any Mode-1 line with no stated receipt anchor. Checking the
-        // SAME thing here — via the same InvoiceReceiptAnchorService::resolve() Post itself
-        // calls, never a re-implemented guard — is what makes "validated, then refused at
-        // Post" impossible. Mode 3 companies never anchor to a receipt at all (see that
-        // service's own Mode-3 payable path), so this is skipped there exactly as Post skips it.
-        $supplierInvoice->loadMissing(['lines.product', 'warehouse']);
-        $companyId = (string) ($supplierInvoice->company_id ?? $supplierInvoice->warehouse?->company_id ?? '');
-
-        if ($this->inwardAuthority->receiptMayPost($companyId)) {
-            $problems = [];
-
-            foreach ($supplierInvoice->lines as $index => $line) {
-                if ((float) $line->quantity <= 0) {
-                    continue;
-                }
-
-                try {
-                    $this->anchors->resolve($supplierInvoice, $line, (string) $supplierInvoice->id);
-                } catch (Throwable $e) {
-                    // §8 — business-readable, never a bare UUID, for the common "nobody picked
-                    // one yet" case. Other guards (wrong supplier/product/quantity) are already
-                    // specific and out of this ticket's scope; their existing message is kept.
-                    $problems[] = $line->goods_receipt_line_id === null
-                        ? sprintf('Line %d (%s) has no goods receipt line selected.', $index + 1, $this->lineLabel($line))
-                        : sprintf('Line %d (%s): %s', $index + 1, $this->lineLabel($line), $e->getMessage());
-                }
-            }
-
-            if ($problems !== []) {
-                return $this->error('Invoice is not ready to post — '.implode(' ', $problems), 422);
-            }
-        }
-
+        // TASK-...-020 §4/§7/§15 — FINAL USER DECISION, supersedes the prior
+        // GR-ANCHOR-REMEDIATION-004-R1 design: commercial approval is a document-level
+        // decision (supplier accepted, header/lines/amounts confirmed, eligible for warehouse
+        // receiving) and must be possible BEFORE any physical Goods Receipt exists or posts —
+        // that used to be exactly backwards here, since InvoiceReceiptAnchorService::resolve()
+        // requires the anchored receipt to already be Posted (TASK-...-014's own guard), which
+        // by definition can't be true yet for an invoice-first flow at the moment of approval.
+        // The full resolve()/basisFor() check remains fully intact at the one boundary where it
+        // belongs — PostSupplierInvoiceService::execute(), unchanged by this task — so nothing
+        // is actually posted, costed, or paid without every one of those guards still passing;
+        // approval just no longer pre-empts a check that Post already owns.
         $supplierInvoice->update(['status' => SupplierInvoiceStatus::Validated]);
 
         return $this->success(new SupplierInvoiceResource($supplierInvoice->fresh()));
-    }
-
-    /** Business-readable line identity for actionable validation errors — never a bare UUID. */
-    private function lineLabel(SupplierInvoiceLine $line): string
-    {
-        $product = $line->product;
-
-        if ($product?->sku) {
-            return $product->sku.' — '.$product->name;
-        }
-
-        return $product?->name ?? $line->description ?? ('line '.$line->id);
     }
 
     public function post(SupplierInvoice $supplierInvoice): JsonResponse
@@ -338,9 +342,25 @@ final class SupplierInvoiceController extends Controller
         return $this->success(new SupplierInvoiceResource($supplierInvoice->fresh()));
     }
 
+    /** TASK-...-020 §12/§13 — Warehouse Full Rejection: nothing accepted, explicit reason, the
+     *  invoice moves to Cancelled and the linked receipt's lines are confirmed at zero. Guards
+     *  are re-checked inside {@see RejectInvoiceReceivingService} under a row lock — this
+     *  method's job is only translating its RuntimeException into the same 422 shape every
+     *  other action in this controller returns. */
+    public function rejectReceiving(RejectInvoiceReceivingRequest $request, SupplierInvoice $supplierInvoice): JsonResponse
+    {
+        try {
+            $this->rejectReceivingService->execute($supplierInvoice, (string) $request->validated('reason'));
+        } catch (Throwable $e) {
+            return $this->error($e->getMessage(), 422);
+        }
+
+        return $this->success(new SupplierInvoiceResource($supplierInvoice->fresh()), 'Invoice rejected — receiving cancelled');
+    }
+
     public function destroy(SupplierInvoice $supplierInvoice): JsonResponse
     {
-        if ($supplierInvoice->status !== SupplierInvoiceStatus::Draft) {
+        if (! $supplierInvoice->status->canDelete()) {
             return $this->error('Only draft invoices can be deleted', 422);
         }
 

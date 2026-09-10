@@ -18,6 +18,18 @@ class SupplierInvoiceResource extends JsonResource
             'status' => $this->status->value,
             'status_label' => $this->status->label(),
             'status_color' => $this->status->color(),
+            // TASK-...-020 §5/§6 — the single server-computed source for which actions the
+            // table/drawer may offer from here; status-only (no receiving data required), so
+            // this is cheap on both index() and show(). "reject_receiving" is deliberately NOT
+            // included here — it also needs the receiving read-model, which only show() loads;
+            // the controller merges it in separately alongside `receiving` itself.
+            'available_actions' => array_values(array_filter([
+                $this->status->canEdit() ? 'edit' : null,
+                $this->status->canValidate() ? 'validate' : null,
+                $this->status->canPost() ? 'post' : null,
+                $this->status->canCancel() ? 'cancel' : null,
+                $this->status->canDelete() ? 'delete' : null,
+            ])),
             'invoice_date' => $this->invoice_date?->toDateString(),
             'due_date' => $this->due_date?->toDateString(),
             'delivery_date' => $this->delivery_date?->toDateString(),

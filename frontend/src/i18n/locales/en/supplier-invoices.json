@@ -27,6 +27,21 @@
     "overdue": "Overdue",
     "cancelled": "Cancelled"
   },
+  "displayStatus": {
+    "draft": "Draft",
+    "commercially_approved": "Commercially Approved",
+    "partial_received": "Partial Received",
+    "fully_received": "Fully Received",
+    "processing": "Posting in Progress",
+    "posted": "Posted",
+    "failed": "Posting Failed",
+    "cancelled": "Cancelled",
+    "nextAction": {
+      "validate": "Validate",
+      "post": "Post",
+      "edit": "Edit"
+    }
+  },
   "form": {
     "supplier": {
       "label": "Supplier",
@@ -185,6 +200,12 @@
         "reconciled": "Reconciled"
       }
     },
+    "rejectReceiving": {
+      "action": "Reject Receiving",
+      "dialogTitle": "Reject this invoice's receiving",
+      "dialogDescription": "Nothing has been received yet. This rejects the full invoiced quantity, cancels the invoice, and cannot be undone. A reason is required.",
+      "reasonPlaceholder": "Why is this being rejected?"
+    },
     "receiptLinks": {
       "title": "Received Against",
       "ordered": "Ordered",
@@ -260,6 +281,7 @@
       "product": "Product",
       "rawMaterial": "Raw Material",
       "emptyHint": "Add a product or raw material to begin.",
+      "qtyRequired": "Enter a quantity greater than 0.",
       "columns": {
         "product": "Product",
         "qty": "Qty",
@@ -335,6 +357,7 @@
       "warehouseRequired": "Warehouse is required",
       "invoiceDateRequired": "Invoice date is required",
       "atLeastOneItem": "At least one item is required",
+      "qtyRequiredSomeLines": "Enter a quantity for every item — one or more lines are blank.",
       "created": "Invoice created.",
       "failed": "Failed to create invoice."
     }

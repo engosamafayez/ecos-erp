@@ -16,15 +16,12 @@ import {
   type LineEntityType,
 } from '@/features/supplier-invoices/components/invoice-line-calc';
 import { ProductLineSelect } from '@/features/supplier-invoices/components/product-line-select';
-import { GoodsReceiptLineSelect } from '@/features/supplier-invoices/components/goods-receipt-line-select';
 
 type Props = {
   lines: InvoiceLineState[];
   onLinesChange: (lines: InvoiceLineState[]) => void;
-  supplierId: string;
   freight: number;
   additionalCosts: number;
-  invoiceId?: string;
 };
 
 // §11 — every cell in the main row shares this fixed-height leading slot (a real label for
@@ -33,7 +30,7 @@ type Props = {
 // with ad-hoc margins was the thing that drifted them apart in the first place.
 const LEADER_HEIGHT = 'h-[18px]';
 
-export function InvoiceLineEditor({ lines, onLinesChange, supplierId, freight, additionalCosts, invoiceId }: Props) {
+export function InvoiceLineEditor({ lines, onLinesChange, freight, additionalCosts }: Props) {
   const { t } = useTranslation('supplier-invoices');
   const fmt = useFormatter();
 
@@ -54,14 +51,18 @@ export function InvoiceLineEditor({ lines, onLinesChange, supplierId, freight, a
   // §5 two-way — editing the line total derives the unit price (backend re-computes on save).
   const setLineTotal = (i: number, v: string) =>
     patch(i, { line_total: v, unit_price: String(deriveUnitPrice(parseNum(v), parseNum(lines[i].quantity), parseNum(lines[i].tax_rate))) });
-  const setAnchor = (i: number, goodsReceiptLineId: string | null) =>
-    patch(i, { goods_receipt_line_id: goodsReceiptLineId });
 
   const addLine = (entityType: LineEntityType) => onLinesChange([...lines, emptyLine(entityType)]);
   const removeLine = (i: number) => onLinesChange(lines.filter((_, idx) => idx !== i));
 
   const typeLabel = (l: InvoiceLineState) =>
     l.entity_type === 'raw_material' ? t($ => $.editor.items.rawMaterial) : t($ => $.editor.items.product);
+
+  // TASK-...-020 §2 — a blank/zero quantity on a line that already has a product selected is
+  // never silently accepted: it must read as invalid, not as an ordinary empty draft row (a
+  // truly untouched line — no product picked yet — is not flagged, since that's the normal
+  // state right after "Add Product"/"Add Raw Material").
+  const qtyInvalid = (l: InvoiceLineState) => l.product_id !== '' && parseNum(l.quantity) <= 0;
 
   // §14 — one shared per-unit rate, live preview only (see invoice-line-calc.ts docblock).
   const extraPerUnit = extraPerUnitPreview(lines, freight, additionalCosts);
@@ -117,7 +118,13 @@ export function InvoiceLineEditor({ lines, onLinesChange, supplierId, freight, a
                   </div>
                   <div className="col-span-1">
                     <div className={`mb-0.5 ${LEADER_HEIGHT}`} />
-                    <Input type="number" min="0.001" step="0.001" value={line.quantity} onChange={(e) => setQty(i, e.target.value)} aria-label={t($ => $.editor.items.columns.qty)} className="no-spinner h-9 text-sm text-end" />
+                    <Input
+                      type="number" min="0.001" step="0.001" value={line.quantity}
+                      onChange={(e) => setQty(i, e.target.value)}
+                      aria-label={t($ => $.editor.items.columns.qty)}
+                      aria-invalid={qtyInvalid(line)}
+                      className={`no-spinner h-9 text-sm text-end ${qtyInvalid(line) ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                    />
                   </div>
                   <div className="col-span-2">
                     <div className={`mb-0.5 ${LEADER_HEIGHT}`} />
@@ -145,20 +152,9 @@ export function InvoiceLineEditor({ lines, onLinesChange, supplierId, freight, a
                   </div>
                 </div>
 
-                {/* §9 — explicit Goods Receipt Line anchor, its own row: rarely the visual focus,
-                    always secondary to what's being bought/priced above. */}
-                <div className="mt-2 pt-2 border-t flex items-center gap-2">
-                  <Label className="text-[10px] text-muted-foreground shrink-0 w-32">{t($ => $.editor.anchor.label)}</Label>
-                  <div className="flex-1 max-w-sm">
-                    <GoodsReceiptLineSelect
-                      supplierId={supplierId}
-                      productId={line.product_id}
-                      value={line.goods_receipt_line_id}
-                      onChange={(id) => setAnchor(i, id)}
-                      excludeInvoiceId={invoiceId}
-                    />
-                  </div>
-                </div>
+                {qtyInvalid(line) && (
+                  <p className="mt-1.5 text-xs text-destructive">{t($ => $.editor.items.qtyRequired)}</p>
+                )}
               </div>
             );
           })}
@@ -186,7 +182,14 @@ export function InvoiceLineEditor({ lines, onLinesChange, supplierId, freight, a
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <Label className="text-[11px] text-muted-foreground">{t($ => $.editor.items.columns.qty)}</Label>
-                    <Input type="number" min="0.001" step="0.001" value={line.quantity} onChange={(e) => setQty(i, e.target.value)} aria-label={`${t($ => $.editor.items.columns.qty)} #${i + 1}`} className="no-spinner mt-1 h-9 text-sm text-end" />
+                    <Input
+                      type="number" min="0.001" step="0.001" value={line.quantity}
+                      onChange={(e) => setQty(i, e.target.value)}
+                      aria-label={`${t($ => $.editor.items.columns.qty)} #${i + 1}`}
+                      aria-invalid={qtyInvalid(line)}
+                      className={`no-spinner mt-1 h-9 text-sm text-end ${qtyInvalid(line) ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                    />
+                    {qtyInvalid(line) && <p className="mt-1 text-xs text-destructive">{t($ => $.editor.items.qtyRequired)}</p>}
                   </div>
                   <div>
                     <Label className="text-[11px] text-muted-foreground">{t($ => $.editor.items.columns.unitPrice)}</Label>
@@ -205,18 +208,6 @@ export function InvoiceLineEditor({ lines, onLinesChange, supplierId, freight, a
                     <div className="mt-1 h-9 flex items-center justify-end text-sm tabular-nums text-muted-foreground px-3 rounded-md border bg-muted/30" title={t($ => $.editor.landedCost.pendingPostHint)}>
                       {fmt.money(finalUnitCost)}
                     </div>
-                  </div>
-                </div>
-                <div className="pt-2 border-t">
-                  <Label className="text-[11px] text-muted-foreground">{t($ => $.editor.anchor.label)}</Label>
-                  <div className="mt-1">
-                    <GoodsReceiptLineSelect
-                      supplierId={supplierId}
-                      productId={line.product_id}
-                      value={line.goods_receipt_line_id}
-                      onChange={(id) => setAnchor(i, id)}
-                      excludeInvoiceId={invoiceId}
-                    />
                   </div>
                 </div>
               </div>

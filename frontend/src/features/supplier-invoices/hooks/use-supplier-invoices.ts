@@ -159,6 +159,22 @@ export function useCancelSupplierInvoice() {
   });
 }
 
+// §12/§13 — Warehouse Full Rejection; same invalidation as every other lifecycle mutation above.
+export function useRejectInvoiceReceiving() {
+  const KEYS = useKeys();
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      supplierInvoicesService.rejectReceiving(id, reason),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.all });
+      toast.success('Invoice rejected — receiving cancelled');
+    },
+    onError: (error) => toast.error(extractMessage(error, 'Failed to reject receiving')),
+  });
+}
+
 // ── Attachment (§3) — toast-free; the attachment UI owns the i18n feedback ──
 export function useInvoiceDocuments(invoiceId: string | null) {
   const KEYS = useKeys();

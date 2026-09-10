@@ -28,11 +28,17 @@ export type InvoiceLineState = {
 
 // VAT defaults to 0% — ECOS tax/VAT policy is NOT activated (Tax/VAT architecture = DEFERRED).
 // The backend honours the submitted rate (syncLines uses `tax_rate ?? 0`), so 0 here persists as 0.
+//
+// TASK-...-020 §1/§2 — the initial line (and every line `emptyLine()` below adds) starts as
+// Raw Material, never Product, and `quantity` starts blank, never `'1'`: a real quantity must
+// always be a deliberate keystroke, never an artifact of the line simply existing. Applies
+// identically to "Add Raw Material" and "Add Product" since both call `emptyLine()`, which only
+// overrides `entity_type` — every other default, including the blank quantity, is shared.
 export const EMPTY_LINE: InvoiceLineState = {
-  entity_type: 'product',
+  entity_type: 'raw_material',
   product_id: '',
   product_name: '',
-  quantity: '1',
+  quantity: '',
   unit_price: '',
   tax_rate: '0',
   line_total: '',

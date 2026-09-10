@@ -27,10 +27,6 @@ vi.mock('@/hooks/use-formatter', () => ({ useFormatter: () => ({ money: (n: numb
 vi.mock('./product-line-select', () => ({
   ProductLineSelect: ({ entityType }: { entityType: string }) => <div data-testid={`product-select-${entityType}`} />,
 }));
-vi.mock('./goods-receipt-line-select', () => ({
-  GoodsReceiptLineSelect: () => <div data-testid="goods-receipt-line-select" />,
-}));
-
 import { InvoiceLineEditor } from './invoice-line-editor';
 import {
   EMPTY_LINE,
@@ -42,7 +38,7 @@ import {
 
 function Harness({ initial }: { initial: InvoiceLineState[] }) {
   const [lines, setLines] = useState<InvoiceLineState[]>(initial);
-  return <InvoiceLineEditor lines={lines} onLinesChange={setLines} supplierId="" freight={0} additionalCosts={0} />;
+  return <InvoiceLineEditor lines={lines} onLinesChange={setLines} freight={0} additionalCosts={0} />;
 }
 
 const LINE: InvoiceLineState = { ...EMPTY_LINE, product_id: 'p1', quantity: '10', unit_price: '20', tax_rate: '0', line_total: '200' };
@@ -64,6 +60,13 @@ describe('invoice line calculation helpers', () => {
     expect(emptyLine('product').entity_type).toBe('product');
     expect(emptyLine('raw_material').entity_type).toBe('raw_material');
     expect(emptyLine('raw_material').tax_rate).toBe('0');
+  });
+
+  it('TASK-...-020 §1/§2: a fresh line defaults to Raw Material with a blank quantity, never Product/1', () => {
+    expect(EMPTY_LINE.entity_type).toBe('raw_material');
+    expect(EMPTY_LINE.quantity).toBe('');
+    // "Add Product" still overrides only the type — the blank quantity default is shared.
+    expect(emptyLine('product').quantity).toBe('');
   });
 });
 
@@ -97,5 +100,21 @@ describe('InvoiceLineEditor', () => {
     render(<Harness initial={[LINE]} />);
     fireEvent.change(screen.getByLabelText('editor.items.columns.qty'), { target: { value: '5' } });
     expect((screen.getByLabelText('editor.items.columns.total') as HTMLInputElement).value).toBe('100');
+  });
+
+  it('TASK-...-020 §3: no Goods Receipt Line selector anywhere in the normal editor', () => {
+    render(<Harness initial={[LINE]} />);
+    expect(screen.queryByText('editor.anchor.label')).not.toBeInTheDocument();
+  });
+
+  it('TASK-...-020 §2: flags a product line left at a blank/zero quantity, but not an untouched empty row', () => {
+    const blankQtyLine: InvoiceLineState = { ...EMPTY_LINE, product_id: 'p1' };
+    render(<Harness initial={[blankQtyLine]} />);
+    expect(screen.getAllByText('editor.items.qtyRequired').length).toBeGreaterThan(0);
+  });
+
+  it('TASK-...-020 §2: a fully untouched empty line (no product yet) is not flagged', () => {
+    render(<Harness initial={[{ ...EMPTY_LINE }]} />);
+    expect(screen.queryByText('editor.items.qtyRequired')).not.toBeInTheDocument();
   });
 });

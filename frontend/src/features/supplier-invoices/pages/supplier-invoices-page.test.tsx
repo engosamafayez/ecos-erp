@@ -90,6 +90,8 @@ function invoice(overrides: Partial<SupplierInvoice> = {}): SupplierInvoice {
     status: 'validated',
     status_label: 'Validated',
     status_color: 'blue',
+    display_status: 'commercially_approved',
+    available_actions: ['post', 'cancel'],
     invoice_date: '2026-09-01',
     due_date: null,
     delivery_date: null,
@@ -149,6 +151,7 @@ describe('SupplierInvoicesPage — invoice-first receiving (TASK-...-014)', () =
   it('shows the linked receipt summary and blocks Post until the receipt is posted', async () => {
     mockGet.mockResolvedValue(invoice({
       status: 'validated',
+      display_status: 'partial_received',
       receiving: {
         status: 'partially_received',
         receipt_id: 'receipt-1',
@@ -193,6 +196,7 @@ describe('SupplierInvoicesPage — invoice-first receiving (TASK-...-014)', () =
   it('enables Post once the backend reports ready_to_post', async () => {
     mockGet.mockResolvedValue(invoice({
       status: 'validated',
+      display_status: 'fully_received',
       receiving: {
         status: 'reconciled', receipt_id: 'receipt-1', receipt_number: 'GR-2026-0007',
         receipt_status: 'posted', ready_to_post: true, lines: [],

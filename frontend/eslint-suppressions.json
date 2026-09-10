@@ -1633,7 +1633,7 @@
   },
   "src/features/supplier-invoices/hooks/use-supplier-invoices.ts": {
     "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 12
+      "count": 7
     }
   },
   "src/features/supplier-returns/hooks/use-supplier-returns.ts": {

@@ -1054,6 +1054,9 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::post('supplier-invoices/{supplierInvoice}/validate', [SupplierInvoiceController::class, 'validate'])->middleware('permission:purchasing.supplier_invoices.validate');
     Route::post('supplier-invoices/{supplierInvoice}/post', [SupplierInvoiceController::class, 'post'])->middleware('permission:purchasing.supplier_invoices.post');
     Route::post('supplier-invoices/{supplierInvoice}/cancel', [SupplierInvoiceController::class, 'cancel'])->middleware('permission:purchasing.supplier_invoices.cancel');
+    // TASK-...-020 §12/§13 — Warehouse Full Rejection; same permission as plain cancel (a
+    // specialized cancel, not a new capability), reason required in the request body.
+    Route::post('supplier-invoices/{supplierInvoice}/reject-receiving', [SupplierInvoiceController::class, 'rejectReceiving'])->middleware('permission:purchasing.supplier_invoices.cancel');
     // Supplier Invoice attachment (§3) — canonical DocumentService, private disk, auth+tenant gated.
     Route::get('supplier-invoices/{supplierInvoice}/documents', [SupplierInvoiceDocumentController::class, 'index'])->middleware('permission:purchasing.supplier_invoices.view');
     Route::post('supplier-invoices/{supplierInvoice}/documents', [SupplierInvoiceDocumentController::class, 'store'])->middleware('permission:purchasing.supplier_invoices.edit');

@@ -59,6 +59,12 @@ export const supplierInvoicesService = {
     return data.data;
   },
 
+  // §12/§13 — Warehouse Full Rejection; reason required, only valid before anything is accepted.
+  async rejectReceiving(id: string, reason: string): Promise<SupplierInvoice> {
+    const { data } = await api.post<ApiResponse<SupplierInvoice>>(`/supplier-invoices/${id}/reject-receiving`, { reason });
+    return data.data;
+  },
+
   async stats(): Promise<InvoiceStats> {
     const { data } = await api.get<ApiResponse<InvoiceStats>>('/supplier-invoices/stats');
     return data.data;

@@ -63,6 +63,9 @@ vi.mock('@/features/supplier-invoices/hooks/use-supplier-invoices', () => ({
   useCreateSupplierInvoice: () => ({ mutateAsync: (...a: unknown[]) => createMutate(...a), isPending: false }),
   useUpdateSupplierInvoice: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useValidateSupplierInvoice: () => ({ mutate: vi.fn(), isPending: false }),
+  // Pre-existing gap (predates TASK-...-020): the component already called this hook, but this
+  // mock never returned it, so every test in this file failed before this task touched anything.
+  usePostSupplierInvoice: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 import { SupplierInvoiceEditor } from './supplier-invoice-editor';

@@ -27,6 +27,21 @@
     "overdue": "متأخرة",
     "cancelled": "ملغاة"
   },
+  "displayStatus": {
+    "draft": "مسودة",
+    "commercially_approved": "معتمدة تجارياً",
+    "partial_received": "استلام جزئي",
+    "fully_received": "استلام كامل",
+    "processing": "جارٍ الترحيل",
+    "posted": "مرحَّلة",
+    "failed": "فشل الترحيل",
+    "cancelled": "ملغاة",
+    "nextAction": {
+      "validate": "اعتماد",
+      "post": "ترحيل",
+      "edit": "تعديل"
+    }
+  },
   "form": {
     "supplier": {
       "label": "المورد",
@@ -185,6 +200,12 @@
         "reconciled": "تمت التسوية"
       }
     },
+    "rejectReceiving": {
+      "action": "رفض الاستلام",
+      "dialogTitle": "رفض استلام هذه الفاتورة",
+      "dialogDescription": "لم يتم استلام أي كمية بعد. هذا الإجراء يرفض كامل الكمية المفوترة، ويلغي الفاتورة، ولا يمكن التراجع عنه. السبب مطلوب.",
+      "reasonPlaceholder": "ما سبب الرفض؟"
+    },
     "receiptLinks": {
       "title": "مستلَمة مقابل",
       "ordered": "المطلوبة",
@@ -260,6 +281,7 @@
       "product": "منتج",
       "rawMaterial": "مادة خام",
       "emptyHint": "أضف منتجاً أو مادة خام للبدء.",
+      "qtyRequired": "أدخل كمية أكبر من 0.",
       "columns": {
         "product": "المنتج",
         "qty": "الكمية",
@@ -335,6 +357,7 @@
       "warehouseRequired": "المستودع مطلوب",
       "invoiceDateRequired": "تاريخ الفاتورة مطلوب",
       "atLeastOneItem": "يجب إضافة صنف واحد على الأقل",
+      "qtyRequiredSomeLines": "أدخل كمية لكل صنف — يوجد سطر واحد أو أكثر فارغ.",
       "created": "تم إنشاء الفاتورة.",
       "failed": "فشل إنشاء الفاتورة."
     }

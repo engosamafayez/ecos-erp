@@ -220,6 +220,14 @@ export function SupplierInvoiceEditor({ open, onOpenChange, invoiceId = null }: 
     if (!supplierId) { toast.error(t($ => $.editor.toast.supplierRequired)); return false; }
     if (!warehouseId) { toast.error(t($ => $.editor.toast.warehouseRequired)); return false; }
     if (!invoiceDate) { toast.error(t($ => $.editor.toast.invoiceDateRequired)); return false; }
+    // TASK-...-020 §2 — a row with a product selected but a blank/zero quantity must block
+    // submit with a specific, visible reason (the inline red state in InvoiceLineEditor), never
+    // silently vanish from the payload the way a truly untouched, no-product row still correctly
+    // does a few lines below.
+    if (lines.some((l) => l.product_id && num(l.quantity) <= 0)) {
+      toast.error(t($ => $.editor.toast.qtyRequiredSomeLines));
+      return false;
+    }
     if (buildPayload().lines.length === 0) { toast.error(t($ => $.editor.toast.atLeastOneItem)); return false; }
     return true;
   }
@@ -390,10 +398,8 @@ export function SupplierInvoiceEditor({ open, onOpenChange, invoiceId = null }: 
             <InvoiceLineEditor
               lines={lines}
               onLinesChange={setLines}
-              supplierId={supplierId}
               freight={num(freight)}
               additionalCosts={num(additional)}
-              invoiceId={invoiceId ?? undefined}
             />
 
             {/* §5 — landed cost is SERVER-AUTHORITATIVE, computed only once the invoice posts

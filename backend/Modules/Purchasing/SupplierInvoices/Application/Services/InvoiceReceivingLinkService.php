@@ -152,6 +152,51 @@ final class InvoiceReceivingLinkService
     }
 
     /**
+     * TASK-ECOS-PROCUREMENT-SUPPLIER-INVOICE-FINAL-LIFECYCLE-020.
+     *
+     * Whether {@see SupplierInvoiceController::update()} may proceed to delete-and-recreate
+     * this invoice's own lines at all. `goods_receipt_lines.supplier_invoice_line_id` carries
+     * `ON DELETE RESTRICT` (added after this service was first written, TASK-...-014's own
+     * follow-on migration) — so deleting an invoice line while ANY receipt line still
+     * references it throws at the database, not merely fails validation. Reuses the exact same
+     * "nothing physical has happened yet" rule {@see isSafeToRewrite()} already enforces for
+     * the receipt's own lines: if it would be unsafe to rewrite the receipt, it is equally
+     * unsafe to rewrite the invoice lines out from under it, so the controller must refuse the
+     * edit with a clear error instead of either crashing or silently proceeding.
+     */
+    public function canRewriteLines(SupplierInvoice $invoice): bool
+    {
+        $invoice->loadMissing('autoReceipt.lines');
+        $receipt = $invoice->autoReceipt;
+
+        return $receipt === null || $this->isSafeToRewrite($receipt);
+    }
+
+    /**
+     * TASK-ECOS-PROCUREMENT-SUPPLIER-INVOICE-FINAL-LIFECYCLE-020.
+     *
+     * Must be called BEFORE {@see SupplierInvoiceController::syncLines()} deletes the invoice's
+     * own lines — see {@see canRewriteLines()}'s docblock for why. Deletes the linked receipt's
+     * lines (clearing the `RESTRICT` FK) ONLY when {@see canRewriteLines()} says it's safe;
+     * otherwise a no-op, matching `resyncLinkedReceipt()`'s own "never silently rewrite accepted
+     * history" rule exactly — this is the same delete `resyncLinkedReceipt()` already performs
+     * (line 129 below), just moved earlier so it runs before the invoice rows it points at are
+     * gone. The subsequent `sync()` call (already wired into `update()`) then rebuilds fresh
+     * receipt lines from the invoice's new state, exactly as it always has.
+     */
+    public function unlinkBeforeLineRewrite(SupplierInvoice $invoice): void
+    {
+        $invoice->loadMissing('autoReceipt.lines');
+        $receipt = $invoice->autoReceipt;
+
+        if ($receipt === null || ! $this->isSafeToRewrite($receipt)) {
+            return;
+        }
+
+        $receipt->lines()->delete();
+    }
+
+    /**
      * §6/§18 — safe to fully re-sync a Draft receipt's lines ONLY while nothing physical has
      * happened to it yet: not posted, and no line already carries an accepted quantity. Once
      * either is true, editing the invoice's commercial lines no longer touches receiving —

@@ -53,4 +53,48 @@ enum SupplierInvoiceStatus: string
     {
         return in_array($this, [self::Draft, self::Validated, self::Failed]);
     }
+
+    /** TASK-...-020 §5/§6 — single authority for "what can be done from here", mirroring the
+     *  inline checks that used to live scattered across the controller (update()/validate()/
+     *  destroy()), so the frontend can drive its action menu from one server-computed list
+     *  instead of re-deriving these same conditions from the raw status string. */
+    public function canEdit(): bool
+    {
+        return $this === self::Draft || $this === self::Failed;
+    }
+
+    public function canValidate(): bool
+    {
+        return $this === self::Draft;
+    }
+
+    public function canDelete(): bool
+    {
+        return $this === self::Draft;
+    }
+
+    /**
+     * TASK-...-020 §5/§6 — presentation-only projection onto the 6 user-approved words
+     * (draft / commercially_approved / partial_received / fully_received / posted / failed /
+     * cancelled — "processing" added for the rare case a client reads mid-transaction).
+     * $receivingStatus is one of SupplierInvoiceReceivingSummary's own string constants
+     * (not_applicable/awaiting/partially_received/reconciled) — passed in rather than resolved
+     * here, since that read-model lives in the Application layer and this enum stays Domain-only.
+     * This NEVER changes `status` itself or any of the canX() guards above — purely a label.
+     */
+    public function displayBucket(?string $receivingStatus): string
+    {
+        return match ($this) {
+            self::Draft => 'draft',
+            self::Validated => match ($receivingStatus) {
+                'partially_received' => 'partial_received',
+                'reconciled' => 'fully_received',
+                default => 'commercially_approved', // not_applicable (Mode 3) or awaiting
+            },
+            self::AutoProcessing => 'processing',
+            self::Posted => 'posted',
+            self::Failed => 'failed',
+            self::Cancelled => 'cancelled',
+        };
+    }
 }
