@@ -561,8 +561,8 @@ final class GoLivePreparationTest extends TestCase
         );
     }
 
-    private function userWithoutPermission(): \Modules\IAM\Domain\Models\User
+    private function userWithoutPermission(): \App\Models\User
     {
-        return \Modules\IAM\Domain\Models\User::factory()->create();
+        return \App\Models\User::factory()->create();
     }
 }
