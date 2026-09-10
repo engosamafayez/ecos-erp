@@ -14,6 +14,7 @@ use Modules\Logistics\Distribution\Domain\Enums\DriverTripMovementStatus;
 use Modules\Logistics\Distribution\Domain\Exceptions\DistributionException;
 use Modules\Logistics\Distribution\Domain\Models\DriverTripMovement;
 use Modules\Logistics\Distribution\Domain\Models\Trip;
+use Modules\Logistics\Distribution\Domain\Events\TripCashHandoverConfirmed;
 use Modules\Logistics\Distribution\Domain\Models\TripCashHandover;
 use Modules\Logistics\Distribution\Domain\Models\TripSettlement;
 
@@ -143,14 +144,14 @@ final class CashHandoverService
             throw DistributionException::cashHandoverAmountInvalid();
         }
 
-        return DB::transaction(function () use ($settlement, $receivedCash, $cashAccountUuid, $receiverId, $notes): TripCashHandover {
+        [$handover, $isNew] = DB::transaction(function () use ($settlement, $receivedCash, $cashAccountUuid, $receiverId, $notes): array {
             // Lock FIRST — before the idempotency check and before any Finance call.
             // Mirrors ReceiveVehicleReturnAction's lockForUpdate-before-check ordering.
             $locked = TripSettlement::query()->lockForUpdate()->findOrFail($settlement->id);
 
             $existing = TripCashHandover::query()->where('trip_settlement_id', $locked->id)->first();
             if ($existing !== null) {
-                return $this->assertSameOrRefuse($existing, $receivedCash);
+                return [$this->assertSameOrRefuse($existing, $receivedCash), false];
             }
 
             $trip = $locked->trip;
@@ -184,7 +185,7 @@ final class CashHandoverService
             );
 
             try {
-                return TripCashHandover::create([
+                return [TripCashHandover::create([
                     'company_id' => $companyId,
                     'trip_settlement_id' => $locked->id,
                     'trip_id' => $trip->id,
@@ -196,15 +197,37 @@ final class CashHandoverService
                     'cash_transaction_id' => $transaction->id,
                     'received_by' => $receiverId,
                     'notes' => $notes,
-                ]);
+                ]), true];
             } catch (UniqueConstraintViolationException) {
                 // Last-resort backstop (see class docblock) — the lock above should
                 // make this unreachable in normal operation.
                 $winner = TripCashHandover::query()->where('trip_settlement_id', $locked->id)->first();
 
-                return $winner ?? throw DistributionException::cashHandoverRaceUnresolved();
+                return [$winner ?? throw DistributionException::cashHandoverRaceUnresolved(), false];
             }
         });
+
+        // TASK-ECOS-OPERATIONS-PREPARATION-DRIVER-EOD-FINAL-023 §C/§K — dispatched
+        // AFTER the transaction commits (mirroring FulfillmentEngine::run()'s own
+        // "events after commit, never rolled back" contract), and only for a
+        // genuinely NEW confirmation — a repeat/idempotent call must not re-trigger
+        // the Order-status bridge a second time. The physical cash fact itself is
+        // never at risk either way: it is already durably committed by the time
+        // this fires, regardless of what the listener does with it.
+        if ($isNew) {
+            event(new TripCashHandoverConfirmed(
+                tripId: (string) $handover->trip_id,
+                tripSettlementId: (string) $handover->trip_settlement_id,
+                companyId: (string) $handover->company_id,
+                handoverId: (string) $handover->id,
+                receivedCash: (float) $handover->received_cash,
+                expectedCash: (float) $handover->expected_cash,
+                confirmedBy: $receiverId,
+                confirmedAt: now()->toIso8601String(),
+            ));
+        }
+
+        return $handover;
     }
 
     private function assertSameOrRefuse(TripCashHandover $existing, float $receivedCash): TripCashHandover

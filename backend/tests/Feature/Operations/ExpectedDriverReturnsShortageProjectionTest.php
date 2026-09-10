@@ -29,10 +29,72 @@ use Tests\TestCase;
  *
  * NOT RUN as part of this task (Validation Freeze, §27) — reviewed for
  * correctness, not executed.
+ *
+ * TASK-ECOS-OPERATIONS-PREPARATION-DRIVER-EOD-FINAL-023 §A extends this file
+ * (does not modify the two tests above): "Expected Driver Returns... must
+ * include the actual goods still expected back... from CLOSED prior delivery
+ * attempts" — a trip still on the road might yet deliver successfully, so its
+ * custody must NOT count yet. The two tests above are untouched and still
+ * correct under the new logic: neither sets `vehicle_assignments.trip_id`, so
+ * both fall through the new check's `whereNull('va.trip_id')` branch exactly
+ * as before (a standalone Loading assignment with no Trip bridge has no
+ * "still on the road" status to defer to, matching how
+ * `loadingBusyVehicleUuids()` elsewhere in this codebase already treats a null
+ * Trip). The two new tests below specifically cover the case that changed:
+ * custody IS linked to a real Trip.
  */
 final class ExpectedDriverReturnsShortageProjectionTest extends TestCase
 {
     use DatabaseTransactions;
+
+    public function test_expected_driver_returns_excludes_custody_still_actively_on_the_road(): void
+    {
+        $company = Company::factory()->create();
+        $warehouse = Warehouse::factory()->create(['company_id' => $company->id]);
+        $productId = (string) Str::uuid();
+
+        $wave = $this->makeWave($company->id, $warehouse->id);
+
+        $this->insertOutstandingVehicleCustody(
+            $company->id, $warehouse->id, $productId, onHand: 4.0,
+            tripStatus: 'out_for_delivery',
+        );
+
+        $calculator = app(MaterialDemandCalculator::class);
+        $method = new ReflectionMethod($calculator, 'expectedDriverReturns');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($calculator, $wave, [$productId]);
+
+        self::assertArrayNotHasKey(
+            $productId,
+            $result,
+            'A trip still out for delivery might yet succeed — its custody is a possible return, not an expected one.',
+        );
+    }
+
+    public function test_expected_driver_returns_includes_custody_once_its_trip_is_no_longer_on_the_road(): void
+    {
+        $company = Company::factory()->create();
+        $warehouse = Warehouse::factory()->create(['company_id' => $company->id]);
+        $productId = (string) Str::uuid();
+
+        $wave = $this->makeWave($company->id, $warehouse->id);
+
+        // Cancelled — a genuinely CLOSED attempt, no longer possibly-successful.
+        $this->insertOutstandingVehicleCustody(
+            $company->id, $warehouse->id, $productId, onHand: 4.0,
+            tripStatus: 'cancelled',
+        );
+
+        $calculator = app(MaterialDemandCalculator::class);
+        $method = new ReflectionMethod($calculator, 'expectedDriverReturns');
+        $method->setAccessible(true);
+
+        $result = $method->invoke($calculator, $wave, [$productId]);
+
+        self::assertSame(4.0, $result[$productId] ?? null, 'Once the trip is off the road, its remaining custody is a real expected return.');
+    }
 
     public function test_expected_driver_returns_sums_outstanding_vehicle_custody_at_the_waves_warehouse(): void
     {
@@ -124,13 +186,36 @@ final class ExpectedDriverReturnsShortageProjectionTest extends TestCase
         ]);
     }
 
-    /** A vehicle assignment at $warehouseId still carrying $onHand units of $productId. */
+    /**
+     * A vehicle assignment at $warehouseId still carrying $onHand units of $productId.
+     *
+     * `$tripStatus` is null by default (no Trip bridge at all — the two original
+     * tests' shape). TASK-...-FINAL-023 §A: pass a real status
+     * (`out_for_delivery`, `cancelled`, ...) to also create a `distribution_trips`
+     * row and link `vehicle_assignments.trip_id` to it, so the closed-vs-active
+     * distinction has something real to read.
+     */
     private function insertOutstandingVehicleCustody(
         string $companyId,
         string $warehouseId,
         string $productId,
         float $onHand,
+        ?string $tripStatus = null,
     ): void {
+        $tripId = null;
+
+        if ($tripStatus !== null) {
+            $tripId = (int) DB::table('distribution_trips')->insertGetId([
+                'uuid' => (string) Str::uuid(),
+                'company_id' => $companyId,
+                'name' => 'EDR-TEST-TRIP',
+                'trip_number' => 'TRP-'.substr(md5((string) microtime()), 0, 8),
+                'status' => $tripStatus,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
         $sessionId = (string) Str::uuid();
         DB::table('loading_sessions')->insert([
             'id' => $sessionId,
@@ -150,6 +235,7 @@ final class ExpectedDriverReturnsShortageProjectionTest extends TestCase
             'id' => $assignmentId,
             'company_id' => $companyId,
             'loading_session_id' => $sessionId,
+            'trip_id' => $tripId,
             'vehicle_id' => (string) Str::uuid(),
             'vehicle_registration_snapshot' => 'PL-TEST',
             'vehicle_type_snapshot' => 'van',

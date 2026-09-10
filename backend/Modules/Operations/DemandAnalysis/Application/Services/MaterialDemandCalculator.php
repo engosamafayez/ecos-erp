@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Commerce\Orders\Application\Actions\ReconcileOrderMaterialReservationsAction;
 use Modules\Inventory\InventoryItems\Domain\Enums\LedgerMovementType;
+use Modules\Logistics\Distribution\Domain\Enums\TripStatus;
 use Modules\Manufacturing\BillsOfMaterials\Domain\Services\ActiveRecipeResolver;
 use Modules\Operations\Preparation\Domain\Models\PreparationWave;
 
@@ -491,14 +492,34 @@ final class MaterialDemandCalculator
      *
      * TIED TO THE ORIGINATING OLD CUSTODY, NEVER TO AN ORDER'S NEW TRIP (§12):
      * this is a pure `VehicleInventoryItem` aggregate, keyed only by
-     * warehouse + company + product. It does NOT join `Order`, `TripOrder` or
-     * `Trip` at all — it does not need to, and joining one would wrongly
-     * scope "goods on the road" to only the orders THIS wave happens to be
-     * replanning, when the true figure Purchasing/Preparation need is "how
-     * much of this material is out on ANY vehicle right now, full stop".
-     * A retryable release (ReleaseOrderOnRetryableOutcomeListener) changes
-     * nothing here — the goods do not move, so neither does this figure,
-     * until the warehouse actually runs ReceiveVehicleReturnAction.
+     * warehouse + company + product — it does NOT join `Order` or `TripOrder`,
+     * and does not need to: joining down to individual orders would require
+     * splitting one vehicle-item's on-hand quantity across whichever orders
+     * demanded that product on that vehicle (only resolvable, if at all, at
+     * `AllocationRecord` grain — a join nothing else in this codebase performs
+     * today), when the closed-vs-active DISTINCTION Trip status already gives
+     * for free is sufficient.
+     *
+     * TASK-ECOS-OPERATIONS-PREPARATION-DRIVER-EOD-FINAL-023 §A — REVISES the
+     * prior task's own explicit decision here to count "how much of this
+     * material is out on ANY vehicle right now, full stop", regardless of
+     * whether that vehicle's trip was still actively delivering. §A is
+     * explicit that Expected Driver Returns "must include the actual goods
+     * still expected back... from CLOSED prior delivery attempts" — a trip
+     * still `isOnTheRoad()` (Dispatched/OutForDelivery/InProgress) might yet
+     * deliver successfully, so its custody is a possible return, not an
+     * expected one, and counting it here would overstate what Preparation can
+     * actually plan against. The join added below (`distribution_trips`, via
+     * `vehicle_assignments.trip_id`, LEFT so a vehicle assignment with no Trip
+     * at all — a standalone Loading assignment outside the Group/Trip bridge —
+     * still counts, matching how `loadingBusyVehicleUuids()` elsewhere in this
+     * codebase treats a null Trip as "nothing to defer to") is scoped at the
+     * TRIP grain, not the order grain: once a trip is no longer on the road,
+     * everything still on it is fair game, even though a multi-stop trip with
+     * one early failure mid-route is (deliberately, conservatively) not
+     * counted until the WHOLE trip finishes — under-counting a moment's
+     * possible return is the safe direction of error here; over-counting
+     * (falsely inflating what Preparation can plan against) is not.
      *
      * CANNOT DOUBLE-COUNT AGAINST `$onHand` ABOVE (§16: "no double-counting
      * may occur at any step"): `inventory_items.on_hand_qty` and
@@ -510,10 +531,13 @@ final class MaterialDemandCalculator
      * (`AdjustmentInAction`) only once, idempotently, when goods physically
      * arrive back. A unit is in exactly one ledger at any moment, so summing
      * this separately from `$onHand` never inflates availability — it only
-     * adds visibility into what `$onHand` cannot yet see.
+     * adds visibility into what `$onHand` cannot yet see. This is PLANNING
+     * INFORMATION ONLY (§A): nothing in this method writes to `on_hand_qty`,
+     * a reservation, or any pickable/reservable flag — it is read-only,
+     * always has been, and stays that way here.
      *
      * @param  list<string>  $materialIds
-     * @return array<string, float> material_id => total outstanding vehicle custody
+     * @return array<string, float> material_id => total outstanding vehicle custody from closed attempts
      */
     private function expectedDriverReturns(PreparationWave $wave, array $materialIds): array
     {
@@ -524,10 +548,15 @@ final class MaterialDemandCalculator
         return DB::table('vehicle_inventory_items as vii')
             ->join('vehicle_assignments as va', 'va.id', '=', 'vii.vehicle_assignment_id')
             ->join('loading_sessions as ls', 'ls.id', '=', 'va.loading_session_id')
+            ->leftJoin('distribution_trips as dt', 'dt.id', '=', 'va.trip_id')
             ->where('ls.warehouse_id', $wave->warehouse_id)
             ->where('vii.company_id', $wave->company_id)
             ->whereIn('vii.product_id', $materialIds)
             ->where('vii.quantity_on_hand', '>', 0)
+            ->where(function ($q): void {
+                $q->whereNull('va.trip_id')
+                    ->orWhereNotIn('dt.status', TripStatus::onTheRoadValues());
+            })
             ->groupBy('vii.product_id')
             ->selectRaw('vii.product_id, SUM(vii.quantity_on_hand) as total')
             ->pluck('total', 'product_id')

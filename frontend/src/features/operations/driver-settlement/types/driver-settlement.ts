@@ -341,6 +341,28 @@ export interface DaySettlementTimelineEvent {
   at: string;
 }
 
+/** Breaks down `overview.failed` by reason. Always sums to `overview.failed`. */
+export interface DaySettlementFailedBreakdown {
+  no_answer: number;
+  postponed: number;
+  other: number;
+}
+
+/**
+ * Rollup of Treasury's confirmation of this driver's Trip cash handovers for the day
+ * (canonical CashHandoverService::confirmReceipt(), via TripCashHandoverConfirmed) — a
+ * read-only fact, never a figure this page can act on. `confirmed_count === 0` means no
+ * handover has been confirmed yet, which must render as an explicit "not yet confirmed"
+ * state, never as a blank or a $0.00 that could be misread as "nothing owed".
+ */
+export interface DaySettlementCashHandover {
+  confirmed_count: number;
+  total_confirmed_trips: number;
+  total_received_cash: number;
+  trip_ids_confirmed: number[];
+  last_confirmed_at: string | null;
+}
+
 export interface DaySettlementDriverDetail {
   date: string;
   driver: {
@@ -356,10 +378,15 @@ export interface DaySettlementDriverDetail {
     delivered: number;
     partial: number;
     failed: number;
+    /** Breaks down `failed` by reason — always sums back to it. */
+    failed_breakdown: DaySettlementFailedBreakdown;
     returns: number;
     delivery_pct: number;
     trips: number;
   };
+  /** Treasury's confirmation of this driver's Trip cash handovers — a sibling rollup to
+   *  `overview`/`financial`, not part of either (see `DaySettlementCashHandover`). */
+  cash_handover: DaySettlementCashHandover;
   financial: {
     cash_expected: number;
     approved_transfers: number;

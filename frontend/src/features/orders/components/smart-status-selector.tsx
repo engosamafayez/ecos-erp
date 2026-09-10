@@ -54,6 +54,7 @@ const STATUS_COLOR: Record<string, string> = {
   confirmed:        'text-emerald-600 dark:text-emerald-400',
   out_for_delivery: 'text-cyan-600 dark:text-cyan-400',
   delivered:        'text-teal-600 dark:text-teal-400',
+  final_cash:       'text-emerald-600 dark:text-emerald-400',
   cancelled:        'text-red-600 dark:text-red-400',
   returned:         'text-rose-600 dark:text-rose-400',
 };

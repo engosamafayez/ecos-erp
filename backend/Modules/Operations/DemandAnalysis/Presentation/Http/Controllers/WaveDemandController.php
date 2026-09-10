@@ -1069,6 +1069,22 @@ final class WaveDemandController extends Controller
                 // the real shortage and what is expected to cover it, without conflating them.
                 'expected_incoming_qty' => round($incoming, 4),
                 'uncovered_shortage_qty' => round(max(0.0, $missing - $incoming), 4),
+                // TASK-ECOS-OPERATIONS-PREPARATION-DRIVER-EOD-FINAL-023 §A — "Expected
+                // Driver Returns" (goods from CLOSED prior delivery attempts still on a
+                // Driver/Vehicle) and the canonical Projected Shortage After Returns
+                // (max(Required - Available - Expected Driver Returns, 0)) already exist
+                // on `wave_material_demand` — computed and persisted by
+                // `MaterialDemandCalculator::calculate()` — and were already exposed on
+                // the sibling `material-demand` endpoint, but never on THIS one (the
+                // actual "Missing Materials" tab). Read-only pass-through: this
+                // controller does no arithmetic of its own, same as every other figure
+                // on this row. PLANNING INFORMATION ONLY — nothing here writes to
+                // inventory, reservations, or any pickable/reservable state; see
+                // `MaterialDemandCalculator::expectedDriverReturns()`'s own docblock.
+                'expected_driver_returns_qty' => $demand !== null ? round((float) $demand->expected_today, 4) : 0.0,
+                'projected_shortage_after_returns_qty' => $demand !== null
+                    ? round((float) $demand->projected_shortage_after_returns, 4)
+                    : $missing,
                 'affected_orders_count' => (int) $i->affected_orders_count,
                 'last_calculated_at' => $i->last_calculated_at?->toIso8601String(),
             ];

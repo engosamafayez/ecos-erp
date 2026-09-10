@@ -7,6 +7,7 @@ namespace Modules\Logistics\Distribution\Infrastructure\Providers;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 use Modules\Commerce\Orders\Domain\Events\OrderGeographyChanged;
+use Modules\Logistics\Distribution\Application\Listeners\CloseWaveDeliveryAttemptsListener;
 use Modules\Logistics\Distribution\Application\Listeners\CloseWaveDistributionGroupsListener;
 use Modules\Logistics\Distribution\Application\Listeners\CloseWaveLoadingCustodyListener;
 use Modules\Logistics\Distribution\Application\Listeners\ReleaseOrderOnRetryableOutcomeListener;
@@ -94,5 +95,9 @@ final class LogisticsDistributionServiceProvider extends ServiceProvider
         // registered explicitly instead of forcing the map into a second shape
         // for its only user.
         Event::listen(WaveClosed::class, CloseWaveLoadingCustodyListener::class);
+
+        // TASK-ECOS-OPERATIONS-PREPARATION-DRIVER-EOD-FINAL-023 §D/§E — a THIRD
+        // listener on the same event, for the same "one value per map key" reason.
+        Event::listen(WaveClosed::class, CloseWaveDeliveryAttemptsListener::class);
     }
 }

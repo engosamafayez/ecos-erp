@@ -21,15 +21,22 @@ export type ReservationStatus =
 
 // ── Status ────────────────────────────────────────────────────────────────────
 // Canonical lifecycle - ADR-042 (Order FSM V3 Canonical).
-// Primary flow: in_progress → confirmed → ready_for_dispatch → out_for_delivery → delivered
+// Primary flow: in_progress → confirmed → ready_for_dispatch → out_for_delivery → delivered → final_cash
 // Entry states: in_progress (normal) | scheduled (future-dated) | awaiting_payment
-// Terminal: delivered, cancelled, returned
+// Terminal: delivered, final_cash, cancelled, returned
+//
+// TASK-ECOS-OPERATIONS-PREPARATION-DRIVER-EOD-FINAL-023 — `final_cash` is the
+// first-ever sanctioned edge OUT of `delivered`, reached only once a driver's
+// Trip cash handover is physically confirmed by Treasury (backend
+// CashHandoverService::confirmReceipt() via CompleteOrderWorkflow). See the
+// backend OrderStatus enum's own docblock for the full rationale.
 export type OrderStatus =
   | 'in_progress'
   | 'confirmed'
   | 'ready_for_dispatch'
   | 'out_for_delivery'
   | 'delivered'
+  | 'final_cash'
   | 'awaiting_payment'
   | 'awaiting_stock'
   | 'scheduled'
@@ -44,9 +51,14 @@ export type OrderStatus =
  * as terminal; every other status is active by construction (INTEGRATION-GATE-
  * REMEDIATION-001, so an "active order" check never needs its own independent,
  * driftable status list).
+ *
+ * `final_cash` is included alongside `delivered` — per the backend enum, Final
+ * Cash is "fulfilled AND cash-settled", a strictly later terminal state reached
+ * only from Delivered, not a separate outcome.
  */
 export const TERMINAL_ORDER_STATUSES: ReadonlySet<OrderStatus> = new Set<OrderStatus>([
   'delivered',
+  'final_cash',
   'cancelled',
   'returned',
 ]);
@@ -70,6 +82,7 @@ export const STATUS_TAB_ORDER: Array<OrderStatus | 'all'> = [
   'ready_for_dispatch',
   'out_for_delivery',
   'delivered',
+  'final_cash',
   'returned',
   'on_hold',
   'cancelled',

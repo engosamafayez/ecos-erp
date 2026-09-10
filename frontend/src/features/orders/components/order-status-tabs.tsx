@@ -22,6 +22,9 @@ const STATUS_ACCENT: Partial<Record<string, string>> = {
   confirmed:        'border-violet-400/60 bg-violet-50 dark:border-violet-600/40 dark:bg-violet-950/20',
   out_for_delivery: 'border-cyan-400/60 bg-cyan-50 dark:border-cyan-600/40 dark:bg-cyan-950/20',
   delivered:        'border-green-400/60 bg-green-50 dark:border-green-600/40 dark:bg-green-950/20',
+  // Same success family as delivered (one shade over, so the two stay distinguishable) —
+  // final_cash is delivered + Treasury-confirmed cash handover, never a different outcome.
+  final_cash:       'border-emerald-400/60 bg-emerald-50 dark:border-emerald-600/40 dark:bg-emerald-950/20',
   cancelled:        'border-rose-400/60 bg-rose-50 dark:border-rose-600/40 dark:bg-rose-950/20',
   returned:         'border-orange-400/60 bg-orange-50 dark:border-orange-600/40 dark:bg-orange-950/20',
   awaiting_stock:   'border-orange-300/60 bg-orange-50 dark:border-orange-600/40 dark:bg-orange-950/20',
@@ -34,6 +37,7 @@ const STATUS_DOT: Partial<Record<string, string>> = {
   confirmed:        'bg-violet-400 dark:bg-violet-500',
   out_for_delivery: 'bg-cyan-400 dark:bg-cyan-500',
   delivered:        'bg-green-400 dark:bg-green-500',
+  final_cash:       'bg-emerald-400 dark:bg-emerald-500',
   cancelled:        'bg-rose-400 dark:bg-rose-500',
   returned:         'bg-orange-400 dark:bg-orange-500',
   awaiting_stock:   'bg-orange-300 dark:bg-orange-500',
@@ -46,6 +50,7 @@ const STATUS_COUNT_COLOR: Partial<Record<string, string>> = {
   confirmed:        'text-violet-700 dark:text-violet-400',
   out_for_delivery: 'text-cyan-700 dark:text-cyan-400',
   delivered:        'text-green-700 dark:text-green-400',
+  final_cash:       'text-emerald-700 dark:text-emerald-400',
   cancelled:        'text-rose-700 dark:text-rose-400',
   returned:         'text-orange-700 dark:text-orange-400',
   awaiting_stock:   'text-orange-600 dark:text-orange-400',

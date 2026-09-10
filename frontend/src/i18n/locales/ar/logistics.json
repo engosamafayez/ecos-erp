@@ -265,6 +265,20 @@
         "outstanding": "المتبقي",
         "method": "الطريقة",
         "outcome": "النتيجة"
+      },
+      "failedBreakdown": {
+        "noAnswer": "لا يوجد رد",
+        "postponed": "مؤجل",
+        "other": "أخرى"
+      },
+      "cashHandover": {
+        "title": "تسليم النقدية",
+        "statusLabel": "تأكيد الخزينة",
+        "confirmed": "مؤكَّد",
+        "notYetConfirmed": "لم يُؤكَّد بعد",
+        "totalConfirmed": "إجمالي المؤكَّد",
+        "tripsConfirmed": "الرحلات المؤكَّدة",
+        "lastConfirmedAt": "آخر تأكيد"
       }
     },
     "overview": {
@@ -2496,6 +2510,24 @@
       "carrier": {
         "title": "تسوية الناقل",
         "unavailable": "لا توجد واجهة برمجية لتسوية الناقل. تُسوّي المنصة الرحلة مع سائقها، وسجلات الناقلين تعرض الحسابات والعقود لا التسويات."
+      },
+      "cashHandover": {
+        "title": "تسليم النقدية للخزينة",
+        "description": "قم بعد المبلغ النقدي الفعلي المستلم من السائق وأكّد التسليم. سيتم ترحيل هذا المبلغ إلى حساب الخزينة النقدي الخاص بالشركة.",
+        "expectedCash": "النقدية المتوقعة (النظام)",
+        "driverDeclaredCash": "النقدية المصرّح بها من السائق",
+        "receivedCashInput": "النقدية المستلمة فعليًا",
+        "receivedCash": "النقدية المستلمة",
+        "difference": "الفرق",
+        "previewDifference": "معاينة الفرق",
+        "destinationAccount": "حساب الخزينة النقدي المستلم",
+        "selectAccount": "اختر حساب الخزينة",
+        "notes": "ملاحظات (اختياري)",
+        "confirm": "تأكيد التسليم",
+        "confirmed": "تم التأكيد",
+        "confirmedAt": "وقت التأكيد",
+        "confirmFailed": "تعذّر تأكيد التسليم. تحقق من المبلغ والحساب المحدد وصلاحياتك، ثم حاول مرة أخرى.",
+        "notAvailable": "غير متاح"
       }
     },
     "routing": {

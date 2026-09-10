@@ -265,6 +265,20 @@
         "outstanding": "Outstanding",
         "method": "Method",
         "outcome": "Outcome"
+      },
+      "failedBreakdown": {
+        "noAnswer": "No Answer",
+        "postponed": "Postponed",
+        "other": "Other"
+      },
+      "cashHandover": {
+        "title": "Cash Handover",
+        "statusLabel": "Treasury Confirmation",
+        "confirmed": "Confirmed",
+        "notYetConfirmed": "Not Yet Confirmed",
+        "totalConfirmed": "Total Confirmed",
+        "tripsConfirmed": "Trips Confirmed",
+        "lastConfirmedAt": "Last Confirmed"
       }
     },
     "overview": {
@@ -2496,6 +2510,24 @@
       "carrier": {
         "title": "Carrier Settlement",
         "unavailable": "Carrier settlement has no API. The platform settles a trip with its driver; carrier records expose accounts and contracts, not settlements."
+      },
+      "cashHandover": {
+        "title": "Treasury Cash Handover",
+        "description": "Count the physical cash received from the driver and confirm the handover. This posts to the company's Treasury cash account.",
+        "expectedCash": "Expected Cash (System)",
+        "driverDeclaredCash": "Driver Declared Cash",
+        "receivedCashInput": "Physical Cash Received",
+        "receivedCash": "Cash Received",
+        "difference": "Difference",
+        "previewDifference": "Preview difference",
+        "destinationAccount": "Destination Cash Account",
+        "selectAccount": "Select a cash account",
+        "notes": "Notes (optional)",
+        "confirm": "Confirm Handover",
+        "confirmed": "Confirmed",
+        "confirmedAt": "Confirmed At",
+        "confirmFailed": "The handover could not be confirmed. Check the amount, the selected account, and your permissions, then try again.",
+        "notAvailable": "Not available"
       }
     },
     "routing": {
