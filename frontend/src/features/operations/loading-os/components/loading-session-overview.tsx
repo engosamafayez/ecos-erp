@@ -10,7 +10,13 @@ import { PagePagination } from '@/components/page/pagination/page-pagination';
 import { useLoadingSessionsOverview } from '../hooks/use-loading-os';
 import type { LoadingSessionOverviewChild, LoadingSessionOverviewRow, LoadingWorkspaceBucket } from '../types/loading-os';
 
-import { bucketBadgeVariant, useBucketLabel, useReasonLabel } from './loading-groups';
+import {
+  bucketBadgeVariant,
+  useBucketLabel,
+  useLoadingSessionStatusLabel,
+  useLoadingTripStatusLabel,
+  useReasonLabel,
+} from '../lib/loading-labels';
 
 /**
  * The LoadingSession-grain read model's presentation — TASK-...-WORKSPACE-READ-MODEL-004.
@@ -96,12 +102,13 @@ function SessionOverviewTableRow({ row }: { row: LoadingSessionOverviewRow }) {
   const { t } = useTranslation('operations');
   const reasonLabel = useReasonLabel();
   const bucketLabel = useBucketLabel();
+  const sessionStatusLabel = useLoadingSessionStatusLabel();
 
   return (
     <TableRow data-testid={`session-overview-row-${row.session_id}`}>
       <TableCell>
         <div className="font-medium">{row.session_number}</div>
-        <div className="text-muted-foreground text-xs">{row.status}</div>
+        <div className="text-muted-foreground text-xs">{sessionStatusLabel(row.status)}</div>
       </TableCell>
       <TableCell>{row.operational_date ?? '—'}</TableCell>
       <TableCell>
@@ -141,6 +148,7 @@ function SessionOverviewTableRow({ row }: { row: LoadingSessionOverviewRow }) {
 function AssignmentEvidenceLine({ child }: { child: LoadingSessionOverviewChild }) {
   const { t } = useTranslation('operations');
   const reasonLabel = useReasonLabel();
+  const tripStatusLabel = useLoadingTripStatusLabel();
 
   const trip = child.transport.trip;
   const vehicle = child.transport.vehicle;
@@ -149,7 +157,7 @@ function AssignmentEvidenceLine({ child }: { child: LoadingSessionOverviewChild 
   return (
     <li className="text-xs" data-testid={`assignment-evidence-${child.vehicle_assignment_id}`}>
       <span className="font-medium">
-        {trip ? `${trip.trip_number} · ${trip.status}` : t(($) => $.loadingOs.groups.tripNotCreated)}
+        {trip ? `${trip.trip_number} · ${tripStatusLabel(trip.status)}` : t(($) => $.loadingOs.groups.tripNotCreated)}
       </span>
       {' — '}
       <span className="text-muted-foreground">

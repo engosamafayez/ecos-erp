@@ -15,7 +15,7 @@ import type {
   HealthOverview,
   OperationalAlert,
 } from '@/features/logistics/operations/types/operations';
-import { useReasonLabel } from '@/features/operations/loading-os/components/loading-groups';
+import { useReasonLabel } from '@/features/operations/loading-os/lib/loading-labels';
 import type { LoadingSessionOverviewRow } from '@/features/operations/loading-os/types/loading-os';
 import { ROUTES } from '@/router/routes';
 
@@ -165,7 +165,7 @@ export function NeedsAttentionSection({
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="text-sm font-medium">{alert.title}</span>
-                  <SourceBadge source={alert.source} label={alert.source} />
+                  <SourceBadge source={alert.source} />
                   {alert.rule ? (
                     <Badge variant="outline" className="text-[10px]">
                       {alert.rule}

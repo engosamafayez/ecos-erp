@@ -45,6 +45,51 @@ const SOURCE_LABEL_KEY: Record<ActivitySource, LogisticsLabel> = {
   note: ($) => $.operations.activityCenter.source.note,
 };
 
+/**
+ * `row.status` tables for the three history tabs below — one per backend enum
+ * (`AllocationStatus`, `DispatchSessionStatus`, `ReservationStatus`). The server also sends a
+ * ready-made `status_label`, but that is English-only prose, not a translation — rendering it
+ * directly is the same raw-enum-leak anti-pattern as `SOURCE_LABEL_KEY` above already guards
+ * against, so every history row goes through one of these instead.
+ */
+const ASSIGNMENT_STATUS_LABEL_KEY: Record<string, LogisticsLabel> = {
+  proposed: ($) => $.operations.activityCenter.assignmentStatus.proposed,
+  reserved: ($) => $.operations.activityCenter.assignmentStatus.reserved,
+  confirmed: ($) => $.operations.activityCenter.assignmentStatus.confirmed,
+  released: ($) => $.operations.activityCenter.assignmentStatus.released,
+  failed: ($) => $.operations.activityCenter.assignmentStatus.failed,
+};
+
+const ASSIGNMENT_MODE_LABEL_KEY: Record<string, LogisticsLabel> = {
+  manual: ($) => $.operations.activityCenter.assignmentMode.manual,
+  automatic: ($) => $.operations.activityCenter.assignmentMode.automatic,
+};
+
+const SESSION_STATUS_LABEL_KEY: Record<string, LogisticsLabel> = {
+  open: ($) => $.operations.activityCenter.sessionStatus.open,
+  paused: ($) => $.operations.activityCenter.sessionStatus.paused,
+  closing: ($) => $.operations.activityCenter.sessionStatus.closing,
+  closed: ($) => $.operations.activityCenter.sessionStatus.closed,
+  abandoned: ($) => $.operations.activityCenter.sessionStatus.abandoned,
+};
+
+const CAPACITY_STATUS_LABEL_KEY: Record<string, LogisticsLabel> = {
+  pending: ($) => $.operations.activityCenter.capacityStatus.pending,
+  held: ($) => $.operations.activityCenter.capacityStatus.held,
+  confirmed: ($) => $.operations.activityCenter.capacityStatus.confirmed,
+  released: ($) => $.operations.activityCenter.capacityStatus.released,
+  failed: ($) => $.operations.activityCenter.capacityStatus.failed,
+};
+
+/**
+ * A table lookup with a safe fallback — the raw key itself — for a value outside the known
+ * set. The known sets above mirror the real backend enums exactly, so the fallback is a
+ * defensive last resort, never the primary path.
+ */
+function labelOr(table: Record<string, LogisticsLabel>, key: string): LogisticsLabel {
+  return table[key] ?? (() => key);
+}
+
 /** A vertical time-ordered list — the Timeline component pattern. */
 function ActivityList({ items }: { items: ActivityItem[] }) {
   const { t } = useTranslation('logistics');
@@ -182,10 +227,10 @@ function AssignmentsTab() {
                 <tr key={row.id}>
                   <td className="px-3 py-2.5">
                     <Badge variant="outline" className="text-[10px]">
-                      {row.status_label}
+                      {t(labelOr(ASSIGNMENT_STATUS_LABEL_KEY, row.status))}
                     </Badge>
                   </td>
-                  <td className="px-3 py-2.5 capitalize text-muted-foreground">{row.mode}</td>
+                  <td className="px-3 py-2.5 text-muted-foreground">{t(labelOr(ASSIGNMENT_MODE_LABEL_KEY, row.mode))}</td>
                   <td className="px-3 py-2.5 tabular-nums">{row.vehicle_id ?? '—'}</td>
                   <td className="px-3 py-2.5 tabular-nums">{row.driver_id ?? '—'}</td>
                   {/* Fleet's verdict at allocation time, quoted. */}
@@ -251,7 +296,7 @@ function SessionsTab() {
                   <td className="px-3 py-2.5">{row.operator_name ?? '—'}</td>
                   <td className="px-3 py-2.5">
                     <Badge variant="outline" className="text-[10px]">
-                      {row.status_label}
+                      {t(labelOr(SESSION_STATUS_LABEL_KEY, row.status))}
                     </Badge>
                   </td>
                   <td className="px-3 py-2.5 text-end tabular-nums">{row.assigned_count}</td>
@@ -321,7 +366,7 @@ function CapacityHistoryTab() {
                   <td className="px-3 py-2.5">{row.purpose ?? '—'}</td>
                   <td className="px-3 py-2.5">
                     <Badge variant="outline" className="text-[10px]">
-                      {row.status_label}
+                      {t(labelOr(CAPACITY_STATUS_LABEL_KEY, row.status))}
                     </Badge>
                   </td>
                   <td className="px-3 py-2.5 text-end tabular-nums">{row.requested_orders}</td>

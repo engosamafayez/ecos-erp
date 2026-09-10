@@ -47,7 +47,7 @@ vi.mock('@/features/logistics/operations/components/exception-drawer', () => ({
   ),
 }));
 
-vi.mock('@/features/operations/loading-os/components/loading-groups', () => ({
+vi.mock('@/features/operations/loading-os/lib/loading-labels', () => ({
   useReasonLabel: () => (reason: string) => `reason:${reason}`,
 }));
 

@@ -286,6 +286,11 @@
       "failed": "Couldn't record delivery"
     },
     "deliveryAction": "Delivery Action",
+    "toasts": {
+      "actionRecorded": "Delivery recorded",
+      "actionRecordedDescription": "Action: {{action}}",
+      "actionFailed": "Failed to record delivery"
+    },
     "payment": {
       "title": "Payment",
       "method": "Payment Method",
@@ -494,6 +499,14 @@
     "finishDialog": {
       "title": "Finish Trip?",
       "description": "All stops must be processed before finishing. This action logs the trip end location."
+    },
+    "toasts": {
+      "started": "Trip started",
+      "startedDescription": "Delivery stops are now active.",
+      "finished": "Trip finished",
+      "finishedDescription": "Proceed to settlement.",
+      "finishFailed": "Cannot finish trip",
+      "closeFailed": "Cannot close trip"
     }
   },
   "failureReasons": {
@@ -610,7 +623,11 @@
     "awaitingReceipt": "Awaiting warehouse receipt",
     "warehouseReceived": "Warehouse received: {{qty}}",
     "discrepancy": "Diff {{qty}}",
-    "recordTitle": "Declare Return"
+    "recordTitle": "Declare Return",
+    "toasts": {
+      "recorded": "Return recorded",
+      "failed": "Failed to record return"
+    }
   },
   "returnForm": {
     "productId": "Product ID *",
@@ -627,6 +644,65 @@
     "cancel": "Cancel",
     "submit": "Record return",
     "saving": "Saving…"
+  },
+  "settlementPage": {
+    "title": "Settlement",
+    "submitTitle": "Submit Settlement",
+    "cashSubmitted": "Cash Submitted ({{currency}})",
+    "cashPlaceholder": "0.00",
+    "notes": "Notes",
+    "notesPlaceholder": "Notes about any discrepancy...",
+    "submitting": "Submitting...",
+    "submit": "Submit Settlement",
+    "closing": "Closing...",
+    "closeTrip": "Close Trip",
+    "custodyReturns": "Custody Returns",
+    "productReturns": "Product Returns",
+    "summary": {
+      "title": "Settlement Summary",
+      "cashCollected": "Cash Collected",
+      "bankTransfersPending": "Bank Transfers (Pending Verification)",
+      "prePaidExcluded": "Pre-Paid (Excluded)",
+      "totalCollected": "Total Collected",
+      "expectedCash": "Expected Cash",
+      "driverCashSubmitted": "Driver Cash Submitted",
+      "discrepancy": "Discrepancy"
+    },
+    "status": {
+      "draft": "Draft",
+      "submitted": "Submitted",
+      "verified": "Verified",
+      "closed": "Closed"
+    },
+    "toasts": {
+      "submitted": "Settlement submitted",
+      "submitFailed": "Settlement failed"
+    }
+  },
+  "custodyReturnPage": {
+    "title": "Custody Returns",
+    "add": "Add",
+    "sheetTitle": "Record Custody Return",
+    "custodyType": "Custody Type *",
+    "custodyTypePlaceholder": "e.g. cash bag, tablet...",
+    "dispatchedQty": "Dispatched Qty *",
+    "returnedQty": "Returned Qty *",
+    "notes": "Notes",
+    "notesPlaceholder": "Optional notes...",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "record": "Record",
+    "list": {
+      "empty": "No custody items recorded yet.",
+      "dispatchedReturned": "Dispatched: {{dispatched}} · Returned: {{returned}}",
+      "confirmedPlaceholder": "Confirmed Qty",
+      "confirm": "Confirm",
+      "liableForShortage": "Driver is liable for the shortage"
+    },
+    "toasts": {
+      "recorded": "Custody return recorded",
+      "failed": "Failed to record custody return"
+    }
   },
   "wallet": {
     "title": "Wallet",
@@ -810,6 +886,10 @@
     }
   },
   "exceptionForm": {
+    "toasts": {
+      "recorded": "Exception recorded",
+      "failed": "Failed to record exception"
+    },
     "type": "Exception type *",
     "description": "Description *",
     "descriptionPlaceholder": "Exception description…",

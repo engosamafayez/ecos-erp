@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,7 @@ import { useCustodyReturns, useRecordCustodyReturn } from '../hooks/use-driver-m
 import { CustodyReturnList } from '../components/custody-return-list';
 
 export function DriverCustodyReturnPage() {
+  const { t } = useTranslation('driver-mobile');
   const { tripId = '' } = useParams<{ tripId: string }>();
   const navigate = useNavigate();
   const [sheetOpen,    setSheetOpen]    = useState(false);
@@ -57,12 +59,12 @@ export function DriverCustodyReturnPage() {
           size="icon"
           onClick={() => navigate(ROUTES.driverTripSettlement.replace(':tripId', tripId))}
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
         </Button>
-        <h1 className="font-semibold text-base flex-1">Custody Returns</h1>
+        <h1 className="font-semibold text-base flex-1">{t(($) => $.custodyReturnPage.title)}</h1>
         <Button size="sm" variant="outline" onClick={() => setSheetOpen(true)}>
-          <PlusCircle className="mr-1.5 h-4 w-4" />
-          Add
+          <PlusCircle className="me-1.5 h-4 w-4" />
+          {t(($) => $.custodyReturnPage.add)}
         </Button>
       </div>
 
@@ -80,20 +82,20 @@ export function DriverCustodyReturnPage() {
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
           <SheetHeader className="mb-4">
-            <SheetTitle>Record Custody Return</SheetTitle>
+            <SheetTitle>{t(($) => $.custodyReturnPage.sheetTitle)}</SheetTitle>
           </SheetHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label>Custody Type *</Label>
+              <Label>{t(($) => $.custodyReturnPage.custodyType)}</Label>
               <Input
                 value={custodyType}
                 onChange={(e) => setCustodyType(e.target.value)}
-                placeholder="e.g. cash bag, tablet..."
+                placeholder={t(($) => $.custodyReturnPage.custodyTypePlaceholder)}
                 required
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Dispatched Qty *</Label>
+              <Label>{t(($) => $.custodyReturnPage.dispatchedQty)}</Label>
               <Input
                 type="number"
                 min="0"
@@ -103,7 +105,7 @@ export function DriverCustodyReturnPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Returned Qty *</Label>
+              <Label>{t(($) => $.custodyReturnPage.returnedQty)}</Label>
               <Input
                 type="number"
                 min="0"
@@ -113,19 +115,19 @@ export function DriverCustodyReturnPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Notes</Label>
+              <Label>{t(($) => $.custodyReturnPage.notes)}</Label>
               <Input
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Optional notes..."
+                placeholder={t(($) => $.custodyReturnPage.notesPlaceholder)}
               />
             </div>
             <div className="flex gap-2">
               <Button type="button" variant="outline" onClick={() => setSheetOpen(false)} className="flex-1">
-                Cancel
+                {t(($) => $.custodyReturnPage.cancel)}
               </Button>
               <Button type="submit" className="flex-1" disabled={recordMutation.isPending}>
-                {recordMutation.isPending ? 'Saving...' : 'Record'}
+                {recordMutation.isPending ? t(($) => $.custodyReturnPage.saving) : t(($) => $.custodyReturnPage.record)}
               </Button>
             </div>
           </form>

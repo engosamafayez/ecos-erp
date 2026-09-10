@@ -21,6 +21,7 @@ import type {
   PoolStatus,
   ReservationStatus,
 } from '../types/operations';
+import { SOURCE } from '../lib/operations-labels';
 
 const POOL: Record<PoolStatus, { labelKey: LogisticsLabel; className: string }> = {
   draft: {
@@ -144,15 +145,20 @@ export function SeverityIcon({ severity }: { severity: ExceptionSeverity }) {
  * Which module owns the fact behind an exception.
  *
  * Always shown, because Operations cannot clear another module's fact — an
- * operator needs to know where the fix actually lives before trying.
+ * operator needs to know where the fix actually lives before trying. The
+ * label is always derived from the `source` enum through the translated map
+ * above — never a caller-supplied string, since every call site historically
+ * passed the backend's own raw English source value here (leaking English
+ * into an otherwise-Arabic UI).
  */
-export function SourceBadge({ source, label }: { source: ExceptionSource; label?: string }) {
+export function SourceBadge({ source }: { source: ExceptionSource }) {
+  const { t } = useTranslation('logistics');
   const isOurs = source === 'operations';
 
   return (
     <Badge variant="outline" className={`gap-1 text-[10px] ${isOurs ? '' : 'border-amber-500'}`}>
       {!isOurs && <Lock className="size-2.5" />}
-      {label ?? source}
+      {t(SOURCE[source])}
     </Badge>
   );
 }

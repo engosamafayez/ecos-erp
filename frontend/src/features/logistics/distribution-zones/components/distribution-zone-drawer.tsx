@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, Loader2, Network } from 'lucide-react';
 import axios from 'axios';
 
@@ -48,13 +49,15 @@ function ColorPicker({
   onChange: (hex: string | null) => void;
   disabled?: boolean;
 }) {
+  const { t } = useTranslation('logistics');
+
   return (
     <div className="flex flex-wrap items-center gap-2">
       <button
         type="button"
         onClick={() => onChange(null)}
         disabled={disabled}
-        title="No color"
+        title={t(($) => $.distributionZones.drawer.colorPicker.noColor)}
         className={`h-6 w-6 rounded-full border-2 bg-background transition-all disabled:pointer-events-none
           ${value === null ? 'border-foreground ring-2 ring-foreground ring-offset-1' : 'border-border hover:border-muted-foreground'}`}
       />
@@ -76,7 +79,7 @@ function ColorPicker({
         <div
           style={{ backgroundColor: value }}
           className="h-6 w-6 rounded-full border-2 border-foreground ring-2 ring-foreground ring-offset-1"
-          title={`Custom: ${value}`}
+          title={t(($) => $.distributionZones.drawer.colorPicker.custom, { value })}
         />
       )}
     </div>
@@ -88,6 +91,8 @@ function ColorPicker({
 type StepHeaderProps = { step: 1 | 2 };
 
 function WizardStepHeader({ step }: StepHeaderProps) {
+  const { t } = useTranslation('logistics');
+
   return (
     <div className="mb-5 flex shrink-0 items-center gap-0">
       {/* Step 1 */}
@@ -108,7 +113,7 @@ function WizardStepHeader({ step }: StepHeaderProps) {
             step === 1 ? 'text-foreground' : 'text-muted-foreground',
           )}
         >
-          General Information
+          {t(($) => $.distributionZones.drawer.wizard.step1)}
         </span>
       </div>
 
@@ -133,7 +138,7 @@ function WizardStepHeader({ step }: StepHeaderProps) {
             step === 2 ? 'text-foreground' : 'text-muted-foreground',
           )}
         >
-          Area Assignment
+          {t(($) => $.distributionZones.drawer.wizard.step2)}
         </span>
         {/* Selected count badge shown when areas are picked */}
         {step === 1 && false && null /* placeholder, shown via Badge below */}
@@ -197,6 +202,7 @@ const EMPTY: FormState = {
 // ── Drawer ────────────────────────────────────────────────────────────────────
 
 export function DistributionZoneDrawer({ open, onOpenChange, editZone }: Props) {
+  const { t } = useTranslation('logistics');
   const { toast } = useToast();
   const isEdit    = editZone != null;
 
@@ -274,14 +280,14 @@ export function DistributionZoneDrawer({ open, onOpenChange, editZone }: Props) 
 
   function validateStep1(): boolean {
     const e: Record<string, string[]> = {};
-    if (!form.name_ar.trim()) e.name_ar = ['Arabic Name is required.'];
+    if (!form.name_ar.trim()) e.name_ar = [t(($) => $.distributionZones.drawer.nameArRequired)];
     setErrors(e);
     return Object.keys(e).length === 0;
   }
 
   function validateStep2(): boolean {
     const e: Record<string, string[]> = {};
-    if (form.area_ids.length === 0) e.area_ids = ['At least one area must be assigned.'];
+    if (form.area_ids.length === 0) e.area_ids = [t(($) => $.distributionZones.drawer.areaRequired)];
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -308,27 +314,31 @@ export function DistributionZoneDrawer({ open, onOpenChange, editZone }: Props) 
     try {
       if (isEdit) {
         await update.mutateAsync({ id: editZone.id, payload });
-        toast({ title: 'Zone updated successfully.' });
+        toast({ title: t(($) => $.distributionZones.toast.updated) });
       } else {
         await create.mutateAsync(payload);
-        toast({ title: 'Distribution zone created.' });
+        toast({ title: t(($) => $.distributionZones.toast.created) });
       }
       onOpenChange(false);
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const data = err.response?.data as { message?: string; errors?: Record<string, string[]> };
         if (data?.errors) setErrors(data.errors);
-        setServerError(data?.message ?? 'An error occurred. Please try again.');
+        setServerError(data?.message ?? t(($) => $.distributionZones.toast.saveError));
       } else {
-        setServerError('An unexpected error occurred.');
+        setServerError(t(($) => $.distributionZones.toast.unexpectedError));
       }
     }
   }
 
-  const title       = isEdit ? `Edit ${editZone?.name_ar ?? 'Zone'}` : 'New Distribution Zone';
+  const title       = isEdit
+    ? t(($) => $.distributionZones.drawer.editTitle, {
+        name: editZone?.name_ar ?? t(($) => $.distributionZones.drawer.zoneFallback),
+      })
+    : t(($) => $.distributionZones.drawer.newTitle);
   const description = isEdit
-    ? 'Update zone details and area assignments.'
-    : 'Create a distribution zone and assign delivery areas to it.';
+    ? t(($) => $.distributionZones.drawer.editDescription)
+    : t(($) => $.distributionZones.drawer.newDescription);
 
   const showGeneralSkeleton = isEdit && loadingDetail;
 
@@ -350,14 +360,14 @@ export function DistributionZoneDrawer({ open, onOpenChange, editZone }: Props) 
           {step === 1 ? (
             <>
               <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
-                Cancel
+                {t(($) => $.distributionZones.drawer.cancel)}
               </Button>
               <Button
                 onClick={handleNext}
                 disabled={isPending || showGeneralSkeleton}
               >
-                Next
-                <ChevronRight className="ml-1 size-4" />
+                {t(($) => $.distributionZones.drawer.next)}
+                <ChevronRight className="ms-1 size-4 rtl:rotate-180" />
               </Button>
             </>
           ) : (
@@ -367,12 +377,12 @@ export function DistributionZoneDrawer({ open, onOpenChange, editZone }: Props) 
                 onClick={() => setStep(1)}
                 disabled={isPending}
               >
-                <ChevronLeft className="mr-1 size-4" />
-                Back
+                <ChevronLeft className="me-1 size-4 rtl:rotate-180" />
+                {t(($) => $.distributionZones.drawer.back)}
               </Button>
               <Button onClick={handleSubmit} disabled={isPending || loadingAreas}>
-                {isPending && <Loader2 className="mr-2 size-4 animate-spin" />}
-                {isEdit ? 'Save Changes' : 'Create Zone'}
+                {isPending && <Loader2 className="me-2 size-4 animate-spin" />}
+                {isEdit ? t(($) => $.distributionZones.drawer.saveChanges) : t(($) => $.distributionZones.drawer.createZone)}
               </Button>
             </>
           )}
@@ -400,12 +410,12 @@ export function DistributionZoneDrawer({ open, onOpenChange, editZone }: Props) 
                 {/* Zone Code (read-only) + Active toggle */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label>Zone Code</Label>
+                    <Label>{t(($) => $.distributionZones.drawer.zoneCode)}</Label>
                     <div className="flex h-9 items-center rounded-md border bg-muted px-3 font-mono text-sm tracking-widest text-muted-foreground">
                       {zoneCodeDisplay}
                     </div>
                     {!isEdit && (
-                      <p className="text-xs text-muted-foreground">Automatically generated.</p>
+                      <p className="text-xs text-muted-foreground">{t(($) => $.distributionZones.drawer.autoGenerated)}</p>
                     )}
                   </div>
 
@@ -418,7 +428,7 @@ export function DistributionZoneDrawer({ open, onOpenChange, editZone }: Props) 
                         disabled={isPending}
                       />
                       <Label htmlFor="dz-active" className="cursor-pointer">
-                        {form.is_active ? 'Active' : 'Inactive'}
+                        {form.is_active ? t(($) => $.distributionZones.drawer.active) : t(($) => $.distributionZones.drawer.inactive)}
                       </Label>
                     </div>
                   </div>
@@ -427,13 +437,13 @@ export function DistributionZoneDrawer({ open, onOpenChange, editZone }: Props) 
                 {/* Arabic Name */}
                 <div className="space-y-1.5">
                   <Label htmlFor="dz-name-ar">
-                    Arabic Name <span className="text-destructive">*</span>
+                    {t(($) => $.distributionZones.drawer.nameAr)} <span className="text-destructive">*</span>
                   </Label>
                   <Input
                     id="dz-name-ar"
                     value={form.name_ar}
                     onChange={(e) => set('name_ar', e.target.value)}
-                    placeholder="Arabic zone name"
+                    placeholder={t(($) => $.distributionZones.drawer.nameArPlaceholder)}
                     dir="rtl"
                     maxLength={100}
                     disabled={isPending}
@@ -445,12 +455,12 @@ export function DistributionZoneDrawer({ open, onOpenChange, editZone }: Props) 
 
                 {/* English Name */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="dz-name-en">English Name</Label>
+                  <Label htmlFor="dz-name-en">{t(($) => $.distributionZones.drawer.nameEn)}</Label>
                   <Input
                     id="dz-name-en"
                     value={form.name_en}
                     onChange={(e) => set('name_en', e.target.value)}
-                    placeholder="Zone name in English"
+                    placeholder={t(($) => $.distributionZones.drawer.nameEnPlaceholder)}
                     maxLength={100}
                     disabled={isPending}
                   />
@@ -458,12 +468,12 @@ export function DistributionZoneDrawer({ open, onOpenChange, editZone }: Props) 
 
                 {/* Description */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="dz-desc">Description</Label>
+                  <Label htmlFor="dz-desc">{t(($) => $.distributionZones.drawer.description)}</Label>
                   <Textarea
                     id="dz-desc"
                     value={form.description}
                     onChange={(e) => set('description', e.target.value)}
-                    placeholder="Optional notes about this distribution zone…"
+                    placeholder={t(($) => $.distributionZones.drawer.descriptionPlaceholder)}
                     rows={3}
                     maxLength={1000}
                     disabled={isPending}
@@ -473,9 +483,9 @@ export function DistributionZoneDrawer({ open, onOpenChange, editZone }: Props) 
                 {/* Color */}
                 <div className="space-y-1.5">
                   <Label>
-                    Zone Color
-                    <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-                      (optional)
+                    {t(($) => $.distributionZones.drawer.zoneColor)}
+                    <span className="ms-1.5 text-xs font-normal text-muted-foreground">
+                      {t(($) => $.distributionZones.drawer.optional)}
                     </span>
                   </Label>
                   <ColorPicker
@@ -485,7 +495,8 @@ export function DistributionZoneDrawer({ open, onOpenChange, editZone }: Props) 
                   />
                   {form.color && (
                     <p className="text-xs text-muted-foreground">
-                      Selected: <span className="font-mono">{form.color}</span>
+                      {t(($) => $.distributionZones.drawer.selectedColorLabel)}{' '}
+                      <span className="font-mono">{form.color}</span>
                     </p>
                   )}
                 </div>
@@ -507,7 +518,7 @@ export function DistributionZoneDrawer({ open, onOpenChange, editZone }: Props) 
               <div className="mb-3 flex shrink-0 items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-400">
                 <Network className="mt-0.5 size-3.5 shrink-0" />
                 <span>
-                  No areas assigned yet. Use the selector below to assign city areas to this zone.
+                  {t(($) => $.distributionZones.drawer.noAreasAssigned)}
                 </span>
               </div>
             )}
@@ -515,21 +526,17 @@ export function DistributionZoneDrawer({ open, onOpenChange, editZone }: Props) 
             {form.area_ids.length > 0 && (
               <div className="mb-3 flex shrink-0 items-center gap-2">
                 <Badge variant="secondary">
-                  {form.area_ids.length} area{form.area_ids.length !== 1 ? 's' : ''} selected
+                  {t(($) => $.distributionZones.drawer.areasSelected, { count: form.area_ids.length })}
                 </Badge>
                 <p className="text-xs text-muted-foreground">
-                  Areas with an{' '}
-                  <span className="font-medium text-amber-600">amber badge</span> belong to another
-                  zone — clicking shows a confirmation dialog before moving.
+                  {t(($) => $.distributionZones.drawer.amberHintSelected)}
                 </p>
               </div>
             )}
 
             {!form.area_ids.length && !loadingAreas && (
               <p className="mb-3 shrink-0 text-xs text-muted-foreground">
-                Areas with an{' '}
-                <span className="font-medium text-amber-600">amber badge</span> already belong to
-                another zone — clicking them shows a confirmation dialog before moving.
+                {t(($) => $.distributionZones.drawer.amberHintEmpty)}
               </p>
             )}
 
@@ -537,7 +544,7 @@ export function DistributionZoneDrawer({ open, onOpenChange, editZone }: Props) 
               groups={areasData?.data ?? []}
               assignedIds={form.area_ids}
               currentZoneId={isEdit ? editZone?.id : null}
-              currentZoneName={form.name_ar || 'this zone'}
+              currentZoneName={form.name_ar || t(($) => $.distributionZones.drawer.thisZoneFallback)}
               isLoading={loadingAreas}
               disabled={isPending}
               totalAreasCount={totalAreasCount}

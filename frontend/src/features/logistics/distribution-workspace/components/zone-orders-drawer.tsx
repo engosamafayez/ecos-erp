@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useOrganizationContext } from '@/features/organization/context/organization-context';
+import { useOrderStatusLabels } from '@/features/orders/hooks/use-order-labels';
+import type { OrderStatus } from '@/features/orders/types/order';
 
 import {
   useDistributionOrders,
@@ -48,6 +50,7 @@ export function ZoneOrdersDrawer({ window, zone, slots, open, onOpenChange }: Pr
   // warehouse-scoped screen.
   const { activeWarehouseId } = useOrganizationContext();
   const { t } = useTranslation('logistics');
+  const { statusLabel } = useOrderStatusLabels();
 
   const { data: orders, isLoading, isError } = useDistributionOrders(
     window.id,
@@ -113,7 +116,9 @@ export function ZoneOrdersDrawer({ window, zone, slots, open, onOpenChange }: Pr
                         >
                           {order.order_number}
                         </button>
-                        <Badge variant="outline">{order.order_status}</Badge>
+                        <Badge variant="outline">
+                          {statusLabel[order.order_status as OrderStatus] ?? order.order_status}
+                        </Badge>
                         {order.assignment_source === 'manual_late' ? (
                           <Badge variant="secondary">
                             {t(($) => $.distributionWorkspace.zoneOrders.late)}
@@ -165,7 +170,7 @@ export function ZoneOrdersDrawer({ window, zone, slots, open, onOpenChange }: Pr
                             <button
                               key={s.slot_id}
                               type="button"
-                              className="flex w-full items-center justify-between rounded-md border px-3 py-2 text-left text-sm hover:bg-accent disabled:opacity-50"
+                              className="flex w-full items-center justify-between rounded-md border px-3 py-2 text-start text-sm hover:bg-accent disabled:opacity-50"
                               disabled={move.isPending}
                               data-testid={`move-target-${s.code}`}
                               onClick={() =>

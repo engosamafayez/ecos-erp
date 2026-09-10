@@ -30,8 +30,14 @@ export const DRIVER_COLLECTED_PAYMENT_TYPES = PAYMENT_TYPES.filter(
   (v): v is Exclude<PaymentType, 'already_paid'> => v !== 'already_paid',
 );
 
-/** Payment rows carry their own review state, separate from the settlement's. */
-export type PaymentStatus = string;
+/**
+ * Payment rows carry their own review state, separate from the settlement's.
+ * Mirrors the canonical backend `PaymentCollection::STATUS_*` constants
+ * (recorded → verified/rejected by an ops reviewer).
+ */
+export const PAYMENT_STATUSES = ['recorded', 'verified', 'rejected'] as const;
+
+export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
 export type SettlementOption = {
   value: string;

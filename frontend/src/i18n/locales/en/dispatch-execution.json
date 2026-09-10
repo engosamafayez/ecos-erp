@@ -19,6 +19,7 @@
     "loadError": "Groups could not be loaded.",
     "overCapacity": "Over capacity",
     "nearCapacity": "Near capacity",
+    "statusDraft": "Draft",
     "columns": {
       "code": "Group",
       "name": "Name",

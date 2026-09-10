@@ -20,6 +20,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useFormatter } from '@/hooks/use-formatter';
 import { useOrganizationContext } from '@/features/organization/context/organization-context';
 import { useWarehousesQuery } from '@/features/warehouses/hooks/use-warehouses';
+import { useOrderStatusLabels } from '@/features/orders/hooks/use-order-labels';
+import type { OrderStatus } from '@/features/orders/types/order';
 
 import { DistributionGroupsPanel } from '../components/distribution-groups-panel';
 import { DistributionExceptionsPanel } from '../components/distribution-exceptions-panel';
@@ -83,6 +85,15 @@ const UNASSIGNED_REASON_LABEL: Record<UnassignedReason, LogisticsLabel> = {
 };
 
 // ── Payment method ───────────────────────────────────────────────────────────
+
+/** DistributionWindowStatus → its label. The backend's own `status_label` is
+ * plain English regardless of locale, so it is a fallback only — never the
+ * primary source — for a status this map has not learned yet. */
+const WINDOW_STATUS_LABEL: Record<string, LogisticsLabel> = {
+  open: ($) => $.distributionWorkspace.windowStatus.open,
+  cutoff: ($) => $.distributionWorkspace.windowStatus.cutoff,
+  closed: ($) => $.distributionWorkspace.windowStatus.closed,
+};
 
 const PAYMENT_METHOD_LABEL: Record<string, LogisticsLabel> = {
   cod: ($) => $.distributionWorkspace.payment.method.cod,
@@ -278,6 +289,7 @@ export function DistributionWorkspacePage() {
 
   const { activeWarehouseId } = useOrganizationContext();
   const { t } = useTranslation('logistics');
+  const { statusLabel } = useOrderStatusLabels();
 
   const { data: warehouseData } = useWarehousesQuery({ per_page: 100 });
   const warehouseNames = useMemo(
@@ -386,7 +398,9 @@ export function DistributionWorkspacePage() {
         cell: (o) => (
           <div className="flex flex-col">
             <span className="font-medium">{o.order_number}</span>
-            <span className="text-xs text-muted-foreground">{o.order_status}</span>
+            <span className="text-xs text-muted-foreground">
+              {statusLabel[o.order_status as OrderStatus] ?? o.order_status}
+            </span>
           </div>
         ),
       },
@@ -477,7 +491,7 @@ export function DistributionWorkspacePage() {
         cell: (o) => o.warehouse_name ?? '—',
       },
     ],
-    [money, t],
+    [money, t, statusLabel],
   );
 
   const rowId = (o: DistributionOrder) => o.assignment_id;
@@ -587,7 +601,9 @@ export function DistributionWorkspacePage() {
         badge={
           currentWindow ? (
             <Badge variant={currentWindow.status === 'open' ? 'default' : 'secondary'}>
-              {currentWindow.status_label}
+              {WINDOW_STATUS_LABEL[currentWindow.status]
+                ? t(WINDOW_STATUS_LABEL[currentWindow.status])
+                : currentWindow.status_label}
             </Badge>
           ) : undefined
         }

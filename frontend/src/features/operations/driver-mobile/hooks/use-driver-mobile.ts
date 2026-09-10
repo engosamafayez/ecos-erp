@@ -66,6 +66,7 @@ export function useDriverStopDetail(tripId: string, stopId: string) {
 export function useStartTrip(tripId: string) {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation('driver-mobile');
 
   return useMutation({
     mutationFn: ({ lat, lng, odoStart }: { lat: number; lng: number; odoStart?: number }) =>
@@ -73,10 +74,10 @@ export function useStartTrip(tripId: string) {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: K.trip(tripId) });
       void qc.invalidateQueries({ queryKey: K.stops(tripId) });
-      toast({ title: 'Trip started', description: 'Delivery stops are now active.' });
+      toast({ title: t(($) => $.dashboard.toasts.started), description: t(($) => $.dashboard.toasts.startedDescription) });
     },
     onError: (err: Error) => {
-      toast({ title: 'Failed to start trip', description: err.message, variant: 'destructive' });
+      toast({ title: t(($) => $.dashboard.startFailed), description: err.message, variant: 'destructive' });
     },
   });
 }
@@ -86,6 +87,7 @@ export function useStartTrip(tripId: string) {
 export function useFinishTrip(tripId: string) {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation('driver-mobile');
 
   return useMutation({
     mutationFn: ({ lat, lng, odoEnd }: { lat: number; lng: number; odoEnd?: number }) =>
@@ -93,10 +95,10 @@ export function useFinishTrip(tripId: string) {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: K.trip(tripId) });
       void qc.invalidateQueries({ queryKey: [K.trips] });
-      toast({ title: 'Trip finished', description: 'Proceed to settlement.' });
+      toast({ title: t(($) => $.dashboard.toasts.finished), description: t(($) => $.dashboard.toasts.finishedDescription) });
     },
     onError: (err: Error) => {
-      toast({ title: 'Cannot finish trip', description: err.message, variant: 'destructive' });
+      toast({ title: t(($) => $.dashboard.toasts.finishFailed), description: err.message, variant: 'destructive' });
     },
   });
 }
@@ -123,18 +125,21 @@ export function useSubmitStopDelivery(tripId: string, stopId: string) {
 export function useSubmitDeliveryAction(stopId: string) {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation('driver-mobile');
 
   return useMutation({
     mutationFn: (payload: DeliveryActionPayload) => svc.submitDeliveryAction(stopId, payload),
     onSuccess: (_data, variables) => {
       void qc.invalidateQueries({ queryKey: [K.trips] });
       toast({
-        title: 'Delivery recorded',
-        description: `Action: ${variables.action_type}`,
+        title: t(($) => $.stop.toasts.actionRecorded),
+        description: t(($) => $.stop.toasts.actionRecordedDescription, {
+          action: t(($) => $.actions[variables.action_type as keyof typeof $.actions]),
+        }),
       });
     },
     onError: (err: Error) => {
-      toast({ title: 'Failed to record delivery', description: err.message, variant: 'destructive' });
+      toast({ title: t(($) => $.stop.toasts.actionFailed), description: err.message, variant: 'destructive' });
     },
   });
 }
@@ -174,15 +179,16 @@ export function useTripReturns(tripId: string) {
 export function useAddReturn(tripId: string) {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation('driver-mobile');
 
   return useMutation({
     mutationFn: (payload: AddReturnPayload) => svc.addReturn(tripId, payload),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: K.returns(tripId) });
-      toast({ title: 'Return recorded' });
+      toast({ title: t(($) => $.returns.toasts.recorded) });
     },
     onError: (err: Error) => {
-      toast({ title: 'Failed to record return', description: err.message, variant: 'destructive' });
+      toast({ title: t(($) => $.returns.toasts.failed), description: err.message, variant: 'destructive' });
     },
   });
 }
@@ -202,16 +208,17 @@ export function useTripSettlement(tripId: string) {
 export function useSubmitSettlement(tripId: string) {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation('driver-mobile');
 
   return useMutation({
     mutationFn: ({ cashSubmitted, notes }: { cashSubmitted: number; notes?: string }) =>
       svc.submitSettlement(tripId, cashSubmitted, notes),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: K.settlement(tripId) });
-      toast({ title: 'Settlement submitted' });
+      toast({ title: t(($) => $.settlementPage.toasts.submitted) });
     },
     onError: (err: Error) => {
-      toast({ title: 'Settlement failed', description: err.message, variant: 'destructive' });
+      toast({ title: t(($) => $.settlementPage.toasts.submitFailed), description: err.message, variant: 'destructive' });
     },
   });
 }
@@ -229,15 +236,16 @@ export function useCustodyReturns(tripId: string) {
 export function useRecordCustodyReturn(tripId: string) {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation('driver-mobile');
 
   return useMutation({
     mutationFn: (payload: RecordCustodyReturnPayload) => svc.recordCustodyReturn(tripId, payload),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: K.custody(tripId) });
-      toast({ title: 'Custody return recorded' });
+      toast({ title: t(($) => $.custodyReturnPage.toasts.recorded) });
     },
     onError: (err: Error) => {
-      toast({ title: 'Failed', description: err.message, variant: 'destructive' });
+      toast({ title: t(($) => $.custodyReturnPage.toasts.failed), description: err.message, variant: 'destructive' });
     },
   });
 }
@@ -247,16 +255,17 @@ export function useRecordCustodyReturn(tripId: string) {
 export function useCloseTrip(tripId: string) {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation('driver-mobile');
 
   return useMutation({
     mutationFn: () => svc.closeTrip(tripId),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: K.trip(tripId) });
       void qc.invalidateQueries({ queryKey: [K.trips] });
-      toast({ title: 'Trip closed' });
+      toast({ title: t(($) => $.dashboard.closed.title) });
     },
     onError: (err: Error) => {
-      toast({ title: 'Cannot close trip', description: err.message, variant: 'destructive' });
+      toast({ title: t(($) => $.dashboard.toasts.closeFailed), description: err.message, variant: 'destructive' });
     },
   });
 }
@@ -276,16 +285,17 @@ export function useTripTimeline(tripId: string) {
 export function useCreateException(stopId: string) {
   const qc = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation('driver-mobile');
 
   return useMutation({
     mutationFn: (payload: { exception_type: string; description: string; photos?: string[] }) =>
       svc.createException(stopId, payload),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: [K.trips] });
-      toast({ title: 'Exception recorded' });
+      toast({ title: t(($) => $.exceptionForm.toasts.recorded) });
     },
     onError: (err: Error) => {
-      toast({ title: 'Failed', description: err.message, variant: 'destructive' });
+      toast({ title: t(($) => $.exceptionForm.toasts.failed), description: err.message, variant: 'destructive' });
     },
   });
 }

@@ -178,6 +178,54 @@
       "colVariance": "الفرق",
       "colRecordReturn": "تسجيل الإرجاع",
       "save": "حفظ"
+    },
+    "sessionStatus": {
+      "draft": "مسودة",
+      "ready": "جاهزة",
+      "open": "مفتوحة",
+      "loading": "قيد التحميل",
+      "loadingComplete": "اكتمل التحميل",
+      "allocating": "قيد التخصيص",
+      "allocated": "تم التخصيص",
+      "dispatching": "قيد الإرسال",
+      "dispatched": "تم الإرسال",
+      "reconciling": "قيد التسوية",
+      "closed": "مغلقة",
+      "cancelled": "ملغاة"
+    },
+    "assignmentStatus": {
+      "pending": "قيد الانتظار",
+      "loading": "قيد التحميل",
+      "loadingComplete": "اكتمل التحميل",
+      "dispatched": "تم الإرسال",
+      "returning": "قيد الإرجاع",
+      "reconciling": "قيد التسوية",
+      "reconciled": "تمت التسوية",
+      "cancelled": "ملغى"
+    },
+    "allocationStatus": {
+      "allocated": "مخصَّص",
+      "confirmed": "مؤكَّد",
+      "inDelivery": "قيد التسليم",
+      "delivered": "تم التسليم",
+      "partialDelivery": "تسليم جزئي",
+      "failed": "فشل",
+      "cancelled": "ملغى"
+    },
+    "tripStatus": {
+      "planning": "قيد التخطيط",
+      "loading": "قيد التحميل",
+      "loadingCompleted": "اكتمل التحميل",
+      "driverAccepted": "قبِلها السائق",
+      "dispatchBlocked": "الإرسال محظور",
+      "readyForDispatch": "جاهزة للإرسال",
+      "dispatched": "تم الإرسال",
+      "outForDelivery": "قيد التوصيل",
+      "inProgress": "قيد التنفيذ",
+      "completed": "مكتملة",
+      "settlementPending": "بانتظار التسوية",
+      "closed": "مغلقة",
+      "cancelled": "ملغاة"
     }
   },
   "wave": {
@@ -1099,7 +1147,7 @@
         "departureTime": "وقت المغادرة",
         "odometer": "عداد المسافات",
         "fuelLevel": "مستوى الوقود",
-        "gps": "GPS",
+        "gps": "تتبع الموقع",
         "gpsActive": "نشط",
         "gpsNotStarted": "لم يبدأ"
       }

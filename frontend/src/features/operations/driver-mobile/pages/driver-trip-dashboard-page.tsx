@@ -173,7 +173,7 @@ export function DriverTripDashboardPage() {
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background border-b px-4 py-3 flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={() => navigate(ROUTES.driverHome)}>
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
         </Button>
         <div className="flex-1 min-w-0">
           <h1 className="font-semibold text-base truncate">{trip.trip_number}</h1>
@@ -402,7 +402,7 @@ function ReadinessRow({ icon, label, value, done }: { icon: ReactNode; label: st
     <div className="flex items-center gap-2 text-sm">
       {icon}
       <span className="text-muted-foreground">{label}</span>
-      <span className="ml-auto flex items-center gap-1.5 font-medium tabular-nums">
+      <span className="ms-auto flex items-center gap-1.5 font-medium tabular-nums">
         {value}
         {done ? (
           <CheckCircle2 className="h-4 w-4 text-green-600" aria-hidden="true" />

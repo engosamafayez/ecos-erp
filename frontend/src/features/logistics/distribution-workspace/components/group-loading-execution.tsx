@@ -34,6 +34,27 @@ import type { GroupLoadingContext, GroupRequiredProduct, SlotSummary } from '../
  * different things: prepared onto the group's pallet, versus physically on the
  * vehicle.
  */
+/**
+ * The Trip's vehicle-loading assignment status (`VehicleAssignmentStatus`, from
+ * Operations\Loading — pending/loading/loading_complete/dispatched/returning/
+ * reconciling/reconciled/cancelled). A DISTINCT enum from the Group's own Trip
+ * status (`TripStatus`, distributionWorkspace.trip) — never assumed to share
+ * values or phrasing with it, even where an English word happens to coincide.
+ */
+const ASSIGNMENT_STATUS_LABEL: Record<
+  string,
+  (($: typeof import('@/i18n/locales/en/logistics.json')) => string)
+> = {
+  pending: ($) => $.distributionWorkspace.loadingExecution.assignmentStatus.pending,
+  loading: ($) => $.distributionWorkspace.loadingExecution.assignmentStatus.loading,
+  loading_complete: ($) => $.distributionWorkspace.loadingExecution.assignmentStatus.loading_complete,
+  dispatched: ($) => $.distributionWorkspace.loadingExecution.assignmentStatus.dispatched,
+  returning: ($) => $.distributionWorkspace.loadingExecution.assignmentStatus.returning,
+  reconciling: ($) => $.distributionWorkspace.loadingExecution.assignmentStatus.reconciling,
+  reconciled: ($) => $.distributionWorkspace.loadingExecution.assignmentStatus.reconciled,
+  cancelled: ($) => $.distributionWorkspace.loadingExecution.assignmentStatus.cancelled,
+};
+
 export function GroupLoadingExecution({
   windowId,
   group,
@@ -206,7 +227,13 @@ export function GroupLoadingExecution({
                 {t(($) => $.distributionWorkspace.loadingExecution.status)}
               </dt>
               <dd>
-                <Badge variant="secondary">{context.loading.assignment_status ?? '—'}</Badge>
+                <Badge variant="secondary">
+                  {context.loading.assignment_status
+                    ? ASSIGNMENT_STATUS_LABEL[context.loading.assignment_status]
+                      ? t(ASSIGNMENT_STATUS_LABEL[context.loading.assignment_status])
+                      : context.loading.assignment_status
+                    : '—'}
+                </Badge>
               </dd>
             </div>
           </dl>

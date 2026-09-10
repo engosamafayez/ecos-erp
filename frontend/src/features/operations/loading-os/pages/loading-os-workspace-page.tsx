@@ -19,8 +19,9 @@ import {
 
 import { useOrganizationContext } from '@/features/organization/context/organization-context';
 
-import { LoadingGroupDetail, LoadingGroupList, useBucketLabel } from '../components/loading-groups';
+import { LoadingGroupDetail, LoadingGroupList } from '../components/loading-groups';
 import { LoadingSessionOverviewPanel } from '../components/loading-session-overview';
+import { useBucketLabel, useLoadingSessionStatusLabel } from '../lib/loading-labels';
 import {
   useAllocations,
   useLoadingGroups,
@@ -36,6 +37,67 @@ import {
 import type { AllocationRecord, LoadingWorkspaceBucket, ReconciliationLine } from '../types/loading-os';
 
 const EPS = 0.00005;
+
+/**
+ * One label per vehicle assignment status (canonical `vehicle_assignments.status`,
+ * `VehicleAssignmentStatus` backend enum) — same anti-pattern fix as
+ * `useLoadingSessionStatusLabel` (lib/loading-labels.ts), never the raw value.
+ */
+function useVehicleAssignmentStatusLabel(): (status: string) => string {
+  const { t } = useTranslation('operations');
+
+  return (status) => {
+    switch (status) {
+      case 'pending':
+        return t(($) => $.loadingOs.assignmentStatus.pending);
+      case 'loading':
+        return t(($) => $.loadingOs.assignmentStatus.loading);
+      case 'loading_complete':
+        return t(($) => $.loadingOs.assignmentStatus.loadingComplete);
+      case 'dispatched':
+        return t(($) => $.loadingOs.assignmentStatus.dispatched);
+      case 'returning':
+        return t(($) => $.loadingOs.assignmentStatus.returning);
+      case 'reconciling':
+        return t(($) => $.loadingOs.assignmentStatus.reconciling);
+      case 'reconciled':
+        return t(($) => $.loadingOs.assignmentStatus.reconciled);
+      case 'cancelled':
+        return t(($) => $.loadingOs.assignmentStatus.cancelled);
+      default:
+        return status;
+    }
+  };
+}
+
+/**
+ * One label per allocation record status (`AllocationRecordStatus` backend enum) — fixes
+ * the same raw-status leak for the per-order allocation table below.
+ */
+function useAllocationRecordStatusLabel(): (status: string) => string {
+  const { t } = useTranslation('operations');
+
+  return (status) => {
+    switch (status) {
+      case 'allocated':
+        return t(($) => $.loadingOs.allocationStatus.allocated);
+      case 'confirmed':
+        return t(($) => $.loadingOs.allocationStatus.confirmed);
+      case 'in_delivery':
+        return t(($) => $.loadingOs.allocationStatus.inDelivery);
+      case 'delivered':
+        return t(($) => $.loadingOs.allocationStatus.delivered);
+      case 'partial_delivery':
+        return t(($) => $.loadingOs.allocationStatus.partialDelivery);
+      case 'failed':
+        return t(($) => $.loadingOs.allocationStatus.failed);
+      case 'cancelled':
+        return t(($) => $.loadingOs.allocationStatus.cancelled);
+      default:
+        return status;
+    }
+  };
+}
 
 /**
  * The workspace's own top-level tabs (TASK-...-WORKSPACE-READ-MODEL-004).
@@ -69,6 +131,8 @@ export function LoadingOsWorkspacePage() {
   const { t } = useTranslation('operations');
   const navLabel = useNavLabel();
   const { activeWarehouseId } = useOrganizationContext();
+  const sessionStatusLabel = useLoadingSessionStatusLabel();
+  const assignmentStatusLabel = useVehicleAssignmentStatusLabel();
 
   const [slotId, setSlotId] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -215,12 +279,12 @@ export function LoadingOsWorkspacePage() {
                     setSessionId(s.id);
                     setAssignmentId(null);
                   }}
-                  className={`w-full rounded-md border px-3 py-2 text-left text-sm ${
+                  className={`w-full rounded-md border px-3 py-2 text-start text-sm ${
                     sessionId === s.id ? 'border-primary bg-accent' : 'border-border'
                   }`}
                 >
                   <span className="font-medium">{s.session_number}</span>
-                  <span className="text-muted-foreground ms-2 text-xs">{s.status}</span>
+                  <span className="text-muted-foreground ms-2 text-xs">{sessionStatusLabel(s.status)}</span>
                 </button>
               ))}
             </CardContent>
@@ -245,12 +309,12 @@ export function LoadingOsWorkspacePage() {
                     key={a.id}
                     type="button"
                     onClick={() => setAssignmentId(a.id)}
-                    className={`w-full rounded-md border px-3 py-2 text-left text-sm ${
+                    className={`w-full rounded-md border px-3 py-2 text-start text-sm ${
                       assignmentId === a.id ? 'border-primary bg-accent' : 'border-border'
                     }`}
                   >
                     <span className="font-medium">{a.vehicle_registration_snapshot}</span>
-                    <span className="text-muted-foreground ml-2 text-xs">{a.status}</span>
+                    <span className="text-muted-foreground ms-2 text-xs">{assignmentStatusLabel(a.status)}</span>
                   </button>
                 ))}
               </CardContent>
@@ -302,13 +366,13 @@ function AssignmentWorkspace({
               {t($ => $.loadingOs.inventory.title)} — {inventory.data.summary.assignment_number}
             </CardTitle>
             <CardDescription>
-              <span className="mr-3">
+              <span className="me-3">
                 {t($ => $.loadingOs.labels.loaded)}: {inventory.data.summary.total_quantity_loaded}
               </span>
-              <span className="mr-3">
+              <span className="me-3">
                 {t($ => $.loadingOs.labels.delivered)}: {inventory.data.summary.total_quantity_delivered}
               </span>
-              <span className="mr-3">
+              <span className="me-3">
                 {t($ => $.loadingOs.labels.returned)}: {inventory.data.summary.total_quantity_returned}
               </span>
               <span>
@@ -337,11 +401,11 @@ function AssignmentWorkspace({
                 <TableRow>
                   <TableHead>{t($ => $.loadingOs.allocations.colOrder)}</TableHead>
                   <TableHead>{t($ => $.loadingOs.allocations.colSku)}</TableHead>
-                  <TableHead className="text-right">{t($ => $.loadingOs.allocations.colAllocated)}</TableHead>
-                  <TableHead className="text-right">{t($ => $.loadingOs.allocations.colDelivered)}</TableHead>
-                  <TableHead className="text-right">{t($ => $.loadingOs.allocations.colRemaining)}</TableHead>
+                  <TableHead className="text-end">{t($ => $.loadingOs.allocations.colAllocated)}</TableHead>
+                  <TableHead className="text-end">{t($ => $.loadingOs.allocations.colDelivered)}</TableHead>
+                  <TableHead className="text-end">{t($ => $.loadingOs.allocations.colRemaining)}</TableHead>
                   <TableHead>{t($ => $.loadingOs.allocations.colStatus)}</TableHead>
-                  <TableHead className="text-right">{t($ => $.loadingOs.allocations.colRecordDelivery)}</TableHead>
+                  <TableHead className="text-end">{t($ => $.loadingOs.allocations.colRecordDelivery)}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -374,6 +438,7 @@ function AllocationRow({
   record: AllocationRecord;
 }) {
   const { t } = useTranslation('operations');
+  const allocationStatusLabel = useAllocationRecordStatusLabel();
   const [value, setValue] = useState<string>(String(record.quantity_delivered));
   const deliver = useRecordDelivery(sessionId, assignmentId);
 
@@ -381,12 +446,12 @@ function AllocationRow({
     <TableRow>
       <TableCell>{record.order_number_snapshot ?? record.order_id.slice(0, 8)}</TableCell>
       <TableCell>{record.sku_snapshot ?? '—'}</TableCell>
-      <TableCell className="text-right">{record.quantity_allocated}</TableCell>
-      <TableCell className="text-right">{record.quantity_delivered}</TableCell>
-      <TableCell className="text-right">{record.quantity_remaining}</TableCell>
+      <TableCell className="text-end">{record.quantity_allocated}</TableCell>
+      <TableCell className="text-end">{record.quantity_delivered}</TableCell>
+      <TableCell className="text-end">{record.quantity_remaining}</TableCell>
       <TableCell>
         <Badge variant={record.status === 'delivered' ? 'default' : 'secondary'}>
-          {record.status}
+          {allocationStatusLabel(record.status)}
         </Badge>
       </TableCell>
       <TableCell>
@@ -454,10 +519,10 @@ function ReconciliationPanel({
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <span className="text-sm">
-                <span className="mr-3">
+                <span className="me-3">
                   {t($ => $.loadingOs.labels.loaded)}: {data.total_quantity_loaded}
                 </span>
-                <span className="mr-3">
+                <span className="me-3">
                   {t($ => $.loadingOs.labels.delivered)}: {data.total_quantity_delivered}
                 </span>
                 <span>
@@ -472,12 +537,12 @@ function ReconciliationPanel({
               <TableHeader>
                 <TableRow>
                   <TableHead>{t($ => $.loadingOs.allocations.colSku)}</TableHead>
-                  <TableHead className="text-right">{t($ => $.loadingOs.labels.loaded)}</TableHead>
-                  <TableHead className="text-right">{t($ => $.loadingOs.labels.delivered)}</TableHead>
-                  <TableHead className="text-right">{t($ => $.loadingOs.reconciliation.colExpectedBack)}</TableHead>
-                  <TableHead className="text-right">{t($ => $.loadingOs.reconciliation.colCountedBack)}</TableHead>
-                  <TableHead className="text-right">{t($ => $.loadingOs.reconciliation.colVariance)}</TableHead>
-                  <TableHead className="text-right">{t($ => $.loadingOs.reconciliation.colRecordReturn)}</TableHead>
+                  <TableHead className="text-end">{t($ => $.loadingOs.labels.loaded)}</TableHead>
+                  <TableHead className="text-end">{t($ => $.loadingOs.labels.delivered)}</TableHead>
+                  <TableHead className="text-end">{t($ => $.loadingOs.reconciliation.colExpectedBack)}</TableHead>
+                  <TableHead className="text-end">{t($ => $.loadingOs.reconciliation.colCountedBack)}</TableHead>
+                  <TableHead className="text-end">{t($ => $.loadingOs.reconciliation.colVariance)}</TableHead>
+                  <TableHead className="text-end">{t($ => $.loadingOs.reconciliation.colRecordReturn)}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -514,11 +579,11 @@ function ReconciliationRow({
   return (
     <TableRow>
       <TableCell>{line.sku_snapshot ?? '—'}</TableCell>
-      <TableCell className="text-right">{line.quantity_loaded}</TableCell>
-      <TableCell className="text-right">{line.quantity_delivered}</TableCell>
-      <TableCell className="text-right">{line.quantity_returned_expected}</TableCell>
-      <TableCell className="text-right">{line.quantity_returned_actual}</TableCell>
-      <TableCell className="text-right">
+      <TableCell className="text-end">{line.quantity_loaded}</TableCell>
+      <TableCell className="text-end">{line.quantity_delivered}</TableCell>
+      <TableCell className="text-end">{line.quantity_returned_expected}</TableCell>
+      <TableCell className="text-end">{line.quantity_returned_actual}</TableCell>
+      <TableCell className="text-end">
         <span className={Math.abs(line.variance) <= EPS ? '' : 'text-destructive font-medium'}>
           {line.variance}
         </span>

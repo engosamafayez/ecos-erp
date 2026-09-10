@@ -15,6 +15,7 @@ import type enLogistics from '@/i18n/locales/en/logistics.json';
 
 import { useSetTripStatus, useTrip, useTripDispatchReadiness } from '../hooks/use-trips';
 import type { Trip, TripStatus, TripType } from '../types/trip';
+import { useTripStatusLabel } from '../lib/trip-status-label';
 import { TripCustodyTab } from './trip-custody-tab';
 import { TripExceptionsTab } from './trip-exceptions-tab';
 import { TripOrdersTab } from './trip-orders-tab';
@@ -67,6 +68,7 @@ function YesNo({ value }: { value: boolean }) {
  */
 function StatusTransition({ trip }: { trip: Trip }) {
   const { t } = useTranslation('logistics');
+  const statusLabel = useTripStatusLabel();
   const setStatus = useSetTripStatus();
   const [target, setTarget] = useState<TripStatus | ''>('');
   const [reason, setReason] = useState('');
@@ -116,7 +118,7 @@ function StatusTransition({ trip }: { trip: Trip }) {
           <option value="">—</option>
           {trip.allowed_transitions.map((transition) => (
             <option key={transition.value} value={transition.value}>
-              {transition.label}
+              {statusLabel(transition.value)}
             </option>
           ))}
         </select>
@@ -146,6 +148,32 @@ function StatusTransition({ trip }: { trip: Trip }) {
 }
 
 // ── Readiness ────────────────────────────────────────────────────────────────
+
+/**
+ * `Trip::dispatchBlockers()` returns free-composed English sentences, not a
+ * reason-code enum — there is no Laravel lang layer in this backend to hook a
+ * real translation into (confirmed: no `resources/lang`, no `__()`/`trans()`
+ * calls anywhere in this module). The set is finite and static today (7
+ * sentences, none interpolated), so each known sentence gets a real Arabic
+ * translation here; anything unrecognized (a future backend wording change,
+ * or a message this map hasn't been extended for yet) still renders as the
+ * raw sentence rather than silently disappearing — see the render below.
+ */
+const BLOCKER_LABEL: Record<string, LogisticsLabel> = {
+  'The trip has no orders assigned.': ($) => $.trips.drawer.readiness.blockerMessages.noOrders,
+  'The driver has not confirmed products, custody and equipment.': ($) =>
+    $.trips.drawer.readiness.blockerMessages.driverNotConfirmed,
+  'No driver/vehicle assignment is linked to this trip.': ($) =>
+    $.trips.drawer.readiness.blockerMessages.noAssignment,
+  'The linked driver/vehicle assignment is no longer active.': ($) =>
+    $.trips.drawer.readiness.blockerMessages.assignmentInactive,
+  'The assigned driver cannot start deliveries (licence or status).': ($) =>
+    $.trips.drawer.readiness.blockerMessages.driverCannotStart,
+  'The assigned vehicle cannot be dispatched (status, licence or insurance).': ($) =>
+    $.trips.drawer.readiness.blockerMessages.vehicleCannotDispatch,
+  'An external-carrier trip must reference a shipping company.': ($) =>
+    $.trips.drawer.readiness.blockerMessages.externalCarrierNeedsCompany,
+};
 
 function Readiness({ tripId }: { tripId: string }) {
   const { t } = useTranslation('logistics');
@@ -179,7 +207,7 @@ function Readiness({ tripId }: { tripId: string }) {
         <ul className="flex flex-col gap-1">
           {blockers.map((blocker) => (
             <li key={blocker} className="rounded-md border px-3 py-2 text-sm">
-              {blocker}
+              {BLOCKER_LABEL[blocker] ? t(BLOCKER_LABEL[blocker]) : blocker}
             </li>
           ))}
         </ul>
@@ -207,6 +235,7 @@ export function TripDrawer({
   initialTab?: string;
 }) {
   const { t, i18n } = useTranslation('logistics');
+  const statusLabel = useTripStatusLabel();
   const { can } = usePermission();
   // The parent remounts this drawer per trip and per open/close, so the tab
   // simply starts at `initialTab` (falling back to overview) — there is no
@@ -223,7 +252,7 @@ export function TripDrawer({
       open={open}
       onOpenChange={onOpenChange}
       title={trip ? `${trip.trip_number} — ${trip.name}` : t(($) => $.trips.drawer.title)}
-      description={trip?.status_label}
+      description={trip ? statusLabel(trip.status) : undefined}
       size="xl"
       footer={
         trip && trip.is_editable && can('logistics.distribution.update') ? (

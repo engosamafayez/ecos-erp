@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useFormatter } from '@/hooks/use-formatter';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
@@ -12,6 +13,7 @@ import { useTripSettlement, useSubmitSettlement, useCloseTrip } from '../hooks/u
 import { SettlementSummary } from '../components/settlement-summary';
 
 export function DriverSettlementPage() {
+  const { t } = useTranslation('driver-mobile');
   const { currency } = useFormatter();
   const { tripId = '' } = useParams<{ tripId: string }>();
   const navigate = useNavigate();
@@ -41,9 +43,9 @@ export function DriverSettlementPage() {
           size="icon"
           onClick={() => navigate(ROUTES.driverTrip.replace(':tripId', tripId))}
         >
-          <ArrowLeft className="h-5 w-5" />
+          <ArrowLeft className="h-5 w-5 rtl:rotate-180" />
         </Button>
-        <h1 className="font-semibold text-base">Settlement</h1>
+        <h1 className="font-semibold text-base">{t(($) => $.settlementPage.title)}</h1>
       </div>
 
       <div className="p-4 space-y-4">
@@ -52,26 +54,26 @@ export function DriverSettlementPage() {
         {/* Submit form — only when draft */}
         {settlement?.status === 'draft' && (
           <div className="rounded-xl border p-4 space-y-3">
-            <p className="font-semibold text-sm">Submit Settlement</p>
+            <p className="font-semibold text-sm">{t(($) => $.settlementPage.submitTitle)}</p>
 
             <div className="space-y-1.5">
-              <Label>Cash Submitted ({currency})</Label>
+              <Label>{t(($) => $.settlementPage.cashSubmitted, { currency })}</Label>
               <Input
                 type="number"
                 min="0"
                 step="0.01"
                 value={cashSubmitted}
                 onChange={(e) => setCashSubmitted(e.target.value)}
-                placeholder="0.00"
+                placeholder={t(($) => $.settlementPage.cashPlaceholder)}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label>Notes</Label>
+              <Label>{t(($) => $.settlementPage.notes)}</Label>
               <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Notes about any discrepancy..."
+                placeholder={t(($) => $.settlementPage.notesPlaceholder)}
                 rows={2}
               />
             </div>
@@ -86,7 +88,7 @@ export function DriverSettlementPage() {
                 })
               }
             >
-              {submitMutation.isPending ? 'Submitting...' : 'Submit Settlement'}
+              {submitMutation.isPending ? t(($) => $.settlementPage.submitting) : t(($) => $.settlementPage.submit)}
             </Button>
           </div>
         )}
@@ -99,7 +101,7 @@ export function DriverSettlementPage() {
             onClick={() => closeMutation.mutate()}
             disabled={closeMutation.isPending}
           >
-            {closeMutation.isPending ? 'Closing...' : 'Close Trip'}
+            {closeMutation.isPending ? t(($) => $.settlementPage.closing) : t(($) => $.settlementPage.closeTrip)}
           </Button>
         )}
 
@@ -109,13 +111,13 @@ export function DriverSettlementPage() {
             variant="outline"
             onClick={() => navigate(ROUTES.driverTripCustody.replace(':tripId', tripId))}
           >
-            Custody Returns
+            {t(($) => $.settlementPage.custodyReturns)}
           </Button>
           <Button
             variant="outline"
             onClick={() => navigate(ROUTES.driverTripReturns.replace(':tripId', tripId))}
           >
-            Product Returns
+            {t(($) => $.settlementPage.productReturns)}
           </Button>
         </div>
       </div>

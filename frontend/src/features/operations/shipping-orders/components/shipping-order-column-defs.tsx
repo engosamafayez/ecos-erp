@@ -11,10 +11,15 @@ function formatMoney(n: number): string {
 }
 
 /** §23 — the full delivery address, never truncated to a hover-only value. */
-function formatAddress(order: ShippingOrder): string {
+function formatAddress(order: ShippingOrder, t: TFunction<'shipping-orders'>): string {
   const a = order.address;
-  return [a.shipping_address, a.building && `Bldg. ${a.building}`, a.floor && `Floor ${a.floor}`,
-    a.apartment && `Apt. ${a.apartment}`, a.landmark, a.area, a.city, a.governorate, a.address_notes]
+  return [
+    a.shipping_address,
+    a.building && t($ => $.drawer.building, { value: a.building }),
+    a.floor && t($ => $.drawer.floor, { value: a.floor }),
+    a.apartment && t($ => $.drawer.apartment, { value: a.apartment }),
+    a.landmark, a.area, a.city, a.governorate, a.address_notes,
+  ]
     .filter((v): v is string => Boolean(v))
     .join(', ');
 }
@@ -109,7 +114,7 @@ export function createShippingOrderColumns(t: TFunction<'shipping-orders'>): Dat
       defaultVisible: true,
       width: 320,
       cell: (o) => {
-        const full = formatAddress(o);
+        const full = formatAddress(o, t);
         const href = mapsUrl(o.location, full);
         return (
           <div className="flex items-start gap-2">

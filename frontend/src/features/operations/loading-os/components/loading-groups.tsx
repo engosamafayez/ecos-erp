@@ -32,10 +32,9 @@ import type {
   LoadingGroupSummary,
   LoadingGroupTransport,
   LoadingWorkflowState,
-  LoadingWorkspaceBucket,
   LoadingWorkspaceClassification,
-  LoadingWorkspaceReasonCode,
 } from '../types/loading-os';
+import { useLoadingTripStatusLabel, useReasonLabel } from '../lib/loading-labels';
 
 /**
  * TASK-LOADING-GROUP-GRAIN-READ-AND-EXECUTION-UX-002 — Loading at GROUP grain.
@@ -203,81 +202,6 @@ function useExecutionLabel(): (state: ExecutionState) => string {
         return t(($) => $.loadingOs.groups.unknown);
       default:
         return t(($) => $.loadingOs.groups.planningOnly);
-    }
-  };
-}
-
-/**
- * One label per read-model reason code — shared with the session-overview (Needs
- * Review / History) tab so the same code always reads the same way everywhere.
- * Exported: stable, machine-readable codes are never rendered as raw strings in any UI
- * that consumes them (task §19).
- */
-export function useReasonLabel(): (reason: LoadingWorkspaceReasonCode) => string {
-  const { t } = useTranslation('operations');
-
-  return (reason) => {
-    switch (reason) {
-      case 'pending_loading':
-        return t(($) => $.loadingOs.reasons.pendingLoading);
-      case 'loading_in_progress':
-        return t(($) => $.loadingOs.reasons.loadingInProgress);
-      case 'adjustment_requested':
-        return t(($) => $.loadingOs.reasons.adjustmentRequested);
-      case 'awaiting_driver_confirmation':
-        return t(($) => $.loadingOs.reasons.awaitingDriverConfirmation);
-      case 'awaiting_driver_reconfirmation':
-        return t(($) => $.loadingOs.reasons.awaitingDriverReconfirmation);
-      case 'missing_loading_tasks':
-        return t(($) => $.loadingOs.reasons.missingLoadingTasks);
-      case 'missing_vehicle_custody':
-        return t(($) => $.loadingOs.reasons.missingVehicleCustody);
-      case 'quantity_mismatch':
-        return t(($) => $.loadingOs.reasons.quantityMismatch);
-      case 'inconsistent_child_state':
-        return t(($) => $.loadingOs.reasons.inconsistentChildState);
-      case 'truthfully_complete':
-        return t(($) => $.loadingOs.reasons.truthfullyComplete);
-      case 'no_activity':
-        return t(($) => $.loadingOs.reasons.noActivity);
-      case 'cancelled':
-        return t(($) => $.loadingOs.reasons.cancelled);
-      default:
-        return reason;
-    }
-  };
-}
-
-/** One badge tone per read-model bucket — shared with the session-overview tabs. */
-export function bucketBadgeVariant(
-  bucket: LoadingWorkspaceBucket,
-): 'default' | 'secondary' | 'destructive' | 'outline' {
-  switch (bucket) {
-    case 'needs_review':
-      return 'destructive';
-    case 'waiting_driver_confirmation':
-      return 'outline';
-    case 'completed_history':
-      return 'secondary';
-    default:
-      return 'default';
-  }
-}
-
-/** One label per read-model bucket — the tab strip and any per-row bucket badge. */
-export function useBucketLabel(): (bucket: LoadingWorkspaceBucket) => string {
-  const { t } = useTranslation('operations');
-
-  return (bucket) => {
-    switch (bucket) {
-      case 'current_actionable':
-        return t(($) => $.loadingOs.workspace.tabs.currentActionable);
-      case 'waiting_driver_confirmation':
-        return t(($) => $.loadingOs.workspace.tabs.waitingDriverConfirmation);
-      case 'needs_review':
-        return t(($) => $.loadingOs.workspace.tabs.needsReview);
-      default:
-        return t(($) => $.loadingOs.workspace.tabs.completedHistory);
     }
   };
 }
@@ -731,6 +655,7 @@ export function LoadingGroupDetail({ slotId }: { slotId: string }) {
   const { t } = useTranslation('operations');
   const executionLabel = useExecutionLabel();
   const reasonLabel = useReasonLabel();
+  const tripStatusLabel = useLoadingTripStatusLabel();
   const detail = useLoadingGroup(slotId);
   const startLoading = useStartLoading(slotId);
 
@@ -810,7 +735,7 @@ export function LoadingGroupDetail({ slotId }: { slotId: string }) {
               label={t(($) => $.loadingOs.groups.trip)}
               value={
                 data?.transport.trip
-                  ? `${data.transport.trip.trip_number} · ${data.transport.trip.status}`
+                  ? `${data.transport.trip.trip_number} · ${tripStatusLabel(data.transport.trip.status)}`
                   : null
               }
               state={state}

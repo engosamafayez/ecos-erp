@@ -445,7 +445,7 @@ export function DriverSettlementWorkspacePage() {
                     disabled={meta.current_page <= 1}
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
                   >
-                    <ChevronLeft className="h-3.5 w-3.5" />
+                    <ChevronLeft className="h-3.5 w-3.5" data-flip-rtl />
                   </Button>
                   <Button
                     variant="outline"
@@ -454,7 +454,7 @@ export function DriverSettlementWorkspacePage() {
                     disabled={meta.current_page >= meta.last_page}
                     onClick={() => setPage((p) => p + 1)}
                   >
-                    <ChevronRight className="h-3.5 w-3.5" />
+                    <ChevronRight className="h-3.5 w-3.5" data-flip-rtl />
                   </Button>
                 </div>
               </div>

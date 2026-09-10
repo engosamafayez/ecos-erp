@@ -29,13 +29,13 @@ interface DeliveryStopCardProps {
 }
 
 const STATUS_BORDER: Record<string, string> = {
-  pending:     'border-l-gray-300',
-  in_progress: 'border-l-blue-500',
-  delivered:   'border-l-green-500',
-  partial:     'border-l-green-500',
-  failed:      'border-l-red-500',
-  returned:    'border-l-purple-500',
-  skipped:     'border-l-gray-200',
+  pending:     'border-s-gray-300',
+  in_progress: 'border-s-blue-500',
+  delivered:   'border-s-green-500',
+  partial:     'border-s-green-500',
+  failed:      'border-s-red-500',
+  returned:    'border-s-purple-500',
+  skipped:     'border-s-gray-200',
 };
 
 export function DeliveryStopCard({ stop, tripId, tripStatus = null }: DeliveryStopCardProps) {
@@ -64,7 +64,7 @@ export function DeliveryStopCard({ stop, tripId, tripStatus = null }: DeliverySt
 
   return (
     <div
-      className={`cursor-pointer rounded-xl border border-l-4 bg-card p-4 shadow-sm hover:shadow-md transition-shadow ${STATUS_BORDER[stop.status] ?? 'border-l-gray-300'}`}
+      className={`cursor-pointer rounded-xl border border-s-4 bg-card p-4 shadow-sm hover:shadow-md transition-shadow ${STATUS_BORDER[stop.status] ?? 'border-s-gray-300'}`}
       onClick={goToDetail}
       role="button"
       tabIndex={0}

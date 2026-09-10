@@ -19,6 +19,7 @@
     "loadError": "تعذّر تحميل المجموعات.",
     "overCapacity": "تجاوز السعة",
     "nearCapacity": "قريب من السعة",
+    "statusDraft": "مسودة",
     "columns": {
       "code": "المجموعة",
       "name": "الاسم",

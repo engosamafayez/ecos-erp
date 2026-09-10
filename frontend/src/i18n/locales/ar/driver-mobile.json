@@ -310,6 +310,11 @@
       "failed": "تعذّر تسجيل التسليم"
     },
     "deliveryAction": "إجراء التسليم",
+    "toasts": {
+      "actionRecorded": "تم تسجيل التسليم",
+      "actionRecordedDescription": "الإجراء: {{action}}",
+      "actionFailed": "تعذّر تسجيل التسليم"
+    },
     "payment": {
       "title": "الدفع",
       "method": "طريقة الدفع",
@@ -522,6 +527,14 @@
     "finishDialog": {
       "title": "إنهاء الرحلة؟",
       "description": "يجب معالجة جميع المحطات قبل الإنهاء. يسجّل هذا الإجراء موقع نهاية الرحلة."
+    },
+    "toasts": {
+      "started": "تم بدء الرحلة",
+      "startedDescription": "محطات التسليم نشطة الآن.",
+      "finished": "انتهت الرحلة",
+      "finishedDescription": "تابع إلى التسوية.",
+      "finishFailed": "يتعذّر إنهاء الرحلة",
+      "closeFailed": "يتعذّر إغلاق الرحلة"
     }
   },
   "failureReasons": {
@@ -642,7 +655,11 @@
     "awaitingReceipt": "بانتظار استلام المخزن",
     "warehouseReceived": "استلم المخزن: {{qty}}",
     "discrepancy": "فرق {{qty}}",
-    "recordTitle": "الإعلان عن مرتجع"
+    "recordTitle": "الإعلان عن مرتجع",
+    "toasts": {
+      "recorded": "تم تسجيل المرتجع",
+      "failed": "تعذّر تسجيل المرتجع"
+    }
   },
   "returnForm": {
     "productId": "معرّف المنتج *",
@@ -659,6 +676,65 @@
     "cancel": "إلغاء",
     "submit": "تسجيل المرتجع",
     "saving": "جارٍ الحفظ…"
+  },
+  "settlementPage": {
+    "title": "التسوية",
+    "submitTitle": "تقديم التسوية",
+    "cashSubmitted": "النقد المُقدَّم ({{currency}})",
+    "cashPlaceholder": "0.00",
+    "notes": "ملاحظات",
+    "notesPlaceholder": "ملاحظات حول أي فرق...",
+    "submitting": "جارٍ التقديم...",
+    "submit": "تقديم التسوية",
+    "closing": "جارٍ الإغلاق...",
+    "closeTrip": "إغلاق الرحلة",
+    "custodyReturns": "مرتجعات العهدة",
+    "productReturns": "مرتجعات المنتجات",
+    "summary": {
+      "title": "ملخص التسوية",
+      "cashCollected": "النقد المُحصَّل",
+      "bankTransfersPending": "التحويلات البنكية (بانتظار التحقق)",
+      "prePaidExcluded": "مدفوع مسبقًا (مستبعد)",
+      "totalCollected": "إجمالي المُحصَّل",
+      "expectedCash": "النقد المتوقع",
+      "driverCashSubmitted": "النقد المُقدَّم من السائق",
+      "discrepancy": "الفرق"
+    },
+    "status": {
+      "draft": "مسودة",
+      "submitted": "تم التقديم",
+      "verified": "تم التحقق",
+      "closed": "مغلق"
+    },
+    "toasts": {
+      "submitted": "تم تقديم التسوية",
+      "submitFailed": "فشلت التسوية"
+    }
+  },
+  "custodyReturnPage": {
+    "title": "مرتجعات العهدة",
+    "add": "إضافة",
+    "sheetTitle": "تسجيل مرتجع عهدة",
+    "custodyType": "نوع العهدة *",
+    "custodyTypePlaceholder": "مثال: حقيبة نقدية، جهاز لوحي...",
+    "dispatchedQty": "الكمية المُرسَلة *",
+    "returnedQty": "الكمية المُرتجَعة *",
+    "notes": "ملاحظات",
+    "notesPlaceholder": "ملاحظات اختيارية...",
+    "cancel": "إلغاء",
+    "saving": "جارٍ الحفظ...",
+    "record": "تسجيل",
+    "list": {
+      "empty": "لا توجد أصناف عهدة مُسجَّلة بعد.",
+      "dispatchedReturned": "المُرسَل: {{dispatched}} · المُرتجَع: {{returned}}",
+      "confirmedPlaceholder": "الكمية المؤكَّدة",
+      "confirm": "تأكيد",
+      "liableForShortage": "السائق مسؤول عن العجز"
+    },
+    "toasts": {
+      "recorded": "تم تسجيل مرتجع العهدة",
+      "failed": "تعذّر تسجيل مرتجع العهدة"
+    }
   },
   "wallet": {
     "title": "المحفظة",
@@ -850,6 +926,10 @@
     }
   },
   "exceptionForm": {
+    "toasts": {
+      "recorded": "تم تسجيل الاستثناء",
+      "failed": "تعذّر تسجيل الاستثناء"
+    },
     "type": "نوع الاستثناء *",
     "description": "الوصف *",
     "descriptionPlaceholder": "وصف الاستثناء…",

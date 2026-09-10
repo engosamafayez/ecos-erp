@@ -674,6 +674,7 @@
     "completed": "Completed",
     "high": "High",
     "low": "Low",
+    "medium": "Medium",
     "pending": "Pending"
   },
   "dispatch": {
@@ -1223,6 +1224,11 @@
       "vehicle": {
         "any": "Any Vehicle"
       }
+    },
+    "archiveDialog": {
+      "title": "Archive Driver",
+      "bodyPrefix": "Archive",
+      "bodySuffix": "? Any assigned vehicle is released back to the pool. Archived drivers are hidden from the default list and cannot be assigned vehicles or documents. Drivers are never deleted, so this can be undone."
     }
   },
   "fleet": {
@@ -1376,7 +1382,15 @@
       "dispute": "Dispute",
       "reconcileFailed": "The transaction could not be reconciled.",
       "disputeFailed": "The transaction could not be disputed.",
-      "outcomesNote": "Reconcile accepts the record, dispute contests it with the supplier, reject says it should not have been recorded, and write-off absorbs the cost. Only the transitions this transaction allows are offered."
+      "outcomesNote": "Reconcile accepts the record, dispute contests it with the supplier, reject says it should not have been recorded, and write-off absorbs the cost. Only the transitions this transaction allows are offered.",
+      "statusValues": {
+        "captured": "Captured",
+        "validated": "Validated",
+        "reconciled": "Reconciled",
+        "disputed": "Disputed",
+        "written_off": "Written Off",
+        "rejected": "Rejected"
+      }
     }
   },
   "network": {
@@ -1631,6 +1645,31 @@
         "dispatchAudit": "Dispatch Audit",
         "escalation": "Escalation",
         "note": "Note"
+      },
+      "assignmentStatus": {
+        "proposed": "Proposed",
+        "reserved": "Reserved",
+        "confirmed": "Confirmed",
+        "released": "Released",
+        "failed": "Failed"
+      },
+      "assignmentMode": {
+        "manual": "Manual",
+        "automatic": "Automatic"
+      },
+      "sessionStatus": {
+        "open": "Open",
+        "paused": "Paused",
+        "closing": "Closing",
+        "closed": "Closed",
+        "abandoned": "Abandoned"
+      },
+      "capacityStatus": {
+        "pending": "Pending",
+        "held": "Held",
+        "confirmed": "Confirmed",
+        "released": "Released",
+        "failed": "Refused"
       }
     },
     "alertCenter": {
@@ -1806,6 +1845,173 @@
         "held": "Held",
         "refused": "Refused",
         "released": "Released"
+      },
+      "source": {
+        "fleet": "Fleet",
+        "drivers": "Drivers",
+        "network": "Network",
+        "dispatch": "Dispatch",
+        "routing": "Routing",
+        "carriers": "Carriers",
+        "distribution": "Distribution",
+        "delivery": "Delivery",
+        "operations": "Operations"
+      },
+      "category": {
+        "resource": "Resource",
+        "capacity": "Capacity",
+        "dispatch": "Dispatch",
+        "routing": "Routing",
+        "execution": "Execution",
+        "carrier": "Carrier",
+        "integration": "Integration",
+        "policy": "Policy"
+      }
+    },
+    "enterpriseWorkspace": {
+      "breadcrumbRoot": "Logistics OS",
+      "breadcrumbSection": "Enterprise",
+      "title": "Enterprise Workspace",
+      "description": "Executive and operations dashboards — readiness, intelligence and automation in one view",
+      "tabsAriaLabel": "Enterprise dashboards",
+      "tabExecutive": "Executive",
+      "tabOperations": "Operations",
+      "metricHealthScore": "Health Score",
+      "metricGrade": "Grade",
+      "metricRecommendations": "Recommendations",
+      "status": {
+        "ready": "Ready",
+        "degraded": "Degraded",
+        "notReady": "Not ready"
+      },
+      "forecastLevel": {
+        "exhausted": "Exhausted",
+        "severe": "Severe",
+        "atRisk": "At risk",
+        "high": "High",
+        "tightening": "Tightening",
+        "moderate": "Moderate",
+        "comfortable": "Comfortable",
+        "low": "Low",
+        "noData": "No data"
+      },
+      "loadingExecutive": "Loading executive dashboard",
+      "loadingOperations": "Loading operations dashboard",
+      "healthScoreAria": "Health score {{score}} out of 100, grade {{grade}}, {{status}}",
+      "gradeLabel": "Grade {{grade}}",
+      "quietMessage": "The operation is healthy — nothing needs a person right now.",
+      "panel": {
+        "health": "Logistics health",
+        "headline": "Headline",
+        "topDecision": "Top decision",
+        "forecasts": "Forecasts",
+        "moduleReadiness": "Module readiness",
+        "bindingConstraint": "Binding constraint",
+        "topSuggestions": "Top suggestions",
+        "capacityWarnings": "Capacity warnings",
+        "automation": "Automation"
+      },
+      "headline": {
+        "criticalAlerts": "Critical alerts",
+        "openExceptions": "Open exceptions",
+        "unhealthyPools": "Unhealthy pools",
+        "exhaustedSlots": "Exhausted slots",
+        "canFieldToday": "Can field today",
+        "overdueEscalations": "Overdue escalations"
+      },
+      "decision": {
+        "empty": "No recommendation outstanding.",
+        "action": "Action:",
+        "total": "{{count}} recommendation(s) in total."
+      },
+      "forecast": {
+        "capacity": "Capacity",
+        "dispatchPressure": "Dispatch pressure",
+        "workload": "Workload",
+        "note": "Deterministic projections from current figures — not statistical predictions."
+      },
+      "suggestionsEmpty": "Nothing to suggest — the operation is running clean.",
+      "capacityWarningsEmpty": "No capacity warnings.",
+      "eventConsumers": "Event consumers",
+      "activePolicies": "Active policies",
+      "automationNote": "Domain events are consumed on background workers and turned into notifications."
+    },
+    "operationalDashboards": {
+      "breadcrumbRoot": "Logistics OS",
+      "breadcrumbSection": "Operations",
+      "title": "Operational Dashboards",
+      "description": "Fleet, driver, capacity and dispatch utilisation — operational metrics only",
+      "tabKpi": "KPI",
+      "tabFleet": "Fleet",
+      "tabDrivers": "Drivers",
+      "tabCapacity": "Capacity",
+      "tabDispatch": "Dispatch",
+      "inUseNow": "In use now",
+      "noAssignableResources": "No assignable resources to measure.",
+      "minutesValue": "{{minutes}} min",
+      "panel": {
+        "fleetUtilisation": "Fleet utilisation (snapshot)",
+        "driverUtilisation": "Driver utilisation (snapshot)",
+        "slotsToday": "Slots today (owned by Network)",
+        "ourReservations": "Our reservations",
+        "queue": "Queue",
+        "cycleTime": "Cycle time",
+        "pools": "Pools",
+        "dispatch": "Dispatch"
+      },
+      "fleet": {
+        "totalVehicles": "Total vehicles",
+        "assignable": "Assignable",
+        "unfit": "Unfit",
+        "idleNote": "{{count}} assignable vehicle(s) idle right now.",
+        "idleTitle": "Idle vehicles ({{count}})",
+        "allWorking": "Every assignable vehicle is working."
+      },
+      "driver": {
+        "totalDrivers": "Total drivers",
+        "available": "Available",
+        "unavailable": "Unavailable",
+        "idleNote": "{{count}} available driver(s) idle right now.",
+        "idleTitle": "Idle drivers ({{count}})",
+        "allWorking": "Every available driver is working."
+      },
+      "capacity": {
+        "slots": "Slots",
+        "averageUtilisation": "Average utilisation",
+        "nearCapacity": "Near capacity",
+        "exhausted": "Exhausted",
+        "requested": "Requested",
+        "currentlyHolding": "Currently holding",
+        "confirmed": "Confirmed",
+        "refused": "Refused",
+        "refusalRate": "Refusal rate"
+      },
+      "dispatch": {
+        "activeSessions": "Active sessions",
+        "confirmed": "Confirmed",
+        "confirmationRate": "Confirmation rate",
+        "automaticShare": "Automatic share",
+        "depth": "Depth",
+        "needsAction": "Needs action",
+        "stuck": "Stuck",
+        "averageWait": "Average wait",
+        "averageSession": "Average session",
+        "attempted": "Attempted"
+      },
+      "kpi": {
+        "quietMessage": "The operation is healthy — nothing needs a person right now.",
+        "criticalAlerts": "Critical alerts",
+        "needsAttention": "Needs attention",
+        "unhealthyPools": "Unhealthy pools",
+        "canFieldToday": "Can field today",
+        "exhaustedSlots": "Exhausted slots",
+        "overdueEscalations": "Overdue escalations"
+      },
+      "pools": {
+        "total": "Total",
+        "unhealthy": "Unhealthy",
+        "availableVehicles": "Available vehicles",
+        "availableDrivers": "Available drivers"
       }
     }
   },
@@ -1845,6 +2051,99 @@
     "searchPlaceholder": "Search companies…",
     "filters": {
       "allTypes": "All Types"
+    },
+    "drawer": {
+      "fallbackTitle": "Shipping Company",
+      "newTitle": "New Shipping Company",
+      "createDescription": "Register an internal fleet or external shipping provider.",
+      "editDescription": "{{code}} — manage details, contracts and company links.",
+      "tabs": {
+        "details": "Details",
+        "contracts": "Contracts",
+        "companies": "Companies"
+      },
+      "createCompany": "Create Company",
+      "nameCodeRequired": "Name and Code are required.",
+      "createdToast": "Shipping company \"{{name}}\" created.",
+      "changesSaved": "Changes saved.",
+      "savingFailed": "Saving failed.",
+      "archivedToast": "Company archived.",
+      "activatedToast": "Company activated.",
+      "deactivatedToast": "Company deactivated.",
+      "statusChangeFailed": "Status change failed.",
+      "actions": {
+        "activate": "Activate",
+        "deactivate": "Deactivate",
+        "archive": "Archive",
+        "restoreFromArchive": "Restore from Archive"
+      },
+      "archiveDialog": {
+        "title": "Archive Shipping Company",
+        "bodyPrefix": "Archive",
+        "bodySuffix": "? Archived companies are hidden from the default list and cannot receive new contracts or company links. You can restore it later."
+      },
+      "typeInternalFleet": "Internal Fleet",
+      "typeExternalProvider": "External Provider",
+      "companyName": "Company Name",
+      "companyNamePlaceholder": "e.g. Bosta",
+      "selectType": "Select type",
+      "typeExternalOption": "External Provider (Bosta, Aramex…)",
+      "typeInternalOption": "Internal Fleet (own vehicles)",
+      "typeLockedNote": "Type cannot be changed after creation.",
+      "typeLockedSuffix": "— locked after creation",
+      "contactPerson": "Contact Person",
+      "email": "Email",
+      "activeHint": "Company is available for assignments",
+      "contracts": {
+        "archivedNotice": "This company is archived — new contracts cannot be added.",
+        "count": "{{count}} contract — one may be active at a time.",
+        "count_other": "{{count}} contracts — one may be active at a time.",
+        "add": "Add Contract",
+        "editTitle": "Edit Contract",
+        "newTitle": "New Contract",
+        "nameLabel": "Contract Name",
+        "namePlaceholder": "e.g. 2026 Master Agreement",
+        "startDate": "Start Date",
+        "endDate": "End Date",
+        "paymentTerms": "Payment Terms",
+        "paymentTermsPlaceholder": "e.g. Net 30, COD weekly settlement",
+        "nameRequired": "Contract name is required.",
+        "updated": "Contract updated.",
+        "added": "Contract added.",
+        "saveFailed": "Saving the contract failed.",
+        "activatedToast": "\"{{name}}\" is now the active contract.",
+        "activateFailed": "Activation failed.",
+        "deactivatedToast": "Contract \"{{name}}\" archived (inactive).",
+        "deactivateFailed": "Deactivation failed.",
+        "deletedToast": "Contract \"{{name}}\" deleted.",
+        "deleteFailed": "Delete failed.",
+        "emptyTitle": "No contracts yet",
+        "emptyHint": "Add the commercial agreement terms for this carrier.",
+        "openEnded": "open-ended",
+        "expired": "Expired",
+        "activate": "Activate",
+        "deactivate": "Deactivate",
+        "deleteTitle": "Delete Contract",
+        "deleteBodyPrefix": "Delete",
+        "deleteBodySuffix": "? This action cannot be undone."
+      },
+      "mapping": {
+        "intro": "Link this carrier to the ECOS companies it ships for. Orders from a linked company can be assigned to this carrier.",
+        "archivedNotice": "This company is archived — new company links cannot be added.",
+        "ecosCompanyLabel": "ECOS Company",
+        "loadingCompanies": "Loading companies…",
+        "allLinked": "All companies are already linked",
+        "selectToLink": "Select a company to link",
+        "linked": "Company linked.",
+        "linkFailed": "Linking failed.",
+        "companyFallback": "Company",
+        "unlinked": "{{name}} unlinked.",
+        "unlinkFailed": "Unlinking failed.",
+        "emptyTitle": "No linked companies",
+        "emptyHint": "This carrier is not yet assigned to any ECOS company.",
+        "unlink": "Unlink",
+        "link": "Link"
+      }
     }
   },
   "vehicles": {
@@ -1983,7 +2282,12 @@
     },
     "table": {
       "colVehicle": "Vehicle",
-      "colDispatch": "Dispatch"
+      "colDispatch": "Dispatch",
+      "blocked": "Blocked",
+      "ready": "Ready",
+      "capacityOrders": "{{count}} order",
+      "capacityOrders_other": "{{count}} orders",
+      "capacityWeightKg": "{{value}} kg"
     },
     "documentType": {
       "license": "Licence",
@@ -1996,6 +2300,28 @@
       "inDelivery": "In Delivery",
       "maintenance": "Maintenance",
       "outOfService": "Out of Service"
+    },
+    "breadcrumbRoot": "Logistics",
+    "title": "Vehicles",
+    "description": "Manage the enterprise fleet — capacity, documents, maintenance and driver assignment",
+    "searchPlaceholder": "Search by plate, code, name, manufacturer or VIN…",
+    "newVehicle": "New Vehicle",
+    "metrics": {
+      "total": "Total Vehicles",
+      "expiringLicenses": "Expiring Licences"
+    },
+    "filters": {
+      "anyDocument": "Any document",
+      "expiringSoon": "Expiring soon"
+    },
+    "type": {
+      "motorcycle": "Motorcycle",
+      "car": "Car",
+      "van": "Van",
+      "pickup": "Pickup Truck",
+      "small_truck": "Small Truck",
+      "medium_truck": "Medium Truck",
+      "large_truck": "Large Truck"
     }
   },
   "trips": {
@@ -2136,7 +2462,16 @@
         "notReady": "Not ready for dispatch",
         "blockers": "Blockers",
         "none": "No blockers.",
-        "checking": "Checking readiness..."
+        "checking": "Checking readiness...",
+        "blockerMessages": {
+          "noOrders": "The trip has no orders assigned.",
+          "driverNotConfirmed": "The driver has not confirmed products, custody and equipment.",
+          "noAssignment": "No driver/vehicle assignment is linked to this trip.",
+          "assignmentInactive": "The linked driver/vehicle assignment is no longer active.",
+          "driverCannotStart": "The assigned driver cannot start deliveries (licence or status).",
+          "vehicleCannotDispatch": "The assigned vehicle cannot be dispatched (status, licence or insurance).",
+          "externalCarrierNeedsCompany": "An external-carrier trip must reference a shipping company."
+        }
       },
       "acceptance": {
         "products": "Products accepted",
@@ -2411,6 +2746,11 @@
         "groupCollected": "Collected now",
         "groupPreDelivery": "Paid before delivery"
       },
+      "paymentStatus": {
+        "recorded": "Recorded",
+        "verified": "Verified",
+        "rejected": "Rejected"
+      },
       "settlement": {
         "title": "Settlement",
         "notOpened": "No settlement has been opened for this trip.",
@@ -2574,7 +2914,15 @@
         "noLocation": "No location"
       },
       "exceptions": {
-        "title": "Exceptions on route"
+        "title": "Exceptions on route",
+        "type": {
+          "damaged": "Damaged item",
+          "missing": "Missing item",
+          "wrong_product": "Wrong product",
+          "complaint": "Customer complaint",
+          "packaging": "Packaging issue",
+          "other": "Other"
+        }
       },
       "gapNote": "Gaps in the path reflect real reporting gaps — nothing is invented between recorded points."
     }
@@ -2830,6 +3178,11 @@
       "end": "End",
       "timezone": "Timezone"
     },
+    "windowStatus": {
+      "open": "Open",
+      "cutoff": "Cutoff",
+      "closed": "Closed"
+    },
     "columns": {
       "order": "Order",
       "customer": "Customer",
@@ -2978,7 +3331,10 @@
       "capacityLabel": "Capacity",
       "remainingLabel": "Remaining",
       "capacityNotSet": "No limit",
-      "editCapacity": "Edit limit"
+      "editCapacity": "Edit limit",
+      "status": {
+        "draft": "Draft"
+      }
     },
     "zoneManager": {
       "title": "Zones in this group",
@@ -3267,6 +3623,16 @@
       "driver": "Driver",
       "session": "Session",
       "status": "Status",
+      "assignmentStatus": {
+        "pending": "Pending",
+        "loading": "Loading",
+        "loading_complete": "Loading Complete",
+        "dispatched": "Dispatched",
+        "returning": "Returning",
+        "reconciling": "Reconciling",
+        "reconciled": "Reconciled",
+        "cancelled": "Cancelled"
+      },
       "capacityOrders": "Capacity is measured in orders — group limit {{group}}, vehicle carries {{vehicle}}.",
       "capacityUnconstrained": "This group has no order limit. Capacity in ECOS is measured in orders only.",
       "columns": {
@@ -3400,6 +3766,101 @@
         "vehicleAssigned": "Vehicle assigned",
         "driverAssigned": "Driver assigned"
       }
+    }
+  },
+  "distributionZones": {
+    "title": "Distribution Zones",
+    "description": "Manage delivery zones and assign city areas to each zone",
+    "newZone": "New Zone",
+    "searchPlaceholder": "Search zones…",
+    "actions": {
+      "activate": "Activate",
+      "deactivate": "Deactivate"
+    },
+    "metrics": {
+      "total": "Total Zones",
+      "active": "Active Zones",
+      "assignedAreas": "Assigned Areas",
+      "unassignedAreas": "Unassigned Areas"
+    },
+    "empty": {
+      "noResultsTitle": "No zones match your search",
+      "noResultsHint": "Try a different keyword or clear your filters.",
+      "title": "No Distribution Zones have been created yet",
+      "hint": "Create zones to organize your delivery areas by geography.",
+      "createFirst": "Create First Zone"
+    },
+    "table": {
+      "arabicName": "Arabic Name",
+      "englishName": "English Name",
+      "areas": "Areas",
+      "updatedBy": "Updated By"
+    },
+    "toast": {
+      "zoneDeleted": "Zone \"{{name}}\" deleted.",
+      "deleteFailed": "Delete failed. Please try again.",
+      "zonesDeleted": "{{count}} zone deleted.",
+      "zonesDeleted_other": "{{count}} zones deleted.",
+      "bulkDeletePartial": "{{success}} deleted, {{failed}} failed.",
+      "zonesActivated": "Zones activated.",
+      "zonesDeactivated": "Zones deactivated.",
+      "bulkUpdateFailed": "Some updates failed ({{count}}).",
+      "updated": "Zone updated successfully.",
+      "created": "Distribution zone created.",
+      "saveError": "An error occurred. Please try again.",
+      "unexpectedError": "An unexpected error occurred."
+    },
+    "drawer": {
+      "wizard": {
+        "step1": "General Information",
+        "step2": "Area Assignment"
+      },
+      "colorPicker": {
+        "noColor": "No color",
+        "custom": "Custom: {{value}}"
+      },
+      "editTitle": "Edit {{name}}",
+      "zoneFallback": "Zone",
+      "newTitle": "New Distribution Zone",
+      "editDescription": "Update zone details and area assignments.",
+      "newDescription": "Create a distribution zone and assign delivery areas to it.",
+      "cancel": "Cancel",
+      "next": "Next",
+      "back": "Back",
+      "saveChanges": "Save Changes",
+      "createZone": "Create Zone",
+      "zoneCode": "Zone Code",
+      "autoGenerated": "Automatically generated.",
+      "active": "Active",
+      "inactive": "Inactive",
+      "nameAr": "Arabic Name",
+      "nameArPlaceholder": "Arabic zone name",
+      "nameArRequired": "Arabic Name is required.",
+      "nameEn": "English Name",
+      "nameEnPlaceholder": "Zone name in English",
+      "description": "Description",
+      "descriptionPlaceholder": "Optional notes about this distribution zone…",
+      "zoneColor": "Zone Color",
+      "optional": "(optional)",
+      "selectedColorLabel": "Selected:",
+      "areaRequired": "At least one area must be assigned.",
+      "noAreasAssigned": "No areas assigned yet. Use the selector below to assign city areas to this zone.",
+      "areasSelected": "{{count}} area selected",
+      "areasSelected_other": "{{count}} areas selected",
+      "amberHintSelected": "Areas with an amber badge belong to another zone — clicking shows a confirmation dialog before moving.",
+      "amberHintEmpty": "Areas with an amber badge already belong to another zone — clicking them shows a confirmation dialog before moving.",
+      "thisZoneFallback": "this zone"
+    },
+    "deleteDialog": {
+      "title": "Delete Zone",
+      "bodyPrefix": "Delete",
+      "bodySuffix": "? All {{count}} area assigned to this zone will become unassigned. This action cannot be undone.",
+      "bodySuffix_other": "? All {{count}} areas assigned to this zone will become unassigned. This action cannot be undone."
+    },
+    "bulkDeleteDialog": {
+      "title": "Delete {{count}} Zones",
+      "body": "All areas assigned to these zones will become unassigned. This cannot be undone.",
+      "confirm": "Delete All"
     }
   }
 }

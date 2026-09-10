@@ -178,6 +178,54 @@
       "colVariance": "Variance",
       "colRecordReturn": "Record return",
       "save": "Save"
+    },
+    "sessionStatus": {
+      "draft": "Draft",
+      "ready": "Ready",
+      "open": "Open",
+      "loading": "Loading",
+      "loadingComplete": "Loading Complete",
+      "allocating": "Allocating",
+      "allocated": "Allocated",
+      "dispatching": "Dispatching",
+      "dispatched": "Dispatched",
+      "reconciling": "Reconciling",
+      "closed": "Closed",
+      "cancelled": "Cancelled"
+    },
+    "assignmentStatus": {
+      "pending": "Pending",
+      "loading": "Loading",
+      "loadingComplete": "Loading Complete",
+      "dispatched": "Dispatched",
+      "returning": "Returning",
+      "reconciling": "Reconciling",
+      "reconciled": "Reconciled",
+      "cancelled": "Cancelled"
+    },
+    "allocationStatus": {
+      "allocated": "Allocated",
+      "confirmed": "Confirmed",
+      "inDelivery": "In Delivery",
+      "delivered": "Delivered",
+      "partialDelivery": "Partial Delivery",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    },
+    "tripStatus": {
+      "planning": "Planning",
+      "loading": "Loading",
+      "loadingCompleted": "Loading Completed",
+      "driverAccepted": "Driver Accepted",
+      "dispatchBlocked": "Dispatch Blocked",
+      "readyForDispatch": "Ready for Dispatch",
+      "dispatched": "Dispatched",
+      "outForDelivery": "Out for Delivery",
+      "inProgress": "In Progress",
+      "completed": "Completed",
+      "settlementPending": "Settlement Pending",
+      "closed": "Closed",
+      "cancelled": "Cancelled"
     }
   },
   "wave": {

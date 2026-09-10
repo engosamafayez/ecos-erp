@@ -16,6 +16,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useFormatter } from '@/hooks/use-formatter';
+import { useOrderStatusLabels } from '@/features/orders/hooks/use-order-labels';
+import type { OrderStatus } from '@/features/orders/types/order';
 import { cn } from '@/lib/utils';
 
 import type { DataGridColumnDef } from '@/components/data-grid/types';
@@ -45,6 +47,15 @@ import type {
  * the inline Detail Section below the grid. No group / capacity / wave / trip /
  * eligibility logic is duplicated or changed.
  */
+
+/**
+ * A Distribution Group's own status. One state exists today ('draft') — kept as a
+ * map rather than an inline check so a status the backend adds later appears here
+ * without reshaping the lookup.
+ */
+const GROUP_STATUS_LABEL: Record<string, (($: typeof import('@/i18n/locales/en/logistics.json')) => string)> = {
+  draft: ($) => $.distributionWorkspace.groups.status.draft,
+};
 
 /** One Group as a first-class grid Card. */
 function GroupCard({
@@ -83,7 +94,7 @@ function GroupCard({
           <div className="flex items-center gap-2">
             <span className="font-semibold">{group.code}</span>
             <Badge variant="secondary" className="capitalize">
-              {group.status}
+              {GROUP_STATUS_LABEL[group.status] ? t(GROUP_STATUS_LABEL[group.status]) : group.status}
             </Badge>
           </div>
           {group.name ? (
@@ -644,6 +655,7 @@ export function OrdersAwaitingGroup({
   warehouseId: string | null;
 }) {
   const { t } = useTranslation('logistics');
+  const { statusLabel } = useOrderStatusLabels();
   const [filter, setFilter] = useState<'all' | GroupAssignmentBlocker>('all');
   const [assigning, setAssigning] = useState<OrderAwaitingGroup | null>(null);
 
@@ -718,7 +730,9 @@ export function OrdersAwaitingGroup({
               <span className="font-medium" dir="ltr">
                 {order.order_number}
               </span>
-              <Badge variant="outline">{order.order_status}</Badge>
+              <Badge variant="outline">
+                {statusLabel[order.order_status as OrderStatus] ?? order.order_status}
+              </Badge>
               {order.payment_state ? (
                 <Badge variant={order.payment_state === 'paid' ? 'secondary' : 'outline'}>
                   {order.payment_state === 'paid'

@@ -38,7 +38,7 @@ export function DriverWalletPage() {
     <div className="min-h-screen bg-background pb-8">
       <div className="sticky top-0 z-10 flex items-center gap-3 border-b bg-background px-4 py-3">
         <Button variant="ghost" size="icon" aria-label={t(($) => $.nav.home)} onClick={() => navigate(ROUTES.driverHome)}>
-          <ArrowLeft className="h-5 w-5" aria-hidden="true" />
+          <ArrowLeft className="h-5 w-5 rtl:rotate-180" aria-hidden="true" />
         </Button>
         <h1 className="flex items-center gap-2 text-base font-semibold">
           <Wallet className="h-5 w-5" aria-hidden="true" />

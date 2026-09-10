@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   CheckCircle,
   ChevronRight,
@@ -82,13 +83,15 @@ function EmptyZones({
   hasFilter:     boolean;
   onCreateFirst: () => void;
 }) {
+  const { t } = useTranslation('logistics');
+
   if (hasFilter) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border bg-card py-16 text-center">
         <Network className="mb-3 size-10 text-muted-foreground/30" />
-        <p className="text-sm font-medium">No zones match your search</p>
+        <p className="text-sm font-medium">{t(($) => $.distributionZones.empty.noResultsTitle)}</p>
         <p className="mt-1 text-xs text-muted-foreground">
-          Try a different keyword or clear your filters.
+          {t(($) => $.distributionZones.empty.noResultsHint)}
         </p>
       </div>
     );
@@ -97,13 +100,13 @@ function EmptyZones({
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border bg-card py-16 text-center">
       <Network className="mb-3 size-12 text-muted-foreground/20" />
-      <p className="text-sm font-medium">No Distribution Zones have been created yet</p>
+      <p className="text-sm font-medium">{t(($) => $.distributionZones.empty.title)}</p>
       <p className="mt-1 text-xs text-muted-foreground">
-        Create zones to organize your delivery areas by geography.
+        {t(($) => $.distributionZones.empty.hint)}
       </p>
       <Button size="sm" className="mt-4 gap-1.5" onClick={onCreateFirst}>
         <Plus className="size-3.5" />
-        Create First Zone
+        {t(($) => $.distributionZones.empty.createFirst)}
       </Button>
     </div>
   );
@@ -130,6 +133,7 @@ function ZonesTable({
   onRowClick:        (zone: DistributionZone) => void;
   onCreateFirst:     () => void;
 }) {
+  const { t } = useTranslation('logistics');
   const allSelected = rows.length > 0 && rows.every((r) => selected.has(r.id));
 
   if (isLoading) return <TableSkeleton />;
@@ -151,12 +155,12 @@ function ZonesTable({
                   className="size-3.5"
                 />
               </th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">Code</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">Arabic Name</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">English Name</th>
-              <th className="h-10 w-16 px-3 text-center text-xs font-medium text-muted-foreground">Areas</th>
-              <th className="h-10 w-24 px-3 text-center text-xs font-medium text-muted-foreground">Status</th>
-              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">Updated By</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t(($) => $.common.code)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t(($) => $.distributionZones.table.arabicName)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t(($) => $.distributionZones.table.englishName)}</th>
+              <th className="h-10 w-16 px-3 text-center text-xs font-medium text-muted-foreground">{t(($) => $.distributionZones.table.areas)}</th>
+              <th className="h-10 w-24 px-3 text-center text-xs font-medium text-muted-foreground">{t(($) => $.common.status)}</th>
+              <th className="h-10 px-3 text-start text-xs font-medium text-muted-foreground">{t(($) => $.distributionZones.table.updatedBy)}</th>
               <th className="h-10 w-10 px-3" />
             </tr>
           </thead>
@@ -202,7 +206,7 @@ function ZonesTable({
                     variant={zone.is_active ? 'default' : 'secondary'}
                     className="text-xs"
                   >
-                    {zone.is_active ? 'Active' : 'Inactive'}
+                    {zone.is_active ? t(($) => $.common.active) : t(($) => $.common.inactive)}
                   </Badge>
                 </td>
 
@@ -232,6 +236,7 @@ function ZonesTable({
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export function DistributionZonesPage() {
+  const { t } = useTranslation('logistics');
   const { toast } = useToast();
   const navLabel = useNavLabel();
 
@@ -292,10 +297,10 @@ export function DistributionZonesPage() {
     if (!deleteTarget) return;
     try {
       await deleteZone.mutateAsync(deleteTarget.id);
-      toast({ title: `Zone "${deleteTarget.name_ar}" deleted.` });
+      toast({ title: t(($) => $.distributionZones.toast.zoneDeleted, { name: deleteTarget.name_ar }) });
       setSelected((prev) => { const next = new Set(prev); next.delete(deleteTarget.id); return next; });
     } catch {
-      toast({ title: 'Delete failed. Please try again.', variant: 'destructive' });
+      toast({ title: t(($) => $.distributionZones.toast.deleteFailed), variant: 'destructive' });
     } finally {
       setDeleteTarget(null);
     }
@@ -311,10 +316,10 @@ export function DistributionZonesPage() {
     setSelected(new Set());
     setBulkDeleteOpen(false);
     if (failed === 0) {
-      toast({ title: `${ids.length} zone${ids.length !== 1 ? 's' : ''} deleted.` });
+      toast({ title: t(($) => $.distributionZones.toast.zonesDeleted, { count: ids.length }) });
     } else {
       toast({
-        title: `${ids.length - failed} deleted, ${failed} failed.`,
+        title: t(($) => $.distributionZones.toast.bulkDeletePartial, { success: ids.length - failed, failed }),
         variant: 'destructive',
       });
     }
@@ -332,19 +337,19 @@ export function DistributionZonesPage() {
     setSelected(new Set());
 
     if (failed === 0) {
-      toast({ title: activate ? 'Zones activated.' : 'Zones deactivated.' });
+      toast({ title: activate ? t(($) => $.distributionZones.toast.zonesActivated) : t(($) => $.distributionZones.toast.zonesDeactivated) });
     } else {
-      toast({ title: `Some updates failed (${failed}).`, variant: 'destructive' });
+      toast({ title: t(($) => $.distributionZones.toast.bulkUpdateFailed, { count: failed }), variant: 'destructive' });
     }
   }
 
   // ── Metrics ────────────────────────────────────────────────────────────────
 
   const metrics = [
-    { id: 'total',    icon: Network,    label: 'Total Zones',     value: stats?.total_zones      ?? 0, isLoading: !stats },
-    { id: 'active',   icon: CheckCircle,label: 'Active Zones',    value: stats?.active_zones     ?? 0, isLoading: !stats, colorClass: 'text-emerald-600' },
-    { id: 'assigned', icon: MapPin,     label: 'Assigned Areas',  value: stats?.assigned_areas   ?? 0, isLoading: !stats },
-    { id: 'free',     icon: Map,        label: 'Unassigned Areas',value: stats?.unassigned_areas ?? 0, isLoading: !stats, colorClass: 'text-amber-600'   },
+    { id: 'total',    icon: Network,    label: t(($) => $.distributionZones.metrics.total),          value: stats?.total_zones      ?? 0, isLoading: !stats },
+    { id: 'active',   icon: CheckCircle,label: t(($) => $.distributionZones.metrics.active),         value: stats?.active_zones     ?? 0, isLoading: !stats, colorClass: 'text-emerald-600' },
+    { id: 'assigned', icon: MapPin,     label: t(($) => $.distributionZones.metrics.assignedAreas),  value: stats?.assigned_areas   ?? 0, isLoading: !stats },
+    { id: 'free',     icon: Map,        label: t(($) => $.distributionZones.metrics.unassignedAreas),value: stats?.unassigned_areas ?? 0, isLoading: !stats, colorClass: 'text-amber-600'   },
   ];
 
   return (
@@ -357,8 +362,8 @@ export function DistributionZonesPage() {
           { label: navLabel.group('shipping') },
           { label: navLabel.item('logistics-distribution-zones') },
         ]}
-        title="Distribution Zones"
-        description="Manage delivery zones and assign city areas to each zone"
+        title={t(($) => $.distributionZones.title)}
+        description={t(($) => $.distributionZones.description)}
         metrics={metrics}
       />
 
@@ -366,13 +371,13 @@ export function DistributionZonesPage() {
         toolbar={
           <div className="px-4 sm:px-6">
             <SmartToolbar
-              primaryAction={{ label: 'New Zone', icon: Plus, onClick: openCreate }}
+              primaryAction={{ label: t(($) => $.distributionZones.newZone), icon: Plus, onClick: openCreate }}
               bulkActions={
                 selected.size > 0
                   ? [
-                      { key: 'activate',   label: 'Activate',   onClick: () => handleBulkToggle(true)  },
-                      { key: 'deactivate', label: 'Deactivate', onClick: () => handleBulkToggle(false) },
-                      { key: 'delete',     label: 'Delete',     onClick: () => setBulkDeleteOpen(true), destructive: true },
+                      { key: 'activate',   label: t(($) => $.distributionZones.actions.activate),   onClick: () => handleBulkToggle(true)  },
+                      { key: 'deactivate', label: t(($) => $.distributionZones.actions.deactivate), onClick: () => handleBulkToggle(false) },
+                      { key: 'delete',     label: t(($) => $.common.delete),     onClick: () => setBulkDeleteOpen(true), destructive: true },
                     ]
                   : []
               }
@@ -385,7 +390,7 @@ export function DistributionZonesPage() {
         quickFilters={
           <div className="flex flex-wrap items-center gap-2 px-4 py-2 sm:px-6">
             <Input
-              placeholder="Search zones…"
+              placeholder={t(($) => $.distributionZones.searchPlaceholder)}
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="h-8 max-w-xs text-sm"
@@ -398,10 +403,10 @@ export function DistributionZonesPage() {
                 className="h-8 text-xs"
                 onClick={() => { setStatusFilter(s); setPage(1); }}
               >
-                {s === 'all' ? 'All'
+                {s === 'all' ? t(($) => $.common.all)
                   : s === 'active'
-                    ? <><CheckCircle className="mr-1 h-3 w-3" />Active</>
-                    : <><XCircle className="mr-1 h-3 w-3" />Inactive</>}
+                    ? <><CheckCircle className="me-1 h-3 w-3" />{t(($) => $.common.active)}</>
+                    : <><XCircle className="me-1 h-3 w-3" />{t(($) => $.common.inactive)}</>}
               </Button>
             ))}
           </div>
@@ -450,20 +455,19 @@ export function DistributionZonesPage() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Zone</AlertDialogTitle>
+            <AlertDialogTitle>{t(($) => $.distributionZones.deleteDialog.title)}</AlertDialogTitle>
             <AlertDialogDescription>
-              Delete <strong>{deleteTarget?.name_ar}</strong>? All{' '}
-              {deleteTarget?.areas_count ? `${deleteTarget.areas_count} ` : ''}areas assigned to
-              this zone will become unassigned. This action cannot be undone.
+              {t(($) => $.distributionZones.deleteDialog.bodyPrefix)} <strong>{deleteTarget?.name_ar}</strong>
+              {t(($) => $.distributionZones.deleteDialog.bodySuffix, { count: deleteTarget?.areas_count ?? 0 })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t(($) => $.common.cancel)}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {t(($) => $.common.delete)}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -473,18 +477,18 @@ export function DistributionZonesPage() {
       <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {selected.size} Zones</AlertDialogTitle>
+            <AlertDialogTitle>{t(($) => $.distributionZones.bulkDeleteDialog.title, { count: selected.size })}</AlertDialogTitle>
             <AlertDialogDescription>
-              All areas assigned to these zones will become unassigned. This cannot be undone.
+              {t(($) => $.distributionZones.bulkDeleteDialog.body)}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t(($) => $.common.cancel)}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleBulkDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete All
+              {t(($) => $.distributionZones.bulkDeleteDialog.confirm)}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
