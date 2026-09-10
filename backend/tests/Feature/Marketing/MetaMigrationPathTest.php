@@ -10,9 +10,11 @@ use Tests\TestCase;
  * Regression tests for Marketing module ServiceProvider migration paths.
  *
  * These tests guard against the two-level `../../` path bug that was found in
- * ConnectionServiceProvider and MarketingAssetServiceProvider: the wrong path
- * silently resolved to a non-existent directory, meaning those migration tables
- * were never created in any environment.  Each test verifies the path set in
+ * ConnectionServiceProvider, MarketingAssetServiceProvider, and (TASK-ECOS-
+ * SYSTEM-WIDE-PREV1-CLEANUP-AND-HYGIENE-029) MappingEngineServiceProvider and
+ * SynchronizationServiceProvider: the wrong path silently resolved to a
+ * non-existent directory, meaning those migration tables were never created
+ * in any environment.  Each test verifies the path set in
  * `loadMigrationsFrom(__DIR__ . '/../Database/Migrations')` actually resolves
  * to an existing directory that contains PHP migration files.
  */
@@ -63,6 +65,36 @@ class MetaMigrationPathTest extends TestCase
         $this->assertNotEmpty($files, 'MetaConnectorServiceProvider migration directory contains no PHP files.');
     }
 
+    public function test_mapping_engine_service_provider_migration_path_exists(): void
+    {
+        $providerDir = base_path('Modules/Marketing/MappingEngine/Infrastructure/Providers');
+        $migPath = realpath($providerDir.'/../Database/Migrations');
+
+        $this->assertNotFalse(
+            $migPath,
+            'MappingEngineServiceProvider migration path `/../Database/Migrations` does not resolve to a real directory.',
+        );
+        $this->assertDirectoryExists($migPath);
+
+        $files = glob($migPath.'/*.php') ?: [];
+        $this->assertNotEmpty($files, 'MappingEngineServiceProvider migration directory contains no PHP files.');
+    }
+
+    public function test_synchronization_service_provider_migration_path_exists(): void
+    {
+        $providerDir = base_path('Modules/Marketing/Synchronization/Infrastructure/Providers');
+        $migPath = realpath($providerDir.'/../Database/Migrations');
+
+        $this->assertNotFalse(
+            $migPath,
+            'SynchronizationServiceProvider migration path `/../Database/Migrations` does not resolve to a real directory.',
+        );
+        $this->assertDirectoryExists($migPath);
+
+        $files = glob($migPath.'/*.php') ?: [];
+        $this->assertNotEmpty($files, 'SynchronizationServiceProvider migration directory contains no PHP files.');
+    }
+
     /**
      * Guard against accidentally reintroducing `../../` or `/../../../` which resolves
      * to a non-existent path when the provider sits two levels inside Infrastructure/.
@@ -73,6 +105,8 @@ class MetaMigrationPathTest extends TestCase
             'Connections/Infrastructure/Providers/ConnectionServiceProvider.php',
             'Assets/Infrastructure/Providers/MarketingAssetServiceProvider.php',
             'MetaConnector/Infrastructure/Providers/MetaConnectorServiceProvider.php',
+            'MappingEngine/Infrastructure/Providers/MappingEngineServiceProvider.php',
+            'Synchronization/Infrastructure/Providers/SynchronizationServiceProvider.php',
         ];
 
         foreach ($providers as $relative) {

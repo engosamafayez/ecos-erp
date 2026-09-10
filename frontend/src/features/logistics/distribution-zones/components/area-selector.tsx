@@ -141,12 +141,12 @@ function AssignByGovPopover({ groups, assignedIds, onAssign, disabled }: AssignB
       <PopoverContent align="start" className="w-64 p-0">
         <div className="border-b p-2">
           <div className="relative">
-            <Search className="absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute start-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search governorates…"
               value={govSearch}
               onChange={(e) => setGovSearch(e.target.value)}
-              className="h-7 pl-7 text-xs"
+              className="h-7 ps-7 text-xs"
             />
           </div>
         </div>
@@ -397,7 +397,7 @@ export function AreaSelector({
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="border-b px-3 py-2">
             <Skeleton className="h-4 w-32" />
-            <div className="mt-1.5 space-y-1.5 pl-6">
+            <div className="mt-1.5 space-y-1.5 ps-6">
               <Skeleton className="h-3.5 w-48" />
               <Skeleton className="h-3.5 w-40" />
               <Skeleton className="h-3.5 w-44" />
@@ -448,19 +448,19 @@ export function AreaSelector({
         {/* Toolbar */}
         <div className="flex flex-wrap items-center gap-2 border-b p-2">
           <div className="relative min-w-0 flex-1">
-            <Search className="absolute left-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute start-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search areas or governorates…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="h-7 pl-7 text-xs"
+              className="h-7 ps-7 text-xs"
               disabled={disabled}
             />
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute end-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 <X className="size-3" />
               </button>
@@ -525,12 +525,12 @@ export function AreaSelector({
             <span className="font-medium text-muted-foreground">Selected</span>
             <span className="tabular-nums">
               <span className="font-semibold text-foreground">{selectedGovCount}</span>
-              <span className="ml-0.5 text-muted-foreground">{selectedGovCount !== 1 ? 'Govs' : 'Gov'}</span>
+              <span className="ms-0.5 text-muted-foreground">{selectedGovCount !== 1 ? 'Govs' : 'Gov'}</span>
             </span>
             <span className="text-muted-foreground/50">·</span>
             <span className="tabular-nums">
               <span className="font-semibold text-foreground">{selectedCount}</span>
-              <span className="ml-0.5 text-muted-foreground">Cities</span>
+              <span className="ms-0.5 text-muted-foreground">Cities</span>
             </span>
           </div>
         )}
