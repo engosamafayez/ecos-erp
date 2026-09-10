@@ -19,6 +19,7 @@ final class ChannelDTO extends BaseDTO
         public readonly bool $sync_prices = true,
         public readonly bool $sync_stock = true,
         public readonly bool $sync_customers = true,
+        public readonly bool $sync_orders = true,
         public readonly ?string $consumer_key = null,
         public readonly ?string $consumer_secret = null,
         public readonly ?string $code = null,
@@ -44,6 +45,7 @@ final class ChannelDTO extends BaseDTO
             sync_prices: (bool) ($data['sync_prices'] ?? true),
             sync_stock: (bool) ($data['sync_stock'] ?? true),
             sync_customers: (bool) ($data['sync_customers'] ?? true),
+            sync_orders: (bool) ($data['sync_orders'] ?? true),
             consumer_key: $ns($data, 'consumer_key'),
             consumer_secret: $ns($data, 'consumer_secret'),
             code: $ns($data, 'code'),
@@ -71,6 +73,7 @@ final class ChannelDTO extends BaseDTO
             'sync_prices' => $this->sync_prices,
             'sync_stock' => $this->sync_stock,
             'sync_customers' => $this->sync_customers,
+            'sync_orders' => $this->sync_orders,
         ];
     }
 

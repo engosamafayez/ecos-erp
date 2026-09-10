@@ -1,4 +1,5 @@
 export type ConnectionStatus = 'disconnected' | 'connected' | 'error';
+export type ChannelHealthStatus = 'healthy' | 'warning' | 'error';
 
 export type ChannelPlatform =
   | 'woocommerce'
@@ -31,9 +32,19 @@ export type Channel = {
   sync_prices: boolean;
   sync_stock: boolean;
   sync_customers: boolean;
+  sync_orders: boolean;
+  orders_sync_watermark_at: string | null;
+  orders_initial_import_policy: string | null;
+  orders_initial_import_cutoff_at: string | null;
+  orders_sync_activated_at: string | null;
   connection_status: ConnectionStatus;
   connection_status_label: string;
+  health_status: ChannelHealthStatus;
   last_sync_at: string | null;
+  last_webhook_received_at: string | null;
+  last_successful_sync_at: string | null;
+  last_error_at: string | null;
+  last_error_message: string | null;
   created_at: string | null;
   updated_at: string | null;
 };
@@ -48,6 +59,7 @@ export type ChannelPayload = {
   sync_prices: boolean;
   sync_stock: boolean;
   sync_customers: boolean;
+  sync_orders: boolean;
   consumer_key?: string;
   consumer_secret?: string;
 };

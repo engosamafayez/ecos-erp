@@ -55,6 +55,7 @@ use Modules\Commerce\ProductMappings\Presentation\Http\Controllers\ProductMappin
 use Modules\Commerce\Shipping\Presentation\Http\Controllers\ShippingQuoteController;
 use Modules\Commerce\StockSync\Presentation\Http\Controllers\StockSyncController;
 use Modules\Commerce\Synchronization\Presentation\Http\Controllers\SynchronizationController;
+use Modules\Commerce\Synchronization\Presentation\Http\Controllers\OrdersSyncControlController;
 use Modules\Commerce\Synchronization\Presentation\Http\Controllers\WooCommerceWebhookController;
 use Modules\Core\DemandAnalysis\Presentation\Http\Controllers\DemandAnalysisController as ProductDemandAnalysisController;
 use Modules\Core\UserPreferences\Presentation\Http\Controllers\UserPreferenceController;
@@ -802,8 +803,14 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
         ->middlewareFor('update', 'permission:sales.channels.update')
         ->middlewareFor('destroy', 'permission:sales.channels.delete');
     Route::post('channels/{channel}/test-connection', [ConnectorController::class, 'testConnection'])->middleware('permission:sales.channels.update');
+    // TASK-...-025 (P1/P3/P4/W6-W9) — Orders Sync pause/resume and first-activation policy.
+    // Same permission verb as the rest of channel-settings writes.
+    Route::post('channels/{channel}/orders-sync/state', [OrdersSyncControlController::class, 'setState'])->middleware('permission:sales.channels.update');
+    Route::post('channels/{channel}/orders-sync/initial-import-policy', [OrdersSyncControlController::class, 'setInitialImportPolicy'])->middleware('permission:sales.channels.update');
     Route::middleware(['throttle:10,1'])->group(function (): void {
         Route::post('channels/{channel}/import-products', [ProductImportController::class, 'importProducts'])->middleware('permission:sales.channels.sync');
+        // TASK-...-025 (P5) — `import-orders` now also accepts {mode: historical, after, batch_id}
+        // in its request body (OrderImportController); the route itself is unchanged.
         Route::post('channels/{channel}/import-orders', [OrderImportController::class, 'importOrders'])->middleware('permission:sales.channels.sync');
     });
     // Product mappings are channel configuration; reads take the channel view verb, matching

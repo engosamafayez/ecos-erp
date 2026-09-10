@@ -7,6 +7,7 @@ namespace Modules\Commerce\Channels\Infrastructure\Providers;
 use Illuminate\Support\ServiceProvider;
 use Modules\Commerce\Channels\Domain\Contracts\ChannelRepositoryInterface;
 use Modules\Commerce\Channels\Domain\Services\SalesChannelCodeGeneratorService;
+use Modules\Commerce\Channels\Infrastructure\Console\Commands\EncryptLegacyChannelCredentialsCommand;
 use Modules\Commerce\Channels\Infrastructure\Repositories\EloquentChannelRepository;
 
 final class ChannelServiceProvider extends ServiceProvider
@@ -20,5 +21,10 @@ final class ChannelServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->loadMigrationsFrom(__DIR__.'/../Database/Migrations');
+
+        // TASK-...-025 (P12) — source-complete, deliberately NOT invoked by this task.
+        $this->commands([
+            EncryptLegacyChannelCredentialsCommand::class,
+        ]);
     }
 }

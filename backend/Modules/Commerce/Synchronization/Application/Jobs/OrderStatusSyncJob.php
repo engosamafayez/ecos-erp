@@ -12,7 +12,9 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Http;
 use Modules\Commerce\Channels\Domain\Models\Channel;
+use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Commerce\Orders\Domain\Models\Order;
+use Modules\Commerce\Synchronization\Application\Services\EcosOrderStatusToWooTranslator;
 use Modules\Commerce\Synchronization\Application\Services\SyncLogService;
 use Modules\Commerce\Synchronization\Domain\Enums\SyncDirection;
 use Modules\Commerce\Synchronization\Domain\Enums\SyncEntityType;
@@ -33,19 +35,12 @@ final class OrderStatusSyncJob implements ShouldQueue
 
     public int $backoff = 60;
 
-    private const STATUS_MAP = [
-        'pending' => 'pending',
-        'processing' => 'processing',
-        'completed' => 'completed',
-        'cancelled' => 'cancelled',
-    ];
-
     public function __construct(
         private readonly Channel $channel,
         private readonly Order $order,
     ) {}
 
-    public function handle(SyncLogService $logService): void
+    public function handle(SyncLogService $logService, EcosOrderStatusToWooTranslator $translator): void
     {
         $log = $logService->createLog(
             $this->channel,
@@ -83,10 +78,21 @@ final class OrderStatusSyncJob implements ShouldQueue
             ? $this->order->status->value
             : (string) $this->order->status;
 
-        $wooStatus = self::STATUS_MAP[$statusValue] ?? null;
+        // TASK-...-024/-025 (W4/P0) — centralized outbound status mapping via the fixed
+        // EcosOrderStatusToWooTranslator (the previous inline STATUS_MAP was keyed on
+        // pre-ADR-042 status strings and silently failed for every status but Cancelled).
+        // tryFrom() rather than a bare cast handles the defensive case of a queued payload whose
+        // status isn't a valid OrderStatus backing value.
+        $ecosStatus = OrderStatus::tryFrom($statusValue);
+        $wooStatus = $ecosStatus !== null ? $translator->translate($ecosStatus) : null;
 
         if ($wooStatus === null) {
-            $logService->markFailed($log, "No WooCommerce mapping for status [{$statusValue}].", null, $this->channel);
+            $logService->markFailed(
+                $log,
+                "No WooCommerce mapping for ECOS status [{$statusValue}] — intentionally unmapped or invalid.",
+                null,
+                $this->channel,
+            );
 
             return;
         }

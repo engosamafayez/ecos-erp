@@ -36,6 +36,12 @@ use Modules\Organization\BusinessAccounts\Domain\Models\BusinessAccount;
  * @property bool $sync_prices
  * @property bool $sync_stock
  * @property bool $sync_customers
+ * @property bool $sync_orders
+ * @property \Illuminate\Support\Carbon|null $orders_sync_watermark_at
+ * @property string|null $orders_initial_import_policy
+ * @property \Illuminate\Support\Carbon|null $orders_initial_import_cutoff_at
+ * @property \Illuminate\Support\Carbon|null $orders_sync_activated_at
+ * @property string|null $orders_sync_activated_by
  * @property string|null $external_webhook_order_created_id
  * @property string|null $external_webhook_order_updated_id
  * @property string|null $external_webhook_product_created_id
@@ -147,6 +153,12 @@ class Channel extends Model
         'sync_prices',
         'sync_stock',
         'sync_customers',
+        'sync_orders',
+        'orders_sync_watermark_at',
+        'orders_initial_import_policy',
+        'orders_initial_import_cutoff_at',
+        'orders_sync_activated_at',
+        'orders_sync_activated_by',
         'external_webhook_order_created_id',
         'external_webhook_order_updated_id',
         'external_webhook_product_created_id',
@@ -174,6 +186,10 @@ class Channel extends Model
             'sync_prices' => 'boolean',
             'sync_stock' => 'boolean',
             'sync_customers' => 'boolean',
+            'sync_orders' => 'boolean',
+            'orders_sync_watermark_at' => 'datetime',
+            'orders_initial_import_cutoff_at' => 'datetime',
+            'orders_sync_activated_at' => 'datetime',
             'last_sync_at' => 'datetime',
             'last_webhook_received_at' => 'datetime',
             'last_successful_sync_at' => 'datetime',

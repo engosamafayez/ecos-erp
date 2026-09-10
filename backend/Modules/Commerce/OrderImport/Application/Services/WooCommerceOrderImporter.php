@@ -6,8 +6,10 @@ namespace Modules\Commerce\OrderImport\Application\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Modules\Admin\Configuration\Domain\Services\ConfigurationManager;
 use Modules\Commerce\Channels\Domain\Models\Channel;
+use Modules\Commerce\OrderImport\Application\DTO\OrderImportOptionsDTO;
 use Modules\Commerce\OrderImport\Application\DTO\OrderImportResultDTO;
 use Modules\Commerce\Orders\Application\Actions\ReserveOrderInventoryAction;
 use Modules\Commerce\Orders\Domain\Contracts\OrderRepositoryInterface;
@@ -56,7 +58,7 @@ final class WooCommerceOrderImporter
      *
      * @param  array<string, mixed>  $wooOrder
      */
-    public function importSingle(Channel $channel, array $wooOrder): bool
+    public function importSingle(Channel $channel, array $wooOrder, bool $historical = false, ?string $batchId = null): bool
     {
         $externalId = (string) ($wooOrder['id'] ?? '');
 
@@ -72,6 +74,11 @@ final class WooCommerceOrderImporter
             return false;
         }
 
+        if ($historical) {
+            $order['is_historical_import'] = true;
+            $order['historical_import_batch_id'] = $batchId;
+        }
+
         $linesSubtotal = array_sum(array_column($lines, 'line_total'));
         $order['subtotal'] = $linesSubtotal;
         $wooTotal = is_numeric($wooOrder['total'] ?? '') ? (float) $wooOrder['total'] : null;
@@ -85,6 +92,17 @@ final class WooCommerceOrderImporter
 
         if ($coupons !== []) {
             $createdOrder->coupons()->createMany($coupons);
+        }
+
+        // TASK-...-025 (P6) — the explicit LIVE-vs-HISTORICAL side-effect boundary. A historical
+        // import projects the order's mapped historical status faithfully (buildOrder() already
+        // ran the same status translation either way) but must NEVER replay the reservation this
+        // status would trigger live — that is precisely "replaying historical business execution"
+        // the task forbids. This is a deliberate, testable code guard, not a reliance on the
+        // accidental assigned_warehouse_id-is-always-null gap TASK-...-024 found and flagged as
+        // unsafe to trust as a boundary.
+        if ($historical) {
+            return true;
         }
 
         $wooStatus = (string) ($wooOrder['status'] ?? 'pending');
@@ -109,8 +127,18 @@ final class WooCommerceOrderImporter
         return true;
     }
 
-    public function import(Channel $channel): OrderImportResultDTO
+    public function import(Channel $channel, ?OrderImportOptionsDTO $options = null): OrderImportResultDTO
     {
+        $options ??= new OrderImportOptionsDTO();
+
+        // TASK-...-025 (W6) — Orders Sync pause gate. This is the live/catch-up path (the manual
+        // "Sync Now" action IS the catch-up mechanism once resumed); an explicit Historical
+        // Import is a deliberately-invoked, operator-triggered mode that does not touch the live
+        // watermark and is independent of this gate.
+        if (! $options->historical && ! $channel->sync_orders) {
+            return new OrderImportResultDTO(0, 0, 0, 0, 0, 0, ['Orders Sync is paused for this channel; no backlog was processed.']);
+        }
+
         $credential = $channel->credential;
 
         if ($credential === null) {
@@ -124,19 +152,43 @@ final class WooCommerceOrderImporter
         $skippedOrders = 0;
         $failedLines = 0;
         $errors = [];
+        $pageFetchFailed = false;
 
         $policy = $this->resolveBrandPolicy($channel);
         $page = 1;
         $baseUrl = rtrim($channel->store_url, '/').'/wp-json/wc/v3/orders';
 
+        // TASK-...-025 (W5/W9) — the watermark authority. Live/catch-up runs default to the
+        // channel's own checkpoint when the caller doesn't pass an explicit `after` (e.g. a
+        // Resume-From-Selected-Point value); a null watermark (channels that predate this
+        // feature, or a deliberate full-history initial-import policy) means no `after` filter —
+        // today's exact unbounded-scan behaviour, unchanged. Historical mode never defaults to
+        // the live watermark: an explicit historical range is either passed in `$options->after`
+        // or, absent, means "the whole history", by design.
+        //
+        // Woo's `after` filters by date_created, not last-modified — deliberately correct here:
+        // this importer only ever CREATES orders (never updates one that already exists — see
+        // orderExists()), so a creation-time watermark is exactly the right semantics. Order
+        // *updates* flow through the separate webhook path entirely, unaffected by this cursor.
+        $after = $options->after ?? ($options->historical ? null : $channel->orders_sync_watermark_at);
+        $runStartedAt = now();
+        $batchId = $options->historical ? ($options->batchId ?? (string) Str::uuid()) : null;
+
         while (true) {
             try {
+                $query = ['per_page' => self::PER_PAGE, 'page' => $page];
+
+                if ($after !== null) {
+                    $query['after'] = $after->toIso8601String();
+                }
+
                 $response = Http::withBasicAuth($credential->consumer_key, $credential->consumer_secret)
                     ->timeout(self::TIMEOUT)
-                    ->get($baseUrl, ['per_page' => self::PER_PAGE, 'page' => $page]);
+                    ->get($baseUrl, $query);
 
                 if (! $response->successful()) {
                     $errors[] = "Failed to fetch page {$page}: HTTP {$response->status()}.";
+                    $pageFetchFailed = true;
                     break;
                 }
 
@@ -181,6 +233,11 @@ final class WooCommerceOrderImporter
                             $wooTotal = is_numeric($wooOrder['total'] ?? '') ? (float) $wooOrder['total'] : null;
                             $order['total'] = $wooTotal ?? ($linesSubtotal + $order['shipping_total'] - $order['discount_total']);
 
+                            if ($options->historical) {
+                                $order['is_historical_import'] = true;
+                                $order['historical_import_batch_id'] = $batchId;
+                            }
+
                             $createdOrder = $this->orders->create($order, $lines);
 
                             if ($fees !== []) {
@@ -191,15 +248,20 @@ final class WooCommerceOrderImporter
                                 $createdOrder->coupons()->createMany($coupons);
                             }
 
-                            // See importSingle()'s identical fix for why the resolved
-                            // status must gate this too, not only the raw Woo status.
-                            $resolvedBlocksReservation = in_array($createdOrder->status, [OrderStatus::OnHold, OrderStatus::AwaitingPayment], true);
+                            // TASK-...-025 (P6) — see importSingle()'s identical guard. A
+                            // historical import never reserves inventory, full stop; it is not
+                            // gated on the raw Woo status at all.
+                            if (! $options->historical) {
+                                // See importSingle()'s identical fix for why the resolved
+                                // status must gate this too, not only the raw Woo status.
+                                $resolvedBlocksReservation = in_array($createdOrder->status, [OrderStatus::OnHold, OrderStatus::AwaitingPayment], true);
 
-                            if (! $resolvedBlocksReservation && in_array($wooOrder['status'] ?? 'pending', self::RESERVE_ON_IMPORT, true)) {
-                                try {
-                                    $this->reserveInventory->execute($createdOrder);
-                                } catch (Throwable $ie) {
-                                    $errors[] = "Order #{$externalId} inventory reserve failed: {$ie->getMessage()}";
+                                if (! $resolvedBlocksReservation && in_array($wooOrder['status'] ?? 'pending', self::RESERVE_ON_IMPORT, true)) {
+                                    try {
+                                        $this->reserveInventory->execute($createdOrder);
+                                    } catch (Throwable $ie) {
+                                        $errors[] = "Order #{$externalId} inventory reserve failed: {$ie->getMessage()}";
+                                    }
                                 }
                             }
 
@@ -225,8 +287,17 @@ final class WooCommerceOrderImporter
                 $page++;
             } catch (Throwable $e) {
                 $errors[] = "Request error on page {$page}: {$e->getMessage()}";
+                $pageFetchFailed = true;
                 break;
             }
+        }
+
+        // TASK-...-025 (W5) — advance the checkpoint ONLY on a clean run, and only for the
+        // live/catch-up path. Advancing to the run's START time (not completion time) is
+        // deliberate: an order created in Woo WHILE this run was paginating must not be silently
+        // skipped by the next run because the watermark moved past it.
+        if (! $options->historical && ! $pageFetchFailed) {
+            $channel->update(['orders_sync_watermark_at' => $runStartedAt]);
         }
 
         return new OrderImportResultDTO(

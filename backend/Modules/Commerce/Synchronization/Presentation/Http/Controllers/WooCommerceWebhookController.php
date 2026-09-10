@@ -37,6 +37,23 @@ final class WooCommerceWebhookController extends Controller
         $topic = is_string($request->header('X-WC-Webhook-Topic')) ? $request->header('X-WC-Webhook-Topic') : 'order.webhook';
         $externalOrderId = (string) ($payload['id'] ?? '');
 
+        // TASK-...-025 (W6/P1) — Orders Sync pause gate. Still 200s the webhook (Woo would
+        // otherwise retry-storm a non-2xx response) and still records it in sync_logs, but never
+        // reaches ProcessOrderWebhookJob: "no NEW Woo Orders enter ECOS" while paused. The
+        // checkpoint (channel.orders_sync_watermark_at) is untouched by this branch.
+        if (! $channel->sync_orders) {
+            $logService->createSkippedLog(
+                $channel,
+                SyncEntityType::Order,
+                SyncDirection::Inbound,
+                'orders_sync_paused',
+                $externalOrderId !== '' ? $externalOrderId : null,
+                ['topic' => $topic],
+            );
+
+            return $this->success(null, 'Orders Sync is paused for this channel; webhook skipped.');
+        }
+
         if ($externalOrderId !== '' && $this->isDuplicate($channel->id, $externalOrderId, $topic)) {
             $logService->createSkippedLog(
                 $channel,

@@ -163,6 +163,10 @@ class Order extends Model
         'customer_id',
         'customer_name',
         'external_order_id',
+        // TASK-...-025 (W3/W12) — explicit historical-import boundary. Written ONLY by a
+        // deliberately-invoked historical import call; never by live import/webhook.
+        'is_historical_import',
+        'historical_import_batch_id',
         'order_number',
         'order_date',
         'status',
@@ -290,6 +294,7 @@ class Order extends Model
     {
         return [
             'status' => OrderStatus::class,
+            'is_historical_import' => 'boolean',
             'subtotal' => 'float',
             'total' => 'float',
             'shipping_total' => 'float',

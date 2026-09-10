@@ -49,9 +49,21 @@ final class ChannelResource extends JsonResource
             'sync_prices' => (bool) $this->sync_prices,
             'sync_stock' => (bool) $this->sync_stock,
             'sync_customers' => (bool) $this->sync_customers,
+            'sync_orders' => (bool) $this->sync_orders,
+            'orders_sync_watermark_at' => $this->orders_sync_watermark_at?->toIso8601String(),
+            'orders_initial_import_policy' => $this->orders_initial_import_policy,
+            'orders_initial_import_cutoff_at' => $this->orders_initial_import_cutoff_at?->toIso8601String(),
+            'orders_sync_activated_at' => $this->orders_sync_activated_at?->toIso8601String(),
             'connection_status' => $this->connection_status->value,
             'connection_status_label' => $this->connection_status->label(),
+            // TASK-...-024 W13 / TASK-...-025 P11 — the domain already computes a real 3-state
+            // signal; it was simply never serialized. No new domain logic, pure wiring.
+            'health_status' => $this->healthStatus()->value,
             'last_sync_at' => $this->last_sync_at?->toIso8601String(),
+            'last_webhook_received_at' => $this->last_webhook_received_at?->toIso8601String(),
+            'last_successful_sync_at' => $this->last_successful_sync_at?->toIso8601String(),
+            'last_error_at' => $this->last_error_at?->toIso8601String(),
+            'last_error_message' => $this->last_error_message,
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
