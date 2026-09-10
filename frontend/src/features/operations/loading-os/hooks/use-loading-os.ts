@@ -234,3 +234,43 @@ export function useRecordReturn(sessionId: string, assignmentId: string) {
     onError: (e: Error) => toast({ title: e.message, variant: 'destructive' }),
   });
 }
+
+/**
+ * Warehouse return receipt — moves the accepted split into real warehouse stock
+ * (see `loadingOsService.receiveReturn` for the full backend contract).
+ *
+ * Deliberately NO `onError` toast here: a refusal (a conflicting re-receipt, an
+ * over-receipt, an approved shift) must be shown next to the line's own form with
+ * the backend's own message, not swallowed into a generic toast — the caller reads
+ * `mutation.isError` / `mutation.error` directly, matching the pattern already used
+ * for `confirm`/`resolve`/`startLoading` in `loading-groups.tsx` and for the cash
+ * handover confirmation in `cash-handover-panel.tsx`.
+ */
+export function useReceiveReturn(sessionId: string, assignmentId: string) {
+  const { t } = useTranslation('operations');
+  const { toast } = useToast();
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      lineId,
+      quantityAccepted,
+      quantityDamaged,
+      damageReason,
+    }: {
+      lineId: string;
+      quantityAccepted: number;
+      quantityDamaged: number;
+      damageReason?: string;
+    }) =>
+      loadingOsService.receiveReturn(sessionId, assignmentId, lineId, {
+        quantity_accepted: quantityAccepted,
+        quantity_damaged: quantityDamaged,
+        damage_reason: damageReason || null,
+      }),
+    onSuccess: (data) => {
+      qc.setQueryData(keys.reconciliation(sessionId, assignmentId), data);
+      toast({ title: t($ => $.loadingOs.toasts.returnReceived) });
+    },
+  });
+}

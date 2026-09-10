@@ -721,6 +721,26 @@ export type WaveMissingMaterialItem = {
    */
   expected_incoming_qty: number;
   uncovered_shortage_qty: number;
+  /**
+   * Expected Driver Returns — quantity from CLOSED prior delivery attempts that is still
+   * physically on a driver/vehicle, not yet received by the warehouse. Distinct from
+   * expected_incoming_qty (Procurement's open-purchase-order figure) and from goods still
+   * possibly out on a delivery that has not yet failed/closed.
+   *
+   * PLANNING INFORMATION ONLY, same guarantee as expected_incoming_qty above: it never
+   * changes On Hand/Available/Reserved, never writes the stock ledger, and never creates a
+   * Goods Receipt. It does NOT mean the warehouse currently has this stock — only that it
+   * expects the stock back once a driver physically returns it. Never treat it as on-hand
+   * or reservable.
+   */
+  expected_driver_returns_qty: number;
+  /**
+   * Canonical, more-accurate shortage once Expected Driver Returns is factored in:
+   * max(0, required_qty - available_qty - expected_driver_returns_qty), computed
+   * server-side. Additive to — never a replacement for — missing_qty (raw physical
+   * shortage) and uncovered_shortage_qty (Procurement-adjusted), both unchanged above.
+   */
+  projected_shortage_after_returns_qty: number;
   affected_orders_count: number;
   last_calculated_at: string | null;
 };
