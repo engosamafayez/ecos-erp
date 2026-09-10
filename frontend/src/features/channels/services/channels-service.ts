@@ -44,8 +44,39 @@ export const channelsService = {
     return data.data;
   },
 
-  async importOrders(id: string): Promise<OrderImportResult> {
-    const { data } = await api.post<ApiResponse<OrderImportResult>>(`/channels/${id}/import-orders`);
+  async importOrders(id: string, options?: ImportOrdersOptions): Promise<OrderImportResult> {
+    const { data } = await api.post<ApiResponse<OrderImportResult>>(`/channels/${id}/import-orders`, options);
     return data.data;
   },
+
+  async setOrdersSyncState(id: string, payload: OrdersSyncStatePayload): Promise<Channel> {
+    const { data } = await api.post<ApiResponse<Channel>>(`/channels/${id}/orders-sync/state`, payload);
+    return data.data;
+  },
+
+  async setInitialImportPolicy(id: string, payload: InitialImportPolicyPayload): Promise<Channel> {
+    const { data } = await api.post<ApiResponse<Channel>>(
+      `/channels/${id}/orders-sync/initial-import-policy`,
+      payload,
+    );
+    return data.data;
+  },
+};
+
+export type ImportOrdersOptions = {
+  mode?: 'live' | 'historical';
+  after?: string;
+  batch_id?: string;
+};
+
+export type OrdersSyncStatePayload = {
+  state: 'paused' | 'enabled';
+  resume_policy?: 'catch_up' | 'resume_from_now' | 'resume_from_point';
+  resume_from?: string;
+};
+
+export type InitialImportPolicyPayload = {
+  policy: 'from_now' | 'from_date' | 'last_n_days' | 'historical';
+  date?: string;
+  days?: number;
 };

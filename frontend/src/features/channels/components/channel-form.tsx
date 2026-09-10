@@ -108,11 +108,11 @@ export function ChannelFormFields() {
           <input type="checkbox" className="border-input size-4 rounded" {...register('sync_customers')} />
           {t($ => $.form.syncCustomers)}
         </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" className="border-input size-4 rounded" {...register('sync_orders')} />
-          {t($ => $.form.syncOrders)}
-        </label>
       </div>
+      {/* Orders Sync is deliberately NOT here — TASK-...-025 P1/W6-W8. Pausing/resuming Orders
+          Sync requires an explicit resume policy the day it resumes, which a bare settings
+          checkbox cannot express; it is controlled from the channel row's "Orders Sync…" action
+          (OrdersSyncDialog) instead. */}
 
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" className="border-input size-4 rounded" {...register('is_active')} />

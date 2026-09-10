@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Download, Pencil, Plus, RefreshCw, Trash2, Wifi } from 'lucide-react';
+import { Download, History, Pencil, Plus, RefreshCw, Settings2, Trash2, Wifi } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -16,6 +16,7 @@ import { ChannelFormDrawer } from '@/features/channels/components/channel-form-d
 import { ConnectionStatusBadge } from '@/features/channels/components/connection-status-badge';
 import { ImportOrdersResultDialog } from '@/features/channels/components/import-orders-result-dialog';
 import { ImportResultDialog } from '@/features/channels/components/import-result-dialog';
+import { OrdersSyncDialog } from '@/features/channels/components/orders-sync-dialog';
 import { PlatformBadge } from '@/features/channels/components/platform-badge';
 import {
   useChannelsQuery,
@@ -73,6 +74,8 @@ export function ChannelsContent() {
   const [importingOrdersId, setImportingOrdersId] = useState<string | null>(null);
   const [orderImportResult, setOrderImportResult] = useState<OrderImportResult | null>(null);
   const [orderImportChannelName, setOrderImportChannelName] = useState<string | undefined>();
+  const [ordersSyncChannel, setOrdersSyncChannel] = useState<Channel | null>(null);
+  const [historicalImportTarget, setHistoricalImportTarget] = useState<Channel | null>(null);
 
   const params = useMemo(
     () => ({
@@ -132,10 +135,25 @@ export function ChannelsContent() {
   const handleImportOrders = (channel: Channel) => {
     setImportingOrdersId(channel.id);
     setOrderImportChannelName(channel.name);
-    importOrders.mutate(channel.id, {
-      onSuccess: (result) => setOrderImportResult(result),
-      onSettled: () => setImportingOrdersId(null),
-    });
+    importOrders.mutate(
+      { id: channel.id },
+      {
+        onSuccess: (result) => setOrderImportResult(result),
+        onSettled: () => setImportingOrdersId(null),
+      },
+    );
+  };
+
+  const handleImportHistorical = (channel: Channel) => {
+    setImportingOrdersId(channel.id);
+    setOrderImportChannelName(channel.name);
+    importOrders.mutate(
+      { id: channel.id, options: { mode: 'historical' } },
+      {
+        onSuccess: (result) => setOrderImportResult(result),
+        onSettled: () => setImportingOrdersId(null),
+      },
+    );
   };
 
   const columns: ColumnDef<Channel>[] = [
@@ -264,6 +282,18 @@ export function ChannelsContent() {
                 onSelect: () => handleImportOrders(channel),
               },
               {
+                key: 'orders-sync',
+                label: t($ => $.actions.ordersSync),
+                icon: Settings2,
+                onSelect: () => setOrdersSyncChannel(channel),
+              },
+              {
+                key: 'import-historical',
+                label: importingOrdersId === channel.id ? t($ => $.actions.importing) : t($ => $.actions.importHistorical),
+                icon: History,
+                onSelect: () => setHistoricalImportTarget(channel),
+              },
+              {
                 key: 'sync-stock',
                 label: syncingId === channel.id ? t($ => $.actions.syncing) : t($ => $.actions.syncStock),
                 icon: RefreshCw,
@@ -326,6 +356,25 @@ export function ChannelsContent() {
         onOpenChange={(open) => { if (!open) setOrderImportResult(null); }}
         result={orderImportResult}
         channelName={orderImportChannelName}
+      />
+
+      <OrdersSyncDialog
+        open={ordersSyncChannel !== null}
+        onOpenChange={(open) => { if (!open) setOrdersSyncChannel(null); }}
+        channel={ordersSyncChannel}
+      />
+
+      <ConfirmDialog
+        open={historicalImportTarget !== null}
+        onOpenChange={(open) => { if (!open) setHistoricalImportTarget(null); }}
+        title={t($ => $.ordersSync.confirmHistoricalImport.title)}
+        description={t($ => $.ordersSync.confirmHistoricalImport.description)}
+        confirmLabel={t($ => $.ordersSync.confirmHistoricalImport.confirm)}
+        loading={importOrders.isPending}
+        onConfirm={() => {
+          if (historicalImportTarget) handleImportHistorical(historicalImportTarget);
+          setHistoricalImportTarget(null);
+        }}
       />
 
       <SyncStockResultDialog

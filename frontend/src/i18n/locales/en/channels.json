@@ -8,6 +8,8 @@
     "edit": "Edit Channel",
     "importProducts": "Import Products",
     "importOrders": "Import Orders",
+    "importHistorical": "Import Historical Orders",
+    "ordersSync": "Orders Sync…",
     "importing": "Importing…",
     "testConnection": "Test Connection",
     "testing": "Testing…",
@@ -113,5 +115,48 @@
     "active": "Active channels",
     "connected": "Connected channels",
     "platforms": "Platforms"
+  },
+  "ordersSync": {
+    "title": "Orders Sync",
+    "health": "Health",
+    "healthValues": {
+      "healthy": "Healthy",
+      "warning": "Warning",
+      "error": "Error"
+    },
+    "state": "Status",
+    "enabled": "Enabled",
+    "paused": "Paused",
+    "checkpoint": "Checkpoint",
+    "lastError": "Last Error",
+    "setupTitle": "Set up Orders Sync",
+    "setupDescription": "Choose where Orders Sync should start from. This runs once, the first time Orders Sync is turned on for this channel.",
+    "initialPolicies": {
+      "fromNow": "Start from now (recommended)",
+      "fromDate": "Start from a selected date",
+      "lastNDays": "Import the last N days",
+      "historical": "I'll import historical Orders separately"
+    },
+    "resumeTitle": "Resume Orders Sync",
+    "resumePolicies": {
+      "catchUp": "Catch up — process Orders since the pause",
+      "fromNow": "Resume from now — skip the paused period",
+      "fromPoint": "Resume from a selected date/time"
+    },
+    "resumePolicyDescriptions": {
+      "catch_up": "Every Order created or changed while paused will be processed.",
+      "resume_from_now": "Orders from the paused period will be skipped permanently.",
+      "resume_from_point": "Orders from the selected date/time onward will be processed."
+    },
+    "pauseDescription": "While paused, no new Orders will enter ECOS from this channel. The current checkpoint is preserved, so nothing is lost.",
+    "cancel": "Cancel",
+    "activate": "Start Orders Sync",
+    "resume": "Resume",
+    "pause": "Pause Orders Sync",
+    "confirmHistoricalImport": {
+      "title": "Import Historical Orders",
+      "description": "Historical Orders will be imported with their real historical status, but will NOT trigger inventory reservation, warehouse execution, or any other live operational action.",
+      "confirm": "Import Historical Orders"
+    }
   }
 }

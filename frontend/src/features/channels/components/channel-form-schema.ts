@@ -22,7 +22,6 @@ export const channelSchema = z.object({
   sync_prices: z.boolean(),
   sync_stock: z.boolean(),
   sync_customers: z.boolean(),
-  sync_orders: z.boolean(),
   consumer_key: z.string().max(500).optional(),
   consumer_secret: z.string().max(500).optional(),
 });
@@ -41,7 +40,6 @@ export function toFormValues(channel?: Channel | null): ChannelFormValues {
     sync_prices: channel?.sync_prices ?? true,
     sync_stock: channel?.sync_stock ?? true,
     sync_customers: channel?.sync_customers ?? true,
-    sync_orders: channel?.sync_orders ?? true,
     consumer_key: '',
     consumer_secret: '',
   };
@@ -58,7 +56,6 @@ export function toPayload(values: ChannelFormValues): ChannelPayload {
     sync_prices: values.sync_prices,
     sync_stock: values.sync_stock,
     sync_customers: values.sync_customers,
-    sync_orders: values.sync_orders,
     consumer_key: values.consumer_key || undefined,
     consumer_secret: values.consumer_secret || undefined,
   };

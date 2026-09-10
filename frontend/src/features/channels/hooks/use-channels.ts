@@ -1,7 +1,13 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import type {
+  ImportOrdersOptions,
+  InitialImportPolicyPayload,
+  OrdersSyncStatePayload,
+} from '@/features/channels/services/channels-service';
 import { channelsService } from '@/features/channels/services/channels-service';
 import type {
+  Channel,
   ChannelPayload,
   ChannelsQuery,
   ImportResult,
@@ -81,11 +87,33 @@ export function useImportOrders() {
   const { activeCompanyId } = useOrganizationContext();
   const companyId = activeCompanyId ?? 'global';
   const queryClient = useQueryClient();
-  return useMutation<OrderImportResult, Error, string>({
-    mutationFn: (id: string) => channelsService.importOrders(id),
+  return useMutation<OrderImportResult, Error, { id: string; options?: ImportOrdersOptions }>({
+    mutationFn: ({ id, options }) => channelsService.importOrders(id, options),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['company', companyId, 'orders'] });
       queryClient.invalidateQueries({ queryKey: ['company', companyId, 'customers-all'] });
     },
+  });
+}
+
+/** TASK-...-025 (P1/P3/W6-W8) — pause/resume, resume policy required only when resuming. */
+export function useSetOrdersSyncState() {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
+  const queryClient = useQueryClient();
+  return useMutation<Channel, Error, { id: string; payload: OrdersSyncStatePayload }>({
+    mutationFn: ({ id, payload }) => channelsService.setOrdersSyncState(id, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['company', companyId, CHANNELS_KEY] }),
+  });
+}
+
+/** TASK-...-025 (P4/W9) — first-activation cutoff policy. */
+export function useSetInitialImportPolicy() {
+  const { activeCompanyId } = useOrganizationContext();
+  const companyId = activeCompanyId ?? 'global';
+  const queryClient = useQueryClient();
+  return useMutation<Channel, Error, { id: string; payload: InitialImportPolicyPayload }>({
+    mutationFn: ({ id, payload }) => channelsService.setInitialImportPolicy(id, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['company', companyId, CHANNELS_KEY] }),
   });
 }

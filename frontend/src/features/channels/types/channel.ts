@@ -59,7 +59,8 @@ export type ChannelPayload = {
   sync_prices: boolean;
   sync_stock: boolean;
   sync_customers: boolean;
-  sync_orders: boolean;
+  // sync_orders is deliberately absent here — not settable via the generic channel update
+  // payload (TASK-...-025 correction). See OrdersSyncDialog / setOrdersSyncState.
   consumer_key?: string;
   consumer_secret?: string;
 };
