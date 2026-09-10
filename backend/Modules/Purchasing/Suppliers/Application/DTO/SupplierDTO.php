@@ -17,6 +17,11 @@ final class SupplierDTO extends BaseDTO
         // Backend-owned (SupplierCodeGeneratorService) — null means "generate on create";
         // ignored entirely on update (TASK-ECOS-PROCUREMENT-SUPPLIERS-BATCH-01-MASTER-DATA-002).
         public readonly ?string $code = null,
+        // Legacy single-category field (Task 2) — accepted for backward compatibility with
+        // any caller that has not moved to `supplier_category_ids` yet, but no longer trusted
+        // directly: CreateSupplierAction/UpdateSupplierAction derive the real column from
+        // `supplier_category_ids[0]`, falling back to this only when that array is empty
+        // (TASK-...-SUPPLIER-MASTER-AND-RETURNS-FINAL-018 §A.1).
         public readonly ?string $supplier_category_id = null,
         public readonly ?string $contact_person = null,
         public readonly ?string $email = null,
@@ -38,6 +43,12 @@ final class SupplierDTO extends BaseDTO
         public readonly array $raw_material_ids = [],
         /** @var list<string> */
         public readonly array $product_category_ids = [],
+        // Supplier Category classification (TASK-...-SUPPLIER-MASTER-AND-RETURNS-FINAL-018
+        // §A.1) — the canonical many-to-many replacement for `supplier_category_id`. NOT a
+        // `suppliers` column; the Actions strip this before writing Supplier attributes and
+        // use it to sync `supplier_category_assignments` instead. Full-replace semantics.
+        /** @var list<string> */
+        public readonly array $supplier_category_ids = [],
     ) {}
 
     /**
@@ -63,6 +74,7 @@ final class SupplierDTO extends BaseDTO
             is_active: (bool) ($data['is_active'] ?? true),
             raw_material_ids: self::stringList($data, 'raw_material_ids'),
             product_category_ids: self::stringList($data, 'product_category_ids'),
+            supplier_category_ids: self::stringList($data, 'supplier_category_ids'),
         );
     }
 

@@ -52,6 +52,7 @@ import { SupplierWizard } from '@/features/suppliers/components/supplier-wizard'
 import { SupplierCategorySelect } from '@/features/suppliers/components/supplier-category-select';
 import { SupplierCategoryManageDrawer } from '@/features/suppliers/components/supplier-category-manage-drawer';
 import { productsService } from '@/features/products/services/products-service';
+import { suppliersService } from '@/features/suppliers/services/suppliers-service';
 import { categoriesService } from '@/features/categories/services/categories-service';
 import { useDeleteSupplier, useSuppliersQuery, useUpdateSupplier } from '@/features/suppliers/hooks/use-suppliers';
 import { useSupplierSummaryStats } from '@/features/suppliers/hooks/use-supplier-analytics';
@@ -67,10 +68,19 @@ const PER_PAGE = 20;
 // v3 — columns rebuilt for TASK-UI-PROCUREMENT-002 Part 6 (keys changed).
 const COL_STORAGE_KEY = 'suppliers-col-visibility-v3';
 
-/** Map a Supplier row back into a full update payload (used by Archive). */
+/**
+ * Map a full Supplier record back into a full update payload (used by Archive). Every
+ * full-replace field (categories + both capability arrays) must carry the record's OWN
+ * current values forward — omitting any of them would silently wipe it on every archive.
+ * Callers MUST pass a fully-loaded Supplier (see handleArchive's own fetch below) — a
+ * list-row Supplier only carries capability/category COUNTS, not the full sets, and
+ * building this payload from one would reintroduce exactly that data loss.
+ */
 function supplierToPayload(s: Supplier, overrides: Partial<SupplierPayload> = {}): SupplierPayload {
   return {
-    supplier_category_id: s.supplier_category_id,
+    supplier_category_ids: (s.categories ?? []).map((c) => c.id),
+    raw_material_ids: (s.raw_materials ?? []).map((m) => m.id),
+    product_category_ids: (s.product_categories ?? []).map((c) => c.id),
     name: s.name,
     contact_person: s.contact_person ?? undefined,
     email: s.email ?? undefined,
@@ -289,7 +299,12 @@ export function SuppliersPage() {
             <span className="font-medium underline-offset-2 hover:underline">{s.name}</span>
             <span className="font-mono text-[10px] text-muted-foreground">
               {s.code}
-              {s.supplier_category_name ? ` · ${s.supplier_category_name}` : ''}
+              {/* Multiple Categories (§A.1) — the full assigned set on the list's batched
+                  aggregate; falls back to the legacy single field for a row fetched before
+                  this rolled out. */}
+              {s.supplier_category_names || s.supplier_category_name
+                ? ` · ${s.supplier_category_names ?? s.supplier_category_name}`
+                : ''}
             </span>
             {/* Compact capability summary (§11) — counts only, never a chip
                 wall; the full set is in Supplier detail. */}
@@ -458,13 +473,16 @@ export function SuppliersPage() {
 
   function handleArchive(supplier: Supplier) {
     if (!supplier.is_active) return;
-    updateSupplier.mutate(
-      { id: supplier.id, payload: supplierToPayload(supplier, { is_active: false }) },
+    // The row here is the LIST shape (counts only, no full category/capability sets) —
+    // fetch the full record first so supplierToPayload has the real arrays to carry
+    // forward, instead of silently clearing them (§A.1 "no data loss").
+    suppliersService.get(supplier.id).then((full) => updateSupplier.mutate(
+      { id: supplier.id, payload: supplierToPayload(full, { is_active: false }) },
       {
         onSuccess: () => toast.success(t($ => $.toast.archived)),
         onError: () => toast.error(t($ => $.toast.archiveFailed)),
       },
-    );
+    ));
   }
 
   /**

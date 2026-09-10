@@ -25,9 +25,7 @@ import {
   toPayload,
   type SupplierFormValues,
 } from '@/features/suppliers/components/supplier-form-schema';
-import { SupplierCategorySelect } from '@/features/suppliers/components/supplier-category-select';
-import { SupplierRawMaterialsSelect } from '@/features/suppliers/components/supplier-raw-materials-select';
-import { SupplierProductCategoriesSelect } from '@/features/suppliers/components/supplier-product-categories-select';
+import { SupplierCategoriesMultiSelect } from '@/features/suppliers/components/supplier-categories-multi-select';
 import { useCreateSupplier } from '@/features/suppliers/hooks/use-suppliers';
 
 type Props = {
@@ -36,14 +34,18 @@ type Props = {
   onCreated?: () => void;
 };
 
-type Step = 1 | 2 | 3;
+// Reduced from 3 steps to 2 (TASK-...-SUPPLIER-MASTER-AND-RETURNS-FINAL-018 §A.4) — the
+// former "Basic Info" and "Contact" steps are now one coherent "Supplier Information"
+// step; "Review" is unchanged. Supply Capabilities (Raw Materials / Product Categories)
+// is deliberately NOT part of Create anymore (§A.2) — it stays fully available from the
+// Edit Supplier form and from Supplier 360 → Products → Manage Offerings, unchanged.
+type Step = 1 | 2;
 
 function StepIndicator({ current }: { current: Step }) {
   const { t } = useTranslation('suppliers');
   const steps: { id: Step; label: string }[] = [
-    { id: 1, label: t($ => $.wizard.steps.basicInfo) },
-    { id: 2, label: t($ => $.wizard.steps.contact) },
-    { id: 3, label: t($ => $.wizard.steps.review) },
+    { id: 1, label: t($ => $.wizard.steps.info) },
+    { id: 2, label: t($ => $.wizard.steps.review) },
   ];
 
   return (
@@ -130,15 +132,17 @@ export function SupplierWizard({ open, onOpenChange, onCreated }: Props) {
   }
 
   async function goNext() {
-    const step1Fields: (keyof SupplierFormValues)[] = ['name', 'is_active'];
-    const step2Fields: (keyof SupplierFormValues)[] = ['contact_person', 'phone', 'email', 'mobile', 'country', 'state', 'city', 'district', 'address', 'google_maps_url'];
+    const step1Fields: (keyof SupplierFormValues)[] = [
+      'name', 'is_active', 'contact_person', 'phone', 'email', 'mobile',
+      'country', 'state', 'city', 'district', 'address', 'google_maps_url',
+    ];
 
-    const valid = await trigger(step === 1 ? step1Fields : step2Fields);
-    if (valid) setStep((s) => Math.min(s + 1, 3) as Step);
+    const valid = await trigger(step1Fields);
+    if (valid) setStep(2);
   }
 
   function goPrev() {
-    setStep((s) => Math.max(s - 1, 1) as Step);
+    setStep(1);
   }
 
   async function handleSubmit() {
@@ -155,9 +159,7 @@ export function SupplierWizard({ open, onOpenChange, onCreated }: Props) {
   }
 
   const vals = getValues();
-  const categoryId = watch('supplier_category_id');
-  const rawMaterialIds = watch('raw_material_ids');
-  const productCategoryIds = watch('product_category_ids');
+  const categoryIds = watch('supplier_category_ids');
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -176,7 +178,7 @@ export function SupplierWizard({ open, onOpenChange, onCreated }: Props) {
         )}
 
         <div className="flex-1 overflow-y-auto px-1 py-1">
-        {/* Step 1 — Basic Information */}
+        {/* Step 1 — Supplier Information (Basic Info + Contact merged, §A.4) */}
         {step === 1 && (
           <div className="flex flex-col gap-4">
             <Field label={t($ => $.wizard.fields.name)} required error={errors.name?.message}>
@@ -185,31 +187,12 @@ export function SupplierWizard({ open, onOpenChange, onCreated }: Props) {
             <div className="rounded-md border border-dashed p-3 text-xs text-muted-foreground">
               {t($ => $.wizard.fields.codeAutoHint)}
             </div>
-            <Field label={t($ => $.wizard.fields.category)} error={undefined}>
-              <SupplierCategorySelect
-                value={categoryId ?? null}
-                onChange={(v) => setValue('supplier_category_id', v)}
+            <Field label={t($ => $.wizard.fields.categories)} error={undefined}>
+              <SupplierCategoriesMultiSelect
+                value={categoryIds}
+                onChange={(ids) => setValue('supplier_category_ids', ids)}
               />
             </Field>
-            <div className="border-border/60 border-t pt-4">
-              <h4 className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
-                {t($ => $.capabilities.sectionTitle)}
-              </h4>
-              <div className="flex flex-col gap-3">
-                <Field label={t($ => $.capabilities.rawMaterials.label)} error={undefined}>
-                  <SupplierRawMaterialsSelect
-                    value={rawMaterialIds}
-                    onChange={(ids) => setValue('raw_material_ids', ids)}
-                  />
-                </Field>
-                <Field label={t($ => $.capabilities.productCategories.label)} error={undefined}>
-                  <SupplierProductCategoriesSelect
-                    value={productCategoryIds}
-                    onChange={(ids) => setValue('product_category_ids', ids)}
-                  />
-                </Field>
-              </div>
-            </div>
             <Field label={t($ => $.wizard.fields.status)} error={undefined}>
               <div className="flex items-center gap-2">
                 <input
@@ -221,46 +204,56 @@ export function SupplierWizard({ open, onOpenChange, onCreated }: Props) {
                 <label htmlFor="is_active" className="text-sm">{t($ => $.wizard.fields.activeSupplier)}</label>
               </div>
             </Field>
-          </div>
-        )}
 
-        {/* Step 2 — Contact Information */}
-        {step === 2 && (
-          <div className="flex flex-col gap-4">
-            <Field label={t($ => $.wizard.fields.contactPerson)} error={errors.contact_person?.message}>
-              <Input {...register('contact_person')} placeholder={t($ => $.wizard.fields.contactPersonPlaceholder)} />
-            </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label={t($ => $.wizard.fields.phone)} error={errors.phone?.message}>
-                <Input {...register('phone')} placeholder={t($ => $.wizard.fields.phonePlaceholder)} />
-              </Field>
-              <Field label={t($ => $.wizard.fields.mobile)} error={errors.mobile?.message}>
-                <Input {...register('mobile')} placeholder={t($ => $.wizard.fields.mobilePlaceholder)} />
-              </Field>
+            <div className="border-border/60 border-t pt-4">
+              <h4 className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
+                {t($ => $.form.sectionContact)}
+              </h4>
+              <div className="flex flex-col gap-4">
+                <Field label={t($ => $.wizard.fields.contactPerson)} error={errors.contact_person?.message}>
+                  <Input {...register('contact_person')} placeholder={t($ => $.wizard.fields.contactPersonPlaceholder)} />
+                </Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label={t($ => $.wizard.fields.phone)} error={errors.phone?.message}>
+                    <Input {...register('phone')} placeholder={t($ => $.wizard.fields.phonePlaceholder)} />
+                  </Field>
+                  <Field label={t($ => $.wizard.fields.mobile)} error={errors.mobile?.message}>
+                    <Input {...register('mobile')} placeholder={t($ => $.wizard.fields.mobilePlaceholder)} />
+                  </Field>
+                </div>
+                <Field label={t($ => $.wizard.fields.email)} error={errors.email?.message}>
+                  <Input {...register('email')} type="email" placeholder="supplier@example.com" />
+                </Field>
+              </div>
             </div>
-            <Field label={t($ => $.wizard.fields.email)} error={errors.email?.message}>
-              <Input {...register('email')} type="email" placeholder="supplier@example.com" />
-            </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label={t($ => $.form.country)} error={errors.country?.message}>
-                <Input {...register('country')} placeholder={t($ => $.wizard.fields.countryPlaceholder)} />
-              </Field>
-              <Field label={t($ => $.form.state)} error={errors.state?.message}>
-                <Input {...register('state')} />
-              </Field>
-              <Field label={t($ => $.form.city)} error={errors.city?.message}>
-                <Input {...register('city')} placeholder={t($ => $.wizard.fields.cityPlaceholder)} />
-              </Field>
-              <Field label={t($ => $.form.district)} error={errors.district?.message}>
-                <Input {...register('district')} />
-              </Field>
+
+            <div className="border-border/60 border-t pt-4">
+              <h4 className="text-muted-foreground mb-3 text-xs font-semibold uppercase tracking-wide">
+                {t($ => $.form.sectionLocation)}
+              </h4>
+              <div className="flex flex-col gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label={t($ => $.form.country)} error={errors.country?.message}>
+                    <Input {...register('country')} placeholder={t($ => $.wizard.fields.countryPlaceholder)} />
+                  </Field>
+                  <Field label={t($ => $.form.state)} error={errors.state?.message}>
+                    <Input {...register('state')} placeholder={t($ => $.wizard.fields.statePlaceholder)} />
+                  </Field>
+                  <Field label={t($ => $.form.city)} error={errors.city?.message}>
+                    <Input {...register('city')} placeholder={t($ => $.wizard.fields.cityPlaceholder)} />
+                  </Field>
+                  <Field label={t($ => $.form.district)} error={errors.district?.message}>
+                    <Input {...register('district')} placeholder={t($ => $.wizard.fields.districtPlaceholder)} />
+                  </Field>
+                </div>
+                <Field label={t($ => $.form.address)} error={errors.address?.message}>
+                  <Input {...register('address')} placeholder={t($ => $.wizard.fields.addressPlaceholder)} />
+                </Field>
+                <Field label={t($ => $.form.googleMapsUrl)} error={errors.google_maps_url?.message}>
+                  <Input type="url" {...register('google_maps_url')} placeholder="https://maps.google.com/…" />
+                </Field>
+              </div>
             </div>
-            <Field label={t($ => $.form.address)} error={errors.address?.message}>
-              <Input {...register('address')} placeholder={t($ => $.wizard.fields.addressPlaceholder)} />
-            </Field>
-            <Field label={t($ => $.form.googleMapsUrl)} error={errors.google_maps_url?.message}>
-              <Input type="url" {...register('google_maps_url')} placeholder="https://maps.google.com/…" />
-            </Field>
 
             {/* Opening balance — REALIGNMENT-001 §7. Not captured during supplier creation:
                 it is a Finance posting (see supplier-form.tsx for the full rationale) and is
@@ -271,8 +264,8 @@ export function SupplierWizard({ open, onOpenChange, onCreated }: Props) {
           </div>
         )}
 
-        {/* Step 3 — Review & Save */}
-        {step === 3 && (
+        {/* Step 2 — Review & Save */}
+        {step === 2 && (
           <div className="flex flex-col gap-4">
             <div className="rounded-lg border bg-muted/30 p-4 text-sm space-y-2">
               <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
@@ -311,7 +304,7 @@ export function SupplierWizard({ open, onOpenChange, onCreated }: Props) {
           <Button variant="ghost" onClick={() => handleClose(false)} type="button" className="mr-auto sm:mr-0">
             {t($ => $.wizard.buttons.cancel)}
           </Button>
-          {step < 3 ? (
+          {step < 2 ? (
             <Button onClick={goNext} type="button">
               {t($ => $.wizard.buttons.next)}
             </Button>

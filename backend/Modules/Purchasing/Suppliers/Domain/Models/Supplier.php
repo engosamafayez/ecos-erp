@@ -108,6 +108,20 @@ class Supplier extends Model
     }
 
     /**
+     * All Supplier Categories this Supplier is classified under — the canonical
+     * many-to-many association (TASK-...-SUPPLIER-MASTER-AND-RETURNS-FINAL-018 §A.1).
+     * `supplierCategory()` above stays a valid single/"primary" read (kept in sync as
+     * the first of these by CreateSupplierAction/UpdateSupplierAction) — this is the
+     * canonical source of truth for "which categories does this Supplier belong to."
+     */
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(SupplierCategory::class, 'supplier_category_assignments')
+            ->withPivot('created_by')
+            ->withTimestamps();
+    }
+
+    /**
      * Raw Materials this Supplier declares it CAN supply — a capability
      * declaration, not purchase history. Every row is enforced at write time
      * (StoreSupplierRequest/UpdateSupplierRequest) to reference a Product

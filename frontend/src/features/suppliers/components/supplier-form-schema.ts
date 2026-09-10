@@ -6,7 +6,9 @@ export const supplierSchema = z.object({
   // Backend-owned (SupplierCodeGeneratorService) — never user-entered; kept
   // read-only in the UI, never validated as required here.
   code: z.string().max(50).optional(),
-  supplier_category_id: z.string().optional(),
+  // Multiple Categories (TASK-...-SUPPLIER-MASTER-AND-RETURNS-FINAL-018 §A.1) — the
+  // canonical many-to-many replacement for the old single supplier_category_id select.
+  supplier_category_ids: z.array(z.string()),
   // Supply Capabilities (TASK-...-SUPPLY-CAPABILITIES-003) — a declaration of
   // what this Supplier CAN supply, not purchase history.
   raw_material_ids: z.array(z.string()),
@@ -35,7 +37,11 @@ export type SupplierFormValues = z.infer<typeof supplierSchema>;
 export function toFormValues(supplier?: Supplier | null): SupplierFormValues {
   return {
     code: supplier?.code ?? '',
-    supplier_category_id: supplier?.supplier_category_id ?? '',
+    // Prefer the canonical multi-category set; fall back to the legacy singular column
+    // for a Supplier fetched before its `categories` relation was eager-loaded anywhere.
+    supplier_category_ids:
+      supplier?.categories?.map((c) => c.id)
+      ?? (supplier?.supplier_category_id ? [supplier.supplier_category_id] : []),
     raw_material_ids: supplier?.raw_materials?.map((m) => m.id) ?? [],
     product_category_ids: supplier?.product_categories?.map((c) => c.id) ?? [],
     name: supplier?.name ?? '',
@@ -57,10 +63,12 @@ export function toFormValues(supplier?: Supplier | null): SupplierFormValues {
 /**
  * The supplier CRUD payload carries profile data only. Opening balance is never sent from
  * here — it is posted through the certified Finance endpoint from Supplier 360. `code` is
- * never sent — the backend generates it on create and ignores it on update.
+ * never sent — the backend generates it on create and ignores it on update. The legacy
+ * singular `supplier_category_id` is likewise never sent — `supplier_category_ids` is the
+ * sole write field; the backend derives the legacy column from it automatically.
  */
 export function toPayload(values: SupplierFormValues): SupplierPayload {
-  const { code, supplier_category_id, ...rest } = values;
+  const { code, ...rest } = values;
   void code; // never sent — backend-owned, see comment above
-  return { ...rest, supplier_category_id: supplier_category_id || null };
+  return rest;
 }

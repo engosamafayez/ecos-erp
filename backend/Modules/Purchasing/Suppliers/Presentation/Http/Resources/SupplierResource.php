@@ -23,10 +23,25 @@ final class SupplierResource extends JsonResource
             'code' => $this->code,
             'supplier_category_id' => $this->supplier_category_id,
             // Populated either via the list query's join alias, or the eager-loaded
-            // relation on a single-record fetch.
+            // relation on a single-record fetch. Legacy single/"primary" read — kept
+            // exactly as-is; see `categories`/`supplier_category_ids` below for the
+            // canonical many-to-many set (§A.1).
             'supplier_category_name' => $this->relationLoaded('supplierCategory')
                 ? $this->supplierCategory?->name
                 : $this->whenHas('supplier_category_name', fn () => $this->supplier_category_name),
+
+            // Multiple Categories (TASK-...-SUPPLIER-MASTER-AND-RETURNS-FINAL-018 §A.1).
+            // Full set on single-record fetch (eager-loaded `categories`); a comma-joined
+            // name string + count on the list endpoint (batched aggregate) — never both,
+            // never a per-row query for either, matching the Supply Capabilities pattern.
+            'categories' => $this->whenLoaded('categories', fn () => $this->categories->map(fn ($c) => [
+                'id' => $c->id,
+                'code' => $c->code,
+                'name' => $c->name,
+            ])),
+            'supplier_category_ids' => $this->whenLoaded('categories', fn () => $this->categories->pluck('id')),
+            'supplier_category_names' => $this->whenHas('supplier_category_names', fn () => $this->supplier_category_names),
+            'supplier_category_count' => $this->whenHas('supplier_category_count', fn () => (int) $this->supplier_category_count),
             'name' => $this->name,
             'contact_person' => $this->contact_person,
             'email' => $this->email,

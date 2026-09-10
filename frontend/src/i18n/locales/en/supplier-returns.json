@@ -35,11 +35,13 @@
     "completed":      "Completed"
   },
   "reason": {
-    "damaged": "Damaged Goods",
+    "defective": "Defective Product",
     "wrong_item": "Wrong Item Received",
-    "excess_quantity": "Excess Quantity",
+    "overdelivery": "Overdelivery",
     "quality_issue": "Quality Issue",
+    "price_discrepancy": "Price Discrepancy",
     "expired": "Expired Product",
+    "damaged": "Damaged Goods",
     "other": "Other"
   },
   "form": {
@@ -140,7 +142,55 @@
   },
   "returnDrawer": {
     "createTitle": "New Supplier Return",
-    "createHint": "Create returns via the API endpoint POST /supplier-returns.",
+    "createForm": {
+      "receiptLabel": "Goods Receipt",
+      "receiptPlaceholder": "Search by receipt number…",
+      "receiptEmpty": "No posted goods receipts found.",
+      "receiptHint": "Only Posted receipts can be returned against — pick the one this return is for.",
+      "supplierLabel": "Supplier",
+      "supplierDerivedHint": "Derived from this receipt's Purchase Order.",
+      "supplierManualHint": "This receipt has no linked Purchase Order — confirm the supplier for this return.",
+      "supplierPlaceholder": "Search suppliers…",
+      "warehouseLabel": "Warehouse",
+      "returnDateLabel": "Return Date",
+      "expectedCreditDateLabel": "Expected Credit Date",
+      "reasonLabel": "Reason",
+      "reasonPlaceholder": "Select a reason…",
+      "qualityConditionLabel": "Quality Condition",
+      "qualityConditionPlaceholder": "Select condition…",
+      "qualityConditions": {
+        "new": "New",
+        "used": "Used",
+        "damaged": "Damaged",
+        "expired": "Expired"
+      },
+      "creditMethodLabel": "Credit Method",
+      "creditMethodPlaceholder": "Select credit method…",
+      "creditMethods": {
+        "credit_note": "Credit Note",
+        "refund": "Refund",
+        "replacement": "Replacement"
+      },
+      "notesLabel": "Notes",
+      "notesPlaceholder": "Reference or additional notes…",
+      "linesTitle": "Select items to return",
+      "linesHint": "Enter a return quantity for each item you want to return. Only items with a quantity greater than zero are included.",
+      "linesEmpty": "This receipt has no lines.",
+      "columns": {
+        "received": "Received",
+        "lineNotes": "Line notes"
+      },
+      "submit": "Create Return",
+      "submitting": "Creating…",
+      "cancel": "Cancel",
+      "validation": {
+        "noReceipt": "Select a Goods Receipt before creating this return.",
+        "noSupplier": "Select or confirm a supplier before creating this return.",
+        "noLines": "Enter a return quantity for at least one item.",
+        "qtyExceedsReceived": "Return quantity for {{product}} cannot exceed the received quantity ({{max}}).",
+        "failed": "Failed to create supplier return."
+      }
+    },
     "reasonLabel": "Reason",
     "loading": "Loading…",
     "tabs": {

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { FormField } from '@/components/crud';
 import { Input } from '@/components/ui/input';
 import type { SupplierFormValues } from '@/features/suppliers/components/supplier-form-schema';
-import { SupplierCategorySelect } from '@/features/suppliers/components/supplier-category-select';
+import { SupplierCategoriesMultiSelect } from '@/features/suppliers/components/supplier-categories-multi-select';
 import { SupplierRawMaterialsSelect } from '@/features/suppliers/components/supplier-raw-materials-select';
 import { SupplierProductCategoriesSelect } from '@/features/suppliers/components/supplier-product-categories-select';
 import type { Supplier } from '@/features/suppliers/types/supplier';
@@ -19,7 +19,7 @@ export function SupplierFormFields({ supplier }: SupplierFormFieldsProps = {}) {
   const { t } = useTranslation('suppliers');
   const { register, watch, setValue } = useFormContext<SupplierFormValues>();
   const code = watch('code');
-  const categoryId = watch('supplier_category_id');
+  const categoryIds = watch('supplier_category_ids');
   const rawMaterialIds = watch('raw_material_ids');
   const productCategoryIds = watch('product_category_ids');
 
@@ -38,10 +38,11 @@ export function SupplierFormFields({ supplier }: SupplierFormFieldsProps = {}) {
         <FormField name="name" label={t($ => $.form.name.label)} required>
           <Input placeholder={t($ => $.form.name.placeholder)} {...register('name')} />
         </FormField>
-        <FormField name="supplier_category_id" label={t($ => $.wizard.fields.category)}>
-          <SupplierCategorySelect
-            value={categoryId ?? null}
-            onChange={(v) => setValue('supplier_category_id', v)}
+        <FormField name="supplier_category_ids" label={t($ => $.wizard.fields.categories)}>
+          <SupplierCategoriesMultiSelect
+            value={categoryIds}
+            onChange={(ids) => setValue('supplier_category_ids', ids)}
+            preloaded={supplier?.categories}
           />
         </FormField>
         <FormField name="contact_person" label={t($ => $.form.contactPerson)}>

@@ -36,6 +36,15 @@ final class UpdateSupplierRequest extends FormRequest
                 Rule::exists('supplier_categories', 'id')
                     ->where(fn ($q) => $q->where('company_id', $companyId)->where('is_active', true)),
             ],
+            // Multiple Categories (TASK-...-SUPPLIER-MASTER-AND-RETURNS-FINAL-018 §A.1) — the
+            // canonical many-to-many replacement for supplier_category_id above. Same tenant +
+            // active-only guard as the legacy singular field.
+            'supplier_category_ids' => ['array'],
+            'supplier_category_ids.*' => [
+                'uuid',
+                Rule::exists('supplier_categories', 'id')
+                    ->where(fn ($q) => $q->where('company_id', $companyId)->where('is_active', true)),
+            ],
             'raw_material_ids' => ['array'],
             'raw_material_ids.*' => [
                 'uuid',

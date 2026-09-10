@@ -26,6 +26,7 @@ import {
   useSubmitSupplierReturn,
   useSupplierReturn,
 } from '@/features/supplier-returns/hooks/use-supplier-returns';
+import { SupplierReturnForm } from '@/features/supplier-returns/components/supplier-return-form';
 import type { SupplierReturnStatus } from '@/features/supplier-returns/types/supplier-return';
 
 const STATUS_COLORS: Record<SupplierReturnStatus, string> = {
@@ -72,12 +73,15 @@ export function SupplierReturnDrawer({ id, open, onOpenChange, mode = 'view' }: 
   if (mode === 'create') {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent className="overflow-y-auto">
+        <SheetContent className="overflow-y-auto sm:max-w-2xl">
           <SheetHeader>
             <SheetTitle>{t($ => $.returnDrawer.createTitle)}</SheetTitle>
           </SheetHeader>
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg text-center text-sm text-gray-500">
-            {t($ => $.returnDrawer.createHint)}
+          <div className="mt-6">
+            <SupplierReturnForm
+              onCreated={() => onOpenChange(false)}
+              onCancel={() => onOpenChange(false)}
+            />
           </div>
         </SheetContent>
       </Sheet>

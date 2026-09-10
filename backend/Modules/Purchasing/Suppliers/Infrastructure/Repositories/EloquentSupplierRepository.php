@@ -26,6 +26,25 @@ final class EloquentSupplierRepository implements SupplierRepositoryInterface
         $query->leftJoin('supplier_categories', 'supplier_categories.id', '=', 'suppliers.supplier_category_id');
         $query->addSelect(['supplier_categories.name as supplier_category_name']);
 
+        // Multiple Categories (§A.1) — the full assigned set, batched (one grouped join,
+        // never a query per Supplier), for the list's compact multi-category display.
+        // `supplier_category_name` above stays untouched (still the legacy single/"primary"
+        // read) so nothing that already relies on it breaks.
+        $supplierCategoryStats = DB::table('supplier_category_assignments')
+            ->join('supplier_categories', 'supplier_categories.id', '=', 'supplier_category_assignments.supplier_category_id')
+            ->selectRaw('
+                supplier_category_assignments.supplier_id,
+                GROUP_CONCAT(supplier_categories.name ORDER BY supplier_categories.name SEPARATOR ", ") AS supplier_category_names,
+                COUNT(*) AS supplier_category_count
+            ')
+            ->groupBy('supplier_category_assignments.supplier_id');
+
+        $query->leftJoinSub($supplierCategoryStats, 'sc_agg', fn ($j) => $j->on('suppliers.id', '=', 'sc_agg.supplier_id'));
+        $query->addSelect([
+            DB::raw('sc_agg.supplier_category_names AS supplier_category_names'),
+            DB::raw('COALESCE(sc_agg.supplier_category_count, 0) AS supplier_category_count'),
+        ]);
+
         // ── Aggregate subqueries (LEFT JOIN on derived tables) ────────────────
 
         $grStats = DB::table('goods_receipts')
@@ -126,9 +145,12 @@ final class EloquentSupplierRepository implements SupplierRepositoryInterface
             $query->where('suppliers.city', $city);
         }
 
+        // Multiple Categories (§A.1) — matches if ANY of the Supplier's assigned categories
+        // is the filtered one, not just the legacy single/"primary" column, so a Supplier
+        // assigned to [A, B] is correctly found when filtering by B even though A is primary.
         $categoryId = trim((string) ($filters['supplier_category_id'] ?? ''));
         if ($categoryId !== '') {
-            $query->where('suppliers.supplier_category_id', $categoryId);
+            $query->whereHas('categories', fn (Builder $q) => $q->where('supplier_categories.id', $categoryId));
         }
 
         // Capability filters — backend-authoritative (correlated EXISTS via
@@ -177,9 +199,9 @@ final class EloquentSupplierRepository implements SupplierRepositoryInterface
 
     public function findById(string $id): ?Supplier
     {
-        // Single-record fetch — eager-loading these 3 relations is a constant 3
+        // Single-record fetch — eager-loading these relations is a constant number of
         // extra queries regardless of how many related rows exist, never N+1.
-        return Supplier::query()->with(['supplierCategory', 'rawMaterials', 'productCategories'])->find($id);
+        return Supplier::query()->with(['supplierCategory', 'categories', 'rawMaterials', 'productCategories'])->find($id);
     }
 
     public function create(array $attributes): Supplier

@@ -30,11 +30,13 @@
     "credit_pending": "في انتظار الإشعار الدائن"
   },
   "reason": {
-    "damaged": "بضائع تالفة",
+    "defective": "منتج معيب",
     "wrong_item": "صنف خاطئ",
-    "excess_quantity": "كمية زائدة",
+    "overdelivery": "كمية زائدة عن المطلوب",
     "quality_issue": "مشكلة في الجودة",
+    "price_discrepancy": "فرق في السعر",
     "expired": "منتج منتهي الصلاحية",
+    "damaged": "بضائع تالفة",
     "other": "سبب آخر"
   },
   "form": {
@@ -147,7 +149,55 @@
   },
   "returnDrawer": {
     "createTitle": "مرتجع مورد جديد",
-    "createHint": "أنشئ المرتجعات عبر نقطة النهاية POST /supplier-returns.",
+    "createForm": {
+      "receiptLabel": "إذن الاستلام",
+      "receiptPlaceholder": "ابحث برقم إذن الاستلام…",
+      "receiptEmpty": "لا توجد أذون استلام مرحّلة.",
+      "receiptHint": "يمكن الإرجاع فقط مقابل الأذون المرحّلة — اختر الإذن الخاص بهذا المرتجع.",
+      "supplierLabel": "المورد",
+      "supplierDerivedHint": "مُستنتج من أمر الشراء الخاص بهذا الإذن.",
+      "supplierManualHint": "لا يوجد أمر شراء مرتبط بهذا الإذن — يرجى تأكيد المورد لهذا المرتجع.",
+      "supplierPlaceholder": "ابحث عن مورد…",
+      "warehouseLabel": "المستودع",
+      "returnDateLabel": "تاريخ الإرجاع",
+      "expectedCreditDateLabel": "تاريخ الإشعار الدائن المتوقع",
+      "reasonLabel": "السبب",
+      "reasonPlaceholder": "اختر السبب…",
+      "qualityConditionLabel": "حالة الجودة",
+      "qualityConditionPlaceholder": "اختر الحالة…",
+      "qualityConditions": {
+        "new": "جديد",
+        "used": "مستعمل",
+        "damaged": "تالف",
+        "expired": "منتهي الصلاحية"
+      },
+      "creditMethodLabel": "طريقة الدائنية",
+      "creditMethodPlaceholder": "اختر طريقة الدائنية…",
+      "creditMethods": {
+        "credit_note": "إشعار دائن",
+        "refund": "استرداد نقدي",
+        "replacement": "استبدال"
+      },
+      "notesLabel": "ملاحظات",
+      "notesPlaceholder": "مرجع أو ملاحظات إضافية…",
+      "linesTitle": "اختر الأصناف المراد إرجاعها",
+      "linesHint": "أدخل كمية الإرجاع لكل صنف تريد إرجاعه. سيتم تضمين الأصناف ذات الكمية الأكبر من صفر فقط.",
+      "linesEmpty": "لا توجد بنود في هذا الإذن.",
+      "columns": {
+        "received": "المستلم",
+        "lineNotes": "ملاحظات البند"
+      },
+      "submit": "إنشاء المرتجع",
+      "submitting": "جارٍ الإنشاء…",
+      "cancel": "إلغاء",
+      "validation": {
+        "noReceipt": "اختر إذن استلام قبل إنشاء هذا المرتجع.",
+        "noSupplier": "اختر أو أكّد المورد قبل إنشاء هذا المرتجع.",
+        "noLines": "أدخل كمية إرجاع لصنف واحد على الأقل.",
+        "qtyExceedsReceived": "كمية إرجاع {{product}} لا يمكن أن تتجاوز الكمية المستلمة ({{max}}).",
+        "failed": "فشل إنشاء مرتجع المورد."
+      }
+    },
     "reasonLabel": "السبب",
     "loading": "جارٍ التحميل…",
     "tabs": {

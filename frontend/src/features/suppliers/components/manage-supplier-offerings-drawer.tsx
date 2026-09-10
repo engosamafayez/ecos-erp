@@ -61,7 +61,13 @@ export function ManageSupplierOfferingsDrawer({ supplier, open, onOpenChange }: 
         id: supplier.id,
         payload: {
           name: supplier.name,
-          supplier_category_id: supplier.supplier_category_id,
+          // Full-replace write (like the two arrays below) — must send the Supplier's
+          // OWN current, unchanged category set back, or this save would silently wipe
+          // its categories the same way this exact call once risked wiping Supply
+          // Capabilities if they were omitted.
+          supplier_category_ids:
+            supplier.categories?.map((c) => c.id)
+            ?? (supplier.supplier_category_id ? [supplier.supplier_category_id] : []),
           contact_person: supplier.contact_person ?? undefined,
           email: supplier.email ?? undefined,
           phone: supplier.phone ?? undefined,

@@ -34,8 +34,17 @@ export type SupplierProductCategoryCapability = {
 export type Supplier = {
   id: string;
   code: string;
+  // Legacy single/"primary" category (kept in sync as categories[0] by the backend) —
+  // still valid to read, but `categories`/`supplier_category_ids` below are canonical.
   supplier_category_id: string | null;
   supplier_category_name?: string | null;
+  // Multiple Categories (TASK-...-SUPPLIER-MASTER-AND-RETURNS-FINAL-018 §A.1). Full set
+  // on single-record fetch (Supplier detail); name summary + count only on the list
+  // endpoint — mirrors the raw_materials/product_categories capability pattern below.
+  categories?: SupplierCategory[];
+  supplier_category_ids?: string[];
+  supplier_category_names?: string | null;
+  supplier_category_count?: number;
   name: string;
   contact_person: string | null;
   email: string | null;
@@ -81,7 +90,13 @@ export type SupplierPayload = {
   // Backend-owned — omitted on create (auto-generated) and ignored on update
   // (TASK-ECOS-PROCUREMENT-SUPPLIERS-BATCH-01-MASTER-DATA-002).
   code?: string;
+  // Legacy single-category write — no longer sent by any ECOS UI (superseded by
+  // supplier_category_ids below), left optional only for type back-compat.
   supplier_category_id?: string | null;
+  // Multiple Categories (TASK-...-SUPPLIER-MASTER-AND-RETURNS-FINAL-018 §A.1) — the
+  // canonical write field. Full-replace semantics, same as raw_material_ids /
+  // product_category_ids: the array sent IS the complete desired set.
+  supplier_category_ids?: string[];
   raw_material_ids?: string[];
   product_category_ids?: string[];
   name: string;
