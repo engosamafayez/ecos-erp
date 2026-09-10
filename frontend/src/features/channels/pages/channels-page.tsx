@@ -256,7 +256,7 @@ export function ChannelsPage() {
   const handleImportOrders = (channel: Channel) => {
     setImportingOrdersId(channel.id);
     setOrderImportChannelName(channel.name);
-    importOrders.mutate(channel.id, {
+    importOrders.mutate({ id: channel.id }, {
       onSuccess: (result) => { setOrderImportResult(result); },
       onSettled: () => setImportingOrdersId(null),
     });

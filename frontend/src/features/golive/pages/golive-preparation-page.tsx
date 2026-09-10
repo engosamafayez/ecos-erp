@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -37,7 +37,6 @@ export function GoLivePreparationPage() {
     { warehouse_id: '', product_id: '', quantity: 0, unit_cost: 0 },
   ]);
 
-  const idempotencyKey = useMemo(() => `golive-reset-${Date.now()}`, [preview.data]);
 
   const isLive = status?.lifecycle_state === 'live';
 
@@ -61,10 +60,15 @@ export function GoLivePreparationPage() {
 
   const handleExecute = () => {
     if (!preview.data?.is_safe) return;
+    // Generated fresh per click, in the event handler only — never during render (Date.now() is
+    // impure). React Query's mutations don't auto-retry by default here, so there is no
+    // automatic-duplicate-submission case that would need the same key reused across attempts;
+    // the button is also disabled while a request is in flight (see `disabled` below), which is
+    // what actually prevents an accidental double-submission with two different keys.
     executeReset.mutate({
       domains: selectedDomains,
       confirmation_phrase: confirmationPhrase,
-      idempotency_key: idempotencyKey,
+      idempotency_key: `golive-reset-${Date.now()}`,
       reason: reason || undefined,
     });
   };
@@ -87,6 +91,7 @@ export function GoLivePreparationPage() {
 
   return (
     <div className="flex flex-col gap-6 p-6" dir="auto">
+      {/* Step 1: Pre-Live readiness — the current lifecycle state itself. */}
       <header className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">{t($ => $.title)}</h1>
         <span
@@ -104,7 +109,15 @@ export function GoLivePreparationPage() {
         </div>
       ) : (
         <>
-          {/* Step: domain selection */}
+          {/* Step 3: preserved master data — purely informational, always true, never a live
+              query: no reset service in this lane ever references any of these tables (see the
+              Task 026 report's Master Data Preservation section). */}
+          <section className={cardClass}>
+            <h2 className="font-medium">{t($ => $.preservedDataTitle)}</h2>
+            <p className="text-sm text-muted-foreground">{t($ => $.preservedDataDescription)}</p>
+          </section>
+
+          {/* Step 4: domain selection */}
           <section className={cardClass}>
             <h2 className="font-medium">{t($ => $.selectDomainsTitle)}</h2>
             <div className="flex flex-col gap-2">
@@ -125,7 +138,10 @@ export function GoLivePreparationPage() {
             </Button>
           </section>
 
-          {/* Step: preview / dry run */}
+          {/* Step 5: dependency preview (read-only). Step 2 (Woo Cutover) is shown inside this
+              same block once a preview has run — its data (Task 025-R1's Orders Sync state) is
+              fetched together with the dependency counts by the same backend call rather than a
+              separate one; still a distinct, clearly-labeled step below, not merged into it. */}
           {preview.data && (
             <section className={cardClass}>
               <h2 className="font-medium">{t($ => $.previewTitle)}</h2>
@@ -151,7 +167,7 @@ export function GoLivePreparationPage() {
                 </div>
               ))}
 
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 border-t pt-3">
                 <span className="text-sm font-medium">{t($ => $.wooCutoverTitle)}</span>
                 {preview.data.woo_cutover.length === 0 ? (
                   <span className="text-xs text-muted-foreground">{t($ => $.noChannels)}</span>
@@ -165,7 +181,7 @@ export function GoLivePreparationPage() {
                 )}
               </div>
 
-              {/* Step: strong confirmation + execute */}
+              {/* Step 6: strong confirmation + execute */}
               {preview.data.is_safe && (
                 <div className="flex flex-col gap-2 border-t pt-3">
                   <p className="text-sm font-medium text-rose-700">{t($ => $.irreversibleWarning)}</p>
@@ -204,7 +220,9 @@ export function GoLivePreparationPage() {
             </section>
           )}
 
-          {/* Step: opening inventory */}
+          {/* Step 7: opening-state readiness (Inventory). Supplier/Customer opening balances are
+              reached from their own existing Supplier/Customer detail screens (the canonical
+              Finance opening-balance authorities this task reuses/mirrors), not duplicated here. */}
           <section className={cardClass}>
             <h2 className="font-medium">{t($ => $.openingInventoryTitle)}</h2>
             {inventoryLines.map((line, i) => (
@@ -245,11 +263,31 @@ export function GoLivePreparationPage() {
             </div>
           </section>
 
-          {/* Step: activation */}
+          {/* Step 8: Go-Live readiness / activation. The two bullets are descriptive — the backend
+              (ActivateGoLiveAction) is the sole authority that actually enforces them; this page
+              never duplicates that check, only states it so the operator knows what's about to be
+              verified before they click. The Cash/Bank line below is NOT descriptive: it is the
+              real `status.cash_bank_opening_blocked` fact from the backend (TASK-...-026-R1 Gate
+              4), so unlike the other two it also disables the button directly here rather than
+              only surfacing as a rejected request after the click. */}
           <section className={cardClass}>
             <h2 className="font-medium">{t($ => $.activateTitle)}</h2>
+            <ul className="list-disc ps-5 text-sm text-muted-foreground">
+              <li>{t($ => $.readinessNoUnfinishedReset)}</li>
+              <li>{t($ => $.readinessWooCutoverResolved)}</li>
+            </ul>
+            {status?.cash_bank_opening_blocked && (
+              <div className="rounded-md bg-rose-50 p-3 text-sm text-rose-700">
+                <p className="font-medium">{t($ => $.cashBankOpeningBlockedTitle)}</p>
+                <p>{status.cash_bank_opening_message}</p>
+              </div>
+            )}
             <p className="text-sm text-muted-foreground">{t($ => $.activateDescription)}</p>
-            <Button variant="destructive" onClick={() => activate.mutate()} disabled={activate.isPending}>
+            <Button
+              variant="destructive"
+              onClick={() => activate.mutate()}
+              disabled={activate.isPending || Boolean(status?.cash_bank_opening_blocked)}
+            >
               {t($ => $.activateButton)}
             </Button>
             {activate.isError && (

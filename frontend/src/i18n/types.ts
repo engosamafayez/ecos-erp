@@ -54,6 +54,7 @@ import type enExecutive from '@/i18n/locales/en/executive.json';
 import type enFinance from '@/i18n/locales/en/finance.json';
 import type enFleetConfiguration from '@/i18n/locales/en/fleet-configuration.json';
 import type enFulfillments from '@/i18n/locales/en/fulfillments.json';
+import type enGoLive from '@/i18n/locales/en/golive.json';
 import type enGoodsReceipts from '@/i18n/locales/en/goods-receipts.json';
 import type enHome from '@/i18n/locales/en/home.json';
 import type enHr from '@/i18n/locales/en/hr.json';
@@ -124,6 +125,7 @@ declare module 'i18next' {
       finance: typeof enFinance;
       'fleet-configuration': typeof enFleetConfiguration;
       fulfillments: typeof enFulfillments;
+      golive: typeof enGoLive;
       'goods-receipts': typeof enGoodsReceipts;
       home: typeof enHome;
       hr: typeof enHr;

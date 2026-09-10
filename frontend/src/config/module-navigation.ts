@@ -302,6 +302,10 @@ const GATE = {
   'iam-management': ['iam.users.view', 'iam.roles.view', 'iam.role-templates.view'],
   'settings': ['configuration.settings.view'],
   'configuration-os': ['configuration.settings.view', 'configuration.company.view'],
+  // TASK-...-026 — the single high-impact permission gating the whole Go-Live surface (§2 of
+  // that task: one permission, not several, since every action behind it is part of the same
+  // one-time operational event).
+  'golive': ['admin.golive.manage'],
   'product-mappings': ['sales.channels.view'],
   'sync-logs': ['sales.channels.view'],
   'reports-board': ['reports.sales.view', 'reports.inventory.view', 'reports.finance.view', 'reports.procurement.view', 'reports.distribution.view', 'reports.customers.view', 'reports.products.view', 'reports.preparation.view', 'reports.drivers.view', 'reports.executive.view'],
@@ -607,6 +611,8 @@ const ALL_MODULES: AppModule[] = [
       { key: 'settings', path: ROUTES.settings, icon: Settings, permissions: GATE['settings'] },
       { key: 'config-section', isSection: true },
       { key: 'configuration-os', path: ROUTES.configurationOs, icon: Cpu, permissions: GATE['configuration-os'] },
+      { key: 'golive-section', isSection: true },
+      { key: 'golive', path: ROUTES.golive, icon: ListChecks, permissions: GATE['golive'] },
       { key: 'integrations-section', isSection: true },
       { key: 'product-mappings', path: ROUTES.productMappings, icon: Link2, permissions: GATE['product-mappings'] },
       { key: 'sync-logs', path: ROUTES.syncLogs, icon: ArrowLeftRight, permissions: GATE['sync-logs'] },

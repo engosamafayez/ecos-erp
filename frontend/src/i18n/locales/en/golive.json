@@ -1,6 +1,10 @@
 {
   "loading": "Loading…",
   "title": "Go-Live Preparation",
+  "preservedDataTitle": "Preserved Master Data",
+  "preservedDataDescription": "Always kept, never touched by any reset: Products, Raw Materials, Categories, Suppliers, Customers, Users & Roles, Warehouses, the Chart of Accounts, tax configuration, and Distribution Group Templates.",
+  "readinessNoUnfinishedReset": "No reset operation is currently in progress",
+  "readinessWooCutoverResolved": "Every WooCommerce channel's Orders Sync cutover has been explicitly resolved",
   "statePreLive": "Pre-Live",
   "stateLive": "Live",
   "liveLockNotice": "This company is Live. Destructive test-data reset is permanently unavailable. Normal operational corrections remain available through their existing workflows.",
@@ -32,6 +36,7 @@
   "unitCostPlaceholder": "Unit Cost",
   "addLine": "Add Line",
   "establishInventoryButton": "Establish Opening Inventory",
+  "cashBankOpeningBlockedTitle": "Cash/Bank opening balance required",
   "activateTitle": "Activate Go-Live",
   "activateDescription": "This is a one-way transition. Once Live, destructive test-data reset is permanently locked and cannot be reversed from this screen.",
   "activateButton": "Activate Go-Live"

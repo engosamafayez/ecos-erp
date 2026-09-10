@@ -94,6 +94,9 @@ import { PreparationWorkspaceLayout } from '@/features/operations/components/pre
 import { PosPage } from '@/features/pos/pages/pos-page';
 import { ConfigurationOsPage } from '@/features/admin/configuration/pages/configuration-os-page';
 import { BrandConfigurationPage } from '@/features/admin/configuration/pages/brand-configuration-page';
+// Pre-Live / Go-Live Preparation (TASK-...-026) — a distinct administration destination, not a
+// Configuration OS tab (see module-navigation.ts's own 'golive-section').
+import { GoLivePreparationPage } from '@/features/golive/pages/golive-preparation-page';
 import { DistributionWorkspacePage } from '@/features/logistics/distribution-workspace/pages/distribution-workspace-page';
 import { DriverSettlementWorkspacePage } from '@/features/operations/driver-settlement/pages/driver-settlement-workspace-page';
 import { DriverSettlementDetailPage } from '@/features/operations/driver-settlement/pages/driver-settlement-detail-page';
@@ -453,6 +456,8 @@ export const router = createBrowserRouter(
             // Configuration OS
             { path: ROUTES.configurationOs, Component: ConfigurationOsPage },
             { path: ROUTES.configurationBrand, Component: BrandConfigurationPage },
+            // Pre-Live / Go-Live Preparation (TASK-...-026)
+            { path: ROUTES.golive, Component: GoLivePreparationPage },
             // Distribution OS
             // Distribution Board's backend (/api/distribution/*) no longer exists in
             // routes/api.php — every one of its calls 404s unconditionally. Retired the

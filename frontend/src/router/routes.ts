@@ -176,6 +176,9 @@ export const ROUTES = {
   configurationOs:      '/admin/configuration',
   configurationCompany: '/admin/configuration/company',
   configurationBrand:   '/admin/configuration/brands/:brandId',
+  // Pre-Live / Go-Live Preparation (TASK-...-026) — a distinct, one-time, high-risk
+  // administrative operation, kept as its own destination rather than a Configuration OS tab.
+  golive: '/admin/golive',
   // Logistics OS
   logisticsGeography:            '/logistics/geography',
   // Distribution Zones is a Shipping → Geography capability (TASK-DISTRIBUTION-DAILY-

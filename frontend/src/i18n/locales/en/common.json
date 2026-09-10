@@ -111,6 +111,8 @@
       "settings": "Settings",
       "config-section": "Configuration",
       "configuration-os": "Configuration OS",
+      "golive-section": "Go-Live",
+      "golive": "Go-Live Preparation",
       "eng-section": "Certification",
       "eng-dashboard": "Dashboard",
       "eng-runs": "Certification Runs",

@@ -111,6 +111,8 @@
       "settings": "الإعدادات",
       "config-section": "الإعدادات",
       "configuration-os": "نظام الإعدادات",
+      "golive-section": "التشغيل الفعلي",
+      "golive": "التحضير للتشغيل الفعلي",
       "eng-section": "الاعتماد",
       "eng-dashboard": "لوحة التحكم",
       "eng-runs": "جلسات الاعتماد",

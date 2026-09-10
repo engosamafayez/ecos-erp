@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Modules\Admin\GoLive\Application\Actions\ActivateGoLiveAction;
+use Modules\Admin\GoLive\Domain\Services\CashBankOpeningReadiness;
 use Modules\Organization\Companies\Domain\Services\CompanyLifecycleAuthority;
 use RuntimeException;
 
@@ -16,13 +17,21 @@ final class GoLiveActivationController extends Controller
 {
     use HasApiResponse;
 
-    public function status(CompanyLifecycleAuthority $lifecycle, CurrentCompanyService $currentCompany): JsonResponse
-    {
+    public function status(
+        CompanyLifecycleAuthority $lifecycle,
+        CashBankOpeningReadiness $cashBankReadiness,
+        CurrentCompanyService $currentCompany,
+    ): JsonResponse {
         $companyId = $this->companyId($currentCompany);
 
         return $this->success([
             'company_id' => $companyId,
             'lifecycle_state' => $lifecycle->stateFor($companyId)->value,
+            // TASK-...-026-R1 Gate 4 — advisory only; ActivateGoLiveAction is the actual gate.
+            // Surfaced here so the operator sees a real blocker before clicking Activate, not only
+            // as a rejected request afterward.
+            'cash_bank_opening_blocked' => $cashBankReadiness->isBlocked($companyId),
+            'cash_bank_opening_message' => $cashBankReadiness->missingPrerequisiteMessage($companyId),
         ]);
     }
 

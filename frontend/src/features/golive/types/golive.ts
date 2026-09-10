@@ -5,6 +5,8 @@ export type LifecycleState = 'pre_live' | 'live';
 export type GoLiveStatus = {
   company_id: string;
   lifecycle_state: LifecycleState;
+  cash_bank_opening_blocked: boolean;
+  cash_bank_opening_message: string | null;
 };
 
 export type WooCutoverChannel = {
