@@ -14,7 +14,6 @@ import type enLogistics from '@/i18n/locales/en/logistics.json';
  */
 type LogisticsLabel = ($: typeof enLogistics) => string;
 import type {
-  ExceptionCategory,
   ExceptionSeverity,
   ExceptionSource,
   ExceptionStatus,
@@ -22,6 +21,7 @@ import type {
   PoolStatus,
   ReservationStatus,
 } from '../types/operations';
+import { SOURCE } from '../lib/operations-labels';
 
 const POOL: Record<PoolStatus, { labelKey: LogisticsLabel; className: string }> = {
   draft: {
@@ -139,46 +139,6 @@ export function SeverityIcon({ severity }: { severity: ExceptionSeverity }) {
   }
 
   return <Info className="size-3.5 shrink-0 text-muted-foreground" />;
-}
-
-const SOURCE: Record<ExceptionSource, LogisticsLabel> = {
-  fleet: ($) => $.operations.badges.source.fleet,
-  drivers: ($) => $.operations.badges.source.drivers,
-  network: ($) => $.operations.badges.source.network,
-  dispatch: ($) => $.operations.badges.source.dispatch,
-  routing: ($) => $.operations.badges.source.routing,
-  carriers: ($) => $.operations.badges.source.carriers,
-  distribution: ($) => $.operations.badges.source.distribution,
-  delivery: ($) => $.operations.badges.source.delivery,
-  operations: ($) => $.operations.badges.source.operations,
-};
-
-const CATEGORY: Record<ExceptionCategory, LogisticsLabel> = {
-  resource: ($) => $.operations.badges.category.resource,
-  capacity: ($) => $.operations.badges.category.capacity,
-  dispatch: ($) => $.operations.badges.category.dispatch,
-  routing: ($) => $.operations.badges.category.routing,
-  execution: ($) => $.operations.badges.category.execution,
-  carrier: ($) => $.operations.badges.category.carrier,
-  integration: ($) => $.operations.badges.category.integration,
-  policy: ($) => $.operations.badges.category.policy,
-};
-
-/**
- * What kind of problem an exception is — distinct from `SourceBadge` (which
- * module owns the fix). Exposed as a hook (not a component, since callers mix
- * it into plain text rather than a badge) so it never renders the backend's
- * raw `category_label` string directly.
- */
-export function useExceptionCategoryLabel() {
-  const { t } = useTranslation('logistics');
-  return (category: ExceptionCategory) => t(CATEGORY[category]);
-}
-
-/** Same translated map `SourceBadge` renders, exposed for plain-text (non-badge) uses. */
-export function useExceptionSourceLabel() {
-  const { t } = useTranslation('logistics');
-  return (source: ExceptionSource) => t(SOURCE[source]);
 }
 
 /**

@@ -19,7 +19,7 @@ import {
   useTripPayments,
   useVerifyPayment,
 } from '../hooks/use-trip-settlement';
-import { DRIVER_COLLECTED_PAYMENT_TYPES, type PaymentType } from '../types/trip-settlement';
+import { DRIVER_COLLECTED_PAYMENT_TYPES, type PaymentStatus, type PaymentType } from '../types/trip-settlement';
 
 type LogisticsLabel = ($: typeof enLogistics) => string;
 
@@ -32,6 +32,13 @@ const PAYMENT_TYPE_LABEL: Record<PaymentType, LogisticsLabel> = {
   already_paid: ($) => $.trips.settlement.paymentType.already_paid,
 };
 
+/** Mirrors the canonical backend `PaymentCollection::STATUS_*` constants (recorded/verified/rejected). */
+const PAYMENT_STATUS_LABEL: Record<PaymentStatus, LogisticsLabel> = {
+  recorded: ($) => $.trips.settlement.paymentStatus.recorded,
+  verified: ($) => $.trips.settlement.paymentStatus.verified,
+  rejected: ($) => $.trips.settlement.paymentStatus.rejected,
+};
+
 /**
  * The payment ledger: one row per collection at a stop.
  *
@@ -39,10 +46,6 @@ const PAYMENT_TYPE_LABEL: Record<PaymentType, LogisticsLabel> = {
  * reason two payments of the same amount can affect the settlement differently
  * — a card payment is collected but is not cash the driver hands over. Hiding
  * that would make the settlement arithmetic look wrong.
- *
- * Payment status is a free string on the resource, so it is rendered as the
- * backend sends it rather than mapped through a client-side enum that could
- * silently fall through.
  */
 export function TripPaymentsTab({ tripId }: { tripId: string }) {
   const { t, i18n } = useTranslation('logistics');
@@ -237,7 +240,7 @@ export function TripPaymentsTab({ tripId }: { tripId: string }) {
                   </span>
                 </span>
                 <Badge variant="outline" className="text-[10px]">
-                  {payment.status}
+                  {t(PAYMENT_STATUS_LABEL[payment.status])}
                 </Badge>
               </div>
 

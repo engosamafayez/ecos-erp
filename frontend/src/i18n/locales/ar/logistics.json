@@ -2462,7 +2462,16 @@
         "notReady": "غير جاهزة للإرسال",
         "blockers": "الموانع",
         "none": "لا توجد موانع.",
-        "checking": "جارٍ فحص الجاهزية..."
+        "checking": "جارٍ فحص الجاهزية...",
+        "blockerMessages": {
+          "noOrders": "لا توجد طلبات مُسندة إلى هذه الرحلة.",
+          "driverNotConfirmed": "لم يؤكّد السائق استلام المنتجات والعهدة والمعدات.",
+          "noAssignment": "لا يوجد إسناد سائق/مركبة مرتبط بهذه الرحلة.",
+          "assignmentInactive": "إسناد السائق/المركبة المرتبط لم يعد نشطًا.",
+          "driverCannotStart": "لا يمكن للسائق المُسنَد بدء التوصيل (بسبب الرخصة أو الحالة).",
+          "vehicleCannotDispatch": "لا يمكن إرسال المركبة المُسنَدة (بسبب الحالة أو الرخصة أو التأمين).",
+          "externalCarrierNeedsCompany": "يجب أن ترتبط رحلة الناقل الخارجي بشركة شحن."
+        }
       },
       "acceptance": {
         "products": "تم قبول المنتجات",
@@ -2736,6 +2745,11 @@
         "wallet": "محفظة إلكترونية",
         "groupCollected": "محصَّل الآن",
         "groupPreDelivery": "مدفوع قبل التسليم"
+      },
+      "paymentStatus": {
+        "recorded": "مُسجَّلة",
+        "verified": "تم التحقق",
+        "rejected": "مرفوضة"
       },
       "settlement": {
         "title": "التسوية",

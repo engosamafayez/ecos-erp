@@ -7,7 +7,7 @@ import type { ColumnDef } from '@/components/crud/types';
 import { Badge } from '@/components/ui/badge';
 import { useOrganizationContext } from '@/features/organization/context/organization-context';
 import { useLoadingGroups } from '@/features/operations/loading-os/hooks/use-loading-os';
-import { bucketBadgeVariant, useBucketLabel } from '@/features/operations/loading-os/components/loading-groups';
+import { bucketBadgeVariant, useBucketLabel } from '@/features/operations/loading-os/lib/loading-labels';
 import type {
   LoadingGroupSummary,
   LoadingWorkspaceBucket,

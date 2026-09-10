@@ -2462,7 +2462,16 @@
         "notReady": "Not ready for dispatch",
         "blockers": "Blockers",
         "none": "No blockers.",
-        "checking": "Checking readiness..."
+        "checking": "Checking readiness...",
+        "blockerMessages": {
+          "noOrders": "The trip has no orders assigned.",
+          "driverNotConfirmed": "The driver has not confirmed products, custody and equipment.",
+          "noAssignment": "No driver/vehicle assignment is linked to this trip.",
+          "assignmentInactive": "The linked driver/vehicle assignment is no longer active.",
+          "driverCannotStart": "The assigned driver cannot start deliveries (licence or status).",
+          "vehicleCannotDispatch": "The assigned vehicle cannot be dispatched (status, licence or insurance).",
+          "externalCarrierNeedsCompany": "An external-carrier trip must reference a shipping company."
+        }
       },
       "acceptance": {
         "products": "Products accepted",
@@ -2736,6 +2745,11 @@
         "wallet": "Wallet",
         "groupCollected": "Collected now",
         "groupPreDelivery": "Paid before delivery"
+      },
+      "paymentStatus": {
+        "recorded": "Recorded",
+        "verified": "Verified",
+        "rejected": "Rejected"
       },
       "settlement": {
         "title": "Settlement",

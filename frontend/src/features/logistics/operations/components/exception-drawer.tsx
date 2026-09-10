@@ -32,7 +32,8 @@ import {
   useSuppressException,
 } from '../hooks/use-operations';
 import type { ExceptionResolution, NoteType } from '../types/operations';
-import { ExceptionStatusBadge, SeverityIcon, SourceBadge, useExceptionCategoryLabel, useExceptionSourceLabel } from './operations-badges';
+import { ExceptionStatusBadge, SeverityIcon, SourceBadge } from './operations-badges';
+import { useExceptionCategoryLabel, useExceptionSourceLabel } from '../lib/operations-labels';
 
 import type enLogistics from '@/i18n/locales/en/logistics.json';
 

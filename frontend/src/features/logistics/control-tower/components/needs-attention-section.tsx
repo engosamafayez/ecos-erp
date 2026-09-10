@@ -15,7 +15,7 @@ import type {
   HealthOverview,
   OperationalAlert,
 } from '@/features/logistics/operations/types/operations';
-import { useReasonLabel } from '@/features/operations/loading-os/components/loading-groups';
+import { useReasonLabel } from '@/features/operations/loading-os/lib/loading-labels';
 import type { LoadingSessionOverviewRow } from '@/features/operations/loading-os/types/loading-os';
 import { ROUTES } from '@/router/routes';
 

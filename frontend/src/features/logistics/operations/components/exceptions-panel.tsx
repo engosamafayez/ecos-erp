@@ -9,8 +9,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 import { useAlerts, useExceptionSummary, useExceptions } from '../hooks/use-operations';
 import type { ExceptionSeverity } from '../types/operations';
-import { ExceptionStatusBadge, SeverityIcon, SourceBadge, useExceptionCategoryLabel } from './operations-badges';
+import { ExceptionStatusBadge, SeverityIcon, SourceBadge } from './operations-badges';
 import { ExceptionDrawer } from './exception-drawer';
+import { useExceptionCategoryLabel } from '../lib/operations-labels';
 import type enLogistics from '@/i18n/locales/en/logistics.json';
 
 /**

@@ -19,13 +19,9 @@ import {
 
 import { useOrganizationContext } from '@/features/organization/context/organization-context';
 
-import {
-  LoadingGroupDetail,
-  LoadingGroupList,
-  useBucketLabel,
-  useLoadingSessionStatusLabel,
-} from '../components/loading-groups';
+import { LoadingGroupDetail, LoadingGroupList } from '../components/loading-groups';
 import { LoadingSessionOverviewPanel } from '../components/loading-session-overview';
+import { useBucketLabel, useLoadingSessionStatusLabel } from '../lib/loading-labels';
 import {
   useAllocations,
   useLoadingGroups,
@@ -45,7 +41,7 @@ const EPS = 0.00005;
 /**
  * One label per vehicle assignment status (canonical `vehicle_assignments.status`,
  * `VehicleAssignmentStatus` backend enum) — same anti-pattern fix as
- * `useLoadingSessionStatusLabel` (loading-groups.tsx), never the raw value.
+ * `useLoadingSessionStatusLabel` (lib/loading-labels.ts), never the raw value.
  */
 function useVehicleAssignmentStatusLabel(): (status: string) => string {
   const { t } = useTranslation('operations');

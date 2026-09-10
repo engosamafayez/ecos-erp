@@ -16,7 +16,7 @@ import {
   useLoadingSessionStatusLabel,
   useLoadingTripStatusLabel,
   useReasonLabel,
-} from './loading-groups';
+} from '../lib/loading-labels';
 
 /**
  * The LoadingSession-grain read model's presentation — TASK-...-WORKSPACE-READ-MODEL-004.
