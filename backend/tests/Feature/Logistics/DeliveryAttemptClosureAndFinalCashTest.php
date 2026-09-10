@@ -106,6 +106,48 @@ final class DeliveryAttemptClosureAndFinalCashTest extends TestCase
         self::assertSame(OrderStatus::InProgress->value, $order->refresh()->status->value);
     }
 
+    /** TASK-...-023-R1 Gate 4 — the real gap: a genuinely Cancelled order can still hold custody. */
+    public function test_wave_closure_moves_a_genuinely_cancelled_order_with_custody_to_on_hold(): void
+    {
+        $waveId = $this->wave();
+        $trip = $this->tripFor($this->groupFor($this->window(), $waveId));
+        // Reached via CancelOrderWorkflow's own ReadyForDispatch+force_cancel_preparation
+        // path in real use — created directly at Cancelled here since only the
+        // RESULTING state matters to this sweep, not how it got there.
+        $order = $this->orderCancelled();
+        $this->tripOrder($trip, $order->id);
+
+        $this->closeWaveEvent($waveId);
+
+        $order->refresh();
+        self::assertSame(OrderStatus::OnHold->value, $order->status->value);
+        self::assertSame(
+            \Modules\Logistics\Distribution\Domain\Services\DeliveryAttemptClosureService::REASON_CANCELLED_WITH_CUSTODY,
+            $order->hold_reason_code,
+        );
+        self::assertNotNull(
+            DB::table('distribution_trip_orders')
+                ->where('trip_id', $trip->id)->where('order_id', $order->id)->value('superseded_at'),
+            'The stale trip/order association must be released so the closing Wave does not keep a live claim on it.',
+        );
+    }
+
+    public function test_cancelled_order_review_transition_does_not_touch_warehouse_inventory(): void
+    {
+        $waveId = $this->wave();
+        $trip = $this->tripFor($this->groupFor($this->window(), $waveId));
+        $order = $this->orderCancelled();
+        $this->tripOrder($trip, $order->id);
+
+        $before = DB::table('inventory_items')->count();
+        $beforeLedger = DB::table('stock_ledger_entries')->count();
+
+        $this->closeWaveEvent($waveId);
+
+        self::assertSame($before, DB::table('inventory_items')->count(), 'A Cancelled->OnHold review transition must never mutate warehouse stock rows.');
+        self::assertSame($beforeLedger, DB::table('stock_ledger_entries')->count(), 'A Cancelled->OnHold review transition must never write a ledger movement.');
+    }
+
     public function test_wave_closure_does_not_touch_a_delivered_order(): void
     {
         $waveId = $this->wave();
@@ -388,6 +430,11 @@ final class DeliveryAttemptClosureAndFinalCashTest extends TestCase
     private function orderDelivered(): Order
     {
         return Order::query()->create($this->orderAttributes(OrderStatus::Delivered));
+    }
+
+    private function orderCancelled(): Order
+    {
+        return Order::query()->create($this->orderAttributes(OrderStatus::Cancelled));
     }
 
     /** @return array<string, mixed> */

@@ -15,6 +15,7 @@ use Modules\Logistics\Distribution\Domain\Models\Trip;
 use Modules\Logistics\Distribution\Domain\Models\VirtualCapacitySlot;
 use Modules\Operations\Fulfillment\Application\FulfillmentEngine;
 use Modules\Operations\Fulfillment\Application\Workflows\MoveToReviewFromDeliveryWorkflow;
+use Modules\Operations\Fulfillment\Application\Workflows\MoveToReviewWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\ReleaseForReplanningWorkflow;
 use Throwable;
 
@@ -64,23 +65,41 @@ use Throwable;
  * `OutForDelivery` on an already-swept trip (each was already moved to
  * InProgress/OnHold), so it is a safe no-op — the same pattern every other
  * closure operation in this codebase already uses.
+ *
+ * TASK-...-023-R1 GATE 4 — a SECOND, independent sweep below
+ * (`sweepGenuinelyCancelledOrders()`) closes a real gap this task's first pass
+ * missed: `CancelOrderWorkflow` allows cancelling a `ReadyForDispatch` order
+ * with `force_cancel_preparation=true` — "physical preparation work is
+ * complete" is its own guard's wording — with NO awareness of Loading/vehicle
+ * custody at all (it releases only the WAREHOUSE-side reservation). An Order
+ * can therefore reach genuine, terminal `OrderStatus::Cancelled` while its
+ * goods are ALREADY physically loaded onto a vehicle under one of this
+ * Wave's Trips, and nothing previously reviewed that case for office
+ * attention. Reuses the EXISTING `MoveToReviewWorkflow` unmodified — `Cancelled`
+ * is not in its blocked-source list, so no new workflow class was needed here
+ * (unlike §E's non-retryable-failure case, which genuinely had no reachable
+ * On-Hold edge before this task).
  */
 final class DeliveryAttemptClosureService
 {
     /** No settled outcome exists, or the recorded reason could not be resolved. */
     public const REASON_UNRESOLVED_AT_CLOSURE = 'wave_closed_attempt_unresolved';
 
+    /** A genuinely Cancelled order still had an active custody claim on this Wave's Trip. */
+    public const REASON_CANCELLED_WITH_CUSTODY = 'wave_closed_cancelled_goods_in_custody';
+
     public function __construct(
         private readonly TripService $trips,
         private readonly FulfillmentEngine $fulfillment,
+        private readonly MoveToReviewWorkflow $moveToReview,
     ) {}
 
     /**
-     * @return array{released_to_in_progress: int, moved_to_on_hold: int}
+     * @return array{released_to_in_progress: int, moved_to_on_hold: int, cancelled_moved_to_on_hold: int}
      */
     public function sweepWave(string $waveId): array
     {
-        $totals = ['released_to_in_progress' => 0, 'moved_to_on_hold' => 0];
+        $totals = ['released_to_in_progress' => 0, 'moved_to_on_hold' => 0, 'cancelled_moved_to_on_hold' => 0];
 
         $groupIds = VirtualCapacitySlot::query()
             ->where('preparation_wave_id', $waveId)
@@ -113,65 +132,110 @@ final class DeliveryAttemptClosureService
 
         $orderIds = $tripOrderRows->pluck('order_id')->unique()->values()->all();
 
-        // Only orders STILL OutForDelivery are candidates — this is the whole
-        // idempotency/backstop contract: anything the immediate listener (or a
-        // prior sweep) already resolved is silently excluded here.
-        $orders = Order::query()
-            ->whereIn('id', $orderIds)
-            ->where('status', OrderStatus::OutForDelivery->value)
-            ->get()
-            ->keyBy(static fn (Order $o): string => (string) $o->id);
-
-        if ($orders->isEmpty()) {
-            return $totals;
-        }
-
         $tripsById = Trip::query()
             ->whereIn('id', $tripIds)
             ->get()
             ->keyBy(static fn (Trip $t): int => (int) $t->id);
 
-        $stopsByTripAndOrder = DeliveryStop::query()
-            ->whereIn('trip_id', $tripIds)
-            ->whereIn('order_id', $orders->keys()->all())
-            ->with('actions')
+        // Every order still carrying an active claim on one of this Wave's Trips,
+        // regardless of its current status — the two sweeps below each filter to
+        // the ONE status they care about, independently, so neither's early exit
+        // can suppress the other (§R1 Gate 4: a Cancelled order must be reviewable
+        // even on a Wave with zero still-OutForDelivery orders).
+        $candidateOrders = Order::query()
+            ->whereIn('id', $orderIds)
             ->get()
-            ->keyBy(static fn (DeliveryStop $s): string => $s->trip_id.':'.$s->order_id);
+            ->keyBy(static fn (Order $o): string => (string) $o->id);
+
+        // ── §D/§E — orders still OutForDelivery: the original backstop ──────────
+
+        $outForDelivery = $candidateOrders->filter(
+            static fn (Order $o): bool => $o->status === OrderStatus::OutForDelivery,
+        );
+
+        if ($outForDelivery->isNotEmpty()) {
+            $stopsByTripAndOrder = DeliveryStop::query()
+                ->whereIn('trip_id', $tripIds)
+                ->whereIn('order_id', $outForDelivery->keys()->all())
+                ->with('actions')
+                ->get()
+                ->keyBy(static fn (DeliveryStop $s): string => $s->trip_id.':'.$s->order_id);
+
+            foreach ($tripOrderRows as $row) {
+                $order = $outForDelivery->get((string) $row->order_id);
+                if ($order === null) {
+                    continue; // not (or no longer) a candidate
+                }
+
+                $trip = $tripsById->get((int) $row->trip_id);
+                if ($trip === null) {
+                    continue; // orphaned reference — defensive only, should not occur
+                }
+
+                $stop = $stopsByTripAndOrder->get($row->trip_id.':'.$row->order_id);
+                [$isNonRetryable, $reasonValue] = $this->classify($stop);
+
+                try {
+                    $this->trips->releaseOrder($trip, (string) $order->id, $reasonValue, null);
+
+                    if ($isNonRetryable) {
+                        $this->fulfillment->run(
+                            new MoveToReviewFromDeliveryWorkflow(),
+                            $order,
+                            ['reason' => $reasonValue, 'hold_reason_code' => $reasonValue, 'trip_id' => $trip->id],
+                        );
+                        $totals['moved_to_on_hold']++;
+                    } else {
+                        $this->fulfillment->run(
+                            new ReleaseForReplanningWorkflow(),
+                            $order,
+                            ['reason' => $reasonValue, 'trip_id' => $trip->id],
+                        );
+                        $totals['released_to_in_progress']++;
+                    }
+                } catch (Throwable $e) {
+                    Log::channel('daily')->error('[DeliveryAttemptClosureService] Failed to close a delivery attempt at Wave closure', [
+                        'wave_id' => $waveId,
+                        'trip_id' => $trip->id,
+                        'order_id' => $order->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        }
+
+        // ── §R1 Gate 4 — orders already genuinely Cancelled, goods still in custody ──
+
+        $cancelled = $candidateOrders->filter(
+            static fn (Order $o): bool => $o->status === OrderStatus::Cancelled,
+        );
 
         foreach ($tripOrderRows as $row) {
-            $order = $orders->get((string) $row->order_id);
+            $order = $cancelled->get((string) $row->order_id);
             if ($order === null) {
-                continue; // not (or no longer) a candidate
+                continue;
             }
 
             $trip = $tripsById->get((int) $row->trip_id);
             if ($trip === null) {
-                continue; // orphaned reference — defensive only, should not occur
+                continue;
             }
 
-            $stop = $stopsByTripAndOrder->get($row->trip_id.':'.$row->order_id);
-            [$isNonRetryable, $reasonValue] = $this->classify($stop);
-
             try {
-                $this->trips->releaseOrder($trip, (string) $order->id, $reasonValue, null);
+                // Preserved as history (superseded, not deleted) exactly like the
+                // OutForDelivery branch above — the order was never re-plannable
+                // from Cancelled in the first place, but the stale claim on this
+                // closing Trip must not linger past the Wave that produced it.
+                $this->trips->releaseOrder($trip, (string) $order->id, self::REASON_CANCELLED_WITH_CUSTODY, null);
 
-                if ($isNonRetryable) {
-                    $this->fulfillment->run(
-                        new MoveToReviewFromDeliveryWorkflow(),
-                        $order,
-                        ['reason' => $reasonValue, 'hold_reason_code' => $reasonValue, 'trip_id' => $trip->id],
-                    );
-                    $totals['moved_to_on_hold']++;
-                } else {
-                    $this->fulfillment->run(
-                        new ReleaseForReplanningWorkflow(),
-                        $order,
-                        ['reason' => $reasonValue, 'trip_id' => $trip->id],
-                    );
-                    $totals['released_to_in_progress']++;
-                }
+                $this->fulfillment->run(
+                    $this->moveToReview,
+                    $order,
+                    ['reason' => self::REASON_CANCELLED_WITH_CUSTODY, 'hold_reason_code' => self::REASON_CANCELLED_WITH_CUSTODY, 'trip_id' => $trip->id],
+                );
+                $totals['cancelled_moved_to_on_hold']++;
             } catch (Throwable $e) {
-                Log::channel('daily')->error('[DeliveryAttemptClosureService] Failed to close a delivery attempt at Wave closure', [
+                Log::channel('daily')->error('[DeliveryAttemptClosureService] Failed to move a cancelled order to review at Wave closure', [
                     'wave_id' => $waveId,
                     'trip_id' => $trip->id,
                     'order_id' => $order->id,
@@ -180,7 +244,7 @@ final class DeliveryAttemptClosureService
             }
         }
 
-        if ($totals['released_to_in_progress'] > 0 || $totals['moved_to_on_hold'] > 0) {
+        if ($totals['released_to_in_progress'] > 0 || $totals['moved_to_on_hold'] > 0 || $totals['cancelled_moved_to_on_hold'] > 0) {
             Log::info('distribution.delivery_attempt_closure_sweep', $totals + ['wave_id' => $waveId]);
         }
 
