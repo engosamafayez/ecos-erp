@@ -18,6 +18,7 @@ import {
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -38,7 +39,7 @@ import { tripSettlementService } from '@/features/logistics/trips/services/trip-
 import { PaymentProofSection } from '@/features/orders/components/payment-proof-section';
 import { OrderDetailDrawer } from '@/features/orders/components/order-detail-drawer';
 import type { Order } from '@/features/orders/types/order';
-import { useDriverSettlementDetail } from '../hooks/use-driver-settlement';
+import { useDriverSettlementDetail, useReceiveVehicleReturn } from '../hooks/use-driver-settlement';
 import type {
   DaySettlementOrderRow,
   DaySettlementProductRow,
@@ -96,6 +97,10 @@ export function DriverSettlementDetailPage() {
   const [finalizing, setFinalizing] = useState(false);
 
   const canWrite = can('logistics.distribution.update');
+  // Warehouse floor staff, not dispatch — the same permission that already gates the canonical
+  // Warehouse Return Receipt everywhere else it's reachable (Loading OS confirmProduct / reconciliation).
+  const canReceiveGoods = can('loading.session.operate');
+  const receiveReturn = useReceiveVehicleReturn(numericAssignmentId, date);
 
   function backToList() {
     navigate(ROUTES.logisticsDriverSettlement);
@@ -125,6 +130,29 @@ export function DriverSettlementDetailPage() {
     } finally {
       setFinalizing(false);
     }
+  }
+
+  // Returns tab — Confirm Receipt. Reuses the canonical Warehouse Return Receipt untouched;
+  // this page never mutates VehicleInventoryItem or warehouse stock directly.
+  function confirmGoodsReceipt(
+    row: DaySettlementProductRow,
+    accepted: number,
+    damaged: number,
+    damageReason: string | null,
+  ) {
+    if (row.receipt === null) return;
+    receiveReturn.mutate(
+      {
+        sessionId: row.receipt.session_id,
+        opsAssignmentId: row.receipt.assignment_id,
+        lineId: row.receipt.line_id,
+        payload: { quantity_accepted: accepted, quantity_damaged: damaged, damage_reason: damageReason },
+      },
+      {
+        onSuccess: () => toast({ title: t(($) => $.driverSettlement.detail.returns.receiptSuccess) }),
+        onError: () => toast({ title: t(($) => $.driverSettlement.detail.returns.receiptError), variant: 'destructive' }),
+      },
+    );
   }
 
   if (isLoading) {
@@ -216,6 +244,7 @@ export function DriverSettlementDetailPage() {
     closed: t(($) => $.driverSettlement.timeline.closed),
     reconciliation_opened: t(($) => $.driverSettlement.timeline.reconciliation_opened),
     reconciliation_completed: t(($) => $.driverSettlement.timeline.reconciliation_completed),
+    goods_received: t(($) => $.driverSettlement.timeline.goods_received),
   };
   const reconStatusLabel: Record<string, string> = {
     received: t(($) => $.driverSettlement.reconStatus.received),
@@ -630,9 +659,21 @@ export function DriverSettlementDetailPage() {
           </TabsContent>
 
           {/* ── 3. Returns ─────────────────────────────────────────────────────── */}
-          <TabsContent value="returns" className="space-y-2 pt-3">
-            <GapNote text={t(($) => $.driverSettlement.detail.returns.note)} />
-            <ReturnsTable rows={data.returns} />
+          <TabsContent value="returns" className="space-y-3 pt-3">
+            {/* Actual current Driver / Vehicle Warehouse stock, never Order lines (§18). Warehouse
+                receipt uses the canonical Warehouse Return Receipt only (§19-§20). */}
+            <PendingReceiptsSection
+              rows={data.product_reconciliation}
+              reconciliationAvailable={custody.reconciliation_available}
+              canReceive={canReceiveGoods}
+              onConfirm={confirmGoodsReceipt}
+              isPending={receiveReturn.isPending}
+            />
+            <div>
+              <SectionTitle text={t(($) => $.driverSettlement.detail.returns.declaredTitle)} />
+              <GapNote text={t(($) => $.driverSettlement.detail.returns.note)} />
+              <ReturnsTable rows={data.returns} />
+            </div>
           </TabsContent>
 
           {/* ── 4. Reconciliation ──────────────────────────────────────────────── */}
@@ -662,7 +703,11 @@ export function DriverSettlementDetailPage() {
                 <SummaryRow label={t(($) => $.driverSettlement.detail.settlement.cashIn)} value={money(data.financial.cash_in)} />
                 <SummaryRow
                   label={t(($) => $.driverSettlement.detail.settlement.difference)}
-                  value={moneyOrNa(c.collection_difference)}
+                  value={
+                    c.collection_difference_pending
+                      ? t(($) => $.driverSettlement.detail.settlement.differencePending)
+                      : moneyOrNa(c.collection_difference)
+                  }
                   muted={c.collection_difference === null}
                   strong
                 />
@@ -1094,6 +1139,151 @@ function EmptyPanel({ icon, label }: { icon: ReactNode; label: string }) {
     <div className="flex flex-col items-center justify-center gap-2 py-10 text-muted-foreground">
       {icon}
       <p className="text-sm">{label}</p>
+    </div>
+  );
+}
+
+function PendingReceiptsSection({
+  rows,
+  reconciliationAvailable,
+  canReceive,
+  onConfirm,
+  isPending,
+}: {
+  rows: DaySettlementProductRow[];
+  reconciliationAvailable: boolean;
+  canReceive: boolean;
+  onConfirm: (row: DaySettlementProductRow, accepted: number, damaged: number, damageReason: string | null) => void;
+  isPending: boolean;
+}) {
+  const { t } = useTranslation('logistics');
+
+  if (!reconciliationAvailable) {
+    return (
+      <section className="rounded-lg border p-3">
+        <SectionTitle text={t(($) => $.driverSettlement.detail.returns.confirmReceiptTitle)} />
+        <div className="rounded-lg border border-dashed px-4 py-3 text-xs text-muted-foreground">
+          {t(($) => $.driverSettlement.custody.notReconciled)}
+        </div>
+      </section>
+    );
+  }
+
+  const pending = rows.filter((r) => r.receipt !== null);
+  if (pending.length === 0) return null;
+
+  return (
+    <section className="rounded-lg border p-3">
+      <SectionTitle text={t(($) => $.driverSettlement.detail.returns.confirmReceiptTitle)} />
+      {!canReceive && <GapNote text={t(($) => $.driverSettlement.detail.returns.receivePermissionNote)} />}
+      <div className="divide-y rounded-lg border">
+        {pending.map((row) => (
+          <ReceiptRow
+            key={row.receipt?.line_id ?? row.product_id}
+            row={row}
+            canReceive={canReceive}
+            isPending={isPending}
+            onConfirm={onConfirm}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ReceiptRow({
+  row,
+  canReceive,
+  isPending,
+  onConfirm,
+}: {
+  row: DaySettlementProductRow;
+  canReceive: boolean;
+  isPending: boolean;
+  onConfirm: (row: DaySettlementProductRow, accepted: number, damaged: number, damageReason: string | null) => void;
+}) {
+  const { t } = useTranslation('logistics');
+  const currentWithDriver = row.expected_return;
+  const [accepted, setAccepted] = useState(String(currentWithDriver));
+  const [damaged, setDamaged] = useState('0');
+  const [reason, setReason] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  const acceptedNum = Number(accepted);
+  const damagedNum = Number(damaged);
+  const validNumbers = Number.isFinite(acceptedNum) && Number.isFinite(damagedNum) && acceptedNum >= 0 && damagedNum >= 0;
+  const overCounted = validNumbers && acceptedNum + damagedNum > currentWithDriver + 0.0001;
+  const remainingAfter = validNumbers ? Math.max(0, currentWithDriver - acceptedNum - damagedNum) : null;
+
+  function submit() {
+    if (!validNumbers) {
+      setError(t(($) => $.driverSettlement.detail.returns.receiptInvalid));
+      return;
+    }
+    if (overCounted) {
+      setError(t(($) => $.driverSettlement.detail.returns.receiptOverCounted));
+      return;
+    }
+    setError(null);
+    onConfirm(row, acceptedNum, damagedNum, reason.trim() || null);
+  }
+
+  return (
+    <div className="p-3">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-6 sm:items-end">
+        <div className="col-span-2 sm:col-span-2">
+          <p className="text-sm font-medium">{row.product_name}</p>
+          <p className="text-[11px] text-muted-foreground">
+            {t(($) => $.driverSettlement.detail.returns.currentWithDriver)}: {currentWithDriver}
+          </p>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase text-muted-foreground">{t(($) => $.driverSettlement.detail.returns.receivedQty)}</p>
+          <Input
+            type="number"
+            min={0}
+            step="0.01"
+            className="h-8"
+            value={accepted}
+            disabled={!canReceive}
+            onChange={(e) => setAccepted(e.target.value)}
+          />
+        </div>
+        <div>
+          <p className="text-[10px] uppercase text-muted-foreground">{t(($) => $.driverSettlement.detail.returns.damagedQty)}</p>
+          <Input
+            type="number"
+            min={0}
+            step="0.01"
+            className="h-8"
+            value={damaged}
+            disabled={!canReceive}
+            onChange={(e) => setDamaged(e.target.value)}
+          />
+        </div>
+        <div>
+          <p className="text-[10px] uppercase text-muted-foreground">{t(($) => $.driverSettlement.detail.returns.remainingAfter)}</p>
+          <p className="text-sm font-semibold tabular-nums">{remainingAfter ?? '—'}</p>
+        </div>
+        <div className="flex flex-col items-start gap-1">
+          <Button size="sm" disabled={!canReceive || isPending} onClick={submit}>
+            {t(($) => $.driverSettlement.detail.returns.confirmReceipt)}
+          </Button>
+          {error && <p className="text-[10px] text-destructive">{error}</p>}
+        </div>
+      </div>
+      {damagedNum > 0 && (
+        <div className="mt-2">
+          <p className="text-[10px] uppercase text-muted-foreground">{t(($) => $.driverSettlement.detail.returns.damageReason)}</p>
+          <Input
+            className="h-8"
+            value={reason}
+            disabled={!canReceive}
+            maxLength={1000}
+            onChange={(e) => setReason(e.target.value)}
+          />
+        </div>
+      )}
     </div>
   );
 }

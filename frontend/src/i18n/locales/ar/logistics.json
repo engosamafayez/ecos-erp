@@ -202,6 +202,7 @@
         "expenses": "المصروفات",
         "cashIn": "نقد وارد / سلف",
         "difference": "فرق التحصيل",
+        "differencePending": "قيد الانتظار — بانتظار نتائج التسليم",
         "netCash": "صافي النقدية مع السائق",
         "statusTitle": "حالة التصفية",
         "deliveries": "التسليمات",
@@ -244,7 +245,20 @@
         "disposition": "التصرف",
         "status": "الحالة",
         "liable": "مسؤولية السائق",
-        "note": "معروض كما هو مسجَّل في سجل المرتجعات المعتمد. الظهور هنا لا يعني مسؤولية مالية."
+        "note": "معروض كما هو مسجَّل في سجل المرتجعات المعتمد. الظهور هنا لا يعني مسؤولية مالية.",
+        "declaredTitle": "المرتجعات المُعلَنة",
+        "confirmReceiptTitle": "تأكيد الاستلام — مخزون مستودع السائق",
+        "receivePermissionNote": "تأكيد الاستلام متاح لمشغّل المستودع فقط.",
+        "currentWithDriver": "الكمية الحالية مع السائق",
+        "receivedQty": "الكمية المُستلَمة",
+        "damagedQty": "الكمية التالفة",
+        "remainingAfter": "المتبقي بعد الاستلام",
+        "damageReason": "سبب التلف",
+        "confirmReceipt": "تأكيد الاستلام",
+        "receiptInvalid": "أدخل كمية مُستلَمة وكمية تالفة صحيحتين.",
+        "receiptOverCounted": "لا يمكن أن يتجاوز مجموع المُستلَم والتالف ما يحمله السائق حاليًا.",
+        "receiptSuccess": "تم تأكيد الاستلام.",
+        "receiptError": "تعذّر تأكيد الاستلام."
       },
       "recon": {
         "ledgerTitle": "مطابقة التحصيل",
@@ -378,7 +392,8 @@
       "reconciled": "تمت تسوية التصفية",
       "closed": "أُغلقت التصفية",
       "reconciliation_opened": "فُتح جرد المخزن",
-      "reconciliation_completed": "اكتمل جرد المخزن"
+      "reconciliation_completed": "اكتمل جرد المخزن",
+      "goods_received": "تم استلام البضاعة في المستودع"
     },
     "tabs": {
       "overview": "نظرة عامة",

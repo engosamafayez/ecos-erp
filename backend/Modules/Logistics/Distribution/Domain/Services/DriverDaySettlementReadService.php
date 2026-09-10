@@ -1035,7 +1035,18 @@ class DriverDaySettlementReadService
         // All electronic channels, derived from the enum so a new channel is counted automatically.
         $driverElectronic = round((float) array_sum(array_map($sumType, PaymentType::electronicCases())), 2);
         $collectedFromCustomers = round($cash + $driverElectronic, 2);
-        $collectionDifference = $expectedCollection !== null
+
+        // A stop's handoff snapshot is taken when goods leave custody, before the delivery is
+        // attempted — so a still-Pending/InProgress stop already carries a real, non-null
+        // `expected_collection_at_handoff` while its actual collection is genuinely zero. Counting
+        // that into the difference would read as a driver shortage when nothing has failed; it is
+        // simply not resolved yet. The difference is therefore FINAL only once every stop has
+        // reached a settled outcome — reusing the canonical `DeliveryStopStatus::isSettled()`
+        // ("a stop that has reached an outcome and no longer counts as outstanding"), never a
+        // second outcome taxonomy.
+        $allStopsSettled = $stops->isNotEmpty() && $stops->every(fn (DeliveryStop $s): bool => $s->status->isSettled());
+        $collectionDifferencePending = $expectedCollection !== null && ! $allStopsSettled;
+        $collectionDifference = ($expectedCollection !== null && $allStopsSettled)
             ? round($collectedFromCustomers - $expectedCollection, 2)
             : null;
 
@@ -1056,6 +1067,9 @@ class DriverDaySettlementReadService
             'expected_collection' => $expectedCollection,
             'expected_collection_available' => $expectedAvailable,
             'collection_difference' => $collectionDifference,
+            // true only when the snapshot exists but at least one stop has not yet reached a
+            // settled outcome — distinct from "Not available" (no snapshot at all).
+            'collection_difference_pending' => $collectionDifferencePending,
             // ── Driver-collected vs prepaid, stated rather than left to the client ──────────
             // A PaymentCollection row IS a driver collection: it is recorded against a stop by the
             // driver, with `collected_by` stamped. `payment_type = already_paid` is the canonical
@@ -1159,13 +1173,25 @@ class DriverDaySettlementReadService
             ? $namesByProduct->get($productId)
             : (string) ($sku ?? '—');
 
+        // Which canonical warehouse-receive endpoint (loading session + vehicle assignment) each
+        // reconciliation line belongs to, keyed by reconciliation header id -- so a line can carry
+        // its own receive target without an N+1 lookup per product row.
+        $receiveTargetByReconciliation = $reconciliations->keyBy('id')->map(
+            fn (VehicleShiftReconciliation $r): array => [
+                'session_id' => $r->loading_session_id,
+                'assignment_id' => $r->vehicle_assignment_id,
+            ],
+        );
+
         // Per-product reconciliation rows (§9). Reconciliation lines win; custody items with
         // no line are surfaced from the custody engine and marked as not-yet-reconciled.
-        $products = $lines->map(function (VehicleShiftReconciliationLine $l) use ($nameFor): array {
+        $products = $lines->map(function (VehicleShiftReconciliationLine $l) use ($nameFor, $receiveTargetByReconciliation): array {
             $expected = (float) $l->quantity_returned_expected;
             $accepted = (float) $l->quantity_accepted;
             $damaged = (float) $l->quantity_damaged;
             $variance = (float) $l->variance;
+            $received = $l->warehouse_receipt_at !== null;
+            $target = $receiveTargetByReconciliation->get($l->reconciliation_id);
 
             return [
                 'product_id' => (string) $l->product_id,
@@ -1178,9 +1204,19 @@ class DriverDaySettlementReadService
                 'damaged' => round($damaged, 4),
                 'shortage' => round(max(0.0, $variance), 4),        // variance kept visible
                 'variance' => round($variance, 4),
-                'reconciliation_status' => $l->warehouse_receipt_at !== null ? 'received' : 'pending',
-                'warehouse_received' => $l->warehouse_receipt_at !== null,
+                'reconciliation_status' => $received ? 'received' : 'pending',
+                'warehouse_received' => $received,
                 'source' => 'reconciliation',
+                // The exact canonical receive-endpoint target for this line (POST
+                // /loading/sessions/{session_id}/assignments/{assignment_id}/reconciliation/lines/{line_id}/receive),
+                // via ReceiveVehicleReturnAction -- never a second inventory-movement path. Null once
+                // received: re-receiving is the canonical action's own idempotent no-op, but the UI
+                // should not re-offer an action that has already run.
+                'receipt' => ! $received && $target !== null ? [
+                    'session_id' => $target['session_id'],
+                    'assignment_id' => $target['assignment_id'],
+                    'line_id' => $l->id,
+                ] : null,
             ];
         });
 
@@ -1205,6 +1241,10 @@ class DriverDaySettlementReadService
                     'reconciliation_status' => 'not_reconciled',
                     'warehouse_received' => false,
                     'source' => 'custody',
+                    // No reconciliation line exists yet for this custody item, so there is nothing
+                    // to receive against yet -- the warehouse must open the shift reconciliation
+                    // first (existing Loading OS workflow, not duplicated here).
+                    'receipt' => null,
                 ];
             });
 
@@ -1416,8 +1456,8 @@ class DriverDaySettlementReadService
 
     /**
      * The driver-day timeline (§16) from canonical timestamps only — trip lifecycle,
-     * reconciliation open/close, and settlement submit/reconcile/finalize. Null stamps
-     * are dropped; the list is ordered.
+     * reconciliation open/close, per-line goods receipt, and settlement submit/reconcile/
+     * finalize. Null stamps are dropped; the list is ordered.
      *
      * @param  Collection<int, Trip>  $trips
      * @param  Collection<int, VehicleShiftReconciliation>  $reconciliations
@@ -1443,6 +1483,10 @@ class DriverDaySettlementReadService
         foreach ($reconciliations as $r) {
             $push('reconciliation_opened', $r->opened_at);
             $push('reconciliation_completed', $r->completed_at);
+
+            foreach ($r->lines as $line) {
+                $push('goods_received', $line->warehouse_receipt_at);
+            }
         }
 
         usort($events, static fn (array $a, array $b): int => strcmp($a['at'], $b['at']));
@@ -1823,7 +1867,7 @@ class DriverDaySettlementReadService
                 'distribution_delivery_stops.trip_id as trip_id,'
                 .' distribution_delivery_stops.status as status,'
                 .' COUNT(DISTINCT distribution_delivery_stops.id) as stops,'
-                .' SUM(order_lines.line_total) as value'
+                .' SUM(order_lines.line_total) as value',
             )
             ->get();
 
@@ -1955,7 +1999,7 @@ class DriverDaySettlementReadService
      * Two grouped queries for the whole board — no per-driver, per-product or per-brand query.
      *
      * @param  list<int>  $tripIds
-     * @return array<int, float>  trip_id → brand-attributable quantity on hand
+     * @return array<int, float> trip_id → brand-attributable quantity on hand
      */
     private function brandGoodsOnHandByTrip(string $companyId, array $tripIds, string $brandId): array
     {

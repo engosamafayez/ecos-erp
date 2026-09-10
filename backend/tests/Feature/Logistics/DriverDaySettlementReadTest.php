@@ -321,6 +321,59 @@ class DriverDaySettlementReadTest extends TestCase
             ->assertJsonPath('collections.expected_collection', null);
     }
 
+    // ── Collection difference: pending vs settled (TASK-ECOS-PREV1-RESIDUAL-SOURCE-GAPS-REMEDIATION-031) ──
+
+    public function test_collection_difference_is_pending_while_any_stop_is_unsettled_and_finalizes_once_all_settle(): void
+    {
+        $company = Company::factory()->create();
+        $user = User::factory()->create(['company_id' => $company->id]);
+        $seed = $this->seedHandoffTrip($company, [
+            ['total' => 1000.0, 'paid' => false, 'deposit' => 0.0],
+            ['total' => 500.0, 'paid' => false, 'deposit' => 0.0],
+        ]);
+        $stops = DeliveryStop::query()->where('trip_id', $seed['trip']->id)->orderBy('sequence')->get();
+
+        // Phase 1 — both stops still Pending (generateStops' default). The handoff snapshot exists
+        // (expected_collection = 1500) but nothing has been attempted yet: the difference must read
+        // as pending, never as a fabricated 1500 shortage.
+        $this->actingAs($user)
+            ->getJson(self::BASE.'/'.$seed['assignment_id'].'?date='.self::DAY)
+            ->assertOk()
+            ->assertJsonPath('collections.expected_collection_available', true)
+            ->assertJsonPath('collections.expected_collection', fn ($v): bool => (float) $v === 1500.0)
+            ->assertJsonPath('collections.collection_difference_pending', true)
+            ->assertJsonPath('collections.collection_difference', null);
+
+        // Phase 2 — one stop settles (delivered, paid in full) but the other is still outstanding.
+        // The difference must STILL read as pending: the driver's day is not over, so collected
+        // (1000) against expected (1500) is not yet a real -500 shortage.
+        $stops[0]->update(['status' => DeliveryStopStatus::Delivered->value]);
+        PaymentCollection::create([
+            'trip_id' => $seed['trip']->id,
+            'stop_id' => $stops[0]->id,
+            'payment_type' => PaymentType::Cash->value,
+            'amount' => 1000.00,
+            'status' => PaymentCollection::STATUS_RECORDED,
+        ]);
+
+        $this->actingAs($user)
+            ->getJson(self::BASE.'/'.$seed['assignment_id'].'?date='.self::DAY)
+            ->assertOk()
+            ->assertJsonPath('collections.collection_difference_pending', true)
+            ->assertJsonPath('collections.collection_difference', null);
+
+        // Phase 3 — the second stop also settles (failed: no payment accepted). Every stop has now
+        // reached an outcome, so the real difference (1000 collected − 1500 expected = −500,
+        // reflecting the failed stop's unresolved 500) is finally computed and surfaced.
+        $stops[1]->update(['status' => DeliveryStopStatus::Failed->value]);
+
+        $this->actingAs($user)
+            ->getJson(self::BASE.'/'.$seed['assignment_id'].'?date='.self::DAY)
+            ->assertOk()
+            ->assertJsonPath('collections.collection_difference_pending', false)
+            ->assertJsonPath('collections.collection_difference', fn ($v): bool => (float) $v === -500.0);
+    }
+
     // ── Single-active operational custody contract (TASK-...-SINGLE-ACTIVE-CUSTODY-CLOSURE-001) ──
 
     public function test_a_loading_shell_without_custody_is_not_active(): void

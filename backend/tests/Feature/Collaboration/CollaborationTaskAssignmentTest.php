@@ -9,6 +9,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Modules\Collaboration\Domain\Services\DriverMessagingAuthorizer;
 use Modules\IAM\Domain\Contracts\ScopeResolverInterface;
 use Modules\IAM\Domain\Enums\DataScope;
+use Modules\IAM\Domain\Models\Role;
 use Modules\IAM\Domain\ValueObjects\ScopeConstraint;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Tests\Feature\Collaboration\Concerns\CollaborationTestHelpers;
@@ -113,6 +114,14 @@ final class CollaborationTaskAssignmentTest extends TestCase
             {
                 return ScopeConstraint::none(DataScope::CUSTOM);
             }
+
+            // Cache invalidation is irrelevant to this test double's one job
+            // (proving a scope denial) and orthogonal to resolve()'s return
+            // value — a no-op is the semantically correct implementation,
+            // not a placeholder that could broaden access.
+            public function invalidateUserCache(int $userId): void {}
+
+            public function invalidateRoleCache(Role $role): void {}
         });
 
         $this->actingAsUnprivileged($actor)

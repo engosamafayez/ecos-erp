@@ -6,6 +6,7 @@ namespace Tests\Feature\Collaboration;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Modules\Collaboration\Domain\Models\InternalTask;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Tests\Feature\Collaboration\Concerns\CollaborationTestHelpers;
 use Tests\TestCase;
@@ -44,6 +45,21 @@ final class CollaborationTaskDomainTest extends TestCase
             // Task 5 — creator/assignee names resolve inline, not bare ids.
             ->assertJsonPath('data.creator_name', 'Task Creator')
             ->assertJsonPath('data.assignee_name', 'Task Assignee');
+    }
+
+    // 1b. Creation persists exactly once — a defect at the response-building
+    // stage (TaskResource serializing a null status) must never be confused
+    // with, or masked by, a retried/duplicated write.
+    public function test_creating_a_task_persists_exactly_one_row(): void
+    {
+        $company = Company::factory()->create();
+        $actor = $this->employee($company);
+
+        $this->actingAsUnprivileged($actor)
+            ->postJson('/api/collaboration/tasks', ['title' => 'Single row check'])
+            ->assertCreated();
+
+        self::assertSame(1, InternalTask::query()->where('company_id', $company->id)->count());
     }
 
     // 2. Unauthorized task create rejected.

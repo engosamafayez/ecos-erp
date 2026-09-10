@@ -202,6 +202,7 @@
         "expenses": "Expenses",
         "cashIn": "Cash In / Advances",
         "difference": "Collection Difference",
+        "differencePending": "Pending — awaiting delivery outcomes",
         "netCash": "Net Cash With Driver",
         "statusTitle": "Settlement Status",
         "deliveries": "Deliveries",
@@ -244,7 +245,20 @@
         "disposition": "Disposition",
         "status": "Status",
         "liable": "Driver liable",
-        "note": "Reported exactly as the canonical return record states it. Visibility here is not a financial liability."
+        "note": "Reported exactly as the canonical return record states it. Visibility here is not a financial liability.",
+        "declaredTitle": "Declared Returns",
+        "confirmReceiptTitle": "Confirm Receipt — Driver Warehouse Stock",
+        "receivePermissionNote": "Only a warehouse operator can confirm receipt.",
+        "currentWithDriver": "Current with driver",
+        "receivedQty": "Received quantity",
+        "damagedQty": "Damaged quantity",
+        "remainingAfter": "Remaining after receipt",
+        "damageReason": "Damage reason",
+        "confirmReceipt": "Confirm Receipt",
+        "receiptInvalid": "Enter a valid received and damaged quantity.",
+        "receiptOverCounted": "Received + damaged cannot exceed what the driver currently holds.",
+        "receiptSuccess": "Receipt confirmed.",
+        "receiptError": "The receipt could not be confirmed."
       },
       "recon": {
         "ledgerTitle": "Collection Reconciliation",
@@ -378,7 +392,8 @@
       "reconciled": "Settlement reconciled",
       "closed": "Settlement closed",
       "reconciliation_opened": "Warehouse count opened",
-      "reconciliation_completed": "Warehouse count completed"
+      "reconciliation_completed": "Warehouse count completed",
+      "goods_received": "Goods received at warehouse"
     },
     "tabs": {
       "overview": "Overview",

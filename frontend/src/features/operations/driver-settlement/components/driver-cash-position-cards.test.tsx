@@ -45,6 +45,7 @@ function collections(over: Partial<DaySettlementCollections> = {}): DaySettlemen
     expected_collection: 8000,
     expected_collection_available: true,
     collection_difference: 0,
+    collection_difference_pending: false,
     ...over,
   };
 }

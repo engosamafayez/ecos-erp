@@ -77,18 +77,15 @@ final class CollaborationAuthorizationGatewaySystemBypassTest extends TestCase
         // CreateTaskAction's own 'collaboration.tasks.create' gate from
         // DriverMessagingAuthorizer's separate assign-permission gate.
         //
-        // Asserts "not 403" rather than assertCreated(): this endpoint currently
-        // 500s for every actor, authorized or not (a pre-existing, unrelated
-        // defect — CreateTaskAction's create() never sets 'status', so
-        // TaskResource's $this->status->value crashes on the in-memory model
-        // before the DB-level default is ever read back; confirmed via the
-        // unmodified CollaborationDriverTaskTest, which fails identically for
-        // an already-privileged actor). Out of scope for this authorization
-        // fix — reported separately, not fixed here.
-        $response = $this->actingAs($sysActor)
-            ->postJson('/api/collaboration/tasks', ['title' => 'System-created task']);
-
-        $this->assertNotSame(403, $response->getStatusCode(), 'is_system actor must not be denied by the authorization gate');
+        // TASK-ECOS-INTERNAL-COLLABORATION-FINAL-DEFECT-CLOSURE-009 fixed the
+        // sibling TaskResource null-status defect this test used to have to
+        // route around — a plain assertCreated() is now the correct, honest
+        // assertion again.
+        $this->actingAs($sysActor)
+            ->postJson('/api/collaboration/tasks', ['title' => 'System-created task'])
+            ->assertCreated()
+            ->assertJsonPath('data.title', 'System-created task')
+            ->assertJsonPath('data.status', 'todo');
     }
 
     public function test_is_system_actor_messages_a_linked_driver_without_any_explicit_grant(): void
@@ -111,16 +108,14 @@ final class CollaborationAuthorizationGatewaySystemBypassTest extends TestCase
         $driverUser = User::factory()->create(['company_id' => $company->id]);
         $this->makeDriver($company, $driverUser);
 
-        // See the sibling test above for why this asserts "not 403" rather
-        // than assertCreated() — a separate, pre-existing TaskResource defect,
-        // not this authorization fix.
-        $response = $this->actingAs($sysActor)
+        $this->actingAs($sysActor)
             ->postJson('/api/collaboration/tasks', [
                 'title' => 'Deliver system-assigned package',
                 'assignee_user_id' => $driverUser->id,
-            ]);
-
-        $this->assertNotSame(403, $response->getStatusCode(), 'is_system actor must not be denied by the authorization gate');
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.assignee_user_id', $driverUser->id)
+            ->assertJsonPath('data.status', 'todo');
     }
 
     public function test_is_system_actor_sees_a_driver_as_addressable_in_search_without_any_explicit_grant(): void

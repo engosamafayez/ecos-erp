@@ -51,6 +51,9 @@ vi.mock('../hooks/use-driver-settlement', () => ({
     approve: { mutate: vi.fn(), isPending: false },
     reject: { mutate: vi.fn(), isPending: false },
   }),
+  // The Returns tab's Confirm Receipt section uses this; an idle mutation is enough for
+  // these tests, none of which exercise the receive flow itself.
+  useReceiveVehicleReturn: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
 import { DriverSettlementDetailPage } from './driver-settlement-detail-page';
@@ -81,6 +84,7 @@ function baseDetail(over: Partial<DaySettlementDriverDetail> = {}): DaySettlemen
       expected_collection: null,
       expected_collection_available: false,
       collection_difference: null,
+      collection_difference_pending: false,
     },
     custody_summary: {
       reconciliation_available: false,

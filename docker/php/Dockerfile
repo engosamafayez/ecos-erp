@@ -190,7 +190,14 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         pcntl \
         exif \
         opcache \
-    && pecl install redis \
+    && pecl channel-update pecl.php.net \
+    && for i in 1 2 3; do \
+           pecl install redis && break; \
+           if [ "$i" = "3" ]; then echo "pecl install redis failed after 3 attempts" >&2; exit 1; fi; \
+           echo "pecl install redis attempt $i failed - refreshing channel and retrying"; \
+           sleep 5; \
+           pecl channel-update pecl.php.net || true; \
+       done \
     && docker-php-ext-enable redis \
     && rm -rf /tmp/pear
 

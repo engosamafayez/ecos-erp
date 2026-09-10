@@ -1,5 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { loadingOsService } from '@/features/operations/loading-os/services/loading-os-service';
+
 import { driverSettlementService } from '../services/driver-settlement-service';
 import type { DaySettlementBoardParams } from '../types/driver-settlement';
 
@@ -48,4 +50,32 @@ export function useReviewDriverMovement(assignmentId: number | null, date: strin
   });
 
   return { approve, reject };
+}
+
+/**
+ * Confirm Receipt on the Returns tab — the canonical Warehouse Return Receipt
+ * (ReceiveVehicleReturnAction, via loadingOsService), never a second inventory-movement path.
+ * Refreshes the detail on success so Loaded/Delivered/Remaining and the reconciliation rows
+ * re-derive from the canonical custody engine, plus the board so Goods Remaining stays in sync.
+ */
+export function useReceiveVehicleReturn(assignmentId: number | null, date: string) {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      sessionId,
+      opsAssignmentId,
+      lineId,
+      payload,
+    }: {
+      sessionId: string;
+      opsAssignmentId: string;
+      lineId: string;
+      payload: { quantity_accepted: number; quantity_damaged: number; damage_reason?: string | null };
+    }) => loadingOsService.receiveReturn(sessionId, opsAssignmentId, lineId, payload),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: [KEY, 'detail', assignmentId, date] });
+      void qc.invalidateQueries({ queryKey: [KEY, 'board'] });
+    },
+  });
 }

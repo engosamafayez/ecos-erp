@@ -242,6 +242,9 @@ export interface DaySettlementCollections {
   expected_collection: number | null;
   expected_collection_available: boolean;
   collection_difference: number | null;
+  /** True only when the handoff snapshot exists but at least one delivery is still Pending/
+   *  InProgress — the difference is not yet final and must not be shown as a shortage. */
+  collection_difference_pending: boolean;
   /** Driver-collected electronic (bank transfer + card) and the full driver-collected total
    *  (cash + electronic). Excludes prepaid value, which is reported separately below. */
   driver_collected_electronic?: number;
@@ -288,6 +291,9 @@ export interface DaySettlementProductRow {
   reconciliation_status: string;
   warehouse_received: boolean;
   source: 'reconciliation' | 'custody';
+  /** The canonical warehouse-receive target for this line, or null when there is nothing to
+   *  receive against yet (already received, or no reconciliation line opened for this item). */
+  receipt: { session_id: string; assignment_id: string; line_id: string } | null;
 }
 
 export interface DaySettlementDamage {
