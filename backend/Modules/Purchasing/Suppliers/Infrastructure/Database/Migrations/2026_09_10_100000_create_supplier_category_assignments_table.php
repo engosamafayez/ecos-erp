@@ -42,7 +42,12 @@ return new class extends Migration
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
-            $table->unique(['supplier_id', 'supplier_category_id']);
+            // Explicit name: Laravel's auto-generated name for this constraint
+            // ("supplier_category_assignments_supplier_id_supplier_category_id_unique")
+            // exceeds MySQL's 64-character identifier limit (error 1059). Applied to DEV
+            // under TASK-ECOS-FOUR-LANE-UNIFIED-DEV-ROLLOUT-027 after CREATE TABLE had
+            // already committed (MySQL DDL is not transactional) but this ALTER failed.
+            $table->unique(['supplier_id', 'supplier_category_id'], 'supplier_category_assignments_unique');
             $table->index('supplier_category_id');
         });
 
