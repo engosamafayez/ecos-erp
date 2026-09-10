@@ -16,12 +16,27 @@ export type PurchaseMaterialStatus =
 
 export type PurchaseMaterialPriority = 'low' | 'normal' | 'high' | 'urgent';
 
+/** The 6 user-approved visible statuses (TASK-...-PURCHASE-REQUESTS-FINAL-019 §5) — a
+ *  presentation-only projection of PurchaseMaterialStatus, computed server-side
+ *  (PurchaseMaterial::displayStatus()). The real workflow authority stays `status`/
+ *  `available_actions`; never derive this bucket client-side. */
+export type PurchaseMaterialDisplayStatus =
+  | 'draft'
+  | 'awaiting_supplier'
+  | 'purchasing'
+  | 'receiving'
+  | 'completed'
+  | 'rejected';
+
 export type PurchaseMaterialProduct = {
   id: string;
   sku: string;
   name: string;
   image_url: string | null;
   average_cost: number | null;
+  /** Updated on every posted Goods Receipt (PO- or Purchase-Material-anchored) — the "latest
+   *  purchase price" authority Est. Value is derived from (§3), NOT average_cost. */
+  last_purchase_cost: number | null;
 };
 
 export type PurchaseMaterialLine = {
@@ -52,6 +67,10 @@ export type PurchaseMaterialLine = {
   remaining_qty: number;
   /** agreed_qty >= requested_qty — TASK-...-011 §7/§9. */
   is_fully_ordered: boolean;
+  /** requested_qty × product.last_purchase_cost (§3) — null when the product has never been
+   *  received yet, so there is no legitimate latest price to estimate from. Never a fake 0. */
+  estimated_unit_price: number | null;
+  estimated_line_value: number | null;
 };
 
 /** TASK-...-011 §9: summary shape used by the Ordered / Not Yet Ordered popovers. */
@@ -89,6 +108,9 @@ export type PurchaseMaterial = {
   status: PurchaseMaterialStatus;
   status_label: string;
   held_from_status: PurchaseMaterialStatus | null;
+  /** The 6 approved user-facing statuses (§5) — display only, see PurchaseMaterialDisplayStatus. */
+  display_status: PurchaseMaterialDisplayStatus;
+  is_on_hold: boolean;
   /** Single source of truth for which actions this request accepts right now. */
   available_actions: PurchaseMaterialAction[];
   priority: PurchaseMaterialPriority;
@@ -102,7 +124,12 @@ export type PurchaseMaterial = {
   submitted_at: string | null;
   approved_at: string | null;
   completed_at: string | null;
+  /** Sum of valid estimated line values (§3) — lines with no latest purchase price yet
+   *  contribute 0, never a fabricated price. See estimated_value_has_gaps. */
   estimated_value: number;
+  /** True when at least one line has no last_purchase_cost yet — estimated_value above is a
+   *  partial sum, not a complete total for every requested line. */
+  estimated_value_has_gaps?: boolean;
   approved_value: number;
   purchased_value: number;
   approved_by: string | null;
@@ -129,7 +156,10 @@ export type PurchaseMaterial = {
 export type PurchaseMaterialsQuery = {
   search?: string;
   record_type?: PurchaseRecordType;
-  status?: PurchaseMaterialStatus | 'all';
+  /** A single status, 'all', or a comma-separated combination (the Hub's display-status bucket
+   *  drill-downs, §5/§19 — e.g. "under_review,waiting_supplier_selection,approved,on_hold" for
+   *  "Awaiting Supplier"), which EloquentPurchaseMaterialRepository resolves via whereIn. */
+  status?: PurchaseMaterialStatus | 'all' | (string & {});
   priority?: PurchaseMaterialPriority | 'all';
   warehouse_id?: string;
   company_id?: string;
@@ -197,6 +227,16 @@ export type PurchaseMaterialStats = {
     cancelled: number;
     open_total: number;
   };
+  /** The 6 user-approved visible statuses (§5/§17) — reuses `operational` above, bucketed the
+   *  same way PurchaseMaterialStatus::displayBucket() does. */
+  by_display_status?: {
+    draft: number;
+    awaiting_supplier: number;
+    purchasing: number;
+    receiving: number;
+    completed: number;
+    rejected: number;
+  };
   /** Ownership / SLA workload — TASK-...-011 §17/§18, scoped to open requests only. */
   workload: {
     unowned_count: number;
@@ -206,7 +246,8 @@ export type PurchaseMaterialStats = {
     not_yet_ordered_lines: number;
   };
   financial: {
-    /** Derived (requested qty x current product cost) across open requests — never a stored, always-0 column. */
+    /** Derived (requested qty x LATEST purchase price, §3) across open requests — never the
+     *  stored, always-0 column, and never average_cost. */
     estimated_value_open: number;
   };
   by_priority: {

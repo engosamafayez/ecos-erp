@@ -106,6 +106,8 @@ function purchase(overrides: Partial<PurchaseMaterial> = {}): PurchaseMaterial {
     status: 'purchasing',
     status_label: 'Purchasing',
     held_from_status: null,
+    display_status: 'purchasing',
+    is_on_hold: false,
     available_actions: ['select_supplier'],
     priority: 'normal',
     priority_label: 'Normal',

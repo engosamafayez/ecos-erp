@@ -1558,11 +1558,6 @@
       "count": 2
     }
   },
-  "src/features/purchase-materials/components/create-purchase-material-wizard.tsx": {
-    "@typescript-eslint/no-unused-expressions": {
-      "count": 1
-    }
-  },
   "src/features/purchase-materials/components/enterprise-demand-panel.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
       "count": 62
@@ -1571,11 +1566,6 @@
   "src/features/purchase-materials/components/purchase-material-priority-badge.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
       "count": 4
-    }
-  },
-  "src/features/purchase-materials/components/purchase-material-status-badge.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 10
     }
   },
   "src/features/purchase-orders/components/purchase-order-lines-editor.tsx": {

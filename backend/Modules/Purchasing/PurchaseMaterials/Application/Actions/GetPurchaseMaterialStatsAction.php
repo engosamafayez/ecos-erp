@@ -77,14 +77,19 @@ final class GetPurchaseMaterialStatsAction
             )
             ->first();
 
-        // Real derived value (requested qty x current product cost) across open requests — the
+        // Real derived value (requested qty x LATEST purchase price) across open requests — the
         // stored estimated_value/approved_value/purchased_value columns are never written by any
         // Action (confirmed by repo-wide search), so they are intentionally NOT surfaced as a
         // reconciled Hub KPI; this is the one honest value figure this endpoint exposes.
+        // TASK-...-019 §3: uses product.last_purchase_cost (updated on every posted Goods
+        // Receipt, PO- or Purchase-Material-anchored alike), NOT average_cost — a weighted
+        // average is not "the latest price." A line never yet received (no last_purchase_cost)
+        // contributes 0 to this sum rather than a fabricated price; it is a running total of
+        // known prices, not a claim that every open line is accounted for.
         $estimatedValue = $openIds->isEmpty() ? 0.0 : (float) DB::table('purchase_material_lines as pml')
             ->join('products as p', 'p.id', '=', 'pml.product_id')
             ->whereIn('pml.purchase_material_id', $openIds)
-            ->sum(DB::raw('pml.requested_qty * COALESCE(p.average_cost, 0)'));
+            ->sum(DB::raw('pml.requested_qty * COALESCE(p.last_purchase_cost, 0)'));
 
         return [
             'operational' => [
@@ -99,6 +104,25 @@ final class GetPurchaseMaterialStatsAction
                 'rejected' => (int) ($byCounts['rejected'] ?? 0),
                 'cancelled' => (int) ($byCounts['cancelled'] ?? 0),
                 'open_total' => $openIds->count(),
+            ],
+            // Requests by the 6 user-approved visible statuses (TASK-...-019 §5/§17) — reuses
+            // $byCounts above (zero extra queries), bucketed exactly like
+            // PurchaseMaterialStatus::displayBucket(): under_review/waiting_supplier_selection/
+            // approved/on_hold all fold into "awaiting_supplier", cancelled folds into
+            // "rejected". This is an aggregate snapshot, not a per-record view, so on_hold uses
+            // the enum's own safe-default bucket rather than resolving each row's
+            // held_from_status individually — see PurchaseMaterial::displayStatus() for the
+            // precise per-record version shown on the table/detail.
+            'by_display_status' => [
+                'draft' => (int) ($byCounts['draft'] ?? 0),
+                'awaiting_supplier' => (int) ($byCounts['under_review'] ?? 0)
+                    + (int) ($byCounts['waiting_supplier_selection'] ?? 0)
+                    + (int) ($byCounts['approved'] ?? 0)
+                    + (int) ($byCounts['on_hold'] ?? 0),
+                'purchasing' => (int) ($byCounts['purchasing'] ?? 0),
+                'receiving' => (int) ($byCounts['receiving'] ?? 0),
+                'completed' => (int) ($byCounts['completed'] ?? 0),
+                'rejected' => (int) ($byCounts['rejected'] ?? 0) + (int) ($byCounts['cancelled'] ?? 0),
             ],
             'workload' => [
                 'unowned_count' => $unownedCount,

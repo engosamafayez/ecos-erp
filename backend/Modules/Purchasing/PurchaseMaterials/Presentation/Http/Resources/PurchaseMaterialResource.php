@@ -6,6 +6,7 @@ namespace Modules\Purchasing\PurchaseMaterials\Presentation\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Purchasing\PurchaseMaterials\Domain\Enums\PurchaseMaterialStatus;
 use Modules\Purchasing\PurchaseMaterials\Domain\Services\PurchaseMaterialReceivingService;
 
 /** @mixin \Modules\Purchasing\PurchaseMaterials\Domain\Models\PurchaseMaterial */
@@ -38,6 +39,11 @@ class PurchaseMaterialResource extends JsonResource
             'status' => $this->status->value,
             'status_label' => $this->status->label(),
             'held_from_status' => $this->held_from_status,
+            // TASK-...-PURCHASE-REQUESTS-FINAL-019 §5 — the 6 approved user-facing statuses.
+            // `status`/`status_label`/`available_actions` stay the real, unchanged workflow
+            // authority (10 states, every guard); this is a display-only projection of it.
+            'display_status' => $this->displayStatus(),
+            'is_on_hold' => $this->status === PurchaseMaterialStatus::OnHold,
             // TASK-...-011 §6/§12: single source of truth for which actions this request accepts
             // right now — the table and detail page render buttons from this list rather than
             // re-deriving their own (and drifting from the backend's actual guards).
@@ -57,15 +63,26 @@ class PurchaseMaterialResource extends JsonResource
             'submitted_at' => $this->submitted_at?->toIso8601String(),
             'approved_at' => $this->approved_at?->toIso8601String(),
             'completed_at' => $this->completed_at?->toIso8601String(),
-            // Derived from lines × product cost when lines are loaded (list and show both eager
-            // load lines.product) — TASK-...-011 §19: the stored column never accumulated a real
-            // value, so every prior reader of "estimated value" showed 0. approved/purchased_value
-            // remain the stored (dead) columns: no canonical negotiated-value ledger exists yet to
-            // derive them from, so they are NOT surfaced as reconciled Hub KPIs (see stats action).
+            // Derived from lines × latest purchase price when lines are loaded (list and show both
+            // eager load lines.product) — TASK-...-011 §19: the stored column never accumulated a
+            // real value, so every prior reader of "estimated value" showed 0. TASK-...-019 §3:
+            // the formula itself was wrong even once derived — it used product.average_cost (a
+            // weighted average), not the latest price. See derivedEstimatedValue() below.
+            // approved/purchased_value remain the stored (dead) columns: no canonical
+            // negotiated-value ledger exists yet to derive them from, so they are NOT surfaced as
+            // reconciled Hub KPIs (see stats action).
             'estimated_value' => $this->when(
                 $this->relationLoaded('lines'),
                 fn () => $this->derivedEstimatedValue(),
                 fn () => (float) $this->estimated_value,
+            ),
+            // True when at least one line has no legitimate latest purchase price yet (never
+            // received) — estimated_value above is still an honest sum of the lines that DO have
+            // one, never a fabricated 0 for the rest, but the frontend needs this flag to show the
+            // total is partial rather than implying every line is priced.
+            'estimated_value_has_gaps' => $this->when(
+                $this->relationLoaded('lines'),
+                fn () => $this->lines->contains(fn ($line) => $line->product?->last_purchase_cost === null),
             ),
             'approved_value' => (float) $this->approved_value,
             'purchased_value' => (float) $this->purchased_value,
@@ -157,10 +174,21 @@ class PurchaseMaterialResource extends JsonResource
         ];
     }
 
+    /**
+     * Total Estimated Value = sum of valid estimated line values (TASK-...-019 §3). Each line's
+     * value is requested_qty × the product's latest canonical purchase price
+     * (`Product.last_purchase_cost` — updated on every posted Goods Receipt, PO- or
+     * Purchase-Material-anchored alike; NOT `average_cost`, which is a weighted average, not
+     * "latest"). A line with no purchase history yet (never received) contributes nothing to
+     * the sum rather than a fabricated 0 standing in for a real price — see
+     * `estimated_value_has_gaps` above for the per-request signal that this total is partial.
+     */
     private function derivedEstimatedValue(): float
     {
-        return round($this->lines->sum(
-            fn ($line) => (float) $line->requested_qty * (float) ($line->product?->average_cost ?? 0),
-        ), 2);
+        return round($this->lines->sum(function ($line) {
+            $price = $line->product?->last_purchase_cost;
+
+            return $price !== null ? (float) $line->requested_qty * (float) $price : 0.0;
+        }), 2);
     }
 }

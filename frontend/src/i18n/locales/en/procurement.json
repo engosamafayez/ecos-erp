@@ -82,6 +82,15 @@
       "purchasesInReview": "Purchases in Review"
     },
     "purchasingWorkload": "Purchasing Workload",
+    "requestsByStatus": "Requests by Status",
+    "displayStatus": {
+      "draft": "Draft",
+      "awaiting_supplier": "Awaiting Supplier",
+      "purchasing": "Purchasing",
+      "receiving": "Receiving",
+      "completed": "Completed",
+      "rejected": "Rejected"
+    },
     "financialOverview": "Financial Overview",
     "kpis": {
       "unowned": "Unowned",
@@ -92,6 +101,8 @@
       "requiredSoonSub": "Due within 3 days",
       "approvedPurchases": "Approved Purchases",
       "readyToExecute": "Ready to execute",
+      "openPurchaseValue": "Open Purchase Value",
+      "openPurchaseValueSub": "Estimated, open requests",
       "invoiceValuePosted": "Invoice Value (posted)",
       "thisPeriod": "This period",
       "pendingInvoiceValue": "Pending Invoice Value",

@@ -40,9 +40,19 @@ final class EloquentPurchaseMaterialRepository implements PurchaseMaterialReposi
             $query->where('record_type', $recordType);
         }
 
+        // TASK-...-PURCHASE-REQUESTS-FINAL-019 §19 — the Hub's "Requests by Status" drill-down
+        // cards are grouped by the 6-bucket display status (e.g. "Awaiting Supplier" covers 4
+        // real internal statuses), so a single-value filter alone can't reproduce what the card
+        // counted. Comma-separated is backward compatible: any existing single-value caller
+        // (?status=approved) is unaffected, since explode(',', 'approved') is just ['approved'].
         $status = trim((string) ($filters['status'] ?? ''));
         if ($status !== '' && $status !== 'all') {
-            $query->where('status', $status);
+            $statuses = array_values(array_filter(array_map('trim', explode(',', $status))));
+            if (count($statuses) > 1) {
+                $query->whereIn('status', $statuses);
+            } else {
+                $query->where('status', $statuses[0] ?? $status);
+            }
         }
 
         $priority = trim((string) ($filters['priority'] ?? ''));

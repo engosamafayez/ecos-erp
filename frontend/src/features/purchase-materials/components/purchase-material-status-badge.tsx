@@ -1,8 +1,12 @@
+import { PauseCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
-import type { PurchaseMaterialStatus } from '../types/purchase-material';
+import type { PurchaseMaterialDisplayStatus, PurchaseMaterialStatus } from '../types/purchase-material';
 
-// Styling only — labels come from i18n (common.status.*) so EN/AR both render correctly.
+// Styling only — labels come from i18n (common.status.* / common.displayStatus.*) so EN/AR both
+// render correctly. Keyed by the real internal status (10 variants) so a paused/cancelled
+// request still LOOKS visually distinct even though its approved-vocabulary WORD (below) is
+// shared with another status — see displayStatus/isOnHold (TASK-...-PURCHASE-REQUESTS-FINAL-019 §5).
 const STATUS_CLASS: Record<PurchaseMaterialStatus, string> = {
   draft: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800/40 dark:text-slate-300 dark:border-slate-700',
   under_review: 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800',
@@ -16,10 +20,25 @@ const STATUS_CLASS: Record<PurchaseMaterialStatus, string> = {
   cancelled: 'bg-zinc-100 text-zinc-500 border-zinc-200 dark:bg-zinc-800/40 dark:text-zinc-400 dark:border-zinc-700',
 };
 
-export function PurchaseMaterialStatusBadge({ status }: { status: PurchaseMaterialStatus }) {
+type Props = {
+  status: PurchaseMaterialStatus;
+  /** The 6 approved user-facing words (TASK-...-019 §5). When omitted, falls back to the raw
+   *  internal status label for any caller that hasn't been updated to the new field yet. */
+  displayStatus?: PurchaseMaterialDisplayStatus;
+  /** Shows a small pause indicator alongside the resolved word — a held request still displays
+   *  as (e.g.) "Purchasing", so this is the only remaining visual cue that it's paused. */
+  isOnHold?: boolean;
+};
+
+export function PurchaseMaterialStatusBadge({ status, displayStatus, isOnHold }: Props) {
   const { t } = useTranslation('purchase-materials');
   const tAny = t as (key: string) => string;
   const className = STATUS_CLASS[status] ?? '';
-  const label = tAny(`common.status.${status}`);
-  return <Badge className={className}>{label}</Badge>;
+  const label = displayStatus ? tAny(`common.displayStatus.${displayStatus}`) : tAny(`common.status.${status}`);
+  return (
+    <Badge className={`${className} gap-1`}>
+      {isOnHold && <PauseCircle className="size-3" />}
+      {label}
+    </Badge>
+  );
 }

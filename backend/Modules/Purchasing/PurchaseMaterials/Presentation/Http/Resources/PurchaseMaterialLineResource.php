@@ -26,8 +26,21 @@ class PurchaseMaterialLineResource extends JsonResource
                 'name' => $this->product->name,
                 'image_url' => $this->product->image_url ?? null,
                 'average_cost' => $this->product->average_cost,
+                'last_purchase_cost' => $this->product->last_purchase_cost,
             ]),
             'requested_qty' => (float) $this->requested_qty,
+            // Est. Value (TASK-...-PURCHASE-REQUESTS-FINAL-019 §3) = latest canonical purchase
+            // unit price × requested qty — `Product.last_purchase_cost`, updated on every posted
+            // Goods Receipt regardless of PO/Purchase-Material anchor (CreateReceiptLayersAction),
+            // NOT `average_cost` (a weighted average, not "latest") and never a fabricated 0.
+            // Null when this product has never actually been received — no legitimate latest
+            // price exists yet, so the line is truthfully "unavailable," not silently zero.
+            'estimated_unit_price' => $this->whenLoaded('product', fn () => $this->product->last_purchase_cost !== null
+                ? (float) $this->product->last_purchase_cost
+                : null),
+            'estimated_line_value' => $this->whenLoaded('product', fn () => $this->product->last_purchase_cost !== null
+                ? round((float) $this->requested_qty * (float) $this->product->last_purchase_cost, 2)
+                : null),
             'unit_label' => $this->unit_label,
             'notes' => $this->notes,
             'supplier_id' => $this->supplier_id,

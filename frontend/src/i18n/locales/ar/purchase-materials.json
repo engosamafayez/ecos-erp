@@ -12,6 +12,14 @@
       "on_hold": "معلق",
       "cancelled": "ملغى"
     },
+    "displayStatus": {
+      "draft": "مسودة",
+      "awaiting_supplier": "في انتظار المورد",
+      "purchasing": "جارٍ الشراء",
+      "receiving": "جارٍ الاستلام",
+      "completed": "مكتمل",
+      "rejected": "مرفوض"
+    },
     "priority": {
       "low": "منخفضة",
       "normal": "عادية",
@@ -305,8 +313,10 @@
     },
     "orderingPopover": {
       "emptyOrdered": "لا توجد بنود مطلوبة بالكامل بعد.",
-      "emptyNotYetOrdered": "تم طلب جميع البنود بالكامل."
+      "emptyNotYetOrdered": "تم طلب جميع البنود بالكامل.",
+      "remaining": "متبقٍ {{qty}}"
     },
+    "estValueUnavailable": "غير متاح",
     "actionMenu": {
       "actions": {
         "submit": "إرسال للمراجعة",
@@ -327,7 +337,6 @@
       "channel": "القناة",
       "warehouse": "المستودع",
       "requestedBy": "طلب بواسطة",
-      "buyer": "المشتري",
       "items": "البنود",
       "orderedItems": "البنود المطلوبة",
       "notYetOrdered": "لم تُطلب بعد",
@@ -351,7 +360,6 @@
       "search": "بحث برقم الشراء أو الملاحظات…",
       "allWarehouses": "جميع المستودعات",
       "allPriorities": "جميع الأولويات",
-      "buyer": "المشتري…",
       "requiredBy": "مطلوب بحلول:",
       "clearFilters": "مسح الفلاتر"
     },
@@ -386,8 +394,6 @@
     },
     "step1": {
       "company": "الشركة",
-      "channel": "القناة",
-      "channelPlaceholder": "معرّف القناة (اختياري)",
       "warehouse": "المستودع",
       "warehouseRequired": "المستودع *",
       "selectWarehouse": "اختر مستودعاً…",
@@ -398,10 +404,14 @@
       "notesPlaceholder": "سياق اختياري لفريق المشتريات…"
     },
     "step2": {
-      "searchProducts": "بحث في المنتجات",
-      "searchPlaceholder": "بحث بالاسم أو الرمز…",
+      "addProduct": "إضافة منتج",
+      "addRawMaterial": "إضافة مادة خام",
+      "searchProductsPlaceholder": "بحث عن منتجات بالاسم أو الرمز…",
+      "searchRawMaterialsPlaceholder": "بحث عن مواد خام بالاسم أو الرمز…",
+      "closePicker": "إغلاق",
+      "browseHint": "عرض أول 3 نتائج — ابحث لعرض المزيد.",
       "searching": "جارٍ البحث…",
-      "noProducts": "لم يتم العثور على منتجات",
+      "noProducts": "لا توجد نتائج",
       "add": "إضافة",
       "remove": "إزالة",
       "selected": "محدد ({{count}})",
@@ -472,7 +482,6 @@
     "step3": {
       "warehouse": "المستودع",
       "priority": "الأولوية",
-      "channel": "القناة",
       "requiredBy": "مطلوب بحلول",
       "notes": "ملاحظات",
       "material": "المادة",
@@ -502,7 +511,6 @@
       "overview": "نظرة عامة",
       "items": "البنود",
       "demand": "الطلب",
-      "review": "المراجعة",
       "supplier": "المورد",
       "purchasing": "الشراء",
       "receipt": "الاستلام",
@@ -517,18 +525,21 @@
     "overview": {
       "notes": "ملاحظات",
       "rejectionReason": "سبب الرفض",
+      "reviewNotes": "ملاحظات المراجعة",
+      "clarificationRequested": "تم طلب التوضيح",
+      "estimatedValueGapsHint": "بعض البنود ليس لها سجل شراء بعد، لذا هذا الإجمالي جزئي.",
       "quickStats": "إحصائيات سريعة",
       "fields": {
         "requestNo": "رقم الطلب",
         "status": "الحالة",
         "company": "الشركة",
-        "channel": "القناة",
         "warehouse": "المستودع",
         "priority": "الأولوية",
         "requiredBy": "مطلوب بحلول",
         "requestedBy": "طلب بواسطة",
         "assignedBuyer": "المشتري المعين",
-        "createdDate": "تاريخ الإنشاء"
+        "createdDate": "تاريخ الإنشاء",
+        "approvedBy": "معتمد من"
       },
       "stats": {
         "lines": "البنود",
@@ -543,6 +554,8 @@
       "empty": "لا توجد بنود في هذا الطلب.",
       "material": "المادة",
       "requestedQty": "الكمية المطلوبة",
+      "estValue": "القيمة التقديرية",
+      "estValueUnavailable": "غير متاح",
       "notes": "ملاحظات"
     },
     "demandAnalysis": {
@@ -555,26 +568,15 @@
       "days": "أيام",
       "trend": "الاتجاه: "
     },
-    "review": {
-      "assignBuyer": "تعيين المشتري",
-      "reviewNotes": "ملاحظات المراجعة",
-      "clarificationRequested": "تم طلب التوضيح",
-      "buyerPlaceholder": "اسم المشتري…",
-      "currentlyAssigned": "معين حالياً لـ: ",
-      "assignButton": "تعيين",
-      "fields": {
-        "submittedDate": "تاريخ الإرسال",
-        "approvedDate": "تاريخ الاعتماد",
-        "approvedBy": "معتمد من",
-        "rejectionReason": "سبب الرفض"
-      }
-    },
     "supplierSelection": {
       "unavailableTitle": "يتوفر اختيار المورد بمجرد انتقال الطلب إلى حالة 'في انتظار المورد' أو 'معتمد'.",
       "currentStatus": "الحالة الحالية: ",
       "empty": "لا توجد بنود في هذا الطلب.",
       "hint": "اختر مورداً لكل بند مادة. لا يمكن لمديري المستودعات رؤية هذا التبويب.",
       "refKnownSuppliers": "الموردون المعروفون — اضغط للاختيار",
+      "ordered": "تم الطلب",
+      "notOrdered": "لم يُطلب",
+      "partiallyOrdered": "تم طلب {{ordered}} / {{requested}}",
       "supplierId": "معرّف المورد",
       "supplierUuidPlaceholder": "UUID المورد…",
       "supplier": "المورد",

@@ -15,8 +15,6 @@ import {
 
 import { Combobox, ErrorState, LoadingState } from '@/components/crud';
 import { useSupplierOptions } from '@/features/purchase-orders/hooks/use-supplier-options';
-import { UserPicker } from '@/features/collaboration/components/user-picker';
-import type { AddressableUser } from '@/features/collaboration/types';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -30,7 +28,6 @@ import { toast } from '@/components/ds/use-toast';
 
 import {
   useApprovePurchaseMaterial,
-  useAssignBuyer,
   useCancelPurchaseMaterial,
   useHoldPurchaseMaterial,
   useProductProcurementPanel,
@@ -86,10 +83,9 @@ function OverviewTab({ material }: { material: PurchaseMaterial }) {
           <span className="font-mono">{material.request_number}</span>
         </Field>
         <Field label={t($ => $.purchaseDrawer.overview.fields.status)}>
-          <PurchaseMaterialStatusBadge status={material.status} />
+          <PurchaseMaterialStatusBadge status={material.status} displayStatus={material.display_status} isOnHold={material.is_on_hold} />
         </Field>
         <Field label={t($ => $.purchaseDrawer.overview.fields.company)}>{material.company?.name ?? '—'}</Field>
-        <Field label={t($ => $.purchaseDrawer.overview.fields.channel)}>{material.channel?.name ?? '—'}</Field>
         <Field label={t($ => $.purchaseDrawer.overview.fields.warehouse)}>{material.warehouse?.name ?? '—'}</Field>
         <Field label={t($ => $.purchaseDrawer.overview.fields.priority)}>
           <PurchaseMaterialPriorityBadge priority={material.priority} />
@@ -109,6 +105,9 @@ function OverviewTab({ material }: { material: PurchaseMaterial }) {
           )}
         </Field>
         <Field label={t($ => $.purchaseDrawer.overview.fields.createdDate)}>{fmt(material.created_at)}</Field>
+        {material.approved_by && (
+          <Field label={t($ => $.purchaseDrawer.overview.fields.approvedBy)}>{material.approved_by}</Field>
+        )}
       </div>
 
       {material.execution_percent !== undefined && (
@@ -148,13 +147,36 @@ function OverviewTab({ material }: { material: PurchaseMaterial }) {
         </div>
       )}
 
+      {/* Relocated from the removed Review tab (§8) — the underlying audit fields (review_notes,
+          clarification_requested_at) are preserved here rather than dropped; submitted/approved
+          dates already live in the Timeline tab's own chronological record. */}
+      {material.review_notes && (
+        <div>
+          <SectionLabel>{t($ => $.purchaseDrawer.overview.reviewNotes)}</SectionLabel>
+          <p className="text-sm whitespace-pre-wrap rounded-md border bg-muted/20 px-3 py-2">{material.review_notes}</p>
+        </div>
+      )}
+
+      {material.clarification_requested_at && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm dark:bg-amber-950/20 dark:border-amber-800">
+          <p className="font-medium text-amber-800 dark:text-amber-400 text-xs mb-0.5">{t($ => $.purchaseDrawer.overview.clarificationRequested)}</p>
+          <p className="text-amber-700 dark:text-amber-300">{fmt(material.clarification_requested_at)}</p>
+        </div>
+      )}
+
       <div>
         <SectionLabel>{t($ => $.purchaseDrawer.overview.quickStats)}</SectionLabel>
         <div className="grid grid-cols-3 gap-2">
           {[
             { label: t($ => $.purchaseDrawer.overview.stats.lines), value: String(material.items_count), mono: false },
             { label: t($ => $.purchaseDrawer.overview.stats.totalQty), value: fmtNum(material.total_requested_qty, 0), mono: true },
-            { label: t($ => $.purchaseDrawer.overview.stats.estimatedValue), value: fmtNum(material.estimated_value, 0), mono: true },
+            {
+              label: t($ => $.purchaseDrawer.overview.stats.estimatedValue),
+              // §3 — an honest sum of the lines that DO have a latest purchase price; the "~"
+              // flags that it may not cover every line rather than implying full precision.
+              value: `${material.estimated_value_has_gaps ? '~' : ''}${fmtNum(material.estimated_value, 0)}`,
+              mono: true,
+            },
           ].map(({ label, value, mono }) => (
             <div key={label} className="rounded-lg border bg-muted/20 px-3 py-2.5 text-center">
               <p className="text-[10px] text-muted-foreground">{label}</p>
@@ -162,6 +184,9 @@ function OverviewTab({ material }: { material: PurchaseMaterial }) {
             </div>
           ))}
         </div>
+        {material.estimated_value_has_gaps && (
+          <p className="text-[10px] text-muted-foreground mt-1">{t($ => $.purchaseDrawer.overview.estimatedValueGapsHint)}</p>
+        )}
       </div>
     </div>
   );
@@ -182,6 +207,7 @@ function RequestedItemsTab({ material }: { material: PurchaseMaterial }) {
           <tr>
             <th className="px-3 py-2 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchaseDrawer.requestedItems.material)}</th>
             <th className="px-3 py-2 text-end font-medium text-xs text-muted-foreground">{t($ => $.purchaseDrawer.requestedItems.requestedQty)}</th>
+            <th className="px-3 py-2 text-end font-medium text-xs text-muted-foreground">{t($ => $.purchaseDrawer.requestedItems.estValue)}</th>
             <th className="px-3 py-2 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchaseDrawer.requestedItems.notes)}</th>
           </tr>
         </thead>
@@ -208,6 +234,13 @@ function RequestedItemsTab({ material }: { material: PurchaseMaterial }) {
               <td className="px-3 py-2 text-end font-mono text-xs tabular-nums">
                 {fmtNum(line.requested_qty, 4).replace(/\.?0+$/, '')}
                 {line.unit_label && <span className="text-muted-foreground ml-1">{line.unit_label}</span>}
+              </td>
+              <td className="px-3 py-2 text-end font-mono text-xs tabular-nums">
+                {/* §3 — latest purchase price × requested qty; a truthful "unavailable" (never a
+                    fabricated 0) when this product has no purchase history yet. */}
+                {line.estimated_line_value != null
+                  ? fmtNum(line.estimated_line_value, 0)
+                  : <span className="text-muted-foreground italic">{t($ => $.purchaseDrawer.requestedItems.estValueUnavailable)}</span>}
               </td>
               <td className="px-3 py-2 text-muted-foreground text-xs">{line.notes ?? '—'}</td>
             </tr>
@@ -299,81 +332,6 @@ function DemandAnalysisTab({ material }: { material: PurchaseMaterial }) {
   );
 }
 
-// ── Tab: Procurement Review ────────────────────────────────────────────────────
-
-function ProcurementReviewTab({ material }: { material: PurchaseMaterial }) {
-  const { t } = useTranslation('purchase-materials');
-  const [candidate, setCandidate] = useState<AddressableUser | null>(
-    material.buyer ? { id: material.buyer.id, name: material.buyer.name, job_title: material.buyer.job_title, is_driver: false } : null,
-  );
-  const assignBuyer = useAssignBuyer(material.id);
-
-  async function handleAssignBuyer() {
-    if (!candidate) return;
-    try {
-      await assignBuyer.mutateAsync(candidate.id);
-      toast.success(t($ => $.purchaseDrawer.toast.buyerAssigned));
-    } catch {
-      toast.error(t($ => $.purchaseDrawer.toast.buyerFailed));
-    }
-  }
-
-  return (
-    <div className="flex flex-col gap-5 text-sm">
-      <div>
-        <SectionLabel>{t($ => $.purchaseDrawer.review.assignBuyer)}</SectionLabel>
-        <div className="flex gap-2">
-          <div className="flex-1">
-            <UserPicker
-              value={candidate}
-              onChange={setCandidate}
-              placeholder={t($ => $.purchaseDrawer.review.buyerPlaceholder)}
-            />
-          </div>
-          <Button
-            size="sm"
-            disabled={!candidate || candidate.id === material.assigned_buyer_id || assignBuyer.isPending}
-            onClick={() => void handleAssignBuyer()}
-          >
-            {assignBuyer.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
-            {t($ => $.purchaseDrawer.review.assignButton)}
-          </Button>
-        </div>
-        {material.buyer && (
-          <p className="text-xs text-muted-foreground mt-1.5">
-            {t($ => $.purchaseDrawer.review.currentlyAssigned)}<span className="font-medium text-foreground">{material.buyer.name}</span>
-          </p>
-        )}
-      </div>
-
-      {material.review_notes && (
-        <div>
-          <SectionLabel>{t($ => $.purchaseDrawer.review.reviewNotes)}</SectionLabel>
-          <p className="text-sm whitespace-pre-wrap rounded-md border bg-muted/20 px-3 py-2">
-            {material.review_notes}
-          </p>
-        </div>
-      )}
-
-      {material.clarification_requested_at && (
-        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm">
-          <p className="font-medium text-amber-800 text-xs mb-0.5">{t($ => $.purchaseDrawer.review.clarificationRequested)}</p>
-          <p className="text-amber-700">{fmt(material.clarification_requested_at)}</p>
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 gap-3">
-        <Field label={t($ => $.purchaseDrawer.review.fields.submittedDate)}>{fmt(material.submitted_at)}</Field>
-        <Field label={t($ => $.purchaseDrawer.review.fields.approvedDate)}>{fmt(material.approved_at)}</Field>
-        <Field label={t($ => $.purchaseDrawer.review.fields.approvedBy)}>{material.approved_by ?? '—'}</Field>
-        {material.rejection_reason && (
-          <Field label={t($ => $.purchaseDrawer.review.fields.rejectionReason)}>{material.rejection_reason}</Field>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ── Tab: Supplier Selection ────────────────────────────────────────────────────
 
 function SupplierSelectionLineRow({ line, materialId }: { line: PurchaseMaterialLine; materialId: string }) {
@@ -423,8 +381,24 @@ function SupplierSelectionLineRow({ line, materialId }: { line: PurchaseMaterial
           <p className="font-medium text-sm">{line.product?.name ?? '—'}</p>
           <p className="text-[10px] text-muted-foreground">{line.product?.sku}</p>
         </div>
+        {/* §9 — a clear, real Ordered / Partially Ordered / Not Ordered indicator, driven by the
+            same agreed_qty commitment SelectLineSupplierAction already enforces (requested-qty
+            ceiling, monotonic, audited) — not a separate decorative flag. */}
+        {line.is_fully_ordered ? (
+          <span className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5 font-medium dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800">
+            {t($ => $.purchaseDrawer.supplierSelection.ordered)}
+          </span>
+        ) : (line.agreed_qty ?? 0) > 0 ? (
+          <span className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 font-medium dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800">
+            {t($ => $.purchaseDrawer.supplierSelection.partiallyOrdered, { ordered: fmtNum(line.agreed_qty ?? 0, 2).replace(/\.?0+$/, ''), requested: fmtNum(line.requested_qty, 2).replace(/\.?0+$/, '') })}
+          </span>
+        ) : (
+          <span className="text-xs text-muted-foreground bg-muted border rounded-full px-2 py-0.5 font-medium">
+            {t($ => $.purchaseDrawer.supplierSelection.notOrdered)}
+          </span>
+        )}
         {line.supplier && (
-          <span className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5 font-medium">
+          <span className="text-xs text-muted-foreground">
             {line.supplier.name}
           </span>
         )}
@@ -594,7 +568,9 @@ function FinancialSummaryTab({ material }: { material: PurchaseMaterial }) {
               </thead>
               <tbody>
                 {lines.map((line) => {
-                  const unitCost = line.agreed_price ?? line.product?.average_cost ?? null;
+                  // Prefer the real negotiated price once one exists; otherwise the same latest-
+                  // purchase-price estimate used for Est. Value (§3) — never average_cost.
+                  const unitCost = line.agreed_price ?? line.estimated_unit_price ?? null;
                   const lineValue = unitCost != null ? line.requested_qty * unitCost : null;
                   return (
                     <tr key={line.id} className="border-t">
@@ -660,7 +636,7 @@ function TimelineTab({ material }: { material: PurchaseMaterial }) {
 
 // ── Main drawer ────────────────────────────────────────────────────────────────
 
-type Tab = 'overview' | 'items' | 'demand' | 'review' | 'supplier' | 'receiving' | 'financial' | 'timeline';
+type Tab = 'overview' | 'items' | 'demand' | 'supplier' | 'receiving' | 'financial' | 'timeline';
 
 /** Statuses where goods can actually arrive against the Purchase. */
 const RECEIVING_STATUSES = ['approved', 'purchasing', 'receiving'];
@@ -691,7 +667,6 @@ export function PurchaseMaterialDrawer({ id, open, onOpenChange }: Props) {
     { id: 'overview', label: t($ => $.purchaseDrawer.tabs.overview) },
     { id: 'items', label: t($ => $.purchaseDrawer.tabs.items) },
     { id: 'demand', label: t($ => $.purchaseDrawer.tabs.demand) },
-    { id: 'review', label: t($ => $.purchaseDrawer.tabs.review) },
     { id: 'supplier', label: t($ => $.purchaseDrawer.tabs.supplier) },
     // Receiving only surfaces once goods can actually arrive against this Purchase.
     ...(material && RECEIVING_STATUSES.includes(material.status)
@@ -767,7 +742,7 @@ export function PurchaseMaterialDrawer({ id, open, onOpenChange }: Props) {
                     </span>
                   )}
                   <PurchaseMaterialPriorityBadge priority={material.priority} />
-                  <PurchaseMaterialStatusBadge status={material.status} />
+                  <PurchaseMaterialStatusBadge status={material.status} displayStatus={material.display_status} isOnHold={material.is_on_hold} />
                 </div>
               </>
             ) : (
@@ -878,7 +853,6 @@ export function PurchaseMaterialDrawer({ id, open, onOpenChange }: Props) {
               {tab === 'overview' && <OverviewTab material={material} />}
               {tab === 'items' && <RequestedItemsTab material={material} />}
               {tab === 'demand' && <DemandAnalysisTab material={material} />}
-              {tab === 'review' && <ProcurementReviewTab material={material} />}
               {tab === 'supplier' && <SupplierSelectionTab material={material} />}
               {tab === 'receiving' && <PurchaseMaterialReceivingTab material={material} />}
               {tab === 'financial' && <FinancialSummaryTab material={material} />}

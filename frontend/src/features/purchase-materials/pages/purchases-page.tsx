@@ -78,6 +78,13 @@ const VALID_STATUSES = new Set<string>([
   'purchasing', 'receiving', 'completed', 'on_hold', 'rejected', 'cancelled',
 ]);
 
+/** Accepts a single status or a comma-separated combination (the Hub's "Requests by Status"
+ *  bucket cards, e.g. ?status=under_review,waiting_supplier_selection,approved,on_hold for
+ *  "Awaiting Supplier" — §5/§19) — every segment must itself be a real status. */
+function isValidStatusFilter(value: string): boolean {
+  return value.split(',').every((s) => VALID_STATUSES.has(s.trim()));
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function PurchasesPage() {
@@ -90,14 +97,16 @@ export function PurchasesPage() {
   const [searchParams] = useSearchParams();
   const initialStatus = searchParams.get('status');
 
-  const [statusFilter, setStatusFilter] = useState<PurchaseMaterialStatus | 'all'>(
-    initialStatus && VALID_STATUSES.has(initialStatus) ? (initialStatus as PurchaseMaterialStatus) : 'all',
+  // Widened from the single-status enum to a plain string: a bucket drill-down (§19) carries a
+  // comma-separated combination the backend now understands (EloquentPurchaseMaterialRepository
+  // whereIn), which no single PurchaseMaterialStatus value can represent.
+  const [statusFilter, setStatusFilter] = useState<string>(
+    initialStatus && isValidStatusFilter(initialStatus) ? initialStatus : 'all',
   );
   const [priorityFilter, setPriorityFilter] = useState<PurchaseMaterialPriority | 'all'>('all');
   const [search, setSearch] = useState('');
   const [warehouseFilter, setWarehouseFilter] = useState('');
   const [companyFilter, setCompanyFilter] = useState('');
-  const [buyerFilter, setBuyerFilter] = useState('');
   const [unownedFilter, setUnownedFilter] = useState(searchParams.get('unowned') === '1');
   const [overdueFilter, setOverdueFilter] = useState(searchParams.get('overdue') === '1');
   const [requiredSoonFilter, setRequiredSoonFilter] = useState(searchParams.get('required_soon') === '1');
@@ -132,7 +141,6 @@ export function PurchasesPage() {
       search: search || undefined,
       warehouse_id: warehouseFilter || undefined,
       company_id: companyFilter || undefined,
-      assigned_buyer: buyerFilter || undefined,
       unowned: unownedFilter,
       overdue: overdueFilter,
       required_soon: requiredSoonFilter,
@@ -142,7 +150,7 @@ export function PurchasesPage() {
       page,
     }),
     [
-      statusFilter, priorityFilter, search, warehouseFilter, companyFilter, buyerFilter,
+      statusFilter, priorityFilter, search, warehouseFilter, companyFilter,
       unownedFilter, overdueFilter, requiredSoonFilter, dateFrom, dateTo, page,
     ],
   );
@@ -166,7 +174,6 @@ export function PurchasesPage() {
     setSearch('');
     setWarehouseFilter('');
     setCompanyFilter('');
-    setBuyerFilter('');
     setUnownedFilter(false);
     setOverdueFilter(false);
     setRequiredSoonFilter(false);
@@ -338,13 +345,6 @@ export function PurchasesPage() {
               <option value="low">{t($ => $.purchasesPage.priority.low)}</option>
             </select>
 
-            <Input
-              className="h-8 w-36 text-sm"
-              placeholder={t($ => $.purchasesPage.filters.buyer)}
-              value={buyerFilter}
-              onChange={(e) => { setBuyerFilter(e.target.value); setPage(1); }}
-            />
-
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <span>{t($ => $.purchasesPage.filters.requiredBy)}</span>
               <Input type="date" className="h-8 w-36 text-sm" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} />
@@ -352,7 +352,7 @@ export function PurchasesPage() {
               <Input type="date" className="h-8 w-36 text-sm" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} />
             </div>
 
-            {(search || statusFilter !== 'all' || priorityFilter !== 'all' || warehouseFilter || companyFilter || buyerFilter || unownedFilter || overdueFilter || requiredSoonFilter || dateFrom || dateTo) && (
+            {(search || statusFilter !== 'all' || priorityFilter !== 'all' || warehouseFilter || companyFilter || unownedFilter || overdueFilter || requiredSoonFilter || dateFrom || dateTo) && (
               <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={resetFilters}>
                 {t($ => $.purchasesPage.filters.clearFilters)}
               </Button>
@@ -371,7 +371,6 @@ export function PurchasesPage() {
                     <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.source)}</th>
                     <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.company)}</th>
                     <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.warehouse)}</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.buyer)}</th>
                     <th className="px-3 py-3 text-center font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.orderedItems)}</th>
                     <th className="px-3 py-3 text-center font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.notYetOrdered)}</th>
                     <th className="px-3 py-3 text-end font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.estValue)}</th>
@@ -386,13 +385,13 @@ export function PurchasesPage() {
                 <tbody>
                   {isLoading ? (
                     <tr>
-                      <td colSpan={14} className="px-4 py-12 text-center text-sm text-muted-foreground">
+                      <td colSpan={13} className="px-4 py-12 text-center text-sm text-muted-foreground">
                         {t($ => $.purchasesPage.loading)}
                       </td>
                     </tr>
                   ) : items.length === 0 ? (
                     <tr>
-                      <td colSpan={14} className="px-4 py-12 text-center">
+                      <td colSpan={13} className="px-4 py-12 text-center">
                         <Truck className="mx-auto mb-3 h-8 w-8 text-muted-foreground/30" />
                         <p className="text-sm text-muted-foreground">
                           {search || statusFilter !== 'all'
@@ -425,17 +424,9 @@ export function PurchasesPage() {
                         <td className="px-3 py-2.5 text-muted-foreground">
                           {purchase.warehouse?.name ?? '—'}
                         </td>
-                        <td className="px-3 py-2.5 text-xs">
-                          {purchase.buyer ? (
-                            <span className="text-muted-foreground">{purchase.buyer.name}</span>
-                          ) : (
-                            <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800">
-                              {t($ => $.purchasesPage.unowned)}
-                            </span>
-                          )}
-                        </td>
                         <td className="px-3 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
                           <PurchaseMaterialOrderingPopover
+                            variant="ordered"
                             count={purchase.ordered_items_count ?? 0}
                             items={purchase.ordered_items ?? []}
                             emptyLabel={t($ => $.purchasesPage.orderingPopover.emptyOrdered)}
@@ -443,13 +434,21 @@ export function PurchasesPage() {
                         </td>
                         <td className="px-3 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
                           <PurchaseMaterialOrderingPopover
+                            variant="not_yet_ordered"
                             count={purchase.not_yet_ordered_items_count ?? 0}
                             items={purchase.not_yet_ordered_items ?? []}
                             emptyLabel={t($ => $.purchasesPage.orderingPopover.emptyNotYetOrdered)}
                           />
                         </td>
                         <td className="px-3 py-2.5 text-end font-mono text-xs tabular-nums">
-                          {purchase.estimated_value > 0 ? fmtCurrency(purchase.estimated_value) : '—'}
+                          {/* §3 — an honest sum of lines with a real latest purchase price; "~"
+                              flags a partial sum, and a request with NO priced lines at all shows
+                              a truthful "unavailable" rather than an indistinguishable-from-real 0. */}
+                          {purchase.estimated_value > 0
+                            ? `${purchase.estimated_value_has_gaps ? '~' : ''}${fmtCurrency(purchase.estimated_value)}`
+                            : purchase.estimated_value_has_gaps
+                              ? <span className="text-muted-foreground italic">{t($ => $.purchasesPage.estValueUnavailable)}</span>
+                              : '—'}
                         </td>
                         <td className="px-3 py-2.5">
                           {purchase.execution_percent !== undefined ? (

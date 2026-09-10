@@ -30,6 +30,17 @@ import { useSupplierInvoiceStats } from '@/features/supplier-invoices/hooks/use-
 import { ROUTES } from '@/router/routes';
 import { useFormatter } from '@/hooks/use-formatter';
 
+/** Mirrors GetPurchaseMaterialStatsAction's by_display_status bucketing exactly, so a click
+ *  reproduces precisely what the card counted (TASK-...-PURCHASE-REQUESTS-FINAL-019 §5/§19). */
+const DISPLAY_STATUS_QUERY: Record<'draft' | 'awaiting_supplier' | 'purchasing' | 'receiving' | 'completed' | 'rejected', string> = {
+  draft: 'draft',
+  awaiting_supplier: 'under_review,waiting_supplier_selection,approved,on_hold',
+  purchasing: 'purchasing',
+  receiving: 'receiving',
+  completed: 'completed',
+  rejected: 'rejected,cancelled',
+};
+
 type KpiCardProps = {
   label: string;
   value: string | number;
@@ -310,13 +321,44 @@ export function ProcurementHubPage() {
               </div>
             </div>
 
-            {/* Financial — Supplier Invoices / Returns only. Purchase Materials never surfaces a
-                value KPI here: estimated_value/approved_value/purchased_value are columns no
-                Action has ever written (confirmed repo-wide), so a "total requested value" card
-                would always read a false 0 — see the remediation report's KPI classification. */}
+            {/* Requests by Status — TASK-...-019 §5/§17: the 6 user-approved visible statuses,
+                each a real drill-down into the exact rows it counted (via the comma-joined
+                whereIn filter above — never an approximation). */}
+            <div>
+              <h2 className="text-sm font-medium text-gray-700 mb-3">{t($ => $.hub.requestsByStatus)}</h2>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                {(Object.keys(DISPLAY_STATUS_QUERY) as Array<keyof typeof DISPLAY_STATUS_QUERY>).map((bucket) => (
+                  <button
+                    key={bucket}
+                    onClick={() => navigate(`${ROUTES.purchases}?status=${DISPLAY_STATUS_QUERY[bucket]}`)}
+                    className="p-3 bg-white rounded-lg border border-gray-200 text-start hover:border-blue-300 hover:shadow-sm transition-all"
+                  >
+                    <p className="text-lg font-semibold text-gray-900 tabular-nums">
+                      {pmStats ? (pmStats.by_display_status?.[bucket] ?? 0) : '—'}
+                    </p>
+                    <p className="text-[11px] text-gray-500 leading-tight">{t($ => $.hub.displayStatus[bucket])}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Financial — Supplier Invoices / Returns, plus one honest Purchasing figure.
+                estimated_value/approved_value/purchased_value on the stored row are columns no
+                Action has ever written (confirmed repo-wide) so THOSE stay unsurfaced; Open
+                Purchase Value below is different — a real, derived sum (requested_qty × latest
+                purchase price per line, §3), not the dead stored column. */}
             <div>
               <h2 className="text-sm font-medium text-gray-700 mb-3">{t($ => $.hub.financialOverview)}</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <button className="text-start" onClick={() => navigate(ROUTES.purchases)}>
+                  <KpiCard
+                    label={t($ => $.hub.kpis.openPurchaseValue)}
+                    value={pmStats ? fmt.moneyCompact(pmStats.financial.estimated_value_open) : '—'}
+                    sub={t($ => $.hub.kpis.openPurchaseValueSub)}
+                    icon={DollarSign}
+                    color="purple"
+                  />
+                </button>
                 <KpiCard
                   label={t($ => $.hub.kpis.invoiceValuePosted)}
                   value={invoiceStats ? fmt.moneyCompact(invoiceStats.total_value) : '—'}
@@ -487,37 +529,49 @@ export function ProcurementHubPage() {
               <h2 className="text-sm font-medium text-gray-700 mb-3">{t($ => $.hub.performance.title)}</h2>
               <Card className="border border-gray-200 shadow-none">
                 <CardContent className="p-4 space-y-3">
-                  <div className="flex items-center justify-between">
+                  <button
+                    className="flex items-center justify-between w-full text-start hover:opacity-70 transition-opacity"
+                    onClick={() => navigate(ROUTES.purchases)}
+                  >
                     <div className="flex items-center gap-2">
                       <TrendingUp className="w-4 h-4 text-green-500" />
                       <span className="text-xs text-gray-700">{t($ => $.hub.performance.totalPurchases)}</span>
                     </div>
                     <span className="text-sm font-semibold text-gray-900">{pmStats ? pmStats.operational.open_total : '—'}</span>
-                  </div>
+                  </button>
                   <Separator />
-                  <div className="flex items-center justify-between">
+                  <button
+                    className="flex items-center justify-between w-full text-start hover:opacity-70 transition-opacity"
+                    onClick={() => navigate(`${ROUTES.purchases}?status=approved`)}
+                  >
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4 text-blue-500" />
                       <span className="text-xs text-gray-700">{t($ => $.hub.performance.approved)}</span>
                     </div>
                     <span className="text-sm font-semibold text-gray-900">{pmStats?.operational?.approved ?? '—'}</span>
-                  </div>
+                  </button>
                   <Separator />
-                  <div className="flex items-center justify-between">
+                  <button
+                    className="flex items-center justify-between w-full text-start hover:opacity-70 transition-opacity"
+                    onClick={() => navigate(ROUTES.supplierInvoices)}
+                  >
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4 text-purple-500" />
                       <span className="text-xs text-gray-700">{t($ => $.hub.performance.invoicesPosted)}</span>
                     </div>
                     <span className="text-sm font-semibold text-gray-900">{invoiceStats?.posted ?? '—'}</span>
-                  </div>
+                  </button>
                   <Separator />
-                  <div className="flex items-center justify-between">
+                  <button
+                    className="flex items-center justify-between w-full text-start hover:opacity-70 transition-opacity"
+                    onClick={() => navigate(ROUTES.supplierReturns)}
+                  >
                     <div className="flex items-center gap-2">
                       <RotateCcw className="w-4 h-4 text-red-400" />
                       <span className="text-xs text-gray-700">{t($ => $.hub.performance.returnsCompleted)}</span>
                     </div>
                     <span className="text-sm font-semibold text-gray-900">{returnStats?.completed ?? '—'}</span>
-                  </div>
+                  </button>
                 </CardContent>
               </Card>
             </div>

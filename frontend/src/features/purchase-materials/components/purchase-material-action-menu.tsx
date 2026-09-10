@@ -73,7 +73,7 @@ export function PurchaseMaterialActionMenu({ material }: { material: PurchaseMat
   const actionableTokens = material.available_actions.filter((a) => a !== 'select_supplier');
 
   if (actionableTokens.length === 0) {
-    return <PurchaseMaterialStatusBadge status={material.status} />;
+    return <PurchaseMaterialStatusBadge status={material.status} displayStatus={material.display_status} isOnHold={material.is_on_hold} />;
   }
 
   return (
@@ -85,7 +85,7 @@ export function PurchaseMaterialActionMenu({ material }: { material: PurchaseMat
           disabled={isBusy}
           className="inline-flex items-center gap-1 rounded-full hover:opacity-80 transition-opacity disabled:opacity-50"
         >
-          <PurchaseMaterialStatusBadge status={material.status} />
+          <PurchaseMaterialStatusBadge status={material.status} displayStatus={material.display_status} isOnHold={material.is_on_hold} />
           {isBusy ? <Loader2 className="size-3 animate-spin text-muted-foreground" /> : <ChevronDown className="size-3 text-muted-foreground" />}
         </button>
       </DropdownMenuTrigger>

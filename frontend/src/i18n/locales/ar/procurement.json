@@ -82,6 +82,15 @@
       "purchasesInReview": "مشتريات قيد المراجعة"
     },
     "purchasingWorkload": "عبء عمل المشتريات",
+    "requestsByStatus": "الطلبات حسب الحالة",
+    "displayStatus": {
+      "draft": "مسودة",
+      "awaiting_supplier": "في انتظار المورد",
+      "purchasing": "جارٍ الشراء",
+      "receiving": "جارٍ الاستلام",
+      "completed": "مكتمل",
+      "rejected": "مرفوض"
+    },
     "financialOverview": "النظرة المالية العامة",
     "kpis": {
       "unowned": "غير مُسنَد",
@@ -92,6 +101,8 @@
       "requiredSoonSub": "خلال 3 أيام",
       "approvedPurchases": "المشتريات المعتمدة",
       "readyToExecute": "جاهزة للتنفيذ",
+      "openPurchaseValue": "قيمة المشتريات المفتوحة",
+      "openPurchaseValueSub": "تقديرية، للطلبات المفتوحة",
       "invoiceValuePosted": "قيمة الفواتير (مرحَّلة)",
       "thisPeriod": "الفترة الحالية",
       "pendingInvoiceValue": "قيمة الفواتير المعلقة",

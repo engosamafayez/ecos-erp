@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, Loader2, Minus, PackageSearch, Plus } from 'lucide-react';
+import { AlertCircle, Loader2, Minus, PackageSearch, Plus, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -38,12 +38,27 @@ type LineItem = PurchaseMaterialLinePayload & {
 
 const TOTAL_STEPS = 3;
 
-/** Shared with the search-results grouping so a material never changes group between picking and review. */
+/** Shared with the selected-lines grouping so a material never changes group between picking
+ *  and review (§ Simplify Purchase Request Create UX — the REVIEW list stays precise about the
+ *  3 real catalog types even though picking itself is now split into just 2 actions below). */
 const PRODUCT_GROUPS: ReadonlyArray<{ type: ProductType; labelKey: 'groupProducts' | 'groupRawMaterials' | 'groupPackagingMaterials' }> = [
   { type: 'finished_good', labelKey: 'groupProducts' },
   { type: 'raw_material', labelKey: 'groupRawMaterials' },
   { type: 'packaging_material', labelKey: 'groupPackagingMaterials' },
 ];
+
+/** The two explicit picking actions (TASK-...-PURCHASE-REQUESTS-FINAL-019 §2). "Add Product"
+ *  covers both finished goods and packaging materials — both are "a product" to a buyer picking
+ *  what to purchase, as opposed to "Add Raw Material" — so no purchasable catalog type loses its
+ *  own entry point. Each maps to the existing, already-supported `/products` filter (`product_type`
+ *  / `product_types`) — no new backend query. */
+type PickerKind = 'product' | 'raw_material';
+const PICKER_FILTERS: Record<PickerKind, { product_type?: ProductType; product_types?: string }> = {
+  product: { product_types: 'finished_good,packaging_material' },
+  raw_material: { product_type: 'raw_material' },
+};
+const BROWSE_LIMIT = 3;
+const SEARCH_LIMIT = 20;
 
 export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 'material_request', sourceType }: Props) {
   const { t } = useTranslation('purchase-materials');
@@ -66,7 +81,8 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
   const [notes, setNotes] = useState('');
 
   // Step 2 fields
-  const [productSearch, setProductSearch] = useState('');
+  const [pickerType, setPickerType] = useState<PickerKind | null>(null);
+  const [pickerSearch, setPickerSearch] = useState('');
   const [lines, setLines] = useState<LineItem[]>([]);
   const [focusedProductId, setFocusedProductId] = useState<string | null>(null);
 
@@ -78,15 +94,20 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
     staleTime: 60_000,
   });
 
-  const { data: productsData, isLoading: pLoading } = useQuery({
-    queryKey: ['products-for-pm-wizard', productSearch],
-    queryFn: () => productsService.list({ search: productSearch || undefined, per_page: 20 }),
+  const { data: pickerData, isLoading: pickerLoading } = useQuery({
+    queryKey: ['products-for-pm-wizard', pickerType, pickerSearch],
+    queryFn: () => productsService.list({
+      ...(pickerType ? PICKER_FILTERS[pickerType] : {}),
+      search: pickerSearch || undefined,
+      // Default browse shows at most BROWSE_LIMIT items; searching lifts the cap (§2).
+      per_page: pickerSearch ? SEARCH_LIMIT : BROWSE_LIMIT,
+    }),
     staleTime: 30_000,
-    enabled: step === 2,
+    enabled: step === 2 && pickerType !== null,
   });
 
   const warehouses = warehousesData?.items ?? [];
-  const products = productsData?.items ?? [];
+  const pickerResults = pickerData?.items ?? [];
 
   // For demand panel: use the focused product if set, else the last added line
   const panelProductId = focusedProductId ?? lines.at(-1)?.product_id ?? null;
@@ -99,10 +120,16 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
     setPriority('normal');
     setRequiredDate('');
     setNotes('');
-    setProductSearch('');
+    setPickerType(null);
+    setPickerSearch('');
     setLines([]);
     setFocusedProductId(null);
     onOpenChange(false);
+  }
+
+  function togglePicker(kind: PickerKind) {
+    setPickerSearch('');
+    setPickerType((prev) => (prev === kind ? null : kind));
   }
 
   function addProduct(product: { id: string; name: string; sku: string; product_type: ProductType }) {
@@ -164,9 +191,19 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
         ? t($ => $.wizard.steps.requestedMaterials)
         : t($ => $.wizard.steps.reviewSubmit);
 
+  const pickerSearchPlaceholder = pickerType === 'raw_material'
+    ? t($ => $.wizard.step2.searchRawMaterialsPlaceholder)
+    : t($ => $.wizard.step2.searchProductsPlaceholder);
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-4xl max-h-[92vh] flex flex-col">
+      {/* §1 — normal, unified scroll instead of a fixed 92vh box with 2-3 separately-scrolling
+          nested regions (search results / selected lines / demand panel each had their own
+          scrollbar). Full height on mobile (feels like a page, not a cramped popup); a single
+          generous cap on desktop. Exactly ONE scroll container below carries the whole active
+          step, so "Selected" is always reachable by the same continuous scroll as everything
+          else — never trapped in its own pane. */}
+      <DialogContent className="sm:max-w-4xl w-full h-full sm:h-auto sm:max-h-[88vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{t($ => $.wizard.title)}</DialogTitle>
           <DialogDescription>
@@ -175,7 +212,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
         </DialogHeader>
 
         {/* Step progress bar */}
-        <div className="flex gap-1 px-1">
+        <div className="flex gap-1 px-1 shrink-0">
           {Array.from({ length: TOTAL_STEPS }, (_, i) => (
             <div
               key={i}
@@ -184,10 +221,10 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
           ))}
         </div>
 
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto px-1">
           {/* ── Step 1: General Information ─────────────────────────── */}
           {step === 1 && (
-            <div className="flex flex-col gap-4 px-1 overflow-y-auto h-full py-1">
+            <div className="flex flex-col gap-4 py-1">
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium">{t($ => $.wizard.step1.company)}</label>
                 <CompanySelect
@@ -252,86 +289,103 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
 
           {/* ── Step 2: Requested Materials + Demand Panel ──────────── */}
           {step === 2 && (
-            <div className="flex gap-4 h-full">
-              {/* Left: product picker + selected lines */}
-              <div className="flex flex-col gap-3 flex-1 overflow-y-auto pr-2">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-medium">{t($ => $.wizard.step2.searchProducts)}</label>
-                  <div className="relative">
-                    <PackageSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-                    <Input
-                      className="pl-9"
-                      placeholder={t($ => $.wizard.step2.searchPlaceholder)}
-                      value={productSearch}
-                      onChange={(e) => setProductSearch(e.target.value)}
-                    />
-                  </div>
+            <div className="flex flex-col sm:flex-row gap-4 py-1">
+              {/* Left: two explicit picking actions + selected lines */}
+              <div className="flex flex-col gap-3 flex-1 min-w-0">
+                {/* §2 — Add Product / Add Raw Material replace one mixed catalogue browser.
+                    Each opens its own canonical selector, scoped server-side by product type. */}
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={pickerType === 'product' ? 'default' : 'outline'}
+                    onClick={() => togglePicker('product')}
+                  >
+                    <Plus className="size-3.5" /> {t($ => $.wizard.step2.addProduct)}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={pickerType === 'raw_material' ? 'default' : 'outline'}
+                    onClick={() => togglePicker('raw_material')}
+                  >
+                    <Plus className="size-3.5" /> {t($ => $.wizard.step2.addRawMaterial)}
+                  </Button>
                 </div>
 
-                {/* Search results — grouped by canonical classification (§6) so Products,
-                    Raw Materials and Packaging Materials never appear as one mixed list. */}
-                <div className="border rounded-md overflow-hidden">
-                  {pLoading ? (
-                    <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
-                      <Loader2 className="size-4 animate-spin" /> {t($ => $.wizard.step2.searching)}
+                {pickerType && (
+                  <div className="flex flex-col gap-2 rounded-md border bg-muted/20 p-3">
+                    <div className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <PackageSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+                        <Input
+                          className="pl-9 h-8 bg-background"
+                          placeholder={pickerSearchPlaceholder}
+                          value={pickerSearch}
+                          onChange={(e) => setPickerSearch(e.target.value)}
+                          autoFocus
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setPickerType(null)}
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                        aria-label={t($ => $.wizard.step2.closePicker)}
+                      >
+                        <X className="size-4" />
+                      </button>
                     </div>
-                  ) : products.length === 0 ? (
-                    <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
-                      {t($ => $.wizard.step2.noProducts)}
-                    </div>
-                  ) : (
-                    <>
-                      {PRODUCT_GROUPS.map(({ type, labelKey }) => {
-                        const groupProducts = products.filter((p) => p.product_type === type);
-                        if (groupProducts.length === 0) return null;
-                        return (
-                          <div key={type} className="border-b last:border-0">
-                            <p className="px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground bg-muted/40">
-                              {t(($) => $.wizard.step2[labelKey])}
-                            </p>
-                            <table className="w-full text-sm">
-                              <tbody>
-                                {groupProducts.map((p) => {
-                                  const added = lines.some((l) => l.product_id === p.id);
-                                  const focused = focusedProductId === p.id;
-                                  return (
-                                    <tr
-                                      key={p.id}
-                                      className={`border-b last:border-0 transition-colors cursor-pointer ${focused ? 'bg-primary/5' : 'hover:bg-muted/30'}`}
-                                      onClick={() => setFocusedProductId(p.id)}
+
+                    <div className="border rounded-md bg-background overflow-hidden">
+                      {pickerLoading ? (
+                        <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+                          <Loader2 className="size-4 animate-spin" /> {t($ => $.wizard.step2.searching)}
+                        </div>
+                      ) : pickerResults.length === 0 ? (
+                        <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
+                          {t($ => $.wizard.step2.noProducts)}
+                        </div>
+                      ) : (
+                        <table className="w-full text-sm">
+                          <tbody>
+                            {pickerResults.map((p) => {
+                              const added = lines.some((l) => l.product_id === p.id);
+                              return (
+                                <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                                  <td className="px-3 py-2">
+                                    <p className="font-medium leading-tight">{p.name}</p>
+                                    <p className="text-xs text-muted-foreground">{p.sku}</p>
+                                  </td>
+                                  <td className="px-3 py-2 text-end">
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant={added ? 'outline' : 'default'}
+                                      onClick={() => (added ? removeLine(p.id) : addProduct({ id: p.id, name: p.name, sku: p.sku, product_type: p.product_type }))}
                                     >
-                                      <td className="px-3 py-2">
-                                        <p className="font-medium leading-tight">{p.name}</p>
-                                        <p className="text-xs text-muted-foreground">{p.sku}</p>
-                                      </td>
-                                      <td className="px-3 py-2 text-end">
-                                        <Button
-                                          type="button"
-                                          size="sm"
-                                          variant={added ? 'outline' : 'default'}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            added ? removeLine(p.id) : addProduct({ id: p.id, name: p.name, sku: p.sku, product_type: p.product_type });
-                                          }}
-                                        >
-                                          {added ? <Minus className="size-3.5" /> : <Plus className="size-3.5" />}
-                                          {added ? t($ => $.wizard.step2.remove) : t($ => $.wizard.step2.add)}
-                                        </Button>
-                                      </td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </div>
-                        );
-                      })}
-                    </>
-                  )}
-                </div>
+                                      {added ? <Minus className="size-3.5" /> : <Plus className="size-3.5" />}
+                                      {added ? t($ => $.wizard.step2.remove) : t($ => $.wizard.step2.add)}
+                                    </Button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      )}
+                    </div>
 
-                {/* Selected lines — grouped the same way as the search results (§3) so a
-                    working list of Products + Raw Materials never reads as one blended list. */}
+                    {!pickerSearch && !pickerLoading && pickerResults.length > 0 && (
+                      <p className="text-[11px] text-muted-foreground">
+                        {t($ => $.wizard.step2.browseHint)}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Selected lines — grouped by real catalog type (§3) so a working list of
+                    Products / Raw Materials / Packaging Materials never reads as one blended list,
+                    regardless of which of the two picking actions added each one. */}
                 {lines.length > 0 && (
                   <div className="flex flex-col gap-2">
                     <p className="text-sm font-medium text-muted-foreground">
@@ -404,10 +458,9 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                 )}
               </div>
 
-              {/* Right: Enterprise Demand Panel — this is the ONLY scroll container for the
-                  column (§2): EnterpriseDemandPanel's own root no longer scrolls, so the
-                  panel never shows a second, nested scrollbar inside this one. */}
-              <div className="w-64 shrink-0 border-l pl-4 pr-1 overflow-y-auto">
+              {/* Right: Enterprise Demand Panel — no scroll container of its own; it flows as
+                  part of the single outer scroll region above. */}
+              <div className="w-full sm:w-64 shrink-0 sm:border-l sm:pl-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
                   {t($ => $.wizard.step2.demandIntelligence)}
                 </p>
@@ -423,7 +476,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
 
           {/* ── Step 3: Review ──────────────────────────────────────── */}
           {step === 3 && (
-            <div className="flex flex-col gap-4 px-1 overflow-y-auto h-full py-1">
+            <div className="flex flex-col gap-4 py-1">
               <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
                 <div>
                   <p className="text-xs text-muted-foreground">{t($ => $.wizard.step3.warehouse)}</p>
@@ -474,7 +527,7 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
           )}
         </div>
 
-        <DialogFooter className="gap-2 pt-2">
+        <DialogFooter className="gap-2 pt-2 shrink-0">
           {step > 1 && (
             <Button type="button" variant="outline" onClick={() => setStep((s) => s - 1)}>
               {t($ => $.wizard.buttons.previous)}

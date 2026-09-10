@@ -12,6 +12,14 @@
       "on_hold": "On Hold",
       "cancelled": "Cancelled"
     },
+    "displayStatus": {
+      "draft": "Draft",
+      "awaiting_supplier": "Awaiting Supplier",
+      "purchasing": "Purchasing",
+      "receiving": "Receiving",
+      "completed": "Completed",
+      "rejected": "Rejected"
+    },
     "priority": {
       "low": "Low",
       "normal": "Normal",
@@ -305,8 +313,10 @@
     },
     "orderingPopover": {
       "emptyOrdered": "No lines fully ordered yet.",
-      "emptyNotYetOrdered": "Every line is fully ordered."
+      "emptyNotYetOrdered": "Every line is fully ordered.",
+      "remaining": "{{qty}} remaining"
     },
+    "estValueUnavailable": "Unavailable",
     "actionMenu": {
       "actions": {
         "submit": "Submit for Review",
@@ -327,7 +337,6 @@
       "channel": "Channel",
       "warehouse": "Warehouse",
       "requestedBy": "Requested By",
-      "buyer": "Buyer",
       "items": "Items",
       "orderedItems": "Ordered Items",
       "notYetOrdered": "Not Yet Ordered",
@@ -351,7 +360,6 @@
       "search": "Search by purchase no. or notes…",
       "allWarehouses": "All Warehouses",
       "allPriorities": "All Priorities",
-      "buyer": "Buyer…",
       "requiredBy": "Required by:",
       "clearFilters": "Clear Filters"
     },
@@ -386,8 +394,6 @@
     },
     "step1": {
       "company": "Company",
-      "channel": "Channel",
-      "channelPlaceholder": "Channel ID (optional)",
       "warehouse": "Warehouse",
       "warehouseRequired": "Warehouse *",
       "selectWarehouse": "Select warehouse…",
@@ -398,10 +404,14 @@
       "notesPlaceholder": "Optional context for the procurement team…"
     },
     "step2": {
-      "searchProducts": "Search Products",
-      "searchPlaceholder": "Search by name or SKU…",
+      "addProduct": "Add Product",
+      "addRawMaterial": "Add Raw Material",
+      "searchProductsPlaceholder": "Search products by name or SKU…",
+      "searchRawMaterialsPlaceholder": "Search raw materials by name or SKU…",
+      "closePicker": "Close",
+      "browseHint": "Showing the first 3 — search to find more.",
       "searching": "Searching…",
-      "noProducts": "No products found",
+      "noProducts": "No results found",
       "add": "Add",
       "remove": "Remove",
       "selected": "Selected ({{count}})",
@@ -472,7 +482,6 @@
     "step3": {
       "warehouse": "Warehouse",
       "priority": "Priority",
-      "channel": "Channel",
       "requiredBy": "Required By",
       "notes": "Notes",
       "material": "Material",
@@ -502,7 +511,6 @@
       "overview": "Overview",
       "items": "Lines",
       "demand": "Demand",
-      "review": "Review",
       "supplier": "Supplier",
       "purchasing": "Purchasing",
       "receipt": "Receiving",
@@ -517,18 +525,21 @@
     "overview": {
       "notes": "Notes",
       "rejectionReason": "Rejection Reason",
+      "reviewNotes": "Review Notes",
+      "clarificationRequested": "Clarification Requested",
+      "estimatedValueGapsHint": "Some lines have no purchase history yet, so this total is partial.",
       "quickStats": "Quick Stats",
       "fields": {
         "requestNo": "Request No.",
         "status": "Status",
         "company": "Company",
-        "channel": "Channel",
         "warehouse": "Warehouse",
         "priority": "Priority",
         "requiredBy": "Required By",
         "requestedBy": "Requested By",
         "assignedBuyer": "Assigned Buyer",
-        "createdDate": "Created Date"
+        "createdDate": "Created Date",
+        "approvedBy": "Approved By"
       },
       "stats": {
         "lines": "Lines",
@@ -543,6 +554,8 @@
       "empty": "No lines in this request.",
       "material": "Material",
       "requestedQty": "Requested Qty",
+      "estValue": "Est. Value",
+      "estValueUnavailable": "Unavailable",
       "notes": "Notes"
     },
     "demandAnalysis": {
@@ -555,26 +568,15 @@
       "days": "days",
       "trend": "Trend: "
     },
-    "review": {
-      "assignBuyer": "Assign Buyer",
-      "reviewNotes": "Review Notes",
-      "clarificationRequested": "Clarification Requested",
-      "buyerPlaceholder": "Buyer name…",
-      "currentlyAssigned": "Currently assigned to: ",
-      "assignButton": "Assign",
-      "fields": {
-        "submittedDate": "Submitted Date",
-        "approvedDate": "Approved Date",
-        "approvedBy": "Approved By",
-        "rejectionReason": "Rejection Reason"
-      }
-    },
     "supplierSelection": {
       "unavailableTitle": "Supplier selection is available once the request moves to Awaiting Supplier or Approved.",
       "currentStatus": "Current status: ",
       "empty": "No lines in this request.",
       "hint": "Select a supplier for each material line. Warehouse managers cannot see this tab.",
       "refKnownSuppliers": "Known suppliers — click to select",
+      "ordered": "Ordered",
+      "notOrdered": "Not Ordered",
+      "partiallyOrdered": "Ordered {{ordered}} / {{requested}}",
       "supplierId": "Supplier ID",
       "supplierUuidPlaceholder": "Supplier UUID…",
       "supplier": "Supplier",

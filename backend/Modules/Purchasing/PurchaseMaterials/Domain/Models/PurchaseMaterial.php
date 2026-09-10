@@ -176,4 +176,21 @@ class PurchaseMaterial extends Model
     {
         return $this->belongsTo(User::class, 'assigned_buyer_id');
     }
+
+    /**
+     * The 6-word user-facing status bucket (TASK-...-PURCHASE-REQUESTS-FINAL-019 §5). While
+     * on hold, resolves through `held_from_status` so a paused request still shows where it's
+     * paused (e.g. "Purchasing") rather than a generic word — `status`/`available_actions`
+     * remain the real, unchanged workflow authority; this is display-only.
+     *
+     * @return 'draft'|'awaiting_supplier'|'purchasing'|'receiving'|'completed'|'rejected'
+     */
+    public function displayStatus(): string
+    {
+        if ($this->status === PurchaseMaterialStatus::OnHold) {
+            return PurchaseMaterialStatus::tryFrom((string) $this->held_from_status)?->displayBucket() ?? 'awaiting_supplier';
+        }
+
+        return $this->status->displayBucket();
+    }
 }
