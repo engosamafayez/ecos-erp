@@ -44,8 +44,12 @@ use Modules\Collaboration\Presentation\Http\Controllers\TaskController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskFollowerController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskLabelController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskStatusController;
+use Modules\Admin\GoLive\Presentation\Http\Controllers\GoLiveActivationController;
+use Modules\Admin\GoLive\Presentation\Http\Controllers\GoLiveResetController;
+use Modules\Admin\GoLive\Presentation\Http\Controllers\OpeningInventoryController;
 use Modules\Commerce\Channels\Presentation\Http\Controllers\ChannelController;
 use Modules\Commerce\Connectors\Presentation\Http\Controllers\ConnectorController;
+use Modules\Finance\Receivables\Presentation\Http\Controllers\CustomerOpeningBalanceController;
 use Modules\Commerce\Fulfillments\Presentation\Http\Controllers\FulfillmentController;
 use Modules\Commerce\OrderImport\Presentation\Http\Controllers\OrderImportController;
 use Modules\Commerce\Orders\Presentation\Http\Controllers\OrderController;
@@ -782,6 +786,29 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
         ->middlewareFor('store', 'permission:crm.customers.update')
         ->middlewareFor('update', 'permission:crm.customers.update')
         ->middlewareFor('destroy', 'permission:crm.customers.update');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Admin — Pre-Live Data Reset / Go-Live Preparation (TASK-...-026)
+|--------------------------------------------------------------------------
+| One permission for the whole surface (§2) — every action here is part of the same one-time,
+| high-risk operational event. Company scope is ALWAYS the authenticated actor's own tenant
+| context (CurrentCompanyService inside each controller) — never a client-supplied company id.
+*/
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->prefix('golive')->group(function (): void {
+    Route::get('status', [GoLiveActivationController::class, 'status'])->middleware('permission:admin.golive.manage');
+    Route::post('activate', [GoLiveActivationController::class, 'activate'])->middleware('permission:admin.golive.manage');
+
+    Route::middleware(['throttle:10,1'])->group(function (): void {
+        Route::post('reset/preview', [GoLiveResetController::class, 'preview'])->middleware('permission:admin.golive.manage');
+        Route::post('reset/execute', [GoLiveResetController::class, 'execute'])->middleware('permission:admin.golive.manage');
+        Route::post('opening-inventory', [OpeningInventoryController::class, 'store'])->middleware('permission:admin.golive.manage');
+    });
+});
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function (): void {
+    Route::post('customers/{customer}/opening-balance', [CustomerOpeningBalanceController::class, 'store'])
+        ->middleware('permission:finance.ar.opening.post');
 });
 
 /*

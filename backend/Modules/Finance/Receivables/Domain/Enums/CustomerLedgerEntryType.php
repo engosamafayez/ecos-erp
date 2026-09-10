@@ -19,12 +19,14 @@ enum CustomerLedgerEntryType: string
     case DebitNote = 'debit_note';
     case Receipt = 'receipt';
     case WriteOff = 'write_off';
+    /** TASK-...-026 §10 — mirrors SupplierLedgerEntryType::OpeningPayable on the AR side. */
+    case OpeningReceivable = 'opening_receivable';
 
     /** +1 increases the customer's balance (they owe more), −1 decreases it. */
     public function sign(): int
     {
         return match ($this) {
-            self::Invoice, self::DebitNote => 1,
+            self::Invoice, self::DebitNote, self::OpeningReceivable => 1,
             self::CreditNote, self::Receipt, self::WriteOff => -1,
         };
     }

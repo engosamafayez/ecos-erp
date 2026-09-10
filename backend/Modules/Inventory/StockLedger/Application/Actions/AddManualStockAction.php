@@ -43,7 +43,14 @@ final class AddManualStockAction extends BaseAction
      *   unit_cost?: float|null,
      *   notes?: string|null,
      *   updated_by?: string|null,
+     *   reference_type?: string|null,
      * } $meta
+     *
+     * TASK-...-026 §9 — `reference_type` is additive and backward-compatible: every existing
+     * caller that omits it keeps tagging entries `'manual_adjustment'` exactly as before.
+     * EstablishOpeningInventoryAction is the only caller that supplies `'opening_stock'`, so a
+     * Go-Live opening entry is distinguishable from an ordinary manual adjustment in the ledger
+     * without a second write path.
      */
     public function execute(mixed ...$arguments): OperationResult
     {
@@ -77,7 +84,7 @@ final class AddManualStockAction extends BaseAction
             product_id: $product->id,
             company_id: $companyId,
             quantity: $quantity,
-            reference_type: 'manual_adjustment',
+            reference_type: is_string($meta['reference_type'] ?? null) ? $meta['reference_type'] : 'manual_adjustment',
             reference_id: null,
             notes: $meta['notes'] ?? null,
             unit_cost: $unitCost,

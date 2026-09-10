@@ -81,6 +81,7 @@ return [
     Modules\Operations\Loading\Infrastructure\Providers\LoadingServiceProvider::class,
     Modules\Operations\Fulfillment\Infrastructure\Providers\FulfillmentServiceProvider::class,
     Modules\Admin\Configuration\Infrastructure\Providers\ConfigurationServiceProvider::class,
+    Modules\Admin\GoLive\Infrastructure\Providers\GoLiveServiceProvider::class,
     Modules\Logistics\Geography\Infrastructure\Providers\LogisticsGeographyServiceProvider::class,
     Modules\Logistics\Distribution\Infrastructure\Providers\LogisticsDistributionServiceProvider::class,
     Modules\Logistics\ShippingCompanies\Infrastructure\Providers\LogisticsShippingCompaniesServiceProvider::class,

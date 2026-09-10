@@ -28,6 +28,7 @@ export const NAMESPACES = [
   'organization',
   'admin',
   'iam-admin',
+  'golive',
 
   // ── Catalog ───────────────────────────────────────────────────────────────
   'products',
