@@ -78,4 +78,27 @@ final readonly class RecipeSnapshot
             'resolved_at' => $this->resolved_at,
         ];
     }
+
+    /**
+     * TASK-...-035D-R1 §4 — every field of toArray() EXCEPT `resolved_at`, the volatile
+     * wall-clock instant this snapshot happened to be produced at. Two resolutions of the
+     * identical Recipe state (same components, quantities, units, version) must be
+     * considered the same snapshot for drift-detection purposes regardless of how far apart
+     * in time they were resolved — `resolved_at` is real, useful audit data (kept in
+     * `toArray()`/persisted snapshots unchanged), it is just never semantically part of
+     * "did the recipe change". Every hash computed FOR INTEGRITY/DRIFT PURPOSES against a
+     * RecipeSnapshot anywhere in Manufacturing (ManufacturingPlanner, ExecutionPipeline,
+     * DisassemblyExecutor) must hash this, not toArray() — hashing toArray() directly makes
+     * the hash differ on every single resolution even when nothing about the recipe changed,
+     * defeating the entire point of comparing it against an earlier hash.
+     *
+     * @return array<string, mixed>
+     */
+    public function semanticFingerprint(): array
+    {
+        $data = $this->toArray();
+        unset($data['resolved_at']);
+
+        return $data;
+    }
 }

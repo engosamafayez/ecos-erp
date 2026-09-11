@@ -195,7 +195,10 @@ final class ExecutionPipeline
             return null;
         }
 
-        $computed = hash('sha256', json_encode($plan->recipe_snapshot->toArray(), JSON_THROW_ON_ERROR));
+        // Hash semanticFingerprint(), not toArray(): toArray() includes resolved_at (TASK-
+        // ...-035D-R1 §4), a wall-clock value the planner's own hash never had a chance to
+        // match against in the first place if this compared toArray() instead.
+        $computed = hash('sha256', json_encode($plan->recipe_snapshot->semanticFingerprint(), JSON_THROW_ON_ERROR));
 
         if (! hash_equals($plan->recipe_snapshot_hash, $computed)) {
             return new ValidationFailure(

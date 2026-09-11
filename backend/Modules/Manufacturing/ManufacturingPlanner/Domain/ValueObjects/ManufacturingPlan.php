@@ -22,7 +22,7 @@ use Modules\Manufacturing\DecisionKernel\Domain\ValueObjects\DecisionReason;
  *   should_manufacture — can_proceed AND manufacturing is actually needed (qty > 0)
  *
  * Recipe integrity:
- *   recipe_snapshot_hash — SHA-256 of RecipeSnapshot.toArray() at planning time.
+ *   recipe_snapshot_hash — SHA-256 of RecipeSnapshot.semanticFingerprint() at planning time.
  *   The Manufacturing Engine verifies this hash before consuming any stock.
  *
  * @property list<ComponentConsumptionPlan> $components
@@ -68,7 +68,7 @@ final readonly class ManufacturingPlan
         public ?RecipeSnapshot $recipe_snapshot,
 
         /**
-         * SHA-256 of RecipeSnapshot.toArray() encoded as JSON.
+         * SHA-256 of RecipeSnapshot.semanticFingerprint() encoded as JSON.
          * The Manufacturing Executor verifies this against recipe_snapshot before executing.
          * Null when no recipe (Sufficient / NoRecipe).
          */

@@ -42,7 +42,7 @@ return new class extends Migration
             /** Monotonically increasing recipe version (for future audit and snapshot reuse). */
             $table->unsignedInteger('bom_version_number')->nullable();
 
-            /** SHA-256 of RecipeSnapshot.toArray() at execution time. Audit trail. */
+            /** SHA-256 of RecipeSnapshot.semanticFingerprint() at execution time. Audit trail. */
             $table->string('recipe_snapshot_hash', 64)->nullable();
 
             $table->decimal('qty_disassembled', 15, 4);

@@ -104,7 +104,11 @@ final class DisassemblyExecutor
                     'warehouse_id' => $plan->warehouse_id,
                     'bom_id' => $plan->recipe_snapshot->recipe_id,
                     'bom_version_number' => $plan->recipe_snapshot->bom_version_number,
-                    'recipe_snapshot_hash' => hash('sha256', json_encode($plan->recipe_snapshot->toArray())),
+                    // semanticFingerprint(), not toArray(): the latter includes the volatile
+                    // resolved_at wall-clock value (TASK-...-035D-R1 §4) — this hash must stay
+                    // comparable across Manufacturing's own planner/execution hashes of the same
+                    // recipe state, not merely unique-per-resolution.
+                    'recipe_snapshot_hash' => hash('sha256', json_encode($plan->recipe_snapshot->semanticFingerprint())),
                     'qty_disassembled' => $plan->qty_to_disassemble,
                     'status' => TransactionStatus::Completed->value,
                     'executed_at' => $executedAt,

@@ -6,6 +6,7 @@ namespace Tests\Feature\Collaboration;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Carbon;
 use Modules\Collaboration\Presentation\Http\Controllers\MessageController;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Tests\Feature\Collaboration\Concerns\CollaborationTestHelpers;
@@ -220,5 +221,70 @@ final class CollaborationMessageTest extends TestCase
     {
         self::assertFalse(method_exists(MessageController::class, 'update'), 'Message editing must not exist in V1.');
         self::assertFalse(method_exists(MessageController::class, 'destroy'), 'Message deletion must not exist in V1.');
+    }
+
+    // TASK-...-035D-R1 §3 — same-second regression. Both the read cursor and the new message are
+    // frozen to the SAME whole second (400ms apart), which is exactly what whole-second `TIMESTAMP`
+    // columns used to collapse into an identical stored value. Before the fix this message was
+    // silently excluded from the unread count; it must not be.
+    public function test_unread_count_includes_a_message_created_later_in_the_same_second_as_the_read_cursor(): void
+    {
+        $company = Company::factory()->create();
+        $actor = $this->employee($company);
+        $target = User::factory()->create(['company_id' => $company->id]);
+        $conversation = $this->directConversation($company, $actor, $target);
+
+        $secondBoundary = Carbon::now()->startOfSecond();
+
+        $this->travelTo($secondBoundary);
+        $this->actingAsUnprivileged($actor)
+            ->patchJson("/api/collaboration/conversations/{$conversation->id}/read")
+            ->assertOk();
+
+        // Same whole second as the read cursor above, 400ms later.
+        $this->travelTo($secondBoundary->copy()->addMilliseconds(400));
+        $this->actingAsUnprivileged($target)
+            ->postJson("/api/collaboration/conversations/{$conversation->id}/messages", ['body' => 'same-second message'])
+            ->assertCreated();
+
+        $this->actingAsUnprivileged($actor)
+            ->getJson('/api/collaboration/conversations')
+            ->assertOk()
+            ->assertJsonFragment(['id' => $conversation->id, 'unread_count' => 1]);
+    }
+
+    // TASK-...-035D-R1 §3 — same-second regression for the polling cursor. Two messages land in
+    // the same whole second (200ms apart); polling with after_message_id=first must still return
+    // the second one. GetConversationMessagesAction compares `id` (a time-ordered UUIDv7), not
+    // `created_at`, precisely so this does not depend on timestamp column precision at all.
+    public function test_polling_after_a_message_id_returns_a_message_created_later_in_the_same_second(): void
+    {
+        $company = Company::factory()->create();
+        $actor = $this->employee($company);
+        $target = User::factory()->create(['company_id' => $company->id]);
+        $conversation = $this->directConversation($company, $actor, $target);
+
+        $secondBoundary = Carbon::now()->startOfSecond();
+
+        $this->travelTo($secondBoundary);
+        $firstId = $this->actingAsUnprivileged($target)
+            ->postJson("/api/collaboration/conversations/{$conversation->id}/messages", ['body' => 'first'])
+            ->assertCreated()
+            ->json('data.id');
+
+        // Same whole second as the first message, 200ms later.
+        $this->travelTo($secondBoundary->copy()->addMilliseconds(200));
+        $secondId = $this->actingAsUnprivileged($target)
+            ->postJson("/api/collaboration/conversations/{$conversation->id}/messages", ['body' => 'second'])
+            ->assertCreated()
+            ->json('data.id');
+
+        $response = $this->actingAsUnprivileged($actor)
+            ->getJson("/api/collaboration/conversations/{$conversation->id}/messages?after_message_id={$firstId}")
+            ->assertOk();
+
+        $returnedIds = collect($response->json('data'))->pluck('id');
+        self::assertTrue($returnedIds->contains($secondId), 'A message created later in the same whole second must not be dropped by polling.');
+        self::assertFalse($returnedIds->contains($firstId), 'The cursor message itself must not be re-returned.');
     }
 }

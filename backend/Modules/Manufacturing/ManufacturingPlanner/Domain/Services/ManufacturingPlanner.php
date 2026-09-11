@@ -159,8 +159,11 @@ final class ManufacturingPlanner
     }
 
     /**
-     * SHA-256 of the RecipeSnapshot JSON — lets the Manufacturing Engine detect
-     * any recipe mutation between planning and execution.
+     * SHA-256 of the RecipeSnapshot's semantic fields — lets the Manufacturing Engine detect
+     * any recipe mutation between planning and execution. Hashes semanticFingerprint(), not
+     * toArray(): the latter includes resolved_at, a wall-clock value that differs on every
+     * resolution and would make this hash never stably match even an unchanged recipe (TASK-
+     * ...-035D-R1 §4).
      * Returns null when there is no recipe (Sufficient / NoRecipe cases).
      */
     private function hashSnapshot(AvailabilityResult $availability): ?string
@@ -172,9 +175,9 @@ final class ManufacturingPlanner
         }
 
         try {
-            return hash('sha256', json_encode($snapshot->toArray(), JSON_THROW_ON_ERROR));
+            return hash('sha256', json_encode($snapshot->semanticFingerprint(), JSON_THROW_ON_ERROR));
         } catch (JsonException) {
-            // toArray() returns only scalar / array data — this path is unreachable
+            // semanticFingerprint() returns only scalar / array data — this path is unreachable
             return null;
         }
     }

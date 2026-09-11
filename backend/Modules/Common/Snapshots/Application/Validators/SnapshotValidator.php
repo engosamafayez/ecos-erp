@@ -16,6 +16,19 @@ use Modules\Common\Snapshots\Domain\Exceptions\SnapshotConsistencyException;
 final class SnapshotValidator
 {
     /**
+     * TASK-...-035D-R1 §5 — one cent, matching the 2-decimal-place rounding this module's
+     * money fields already use throughout Commerce/Orders (e.g. CreateManualOrderAction's own
+     * `round($subtotal ..., 2)`). subtotal and each line's lineTotal can be independently
+     * rounded to the cent by their own upstream computation, so summing several
+     * independently-rounded lines can legitimately differ from a directly-rounded subtotal by
+     * a cent at the edge — this is the same tolerance-not-exact-equality pattern already
+     * established elsewhere in this codebase for comparing two independently-computed money
+     * floats (e.g. Logistics\Distribution\CashHandoverService::EPSILON,
+     * Operations\Loading\ReceiveVehicleReturnAction's quantity-comparison EPSILON).
+     */
+    private const SUBTOTAL_TOLERANCE = 0.01;
+
+    /**
      * @throws SnapshotConsistencyException
      */
     public function validateConsistency(FinancialSnapshotProvider $provider): void
@@ -24,6 +37,7 @@ final class SnapshotValidator
         $this->assertCurrencyPresent($provider);
         $this->assertLinesNotEmpty($provider);
         $this->assertAggregateIdentityComplete($provider);
+        $this->assertSubtotalMatchesLineTotals($provider);
     }
 
     private function assertGrandTotalPositive(FinancialSnapshotProvider $provider): void
@@ -64,6 +78,24 @@ final class SnapshotValidator
 
         if (trim($provider->getSnapshotAggregateType()) === '') {
             throw new SnapshotConsistencyException('Snapshot aggregate_type must not be empty.');
+        }
+    }
+
+    private function assertSubtotalMatchesLineTotals(FinancialSnapshotProvider $provider): void
+    {
+        $sumOfLines = array_sum(array_map(
+            static fn ($line): float => $line->lineTotal,
+            $provider->getLineItems(),
+        ));
+
+        $difference = abs($provider->getSubtotal() - $sumOfLines);
+
+        if ($difference > self::SUBTOTAL_TOLERANCE) {
+            throw new SnapshotConsistencyException(
+                "Snapshot subtotal ({$provider->getSubtotal()}) does not reconcile with the sum of its "
+                ."line values ({$sumOfLines}), a difference of {$difference}. "
+                ."Aggregate: {$provider->getSnapshotAggregateType()} {$provider->getSnapshotAggregateId()}",
+            );
         }
     }
 }

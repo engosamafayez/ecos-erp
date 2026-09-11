@@ -38,7 +38,7 @@ return new class extends Migration
             /** RC-10: monotonically increasing version. */
             $table->unsignedInteger('bom_version_number')->nullable();
 
-            /** SHA-256 of RecipeSnapshot.toArray() at planning time. Audit trail. */
+            /** SHA-256 of RecipeSnapshot.semanticFingerprint() at planning time. Audit trail. */
             $table->string('recipe_snapshot_hash', 64)->nullable();
 
             $table->decimal('qty_produced', 15, 4);

@@ -78,7 +78,10 @@ class ExecutionPipelineTest extends TestCase
 
     private function hashSnapshot(RecipeSnapshot $snapshot): string
     {
-        return hash('sha256', json_encode($snapshot->toArray(), JSON_THROW_ON_ERROR));
+        // Must match ExecutionPipeline::validateSnapshotHash() exactly (TASK-...-035D-R1 §4):
+        // semanticFingerprint(), not toArray() — toArray() still carries the volatile
+        // resolved_at value the pipeline's own hash deliberately excludes.
+        return hash('sha256', json_encode($snapshot->semanticFingerprint(), JSON_THROW_ON_ERROR));
     }
 
     private function makeComponentPlan(string $componentId = 'comp-001', float $qty = 10.0): ComponentConsumptionPlan
