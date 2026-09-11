@@ -15,6 +15,7 @@ use Modules\Inventory\InventoryItems\Domain\Contracts\InventoryItemRepositoryInt
 use Modules\Inventory\InventoryItems\Domain\Enums\LedgerMovementType;
 use Modules\Inventory\InventoryItems\Domain\Exceptions\InvalidInventoryMovementException;
 use Modules\Inventory\Products\Domain\Enums\InventoryClass;
+use Modules\Inventory\Products\Domain\Exceptions\ProductNotFoundException;
 use Modules\Inventory\Products\Domain\Models\Product;
 
 /**
@@ -108,6 +109,19 @@ final class ReceiveStockAction extends BaseAction
         // is refused is the claim to know how to account for it.
         $product = Product::query()->find($dto->product_id);
 
+        // TASK-ECOS-V1-REMEDIATION-PROCUREMENT-035A — Product's tenant scope silently excludes
+        // a cross-company id here rather than erroring, so `$product` being null means either
+        // "genuinely doesn't exist" or "exists, but not in this tenant" — Do NOT bypass the
+        // scope to tell those apart; both must refuse identically. Previously this fell through
+        // to `InventoryClass::fromProductType(null, ...)`, which throws its own unregistered
+        // `UnknownInventoryClassException` — a confusing, unrelated-sounding 500 for what is
+        // really just a not-found product. Refusing here with the correct, already-registered
+        // domain exception does not change the existing stock-movement-already-committed
+        // tradeoff documented above (still deliberate, still unchanged) — only what gets thrown.
+        if ($product === null) {
+            throw new ProductNotFoundException;
+        }
+
         $event = new InventoryStockReceived(
             inventoryItemId: $result->id,
             warehouseId: $dto->warehouse_id,
@@ -116,11 +130,11 @@ final class ReceiveStockAction extends BaseAction
             quantityReceived: $dto->quantity,
             onHandBefore: $onHandBefore ?? 0.0,
             onHandAfter: (float) $result->on_hand_qty,
-            inventoryClass: InventoryClass::fromProductType($product?->product_type, $dto->product_id),
+            inventoryClass: InventoryClass::fromProductType($product->product_type, $dto->product_id),
             // Prefer the price actually paid, which goods-receipt posting passes
             // through. A running average would value arriving stock at what
             // older stock cost, which is a different number and the wrong one.
-            unitCost: $dto->unit_cost ?? (float) ($product?->current_fifo_cost ?? 0.0),
+            unitCost: $dto->unit_cost ?? (float) ($product->current_fifo_cost ?? 0.0),
             referenceType: $dto->reference_type,
             referenceId: $dto->reference_id,
         );

@@ -10,6 +10,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+use Modules\Inventory\Products\Domain\Exceptions\ProductNotFoundException;
 use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\Purchasing\GoodsReceipts\Application\DTO\GoodsReceiptDTO;
 use Modules\Purchasing\GoodsReceipts\Application\DTO\GoodsReceiptLineDTO;
@@ -137,6 +138,20 @@ final class CreateGoodsReceiptAction extends BaseAction
 
         $productIds = array_map(fn (GoodsReceiptLineDTO $l): string => $l->product_id, $dto->lines);
         $products = Product::query()->with('unit')->whereIn('id', $productIds)->get()->keyBy('id');
+
+        // TASK-ECOS-V1-REMEDIATION-PROCUREMENT-035A — Product's own tenant scope silently
+        // excludes a cross-company id from the result above rather than erroring, so an
+        // unqualified `$products->get($id)` a few lines down would return null and let a
+        // foreign-company (or simply nonexistent) product_id ride all the way through to
+        // posting, where it would surface as an opaque, unrelated "unknown inventory class"
+        // 500 instead of a clean rejection here, at the only point that actually knows which
+        // id was requested. Rejected deterministically — never bypassing the tenant scope
+        // itself, just refusing to proceed once it has already done its job.
+        foreach ($productIds as $productId) {
+            if (! $products->has($productId)) {
+                throw new ProductNotFoundException;
+            }
+        }
 
         $lines = array_map(function (GoodsReceiptLineDTO $line) use ($poLineUnitPrices, $products, $pmLines): array {
             // Price precedence mirrors the PO branch: the ordering document's agreed price

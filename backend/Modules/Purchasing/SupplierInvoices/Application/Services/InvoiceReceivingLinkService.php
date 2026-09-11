@@ -58,10 +58,19 @@ final class InvoiceReceivingLinkService
 
     private function createLinkedReceipt(SupplierInvoice $invoice): void
     {
-        $lines = $invoice->lines->filter(fn (SupplierInvoiceLine $l): bool => (float) $l->quantity > 0);
+        // TASK-ECOS-V1-REMEDIATION-PROCUREMENT-035A — never build a receipt line for an
+        // invoice line that already carries a valid anchor (e.g. a legacy, manually-anchored
+        // line from before this anchor picker was removed from the create/edit UI). This flow
+        // is documented as additive; without this filter it silently overwrote
+        // `goods_receipt_line_id` for every qty>0 line regardless of whether one already
+        // pointed at a real, unrelated receipt line — orphaning that anchor with no trace.
+        $lines = $invoice->lines->filter(
+            fn (SupplierInvoiceLine $l): bool => (float) $l->quantity > 0 && $l->goods_receipt_line_id === null,
+        );
 
-        // Nothing to receive yet (e.g. a header-only draft with no lines saved yet) — sync()
-        // will be called again on every subsequent save, so this simply waits for lines.
+        // Nothing to receive yet (e.g. a header-only draft with no lines saved yet), or every
+        // positive-quantity line is already anchored elsewhere — sync() runs again on every
+        // subsequent save, so this simply waits/stays a no-op either way.
         if ($lines->isEmpty()) {
             return;
         }
@@ -119,7 +128,16 @@ final class InvoiceReceivingLinkService
             return;
         }
 
-        $lines = $invoice->lines->filter(fn (SupplierInvoiceLine $l): bool => (float) $l->quantity > 0);
+        // TASK-ECOS-V1-REMEDIATION-PROCUREMENT-035A — same rule as createLinkedReceipt(): only
+        // rebuild lines that either have no anchor yet, or are already anchored to THIS
+        // receipt's own (about-to-be-deleted-and-recreated) lines. A line anchored to a
+        // DIFFERENT, foreign receipt is left untouched — never overwritten with a pointer into
+        // this receipt just because both happen to belong to the same invoice.
+        $ownLineIds = $receipt->lines->pluck('id')->all();
+        $lines = $invoice->lines->filter(
+            fn (SupplierInvoiceLine $l): bool => (float) $l->quantity > 0
+                && ($l->goods_receipt_line_id === null || in_array($l->goods_receipt_line_id, $ownLineIds, true)),
+        );
 
         if ($lines->isEmpty()) {
             return;

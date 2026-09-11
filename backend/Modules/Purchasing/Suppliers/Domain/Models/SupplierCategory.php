@@ -56,7 +56,12 @@ class SupplierCategory extends Model
                 return;
             }
 
-            $query->where('company_id', $companyId);
+            // TASK-ECOS-V1-REMEDIATION-PROCUREMENT-035A — qualified defensively, matching the
+            // sibling fix on Supplier's own tenant scope: dormant today (nothing currently joins
+            // another company_id-bearing table against a SupplierCategory query), but an
+            // unqualified column is the exact ambiguity that made the supplier list 500 the
+            // moment a join was added — closing the same bug class here before it's ever hit.
+            $query->where('supplier_categories.company_id', $companyId);
         });
     }
 

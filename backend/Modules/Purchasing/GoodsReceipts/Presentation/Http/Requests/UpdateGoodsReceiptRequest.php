@@ -16,6 +16,14 @@ final class UpdateGoodsReceiptRequest extends FormRequest
         return true;
     }
 
+    /** The acting user's company — the tenant boundary every anchor must fall inside. */
+    private function actorCompanyId(): ?string
+    {
+        $companyId = $this->user()?->company_id;
+
+        return $companyId === null ? null : (string) $companyId;
+    }
+
     /**
      * @return array<string, array<int, mixed>>
      */
@@ -53,7 +61,13 @@ final class UpdateGoodsReceiptRequest extends FormRequest
             // ── Lines ────────────────────────────────────────────────────────
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.purchase_order_line_id' => ['required', 'uuid', 'exists:purchase_order_lines,id'],
-            'lines.*.product_id' => ['required', 'uuid', 'exists:products,id'],
+            // TASK-ECOS-V1-REMEDIATION-PROCUREMENT-035A — tenant-scoped, same reasoning as
+            // StoreGoodsReceiptRequest's identical rule.
+            'lines.*.product_id' => [
+                'required',
+                'uuid',
+                Rule::exists('products', 'id')->where('company_id', $this->actorCompanyId()),
+            ],
             'lines.*.ordered_quantity' => ['required', 'numeric', 'min:0.0001'],
             'lines.*.gross_received_quantity' => ['required', 'numeric', 'min:0.0001'],
             'lines.*.net_received_quantity' => ['required', 'numeric', 'min:0.0001', 'lte:lines.*.gross_received_quantity'],

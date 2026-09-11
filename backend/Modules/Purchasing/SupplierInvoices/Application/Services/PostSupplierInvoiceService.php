@@ -17,6 +17,7 @@ use Modules\Inventory\InventoryItems\Domain\Models\InventoryItem;
 use Modules\Inventory\InventoryItems\Domain\Services\GoodsInwardAuthority;
 use Modules\Inventory\InventoryItems\Domain\Services\InboundPostingGuard;
 use Modules\Inventory\Products\Domain\Enums\InventoryClass;
+use Modules\Inventory\Products\Domain\Exceptions\ProductNotFoundException;
 use Modules\Inventory\ReceiptLayers\Application\Actions\CreateReceiptLayersAction;
 use Modules\Purchasing\SupplierInvoices\Domain\Enums\SupplierInvoiceStatus;
 use Modules\Purchasing\SupplierInvoices\Domain\Models\SupplierInvoice;
@@ -410,10 +411,19 @@ final class PostSupplierInvoiceService
             // same posting run — never a FIFO re-read, never today's cost, never an average.
             $value = $qty * (float) ($line->landed_unit_cost ?? $line->unit_price);
 
+            // TASK-ECOS-V1-REMEDIATION-PROCUREMENT-035A — a cross-company (or deleted)
+            // product_id resolves $line->product to null via the same tenant-scoped relation
+            // that silently excludes foreign rows rather than erroring; refused here,
+            // deterministically, rather than falling through to fromProductType(null, ...)'s
+            // own unregistered exception a few lines below.
+            if ($line->product === null) {
+                throw new ProductNotFoundException;
+            }
+
             // Refuses rather than defaults: an unclassifiable product has no inventory account,
             // and guessing one posts real money somewhere that looks fine forever afterwards.
             $class = InventoryClass::fromProductType(
-                $line->product?->product_type,
+                $line->product->product_type,
                 (string) $line->product_id,
             );
 

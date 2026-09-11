@@ -77,7 +77,15 @@ final class StoreGoodsReceiptRequest extends FormRequest
                     ),
                 ),
             ],
-            'lines.*.product_id' => ['required', 'uuid', 'exists:products,id'],
+            // TASK-ECOS-V1-REMEDIATION-PROCUREMENT-035A — same rule as `purchase_material_line_id`
+            // just above: a bare `exists:products,id` is scope-blind, so a foreign-company
+            // product_id would pass here and only fail much later, as an unrelated-looking crash
+            // at posting time. Tenant-scoped so it fails here instead, cleanly.
+            'lines.*.product_id' => [
+                'required',
+                'uuid',
+                Rule::exists('products', 'id')->where('company_id', $this->actorCompanyId()),
+            ],
             'lines.*.ordered_quantity' => ['required', 'numeric', 'min:0.0001'],
             'lines.*.gross_received_quantity' => ['required', 'numeric', 'min:0.0001'],
             'lines.*.net_received_quantity' => ['required', 'numeric', 'min:0.0001', 'lte:lines.*.gross_received_quantity'],

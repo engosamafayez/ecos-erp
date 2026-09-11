@@ -16,9 +16,14 @@ use Modules\Purchasing\SupplierInvoices\Domain\Services\InvoiceReceiptAnchorServ
  * mirroring {@see SupplierInvoicePaymentSummary}'s own convention exactly (no new invoice
  * status engine, per §10: "add derived receiving/readiness information where needed").
  *
- * "Accepted / Reconciled" quantity per line is
- * {@see InvoiceReceiptAnchorService::reconciledQuantity()} — the SAME derivation that feeds
- * the actual AP posting basis, so the UI and the money can never disagree.
+ * "Accepted" quantity per line is TASK-ECOS-V1-REMEDIATION-PROCUREMENT-035A's
+ * {@see InvoiceReceiptAnchorService::physicallyAcceptedQuantity()} — deliberately NOT the
+ * posted-only {@see InvoiceReceiptAnchorService::reconciledQuantity()} that feeds the actual AP
+ * posting basis. A quantity the warehouse has confirmed on a still-Draft invoice-first receipt
+ * is physically real immediately; the UI (and the Warehouse-Full-Rejection safety guard built
+ * on this summary) must reflect that right away, not only once the receipt eventually posts.
+ * The money still waits for `reconciledQuantity()`'s posted-only truth — see that method's own
+ * docblock for why they are allowed to disagree while a receipt is still Draft.
  *
  * Purely a READ surface: creates nothing, edits nothing, posts nothing. Receipt creation/sync
  * is {@see InvoiceReceivingLinkService}; posting/inventory stays the existing, untouched
@@ -79,7 +84,7 @@ final class SupplierInvoiceReceivingSummary
             ->filter(fn (SupplierInvoiceLine $l): bool => (float) $l->quantity > 0)
             ->map(function (SupplierInvoiceLine $l): array {
                 $expected = round((float) $l->quantity, 4);
-                $accepted = $this->anchors->reconciledQuantity($l);
+                $accepted = $this->anchors->physicallyAcceptedQuantity($l);
 
                 return [
                     'line_id' => (string) $l->id,

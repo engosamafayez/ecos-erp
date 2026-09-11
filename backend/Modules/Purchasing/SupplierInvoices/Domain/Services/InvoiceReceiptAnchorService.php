@@ -116,6 +116,33 @@ final class InvoiceReceiptAnchorService
     }
 
     /**
+     * TASK-ECOS-V1-REMEDIATION-PROCUREMENT-035A.
+     *
+     * The PHYSICAL, presentation-grade accepted quantity — identical derivation to
+     * {@see reconciledQuantity()} but deliberately WITHOUT its posted-only filter. A quantity
+     * the warehouse has already confirmed via `ConfirmReceiptQuantitiesAction` on a still-Draft
+     * invoice-first receipt is real and physically true the moment it's recorded — the
+     * presentation layer ({@see \Modules\Purchasing\SupplierInvoices\Application\Services\SupplierInvoiceReceivingSummary})
+     * and any safety guard built on it (e.g. Warehouse Full Rejection) must see it immediately,
+     * not only once that receipt eventually posts.
+     *
+     * Deliberately NOT used by {@see basisFor()}/{@see reconciledQuantity()} — the AP posting
+     * basis must stay posted-only: an unposted receipt has no stamped `landed_unit_cost`, so
+     * clearing GRNI against a not-yet-final quantity would value the settlement at zero. This
+     * method is presentation/safety truth; `reconciledQuantity()` is financial truth. They are
+     * allowed to disagree while a receipt is still Draft — that disagreement is the whole point.
+     */
+    public function physicallyAcceptedQuantity(SupplierInvoiceLine $line): float
+    {
+        return round(
+            (float) GoodsReceiptLine::query()
+                ->where('supplier_invoice_line_id', $line->id)
+                ->sum('net_received_quantity'),
+            4,
+        );
+    }
+
+    /**
      * Resolved the same way the certified inbound path resolves it: the PO's own company,
      * falling back to the receiving warehouse's.
      */
@@ -127,9 +154,14 @@ final class InvoiceReceiptAnchorService
     }
 
     /**
-     * D-1: the receipt's supplier — the legacy PO authority first, then the Purchase Material
-     * authority (a Purchase-Material-anchored receipt carries no purchase order, so reading the
-     * supplier from `purchaseOrder` alone would refuse every such line as a mismatch).
+     * TASK-ECOS-V1-REMEDIATION-PROCUREMENT-035A — D-1, extended for the invoice-first anchor
+     * (TASK-...-014): the receipt's supplier, tried in origin order — the legacy PO authority
+     * first, then the Purchase Material authority (a Purchase-Material-anchored receipt carries
+     * no purchase order), then the invoice-first authority (`supplier_invoice_line_id` → its
+     * parent invoice's own `supplier_id` — an invoice-first receipt line has neither a PO nor a
+     * Purchase-Material line, so without this branch EVERY invoice-first anchor resolved `''`
+     * here and `resolve()` refused it as a supplier mismatch on every single Mode-1 posting,
+     * regardless of whether the invoice's real supplier agreed).
      */
     private function anchorSupplierId(GoodsReceiptLine $anchor): string
     {
@@ -138,6 +170,7 @@ final class InvoiceReceiptAnchorService
         return (string) (
             $receipt?->purchaseOrder?->supplier_id
             ?? $anchor->purchaseMaterialLine?->supplier_id
+            ?? $anchor->supplierInvoiceLine?->supplierInvoice?->supplier_id
             ?? ''
         );
     }
@@ -162,7 +195,7 @@ final class InvoiceReceiptAnchorService
 
         /** @var GoodsReceiptLine|null $anchor */
         $anchor = GoodsReceiptLine::query()
-            ->with(['goodsReceipt.purchaseOrder', 'goodsReceipt.warehouse', 'purchaseMaterialLine'])
+            ->with(['goodsReceipt.purchaseOrder', 'goodsReceipt.warehouse', 'purchaseMaterialLine', 'supplierInvoiceLine.supplierInvoice'])
             ->find($anchorId);
 
         if ($anchor === null) {
@@ -236,7 +269,7 @@ final class InvoiceReceiptAnchorService
 
         return GoodsReceiptLine::query()
             ->where('product_id', $productId)
-            ->with(['goodsReceipt.purchaseOrder', 'goodsReceipt.warehouse', 'purchaseMaterialLine'])
+            ->with(['goodsReceipt.purchaseOrder', 'goodsReceipt.warehouse', 'purchaseMaterialLine', 'supplierInvoiceLine.supplierInvoice'])
             ->get()
             ->filter(fn (GoodsReceiptLine $anchor): bool => $anchor->goodsReceipt !== null
                 && $this->anchorCompanyId($anchor) === $companyId

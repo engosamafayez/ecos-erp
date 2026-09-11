@@ -74,7 +74,16 @@ class StoreSupplierInvoiceRequest extends FormRequest
                     ),
                 ),
             ],
-            'lines.*.product_id' => ['required', 'uuid', 'exists:products,id'],
+            // TASK-ECOS-V1-REMEDIATION-PROCUREMENT-035A — TENANT-SCOPED EXISTENCE, same shape
+            // and same reason as `goods_receipt_line_id` right above: a bare `exists:products,id`
+            // is scope-blind, so a foreign-company product_id would pass here, then resolve to
+            // null everywhere it's actually used (ReceiveStockAction, Mode-3 posting), surfacing
+            // as an unrelated crash at posting time instead of a clean rejection here.
+            'lines.*.product_id' => [
+                'required',
+                'uuid',
+                Rule::exists('products', 'id')->where('company_id', $this->actorCompanyId()),
+            ],
             'lines.*.description' => ['nullable', 'string', 'max:255'],
             'lines.*.quantity' => ['required', 'numeric', 'min:0.0001'],
             'lines.*.unit_price' => ['required', 'numeric', 'min:0'],

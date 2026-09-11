@@ -82,7 +82,11 @@ class Supplier extends Model
                 return;
             }
 
-            $query->where('company_id', $companyId);
+            // Qualified: an unqualified 'company_id' is ambiguous the moment a caller
+            // joins another table that also carries a company_id column (e.g. the
+            // supplier list's join against supplier_categories), and MySQL rejects
+            // the whole query rather than guessing which one is meant.
+            $query->where('suppliers.company_id', $companyId);
         });
     }
 

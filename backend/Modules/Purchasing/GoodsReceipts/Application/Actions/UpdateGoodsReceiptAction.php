@@ -8,6 +8,7 @@ use App\Core\Actions\BaseAction;
 use App\Core\Responses\OperationResult;
 use Illuminate\Support\Carbon;
 use InvalidArgumentException;
+use Modules\Inventory\Products\Domain\Exceptions\ProductNotFoundException;
 use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\Purchasing\GoodsReceipts\Application\DTO\GoodsReceiptDTO;
 use Modules\Purchasing\GoodsReceipts\Application\DTO\GoodsReceiptLineDTO;
@@ -69,6 +70,16 @@ final class UpdateGoodsReceiptAction extends BaseAction
 
         $productIds = array_map(fn (GoodsReceiptLineDTO $l): string => $l->product_id, $dto->lines);
         $products = Product::query()->with('unit')->whereIn('id', $productIds)->get()->keyBy('id');
+
+        // TASK-ECOS-V1-REMEDIATION-PROCUREMENT-035A — see CreateGoodsReceiptAction's identical
+        // guard for the full rationale: a cross-company or nonexistent product_id must be
+        // rejected here, deterministically, not silently proceed as null and surface much
+        // later as an unrelated posting-time crash.
+        foreach ($productIds as $productId) {
+            if (! $products->has($productId)) {
+                throw new ProductNotFoundException;
+            }
+        }
 
         $lines = array_map(function (GoodsReceiptLineDTO $line) use ($poLineUnitPrices, $products): array {
             $unitPrice = (float) ($poLineUnitPrices[$line->purchase_order_line_id] ?? $line->unit_price);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Purchasing;
 
+use App\Core\Company\TenantOwnershipResolver;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -410,6 +411,57 @@ final class SupplierMultipleCategoriesTest extends TestCase
             ->count('suppliers.id');
 
         $this->assertSame(1, $count, 'A category assigned only via the pivot must still be reported as in-use.');
+    }
+
+    // ── TASK-ECOS-V1-REMEDIATION-PROCUREMENT-035A — the actual supplier-list 500 ───────
+
+    /**
+     * Every other test in this file creates its Supplier via `withoutGlobalScopes()`
+     * (setUp()'s own documented reason: no roles/permissions table exists in this minimal
+     * schema, so a real authenticated actor would fail resolving `isUnrestricted()`), which
+     * means none of them ever actually execute `paginate()` with the tenant scope's own
+     * `WHERE company_id = ?` clause present — exactly the clause that becomes ambiguous the
+     * moment `paginate()`'s `LEFT JOIN supplier_categories` is on the same query. Faking
+     * `TenantOwnershipResolver` (a plain object satisfying its call shape, not a subclass —
+     * it's `final`) lets this one test activate the REAL scope without needing real
+     * roles/user_roles tables, so it actually reproduces the bug this task fixes rather than
+     * only proving the fix in isolation.
+     */
+    public function test_paginate_does_not_throw_an_ambiguous_column_error_with_the_tenant_scope_active(): void
+    {
+        $companyId = (string) Str::uuid();
+        $otherCompanyId = (string) Str::uuid();
+
+        $this->app->instance(TenantOwnershipResolver::class, new class($companyId)
+        {
+            public function __construct(private readonly string $companyId) {}
+
+            public function appliesTo(): bool
+            {
+                return true;
+            }
+
+            public function isUnrestricted(): bool
+            {
+                return false;
+            }
+
+            public function companyId(): ?string
+            {
+                return $this->companyId;
+            }
+        });
+
+        $mine = $this->makeSupplier($companyId, 'SUP-000001');
+        $this->makeSupplier($otherCompanyId, 'SUP-000002');
+
+        // Before the fix: this threw "Column 'company_id' in where clause is ambiguous" —
+        // suppliers.company_id and supplier_categories.company_id both satisfy the unqualified
+        // reference the moment paginate()'s own LEFT JOIN against supplier_categories is active.
+        $result = app(EloquentSupplierRepository::class)->paginate(['per_page' => 20]);
+
+        $this->assertSame(1, $result->total(), 'Only the acting company\'s own supplier must be returned.');
+        $this->assertSame($mine->id, $result->items()[0]->id);
     }
 
     // ── TENANCY (request-validation-level rule, exercised directly) ────────
