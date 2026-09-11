@@ -37,6 +37,16 @@ return [
         'organization' => [
             'companies' => ['view', 'create', 'update', 'delete'],
             'branches' => ['view', 'create', 'update', 'delete'],
+            // 035B-R1: routes/api.php already gated brands/business_accounts/teams
+            // mutations behind these exact tokens (organization.brands.create etc.)
+            // — they were simply never registered here, so no role could ever hold
+            // them and every non-system-role request 403'd unconditionally. No
+            // `view` action: nothing in routes/api.php references
+            // organization.{brands,business_accounts,teams}.view, so none is added
+            // (only the required, route-referenced actions are registered).
+            'brands' => ['create', 'update', 'delete'],
+            'business_accounts' => ['create', 'update', 'delete'],
+            'teams' => ['create', 'update', 'delete'],
         ],
 
         // Internal Collaboration & Tasks — ADR-044. Conversation read/send and
@@ -262,6 +272,14 @@ return [
             'iam.permissions' => ['view'],
             'organization.companies' => ['view', 'create', 'update'],
             'organization.branches' => ['view', 'create', 'update', 'delete'],
+            // 035B-R1: parity with the companies/branches grant directly above —
+            // company-admin is the only role with mutate rights on organization
+            // structure, and brands/business_accounts/teams are sibling entities
+            // of it. No other role held create/update/delete on companies/
+            // branches either, so none gets these new tokens.
+            'organization.brands' => ['create', 'update', 'delete'],
+            'organization.business_accounts' => ['create', 'update', 'delete'],
+            'organization.teams' => ['create', 'update', 'delete'],
             'inventory.warehouses' => ['view', 'create', 'update', 'delete'],
             'inventory.categories' => ['view', 'create', 'update', 'delete'],
             'inventory.units' => ['view', 'create', 'update', 'delete'],

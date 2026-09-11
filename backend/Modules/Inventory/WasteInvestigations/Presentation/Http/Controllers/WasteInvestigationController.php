@@ -218,10 +218,12 @@ class WasteInvestigationController extends Controller
         $resolved = (clone $base)->where('status', 'resolved');
         $pending = (clone $base)->where('status', 'pending_investigation');
 
-        // Average resolution time in hours (PostgreSQL)
+        // Average resolution time in hours. TIMESTAMPDIFF(SECOND, ...) is the
+        // MySQL equivalent of PostgreSQL's EXTRACT(EPOCH FROM (b - a)) — both
+        // give whole seconds between the two timestamps.
         $avgHours = (clone $resolved)
             ->whereNotNull('resolved_at')
-            ->selectRaw('AVG(EXTRACT(EPOCH FROM (resolved_at - created_at)) / 3600) as avg_hours')
+            ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, created_at, resolved_at)) / 3600 as avg_hours')
             ->value('avg_hours');
 
         // Groupings
@@ -250,12 +252,16 @@ class WasteInvestigationController extends Controller
             ->groupBy('c.name')
             ->get();
 
-        // Weekly trend within the month
+        // Weekly trend within the month. PostgreSQL's DATE_TRUNC('week', ts)
+        // truncates to that ISO week's Monday at 00:00:00. MySQL's WEEKDAY()
+        // returns 0=Monday..6=Sunday, so subtracting it from the date lands on
+        // the same Monday — an exact equivalent, not an approximation.
+        $weekExpr = 'DATE_SUB(DATE(created_at), INTERVAL WEEKDAY(created_at) DAY)';
         $trend = DB::table('waste_investigations')
             ->where('month', $month)
-            ->selectRaw("DATE_TRUNC('week', created_at) as week, count(*) as count, sum(cost_snapshot_total_value) as total_value")
-            ->groupByRaw("DATE_TRUNC('week', created_at)")
-            ->orderByRaw("DATE_TRUNC('week', created_at)")
+            ->selectRaw("{$weekExpr} as week, count(*) as count, sum(cost_snapshot_total_value) as total_value")
+            ->groupByRaw($weekExpr)
+            ->orderByRaw($weekExpr)
             ->get();
 
         return response()->json([
