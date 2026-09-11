@@ -87,6 +87,28 @@ class BrandCrudTest extends TestCase
             ->assertJsonPath('data.meta.total', 1);
     }
 
+    // 035B — the search predicate used PostgreSQL-only `ilike` on a MySQL 8.4
+    // platform, so any keystroke in the Brands search box produced SQLSTATE
+    // 42000 / 1064 and a 500. assertOk() is the load-bearing assertion here.
+    public function test_index_search_matches_case_insensitively(): void
+    {
+        Brand::factory()->create(['company_id' => $this->company->id, 'name' => 'ECOS Prime', 'code' => 'BRD-000001', 'slug' => 'ecos-prime']);
+
+        $this->auth()->getJson('/api/brands?search=ecos prime')
+            ->assertOk()
+            ->assertJsonPath('data.meta.total', 1);
+    }
+
+    public function test_index_search_matches_by_code(): void
+    {
+        Brand::factory()->create(['company_id' => $this->company->id, 'name' => 'Unrelated Name', 'code' => 'BRD-042042', 'slug' => 'unrelated-name']);
+        Brand::factory()->create(['company_id' => $this->company->id, 'name' => 'Another', 'code' => 'BRD-000002', 'slug' => 'another']);
+
+        $this->auth()->getJson('/api/brands?search=042042')
+            ->assertOk()
+            ->assertJsonPath('data.meta.total', 1);
+    }
+
     public function test_index_company_filter(): void
     {
         $other = Company::factory()->create();

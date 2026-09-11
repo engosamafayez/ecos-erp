@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Tests\Feature\Commerce;
 
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
+use Modules\Commerce\Channels\Domain\Enums\ChannelPlatform;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\IAM\Domain\Models\Permission;
 use Modules\IAM\Domain\Models\Role;
@@ -220,6 +223,47 @@ final class ChannelSearchAndTenantIsolationTest extends TestCase
         $this->actingAsUnprivileged($this->grantSystemRole(User::factory()->create(['company_id' => null])));
 
         $this->getJson('/api/channels')->assertOk()->assertJsonPath('data.meta.total', 2);
+    }
+
+    // ── 035B: migrate_channels_to_brand_ownership actually completed ──────────
+
+    public function test_channels_table_no_longer_carries_a_company_id_column(): void
+    {
+        // The migration's guards were keyed on brand_id's presence, which is
+        // always true by the time it runs, so every step past the initial
+        // backfill silently no-op'd and company_id was never actually dropped.
+        self::assertFalse(Schema::hasColumn('channels', 'company_id'));
+    }
+
+    public function test_channel_creation_succeeds_supplying_only_brand_id(): void
+    {
+        $company = Company::factory()->create();
+        $brand = Brand::factory()->create(['company_id' => $company->id]);
+
+        // No company_id anywhere in this payload — if the column were still
+        // NOT NULL and unpopulated, this insert would fail.
+        $channel = Channel::query()->create([
+            'brand_id' => $brand->id,
+            'name' => 'Direct Creation Store',
+            'platform' => ChannelPlatform::WooCommerce->value,
+            'store_url' => 'https://direct-creation.test',
+            'is_active' => true,
+        ]);
+
+        self::assertSame($brand->id, $channel->brand_id);
+    }
+
+    public function test_a_second_channel_with_the_same_brand_and_code_is_rejected(): void
+    {
+        $company = Company::factory()->create();
+        $brand = Brand::factory()->create(['company_id' => $company->id]);
+
+        Channel::factory()->create(['brand_id' => $brand->id, 'code' => 'DUP-01']);
+
+        // Proves the new [brand_id, code] unique constraint (step 4) actually
+        // exists — under the bug it was never added.
+        $this->expectException(QueryException::class);
+        Channel::factory()->create(['brand_id' => $brand->id, 'code' => 'DUP-01']);
     }
 
     public function test_queue_and_console_execution_is_not_scoped(): void

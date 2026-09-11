@@ -30,9 +30,9 @@ final class EloquentWarehouseRepository implements WarehouseRepositoryInterface
         if ($search !== '') {
             $query->where(function (Builder $builder) use ($search): void {
                 $builder
-                    ->where('code', 'ilike', "%{$search}%")
-                    ->orWhere('name', 'ilike', "%{$search}%")
-                    ->orWhere('city', 'ilike', "%{$search}%");
+                    ->where('code', 'like', "%{$search}%")
+                    ->orWhere('name', 'like', "%{$search}%")
+                    ->orWhere('city', 'like', "%{$search}%");
             });
         }
 

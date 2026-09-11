@@ -7,11 +7,37 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * Reconciliation for 2026_07_06_180000_migrate_channels_to_brand_ownership.
+ *
+ * That migration's guards were keyed on brand_id's presence, which is already
+ * true the instant it runs (brand_id is added, nullable, by the migration
+ * immediately before it) — so every step past the initial backfill silently
+ * no-op'd, on every environment that ever ran it. company_id was never
+ * actually dropped, brand_id was never made required, and the new
+ * [brand_id, code] unique constraint was never added.
+ *
+ * That file is fixed going forward for installs that have never run it, but
+ * an environment where it already ran (as a no-op) has it recorded in the
+ * migrations table and will never run the fixed version. This migration is
+ * the one that actually reaches those environments: idempotent, keyed on
+ * real current state, safe to run whether the original left everything
+ * undone, partially done, or (on a genuinely fresh install past the fix)
+ * already fully done.
+ */
 return new class extends Migration
 {
     public function up(): void
     {
-        // 1. Backfill brand_id where still null using the company's first brand
+        if (! Schema::hasColumn('channels', 'company_id')) {
+            // Already fully migrated (fresh install via the fixed original
+            // migration, or this reconciliation already ran here before).
+            return;
+        }
+
+        // Defensive re-backfill: covers a channel created between the
+        // original migration's backfill and this one, or a brand added to a
+        // company after the original backfill already ran and missed it.
         DB::statement(
             'UPDATE channels SET brand_id = ('
             .' SELECT id FROM brands WHERE company_id = channels.company_id'
@@ -19,35 +45,27 @@ return new class extends Migration
             .') WHERE brand_id IS NULL',
         );
 
-        // Everything below is guarded by the ACTUAL state of the column being
-        // changed, not by brand_id's existence — brand_id is added (nullable) by
-        // the immediately-preceding migration, so it is already present the
-        // instant this migration starts, and a guard keyed on it is true on
-        // every run. (That was the bug: every step below silently no-op'd on
-        // both fresh installs and re-runs alike, so company_id was NEVER
-        // actually dropped. See the 2026_12_30_090000 reconciliation migration
-        // for how already-migrated environments, which have this exact file
-        // already recorded as run, get fixed without re-running it.)
-        if (! Schema::hasColumn('channels', 'company_id')) {
-            return;
+        $unresolved = DB::table('channels')->whereNull('brand_id')->count();
+        if ($unresolved > 0) {
+            throw new RuntimeException(
+                "reconcile_channels_company_id_drop: refusing to drop channels.company_id — {$unresolved} row(s) still have no brand_id (their company has no brand to backfill from). Resolve those channels' brand ownership first, then re-run this migration.",
+            );
         }
 
-        // 2. Drop the old unique constraint [company_id, code]
         try {
             Schema::table('channels', function (Blueprint $table): void {
                 $table->dropUnique(['company_id', 'code']);
             });
         } catch (Exception) {
-            // Constraint may already be gone (partial migration re-run)
+            // Already gone
         }
 
-        // 3. Make brand_id required (NOT NULL) — must drop SET NULL FK first (MySQL rejects NOT NULL with SET NULL cascade)
         try {
             Schema::table('channels', function (Blueprint $table): void {
                 $table->dropForeign(['brand_id']);
             });
         } catch (Exception) {
-            // FK may already be gone (partial migration re-run)
+            // Already gone
         }
 
         Schema::table('channels', function (Blueprint $table): void {
@@ -59,27 +77,15 @@ return new class extends Migration
                 $table->foreign('brand_id')->references('id')->on('brands')->cascadeOnDelete();
             });
         } catch (Exception) {
-            // FK already (re-)added
+            // Already present
         }
 
-        // 4. Add unique constraint [brand_id, code]
         try {
             Schema::table('channels', function (Blueprint $table): void {
                 $table->unique(['brand_id', 'code'], 'channels_brand_id_code_unique');
             });
         } catch (Exception) {
-            // Constraint already exists
-        }
-
-        // 5. Drop company_id foreign key, index, and column. Refuse if any row
-        // still has a null brand_id — dropping company_id would silently sever
-        // that row's only tenant-ownership link (D-8: a company must be
-        // resolvable, never dropped for convenience).
-        $unresolved = DB::table('channels')->whereNull('brand_id')->count();
-        if ($unresolved > 0) {
-            throw new RuntimeException(
-                "migrate_channels_to_brand_ownership: refusing to drop channels.company_id — {$unresolved} row(s) still have no brand_id (their company has no brand to backfill from). Resolve those channels' brand ownership first.",
-            );
+            // Already present
         }
 
         try {
@@ -87,7 +93,7 @@ return new class extends Migration
                 $table->dropForeign(['company_id']);
             });
         } catch (Exception) {
-            // FK may already be gone
+            // Already gone
         }
 
         try {
@@ -95,7 +101,7 @@ return new class extends Migration
                 $table->dropIndex(['company_id']);
             });
         } catch (Exception) {
-            // Index may already be gone
+            // Already gone
         }
 
         Schema::table('channels', function (Blueprint $table): void {
@@ -105,9 +111,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        // Same guard fix as up(): reverse only what up() actually did, keyed on
-        // company_id's own presence, not brand_id's (which is unrelated to
-        // whether this migration's own changes are in place).
         if (Schema::hasColumn('channels', 'company_id')) {
             return;
         }
@@ -117,7 +120,7 @@ return new class extends Migration
                 $table->dropUnique('channels_brand_id_code_unique');
             });
         } catch (Exception) {
-            // Constraint already gone
+            // Already gone
         }
 
         Schema::table('channels', function (Blueprint $table): void {
@@ -136,5 +139,7 @@ return new class extends Migration
             $table->index('company_id');
             $table->unique(['company_id', 'code']);
         });
+
+        DB::statement('UPDATE channels SET company_id = (SELECT company_id FROM brands WHERE brands.id = channels.brand_id)');
     }
 };

@@ -20,8 +20,8 @@ class ProductSelectorService
             ])
             ->where('products.is_active', true)
             ->where(function ($sq) use ($term) {
-                $sq->where('products.name', 'ilike', "%{$term}%")
-                    ->orWhere('products.sku', 'ilike', "%{$term}%");
+                $sq->where('products.name', 'like', "%{$term}%")
+                    ->orWhere('products.sku', 'like', "%{$term}%");
             });
 
         if ($companyId) {

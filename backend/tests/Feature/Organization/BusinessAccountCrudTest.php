@@ -117,6 +117,23 @@ class BusinessAccountCrudTest extends TestCase
             ->assertJsonPath('data.meta.total', 1);
     }
 
+    // 035B — the search predicate used PostgreSQL-only `ilike` on a MySQL 8.4
+    // platform, so any keystroke in the Business Accounts search box produced
+    // SQLSTATE 42000 / 1064 and a 500. assertOk() is the load-bearing assertion.
+    public function test_index_search_matches_case_insensitively_and_by_code(): void
+    {
+        BusinessAccount::factory()->create(['company_id' => $this->company->id, 'name' => 'ECOS Wholesale', 'code' => 'BA-042042']);
+        BusinessAccount::factory()->create(['company_id' => $this->company->id, 'name' => 'Unrelated', 'code' => 'BA-000002']);
+
+        $this->auth()->getJson('/api/business-accounts?search=ecos wholesale')
+            ->assertOk()
+            ->assertJsonPath('data.meta.total', 1);
+
+        $this->auth()->getJson('/api/business-accounts?search=042042')
+            ->assertOk()
+            ->assertJsonPath('data.meta.total', 1);
+    }
+
     // ── Create ────────────────────────────────────────────────────────────────
 
     public function test_store_generates_ba_000001_code(): void

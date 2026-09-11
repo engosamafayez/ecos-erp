@@ -19,7 +19,7 @@ class WorkflowService
             ->when($filters['company_id'] ?? null, fn ($q, $v) => $q->where('company_id', $v))
             ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->when($filters['trigger_type'] ?? null, fn ($q, $v) => $q->where('trigger_type', $v))
-            ->when($filters['search'] ?? null, fn ($q, $v) => $q->where('name', 'ilike', "%{$v}%"))
+            ->when($filters['search'] ?? null, fn ($q, $v) => $q->where('name', 'like', "%{$v}%"))
             ->orderByDesc('updated_at')
             ->paginate($perPage);
     }

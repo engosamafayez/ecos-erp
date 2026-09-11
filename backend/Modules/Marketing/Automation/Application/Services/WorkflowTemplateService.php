@@ -16,7 +16,7 @@ class WorkflowTemplateService
         return AutomationWorkflowTemplate::query()
             ->where(fn ($q) => $q->where('is_global', true)->orWhere('company_id', $filters['company_id'] ?? null))
             ->when($filters['category'] ?? null, fn ($q, $v) => $q->where('category', $v))
-            ->when($filters['search'] ?? null, fn ($q, $v) => $q->where('name', 'ilike', "%{$v}%"))
+            ->when($filters['search'] ?? null, fn ($q, $v) => $q->where('name', 'like', "%{$v}%"))
             ->where('is_active', true)
             ->orderByDesc('is_global')
             ->orderByDesc('usage_count')

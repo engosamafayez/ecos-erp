@@ -15,8 +15,8 @@ class MacroService
             ->when(! empty($filters['company_id']), fn ($q) => $q->where('company_id', $filters['company_id']))
             ->when(! empty($filters['category']), fn ($q) => $q->where('category', $filters['category']))
             ->when(! empty($filters['search']), fn ($q) => $q->where(function ($sq) use ($filters) {
-                $sq->where('name', 'ilike', "%{$filters['search']}%")
-                    ->orWhere('shortcut', 'ilike', "%{$filters['search']}%");
+                $sq->where('name', 'like', "%{$filters['search']}%")
+                    ->orWhere('shortcut', 'like', "%{$filters['search']}%");
             }))
             ->orderBy('usage_count', 'desc')
             ->paginate($perPage);

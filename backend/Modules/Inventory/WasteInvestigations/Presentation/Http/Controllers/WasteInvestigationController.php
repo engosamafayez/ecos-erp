@@ -57,7 +57,7 @@ class WasteInvestigationController extends Controller
             $query->where('month', $month);
         }
         if ($search) {
-            $query->whereHas('product', fn ($q) => $q->where('name', 'ilike', "%{$search}%")->orWhere('sku', 'ilike', "%{$search}%"),
+            $query->whereHas('product', fn ($q) => $q->where('name', 'like', "%{$search}%")->orWhere('sku', 'like', "%{$search}%"),
             );
         }
 

@@ -16,7 +16,7 @@ class AudienceSegmentService
         return AudienceSegment::query()
             ->when($filters['company_id'] ?? null, fn ($q, $v) => $q->where('company_id', $v))
             ->when($filters['segment_type'] ?? null, fn ($q, $v) => $q->where('segment_type', $v))
-            ->when($filters['search'] ?? null, fn ($q, $v) => $q->where('name', 'ilike', "%{$v}%"))
+            ->when($filters['search'] ?? null, fn ($q, $v) => $q->where('name', 'like', "%{$v}%"))
             ->where('is_active', true)
             ->orderByDesc('updated_at')
             ->paginate($perPage);
@@ -126,6 +126,13 @@ class AudienceSegmentService
         $rules = $segment->rules;
 
         // Build query based on rules — simplified rule evaluator
+        // 'contains' below uses the query builder's own where($field, 'like', ...),
+        // not whereRaw — $field is unwhitelisted, rule-controlled input, and every
+        // other operator here already passes it through the same builder call, so
+        // a raw-SQL LOWER($field) form would be a strictly worse injection surface
+        // than what already exists for 'equals'/'greater_than'/etc. (pre-existing,
+        // separate concern: $field isn't validated against real column names for
+        // any operator here, not just this one).
         $query = DB::table('customers')->select('id');
 
         foreach ($rules['conditions'] ?? [] as $condition) {
@@ -142,7 +149,7 @@ class AudienceSegmentService
                 'not_equals' => $query->where($field, '!=', $value),
                 'greater_than' => $query->where($field, '>', $value),
                 'less_than' => $query->where($field, '<', $value),
-                'contains' => $query->where($field, 'ilike', "%{$value}%"),
+                'contains' => $query->where($field, 'like', "%{$value}%"),
                 'not_null' => $query->whereNotNull($field),
                 'is_null' => $query->whereNull($field),
                 default => null,

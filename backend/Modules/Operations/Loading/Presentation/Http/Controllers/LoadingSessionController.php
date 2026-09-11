@@ -45,7 +45,7 @@ final class LoadingSessionController extends Controller
             ->when($request->query('status'), fn ($q, $v) => $q->where('status', $v))
             ->when($request->query('warehouse_id'), fn ($q, $v) => $q->where('warehouse_id', $v))
             ->when($request->query('operational_date'), fn ($q, $v) => $q->whereDate('operational_date', $v))
-            ->when($request->query('search'), fn ($q, $v) => $q->where('session_number', 'ilike', "%{$v}%"))
+            ->when($request->query('search'), fn ($q, $v) => $q->where('session_number', 'like', "%{$v}%"))
             ->orderByDesc('created_at');
 
         $paginator = $query->paginate($perPage);

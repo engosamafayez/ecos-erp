@@ -32,8 +32,8 @@ final class EloquentTeamRepository implements TeamRepositoryInterface
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
             $query->where(function (Builder $b) use ($search): void {
-                $b->where('code', 'ilike', "%{$search}%")
-                    ->orWhere('name', 'ilike', "%{$search}%");
+                $b->where('code', 'like', "%{$search}%")
+                    ->orWhere('name', 'like', "%{$search}%");
             });
         }
 

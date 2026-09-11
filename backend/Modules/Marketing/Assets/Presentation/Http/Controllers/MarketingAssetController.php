@@ -26,7 +26,7 @@ final class MarketingAssetController extends Controller
             ->when($request->has('asset_type'), fn ($q) => $q->where('asset_type', $request->string('asset_type')))
             ->when($request->has('health_status'), fn ($q) => $q->where('health_status', $request->string('health_status')))
             ->when($request->has('status'), fn ($q) => $q->where('status', $request->string('status')))
-            ->when($request->string('search'), fn ($q, $s) => $q->where('name', 'ilike', "%{$s}%"))
+            ->when($request->string('search'), fn ($q, $s) => $q->where('name', 'like', "%{$s}%"))
             ->with('connection:id,label,connector_type,status')
             ->withCount('relationships')
             ->orderByDesc('created_at')

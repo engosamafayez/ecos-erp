@@ -34,7 +34,7 @@ class CampaignDraftService
             $query->where('campaign_owner_id', $ownerId);
         }
         if ($search = Arr::get($filters, 'search')) {
-            $query->where('name', 'ilike', "%{$search}%");
+            $query->where('name', 'like', "%{$search}%");
         }
         if ($connectorType = Arr::get($filters, 'connector_type')) {
             $query->where('connector_type', $connectorType);

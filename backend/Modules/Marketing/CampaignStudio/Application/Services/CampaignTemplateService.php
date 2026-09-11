@@ -25,7 +25,7 @@ class CampaignTemplateService
             $query->where('category', $category);
         }
         if ($search = Arr::get($filters, 'search')) {
-            $query->where('name', 'ilike', "%{$search}%");
+            $query->where('name', 'like', "%{$search}%");
         }
 
         return $query->orderBy('usage_count', 'desc')->paginate($perPage);
