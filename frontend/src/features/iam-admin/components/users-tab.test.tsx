@@ -231,9 +231,12 @@ describe('UsersTab', () => {
     );
     renderTab();
 
+    // EntityTable renders both the lg+ table and the mobile card list unconditionally (jsdom
+    // doesn't evaluate the lg: breakpoint), so each role chip legitimately appears twice — same
+    // pattern already handled by every other test in this file (see findAllByText above).
     // eslint-disable-next-line ecos-i18n/no-arabic-literals -- asserting on the mock fixture value above, not a hardcoded UI string
-    expect(await screen.findByText('أمين الصندوق')).toBeInTheDocument();
-    expect(screen.getByText('users.roles.none')).toBeInTheDocument();
+    expect((await screen.findAllByText('أمين الصندوق')).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('users.roles.none').length).toBeGreaterThan(0);
   });
 
   // ── 30: 403-handled ──────────────────────────────────────────────────────────

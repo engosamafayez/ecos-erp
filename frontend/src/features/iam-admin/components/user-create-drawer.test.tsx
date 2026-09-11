@@ -153,7 +153,8 @@ describe('UserCreateDrawer', () => {
   it('shows the server-generated password exactly once, with a working Copy action, after a successful create', async () => {
     const user = userEvent.setup();
     const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.assign(navigator, { clipboard: { writeText } });
+    // navigator.clipboard is getter-only in jsdom; Object.assign can't set it (see src/lib/clipboard.test.ts).
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true, writable: true });
     mockCreate.mockResolvedValue({ id: 1, generated_password: 'Xk9#mQ2pLv7&Rz' });
     renderDrawer();
 

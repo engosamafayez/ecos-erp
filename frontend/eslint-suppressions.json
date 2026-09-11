@@ -815,7 +815,7 @@
   },
   "src/features/logistics/distribution-zones/components/distribution-zone-drawer.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 38
+      "count": 10
     },
     "no-constant-binary-expression": {
       "count": 1
@@ -835,14 +835,11 @@
   "src/features/logistics/distribution-zones/pages/distribution-zones-page.tsx": {
     "@typescript-eslint/no-unused-expressions": {
       "count": 1
-    },
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 36
     }
   },
   "src/features/logistics/drivers/components/driver-drawer.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 6
+      "count": 1
     }
   },
   "src/features/logistics/geography/components/governorate-drawer.tsx": {
@@ -885,16 +882,6 @@
       "count": 3
     }
   },
-  "src/features/logistics/operations/pages/enterprise-workspace-page.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 45
-    }
-  },
-  "src/features/logistics/operations/pages/operational-dashboards-page.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 66
-    }
-  },
   "src/features/logistics/operations/pages/operations-center-page.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
       "count": 14
@@ -902,12 +889,7 @@
   },
   "src/features/logistics/shipping-companies/components/shipping-company-drawer.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 74
-    }
-  },
-  "src/features/logistics/vehicles/pages/vehicles-page.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 26
+      "count": 1
     }
   },
   "src/features/marketing/automation/pages/workflow-builder-page.tsx": {
@@ -1193,11 +1175,6 @@
       "count": 39
     }
   },
-  "src/features/operations/driver-mobile/components/custody-return-list.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 6
-    }
-  },
   "src/features/operations/driver-mobile/components/driver-trip-timeline.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
       "count": 1
@@ -1208,29 +1185,9 @@
       "count": 6
     }
   },
-  "src/features/operations/driver-mobile/components/settlement-summary.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 8
-    }
-  },
   "src/features/operations/driver-mobile/components/trip-kpi-grid.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
       "count": 6
-    }
-  },
-  "src/features/operations/driver-mobile/hooks/use-driver-mobile.ts": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 18
-    }
-  },
-  "src/features/operations/driver-mobile/pages/driver-custody-return-page.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 10
-    }
-  },
-  "src/features/operations/driver-mobile/pages/driver-settlement-page.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 7
     }
   },
   "src/features/operations/driver-mobile/pages/driver-trip-timeline-page.tsx": {
@@ -1258,7 +1215,7 @@
   },
   "src/features/orders/components/order-column-defs.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 4
+      "count": 3
     },
     "react-refresh/only-export-components": {
       "count": 2
@@ -1316,11 +1273,6 @@
     },
     "ecos-i18n/no-hardcoded-ui-strings": {
       "count": 5
-    }
-  },
-  "src/features/orders/components/order-payment-section.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 1
     }
   },
   "src/features/orders/components/order-zone-editor.tsx": {
@@ -1556,16 +1508,6 @@
   "src/features/products/pages/products-page.tsx": {
     "react-hooks/set-state-in-effect": {
       "count": 2
-    }
-  },
-  "src/features/purchase-materials/components/enterprise-demand-panel.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 62
-    }
-  },
-  "src/features/purchase-materials/components/purchase-material-priority-badge.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 4
     }
   },
   "src/features/purchase-orders/components/purchase-order-lines-editor.tsx": {

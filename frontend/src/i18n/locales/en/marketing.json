@@ -208,8 +208,13 @@
       }
     },
     "executionStatus": {
+      "pending": "Pending",
+      "running": "Running",
       "completed": "Completed",
-      "failed": "Failed"
+      "failed": "Failed",
+      "cancelled": "Cancelled",
+      "timed_out": "Timed Out",
+      "waiting": "Waiting"
     },
     "governance": {
       "limits": {
@@ -232,7 +237,13 @@
       "formPlaceholder": "Policy configuration"
     },
     "workflowStatus": {
-      "pending_approval": "Pending Approval"
+      "draft": "Draft",
+      "pending_approval": "Pending Approval",
+      "approved": "Approved",
+      "active": "Active",
+      "paused": "Paused",
+      "archived": "Archived",
+      "failed": "Failed"
     },
     "triggerType": {
       "business_event": "Business Event",
@@ -292,8 +303,18 @@
       "title": "Connection Health"
     },
     "status": {
-      "disconnected": "Disconnected",
+      "pending": "Pending",
+      "authenticating": "Authenticating",
       "connected": "Connected",
+      "validating": "Validating",
+      "synchronizing": "Synchronizing",
+      "healthy": "Healthy",
+      "warning": "Warning",
+      "degraded": "Degraded",
+      "disconnected": "Disconnected",
+      "archived": "Archived",
+      "active": "Active",
+      "expired": "Expired",
       "error": "Error"
     },
     "health": {

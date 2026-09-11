@@ -210,8 +210,13 @@
       }
     },
     "executionStatus": {
+      "pending": "قيد الانتظار",
+      "running": "قيد التنفيذ",
       "completed": "مكتمل",
-      "failed": "فاشل"
+      "failed": "فاشل",
+      "cancelled": "ملغى",
+      "timed_out": "انتهت المهلة",
+      "waiting": "بانتظار"
     },
     "governance": {
       "limits": {
@@ -234,7 +239,13 @@
       "formPlaceholder": "إعدادات السياسة"
     },
     "workflowStatus": {
-      "pending_approval": "بانتظار الموافقة"
+      "draft": "مسودة",
+      "pending_approval": "بانتظار الموافقة",
+      "approved": "معتمد",
+      "active": "نشط",
+      "paused": "متوقف مؤقتاً",
+      "archived": "مؤرشف",
+      "failed": "فاشل"
     },
     "triggerType": {
       "business_event": "حدث أعمال",
@@ -294,8 +305,18 @@
       "title": "سلامة الاتصال"
     },
     "status": {
-      "disconnected": "غير متصل",
+      "pending": "قيد الانتظار",
+      "authenticating": "جارٍ المصادقة",
       "connected": "متصل",
+      "validating": "جارٍ التحقق",
+      "synchronizing": "جارٍ المزامنة",
+      "healthy": "سليم",
+      "warning": "تحذير",
+      "degraded": "متدهور",
+      "disconnected": "غير متصل",
+      "archived": "مؤرشف",
+      "active": "نشط",
+      "expired": "منتهي الصلاحية",
       "error": "خطأ"
     },
     "health": {

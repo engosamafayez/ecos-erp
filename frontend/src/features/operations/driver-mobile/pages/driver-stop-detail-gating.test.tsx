@@ -44,6 +44,7 @@ vi.mock('../hooks/use-driver-mobile', () => ({
   useUploadDeliveryProof: () => idleMutation,
   useUploadPaymentProof: () => idleMutation,
   useChangePaymentMethod: () => idleMutation,
+  useCreateException: () => idleMutation,
 }));
 
 // IMPORTANT: `../lib/trip-lifecycle` is intentionally NOT mocked — the test exercises the real

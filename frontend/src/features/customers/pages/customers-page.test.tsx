@@ -202,7 +202,10 @@ describe('CustomersPage — Customer Intelligence', () => {
     renderPage();
 
     await screen.findByText('Acme Corp');
-    await user.click(screen.getByText('trigger'));
+    // Two distinct real buttons (Intelligence panel, Order Activity filters) both collapse to
+    // literal "trigger" under this file's key-collapsing t() mock -- real i18n resolves them to
+    // "Intelligence"/"Filters" with no collision. Intelligence renders first in DOM order.
+    await user.click(screen.getAllByText('trigger')[0]);
 
     expect(await screen.findByText('highestSpend')).toBeInTheDocument();
     expect(screen.getByText('repeatCustomers')).toBeInTheDocument();
@@ -214,7 +217,10 @@ describe('CustomersPage — Customer Intelligence', () => {
     renderPage();
 
     await screen.findByText('Acme Corp');
-    await user.click(screen.getByText('trigger'));
+    // Two distinct real buttons (Intelligence panel, Order Activity filters) both collapse to
+    // literal "trigger" under this file's key-collapsing t() mock -- real i18n resolves them to
+    // "Intelligence"/"Filters" with no collision. Intelligence renders first in DOM order.
+    await user.click(screen.getAllByText('trigger')[0]);
     await user.click(await screen.findByText('highestSpend'));
 
     await waitFor(() => {
@@ -228,7 +234,10 @@ describe('CustomersPage — Customer Intelligence', () => {
     renderPage();
 
     await screen.findByText('Acme Corp');
-    await user.click(screen.getByText('trigger'));
+    // Two distinct real buttons (Intelligence panel, Order Activity filters) both collapse to
+    // literal "trigger" under this file's key-collapsing t() mock -- real i18n resolves them to
+    // "Intelligence"/"Filters" with no collision. Intelligence renders first in DOM order.
+    await user.click(screen.getAllByText('trigger')[0]);
     await user.click(await screen.findByText('repeatCustomers'));
 
     await waitFor(() => {
@@ -249,7 +258,10 @@ describe('CustomersPage — Customer Intelligence', () => {
     renderPage();
 
     await screen.findByText('Acme Corp');
-    await user.click(screen.getByText('trigger'));
+    // Two distinct real buttons (Intelligence panel, Order Activity filters) both collapse to
+    // literal "trigger" under this file's key-collapsing t() mock -- real i18n resolves them to
+    // "Intelligence"/"Filters" with no collision. Intelligence renders first in DOM order.
+    await user.click(screen.getAllByText('trigger')[0]);
     await screen.findByText('productAffinity');
 
     await user.click(screen.getByText('selectProduct'));

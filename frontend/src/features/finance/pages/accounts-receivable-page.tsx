@@ -57,8 +57,10 @@ export function AccountsReceivablePage() {
   const [searchParams] = useSearchParams();
   const customerIdParam = searchParams.get('customer_id');
   useEffect(() => {
+    // Syncing UI state FROM the external URL search param on navigation — the canonical
+    // exception this rule itself documents, not an internal render-driven update.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (customerIdParam) openLedger(customerIdParam);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customerIdParam]);
 
   const metrics = useMemo<WorkspaceMetric[]>(() => {

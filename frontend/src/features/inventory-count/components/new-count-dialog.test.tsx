@@ -32,12 +32,20 @@
  */
 
 import { useState } from 'react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { render, screen, waitFor, within, fireEvent, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
+import i18n from '@/i18n/i18n';
 import { NewCountDialog } from './new-count-dialog';
+
+// Real i18n singleton lazy-loads namespaces via an async glob backend; without this, t()
+// resolves to an empty string because the namespace hasn't fetched yet (see the identical
+// fix in warehouse-liability-mobile-card.test.tsx).
+beforeAll(async () => {
+  await i18n.loadNamespaces('inventory-count');
+});
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 // vi.mock factories are hoisted before imports — use vi.hoisted for shared refs.

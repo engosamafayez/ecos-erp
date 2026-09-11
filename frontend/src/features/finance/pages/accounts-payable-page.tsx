@@ -65,8 +65,10 @@ export function AccountsPayablePage() {
   const [searchParams] = useSearchParams();
   const supplierIdParam = searchParams.get('supplier_id');
   useEffect(() => {
+    // Syncing UI state FROM the external URL search param on navigation — the canonical
+    // exception this rule itself documents, not an internal render-driven update.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (supplierIdParam) openLedger(supplierIdParam);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supplierIdParam]);
 
   const metrics = useMemo<WorkspaceMetric[]>(() => {

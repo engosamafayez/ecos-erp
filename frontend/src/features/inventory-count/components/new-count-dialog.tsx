@@ -78,7 +78,7 @@ export function NewCountDialog({ open, onOpenChange }: Props) {
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">
+            <label htmlFor="new-count-warehouse" className="text-sm font-medium">
               {t($ => $.sessions.newDialog.warehouseLabel)} <span className="text-destructive">*</span>
             </label>
             {!companyId ? (
@@ -91,6 +91,7 @@ export function NewCountDialog({ open, onOpenChange }: Props) {
               <p className="text-xs text-muted-foreground italic">{t($ => $.sessions.newDialog.noWarehouses)}</p>
             ) : (
               <select
+                id="new-count-warehouse"
                 value={warehouseId}
                 onChange={(e) => setWarehouseId(e.target.value)}
                 className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs"

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { LogOut, Search, User as UserIcon, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -123,14 +123,22 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
   // card now cost zero height until the User taps their compact icon in the
   // header. A single three-way switch (rather than two independent booleans)
   // keeps the two mutually exclusive: opening one closes the other, so they
-  // never compete for the Drawer's limited vertical space at once. Because
-  // Radix unmounts `SheetPrimitive.Content` when the Drawer closes, this
-  // resets to `null` on every close automatically — reopening never restores
-  // a previously-open panel (or its focus) on its own, matching the task's
-  // own "do not automatically restore search focus on reopen" requirement.
+  // never compete for the Drawer's limited vertical space at once.
   const [activePanel, setActivePanel] = useState<'search' | 'identity' | null>(null);
   const toggleSearch = () => setActivePanel((p) => (p === 'search' ? null : 'search'));
   const toggleIdentity = () => setActivePanel((p) => (p === 'identity' ? null : 'identity'));
+
+  // `MobileMenu` itself is rendered unconditionally by AppShell (only `open` toggles), so
+  // `activePanel` is NOT reset for free by Radix unmounting `SheetPrimitive.Content` — that
+  // unmounts a descendant, not this component. Reset explicitly on close, so reopening never
+  // restores a previously-open panel (or its focus), matching the task's own "do not
+  // automatically restore search focus on reopen" requirement.
+  useEffect(() => {
+    // Syncing FROM the external `open` prop (owned by AppShell) — the canonical exception
+    // this rule itself documents, not an internal render-driven update.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (!open) setActivePanel(null);
+  }, [open]);
 
   async function handleLogout() {
     await logout();

@@ -122,6 +122,13 @@ vi.mock('../components/task-list', () => ({
   ),
 }));
 
+// Both mount unconditionally on every render regardless of which tab is active (this file's
+// own Tabs mock renders every TabsContent at once — see the comment above) and both call real,
+// unmocked React Query hooks that need a QueryClientProvider this harness doesn't set up. No
+// assertion here touches Board or Archive content, so trivial stand-ins are enough.
+vi.mock('../components/task-board', () => ({ TaskBoard: () => <div data-testid="task-board" /> }));
+vi.mock('../components/task-archive-sheet', () => ({ TaskArchiveSheet: () => <div data-testid="task-archive-sheet" /> }));
+
 vi.mock('../components/conversation-info-panel', () => ({
   ConversationInfoPanel: (props: React.ComponentProps<typeof ConversationInfoPanel>) => (
     <div data-testid="info-panel" data-open={String(props.open)} data-conversation-id={props.conversation?.id ?? ''}>
@@ -232,7 +239,9 @@ describe('CollaborationWorkspacePage', () => {
     renderPage(['/collaboration?tab=tasks']);
 
     expect(activeTab()).toBe('tasks');
-    expect(screen.getByTestId('task-list')).toBeInTheDocument();
+    // Board is the default task view (added after this test was first written — see the
+    // List/Board toggle test below for the List path specifically).
+    expect(screen.getByTestId('task-board')).toBeInTheDocument();
   });
 
   it('passes ?conversationId through to useConversation and down to the thread stub', () => {
@@ -259,6 +268,8 @@ describe('CollaborationWorkspacePage', () => {
 
     expect(screen.getByTestId('task-detail-drawer').getAttribute('data-open')).toBe('false');
 
+    // Board is the default task view; switch to List to test the List-specific selection path.
+    fireEvent.click(screen.getByText('tasks.view.list'));
     fireEvent.click(screen.getByTestId('task-list-select'));
 
     expect(screen.getByTestId('task-detail-drawer').getAttribute('data-open')).toBe('true');

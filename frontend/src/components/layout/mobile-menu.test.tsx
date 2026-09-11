@@ -35,7 +35,13 @@ vi.mock('@/components/layout/header', () => ({
   CompanySwitcher: () => <div data-testid="company" />,
   WarehouseSwitcher: () => <div data-testid="warehouse" />,
 }));
-vi.mock('@/features/authorization', () => ({ useNavigation: () => ({ modules: nav.modules, canSeeModule: () => true }) }));
+vi.mock('@/features/authorization', () => ({
+  useNavigation: () => ({ modules: nav.modules, canSeeModule: () => true }),
+  // §17 nav-item permission gating (MobileModulesLauncher) — no fixture below declares
+  // restricted permissions, so this matches their "everything visible" assumption.
+  usePermission: () => ({ can: () => true, cannot: () => false, canAccess: () => true, canExecute: () => true }),
+  useAuthorization: () => ({ can: () => true, context: { navigationOverrides: {} } }),
+}));
 vi.mock('@/hooks/use-active-module', () => ({ useActiveModule: () => nav.active }));
 vi.mock('@/features/auth/store/auth-store', () => ({
   useAuthStore: (selector: (s: typeof auth) => unknown) => selector(auth),

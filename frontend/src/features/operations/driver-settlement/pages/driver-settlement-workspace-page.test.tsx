@@ -96,6 +96,14 @@ vi.mock('@/components/ui/select', () => ({
 
 import { useDriverSettlementBoard } from '../hooks/use-driver-settlement';
 vi.mock('../hooks/use-driver-settlement', () => ({ useDriverSettlementBoard: vi.fn() }));
+// DaySettlementBrandFilter (added after this test file was last touched) needs both — no
+// assertion here exercises brand-filter behavior, so trivial stand-ins are enough.
+vi.mock('@/features/organization/context/organization-context', () => ({
+  useOrganizationContext: () => ({ activeCompanyId: null }),
+}));
+vi.mock('@/features/brands/hooks/use-brands', () => ({
+  useBrandsQuery: () => ({ data: undefined, isLoading: false }),
+}));
 
 import { DriverSettlementWorkspacePage } from './driver-settlement-workspace-page';
 import type { DaySettlementDriverRow } from '../types/driver-settlement';

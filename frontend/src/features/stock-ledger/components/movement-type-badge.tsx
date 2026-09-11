@@ -18,7 +18,7 @@ export function MovementTypeBadge({ type }: { type: MovementType }) {
   return (
     <Badge variant="secondary" className="gap-1.5 whitespace-nowrap">
       <span className={cn('size-1.5 rounded-full', TYPE_DOT[type])} />
-      {t(`movementTypes.${type}`)}
+      {t(($) => $.movementTypes[type])}
     </Badge>
   );
 }

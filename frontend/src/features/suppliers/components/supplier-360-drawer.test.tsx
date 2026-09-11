@@ -42,6 +42,24 @@ vi.mock('@/features/suppliers/hooks/use-supplier-analytics', () => ({
   useSupplierTimeline: () => ({ data: undefined, isLoading: false }),
 }));
 
+// OverviewTab (the default, always-mounted tab) calls useFormatter() for `money`; this harness
+// has no LanguageProvider, so mock it the same way invoice-line-editor.test.tsx does.
+vi.mock('@/hooks/use-formatter', () => ({
+  useFormatter: () => ({ money: (n: number) => `EGP ${n}`, currency: 'EGP' }),
+}));
+
+// ManageSupplierOfferingsDrawer is an always-mounted sibling drawer (its own `open` prop gates
+// visibility, not mounting) that calls useUpdateSupplier() -> useOrganizationContext()
+// unconditionally. No test here exercises it, so a trivial stand-in is enough.
+vi.mock('@/features/suppliers/components/manage-supplier-offerings-drawer', () => ({
+  ManageSupplierOfferingsDrawer: () => <div data-testid="manage-offerings-drawer" />,
+}));
+// Same always-mounted-sibling-drawer situation: usePostSupplierOpeningBalance() also needs
+// useOrganizationContext(), unconditionally, regardless of this drawer's own `open` prop.
+vi.mock('@/features/suppliers/components/add-opening-balance-drawer', () => ({
+  AddOpeningBalanceDrawer: () => <div data-testid="add-opening-balance-drawer" />,
+}));
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (sel: unknown, opts?: { defaultValue?: string }) => {
@@ -65,6 +83,7 @@ function baseSupplier(overrides: Partial<Supplier> = {}): Supplier {
     code: 'SUP-000001',
     name: 'Acme Supplies',
     contact_person: null,
+    supplier_category_id: null,
     email: null,
     phone: null,
     mobile: null,
