@@ -6,6 +6,8 @@ namespace Modules\Logistics\Distribution\Domain\Services;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
+use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Logistics\Distribution\Domain\Enums\TripStatus;
 use Modules\Logistics\Distribution\Domain\Models\Trip;
 use Modules\Logistics\Distribution\Domain\Models\VirtualCapacitySlot;
@@ -70,6 +72,32 @@ use Throwable;
  * never allowed to stop the rest of the sweep or escape into the `WaveClosed`
  * dispatch chain — Wave/Group closure (already a tested, working operation) must
  * never be put at risk by this newer, additive cleanup.
+ *
+ * ┌─ OWNERSHIP BOUNDARY WITH DeliveryAttemptClosureService (TASK-ECOS-V1- ────┐
+ * │ REMEDIATION-OPERATIONS-DISTRIBUTION-035C §1) ──────────────────────────── │
+ * │ This service and {@see DeliveryAttemptClosureService} both react to the   │
+ * │ same `WaveClosed` event, and both call {@see TripService::releaseOrder()} │
+ * │ on the same `distribution_trip_orders` rows — but `releaseOrder()` itself │
+ * │ only checks the TripOrder link's own `superseded_at`, never the Order's   │
+ * │ business status, so it cannot arbitrate between them. §E's original       │
+ * │ assumption ("the Order's status is untouched: it was never anything but  │
+ * │ ReadyForDispatch") predates DeliveryAttemptClosureService and no longer   │
+ * │ holds in every case: an Order on an unaccepted Trip can already be        │
+ * │ OutForDelivery (a real attempt happened) or Cancelled (§R1 Gate 4) by the │
+ * │ time this sweep runs. Releasing those here — with this service's generic  │
+ * │ custody reason — would strip their active TripOrder claim before          │
+ * │ DeliveryAttemptClosureService's own `whereNull('superseded_at')` query    │
+ * │ ever sees them, silently skipping its outcome-specific classification     │
+ * │ (retryable vs. non-retryable) and the Cancelled-with-custody review path. │
+ * │ `closeUnacceptedTrip()` therefore skips any Order already in a status the │
+ * │ other sweep owns (OutForDelivery, Cancelled) or already terminal-success  │
+ * │ (Delivered, FinalCash) — leaving genuinely un-dispatched orders           │
+ * │ (ReadyForDispatch and earlier) as this service's only real domain, exactly│
+ * │ as §E always intended. This makes the two sweeps commute: whichever of    │
+ * │ the three WaveClosed listeners runs first, the same orders end up         │
+ * │ released by the same (correct) owner — proven by                         │
+ * │ WaveClosedListenerOrderIndependenceTest.                                  │
+ * └────────────────────────────────────────────────────────────────────────────┘
  */
 final class WaveClosureCustodyService
 {
@@ -163,13 +191,37 @@ final class WaveClosureCustodyService
                 ]);
             }
 
-            // Release every still-active Order execution on this Trip — the Order
-            // itself is untouched (still whatever status it already was), it is
-            // only freed from THIS Trip so a future Wave can plan it again.
-            // Historical/superseded rows and the trip's own past are preserved.
+            // Release every still-active Order execution on this Trip that is
+            // genuinely this service's to release — the Order itself is untouched
+            // (still whatever status it already was), it is only freed from THIS
+            // Trip so a future Wave can plan it again. Historical/superseded rows
+            // and the trip's own past are preserved.
+            //
+            // Orders already OutForDelivery/Cancelled belong to
+            // DeliveryAttemptClosureService's own WaveClosed sweep (see this
+            // class's docblock, "OWNERSHIP BOUNDARY"), and Delivered/FinalCash
+            // orders are already-succeeded and must never be released back to the
+            // unassigned pool. Skipping them here is what lets both sweeps run in
+            // either order and reach the same outcome.
+            $orders = Order::query()
+                ->whereIn('id', $trip->tripOrders->pluck('order_id'))
+                ->get()
+                ->keyBy(static fn (Order $o): string => (string) $o->id);
+
             $releasedCount = 0;
 
             foreach ($trip->tripOrders as $tripOrder) {
+                $order = $orders->get((string) $tripOrder->order_id);
+
+                if ($order !== null && in_array($order->status, [
+                    OrderStatus::OutForDelivery,
+                    OrderStatus::Cancelled,
+                    OrderStatus::Delivered,
+                    OrderStatus::FinalCash,
+                ], true)) {
+                    continue;
+                }
+
                 $this->trips->releaseOrder($trip, $tripOrder->order_id, $reason);
                 $releasedCount++;
             }

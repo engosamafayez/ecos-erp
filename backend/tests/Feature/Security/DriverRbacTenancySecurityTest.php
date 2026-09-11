@@ -537,4 +537,53 @@ final class DriverRbacTenancySecurityTest extends TestCase
         self::assertFalse($proof->isSelfReviewBy('8'));
         self::assertFalse($proof->isSelfReviewBy(null));
     }
+
+    // ═════════════════════════════════════════════════════════════════════════════
+    // H. Trip search (TASK-ECOS-V1-REMEDIATION-OPERATIONS-DISTRIBUTION-035C §3) —
+    //    tenant isolation on the dispatcher LIST endpoint. `LogisticsTripController::index()`
+    //    already forces `where('company_id', $this->companyId())` before applying any
+    //    request filter (the "Part 21" fix, predating this task) — these two cases were
+    //    flagged as untested, not as broken. Investigation found the scope correct;
+    //    these are the missing focused tests §3 asked for, not a production change.
+    // ═════════════════════════════════════════════════════════════════════════════
+
+    /** GET /trips carries no permission middleware — tenant scoping is the ONLY guard. */
+    public function test_h1_the_trip_search_list_excludes_another_companys_trips(): void
+    {
+        $companyA = Company::factory()->create();
+        $companyB = Company::factory()->create();
+
+        $dispatcherA = $this->userWithGrants($companyA, 'test-dispatcher-h', [self::DISPATCHER_READ]);
+        $ownTrip = $this->makeTrip($companyA);
+        $foreignTrip = $this->makeTrip($companyB);
+
+        $response = $this->actingAsUnprivileged($dispatcherA)
+            ->getJson('/api/logistics/distribution/trips')
+            ->assertOk();
+
+        $ids = collect($response->json('data'))->pluck('id')->all();
+
+        self::assertContains($ownTrip->uuid, $ids, 'The acting company\'s own trip must be listed.');
+        self::assertNotContains($foreignTrip->uuid, $ids, 'Another company\'s trip must never appear in the search results.');
+    }
+
+    /** The `company_id` request filter can only narrow within the tenant, never widen past it. */
+    public function test_h2_a_foreign_company_id_filter_cannot_widen_the_trip_search_beyond_the_tenant(): void
+    {
+        $companyA = Company::factory()->create();
+        $companyB = Company::factory()->create();
+
+        $dispatcherA = $this->userWithGrants($companyA, 'test-dispatcher-h2', [self::DISPATCHER_READ]);
+        $foreignTrip = $this->makeTrip($companyB);
+
+        $response = $this->actingAsUnprivileged($dispatcherA)
+            ->getJson('/api/logistics/distribution/trips?company_id='.$companyB->id)
+            ->assertOk();
+
+        self::assertSame(
+            [],
+            $response->json('data'),
+            'Requesting a foreign company_id must yield an empty result, never that company\'s trips.',
+        );
+    }
 }
