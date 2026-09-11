@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom/vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
 function pathProxy(path: string): unknown {
@@ -119,13 +120,21 @@ function withDetail(detail: DaySettlementDriverDetail) {
 }
 
 describe('DriverSettlementDetailPage', () => {
-  it('renders the driver header and overview figures', () => {
+  it('renders the driver header and overview figures', async () => {
     withDetail(baseDetail());
     render(<DriverSettlementDetailPage />);
-    expect(screen.getByText('Ahmed Samir')).toBeInTheDocument();
-    // approved_transfers is a unique figure in the financial strip.
-    expect(screen.getByText('EGP 1200')).toBeInTheDocument();
+    // REDESIGN-002 consolidated the old standalone Overview tab into the header + KPI grid,
+    // so the driver's name now legitimately appears twice (header heading, and again in the
+    // default Settlement tab's context row) — scope to the heading to name the one this test
+    // actually means to check.
+    expect(screen.getByRole('heading', { name: 'Ahmed Samir' })).toBeInTheDocument();
     expect(screen.getByText('driverSettlement.tabs.settlement')).toBeInTheDocument();
+
+    // approved_transfers lives on the Transfers tab post-REDESIGN-002 (it's the VERIFIED
+    // subset of driver-collected electronic payments, reported there alongside the raw
+    // total) — not part of the default Settlement view, so this checks it where it renders.
+    await userEvent.setup().click(screen.getByRole('tab', { name: 'driverSettlement.tabs.transfers' }));
+    expect(screen.getByText('EGP 1200')).toBeInTheDocument();
   });
 
   it('shows the difference banner when the settlement is not balanced', () => {
@@ -140,12 +149,13 @@ describe('DriverSettlementDetailPage', () => {
     expect(screen.getByText('driverSettlement.completedBanner')).toBeInTheDocument();
   });
 
-  it('rolls up the driver day per trip (Overview lists each trip)', () => {
+  it('rolls up the driver day per trip (default Settlement tab lists each trip)', () => {
     withDetail(baseDetail());
     render(<DriverSettlementDetailPage />);
-    // The default Overview tab lists each of the driver's trips — the day view is a
-    // rollup over trips, and the Settlement tab reuses TripSettlementTab per trip.
-    expect(screen.getByText('TRIP-1')).toBeInTheDocument();
+    // REDESIGN-002 removed the standalone Overview tab; the default Settlement tab now shows
+    // the trip number twice by design — once in the context summary row, once as the
+    // per-trip breakdown header above each embedded TripSettlementTab.
+    expect(screen.getAllByText('TRIP-1')).toHaveLength(2);
     expect(screen.getByRole('tab', { name: 'driverSettlement.tabs.settlement' })).toBeInTheDocument();
   });
 
