@@ -30,7 +30,7 @@ final class ConversationController extends Controller
     }
 
     /** Direct-conversation get-or-create: see GetOrCreateDirectConversationAction. */
-    public function storeDirect(StoreDirectConversationRequest $request, GetOrCreateDirectConversationAction $action): JsonResponse
+    public function storeDirect(StoreDirectConversationRequest $request, GetOrCreateDirectConversationAction $action, GetConversationForUserAction $hydrate): JsonResponse
     {
         try {
             $conversation = $action->execute($request->user(), (int) $request->validated('target_user_id'));
@@ -38,10 +38,12 @@ final class ConversationController extends Controller
             return $this->error($e->getMessage(), 422);
         }
 
-        return $this->created(new ConversationResource($conversation->load('activeParticipants.user')));
+        $conversation = $hydrate->execute($request->user(), $conversation->load('activeParticipants.user'));
+
+        return $this->created(new ConversationResource($conversation));
     }
 
-    public function storeGroup(StoreGroupConversationRequest $request, CreateGroupConversationAction $action): JsonResponse
+    public function storeGroup(StoreGroupConversationRequest $request, CreateGroupConversationAction $action, GetConversationForUserAction $hydrate): JsonResponse
     {
         try {
             $conversation = $action->execute(
@@ -54,7 +56,9 @@ final class ConversationController extends Controller
             return $this->error($e->getMessage(), 422);
         }
 
-        return $this->created(new ConversationResource($conversation->load('activeParticipants.user')));
+        $conversation = $hydrate->execute($request->user(), $conversation->load('activeParticipants.user'));
+
+        return $this->created(new ConversationResource($conversation));
     }
 
     public function show(Request $request, Conversation $conversation, GetConversationForUserAction $action): JsonResponse

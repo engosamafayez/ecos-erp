@@ -192,4 +192,39 @@ final class CollaborationConversationTest extends TestCase
         self::assertContains('message_drivers', config('permissions.modules.collaboration.conversations'));
         self::assertContains('create', config('permissions.modules.collaboration.groups'));
     }
+
+    // TASK-...-V1-REMEDIATION-COLLABORATION-INTEGRITY-035D §1 — storeDirect/storeGroup must return
+    // the same hydrated my_participant/my_role/unread_count state show() already returns, via
+    // GetConversationForUserAction. Before this fix, a freshly created conversation's own create
+    // response carried my_role: null and unread_count: null (ConversationResource reads both off a
+    // request-time-only attribute GetConversationForUserAction sets — never touched by the bare
+    // ->load('activeParticipants.user') the create endpoints used instead).
+    public function test_creating_a_direct_conversation_hydrates_my_participant_state(): void
+    {
+        $company = Company::factory()->create();
+        $actor = $this->employee($company);
+        $target = User::factory()->create(['company_id' => $company->id]);
+
+        $this->actingAsUnprivileged($actor)
+            ->postJson('/api/collaboration/conversations/direct', ['target_user_id' => $target->id])
+            ->assertCreated()
+            ->assertJsonPath('data.my_role', 'member')
+            ->assertJsonPath('data.unread_count', 0);
+    }
+
+    public function test_creating_a_group_conversation_hydrates_unread_count(): void
+    {
+        $company = Company::factory()->create();
+        $actor = $this->employee($company);
+        $member = User::factory()->create(['company_id' => $company->id]);
+
+        $this->actingAsUnprivileged($actor)
+            ->postJson('/api/collaboration/conversations/groups', [
+                'title' => 'New Group',
+                'participant_user_ids' => [$member->id],
+            ])
+            ->assertCreated()
+            ->assertJsonPath('data.my_role', 'owner')
+            ->assertJsonPath('data.unread_count', 0);
+    }
 }
