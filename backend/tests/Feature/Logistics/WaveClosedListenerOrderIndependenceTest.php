@@ -191,7 +191,7 @@ final class WaveClosedListenerOrderIndependenceTest extends TestCase
             'WaveClosureCustodyService never writes the Order\'s own status.',
         );
         self::assertSame(
-            WaveClosureCustodyService::REASON_LOADED_NOT_ACCEPTED,
+            WaveClosureCustodyService::REASON_NOT_LOADED,
             DB::table('distribution_trip_orders')
                 ->where('trip_id', $trip->id)->where('order_id', $readyForDispatch->id)->value('release_reason'),
             'A never-attempted order is genuinely WaveClosureCustodyService\'s own domain, regardless of listener order.',
