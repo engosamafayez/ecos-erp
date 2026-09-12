@@ -10,7 +10,12 @@ type ErrorStateProps = {
 };
 
 /**
- * Reusable error placeholder with an optional retry action.
+ * Reusable error placeholder for a *read failure* — distinct from EmptyState
+ * (the request succeeded, there's just no data) per
+ * TASK-ECOS-V1.1-CORE-01-UI-01-CANONICAL-FOUNDATION-045 (ticket §6): a read
+ * failure must never be rendered as an empty dataset. Deliberately exposes
+ * only `onRetry` (a read retry) — there is no generic `action` slot here, so
+ * a mutation CTA cannot become available merely because a read failed.
  */
 export function ErrorState({ title, description, onRetry }: ErrorStateProps) {
   const { t } = useTranslation('common');

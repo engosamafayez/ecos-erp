@@ -3,6 +3,7 @@ import { Check, ChevronsUpDown } from 'lucide-react';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 
 import { Input } from '@/components/ui/input';
+import { useDialogAncestorPortal } from '@/components/ui/use-dialog-ancestor-portal';
 import { cn } from '@/lib/utils';
 
 export type EcosComboboxOption = {
@@ -70,9 +71,10 @@ export function EcosCombobox({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  // §4/§6 (TASK-ECOS-SYSTEM-WIDE-SEARCHABLE-SELECT-FOCUS-REMEDIATION-006) — see the
-  // dedicated comment beside its computation below for the full root cause.
-  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+  // TASK-ECOS-SYSTEM-WIDE-SEARCHABLE-SELECT-FOCUS-REMEDIATION-006 — shared
+  // with EcosMultiCombobox; see use-dialog-ancestor-portal.ts for the root
+  // cause and fix (previously an independently-maintained copy here).
+  const { portalContainer, attachOnOpen } = useDialogAncestorPortal(triggerRef);
 
   const selected = options.find((o) => o.value === value) ?? null;
   const filtered = filterClientSide && query
@@ -84,43 +86,10 @@ export function EcosCombobox({
     if (open) {
       setQuery('');
       setActiveIndex(-1);
-
-      // ROOT CAUSE (§4/§6, remediation-006): a Radix Dialog/Sheet's `Dialog.Content`
-      // wraps its children in `FocusScope trapped`. That trap's `focusin` listener
-      // (@radix-ui/react-focus-scope) checks plain DOM containment —
-      // `dialogContainer.contains(event.target)` — and, whenever it is false,
-      // SYNCHRONOUSLY redirects focus back inside the dialog. This Popover's
-      // content portals to `document.body` by default: a DOM SIBLING of the
-      // Dialog's own portalled content, never a descendant. So the instant focus
-      // would land on anything in here — the search input, an option — the
-      // dialog's trap saw focus "leave" its container and yanked it straight
-      // back, every time, with no caret ever appearing and no keystroke ever
-      // landing. This is why it looked system-wide: nearly every consumer of
-      // this component sits inside a Sheet/Dialog/Drawer.
-      //
-      // Fix: portal INTO the nearest ancestor Dialog/Sheet's own content node
-      // instead of `document.body` when one exists, so the trap's containment
-      // check is true and it stops fighting. `[role="dialog"]` is what Radix's
-      // own `Dialog.Content` (and this app's Sheet, which wraps it) stamps on
-      // that exact node — not a convention invented here. Standalone usage (no
-      // ancestor dialog) resolves to `null`, and the Portal falls back to its
-      // own default (`document.body`) exactly as before.
-      //
-      // Read inside this effect (an approved place to read a ref's current
-      // value), never during render (`react-hooks/refs` correctly forbids
-      // that) — the trigger button is always mounted regardless of `open`, so
-      // `triggerRef.current` is already valid the instant this effect runs,
-      // and it runs (this is a plain `useEffect`, not `useLayoutEffect`) well
-      // before the deferred auto-focus below, so the Portal has already
-      // re-targeted its container by the time anything tries to focus into it.
-      const dialogAncestor = triggerRef.current?.closest<HTMLElement>('[role="dialog"]') ?? null;
-      setPortalContainer(dialogAncestor);
-
-      // Defer focus so Radix finishes mounting the portal content
-      const id = setTimeout(() => inputRef.current?.focus(), 10);
+      const id = attachOnOpen(inputRef);
       return () => clearTimeout(id);
     }
-  }, [open]);
+  }, [open, attachOnOpen]);
 
   // Reset active index when query changes
   useEffect(() => {

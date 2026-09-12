@@ -40,6 +40,13 @@ Design tokens are the only source of visual values in ECOS. No hardcoded color v
 
 #### Status Colors
 
+> **Implemented (2026-09-12, TASK-ECOS-V1.1-CORE-01-UI-01-CANONICAL-FOUNDATION-045):** as
+> `--success`/`--warning`/`--error`/`--info`/`--neutral` (+ `-foreground`/`-border`) in
+> `frontend/src/index.css`, consumed via `StatusBadge`'s `tone` prop
+> (`components/crud/status-badge`). Uses Tailwind's own emerald/amber/red/blue palette rather than
+> literal Green-600 — the same family `components/ecos/tokens.ts`'s `BADGE_VARIANTS` already used —
+> not a new color decision.
+
 | Semantic | Color | Usage |
 |---|---|---|
 | `color-success` | Green-600 | Completed, delivered, paid, active |

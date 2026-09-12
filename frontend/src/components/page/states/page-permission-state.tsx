@@ -1,37 +1,9 @@
-import { ShieldAlert } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-
-import { cn } from '@/lib/utils';
-
-type PagePermissionStateProps = {
-  title?: string;
-  description?: string;
-  className?: string;
-};
-
-export function PagePermissionState({
-  title,
-  description,
-  className,
-}: PagePermissionStateProps) {
-  const { t } = useTranslation('common');
-  const displayTitle = title ?? t($ => $.permission.accessDenied);
-  const displayDescription = description ?? t($ => $.permission.description);
-
-  return (
-    <div
-      className={cn(
-        'flex flex-col items-center justify-center gap-3 py-20 text-center',
-        className,
-      )}
-    >
-      <span className="flex size-16 items-center justify-center rounded-full bg-amber-100 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400">
-        <ShieldAlert className="size-8" aria-hidden />
-      </span>
-      <div className="space-y-1">
-        <p className="text-base font-semibold">{displayTitle}</p>
-        <p className="mx-auto max-w-xs text-sm text-muted-foreground">{displayDescription}</p>
-      </div>
-    </div>
-  );
-}
+/**
+ * Compatibility re-export (TASK-ECOS-V1.1-CORE-01-UI-01-CANONICAL-FOUNDATION-045).
+ * The real implementation moved to the canonical crud kit as `PermissionState`
+ * — import from `@/components/crud` (or `@/components/foundation`) in new
+ * code. No consumers of this path were found at the time of this change; kept
+ * as a compatibility shim rather than deleted outright, per the "ratchet, not
+ * a cliff" migration rule.
+ */
+export { PermissionState as PagePermissionState } from '@/components/crud/permission-state';
