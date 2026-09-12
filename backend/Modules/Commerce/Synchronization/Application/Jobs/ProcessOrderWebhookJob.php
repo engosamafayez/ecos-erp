@@ -14,6 +14,7 @@ use Modules\Commerce\OrderImport\Application\Services\WooCommerceOrderImporter;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Synchronization\Application\Services\SyncLogService;
 use Modules\Commerce\Synchronization\Application\Services\WooCommerceOrderStatusTranslator;
+use Modules\Commerce\Synchronization\Application\Services\WooRefundApplicationService;
 use Modules\Commerce\Synchronization\Domain\Enums\SyncDirection;
 use Modules\Commerce\Synchronization\Domain\Enums\SyncEntityType;
 use Modules\Commerce\Synchronization\Domain\Enums\SyncStatus;
@@ -21,7 +22,6 @@ use Modules\Operations\Fulfillment\Application\FulfillmentEngine;
 use Modules\Operations\Fulfillment\Application\Workflows\CancelOrderWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\CompleteDeliveryWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\ProcessOrderWorkflow;
-use Modules\Operations\Fulfillment\Application\Workflows\ReturnOrderWorkflow;
 use Modules\Operations\Fulfillment\Application\Workflows\SetEarlyStatusWorkflow;
 use Throwable;
 
@@ -36,6 +36,27 @@ use Throwable;
  *
  * Guard failures are non-fatal: if ECOS and WC are out of sync, the webhook
  * logs a warning and skips the transition rather than crashing.
+ *
+ * TASK-ECOS-V1.1-WOOCOMMERCE-WOO-01-REFUND-FINANCE-INTEGRATION-043 (revised
+ * under TASK-ECOS-V1.1-WOO-01-VERIFICATION-REMEDIATION-CHECKPOINT-043-R1) —
+ * refunds are no longer part of the generic status-transition match() below.
+ * Woo's `refunds` array is read directly off this SAME payload (WooCommerce
+ * already includes it on the order representation — no new webhook topic is
+ * registered) and delegated, per entry, to WooRefundApplicationService, which
+ * is FINANCIAL-ONLY: it posts a Credit Note against the order's existing
+ * invoice (see its own class docblock) and never touches Order.status,
+ * Inventory, or ReturnOrderWorkflow — a refunded line-item quantity is
+ * commercial/accounting allocation, not physical-return evidence, so
+ * 'refunded' reaching this job produces exactly one effect (the financial
+ * one) and never a second, generic-status-transition effect: it is
+ * deliberately excluded from the match() below so the two can never fire
+ * for the same event. Physical return remains entirely the canonical ECOS
+ * warehouse/driver flow, untouched by this job.
+ *
+ * A partial Woo refund does not change the order's own `status` (WooCommerce
+ * only sets status=refunded when the entire order total has been refunded),
+ * so refund processing runs unconditionally — independent of whether a status
+ * transition is also detected below.
  */
 final class ProcessOrderWebhookJob implements ShouldQueue
 {
@@ -60,8 +81,8 @@ final class ProcessOrderWebhookJob implements ShouldQueue
         ProcessOrderWorkflow $processWorkflow,
         CancelOrderWorkflow $cancelWorkflow,
         CompleteDeliveryWorkflow $deliverWorkflow,
-        ReturnOrderWorkflow $returnWorkflow,
         SetEarlyStatusWorkflow $earlyStatusWorkflow,
+        WooRefundApplicationService $refundService,
     ): void {
         $externalId = (string) ($this->payload['id'] ?? '');
 
@@ -87,15 +108,21 @@ final class ProcessOrderWebhookJob implements ShouldQueue
                 $wooStatus = (string) ($this->payload['status'] ?? '');
                 $ecosStatus = $translator->translate($wooStatus);
 
-                if ($ecosStatus !== null && $ecosStatus !== $existingOrder->status) {
+                // Refunds run unconditionally — a partial refund never changes Woo's own
+                // order status, so this cannot be folded into the status-diff branch below.
+                // Money (Credit Note) and goods (ReturnOrderWorkflow) are decided
+                // independently inside the service; see its class docblock.
+                $refundResults = $this->processRefunds($refundService, $existingOrder);
+
+                // 'refunded' is handled ENTIRELY by processRefunds() above — ReturnOrderWorkflow
+                // is invoked only there, only when Woo's own refund detail evidences returned
+                // goods, and only with the context keys its guard actually reads. It must not
+                // also be reached via the generic status-transition match() below.
+                if ($wooStatus !== 'refunded' && $ecosStatus !== null && $ecosStatus !== $existingOrder->status) {
                     // Route through the appropriate canonical workflow.
                     // Guard failures are skipped — WC/ECOS state divergence is expected
                     // when orders are managed in ECOS outside the WC lifecycle.
                     $workflow = match (true) {
-                        // 'refunded' maps to 'returned' per the translator — must NOT use cancelWorkflow.
-                        // ReturnOrderWorkflow::guard() will fail non-fatally for orders not yet OutForDelivery;
-                        // the catch below handles that gracefully.
-                        $wooStatus === 'refunded' => $returnWorkflow,
                         in_array($wooStatus, ['cancelled', 'failed'], true) => $cancelWorkflow,
                         $wooStatus === 'processing' => $processWorkflow,
                         $wooStatus === 'completed' => $deliverWorkflow,
@@ -121,7 +148,11 @@ final class ProcessOrderWebhookJob implements ShouldQueue
                     }
                 }
 
-                $logService->markSuccess($log, ['message' => 'Order status processed.', 'order_id' => $existingOrder->id], $this->channel);
+                $logService->markSuccess($log, [
+                    'message' => 'Order status processed.',
+                    'order_id' => $existingOrder->id,
+                    'refunds_processed' => $refundResults,
+                ], $this->channel);
             } else {
                 $created = $importer->importSingle($this->channel, $this->payload);
                 $logService->markSuccess(
@@ -134,5 +165,45 @@ final class ProcessOrderWebhookJob implements ShouldQueue
             $logService->markFailed($log, $e->getMessage(), null, $this->channel);
             throw $e;
         }
+    }
+
+    /**
+     * Apply every not-yet-seen entry in Woo's own `refunds` summary array
+     * against this order. Each entry is independently idempotent inside
+     * WooRefundApplicationService (durable, DB-enforced — see its docblock),
+     * so re-processing the same payload on a retried webhook delivery is safe.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function processRefunds(WooRefundApplicationService $refundService, Order $order): array
+    {
+        /** @var list<array<string, mixed>> $refunds */
+        $refunds = is_array($this->payload['refunds'] ?? null) ? $this->payload['refunds'] : [];
+
+        // WooCommerce refunds carry no currency of their own — it belongs to the parent
+        // order. Attached here so the service can refuse a currency mismatch explicitly
+        // rather than silently posting in whatever currency the invoice happens to use.
+        $orderCurrency = isset($this->payload['currency']) ? (string) $this->payload['currency'] : null;
+
+        $results = [];
+
+        foreach ($refunds as $wooRefundSummary) {
+            if (! is_array($wooRefundSummary) || ! isset($wooRefundSummary['id'], $wooRefundSummary['total'])) {
+                continue;
+            }
+
+            if ($orderCurrency !== null && ! isset($wooRefundSummary['currency'])) {
+                $wooRefundSummary['currency'] = $orderCurrency;
+            }
+
+            $outcome = $refundService->applyRefund($this->channel, $order, $wooRefundSummary);
+
+            $results[] = [
+                'woo_refund_id' => $wooRefundSummary['id'],
+                ...$outcome->toLogPayload(),
+            ];
+        }
+
+        return $results;
     }
 }
