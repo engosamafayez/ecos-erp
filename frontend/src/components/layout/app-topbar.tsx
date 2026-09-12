@@ -2,6 +2,7 @@ import { PanelLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { BrandLogo } from '@/components/common/brand-logo';
 
 import {
@@ -23,8 +24,8 @@ type AppTopbarProps = {
  *
  * Layout (left → right):
  *   BrandLogo | SidebarToggle(md-only) | GlobalSearch(flex-1, sm+)
- *   | SearchIcon(mobile) | Company(md+) | Warehouse(md+)
- *   | SmartCreate(md+) | Notifications | UserMenu
+ *   | SearchIcon(mobile) | Company(md+) | Brand(md+) | Warehouse(md+)
+ *   | Separator(md+) | SmartCreate(md+) | Notifications | UserMenu
  *
  * Language + Theme are accessible via the UserMenu dropdown on all screen sizes.
  */
@@ -66,6 +67,12 @@ export function AppTopbar({ onOpenSidebar }: AppTopbarProps) {
           <BrandSwitcher />
           <WarehouseSwitcher />
         </div>
+
+        {/* §7 — a visual boundary between "context" (which company/brand/
+            warehouse) and "actions" (create, notifications, account) reads
+            as one grouped cluster otherwise, especially once the switchers
+            grow to 3 items. Canonical Separator, not a hardcoded border. */}
+        <Separator orientation="vertical" className="hidden h-5 md:block" />
 
         {/* Smart Create — tablet+ */}
         <div className="hidden md:block">
