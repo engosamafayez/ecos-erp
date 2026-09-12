@@ -3,17 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { CheckCircle, Eye, Pencil, Plus, SendHorizonal, Trash2, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import {
-  ActionMenu,
-  ConfirmDialog,
-  EntityTable,
-  EntityToolbar,
-  PageHeader,
-  Pagination,
-} from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
-import { Button } from '@/components/ui/button';
+import { ActionMenu, ConfirmDialog, EntityToolbar, ErrorState } from '@/components/crud';
+import { UniversalDataGrid, WorkspaceHeader } from '@/components/foundation';
+import type { DataGridColumnDef } from '@/components/foundation';
+import { MobileDataCard } from '@/components/mobile';
 import { Card, CardContent } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PoStatusBadge } from '@/features/purchase-orders/components/po-status-badge';
 import {
   useApprovePurchaseOrder,
@@ -85,21 +80,70 @@ export function PurchaseOrdersPage() {
     setPage(1);
   };
 
-  const columns: ColumnDef<PurchaseOrder>[] = [
+  // Shared between the desktop "Actions" column and the mobile card's action
+  // slot — same menu, same items, one definition (TASK-ECOS-V1.1-CORE-01-UI-03-
+  // LIST-TABLE-FILTER-WORK-QUEUE-047).
+  function rowActions(po: PurchaseOrder) {
+    return (
+      <ActionMenu
+        label={`Actions for ${po.po_number}`}
+        items={[
+          { key: 'view', label: tCommon($ => $.actions.view), icon: Eye, onSelect: () => navigate(`${ROUTES.purchaseOrders}/${po.id}`) },
+          ...(po.status === 'draft'
+            ? [
+                { key: 'edit', label: tCommon($ => $.common.edit), icon: Pencil, onSelect: () => navigate(`${ROUTES.purchaseOrders}/${po.id}/edit`) },
+                { key: 'submit', label: t($ => $.actions.submit), icon: SendHorizonal, onSelect: () => setSubmitting(po) },
+              ]
+            : []),
+          ...(po.status === 'submitted'
+            ? [{ key: 'approve', label: t($ => $.actions.approve), icon: CheckCircle, onSelect: () => setApproving(po) }]
+            : []),
+          ...(!['cancelled', 'received'].includes(po.status)
+            ? [{ key: 'cancel', label: tCommon($ => $.common.cancel), icon: XCircle, variant: 'destructive' as const, onSelect: () => setCancelling(po) }]
+            : []),
+          ...(po.status === 'draft'
+            ? [{ key: 'delete', label: tCommon($ => $.common.delete), icon: Trash2, variant: 'destructive' as const, onSelect: () => setDeleting(po) }]
+            : []),
+        ]}
+      />
+    );
+  }
+
+  // Canonical list pattern (UI-03): UniversalDataGrid columns replace
+  // EntityTable's ColumnDef[] — `label` (Column Manager text, unused today
+  // since this page doesn't enable column visibility, but required by the
+  // canonical type) is set to the same translated string as the visible
+  // header. Row actions move from EntityTable's dedicated `rowActions` prop
+  // into a trailing column, since UniversalDataGrid has no equivalent prop.
+  const columns: DataGridColumnDef<PurchaseOrder>[] = [
     {
       key: 'po_number',
-      header: t($ => $.columns.number),
+      label: t($ => $.columns.number),
       sortable: true,
+      cardRole: 'title',
       cell: (po) => <span className="font-medium">{po.po_number}</span>,
     },
-    { key: 'supplier', header: t($ => $.columns.supplier), cell: (po) => po.supplier?.name ?? '—' },
-    { key: 'warehouse', header: t($ => $.columns.warehouse), cell: (po) => po.warehouse?.name ?? '—' },
-    { key: 'order_date', header: t($ => $.columns.orderDate), sortable: true, cell: (po) => po.order_date },
-    { key: 'expected_date', header: t($ => $.columns.expectedDate), sortable: true, cell: (po) => po.expected_date ?? '—' },
+    {
+      key: 'status',
+      label: t($ => $.columns.status),
+      sortable: true,
+      cardRole: 'status',
+      cell: (po) => <PoStatusBadge status={po.status} />,
+    },
+    {
+      key: 'supplier',
+      label: t($ => $.columns.supplier),
+      cardRole: 'subtitle',
+      cell: (po) => po.supplier?.name ?? '—',
+    },
+    { key: 'warehouse', label: t($ => $.columns.warehouse), cell: (po) => po.warehouse?.name ?? '—' },
+    { key: 'order_date', label: t($ => $.columns.orderDate), sortable: true, cell: (po) => po.order_date },
+    { key: 'expected_date', label: t($ => $.columns.expectedDate), sortable: true, cell: (po) => po.expected_date ?? '—' },
     {
       key: 'grand_total',
-      header: t($ => $.columns.total),
+      label: t($ => $.columns.total),
       sortable: true,
+      align: 'end',
       cell: (po) => (
         <span className="font-medium">
           {(po.grand_total ?? po.total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -108,7 +152,7 @@ export function PurchaseOrdersPage() {
     },
     {
       key: 'received_percentage',
-      header: t($ => $.columns.receivedPct),
+      label: t($ => $.columns.receivedPct),
       cell: (po) => {
         if (po.received_percentage === null || po.received_percentage === undefined) return '—';
         const pct = Math.min(100, Math.max(0, po.received_percentage));
@@ -122,21 +166,54 @@ export function PurchaseOrdersPage() {
         );
       },
     },
-    { key: 'status', header: t($ => $.columns.status), sortable: true, cell: (po) => <PoStatusBadge status={po.status} /> },
+    {
+      key: 'actions',
+      label: tCommon($ => $.table.actions),
+      align: 'end',
+      alwaysVisible: true,
+      cardRole: 'hidden', // rendered via the mobile card's own `actions` slot below, not as a meta field
+      cell: (po) => rowActions(po),
+    },
   ];
+
+  // Custom mobile card (rather than UniversalDataGrid's generic auto-card
+  // fallback): the auto-card has no dedicated actions slot, so the "actions"
+  // column above would otherwise render as a plain meta field instead of a
+  // proper tap-visible action row — this preserves EntityTable's previous
+  // mobile presentation instead of regressing it.
+  function renderMobileCard(po: PurchaseOrder) {
+    return (
+      <MobileDataCard
+        title={po.po_number}
+        subtitle={po.supplier?.name ?? undefined}
+        status={<PoStatusBadge status={po.status} />}
+        fields={[
+          { label: t($ => $.columns.warehouse), value: po.warehouse?.name ?? '—' },
+          { label: t($ => $.columns.orderDate), value: po.order_date },
+          { label: t($ => $.columns.expectedDate), value: po.expected_date ?? '—' },
+          {
+            label: t($ => $.columns.total),
+            value: (po.grand_total ?? po.total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+            align: 'end',
+          },
+        ]}
+        actions={rowActions(po)}
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
+      <WorkspaceHeader
         title={t($ => $.title)}
-        subtitle={t($ => $.subtitle)}
-        breadcrumbs={[{ label: tCommon($ => $.home), to: ROUTES.dashboard }, { label: t($ => $.title) }]}
-        actions={
-          <Button onClick={() => navigate(ROUTES.purchaseOrdersNew)}>
-            <Plus className="size-4" />
-            {t($ => $.actions.new)}
-          </Button>
-        }
+        description={t($ => $.subtitle)}
+        breadcrumbs={[{ label: t($ => $.title) }]}
+        primaryAction={{
+          key: 'new',
+          label: t($ => $.actions.new),
+          icon: Plus,
+          onClick: () => navigate(ROUTES.purchaseOrdersNew),
+        }}
       />
 
       <Card>
@@ -151,62 +228,50 @@ export function PurchaseOrdersPage() {
             filterPanel={
               <div className="flex flex-col gap-1.5">
                 <span className="text-sm font-medium">{t($ => $.filters.status)}</span>
-                <select
+                {/* Canonical ui/select (UI-03 §5) — this was a raw native <select>
+                    before; a status filter is a simple non-searchable dropdown,
+                    exactly the case the filter contract reserves for ui/select
+                    rather than EcosCombobox. */}
+                <Select
                   value={statusFilter}
-                  onChange={(event) => { setStatusFilter(event.target.value as StatusFilter); setPage(1); }}
-                  className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
+                  onValueChange={(value) => { setStatusFilter(value as StatusFilter); setPage(1); }}
                 >
-                  <option value="all">{tCommon($ => $.status.all)}</option>
-                  <option value="draft">{t($ => $.status.draft)}</option>
-                  <option value="submitted">{t($ => $.status.submitted)}</option>
-                  <option value="approved">{t($ => $.status.approved)}</option>
-                  <option value="partially_received">{t($ => $.status.partially_received)}</option>
-                  <option value="received">{t($ => $.status.received)}</option>
-                  <option value="cancelled">{t($ => $.status.cancelled)}</option>
-                </select>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{tCommon($ => $.status.all)}</SelectItem>
+                    <SelectItem value="draft">{t($ => $.status.draft)}</SelectItem>
+                    <SelectItem value="submitted">{t($ => $.status.submitted)}</SelectItem>
+                    <SelectItem value="approved">{t($ => $.status.approved)}</SelectItem>
+                    <SelectItem value="partially_received">{t($ => $.status.partially_received)}</SelectItem>
+                    <SelectItem value="received">{t($ => $.status.received)}</SelectItem>
+                    <SelectItem value="cancelled">{t($ => $.status.cancelled)}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             }
           />
 
-          <EntityTable<PurchaseOrder>
-            columns={columns}
+          <UniversalDataGrid<PurchaseOrder>
             data={items}
-            getRowId={(po) => po.id}
-            isLoading={isLoading}
-            isError={isError}
+            columns={columns}
+            rowId={(po) => po.id}
+            loading={isLoading}
+            error={isError}
+            errorState={<ErrorState onRetry={() => void refetch()} />}
             sort={sort}
             onSortChange={handleSort}
-            rowActions={(po) => (
-              <ActionMenu
-                label={`Actions for ${po.po_number}`}
-                items={[
-                  { key: 'view', label: tCommon($ => $.actions.view), icon: Eye, onSelect: () => navigate(`${ROUTES.purchaseOrders}/${po.id}`) },
-                  ...(po.status === 'draft'
-                    ? [
-                        { key: 'edit', label: tCommon($ => $.common.edit), icon: Pencil, onSelect: () => navigate(`${ROUTES.purchaseOrders}/${po.id}/edit`) },
-                        { key: 'submit', label: t($ => $.actions.submit), icon: SendHorizonal, onSelect: () => setSubmitting(po) },
-                      ]
-                    : []),
-                  ...(po.status === 'submitted'
-                    ? [{ key: 'approve', label: t($ => $.actions.approve), icon: CheckCircle, onSelect: () => setApproving(po) }]
-                    : []),
-                  ...(!['cancelled', 'received'].includes(po.status)
-                    ? [{ key: 'cancel', label: tCommon($ => $.common.cancel), icon: XCircle, variant: 'destructive' as const, onSelect: () => setCancelling(po) }]
-                    : []),
-                  ...(po.status === 'draft'
-                    ? [{ key: 'delete', label: tCommon($ => $.common.delete), icon: Trash2, variant: 'destructive' as const, onSelect: () => setDeleting(po) }]
-                    : []),
-                ]}
-              />
-            )}
+            renderMobileCard={renderMobileCard}
+            pagination={
+              meta
+                ? {
+                    meta: { page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page },
+                    onPageChange: setPage,
+                  }
+                : undefined
+            }
           />
-
-          {meta ? (
-            <Pagination
-              meta={{ page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page }}
-              onPageChange={setPage}
-            />
-          ) : null}
         </CardContent>
       </Card>
 

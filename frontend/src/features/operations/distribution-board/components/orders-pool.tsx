@@ -1,13 +1,23 @@
 import { MapPin, Package, User } from 'lucide-react';
 import { useFormatter } from '@/hooks/use-formatter';
-import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/crud/error-state';
+import { QueueSection } from '@/components/queue';
 import type { PoolOrder } from '../types/distribution-board';
 
 interface OrdersPoolProps {
   orders: PoolOrder[];
   isLoading: boolean;
   selectedZoneName: string;
+  /**
+   * True when the zone-orders read failed. Previously unhandled — a failed
+   * fetch fell through to `orders: []` and rendered silently as "All orders
+   * assigned" (an empty dataset), rather than a real read failure needing a
+   * retry (TASK-ECOS-V1.1-CORE-01-UI-03-LIST-TABLE-FILTER-WORK-QUEUE-047 —
+   * the same read-error-must-never-render-as-empty invariant UI-01 already
+   * established for the canonical shared states).
+   */
+  isError?: boolean;
+  onRetry?: () => void;
   /** Called when user clicks an order — surfaces it for manual assignment. */
   onOrderClick?: (order: PoolOrder) => void;
 }
@@ -37,45 +47,26 @@ function OrderCard({ order, onClick }: { order: PoolOrder; onClick?: () => void 
   );
 }
 
-export function OrdersPool({ orders, isLoading, selectedZoneName, onOrderClick }: OrdersPoolProps) {
+export function OrdersPool({ orders, isLoading, selectedZoneName, isError = false, onRetry, onOrderClick }: OrdersPoolProps) {
   return (
-    <div className="flex flex-col h-full min-h-0 border-r">
-      {/* Panel header */}
-      <div className="px-3 py-2.5 border-b flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2">
-          <Package className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">Unassigned Orders</span>
+    <QueueSection<PoolOrder>
+      title="Unassigned Orders"
+      icon={Package}
+      count={orders.length}
+      loading={isLoading}
+      error={isError}
+      errorState={<ErrorState onRetry={onRetry} />}
+      items={orders}
+      getItemKey={(order) => order.order_id}
+      renderItem={(order) => <OrderCard order={order} onClick={() => onOrderClick?.(order)} />}
+      emptyState={
+        <div className="flex flex-col items-center justify-center py-10 text-center">
+          <Package className="h-8 w-8 text-muted-foreground/40 mb-2" />
+          <p className="text-sm text-muted-foreground">All orders assigned</p>
+          <p className="text-xs text-muted-foreground/60 mt-1">{selectedZoneName}</p>
         </div>
-        {!isLoading && (
-          <Badge variant={orders.length > 0 ? 'secondary' : 'outline'} className="text-xs tabular-nums">
-            {orders.length}
-          </Badge>
-        )}
-      </div>
-
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-2 space-y-1.5">
-          {isLoading ? (
-            Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-20 w-full rounded-lg" />
-            ))
-          ) : orders.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-10 text-center">
-              <Package className="h-8 w-8 text-muted-foreground/40 mb-2" />
-              <p className="text-sm text-muted-foreground">All orders assigned</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">{selectedZoneName}</p>
-            </div>
-          ) : (
-            orders.map((order) => (
-              <OrderCard
-                key={order.order_id}
-                order={order}
-                onClick={() => onOrderClick?.(order)}
-              />
-            ))
-          )}
-        </div>
-      </div>
-    </div>
+      }
+      className="border-r"
+    />
   );
 }

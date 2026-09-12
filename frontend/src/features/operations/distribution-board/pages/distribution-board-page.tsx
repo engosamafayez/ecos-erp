@@ -12,6 +12,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { QueueSection } from '@/components/queue';
 import {
   useDistributionBoard,
   useFinalizeBoard,
@@ -118,61 +119,57 @@ export function DistributionBoardPage() {
           <OrdersPool
             orders={zoneOrdersQ.data?.orders ?? []}
             isLoading={zoneOrdersQ.isLoading && resolvedZoneId !== null}
+            isError={zoneOrdersQ.isError}
+            onRetry={() => void zoneOrdersQ.refetch()}
             selectedZoneName={activeZone?.name_en ?? 'Selected Zone'}
           />
         </div>
 
-        {/* Right: Trips panel */}
+        {/* Right: Trips panel — canonical QueueSection (UI-03), TripCard itself
+            is entirely unchanged and still owns every trip business detail. */}
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <div className="flex items-center justify-between px-3 py-2.5 border-b shrink-0">
-            <span className="text-sm font-medium">
-              Today's Trips
-              {allTrips.length > 0 && (
-                <span className="ml-2 text-xs text-muted-foreground">({allTrips.length})</span>
-              )}
-            </span>
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 text-xs gap-1"
-              onClick={() => { setEditingTrip(null); setTripDrawerOpen(true); }}
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Add Trip
-            </Button>
-          </div>
-
-          <div className="flex-1 overflow-y-auto">
-            <div className="p-3 space-y-3">
-              {trips.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <Truck className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                  <p className="text-sm text-muted-foreground font-medium">No trips yet</p>
-                  <p className="text-xs text-muted-foreground/60 mt-1 mb-4">
-                    Create a trip and orders from this zone will be added automatically.
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1.5"
-                    onClick={() => { setEditingTrip(null); setTripDrawerOpen(true); }}
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    Create First Trip
-                  </Button>
-                </div>
-              ) : (
-                trips.map((trip) => (
-                  <TripCard
-                    key={trip.id}
-                    trip={trip}
-                    onEdit={(t) => { setEditingTrip(t); setTripDrawerOpen(true); }}
-                    allTrips={allTrips}
-                  />
-                ))
-              )}
-            </div>
-          </div>
+          <QueueSection<DistributionTrip>
+            title="Today's Trips"
+            count={allTrips.length}
+            action={
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs gap-1"
+                onClick={() => { setEditingTrip(null); setTripDrawerOpen(true); }}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Add Trip
+              </Button>
+            }
+            items={trips}
+            getItemKey={(trip) => trip.id}
+            renderItem={(trip) => (
+              <TripCard
+                trip={trip}
+                onEdit={(t) => { setEditingTrip(t); setTripDrawerOpen(true); }}
+                allTrips={allTrips}
+              />
+            )}
+            emptyState={
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <Truck className="h-10 w-10 text-muted-foreground/30 mb-3" />
+                <p className="text-sm text-muted-foreground font-medium">No trips yet</p>
+                <p className="text-xs text-muted-foreground/60 mt-1 mb-4">
+                  Create a trip and orders from this zone will be added automatically.
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  onClick={() => { setEditingTrip(null); setTripDrawerOpen(true); }}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Create First Trip
+                </Button>
+              </div>
+            }
+          />
         </div>
       </div>
 
