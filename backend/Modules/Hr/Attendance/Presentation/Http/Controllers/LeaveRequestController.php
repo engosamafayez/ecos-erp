@@ -50,7 +50,7 @@ class LeaveRequestController extends Controller
         ]);
 
         $leaveRequest = $this->leave->submit(
-            $this->employee($request, $v['employee_id']), $v, $this->actorId($request)
+            $this->employee($request, $v['employee_id']), $v, $this->actorId($request),
         );
 
         return response()->json(['data' => $this->payload($leaveRequest)], 201);
@@ -61,7 +61,7 @@ class LeaveRequestController extends Controller
         $v = $request->validate(['note' => ['nullable', 'string', 'max:400']]);
 
         $approved = $this->leave->approve(
-            $this->leaveRequest($request, $id), $this->actingEmployee($request), $v['note'] ?? null
+            $this->leaveRequest($request, $id), $this->actingEmployee($request), $v['note'] ?? null, $this->actorId($request),
         );
 
         return response()->json(['data' => $this->payload($approved)]);
@@ -72,7 +72,7 @@ class LeaveRequestController extends Controller
         $v = $request->validate(['note' => ['nullable', 'string', 'max:400']]);
 
         $rejected = $this->leave->reject(
-            $this->leaveRequest($request, $id), $this->actingEmployee($request), $v['note'] ?? null
+            $this->leaveRequest($request, $id), $this->actingEmployee($request), $v['note'] ?? null, $this->actorId($request),
         );
 
         return response()->json(['data' => $this->payload($rejected)]);
@@ -82,7 +82,7 @@ class LeaveRequestController extends Controller
     {
         $v = $request->validate(['note' => ['nullable', 'string', 'max:400']]);
 
-        return response()->json(['data' => $this->payload($this->leave->cancel($this->leaveRequest($request, $id), $v['note'] ?? null))]);
+        return response()->json(['data' => $this->payload($this->leave->cancel($this->leaveRequest($request, $id), $v['note'] ?? null, $this->actorId($request)))]);
     }
 
     private function leaveRequest(Request $request, string $id): LeaveRequest

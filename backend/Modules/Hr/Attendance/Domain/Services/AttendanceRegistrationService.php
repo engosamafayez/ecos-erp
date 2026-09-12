@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Hr\Attendance\Domain\Enums\AttendanceStatus;
 use Modules\Hr\Attendance\Domain\Exceptions\AttendanceException;
 use Modules\Hr\Attendance\Domain\Models\AttendanceDay;
+use Modules\Hr\Infrastructure\Services\HrAuditService;
 use Modules\Hr\Workforce\Domain\Models\Employee;
 
 /**
@@ -29,6 +30,7 @@ final class AttendanceRegistrationService
     public function __construct(
         private readonly HolidayService $holidays,
         private readonly WorkScheduleService $schedule,
+        private readonly HrAuditService $audit,
     ) {}
 
     /**
@@ -52,21 +54,44 @@ final class AttendanceRegistrationService
             throw AttendanceException::futureAttendance();
         }
 
-        return DB::transaction(fn (): AttendanceDay => AttendanceDay::updateOrCreate(
-            ['employee_id' => $employee->id, 'work_date' => $date->toDateString()],
-            [
-                'company_id' => $employee->company_id,
-                'department_id' => $employee->department_id,
-                'shift_id' => $data['shift_id'] ?? $this->schedule->currentShift($employee)?->id,
-                'status' => $status->value,
-                'check_in' => $data['check_in'] ?? null,
-                'check_out' => $data['check_out'] ?? null,
-                'source' => 'manual',
-                'leave_request_id' => $data['leave_request_id'] ?? null,
-                'notes' => $data['notes'] ?? null,
-                'registered_by' => $actorId,
-            ]
-        ));
+        $auditFields = ['status', 'check_in', 'check_out', 'notes'];
+
+        return DB::transaction(function () use ($employee, $date, $status, $data, $actorId, $auditFields): AttendanceDay {
+            $existing = AttendanceDay::query()
+                ->where('employee_id', $employee->id)
+                ->where('work_date', $date->toDateString())
+                ->first();
+            $before = $existing?->only($auditFields) ?? [];
+
+            $day = AttendanceDay::updateOrCreate(
+                ['employee_id' => $employee->id, 'work_date' => $date->toDateString()],
+                [
+                    'company_id' => $employee->company_id,
+                    'department_id' => $employee->department_id,
+                    'shift_id' => $data['shift_id'] ?? $this->schedule->currentShift($employee)?->id,
+                    'status' => $status->value,
+                    'check_in' => $data['check_in'] ?? null,
+                    'check_out' => $data['check_out'] ?? null,
+                    'source' => 'manual',
+                    'leave_request_id' => $data['leave_request_id'] ?? null,
+                    'notes' => $data['notes'] ?? null,
+                    'registered_by' => $actorId,
+                ],
+            );
+
+            $this->audit->log(
+                action: $day->wasRecentlyCreated ? 'hr.attendance_day.registered' : 'hr.attendance_day.corrected',
+                entityType: HrAuditService::ENTITY_ATTENDANCE_DAY,
+                entityId: (string) $day->id,
+                companyId: (string) $employee->company_id,
+                actorId: $actorId,
+                oldValues: $before,
+                newValues: $day->only($auditFields),
+                metadata: ['employee_id' => (string) $employee->id, 'work_date' => $date->toDateString()],
+            );
+
+            return $day;
+        });
     }
 
     /**

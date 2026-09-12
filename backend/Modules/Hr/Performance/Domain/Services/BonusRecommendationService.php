@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\Hr\Compensation\Domain\Enums\BonusType;
 use Modules\Hr\Compensation\Domain\Services\BonusService;
 use Modules\Hr\Compensation\Domain\Services\SalaryStructureService;
+use Modules\Hr\Infrastructure\Services\HrAuditService;
 use Modules\Hr\Performance\Domain\Enums\GoalSubject;
 use Modules\Hr\Performance\Domain\Enums\RecommendationStatus;
 use Modules\Hr\Performance\Domain\Models\BonusRecommendation;
@@ -40,10 +41,15 @@ final class BonusRecommendationService
     /** Below this, no recommendation is produced at all. */
     public const MINIMUM_ACHIEVEMENT = 90.0;
 
+    private const AUDITED_FIELDS = ['achievement_percent', 'recommended_amount', 'currency', 'rule_key', 'status'];
+
+    private const DECISION_FIELDS = ['status', 'decided_amount', 'decided_by_employee_id', 'decision_note', 'bonus_id'];
+
     public function __construct(
         private readonly PerformanceEvaluationService $evaluation,
         private readonly SalaryStructureService $salaries,
         private readonly BonusService $bonuses,
+        private readonly HrAuditService $audit,
     ) {}
 
     /**
@@ -53,7 +59,7 @@ final class BonusRecommendationService
     public function recommendFor(Employee $employee, string $periodMonth): ?BonusRecommendation
     {
         $overall = $this->evaluation->overallAchievement(
-            (string) $employee->company_id, GoalSubject::Employee, (string) $employee->id, $periodMonth
+            (string) $employee->company_id, GoalSubject::Employee, (string) $employee->id, $periodMonth,
         );
 
         if ($overall['goals'] === 0) {
@@ -76,12 +82,15 @@ final class BonusRecommendationService
 
         $amount = round($basic * ((float) $band['percent_of_basic'] / 100), 2);
 
-        return BonusRecommendation::updateOrCreate(
-            [
-                'company_id' => $employee->company_id,
-                'employee_id' => $employee->id,
-                'period_month' => $periodMonth,
-            ],
+        $keys = [
+            'company_id' => $employee->company_id,
+            'employee_id' => $employee->id,
+            'period_month' => $periodMonth,
+        ];
+        $before = BonusRecommendation::query()->where($keys)->first()?->only(self::AUDITED_FIELDS) ?? [];
+
+        $recommendation = BonusRecommendation::updateOrCreate(
+            $keys,
             [
                 'achievement_percent' => $achievement,
                 'recommended_amount' => $amount,
@@ -89,7 +98,7 @@ final class BonusRecommendationService
                 'rule_key' => (string) $band['key'],
                 'rationale' => sprintf(
                     '%s%% weighted achievement across %d goal(s) — %s band pays %s%% of basic salary.',
-                    $achievement, $overall['goals'], $band['key'], $band['percent_of_basic']
+                    $achievement, $overall['goals'], $band['key'], $band['percent_of_basic'],
                 ),
                 'explanation' => [
                     'achievement_percent' => $achievement,
@@ -102,8 +111,23 @@ final class BonusRecommendationService
                     'bands' => self::BANDS,
                 ],
                 'status' => RecommendationStatus::Pending->value,
-            ]
+            ],
         );
+
+        // HR performance evidence only — this records that a recommendation was
+        // (re)computed, never a payment; the bonus/payslip lifecycle is FIN-02's.
+        $this->audit->log(
+            action: $recommendation->wasRecentlyCreated ? 'hr.bonus_recommendation.recommended' : 'hr.bonus_recommendation.updated',
+            entityType: HrAuditService::ENTITY_BONUS_RECOMMENDATION,
+            entityId: (string) $recommendation->id,
+            companyId: (string) $employee->company_id,
+            actorId: null,
+            oldValues: $before,
+            newValues: $recommendation->only(self::AUDITED_FIELDS),
+            metadata: ['employee_id' => (string) $employee->id, 'period_month' => $periodMonth],
+        );
+
+        return $recommendation;
     }
 
     /**
@@ -129,27 +153,40 @@ final class BonusRecommendationService
     }
 
     /** Approve at the recommended amount — and create the bonus. */
-    public function approve(BonusRecommendation $recommendation, ?Employee $decidedBy = null, ?string $note = null): BonusRecommendation
+    public function approve(BonusRecommendation $recommendation, ?Employee $decidedBy = null, ?string $note = null, ?int $actorId = null): BonusRecommendation
     {
-        return $this->decide($recommendation, RecommendationStatus::Approved, (float) $recommendation->recommended_amount, $decidedBy, $note);
+        return $this->decide($recommendation, RecommendationStatus::Approved, (float) $recommendation->recommended_amount, $decidedBy, $note, $actorId);
     }
 
     /** Approve at a different amount — the manager's number wins, and is visible as an override. */
-    public function modify(BonusRecommendation $recommendation, float $amount, ?Employee $decidedBy = null, ?string $note = null): BonusRecommendation
+    public function modify(BonusRecommendation $recommendation, float $amount, ?Employee $decidedBy = null, ?string $note = null, ?int $actorId = null): BonusRecommendation
     {
-        return $this->decide($recommendation, RecommendationStatus::Modified, round($amount, 2), $decidedBy, $note);
+        return $this->decide($recommendation, RecommendationStatus::Modified, round($amount, 2), $decidedBy, $note, $actorId);
     }
 
-    public function reject(BonusRecommendation $recommendation, ?Employee $decidedBy = null, ?string $note = null): BonusRecommendation
+    public function reject(BonusRecommendation $recommendation, ?Employee $decidedBy = null, ?string $note = null, ?int $actorId = null): BonusRecommendation
     {
+        $before = $recommendation->only(self::DECISION_FIELDS);
+
         $recommendation->update([
             'status' => RecommendationStatus::Rejected->value,
             'decided_by_employee_id' => $decidedBy?->id,
             'decided_at' => Carbon::now(),
             'decision_note' => $note,
         ]);
+        $recommendation->refresh();
 
-        return $recommendation->refresh();
+        $this->audit->log(
+            action: 'hr.bonus_recommendation.rejected',
+            entityType: HrAuditService::ENTITY_BONUS_RECOMMENDATION,
+            entityId: (string) $recommendation->id,
+            companyId: (string) $recommendation->company_id,
+            actorId: $actorId,
+            oldValues: $before,
+            newValues: $recommendation->only(self::DECISION_FIELDS),
+        );
+
+        return $recommendation;
     }
 
     /** @return \Illuminate\Database\Eloquent\Collection<int, BonusRecommendation> */
@@ -178,9 +215,11 @@ final class BonusRecommendationService
         float $amount,
         ?Employee $decidedBy,
         ?string $note,
+        ?int $actorId = null,
     ): BonusRecommendation {
-        return DB::transaction(function () use ($recommendation, $status, $amount, $decidedBy, $note): BonusRecommendation {
+        return DB::transaction(function () use ($recommendation, $status, $amount, $decidedBy, $note, $actorId): BonusRecommendation {
             $employee = $recommendation->employee;
+            $before = $recommendation->only(self::DECISION_FIELDS);
 
             $bonus = $this->bonuses->award($employee, [
                 'type' => BonusType::Performance->value,
@@ -201,8 +240,22 @@ final class BonusRecommendationService
                 'decision_note' => $note,
                 'bonus_id' => (string) $bonus->id,
             ]);
+            $recommendation->refresh();
 
-            return $recommendation->refresh();
+            // The HR-evidence side of this decision only. The Bonus record itself
+            // (bonus_id above) is Compensation's own aggregate and is out of this
+            // slice's scope — see the Compensation Boundary in the task ticket.
+            $this->audit->log(
+                action: $status === RecommendationStatus::Modified ? 'hr.bonus_recommendation.modified' : 'hr.bonus_recommendation.approved',
+                entityType: HrAuditService::ENTITY_BONUS_RECOMMENDATION,
+                entityId: (string) $recommendation->id,
+                companyId: (string) $recommendation->company_id,
+                actorId: $actorId,
+                oldValues: $before,
+                newValues: $recommendation->only(self::DECISION_FIELDS),
+            );
+
+            return $recommendation;
         });
     }
 

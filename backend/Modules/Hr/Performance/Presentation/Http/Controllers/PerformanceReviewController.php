@@ -74,7 +74,7 @@ class PerformanceReviewController extends Controller
         );
 
         if (($v['status'] ?? 'draft') === 'submitted') {
-            $review = $this->reviews->submit($review);
+            $review = $this->reviews->submit($review, $this->actorId($request));
         }
 
         return response()->json(['data' => $review], 201);
@@ -113,11 +113,12 @@ class PerformanceReviewController extends Controller
 
         $decidedBy = $this->actingEmployee($request);
         $note = $v['note'] ?? null;
+        $actorId = $this->actorId($request);
 
         $recommendation = match ($v['decision']) {
-            'approve' => $this->recommendations->approve($recommendation, $decidedBy, $note),
-            'modify' => $this->recommendations->modify($recommendation, (float) $v['amount'], $decidedBy, $note),
-            default => $this->recommendations->reject($recommendation, $decidedBy, $note),
+            'approve' => $this->recommendations->approve($recommendation, $decidedBy, $note, $actorId),
+            'modify' => $this->recommendations->modify($recommendation, (float) $v['amount'], $decidedBy, $note, $actorId),
+            default => $this->recommendations->reject($recommendation, $decidedBy, $note, $actorId),
         };
 
         return response()->json(['data' => $this->recommendationPayload($recommendation)]);

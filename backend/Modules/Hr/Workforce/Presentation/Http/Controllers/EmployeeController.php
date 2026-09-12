@@ -84,7 +84,7 @@ class EmployeeController extends Controller
     public function update(Request $request, string $id): JsonResponse
     {
         $v = $request->validate($this->rules(updating: true));
-        $employee = $this->employees->update($this->employee($request, $id), $v);
+        $employee = $this->employees->update($this->employee($request, $id), $v, $this->actorId($request));
 
         return response()->json(['data' => $this->payload($employee)]);
     }
@@ -98,7 +98,7 @@ class EmployeeController extends Controller
             'job_grade_id' => ['nullable', 'string'],
         ]);
 
-        return response()->json(['data' => $this->payload($this->employees->transfer($this->employee($request, $id), $v))]);
+        return response()->json(['data' => $this->payload($this->employees->transfer($this->employee($request, $id), $v, $this->actorId($request)))]);
     }
 
     public function changeStatus(Request $request, string $id): JsonResponse
@@ -110,7 +110,7 @@ class EmployeeController extends Controller
             return response()->json(['message' => 'Unknown employee status.'], 422);
         }
 
-        return response()->json(['data' => $this->payload($this->employees->changeStatus($this->employee($request, $id), $target))]);
+        return response()->json(['data' => $this->payload($this->employees->changeStatus($this->employee($request, $id), $target, $this->actorId($request)))]);
     }
 
     public function terminate(Request $request, string $id): JsonResponse
@@ -129,7 +129,7 @@ class EmployeeController extends Controller
         }
 
         $employee = $this->employees->terminate(
-            $employee, $v['reason'], $v['termination_date'] ?? null, (bool) ($v['resigned'] ?? false)
+            $employee, $v['reason'], $v['termination_date'] ?? null, (bool) ($v['resigned'] ?? false), $this->actorId($request),
         );
 
         return response()->json(['data' => $this->payload($employee)]);
