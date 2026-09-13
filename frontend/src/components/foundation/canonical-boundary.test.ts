@@ -20,7 +20,7 @@ describe('canonical/deprecated UI foundation import boundary', () => {
 
   it('flags a new file importing a deprecated path', async () => {
     const messages = await lint(
-      `import { Tabs } from '@/components/ds/tabs';\nexport const x = Tabs;\n`,
+      `import { QuickStatCard } from '@/components/ds/quick-stat-card';\nexport const x = QuickStatCard;\n`,
       'src/features/some-new-page-not-on-the-grandfather-list.tsx',
     );
     expect(messages.length).toBeGreaterThan(0);
@@ -29,14 +29,6 @@ describe('canonical/deprecated UI foundation import boundary', () => {
   it('flags a new file importing a deprecated named export via a barrel', async () => {
     const messages = await lint(
       `import { QuickStatCard } from '@/components/ds';\nexport const x = QuickStatCard;\n`,
-      'src/features/some-new-page-not-on-the-grandfather-list.tsx',
-    );
-    expect(messages.length).toBeGreaterThan(0);
-  });
-
-  it('flags a new file importing the fully-unadopted EntityWorkspace unifier', async () => {
-    const messages = await lint(
-      `import { EntityWorkspace } from '@/components/entity';\nexport const x = EntityWorkspace;\n`,
       'src/features/some-new-page-not-on-the-grandfather-list.tsx',
     );
     expect(messages.length).toBeGreaterThan(0);
@@ -52,8 +44,8 @@ describe('canonical/deprecated UI foundation import boundary', () => {
 
   it('does not flag an explicitly grandfathered existing consumer', async () => {
     const messages = await lint(
-      `import { Tabs } from '@/components/ds/tabs';\nexport const x = Tabs;\n`,
-      'src/features/orders/components/order-detail-drawer.tsx',
+      `import { QuickStatCard } from '@/components/ds/quick-stat-card';\nexport const x = QuickStatCard;\n`,
+      'src/features/products/components/product-quick-stats.tsx',
     );
     expect(messages).toHaveLength(0);
   });

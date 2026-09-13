@@ -3,12 +3,11 @@ import { RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import {
-  EntityTable,
   EntityToolbar,
   PageHeader,
-  Pagination,
 } from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
+import type { DataGridColumnDef, GridPaginationConfig } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -98,50 +97,78 @@ export function SyncLogsPage() {
     setPage(1);
   };
 
-  const columns: ColumnDef<SyncLog>[] = [
+  const columns: DataGridColumnDef<SyncLog>[] = [
     {
       key: 'synced_at',
-      header: t($ => $.columns.date),
+      label: t($ => $.columns.date),
       sortable: true,
       cell: (log) => (log.synced_at ? new Date(log.synced_at).toLocaleString() : '—'),
     },
     {
       key: 'channel',
-      header: t($ => $.columns.channel),
+      label: t($ => $.columns.channel),
+      cardRole: 'title',
       cell: (log) => <span className="font-medium">{log.channel?.name ?? '—'}</span>,
     },
     {
       key: 'entity_type',
-      header: t($ => $.columns.entityType),
+      label: t($ => $.columns.entityType),
+      cardRole: 'subtitle',
       cell: (log) => t($ => $.entityType[log.entity_type]),
     },
     {
       key: 'direction',
-      header: t($ => $.columns.direction),
+      label: t($ => $.columns.direction),
       cell: (log) => <DirectionBadge direction={log.direction} />,
     },
     {
       key: 'action',
-      header: t($ => $.columns.action),
+      label: t($ => $.columns.action),
       cell: (log) => (
         <span className="font-mono text-xs">{log.action ?? '—'}</span>
       ),
     },
     {
       key: 'status',
-      header: t($ => $.columns.status),
+      label: t($ => $.columns.status),
+      cardRole: 'status',
       cell: (log) => <StatusBadge status={log.status} />,
     },
     {
       key: 'error_message',
-      header: t($ => $.columns.error),
+      label: t($ => $.columns.error),
       cell: (log) => (
         <span className="text-muted-foreground max-w-xs truncate text-xs">
           {log.error_message ?? '—'}
         </span>
       ),
     },
+    {
+      key: 'rowActions',
+      label: '',
+      align: 'end',
+      alwaysVisible: true,
+      cell: (log) =>
+        log.status === 'failed' && log.direction === 'outbound' ? (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={retrySyncLog.isPending}
+            onClick={() => retrySyncLog.mutate(log.id)}
+          >
+            <RefreshCw className="size-3.5" />
+            {retrySyncLog.isPending ? t($ => $.actions.retrying) : t($ => $.actions.retry)}
+          </Button>
+        ) : null,
+    },
   ];
+
+  const pagination: GridPaginationConfig | undefined = meta
+    ? {
+        meta: { page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page },
+        onPageChange: setPage,
+      }
+    : undefined;
 
   return (
     <div className="flex flex-col gap-6">
@@ -254,35 +281,16 @@ export function SyncLogsPage() {
             }
           />
 
-          <EntityTable<SyncLog>
-            columns={columns}
+          <UniversalDataGrid<SyncLog>
             data={items}
-            getRowId={(log) => log.id}
-            isLoading={isLoading}
-            isError={isError}
+            columns={columns}
+            rowId={(log) => log.id}
+            loading={isLoading}
+            error={isError}
             sort={sort}
             onSortChange={handleSort}
-            rowActions={(log) =>
-              log.status === 'failed' && log.direction === 'outbound' ? (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={retrySyncLog.isPending}
-                  onClick={() => retrySyncLog.mutate(log.id)}
-                >
-                  <RefreshCw className="size-3.5" />
-                  {retrySyncLog.isPending ? t($ => $.actions.retrying) : t($ => $.actions.retry)}
-                </Button>
-              ) : null
-            }
+            pagination={pagination}
           />
-
-          {meta ? (
-            <Pagination
-              meta={{ page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page }}
-              onPageChange={setPage}
-            />
-          ) : null}
         </CardContent>
       </Card>
     </div>

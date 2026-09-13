@@ -32,7 +32,7 @@ vi.mock('@/features/orders/hooks/use-orders', () => ({
   usePatchOrder: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
-import { OrderPaymentBadge, OrderPaymentCell } from './order-payment-cell';
+import { OrderPaymentCell } from './order-payment-cell';
 import type { Order } from '../types/order';
 
 function orderWith(method: string | null, methodTitle: string | null = null) {
@@ -78,12 +78,5 @@ describe('OrderPaymentCell — legacy/unrecognized values keep the short non-loc
   it('shows an em-dash when there is no payment method at all', () => {
     render(<OrderPaymentCell order={orderWith(null)} />);
     expect(screen.getByText('—')).toBeInTheDocument();
-  });
-});
-
-describe('OrderPaymentBadge — the same localized fix applies to the legacy badge export', () => {
-  it('resolves a canonical method through the localized map', () => {
-    render(<OrderPaymentBadge method="cod" methodTitle={null} datePaid={null} />);
-    expect(screen.getByText('workspace.paymentMethodLabels.cod')).toBeInTheDocument();
   });
 });

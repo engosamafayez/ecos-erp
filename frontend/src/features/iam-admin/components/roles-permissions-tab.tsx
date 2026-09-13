@@ -3,9 +3,11 @@ import { Archive, Copy, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { ConfirmDialog, EmptyState, EntityTable, ErrorState, PageHeader } from '@/components/crud';
+import { ConfirmDialog, EmptyState, ErrorState, PageHeader } from '@/components/crud';
 import { ActionMenu } from '@/components/crud/action-menu';
-import type { ActionMenuItem, ColumnDef } from '@/components/crud/types';
+import type { ActionMenuItem } from '@/components/crud/types';
+import type { DataGridColumnDef } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -67,11 +69,13 @@ export function RolesPermissionsTab({
   const restoreRole = useRestoreRoleByIdMutation();
   const deleteRole = useDeleteRoleMutation();
 
-  const columns = useMemo<ColumnDef<RoleSummary>[]>(
+  const columns = useMemo<DataGridColumnDef<RoleSummary>[]>(
     () => [
       {
         key: 'name',
-        header: t(($) => $.roles.columns.name),
+        label: t(($) => $.roles.columns.name),
+        alwaysVisible: true,
+        cardRole: 'title',
         cell: (row) => (
           <button type="button" onClick={() => setSelectedRoleId(row.id)} className="text-start hover:underline">
             <span className="block font-medium">{row.name_ar}</span>
@@ -81,7 +85,8 @@ export function RolesPermissionsTab({
       },
       {
         key: 'type',
-        header: t(($) => $.roles.columns.type),
+        label: t(($) => $.roles.columns.type),
+        cardRole: 'status',
         cell: (row) => (
           <div className="flex flex-wrap gap-1">
             {row.is_system ? (
@@ -98,18 +103,72 @@ export function RolesPermissionsTab({
       },
       {
         key: 'template',
-        header: t(($) => $.roles.columns.template),
+        label: t(($) => $.roles.columns.template),
+        cardRole: 'subtitle',
         cell: (row) => row.template?.name ?? '—',
       },
       {
         key: 'user_count',
-        header: t(($) => $.roles.columns.userCount),
+        label: t(($) => $.roles.columns.userCount),
         cell: (row) => row.user_count ?? '—',
-        align: 'right',
+        align: 'end',
       },
     ],
     [t],
   );
+
+  // Not memoized — mirrors how `rowActions` was previously passed to EntityTable as a fresh
+  // inline function on every render, so it always closes over the current `tCommon`, the
+  // mutation objects and the setters below without a stale-dependency risk.
+  const actionsColumn: DataGridColumnDef<RoleSummary> = {
+    key: 'actions',
+    label: '',
+    align: 'end',
+    alwaysVisible: true,
+    cell: (row) => {
+      const actions: ActionMenuItem[] = [
+        {
+          key: 'view',
+          label: row.editable ? tCommon(($) => $.common.edit) : tCommon(($) => $.actions.view),
+          icon: Pencil,
+          onSelect: () => setSelectedRoleId(row.id),
+        },
+        {
+          key: 'clone',
+          label: t(($) => $.roles.cloneAction),
+          icon: Copy,
+          onSelect: () => setCloneTarget({ id: row.id, name: row.name }),
+        },
+      ];
+      if (row.editable && !row.is_system) {
+        if (row.archived) {
+          actions.push({
+            key: 'restore',
+            label: t(($) => $.roles.detail.restoreTrigger),
+            icon: RotateCcw,
+            onSelect: () => restoreRole.mutate(row.id),
+          });
+        } else {
+          actions.push({
+            key: 'archive',
+            label: t(($) => $.roles.detail.archiveTrigger),
+            icon: Archive,
+            onSelect: () => setArchiveTarget({ id: row.id, name: row.name }),
+          });
+        }
+      }
+      if (row.editable && !row.is_system && (row.user_count ?? 0) === 0) {
+        actions.push({
+          key: 'delete',
+          label: t(($) => $.roles.detail.deleteTrigger),
+          icon: Trash2,
+          variant: 'destructive',
+          onSelect: () => setDeleteTarget({ id: row.id, name: row.name }),
+        });
+      }
+      return <ActionMenu items={actions} />;
+    },
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -142,57 +201,14 @@ export function RolesPermissionsTab({
             {t(($) => $.roles.showArchived)}
           </label>
 
-          <EntityTable
-            columns={columns}
+          <UniversalDataGrid<RoleSummary>
             data={query.data?.data ?? []}
-            getRowId={(row) => row.id}
-            isLoading={query.isLoading}
-            isError={query.isError}
+            columns={[...columns, actionsColumn]}
+            rowId={(row) => row.id}
+            loading={query.isLoading}
+            error={query.isError}
             errorState={<ErrorState description={query.error instanceof Error ? query.error.message : undefined} />}
             emptyState={<EmptyState title={t(($) => $.roles.empty)} />}
-            rowActions={(row) => {
-              const actions: ActionMenuItem[] = [
-                {
-                  key: 'view',
-                  label: row.editable ? tCommon(($) => $.common.edit) : tCommon(($) => $.actions.view),
-                  icon: Pencil,
-                  onSelect: () => setSelectedRoleId(row.id),
-                },
-                {
-                  key: 'clone',
-                  label: t(($) => $.roles.cloneAction),
-                  icon: Copy,
-                  onSelect: () => setCloneTarget({ id: row.id, name: row.name }),
-                },
-              ];
-              if (row.editable && !row.is_system) {
-                if (row.archived) {
-                  actions.push({
-                    key: 'restore',
-                    label: t(($) => $.roles.detail.restoreTrigger),
-                    icon: RotateCcw,
-                    onSelect: () => restoreRole.mutate(row.id),
-                  });
-                } else {
-                  actions.push({
-                    key: 'archive',
-                    label: t(($) => $.roles.detail.archiveTrigger),
-                    icon: Archive,
-                    onSelect: () => setArchiveTarget({ id: row.id, name: row.name }),
-                  });
-                }
-              }
-              if (row.editable && !row.is_system && (row.user_count ?? 0) === 0) {
-                actions.push({
-                  key: 'delete',
-                  label: t(($) => $.roles.detail.deleteTrigger),
-                  icon: Trash2,
-                  variant: 'destructive',
-                  onSelect: () => setDeleteTarget({ id: row.id, name: row.name }),
-                });
-              }
-              return <ActionMenu items={actions} />;
-            }}
           />
         </TabsContent>
 

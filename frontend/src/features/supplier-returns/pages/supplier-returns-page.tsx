@@ -6,12 +6,11 @@ import { CheckCircle2, Plus, RotateCcw, Send, Trash2, XCircle } from 'lucide-rea
 import {
   ActionMenu,
   ConfirmDialog,
-  EntityTable,
   EntityToolbar,
   PageHeader,
-  Pagination,
 } from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
+import type { DataGridColumnDef, GridPaginationConfig } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -94,46 +93,110 @@ export function SupplierReturnsPage() {
     setPage(1);
   };
 
-  const columns: ColumnDef<SupplierReturn>[] = [
+  const columns: DataGridColumnDef<SupplierReturn>[] = [
     {
       key: 'return_number',
-      header: returnColumnHeaders.number,
+      label: returnColumnHeaders.number,
+      alwaysVisible: true,
+      cardRole: 'title',
       cell: (r) => <span className="font-mono text-sm font-medium">{r.return_number}</span>,
     },
     {
       key: 'supplier',
-      header: returnColumnHeaders.supplier,
+      label: returnColumnHeaders.supplier,
+      cardRole: 'subtitle',
       cell: (r) => <span className="text-sm">{r.supplier?.name ?? '—'}</span>,
     },
     {
       key: 'return_date',
-      header: returnColumnHeaders.returnDate,
+      label: returnColumnHeaders.returnDate,
       cell: (r) => <span className="text-sm text-gray-600">{r.return_date}</span>,
     },
     {
       key: 'reason',
-      header: returnColumnHeaders.reason,
+      label: returnColumnHeaders.reason,
       cell: (r) => (
         <span className="text-xs text-gray-500 capitalize">{r.reason?.replace(/_/g, ' ') ?? '—'}</span>
       ),
     },
     {
       key: 'total_return_value',
-      header: returnColumnHeaders.amount,
+      label: returnColumnHeaders.amount,
       cell: (r) => (
         <span className="text-sm font-medium">{fmt.money(r.total_return_value)}</span>
       ),
     },
     {
       key: 'status',
-      header: returnColumnHeaders.status,
+      label: returnColumnHeaders.status,
+      cardRole: 'status',
       cell: (r) => (
         <Badge className={`${RETURN_STATUS_COLORS[r.status]} border-0 text-xs`} variant="secondary">
           {returnStatusLabel[r.status]}
         </Badge>
       ),
     },
+    {
+      key: 'actions',
+      label: '',
+      align: 'end',
+      alwaysVisible: true,
+      cell: (r) => (
+        <ActionMenu
+          label={`Actions for ${r.return_number}`}
+          items={[
+            {
+              key: 'view',
+              label: t($ => $.page.actions.viewDetails),
+              icon: RotateCcw,
+              onSelect: () => setSelectedId(r.id),
+            },
+            ...(r.status === 'draft' ? [
+              {
+                key: 'submit',
+                label: t($ => $.page.actions.submit),
+                icon: Send,
+                onSelect: () => submitMutation.mutate(r.id),
+              },
+            ] : []),
+            ...(r.status === 'waiting_approval' ? [
+              {
+                key: 'approve',
+                label: t($ => $.page.actions.approve),
+                icon: CheckCircle2,
+                onSelect: () => approveMutation.mutate(r.id),
+              },
+            ] : []),
+            ...(['draft', 'waiting_approval'].includes(r.status) ? [
+              {
+                key: 'cancel',
+                label: t($ => $.page.actions.cancel),
+                icon: XCircle,
+                variant: 'destructive' as const,
+                onSelect: () => setCancelling(r),
+              },
+            ] : []),
+            ...(r.status === 'draft' ? [
+              {
+                key: 'delete',
+                label: t($ => $.page.actions.delete),
+                icon: Trash2,
+                variant: 'destructive' as const,
+                onSelect: () => setDeleting(r),
+              },
+            ] : []),
+          ]}
+        />
+      ),
+    },
   ];
+
+  const pagination: GridPaginationConfig | undefined = meta
+    ? {
+        meta: { page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page },
+        onPageChange: setPage,
+      }
+    : undefined;
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -202,69 +265,16 @@ export function SupplierReturnsPage() {
               }
             />
 
-            <EntityTable<SupplierReturn>
+            <UniversalDataGrid<SupplierReturn>
               columns={columns}
               data={items}
-              getRowId={(r) => r.id}
-              isLoading={isLoading}
-              isError={isError}
+              rowId={(r) => r.id}
+              loading={isLoading}
+              error={isError}
               sort={sort}
               onSortChange={handleSort}
-              rowActions={(r) => (
-                <ActionMenu
-                  label={`Actions for ${r.return_number}`}
-                  items={[
-                    {
-                      key: 'view',
-                      label: t($ => $.page.actions.viewDetails),
-                      icon: RotateCcw,
-                      onSelect: () => setSelectedId(r.id),
-                    },
-                    ...(r.status === 'draft' ? [
-                      {
-                        key: 'submit',
-                        label: t($ => $.page.actions.submit),
-                        icon: Send,
-                        onSelect: () => submitMutation.mutate(r.id),
-                      },
-                    ] : []),
-                    ...(r.status === 'waiting_approval' ? [
-                      {
-                        key: 'approve',
-                        label: t($ => $.page.actions.approve),
-                        icon: CheckCircle2,
-                        onSelect: () => approveMutation.mutate(r.id),
-                      },
-                    ] : []),
-                    ...(['draft', 'waiting_approval'].includes(r.status) ? [
-                      {
-                        key: 'cancel',
-                        label: t($ => $.page.actions.cancel),
-                        icon: XCircle,
-                        variant: 'destructive' as const,
-                        onSelect: () => setCancelling(r),
-                      },
-                    ] : []),
-                    ...(r.status === 'draft' ? [
-                      {
-                        key: 'delete',
-                        label: t($ => $.page.actions.delete),
-                        icon: Trash2,
-                        variant: 'destructive' as const,
-                        onSelect: () => setDeleting(r),
-                      },
-                    ] : []),
-                  ]}
-                />
-              )}
+              pagination={pagination}
             />
-
-            {meta ? (
-              <Pagination
-                meta={{ page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page }}
-                onPageChange={setPage}
-              />
-            ) : null}
           </CardContent>
         </Card>
       </div>

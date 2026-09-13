@@ -2,12 +2,11 @@ import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import {
-  EntityTable,
   EntityToolbar,
   PageHeader,
-  Pagination,
 } from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
+import type { DataGridColumnDef, GridPaginationConfig } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Card, CardContent } from '@/components/ui/card';
 import { useChannelOptions } from '@/features/channels/hooks/use-channel-options';
 import { StockSyncStatusBadge } from '@/features/stock-sync/components/stock-sync-status-badge';
@@ -64,22 +63,24 @@ export function StockSyncLogsPage() {
     setPage(1);
   };
 
-  const columns: ColumnDef<StockSyncLog>[] = [
+  const columns: DataGridColumnDef<StockSyncLog>[] = [
     {
       key: 'synced_at',
-      header: t($ => $.columns.date),
+      label: t($ => $.columns.date),
       sortable: true,
       cell: (log) =>
         log.synced_at ? new Date(log.synced_at).toLocaleString() : '—',
     },
     {
       key: 'channel',
-      header: t($ => $.columns.channel),
+      label: t($ => $.columns.channel),
+      cardRole: 'subtitle',
       cell: (log) => <span className="font-medium">{log.channel?.name ?? '—'}</span>,
     },
     {
       key: 'product',
-      header: t($ => $.columns.product),
+      label: t($ => $.columns.product),
+      cardRole: 'title',
       cell: (log) => (
         <div>
           <span className="font-medium">{log.product?.name ?? '—'}</span>
@@ -91,7 +92,7 @@ export function StockSyncLogsPage() {
     },
     {
       key: 'stock_quantity',
-      header: t($ => $.columns.quantity),
+      label: t($ => $.columns.quantity),
       sortable: true,
       cell: (log) => (
         <span className="font-mono tabular-nums">{log.stock_quantity}</span>
@@ -99,12 +100,13 @@ export function StockSyncLogsPage() {
     },
     {
       key: 'sync_status',
-      header: t($ => $.columns.status),
+      label: t($ => $.columns.status),
+      cardRole: 'status',
       cell: (log) => <StockSyncStatusBadge status={log.sync_status} />,
     },
     {
       key: 'response_message',
-      header: t($ => $.columns.message),
+      label: t($ => $.columns.message),
       cell: (log) => (
         <span className="text-muted-foreground max-w-xs truncate text-xs">
           {log.response_message ?? '—'}
@@ -112,6 +114,13 @@ export function StockSyncLogsPage() {
       ),
     },
   ];
+
+  const pagination: GridPaginationConfig | undefined = meta
+    ? {
+        meta: { page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page },
+        onPageChange: setPage,
+      }
+    : undefined;
 
   return (
     <div className="flex flex-col gap-6">
@@ -192,22 +201,16 @@ export function StockSyncLogsPage() {
             }
           />
 
-          <EntityTable<StockSyncLog>
-            columns={columns}
+          <UniversalDataGrid<StockSyncLog>
             data={items}
-            getRowId={(log) => log.id}
-            isLoading={isLoading}
-            isError={isError}
+            columns={columns}
+            rowId={(log) => log.id}
+            loading={isLoading}
+            error={isError}
             sort={sort}
             onSortChange={handleSort}
+            pagination={pagination}
           />
-
-          {meta ? (
-            <Pagination
-              meta={{ page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page }}
-              onPageChange={setPage}
-            />
-          ) : null}
         </CardContent>
       </Card>
     </div>

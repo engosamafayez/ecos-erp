@@ -2,9 +2,11 @@ import { useMemo, useState } from 'react';
 import { Archive, Copy, Pencil, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { ConfirmDialog, EmptyState, EntityTable, ErrorState, PageHeader } from '@/components/crud';
+import { ConfirmDialog, EmptyState, ErrorState, PageHeader } from '@/components/crud';
 import { ActionMenu } from '@/components/crud/action-menu';
-import type { ActionMenuItem, ColumnDef } from '@/components/crud/types';
+import type { ActionMenuItem } from '@/components/crud/types';
+import type { DataGridColumnDef } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Badge } from '@/components/ui/badge';
 import { Can } from '@/features/authorization';
 import { useArchiveRoleTemplateByKey, useRoleTemplatesQuery } from '@/features/iam-admin/hooks/use-role-templates';
@@ -48,11 +50,13 @@ export function RoleTemplatesTab({
     }
   }
 
-  const columns = useMemo<ColumnDef<RoleTemplateSummary>[]>(
+  const columns = useMemo<DataGridColumnDef<RoleTemplateSummary>[]>(
     () => [
       {
         key: 'name',
-        header: t(($) => $.roleTemplates.columns.name),
+        label: t(($) => $.roleTemplates.columns.name),
+        alwaysVisible: true,
+        cardRole: 'title',
         cell: (row) => (
           <button type="button" onClick={() => setSelectedKey(row.key)} className="text-start hover:underline">
             <span className="block font-medium">{row.name_ar}</span>
@@ -62,7 +66,7 @@ export function RoleTemplatesTab({
       },
       {
         key: 'type',
-        header: t(($) => $.roleTemplates.columns.type),
+        label: t(($) => $.roleTemplates.columns.type),
         cell: (row) =>
           row.is_system ? (
             <Badge variant="outline">{t(($) => $.roleTemplates.systemBadge)}</Badge>
@@ -72,22 +76,59 @@ export function RoleTemplatesTab({
       },
       {
         key: 'category',
-        header: t(($) => $.roleTemplates.columns.category),
+        label: t(($) => $.roleTemplates.columns.category),
+        cardRole: 'subtitle',
         cell: (row) => row.category,
       },
       {
         key: 'version',
-        header: t(($) => $.roleTemplates.columns.version),
+        label: t(($) => $.roleTemplates.columns.version),
         cell: (row) => `v${row.version}`,
       },
       {
         key: 'status',
-        header: t(($) => $.roleTemplates.columns.status),
+        label: t(($) => $.roleTemplates.columns.status),
+        cardRole: 'status',
         cell: (row) => <Badge variant="outline">{row.status}</Badge>,
       },
     ],
     [t],
   );
+
+  // Not memoized — mirrors how `rowActions` was previously passed to EntityTable as a fresh
+  // inline function on every render, so it always closes over the current `tCommon` and setters
+  // below without a stale-dependency risk.
+  const actionsColumn: DataGridColumnDef<RoleTemplateSummary> = {
+    key: 'actions',
+    label: '',
+    align: 'end',
+    alwaysVisible: true,
+    cell: (row) => {
+      const actions: ActionMenuItem[] = [
+        {
+          key: 'view',
+          label: row.is_system ? tCommon(($) => $.actions.view) : tCommon(($) => $.common.edit),
+          icon: Pencil,
+          onSelect: () => setSelectedKey(row.key),
+        },
+        {
+          key: 'clone',
+          label: t(($) => $.roleTemplates.cloneAction),
+          icon: Copy,
+          onSelect: () => setCloneTarget(row),
+        },
+      ];
+      if (!row.is_system) {
+        actions.push({
+          key: 'archive',
+          label: t(($) => $.roleTemplates.detail.archiveTrigger),
+          icon: Archive,
+          onSelect: () => setArchiveTarget(row),
+        });
+      }
+      return <ActionMenu items={actions} />;
+    },
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -108,39 +149,14 @@ export function RoleTemplatesTab({
         }
       />
 
-      <EntityTable
-        columns={columns}
+      <UniversalDataGrid<RoleTemplateSummary>
         data={query.data ?? []}
-        getRowId={(row) => row.key}
-        isLoading={query.isLoading}
-        isError={query.isError}
+        columns={[...columns, actionsColumn]}
+        rowId={(row) => row.key}
+        loading={query.isLoading}
+        error={query.isError}
         errorState={<ErrorState description={query.error instanceof Error ? query.error.message : undefined} />}
         emptyState={<EmptyState title={t(($) => $.roleTemplates.empty)} />}
-        rowActions={(row) => {
-          const actions: ActionMenuItem[] = [
-            {
-              key: 'view',
-              label: row.is_system ? tCommon(($) => $.actions.view) : tCommon(($) => $.common.edit),
-              icon: Pencil,
-              onSelect: () => setSelectedKey(row.key),
-            },
-            {
-              key: 'clone',
-              label: t(($) => $.roleTemplates.cloneAction),
-              icon: Copy,
-              onSelect: () => setCloneTarget(row),
-            },
-          ];
-          if (!row.is_system) {
-            actions.push({
-              key: 'archive',
-              label: t(($) => $.roleTemplates.detail.archiveTrigger),
-              icon: Archive,
-              onSelect: () => setArchiveTarget(row),
-            });
-          }
-          return <ActionMenu items={actions} />;
-        }}
       />
 
       <ConfirmDialog

@@ -16,12 +16,13 @@
  * `ErrorState`/`Pagination` from the `crud` barrel, so `crud/index.ts` itself
  * must never import from `data-grid` or `workspace`.
  *
- * Deliberately NOT re-exported here (see the compatibility/deprecation matrix
- * in the 045 engineering report): `EntityTable` (`crud/entity-table` —
- * compatibility-only, superseded by `UniversalDataGrid`), and anything from
- * `components/entity`, `components/form`, `components/page`, or
- * `components/ds/{tabs,quick-stat-card}` (deprecated — see
- * `eslint.config.js`'s `no-restricted-imports` boundary). Raw Radix-based
+ * `EntityTable`, the whole `components/entity` EntityWorkspace unifier,
+ * `components/form`, `ds/tabs`, and most of `components/page`'s deprecated
+ * state/dialog pieces were fully retired across UI-01/UI-07 once their last
+ * real consumers migrated to the canonical replacements — there is nothing
+ * left to deliberately exclude for them. `components/ds/quick-stat-card`
+ * still has a handful of grandfathered consumers — see `eslint.config.js`'s
+ * `no-restricted-imports` boundary for the exact current state. Raw Radix-based
  * primitives (Dialog, Sheet, Tabs, Button, Input, EcosCombobox, …) stay
  * imported directly from `@/components/ui/*` — they don't need another layer
  * of indirection over an already-uncontested, non-duplicated import path.

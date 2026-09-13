@@ -6,13 +6,12 @@ import { getMediaUrl } from '@/lib/media';
 import {
   ActionMenu,
   ConfirmDialog,
-  EntityTable,
   EntityToolbar,
   PageHeader,
-  Pagination,
   StatusBadge,
 } from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
+import type { DataGridColumnDef, GridPaginationConfig } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -136,22 +135,29 @@ export function BrandsPage() {
     setDetailDrawerOpen(true);
   }, []);
 
-  const columns: ColumnDef<Brand>[] = [
+  /* eslint-disable ecos-i18n/no-hardcoded-ui-strings -- these column labels were
+     pre-existing plain strings under the deprecated ColumnDef's `header` field
+     (not a monitored key); `DataGridColumnDef.label` is the same pre-existing
+     copy under its required field name. Converting this page to full i18n is
+     out of scope for the EntityTable -> UniversalDataGrid presentation migration. */
+  const columns: DataGridColumnDef<Brand>[] = [
     {
       key: 'logo',
-      header: 'Logo',
+      label: 'Logo',
       cell: (b) => <BrandLogoCell path={b.logo} name={b.name} />,
     },
     {
       key: 'code',
-      header: 'Code',
+      label: 'Code',
       sortable: true,
+      cardRole: 'subtitle',
       cell: (b) => <span className="font-mono text-xs font-medium">{b.code}</span>,
     },
     {
       key: 'name',
-      header: 'Brand Name',
+      label: 'Brand Name',
       sortable: true,
+      cardRole: 'title',
       cell: (b) => (
         <button
           className="font-medium hover:underline text-start leading-none"
@@ -163,12 +169,12 @@ export function BrandsPage() {
     },
     {
       key: 'company',
-      header: 'Company',
+      label: 'Company',
       cell: (b) => <span className="text-muted-foreground">{b.company?.name ?? '—'}</span>,
     },
     {
       key: 'channels',
-      header: 'Active Channels',
+      label: 'Active Channels',
       cell: (b) => (
         <span className="text-muted-foreground">
           {b.active_channels_count > 0
@@ -179,13 +185,14 @@ export function BrandsPage() {
     },
     {
       key: 'is_active',
-      header: 'Status',
+      label: 'Status',
       sortable: true,
+      cardRole: 'status',
       cell: (b) => <StatusBadge status={b.is_active ? 'active' : 'inactive'} />,
     },
     {
       key: 'updated_at',
-      header: 'Updated At',
+      label: 'Updated At',
       sortable: true,
       cell: (b) => (
         <span className="text-muted-foreground text-xs">
@@ -193,7 +200,45 @@ export function BrandsPage() {
         </span>
       ),
     },
+    /* eslint-enable ecos-i18n/no-hardcoded-ui-strings */
+    // This action column carries the same pre-existing ActionMenu item labels
+    // the old `rowActions` prop already rendered (unchanged, still subject to
+    // the i18n guard like before) — kept outside the disable block above.
+    {
+      key: 'actions',
+      label: '',
+      align: 'end',
+      alwaysVisible: true,
+      cell: (brand) => (
+        <ActionMenu
+          label={`Actions for ${brand.name}`}
+          items={[
+            { key: 'view', label: 'View', icon: Eye, onSelect: () => openDetail(brand) },
+            { key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => openEdit(brand) },
+            {
+              key: 'delete',
+              label: 'Delete',
+              icon: Trash2,
+              variant: 'destructive',
+              onSelect: () => setDeleting(brand),
+            },
+          ]}
+        />
+      ),
+    },
   ];
+
+  const pagination: GridPaginationConfig | undefined = meta
+    ? {
+        meta: {
+          page: meta.current_page,
+          perPage: meta.per_page,
+          total: meta.total,
+          lastPage: meta.last_page,
+        },
+        onPageChange: setPage,
+      }
+    : undefined;
 
   const confirmDelete = () => {
     if (!deleting) return;
@@ -317,43 +362,16 @@ export function BrandsPage() {
             </DropdownMenu>
           </EntityToolbar>
 
-          <EntityTable<Brand>
-            columns={columns.filter((c) => !hiddenCols.has(c.key))}
+          <UniversalDataGrid<Brand>
             data={items}
-            getRowId={(b) => b.id}
-            isLoading={isLoading}
-            isError={isError}
+            columns={columns.filter((c) => !hiddenCols.has(c.key))}
+            rowId={(b) => b.id}
+            loading={isLoading}
+            error={isError}
             sort={sort}
             onSortChange={handleSort}
-            rowActions={(brand) => (
-              <ActionMenu
-                label={`Actions for ${brand.name}`}
-                items={[
-                  { key: 'view', label: 'View', icon: Eye, onSelect: () => openDetail(brand) },
-                  { key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => openEdit(brand) },
-                  {
-                    key: 'delete',
-                    label: 'Delete',
-                    icon: Trash2,
-                    variant: 'destructive',
-                    onSelect: () => setDeleting(brand),
-                  },
-                ]}
-              />
-            )}
+            pagination={pagination}
           />
-
-          {meta ? (
-            <Pagination
-              meta={{
-                page: meta.current_page,
-                perPage: meta.per_page,
-                total: meta.total,
-                lastPage: meta.last_page,
-              }}
-              onPageChange={setPage}
-            />
-          ) : null}
         </CardContent>
       </Card>
 

@@ -5,13 +5,12 @@ import { useTranslation } from 'react-i18next';
 import {
   ActionMenu,
   ConfirmDialog,
-  EntityTable,
   EntityToolbar,
   PageHeader,
-  Pagination,
   StatusBadge,
 } from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
+import type { DataGridColumnDef, GridPaginationConfig } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -114,23 +113,54 @@ export function WarehousesPage() {
     setEditDrawerOpen(true);
   };
 
-  const columns: ColumnDef<Warehouse>[] = [
-    { key: 'company', header: t($ => $.columns.company), cell: (w) => w.company?.name ?? '—' },
+  const columns: DataGridColumnDef<Warehouse>[] = [
+    { key: 'company', label: t($ => $.columns.company), cell: (w) => w.company?.name ?? '—' },
     {
       key: 'code',
-      header: t($ => $.columns.code),
+      label: t($ => $.columns.code),
       sortable: true,
+      cardRole: 'title',
       cell: (w) => <span className="font-medium">{w.code}</span>,
     },
-    { key: 'name', header: t($ => $.columns.name), sortable: true, cell: (w) => w.name },
-    { key: 'city', header: t($ => $.columns.city), sortable: true, cell: (w) => w.city ?? '—' },
+    { key: 'name', label: t($ => $.columns.name), sortable: true, cardRole: 'subtitle', cell: (w) => w.name },
+    { key: 'city', label: t($ => $.columns.city), sortable: true, cell: (w) => w.city ?? '—' },
     {
       key: 'is_active',
-      header: t($ => $.columns.status),
+      label: t($ => $.columns.status),
       sortable: true,
+      cardRole: 'status',
       cell: (w) => <StatusBadge status={w.is_active ? 'active' : 'inactive'} />,
     },
+    {
+      key: 'actions',
+      label: '',
+      align: 'end',
+      alwaysVisible: true,
+      cell: (warehouse) => (
+        <ActionMenu
+          label={`Actions for ${warehouse.name}`}
+          items={[
+            { key: 'view', label: tCommon($ => $.actions.view), icon: Eye, onSelect: () => openView(warehouse) },
+            { key: 'edit', label: tCommon($ => $.common.edit), icon: Pencil, onSelect: () => openEdit(warehouse) },
+            {
+              key: 'delete',
+              label: tCommon($ => $.common.delete),
+              icon: Trash2,
+              variant: 'destructive',
+              onSelect: () => setDeleting(warehouse),
+            },
+          ]}
+        />
+      ),
+    },
   ];
+
+  const pagination: GridPaginationConfig | undefined = meta
+    ? {
+        meta: { page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page },
+        onPageChange: setPage,
+      }
+    : undefined;
 
   const confirmDelete = () => {
     if (!deleting) return;
@@ -259,43 +289,16 @@ export function WarehousesPage() {
             </DropdownMenu>
           </EntityToolbar>
 
-          <EntityTable<Warehouse>
-            columns={columns.filter((c) => !hiddenCols.has(c.key))}
+          <UniversalDataGrid<Warehouse>
             data={items}
-            getRowId={(warehouse) => warehouse.id}
-            isLoading={isLoading}
-            isError={isError}
+            columns={columns.filter((c) => !hiddenCols.has(c.key))}
+            rowId={(warehouse) => warehouse.id}
+            loading={isLoading}
+            error={isError}
             sort={sort}
             onSortChange={handleSort}
-            rowActions={(warehouse) => (
-              <ActionMenu
-                label={`Actions for ${warehouse.name}`}
-                items={[
-                  { key: 'view', label: tCommon($ => $.actions.view), icon: Eye, onSelect: () => openView(warehouse) },
-                  { key: 'edit', label: tCommon($ => $.common.edit), icon: Pencil, onSelect: () => openEdit(warehouse) },
-                  {
-                    key: 'delete',
-                    label: tCommon($ => $.common.delete),
-                    icon: Trash2,
-                    variant: 'destructive',
-                    onSelect: () => setDeleting(warehouse),
-                  },
-                ]}
-              />
-            )}
+            pagination={pagination}
           />
-
-          {meta ? (
-            <Pagination
-              meta={{
-                page: meta.current_page,
-                perPage: meta.per_page,
-                total: meta.total,
-                lastPage: meta.last_page,
-              }}
-              onPageChange={setPage}
-            />
-          ) : null}
         </CardContent>
       </Card>
 

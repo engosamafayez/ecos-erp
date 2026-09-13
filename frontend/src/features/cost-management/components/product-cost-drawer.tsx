@@ -2,16 +2,11 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BookOpen, TrendingDown, TrendingUp } from 'lucide-react';
 
-import { Tabs } from '@/components/ds/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+import { EntityDrawer } from '@/components/crud';
 import { useProductCostDetail } from '@/features/cost-management/hooks/use-pricing-reviews';
 import type { PricingReview } from '@/features/cost-management/types/pricing-review';
 import { cn } from '@/lib/utils';
@@ -440,65 +435,44 @@ export function ProductCostDrawer({ review, open, onOpenChange }: ProductCostDra
 
   if (!review) return null;
 
-  const tabs = [
-    {
-      key: 'cost-breakdown',
-      label: t($ => $.drawer.tabs.costBreakdown),
-      content: <CostBreakdownTab review={review} detailLoading={false} />,
-    },
-    {
-      key: 'recipe-changes',
-      label: t($ => $.drawer.tabs.recipeChanges),
-      badge: review.impacts.includes('recipe_changed') ? '!' : undefined,
-      content: <RecipeChangesTab review={review} />,
-    },
-    {
-      key: 'price-history',
-      label: t($ => $.drawer.tabs.priceHistory),
-      content: <PriceHistoryTab review={review} />,
-    },
-    {
-      key: 'simulation',
-      label: t($ => $.drawer.tabs.marginSimulation),
-      content: <MarginSimulationTab review={review} />,
-    },
-    {
-      key: 'approval-history',
-      label: t($ => $.drawer.tabs.approvalHistory),
-      content: <ApprovalHistoryTab review={review} />,
-    },
-  ];
+  const hasRecipeChangeFlag = review.impacts.includes('recipe_changed');
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="flex flex-col gap-0 overflow-hidden p-0 sm:w-[90vw] lg:w-[60vw]"
-        style={{ maxWidth: 1100 }}
-      >
-        <SheetHeader className="shrink-0 border-b px-6 py-4">
-          <div className="flex items-start gap-3 pr-8">
-            <div className="flex-1 min-w-0">
-              <SheetTitle className="truncate">{review.product.name}</SheetTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {review.product.sku} · {review.company.name} · {review.channel.name}
-              </p>
-            </div>
-            <div className="flex flex-col items-end gap-1 flex-shrink-0">
-              <span className="text-xs text-muted-foreground">{t($ => $.drawer.header.productCost)}</span>
-              <span className="text-lg font-semibold tabular-nums">{fmt(review.product_cost)}</span>
-            </div>
-          </div>
-        </SheetHeader>
+    <EntityDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title={review.product.name}
+      description={`${review.product.sku} · ${review.company.name} · ${review.channel.name}`}
+      className="sm:w-[90vw] sm:max-w-[1100px] lg:w-[60vw]"
+    >
+      <div className="flex h-full flex-col gap-4">
+        <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/20 px-4 py-2.5">
+          <span className="text-xs text-muted-foreground">{t($ => $.drawer.header.productCost)}</span>
+          <span className="text-lg font-semibold tabular-nums">{fmt(review.product_cost)}</span>
+        </div>
 
-        <Tabs
-          tabs={tabs}
-          activeKey={activeKey}
-          onTabChange={setActiveKey}
-          className="h-full"
-          contentClassName="overflow-y-auto py-6 px-6 min-h-0"
-        />
-      </SheetContent>
-    </Sheet>
+        <Tabs value={activeKey} onValueChange={setActiveKey} className="flex min-h-0 flex-1 flex-col gap-0">
+          <TabsList className="w-full shrink-0 justify-start overflow-x-auto">
+            <TabsTrigger value="cost-breakdown">{t($ => $.drawer.tabs.costBreakdown)}</TabsTrigger>
+            <TabsTrigger value="recipe-changes" className="gap-1.5">
+              {t($ => $.drawer.tabs.recipeChanges)}
+              {hasRecipeChangeFlag ? (
+                <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary/15 px-1 text-[10px] font-semibold text-primary">!</span>
+              ) : null}
+            </TabsTrigger>
+            <TabsTrigger value="price-history">{t($ => $.drawer.tabs.priceHistory)}</TabsTrigger>
+            <TabsTrigger value="simulation">{t($ => $.drawer.tabs.marginSimulation)}</TabsTrigger>
+            <TabsTrigger value="approval-history">{t($ => $.drawer.tabs.approvalHistory)}</TabsTrigger>
+          </TabsList>
+          <div className="min-h-0 flex-1 overflow-y-auto py-2">
+            <TabsContent value="cost-breakdown" className="mt-0"><CostBreakdownTab review={review} detailLoading={false} /></TabsContent>
+            <TabsContent value="recipe-changes" className="mt-0"><RecipeChangesTab review={review} /></TabsContent>
+            <TabsContent value="price-history" className="mt-0"><PriceHistoryTab review={review} /></TabsContent>
+            <TabsContent value="simulation" className="mt-0"><MarginSimulationTab review={review} /></TabsContent>
+            <TabsContent value="approval-history" className="mt-0"><ApprovalHistoryTab review={review} /></TabsContent>
+          </div>
+        </Tabs>
+      </div>
+    </EntityDrawer>
   );
 }

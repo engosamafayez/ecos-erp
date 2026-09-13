@@ -1,6 +1,5 @@
 // Enterprise CRUD Kit — reusable, generic components for every ERP module.
 export { PageHeader } from '@/components/crud/page-header';
-export { EntityTable } from '@/components/crud/entity-table';
 export { EntityToolbar } from '@/components/crud/entity-toolbar';
 export { SearchInput } from '@/components/crud/search-input';
 export { FilterPanel } from '@/components/crud/filter-panel';

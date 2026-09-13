@@ -2,8 +2,9 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PackageCheck } from 'lucide-react';
 
-import { EmptyState, EntityTable, ErrorState } from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
+import { EmptyState, ErrorState } from '@/components/crud';
+import type { DataGridColumnDef } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Badge } from '@/components/ui/badge';
 import { useOrganizationContext } from '@/features/organization/context/organization-context';
 import { useLoadingGroups } from '@/features/operations/loading-os/hooks/use-loading-os';
@@ -56,36 +57,39 @@ export function LoadingBucketTab({
       .slice(0, MAX_ROWS);
   }, [data, bucket]);
 
-  const columns: ColumnDef<LoadingGroupSummary>[] = [
+  const columns: DataGridColumnDef<LoadingGroupSummary>[] = [
     {
       key: 'code',
-      header: t($ => $.loadingGroups.columns.code),
+      label: t($ => $.loadingGroups.columns.code),
+      cardRole: 'title',
       cell: (g) => <span className="font-medium">{g.code}</span>,
     },
     {
       key: 'zones',
-      header: t($ => $.loadingGroups.columns.zones),
+      label: t($ => $.loadingGroups.columns.zones),
+      cardRole: 'subtitle',
       cell: (g) => (g.zone_names.length > 0 ? g.zone_names.join(' · ') : '—'),
     },
     {
       key: 'orders',
-      header: t($ => $.loadingGroups.columns.orders),
-      align: 'right',
+      label: t($ => $.loadingGroups.columns.orders),
+      align: 'end',
       cell: (g) => g.orders_count,
     },
     {
       key: 'vehicle',
-      header: t($ => $.loadingGroups.columns.vehicle),
+      label: t($ => $.loadingGroups.columns.vehicle),
       cell: (g) => g.transport.vehicle?.plate_number ?? t($ => $.common.notAssigned),
     },
     {
       key: 'driver',
-      header: t($ => $.loadingGroups.columns.driver),
+      label: t($ => $.loadingGroups.columns.driver),
       cell: (g) => g.transport.driver?.full_name ?? t($ => $.common.notAssigned),
     },
     {
       key: 'state',
-      header: t($ => $.loadingGroups.columns.state),
+      label: t($ => $.loadingGroups.columns.state),
+      cardRole: 'status',
       cell: (g) =>
         g.classification ? (
           <Badge variant={bucketBadgeVariant(g.classification.bucket)}>
@@ -116,12 +120,12 @@ export function LoadingBucketTab({
       {noWindow ? (
         <EmptyState icon={PackageCheck} title={t($ => $.loadingGroups.noWindow)} />
       ) : (
-        <EntityTable<LoadingGroupSummary>
-          columns={columns}
+        <UniversalDataGrid<LoadingGroupSummary>
           data={groups}
-          getRowId={(g) => g.slot_id}
-          isLoading={isLoading}
-          isError={isError}
+          columns={columns}
+          rowId={(g) => g.slot_id}
+          loading={isLoading}
+          error={isError}
           skeletonRows={5}
           emptyState={<EmptyState icon={PackageCheck} title={emptyLabel} />}
           errorState={

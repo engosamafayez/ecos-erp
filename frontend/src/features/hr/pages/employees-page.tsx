@@ -6,13 +6,13 @@ import { Eye, Plus, UserMinus } from 'lucide-react';
 import {
   ActionMenu,
   ConfirmDialog,
-  EntityTable,
   EntityToolbar,
   PageHeader,
-  Pagination,
   StatusBadge,
 } from '@/components/crud';
-import type { ColumnDef, StatusVariant } from '@/components/crud/types';
+import type { StatusVariant } from '@/components/crud/types';
+import type { DataGridColumnDef, GridPaginationConfig } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { EmployeeFormDrawer } from '@/features/hr/components/employee-form-drawer';
@@ -63,43 +63,80 @@ export function EmployeesPage() {
   const activeCount = items.filter((e) => e.status === 'active').length;
   const onLeaveCount = items.filter((e) => e.status === 'on_leave').length;
 
-  const columns: ColumnDef<Employee>[] = [
+  const columns: DataGridColumnDef<Employee>[] = [
     {
       key: 'employee_number',
-      header: t($ => $.employees.table.number),
+      label: t($ => $.employees.table.number),
       cell: (e) => <span className="font-mono text-xs font-medium">{e.employee_number}</span>,
     },
     {
       key: 'name',
-      header: t($ => $.employees.table.name),
+      label: t($ => $.employees.table.name),
+      alwaysVisible: true,
+      cardRole: 'title',
       cell: (e) => <span className="font-medium">{e.name}</span>,
     },
     {
       key: 'department',
-      header: t($ => $.employees.table.department),
+      label: t($ => $.employees.table.department),
       cell: (e) => <span className="text-muted-foreground">{e.department?.name ?? '—'}</span>,
     },
     {
       key: 'position',
-      header: t($ => $.employees.table.position),
+      label: t($ => $.employees.table.position),
+      cardRole: 'subtitle',
       cell: (e) => <span className="text-muted-foreground">{e.position?.title ?? '—'}</span>,
     },
     {
       key: 'work_email',
-      header: t($ => $.employees.table.workEmail),
+      label: t($ => $.employees.table.workEmail),
       cell: (e) => <span className="text-muted-foreground">{e.work_email ?? '—'}</span>,
     },
     {
       key: 'hire_date',
-      header: t($ => $.employees.table.hired),
+      label: t($ => $.employees.table.hired),
       cell: (e) => <span className="tabular-nums">{e.hire_date ?? '—'}</span>,
     },
     {
       key: 'status',
-      header: t($ => $.employees.table.status),
+      label: t($ => $.employees.table.status),
+      cardRole: 'status',
       cell: (e) => <StatusBadge status={STATUS_TONE[e.status]} label={e.status_label} />,
     },
+    {
+      key: 'actions',
+      label: '',
+      align: 'end',
+      alwaysVisible: true,
+      cell: (employee) => (
+        <ActionMenu
+          label={t($ => $.employees.actions.menuLabel, { name: employee.name })}
+          items={[
+            {
+              key: 'view',
+              label: t($ => $.employees.actions.view360),
+              icon: Eye,
+              onSelect: () => navigate(`/hr/employees/${employee.id}`),
+            },
+            {
+              key: 'terminate',
+              label: t($ => $.employees.actions.endEmployment),
+              icon: UserMinus,
+              variant: 'destructive',
+              onSelect: () => setTerminating(employee),
+            },
+          ]}
+        />
+      ),
+    },
   ];
+
+  const pagination: GridPaginationConfig | undefined = meta
+    ? {
+        meta: { page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page },
+        onPageChange: setPage,
+      }
+    : undefined;
 
   const confirmTerminate = async () => {
     if (!terminating) return;
@@ -199,45 +236,14 @@ export function EmployeesPage() {
             }
           />
 
-          <EntityTable<Employee>
-            columns={columns}
+          <UniversalDataGrid<Employee>
             data={items}
-            getRowId={(e) => e.id}
-            isLoading={isLoading}
-            isError={isError}
-            rowActions={(employee) => (
-              <ActionMenu
-                label={t($ => $.employees.actions.menuLabel, { name: employee.name })}
-                items={[
-                  {
-                    key: 'view',
-                    label: t($ => $.employees.actions.view360),
-                    icon: Eye,
-                    onSelect: () => navigate(`/hr/employees/${employee.id}`),
-                  },
-                  {
-                    key: 'terminate',
-                    label: t($ => $.employees.actions.endEmployment),
-                    icon: UserMinus,
-                    variant: 'destructive',
-                    onSelect: () => setTerminating(employee),
-                  },
-                ]}
-              />
-            )}
+            columns={columns}
+            rowId={(e) => e.id}
+            loading={isLoading}
+            error={isError}
+            pagination={pagination}
           />
-
-          {meta ? (
-            <Pagination
-              meta={{
-                page: meta.current_page,
-                perPage: meta.per_page,
-                total: meta.total,
-                lastPage: meta.last_page,
-              }}
-              onPageChange={setPage}
-            />
-          ) : null}
         </CardContent>
       </Card>
 
