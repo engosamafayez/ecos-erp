@@ -165,6 +165,7 @@ use Modules\Hr\Workforce\Presentation\Http\Controllers\EmploymentContractControl
 use Modules\Hr\Workforce\Presentation\Http\Controllers\OrganizationChartController as HrOrgChartController;
 use Modules\Hr\Workforce\Presentation\Http\Controllers\WorkforceStructureController as HrStructureController;
 use Modules\IAM\Presentation\Http\Controllers\AuthController;
+use Modules\IAM\Presentation\Http\Controllers\InvitationAcceptController;
 use Modules\IAM\Presentation\Http\Controllers\PermissionController as IamPermissionController;
 use Modules\IAM\Presentation\Http\Controllers\RoleController as IamRoleController;
 use Modules\IAM\Presentation\Http\Controllers\RoleTemplateController as IamRoleTemplateController;
@@ -349,6 +350,11 @@ Route::get('/health', HealthController::class);
 Route::prefix('auth')->group(function (): void {
     Route::middleware(['throttle:10,1'])->group(function (): void {
         Route::post('/login', [AuthController::class, 'login']);
+
+        // CORE-02 Task 1 — public invitation acceptance. Same throttle as login: both are
+        // unauthenticated, token/credential-guessing-sensitive endpoints.
+        Route::get('/invitations/show', [InvitationAcceptController::class, 'show']);
+        Route::post('/invitations/accept', [InvitationAcceptController::class, 'accept']);
     });
 
     Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
@@ -419,6 +425,16 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->prefix('iam')->group(func
             // binding (SoftDeletes global scope) — restore() must still be able to find them.
             Route::post('restore', [IamUserController::class, 'restore'])->middleware('permission:iam.users.restore')->withTrashed();
             Route::post('reset-password', [IamUserController::class, 'resetPassword'])->middleware('permission:iam.users.reset-password');
+
+            // CORE-02 Task 1 — Invitation Closure. One permission (`iam.users.invite`, already
+            // seeded and already granted to company-admin) covers the whole lifecycle facet,
+            // matching this file's own convention (e.g. updateNavigation reusing iam.roles.update)
+            // rather than inventing a new token per action. Listing reuses `iam.users.view` —
+            // purely informational, like every other read of user lifecycle state.
+            Route::get('invitations', [IamUserController::class, 'invitations'])->middleware('permission:iam.users.view');
+            Route::post('invitations', [IamUserController::class, 'invite'])->middleware('permission:iam.users.invite');
+            Route::post('invitations/resend', [IamUserController::class, 'resendInvitation'])->middleware('permission:iam.users.invite');
+            Route::post('invitations/{invitation}/revoke', [IamUserController::class, 'revokeInvitation'])->middleware('permission:iam.users.invite');
 
             Route::get('sessions', [IamSessionController::class, 'index'])->middleware('permission:iam.users.manage-sessions');
             Route::delete('sessions/{session}', [IamSessionController::class, 'destroy'])->middleware('permission:iam.users.manage-sessions');

@@ -373,7 +373,10 @@ class RoleAuthoringService
             'definition' => $this->definitionWithPermissions([], $current),
             'created_by' => $actorId,
             'company_id' => $companyId,
-        ]);
+            // $current is passed again below as the ceiling's pre-authorized baseline: these
+            // exact permissions are already live on $role via role_permissions, so mirroring
+            // them into a template grants nothing new (CORE-02 Task 1).
+        ], preauthorizedPermissions: $current);
 
         $template = $this->publish($template, $actorId);
 

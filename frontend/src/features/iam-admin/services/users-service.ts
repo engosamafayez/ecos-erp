@@ -4,6 +4,9 @@ import type {
   AssignOrganizationPayload,
   CreateUserPayload,
   EmployeeDirectoryResult,
+  Invitation,
+  InvitationIssueResult,
+  InvitePayload,
   LifecycleAction,
   OrganizationDirectoryResult,
   OrganizationScopeAssignmentInput,
@@ -95,6 +98,31 @@ export const usersService = {
   async forceLogout(id: number): Promise<{ revoked: number }> {
     const { data } = await api.post<ApiResponse<{ revoked: number }>>(`/iam/users/${id}/sessions/force-logout`);
     return data.data;
+  },
+
+  /** CORE-02 Task 1 — this user's invitation history, most recent first. Never a token. */
+  async invitations(id: number): Promise<Invitation[]> {
+    const { data } = await api.get<ApiResponse<Invitation[]>>(`/iam/users/${id}/invitations`);
+    return data.data;
+  },
+
+  /**
+   * Issues a fresh invitation. The raw `invitation_token` is returned exactly once, in this
+   * response only — hand it to the invitee (e.g. as `${origin}/accept-invitation?token=...`)
+   * and never store it; it cannot be retrieved again afterward.
+   */
+  async invite(id: number, payload: InvitePayload = {}): Promise<InvitationIssueResult> {
+    const { data } = await api.post<ApiResponse<InvitationIssueResult>>(`/iam/users/${id}/invitations`, payload);
+    return data.data;
+  },
+
+  async resendInvitation(id: number, payload: InvitePayload = {}): Promise<InvitationIssueResult> {
+    const { data } = await api.post<ApiResponse<InvitationIssueResult>>(`/iam/users/${id}/invitations/resend`, payload);
+    return data.data;
+  },
+
+  async revokeInvitation(id: number, invitationId: string): Promise<void> {
+    await api.post(`/iam/users/${id}/invitations/${invitationId}/revoke`);
   },
 };
 

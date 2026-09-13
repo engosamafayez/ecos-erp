@@ -2,6 +2,7 @@ import { createBrowserRouter, redirect } from 'react-router-dom';
 
 import { ComingSoonPage } from '@/components/common/coming-soon-page';
 import { DriverShell } from '@/components/layout/driver-shell';
+import { AcceptInvitationPage } from '@/features/auth/pages/accept-invitation-page';
 import { LoginPage } from '@/features/auth/pages/login-page';
 import { BrandsPage } from '@/features/brands/pages/brands-page';
 import { BusinessAccountsPage } from '@/features/business-accounts/pages/business-accounts-page';
@@ -261,6 +262,10 @@ export const router = createBrowserRouter(
     // A visitor has no session, no company context and no navigation rail.
     { path: ROUTES.careers, Component: CareersPortalPage },
     { path: ROUTES.careersJob, Component: CareersApplyPage },
+    // CORE-02 Task 1 — PUBLIC invitation acceptance, same reasoning: the invitee has no
+    // session yet, so this sits outside ProtectedRoute (and outside GuestRoute too — it is
+    // not "log in", it is "set up the account before you can").
+    { path: ROUTES.acceptInvitation, Component: AcceptInvitationPage },
     {
       path: ROUTES.login,
       Component: GuestRoute,

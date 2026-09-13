@@ -27,7 +27,19 @@ class RoleTemplateRepository implements RoleTemplateRepositoryInterface
     public function __construct(
         private readonly RoleTemplateVersionService $versions,
         private readonly RoleTemplateAuditService $audit,
+        private readonly PermissionGrantCeiling $ceiling,
     ) {}
+
+    /**
+     * @param  array<string,mixed>  $definition
+     * @return list<string>
+     */
+    private function permissionsOf(array $definition): array
+    {
+        $permissions = $definition['permissions'] ?? [];
+
+        return is_array($permissions) ? array_values($permissions) : [];
+    }
 
     public function all(): Collection
     {
@@ -72,7 +84,7 @@ class RoleTemplateRepository implements RoleTemplateRepositoryInterface
     {
         $template = RoleTemplate::firstOrNew(['key' => $key]);
         $existed = $template->exists;
-        $definitionChanged = $existed && $template->definition != ($attributes['definition'] ?? []);
+        $definitionChanged = $existed && $template->definition !== ($attributes['definition'] ?? []);
 
         $template->fill([
             'name' => $attributes['name'],
@@ -108,8 +120,13 @@ class RoleTemplateRepository implements RoleTemplateRepositoryInterface
      *                                           (out of this task's HTTP-wiring scope) keeps
      *                                           working unchanged.
      */
-    public function createCustom(array $attributes): RoleTemplate
+    public function createCustom(array $attributes, array $preauthorizedPermissions = []): RoleTemplate
     {
+        $this->ceiling->assertWithinCeiling(
+            $this->permissionsOf($attributes['definition'] ?? []),
+            $preauthorizedPermissions,
+        );
+
         $template = new RoleTemplate([
             'key' => $attributes['key'],
             'name' => $attributes['name'],
@@ -135,6 +152,13 @@ class RoleTemplateRepository implements RoleTemplateRepositoryInterface
     {
         $this->guardSystem($template);
 
+        if (array_key_exists('definition', $attributes)) {
+            $this->ceiling->assertWithinCeiling(
+                $this->permissionsOf($attributes['definition'] ?? []),
+                $this->permissionsOf($template->definition ?? []),
+            );
+        }
+
         $old = $template->only(['name', 'description', 'category', 'is_composable', 'definition', 'status']);
 
         $template->fill(array_intersect_key($attributes, array_flip([
@@ -151,6 +175,9 @@ class RoleTemplateRepository implements RoleTemplateRepositoryInterface
 
     public function clone(RoleTemplate $template, string $newKey, string $companyId, ?string $newName = null): RoleTemplate
     {
+        // The full source definition is "net new" relative to the brand-new clone — checked
+        // again inside createCustom() below via its own (empty-current) assertWithinCeiling
+        // call, so cloning a system template's full permission set cannot bypass the ceiling.
         $clone = $this->createCustom([
             'key' => $newKey,
             'name' => $newName ?? ('Copy of '.$template->name),

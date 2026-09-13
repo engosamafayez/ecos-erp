@@ -4,6 +4,7 @@ import { iamDirectoriesService, usersService } from '@/features/iam-admin/servic
 import type {
   AssignOrganizationPayload,
   CreateUserPayload,
+  InvitePayload,
   LifecycleAction,
   OrganizationScopeAssignmentInput,
   ResetPasswordPayload,
@@ -126,6 +127,44 @@ export function useForceLogout(id: number) {
   return useMutation({
     mutationFn: () => usersService.forceLogout(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [USERS_KEY, 'sessions', id] }),
+  });
+}
+
+/** CORE-02 Task 1 — this user's invitation history. */
+export function useUserInvitations(id: number | null) {
+  return useQuery({
+    queryKey: [USERS_KEY, 'invitations', id],
+    queryFn: () => usersService.invitations(id as number),
+    enabled: id !== null,
+  });
+}
+
+function useInvalidateInvitations(id: number) {
+  const queryClient = useQueryClient();
+  return () => queryClient.invalidateQueries({ queryKey: [USERS_KEY, 'invitations', id] });
+}
+
+export function useInviteUser(id: number) {
+  const invalidate = useInvalidateInvitations(id);
+  return useMutation({
+    mutationFn: (payload: InvitePayload = {}) => usersService.invite(id, payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useResendInvitation(id: number) {
+  const invalidate = useInvalidateInvitations(id);
+  return useMutation({
+    mutationFn: (payload: InvitePayload = {}) => usersService.resendInvitation(id, payload),
+    onSuccess: invalidate,
+  });
+}
+
+export function useRevokeInvitation(id: number) {
+  const invalidate = useInvalidateInvitations(id);
+  return useMutation({
+    mutationFn: (invitationId: string) => usersService.revokeInvitation(id, invitationId),
+    onSuccess: invalidate,
   });
 }
 

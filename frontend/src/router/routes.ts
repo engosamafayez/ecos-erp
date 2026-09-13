@@ -4,6 +4,9 @@
 export const ROUTES = {
   home: '/',
   login: '/login',
+  // CORE-02 Task 1 — public, unauthenticated invitation acceptance (see router.ts's careers-
+  // portal precedent for how a fully public page is registered outside ProtectedRoute).
+  acceptInvitation: '/accept-invitation',
   dashboard: '/dashboard',
   organization: '/organization',
   companies: '/companies',

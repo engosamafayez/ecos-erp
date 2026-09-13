@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Gate;
 use Modules\IAM\Application\Services\EmployeeDirectory;
 use Modules\IAM\Application\Services\OrganizationScopeDirectory;
 use Modules\IAM\Application\Services\UserIdentityService;
+use Modules\IAM\Application\Services\UserInvitationService;
 use Modules\IAM\Application\Services\UserLifecycleService;
 use Modules\IAM\Application\Services\UserOrganizationAssignmentService;
 use Modules\IAM\Application\Services\UserPasswordService;
@@ -24,9 +25,11 @@ use Modules\IAM\Application\Services\UserRepository;
 use Modules\IAM\Application\Services\UserRoleAssignmentService;
 use Modules\IAM\Domain\Catalog\BusinessRoleCatalog;
 use Modules\IAM\Domain\Enums\UserStatus;
+use Modules\IAM\Domain\Models\UserInvitation;
 use Modules\IAM\Presentation\Http\Requests\AdminResetPasswordRequest;
 use Modules\IAM\Presentation\Http\Requests\AssignTemplateRequest;
 use Modules\IAM\Presentation\Http\Requests\CreateUserRequest;
+use Modules\IAM\Presentation\Http\Requests\InviteUserRequest;
 use Modules\IAM\Presentation\Http\Requests\SyncOrganizationScopeRequest;
 use Modules\IAM\Presentation\Http\Requests\TransitionReasonRequest;
 use Modules\IAM\Presentation\Http\Requests\UpdateUserRequest;
@@ -72,6 +75,7 @@ final class UserController extends Controller
         private readonly TenantOwnershipResolver $tenant,
         private readonly EmployeeDirectory $employees,
         private readonly OrganizationScopeDirectory $orgDirectory,
+        private readonly UserInvitationService $invitations,
     ) {}
 
     /**
@@ -340,6 +344,83 @@ final class UserController extends Controller
             $this->serialize($user->refresh(), detailed: true),
             $wasInitial ? 'Initial password set.' : 'Password reset.',
         );
+    }
+
+    /**
+     * CORE-02 Task 1 — this user's invitation history, most recent first. Never exposes
+     * token_hash; the raw token itself was already shown once, at invite()/resendInvitation()
+     * time, and is never persisted or re-derivable.
+     */
+    public function invitations(User $user): JsonResponse
+    {
+        Gate::authorize('view', $user);
+
+        $history = $this->invitations->historyFor($user)->map(fn (UserInvitation $invitation) => [
+            'id' => $invitation->getKey(),
+            'email' => $invitation->email,
+            'status' => $invitation->status,
+            'expired' => $invitation->isExpired(),
+            'expires_at' => $invitation->expires_at?->toIso8601String(),
+            'accepted_at' => $invitation->accepted_at?->toIso8601String(),
+            'invited_by' => $invitation->invited_by,
+            'created_at' => $invitation->created_at?->toIso8601String(),
+        ]);
+
+        return $this->success($history->values()->all());
+    }
+
+    /**
+     * CORE-02 Task 1 — issue an invitation for a pre-provisioned (DRAFT) user. The raw token
+     * is returned exactly once, in this response only, so the admin can hand the invitee an
+     * activation link — mirroring store()'s existing `generated_password` precedent for a
+     * secret that is shown once and never persisted in plaintext or logged.
+     */
+    public function invite(InviteUserRequest $request, User $user): JsonResponse
+    {
+        Gate::authorize('invite', $user);
+
+        $token = $this->invitations->invite(
+            $user,
+            $request->user()?->getKey(),
+            (int) $request->integer('ttl_hours', 72),
+        );
+
+        return $this->success([
+            'invitation_token' => $token,
+            'expires_in_hours' => (int) $request->integer('ttl_hours', 72),
+        ], 'Invitation issued.');
+    }
+
+    /** CORE-02 Task 1 — reissue a token for a user whose invitation is still outstanding. */
+    public function resendInvitation(InviteUserRequest $request, User $user): JsonResponse
+    {
+        Gate::authorize('invite', $user);
+
+        $token = $this->invitations->resend(
+            $user,
+            $request->user()?->getKey(),
+            (int) $request->integer('ttl_hours', 72),
+        );
+
+        return $this->success([
+            'invitation_token' => $token,
+            'expires_in_hours' => (int) $request->integer('ttl_hours', 72),
+        ], 'Invitation resent.');
+    }
+
+    /** CORE-02 Task 1 — revoke a specific pending invitation. */
+    public function revokeInvitation(Request $request, User $user, UserInvitation $invitation): JsonResponse
+    {
+        Gate::authorize('invite', $user);
+
+        // Defense in depth: the route nests {invitation} under {user}, but never trust the
+        // two path segments to agree without checking — a mismatched pair must 404, not act
+        // on a different user's invitation.
+        abort_if((string) $invitation->user_id !== (string) $user->getKey(), 404);
+
+        $this->invitations->revoke($invitation, $request->user()?->getKey());
+
+        return $this->success(null, 'Invitation revoked.');
     }
 
     /**

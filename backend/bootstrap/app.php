@@ -10,6 +10,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Modules\IAM\Domain\Exceptions\InvalidUserTransitionException;
+use Modules\IAM\Domain\Exceptions\PermissionGrantCeilingExceededException;
 use Modules\IAM\Domain\Exceptions\RoleLifecycleException;
 use Modules\IAM\Domain\Exceptions\RoleTemplateInUseException;
 use Modules\IAM\Domain\Exceptions\SystemTemplateImmutableException;
@@ -226,6 +227,16 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->render(function (UnknownTemplatePermissionException $e, Request $request) {
             if ($request->is('api/*')) {
                 return ApiResponse::error($e->getMessage(), 422, ['unknown_permissions' => $e->unknown]);
+            }
+
+            return null;
+        });
+
+        // CORE-02 Task 1: Permission Grant Ceiling — same 422 contract as its sibling
+        // authoring-validation exception above (UnknownTemplatePermissionException).
+        $exceptions->render(function (PermissionGrantCeilingExceededException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return ApiResponse::error($e->getMessage(), 422, ['unauthorized_permissions' => $e->unauthorized]);
             }
 
             return null;
