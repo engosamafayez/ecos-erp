@@ -22,6 +22,7 @@ use Modules\Admin\Configuration\Presentation\Http\Controllers\WaveEngineConfigur
 use Modules\Admin\GoLive\Presentation\Http\Controllers\GoLiveActivationController;
 use Modules\Admin\GoLive\Presentation\Http\Controllers\GoLiveResetController;
 use Modules\Admin\GoLive\Presentation\Http\Controllers\OpeningInventoryController;
+use Modules\AI\Presentation\Http\Controllers\AssistantController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\ArtifactController as CbArtifactController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\DashboardController as CbDashboardController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\TaskController as CbTaskController;
@@ -553,6 +554,21 @@ Route::middleware('auth:sanctum')->prefix('reporting')->group(function (): void 
 */
 Route::middleware(['auth:sanctum', 'permission:system.audit.view'])->prefix('audit')->group(function (): void {
     Route::get('/', [AuditLogController::class, 'index']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Resident AI Assistant (CORE-03 Task 1)
+|
+| Bounded, non-streaming request/response only (§17/§34) — no SSE, no
+| WebSocket. `ai.assistant.use` is enforced inside AIAssistantService itself
+| (so a denial returns a graceful in-band {status: "denied"} response, the
+| same pattern ReportExecutionController uses for its own dynamic per-report
+| permission), not via route middleware.
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->prefix('ai')->group(function (): void {
+    Route::post('assistant/message', [AssistantController::class, 'message']);
 });
 
 /*
