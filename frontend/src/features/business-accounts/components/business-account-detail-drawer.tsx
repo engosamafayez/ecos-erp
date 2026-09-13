@@ -211,9 +211,18 @@ export function BusinessAccountDetailDrawer({
   onOpenChange,
   onEdit,
 }: BusinessAccountDetailDrawerProps) {
+  // This query hook must run on EVERY render, in the same order, regardless of whether
+  // `account` is null — the parent keeps this drawer mounted at all times and only flips
+  // `account` from null to a real BusinessAccount the instant a row is opened for view or
+  // edit. Gating the hook call itself behind `if (!account) return null` made the number of
+  // hooks called differ between the "nothing selected" render and the "account selected"
+  // render — a Rules-of-Hooks violation that crashes with React error #310 the moment an
+  // account is opened. `enabled` is what actually gates the network call; the hook call
+  // itself must never be conditional.
+  const channelsResult = useChannelsQuery({ business_account_id: account?.id ?? '', per_page: 50 }, { enabled: open && !!account });
+
   if (!account) return null;
 
-  const channelsResult = useChannelsQuery({ business_account_id: account.id, per_page: 50 }, { enabled: open });
   const channels = channelsResult.data?.items ?? [];
 
   return (
