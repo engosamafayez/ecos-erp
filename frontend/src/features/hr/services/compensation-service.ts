@@ -10,6 +10,8 @@ import type {
   Compensation360,
   Deduction,
   DepartmentPerformance,
+  DriverPerformance,
+  DriverRosterRow,
   EmployeeIncident,
   EmployeePerformance,
   Goal,
@@ -280,6 +282,18 @@ export const compensationService = {
   /** The caller's own authorized employee subtree — self plus every direct/indirect report. */
   async myTeam(): Promise<MyTeamMember[]> {
     const { data } = await api.get<ApiResponse<MyTeamMember[]>>('/hr/performance/my-team');
+    return data.data;
+  },
+
+  /** FIN-01 Slice 1/4 — the driver roster with identity-resolution state only. */
+  async driverRoster(): Promise<DriverRosterRow[]> {
+    const { data } = await api.get<ApiResponse<DriverRosterRow[]>>('/hr/performance/drivers');
+    return data.data;
+  },
+
+  /** FIN-01 Slice 4 — one driver's Pattern-C performance presentation for a period. */
+  async driverPerformance(driverId: string, params: { from: string; to: string }): Promise<DriverPerformance> {
+    const { data } = await api.get<ApiResponse<DriverPerformance>>(`/hr/performance/drivers/${driverId}`, { params });
     return data.data;
   },
 

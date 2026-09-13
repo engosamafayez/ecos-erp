@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   useDecideRecommendation,
+  useDriverRosterQuery,
   useEvaluatePerformance,
   useGenerateRecommendations,
   useGoalsQuery,
@@ -17,6 +18,7 @@ import {
   useMyTeamQuery,
   useRecommendationsQuery,
 } from '@/features/hr/hooks/use-compensation';
+import type { DriverIdentityStatus } from '@/features/hr/types/compensation';
 import { ROUTES } from '@/router/routes';
 
 const currentMonth = () => new Date().toISOString().slice(0, 7);
@@ -29,6 +31,13 @@ const STATUS_TONE: Record<string, StatusVariant> = {
   approved: 'active',
   modified: 'active',
   rejected: 'inactive',
+};
+
+const DRIVER_IDENTITY_TONE: Record<DriverIdentityStatus, StatusVariant> = {
+  matched: 'active',
+  unmatched: 'pending',
+  ambiguous: 'pending',
+  cross_company: 'inactive',
 };
 
 /**
@@ -46,6 +55,7 @@ export function PerformanceWorkspacePage() {
   const { data: recommendations, isLoading } = useRecommendationsQuery(month);
   const { data: incidents } = useIncidentsQuery();
   const { data: myTeam, isLoading: teamLoading, isError: teamError, refetch: refetchTeam } = useMyTeamQuery();
+  const { data: driverRoster, isLoading: driversLoading, isError: driversError, refetch: refetchDrivers } = useDriverRosterQuery();
 
   const evaluate = useEvaluatePerformance();
   const generate = useGenerateRecommendations();
@@ -147,6 +157,43 @@ export function PerformanceWorkspacePage() {
                   <span className="text-muted-foreground text-xs">
                     {member.employee_number} · {member.department?.name ?? t(($) => $.performance.myTeam.noDepartment)}
                   </span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="flex flex-col gap-4 pt-6">
+          <h2 className="font-semibold">{t(($) => $.performance.drivers.title)}</h2>
+          {driversLoading ? (
+            <LoadingState />
+          ) : driversError ? (
+            <ErrorState onRetry={() => void refetchDrivers()} />
+          ) : !driverRoster || driverRoster.length === 0 ? (
+            <EmptyState
+              title={t(($) => $.performance.drivers.emptyTitle)}
+              description={t(($) => $.performance.drivers.emptyDescription)}
+            />
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {driverRoster.map((row) => (
+                <Link
+                  key={row.driver_id}
+                  to={generatePath(ROUTES.hrDriverPerformance, { driverId: row.driver_id })}
+                  className="hover:bg-muted flex flex-col gap-1 rounded-md border px-3 py-2 text-sm transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium">{row.driver_name}</span>
+                    <StatusBadge
+                      status={DRIVER_IDENTITY_TONE[row.identity.status]}
+                      label={t(($) => $.performance.drivers.identity[row.identity.status])}
+                    />
+                  </div>
+                  {row.identity.employee_name ? (
+                    <span className="text-muted-foreground text-xs">{row.identity.employee_name}</span>
+                  ) : null}
                 </Link>
               ))}
             </div>

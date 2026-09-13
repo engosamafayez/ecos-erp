@@ -155,6 +155,7 @@ use Modules\Hr\Recruitment\Presentation\Http\Controllers\OfferController as HrOf
 use Modules\Hr\Recruitment\Presentation\Http\Controllers\PublicCareersController as HrPublicCareersController;
 use Modules\Hr\Recruitment\Presentation\Http\Controllers\RecruitmentController as HrRecruitmentController;
 use Modules\Hr\Recruitment\Presentation\Http\Controllers\RecruitmentEnhancementController as HrRecruitmentEnhancementController;
+use Modules\Hr\Workforce\Presentation\Http\Controllers\DriverPerformanceController as HrDriverPerformanceController;
 use Modules\Hr\Workforce\Presentation\Http\Controllers\EmployeeController as HrEmployeeController;
 use Modules\Hr\Workforce\Presentation\Http\Controllers\EmployeeDocumentController as HrDocumentController;
 use Modules\Hr\Workforce\Presentation\Http\Controllers\EmploymentContractController as HrContractController;
@@ -4569,6 +4570,8 @@ Route::middleware('auth:sanctum')->prefix('hr/performance')->group(function (): 
         Route::get('/reviews', [HrReviewController::class, 'reviews']);
         Route::get('/recommendations', [HrReviewController::class, 'recommendations']);
         Route::get('/incidents', [HrReviewController::class, 'incidents']);
+        Route::get('/drivers', [HrDriverPerformanceController::class, 'roster']);
+        Route::get('/drivers/{driverId}', [HrDriverPerformanceController::class, 'show']);
     });
     Route::middleware('permission:hr.performance.manage')->group(function (): void {
         Route::post('/goals', [HrPerformanceController::class, 'storeGoal']);

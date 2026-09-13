@@ -46,6 +46,8 @@ use Modules\Hr\Recruitment\Domain\Services\RecruitmentPipelineService;
 use Modules\Hr\Workforce\Domain\Contracts\ProvidesAttendanceSummary;
 use Modules\Hr\Workforce\Domain\Policies\EmployeePolicy;
 use Modules\Hr\Workforce\Domain\Services\DepartmentService;
+use Modules\Hr\Workforce\Domain\Services\DriverEmployeeResolver;
+use Modules\Hr\Workforce\Domain\Services\DriverPerformanceReadModel;
 use Modules\Hr\Workforce\Domain\Services\Employee360Service;
 use Modules\Hr\Workforce\Domain\Services\EmployeeDocumentService;
 use Modules\Hr\Workforce\Domain\Services\EmployeeService;
@@ -54,6 +56,7 @@ use Modules\Hr\Workforce\Domain\Services\ManagerScopeService;
 use Modules\Hr\Workforce\Domain\Services\OrganizationChartService;
 use Modules\Hr\Workforce\Domain\Services\ReportingLineService;
 use Modules\Hr\Workforce\Domain\Services\WorkforceStructureService;
+use Modules\Hr\Workforce\Presentation\Console\Commands\DriverIdentityDiagnosticsCommand;
 use Modules\IAM\Domain\Contracts\SensitiveFieldRegistryInterface;
 
 /**
@@ -90,6 +93,8 @@ final class HrServiceProvider extends ServiceProvider
         $this->app->singleton(EmployeeDocumentService::class);
         $this->app->singleton(Employee360Service::class);
         $this->app->singleton(EmployeePolicy::class);
+        $this->app->singleton(DriverEmployeeResolver::class);
+        $this->app->singleton(DriverPerformanceReadModel::class);
 
         // H2 — Attendance and availability.
         $this->app->singleton(HolidayService::class);
@@ -151,6 +156,12 @@ final class HrServiceProvider extends ServiceProvider
 
         $this->registerKpiSubscribers();
         $this->registerSensitiveFields();
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                DriverIdentityDiagnosticsCommand::class,
+            ]);
+        }
     }
 
     /**

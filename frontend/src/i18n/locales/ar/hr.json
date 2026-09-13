@@ -363,6 +363,43 @@
       "emptyDescription": "ليس لديك مرؤوسون مباشرون أو غير مباشرين لمراجعتهم بعد.",
       "noDepartment": "بدون قسم"
     },
+    "drivers": {
+      "title": "أداء السائقين",
+      "detailTitle": "أداء السائق",
+      "emptyTitle": "لا يوجد سائقون لعرضهم",
+      "emptyDescription": "لا يوجد سائقون مرئيون لك حتى الآن.",
+      "identityLabel": "الهوية",
+      "noEmployeeLink": "غير مرتبط بموظف",
+      "notAvailable": "غير متاح",
+      "identity": {
+        "matched": "مطابق",
+        "unmatched": "غير مطابق",
+        "ambiguous": "غامض",
+        "cross_company": "عبر الشركات"
+      },
+      "stats": {
+        "received": "المستلمة",
+        "delivered": "المسلَّمة",
+        "deliveryRate": "معدل التسليم",
+        "undelivered": "غير المسلَّمة"
+      },
+      "outcomes": {
+        "title": "نتائج التسليم",
+        "partial": "جزئي",
+        "failed": "فاشل",
+        "returned": "مرتجع",
+        "skipped": "متخطى",
+        "pending": "معلق"
+      },
+      "settlement": {
+        "title": "التسوية",
+        "status": "الحالة",
+        "cashExpected": "النقد المتوقع",
+        "cashSubmitted": "النقد المُسلَّم",
+        "difference": "الفرق",
+        "shortages": "العجز"
+      }
+    },
     "recommendations": {
       "title": "توصيات المكافآت",
       "percentOfBasic": "% من الأساسي",

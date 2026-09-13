@@ -105,6 +105,7 @@ export const ROUTES = {
   hrPerformance: '/hr/performance',
   hrEmployeePerformance: '/hr/performance/employees/:employeeId',
   hrDepartmentPerformance: '/hr/performance/departments/:departmentId',
+  hrDriverPerformance: '/hr/performance/drivers/:driverId',
   reports: '/reports',
   reportDetail: '/reports/:reportId',
   settings: '/settings',

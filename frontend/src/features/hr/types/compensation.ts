@@ -321,6 +321,54 @@ export type MyTeamMember = {
   position: { id: string; title: string } | null;
 };
 
+/** FIN-01 Slice 1 — the Driver ↔ Employee identity resolution outcome. */
+export type DriverIdentityStatus = 'matched' | 'unmatched' | 'ambiguous' | 'cross_company';
+
+export type DriverIdentity = {
+  status: DriverIdentityStatus;
+  employee_id: string | null;
+  employee_name: string | null;
+};
+
+/** One row from GET /hr/performance/drivers — identity state only, no performance figures. */
+export type DriverRosterRow = {
+  driver_id: string;
+  driver_name: string;
+  identity: DriverIdentity;
+};
+
+/**
+ * FIN-01 Slice 4 — Driver Performance Presentation. Every figure is copied
+ * verbatim from Logistics's own driver read services (Pattern C); nothing
+ * here is calculated in the frontend.
+ */
+export type DriverPerformance = {
+  driver: { id: string; name: string };
+  identity: DriverIdentity;
+  period: { from: string; to: string };
+  delivery: {
+    received: number;
+    delivered: number;
+    partial: number;
+    failed: number;
+    returned: number;
+    skipped: number;
+    pending: number;
+    delivery_rate: number;
+  };
+  settlement: {
+    status: string;
+    cash_expected: number;
+    cash_submitted: number | null;
+    difference: number | null;
+    is_balanced: boolean | null;
+  };
+  shortages: {
+    count: number;
+    value_available: boolean;
+  };
+};
+
 export type EmployeePerformance = {
   employee: { id: string; employee_number: string; name: string; department_id: string | null };
   period_month: string;

@@ -355,6 +355,43 @@
       "emptyDescription": "You have no direct or indirect reports to review yet.",
       "noDepartment": "No department"
     },
+    "drivers": {
+      "title": "Driver Performance",
+      "detailTitle": "Driver Performance",
+      "emptyTitle": "No drivers to show",
+      "emptyDescription": "There are no drivers visible to you yet.",
+      "identityLabel": "Identity",
+      "noEmployeeLink": "Not linked to an employee",
+      "notAvailable": "Not available",
+      "identity": {
+        "matched": "Matched",
+        "unmatched": "Unmatched",
+        "ambiguous": "Ambiguous",
+        "cross_company": "Cross-company"
+      },
+      "stats": {
+        "received": "Received",
+        "delivered": "Delivered",
+        "deliveryRate": "Delivery rate",
+        "undelivered": "Undelivered"
+      },
+      "outcomes": {
+        "title": "Delivery Outcomes",
+        "partial": "Partial",
+        "failed": "Failed",
+        "returned": "Returned",
+        "skipped": "Skipped",
+        "pending": "Pending"
+      },
+      "settlement": {
+        "title": "Settlement",
+        "status": "Status",
+        "cashExpected": "Cash expected",
+        "cashSubmitted": "Cash submitted",
+        "difference": "Difference",
+        "shortages": "Shortages"
+      }
+    },
     "recommendations": {
       "title": "Bonus Recommendations",
       "percentOfBasic": "% of basic",
