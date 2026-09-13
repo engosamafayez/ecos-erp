@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Commerce\Synchronization\Application\Services;
 
-use Illuminate\Support\Facades\Http;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\Synchronization\Domain\Enums\SyncDirection;
 use Modules\Commerce\Synchronization\Domain\Enums\SyncEntityType;
@@ -12,23 +11,29 @@ use Modules\Commerce\Synchronization\Domain\Enums\SyncStatus;
 use Throwable;
 
 /**
- * Manages the full lifecycle of WooCommerce webhooks for all 7 topics.
+ * Manages the full lifecycle of WooCommerce webhooks for all 7 topics — the ONE desired-webhook
+ * manifest authority (topics, callback destination, signing secret). TASK-ECOS-V1.1-WOO-05 /
+ * 042A-R1 §6. `WooCommerceWebhookRegistrar` (a strict subset, zero real consumers) was deleted
+ * in WOO-06 §17-A.
  *
- * TASK-ECOS-V1.1-WOO-05-WEBHOOK-LIFECYCLE — architecture authority 042A-R1 §6, the ONE
- * registration authority. `WooCommerceWebhookRegistrar` (a strict subset — only 2 of these 7
- * topics — with zero real consumers, confirmed by direct search) was deleted in
- * TASK-ECOS-V1.1-WOO-06-COMPLETED-EXTERNAL-FULFILLMENT-SEMANTICS §17-A.
+ * TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R1 §11/§12/§16 — store-side APPLICATION of that
+ * manifest now goes through WooOutboundCommandDispatcher exactly like every other outbound
+ * mutation, so there are never two independent store-side webhook creators for one Channel:
+ *
+ *   - A paired Channel (connector_token set) applies the manifest via the plugin, which creates
+ *     Woo webhooks locally using WooCommerce's own WC_REST_Webhooks_Controller — ECOS never
+ *     calls Woo's REST API directly for such a Channel again.
+ *   - An unpaired (legacy) Channel keeps the original direct-REST application, unchanged.
+ *
+ * The webhook's HMAC signing secret is the connector_token for a paired Channel (the same
+ * already-issued, channel-scoped secret — not a third one) or consumer_secret for a legacy
+ * Channel, mirrored by WooCommerceWebhookController::verifySignature() on the ingress side.
  *
  * Registration failures used to be silently swallowed (`catch (Throwable) {}`) — per 042A-R1
- * §6 ("persist registration failures... so they're retryable and visible, the same way sync
- * failures already are via SyncLog"), every register()/deregister() attempt now produces a
- * SyncLog row exactly like every other outbound sync job already does, via the same
- * SyncLogService. Not a new logging mechanism.
- *
- * `deregister()` also had a real bug fixed as part of "persist failures": it cleared the
- * channel's own webhook-id column unconditionally, even when the remote DELETE request failed
- * — losing track of a webhook that might still be registered on the Woo side. It now only
- * clears the column on a confirmed-successful remote response.
+ * §6, every register()/deregister() attempt produces a SyncLog row via the same SyncLogService
+ * every other outbound sync job already uses. `deregister()` also only clears the channel's
+ * webhook-id column on a confirmed-successful remote response — an unconfirmed deregistration
+ * must not make ECOS forget a webhook that may still be live on the Woo side.
  *
  * Delivery URL scheme (production-ready):
  *   orders:    {APP_URL}/api/webhooks/woocommerce/{channel_id}/orders
@@ -55,14 +60,17 @@ final class WebhookManagerService
         'customer.updated' => ['column' => 'external_webhook_customer_updated_id', 'route' => 'customers'],
     ];
 
-    public function __construct(private readonly SyncLogService $logService) {}
+    public function __construct(
+        private readonly SyncLogService $logService,
+        private readonly WooOutboundCommandDispatcher $dispatcher,
+    ) {}
 
     /** Registers only topics not already registered — the existing, correct behavior. */
     public function registerAll(Channel $channel): void
     {
-        $credential = $channel->credential;
+        $secret = $this->webhookSecretFor($channel);
 
-        if ($credential === null) {
+        if ($secret === null) {
             return;
         }
 
@@ -73,14 +81,7 @@ final class WebhookManagerService
                 continue;
             }
 
-            $this->register(
-                $channel,
-                $credential->consumer_key,
-                $credential->consumer_secret,
-                $topic,
-                $baseUrl.$config['route'],
-                $config['column'],
-            );
+            $this->register($channel, $secret, $topic, $baseUrl.$config['route'], $config['column']);
         }
     }
 
@@ -95,9 +96,9 @@ final class WebhookManagerService
      */
     public function reregisterAll(Channel $channel): void
     {
-        $credential = $channel->credential;
+        $secret = $this->webhookSecretFor($channel);
 
-        if ($credential === null) {
+        if ($secret === null) {
             return;
         }
 
@@ -107,25 +108,16 @@ final class WebhookManagerService
             $existingId = $channel->{$config['column']};
 
             if ($existingId !== null) {
-                $this->deregister($channel, $credential->consumer_key, $credential->consumer_secret, $existingId, $config['column']);
+                $this->deregister($channel, $existingId, $config['column']);
             }
 
-            $this->register(
-                $channel,
-                $credential->consumer_key,
-                $credential->consumer_secret,
-                $topic,
-                $baseUrl.$config['route'],
-                $config['column'],
-            );
+            $this->register($channel, $secret, $topic, $baseUrl.$config['route'], $config['column']);
         }
     }
 
     public function deregisterAll(Channel $channel): void
     {
-        $credential = $channel->credential;
-
-        if ($credential === null) {
+        if ($this->webhookSecretFor($channel) === null) {
             return;
         }
 
@@ -136,20 +128,29 @@ final class WebhookManagerService
                 continue;
             }
 
-            $this->deregister(
-                $channel,
-                $credential->consumer_key,
-                $credential->consumer_secret,
-                $webhookId,
-                $config['column'],
-            );
+            $this->deregister($channel, $webhookId, $config['column']);
         }
+    }
+
+    /**
+     * The webhook HMAC signing secret for this Channel — connector_token for a paired
+     * (Connector-mode) Channel, consumer_secret for a legacy direct-REST one. Null means
+     * neither exists yet, so there is nothing to register/deregister against.
+     */
+    private function webhookSecretFor(Channel $channel): ?string
+    {
+        $credential = $channel->credential;
+
+        if ($credential === null) {
+            return null;
+        }
+
+        return $credential->connector_token ?? $credential->consumer_secret;
     }
 
     private function register(
         Channel $channel,
-        string $consumerKey,
-        string $consumerSecret,
+        string $secret,
         string $topic,
         string $deliveryUrl,
         string $idColumn,
@@ -165,36 +166,26 @@ final class WebhookManagerService
         );
 
         try {
-            $response = Http::withBasicAuth($consumerKey, $consumerSecret)
-                ->timeout(15)
-                ->post(
-                    rtrim($channel->store_url, '/').'/wp-json/wc/v3/webhooks',
-                    [
-                        'name' => 'ECOS ERP – '.$topic,
-                        'topic' => $topic,
-                        'delivery_url' => $deliveryUrl,
-                        // Never logged — see SyncLogService payloads above/below, neither of
-                        // which includes $consumerSecret.
-                        'secret' => $consumerSecret,
-                        'status' => 'active',
-                    ],
-                );
+            $result = $this->dispatcher->create($channel, 'webhooks', [
+                'name' => 'ECOS ERP – '.$topic,
+                'topic' => $topic,
+                'delivery_url' => $deliveryUrl,
+                // Never logged — see SyncLogService payloads above/below, neither of which
+                // includes $secret.
+                'secret' => $secret,
+                'status' => 'active',
+            ]);
 
-            if (! $response->successful()) {
-                $this->logService->markFailed(
-                    $log,
-                    "HTTP {$response->status()}: ".substr($response->body(), 0, 500),
-                    null,
-                    $channel,
-                );
+            if (! $result->ok) {
+                $this->logService->markFailed($log, (string) $result->error, null, $channel);
 
                 return;
             }
 
-            $webhookId = (string) ($response->json('id') ?? '');
+            $webhookId = (string) ($result->data['id'] ?? '');
 
             if ($webhookId === '') {
-                $this->logService->markFailed($log, 'Woo did not return a webhook id.', ['status' => $response->status()], $channel);
+                $this->logService->markFailed($log, 'Woo did not return a webhook id.', ['status' => $result->status], $channel);
 
                 return;
             }
@@ -206,13 +197,8 @@ final class WebhookManagerService
         }
     }
 
-    private function deregister(
-        Channel $channel,
-        string $consumerKey,
-        string $consumerSecret,
-        string $webhookId,
-        string $idColumn,
-    ): void {
+    private function deregister(Channel $channel, string $webhookId, string $idColumn): void
+    {
         $log = $this->logService->createLog(
             $channel,
             SyncEntityType::Webhook,
@@ -224,19 +210,12 @@ final class WebhookManagerService
         );
 
         try {
-            $response = Http::withBasicAuth($consumerKey, $consumerSecret)
-                ->timeout(15)
-                ->delete(rtrim($channel->store_url, '/').'/wp-json/wc/v3/webhooks/'.$webhookId);
+            $result = $this->dispatcher->delete($channel, 'webhooks', $webhookId);
 
-            if (! $response->successful()) {
+            if (! $result->ok) {
                 // Deliberately NOT clearing $idColumn — an unconfirmed deregistration must not
                 // make ECOS forget a webhook that may still be live on the Woo side.
-                $this->logService->markFailed(
-                    $log,
-                    "HTTP {$response->status()}: ".substr($response->body(), 0, 500),
-                    null,
-                    $channel,
-                );
+                $this->logService->markFailed($log, (string) $result->error, null, $channel);
 
                 return;
             }

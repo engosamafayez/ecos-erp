@@ -35,8 +35,10 @@ final class ProductObserver
             $channel = $mapping->channel;
 
             // TASK-...-WOO-04 — a channel not yet Live stays inert regardless of is_active/
-            // sync_* flags (042A-R1 §5); see Channel::isLive()'s own docblock.
-            if ($channel === null || ! $channel->is_active || ! $channel->isLive()) {
+            // sync_* flags (042A-R1 §5). TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R1 §14 —
+            // canSyncNow() also closes the gate for a paired Channel whose Connector has gone
+            // stale/disconnected.
+            if ($channel === null || ! $channel->is_active || ! $channel->canSyncNow()) {
                 continue;
             }
 

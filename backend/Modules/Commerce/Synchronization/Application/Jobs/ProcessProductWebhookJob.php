@@ -39,7 +39,10 @@ final class ProcessProductWebhookJob implements ShouldQueue
         // TASK-...-WOO-04 (042A-R1 §5) — "inbound webhook processing remain[s] inert" until
         // TransitionChannelToLiveAction runs, regardless of is_active/sync_* flags. Recorded as
         // a skip (the existing convention for duplicate-webhook detection), not a failure.
-        if (! $this->channel->isLive()) {
+        // TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R1 §17 — canSyncNow() also holds a stale
+        // native Woo webhook for a paired Channel whose Connector has explicitly disconnected
+        // or gone stale, rather than processing it as though the integration were healthy.
+        if (! $this->channel->canSyncNow()) {
             $logService->createSkippedLog(
                 $this->channel,
                 SyncEntityType::Product,

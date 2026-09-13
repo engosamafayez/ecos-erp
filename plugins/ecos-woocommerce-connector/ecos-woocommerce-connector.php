@@ -37,10 +37,12 @@ define('ECOS_WC_CONNECTOR_DIR', plugin_dir_path(__FILE__));
 require_once ECOS_WC_CONNECTOR_DIR . 'includes/class-ecos-api-client.php';
 require_once ECOS_WC_CONNECTOR_DIR . 'includes/class-ecos-heartbeat.php';
 require_once ECOS_WC_CONNECTOR_DIR . 'includes/class-ecos-admin-settings.php';
+require_once ECOS_WC_CONNECTOR_DIR . 'includes/class-ecos-command-controller.php';
 
 function ecos_wc_connector_init() {
 	Ecos_Wc_Connector_Admin_Settings::instance();
 	Ecos_Wc_Connector_Heartbeat::boot();
+	Ecos_Wc_Connector_Command_Controller::boot();
 }
 add_action('plugins_loaded', 'ecos_wc_connector_init');
 add_filter('cron_schedules', ['Ecos_Wc_Connector_Heartbeat', 'register_interval']);
@@ -60,20 +62,39 @@ function ecos_wc_connector_on_activate() {
 register_activation_hook(__FILE__, 'ecos_wc_connector_on_activate');
 
 /**
- * Deactivation marks the Connector OFFLINE in ECOS and deregisters this channel's Woo webhooks
- * (reusing WebhookManagerService via the deactivated endpoint — not a second deregistration
- * mechanism) — it never touches ECOS business data (Channel lifecycle, Brand, Orders, Products,
- * Customers, historical SyncLogs all stay exactly as they are). Deliberately non-blocking: a
- * slow or unreachable ECOS instance never delays WordPress's own deactivation, and the
- * heartbeat schedule is cleared locally regardless of whether the notify call succeeds.
+ * TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R1 §16 — deactivation has TWO best-effort steps,
+ * both non-blocking so a slow/unreachable ECOS instance or WooCommerce quirk never delays
+ * WordPress's own deactivation:
+ *
+ *   1. LOCAL: delete this Channel's Woo webhooks directly, in-process, via WooCommerce's own
+ *      wc_get_webhooks()/WC_Webhook::delete() — found by matching delivery_url against this
+ *      channel's own callback path, not a locally-cached id list (the plugin holds no webhook
+ *      state of its own; ECOS's external_webhook_*_id columns remain the source of truth).
+ *      This does not depend on ECOS being reachable.
+ *   2. REMOTE: notify ECOS, which marks the Connector disconnected (Channel lifecycle, Brand,
+ *      Orders, Products, Customers, and historical SyncLogs are never touched) and — as a
+ *      belt-and-suspenders fallback if step 1 could not run — separately tries to reach this
+ *      same webhook-deletion capability via the command endpoint.
  */
 function ecos_wc_connector_on_deactivate() {
 	$settings = get_option(ECOS_WC_CONNECTOR_OPTION, []);
 
 	Ecos_Wc_Connector_Heartbeat::unschedule();
 
-	if (empty($settings['connector_token'])) {
+	if (empty($settings['connector_token']) || empty($settings['channel_id'])) {
 		return;
+	}
+
+	if (function_exists('wc_get_webhooks')) {
+		$needle = '/api/webhooks/woocommerce/' . $settings['channel_id'] . '/';
+
+		foreach (wc_get_webhooks() as $webhook_id) {
+			$webhook = wc_get_webhook($webhook_id);
+
+			if ($webhook && strpos((string) $webhook->get_delivery_url(), $needle) !== false) {
+				$webhook->delete(true);
+			}
+		}
 	}
 
 	$client = new Ecos_Wc_Connector_Api_Client($settings['base_url'], $settings['channel_id'], $settings['connector_token']);

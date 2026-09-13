@@ -94,13 +94,7 @@ final class ProductAvailabilitySyncJob implements ShouldQueue
         }
 
         try {
-            $success = $syncer->updateAvailability(
-                $this->channel->store_url,
-                $credential->consumer_key,
-                $credential->consumer_secret,
-                $mapping->external_product_id,
-                $this->status,
-            );
+            $success = $syncer->updateAvailability($this->channel, $mapping->external_product_id, $this->status);
 
             $durationMs = $this->elapsedMs($startedAt);
 

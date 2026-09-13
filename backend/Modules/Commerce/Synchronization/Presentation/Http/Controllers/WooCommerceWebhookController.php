@@ -42,7 +42,11 @@ final class WooCommerceWebhookController extends Controller
         // PAUSED/DISABLED must not perform normal live synchronization side effects. Checked
         // here (not only inside ProcessOrderWebhookJob's own defense-in-depth check) so a
         // not-yet-live channel's webhooks are never even queued, not merely skipped later.
-        if (! $channel->isLive()) {
+        // TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R1 §17 — canSyncNow() also holds a stale
+        // native Woo webhook for a paired Channel whose Connector has explicitly disconnected
+        // or gone stale, at the ingress boundary — not only inside each Job's own
+        // defense-in-depth check.
+        if (! $channel->canSyncNow()) {
             $logService->createSkippedLog(
                 $channel,
                 SyncEntityType::Order,
@@ -106,7 +110,11 @@ final class WooCommerceWebhookController extends Controller
         $externalId = (string) ($payload['id'] ?? '');
 
         // TASK-...-WOO-05 — see handleOrder()'s identical check for the full rationale.
-        if (! $channel->isLive()) {
+        // TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R1 §17 — canSyncNow() also holds a stale
+        // native Woo webhook for a paired Channel whose Connector has explicitly disconnected
+        // or gone stale, at the ingress boundary — not only inside each Job's own
+        // defense-in-depth check.
+        if (! $channel->canSyncNow()) {
             $logService->createSkippedLog(
                 $channel,
                 SyncEntityType::Product,
@@ -153,7 +161,11 @@ final class WooCommerceWebhookController extends Controller
         $externalId = (string) ($payload['id'] ?? '');
 
         // TASK-...-WOO-05 — see handleOrder()'s identical check for the full rationale.
-        if (! $channel->isLive()) {
+        // TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R1 §17 — canSyncNow() also holds a stale
+        // native Woo webhook for a paired Channel whose Connector has explicitly disconnected
+        // or gone stale, at the ingress boundary — not only inside each Job's own
+        // defense-in-depth check.
+        if (! $channel->canSyncNow()) {
             $logService->createSkippedLog(
                 $channel,
                 SyncEntityType::Customer,
@@ -184,6 +196,12 @@ final class WooCommerceWebhookController extends Controller
         return $this->success(null, 'Webhook received.');
     }
 
+    /**
+     * TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R1 §16 — the signing secret is
+     * connector_token for a paired (Connector-mode) Channel or consumer_secret for a legacy
+     * direct-REST one, mirroring exactly which secret WebhookManagerService registered the
+     * webhook with (see its own webhookSecretFor()) — never a third, separately-tracked secret.
+     */
     private function verifySignature(Request $request, Channel $channel): bool
     {
         $signature = $request->header('X-WC-Webhook-Signature');
@@ -198,8 +216,14 @@ final class WooCommerceWebhookController extends Controller
             return false;
         }
 
+        $secret = $credential->connector_token ?? $credential->consumer_secret;
+
+        if ($secret === null) {
+            return false;
+        }
+
         $rawBody = $request->getContent();
-        $expected = base64_encode(hash_hmac('sha256', $rawBody, $credential->consumer_secret, true));
+        $expected = base64_encode(hash_hmac('sha256', $rawBody, $secret, true));
 
         return hash_equals($expected, $signature);
     }

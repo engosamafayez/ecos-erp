@@ -54,9 +54,15 @@ final class CustomerObserver
             ->where('is_active', true)
             ->where('sync_customers', true)
             // TASK-...-WOO-04 — a channel not yet Live stays inert regardless of either flag
-            // above (042A-R1 §5); see Channel::isLive()'s own docblock.
+            // above (042A-R1 §5); see Channel::isLive()'s own docblock. lifecycle_state=Live is
+            // still filtered in SQL (cheap, avoids fetching every non-live channel); the
+            // Connector-eligibility half of canSyncNow() TASK-...-CONSOLIDATED-REMEDIATION-001-
+            // R2-R1 §14 adds (a paired Channel whose Connector has gone stale/disconnected)
+            // can't be expressed as a WHERE clause against a derived, relationship-dependent
+            // fact, so it is applied in PHP below instead.
             ->where('lifecycle_state', ChannelLifecycleState::Live->value)
             ->get()
+            ->filter(fn (Channel $channel): bool => $channel->canSyncNow())
             ->each(function (Channel $channel) use ($salesCustomer): void {
                 CustomerSyncJob::dispatch($channel, $salesCustomer);
             });

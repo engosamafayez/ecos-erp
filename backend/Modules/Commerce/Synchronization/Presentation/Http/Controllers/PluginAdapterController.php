@@ -75,8 +75,11 @@ final class PluginAdapterController extends Controller
             'last_error_at' => $channel->last_error_at?->toIso8601String(),
             'last_error_message' => $channel->last_error_message,
             'connector_last_heartbeat_at' => $channel->connector_last_heartbeat_at?->toIso8601String(),
-            // Confirms which credential the plugin is presenting without ever echoing the secret.
-            'credential_key_suffix' => $credential !== null ? mb_substr($credential->consumer_key, -4) : null,
+            // Confirms which credential the plugin is presenting without ever echoing the
+            // secret. Null for a pure Connector-mode channel — there is no consumer_key at all
+            // (TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R1 §6).
+            'credential_key_suffix' => $credential?->consumer_key !== null ? mb_substr($credential->consumer_key, -4) : null,
+            'transport_mode' => $credential?->connector_token !== null ? 'connector' : 'direct_rest',
         ]);
     }
 

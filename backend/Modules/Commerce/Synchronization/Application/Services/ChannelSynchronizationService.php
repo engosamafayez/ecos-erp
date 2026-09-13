@@ -167,11 +167,10 @@ class ChannelSynchronizationService
      *   - Channel must exist (not null / soft-deleted)
      *   - is_active must be true
      *   - sync_stock must be true
-     *   - the channel must be LIVE (TASK-...-CONSOLIDATED-REMEDIATION-001 §11/§7 — every other
-     *     Woo dispatch/ingress point in this codebase already gates on Channel::isLive()
-     *     (TASK-...-WOO-04, 042A-R1 §5); this was the one path that did not, so a
-     *     Draft/Configured/Ready/Paused/Disabled channel with is_active+sync_stock both
-     *     true could still receive availability pushes to Woo.
+     *   - Channel::canSyncNow() — LIVE (TASK-...-WOO-04, 042A-R1 §5) AND, for a paired
+     *     Channel, a genuinely connected Connector (TASK-...-CONSOLIDATED-REMEDIATION-001-
+     *     R2-R1 §14: a Degraded/Disconnected paired Channel must not keep receiving pushes as
+     *     though nothing changed).
      */
     private function shouldSync(mixed $channel): bool
     {
@@ -181,6 +180,6 @@ class ChannelSynchronizationService
 
         return $channel->is_active === true
             && $channel->sync_stock === true
-            && $channel->isLive();
+            && $channel->canSyncNow();
     }
 }

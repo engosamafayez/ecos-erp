@@ -8,19 +8,26 @@ use App\Core\Actions\BaseAction;
 use App\Core\Responses\OperationResult;
 use Illuminate\Support\Str;
 use Modules\Commerce\Channels\Domain\Models\Channel;
+use Modules\Commerce\Channels\Domain\Models\ChannelCredential;
 use Modules\Commerce\Synchronization\Application\Services\ChannelSyncAuditLogger;
 use Modules\Commerce\Synchronization\Application\Services\WebhookManagerService;
 
 /**
- * TASK-...-CONSOLIDATED-REMEDIATION-001-R2 §14/§15 — the ONE pairing-exchange authority. A
- * WordPress plugin, holding only a short-lived pairing code the merchant pasted in, exchanges
- * it here for a persistent, Channel-scoped `connector_token` — a credential distinct from the
- * consumer_key/consumer_secret pair ECOS uses to call Woo's own REST API, which the plugin
- * never sees or needs.
+ * TASK-...-CONSOLIDATED-REMEDIATION-001-R2/R2-R1 §6/§14/§15 — the ONE pairing-exchange
+ * authority. A WordPress plugin, holding only a short-lived pairing code the merchant pasted
+ * in, exchanges it here for a persistent, Channel-scoped `connector_token`.
+ *
+ * §6 (CTO correction): an official Connector-mode Channel never requires the merchant/operator
+ * to obtain or paste a WooCommerce REST consumer_key/consumer_secret at all — unlike the R2
+ * design, this no longer requires a pre-existing ChannelCredential row. A missing row is
+ * created here holding ONLY connector_token; consumer_key/consumer_secret stay null (the
+ * Channel never uses the legacy direct-REST transport — see WooOutboundCommandDispatcher).
  *
  * Reuses WebhookManagerService (unchanged, not duplicated) to complete "required webhooks are
  * configured automatically" as the last pairing step — the merchant never creates a Woo
- * webhook, chooses a topic, or pastes a callback URL.
+ * webhook, chooses a topic, or pastes a callback URL. For a Connector-mode Channel,
+ * WebhookManagerService itself now routes webhook creation through the paired plugin (see its
+ * own docblock) rather than calling Woo's REST API directly.
  */
 final class ExchangePairingCodeAction extends BaseAction
 {
@@ -53,17 +60,17 @@ final class ExchangePairingCodeAction extends BaseAction
             return OperationResult::failure('Pairing code is invalid or has expired.');
         }
 
+        $connectorToken = Str::random(64);
         $credential = $channel->credential;
 
         if ($credential === null) {
-            return OperationResult::failure(
-                'This channel has no WooCommerce REST credential configured yet. An ECOS operator must configure it before pairing.',
-            );
+            $credential = ChannelCredential::query()->create([
+                'channel_id' => $channel->id,
+                'connector_token' => $connectorToken,
+            ]);
+        } else {
+            $credential->update(['connector_token' => $connectorToken]);
         }
-
-        $connectorToken = Str::random(64);
-
-        $credential->update(['connector_token' => $connectorToken]);
 
         // Single-use: consumed regardless of outcome from here on, so a leaked/observed code
         // cannot be replayed even if webhook registration below partially fails.

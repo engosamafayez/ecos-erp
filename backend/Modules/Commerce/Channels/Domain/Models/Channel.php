@@ -71,8 +71,14 @@ class Channel extends Model
     /** @use HasFactory<ChannelFactory> */
     use HasFactory, HasUuids, SoftDeletes;
 
-    /** Minutes without a Connector heartbeat before health degrades from Healthy. */
-    private const HEARTBEAT_STALE_AFTER_MINUTES = 15;
+    /**
+     * Minutes without a Connector heartbeat before health degrades from Healthy — one
+     * threshold, used for both the diagnostic display and the sync-eligibility gate (R2-R1
+     * §15/§23), deliberately generous (12 missed 5-minute WP-Cron ticks) so ordinary WP-Cron
+     * delay on a low-traffic store never trips a false disconnect; a genuinely dead/uninstalled
+     * Connector still cannot read Healthy forever.
+     */
+    private const HEARTBEAT_STALE_AFTER_MINUTES = 60;
 
     public $incrementing = false;
 
@@ -245,6 +251,31 @@ class Channel extends Model
         return $this->connector_last_heartbeat_at->gt(now()->subMinutes(self::HEARTBEAT_STALE_AFTER_MINUTES))
             ? ConnectorHealth::Healthy
             : ConnectorHealth::Degraded;
+    }
+
+    /**
+     * TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R1 §14/§17 — the ONE eligibility check every
+     * normal outbound/inbound Woo synchronization point must use going forward: isLive() AND
+     * (for a Channel that has adopted the Connector) a genuinely connected pairing state.
+     *
+     * A Channel that has never been paired (credential->connector_token is null — the legacy
+     * direct-REST path, still permitted per R2-R1 §20/§21 as long as it never dual-runs against
+     * a paired Channel) is unaffected by connector health: there is no Plugin whose absence
+     * could matter. A paired Channel must not silently keep synchronizing as though healthy
+     * once it is Degraded (stale heartbeat) or Disconnected (explicit deactivation notice) —
+     * this is what closes the "invisible integration after Plugin deactivation" gap.
+     */
+    public function canSyncNow(): bool
+    {
+        if (! $this->isLive()) {
+            return false;
+        }
+
+        if ($this->credential?->connector_token === null) {
+            return true;
+        }
+
+        return $this->connectorHealth() === ConnectorHealth::Healthy;
     }
 
     /**

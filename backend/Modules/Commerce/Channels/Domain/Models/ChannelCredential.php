@@ -22,12 +22,18 @@ use Modules\Commerce\Channels\Infrastructure\Casts\TransitionalEncryptedCast;
  *
  * @property string $id
  * @property string $channel_id
- * @property string $consumer_key
- * @property string $consumer_secret
+ * @property string|null $consumer_key Null for a pure Connector-mode Channel (TASK-...-
+ *                                     CONSOLIDATED-REMEDIATION-001-R2-R1 §6) — the official
+ *                                     Plugin pairing flow never collects a Woo REST credential
+ *                                     at all. Still required for the legacy direct-REST path.
+ * @property string|null $consumer_secret See consumer_key.
  * @property string|null $connector_token TASK-...-CONSOLIDATED-REMEDIATION-001-R2 — the
  *                                        WooCommerce Connector plugin's own authentication
  *                                        secret, distinct from consumer_key/consumer_secret
- *                                        (ECOS→Woo REST only). Issued once during pairing.
+ *                                        (ECOS→Woo REST only, legacy path). Issued once during
+ *                                        pairing; also doubles as the Woo webhook HMAC signing
+ *                                        secret for Connector-mode Channels (R2-R1 §16) — no
+ *                                        third secret is introduced.
  */
 class ChannelCredential extends Model
 {

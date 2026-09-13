@@ -10,12 +10,12 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Http;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\Orders\Domain\Enums\OrderStatus;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Synchronization\Application\Services\EcosOrderStatusToWooTranslator;
 use Modules\Commerce\Synchronization\Application\Services\SyncLogService;
+use Modules\Commerce\Synchronization\Application\Services\WooOutboundCommandDispatcher;
 use Modules\Commerce\Synchronization\Domain\Enums\SyncDirection;
 use Modules\Commerce\Synchronization\Domain\Enums\SyncEntityType;
 use Modules\Commerce\Synchronization\Domain\Enums\SyncStatus;
@@ -26,6 +26,9 @@ use Throwable;
  *
  * Dispatched by OrderObserver when an order with a known external_order_id
  * has its status changed. Maps ECOS OrderStatus values to WooCommerce status slugs.
+ *
+ * TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R1 — transport decided by
+ * WooOutboundCommandDispatcher, not here.
  */
 final class OrderStatusSyncJob implements ShouldQueue
 {
@@ -40,7 +43,7 @@ final class OrderStatusSyncJob implements ShouldQueue
         private readonly Order $order,
     ) {}
 
-    public function handle(SyncLogService $logService, EcosOrderStatusToWooTranslator $translator): void
+    public function handle(SyncLogService $logService, EcosOrderStatusToWooTranslator $translator, WooOutboundCommandDispatcher $dispatcher): void
     {
         $log = $logService->createLog(
             $this->channel,
@@ -58,9 +61,7 @@ final class OrderStatusSyncJob implements ShouldQueue
             ],
         );
 
-        $credential = $this->channel->credential;
-
-        if ($credential === null) {
+        if ($this->channel->credential === null) {
             $logService->markFailed($log, 'No credentials configured for this channel.', null, $this->channel);
 
             return;
@@ -98,22 +99,12 @@ final class OrderStatusSyncJob implements ShouldQueue
         }
 
         try {
-            $response = Http::withBasicAuth($credential->consumer_key, $credential->consumer_secret)
-                ->timeout(15)
-                ->put(
-                    rtrim($this->channel->store_url, '/').'/wp-json/wc/v3/orders/'.$externalId,
-                    ['status' => $wooStatus],
-                );
+            $result = $dispatcher->put($this->channel, 'orders', $externalId, ['status' => $wooStatus]);
 
-            if ($response->successful()) {
-                $logService->markSuccess($log, ['woo_status' => $wooStatus, 'http_status' => $response->status()], $this->channel);
+            if ($result->ok) {
+                $logService->markSuccess($log, ['woo_status' => $wooStatus, 'http_status' => $result->status], $this->channel);
             } else {
-                $logService->markFailed(
-                    $log,
-                    "HTTP {$response->status()}: ".mb_substr($response->body(), 0, 500),
-                    null,
-                    $this->channel,
-                );
+                $logService->markFailed($log, (string) $result->error, null, $this->channel);
             }
         } catch (Throwable $e) {
             $logService->markFailed($log, $e->getMessage(), null, $this->channel);

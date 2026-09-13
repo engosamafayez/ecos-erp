@@ -7,6 +7,7 @@ namespace Modules\Commerce\Channels\Domain\Services;
 use Modules\Admin\Configuration\Domain\Services\ConfigurationManager;
 use Modules\Commerce\Channels\Domain\Enums\ChannelLifecycleState;
 use Modules\Commerce\Channels\Domain\Enums\ConnectionStatus;
+use Modules\Commerce\Channels\Domain\Enums\ConnectorHealth;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\ProductMappings\Domain\Models\ProductMapping;
@@ -146,8 +147,29 @@ final class ChannelGoLiveReadinessService
     /**
      * @return array{key: string, label: string, ready: bool, reason: string}
      */
+    /**
+     * TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R1 §22 — for an official Connector-mode Channel
+     * (paired via the Plugin), "credentials valid" means a genuinely connected pairing
+     * (Channel::connectorHealth() === Healthy), never a manually-pasted Woo REST consumer
+     * key/secret — a pure Connector-mode Channel has none. The legacy direct-REST path
+     * (connection_status, set by TestConnectionAction) remains the gate for a Channel that has
+     * never been paired.
+     */
     private function credentialsValid(Channel $channel): array
     {
+        if ($channel->credential?->connector_token !== null) {
+            $ready = $channel->connectorHealth() === ConnectorHealth::Healthy;
+
+            return [
+                'key' => 'credentials_valid',
+                'label' => 'Credentials valid',
+                'ready' => $ready,
+                'reason' => $ready
+                    ? 'The Connector plugin is paired and reporting a healthy connection.'
+                    : 'The Connector plugin is not yet reporting a healthy, connected pairing (current: '.$channel->connectorHealth()->label().').',
+            ];
+        }
+
         $ready = $channel->connection_status === ConnectionStatus::Connected;
 
         return [

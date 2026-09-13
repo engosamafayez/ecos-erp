@@ -89,13 +89,7 @@ final class SyncStockAction extends BaseAction
                 $product->update(['stock_status' => $status->value]);
             }
 
-            $success = $this->syncer->updateAvailability(
-                $channel->store_url,
-                $credential->consumer_key,
-                $credential->consumer_secret,
-                $mapping->external_product_id,
-                $status,
-            );
+            $success = $this->syncer->updateAvailability($channel, $mapping->external_product_id, $status);
 
             $syncStatus = $success ? StockSyncStatus::Success : StockSyncStatus::Error;
             $message = $success
