@@ -7,7 +7,6 @@ namespace Modules\Organization\Brands\Application\Actions;
 use App\Core\Actions\BaseAction;
 use App\Core\Responses\OperationResult;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Modules\Admin\Configuration\Domain\Services\ConfigurationManager;
 use Modules\Organization\Brands\Application\DTO\BrandDTO;
@@ -35,7 +34,12 @@ final class UpdateBrandAction extends BaseAction
             throw new BrandNotFoundException($id);
         }
 
-        $slug = $dto->slug ?? Str::slug($dto->name);
+        // A Brand slug may already be externally referenced, so it is NEVER
+        // regenerated from the (possibly changed) name on update. When the client
+        // omits slug (or sends it blank — BrandDTO nullifies ''), the existing slug
+        // is preserved; only an explicitly supplied slug changes it, and its format
+        // and company-scoped uniqueness are already enforced by UpdateBrandRequest.
+        $slug = $dto->slug ?? $brand->slug;
         $baseSlug = $slug;
         $counter = 1;
         while ($this->brands->existsBySlug($brand->company_id, $slug, $id)) {

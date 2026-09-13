@@ -31,7 +31,17 @@ final class CreateBrandAction extends BaseAction
         }
 
         $code = $dto->code ?? $this->codeGenerator->next($dto->company_id);
+
+        // Slug is optional for the caller: when omitted (or blank — BrandDTO nullifies
+        // ''), it is generated from the name here, the authoritative source. Str::slug()
+        // strips non-Latin scripts (an Arabic-only name → ''), and the slug column is
+        // NOT NULL and unique per company, so fall back to the code-derived slug — the
+        // brand code is always present and unique per company — rather than persisting a
+        // blank or colliding slug.
         $slug = $dto->slug ?? Str::slug($dto->name);
+        if ($slug === '') {
+            $slug = Str::slug($code);
+        }
 
         $baseSlug = $slug;
         $counter = 1;

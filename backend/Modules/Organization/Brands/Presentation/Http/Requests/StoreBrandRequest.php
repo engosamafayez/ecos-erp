@@ -14,6 +14,27 @@ final class StoreBrandRequest extends FormRequest
         return true;
     }
 
+    /**
+     * A blank slug/code means "generate it" — normalise '' to absent so the optional
+     * rules below skip a blank value instead of failing its format/unique check, and
+     * the action's canonical auto-generation runs (slug from name, code from sequence).
+     */
+    protected function prepareForValidation(): void
+    {
+        $normalized = [];
+
+        foreach (['slug', 'code'] as $key) {
+            $value = $this->input($key);
+            if (is_string($value) && trim($value) === '') {
+                $normalized[$key] = null;
+            }
+        }
+
+        if ($normalized !== []) {
+            $this->merge($normalized);
+        }
+    }
+
     /** @return array<string, array<int, mixed>> */
     public function rules(): array
     {
