@@ -15,7 +15,7 @@ function applyToDocument(lang: Language): void {
 
 function getInitialLanguage(): Language {
   const stored = localStorage.getItem(STORAGE_KEY) as Language | null;
-  const lang = stored !== null && SUPPORTED.includes(stored) ? stored : 'en';
+  const lang = stored !== null && SUPPORTED.includes(stored) ? stored : 'ar';
   // Apply synchronously during state initialisation so the first paint
   // already has the correct dir attribute — eliminates RTL layout flash.
   applyToDocument(lang);
