@@ -63,6 +63,13 @@ enum BusinessEventType: string
     case LoyaltyEarn = 'crm.loyalty_earn';
     case LoyaltyRedeem = 'crm.loyalty_redeem';
 
+    // ── HR / Payroll ─────────────────────────────────────────────────────────────
+    // The approved/frozen result of a payroll run (TASK-ECOS-FIN-03-PAYROLL-
+    // FINANCE-POSTING-CLOSURE-001) — HR announces totals only; this is Finance's
+    // own name for that announcement, resolved by the same rule-driven bridge as
+    // every other event above.
+    case PayrollApproved = 'hr.payroll_approved';
+
     public function module(): string
     {
         return explode('.', $this->value)[0];
