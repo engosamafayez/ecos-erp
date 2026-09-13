@@ -1,12 +1,16 @@
 import { api } from '@/lib/axios';
 import type {
+  CrmBlockHistoryEntry,
   CrmCustomer,
   CrmCustomerGroup,
+  CrmCustomerOrder,
   CrmCustomerProfile,
   CrmCustomersMeta,
   CrmCustomersQuery,
   CrmCustomersResult,
   CrmCustomerIntelligence,
+  CrmCustomerTicket,
+  CrmSalesOwnerOption,
   CrmTask,
   CrmTaskType,
   CrmTimelineEntry,
@@ -144,5 +148,55 @@ export const crmCustomersService = {
       payload,
     );
     return data.data;
+  },
+
+  // ── CRM-01 Task 1 — Customer 360 Orders + Support closure ──────────────────
+
+  async orders(id: string): Promise<CrmCustomerOrder[]> {
+    const { data } = await api.get<ApiResponse<CrmCustomerOrder[]>>(`/crm/customers/${id}/orders`);
+    return data.data;
+  },
+
+  async tickets(id: string): Promise<CrmCustomerTicket[]> {
+    const { data } = await api.get<ApiResponse<CrmCustomerTicket[]>>(`/crm/customers/${id}/tickets`);
+    return data.data;
+  },
+
+  // ── CRM-01 Task 1 — canonical-surface parity (owner/block/export) ──────────
+
+  async salesOwnerOptions(): Promise<CrmSalesOwnerOption[]> {
+    const { data } = await api.get<ApiResponse<CrmSalesOwnerOption[]>>('/crm/customers/sales-owners');
+    return data.data;
+  },
+
+  async assignOwner(id: string, salesOwnerId: string | null): Promise<CrmCustomer> {
+    const { data } = await api.patch<ApiResponse<CrmCustomer>>(`/crm/customers/${id}/sales-owner`, {
+      sales_owner_id: salesOwnerId,
+    });
+    return data.data;
+  },
+
+  async block(id: string, reason: string): Promise<void> {
+    await api.post(`/crm/customers/${id}/block`, { reason });
+  },
+
+  async unblock(id: string, blockId: string, reason: string): Promise<void> {
+    await api.post(`/crm/customers/${id}/unblock`, { block_id: blockId, reason });
+  },
+
+  async blockHistory(id: string): Promise<CrmBlockHistoryEntry[]> {
+    const { data } = await api.get<ApiResponse<CrmBlockHistoryEntry[]>>(
+      `/crm/customers/${id}/block-history`,
+    );
+    return data.data;
+  },
+
+  /** Same filters as list() so the exported set matches what the user is looking at. */
+  async exportCsv(params: Pick<CrmCustomersQuery, 'q' | 'status' | 'type'>): Promise<Blob> {
+    const { data } = await api.get<Blob>('/crm/customers/export', {
+      params,
+      responseType: 'blob',
+    });
+    return data;
   },
 };

@@ -23,6 +23,7 @@ export const ROUTES = {
   stockLedger: '/stock-ledger',
   customers: '/customers',
   crmCustomers: '/crm/customers',
+  crmLeads: '/crm/leads',
   crmExecutive: '/crm/executive',
   crmPortfolio: '/crm/portfolio',
   customerDetail: '/customers/:customerId',

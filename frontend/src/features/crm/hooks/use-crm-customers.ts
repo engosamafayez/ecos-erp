@@ -205,3 +205,79 @@ export function useRescheduleCrmTask(customerId: string) {
     onSuccess: invalidate,
   });
 }
+
+// ── CRM-01 Task 1 — Customer 360 Orders + Support closure ────────────────────
+
+export function useCrmCustomerOrdersQuery(id: string | null, enabled: boolean) {
+  const companyId = useCompanyScope();
+
+  return useQuery({
+    queryKey: ['company', companyId, CRM_CUSTOMERS_KEY, id, 'orders'],
+    queryFn: () => crmCustomersService.orders(id as string),
+    enabled: Boolean(id) && enabled,
+  });
+}
+
+export function useCrmCustomerTicketsQuery(id: string | null, enabled: boolean) {
+  const companyId = useCompanyScope();
+
+  return useQuery({
+    queryKey: ['company', companyId, CRM_CUSTOMERS_KEY, id, 'tickets'],
+    queryFn: () => crmCustomersService.tickets(id as string),
+    enabled: Boolean(id) && enabled,
+  });
+}
+
+// ── CRM-01 Task 1 — canonical-surface parity (owner/block/export) ───────────
+
+export function useCrmSalesOwnerOptionsQuery() {
+  const companyId = useCompanyScope();
+
+  return useQuery({
+    queryKey: ['company', companyId, CRM_CUSTOMERS_KEY, 'sales-owners'],
+    queryFn: () => crmCustomersService.salesOwnerOptions(),
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useAssignCrmCustomerOwner(customerId: string) {
+  const companyId = useCompanyScope();
+  const invalidate = useInvalidateCustomerAndPortfolio(companyId, customerId);
+
+  return useMutation({
+    mutationFn: (salesOwnerId: string | null) =>
+      crmCustomersService.assignOwner(customerId, salesOwnerId),
+    onSuccess: invalidate,
+  });
+}
+
+export function useCrmCustomerBlockHistoryQuery(id: string | null, enabled: boolean) {
+  const companyId = useCompanyScope();
+
+  return useQuery({
+    queryKey: ['company', companyId, CRM_CUSTOMERS_KEY, id, 'block-history'],
+    queryFn: () => crmCustomersService.blockHistory(id as string),
+    enabled: Boolean(id) && enabled,
+  });
+}
+
+export function useBlockCrmCustomer(customerId: string) {
+  const companyId = useCompanyScope();
+  const invalidate = useInvalidateCustomerAndPortfolio(companyId, customerId);
+
+  return useMutation({
+    mutationFn: (reason: string) => crmCustomersService.block(customerId, reason),
+    onSuccess: invalidate,
+  });
+}
+
+export function useUnblockCrmCustomer(customerId: string) {
+  const companyId = useCompanyScope();
+  const invalidate = useInvalidateCustomerAndPortfolio(companyId, customerId);
+
+  return useMutation({
+    mutationFn: ({ blockId, reason }: { blockId: string; reason: string }) =>
+      crmCustomersService.unblock(customerId, blockId, reason),
+    onSuccess: invalidate,
+  });
+}

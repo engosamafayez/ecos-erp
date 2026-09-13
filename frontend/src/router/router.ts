@@ -54,9 +54,8 @@ import { RecipesPage } from '@/features/recipes/pages/recipes-page';
 import { RecipeWorkspacePage } from '@/features/recipes/pages/recipe-workspace-page';
 import { CrmCustomersWorkspacePage } from '@/features/crm/pages/crm-customers-workspace-page';
 import { CrmExecutiveWorkspacePage } from '@/features/crm/pages/crm-executive-workspace-page';
+import { CrmLeadsWorkspacePage } from '@/features/crm/pages/crm-leads-workspace-page';
 import { CrmPortfolioPage } from '@/features/crm/pages/crm-portfolio-page';
-import { CustomersPage } from '@/features/customers/pages/customers-page';
-import { CustomerProfilePage } from '@/features/customers/pages/customer-profile-page';
 import { StockLedgerPage } from '@/features/stock-ledger/pages/stock-ledger-page';
 import { InventoryDashboardPage } from '@/features/inventory-control/pages/inventory-dashboard-page';
 import { AbcClassificationPage } from '@/features/inventory-control/pages/abc-classification-page';
@@ -449,12 +448,20 @@ export const router = createBrowserRouter(
             { path: ROUTES.fulfillments, Component: FulfillmentsPage },
             { path: ROUTES.fulfillmentsNew, Component: CreateFulfillmentPage },
             { path: `${ROUTES.fulfillments}/:id`, Component: ViewFulfillmentPage },
-            { path: ROUTES.customers, Component: CustomersPage },
+            // CRM-01 Task 1 — the legacy Customers workspace is retired in favor of the
+            // canonical /crm/customers workspace (see CRM-01 Task 1 report, "Customer UI").
+            // Both routes are kept as compatibility redirects so an existing bookmark or
+            // deep link still lands on the right record rather than a broken/duplicate page.
+            { path: ROUTES.customers, loader: () => redirect(ROUTES.crmCustomers) },
+            {
+              path: ROUTES.customerDetail,
+              loader: ({ params }) => redirect(`${ROUTES.crmCustomers}?open=${params.customerId}`),
+            },
             { path: ROUTES.crm, loader: () => redirect(ROUTES.crmCustomers) },
             { path: ROUTES.crmCustomers, Component: CrmCustomersWorkspacePage },
+            { path: ROUTES.crmLeads, Component: CrmLeadsWorkspacePage },
             { path: ROUTES.crmExecutive, Component: CrmExecutiveWorkspacePage },
             { path: ROUTES.crmPortfolio, Component: CrmPortfolioPage },
-            { path: ROUTES.customerDetail, Component: CustomerProfilePage },
             // Configuration OS
             { path: ROUTES.configurationOs, Component: ConfigurationOsPage },
             { path: ROUTES.configurationBrand, Component: BrandConfigurationPage },
