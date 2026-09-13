@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Download, Pencil, Plus, RefreshCw, SlidersHorizontal, Trash2, Wifi } from 'lucide-react';
+import { Download, KeyRound, Pencil, Plus, RefreshCw, SlidersHorizontal, Trash2, Wifi } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import {
@@ -21,10 +21,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { usePermission } from '@/features/authorization';
 import { ChannelFormDrawer } from '@/features/channels/components/channel-form-drawer';
 import { ConnectionStatusBadge } from '@/features/channels/components/connection-status-badge';
 import { ImportOrdersResultDialog } from '@/features/channels/components/import-orders-result-dialog';
 import { ImportResultDialog } from '@/features/channels/components/import-result-dialog';
+import { PairingCodeDialog } from '@/features/channels/components/pairing-code-dialog';
 import { PlatformBadge } from '@/features/channels/components/platform-badge';
 import {
   useChannelsQuery,
@@ -86,6 +88,7 @@ const PLATFORM_OPTIONS: { value: ChannelPlatform; label: string }[] = [
 export function ChannelsPage() {
   const { t } = useTranslation('channels');
   const { t: tCommon } = useTranslation('common');
+  const { can } = usePermission();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<ChannelStatusFilter>('all');
   const [platformFilter, setPlatformFilter] = useState('');
@@ -108,6 +111,7 @@ export function ChannelsPage() {
   const [importingOrdersId, setImportingOrdersId] = useState<string | null>(null);
   const [orderImportResult, setOrderImportResult] = useState<OrderImportResult | null>(null);
   const [orderImportChannelName, setOrderImportChannelName] = useState<string | undefined>();
+  const [pairingChannel, setPairingChannel] = useState<Channel | null>(null);
 
   // ── Keyboard nav ──────────────────────────────────────────────────────────────
   const searchRef = useRef<HTMLInputElement>(null);
@@ -356,6 +360,22 @@ export function ChannelsPage() {
               icon: Wifi,
               onSelect: () => handleTestConnection(channel),
             },
+            // TASK-...-CRM-02-PAIRING-UI-FINAL-CLOSURE-011 — WooCommerce-only (the official
+            // plugin the code is entered into is WooCommerce-specific) and reuses the exact
+            // permission already protecting every other action on this row; no new permission.
+            ...(channel.platform === 'woocommerce' && can('sales.channels.update')
+              ? [
+                  {
+                    key: 'pairing-code',
+                    label:
+                      channel.transport_mode === 'connector'
+                        ? t($ => $.connector.menuActionPaired)
+                        : t($ => $.connector.menuActionUnpaired),
+                    icon: KeyRound,
+                    onSelect: () => setPairingChannel(channel),
+                  },
+                ]
+              : []),
             { key: 'edit', label: tCommon($ => $.common.edit), icon: Pencil, onSelect: () => openEdit(channel) },
             {
               key: 'delete',
@@ -548,6 +568,12 @@ export function ChannelsPage() {
         onOpenChange={(open) => { if (!open) setSyncResult(null); }}
         result={syncResult}
         channelName={syncChannelName}
+      />
+
+      <PairingCodeDialog
+        open={pairingChannel !== null}
+        onOpenChange={(open) => { if (!open) setPairingChannel(null); }}
+        channel={pairingChannel}
       />
     </div>
   );

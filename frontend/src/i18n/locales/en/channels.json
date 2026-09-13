@@ -158,5 +158,22 @@
       "description": "Historical Orders will be imported with their real historical status, but will NOT trigger inventory reservation, warehouse execution, or any other live operational action.",
       "confirm": "Import Historical Orders"
     }
+  },
+  "connector": {
+    "menuActionUnpaired": "Generate Pairing Code",
+    "menuActionPaired": "Pairing Code",
+    "dialogTitle": "Pairing Code",
+    "generateButton": "Generate Pairing Code",
+    "generating": "Generating…",
+    "code": "Pairing Code",
+    "copy": "Copy",
+    "copied": "Copied",
+    "expires": "Expires",
+    "expired": "Expired",
+    "generateNewCode": "Generate New Code",
+    "connected": "Connected",
+    "connectedDescription": "This store is connected through the official ECOS WooCommerce Connector plugin.",
+    "instructions": "Enter this code in the official ECOS WooCommerce Connector plugin on your store to finish connecting it. The code is shown only once and expires shortly.",
+    "errorGeneric": "Something went wrong. Please try again."
   }
 }

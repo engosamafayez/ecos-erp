@@ -158,5 +158,22 @@
       "description": "سيتم استيراد الطلبات التاريخية بحالتها التاريخية الحقيقية، لكن لن يتم تفعيل حجز المخزون أو تنفيذ المستودع أو أي إجراء تشغيلي حي آخر.",
       "confirm": "استيراد الطلبات التاريخية"
     }
+  },
+  "connector": {
+    "menuActionUnpaired": "إنشاء كود الربط",
+    "menuActionPaired": "كود الربط",
+    "dialogTitle": "كود الربط",
+    "generateButton": "إنشاء كود الربط",
+    "generating": "جارٍ إنشاء الكود…",
+    "code": "كود الربط",
+    "copy": "نسخ",
+    "copied": "تم النسخ",
+    "expires": "ينتهي في",
+    "expired": "منتهي الصلاحية",
+    "generateNewCode": "إنشاء كود جديد",
+    "connected": "متصل",
+    "connectedDescription": "هذا المتجر متصل عبر إضافة ECOS الرسمية لـ WooCommerce Connector.",
+    "instructions": "أدخل هذا الكود في إضافة ECOS الرسمية لـ WooCommerce Connector في متجرك لإتمام عملية الربط. يظهر الكود مرة واحدة فقط وتنتهي صلاحيته خلال وقت قصير.",
+    "errorGeneric": "حدث خطأ ما. حاول مرة أخرى من فضلك."
   }
 }

@@ -13,7 +13,11 @@ final class EloquentChannelRepository implements ChannelRepositoryInterface
 {
     private const SORTABLE = ['name', 'platform', 'is_active', 'last_sync_at', 'created_at'];
 
-    private const EAGER = ['brand.company', 'businessAccount'];
+    // TASK-ECOS-V1.1-CRM-02-PAIRING-UI-FINAL-CLOSURE-011 — `credential` added so
+    // ChannelResource can serialize transport_mode/connector_health (already-computed
+    // Channel::connectorHealth()/credential->connector_token signals) without an N+1 query
+    // per row on the paginated list.
+    private const EAGER = ['brand.company', 'businessAccount', 'credential'];
 
     public function paginate(array $filters): LengthAwarePaginator
     {

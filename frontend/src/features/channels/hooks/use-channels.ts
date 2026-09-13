@@ -12,6 +12,7 @@ import type {
   ChannelsQuery,
   ImportResult,
   OrderImportResult,
+  PairingCodeResult,
 } from '@/features/channels/types/channel';
 import { useOrganizationContext } from '@/features/organization/context/organization-context';
 
@@ -66,6 +67,15 @@ export function useTestConnection() {
   return useMutation({
     mutationFn: (id: string) => channelsService.testConnection(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['company', companyId, CHANNELS_KEY] }),
+  });
+}
+
+/** TASK-...-CRM-02-PAIRING-UI-FINAL-CLOSURE-011. No query invalidation: generating a code
+ *  does not itself change the Channel — transport_mode only flips once the merchant exchanges
+ *  it via the plugin (ExchangePairingCodeAction), which this mutation never calls. */
+export function useGeneratePairingCode() {
+  return useMutation<PairingCodeResult, Error, string>({
+    mutationFn: (id: string) => channelsService.generatePairingCode(id),
   });
 }
 
