@@ -18,6 +18,8 @@ import { ExecutiveDashboardPage as ExecutivePlatformPage } from '@/features/exec
 // Reporting V1 (TASK-ECOS-REPORTING-V1-USER-VISIBLE-NAVIGATION-CLOSURE-010)
 import { ReportingCataloguePage } from '@/features/reporting/pages/reporting-catalogue-page';
 import { ReportDetailPage } from '@/features/reporting/pages/report-detail-page';
+// Central Audit workspace (CORE-02 Task 2)
+import { AuditLogPage } from '@/features/audit/pages/audit-log-page';
 // Finance workspace (EPIC-FINANCE-UI-001)
 import { FinanceExecutivePage } from '@/features/finance/pages/finance-executive-page';
 import { ChartOfAccountsPage } from '@/features/finance/pages/chart-of-accounts-page';
@@ -339,6 +341,7 @@ export const router = createBrowserRouter(
             // Reporting V1 (TASK-ECOS-REPORTING-V1-USER-VISIBLE-NAVIGATION-CLOSURE-010)
             { path: ROUTES.reports, Component: ReportingCataloguePage },
             { path: ROUTES.reportDetail, Component: ReportDetailPage },
+            { path: ROUTES.audit, Component: AuditLogPage },
             // Finance workspace (EPIC-FINANCE-UI-001). /accounting = Executive Finance.
             { path: ROUTES.accounting, Component: FinanceExecutivePage },
             { path: ROUTES.financeChartOfAccounts, Component: ChartOfAccountsPage },

@@ -300,6 +300,7 @@ const GATE = {
   'branch-coverage': ['organization.branches.view'],
   'teams': ['organization.teams.view'],
   'iam-management': ['iam.users.view', 'iam.roles.view', 'iam.role-templates.view'],
+  'audit': ['system.audit.view'],
   'settings': ['configuration.settings.view'],
   'configuration-os': ['configuration.settings.view', 'configuration.company.view'],
   // TASK-...-026 — the single high-impact permission gating the whole Go-Live surface (§2 of
@@ -608,6 +609,8 @@ const ALL_MODULES: AppModule[] = [
         icon: Shield,
         permissions: GATE['iam-management'],
       },
+      // CORE-02 Task 2 — central Audit read/search workspace.
+      { key: 'audit', path: ROUTES.audit, icon: History, permissions: GATE['audit'] },
       { key: 'settings', path: ROUTES.settings, icon: Settings, permissions: GATE['settings'] },
       { key: 'config-section', isSection: true },
       { key: 'configuration-os', path: ROUTES.configurationOs, icon: Cpu, permissions: GATE['configuration-os'] },

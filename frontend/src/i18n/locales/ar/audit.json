@@ -1,0 +1,38 @@
+{
+  "title": "سجل النشاط",
+  "subtitle": "سجل للقراءة فقط لمن قام بماذا، ومتى، عبر شركتك",
+  "columns": {
+    "date": "التاريخ",
+    "actor": "الفاعل",
+    "action": "الإجراء",
+    "entity": "الكيان"
+  },
+  "filters": {
+    "actor": "الفاعل",
+    "allActors": "كل الفاعلين",
+    "action": "الإجراء",
+    "actionPlaceholder": "مثال: user.activated",
+    "entityType": "نوع الكيان",
+    "entityTypePlaceholder": "مثال: user",
+    "dateFrom": "من تاريخ",
+    "dateTo": "إلى تاريخ"
+  },
+  "detail": {
+    "title": "تفاصيل النشاط",
+    "occurredAt": "وقت الحدوث",
+    "actor": "الفاعل",
+    "action": "الإجراء",
+    "entityType": "نوع الكيان",
+    "entityId": "معرّف الكيان",
+    "company": "الشركة",
+    "oldValues": "قبل",
+    "newValues": "بعد",
+    "metadata": "بيانات إضافية",
+    "none": "لا يوجد مسجل"
+  },
+  "systemActor": "النظام",
+  "empty": {
+    "title": "لا يوجد نشاط",
+    "description": "لا توجد أحداث تدقيق مطابقة للفلاتر الحالية."
+  }
+}

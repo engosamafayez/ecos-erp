@@ -36,6 +36,7 @@ export const ROUTES = {
   fulfillments: '/fulfillments',
   fulfillmentsNew: '/fulfillments/new',
   syncLogs: '/sync-logs',
+  audit: '/audit',
   // Legacy BOM routes — kept for redirect compatibility
   boms: '/boms',
   bomsNew: '/boms/new',

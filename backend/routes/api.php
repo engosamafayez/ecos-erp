@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\AdminDashboardController;
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\CompanyContextController;
 use App\Http\Controllers\ExecutiveDashboardController;
 use App\Http\Controllers\Infrastructure\HealthController;
@@ -533,6 +534,20 @@ Route::middleware('auth:sanctum')->prefix('reporting')->group(function (): void 
     // other cataloged report id fails cleanly with 501 (§4/§13: "Only executable Task 3
     // reports should execute").
     Route::get('reports/{reportId}/execute', [ReportExecutionController::class, 'execute']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Central Audit — read/search (CORE-02 Task 2)
+|
+| The read-side counterpart to App\Core\Audit\AuditService::record(), which every
+| existing *AuditService adapter (IAM, HR, Marketing, Logistics, Engineering, ...)
+| already writes to. One list endpoint, company-scoped inside AuditQueryService —
+| no second audit table, no per-module audit-read duplication.
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth:sanctum', 'permission:system.audit.view'])->prefix('audit')->group(function (): void {
+    Route::get('/', [AuditLogController::class, 'index']);
 });
 
 /*

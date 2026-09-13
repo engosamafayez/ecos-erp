@@ -96,12 +96,16 @@ export function isForbiddenError(error: unknown): boolean {
  * 403 short-circuit below is defense in depth only (a stale client-side
  * permission cache), not the primary gate.
  */
-export function useReportExecutionQuery(reportId: string | undefined, canRun: boolean) {
+export function useReportExecutionQuery(
+  reportId: string | undefined,
+  canRun: boolean,
+  filters?: Record<string, string | undefined>,
+) {
   const companyId = useCompanyKey();
 
   return useQuery({
-    queryKey: ['company', companyId, KEY, 'execute', reportId],
-    queryFn: () => reportingService.execute(reportId as string),
+    queryKey: ['company', companyId, KEY, 'execute', reportId, filters ?? {}],
+    queryFn: () => reportingService.execute(reportId as string, filters),
     enabled: Boolean(reportId) && canRun,
     staleTime: 60_000,
     retry: (failureCount, error) => !isForbiddenError(error) && failureCount < 1,

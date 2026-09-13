@@ -38,9 +38,14 @@ export const reportingService = {
     return unwrap<MetricDictionaryPayload>(data);
   },
 
-  /** GET api/reporting/reports/{reportId}/execute — the one generic execution surface. */
-  async execute(reportId: string): Promise<ReportResult> {
-    const { data } = await api.get(`/reporting/reports/${reportId}/execute`);
+  /**
+   * GET api/reporting/reports/{reportId}/execute — the one generic execution surface.
+   * `filters` is passed through verbatim as query params; each report's own
+   * `ReportHandlerInterface::validateFilters()` remains the sole authority on which of
+   * them (if any) it actually accepts — this service never decides that (§9).
+   */
+  async execute(reportId: string, filters?: Record<string, string | undefined>): Promise<ReportResult> {
+    const { data } = await api.get(`/reporting/reports/${reportId}/execute`, { params: filters });
 
     return unwrap<ReportResult>(data);
   },
