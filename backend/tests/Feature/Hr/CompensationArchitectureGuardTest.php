@@ -12,6 +12,8 @@ use Modules\Hr\Compensation\Domain\Contracts\ProvidesAbsenceFacts;
 use Modules\Hr\Compensation\Domain\Enums\KpiMetric;
 use Modules\Hr\Compensation\Domain\Models\KpiFact;
 use Modules\Hr\Compensation\Domain\Services\KpiFactService;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 use Tests\TestCase;
 
 /**
@@ -59,7 +61,7 @@ class CompensationArchitectureGuardTest extends TestCase
                 $this->assertStringNotContainsString(
                     $needle,
                     $source,
-                    "{$file} must not reach into Finance's books — Payroll calculates, Finance posts."
+                    "{$file} must not reach into Finance's books — Payroll calculates, Finance posts.",
                 );
             }
         }
@@ -86,7 +88,7 @@ class CompensationArchitectureGuardTest extends TestCase
     public function test_the_finance_handover_carries_amounts_but_no_accounting_instructions(): void
     {
         $source = (string) file_get_contents(
-            base_path('Modules/Hr/Compensation/Domain/Events/CompensationApproved.php')
+            base_path('Modules/Hr/Compensation/Domain/Events/CompensationApproved.php'),
         );
 
         // It says WHAT is owed…
@@ -123,7 +125,7 @@ class CompensationArchitectureGuardTest extends TestCase
                 $this->assertStringNotContainsString(
                     $needle,
                     $source,
-                    "{$file} must integrate by reference only ({$needle})."
+                    "{$file} must integrate by reference only ({$needle}).",
                 );
             }
         }
@@ -132,7 +134,7 @@ class CompensationArchitectureGuardTest extends TestCase
     public function test_the_kpi_bridge_reads_events_by_duck_typing_rather_than_by_class(): void
     {
         $source = (string) file_get_contents(
-            base_path('Modules/Hr/Compensation/Application/Bridge/WorkforceKpiSubscriber.php')
+            base_path('Modules/Hr/Compensation/Application/Bridge/WorkforceKpiSubscriber.php'),
         );
 
         // It reads the marker contract off whatever it is handed…
@@ -151,7 +153,7 @@ class CompensationArchitectureGuardTest extends TestCase
         $this->assertFalse((bool) config('hr.kpi.auto_subscribe', false));
 
         $provider = (string) file_get_contents(
-            base_path('Modules/Hr/Infrastructure/Providers/HrServiceProvider.php')
+            base_path('Modules/Hr/Infrastructure/Providers/HrServiceProvider.php'),
         );
         $this->assertStringContainsString("config('hr.kpi.auto_subscribe', false)", $provider);
     }
@@ -214,6 +216,107 @@ class CompensationArchitectureGuardTest extends TestCase
         $this->assertSame(1, KpiFact::where('employee_id', $employee->id)->count());
     }
 
+    // ═══ OPERATIONAL FACT BRIDGE — ProductPrepared (FIN-01 Slice 5) ══════════════
+
+    public function test_product_prepared_bridges_to_a_workforce_fact_through_the_acting_user(): void
+    {
+        $company = \Modules\Organization\Companies\Domain\Models\Company::factory()->create();
+        $user = \App\Models\User::factory()->create();
+        $employee = app(\Modules\Hr\Workforce\Domain\Services\EmployeeService::class)->create(
+            (string) $company->id,
+            ['first_name' => 'Prep', 'last_name' => 'Operator', 'user_id' => $user->id],
+        );
+
+        $event = new \Modules\Operations\Preparation\Domain\Events\ProductPrepared(
+            waveId: (string) \Illuminate\Support\Str::uuid(),
+            companyId: (string) $company->id,
+            waveItemId: 'wave-item-42',
+            productId: (string) \Illuminate\Support\Str::uuid(),
+            sku: 'SKU-1',
+            quantityRequired: 10.0,
+            quantityPrepared: 7.0,
+            quantityShort: 3.0,
+            status: 'short',
+            preparedBy: (string) $user->id,
+            preparedAt: '2026-05-10T09:00:00+00:00',
+        );
+
+        $this->assertTrue(app(WorkforceKpiSubscriber::class)->consume($event));
+
+        $fact = KpiFact::where('employee_id', $employee->id)->first();
+        $this->assertNotNull($fact, 'A prepared-by user with a matching Employee record must be attributed, not dropped.');
+        $this->assertSame(KpiMetric::OrdersPrepared->value, $fact->metric_key);
+        $this->assertSame(7.0, round((float) $fact->quantity, 2), 'The real prepared quantity must be recorded, not a hardcoded count.');
+        $this->assertSame(0.0, round((float) $fact->value, 2), 'FIN-01 records the fact only — no payroll/commission value is calculated here.');
+        $this->assertSame('wave-item-42', $fact->source_reference);
+        $this->assertSame('2026-05-10 09:00:00', $fact->occurred_at->toDateTimeString(), 'Must use the domain prepared_at timestamp, never a fabricated one.');
+        $this->assertSame((string) $company->id, $fact->company_id);
+
+        // Delivered twice — a queue retry of the same event instance — counted once.
+        $this->assertTrue(app(WorkforceKpiSubscriber::class)->consume($event));
+        $this->assertSame(1, KpiFact::where('employee_id', $employee->id)->count());
+    }
+
+    public function test_product_prepared_is_dropped_when_the_acting_user_has_no_employee_record(): void
+    {
+        $company = \Modules\Organization\Companies\Domain\Models\Company::factory()->create();
+        $user = \App\Models\User::factory()->create();
+
+        $event = new \Modules\Operations\Preparation\Domain\Events\ProductPrepared(
+            waveId: (string) \Illuminate\Support\Str::uuid(),
+            companyId: (string) $company->id,
+            waveItemId: 'wave-item-99',
+            productId: (string) \Illuminate\Support\Str::uuid(),
+            sku: 'SKU-2',
+            quantityRequired: 5.0,
+            quantityPrepared: 5.0,
+            quantityShort: 0.0,
+            status: 'complete',
+            preparedBy: (string) $user->id,
+            preparedAt: '2026-05-10T09:00:00+00:00',
+        );
+
+        $this->assertFalse(
+            app(WorkforceKpiSubscriber::class)->consume($event),
+            'No Employee exists for this user — the fact must be skipped, never guessed from a name or phone match.',
+        );
+        $this->assertSame(0, KpiFact::where('source_reference', 'wave-item-99')->count());
+    }
+
+    public function test_product_prepared_is_dropped_when_the_employee_belongs_to_a_different_company(): void
+    {
+        $factCompany = \Modules\Organization\Companies\Domain\Models\Company::factory()->create();
+        $employeeCompany = \Modules\Organization\Companies\Domain\Models\Company::factory()->create();
+        $user = \App\Models\User::factory()->create();
+
+        // The user's only Employee record sits in a DIFFERENT company than the
+        // one this operational fact claims — a contradiction that must fail closed.
+        app(\Modules\Hr\Workforce\Domain\Services\EmployeeService::class)->create(
+            (string) $employeeCompany->id,
+            ['first_name' => 'Other', 'last_name' => 'Co', 'user_id' => $user->id],
+        );
+
+        $event = new \Modules\Operations\Preparation\Domain\Events\ProductPrepared(
+            waveId: (string) \Illuminate\Support\Str::uuid(),
+            companyId: (string) $factCompany->id,
+            waveItemId: 'wave-item-77',
+            productId: (string) \Illuminate\Support\Str::uuid(),
+            sku: 'SKU-3',
+            quantityRequired: 2.0,
+            quantityPrepared: 2.0,
+            quantityShort: 0.0,
+            status: 'complete',
+            preparedBy: (string) $user->id,
+            preparedAt: '2026-05-10T09:00:00+00:00',
+        );
+
+        $this->assertFalse(
+            app(WorkforceKpiSubscriber::class)->consume($event),
+            'The employee resolves in a different company than the fact itself claims — must fail closed, never cross-attribute.',
+        );
+        $this->assertSame(0, KpiFact::where('source_reference', 'wave-item-77')->count());
+    }
+
     public function test_kpi_facts_reference_operational_documents_opaquely(): void
     {
         $columns = Schema::getColumnListing('hr_kpi_facts');
@@ -240,7 +343,7 @@ class CompensationArchitectureGuardTest extends TestCase
     public function test_the_commission_engine_names_no_role_or_scheme(): void
     {
         $source = strtolower((string) file_get_contents(
-            base_path('Modules/Hr/Compensation/Domain/Services/CommissionEngine.php')
+            base_path('Modules/Hr/Compensation/Domain/Services/CommissionEngine.php'),
         ));
 
         // Strip the comments — the docblock legitimately explains the examples.
@@ -250,7 +353,7 @@ class CompensationArchitectureGuardTest extends TestCase
             $this->assertStringNotContainsString(
                 $role,
                 $code,
-                'A commission scheme is configuration; the engine must not know about roles.'
+                'A commission scheme is configuration; the engine must not know about roles.',
             );
         }
 
@@ -258,7 +361,7 @@ class CompensationArchitectureGuardTest extends TestCase
         $this->assertDoesNotMatchRegularExpression(
             '/\*\s*0\.0[0-9]+/',
             $code,
-            'Rates come from the rule, never from the engine.'
+            'Rates come from the rule, never from the engine.',
         );
     }
 
@@ -281,7 +384,7 @@ class CompensationArchitectureGuardTest extends TestCase
     public function test_the_calculator_subtracts_only_approved_adjustments(): void
     {
         $source = (string) file_get_contents(
-            base_path('Modules/Hr/Compensation/Domain/Services/CompensationCalculator.php')
+            base_path('Modules/Hr/Compensation/Domain/Services/CompensationCalculator.php'),
         );
 
         // Bonuses and deductions are fetched through the approved-only readers.
@@ -289,7 +392,7 @@ class CompensationArchitectureGuardTest extends TestCase
         $this->assertStringContainsString('only approved deductions are subtracted', $source);
         $this->assertStringContainsString(
             'indicative only — a deduction is raised and approved, never applied automatically',
-            $source
+            $source,
         );
     }
 
@@ -297,11 +400,11 @@ class CompensationArchitectureGuardTest extends TestCase
     {
         $this->assertInstanceOf(
             \Modules\Hr\Attendance\Domain\Services\AbsenceFactsProvider::class,
-            app(ProvidesAbsenceFacts::class)
+            app(ProvidesAbsenceFacts::class),
         );
 
         $contract = (string) file_get_contents(
-            base_path('Modules/Hr/Compensation/Domain/Contracts/ProvidesAbsenceFacts.php')
+            base_path('Modules/Hr/Compensation/Domain/Contracts/ProvidesAbsenceFacts.php'),
         );
 
         // The port speaks in days; pricing them is Payroll's job alone.
@@ -311,7 +414,7 @@ class CompensationArchitectureGuardTest extends TestCase
             $this->assertStringNotContainsString(
                 "'{$forbidden}'",
                 $contract,
-                'Attendance counts days; Payroll prices them.'
+                'Attendance counts days; Payroll prices them.',
             );
         }
     }
@@ -321,7 +424,7 @@ class CompensationArchitectureGuardTest extends TestCase
     public function test_the_kpi_fact_stream_is_append_only_and_idempotent(): void
     {
         $model = (string) file_get_contents(
-            base_path('Modules/Hr/Compensation/Domain/Models/KpiFact.php')
+            base_path('Modules/Hr/Compensation/Domain/Models/KpiFact.php'),
         );
 
         $this->assertStringContainsString('static::updating(fn () => false)', $model);
@@ -329,7 +432,7 @@ class CompensationArchitectureGuardTest extends TestCase
 
         // And the database enforces exactly-once at the key.
         $service = (string) file_get_contents(
-            base_path('Modules/Hr/Compensation/Domain/Services/KpiFactService.php')
+            base_path('Modules/Hr/Compensation/Domain/Services/KpiFactService.php'),
         );
         $this->assertStringContainsString('idempotency_key', $service);
     }
@@ -359,7 +462,7 @@ class CompensationArchitectureGuardTest extends TestCase
                 continue;
             }
 
-            $it = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($path));
+            $it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($path));
             foreach ($it as $file) {
                 if ($file->isFile() && $file->getExtension() === 'php') {
                     $out[basename($file->getPathname())] = (string) file_get_contents($file->getPathname());
@@ -375,7 +478,7 @@ class CompensationArchitectureGuardTest extends TestCase
     {
         $tables = array_map(
             fn ($t) => is_array($t) ? ($t['name'] ?? '') : (string) $t,
-            array_map(fn ($t) => is_object($t) ? (array) $t : $t, Schema::getTables())
+            array_map(fn ($t) => is_object($t) ? (array) $t : $t, Schema::getTables()),
         );
 
         return array_values(array_filter($tables, fn (string $t) => str_starts_with($t, 'hr_')));
