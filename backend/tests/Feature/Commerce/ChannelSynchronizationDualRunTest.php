@@ -80,7 +80,16 @@ class ChannelSynchronizationDualRunTest extends TestCase
         $this->company = Company::factory()->create();
         $this->brand = Brand::factory()->create(['company_id' => $this->company->id]);
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $this->product = Product::factory()->create(['company_id' => $this->company->id]);
+        // TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R3 — ProductFactory's product_type default
+        // is a random TYPES element; these tests are specifically about physical-stock-driven
+        // availability changes, which is only the correct authority for a non-finished-good
+        // (a Finished Good's availability is unconditionally manufacturing/recipe-derived, per
+        // ProductCommerceAvailabilityService). Pinned explicitly so this file's assertions
+        // never depend on which type the factory randomly picked.
+        $this->product = Product::factory()->create([
+            'company_id' => $this->company->id,
+            'product_type' => Product::TYPE_RAW_MATERIAL,
+        ]);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

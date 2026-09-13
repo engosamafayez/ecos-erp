@@ -15,12 +15,14 @@ use Modules\Organization\Companies\Domain\Models\Company;
 use Tests\TestCase;
 
 /**
- * TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R2 (CTO business-rule correction, superseding R2-R1's
- * precedence) — warehouse physical stock is raw-material stock; a manufactured finished good's
- * OWN physical on_hand quantity is never an independent sellability signal and can never
- * override an unavailable Recipe. ManufacturingAvailabilityService itself is mocked here (it
- * has its own coverage elsewhere) so these tests verify ONLY the precedence this orchestration
- * service adds.
+ * TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R3 (CTO business-rule correction, superseding
+ * R2-R2's no-recipe physical-stock fallback) — warehouse physical stock is raw-material stock;
+ * a Finished Good's OWN physical on_hand quantity is NEVER a sellability signal, in any
+ * circumstance — not with an executable recipe, not with a blocked one, and not with no recipe
+ * at all ('recipe_missing' resolves NOT AVAILABLE, exactly like 'outofstock'; it is not a
+ * fallback trigger). ManufacturingAvailabilityService itself is mocked here (it has its own
+ * coverage elsewhere) so these tests verify ONLY the precedence this orchestration service
+ * adds.
  *
  * Per the CTO's Track 2 execution model, these are written as source-level regression coverage
  * but their EXECUTION is deferred to the consolidated test pass.
@@ -62,8 +64,10 @@ final class ProductCommerceAvailabilityServiceTest extends TestCase
         ]);
     }
 
-    // ═══ Manufactured (Recipe exists) — Recipe is the SOLE authority ══════════
+    // ═══ Finished good — ManufacturingAvailabilityService is the SOLE authority, ══════
+    // ═══ unconditionally, including the no-recipe case (§6 A/B/C/D) ═══════════
 
+    /** §6.A */
     public function test_manufactured_product_with_executable_recipe_is_available_despite_zero_stock(): void
     {
         $product = $this->manufacturedProduct();
@@ -80,6 +84,7 @@ final class ProductCommerceAvailabilityServiceTest extends TestCase
         );
     }
 
+    /** §6.B */
     public function test_manufactured_product_with_unavailable_recipe_is_not_available_even_with_stale_physical_stock(): void
     {
         $product = $this->manufacturedProduct();
@@ -114,9 +119,11 @@ final class ProductCommerceAvailabilityServiceTest extends TestCase
         $this->assertFalse(app(ProductCommerceAvailabilityService::class)->isAvailable($product->fresh()));
     }
 
-    // ═══ Manufactured, but no active Recipe configured — falls back to physical stock ══
+    // ═══ Finished good, no active Recipe at all — still NOT AVAILABLE, never a ═══
+    // ═══ physical-stock fallback trigger (R2-R3 supersedes R2-R2 here) ════════
 
-    public function test_finished_good_with_no_active_recipe_falls_back_to_physical_stock(): void
+    /** §6.C — a stale physical quantity must not make an unconfigured Finished Good sellable. */
+    public function test_finished_good_with_no_active_recipe_and_stale_stock_is_not_available(): void
     {
         $product = $this->manufacturedProduct();
         $this->receive($product, 5.0);
@@ -126,9 +133,13 @@ final class ProductCommerceAvailabilityServiceTest extends TestCase
             ->once()
             ->andReturn(['status' => 'recipe_missing', 'blocking_materials' => [], 'components' => []]);
 
-        $this->assertTrue(app(ProductCommerceAvailabilityService::class)->isAvailable($product->fresh()));
+        $this->assertFalse(
+            app(ProductCommerceAvailabilityService::class)->isAvailable($product->fresh()),
+            "'recipe_missing' must resolve NOT AVAILABLE regardless of any stale physical finished-product quantity — it is not a fallback trigger.",
+        );
     }
 
+    /** §6.D */
     public function test_finished_good_with_no_active_recipe_and_no_stock_is_not_available(): void
     {
         $product = $this->manufacturedProduct();
