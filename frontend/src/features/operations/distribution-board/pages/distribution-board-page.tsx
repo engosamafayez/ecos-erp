@@ -63,9 +63,9 @@ export function DistributionBoardPage() {
       <div className="flex flex-col h-full gap-3 p-4">
         <Skeleton className="h-14 w-full" />
         <Skeleton className="h-10 w-full" />
-        <div className="flex gap-3 flex-1">
-          <Skeleton className="w-72 flex-shrink-0" />
-          <Skeleton className="flex-1" />
+        <div className="flex flex-col gap-3 md:flex-1 md:flex-row">
+          <Skeleton className="h-40 w-full md:h-auto md:w-72 md:flex-shrink-0" />
+          <Skeleton className="h-40 w-full md:h-auto md:flex-1" />
         </div>
       </div>
     );
@@ -96,7 +96,7 @@ export function DistributionBoardPage() {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0 overflow-hidden">
+    <div className="flex flex-col min-h-0 overflow-visible md:h-full md:overflow-hidden">
       {/* Wave header — sticky */}
       <WaveHeader
         wave={data.wave}
@@ -112,10 +112,19 @@ export function DistributionBoardPage() {
         onSelect={(id) => setActiveZoneId(id)}
       />
 
-      {/* Main split layout */}
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      {/* Main split layout.
+          TASK-ECOS-V1.1-CORE-01-UI-03-MOBILE-DISTRIBUTION-CLOSURE-047-R1 —
+          below md (768px, the already-approved tablet breakpoint where the
+          side-by-side layout already fit) the two panels stack vertically
+          instead: this page's own root stops constraining to viewport height
+          (`overflow-visible`, no `h-full`) so stacked content flows normally
+          and scrolls via AppShell's own <main> scroll region, exactly like
+          any other page, rather than fighting it for a second nested scroll
+          area. At md+, both panels revert to the original fixed-viewport,
+          independently-scrolling side-by-side behavior unchanged. */}
+      <div className="flex flex-col gap-3 md:flex-1 md:min-h-0 md:flex-row md:gap-0 md:overflow-hidden">
         {/* Left: Orders pool */}
-        <div className="w-72 shrink-0 flex flex-col min-h-0">
+        <div className="w-full flex flex-col md:w-72 md:shrink-0 md:min-h-0">
           <OrdersPool
             orders={zoneOrdersQ.data?.orders ?? []}
             isLoading={zoneOrdersQ.isLoading && resolvedZoneId !== null}
@@ -127,7 +136,7 @@ export function DistributionBoardPage() {
 
         {/* Right: Trips panel — canonical QueueSection (UI-03), TripCard itself
             is entirely unchanged and still owns every trip business detail. */}
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <div className="flex flex-col md:flex-1 md:min-h-0 md:overflow-hidden">
           <QueueSection<DistributionTrip>
             title="Today's Trips"
             count={allTrips.length}

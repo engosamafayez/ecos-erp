@@ -66,7 +66,7 @@ export function OrdersPool({ orders, isLoading, selectedZoneName, isError = fals
           <p className="text-xs text-muted-foreground/60 mt-1">{selectedZoneName}</p>
         </div>
       }
-      className="border-r"
+      className="border-b md:border-b-0 md:border-r"
     />
   );
 }
