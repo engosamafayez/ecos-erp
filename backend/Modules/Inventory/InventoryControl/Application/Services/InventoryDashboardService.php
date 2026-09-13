@@ -4,26 +4,40 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\InventoryControl\Application\Services;
 
+use App\Core\Company\TenantOwnershipResolver;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Inventory\CountSessions\Domain\Enums\CountSessionStatus;
 
 /**
  * Computes KPIs and widget data for the Inventory Control Dashboard.
+ *
+ * TASK-ECOS-V1.1-OPS-01-IMPLEMENTATION-044A-R1: every query here is scoped to
+ * the acting company using the same tenant idiom as Warehouse/GoodsReceipt
+ * (see App\Core\Company\TenantOwnershipResolver). Before this fix, none of
+ * these raw query-builder queries filtered by company at all.
  */
 final class InventoryDashboardService
 {
+    public function __construct(
+        private readonly TenantOwnershipResolver $tenant,
+    ) {}
+
     public function kpis(): array
     {
         $twelveMonthsAgo = Carbon::now()->subYear();
         $monthStart = Carbon::now()->startOfMonth();
 
         // ── Inventory Accuracy (last 12 months of approved counts) ────────────
-        $accuracy = DB::table('inventory_count_lines as icl')
+        $accuracyQuery = DB::table('inventory_count_lines as icl')
             ->join('inventory_count_sessions as ics', 'ics.id', '=', 'icl.session_id')
             ->where('ics.status', CountSessionStatus::Approved->value)
             ->whereNotNull('icl.counted_qty')
-            ->where('ics.completed_at', '>=', $twelveMonthsAgo)
+            ->where('ics.completed_at', '>=', $twelveMonthsAgo);
+        $this->scopeToCompany($accuracyQuery, 'ics.company_id');
+
+        $accuracy = $accuracyQuery
             ->selectRaw('
                 COUNT(icl.id) as total_counted,
                 SUM(CASE WHEN icl.variance_qty = 0 THEN 1 ELSE 0 END) as matched
@@ -35,25 +49,31 @@ final class InventoryDashboardService
         $accuracyPct = $totalCounted > 0 ? round($matched / $totalCounted * 100, 2) : null;
 
         // ── Open Sessions ──────────────────────────────────────────────────────
-        $openSessions = DB::table('inventory_count_sessions')
-            ->whereIn('status', [CountSessionStatus::Draft->value, CountSessionStatus::InProgress->value])
-            ->count();
+        $openSessionsQuery = DB::table('inventory_count_sessions')
+            ->whereIn('status', [CountSessionStatus::Draft->value, CountSessionStatus::InProgress->value]);
+        $this->scopeToCompany($openSessionsQuery, 'company_id');
+
+        $openSessions = $openSessionsQuery->count();
 
         // ── Products With Variance (last 30 days) ─────────────────────────────
-        $productsWithVariance = DB::table('inventory_count_lines as icl')
+        $varianceQuery = DB::table('inventory_count_lines as icl')
             ->join('inventory_count_sessions as ics', 'ics.id', '=', 'icl.session_id')
             ->where('ics.status', CountSessionStatus::Approved->value)
             ->whereRaw('icl.variance_qty != 0')
-            ->where('ics.completed_at', '>=', Carbon::now()->subDays(30))
-            ->distinct()
-            ->count('icl.product_id');
+            ->where('ics.completed_at', '>=', Carbon::now()->subDays(30));
+        $this->scopeToCompany($varianceQuery, 'ics.company_id');
+
+        $productsWithVariance = $varianceQuery->distinct()->count('icl.product_id');
 
         // ── Adjustment Value & Shrinkage (this calendar month, approved) ───────
-        $monthAdj = DB::table('inventory_count_lines as icl')
+        $monthAdjQuery = DB::table('inventory_count_lines as icl')
             ->join('inventory_count_sessions as ics', 'ics.id', '=', 'icl.session_id')
             ->where('ics.status', CountSessionStatus::Approved->value)
             ->where('ics.completed_at', '>=', $monthStart)
-            ->whereNotNull('icl.variance_value')
+            ->whereNotNull('icl.variance_value');
+        $this->scopeToCompany($monthAdjQuery, 'ics.company_id');
+
+        $monthAdj = $monthAdjQuery
             ->selectRaw('
                 COALESCE(SUM(CASE WHEN icl.variance_value > 0 THEN icl.variance_value ELSE 0 END), 0) as adj_in_value,
                 COALESCE(SUM(CASE WHEN icl.variance_value < 0 THEN ABS(icl.variance_value) ELSE 0 END), 0) as shrinkage_value
@@ -64,9 +84,11 @@ final class InventoryDashboardService
         $shrinkageValueMonth = round((float) ($monthAdj?->shrinkage_value ?? 0), 2);
 
         // ── Last Count Date ────────────────────────────────────────────────────
-        $lastCountDate = DB::table('inventory_count_sessions')
-            ->where('status', CountSessionStatus::Approved->value)
-            ->max('completed_at');
+        $lastCountQuery = DB::table('inventory_count_sessions')
+            ->where('status', CountSessionStatus::Approved->value);
+        $this->scopeToCompany($lastCountQuery, 'company_id');
+
+        $lastCountDate = $lastCountQuery->max('completed_at');
 
         return [
             'accuracy_pct' => $accuracyPct,
@@ -84,11 +106,14 @@ final class InventoryDashboardService
     /** @return array<int, array{product_id: string, product_name: string, variance_qty: float, variance_value: float}> */
     public function topNegativeVariances(int $limit = 10): array
     {
-        return DB::table('inventory_count_lines as icl')
+        $query = DB::table('inventory_count_lines as icl')
             ->join('inventory_count_sessions as ics', 'ics.id', '=', 'icl.session_id')
             ->join('products as p', 'p.id', '=', 'icl.product_id')
             ->where('ics.status', CountSessionStatus::Approved->value)
-            ->where('ics.completed_at', '>=', Carbon::now()->subYear())
+            ->where('ics.completed_at', '>=', Carbon::now()->subYear());
+        $this->scopeToCompany($query, 'ics.company_id');
+
+        return $query
             ->selectRaw('
                 icl.product_id,
                 p.name as product_name,
@@ -114,11 +139,14 @@ final class InventoryDashboardService
     /** @return array<int, array{product_id: string, product_name: string, variance_qty: float, variance_value: float}> */
     public function topPositiveVariances(int $limit = 10): array
     {
-        return DB::table('inventory_count_lines as icl')
+        $query = DB::table('inventory_count_lines as icl')
             ->join('inventory_count_sessions as ics', 'ics.id', '=', 'icl.session_id')
             ->join('products as p', 'p.id', '=', 'icl.product_id')
             ->where('ics.status', CountSessionStatus::Approved->value)
-            ->where('ics.completed_at', '>=', Carbon::now()->subYear())
+            ->where('ics.completed_at', '>=', Carbon::now()->subYear());
+        $this->scopeToCompany($query, 'ics.company_id');
+
+        return $query
             ->selectRaw('
                 icl.product_id,
                 p.name as product_name,
@@ -144,9 +172,12 @@ final class InventoryDashboardService
     /** @return array<int, array<string, mixed>> */
     public function recentSessions(int $limit = 5): array
     {
-        return DB::table('inventory_count_sessions as ics')
+        $query = DB::table('inventory_count_sessions as ics')
             ->join('warehouses as w', 'w.id', '=', 'ics.warehouse_id')
-            ->whereIn('ics.status', [CountSessionStatus::Completed->value, CountSessionStatus::Approved->value])
+            ->whereIn('ics.status', [CountSessionStatus::Completed->value, CountSessionStatus::Approved->value]);
+        $this->scopeToCompany($query, 'ics.company_id');
+
+        return $query
             ->selectRaw('
                 ics.id,
                 ics.count_number,
@@ -191,5 +222,35 @@ final class InventoryDashboardService
             $pct >= 90 => 'warning',
             default => 'critical',
         };
+    }
+
+    /**
+     * Applies the same tenant-isolation idiom used by Warehouse/GoodsReceipt
+     * (see Modules\MasterData\Warehouses\Domain\Models\Warehouse::booted()) to
+     * a raw query-builder query, since these dashboard queries bypass Eloquent
+     * (and therefore any model-level global scope) entirely.
+     */
+    private function scopeToCompany(Builder $query, string $column): void
+    {
+        // Console, queue workers, seeders and migrations run with no actor.
+        if (! $this->tenant->appliesTo()) {
+            return;
+        }
+
+        // Cross-company access is granted only by an is_system role.
+        if ($this->tenant->isUnrestricted()) {
+            return;
+        }
+
+        $companyId = $this->tenant->companyId();
+
+        // A null company must close the query, not remove the filter.
+        if ($companyId === null) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $query->where($column, $companyId);
     }
 }

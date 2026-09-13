@@ -16,6 +16,9 @@ use Modules\Admin\Configuration\Presentation\Http\Controllers\MasterGeographyCon
 use Modules\Admin\Configuration\Presentation\Http\Controllers\MasterZoneController;
 use Modules\Admin\Configuration\Presentation\Http\Controllers\PreparationPolicyController;
 use Modules\Admin\Configuration\Presentation\Http\Controllers\WaveEngineConfigurationController;
+use Modules\Admin\GoLive\Presentation\Http\Controllers\GoLiveActivationController;
+use Modules\Admin\GoLive\Presentation\Http\Controllers\GoLiveResetController;
+use Modules\Admin\GoLive\Presentation\Http\Controllers\OpeningInventoryController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\ArtifactController as CbArtifactController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\DashboardController as CbDashboardController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\TaskController as CbTaskController;
@@ -44,12 +47,8 @@ use Modules\Collaboration\Presentation\Http\Controllers\TaskController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskFollowerController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskLabelController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskStatusController;
-use Modules\Admin\GoLive\Presentation\Http\Controllers\GoLiveActivationController;
-use Modules\Admin\GoLive\Presentation\Http\Controllers\GoLiveResetController;
-use Modules\Admin\GoLive\Presentation\Http\Controllers\OpeningInventoryController;
 use Modules\Commerce\Channels\Presentation\Http\Controllers\ChannelController;
 use Modules\Commerce\Connectors\Presentation\Http\Controllers\ConnectorController;
-use Modules\Finance\Receivables\Presentation\Http\Controllers\CustomerOpeningBalanceController;
 use Modules\Commerce\Fulfillments\Presentation\Http\Controllers\FulfillmentController;
 use Modules\Commerce\OrderImport\Presentation\Http\Controllers\OrderImportController;
 use Modules\Commerce\Orders\Presentation\Http\Controllers\OrderController;
@@ -58,8 +57,8 @@ use Modules\Commerce\ProductImport\Presentation\Http\Controllers\ProductImportCo
 use Modules\Commerce\ProductMappings\Presentation\Http\Controllers\ProductMappingController;
 use Modules\Commerce\Shipping\Presentation\Http\Controllers\ShippingQuoteController;
 use Modules\Commerce\StockSync\Presentation\Http\Controllers\StockSyncController;
-use Modules\Commerce\Synchronization\Presentation\Http\Controllers\SynchronizationController;
 use Modules\Commerce\Synchronization\Presentation\Http\Controllers\OrdersSyncControlController;
+use Modules\Commerce\Synchronization\Presentation\Http\Controllers\SynchronizationController;
 use Modules\Commerce\Synchronization\Presentation\Http\Controllers\WooCommerceWebhookController;
 use Modules\Core\DemandAnalysis\Presentation\Http\Controllers\DemandAnalysisController as ProductDemandAnalysisController;
 use Modules\Core\UserPreferences\Presentation\Http\Controllers\UserPreferenceController;
@@ -137,6 +136,7 @@ use Modules\Finance\Presentation\Http\Controllers\TaxController as FinanceTaxCon
 use Modules\Finance\Presentation\Http\Controllers\TrialBalanceController as FinanceTrialBalanceController;
 use Modules\Finance\Presentation\Http\Controllers\VatController as FinanceVatController;
 use Modules\Finance\Presentation\Http\Controllers\YearEndController as FinanceYearEndController;
+use Modules\Finance\Receivables\Presentation\Http\Controllers\CustomerOpeningBalanceController;
 use Modules\Hr\Attendance\Presentation\Http\Controllers\AttendanceController as HrAttendanceController;
 use Modules\Hr\Attendance\Presentation\Http\Controllers\LeaveRequestController as HrLeaveController;
 use Modules\Hr\Attendance\Presentation\Http\Controllers\WorkforceAvailabilityController as HrAvailabilityController;
@@ -175,6 +175,7 @@ use Modules\Inventory\InventoryControl\Presentation\Http\Controllers\WarehousePe
 use Modules\Inventory\Products\Presentation\Http\Controllers\ProductController;
 use Modules\Inventory\ReceiptLayers\Presentation\Http\Controllers\InventoryLayerController;
 use Modules\Inventory\StockLedger\Presentation\Http\Controllers\StockMovementController;
+use Modules\Inventory\Transfer\Presentation\Http\Controllers\WarehouseTransferController;
 use Modules\Inventory\WarehouseLiabilities\Presentation\Http\Controllers\WarehouseLiabilityController;
 use Modules\Inventory\WasteInvestigations\Presentation\Http\Controllers\WasteInvestigationController;
 use Modules\Logistics\Automation\Presentation\Http\Controllers\AutomationController;
@@ -187,6 +188,7 @@ use Modules\Logistics\Delivery\Presentation\Http\Controllers\DeliveryReturnContr
 use Modules\Logistics\Dispatch\Presentation\Http\Controllers\DispatchController;
 use Modules\Logistics\Dispatch\Presentation\Http\Controllers\DispatchOperationsController;
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\CashHandoverController;
+use Modules\Logistics\Distribution\Presentation\Http\Controllers\DeliveryController as DistributionDeliveryController;
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\DistributionPlanningController;
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\DistributionWindowController;
 use Modules\Logistics\Distribution\Presentation\Http\Controllers\DistributionZoneController;
@@ -732,6 +734,18 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 
 /*
 |--------------------------------------------------------------------------
+| Inventory — Warehouse Transfer (protected)
+|--------------------------------------------------------------------------
+| TASK-ECOS-V1.1-OPS-01-IMPLEMENTATION-044A-R1: HTTP wiring only — the
+| canonical TransferStockAction (locking, FIFO-layer preservation, the
+| cross-company guard, ledger + audit writes) is unchanged and reused as-is.
+*/
+Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
+    Route::post('inventory/transfers', [WarehouseTransferController::class, 'store'])->middleware('permission:inventory.transfers.create');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Sales — Customers (protected)
 |--------------------------------------------------------------------------
 */
@@ -1095,11 +1109,14 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
-    Route::get('inventory/dashboard', [InventoryDashboardController::class, 'index']);
+    // TASK-ECOS-V1.1-OPS-01-IMPLEMENTATION-044A-R1: these three read from
+    // inventory_count_sessions/_lines, the same data `inventory.count` already
+    // gates elsewhere — reused rather than inventing a new permission resource.
+    Route::get('inventory/dashboard', [InventoryDashboardController::class, 'index'])->middleware('permission:inventory.count.view');
     Route::get('inventory/abc-classifications', [AbcClassificationController::class, 'index']);
     Route::post('inventory/abc-classifications/recalculate', [AbcClassificationController::class, 'recalculate'])->middleware('permission:inventory.abc.recalculate');
-    Route::get('inventory/variance-analytics', [VarianceAnalyticsController::class, 'index']);
-    Route::get('inventory/warehouse-performance', [WarehousePerformanceController::class, 'index']);
+    Route::get('inventory/variance-analytics', [VarianceAnalyticsController::class, 'index'])->middleware('permission:inventory.count.view');
+    Route::get('inventory/warehouse-performance', [WarehousePerformanceController::class, 'index'])->middleware('permission:inventory.count.view');
     Route::get('inventory/cycle-count-plans', [CycleCountPlanController::class, 'index']);
 });
 
@@ -2337,6 +2354,20 @@ Route::middleware('auth:sanctum')->prefix('logistics/distribution')->group(funct
     // Exceptions
 
     // Returns (product + custody, unified)
+    // TASK-ECOS-V1.1-OPS-01-IMPLEMENTATION-044A-R1: restores ONLY the dispatcher
+    // warehouse-confirmation route, per the same "missing from canonical" failure
+    // mode already documented and fixed for Settlement immediately below. The
+    // controller method (DeliveryController::confirmReturn), its permission, and
+    // the frontend caller (trip-execution-service.ts confirmReturn()) were all
+    // already correct and unchanged by this task — this line alone was absent.
+    // recordReturn on this same controller, and this group's own "Delivery
+    // execution"/"Exceptions" reads, are ALSO currently unrouted but are a
+    // separate, wider gap intentionally left untouched here (see the engineering
+    // report — recordReturn already has a working path via DriverRuntimeController
+    // ::addReturn, so restoring it is not part of this fix; the reads gap needs
+    // its own scoped task).
+    Route::patch('/trips/{tripId}/returns/{returnId}/confirm', [DistributionDeliveryController::class, 'confirmReturn'])
+        ->middleware('permission:logistics.distribution.update');
 
     // ── Settlement (RESTORED — see ROUTES-PATCH-NOTES.md §1. Route registrations for
     // this controller were missing from canonical; the controller itself, the

@@ -16,6 +16,9 @@ use Modules\IAM\Domain\Exceptions\SystemTemplateImmutableException;
 use Modules\IAM\Domain\Exceptions\UnknownTemplatePermissionException;
 use Modules\IAM\Domain\Exceptions\UserSecurityRuleException;
 use Modules\Inventory\InventoryItems\Domain\Exceptions\InsufficientStockException;
+use Modules\Inventory\Transfer\Domain\Exceptions\CrossCompanyTransferException;
+use Modules\Inventory\Transfer\Domain\Exceptions\InactiveWarehouseException;
+use Modules\Inventory\Transfer\Domain\Exceptions\SameWarehouseTransferException;
 use Modules\Operations\Fulfillment\Domain\Exceptions\WorkflowPreconditionException;
 use Modules\POS\Cart\Domain\Exceptions\InvalidCartTransitionException;
 use Modules\POS\Receipt\Domain\Exceptions\ReceiptAlreadyVoidedException;
@@ -138,6 +141,32 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Inventory domain exceptions — stock reservation failures.
         $exceptions->render(function (InsufficientStockException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return ApiResponse::error($e->getMessage(), 422);
+            }
+
+            return null;
+        });
+
+        // Inventory Transfer domain exceptions — pure domain types that do not
+        // extend BusinessException (TASK-ECOS-V1.1-OPS-01-IMPLEMENTATION-044A-R1).
+        $exceptions->render(function (CrossCompanyTransferException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return ApiResponse::error($e->getMessage(), 422);
+            }
+
+            return null;
+        });
+
+        $exceptions->render(function (SameWarehouseTransferException $e, Request $request) {
+            if ($request->is('api/*')) {
+                return ApiResponse::error($e->getMessage(), 422);
+            }
+
+            return null;
+        });
+
+        $exceptions->render(function (InactiveWarehouseException $e, Request $request) {
             if ($request->is('api/*')) {
                 return ApiResponse::error($e->getMessage(), 422);
             }

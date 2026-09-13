@@ -4,15 +4,26 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\InventoryControl\Application\Services;
 
+use App\Core\Company\TenantOwnershipResolver;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Inventory\CountSessions\Domain\Enums\CountSessionStatus;
 
 /**
  * Provides variance analytics for inventory control reporting.
+ *
+ * TASK-ECOS-V1.1-OPS-01-IMPLEMENTATION-044A-R1: every query here is scoped to
+ * the acting company using the same tenant idiom as Warehouse/GoodsReceipt
+ * (see App\Core\Company\TenantOwnershipResolver). Before this fix, none of
+ * these raw query-builder queries filtered by company at all.
  */
 final class VarianceAnalyticsService
 {
+    public function __construct(
+        private readonly TenantOwnershipResolver $tenant,
+    ) {}
+
     /** Most frequently missing products (negative variance count). */
     public function frequentlyMissing(int $limit = 10): array
     {
@@ -27,12 +38,15 @@ final class VarianceAnalyticsService
 
     private function frequentVariance(string $sign, int $limit, string $order): array
     {
-        return DB::table('inventory_count_lines as icl')
+        $query = DB::table('inventory_count_lines as icl')
             ->join('inventory_count_sessions as ics', 'ics.id', '=', 'icl.session_id')
             ->join('products as p', 'p.id', '=', 'icl.product_id')
             ->where('ics.status', CountSessionStatus::Approved->value)
             ->whereNotNull('icl.variance_qty')
-            ->whereRaw("icl.variance_qty {$sign}")
+            ->whereRaw("icl.variance_qty {$sign}");
+        $this->scopeToCompany($query, 'ics.company_id');
+
+        return $query
             ->selectRaw('
                 icl.product_id,
                 p.name as product_name,
@@ -59,11 +73,14 @@ final class VarianceAnalyticsService
     /** Variance value broken down by warehouse. */
     public function byWarehouse(): array
     {
-        return DB::table('inventory_count_lines as icl')
+        $query = DB::table('inventory_count_lines as icl')
             ->join('inventory_count_sessions as ics', 'ics.id', '=', 'icl.session_id')
             ->join('warehouses as w', 'w.id', '=', 'ics.warehouse_id')
             ->where('ics.status', CountSessionStatus::Approved->value)
-            ->whereNotNull('icl.variance_value')
+            ->whereNotNull('icl.variance_value');
+        $this->scopeToCompany($query, 'ics.company_id');
+
+        return $query
             ->selectRaw('
                 ics.warehouse_id,
                 w.name as warehouse_name,
@@ -87,12 +104,15 @@ final class VarianceAnalyticsService
     /** Variance value broken down by product category. */
     public function byCategory(): array
     {
-        return DB::table('inventory_count_lines as icl')
+        $query = DB::table('inventory_count_lines as icl')
             ->join('inventory_count_sessions as ics', 'ics.id', '=', 'icl.session_id')
             ->join('products as p', 'p.id', '=', 'icl.product_id')
             ->join('categories as c', 'c.id', '=', 'p.category_id')
             ->where('ics.status', CountSessionStatus::Approved->value)
-            ->whereNotNull('icl.variance_value')
+            ->whereNotNull('icl.variance_value');
+        $this->scopeToCompany($query, 'ics.company_id');
+
+        return $query
             ->selectRaw('
                 p.category_id,
                 c.name as category_name,
@@ -120,11 +140,14 @@ final class VarianceAnalyticsService
      */
     public function monthlyTrend(): array
     {
-        $rows = DB::table('inventory_count_lines as icl')
+        $query = DB::table('inventory_count_lines as icl')
             ->join('inventory_count_sessions as ics', 'ics.id', '=', 'icl.session_id')
             ->where('ics.status', CountSessionStatus::Approved->value)
             ->where('ics.completed_at', '>=', Carbon::now()->subYear())
-            ->whereNotNull('icl.variance_value')
+            ->whereNotNull('icl.variance_value');
+        $this->scopeToCompany($query, 'ics.company_id');
+
+        $rows = $query
             ->selectRaw("
                 DATE_FORMAT(ics.completed_at, '%Y-%m') as month,
                 SUM(CASE WHEN icl.variance_value > 0 THEN icl.variance_value ELSE 0 END) as adj_in_value,
@@ -150,5 +173,32 @@ final class VarianceAnalyticsService
         }
 
         return $months;
+    }
+
+    /**
+     * Applies the same tenant-isolation idiom used by Warehouse/GoodsReceipt
+     * (see Modules\MasterData\Warehouses\Domain\Models\Warehouse::booted()) to
+     * a raw query-builder query, since these analytics queries bypass Eloquent
+     * (and therefore any model-level global scope) entirely.
+     */
+    private function scopeToCompany(Builder $query, string $column): void
+    {
+        if (! $this->tenant->appliesTo()) {
+            return;
+        }
+
+        if ($this->tenant->isUnrestricted()) {
+            return;
+        }
+
+        $companyId = $this->tenant->companyId();
+
+        if ($companyId === null) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $query->where($column, $companyId);
     }
 }
