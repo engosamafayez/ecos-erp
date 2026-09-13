@@ -190,7 +190,12 @@ final class CustomerAuthorityConsolidationTest extends TestCase
 
     public function test_woocommerce_syncer_assigns_a_canonical_code_to_a_new_inbound_customer(): void
     {
-        $result = app(WooCommerceCustomerSyncer::class)->sync([
+        // TASK-ECOS-V1.1-WOO-02-TENANT-SAFE-CUSTOMER-IDENTITY-044 — sync() is now
+        // company-scoped and requires the originating Channel (Channel::factory()'s
+        // default brand_id/company_id chain supplies a resolvable company).
+        $channel = Channel::factory()->create();
+
+        $result = app(WooCommerceCustomerSyncer::class)->sync($channel, [
             'billing' => ['email' => 'inbound@shop.com', 'first_name' => 'Inbound', 'last_name' => 'Buyer', 'phone' => '01000000001'],
         ]);
 

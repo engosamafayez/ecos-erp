@@ -47,7 +47,7 @@ final class ProcessCustomerWebhookJob implements ShouldQueue
         );
 
         try {
-            $result = $syncer->sync($this->payload);
+            $result = $syncer->sync($this->channel, $this->payload);
 
             $logService->markSuccess($log, $result, $this->channel);
         } catch (Throwable $e) {

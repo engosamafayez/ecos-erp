@@ -18,14 +18,13 @@ use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Orders\Domain\Services\PaymentFulfillmentGate;
 use Modules\Commerce\Shipping\Domain\Services\ShippingValidationService;
 use Modules\Commerce\Synchronization\Application\Services\WooCommerceOrderStatusTranslator;
+use Modules\Commerce\Synchronization\Application\Services\WooTenantCustomerResolver;
 use Modules\Crm\Customers\Domain\Models\Customer;
 use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\Logistics\Geography\Domain\Models\City;
 use Modules\Logistics\Geography\Domain\Models\Governorate;
-use Modules\Organization\Brands\Domain\Models\Brand;
 use Modules\Sales\Customers\Domain\Services\BlockedCustomerPolicy;
 use Modules\Sales\Customers\Domain\Services\PhoneNormalizer;
-use RuntimeException;
 use Throwable;
 
 final class WooCommerceOrderImporter
@@ -51,6 +50,10 @@ final class WooCommerceOrderImporter
         // PhoneNormalizer's docblock — plus the shared blocked-customer read authority.
         private readonly PhoneNormalizer $phoneNormalizer,
         private readonly BlockedCustomerPolicy $blockedCustomerPolicy,
+        // TASK-ECOS-V1.1-WOO-02-TENANT-SAFE-CUSTOMER-IDENTITY-044 — the ONE canonical
+        // company-scoped customer resolution authority, shared with
+        // WooCommerceCustomerSyncer so both files use the identical tenant contract.
+        private readonly WooTenantCustomerResolver $tenantResolver,
     ) {}
 
     /**
@@ -66,9 +69,17 @@ final class WooCommerceOrderImporter
             return false;
         }
 
+        // TASK-...-044 — resolved FIRST, fail-closed, before any customer lookup/creation
+        // is attempted. Previously this ran inside buildOrder(), AFTER resolveCustomer()
+        // already executed an (until now unscoped) customer match/create — meaning a
+        // channel with a broken brand→company chain would still have touched the
+        // Customer table before the whole import failed. No customer resolution may
+        // happen without an already-resolved company.
+        $companyId = $this->tenantResolver->resolveCompanyId($channel);
+
         $policy = $this->resolveBrandPolicy($channel);
-        [$customer] = $this->resolveCustomer($wooOrder, $policy);
-        [$order, $lines, $fees, $coupons] = $this->buildOrder($wooOrder, $channel, $customer);
+        [$customer] = $this->resolveCustomer($wooOrder, $companyId, $policy);
+        [$order, $lines, $fees, $coupons] = $this->buildOrder($wooOrder, $channel, $customer, $companyId);
 
         if ($lines === []) {
             return false;
@@ -129,7 +140,7 @@ final class WooCommerceOrderImporter
 
     public function import(Channel $channel, ?OrderImportOptionsDTO $options = null): OrderImportResultDTO
     {
-        $options ??= new OrderImportOptionsDTO();
+        $options ??= new OrderImportOptionsDTO;
 
         // TASK-...-025 (W6) — Orders Sync pause gate. This is the live/catch-up path (the manual
         // "Sync Now" action IS the catch-up mechanism once resumed); an explicit Historical
@@ -143,6 +154,16 @@ final class WooCommerceOrderImporter
 
         if ($credential === null) {
             return new OrderImportResultDTO(0, 0, 0, 0, 0, 0, ['No credentials configured for this channel.']);
+        }
+
+        // TASK-...-044 — resolved ONCE for the whole run (the channel is constant
+        // throughout), fail-closed. A broken brand→company chain fails the entire
+        // import with one clear error instead of repeating the identical failure once
+        // per order in the batch, and no customer is matched/created before this check.
+        try {
+            $companyId = $this->tenantResolver->resolveCompanyId($channel);
+        } catch (Throwable $e) {
+            return new OrderImportResultDTO(0, 0, 0, 0, 0, 0, [$e->getMessage()]);
         }
 
         $importedOrders = 0;
@@ -211,7 +232,7 @@ final class WooCommerceOrderImporter
                     }
 
                     try {
-                        [$customer, $wasCreated] = $this->resolveCustomer($wooOrder, $policy);
+                        [$customer, $wasCreated] = $this->resolveCustomer($wooOrder, $companyId, $policy);
 
                         if ($wasCreated) {
                             $createdCustomers++;
@@ -221,6 +242,7 @@ final class WooCommerceOrderImporter
                             $wooOrder,
                             $channel,
                             $customer,
+                            $companyId,
                         );
 
                         $failedLines += $lineFails;
@@ -343,17 +365,25 @@ final class WooCommerceOrderImporter
     }
 
     /**
-     * Find or create a customer from WooCommerce billing data.
+     * Find or create a customer from WooCommerce billing data — tenant-safe: every
+     * lookup and every creation is scoped to the already-resolved $companyId (TASK-
+     * ...-044). A phone or email match belonging to a different company is NOT a
+     * match; this method never falls back to an unscoped/global lookup, and never
+     * creates a customer with a null company_id.
      *
      * Applies customer_matching_policy from the brand's order policy (Phase 5):
      *   always_create_new — skip phone/email matching; always create a new customer record.
      *   all other values  — attempt phone then email match first (existing behaviour).
      *
+     * Woo guest checkout is not special-cased: a guest order carries the identical
+     * billing shape as a registered-account order, so it resolves through this exact
+     * same company-scoped phone-then-email-then-create chain (TASK-...-044 §6).
+     *
      * @param  array<string, mixed>  $wooOrder
      * @param  array<string, mixed>  $policy  Brand order policy settings
      * @return array{Customer, bool}
      */
-    private function resolveCustomer(array $wooOrder, array $policy = []): array
+    private function resolveCustomer(array $wooOrder, string $companyId, array $policy = []): array
     {
         /** @var array<string, string> $billing */
         $billing = is_array($wooOrder['billing'] ?? null) ? $wooOrder['billing'] : [];
@@ -365,29 +395,15 @@ final class WooCommerceOrderImporter
         $matchingPolicy = (string) ($policy['customer_matching_policy'] ?? 'reuse_existing');
 
         if ($matchingPolicy !== 'always_create_new') {
-            // 1. Match by phone
-            if ($normalizedPhone !== '') {
-                $customer = Customer::query()
-                    ->where('phone', $normalizedPhone)
-                    ->orWhere('mobile', $normalizedPhone)
-                    ->first();
+            $customer = $this->tenantResolver->findByPhone($companyId, $normalizedPhone)
+                ?? $this->tenantResolver->findByEmail($companyId, $email);
 
-                if ($customer !== null) {
-                    return [$customer, false];
-                }
-            }
-
-            // 2. Match by email
-            if ($email !== '') {
-                $customer = Customer::query()->where('email', $email)->first();
-
-                if ($customer !== null) {
-                    return [$customer, false];
-                }
+            if ($customer !== null) {
+                return [$customer, false];
             }
         }
 
-        // 3. Create new customer
+        // Create new customer, scoped to $companyId.
         $firstName = trim((string) ($billing['first_name'] ?? ''));
         $lastName = trim((string) ($billing['last_name'] ?? ''));
         $name = trim("{$firstName} {$lastName}");
@@ -396,39 +412,17 @@ final class WooCommerceOrderImporter
             $name = $email !== '' ? $email : 'WooCommerce Customer';
         }
 
-        // Suppress Eloquent events so CustomerObserver does not dispatch an outbound
-        // CustomerSyncJob for a customer that originates FROM WooCommerce (circular sync).
-        $customer = Customer::withoutEvents(function () use ($name, $email, $normalizedPhone, $billing): Customer {
-            return Customer::query()->create([
-                'code' => $this->nextCustomerCode(),
-                'name' => $name,
-                'email' => $email !== '' ? $email : null,
-                'phone' => $normalizedPhone !== '' ? $normalizedPhone : null,
-                'city' => trim((string) ($billing['city'] ?? '')) ?: null,
-                'country' => trim((string) ($billing['country'] ?? '')) ?: null,
-                'address' => trim((string) ($billing['address_1'] ?? '')) ?: null,
-                'is_active' => true,
-            ]);
-        });
+        $customer = $this->tenantResolver->createCustomer($companyId, [
+            'name' => $name,
+            'email' => $email !== '' ? $email : null,
+            'phone' => $normalizedPhone !== '' ? $normalizedPhone : null,
+            'city' => trim((string) ($billing['city'] ?? '')) ?: null,
+            'country' => trim((string) ($billing['country'] ?? '')) ?: null,
+            'address' => trim((string) ($billing['address_1'] ?? '')) ?: null,
+            'is_active' => true,
+        ]);
 
         return [$customer, true];
-    }
-
-    private function nextCustomerCode(): string
-    {
-        $last = Customer::query()
-            ->withTrashed()
-            ->where('code', 'like', 'CUS-%')
-            ->orderByRaw("CAST(REPLACE(code, 'CUS-', '') AS UNSIGNED) DESC")
-            ->value('code');
-
-        if ($last === null) {
-            return 'CUS-001';
-        }
-
-        $current = (int) str_replace('CUS-', '', (string) $last);
-
-        return 'CUS-'.str_pad((string) ($current + 1), 3, '0', STR_PAD_LEFT);
     }
 
     /**
@@ -437,7 +431,7 @@ final class WooCommerceOrderImporter
      * @param  array<string, mixed>  $wooOrder
      * @return array{array<string, mixed>, list<array<string, mixed>>, list<array<string, mixed>>, list<array<string, mixed>>, int, list<string>}
      */
-    private function buildOrder(array $wooOrder, Channel $channel, Customer $customer): array
+    private function buildOrder(array $wooOrder, Channel $channel, Customer $customer, string $companyId): array
     {
         $externalId = (string) ($wooOrder['id'] ?? '');
         $wooNumber = (string) ($wooOrder['number'] ?? $externalId);
@@ -470,14 +464,13 @@ final class WooCommerceOrderImporter
         $billingLastName = trim((string) ($billing['last_name'] ?? ''));
         $billingFullName = trim("{$billingFirstName} {$billingLastName}");
 
-        $companyId = $this->resolveCompanyId($channel);
-
         $orderAttributes = [
             'channel_id' => (string) $channel->id,
             // TENANT OWNERSHIP. Previously absent, so every imported order was written with
             // `company_id = NULL` — invisible to Order's tenant read scope and outside every
             // company-scoped control. Resolved deterministically from the integration context
-            // (see resolveCompanyId), never from Auth and never from a "first company" guess.
+            // (see WooTenantCustomerResolver::resolveCompanyId, called once per import/importSingle
+            // before any customer resolution), never from Auth and never from a "first company" guess.
             'company_id' => $companyId,
             'assigned_warehouse_id' => null,
             'customer_id' => (string) $customer->id,
@@ -660,44 +653,6 @@ final class WooCommerceOrderImporter
         }
 
         return [$orderAttributes, $lines, $fees, $coupons, $failedLines, $lineErrors];
-    }
-
-    /**
-     * The company that owns an imported order, resolved from the integration context alone.
-     *
-     * CHAIN: `channel.brand_id → brands.company_id`. This is the platform's existing convention
-     * for deriving tenancy from a channel (`EloquentChannelRepository::paginate()` filters
-     * `whereHas('brand', …)`, and the channel factory itself reads the brand's company), and it
-     * is the only chain available here: the webhook path is unauthenticated and runs on a queue
-     * worker, so `Auth::user()` is null by construction.
-     *
-     * `brands.company_id` is NOT NULL with an enforced foreign key, so the chain has exactly one
-     * link that can break — `channels.brand_id`, which is nullable at the database layer only
-     * because the migration that was meant to tighten it returns early on an inverted guard. It
-     * is `required` in both the create and update channel requests, so no HTTP path can produce
-     * such a row.
-     *
-     * If it breaks anyway, this THROWS rather than importing an untenanted order. Both callers
-     * already treat a per-order throw as a recorded skip, so one misconfigured channel is
-     * reported and no cross-tenant row is written. Failing closed is the point: an order with no
-     * owner is not a lesser version of an order, it is a row no tenant control can see.
-     */
-    private function resolveCompanyId(Channel $channel): string
-    {
-        $brandId = $channel->brand_id;
-
-        $companyId = $brandId !== null
-            ? Brand::query()->whereKey($brandId)->value('company_id')
-            : null;
-
-        if ($companyId === null || (string) $companyId === '') {
-            throw new RuntimeException(
-                "Channel [{$channel->id}] resolves to no owning company (brand_id is null or its brand is missing). "
-                .'Refusing to import an order with no tenant.',
-            );
-        }
-
-        return (string) $companyId;
     }
 
     /**
