@@ -49,6 +49,7 @@ const mockCompany = vi.hoisted(() => vi.fn());
 const mockBranch = vi.hoisted(() => vi.fn());
 const mockCostCenter = vi.hoisted(() => vi.fn());
 const mockProject = vi.hoisted(() => vi.fn());
+const mockBrand = vi.hoisted(() => vi.fn());
 const mockCustomer = vi.hoisted(() => vi.fn());
 const mockProduct = vi.hoisted(() => vi.fn());
 const mockChannel = vi.hoisted(() => vi.fn());
@@ -58,6 +59,7 @@ vi.mock('../hooks/use-finance-intelligence', () => ({
   useProfitabilityBranch: mockBranch,
   useProfitabilityCostCenter: mockCostCenter,
   useProfitabilityProject: mockProject,
+  useProfitabilityBrand: mockBrand,
   useProfitabilityCustomer: mockCustomer,
   useProfitabilityProduct: mockProduct,
   useProfitabilityChannel: mockChannel,
@@ -74,6 +76,7 @@ beforeEach(() => {
   mockBranch.mockReturnValue(IDLE);
   mockCostCenter.mockReturnValue(IDLE);
   mockProject.mockReturnValue(IDLE);
+  mockBrand.mockReturnValue(IDLE);
   mockCustomer.mockReturnValue(IDLE);
   mockProduct.mockReturnValue(IDLE);
   mockChannel.mockReturnValue(IDLE);
@@ -125,6 +128,103 @@ describe('ProfitabilityTab', () => {
 
     expect(screen.getAllByText('b1111111-uuid')[0]).toBeInTheDocument();
     expect(screen.getAllByText('$300')[0]).toBeInTheDocument();
+  });
+
+  it('renders Brand rows with resolved names, an Unallocated row, and reconciling totals', async () => {
+    const user = userEvent.setup();
+    mockBrand.mockReturnValue({
+      data: {
+        dimension: 'brand',
+        rows: [
+          { brand_id: 'brand-1-uuid', brand_name: 'Acme', brand_code: 'ACM', resolved: true, revenue: 1000, expense: 400, profit: 600, margin_pct: 60 },
+        ],
+        unallocated: { revenue: 300, expense: 100, profit: 200, margin_pct: 66.67 },
+        total: { revenue: 1300, expense: 500, profit: 800, margin_pct: 61.54 },
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<ProfitabilityTab />);
+    await user.click(screen.getByText('brand'));
+
+    // The resolved Brand's own name, not its raw id. UniversalDataGrid renders
+    // both a table row and a mobile card for each row, so grid text always
+    // appears twice — every assertion here checks the first match, matching
+    // the existing branch-tab test's own convention.
+    expect(screen.getAllByText('Acme')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('$600')[0]).toBeInTheDocument();
+
+    // The Unallocated row is its own, clearly-labeled row — never a Brand,
+    // never silently folded into a Brand's figures.
+    expect(screen.getAllByText('unallocatedRow')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('$300')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('$100')[0]).toBeInTheDocument();
+
+    // The reconciling total is also rendered as its own row.
+    expect(screen.getAllByText('totalRow')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('$1300')[0]).toBeInTheDocument();
+
+    // The honest explanatory note is shown, unconditionally.
+    expect(screen.getByText('unallocatedNote')).toBeInTheDocument();
+  });
+
+  it('renders an unresolved Brand id honestly, without dropping its amount', async () => {
+    const user = userEvent.setup();
+    mockBrand.mockReturnValue({
+      data: {
+        dimension: 'brand',
+        rows: [
+          { brand_id: 'deleted-brand-uuid', brand_name: null, brand_code: null, resolved: false, revenue: 750, expense: 0, profit: 750, margin_pct: 100 },
+        ],
+        unallocated: { revenue: 0, expense: 0, profit: 0, margin_pct: 0 },
+        total: { revenue: 750, expense: 0, profit: 750, margin_pct: 100 },
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<ProfitabilityTab />);
+    await user.click(screen.getByText('brand'));
+
+    // Labeled honestly as unresolved — never the raw id standing in as a name,
+    // and never dropped from the total.
+    expect(screen.getAllByText('unresolved')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('$750')[0]).toBeInTheDocument();
+  });
+
+  it('shows a loading state before the brand endpoint responds', async () => {
+    const user = userEvent.setup();
+    mockBrand.mockReturnValue({ data: undefined, isLoading: true, isError: false });
+
+    render(<ProfitabilityTab />);
+    await user.click(screen.getByText('brand'));
+
+    expect(screen.getByText('loading')).toBeInTheDocument();
+  });
+
+  it('still renders Unallocated/Total when no Brand has any attributed activity', async () => {
+    const user = userEvent.setup();
+    mockBrand.mockReturnValue({
+      data: {
+        dimension: 'brand',
+        rows: [],
+        unallocated: { revenue: 0, expense: 0, profit: 0, margin_pct: 0 },
+        total: { revenue: 0, expense: 0, profit: 0, margin_pct: 0 },
+      },
+      isLoading: false,
+      isError: false,
+    });
+
+    render(<ProfitabilityTab />);
+    await user.click(screen.getByText('brand'));
+
+    // Unallocated and Total still render as their own rows even with zero
+    // Brand rows — never the generic "no data" empty-grid message, since a
+    // company total (even a zero one) always exists.
+    expect(screen.getAllByText('unallocatedRow')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('totalRow')[0]).toBeInTheDocument();
+    expect(screen.queryByText('empty')).not.toBeInTheDocument();
   });
 
   it('shows the HONEST "not yet available" state for product — never an empty chart', async () => {

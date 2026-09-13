@@ -7,6 +7,7 @@ namespace Modules\Finance\Integration\Application\Listeners;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Modules\Commerce\Orders\Domain\Models\OrderFinancialSnapshot;
 use Modules\Finance\Integration\Domain\Services\CommercialAccountingService;
 use Modules\Operations\Fulfillment\Domain\Events\OrderDeliveredEvent;
 use Throwable;
@@ -33,6 +34,17 @@ use Throwable;
  * │ Modules\Commerce\Orders\Domain\Models\Order) because OrderDeliveredEvent   │
  * │ does not carry it — the narrowest read that gets the one missing field.   │
  * └──────────────────────────────────────────────────────────────────────────┘
+ *
+ * ┌─ BRAND ATTRIBUTION (TASK-ECOS-V1.1-FIN-04-BRAND-PROFITABILITY-           ┐
+ * │ IMPLEMENTATION-007) — NEW POSTINGS ONLY                                   │
+ * │                                                                            │
+ * │ profit_center_id is read from the order's own, already-immutable           │
+ * │ OrderFinancialSnapshot.brand_id (ADR-020: "the snapshot IS the financial    │
+ * │ truth") — never re-derived, never guessed from the customer or any other   │
+ * │ relationship. A snapshot with no brand_id (or no snapshot at all) simply    │
+ * │ posts with profit_center_id = null, exactly as it always has — this is a    │
+ * │ forward-only change with no backfill of anything already posted.           │
+ * └──────────────────────────────────────────────────────────────────────────┘
  */
 final class PostRevenueAndCogsOnOrderDelivered
 {
@@ -53,6 +65,11 @@ final class PostRevenueAndCogsOnOrderDelivered
         $actorId = $this->intOrNull($event->actorId);
         $deliveredAt = Carbon::parse($event->deliveredAt);
         $taxTotal = round((float) ($order->tax_total ?? 0.0), 4);
+        $brandId = OrderFinancialSnapshot::query()
+            ->where('order_id', $event->orderId)
+            ->where('company_id', $event->companyId)
+            ->value('brand_id');
+        $profitCenterId = $brandId !== null ? (string) $brandId : null;
 
         try {
             $this->accounting->recognizeRevenue(
@@ -64,6 +81,7 @@ final class PostRevenueAndCogsOnOrderDelivered
                 taxTotal: $taxTotal,
                 recognizedAt: $deliveredAt,
                 actorId: $actorId,
+                profitCenterId: $profitCenterId,
             );
         } catch (Throwable $e) {
             Log::channel('daily')->error('[PostRevenueAndCogsOnOrderDelivered] Revenue recognition failed', [
@@ -80,6 +98,7 @@ final class PostRevenueAndCogsOnOrderDelivered
                 cogsAmount: $event->cogsAmount,
                 recognizedAt: $deliveredAt,
                 actorId: $actorId,
+                profitCenterId: $profitCenterId,
             );
         } catch (Throwable $e) {
             Log::channel('daily')->error('[PostRevenueAndCogsOnOrderDelivered] COGS recognition failed', [

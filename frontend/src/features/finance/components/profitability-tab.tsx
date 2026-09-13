@@ -13,6 +13,7 @@ import { FinanceIntelligenceStateCard, FinanceIntelligenceUnavailableCard } from
 import { NoAccess, Stat } from './finance-panels';
 import {
   useProfitabilityBranch,
+  useProfitabilityBrand,
   useProfitabilityChannel,
   useProfitabilityCompany,
   useProfitabilityCostCenter,
@@ -23,6 +24,7 @@ import {
 import type {
   ProfitabilityByDimension,
   FinanceIntelligenceWindowParams,
+  ProfitabilityBrandRow,
   ProfitabilityCustomerRow,
   ProfitabilityDimensionRow,
   ProfitabilityUnavailable,
@@ -66,6 +68,7 @@ export function ProfitabilityTab() {
           <TabsTrigger value="branch">{t(($) => $.profitability.tab.branch)}</TabsTrigger>
           <TabsTrigger value="cost-center">{t(($) => $.profitability.tab.costCenter)}</TabsTrigger>
           <TabsTrigger value="project">{t(($) => $.profitability.tab.project)}</TabsTrigger>
+          <TabsTrigger value="brand">{t(($) => $.profitability.tab.brand)}</TabsTrigger>
           <TabsTrigger value="customer">{t(($) => $.profitability.tab.customer)}</TabsTrigger>
           <TabsTrigger value="product">{t(($) => $.profitability.tab.product)}</TabsTrigger>
           <TabsTrigger value="channel">{t(($) => $.profitability.tab.channel)}</TabsTrigger>
@@ -82,6 +85,9 @@ export function ProfitabilityTab() {
         </TabsContent>
         <TabsContent value="project" className="mt-4">
           <ProjectView range={range} />
+        </TabsContent>
+        <TabsContent value="brand" className="mt-4">
+          <BrandView range={range} />
         </TabsContent>
         <TabsContent value="customer" className="mt-4">
           <CustomerView range={range} />
@@ -191,6 +197,115 @@ function ProjectView({ range }: { range: FinanceIntelligenceWindowParams }) {
   const { t } = useTranslation('finance');
   const query = useProfitabilityProject(range);
   return <DimensionRowsView query={query} dimensionKey="project" columnLabel={t(($) => $.profitability.tab.project)} />;
+}
+
+// ── Brand — resolved names + an explicit, honest Unallocated row ─────────────
+//
+// Unlike branch/cost-center/project, a Brand row can be "unresolved" (a
+// profit_center_id that no longer matches a current Brand of this company —
+// deleted, or never one) and the breakdown always reconciles exactly:
+// sum(brand rows) + unallocated === total. Both are rendered as their own
+// grid rows (never as a raw brand, never as zero, never omitted) so the
+// invariant is visible, not just true in the response payload.
+
+type BrandGridRow = {
+  key: string;
+  kind: 'brand' | 'unallocated' | 'total';
+  label: string;
+  resolved: boolean;
+  revenue: number;
+  expense: number;
+  profit: number;
+  margin_pct: number;
+};
+
+function BrandView({ range }: { range: FinanceIntelligenceWindowParams }) {
+  const { t } = useTranslation('finance');
+  const fmt = useFormatter();
+  const query = useProfitabilityBrand(range);
+  const data = query.data;
+
+  const rows = useMemo<BrandGridRow[]>(() => {
+    if (!data) return [];
+
+    const brandRows: BrandGridRow[] = data.rows.map((r: ProfitabilityBrandRow) => ({
+      key: r.brand_id,
+      kind: 'brand',
+      label: r.resolved ? (r.brand_name ?? r.brand_id) : t(($) => $.profitability.brand.unresolved),
+      resolved: r.resolved,
+      revenue: r.revenue,
+      expense: r.expense,
+      profit: r.profit,
+      margin_pct: r.margin_pct,
+    }));
+
+    const unallocatedRow: BrandGridRow = {
+      key: '__unallocated__',
+      kind: 'unallocated',
+      label: t(($) => $.profitability.brand.unallocatedRow),
+      resolved: true,
+      ...data.unallocated,
+    };
+
+    const totalRow: BrandGridRow = {
+      key: '__total__',
+      kind: 'total',
+      label: t(($) => $.profitability.brand.totalRow),
+      resolved: true,
+      ...data.total,
+    };
+
+    return [...brandRows, unallocatedRow, totalRow];
+  }, [data, t]);
+
+  // Special rows (unallocated/total) are visually set apart through the cell
+  // content itself — bold, and a distinct label — rather than a row-level
+  // style prop UniversalDataGrid does not expose, per this task's own "reuse
+  // existing tables" boundary (no grid API is extended for this).
+  const columns = useMemo<DataGridColumnDef<BrandGridRow>[]>(() => [
+    {
+      key: 'label',
+      label: t(($) => $.profitability.tab.brand),
+      pin: 'left',
+      cell: (r) => (
+        <span className={cn(r.kind !== 'brand' && 'font-semibold', r.kind === 'brand' && !r.resolved && 'italic text-muted-foreground')}>
+          {r.label}
+        </span>
+      ),
+    },
+    { key: 'revenue', label: t(($) => $.profitability.field.revenue), align: 'end', cell: (r) => <span className={cn('tabular-nums', r.kind !== 'brand' && 'font-semibold')}>{fmt.money(r.revenue)}</span> },
+    { key: 'expense', label: t(($) => $.profitability.field.expense), align: 'end', cell: (r) => <span className={cn('tabular-nums', r.kind !== 'brand' && 'font-semibold')}>{fmt.money(r.expense)}</span> },
+    {
+      key: 'profit', label: t(($) => $.profitability.field.profit), align: 'end',
+      cell: (r) => <span className={cn('tabular-nums font-medium', r.profit < 0 && 'text-red-600')}>{fmt.money(r.profit)}</span>,
+    },
+    { key: 'margin_pct', label: t(($) => $.profitability.field.marginPct), align: 'end', cell: (r) => <span className="tabular-nums">{fmt.percent(r.margin_pct, false)}</span> },
+  ], [t, fmt]);
+
+  if (!data) {
+    return (
+      <FinanceIntelligenceStateCard
+        loading={query.isLoading}
+        error={query.isError}
+        loadingLabel={t(($) => $.loading)}
+        errorLabel={t(($) => $.profitability.error)}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-muted-foreground">{t(($) => $.profitability.brand.unallocatedNote)}</p>
+      <UniversalDataGrid
+        data={rows}
+        columns={columns}
+        rowId={(r) => r.key}
+        loading={query.isLoading}
+        error={query.isError}
+        emptyState={<p className="py-10 text-center text-sm text-muted-foreground">{t(($) => $.profitability.empty)}</p>}
+      />
+    </div>
+  );
 }
 
 // ── Customer — AR-attributed rows, REAL data ──────────────────────────────────

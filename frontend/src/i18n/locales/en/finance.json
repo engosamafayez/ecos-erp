@@ -977,10 +977,16 @@
     }
   },
   "profitability": {
-    "tab": { "company": "Company", "branch": "Branch", "costCenter": "Cost Center", "project": "Project", "customer": "Customer", "product": "Product", "channel": "Channel" },
+    "tab": { "company": "Company", "branch": "Branch", "costCenter": "Cost Center", "project": "Project", "brand": "Brand", "customer": "Customer", "product": "Product", "channel": "Channel" },
     "filter": { "from": "From", "to": "To" },
-    "field": { "revenue": "Revenue", "expense": "Expense", "profit": "Profit", "marginPct": "Margin", "estimatedProfit": "Est. Profit" },
+    "field": { "revenue": "Revenue", "expense": "Expense", "profit": "Profit", "marginPct": "Margin", "estimatedProfit": "Est. Profit", "total": "Total" },
     "customer": { "attributionPrefix": "Attribution method:" },
+    "brand": {
+      "unresolved": "Unknown brand",
+      "unallocatedRow": "Unallocated",
+      "unallocatedNote": "These entries exist in the company ledger but are not attributed to a Brand.",
+      "totalRow": "Total (company)"
+    },
     "unavailable": { "heading": "Not yet available", "companyFallback": "Company-level profitability (shown instead)" },
     "empty": "No profitability data for this period.",
     "error": "Could not load profitability data."

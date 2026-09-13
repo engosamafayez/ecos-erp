@@ -54,6 +54,14 @@ export function useProfitabilityProject(params: FinanceIntelligenceWindowParams 
   });
 }
 
+export function useProfitabilityBrand(params: FinanceIntelligenceWindowParams = {}) {
+  const companyId = useCompanyId();
+  return useQuery({
+    queryKey: ['company', companyId, 'finance', 'profitability', 'brand', params],
+    queryFn: () => financeIntelligenceService.profitability.brand(params),
+  });
+}
+
 export function useProfitabilityCustomer(params: FinanceIntelligenceWindowParams = {}) {
   const companyId = useCompanyId();
   return useQuery({

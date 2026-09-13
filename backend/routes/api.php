@@ -3602,6 +3602,7 @@ Route::middleware('auth:sanctum')->prefix('finance/intelligence')->group(functio
             Route::get('/branch', [FinanceProfitabilityController::class, 'branch']);
             Route::get('/cost-center', [FinanceProfitabilityController::class, 'costCenter']);
             Route::get('/project', [FinanceProfitabilityController::class, 'project']);
+            Route::get('/brand', [FinanceProfitabilityController::class, 'brand']);
             Route::get('/customer', [FinanceProfitabilityController::class, 'customer']);
             Route::get('/product', [FinanceProfitabilityController::class, 'product']);
             Route::get('/channel', [FinanceProfitabilityController::class, 'channel']);
