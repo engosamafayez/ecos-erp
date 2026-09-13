@@ -153,14 +153,32 @@ final class ProcessOrderWebhookJob implements ShouldQueue
                             null, // system actor
                         );
                     } catch (Throwable $workflowError) {
-                        // Non-fatal: guard failure or state mismatch — log and continue.
-                        \Illuminate\Support\Facades\Log::warning('[WcWebhook] Workflow guard rejected status transition', [
-                            'order_id' => $existingOrder->id,
-                            'wc_status' => $wooStatus,
-                            'ecos_from' => $existingOrder->status->value,
-                            'ecos_to' => $ecosStatus->value,
-                            'error' => $workflowError->getMessage(),
-                        ]);
+                        // TASK-...-WOO-06 (042A-R1 §2/§10) — non-fatal: a guard rejection means
+                        // WC and ECOS disagree about state. This is EXPECTED, not an error to
+                        // fix — most visibly for Woo "completed": CompleteDeliveryWorkflow's own
+                        // guard (OutForDelivery + inventory_shipped_at already set) is the ONLY
+                        // authority for reaching Delivered, and it is deliberately unchanged
+                        // here. A "completed" webhook arriving before ECOS's own dispatch made
+                        // that guard satisfiable is HELD, never forced — Woo status remains
+                        // informational, never physical evidence.
+                        //
+                        // Previously this was only a transient log line, invisible to an
+                        // operator. Recorded now as a distinct, queryable SyncLog entry — the
+                        // same existing convention duplicate-webhook/signature-rejected skips
+                        // already use, not a new audit mechanism.
+                        $logService->createSkippedLog(
+                            $this->channel,
+                            SyncEntityType::Order,
+                            SyncDirection::Inbound,
+                            'fulfillment_transition_held',
+                            $existingOrder->id,
+                            [
+                                'wc_status' => $wooStatus,
+                                'ecos_from' => $existingOrder->status->value,
+                                'ecos_to' => $ecosStatus->value,
+                                'reason' => $workflowError->getMessage(),
+                            ],
+                        );
                     }
                 }
 

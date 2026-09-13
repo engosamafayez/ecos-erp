@@ -15,9 +15,9 @@ use Throwable;
  * Manages the full lifecycle of WooCommerce webhooks for all 7 topics.
  *
  * TASK-ECOS-V1.1-WOO-05-WEBHOOK-LIFECYCLE — architecture authority 042A-R1 §6, the ONE
- * registration authority (`WooCommerceWebhookRegistrar` is dead/superseded — never called
- * anywhere, confirmed by direct search; not deleted here since removing an already-dead,
- * uncalled class is not this ticket's scope, but nothing new is ever routed through it).
+ * registration authority. `WooCommerceWebhookRegistrar` (a strict subset — only 2 of these 7
+ * topics — with zero real consumers, confirmed by direct search) was deleted in
+ * TASK-ECOS-V1.1-WOO-06-COMPLETED-EXTERNAL-FULFILLMENT-SEMANTICS §17-A.
  *
  * Registration failures used to be silently swallowed (`catch (Throwable) {}`) — per 042A-R1
  * §6 ("persist registration failures... so they're retryable and visible, the same way sync
