@@ -8,6 +8,7 @@ import {
   Building2,
   CalendarDays,
   ClipboardList,
+  Columns3,
   Cpu,
   DollarSign,
   DoorOpen,
@@ -188,6 +189,8 @@ const GATE = {
   'products': ['inventory.products.view'],
   'customers': ['crm.customers.view'],
   'crm-leads': ['crm.sales.view'],
+  'crm-pipeline': ['crm.sales.view'],
+  'crm-my-work': ['crm.sales.view'],
   'inv-dashboard': ['inventory.stock.view'],
   'raw-materials': ['inventory.raw_materials.view'],
   'recipes': ['inventory.recipes.view'],
@@ -512,11 +515,16 @@ const ALL_MODULES: AppModule[] = [
   {
     id: 'crm',
     icon: UsersIcon,
-    defaultPath: ROUTES.crmCustomers,
+    defaultPath: ROUTES.crmMyWork,
     items: [
+      // CRM-01 Task 2 — a personal landing page composed from existing
+      // Lead/Opportunity/Portfolio/InternalTask authorities (no new ACL).
+      { key: 'crm-my-work', path: ROUTES.crmMyWork, icon: LayoutDashboard, permissions: GATE['crm-my-work'] },
       { key: 'crm-customers', path: ROUTES.crmCustomers, icon: UsersIcon, permissions: GATE['crm-customers'] },
       // CRM-01 Task 1 — Lead 360 closure; canonical crm_leads, not CustomerEngagement's cep_leads.
       { key: 'crm-leads', path: ROUTES.crmLeads, icon: Target, permissions: GATE['crm-leads'] },
+      // CRM-01 Task 2 — Pipeline board over the already-complete Opportunity backend.
+      { key: 'crm-pipeline', path: ROUTES.crmPipeline, icon: Columns3, permissions: GATE['crm-pipeline'] },
       { key: 'crm-portfolio', path: ROUTES.crmPortfolio, icon: ListChecks },
       { key: 'crm-executive', path: ROUTES.crmExecutive, icon: BarChart3, permissions: GATE['crm-executive'] },
     ],

@@ -66,6 +66,7 @@ final class OpportunityService
     public function moveToStage(Opportunity $opportunity, PipelineStage $stage): Opportunity
     {
         $this->assertOpen($opportunity);
+        $this->assertStageInOpportunityPipeline($opportunity, $stage);
 
         $previousStageId = $opportunity->stage_id !== null ? (string) $opportunity->stage_id : null;
 
@@ -172,6 +173,24 @@ final class OpportunityService
     {
         if ($opportunity->status->isClosed()) {
             throw SalesException::opportunityClosed($opportunity->name);
+        }
+    }
+
+    /**
+     * CRM-01 Task 2 — the canonical authority for moveToStage(), enforced here so
+     * every caller gets it, not only the one controller that happened to be
+     * reviewed. `crm_pipeline_stages` carries no `company_id` of its own — the
+     * only trustworthy scope is "the opportunity's OWN pipeline_id", which is
+     * itself always company-validated at creation time (see create()). This also
+     * closes a distinct, pre-existing correctness gap: moveToStage() updates
+     * `stage_id` but never `pipeline_id`, so accepting a stage from a different
+     * pipeline (even within the same company) would leave the opportunity's
+     * pipeline_id and stage_id pointing at two different boards.
+     */
+    private function assertStageInOpportunityPipeline(Opportunity $opportunity, PipelineStage $stage): void
+    {
+        if ($opportunity->pipeline_id === null || (string) $stage->pipeline_id !== (string) $opportunity->pipeline_id) {
+            throw SalesException::stageNotInOpportunityPipeline($opportunity->name);
         }
     }
 }

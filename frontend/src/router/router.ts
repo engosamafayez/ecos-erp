@@ -55,6 +55,8 @@ import { RecipeWorkspacePage } from '@/features/recipes/pages/recipe-workspace-p
 import { CrmCustomersWorkspacePage } from '@/features/crm/pages/crm-customers-workspace-page';
 import { CrmExecutiveWorkspacePage } from '@/features/crm/pages/crm-executive-workspace-page';
 import { CrmLeadsWorkspacePage } from '@/features/crm/pages/crm-leads-workspace-page';
+import { CrmMyWorkPage } from '@/features/crm/pages/crm-my-work-page';
+import { CrmPipelineWorkspacePage } from '@/features/crm/pages/crm-pipeline-workspace-page';
 import { CrmPortfolioPage } from '@/features/crm/pages/crm-portfolio-page';
 import { StockLedgerPage } from '@/features/stock-ledger/pages/stock-ledger-page';
 import { InventoryDashboardPage } from '@/features/inventory-control/pages/inventory-dashboard-page';
@@ -460,6 +462,8 @@ export const router = createBrowserRouter(
             { path: ROUTES.crm, loader: () => redirect(ROUTES.crmCustomers) },
             { path: ROUTES.crmCustomers, Component: CrmCustomersWorkspacePage },
             { path: ROUTES.crmLeads, Component: CrmLeadsWorkspacePage },
+            { path: ROUTES.crmPipeline, Component: CrmPipelineWorkspacePage },
+            { path: ROUTES.crmMyWork, Component: CrmMyWorkPage },
             { path: ROUTES.crmExecutive, Component: CrmExecutiveWorkspacePage },
             { path: ROUTES.crmPortfolio, Component: CrmPortfolioPage },
             // Configuration OS

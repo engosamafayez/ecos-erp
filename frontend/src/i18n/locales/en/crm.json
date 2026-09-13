@@ -67,6 +67,60 @@
       "body": "Leads will appear here as they are created."
     }
   },
+  "pipeline": {
+    "title": "Pipeline",
+    "subtitle": "Opportunities by stage",
+    "selectPipeline": "Pipeline",
+    "status": {
+      "open": "Open",
+      "won": "Won",
+      "lost": "Lost"
+    },
+    "toolbar": {
+      "newOpportunity": "New Opportunity",
+      "searchPlaceholder": "Search by name"
+    },
+    "card": {
+      "viewLead": "View lead",
+      "viewCustomer": "View customer",
+      "owner": "Owner",
+      "moveTo": "Move to…"
+    },
+    "fields": {
+      "name": "Name",
+      "amount": "Amount",
+      "expectedCloseDate": "Expected close date"
+    },
+    "form": {
+      "createTitle": "New Opportunity",
+      "createdToast": "Opportunity created",
+      "create": "Create"
+    },
+    "empty": {
+      "noPipeline": "No pipeline is configured for this company yet.",
+      "title": "No opportunities yet",
+      "body": "Opportunities will appear here as they are created or converted from a lead."
+    }
+  },
+  "myWork": {
+    "title": "My Work",
+    "subtitle": "Your assigned leads, opportunities and follow-ups in one place",
+    "sections": {
+      "leads": "Leads needing action",
+      "opportunities": "My open opportunities",
+      "dueActivities": "Due & overdue follow-ups",
+      "customerFollowUps": "Customer follow-ups",
+      "internalTasks": "Your other tasks"
+    },
+    "empty": {
+      "leads": "No leads assigned to you right now.",
+      "opportunities": "No open opportunities assigned to you right now.",
+      "dueActivities": "Nothing due right now.",
+      "customerFollowUps": "No customer follow-ups due right now.",
+      "internalTasks": "No open tasks."
+    },
+    "internalTasksNote": "\"Your other tasks\" are general Collaboration tasks — they are not yet linked to a specific Lead, Opportunity or Customer."
+  },
   "toolbar": {
     "searchPlaceholder": "Search by name, code, phone or email",
     "newCustomer": "New Customer",

@@ -87,6 +87,7 @@ use Modules\Crm\Loyalty\Presentation\Http\Controllers\PointsController as CrmPoi
 use Modules\Crm\Loyalty\Presentation\Http\Controllers\RewardController as CrmRewardController;
 use Modules\Crm\Portfolio\Presentation\Http\Controllers\PortfolioController as CrmPortfolioController;
 use Modules\Crm\Sales\Presentation\Http\Controllers\LeadController as CrmLeadController;
+use Modules\Crm\Sales\Presentation\Http\Controllers\MyWorkController as CrmMyWorkController;
 use Modules\Crm\Sales\Presentation\Http\Controllers\OpportunityController as CrmOpportunityController;
 use Modules\Crm\Sales\Presentation\Http\Controllers\PipelineController as CrmPipelineController;
 use Modules\Crm\Sales\Presentation\Http\Controllers\QuoteController as CrmQuoteController;
@@ -4367,6 +4368,13 @@ Route::middleware('auth:sanctum')->prefix('crm/sales')->group(function (): void 
             Route::patch('/{id}/cancel', [CrmSalesActivityController::class, 'cancel']);
         });
     });
+});
+
+// CRM-01 Task 2 — "My Work": composed read-only from existing Lead/Opportunity/
+// Portfolio/InternalTask authorities. Same view any of those would already grant
+// this user for their own rows — see MyWorkController's own docblock.
+Route::middleware(['auth:sanctum', 'permission:crm.sales.view'])->group(function (): void {
+    Route::get('crm/my-work', [CrmMyWorkController::class, 'index']);
 });
 
 // Loyalty.

@@ -24,6 +24,8 @@ export const ROUTES = {
   customers: '/customers',
   crmCustomers: '/crm/customers',
   crmLeads: '/crm/leads',
+  crmPipeline: '/crm/pipeline',
+  crmMyWork: '/crm/my-work',
   crmExecutive: '/crm/executive',
   crmPortfolio: '/crm/portfolio',
   customerDetail: '/customers/:customerId',

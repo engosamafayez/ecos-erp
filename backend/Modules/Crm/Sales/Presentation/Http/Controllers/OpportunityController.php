@@ -19,13 +19,24 @@ class OpportunityController extends Controller
 
     public function __construct(private readonly OpportunityService $opportunities) {}
 
+    /**
+     * CRM-01 Task 2 — added `pipeline_id`/`owner_id`/`q` so the Pipeline board can
+     * fetch one pipeline's bounded open-deal set server-filtered, rather than an
+     * unbounded fetch filtered client-side (see CRM-01 Task 2 report, "Pipeline
+     * search/filtering").
+     */
     public function index(Request $request): JsonResponse
     {
+        $term = trim((string) $request->query('q', ''));
+
         $rows = Opportunity::query()
             ->where('company_id', $this->companyId($request))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
             ->when($request->filled('customer_id'), fn ($q) => $q->where('customer_id', $request->string('customer_id')))
-            ->latest('created_at')->limit(100)->get()
+            ->when($request->filled('pipeline_id'), fn ($q) => $q->where('pipeline_id', $request->string('pipeline_id')))
+            ->when($request->filled('owner_id'), fn ($q) => $q->where('owner_id', $request->integer('owner_id')))
+            ->when($term !== '', fn ($q) => $q->where('name', 'like', '%'.$term.'%'))
+            ->latest('created_at')->limit(200)->get()
             ->map(fn (Opportunity $o) => $this->payload($o));
 
         return response()->json(['data' => $rows]);
@@ -51,11 +62,22 @@ class OpportunityController extends Controller
         return response()->json(['data' => $this->payload($this->opportunities->create($this->companyId($request), $v, $this->actorId($request)))], 201);
     }
 
+    /**
+     * CRM-01 Task 2 — closes the confirmed cross-tenant scoping defect: the stage
+     * lookup is now scoped to the acting company (via its owning pipeline), so a
+     * foreign-company stage id 404s here rather than ever reaching the service.
+     * OpportunityService::moveToStage() additionally asserts the stage belongs to
+     * this OPPORTUNITY's own pipeline — defense in depth, not either/or.
+     */
     public function moveStage(Request $request, string $id): JsonResponse
     {
         $v = $request->validate(['stage_id' => ['required', 'string']]);
+        $companyId = $this->companyId($request);
         $opportunity = $this->opportunity($request, $id);
-        $stage = PipelineStage::query()->where('id', $v['stage_id'])->firstOrFail();
+        $stage = PipelineStage::query()
+            ->where('id', $v['stage_id'])
+            ->whereHas('pipeline', fn ($q) => $q->where('company_id', $companyId))
+            ->firstOrFail();
 
         return response()->json(['data' => $this->payload($this->opportunities->moveToStage($opportunity, $stage))]);
     }
@@ -90,9 +112,10 @@ class OpportunityController extends Controller
     private function payload(Opportunity $o): array
     {
         return [
-            'id' => $o->id, 'name' => $o->name, 'customer_id' => $o->customer_id, 'pipeline_id' => $o->pipeline_id,
-            'stage_id' => $o->stage_id, 'amount' => (float) $o->amount, 'currency' => $o->currency,
+            'id' => $o->id, 'name' => $o->name, 'customer_id' => $o->customer_id, 'lead_id' => $o->lead_id,
+            'pipeline_id' => $o->pipeline_id, 'stage_id' => $o->stage_id, 'amount' => (float) $o->amount, 'currency' => $o->currency,
             'probability' => $o->probability, 'weighted_value' => $o->weightedValue(), 'status' => $o->status->value,
+            'source' => $o->source, 'owner_id' => $o->owner_id,
             'expected_close_date' => $o->expected_close_date?->toDateString(), 'order_reference' => $o->order_reference,
             'won_at' => $o->won_at?->toIso8601String(), 'lost_at' => $o->lost_at?->toIso8601String(), 'lost_reason' => $o->lost_reason,
         ];

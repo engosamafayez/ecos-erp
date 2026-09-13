@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 
 import { UniversalDataGrid } from '@/components/data-grid/universal-data-grid';
 import { SmartToolbar } from '@/components/data-grid/smart-toolbar';
@@ -50,7 +51,11 @@ export function CrmLeadsWorkspacePage() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<CrmLeadStatus | 'all'>('all');
   const [page, setPage] = useState(1);
-  const [detailsId, setDetailsId] = useState<string | null>(null);
+  // CRM-01 Task 2 — `?open=<id>` lets the Pipeline board's "View Lead" link (and
+  // any other deep link) open a specific lead here, same mechanism Task 1 added
+  // for the Customers workspace.
+  const [searchParams] = useSearchParams();
+  const [detailsId, setDetailsId] = useState<string | null>(() => searchParams.get('open'));
   const [formOpen, setFormOpen] = useState(false);
 
   const params = useMemo(
