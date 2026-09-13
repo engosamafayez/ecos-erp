@@ -832,6 +832,9 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
         ->middlewareFor('update', 'permission:sales.channels.update')
         ->middlewareFor('destroy', 'permission:sales.channels.delete');
     Route::post('channels/{channel}/test-connection', [ConnectorController::class, 'testConnection'])->middleware('permission:sales.channels.update');
+    // TASK-...-CONSOLIDATED-REMEDIATION-001-R2 — same permission verb as the rest of
+    // channel-settings writes; issuing a pairing code is a channel-settings action.
+    Route::post('channels/{channel}/pairing-code', [ConnectorController::class, 'generatePairingCode'])->middleware('permission:sales.channels.update');
     // TASK-...-025 (P1/P3/P4/W6-W9) — Orders Sync pause/resume and first-activation policy.
     // Same permission verb as the rest of channel-settings writes.
     Route::post('channels/{channel}/orders-sync/state', [OrdersSyncControlController::class, 'setState'])->middleware('permission:sales.channels.update');
@@ -2087,16 +2090,22 @@ Route::middleware(['throttle:60,1'])->group(function (): void {
 
 /*
 |--------------------------------------------------------------------------
-| Plugin adapter — WordPress/WooCommerce plugin (public, channel-credential auth)
+| Plugin adapter — WooCommerce Connector plugin (public, connector-token auth)
 |--------------------------------------------------------------------------
-| TASK-ECOS-V1.1-WOO-07-OFFICIAL-WOOCOMMERCE-WORDPRESS-ADAPTER. Same "no auth:sanctum actor"
-| shape as the webhook routes above (an external, non-ECOS-user caller authenticates itself via
-| PluginAdapterController's own Basic-Auth check against the channel's existing credential, not
-| via Sanctum) — kept in its own group for clarity since it is a distinct direction (plugin pulls
-| from ECOS) and a distinct auth scheme (Basic Auth, not HMAC) from the webhook routes above.
+| TASK-...-CONSOLIDATED-REMEDIATION-001-R2. Same "no auth:sanctum actor" shape as the webhook
+| routes above (an external, non-ECOS-user caller authenticates itself via
+| PluginAdapterController's own Bearer connector_token check against the channel's own
+| credential row, not via Sanctum) — kept in its own group since it is a distinct direction
+| (plugin pulls from / pushes heartbeats to ECOS) and a distinct auth scheme from the webhook
+| routes above. `pair` is the one endpoint with no channel context yet — the pairing code
+| itself resolves which channel is being paired (see ExchangePairingCodeAction).
 */
+Route::middleware(['throttle:10,1'])->post('plugin/pair', [PluginAdapterController::class, 'pair']);
+
 Route::middleware(['throttle:60,1'])->prefix('plugin/channels/{channel}')->group(function (): void {
     Route::get('status', [PluginAdapterController::class, 'status']);
+    Route::post('heartbeat', [PluginAdapterController::class, 'heartbeat']);
+    Route::post('repair', [PluginAdapterController::class, 'repair']);
     Route::post('deactivated', [PluginAdapterController::class, 'deactivated']);
 });
 

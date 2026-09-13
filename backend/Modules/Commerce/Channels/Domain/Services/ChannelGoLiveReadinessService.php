@@ -161,6 +161,13 @@ final class ChannelGoLiveReadinessService
     }
 
     /**
+     * TASK-...-CONSOLIDATED-REMEDIATION-001-R1/R2 §18/§30 — "stock" in this gate's label has
+     * always meant mapping coverage (does a Woo-side product exist to receive ECOS's outbound
+     * fields at all), never a numeric-quantity configuration concern — this gate's own logic
+     * never checked one. Restated explicitly now that outbound "stock" is formally an
+     * availability STATE (WooCommerceProductAvailabilityResolver), not a quantity: mapping
+     * coverage is exactly "is Woo capable of receiving that state for this product", unchanged.
+     *
      * @return array{key: string, label: string, ready: bool, reason: string}
      */
     private function productMappingCoverage(Channel $channel): array
@@ -265,6 +272,12 @@ final class ChannelGoLiveReadinessService
     }
 
     /**
+     * TASK-...-CONSOLIDATED-REMEDIATION-001-R2 §30 — unchanged by the Connector: this already
+     * reads the actual persisted webhook-id columns WebhookManagerService owns, which the
+     * Connector's pairing exchange (ExchangePairingCodeAction) populates automatically by
+     * calling that same, unduplicated authority — so this gate is satisfied by a real,
+     * verified registration the moment pairing completes, never a self-reported "trust me".
+     *
      * @return array{key: string, label: string, ready: bool, reason: string}
      */
     private function webhooksRegistered(Channel $channel): array

@@ -1,10 +1,9 @@
 <?php
 /**
- * Thin HTTP client for the two ECOS-side plugin-adapter endpoints
- * (PluginAdapterController::status / ::deactivated). No WooCommerce or ECOS business data ever
- * passes through this class — it only carries the channel id + the same consumer key/secret pair
- * already issued for this channel's WooCommerce REST API connection, presented as HTTP Basic Auth.
- * That pair is never logged and never echoed back into the admin UI once saved.
+ * Thin HTTP client for the ECOS plugin-adapter endpoints. Authenticates every call after
+ * pairing with the Channel-scoped `connector_token` issued by ExchangePairingCodeAction — never
+ * the WooCommerce REST consumer key/secret, which this plugin never sees or handles at all.
+ * The connector_token is never logged and never re-displayed once stored.
  */
 
 if (! defined('ABSPATH')) {
@@ -15,55 +14,88 @@ class Ecos_Wc_Connector_Api_Client {
 
 	private $base_url;
 	private $channel_id;
-	private $consumer_key;
-	private $consumer_secret;
+	private $connector_token;
 
-	public function __construct($base_url, $channel_id, $consumer_key, $consumer_secret) {
+	public function __construct($base_url, $channel_id = null, $connector_token = null) {
 		$this->base_url        = untrailingslashit($base_url);
 		$this->channel_id      = $channel_id;
-		$this->consumer_key    = $consumer_key;
-		$this->consumer_secret = $consumer_secret;
+		$this->connector_token = $connector_token;
 	}
 
 	/**
-	 * GET .../api/plugin/channels/{channel}/status — read-only, no side effects on the ECOS side.
+	 * POST .../api/plugin/pair — the ONE unauthenticated call this client makes (there is no
+	 * connector_token yet; the pairing code itself is the one-time proof of authorization).
 	 *
 	 * @return array{ok: bool, data?: array, message?: string}
 	 */
-	public function fetch_status() {
-		$url = $this->base_url . '/api/plugin/channels/' . rawurlencode($this->channel_id) . '/status';
-
-		$response = wp_remote_get($url, [
+	public function pair($pairing_code) {
+		$response = wp_remote_post($this->base_url . '/api/plugin/pair', [
 			'timeout' => 15,
-			'headers' => [
-				'Authorization' => 'Basic ' . base64_encode($this->consumer_key . ':' . $this->consumer_secret),
-				'Accept'        => 'application/json',
-			],
+			'headers' => ['Content-Type' => 'application/json', 'Accept' => 'application/json'],
+			'body'    => wp_json_encode(['pairing_code' => $pairing_code]),
+		]);
+
+		return $this->parse_response($response);
+	}
+
+	/** GET .../api/plugin/channels/{channel}/status — read-only, no side effects. */
+	public function fetch_status() {
+		$response = wp_remote_get($this->channel_url('status'), [
+			'timeout' => 15,
+			'headers' => $this->auth_headers(),
 		]);
 
 		return $this->parse_response($response);
 	}
 
 	/**
-	 * POST .../api/plugin/channels/{channel}/deactivated — fire-and-forget: a short timeout and
-	 * no blocking, so an unreachable ECOS instance never delays WordPress's own deactivation
-	 * lifecycle. Failure here is intentionally silent (there is nothing an operator deactivating
-	 * a plugin can action on a failed notice, and it is never business-critical — see the class
-	 * docblock on the ECOS side).
+	 * POST .../heartbeat — called on the plugin's own WP-Cron schedule. This is the ONLY thing
+	 * that keeps ECOS's connectorHealth() from degrading a live site to Degraded/stale, so a
+	 * failure here is logged but never surfaced as a fatal WordPress error — a transient
+	 * network blip must not disrupt the site it runs on.
+	 */
+	public function heartbeat() {
+		$response = wp_remote_post($this->channel_url('heartbeat'), [
+			'timeout'  => 10,
+			'blocking' => true,
+			'headers'  => $this->auth_headers(),
+		]);
+
+		return $this->parse_response($response);
+	}
+
+	/** POST .../repair — force re-verify + re-register every Woo webhook topic via ECOS. */
+	public function repair() {
+		$response = wp_remote_post($this->channel_url('repair'), [
+			'timeout' => 20,
+			'headers' => $this->auth_headers(),
+		]);
+
+		return $this->parse_response($response);
+	}
+
+	/**
+	 * POST .../deactivated — fire-and-forget: a short timeout and no blocking, so an
+	 * unreachable ECOS instance never delays WordPress's own deactivation lifecycle.
 	 */
 	public function notify_deactivated($reason) {
-		$url = $this->base_url . '/api/plugin/channels/' . rawurlencode($this->channel_id) . '/deactivated';
-
-		wp_remote_post($url, [
-			'timeout'   => 5,
-			'blocking'  => false,
-			'headers'   => [
-				'Authorization' => 'Basic ' . base64_encode($this->consumer_key . ':' . $this->consumer_secret),
-				'Content-Type'  => 'application/json',
-				'Accept'        => 'application/json',
-			],
-			'body'      => wp_json_encode(['reason' => $reason]),
+		wp_remote_post($this->channel_url('deactivated'), [
+			'timeout'  => 5,
+			'blocking' => false,
+			'headers'  => array_merge($this->auth_headers(), ['Content-Type' => 'application/json']),
+			'body'     => wp_json_encode(['reason' => $reason]),
 		]);
+	}
+
+	private function channel_url($action) {
+		return $this->base_url . '/api/plugin/channels/' . rawurlencode((string) $this->channel_id) . '/' . $action;
+	}
+
+	private function auth_headers() {
+		return [
+			'Authorization' => 'Bearer ' . $this->connector_token,
+			'Accept'        => 'application/json',
+		];
 	}
 
 	/**

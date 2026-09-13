@@ -24,6 +24,10 @@ use Modules\Commerce\Channels\Infrastructure\Casts\TransitionalEncryptedCast;
  * @property string $channel_id
  * @property string $consumer_key
  * @property string $consumer_secret
+ * @property string|null $connector_token TASK-...-CONSOLIDATED-REMEDIATION-001-R2 — the
+ *                                        WooCommerce Connector plugin's own authentication
+ *                                        secret, distinct from consumer_key/consumer_secret
+ *                                        (ECOS→Woo REST only). Issued once during pairing.
  */
 class ChannelCredential extends Model
 {
@@ -40,6 +44,7 @@ class ChannelCredential extends Model
         'channel_id',
         'consumer_key',
         'consumer_secret',
+        'connector_token',
     ];
 
     /**
@@ -50,6 +55,10 @@ class ChannelCredential extends Model
         return [
             'consumer_key' => TransitionalEncryptedCast::class,
             'consumer_secret' => TransitionalEncryptedCast::class,
+            // A brand-new column with no pre-existing plaintext rows to stay compatible with —
+            // the stock `encrypted` cast is used directly rather than the transitional
+            // fallback-on-failure variant the other two fields need for legacy data.
+            'connector_token' => 'encrypted',
         ];
     }
 

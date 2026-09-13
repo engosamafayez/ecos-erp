@@ -1,72 +1,82 @@
 <?php
 /**
  * Plugin Name:       ECOS WooCommerce Connector
- * Description:       Connects this store to its ECOS ERP channel: pairs the store with the
- *                     ECOS-configured channel credential and shows connection/webhook health.
- *                     All product, price, stock, customer, and order data continues to flow
- *                     entirely through WooCommerce's own REST API and webhooks, unmodified by
- *                     this plugin — it is a diagnostics/bootstrap surface only.
- * Version:           1.0.0
+ * Description:       The complete connection agent between this store and its ECOS ERP
+ *                     Channel. Install, pair with a short-lived code from ECOS, and sync
+ *                     operates automatically — no webhook, topic, or callback URL setup is
+ *                     ever required. All product, price, availability, customer, and order
+ *                     business logic remains entirely in ECOS; this plugin transports data and
+ *                     manages the connection only.
+ * Version:           2.0.0
  * Requires at least: 6.0
  * Requires PHP:      7.4
  * Author:            ECOS ERP
  * License:           GPL-2.0-or-later
  * Text Domain:       ecos-wc-connector
  *
- * TASK-ECOS-V1.1-WOO-07-OFFICIAL-WOOCOMMERCE-WORDPRESS-ADAPTER — architecture authority 042A §7
- * / 042A-R1 §7-8. Both architecture reports confirm no WordPress/WooCommerce plugin existed
- * anywhere in the ECOS workspace before this ticket, and that a plugin is only structurally
- * necessary for: (a) the store-side connection bootstrap/settings screen, and (b) integration
- * diagnostics/version/health surfaced on the WordPress side. Everything else — product, price,
- * stock, customer, and order data ownership, all business logic and policy decisions — belongs to
- * ECOS ERP unconditionally and is already fully served by WooCommerce's own REST API + webhook
- * system (see the ECOS-side WebhookManagerService, which registers/deregisters all 7 topics
- * directly against Woo's REST API — this plugin does NOT register, relay, or verify webhooks
- * itself).
- *
- * Deliberately NOT built here (see the WOO-07 final report's "Open Implementation Items"): a
- * synchronous checkout-time bridge (e.g. a custom WC_Shipping_Method calling ECOS's
- * ShippingQuoteController). Both architecture reports flag "plugin necessity" beyond bootstrap as
- * a genuine, still-unresolved business decision — whether real-time checkout-time validation is
- * actually required — not something derivable from existing code. This plugin is therefore the
- * bootstrap-only outcome both reports explicitly describe as a valid interim state.
+ * TASK-...-CONSOLIDATED-REMEDIATION-001-R2 (CTO business-rule correction) — supersedes the
+ * WOO-07 bootstrap/diagnostics-only plugin. The Connector now owns: pairing to one ECOS
+ * Channel, its own dedicated authentication (connector_token — never the WooCommerce REST
+ * consumer_key/secret ECOS uses to call Woo, which this plugin never sees), automatic webhook
+ * setup/repair (delegated entirely to ECOS's existing WebhookManagerService — this plugin never
+ * registers a Woo webhook itself), connection health heartbeats, and deactivation/disconnect
+ * notification. It still owns NO business logic: it does not calculate product availability,
+ * does not read raw-material stock or recipes, does not match customers, and does not decide
+ * fulfillment or Finance outcomes — those remain exclusively ECOS's authorities, reached only
+ * through Woo's own native REST API and webhook system plus the endpoints in this plugin.
  */
 
 if (! defined('ABSPATH')) {
 	exit;
 }
 
-define('ECOS_WC_CONNECTOR_VERSION', '1.0.0');
+define('ECOS_WC_CONNECTOR_VERSION', '2.0.0');
 define('ECOS_WC_CONNECTOR_OPTION', 'ecos_wc_connector_settings');
 define('ECOS_WC_CONNECTOR_DIR', plugin_dir_path(__FILE__));
 
 require_once ECOS_WC_CONNECTOR_DIR . 'includes/class-ecos-api-client.php';
+require_once ECOS_WC_CONNECTOR_DIR . 'includes/class-ecos-heartbeat.php';
 require_once ECOS_WC_CONNECTOR_DIR . 'includes/class-ecos-admin-settings.php';
 
-/**
- * Entry point. A thin bootstrap only — all real behaviour lives in the two included classes so
- * this file stays a manifest, not an implementation.
- */
 function ecos_wc_connector_init() {
 	Ecos_Wc_Connector_Admin_Settings::instance();
+	Ecos_Wc_Connector_Heartbeat::boot();
 }
 add_action('plugins_loaded', 'ecos_wc_connector_init');
+add_filter('cron_schedules', ['Ecos_Wc_Connector_Heartbeat', 'register_interval']);
 
 /**
- * Deactivation is treated as a visible breadcrumb for the ECOS operator, never as an implicit
- * "disconnect the channel" action — Channel pause/disable/delete stays an explicit, separate ECOS
- * lifecycle decision (see PluginAdapterController::deactivated() on the ECOS side). This call is
- * deliberately non-blocking (a short timeout, no retry) so a slow or unreachable ECOS instance
- * never delays WordPress's own deactivation.
+ * Re-arm the heartbeat schedule on activation if this site was already paired (e.g. the
+ * plugin was deactivated and reactivated without disconnecting first) — reactivation alone
+ * must restore normal operation without requiring the merchant to re-pair.
+ */
+function ecos_wc_connector_on_activate() {
+	$settings = get_option(ECOS_WC_CONNECTOR_OPTION, []);
+
+	if (! empty($settings['connector_token'])) {
+		Ecos_Wc_Connector_Heartbeat::schedule();
+	}
+}
+register_activation_hook(__FILE__, 'ecos_wc_connector_on_activate');
+
+/**
+ * Deactivation marks the Connector OFFLINE in ECOS and deregisters this channel's Woo webhooks
+ * (reusing WebhookManagerService via the deactivated endpoint — not a second deregistration
+ * mechanism) — it never touches ECOS business data (Channel lifecycle, Brand, Orders, Products,
+ * Customers, historical SyncLogs all stay exactly as they are). Deliberately non-blocking: a
+ * slow or unreachable ECOS instance never delays WordPress's own deactivation, and the
+ * heartbeat schedule is cleared locally regardless of whether the notify call succeeds.
  */
 function ecos_wc_connector_on_deactivate() {
 	$settings = get_option(ECOS_WC_CONNECTOR_OPTION, []);
 
-	if (empty($settings['base_url']) || empty($settings['channel_id']) || empty($settings['consumer_key']) || empty($settings['consumer_secret'])) {
+	Ecos_Wc_Connector_Heartbeat::unschedule();
+
+	if (empty($settings['connector_token'])) {
 		return;
 	}
 
-	$client = new Ecos_Wc_Connector_Api_Client($settings['base_url'], $settings['channel_id'], $settings['consumer_key'], $settings['consumer_secret']);
+	$client = new Ecos_Wc_Connector_Api_Client($settings['base_url'], $settings['channel_id'], $settings['connector_token']);
 	$client->notify_deactivated('wordpress_plugin_deactivated');
 }
 register_deactivation_hook(__FILE__, 'ecos_wc_connector_on_deactivate');

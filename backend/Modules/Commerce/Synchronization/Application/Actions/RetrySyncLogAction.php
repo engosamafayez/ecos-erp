@@ -9,22 +9,26 @@ use App\Core\Responses\OperationResult;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Commerce\Synchronization\Application\Jobs\CustomerSyncJob;
-use Modules\Commerce\Synchronization\Application\Jobs\InventorySyncJob;
 use Modules\Commerce\Synchronization\Application\Jobs\OrderStatusSyncJob;
 use Modules\Commerce\Synchronization\Application\Jobs\PriceSyncJob;
 use Modules\Commerce\Synchronization\Application\Jobs\ProcessCustomerWebhookJob;
 use Modules\Commerce\Synchronization\Application\Jobs\ProcessOrderWebhookJob;
 use Modules\Commerce\Synchronization\Application\Jobs\ProcessProductWebhookJob;
+use Modules\Commerce\Synchronization\Application\Jobs\ProductAvailabilitySyncJob;
 use Modules\Commerce\Synchronization\Application\Jobs\ProductSyncJob;
+use Modules\Commerce\Synchronization\Application\Services\WooCommerceProductAvailabilityResolver;
 use Modules\Commerce\Synchronization\Domain\Enums\SyncDirection;
 use Modules\Commerce\Synchronization\Domain\Enums\SyncEntityType;
 use Modules\Commerce\Synchronization\Domain\Models\SyncLog;
 use Modules\Inventory\Products\Domain\Models\Product;
-use Modules\Purchasing\GoodsReceipts\Domain\Models\StockBalance;
 use Modules\Sales\Customers\Domain\Models\Customer;
 
 final class RetrySyncLogAction extends BaseAction
 {
+    public function __construct(
+        private readonly WooCommerceProductAvailabilityResolver $availability,
+    ) {}
+
     /**
      * Arguments:
      *   [0] SyncLog $log
@@ -62,10 +66,13 @@ final class RetrySyncLogAction extends BaseAction
                 match ($log->entity_type) {
                     SyncEntityType::Product => ProductSyncJob::dispatch($channel, $product),
                     SyncEntityType::Price => PriceSyncJob::dispatch($channel, $product),
-                    SyncEntityType::Inventory => InventorySyncJob::dispatch(
+                    // TASK-...-CONSOLIDATED-REMEDIATION-001-R1/R2 — retry pushes the current
+                    // canonical availability STATE, never a finished-product quantity. Same
+                    // resolver as ChannelSynchronizationService/SyncStockAction.
+                    SyncEntityType::Inventory => ProductAvailabilitySyncJob::dispatch(
                         $channel,
                         $product,
-                        (float) StockBalance::query()->where('product_id', $product->id)->sum('quantity'),
+                        $this->availability->resolve($product),
                     ),
                     default => null,
                 };

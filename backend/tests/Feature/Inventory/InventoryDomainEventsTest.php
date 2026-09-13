@@ -11,9 +11,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Mockery;
-use Modules\Commerce\Channels\Domain\Models\Channel;
-use Modules\Commerce\ProductMappings\Domain\Models\ProductMapping;
-use Modules\Commerce\Synchronization\Application\Jobs\InventorySyncJob;
+use Modules\Commerce\Synchronization\Application\Jobs\ProductAvailabilitySyncJob;
 use Modules\Commerce\Synchronization\Application\Listeners\InventoryChannelSynchronizationListener;
 use Modules\Commerce\Synchronization\Application\Services\ChannelSynchronizationService;
 use Modules\Inventory\DomainEvents\Contracts\DomainEvent;
@@ -21,7 +19,6 @@ use Modules\Inventory\DomainEvents\Contracts\DomainEventBus;
 use Modules\Inventory\DomainEvents\Events\InventoryCountApproved;
 use Modules\Inventory\DomainEvents\Events\InventoryStockAdjusted;
 use Modules\Inventory\DomainEvents\Events\InventoryStockReceived;
-use Modules\Inventory\Products\Domain\Enums\InventoryClass;
 use Modules\Inventory\DomainEvents\Events\InventoryStockReleased;
 use Modules\Inventory\DomainEvents\Events\InventoryStockReserved;
 use Modules\Inventory\DomainEvents\Events\InventoryStockShipped;
@@ -33,11 +30,9 @@ use Modules\Inventory\InventoryItems\Application\Actions\ReleaseStockAction;
 use Modules\Inventory\InventoryItems\Application\Actions\ReserveStockAction;
 use Modules\Inventory\InventoryItems\Application\Actions\ShipStockAction;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
+use Modules\Inventory\Products\Domain\Enums\InventoryClass;
 use Modules\Inventory\Products\Domain\Models\Product;
-use Modules\Inventory\StockLedger\Domain\Enums\MovementType;
-use Modules\Inventory\StockLedger\Domain\Models\StockMovement;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
-use Modules\Organization\Brands\Domain\Models\Brand;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Tests\TestCase;
 use Throwable;
@@ -49,9 +44,15 @@ use Throwable;
  *  1. DomainEventBus → LaravelDomainEventBus IoC binding
  *  2. Each inventory action dispatches the correct domain event after commit
  *  3. No event is published when a transaction rolls back
- *  4. InventoryChannelSynchronizationListener logs only — no InventorySyncJob
- *  5. StockMovementObserver is unchanged and still dispatches InventorySyncJob
- *  6. No duplicate sync from the new domain event paths
+ *  4. InventoryChannelSynchronizationListener logs only — no dispatch of its own
+ *  5. No duplicate sync from the new domain event paths
+ *
+ * TASK-...-CONSOLIDATED-REMEDIATION-001-R1/R2 — item 5 ("StockMovementObserver unchanged")
+ * is retired: that observer's sole purpose was an independent Woo stock-QUANTITY dispatch
+ * (superseded — Woo now receives only an availability state, from ONE authority,
+ * ChannelSynchronizationService), and it has been deleted. `InventorySyncJob` (the job it and
+ * this listener's pipeline used to dispatch) is likewise deleted, replaced by
+ * ProductAvailabilitySyncJob.
  */
 class InventoryDomainEventsTest extends TestCase
 {
@@ -287,7 +288,7 @@ class InventoryDomainEventsTest extends TestCase
 
         app(InventoryChannelSynchronizationListener::class)->handle($event);
 
-        Queue::assertNotPushed(InventorySyncJob::class);
+        Queue::assertNotPushed(ProductAvailabilitySyncJob::class);
     }
 
     public function test_listener_logs_warning_for_event_missing_base_required_fields(): void
@@ -373,59 +374,6 @@ class InventoryDomainEventsTest extends TestCase
         // All 6 events have the base required fields (event_id, event_name, occurred_at),
         // so the listener delegates all of them to the service without error.
         $this->assertCount(6, $events);
-    }
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // Part 5 — StockMovementObserver unchanged
-    // ─────────────────────────────────────────────────────────────────────────
-
-    public function test_stock_movement_observer_still_dispatches_sync_job_for_mapped_product(): void
-    {
-        Queue::fake();
-
-        // Wire up a product with an active channel mapping that has sync_stock enabled.
-        $brand = Brand::factory()->create(['company_id' => $this->company->id]);
-        $channel = Channel::factory()->create([
-            'brand_id' => $brand->id,
-            'is_active' => true,
-            'sync_stock' => true,
-        ]);
-
-        ProductMapping::factory()->create([
-            'product_id' => $this->product->id,
-            'channel_id' => $channel->id,
-        ]);
-
-        // Creating a StockMovement directly triggers the observer's `created` hook.
-        StockMovement::create([
-            'warehouse_id' => $this->warehouse->id,
-            'product_id' => $this->product->id,
-            'movement_type' => MovementType::PurchaseReceipt->value,
-            'quantity' => 10.0,
-            'balance_before' => 0.0,
-            'balance_after' => 10.0,
-            'movement_date' => now()->toDateString(),
-        ]);
-
-        Queue::assertPushed(InventorySyncJob::class);
-    }
-
-    public function test_stock_movement_observer_skips_sync_for_unmapped_product(): void
-    {
-        Queue::fake();
-
-        // No ProductMapping for this product → observer returns early.
-        StockMovement::create([
-            'warehouse_id' => $this->warehouse->id,
-            'product_id' => $this->product->id,
-            'movement_type' => MovementType::PurchaseReceipt->value,
-            'quantity' => 5.0,
-            'balance_before' => 0.0,
-            'balance_after' => 5.0,
-            'movement_date' => now()->toDateString(),
-        ]);
-
-        Queue::assertNothingPushed();
     }
 
     // ─────────────────────────────────────────────────────────────────────────

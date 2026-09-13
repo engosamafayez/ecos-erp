@@ -6,35 +6,41 @@ namespace Modules\Commerce\Synchronization\Application\Services;
 
 use Illuminate\Support\Facades\Log;
 use Modules\Commerce\ProductMappings\Domain\Models\ProductMapping;
-use Modules\Commerce\Synchronization\Application\Jobs\InventorySyncJob;
+use Modules\Commerce\Synchronization\Application\Jobs\ProductAvailabilitySyncJob;
 use Modules\Inventory\DomainEvents\Contracts\DomainEvent;
-use Modules\Inventory\InventoryItems\Domain\Models\InventoryItem;
+use Modules\Inventory\Products\Domain\Enums\ProductStockStatus;
 use Modules\Inventory\Products\Domain\Models\Product;
 
 /**
  * Phase B — Channel Synchronization Service.
  *
- * Orchestrates the domain-event → WooCommerce synchronization pipeline.
+ * Orchestrates the domain-event → WooCommerce availability-synchronization pipeline.
  *
- * Responsibilities (ADR-006 §Listener Strategy):
- *   1. Determine whether the event carries a product_id (session-level events do not).
- *   2. Resolve which channels are active and have sync_stock enabled.
- *   3. Verify a product mapping exists for each eligible channel.
- *   4. Compute the aggregate available stock across all warehouses.
- *   5. Dispatch one InventorySyncJob per channel, carrying the correlation ID and event metadata.
+ * TASK-...-CONSOLIDATED-REMEDIATION-001-R1 (CTO business-rule correction) — this used to
+ * aggregate and push a finished-product QUANTITY (Σon_hand_qty). That contract is superseded:
+ * WooCommerce must never receive or own a finished-product quantity. This service now:
+ *   1. Determines whether the event carries a product_id (session-level events do not).
+ *   2. Resolves the ONE canonical availability state for the product
+ *      (WooCommerceProductAvailabilityResolver — itself backed by InventorySummaryService +
+ *      ProductAvailability, never a Commerce-local formula).
+ *   3. Skips entirely when that state has not actually changed since the last push
+ *      (products.stock_status is both "what Woo was last told" and the change-detector — no
+ *      new storage) — do not push on every raw-material movement if availability didn't move.
+ *   4. Resolves which channels are LIVE, active, and have sync_stock enabled, with a mapping.
+ *   5. Dispatches one ProductAvailabilitySyncJob per eligible channel — an absolute
+ *      instock/outofstock state, never a quantity.
  *
- * This service MUST NOT contain inventory business logic.
+ * This service MUST NOT contain inventory or recipe business logic — it consumes the
+ * canonical availability answer, never recomputes one.
  * This service MUST NOT create StockMovement records or modify stock balances.
  * This service MUST NOT know the internals of any channel adapter.
- *
- * Duplicate sync prevention:
- *   The legacy StockMovementObserver may also fire for paths that still create
- *   StockMovement records. Because InventorySyncJob pushes an absolute quantity to
- *   WooCommerce (idempotent PUT), dispatching the same quantity twice has no
- *   observable side-effect. No additional deduplication is required in Phase B.
  */
 class ChannelSynchronizationService
 {
+    public function __construct(
+        private readonly WooCommerceProductAvailabilityResolver $availability,
+    ) {}
+
     /**
      * Entry point called by InventoryChannelSynchronizationListener for every
      * received domain event. Silently no-ops for events without a product_id
@@ -72,13 +78,27 @@ class ChannelSynchronizationService
             return;
         }
 
-        // Aggregate on-hand qty across ALL warehouses so WooCommerce sees the correct
-        // total (same approach as the legacy StockMovementObserver).
-        $totalOnHand = (float) InventoryItem::query()
-            ->where('product_id', $productId)
-            ->sum('on_hand_qty');
+        $newStatus = $this->availability->resolve($product);
 
-        $dispatchCount = $this->dispatchToChannels($event, $product, $totalOnHand, $warehouseId);
+        if ($product->stock_status === $newStatus) {
+            Log::channel('daily')->info('[ChannelSync] Availability unchanged — nothing to push', [
+                'correlation_id' => $event->correlationId(),
+                'event_name' => $event->eventName(),
+                'product_id' => $productId,
+                'stock_status' => $newStatus->value,
+            ]);
+
+            return;
+        }
+
+        // products.stock_status is now ECOS-owned/outbound-only (see
+        // WooCommerceProductImporter's corrected inbound handling) — updating it here is the
+        // ECOS-side record of "what we last computed", which doubles as the change-detector
+        // above. Never triggers ProductObserver's own sync (stock_status is not one of its
+        // watched fields), so no duplicate dispatch loop.
+        $product->update(['stock_status' => $newStatus->value]);
+
+        $dispatchCount = $this->dispatchToChannels($event, $product, $newStatus, $warehouseId);
 
         Log::channel('daily')->info('[ChannelSync] Event processed', [
             'correlation_id' => $event->correlationId(),
@@ -86,7 +106,7 @@ class ChannelSynchronizationService
             'event_version' => $event->eventVersion(),
             'product_id' => $productId,
             'warehouse_id' => $warehouseId,
-            'total_on_hand' => $totalOnHand,
+            'stock_status' => $newStatus->value,
             'jobs_dispatched' => $dispatchCount,
         ]);
     }
@@ -94,15 +114,15 @@ class ChannelSynchronizationService
     // ── Private orchestration ─────────────────────────────────────────────────
 
     /**
-     * Find every active channel with sync_stock enabled that has a mapping for
-     * this product, then dispatch one InventorySyncJob per match.
+     * Find every LIVE, active channel with sync_stock enabled that has a mapping for this
+     * product, then dispatch one ProductAvailabilitySyncJob per match.
      *
      * @return int number of jobs dispatched
      */
     private function dispatchToChannels(
         DomainEvent $event,
         Product $product,
-        float $totalOnHand,
+        ProductStockStatus $status,
         ?string $warehouseId,
     ): int {
         $mappings = ProductMapping::query()
@@ -124,10 +144,10 @@ class ChannelSynchronizationService
                 continue;
             }
 
-            InventorySyncJob::dispatch(
+            ProductAvailabilitySyncJob::dispatch(
                 $channel,
                 $product,
-                $totalOnHand,
+                $status,
                 $event->correlationId(),
                 $event->eventName(),
                 $event->eventVersion(),
@@ -141,12 +161,17 @@ class ChannelSynchronizationService
     }
 
     /**
-     * Verify that a channel is eligible for stock synchronization.
+     * Verify that a channel is eligible for availability synchronization.
      *
-     * Rules (matching the legacy StockMovementObserver):
+     * Rules:
      *   - Channel must exist (not null / soft-deleted)
      *   - is_active must be true
      *   - sync_stock must be true
+     *   - the channel must be LIVE (TASK-...-CONSOLIDATED-REMEDIATION-001 §11/§7 — every other
+     *     Woo dispatch/ingress point in this codebase already gates on Channel::isLive()
+     *     (TASK-...-WOO-04, 042A-R1 §5); this was the one path that did not, so a
+     *     Draft/Configured/Ready/Paused/Disabled channel with is_active+sync_stock both
+     *     true could still receive availability pushes to Woo.
      */
     private function shouldSync(mixed $channel): bool
     {
@@ -155,6 +180,7 @@ class ChannelSynchronizationService
         }
 
         return $channel->is_active === true
-            && $channel->sync_stock === true;
+            && $channel->sync_stock === true
+            && $channel->isLive();
     }
 }

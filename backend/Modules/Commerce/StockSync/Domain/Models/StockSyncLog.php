@@ -17,7 +17,10 @@ use Modules\Inventory\Products\Domain\Models\Product;
  * @property string $channel_id
  * @property string $product_id
  * @property string $product_mapping_id
- * @property float $stock_quantity
+ * @property float|null $stock_quantity Historical rows only (pre-CTO-correction) — never
+ *                                      written going forward, see `stock_status`.
+ * @property string|null $stock_status TASK-...-CONSOLIDATED-REMEDIATION-001-R1/R2 — the ONE
+ *                                     value pushed to Woo going forward: 'instock'|'outofstock'.
  * @property StockSyncStatus $sync_status
  * @property string|null $response_message
  * @property \Illuminate\Support\Carbon|null $synced_at
@@ -38,6 +41,7 @@ class StockSyncLog extends Model
         'product_id',
         'product_mapping_id',
         'stock_quantity',
+        'stock_status',
         'sync_status',
         'response_message',
         'synced_at',

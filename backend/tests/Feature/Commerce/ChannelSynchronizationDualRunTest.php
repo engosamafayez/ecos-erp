@@ -5,37 +5,38 @@ declare(strict_types=1);
 namespace Tests\Feature\Commerce;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Mockery;
+use Modules\Commerce\Channels\Domain\Enums\ChannelLifecycleState;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\ProductMappings\Domain\Models\ProductMapping;
-use Modules\Commerce\Synchronization\Application\Jobs\InventorySyncJob;
+use Modules\Commerce\Synchronization\Application\Jobs\ProductAvailabilitySyncJob;
 use Modules\Commerce\Synchronization\Application\Listeners\InventoryChannelSynchronizationListener;
 use Modules\Commerce\Synchronization\Application\Services\ChannelSynchronizationService;
 use Modules\Inventory\DomainEvents\Events\InventoryCountApproved;
 use Modules\Inventory\DomainEvents\Events\InventoryStockAdjusted;
 use Modules\Inventory\DomainEvents\Events\InventoryStockReceived;
-use Modules\Inventory\Products\Domain\Enums\InventoryClass;
 use Modules\Inventory\DomainEvents\Events\InventoryStockReleased;
 use Modules\Inventory\DomainEvents\Events\InventoryStockReserved;
 use Modules\Inventory\DomainEvents\Events\InventoryStockShipped;
 use Modules\Inventory\InventoryItems\Application\Actions\ReceiveStockAction;
 use Modules\Inventory\InventoryItems\Application\DTO\StockOperationDTO;
+use Modules\Inventory\Products\Domain\Enums\InventoryClass;
 use Modules\Inventory\Products\Domain\Models\Product;
-use Modules\Inventory\StockLedger\Domain\Enums\MovementType;
-use Modules\Inventory\StockLedger\Domain\Models\StockMovement;
 use Modules\MasterData\Warehouses\Domain\Models\Warehouse;
 use Modules\Organization\Brands\Domain\Models\Brand;
 use Modules\Organization\Companies\Domain\Models\Company;
+use Modules\Purchasing\GoodsReceipts\Domain\Models\StockBalance;
 use Tests\TestCase;
 
 /**
- * TASK-IMPLEMENT-002 Phase B — Channel Synchronization Dual Run
+ * TASK-IMPLEMENT-002 Phase B — Channel Synchronization
  *
  * Verifies:
  *  1. Listener delegates to ChannelSynchronizationService (no logic in listener)
- *  2. Service dispatches InventorySyncJob for active channels with stock-sync mapping
+ *  2. Service dispatches ProductAvailabilitySyncJob for eligible channels with a mapping
  *  3. Service does NOT dispatch for unmapped products
  *  4. Service does NOT dispatch for inactive channels
  *  5. Service does NOT dispatch when sync_stock = false
@@ -43,8 +44,22 @@ use Tests\TestCase;
  *  7. Correlation ID and event metadata appear in the structured log
  *  8. All 6 domain events expose eventVersion() = 1
  *  9. InventoryCountApproved (session-level, no product_id) is handled gracefully
- * 10. StockMovementObserver is unchanged and still dispatches InventorySyncJob (legacy path)
- * 11. Dual-run: domain-event pipeline and legacy observer are both active simultaneously
+ *
+ * TASK-...-CONSOLIDATED-REMEDIATION-001-R1/R2 (CTO business-rule correction) — items 10/11
+ * ("StockMovementObserver unchanged"/"dual-run") are RETIRED: WooCommerce must never receive a
+ * finished-product quantity, so the old StockBalance-based legacy pipeline that observer fed
+ * has no place in the corrected contract and has been deleted, along with the InventoryItem
+ * on_hand_qty SUM the service itself used to push. ChannelSynchronizationService is now the
+ * ONE Woo dispatch authority, pushing an absolute AVAILABILITY STATE
+ * (WooCommerceProductAvailabilityResolver — itself backed by the already-canonical
+ * InventorySummaryService + ProductAvailability, never a Commerce-local formula) — this file
+ * now additionally verifies:
+ * 10. shouldSync() requires Channel::isLive() — a Draft/Configured/Ready/Paused/Disabled
+ *     channel never receives an availability push, even with is_active/sync_stock both true.
+ * 11. The service only dispatches when availability actually CHANGED (products.stock_status
+ *     doubles as the change-detector) — it must not push on every raw-material movement.
+ * 12. A legacy StockBalance mutation alone produces zero Woo dispatch — it is no longer an
+ *     independent authority of any kind.
  */
 class ChannelSynchronizationDualRunTest extends TestCase
 {
@@ -65,7 +80,7 @@ class ChannelSynchronizationDualRunTest extends TestCase
         $this->company = Company::factory()->create();
         $this->brand = Brand::factory()->create(['company_id' => $this->company->id]);
         $this->warehouse = Warehouse::factory()->create(['company_id' => $this->company->id]);
-        $this->product = Product::factory()->create();
+        $this->product = Product::factory()->create(['company_id' => $this->company->id]);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -82,13 +97,17 @@ class ChannelSynchronizationDualRunTest extends TestCase
         ]);
     }
 
-    private function activeChannel(): Channel
+    private function activeChannel(array $overrides = []): Channel
     {
-        return Channel::factory()->create([
+        return Channel::factory()->create(array_merge([
             'brand_id' => $this->brand->id,
             'is_active' => true,
             'sync_stock' => true,
-        ]);
+            // TASK-...-CONSOLIDATED-REMEDIATION-001 §9/§11 — shouldSync() now also requires
+            // isLive(); the factory defaults lifecycle_state to 'draft', so every test in
+            // this file that expects a real dispatch needs an explicitly LIVE channel.
+            'lifecycle_state' => ChannelLifecycleState::Live->value,
+        ], $overrides));
     }
 
     private function mapProduct(Channel $channel): ProductMapping
@@ -145,7 +164,7 @@ class ChannelSynchronizationDualRunTest extends TestCase
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Part 2 — Service dispatches InventorySyncJob for eligible channels
+    // Part 2 — Service dispatches ProductAvailabilitySyncJob for eligible channels
     // ─────────────────────────────────────────────────────────────────────────
 
     public function test_service_dispatches_sync_job_for_active_channel_with_mapping(): void
@@ -155,9 +174,11 @@ class ChannelSynchronizationDualRunTest extends TestCase
         $channel = $this->activeChannel();
         $this->mapProduct($channel);
 
+        // Fresh product: stock_status starts null, so on_hand 0 -> 10 flips it to InStock —
+        // a genuine change, so the service must dispatch exactly once.
         app(ChannelSynchronizationService::class)->handleEvent($this->receivedEvent());
 
-        Queue::assertPushed(InventorySyncJob::class, 1);
+        Queue::assertPushed(ProductAvailabilitySyncJob::class, 1);
     }
 
     public function test_service_does_not_dispatch_when_no_product_mapping_exists(): void
@@ -169,6 +190,7 @@ class ChannelSynchronizationDualRunTest extends TestCase
             'brand_id' => $this->brand->id,
             'is_active' => true,
             'sync_stock' => true,
+            'lifecycle_state' => ChannelLifecycleState::Live->value,
         ]);
 
         app(ChannelSynchronizationService::class)->handleEvent($this->receivedEvent());
@@ -184,6 +206,7 @@ class ChannelSynchronizationDualRunTest extends TestCase
             'brand_id' => $this->brand->id,
             'is_active' => false,
             'sync_stock' => true,
+            'lifecycle_state' => ChannelLifecycleState::Live->value,
         ]);
         $this->mapProduct($channel);
 
@@ -200,6 +223,7 @@ class ChannelSynchronizationDualRunTest extends TestCase
             'brand_id' => $this->brand->id,
             'is_active' => true,
             'sync_stock' => false,
+            'lifecycle_state' => ChannelLifecycleState::Live->value,
         ]);
         $this->mapProduct($channel);
 
@@ -219,7 +243,7 @@ class ChannelSynchronizationDualRunTest extends TestCase
 
         app(ChannelSynchronizationService::class)->handleEvent($this->receivedEvent());
 
-        Queue::assertPushed(InventorySyncJob::class, 2);
+        Queue::assertPushed(ProductAvailabilitySyncJob::class, 2);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -351,79 +375,97 @@ class ChannelSynchronizationDualRunTest extends TestCase
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Part 6 — Legacy StockMovementObserver unchanged (dual-run guarantee)
+    // Part 6 — shouldSync() requires Channel::isLive()
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function test_legacy_observer_still_dispatches_sync_job_for_mapped_product(): void
+    public function test_should_sync_sends_nothing_for_a_non_live_channel(): void
     {
         Queue::fake();
 
-        $channel = $this->activeChannel();
+        $channel = $this->activeChannel(['lifecycle_state' => ChannelLifecycleState::Draft->value]);
         $this->mapProduct($channel);
 
-        // Direct StockMovement creation triggers the observer's `created` hook.
-        // This path is completely independent of the domain event system.
-        StockMovement::create([
-            'warehouse_id' => $this->warehouse->id,
-            'product_id' => $this->product->id,
-            'movement_type' => MovementType::PurchaseReceipt->value,
-            'quantity' => 20.0,
-            'balance_before' => 0.0,
-            'balance_after' => 20.0,
-            'movement_date' => now()->toDateString(),
-        ]);
+        app(ChannelSynchronizationService::class)->handleEvent($this->receivedEvent());
 
-        Queue::assertPushed(InventorySyncJob::class, 1);
+        Queue::assertNothingPushed();
     }
 
-    public function test_legacy_observer_skips_job_for_unmapped_product(): void
+    public function test_should_sync_sends_nothing_for_a_paused_channel(): void
     {
         Queue::fake();
 
-        StockMovement::create([
-            'warehouse_id' => $this->warehouse->id,
-            'product_id' => $this->product->id,
-            'movement_type' => MovementType::PurchaseReceipt->value,
-            'quantity' => 5.0,
-            'balance_before' => 0.0,
-            'balance_after' => 5.0,
-            'movement_date' => now()->toDateString(),
-        ]);
+        $channel = $this->activeChannel(['lifecycle_state' => ChannelLifecycleState::Paused->value]);
+        $this->mapProduct($channel);
+
+        app(ChannelSynchronizationService::class)->handleEvent($this->receivedEvent());
+
+        Queue::assertNothingPushed();
+    }
+
+    public function test_should_sync_sends_nothing_for_a_disabled_channel(): void
+    {
+        Queue::fake();
+
+        $channel = $this->activeChannel(['lifecycle_state' => ChannelLifecycleState::Disabled->value]);
+        $this->mapProduct($channel);
+
+        app(ChannelSynchronizationService::class)->handleEvent($this->receivedEvent());
 
         Queue::assertNothingPushed();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
-    // Part 7 — Dual run: both pipelines active simultaneously
+    // Part 7 — availability STATE, not quantity; only pushed on an actual change
     // ─────────────────────────────────────────────────────────────────────────
 
-    public function test_dual_run_both_domain_event_and_observer_pipelines_are_active(): void
+    public function test_service_pushes_instock_when_stock_becomes_available(): void
     {
-        Queue::fake();
+        Http::fake(['*/wp-json/wc/v3/products/*' => Http::response(['id' => 999], 200)]);
 
         $channel = $this->activeChannel();
         $this->mapProduct($channel);
 
-        // Path A — Domain event pipeline.
-        // ReceiveStockAction creates/updates an InventoryItem and publishes InventoryStockReceived.
-        // The listener forwards it to ChannelSynchronizationService → dispatches InventorySyncJob.
         app(ReceiveStockAction::class)->execute($this->dto(10.0));
 
-        // Path B — Legacy observer pipeline.
-        // Direct StockMovement creation triggers StockMovementObserver → dispatches InventorySyncJob.
-        StockMovement::create([
+        Http::assertSent(function ($request): bool {
+            return ($request['stock_status'] ?? null) === 'instock'
+                && $request['manage_stock'] === false
+                && ! isset($request['stock_quantity']);
+        });
+        $this->assertSame('instock', $this->product->fresh()->stock_status->value);
+    }
+
+    public function test_service_does_not_dispatch_again_when_availability_is_unchanged(): void
+    {
+        Http::fake(['*/wp-json/wc/v3/products/*' => Http::response(['id' => 999], 200)]);
+
+        $channel = $this->activeChannel();
+        $this->mapProduct($channel);
+
+        app(ReceiveStockAction::class)->execute($this->dto(10.0));
+        Http::assertSentCount(1);
+
+        // A second receipt that keeps the product InStock (still > 0) must NOT push again —
+        // availability did not change, only the underlying quantity (which Woo never sees).
+        app(ReceiveStockAction::class)->execute($this->dto(5.0));
+        Http::assertSentCount(1);
+    }
+
+    public function test_legacy_stockbalance_mutation_alone_produces_no_woo_dispatch(): void
+    {
+        Http::fake(['*/wp-json/wc/v3/products/*' => Http::response(['id' => 999], 200)]);
+
+        $channel = $this->activeChannel();
+        $this->mapProduct($channel);
+
+        // StockBalance is preserved for whatever else may still read it, but must no longer
+        // act as an independent Woo authority of any kind — nothing observes it.
+        StockBalance::query()->create([
             'warehouse_id' => $this->warehouse->id,
             'product_id' => $this->product->id,
-            'movement_type' => MovementType::PurchaseReceipt->value,
-            'quantity' => 10.0,
-            'balance_before' => 0.0,
-            'balance_after' => 10.0,
-            'movement_date' => now()->toDateString(),
+            'quantity' => 999.0,
         ]);
 
-        // Both pipelines must have dispatched a job independently — 2 total.
-        // InventorySyncJob is idempotent (absolute PUT to WooCommerce), so duplicate
-        // dispatch is safe and expected during the Phase B dual-run period.
-        Queue::assertPushed(InventorySyncJob::class, 2);
+        Http::assertNothingSent();
     }
 }

@@ -11,12 +11,10 @@ use Modules\Commerce\Synchronization\Application\Commands\RegisterWebhooksComman
 use Modules\Commerce\Synchronization\Application\Observers\CustomerObserver;
 use Modules\Commerce\Synchronization\Application\Observers\OrderObserver;
 use Modules\Commerce\Synchronization\Application\Observers\ProductObserver;
-use Modules\Commerce\Synchronization\Application\Observers\StockMovementObserver;
 use Modules\Commerce\Synchronization\Domain\Contracts\SyncLogRepositoryInterface;
 use Modules\Commerce\Synchronization\Infrastructure\Repositories\EloquentSyncLogRepository;
 use Modules\Crm\Customers\Domain\Models\Customer as CrmCustomer;
 use Modules\Inventory\Products\Domain\Models\Product;
-use Modules\Inventory\StockLedger\Domain\Models\StockMovement;
 use Modules\Sales\Customers\Domain\Models\Customer;
 
 final class SynchronizationServiceProvider extends ServiceProvider
@@ -36,7 +34,11 @@ final class SynchronizationServiceProvider extends ServiceProvider
         ]);
 
         Product::observe(ProductObserver::class);
-        StockMovement::observe(StockMovementObserver::class);
+        // TASK-...-CONSOLIDATED-REMEDIATION-001 §3/§5 — StockMovementObserver deleted: its
+        // sole purpose was an independent Woo stock-dispatch trigger reading the legacy,
+        // unreconciled StockBalance table. ChannelSynchronizationService (fed by
+        // ReceiveStockAction/ShipStockAction/DirectIssueStockAction's domain events via the
+        // canonical InventoryItem ledger) is now the one authority for that dispatch.
         Customer::observe(CustomerObserver::class);
         // TASK-...-044 §7 — ADDITIVE: the legacy Sales binding above is unchanged;
         // this registers the SAME observer against the canonical Crm class too, so

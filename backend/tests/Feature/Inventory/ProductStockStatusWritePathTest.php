@@ -13,10 +13,17 @@ use Tests\TestCase;
 /**
  * TASK-PHASE3-GD2-STEP2-CLOSE-001 — Step 8 write-path regression.
  *
- * Step 8 closed the human write path on `products.stock_status`: it is a
- * WooCommerce channel attribute owned by the inbound importer (E-3 proved it is
- * never published outbound), so a human edit would make the column neither an
- * ERP fact nor a faithful channel mirror.
+ * Step 8 closed the human write path on `products.stock_status`: a human edit would let an
+ * operator override a fact the system computes, not record.
+ *
+ * TASK-...-CONSOLIDATED-REMEDIATION-001-R1/R2 (CTO business-rule correction) superseded the
+ * ownership rationale, not the human-write-path closure this file actually tests:
+ * `stock_status` is no longer a WooCommerce-owned, inbound-importer-owned channel attribute —
+ * it is ECOS-owned and outbound-only (WooCommerceProductAvailabilityResolver), and the inbound
+ * importer no longer applies it unconditionally (see WooCommerceProductImporter::
+ * reconcileExisting(), which now detects and logs stock_status drift instead of writing it).
+ * The importer still EXTRACTS the inbound value for that comparison, which is why
+ * test_inbound_importer_still_maps_stock_status below still passes unchanged.
  *
  * The previous task removed the validation rules but recorded that no executed
  * assertion proved it. These cases close that gap by asserting the rule sets

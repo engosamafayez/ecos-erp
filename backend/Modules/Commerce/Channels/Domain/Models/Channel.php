@@ -16,6 +16,7 @@ use Modules\Commerce\Channels\Domain\Enums\ChannelHealthStatus;
 use Modules\Commerce\Channels\Domain\Enums\ChannelLifecycleState;
 use Modules\Commerce\Channels\Domain\Enums\ChannelPlatform;
 use Modules\Commerce\Channels\Domain\Enums\ConnectionStatus;
+use Modules\Commerce\Channels\Domain\Enums\ConnectorHealth;
 use Modules\Commerce\Channels\Infrastructure\Database\Factories\ChannelFactory;
 use Modules\Organization\Brands\Domain\Models\Brand;
 use Modules\Organization\BusinessAccounts\Domain\Models\BusinessAccount;
@@ -60,11 +61,18 @@ use Modules\Organization\BusinessAccounts\Domain\Models\BusinessAccount;
  * @property string|null $customer_sync_policy
  * @property \Illuminate\Support\Carbon|null $shipping_mapping_reviewed_at
  * @property int $product_mapping_coverage_threshold
+ * @property string|null $pairing_code_hash
+ * @property \Illuminate\Support\Carbon|null $pairing_code_expires_at
+ * @property \Illuminate\Support\Carbon|null $connector_last_heartbeat_at
+ * @property \Illuminate\Support\Carbon|null $connector_disconnected_at
  */
 class Channel extends Model
 {
     /** @use HasFactory<ChannelFactory> */
     use HasFactory, HasUuids, SoftDeletes;
+
+    /** Minutes without a Connector heartbeat before health degrades from Healthy. */
+    private const HEARTBEAT_STALE_AFTER_MINUTES = 15;
 
     public $incrementing = false;
 
@@ -181,6 +189,10 @@ class Channel extends Model
         'customer_sync_policy',
         'shipping_mapping_reviewed_at',
         'product_mapping_coverage_threshold',
+        'pairing_code_hash',
+        'pairing_code_expires_at',
+        'connector_last_heartbeat_at',
+        'connector_disconnected_at',
     ];
 
     /**
@@ -207,7 +219,32 @@ class Channel extends Model
             'lifecycle_state' => ChannelLifecycleState::class,
             'shipping_mapping_reviewed_at' => 'datetime',
             'product_mapping_coverage_threshold' => 'integer',
+            'pairing_code_expires_at' => 'datetime',
+            'connector_last_heartbeat_at' => 'datetime',
+            'connector_disconnected_at' => 'datetime',
         ];
+    }
+
+    /**
+     * TASK-...-CONSOLIDATED-REMEDIATION-001-R2 §23 — derived, not a duplicated status enum.
+     * A Connector heartbeat that stops arriving (site went dark without notifying) is read as
+     * staleness, not "healthy forever"; an explicit deactivation notice is distinct from mere
+     * staleness so an operator can tell "the plugin told us it stopped" from "we simply
+     * haven't heard from it in a while".
+     */
+    public function connectorHealth(): ConnectorHealth
+    {
+        if ($this->connector_disconnected_at !== null) {
+            return ConnectorHealth::Disconnected;
+        }
+
+        if ($this->connector_last_heartbeat_at === null) {
+            return ConnectorHealth::NeverConnected;
+        }
+
+        return $this->connector_last_heartbeat_at->gt(now()->subMinutes(self::HEARTBEAT_STALE_AFTER_MINUTES))
+            ? ConnectorHealth::Healthy
+            : ConnectorHealth::Degraded;
     }
 
     /**

@@ -181,9 +181,17 @@ final class AuditWooCustomerCompanyLinkageAction
         OrderEvent::log(
             orderId: (string) $order->id,
             type: 'woo_customer_linkage_relinked',
-            description: "Order relinked from cross-company customer [{$previousCustomerId}] ".
-                "(company [{$wrongCompanyCustomer->company_id}]) to same-company customer [{$target->id}] ".
-                '— TASK-ECOS-V1.1-WOO-02-TENANT-SAFE-CUSTOMER-IDENTITY-044 historical audit.',
+            // TASK-...-CONSOLIDATED-REMEDIATION-001 §8 — order_events.description is
+            // VARCHAR(255); the previous message interpolated 3 UUIDs plus fixed text
+            // and could exceed it, hard-failing under MySQL strict mode. NON-LOSSY fix:
+            // this is now a short, fixed-length string with no interpolation, and every
+            // identifier it used to carry (previous_customer_id, previous_customer_company_id,
+            // new_customer_id) is already fully preserved below in `payload` — an
+            // existing, unbounded JSON column this action already wrote to. Nothing is
+            // lost; only the redundant copy in the length-constrained column is removed.
+            description: 'Order relinked from cross-company customer to same-company customer '.
+                '— TASK-ECOS-V1.1-WOO-02-TENANT-SAFE-CUSTOMER-IDENTITY-044 historical audit. '.
+                'Full identifiers in payload.',
             payload: [
                 'previous_customer_id' => $previousCustomerId,
                 'previous_customer_company_id' => (string) $wrongCompanyCustomer->company_id,

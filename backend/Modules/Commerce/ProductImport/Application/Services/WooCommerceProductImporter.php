@@ -10,8 +10,10 @@ use Modules\Commerce\ProductImport\Application\DTO\ImportResultDTO;
 use Modules\Commerce\ProductMappings\Domain\Enums\SyncStatus;
 use Modules\Commerce\ProductMappings\Domain\Models\ProductMapping;
 use Modules\Commerce\Synchronization\Application\Jobs\PriceSyncJob;
+use Modules\Commerce\Synchronization\Application\Jobs\ProductAvailabilitySyncJob;
 use Modules\Commerce\Synchronization\Application\Jobs\ProductSyncJob;
 use Modules\Commerce\Synchronization\Application\Services\SyncLogService;
+use Modules\Commerce\Synchronization\Application\Services\WooCommerceProductAvailabilityResolver;
 use Modules\Commerce\Synchronization\Application\Services\WooTenantCustomerResolver;
 use Modules\Commerce\Synchronization\Domain\Enums\SyncDirection;
 use Modules\Commerce\Synchronization\Domain\Enums\SyncEntityType;
@@ -43,6 +45,10 @@ final class WooCommerceProductImporter
         // there is one company-resolution engine, not a second one for products.
         private readonly WooTenantCustomerResolver $tenantResolver,
         private readonly SyncLogService $logService,
+        // TASK-...-CONSOLIDATED-REMEDIATION-001-R1/R2 (CTO business-rule correction) — the
+        // ONE ECOS-owned availability authority; stock_status is no longer inbound-owned
+        // (see resolveProduct()/reconcileExisting() below).
+        private readonly WooCommerceProductAvailabilityResolver $availability,
     ) {}
 
     public function import(Channel $channel): ImportResultDTO
@@ -270,13 +276,12 @@ final class WooCommerceProductImporter
                 );
             }
 
+            // TASK-...-CONSOLIDATED-REMEDIATION-001-R1/R2 (CTO business-rule correction) —
+            // stock_status is now ECOS-owned/outbound-only, superseding the previous
+            // inbound-owned rule. reconcileExisting() now detects stock_status drift (see
+            // below) and, when found, corrects it by re-pushing ECOS's own computed value —
+            // it is never applied from the inbound payload.
             $this->reconcileExisting($channel, $existing, $wooProduct);
-
-            // See resolveProduct()'s docblock: stock_status is inbound-owned, not ECOS-owned —
-            // written unconditionally, unlike every field reconcileExisting() protects. Matches
-            // this file's pre-existing convention of not suppressing events on its own writes
-            // (unlike WooCommerceProductSyncer) — unchanged by this task.
-            $existing->update(['stock_status' => $this->extractEnrichment($wooProduct)['stock_status']]);
 
             return [$existing, false];
         }
@@ -288,6 +293,10 @@ final class WooCommerceProductImporter
             $defaultCategoryId,
         );
         $isActive = (($wooProduct['status'] ?? '') === 'publish');
+
+        // stock_status is computed by ECOS immediately after creation (below), never seeded
+        // from the inbound payload — it is ECOS-owned/outbound-only.
+        unset($enrichment['stock_status']);
 
         $product = Product::query()->create(array_merge([
             'sku' => $sku,
@@ -304,6 +313,12 @@ final class WooCommerceProductImporter
             // created with company_id = NULL. Resolved once per run (see import()).
             'company_id' => $companyId,
         ], $enrichment));
+
+        // The initial ECOS-computed availability for a brand-new product — never taken from
+        // Woo. A freshly-created product with no InventoryItem row yet resolves to OutOfStock
+        // (ProductAvailability's null-available rule), which is the correct, honest starting
+        // state until raw material stock actually exists.
+        $product->update(['stock_status' => $this->availability->resolve($product)->value]);
 
         return [$product, true];
     }
@@ -345,8 +360,17 @@ final class WooCommerceProductImporter
             }
         }
 
-        // stock_status is NOT compared here — see resolveProduct()'s docblock; it is
-        // inbound-owned and applied unconditionally by this method's only caller.
+        // TASK-...-CONSOLIDATED-REMEDIATION-001-R1/R2 (CTO business-rule correction) —
+        // stock_status is now ECOS-owned/outbound-only, protected exactly like the fields
+        // above: compared against ECOS's own canonical value (never Woo's inbound one, and
+        // never $existing->stock_status, which may itself be stale — see below), detected as
+        // drift, logged, and corrected by re-pushing the canonical value. Never applied here.
+        $wooStockStatus = trim((string) ($wooProduct['stock_status'] ?? ''));
+        $ecosStockStatus = $this->availability->resolve($existing);
+
+        if ($wooStockStatus !== '' && $wooStockStatus !== $ecosStockStatus->value) {
+            $drift['stock_status'] = ['old' => $ecosStockStatus->value, 'new' => $wooStockStatus];
+        }
 
         if ($drift === []) {
             return;
@@ -368,8 +392,20 @@ final class WooCommerceProductImporter
             'corrective_action' => 'canonical_value_repushed',
         ], $channel);
 
-        ProductSyncJob::dispatch($channel, $existing);
-        PriceSyncJob::dispatch($channel, $existing);
+        if (array_key_exists('stock_status', $drift)) {
+            if ($existing->stock_status !== $ecosStockStatus) {
+                $existing->update(['stock_status' => $ecosStockStatus->value]);
+            }
+
+            ProductAvailabilitySyncJob::dispatch($channel, $existing, $ecosStockStatus);
+        }
+
+        if (array_key_exists('name', $drift) || array_key_exists('long_description', $drift)
+            || array_key_exists('short_description', $drift) || array_key_exists('regular_price', $drift)
+            || array_key_exists('sale_price', $drift)) {
+            ProductSyncJob::dispatch($channel, $existing);
+            PriceSyncJob::dispatch($channel, $existing);
+        }
     }
 
     /**

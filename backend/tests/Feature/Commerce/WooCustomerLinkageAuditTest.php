@@ -199,4 +199,36 @@ final class WooCustomerLinkageAuditTest extends TestCase
             OrderEvent::query()->where('order_id', $order->id)->where('event_type', 'woo_customer_linkage_relinked')->count(),
         );
     }
+
+    /**
+     * TASK-...-CONSOLIDATED-REMEDIATION-001 §8 — order_events.description is VARCHAR(255).
+     * The previous message interpolated 3 UUIDs plus fixed text and could exceed it,
+     * hard-failing under MySQL strict mode. Non-lossy fix: description is now short and
+     * fixed-length; every identifier it used to carry is preserved in `payload` instead.
+     */
+    public function test_relink_description_stays_within_column_limit_with_full_detail_in_payload(): void
+    {
+        $companyA = Company::factory()->create();
+        $companyB = Company::factory()->create();
+
+        $wrongCustomer = $this->makeCustomer($companyB->id, ['phone' => '201099990009']);
+        $correctCustomer = $this->makeCustomer($companyA->id, ['phone' => '201099990009']);
+        $order = $this->makeOrder($companyA->id, $wrongCustomer->id, 'AUDIT-F6');
+
+        app(AuditWooCustomerCompanyLinkageAction::class)->run(apply: true);
+
+        $event = OrderEvent::query()
+            ->where('order_id', $order->id)
+            ->where('event_type', 'woo_customer_linkage_relinked')
+            ->firstOrFail();
+
+        $this->assertLessThanOrEqual(255, mb_strlen($event->description));
+        $this->assertStringNotContainsString($wrongCustomer->id, $event->description);
+        $this->assertStringNotContainsString($correctCustomer->id, $event->description);
+
+        $this->assertSame($wrongCustomer->id, $event->payload['previous_customer_id']);
+        $this->assertSame((string) $companyB->id, $event->payload['previous_customer_company_id']);
+        $this->assertSame($correctCustomer->id, $event->payload['new_customer_id']);
+        $this->assertSame((string) $companyA->id, $event->payload['order_company_id']);
+    }
 }

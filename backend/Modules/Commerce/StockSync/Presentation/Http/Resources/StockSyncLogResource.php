@@ -19,6 +19,7 @@ final class StockSyncLogResource extends JsonResource
             'product_id' => $this->product_id,
             'product_mapping_id' => $this->product_mapping_id,
             'stock_quantity' => $this->stock_quantity,
+            'stock_status' => $this->stock_status,
             'sync_status' => $this->sync_status->value,
             'response_message' => $this->response_message,
             'synced_at' => $this->synced_at?->toIso8601String(),
