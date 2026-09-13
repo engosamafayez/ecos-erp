@@ -44,4 +44,11 @@ return [
 
     'max_message_length' => (int) env('AI_MAX_MESSAGE_LENGTH', 2000),
 
+    // CORE-03 Task 2 §3 — bound for the 'ai-assistant' named rate limiter
+    // (registered in AppServiceProvider::boot(), applied via the existing
+    // 'throttle:*' middleware convention). Read from config on every request,
+    // not baked in at route registration — this is what makes it testable via
+    // config(['ai.rate_limit_per_minute' => N]). Not a new rate-limit framework.
+    'rate_limit_per_minute' => (int) env('AI_RATE_LIMIT_PER_MINUTE', 20),
+
 ];

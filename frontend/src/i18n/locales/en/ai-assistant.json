@@ -1,0 +1,59 @@
+{
+  "launcher": {
+    "ariaLabel": "Ask ECOS AI"
+  },
+  "drawer": {
+    "title": "ECOS AI",
+    "subtitle": "Ask about orders, customers, inventory, and more.",
+    "close": "Close",
+    "composerPlaceholder": "Ask ECOS AI…",
+    "composerLabel": "Message",
+    "send": "Send",
+    "retry": "Retry",
+    "newConversation": "New conversation"
+  },
+  "context": {
+    "label": "Context",
+    "none": "General",
+    "module": {
+      "commerce": "Orders",
+      "crm": "CRM",
+      "inventory": "Inventory",
+      "finance": "Finance",
+      "reporting": "Reporting",
+      "logistics": "Logistics",
+      "hr": "HR",
+      "procurement": "Procurement"
+    }
+  },
+  "status": {
+    "working": "ECOS AI is checking the system…",
+    "denied": "You don't have permission to use the AI assistant.",
+    "unavailable": "The assistant is temporarily unavailable. Please try again shortly.",
+    "toolLimitReached": "This request needed more lookups than allowed — here's what was found so far.",
+    "rateLimited": "Too many requests. Please try again shortly.",
+    "validationError": "That message couldn't be sent — try a shorter message.",
+    "authError": "Your session has expired. Please sign in again.",
+    "genericError": "Something went wrong. Please try again."
+  },
+  "references": {
+    "title": "Related records"
+  },
+  "empty": {
+    "title": "Ask ECOS AI",
+    "description": "Ask a question about your orders, customers, inventory, or reports."
+  },
+  "suggestedPrompts": {
+    "default1": "What can you help me with?",
+    "commerce1": "Why is this order stuck?",
+    "commerce2": "What's the payment status?",
+    "commerce3": "When is the requested delivery date?",
+    "crm1": "What are this customer's recent orders?",
+    "crm2": "What's this customer's balance?",
+    "inventory1": "Is this product available to sell?",
+    "finance1": "What reports are available here?",
+    "reporting1": "What were today's sales?",
+    "logistics1": "Which trips haven't gone out yet?",
+    "procurement1": "What purchase orders are pending?"
+  }
+}

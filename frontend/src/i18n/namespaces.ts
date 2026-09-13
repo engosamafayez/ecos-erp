@@ -29,6 +29,7 @@ export const NAMESPACES = [
   'admin',
   'iam-admin',
   'audit',
+  'ai-assistant',
   'golive',
 
   // ── Catalog ───────────────────────────────────────────────────────────────

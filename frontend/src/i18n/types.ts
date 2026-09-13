@@ -27,6 +27,7 @@
 import 'i18next';
 
 import type enAdmin from '@/i18n/locales/en/admin.json';
+import type enAiAssistant from '@/i18n/locales/en/ai-assistant.json';
 import type enAudit from '@/i18n/locales/en/audit.json';
 import type enAuth from '@/i18n/locales/en/auth.json';
 import type enBoms from '@/i18n/locales/en/boms.json';
@@ -99,6 +100,7 @@ declare module 'i18next' {
     defaultNS: 'common';
     resources: {
       admin: typeof enAdmin;
+      'ai-assistant': typeof enAiAssistant;
       audit: typeof enAudit;
       auth: typeof enAuth;
       boms: typeof enBoms;

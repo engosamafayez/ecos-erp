@@ -558,16 +558,21 @@ Route::middleware(['auth:sanctum', 'permission:system.audit.view'])->prefix('aud
 
 /*
 |--------------------------------------------------------------------------
-| Resident AI Assistant (CORE-03 Task 1)
+| Resident AI Assistant (CORE-03)
 |
 | Bounded, non-streaming request/response only (§17/§34) — no SSE, no
 | WebSocket. `ai.assistant.use` is enforced inside AIAssistantService itself
 | (so a denial returns a graceful in-band {status: "denied"} response, the
 | same pattern ReportExecutionController uses for its own dynamic per-report
-| permission), not via route middleware.
+| permission), not via route middleware. Rate limiting (Task 2 §3) reuses
+| Laravel's own named-limiter throttle middleware (the 'ai-assistant' limiter
+| registered in AppServiceProvider::boot(), the same throttle:* mechanism
+| every other route group in this file already uses via the plain 'N,1' form)
+| — named rather than inline so the threshold is read from config on every
+| request, not baked in once at route registration.
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth:sanctum')->prefix('ai')->group(function (): void {
+Route::middleware(['auth:sanctum', 'throttle:ai-assistant'])->prefix('ai')->group(function (): void {
     Route::post('assistant/message', [AssistantController::class, 'message']);
 });
 
