@@ -9,9 +9,17 @@ use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\ProductImport\Application\DTO\ImportResultDTO;
 use Modules\Commerce\ProductMappings\Domain\Enums\SyncStatus;
 use Modules\Commerce\ProductMappings\Domain\Models\ProductMapping;
+use Modules\Commerce\Synchronization\Application\Jobs\PriceSyncJob;
+use Modules\Commerce\Synchronization\Application\Jobs\ProductSyncJob;
+use Modules\Commerce\Synchronization\Application\Services\SyncLogService;
+use Modules\Commerce\Synchronization\Application\Services\WooTenantCustomerResolver;
+use Modules\Commerce\Synchronization\Domain\Enums\SyncDirection;
+use Modules\Commerce\Synchronization\Domain\Enums\SyncEntityType;
+use Modules\Commerce\Synchronization\Domain\Enums\SyncStatus as SyncLogStatus;
 use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\MasterData\Categories\Domain\Models\Category;
 use Modules\MasterData\Units\Domain\Models\Unit;
+use RuntimeException;
 use Throwable;
 
 final class WooCommerceProductImporter
@@ -28,6 +36,15 @@ final class WooCommerceProductImporter
 
     private int $categoriesUpdated = 0;
 
+    public function __construct(
+        // TASK-ECOS-V1.1-WOO-03-PRODUCT-INBOUND-OWNERSHIP-PROTECTION — the same shared
+        // channel→brand→company authority WOO-02 centralized (WooTenantCustomerResolver;
+        // not customer-specific despite the name — see its own docblock), reused here so
+        // there is one company-resolution engine, not a second one for products.
+        private readonly WooTenantCustomerResolver $tenantResolver,
+        private readonly SyncLogService $logService,
+    ) {}
+
     public function import(Channel $channel): ImportResultDTO
     {
         $this->categoriesCreated = 0;
@@ -37,6 +54,15 @@ final class WooCommerceProductImporter
 
         if ($credential === null) {
             return new ImportResultDTO(0, 0, 0, 0, 0, 0, ['No credentials configured for this channel.']);
+        }
+
+        // TASK-...-WOO-03 — resolved ONCE for the whole run (the channel is constant
+        // throughout), fail-closed, before any product is matched/created — same pattern
+        // WOO-02 established for WooCommerceOrderImporter::import().
+        try {
+            $companyId = $this->tenantResolver->resolveCompanyId($channel);
+        } catch (Throwable $e) {
+            return new ImportResultDTO(0, 0, 0, 0, 0, 0, [$e->getMessage()]);
         }
 
         $defaultCategory = Category::query()->first();
@@ -102,6 +128,7 @@ final class WooCommerceProductImporter
                             $defaultCategory->id,
                             $defaultUnit->id,
                             $channel,
+                            $companyId,
                         );
 
                         if ($wasCreated) {
@@ -193,9 +220,25 @@ final class WooCommerceProductImporter
     }
 
     /**
-     * Find or update existing product by SKU, or create a new one.
-     * Updates: name, enrichment fields, category_id.
-     * Preserves: unit_id, product_type, barcode, description (internal).
+     * Find an existing product by SKU, or create a new one.
+     *
+     * TASK-...-WOO-03: `name`, descriptions, prices, image_url and category_id are ECOS-owned
+     * once a product exists — an existing match is NEVER updated from inbound Woo data for
+     * these (previously it was, unconditionally — GAP-1). A different inbound value for one of
+     * them is drift: detected, logged, and corrected by re-pushing the ECOS canonical value
+     * back out, never applied. All of the above ARE still used to populate a brand-new
+     * product, since ECOS has made no decision yet for a SKU it has never seen.
+     *
+     * `stock_status` is the one deliberate exception, NOT covered by the above: per
+     * ProductStockStatusWritePathTest (TASK-PHASE3-GD2-STEP2-CLOSE-001), it is a WooCommerce
+     * channel attribute owned by the inbound importer specifically — never human-editable
+     * (excluded from every product write-path request's rules()) and never published outbound
+     * — so it keeps being written on every match, existing or new, exactly as before this task.
+     *
+     * Tenant-safe: `products.sku` is globally unique, so a SKU match is never ambiguous — but a
+     * match belonging to a company other than the one this $channel resolves to is refused
+     * (thrown, caught by this method's only caller's existing per-SKU try/catch) rather than
+     * silently updated or adopted.
      *
      * @param  array<string, mixed>  $wooProduct
      * @param  array<int, array<string, mixed>>  $wooCategoryMap
@@ -208,25 +251,42 @@ final class WooCommerceProductImporter
         string $defaultCategoryId,
         string $defaultUnitId,
         Channel $channel,
+        string $companyId,
     ): array {
+        // Deliberately bypasses Product's own 'tenant' global scope: this lookup must see a
+        // SKU regardless of the executing actor (this Action runs under an authenticated HTTP
+        // request — see ImportProductsAction — so without this, an admin's own company would
+        // silently hide a different company's product, and the create-fallback below would
+        // then collide with sku's global unique constraint instead of reporting a clear
+        // cross-company conflict). The explicit ownership check right after is what actually
+        // enforces tenant safety, not this scope.
+        $existing = Product::withoutGlobalScope('tenant')->where('sku', $sku)->first();
+
+        if ($existing !== null) {
+            if ($existing->company_id !== null && (string) $existing->company_id !== $companyId) {
+                throw new RuntimeException(
+                    "SKU [{$sku}] belongs to a different company than channel [{$channel->id}] resolves to. ".
+                    'Refusing to update a product this channel does not own.',
+                );
+            }
+
+            $this->reconcileExisting($channel, $existing, $wooProduct);
+
+            // See resolveProduct()'s docblock: stock_status is inbound-owned, not ECOS-owned —
+            // written unconditionally, unlike every field reconcileExisting() protects. Matches
+            // this file's pre-existing convention of not suppressing events on its own writes
+            // (unlike WooCommerceProductSyncer) — unchanged by this task.
+            $existing->update(['stock_status' => $this->extractEnrichment($wooProduct)['stock_status']]);
+
+            return [$existing, false];
+        }
+
         $enrichment = $this->extractEnrichment($wooProduct);
         $categoryId = $this->resolveDeepestEcosCategory(
             $wooProduct['categories'] ?? [],
             $wooCategoryMap,
             $defaultCategoryId,
         );
-
-        $existing = Product::query()->where('sku', $sku)->first();
-
-        if ($existing !== null) {
-            $existing->update(array_merge($enrichment, [
-                'name' => (string) ($wooProduct['name'] ?? $existing->name),
-                'category_id' => $categoryId,
-            ]));
-
-            return [$existing, false];
-        }
-
         $isActive = (($wooProduct['status'] ?? '') === 'publish');
 
         $product = Product::query()->create(array_merge([
@@ -240,9 +300,76 @@ final class WooCommerceProductImporter
             // ADR-013 Principle 8 / TASK-PRODUCT-OWNERSHIP-002:
             // Brand is the direct owner; channel.brand_id is always set (non-nullable after TASK-ADMIN-005).
             'brand_id' => $channel->brand_id,
+            // TASK-...-WOO-03 §7 — previously absent, so every Woo-imported product was
+            // created with company_id = NULL. Resolved once per run (see import()).
+            'company_id' => $companyId,
         ], $enrichment));
 
         return [$product, true];
+    }
+
+    /**
+     * Detect drift on an already-existing product match and correct it by re-pushing the
+     * ECOS canonical value — never by applying the inbound one. See resolveProduct()'s
+     * docblock and WooCommerceProductSyncer's class docblock for the full rationale; this is
+     * the identical rule applied to the manual pull-import path.
+     *
+     * @param  array<string, mixed>  $wooProduct
+     */
+    private function reconcileExisting(Channel $channel, Product $existing, array $wooProduct): void
+    {
+        $enrichment = $this->extractEnrichment($wooProduct);
+        $drift = [];
+
+        // Every comparison below only fires when ECOS already holds a non-null value for that
+        // field — i.e., an actual prior ECOS decision exists to protect. A currently-empty
+        // field has no decision to protect yet, so an inbound value merely fills a gap; it is
+        // not applied here either (still ECOS-owned going forward), just not flagged as drift.
+        $name = trim((string) ($wooProduct['name'] ?? ''));
+        if ($name !== '' && $name !== $existing->name) {
+            $drift['name'] = ['old' => $existing->name, 'new' => $name];
+        }
+
+        // Enrichment key and Product column share the same name for both of these.
+        foreach (['long_description', 'short_description'] as $field) {
+            $value = $enrichment[$field];
+            if ($value !== null && $existing->{$field} !== null && $value !== (string) $existing->{$field}) {
+                $drift[$field] = ['old' => $existing->{$field}, 'new' => $value];
+            }
+        }
+
+        foreach (['regular_price', 'sale_price'] as $field) {
+            $value = $enrichment[$field];
+            if ($value !== null && $existing->{$field} !== null && (float) $value !== (float) $existing->{$field}) {
+                $drift[$field] = ['old' => $existing->{$field}, 'new' => $value];
+            }
+        }
+
+        // stock_status is NOT compared here — see resolveProduct()'s docblock; it is
+        // inbound-owned and applied unconditionally by this method's only caller.
+
+        if ($drift === []) {
+            return;
+        }
+
+        $log = $this->logService->createLog(
+            $channel,
+            SyncEntityType::Product,
+            SyncDirection::Inbound,
+            'product.drift_detected',
+            $existing->id,
+            SyncLogStatus::Processing,
+            ['product_id' => $existing->id, 'sku' => $existing->sku, 'drift' => $drift],
+        );
+
+        $this->logService->markSuccess($log, [
+            'action' => 'drift_detected',
+            'drift' => $drift,
+            'corrective_action' => 'canonical_value_repushed',
+        ], $channel);
+
+        ProductSyncJob::dispatch($channel, $existing);
+        PriceSyncJob::dispatch($channel, $existing);
     }
 
     /**
