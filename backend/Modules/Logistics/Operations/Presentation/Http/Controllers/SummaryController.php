@@ -48,6 +48,34 @@ class SummaryController extends Controller
         return response()->json(['data' => $this->summaries->exceptions($this->companyId($request))]);
     }
 
+    // TASK-ECOS-V1.1-OPS-04-TASK1 — additive Control Tower digests, same
+    // one-method-per-summary-type pattern as everything above.
+
+    public function shipping(Request $request): JsonResponse
+    {
+        return response()->json(['data' => $this->summaries->shipping($this->companyId($request))]);
+    }
+
+    public function custody(Request $request): JsonResponse
+    {
+        return response()->json(['data' => $this->summaries->custody($this->companyId($request))]);
+    }
+
+    public function returns(Request $request): JsonResponse
+    {
+        return response()->json(['data' => $this->summaries->returns($this->companyId($request))]);
+    }
+
+    public function settlement(Request $request): JsonResponse
+    {
+        return response()->json(['data' => $this->summaries->settlement($this->companyId($request))]);
+    }
+
+    public function externalCarrier(Request $request): JsonResponse
+    {
+        return response()->json(['data' => $this->summaries->externalCarrier($this->companyId($request))]);
+    }
+
     private function companyId(Request $request): ?string
     {
         $companyId = $request->user()?->company_id;
