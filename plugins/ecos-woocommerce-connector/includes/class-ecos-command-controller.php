@@ -89,6 +89,24 @@ class Ecos_Wc_Connector_Command_Controller {
 			return new WP_Error('ecos_unknown_operation', 'Unknown operation: ' . $operation, ['status' => 422]);
 		}
 
+		// Customers carry no ECOS-stored Woo id (see WooOutboundCommandDispatcher::upsertCustomer):
+		// ECOS sends operation=create with a null woo_id and the ECOS-authoritative email in the
+		// fields. Resolve the Woo customer LOCALLY by that exact email (Woo's own unique key) so the
+		// apply is idempotent create-or-update — the connector-mode equivalent of the legacy job's
+		// own resolve-by-email. This is a mechanical Woo-side lookup on an ECOS-decided value only:
+		// it never matches among ECOS customers, merges, decides tenant/company, or runs CRM logic.
+		if ($resource === 'customers') {
+			$existing_id = self::resolve_customer_id($fields);
+
+			if ($existing_id !== null) {
+				$operation = 'update';
+				$woo_id    = $existing_id;
+			} else {
+				$operation = 'create';
+				$woo_id    = null;
+			}
+		}
+
 		if ($operation !== 'create' && empty($woo_id)) {
 			return new WP_Error('ecos_missing_woo_id', 'woo_id is required for update/delete.', ['status' => 422]);
 		}
@@ -143,9 +161,36 @@ class Ecos_Wc_Connector_Command_Controller {
 				return class_exists('WC_REST_Orders_Controller') ? new WC_REST_Orders_Controller() : null;
 			case 'webhooks':
 				return class_exists('WC_REST_Webhooks_Controller') ? new WC_REST_Webhooks_Controller() : null;
+			case 'customers':
+				return class_exists('WC_REST_Customers_Controller') ? new WC_REST_Customers_Controller() : null;
 			default:
 				return null;
 		}
+	}
+
+	/**
+	 * Find an existing Woo customer's id by the email ECOS supplied in the command fields (checked
+	 * at the top level first, then inside the billing block). Returns the WordPress user id — which
+	 * is the WooCommerce customer id WC_REST_Customers_Controller operates on — or null when no
+	 * email is present or no customer with that email exists. Pure Woo-local lookup on an
+	 * ECOS-authoritative value; no identity/merge/CRM decision is made here.
+	 */
+	private static function resolve_customer_id($fields) {
+		$email = '';
+
+		if (isset($fields['email']) && is_string($fields['email'])) {
+			$email = trim($fields['email']);
+		} elseif (isset($fields['billing']['email']) && is_string($fields['billing']['email'])) {
+			$email = trim($fields['billing']['email']);
+		}
+
+		if ($email === '') {
+			return null;
+		}
+
+		$user = get_user_by('email', $email);
+
+		return $user ? (int) $user->ID : null;
 	}
 
 	private static function first_administrator() {
