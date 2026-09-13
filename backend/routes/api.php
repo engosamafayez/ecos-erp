@@ -186,6 +186,8 @@ use Modules\Inventory\WarehouseLiabilities\Presentation\Http\Controllers\Warehou
 use Modules\Inventory\WasteInvestigations\Presentation\Http\Controllers\WasteInvestigationController;
 use Modules\Logistics\Automation\Presentation\Http\Controllers\AutomationController;
 use Modules\Logistics\Carriers\Presentation\Http\Controllers\CarrierController;
+use Modules\Logistics\Carriers\Presentation\Http\Controllers\CarrierShipmentController;
+use Modules\Logistics\Carriers\Presentation\Http\Controllers\CarrierWebhookController;
 use Modules\Logistics\Delivery\Presentation\Http\Controllers\DeliveryAttemptController;
 use Modules\Logistics\Delivery\Presentation\Http\Controllers\DeliveryCodController;
 use Modules\Logistics\Delivery\Presentation\Http\Controllers\DeliveryController as DeliveryOsController;
@@ -2851,7 +2853,22 @@ Route::middleware('auth:sanctum')->prefix('logistics/carriers')->group(function 
         Route::post('/accounts/{id}/test-connection', [CarrierController::class, 'testConnection']);
         Route::put('/accounts/{id}/status-mappings', [CarrierController::class, 'upsertStatusMapping']);
     });
+
+    // TASK-ECOS-V1.1-OPS-03-TASK1-BOSTA — external shipment execution. Company
+    // scope is enforced inside the controller (the authenticated user's own
+    // company_id), same pattern as the account routes above.
+    Route::middleware('permission:carrier.manage')->group(function (): void {
+        Route::post('/stops/{stopUuid}/shipment', [CarrierShipmentController::class, 'store']);
+        Route::get('/stops/{stopUuid}/shipment', [CarrierShipmentController::class, 'show']);
+    });
 });
+
+// Carrier webhook receiver — deliberately OUTSIDE auth:sanctum (the caller is
+// the carrier, not an ECOS user). The adapter's own signature verification
+// (fail-closed by default) is the only trust boundary; the account uuid in
+// the path keeps one carrier with several accounts unambiguous, matching
+// docs/logistics-v2/06-EXTERNAL-CARRIER-PLATFORM.md §6.5's exact route shape.
+Route::post('logistics/carriers/webhook/{carrier}/{accountUuid}', [CarrierWebhookController::class, 'handle']);
 
 // ── Logistics V2 — Operations (Phase 4) ───────────────────────────────────────
 // ADDITIVE: every Phase 0–3 route above is untouched.

@@ -51,4 +51,17 @@ return [
         'key' => env('GOOGLE_MAPS_API_KEY'),
     ],
 
+    // Bosta — the first external carrier (TASK-ECOS-V1.1-OPS-03-TASK1-BOSTA).
+    // API-key auth (docs/contracts/INTEGRATION-CATALOG.md §3.4) via Laravel's
+    // own standard encrypted config/env layer — see BostaCarrierAdapter's own
+    // class docblock for why this is used instead of the Marketing module's
+    // OAuth-specific Provider Platform. base_url has NO default host: the
+    // verified contract confirms only the "/v2/" version path, not the real
+    // domain, so it must be set explicitly rather than guessed.
+    'bosta' => [
+        'api_key' => env('BOSTA_API_KEY'),
+        'base_url' => env('BOSTA_BASE_URL'),
+        'timeout' => env('BOSTA_HTTP_TIMEOUT', 15),
+    ],
+
 ];
