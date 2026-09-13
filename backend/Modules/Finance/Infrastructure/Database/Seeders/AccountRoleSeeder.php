@@ -79,6 +79,12 @@ class AccountRoleSeeder extends Seeder
             // charts use for employee balances rather than a separate asset
             // and liability account for the same underlying party.
             'driver_receivable' => ['1320', 'Employee Receivables'],
+            // TASK-ECOS-FIN-03-PAYROLL-FINANCE-POSTING-CLOSURE-001: recovering a
+            // payroll advance is the same "employee owes the company" fact as
+            // driver_receivable above — same account (1320), a separate role so
+            // a company can point the two at different accounts later without
+            // renaming either. Named for what it recovers, not for who it is.
+            'employee_advance_receivable' => ['1320', 'Employee Receivables'],
             'vat_input' => ['1530', 'VAT Receivable (Input)'],
             'ar_control' => ['1310', 'Trade Receivables — control, subledger receivables'],
 
@@ -87,6 +93,16 @@ class AccountRoleSeeder extends Seeder
             'grni' => ['2120', 'Goods Received Not Invoiced'],
             'carrier_payable' => ['2130', 'Shipping Payables'],
             'vat_output' => ['2210', 'VAT Payable (Output)'],
+            // TASK-ECOS-FIN-03-PAYROLL-FINANCE-POSTING-CLOSURE-001: the net amount
+            // an approved payroll run owes its employees, until actually paid.
+            'salaries_payable' => ['2310', 'Salaries Payable'],
+            // Amounts withheld from pay (approved deductions) that the company
+            // now holds rather than owing to the employee. Deliberately not split
+            // by HR's deduction reason (unpaid leave, penalty, inventory recovery,
+            // …) — one liability bucket for what was withheld, matching the
+            // account's own name; a finer split is a later decision, not a guess
+            // made here.
+            'employee_deductions_payable' => ['2320', 'Employee Deductions Payable'],
             'loyalty_liability' => ['2430', 'Loyalty Points Liability'],
             'refund_clearing' => ['2440', 'Refunds Payable'],
 
@@ -127,6 +143,14 @@ class AccountRoleSeeder extends Seeder
             'shipping_expense' => ['5550', 'Shipping & Delivery'],
             'marketing_credit_expense' => ['5560', 'Marketing & Advertising'],
             'loyalty_expense' => ['5940', 'Loyalty Expense — points EARNED, not redeemed'],
+            // TASK-ECOS-FIN-03-PAYROLL-FINANCE-POSTING-CLOSURE-001: an approved
+            // payroll run's basic salary and bonus components — standard wages
+            // expense. Commission is named separately below (its own account
+            // already existed for it); everything else on a payslip either nets
+            // into salaries_payable (net) or is withheld (employee_deductions_
+            // payable / employee_advance_receivable), not a further expense.
+            'salaries_expense' => ['5510', 'Salaries & Wages'],
+            'commission_expense' => ['5540', 'Sales Commissions'],
         ];
     }
 

@@ -28,6 +28,7 @@ use Modules\Finance\Integration\Application\Bridge\EventPostingCatalog;
 use Modules\Finance\Integration\Application\Bridge\EventPostingSubscriber;
 use Modules\Finance\Integration\Application\Listeners\PostCodCollectionOnCodCollected;
 use Modules\Finance\Integration\Application\Listeners\PostFleetCostOnVehicleCostPosted;
+use Modules\Finance\Integration\Application\Listeners\PostPayrollLiabilityOnCompensationApproved;
 use Modules\Finance\Integration\Application\Listeners\PostRevenueAndCogsOnOrderDelivered;
 use Modules\Finance\Integration\Application\Services\FinancialIntegrationService;
 use Modules\Finance\Integration\Domain\Services\AccountRoleResolver;
@@ -39,10 +40,6 @@ use Modules\Finance\Integration\Domain\Services\PostingRuleRegistry;
 use Modules\Finance\Integration\Domain\Services\PostingRuleResolver;
 use Modules\Finance\Integration\Domain\Services\PostingTraceService;
 use Modules\Finance\Integration\Domain\Services\RulePostingStrategy;
-use Modules\Finance\OperationalCost\Domain\Services\DriverFinanceService;
-use Modules\Logistics\Delivery\Domain\Events\CodCollected;
-use Modules\Logistics\Fleet\Domain\Events\VehicleCostPosted;
-use Modules\Operations\Fulfillment\Domain\Events\OrderDeliveredEvent;
 use Modules\Finance\Intelligence\Domain\Services\CashFlowIntelligenceService;
 use Modules\Finance\Intelligence\Domain\Services\CostIntelligenceService;
 use Modules\Finance\Intelligence\Domain\Services\ForecastService;
@@ -53,6 +50,7 @@ use Modules\Finance\Intelligence\Domain\Services\VarianceAnalysisService;
 use Modules\Finance\Ledger\Domain\Services\ChartOfAccountsService;
 use Modules\Finance\Ledger\Domain\Services\JournalEngine;
 use Modules\Finance\Ledger\Domain\Services\TrialBalanceService;
+use Modules\Finance\OperationalCost\Domain\Services\DriverFinanceService;
 use Modules\Finance\Payables\Domain\Services\AccountsPayableService;
 use Modules\Finance\Payables\Domain\Services\ApAgingService;
 use Modules\Finance\Payables\Domain\Services\SupplierLedgerService;
@@ -69,6 +67,10 @@ use Modules\Finance\Tax\Domain\Services\TaxService;
 use Modules\Finance\Vat\Domain\Services\VatService;
 use Modules\Finance\Workspace\Domain\Services\CfoWorkspaceService;
 use Modules\Finance\Workspace\Domain\Services\ExecutiveWorkspaceService;
+use Modules\Hr\Compensation\Domain\Events\CompensationApproved;
+use Modules\Logistics\Delivery\Domain\Events\CodCollected;
+use Modules\Logistics\Fleet\Domain\Events\VehicleCostPosted;
+use Modules\Operations\Fulfillment\Domain\Events\OrderDeliveredEvent;
 
 /**
  * Finance OS — EPIC F1. Ledger Core & Fiscal Foundation.
@@ -231,8 +233,9 @@ final class FinanceServiceProvider extends ServiceProvider
 
     /**
      * Commercial Accounting (TASK-ECOS-FINANCE-COMMERCIAL-ACCOUNTING-006) —
-     * revenue/COGS on order delivery, and COD-collection settlement. These
-     * are plain Laravel event listeners (both source events are plain
+     * revenue/COGS on order delivery, and COD-collection settlement. Also
+     * Payroll (TASK-ECOS-FIN-03-PAYROLL-FINANCE-POSTING-CLOSURE-001). These
+     * are plain Laravel event listeners (the source events are plain
      * Dispatchable events, not routed through EnterpriseEventBus), gated by
      * the SAME auto_subscribe flag as the bridge above — this posts real
      * journals off operational events with the same prerequisite (account
@@ -241,7 +244,8 @@ final class FinanceServiceProvider extends ServiceProvider
      *
      * Event::listen is additive: Fulfillment's own HandleOrderDelivered
      * listener for OrderDeliveredEvent, and any existing (there are none
-     * today) listener for CodCollected, are untouched.
+     * today) listener for CodCollected or CompensationApproved, are
+     * untouched.
      */
     private function registerCommercialAccountingListeners(): void
     {
@@ -263,6 +267,13 @@ final class FinanceServiceProvider extends ServiceProvider
         // see PostFleetCostOnVehicleCostPosted's own docblock for why.
         if (class_exists(VehicleCostPosted::class)) {
             Event::listen(VehicleCostPosted::class, PostFleetCostOnVehicleCostPosted::class);
+        }
+
+        // TASK-ECOS-FIN-03-PAYROLL-FINANCE-POSTING-CLOSURE-001 — HR's own
+        // event docblock states nothing in HR listens to it; this is the
+        // first subscriber.
+        if (class_exists(CompensationApproved::class)) {
+            Event::listen(CompensationApproved::class, PostPayrollLiabilityOnCompensationApproved::class);
         }
     }
 }
