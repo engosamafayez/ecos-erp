@@ -23,16 +23,40 @@ use Throwable;
  * │ event in BusinessEventType uses (PostingCoordinator → JournalEngine),        │
  * │ never the ledger directly, and never a second payroll ledger of its own.    │
  * │                                                                            │
- * │ The five posted amounts are exactly the terms of HR's own net formula        │
- * │ (net = basic + bonus + commission − advances − approved deductions),         │
- * │ summed across the run's employees — an aggregation for the journal, not a    │
- * │ recalculation of anyone's pay.                                              │
+ * │ salaries + commission always equals the run's total gross (HR's own         │
+ * │ gross = basic + bonus + commission, summed across employees) — an           │
+ * │ aggregation of an already-frozen fact, not a recalculation of anyone's pay.  │
+ * └──────────────────────────────────────────────────────────────────────────┘
+ *
+ * ┌─ WHY A RUN WITH ADVANCE RECOVERY DOES NOT POST (TASK-ECOS-FIN-03-        ┐
+ * │ EMPLOYEE-ADVANCE-ACCOUNTING-INTEGRITY-001)                                │
+ * │                                                                            │
+ * │ Crediting employee_advance_receivable is only correct if Finance already   │
+ * │ carries a debit there for the same advance — recognised when the money      │
+ * │ was actually handed out. It never has: HR's own Advance migration says       │
+ * │ so directly ("HR records the advance and recovers it from pay. Finance       │
+ * │ disburses the money and owns the cash side; nothing here posts an entry.")   │
+ * │ and no Finance-side disbursement listener exists for it (unlike Logistics'    │
+ * │ driver advances, which DriverFinanceService does post). Crediting the role   │
+ * │ anyway would recognise a recovery against a receivable nobody ever debited    │
+ * │ — an invalid, unbalanced-in-substance entry that happens to balance in form.  │
+ * │                                                                            │
+ * │ Folding the advance amount into salaries_payable instead (to keep posting     │
+ * │ everything else) was considered and rejected: it would silently overstate     │
+ * │ what the run still owes and erase the one thread this whole system relies      │
+ * │ on to eventually reconcile the advance at all.                                │
+ * │                                                                            │
+ * │ So a run with any recovered advance amount posts NOTHING today — logged        │
+ * │ clearly, not dead-lettered as a failure, since nothing here is broken; the    │
+ * │ missing piece is a Finance-side advance-disbursement authority that does not  │
+ * │ exist yet. Runs with no advance recovery are entirely unaffected.             │
  * └──────────────────────────────────────────────────────────────────────────┘
  *
  * Queued (async), the same posting path used for every other rule-driven,
  * generic-bridge event (fleet cost, COGS) — payroll approval is not on any
  * caller's critical path waiting for a journal to exist. Idempotent on the
- * run: a redelivered event resolves to the one journal already posted for it.
+ * run: a redelivered event resolves to the one journal already posted for it
+ * (or, for a blocked run, is simply evaluated and skipped again).
  *
  * Deliberately does not post a payment — approving payroll recognises what is
  * owed, not that it has been paid. Deliberately does not post an employer
@@ -49,6 +73,23 @@ final class PostPayrollLiabilityOnCompensationApproved
     {
         if ($event->totalGross <= 0.0) {
             return; // nothing approved to recognise — an empty run has no effect
+        }
+
+        if ($event->totalAdvances > 0.0) {
+            // Not an error: a correctly-handled boundary, not a bug. See the
+            // class docblock — there is no Finance-recognised receivable for
+            // this amount to clear yet.
+            Log::channel('daily')->warning(
+                '[PostPayrollLiabilityOnCompensationApproved] Skipped — advance recovery has no Finance-recognised receivable to credit',
+                [
+                    'payroll_run_id' => $event->payrollRunId,
+                    'company_id' => $event->companyId,
+                    'period_code' => $event->periodCode,
+                    'total_advances' => round($event->totalAdvances, 4),
+                ],
+            );
+
+            return;
         }
 
         try {
@@ -70,7 +111,6 @@ final class PostPayrollLiabilityOnCompensationApproved
                     'commission' => $commission,
                     'net_payable' => round($event->totalNet, 4),
                     'deductions' => round($event->totalDeductions, 4),
-                    'advances' => round($event->totalAdvances, 4),
                 ],
                 occurredAt: Carbon::parse($event->approvedAt),
                 idempotencyKey: 'payroll_run:'.$event->payrollRunId,

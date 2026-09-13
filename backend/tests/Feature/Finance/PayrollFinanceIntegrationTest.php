@@ -24,11 +24,13 @@ use Modules\Organization\Companies\Domain\Models\Company;
 use Tests\TestCase;
 
 /**
- * TASK-ECOS-FIN-03-PAYROLL-FINANCE-POSTING-CLOSURE-001 — approved payroll
- * posting through the existing rule-driven bridge. CompensationApproved is
- * confirmed (FIN-02/FIN-03 reconciliation) to have had zero subscribers
- * before this task. QUEUE_CONNECTION=sync makes the async post inline in
- * this suite, the same convention FleetCostAccountingTest already uses.
+ * TASK-ECOS-FIN-03-PAYROLL-FINANCE-POSTING-CLOSURE-001, remediated by
+ * TASK-ECOS-FIN-03-EMPLOYEE-ADVANCE-ACCOUNTING-INTEGRITY-001 — approved
+ * payroll posting through the existing rule-driven bridge, with advance
+ * recovery blocked until a Finance-side advance-disbursement authority
+ * exists (see the listener's own docblock). QUEUE_CONNECTION=sync makes the
+ * async post inline in this suite, the same convention FleetCostAccountingTest
+ * already uses.
  *
  * Written for later consolidated execution — not run by this task (would
  * require a live connection to the shared test database).
@@ -50,10 +52,9 @@ class PayrollFinanceIntegrationTest extends TestCase
         $this->openPeriodForToday();
     }
 
-    // 1, 8, 12. An approved run posts one balanced journal: salary + commission
-    // expense debited, net payable / deductions / advances credited — through
-    // JournalEngine via the unchanged posting pipeline, never a Cash account.
-    public function test_approved_payroll_posts_expected_journal(): void
+    // 1, 8. A run with no advance recovery posts one balanced journal: salary
+    // + commission expense debited, net payable / deductions credited.
+    public function test_approved_payroll_with_no_advances_posts_expected_journal(): void
     {
         $roles = $this->seedPayrollRoles();
         $event = $this->approvedEvent(runId: (string) Str::uuid());
@@ -71,17 +72,76 @@ class PayrollFinanceIntegrationTest extends TestCase
         $lines = $journal->lines;
         $this->assertSame(3000.0, round((float) $lines->firstWhere('account_id', $roles['salaries_expense']->id)?->debit, 4));
         $this->assertSame(200.0, round((float) $lines->firstWhere('account_id', $roles['commission_expense']->id)?->debit, 4));
-        $this->assertSame(2600.0, round((float) $lines->firstWhere('account_id', $roles['salaries_payable']->id)?->credit, 4));
+        $this->assertSame(2900.0, round((float) $lines->firstWhere('account_id', $roles['salaries_payable']->id)?->credit, 4));
         $this->assertSame(300.0, round((float) $lines->firstWhere('account_id', $roles['employee_deductions_payable']->id)?->credit, 4));
-        $this->assertSame(300.0, round((float) $lines->firstWhere('account_id', $roles['employee_advance_receivable']->id)?->credit, 4));
+        // No advance recovery in this run — the receivable role is never touched.
+        $this->assertNull($lines->firstWhere('account_id', $roles['employee_advance_receivable']->id));
 
         $totalDebit = $lines->sum(fn ($l) => (float) $l->debit);
         $totalCredit = $lines->sum(fn ($l) => (float) $l->credit);
         $this->assertEqualsWithDelta($totalDebit, $totalCredit, 0.0001);
     }
 
-    // 3. A redelivered CompensationApproved (queue at-least-once, or any
-    // caller invoking handle() twice) never creates a second journal.
+    // 2, 7. Advance recovery cannot create an unrecognised credit to
+    // employee_advance_receivable: a run with recovered advances posts NO
+    // journal at all today (see listener docblock — HR's own Advance
+    // migration states Finance was always meant to own disbursement, and
+    // never built it). This is the historical/unrecognised-advance case
+    // too: there is no distinction Finance can draw between an old and a
+    // new advance, so all of them are treated the same, safely.
+    public function test_advance_recovery_is_blocked_when_no_receivable_recognized(): void
+    {
+        $roles = $this->seedPayrollRoles();
+        $event = $this->blockedAdvanceEvent(runId: (string) Str::uuid());
+
+        app(PostPayrollLiabilityOnCompensationApproved::class)->handle($event);
+
+        $this->assertSame(
+            0,
+            JournalEntry::query()->where('source_event_id', 'payroll_run:'.$event->payrollRunId)->count(),
+        );
+        // No line anywhere in the company's ledger credits the receivable for
+        // this run — not a partial or malformed entry, no entry at all.
+        $this->assertSame(
+            0,
+            DB::table('finance_journal_lines')->where('account_id', $roles['employee_advance_receivable']->id)->count(),
+        );
+    }
+
+    // 5. The advance-recovery block is idempotent — repeated handling of the
+    // same blocked event never posts partially or accumulates side effects.
+    public function test_advance_recovery_block_is_idempotent(): void
+    {
+        $roles = $this->seedPayrollRoles();
+        $event = $this->blockedAdvanceEvent(runId: (string) Str::uuid());
+
+        $handler = app(PostPayrollLiabilityOnCompensationApproved::class);
+        $handler->handle($event);
+        $handler->handle($event);
+
+        $this->assertSame(0, JournalEntry::query()->where('source_event_id', 'payroll_run:'.$event->payrollRunId)->count());
+        $this->assertSame(0, DB::table('finance_journal_lines')->where('account_id', $roles['employee_advance_receivable']->id)->count());
+    }
+
+    // 6. Two independent runs are evaluated independently: one run's
+    // recovered advances never affects whether a different run (even for
+    // the same company) posts.
+    public function test_each_run_is_evaluated_independently_for_the_advance_guard(): void
+    {
+        $this->seedPayrollRoles();
+        $clean = $this->approvedEvent(runId: (string) Str::uuid());
+        $blocked = $this->blockedAdvanceEvent(runId: (string) Str::uuid());
+
+        $handler = app(PostPayrollLiabilityOnCompensationApproved::class);
+        $handler->handle($clean);
+        $handler->handle($blocked);
+
+        $this->assertSame(1, JournalEntry::query()->where('source_event_id', 'payroll_run:'.$clean->payrollRunId)->count());
+        $this->assertSame(0, JournalEntry::query()->where('source_event_id', 'payroll_run:'.$blocked->payrollRunId)->count());
+    }
+
+    // 3. There is no duplicated JournalEntry when the same clean event is
+    // redelivered (queue at-least-once, or any caller invoking handle() twice).
     public function test_duplicate_event_does_not_duplicate_journal(): void
     {
         $this->seedPayrollRoles();
@@ -129,13 +189,10 @@ class PayrollFinanceIntegrationTest extends TestCase
         $this->assertTrue($journal->lines->every(fn ($l) => (string) $l->company_id === $this->companyId));
     }
 
-    // 9, 10. Deductions and advance recovery are each posted exactly once, at
-    // the run's own totals — there is no separate subscription to Bonus/
-    // Deduction/Commission approval, so there is no path to double-post them,
-    // and the advance recovery leg is not a second recognition of the advance
-    // itself (which HR's own Advance model never posts to Finance at
-    // disbursement — see the FIN-03 report's deferred items).
-    public function test_deductions_and_advances_post_exactly_once_at_run_totals(): void
+    // Deductions post exactly once, at the run's own total — there is no
+    // separate subscription to Deduction approval, so there is no path to
+    // double-post it.
+    public function test_deductions_post_exactly_once_at_run_totals(): void
     {
         $roles = $this->seedPayrollRoles();
         $event = $this->approvedEvent(runId: (string) Str::uuid());
@@ -146,16 +203,32 @@ class PayrollFinanceIntegrationTest extends TestCase
             ->with('lines')->first();
 
         $deductionLines = $journal->lines->where('account_id', $roles['employee_deductions_payable']->id);
-        $advanceLines = $journal->lines->where('account_id', $roles['employee_advance_receivable']->id);
-
         $this->assertCount(1, $deductionLines);
-        $this->assertCount(1, $advanceLines);
         $this->assertSame(300.0, round((float) $deductionLines->first()->credit, 4));
-        $this->assertSame(300.0, round((float) $advanceLines->first()->credit, 4));
+    }
+
+    // 8. Salary and commission are mutually exclusive components of the same
+    // frozen gross_salary fact (HR's own gross = basic + bonus + commission),
+    // summed across employees — proving no double-count: salaries (basic+
+    // bonus) + commission always equals the run's total gross.
+    public function test_salary_and_commission_split_does_not_double_count_gross(): void
+    {
+        $roles = $this->seedPayrollRoles();
+        $event = $this->approvedEvent(runId: (string) Str::uuid());
+
+        app(PostPayrollLiabilityOnCompensationApproved::class)->handle($event);
+
+        $journal = JournalEntry::query()->where('source_event_id', 'payroll_run:'.$event->payrollRunId)
+            ->with('lines')->first();
+
+        $salariesDebit = (float) $journal->lines->firstWhere('account_id', $roles['salaries_expense']->id)?->debit;
+        $commissionDebit = (float) $journal->lines->firstWhere('account_id', $roles['commission_expense']->id)?->debit;
+
+        $this->assertEqualsWithDelta($event->totalGross, $salariesDebit + $commissionDebit, 0.0001);
     }
 
     // 11. No financial overtime is introduced — the posting rule's legs are
-    // exactly the five roles this task defines, none of them overtime.
+    // exactly the roles this task defines, none of them overtime.
     public function test_no_overtime_role_in_posting_rule_or_journal(): void
     {
         $roles = $this->seedPayrollRoles();
@@ -170,13 +243,12 @@ class PayrollFinanceIntegrationTest extends TestCase
 
         $journal = JournalEntry::query()->where('source_event_id', 'payroll_run:'.$event->payrollRunId)
             ->with('lines.account')->first();
-        $this->assertCount(5, $journal->lines);
         foreach ($journal->lines as $line) {
             $this->assertStringNotContainsStringIgnoringCase('overtime', (string) $line->account->name);
         }
     }
 
-    // 8. Approving payroll recognises a liability, never a payment: no Cash
+    // 10. Approving payroll recognises a liability, never a payment: no Cash
     // account is touched, and what is credited is the liability role.
     public function test_approval_does_not_post_a_cash_payment(): void
     {
@@ -189,7 +261,7 @@ class PayrollFinanceIntegrationTest extends TestCase
         $this->assertSame(AccountType::Liability, $roles['salaries_payable']->account_type);
     }
 
-    // 6. A freshly provisioned company receives all five payroll roles through
+    // A freshly provisioned company receives all five payroll roles through
     // the canonical, unchanged provisioning path — no bespoke payroll seeder.
     public function test_new_company_provisioning_includes_payroll_roles(): void
     {
@@ -202,9 +274,9 @@ class PayrollFinanceIntegrationTest extends TestCase
         }
     }
 
-    // 5, 7. Backfilling an existing company (re-running the seeder — the
-    // approved additive pattern, e.g. `finance:provision-companies`) fills
-    // only what is missing and never overwrites a company's own override.
+    // Backfilling an existing company (re-running the seeder — the approved
+    // additive pattern, e.g. `finance:provision-companies`) fills only what
+    // is missing and never overwrites a company's own override.
     public function test_backfill_is_idempotent_and_preserves_existing_override(): void
     {
         app(CompanyFinanceProvisioner::class)->provision($this->companyId);
@@ -239,11 +311,12 @@ class PayrollFinanceIntegrationTest extends TestCase
     // ═══ HELPERS ═══════════════════════════════════════════════════════════════
 
     /**
-     * A run of two employees, each with a different mix of basic/bonus/
-     * commission/advance/deduction — chosen so no two employees' figures are
-     * equal, which would hide a bug that summed the wrong column. Totals:
-     * salaries (basic+bonus) 3000, commission 200 → gross 3200; net 2600 +
-     * deductions 300 + advances 300 = 3200, matching HR's own net formula.
+     * A run of two employees with no advance recovery, each with a different
+     * mix of basic/bonus/commission/deduction — chosen so no two employees'
+     * figures are equal, which would hide a bug that summed the wrong column.
+     * Totals: salaries (basic+bonus) 3000, commission 200 → gross 3200; net
+     * 2900 + deductions 300 (+ advances 0) = 3200, matching HR's own net
+     * formula. Callers that need advance recovery pass an explicit override.
      */
     private function approvedEvent(string $runId, ?array $employees = null, ?array $totals = null): CompensationApproved
     {
@@ -251,17 +324,17 @@ class PayrollFinanceIntegrationTest extends TestCase
             [
                 'employee_id' => (string) Str::uuid(), 'employee_number' => 'E-001',
                 'basic_salary' => 2000.0, 'bonus_total' => 500.0, 'commission_total' => 150.0,
-                'advance_total' => 200.0, 'deduction_total' => 100.0,
-                'gross_salary' => 2650.0, 'net_salary' => 2350.0,
+                'advance_total' => 0.0, 'deduction_total' => 100.0,
+                'gross_salary' => 2650.0, 'net_salary' => 2550.0,
             ],
             [
                 'employee_id' => (string) Str::uuid(), 'employee_number' => 'E-002',
                 'basic_salary' => 500.0, 'bonus_total' => 0.0, 'commission_total' => 50.0,
-                'advance_total' => 100.0, 'deduction_total' => 200.0,
-                'gross_salary' => 550.0, 'net_salary' => 250.0,
+                'advance_total' => 0.0, 'deduction_total' => 200.0,
+                'gross_salary' => 550.0, 'net_salary' => 350.0,
             ],
         ];
-        $totals ??= ['gross' => 3200.0, 'net' => 2600.0, 'deductions' => 300.0, 'advances' => 300.0];
+        $totals ??= ['gross' => 3200.0, 'net' => 2900.0, 'deductions' => 300.0, 'advances' => 0.0];
 
         return new CompensationApproved(
             companyId: $this->companyId,
@@ -278,6 +351,34 @@ class PayrollFinanceIntegrationTest extends TestCase
             employees: $employees,
             approvedAt: Carbon::now(),
             approvedBy: 1,
+        );
+    }
+
+    /**
+     * A run of the same two employees as {@see approvedEvent()}'s default,
+     * but with advance recovery this time (200 + 100 = 300) — the fixture
+     * every "blocked" test shares, so the three of them can never silently
+     * drift out of sync with each other.
+     */
+    private function blockedAdvanceEvent(string $runId): CompensationApproved
+    {
+        return $this->approvedEvent(
+            runId: $runId,
+            employees: [
+                [
+                    'employee_id' => (string) Str::uuid(), 'employee_number' => 'E-001',
+                    'basic_salary' => 2000.0, 'bonus_total' => 500.0, 'commission_total' => 150.0,
+                    'advance_total' => 200.0, 'deduction_total' => 100.0,
+                    'gross_salary' => 2650.0, 'net_salary' => 2350.0,
+                ],
+                [
+                    'employee_id' => (string) Str::uuid(), 'employee_number' => 'E-002',
+                    'basic_salary' => 500.0, 'bonus_total' => 0.0, 'commission_total' => 50.0,
+                    'advance_total' => 100.0, 'deduction_total' => 200.0,
+                    'gross_salary' => 550.0, 'net_salary' => 250.0,
+                ],
+            ],
+            totals: ['gross' => 3200.0, 'net' => 2600.0, 'deductions' => 300.0, 'advances' => 300.0],
         );
     }
 
