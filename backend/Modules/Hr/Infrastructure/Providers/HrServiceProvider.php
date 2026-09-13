@@ -50,6 +50,7 @@ use Modules\Hr\Workforce\Domain\Services\Employee360Service;
 use Modules\Hr\Workforce\Domain\Services\EmployeeDocumentService;
 use Modules\Hr\Workforce\Domain\Services\EmployeeService;
 use Modules\Hr\Workforce\Domain\Services\EmploymentContractService;
+use Modules\Hr\Workforce\Domain\Services\ManagerScopeService;
 use Modules\Hr\Workforce\Domain\Services\OrganizationChartService;
 use Modules\Hr\Workforce\Domain\Services\ReportingLineService;
 use Modules\Hr\Workforce\Domain\Services\WorkforceStructureService;
@@ -85,6 +86,7 @@ final class HrServiceProvider extends ServiceProvider
         $this->app->singleton(EmploymentContractService::class);
         $this->app->singleton(ReportingLineService::class);
         $this->app->singleton(OrganizationChartService::class);
+        $this->app->singleton(ManagerScopeService::class);
         $this->app->singleton(EmployeeDocumentService::class);
         $this->app->singleton(Employee360Service::class);
         $this->app->singleton(EmployeePolicy::class);

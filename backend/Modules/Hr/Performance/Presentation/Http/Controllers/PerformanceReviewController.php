@@ -13,7 +13,10 @@ use Modules\Hr\Performance\Domain\Models\EmployeeIncident;
 use Modules\Hr\Performance\Domain\Services\BonusRecommendationService;
 use Modules\Hr\Performance\Domain\Services\IncidentService;
 use Modules\Hr\Performance\Domain\Services\ManagerReviewService;
+use Modules\Hr\Workforce\Domain\Models\Employee;
+use Modules\Hr\Workforce\Domain\Services\ManagerScopeService;
 use Modules\Hr\Workforce\Presentation\Http\Controllers\Concerns\ResolvesHrContext;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /** Manager reviews, bonus recommendations and employee incidents. */
 class PerformanceReviewController extends Controller
@@ -24,7 +27,16 @@ class PerformanceReviewController extends Controller
         private readonly ManagerReviewService $reviews,
         private readonly BonusRecommendationService $recommendations,
         private readonly IncidentService $incidents,
+        private readonly ManagerScopeService $managerScope,
     ) {}
+
+    /** Same visibility gate PerformanceController uses — see its docblock. */
+    private function assertVisible(Request $request, Employee $target): void
+    {
+        if (! $this->managerScope->canView($request->user(), $this->actingEmployee($request), $target)) {
+            throw new NotFoundHttpException;
+        }
+    }
 
     private function month(Request $request): string
     {
@@ -35,7 +47,10 @@ class PerformanceReviewController extends Controller
 
     public function reviews(Request $request): JsonResponse
     {
+        $visible = $this->managerScope->visibleEmployeeIdsOrNull($request->user(), $this->actingEmployee($request));
+
         $rows = $this->reviews->forPeriod($this->companyId($request), $this->month($request))
+            ->when($visible !== null, fn ($c) => $c->whereIn('employee_id', $visible))
             ->map(fn ($r) => [
                 'id' => (string) $r->id,
                 'employee' => $r->employee === null ? null : [
@@ -65,8 +80,11 @@ class PerformanceReviewController extends Controller
             'status' => ['nullable', 'in:draft,submitted'],
         ]);
 
+        $target = $this->employee($request, $employeeId);
+        $this->assertVisible($request, $target);
+
         $review = $this->reviews->save(
-            $this->employee($request, $employeeId),
+            $target,
             $v['period_month'],
             $v,
             $this->actingEmployee($request),
@@ -84,7 +102,10 @@ class PerformanceReviewController extends Controller
 
     public function recommendations(Request $request): JsonResponse
     {
+        $visible = $this->managerScope->visibleEmployeeIdsOrNull($request->user(), $this->actingEmployee($request));
+
         $rows = $this->recommendations->pending($this->companyId($request), $this->month($request))
+            ->when($visible !== null, fn ($c) => $c->whereIn('employee_id', $visible))
             ->map(fn (BonusRecommendation $r) => $this->recommendationPayload($r));
 
         return response()->json(['data' => ['bands' => $this->recommendations->bands(), 'items' => $rows]]);
@@ -128,9 +149,12 @@ class PerformanceReviewController extends Controller
 
     public function incidents(Request $request): JsonResponse
     {
+        $visible = $this->managerScope->visibleEmployeeIdsOrNull($request->user(), $this->actingEmployee($request));
+
         $rows = EmployeeIncident::query()
             ->with('employee:id,first_name,last_name,employee_number')
             ->where('company_id', $this->companyId($request))
+            ->when($visible !== null, fn ($q) => $q->whereIn('employee_id', $visible))
             ->when($request->filled('employee_id'), fn ($q) => $q->where('employee_id', $request->string('employee_id')))
             ->when($request->filled('category'), fn ($q) => $q->where('category', $request->string('category')))
             ->orderByDesc('occurred_on')->limit(200)->get()

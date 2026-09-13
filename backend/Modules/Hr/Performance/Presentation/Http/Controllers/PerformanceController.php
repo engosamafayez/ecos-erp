@@ -14,7 +14,10 @@ use Modules\Hr\Performance\Domain\Services\GoalService;
 use Modules\Hr\Performance\Domain\Services\KpiEngine;
 use Modules\Hr\Performance\Domain\Services\PerformanceDashboardService;
 use Modules\Hr\Performance\Domain\Services\PerformanceEvaluationService;
+use Modules\Hr\Workforce\Domain\Models\Employee;
+use Modules\Hr\Workforce\Domain\Services\ManagerScopeService;
 use Modules\Hr\Workforce\Presentation\Http\Controllers\Concerns\ResolvesHrContext;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /** Goals, KPI evaluation and the performance dashboards. */
 class PerformanceController extends Controller
@@ -26,7 +29,44 @@ class PerformanceController extends Controller
         private readonly KpiEngine $kpi,
         private readonly PerformanceEvaluationService $evaluation,
         private readonly PerformanceDashboardService $dashboards,
+        private readonly ManagerScopeService $managerScope,
     ) {}
+
+    /**
+     * The FIN-01 visibility gate for a single target employee. A direct-id
+     * guess outside the caller's authorized scope 404s exactly like an id
+     * from another company already does via ResolvesHrContext::employee() —
+     * never a 403, so a blocked request reveals nothing about whether the
+     * record exists at all.
+     */
+    private function assertVisible(Request $request, Employee $target): void
+    {
+        if (! $this->managerScope->canView($request->user(), $this->actingEmployee($request), $target)) {
+            throw new NotFoundHttpException;
+        }
+    }
+
+    /** Employee ids for the "My Team" picker: the caller's own authorized subtree. */
+    public function myTeam(Request $request): JsonResponse
+    {
+        $query = Employee::query()
+            ->where('company_id', $this->companyId($request))
+            ->whereNotIn('status', ['terminated', 'resigned'])
+            ->with(['department:id,name', 'position:id,title']);
+
+        $employees = $this->managerScope
+            ->scopeEmployeeQuery($query, $request->user(), $this->actingEmployee($request))
+            ->orderBy('first_name')
+            ->get();
+
+        return response()->json(['data' => $employees->map(fn (Employee $e) => [
+            'id' => (string) $e->id,
+            'employee_number' => $e->employee_number,
+            'name' => $e->fullName(),
+            'department' => $e->department?->only(['id', 'name']),
+            'position' => $e->position?->only(['id', 'title']),
+        ])]);
+    }
 
     private function month(Request $request): string
     {
@@ -86,27 +126,31 @@ class PerformanceController extends Controller
     public function employeeDashboard(Request $request, string $employeeId): JsonResponse
     {
         $employee = $this->employee($request, $employeeId);
+        $this->assertVisible($request, $employee);
 
         return response()->json(['data' => $this->dashboards->forEmployee($employee, $this->month($request))]);
     }
 
     public function departmentDashboard(Request $request, string $departmentId): JsonResponse
     {
+        $restrict = $this->managerScope->visibleEmployeeIdsOrNull($request->user(), $this->actingEmployee($request));
+
         return response()->json([
-            'data' => $this->dashboards->forDepartment($this->companyId($request), $departmentId, $this->month($request)),
+            'data' => $this->dashboards->forDepartment($this->companyId($request), $departmentId, $this->month($request), $restrict),
         ]);
     }
 
     public function history(Request $request, string $employeeId): JsonResponse
     {
         $employee = $this->employee($request, $employeeId);
+        $this->assertVisible($request, $employee);
         $months = min(24, max(1, (int) $request->integer('months', 6)));
 
         return response()->json([
             'data' => [
                 'employee_id' => (string) $employee->id,
                 'series' => $this->dashboards->history(
-                    $this->companyId($request), GoalSubject::Employee, (string) $employee->id, $months
+                    $this->companyId($request), GoalSubject::Employee, (string) $employee->id, $months,
                 ),
             ],
         ]);

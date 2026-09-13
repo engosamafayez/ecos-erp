@@ -293,6 +293,34 @@ export type HistoryPoint = {
   status: PerformanceStatusKey;
 };
 
+export type ManagerReviewStatus = 'draft' | 'submitted';
+
+export type ManagerReview = {
+  overall_rating: number;
+  strengths: string | null;
+  improvement_notes: string | null;
+  manager_comments: string | null;
+  status: ManagerReviewStatus;
+};
+
+export type SaveManagerReviewPayload = {
+  period_month: string;
+  overall_rating: number;
+  strengths?: string;
+  improvement_notes?: string;
+  manager_comments?: string;
+  status?: ManagerReviewStatus;
+};
+
+/** One row from GET /hr/performance/my-team — the caller's own authorized subtree. */
+export type MyTeamMember = {
+  id: string;
+  employee_number: string;
+  name: string;
+  department: { id: string; name: string } | null;
+  position: { id: string; title: string } | null;
+};
+
 export type EmployeePerformance = {
   employee: { id: string; employee_number: string; name: string; department_id: string | null };
   period_month: string;
@@ -306,13 +334,7 @@ export type EmployeePerformance = {
     actual: number;
     facts: number;
   }>;
-  review: {
-    overall_rating: number;
-    strengths: string | null;
-    improvement_notes: string | null;
-    manager_comments: string | null;
-    status: string;
-  } | null;
+  review: ManagerReview | null;
   history: HistoryPoint[];
 };
 

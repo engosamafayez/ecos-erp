@@ -16,6 +16,9 @@ use Modules\Admin\Configuration\Presentation\Http\Controllers\MasterGeographyCon
 use Modules\Admin\Configuration\Presentation\Http\Controllers\MasterZoneController;
 use Modules\Admin\Configuration\Presentation\Http\Controllers\PreparationPolicyController;
 use Modules\Admin\Configuration\Presentation\Http\Controllers\WaveEngineConfigurationController;
+use Modules\Admin\GoLive\Presentation\Http\Controllers\GoLiveActivationController;
+use Modules\Admin\GoLive\Presentation\Http\Controllers\GoLiveResetController;
+use Modules\Admin\GoLive\Presentation\Http\Controllers\OpeningInventoryController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\ArtifactController as CbArtifactController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\DashboardController as CbDashboardController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\TaskController as CbTaskController;
@@ -44,12 +47,8 @@ use Modules\Collaboration\Presentation\Http\Controllers\TaskController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskFollowerController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskLabelController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskStatusController;
-use Modules\Admin\GoLive\Presentation\Http\Controllers\GoLiveActivationController;
-use Modules\Admin\GoLive\Presentation\Http\Controllers\GoLiveResetController;
-use Modules\Admin\GoLive\Presentation\Http\Controllers\OpeningInventoryController;
 use Modules\Commerce\Channels\Presentation\Http\Controllers\ChannelController;
 use Modules\Commerce\Connectors\Presentation\Http\Controllers\ConnectorController;
-use Modules\Finance\Receivables\Presentation\Http\Controllers\CustomerOpeningBalanceController;
 use Modules\Commerce\Fulfillments\Presentation\Http\Controllers\FulfillmentController;
 use Modules\Commerce\OrderImport\Presentation\Http\Controllers\OrderImportController;
 use Modules\Commerce\Orders\Presentation\Http\Controllers\OrderController;
@@ -58,8 +57,8 @@ use Modules\Commerce\ProductImport\Presentation\Http\Controllers\ProductImportCo
 use Modules\Commerce\ProductMappings\Presentation\Http\Controllers\ProductMappingController;
 use Modules\Commerce\Shipping\Presentation\Http\Controllers\ShippingQuoteController;
 use Modules\Commerce\StockSync\Presentation\Http\Controllers\StockSyncController;
-use Modules\Commerce\Synchronization\Presentation\Http\Controllers\SynchronizationController;
 use Modules\Commerce\Synchronization\Presentation\Http\Controllers\OrdersSyncControlController;
+use Modules\Commerce\Synchronization\Presentation\Http\Controllers\SynchronizationController;
 use Modules\Commerce\Synchronization\Presentation\Http\Controllers\WooCommerceWebhookController;
 use Modules\Core\DemandAnalysis\Presentation\Http\Controllers\DemandAnalysisController as ProductDemandAnalysisController;
 use Modules\Core\UserPreferences\Presentation\Http\Controllers\UserPreferenceController;
@@ -137,6 +136,7 @@ use Modules\Finance\Presentation\Http\Controllers\TaxController as FinanceTaxCon
 use Modules\Finance\Presentation\Http\Controllers\TrialBalanceController as FinanceTrialBalanceController;
 use Modules\Finance\Presentation\Http\Controllers\VatController as FinanceVatController;
 use Modules\Finance\Presentation\Http\Controllers\YearEndController as FinanceYearEndController;
+use Modules\Finance\Receivables\Presentation\Http\Controllers\CustomerOpeningBalanceController;
 use Modules\Hr\Attendance\Presentation\Http\Controllers\AttendanceController as HrAttendanceController;
 use Modules\Hr\Attendance\Presentation\Http\Controllers\LeaveRequestController as HrLeaveController;
 use Modules\Hr\Attendance\Presentation\Http\Controllers\WorkforceAvailabilityController as HrAvailabilityController;
@@ -4562,6 +4562,7 @@ Route::middleware('auth:sanctum')->prefix('hr/performance')->group(function (): 
     Route::middleware('permission:hr.performance.view')->group(function (): void {
         Route::get('/goals', [HrPerformanceController::class, 'goals']);
         Route::get('/metrics', [HrPerformanceController::class, 'metrics']);
+        Route::get('/my-team', [HrPerformanceController::class, 'myTeam']);
         Route::get('/employees/{employeeId}/dashboard', [HrPerformanceController::class, 'employeeDashboard']);
         Route::get('/employees/{employeeId}/history', [HrPerformanceController::class, 'history']);
         Route::get('/departments/{departmentId}/dashboard', [HrPerformanceController::class, 'departmentDashboard']);

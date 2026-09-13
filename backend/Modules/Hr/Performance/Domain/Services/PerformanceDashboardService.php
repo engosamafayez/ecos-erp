@@ -65,8 +65,21 @@ final class PerformanceDashboardService
         ];
     }
 
-    /** @return array<string, mixed> */
-    public function forDepartment(string $companyId, string $departmentId, string $periodMonth): array
+    /**
+     * $restrictToEmployeeIds, when given, limits the per-member ranking/team
+     * rollup below to that population — the caller's authorized visibility
+     * set. It must be applied here, before any averaging happens, not as a
+     * filter on the output afterward: an aggregate computed over everyone and
+     * then merely hidden per-row would still leak headcount/averages derived
+     * from employees outside the caller's scope. The department-level goal
+     * ("department_goals"/"department_overall" below) is a directly-recorded
+     * department KPI, not a rollup of individual employees, so it carries no
+     * per-employee data to leak and is unaffected by this restriction.
+     *
+     * @param  array<int, string>|null  $restrictToEmployeeIds
+     * @return array<string, mixed>
+     */
+    public function forDepartment(string $companyId, string $departmentId, string $periodMonth, ?array $restrictToEmployeeIds = null): array
     {
         $departmentGoals = $this->snapshots($companyId, GoalSubject::Department, $departmentId, $periodMonth);
         $overall = $this->evaluation->overallAchievement($companyId, GoalSubject::Department, $departmentId, $periodMonth);
@@ -75,12 +88,13 @@ final class PerformanceDashboardService
             ->where('company_id', $companyId)
             ->where('department_id', $departmentId)
             ->whereNotIn('status', ['terminated', 'resigned'])
+            ->when($restrictToEmployeeIds !== null, fn ($q) => $q->whereIn('id', $restrictToEmployeeIds))
             ->get();
 
         // One ranking row per member, from their own snapshots.
         $ranking = $employees->map(function (Employee $employee) use ($companyId, $periodMonth) {
             $result = $this->evaluation->overallAchievement(
-                $companyId, GoalSubject::Employee, (string) $employee->id, $periodMonth
+                $companyId, GoalSubject::Employee, (string) $employee->id, $periodMonth,
             );
 
             return [
@@ -117,11 +131,11 @@ final class PerformanceDashboardService
                 'status' => PerformanceStatus::fromAchievement($teamAverage)->value,
                 'meeting_target' => count(array_filter(
                     $withGoals,
-                    fn (array $r) => PerformanceStatus::from($r['status'])->metTarget()
+                    fn (array $r) => PerformanceStatus::from($r['status'])->metTarget(),
                 )),
                 'needing_attention' => count(array_filter(
                     $withGoals,
-                    fn (array $r) => PerformanceStatus::from($r['status'])->needsAttention()
+                    fn (array $r) => PerformanceStatus::from($r['status'])->needsAttention(),
                 )),
             ],
             'rankings' => $ranking,
