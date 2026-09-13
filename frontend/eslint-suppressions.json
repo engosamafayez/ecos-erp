@@ -727,11 +727,6 @@
       "count": 19
     }
   },
-  "src/features/hr/pages/employee-performance-page.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 20
-    }
-  },
   "src/features/hr/pages/exit-management-page.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
       "count": 19
@@ -750,11 +745,6 @@
   "src/features/hr/pages/offers-workspace-page.tsx": {
     "ecos-i18n/no-hardcoded-ui-strings": {
       "count": 28
-    }
-  },
-  "src/features/hr/pages/performance-workspace-page.tsx": {
-    "ecos-i18n/no-hardcoded-ui-strings": {
-      "count": 27
     }
   },
   "src/features/hr/pages/recruitment-analytics-page.tsx": {

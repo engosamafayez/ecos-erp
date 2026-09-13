@@ -8,6 +8,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Hr\Compensation\Domain\Enums\DeductionType;
 use Modules\Hr\Compensation\Domain\Services\DeductionService;
+use Modules\Hr\Infrastructure\Services\HrAuditService;
 use Modules\Hr\Performance\Domain\Enums\IncidentCategory;
 use Modules\Hr\Performance\Domain\Models\EmployeeIncident;
 use Modules\Hr\Workforce\Domain\Models\Employee;
@@ -21,7 +22,15 @@ use Modules\Hr\Workforce\Domain\Models\Employee;
  */
 final class IncidentService
 {
-    public function __construct(private readonly DeductionService $deductions) {}
+    /** Free-text field kept out of the audit trail's old/new values. */
+    private const REDACTED_FIELDS = ['description'];
+
+    private const AUDITED_FIELDS = ['occurred_on', 'category', 'severity', 'description', 'related_module', 'related_reference', 'amount'];
+
+    public function __construct(
+        private readonly DeductionService $deductions,
+        private readonly HrAuditService $audit,
+    ) {}
 
     public function record(Employee $employee, array $data, ?int $actorId = null): EmployeeIncident
     {
@@ -29,7 +38,7 @@ final class IncidentService
             ? $data['category']
             : (IncidentCategory::tryFrom((string) ($data['category'] ?? '')) ?? IncidentCategory::OperationalNote);
 
-        return EmployeeIncident::create([
+        $incident = EmployeeIncident::create([
             'company_id' => $employee->company_id,
             'employee_id' => $employee->id,
             'occurred_on' => $data['occurred_on'] ?? Carbon::now()->toDateString(),
@@ -43,6 +52,21 @@ final class IncidentService
             'amount' => isset($data['amount']) ? round((float) $data['amount'], 2) : null,
             'created_by' => $actorId,
         ]);
+
+        $captured = $incident->only(self::AUDITED_FIELDS);
+        $captured['occurred_on'] = $incident->occurred_on?->toDateString();
+
+        $this->audit->log(
+            action: 'hr.employee_incident.recorded',
+            entityType: HrAuditService::ENTITY_EMPLOYEE_INCIDENT,
+            entityId: (string) $incident->id,
+            companyId: (string) $employee->company_id,
+            actorId: $actorId,
+            newValues: $this->audit->redact($captured, self::REDACTED_FIELDS),
+            metadata: ['employee_id' => (string) $employee->id],
+        );
+
+        return $incident;
     }
 
     /**
@@ -74,8 +98,23 @@ final class IncidentService
             ], $actorId);
 
             $incident->update(['deduction_id' => (string) $deduction->id]);
+            $incident->refresh();
 
-            return $incident->refresh();
+            // The EmployeeIncident side of this mutation only — the Deduction
+            // record itself is Compensation's aggregate (out of this slice's
+            // Compensation Boundary) and is not separately audited here.
+            $this->audit->log(
+                action: 'hr.employee_incident.deduction_raised',
+                entityType: HrAuditService::ENTITY_EMPLOYEE_INCIDENT,
+                entityId: (string) $incident->id,
+                companyId: (string) $incident->company_id,
+                actorId: $actorId,
+                oldValues: ['deduction_id' => null],
+                newValues: ['deduction_id' => $incident->deduction_id],
+                metadata: ['incident_category' => $incident->category->value],
+            );
+
+            return $incident;
         });
     }
 

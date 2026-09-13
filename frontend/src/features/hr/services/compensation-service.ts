@@ -10,15 +10,20 @@ import type {
   Compensation360,
   Deduction,
   DepartmentPerformance,
+  DriverPerformance,
+  DriverRosterRow,
   EmployeeIncident,
   EmployeePerformance,
   Goal,
   KpiMetricDef,
+  ManagerReview,
+  MyTeamMember,
   PayrollPeriod,
   PayrollRun,
   Payslip,
   PayslipDetail,
   RecommendationBand,
+  SaveManagerReviewPayload,
 } from '@/features/hr/types/compensation';
 
 /** HR & Workforce OS — EPIC H3 + H4 REST client. */
@@ -266,21 +271,29 @@ export const compensationService = {
     return data.data;
   },
 
-  async saveReview(
-    employeeId: string,
-    payload: {
-      period_month: string;
-      overall_rating: number;
-      strengths?: string;
-      improvement_notes?: string;
-      manager_comments?: string;
-      status?: 'draft' | 'submitted';
-    },
-  ): Promise<unknown> {
-    const { data } = await api.post<ApiResponse<unknown>>(
+  async saveReview(employeeId: string, payload: SaveManagerReviewPayload): Promise<ManagerReview> {
+    const { data } = await api.post<ApiResponse<ManagerReview>>(
       `/hr/performance/employees/${employeeId}/review`,
       payload,
     );
+    return data.data;
+  },
+
+  /** The caller's own authorized employee subtree — self plus every direct/indirect report. */
+  async myTeam(): Promise<MyTeamMember[]> {
+    const { data } = await api.get<ApiResponse<MyTeamMember[]>>('/hr/performance/my-team');
+    return data.data;
+  },
+
+  /** FIN-01 Slice 1/4 — the driver roster with identity-resolution state only. */
+  async driverRoster(): Promise<DriverRosterRow[]> {
+    const { data } = await api.get<ApiResponse<DriverRosterRow[]>>('/hr/performance/drivers');
+    return data.data;
+  },
+
+  /** FIN-01 Slice 4 — one driver's Pattern-C performance presentation for a period. */
+  async driverPerformance(driverId: string, params: { from: string; to: string }): Promise<DriverPerformance> {
+    const { data } = await api.get<ApiResponse<DriverPerformance>>(`/hr/performance/drivers/${driverId}`, { params });
     return data.data;
   },
 

@@ -241,6 +241,43 @@ export function useDepartmentPerformanceQuery(departmentId: string, periodMonth:
   });
 }
 
+/** The caller's own authorized employee subtree — backs the "My Team" picker. */
+export function useMyTeamQuery() {
+  const companyId = useCompanyKey();
+  return useQuery({
+    queryKey: ['company', companyId, HR_KEY, 'my-team'],
+    queryFn: () => compensationService.myTeam(),
+  });
+}
+
+/** FIN-01 Slice 1/4 — the driver roster, identity state only. */
+export function useDriverRosterQuery() {
+  const companyId = useCompanyKey();
+  return useQuery({
+    queryKey: ['company', companyId, HR_KEY, 'driver-roster'],
+    queryFn: () => compensationService.driverRoster(),
+  });
+}
+
+/** FIN-01 Slice 4 — one driver's Pattern-C performance presentation for a period. */
+export function useDriverPerformanceQuery(driverId: string, from: string, to: string) {
+  const companyId = useCompanyKey();
+  return useQuery({
+    queryKey: ['company', companyId, HR_KEY, 'driver-performance', driverId, from, to],
+    queryFn: () => compensationService.driverPerformance(driverId, { from, to }),
+    enabled: !!driverId,
+  });
+}
+
+export function useSaveManagerReview() {
+  const invalidate = useInvalidateHr();
+  return useMutation({
+    mutationFn: ({ employeeId, ...payload }: { employeeId: string } & Parameters<typeof compensationService.saveReview>[1]) =>
+      compensationService.saveReview(employeeId, payload),
+    onSuccess: invalidate,
+  });
+}
+
 export function useRecommendationsQuery(periodMonth: string) {
   const companyId = useCompanyKey();
   return useQuery({

@@ -138,6 +138,7 @@ use Modules\Finance\Presentation\Http\Controllers\VatController as FinanceVatCon
 use Modules\Finance\Presentation\Http\Controllers\YearEndController as FinanceYearEndController;
 use Modules\Finance\Receivables\Presentation\Http\Controllers\CustomerOpeningBalanceController;
 use Modules\Hr\Attendance\Presentation\Http\Controllers\AttendanceController as HrAttendanceController;
+use Modules\Hr\Attendance\Presentation\Http\Controllers\AttendanceCorrectionController as HrAttendanceCorrectionController;
 use Modules\Hr\Attendance\Presentation\Http\Controllers\LeaveRequestController as HrLeaveController;
 use Modules\Hr\Attendance\Presentation\Http\Controllers\WorkforceAvailabilityController as HrAvailabilityController;
 use Modules\Hr\Attendance\Presentation\Http\Controllers\WorkScheduleController as HrScheduleController;
@@ -155,6 +156,7 @@ use Modules\Hr\Recruitment\Presentation\Http\Controllers\OfferController as HrOf
 use Modules\Hr\Recruitment\Presentation\Http\Controllers\PublicCareersController as HrPublicCareersController;
 use Modules\Hr\Recruitment\Presentation\Http\Controllers\RecruitmentController as HrRecruitmentController;
 use Modules\Hr\Recruitment\Presentation\Http\Controllers\RecruitmentEnhancementController as HrRecruitmentEnhancementController;
+use Modules\Hr\Workforce\Presentation\Http\Controllers\DriverPerformanceController as HrDriverPerformanceController;
 use Modules\Hr\Workforce\Presentation\Http\Controllers\EmployeeController as HrEmployeeController;
 use Modules\Hr\Workforce\Presentation\Http\Controllers\EmployeeDocumentController as HrDocumentController;
 use Modules\Hr\Workforce\Presentation\Http\Controllers\EmploymentContractController as HrContractController;
@@ -4484,6 +4486,7 @@ Route::middleware('auth:sanctum')->prefix('hr/attendance')->group(function (): v
         Route::get('/calendars', [HrScheduleController::class, 'calendars']);
         Route::get('/shifts', [HrScheduleController::class, 'shifts']);
         Route::get('/holidays', [HrScheduleController::class, 'holidays']);
+        Route::get('/corrections', [HrAttendanceCorrectionController::class, 'index']);
     });
     Route::middleware('permission:hr.attendance.register')->group(function (): void {
         Route::post('/register', [HrAttendanceController::class, 'register']);
@@ -4496,6 +4499,10 @@ Route::middleware('auth:sanctum')->prefix('hr/attendance')->group(function (): v
         Route::post('/holidays', [HrScheduleController::class, 'storeHoliday']);
         Route::put('/holidays/{id}', [HrScheduleController::class, 'updateHoliday']);
         Route::delete('/holidays/{id}', [HrScheduleController::class, 'destroyHoliday']);
+        Route::post('/days/{attendanceDayId}/corrections', [HrAttendanceCorrectionController::class, 'store']);
+        Route::patch('/corrections/{id}/approve', [HrAttendanceCorrectionController::class, 'approve']);
+        Route::patch('/corrections/{id}/reject', [HrAttendanceCorrectionController::class, 'reject']);
+        Route::patch('/corrections/{id}/cancel', [HrAttendanceCorrectionController::class, 'cancel']);
     });
 });
 
@@ -4593,12 +4600,15 @@ Route::middleware('auth:sanctum')->prefix('hr/performance')->group(function (): 
     Route::middleware('permission:hr.performance.view')->group(function (): void {
         Route::get('/goals', [HrPerformanceController::class, 'goals']);
         Route::get('/metrics', [HrPerformanceController::class, 'metrics']);
+        Route::get('/my-team', [HrPerformanceController::class, 'myTeam']);
         Route::get('/employees/{employeeId}/dashboard', [HrPerformanceController::class, 'employeeDashboard']);
         Route::get('/employees/{employeeId}/history', [HrPerformanceController::class, 'history']);
         Route::get('/departments/{departmentId}/dashboard', [HrPerformanceController::class, 'departmentDashboard']);
         Route::get('/reviews', [HrReviewController::class, 'reviews']);
         Route::get('/recommendations', [HrReviewController::class, 'recommendations']);
         Route::get('/incidents', [HrReviewController::class, 'incidents']);
+        Route::get('/drivers', [HrDriverPerformanceController::class, 'roster']);
+        Route::get('/drivers/{driverId}', [HrDriverPerformanceController::class, 'show']);
     });
     Route::middleware('permission:hr.performance.manage')->group(function (): void {
         Route::post('/goals', [HrPerformanceController::class, 'storeGoal']);

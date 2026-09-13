@@ -220,6 +220,7 @@ import { CommissionRulesPage } from '@/features/hr/pages/commission-rules-page';
 import { PerformanceWorkspacePage } from '@/features/hr/pages/performance-workspace-page';
 import { EmployeePerformancePage } from '@/features/hr/pages/employee-performance-page';
 import { DepartmentPerformancePage } from '@/features/hr/pages/department-performance-page';
+import { DriverPerformancePage } from '@/features/hr/pages/driver-performance-page';
 import { CareersPortalPage } from '@/features/hr/pages/careers-portal-page';
 import { CareersApplyPage } from '@/features/hr/pages/careers-apply-page';
 import { RecruitmentWorkspacePage } from '@/features/hr/pages/recruitment-workspace-page';
@@ -370,6 +371,7 @@ export const router = createBrowserRouter(
             { path: ROUTES.hrPerformance, Component: PerformanceWorkspacePage },
             { path: ROUTES.hrEmployeePerformance, Component: EmployeePerformancePage },
             { path: ROUTES.hrDepartmentPerformance, Component: DepartmentPerformancePage },
+            { path: ROUTES.hrDriverPerformance, Component: DriverPerformancePage },
             // HR & Workforce OS — EPIC H5 + H6
             // Static segments before the :applicationId pattern, or /analytics
             // and /tags would be matched as application ids.

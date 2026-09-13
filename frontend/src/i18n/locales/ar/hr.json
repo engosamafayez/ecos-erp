@@ -141,6 +141,32 @@
       "department": "القسم",
       "recorded": "مُسجَّل",
       "status": "الحالة"
+    },
+    "time": {
+      "onTime": "في الموعد",
+      "late": "متأخر",
+      "early": "مبكر",
+      "notEvaluated": "غير مقيَّم"
+    },
+    "history": {
+      "title": "سجل الحضور",
+      "empty": "لا يوجد حضور مسجَّل لهذه الفترة.",
+      "date": "التاريخ",
+      "checkIn": "الحضور",
+      "checkOut": "الانصراف",
+      "late": "التأخير",
+      "earlyLeave": "الانصراف المبكر",
+      "workedTime": "وقت العمل",
+      "action": "الإجراء",
+      "requestCorrection": "طلب تصحيح",
+      "submitCorrection": "إرسال"
+    },
+    "correction": {
+      "reason": "السبب",
+      "pendingTitle": "طلبات التصحيح المعلقة",
+      "empty": "لا توجد طلبات تصحيح معلقة.",
+      "approve": "موافقة",
+      "reject": "رفض"
     }
   },
   "careers": {
@@ -302,6 +328,130 @@
       "approveDescription": "هل تريد الموافقة على طلب الإجازة هذا؟",
       "thisEmployee": "هذا الموظف",
       "rejectDescription": "هل تريد رفض طلب الإجازة هذا؟"
+    }
+  },
+  "performance": {
+    "breadcrumbWorkforce": "القوى العاملة",
+    "breadcrumb": "الأداء",
+    "stats": {
+      "overallAchievement": "الإنجاز الإجمالي",
+      "goals": "الأهداف",
+      "targetsMet": "الأهداف المحققة",
+      "managerRating": "تقييم المدير",
+      "goalsSet": "الأهداف المحددة",
+      "awaitingDecision": "بانتظار القرار",
+      "recommendedTotal": "الإجمالي الموصى به",
+      "incidents": "الحوادث"
+    },
+    "goalsCard": {
+      "title": "الأهداف",
+      "emptyFor": "لا توجد أهداف محددة لشهر {{month}}.",
+      "actual": "الفعلي",
+      "fact": "واقعة",
+      "facts": "وقائع",
+      "from": "من"
+    },
+    "trend": {
+      "title": "الاتجاه",
+      "empty": "لا يوجد سجل بعد."
+    },
+    "measured": {
+      "title": "تم قياسه هذا الشهر",
+      "empty": "لم يتم جمع أي وقائع تشغيلية بعد.",
+      "from": "من"
+    },
+    "review": {
+      "title": "مراجعة المدير",
+      "edit": "تعديل المراجعة",
+      "write": "كتابة مراجعة",
+      "strengths": "نقاط القوة",
+      "toImprove": "نقاط التحسين",
+      "comments": "ملاحظات",
+      "emptyFor": "لم يتم تسجيل مراجعة لشهر {{month}} بعد.",
+      "overallRating": "التقييم العام",
+      "cancel": "إلغاء",
+      "saveDraft": "حفظ كمسودة",
+      "submit": "إرسال",
+      "toastSubmitted": "تم إرسال المراجعة",
+      "toastDraftSaved": "تم حفظ المسودة",
+      "toastNotAuthorized": "غير مصرح لك بمراجعة هذا الموظف.",
+      "toastSaveFailed": "تعذر حفظ المراجعة — يرجى المحاولة مرة أخرى."
+    },
+    "workspace": {
+      "subtitle": "تُقاس الأهداف بناءً على ما تُبلغ عنه الوحدات التشغيلية — لا أحد يُدخل نتيجته بنفسه.",
+      "evaluating": "جارٍ التقييم…",
+      "evaluate": "تقييم",
+      "recommendBonuses": "التوصية بالمكافآت"
+    },
+    "myTeam": {
+      "title": "فريقي",
+      "emptyTitle": "لا يوجد موظفون مصرح بهم",
+      "emptyDescription": "ليس لديك مرؤوسون مباشرون أو غير مباشرين لمراجعتهم بعد.",
+      "noDepartment": "بدون قسم"
+    },
+    "drivers": {
+      "title": "أداء السائقين",
+      "detailTitle": "أداء السائق",
+      "emptyTitle": "لا يوجد سائقون لعرضهم",
+      "emptyDescription": "لا يوجد سائقون مرئيون لك حتى الآن.",
+      "identityLabel": "الهوية",
+      "noEmployeeLink": "غير مرتبط بموظف",
+      "notAvailable": "غير متاح",
+      "identity": {
+        "matched": "مطابق",
+        "unmatched": "غير مطابق",
+        "ambiguous": "غامض",
+        "cross_company": "عبر الشركات"
+      },
+      "stats": {
+        "received": "المستلمة",
+        "delivered": "المسلَّمة",
+        "deliveryRate": "معدل التسليم",
+        "undelivered": "غير المسلَّمة"
+      },
+      "outcomes": {
+        "title": "نتائج التسليم",
+        "partial": "جزئي",
+        "failed": "فاشل",
+        "returned": "مرتجع",
+        "skipped": "متخطى",
+        "pending": "معلق"
+      },
+      "settlement": {
+        "title": "التسوية",
+        "status": "الحالة",
+        "cashExpected": "النقد المتوقع",
+        "cashSubmitted": "النقد المُسلَّم",
+        "difference": "الفرق",
+        "shortages": "العجز"
+      }
+    },
+    "recommendations": {
+      "title": "توصيات المكافآت",
+      "percentOfBasic": "% من الأساسي",
+      "emptyFor": "لا توجد توصيات لشهر {{month}}. قم بتقييم الشهر أولاً ثم قم بالإنشاء.",
+      "table": {
+        "employee": "الموظف",
+        "achievement": "الإنجاز",
+        "band": "الفئة",
+        "recommended": "الموصى به",
+        "status": "الحالة",
+        "decision": "القرار"
+      },
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "approve": "موافقة",
+      "modify": "تعديل",
+      "reject": "رفض"
+    },
+    "goalsList": {
+      "titleFor": "أهداف شهر {{month}}",
+      "empty": "لا توجد أهداف محددة لهذا الشهر."
+    },
+    "incidentsList": {
+      "title": "الحوادث الأخيرة",
+      "empty": "لم يتم تسجيل أي حوادث.",
+      "deductionRaised": "تم رفع خصم"
     }
   }
 }

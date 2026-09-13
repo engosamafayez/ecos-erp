@@ -137,6 +137,32 @@
       "department": "Department",
       "recorded": "Recorded",
       "status": "Status"
+    },
+    "time": {
+      "onTime": "On time",
+      "late": "Late",
+      "early": "Early",
+      "notEvaluated": "Not evaluated"
+    },
+    "history": {
+      "title": "Attendance History",
+      "empty": "No attendance recorded for this range.",
+      "date": "Date",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "late": "Late",
+      "earlyLeave": "Early Leave",
+      "workedTime": "Worked Time",
+      "action": "Action",
+      "requestCorrection": "Request Correction",
+      "submitCorrection": "Submit"
+    },
+    "correction": {
+      "reason": "Reason",
+      "pendingTitle": "Pending Corrections",
+      "empty": "No pending correction requests.",
+      "approve": "Approve",
+      "reject": "Reject"
     }
   },
   "careers": {
@@ -294,6 +320,130 @@
       "approveDescription": "Approve this leave request?",
       "thisEmployee": "this employee",
       "rejectDescription": "Reject this leave request?"
+    }
+  },
+  "performance": {
+    "breadcrumbWorkforce": "Workforce",
+    "breadcrumb": "Performance",
+    "stats": {
+      "overallAchievement": "Overall Achievement",
+      "goals": "Goals",
+      "targetsMet": "Targets Met",
+      "managerRating": "Manager Rating",
+      "goalsSet": "Goals Set",
+      "awaitingDecision": "Awaiting Decision",
+      "recommendedTotal": "Recommended Total",
+      "incidents": "Incidents"
+    },
+    "goalsCard": {
+      "title": "Goals",
+      "emptyFor": "No goals set for {{month}}.",
+      "actual": "actual",
+      "fact": "fact",
+      "facts": "facts",
+      "from": "from"
+    },
+    "trend": {
+      "title": "Trend",
+      "empty": "No history yet."
+    },
+    "measured": {
+      "title": "Measured This Month",
+      "empty": "No operational facts collected yet.",
+      "from": "from"
+    },
+    "review": {
+      "title": "Manager Review",
+      "edit": "Edit Review",
+      "write": "Write Review",
+      "strengths": "Strengths",
+      "toImprove": "To Improve",
+      "comments": "Comments",
+      "emptyFor": "No review recorded for {{month}} yet.",
+      "overallRating": "Overall Rating",
+      "cancel": "Cancel",
+      "saveDraft": "Save Draft",
+      "submit": "Submit",
+      "toastSubmitted": "Review submitted",
+      "toastDraftSaved": "Draft saved",
+      "toastNotAuthorized": "You are not authorized to review this employee.",
+      "toastSaveFailed": "Could not save the review — please try again."
+    },
+    "workspace": {
+      "subtitle": "Goals are measured from what the operational modules report — nobody enters their own score.",
+      "evaluating": "Evaluating…",
+      "evaluate": "Evaluate",
+      "recommendBonuses": "Recommend Bonuses"
+    },
+    "myTeam": {
+      "title": "My Team",
+      "emptyTitle": "No authorized employees",
+      "emptyDescription": "You have no direct or indirect reports to review yet.",
+      "noDepartment": "No department"
+    },
+    "drivers": {
+      "title": "Driver Performance",
+      "detailTitle": "Driver Performance",
+      "emptyTitle": "No drivers to show",
+      "emptyDescription": "There are no drivers visible to you yet.",
+      "identityLabel": "Identity",
+      "noEmployeeLink": "Not linked to an employee",
+      "notAvailable": "Not available",
+      "identity": {
+        "matched": "Matched",
+        "unmatched": "Unmatched",
+        "ambiguous": "Ambiguous",
+        "cross_company": "Cross-company"
+      },
+      "stats": {
+        "received": "Received",
+        "delivered": "Delivered",
+        "deliveryRate": "Delivery rate",
+        "undelivered": "Undelivered"
+      },
+      "outcomes": {
+        "title": "Delivery Outcomes",
+        "partial": "Partial",
+        "failed": "Failed",
+        "returned": "Returned",
+        "skipped": "Skipped",
+        "pending": "Pending"
+      },
+      "settlement": {
+        "title": "Settlement",
+        "status": "Status",
+        "cashExpected": "Cash expected",
+        "cashSubmitted": "Cash submitted",
+        "difference": "Difference",
+        "shortages": "Shortages"
+      }
+    },
+    "recommendations": {
+      "title": "Bonus Recommendations",
+      "percentOfBasic": "% of basic",
+      "emptyFor": "No recommendations for {{month}}. Evaluate the month first, then generate.",
+      "table": {
+        "employee": "Employee",
+        "achievement": "Achievement",
+        "band": "Band",
+        "recommended": "Recommended",
+        "status": "Status",
+        "decision": "Decision"
+      },
+      "save": "Save",
+      "cancel": "Cancel",
+      "approve": "Approve",
+      "modify": "Modify",
+      "reject": "Reject"
+    },
+    "goalsList": {
+      "titleFor": "Goals for {{month}}",
+      "empty": "No goals set for this month."
+    },
+    "incidentsList": {
+      "title": "Recent Incidents",
+      "empty": "No incidents recorded.",
+      "deductionRaised": "deduction raised"
     }
   }
 }

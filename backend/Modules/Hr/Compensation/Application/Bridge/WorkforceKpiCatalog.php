@@ -71,7 +71,7 @@ final class WorkforceKpiCatalog
             occurredAt: $this->when($payload),
             idempotencyKey: $metric->value.':'.$eventId,
             departmentId: $this->str($payload, ['department_id', 'departmentId']),
-            sourceReference: $this->str($payload, ['id', 'order_id', 'shipment_id', 'ticket_id', 'reference']),
+            sourceReference: $this->str($payload, ['id', 'order_id', 'shipment_id', 'ticket_id', 'wave_item_id', 'reference']),
             metadata: ['event_name' => $eventName],
         );
     }
@@ -103,7 +103,7 @@ final class WorkforceKpiCatalog
             'crm.ticket.closed' => [KpiMetric::TicketsClosed, [], ['count']],
 
             // Preparation and Packing OS.
-            'preparation.order.prepared' => [KpiMetric::OrdersPrepared, [], ['count']],
+            'preparation.product.prepared' => [KpiMetric::OrdersPrepared, [], ['quantity_prepared']],
             'packing.order.packed' => [KpiMetric::OrdersPacked, [], ['count']],
         ];
     }
@@ -136,7 +136,7 @@ final class WorkforceKpiCatalog
 
     private function when(array $payload): Carbon
     {
-        foreach (['occurred_at', 'occurredAt', 'delivered_at', 'completed_at', 'closed_at'] as $key) {
+        foreach (['prepared_at', 'occurred_at', 'occurredAt', 'delivered_at', 'completed_at', 'closed_at'] as $key) {
             $value = $payload[$key] ?? null;
             if (is_string($value) && $value !== '') {
                 return Carbon::parse($value);

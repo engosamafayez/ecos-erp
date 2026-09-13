@@ -1,6 +1,8 @@
 import { api } from '@/lib/axios';
 import type { ApiResponse } from '@/types';
 import type {
+  AttendanceCorrection,
+  AttendanceDayRecord,
   AttendanceSheet,
   Department,
   DepartmentAvailability,
@@ -168,6 +170,46 @@ export const hrService = {
 
   async listShifts(): Promise<Shift[]> {
     const { data } = await api.get<ApiResponse<Shift[]>>('/hr/attendance/shifts');
+    return data.data;
+  },
+
+  async attendanceDays(params: { employee_id?: string; from?: string; to?: string }): Promise<{
+    from: string;
+    to: string;
+    items: AttendanceDayRecord[];
+  }> {
+    const { data } = await api.get<ApiResponse<{ from: string; to: string; items: AttendanceDayRecord[] }>>(
+      '/hr/attendance/days',
+      { params },
+    );
+    return data.data;
+  },
+
+  async attendanceCorrections(params: { employee_id?: string; status?: string } = {}): Promise<AttendanceCorrection[]> {
+    const { data } = await api.get<ApiResponse<AttendanceCorrection[]>>('/hr/attendance/corrections', { params });
+    return data.data;
+  },
+
+  async requestAttendanceCorrection(
+    attendanceDayId: string,
+    payload: { status?: string; check_in?: string; check_out?: string; notes?: string; reason: string },
+  ): Promise<AttendanceCorrection> {
+    const { data } = await api.post<ApiResponse<AttendanceCorrection>>(
+      `/hr/attendance/days/${attendanceDayId}/corrections`,
+      payload,
+    );
+    return data.data;
+  },
+
+  async decideAttendanceCorrection(
+    id: string,
+    decision: 'approve' | 'reject' | 'cancel',
+    note?: string,
+  ): Promise<AttendanceCorrection> {
+    const { data } = await api.patch<ApiResponse<AttendanceCorrection>>(
+      `/hr/attendance/corrections/${id}/${decision}`,
+      decision === 'cancel' ? {} : { note },
+    );
     return data.data;
   },
 

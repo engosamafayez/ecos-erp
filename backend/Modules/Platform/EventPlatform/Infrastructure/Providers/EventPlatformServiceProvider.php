@@ -11,6 +11,8 @@ use Modules\Crm\Customers\Domain\Events\CustomerCreated;
 use Modules\Crm\Customers\Domain\Events\CustomerMerged;
 use Modules\Crm\Customers\Domain\Events\CustomerRestored;
 use Modules\Crm\Customers\Domain\Events\CustomerUpdated;
+use Modules\Crm\Loyalty\Domain\Events\LoyaltyPointsEarned;
+use Modules\Crm\Loyalty\Domain\Events\LoyaltyPointsRedeemed;
 use Modules\Crm\Sales\Domain\Events\LeadConverted;
 use Modules\Crm\Sales\Domain\Events\LeadCreated;
 use Modules\Crm\Sales\Domain\Events\LeadLost;
@@ -22,8 +24,6 @@ use Modules\Crm\Sales\Domain\Events\OpportunityWon;
 use Modules\Crm\Sales\Domain\Events\QuoteApproved;
 use Modules\Crm\Sales\Domain\Events\QuoteCreated;
 use Modules\Crm\Sales\Domain\Events\QuoteRejected;
-use Modules\Crm\Loyalty\Domain\Events\LoyaltyPointsEarned;
-use Modules\Crm\Loyalty\Domain\Events\LoyaltyPointsRedeemed;
 use Modules\Inventory\DomainEvents\Events\InventoryCountApproved;
 use Modules\Inventory\DomainEvents\Events\InventoryStockAdjusted;
 use Modules\Inventory\DomainEvents\Events\InventoryStockReceived;
@@ -44,6 +44,7 @@ use Modules\Operations\Preparation\Domain\Events\DemandRefreshRequested;
 use Modules\Operations\Preparation\Domain\Events\OrderAddedToWave;
 use Modules\Operations\Preparation\Domain\Events\OrderMovedToPreparing;
 use Modules\Operations\Preparation\Domain\Events\OrderRemovedFromWave;
+use Modules\Operations\Preparation\Domain\Events\ProductPrepared;
 use Modules\Operations\Preparation\Domain\Events\WaveClosed;
 use Modules\Operations\Preparation\Domain\Events\WaveCreated;
 use Modules\Platform\EventPlatform\Application\Services\EnterpriseEventBus;
@@ -156,6 +157,7 @@ final class EventPlatformServiceProvider extends ServiceProvider
         Event::listen(OrderAddedToWave::class, fn (OrderAddedToWave $e) => $bus->publish($e));
         Event::listen(OrderRemovedFromWave::class, fn (OrderRemovedFromWave $e) => $bus->publish($e));
         Event::listen(OrderMovedToPreparing::class, fn (OrderMovedToPreparing $e) => $bus->publish($e));
+        Event::listen(ProductPrepared::class, fn (ProductPrepared $e) => $bus->publish($e));
 
         // Inventory domain events. These dispatch through LaravelDomainEventBus so
         // DomainEventServiceProvider's listeners run; bridging them here keeps the
