@@ -143,19 +143,59 @@ final class WorkScheduleService
      * derive from the schedule that applied on that specific day, since a
      * correction or a historical read may concern a date the employee has
      * since moved off of.
+     *
+     * Delegates to effectiveShiftsFor() — the single-row and bulk paths share
+     * one matching rule, so they can never disagree.
      */
     public function effectiveShiftFor(Employee $employee, Carbon $date): ?Shift
     {
-        $dateString = $date->toDateString();
+        $key = $employee->id.'|'.$date->toDateString();
 
-        return EmployeeShiftAssignment::query()
+        return $this->effectiveShiftsFor([['employee_id' => (string) $employee->id, 'date' => $date]])[$key] ?? null;
+    }
+
+    /**
+     * Bulk form of effectiveShiftFor(): resolves every (employee_id, date)
+     * pair in ONE bounded set of EmployeeShiftAssignment queries — never one
+     * query per pair — for a list/history read covering many rows.
+     *
+     * @param  array<int, array{employee_id: string, date: Carbon}>  $pairs
+     * @return array<string, Shift|null> keyed by "{employee_id}|{Y-m-d}"
+     */
+    public function effectiveShiftsFor(array $pairs): array
+    {
+        $employeeIds = array_values(array_unique(array_column($pairs, 'employee_id')));
+
+        if ($employeeIds === []) {
+            return [];
+        }
+
+        // One query for every employee in the batch, newest assignment
+        // first, so the in-memory match below preserves the exact same
+        // "latest matching effective_from wins" tie-break as the single-row
+        // query's own orderByDesc('effective_from').
+        $assignmentsByEmployee = EmployeeShiftAssignment::query()
             ->with('shift')
-            ->where('employee_id', $employee->id)
-            ->where('effective_from', '<=', $dateString)
-            ->where(function ($query) use ($dateString): void {
-                $query->whereNull('effective_to')->orWhere('effective_to', '>=', $dateString);
-            })
+            ->whereIn('employee_id', $employeeIds)
             ->orderByDesc('effective_from')
-            ->first()?->shift;
+            ->get()
+            ->groupBy('employee_id');
+
+        $out = [];
+        foreach ($pairs as $pair) {
+            $dateString = $pair['date']->toDateString();
+            $key = $pair['employee_id'].'|'.$dateString;
+
+            $assignments = $assignmentsByEmployee->get($pair['employee_id']) ?? collect();
+
+            $match = $assignments->first(
+                fn (EmployeeShiftAssignment $a): bool => $a->effective_from->toDateString() <= $dateString
+                    && ($a->effective_to === null || $a->effective_to->toDateString() >= $dateString),
+            );
+
+            $out[$key] = $match?->shift;
+        }
+
+        return $out;
     }
 }

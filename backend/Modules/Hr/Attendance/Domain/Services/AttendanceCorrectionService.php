@@ -28,6 +28,18 @@ use Modules\Hr\Infrastructure\Services\HrAuditService;
  * │ A correction's own decision (approved/rejected/cancelled) is a SEPARATE,   │
  * │ additionally-audited fact from the resulting attendance mutation.          │
  * └──────────────────────────────────────────────────────────────────────────┘
+ *
+ * ┌─ ONE DECISION MUST WIN, AND IT MUST NEVER BE THE REQUESTER'S OWN ───────┐
+ * │ Every decision re-reads the correction row WITH lockForUpdate() inside the │
+ * │ transaction and re-checks both the transition and the self-decision rule   │
+ * │ against that freshly-locked state — never the possibly-stale object the    │
+ * │ caller passed in. A second, concurrent decision on the same correction      │
+ * │ blocks on the lock, then sees a row that is no longer Pending and fails     │
+ * │ explicitly, so the correction's own status can never disagree with what     │
+ * │ actually got applied to AttendanceDay. Self-CANCEL of a still-Pending own   │
+ * │ request remains allowed — only approving/rejecting one's own request is    │
+ * │ forbidden.                                                                 │
+ * └──────────────────────────────────────────────────────────────────────────┘
  */
 final class AttendanceCorrectionService
 {
@@ -75,72 +87,71 @@ final class AttendanceCorrectionService
     /** Applies the proposed values onto the canonical AttendanceDay, atomically with the decision. */
     public function approve(AttendanceCorrection $correction, ?int $decidedBy, ?string $note = null): AttendanceCorrection
     {
-        $this->assertTransition($correction, CorrectionStatus::Approved);
-
         return DB::transaction(function () use ($correction, $decidedBy, $note): AttendanceCorrection {
-            $day = $correction->attendanceDay;
-            $employee = $correction->employee;
+            $locked = $this->lockPending($correction, CorrectionStatus::Approved, $decidedBy);
+            $day = $locked->attendanceDay;
+            $employee = $locked->employee;
 
             $this->attendance->register(
                 $employee,
                 $day->work_date->toDateString(),
-                $correction->corrected_status,
+                $locked->corrected_status,
                 [
                     // Preserve the day's own shift attribution — a correction
                     // fixes check-in/check-out/status/notes, it does not
                     // silently re-attribute which shift the day belongs to.
                     'shift_id' => $day->shift_id,
-                    'check_in' => $correction->corrected_check_in,
-                    'check_out' => $correction->corrected_check_out,
-                    'notes' => $correction->corrected_notes,
+                    'check_in' => $locked->corrected_check_in,
+                    'check_out' => $locked->corrected_check_out,
+                    'notes' => $locked->corrected_notes,
                     'leave_request_id' => $day->leave_request_id,
                 ],
                 $decidedBy,
             );
 
-            $correction->update([
+            $locked->update([
                 'status' => CorrectionStatus::Approved->value,
                 'decided_by' => $decidedBy,
                 'decided_at' => Carbon::now(),
                 'decision_note' => $note,
             ]);
 
-            $this->auditDecision($correction, 'approved', $decidedBy);
+            $this->auditDecision($locked, 'approved', $decidedBy);
 
-            return $correction->refresh();
+            return $locked->refresh();
         });
     }
 
     /** Rejecting never touches the target AttendanceDay. */
     public function reject(AttendanceCorrection $correction, ?int $decidedBy, ?string $note = null): AttendanceCorrection
     {
-        $this->assertTransition($correction, CorrectionStatus::Rejected);
-
         return DB::transaction(function () use ($correction, $decidedBy, $note): AttendanceCorrection {
-            $correction->update([
+            $locked = $this->lockPending($correction, CorrectionStatus::Rejected, $decidedBy);
+
+            $locked->update([
                 'status' => CorrectionStatus::Rejected->value,
                 'decided_by' => $decidedBy,
                 'decided_at' => Carbon::now(),
                 'decision_note' => $note,
             ]);
 
-            $this->auditDecision($correction, 'rejected', $decidedBy);
+            $this->auditDecision($locked, 'rejected', $decidedBy);
 
-            return $correction->refresh();
+            return $locked->refresh();
         });
     }
 
-    /** Cancelling never touches the target AttendanceDay. */
+    /** Cancelling never touches the target AttendanceDay. Self-cancel of one's own still-Pending request is allowed. */
     public function cancel(AttendanceCorrection $correction, ?int $actorId): AttendanceCorrection
     {
-        $this->assertTransition($correction, CorrectionStatus::Cancelled);
-
         return DB::transaction(function () use ($correction, $actorId): AttendanceCorrection {
-            $correction->update(['status' => CorrectionStatus::Cancelled->value]);
+            $locked = $this->lockPending($correction, CorrectionStatus::Cancelled, $actorId);
 
-            $this->auditDecision($correction, 'cancelled', $actorId);
+            $locked->update(['status' => CorrectionStatus::Cancelled->value]);
 
-            return $correction->refresh();
+            $this->auditDecision($locked, 'cancelled', $actorId);
+
+            return $locked->refresh();
         });
     }
 
@@ -158,10 +169,27 @@ final class AttendanceCorrectionService
         );
     }
 
-    private function assertTransition(AttendanceCorrection $correction, CorrectionStatus $target): void
+    /**
+     * Re-fetch the correction WITH A ROW LOCK inside the caller's open
+     * transaction, and verify the transition and the self-decision rule
+     * against that freshly-locked state — never the (possibly stale) object
+     * the caller passed in. This is the one gate every decision path shares:
+     * a concurrent second decision blocks on the lock, then re-reads a row
+     * that is no longer Pending and fails here, explicitly.
+     */
+    private function lockPending(AttendanceCorrection $correction, CorrectionStatus $target, ?int $actorId): AttendanceCorrection
     {
-        if (! $correction->status->canTransitionTo($target)) {
-            throw AttendanceException::correctionNotPending($correction->status->value, $target->value);
+        /** @var AttendanceCorrection $locked */
+        $locked = AttendanceCorrection::query()->whereKey($correction->id)->lockForUpdate()->firstOrFail();
+
+        if (! $locked->status->canTransitionTo($target)) {
+            throw AttendanceException::correctionNotPending($locked->status->value, $target->value);
         }
+
+        if ($target !== CorrectionStatus::Cancelled && $actorId !== null && (int) $locked->requested_by === $actorId) {
+            throw AttendanceException::selfDecisionNotAllowed();
+        }
+
+        return $locked;
     }
 }

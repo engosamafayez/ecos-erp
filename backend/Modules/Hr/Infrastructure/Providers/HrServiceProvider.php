@@ -214,6 +214,12 @@ final class HrServiceProvider extends ServiceProvider
         $registry->register('hr.employee_incidents', [
             'description' => 'hr.performance.view_incident_details',
         ]);
+
+        $registry->register('hr.attendance_corrections', [
+            'reason' => 'hr.attendance.view_correction_notes',
+            'decision_note' => 'hr.attendance.view_correction_notes',
+            'corrected_notes' => 'hr.attendance.view_correction_notes',
+        ]);
     }
 
     /**

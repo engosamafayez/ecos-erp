@@ -57,7 +57,31 @@ class AttendanceCorrectionControllerHttpTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_a_registrar_can_request_and_approve_a_correction(): void
+    public function test_a_different_registrar_can_approve_a_requested_correction(): void
+    {
+        $company = Company::factory()->create();
+        $employee = app(EmployeeService::class)->create((string) $company->id, ['first_name' => 'E', 'last_name' => 'X']);
+        $day = app(AttendanceRegistrationService::class)->register(
+            $employee, '2026-01-05', AttendanceStatus::Present, ['check_in' => '09:15:00', 'check_out' => '17:00:00'],
+        );
+        $role = $this->role($company, ['hr.attendance.view', 'hr.attendance.register']);
+        $requester = $this->userFor($company, $role);
+        $approver = $this->userFor($company, $role);
+
+        $created = $this->actingAsUnprivileged($requester)
+            ->postJson("/api/hr/attendance/days/{$day->id}/corrections", ['check_in' => '09:00:00', 'reason' => 'Fix'])
+            ->assertCreated()
+            ->assertJsonPath('data.status', 'pending')
+            ->json('data');
+
+        $this->actingAsUnprivileged($approver)
+            ->patchJson("/api/hr/attendance/corrections/{$created['id']}/approve", [])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'approved')
+            ->assertJsonPath('data.corrected.check_in', '09:00:00');
+    }
+
+    public function test_the_same_registrar_cannot_approve_their_own_correction_request(): void
     {
         $company = Company::factory()->create();
         $employee = app(EmployeeService::class)->create((string) $company->id, ['first_name' => 'E', 'last_name' => 'X']);
@@ -69,14 +93,12 @@ class AttendanceCorrectionControllerHttpTest extends TestCase
         $created = $this->actingAsUnprivileged($registrar)
             ->postJson("/api/hr/attendance/days/{$day->id}/corrections", ['check_in' => '09:00:00', 'reason' => 'Fix'])
             ->assertCreated()
-            ->assertJsonPath('data.status', 'pending')
             ->json('data');
 
-        $this->actingAsUnprivileged($registrar)
-            ->patchJson("/api/hr/attendance/corrections/{$created['id']}/approve", [])
-            ->assertOk()
-            ->assertJsonPath('data.status', 'approved')
-            ->assertJsonPath('data.corrected.check_in', '09:00:00');
+        $response = $this->actingAsUnprivileged($registrar)
+            ->patchJson("/api/hr/attendance/corrections/{$created['id']}/approve", []);
+
+        $response->assertStatus(500);
     }
 
     public function test_a_cross_company_attendance_day_id_is_never_found(): void

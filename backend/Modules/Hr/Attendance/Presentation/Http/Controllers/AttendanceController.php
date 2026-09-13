@@ -50,14 +50,18 @@ class AttendanceController extends Controller
         $from = $v['from'] ?? Carbon::now()->startOfMonth()->toDateString();
         $to = $v['to'] ?? Carbon::now()->toDateString();
 
-        $rows = AttendanceDay::query()
+        $days = AttendanceDay::query()
             ->with('employee:id,company_id,first_name,last_name,employee_number')
             ->where('company_id', $this->companyId($request))
             ->when(isset($v['employee_id']), fn ($q) => $q->where('employee_id', $v['employee_id']))
             ->whereBetween('work_date', [$from, $to])
             ->orderByDesc('work_date')
-            ->limit(500)->get()
-            ->map(fn (AttendanceDay $d) => $this->payload($d));
+            ->limit(500)->get();
+
+        // Bulk-resolved once for the whole page — never one effective-shift
+        // query per row (see AttendanceDerivationService::deriveMany()).
+        $derived = $this->derivation->deriveMany($days);
+        $rows = $days->map(fn (AttendanceDay $d) => $this->payload($d, $derived[$d->id] ?? null));
 
         return response()->json(['data' => ['from' => $from, 'to' => $to, 'items' => $rows]]);
     }
@@ -111,10 +115,15 @@ class AttendanceController extends Controller
         return response()->json(['data' => $result]);
     }
 
-    /** @return array<string, mixed> */
-    private function payload(AttendanceDay $day): array
+    /**
+     * @param  array{late: array<string, mixed>, early_leave: array<string, mixed>, worked_time: array<string, mixed>}|null  $derived  pre-resolved by the caller (e.g. deriveMany() for a list); resolved here when omitted, for a single-row action like register().
+     * @return array<string, mixed>
+     */
+    private function payload(AttendanceDay $day, ?array $derived = null): array
     {
-        $derived = $day->employee === null ? null : $this->derivation->derive($day->employee, $day->work_date, $day);
+        if ($derived === null && $day->employee !== null) {
+            $derived = $this->derivation->derive($day->employee, $day->work_date, $day);
+        }
 
         return [
             'id' => $day->id,

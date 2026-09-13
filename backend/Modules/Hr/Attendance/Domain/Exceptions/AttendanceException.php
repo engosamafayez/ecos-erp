@@ -43,4 +43,9 @@ final class AttendanceException extends RuntimeException
     {
         return new self("An attendance correction cannot move from {$from} to {$to}.");
     }
+
+    public static function selfDecisionNotAllowed(): self
+    {
+        return new self('The employee who requested an attendance correction cannot approve or reject it themselves.');
+    }
 }

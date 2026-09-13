@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Hr\Attendance\Domain\Services;
 
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Modules\Hr\Attendance\Domain\Enums\AttendanceStatus;
 use Modules\Hr\Attendance\Domain\Models\AttendanceDay;
 use Modules\Hr\Attendance\Domain\Models\Shift;
@@ -64,24 +65,77 @@ final class AttendanceDerivationService
         }
 
         if (! $day->status->isWorked()) {
-            // Leave / Holiday / Rest day / an explicitly recorded Absence: the
-            // status itself is the whole answer. Time semantics do not apply
-            // to a day nobody was expected to (or did not) work.
-            return [
-                'outcome' => $day->status->value,
-                'late' => $this->notApplicableLate(),
-                'early_leave' => $this->notApplicableEarlyLeave(),
-                'worked_time' => $this->notApplicableWorkedTime(),
-            ];
+            return $this->nonWorkedResult($day->status->value);
         }
 
-        $shift = $this->schedule->effectiveShiftFor($employee, $workDate);
+        return $this->workedResult($day, $this->schedule->effectiveShiftFor($employee, $workDate));
+    }
 
+    /**
+     * Bulk form of derive() for a list of attendance rows (e.g. a date-range
+     * history read): resolves every row's effective shift in ONE bounded set
+     * of queries via WorkScheduleService::effectiveShiftsFor() — never one
+     * EmployeeShiftAssignment query per row — then applies the exact same
+     * per-row derivation derive() itself uses, so the two paths can never
+     * disagree.
+     *
+     * @param  Collection<int, AttendanceDay>  $days  each with its `employee` relation already loaded
+     * @return array<string, array{outcome: string, late: array<string, mixed>, early_leave: array<string, mixed>, worked_time: array<string, mixed>}|null> keyed by AttendanceDay::id — null only when the row's employee relation is missing
+     */
+    public function deriveMany(Collection $days): array
+    {
+        $pairs = [];
+        foreach ($days as $day) {
+            if ($day->employee !== null && $day->status->isWorked()) {
+                $pairs[] = ['employee_id' => (string) $day->employee_id, 'date' => $day->work_date];
+            }
+        }
+
+        $shifts = $this->schedule->effectiveShiftsFor($pairs);
+
+        $out = [];
+        foreach ($days as $day) {
+            if ($day->employee === null) {
+                $out[$day->id] = null;
+
+                continue;
+            }
+
+            if (! $day->status->isWorked()) {
+                $out[$day->id] = $this->nonWorkedResult($day->status->value);
+
+                continue;
+            }
+
+            $key = $day->employee_id.'|'.$day->work_date->toDateString();
+            $out[$day->id] = $this->workedResult($day, $shifts[$key] ?? null);
+        }
+
+        return $out;
+    }
+
+    /** @return array{outcome: string, late: array<string, mixed>, early_leave: array<string, mixed>, worked_time: array<string, mixed>} */
+    private function nonWorkedResult(string $status): array
+    {
+        // Leave / Holiday / Rest day / an explicitly recorded Absence: the
+        // status itself is the whole answer. Time semantics do not apply to
+        // a day nobody was expected to (or did not) work.
+        return [
+            'outcome' => $status,
+            'late' => $this->notApplicableLate(),
+            'early_leave' => $this->notApplicableEarlyLeave(),
+            'worked_time' => $this->notApplicableWorkedTime(),
+        ];
+    }
+
+    /** @return array{outcome: string, late: array<string, mixed>, early_leave: array<string, mixed>, worked_time: array<string, mixed>} */
+    private function workedResult(AttendanceDay $day, ?Shift $shift): array
+    {
         return [
             'outcome' => $day->status->value,
-            'late' => $this->deriveLate($workDate, $day->check_in, $shift),
-            'early_leave' => $this->deriveEarlyLeave($workDate, $day->check_out, $shift),
-            'worked_time' => $this->deriveWorkedTime($workDate, $day->check_in, $day->check_out, $shift),
+            'late' => $this->deriveLate($day->work_date, $day->check_in, $shift),
+            'early_leave' => $this->deriveEarlyLeave($day->work_date, $day->check_out, $shift),
+            'worked_time' => $this->deriveWorkedTime($day->work_date, $day->check_in, $day->check_out, $shift),
         ];
     }
 

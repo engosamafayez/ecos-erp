@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Hr;
 
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\DB;
 use Modules\Hr\Attendance\Domain\Enums\AttendanceStatus;
 use Modules\Hr\Attendance\Domain\Models\AttendanceDay;
 use Modules\Hr\Attendance\Domain\Models\OfficialHoliday;
@@ -286,5 +287,90 @@ class AttendanceDerivationServiceTest extends TestCase
         $result = app(AttendanceDerivationService::class)->derive($employee, \Illuminate\Support\Carbon::now()->startOfDay(), null);
 
         $this->assertSame(AttendanceDerivationService::OUTCOME_UNRESOLVED, $result['outcome']);
+    }
+
+    // ═══ Bulk shift resolution (FIN-01 consolidated remediation) ════════════════
+
+    public function test_deriving_many_rows_uses_one_bounded_set_of_shift_queries(): void
+    {
+        $company = $this->company();
+        $dayIds = [];
+        foreach (range(1, 5) as $i) {
+            $employee = $this->employeeWithShift($company, '09:00:00', '17:00:00', graceMinutes: 10);
+            $dayIds[] = $this->dayFor($employee, '2026-01-05', AttendanceStatus::Present, '09:07:00', '17:00:00')->id;
+        }
+
+        // Reloaded with `employee` eager-loaded, exactly as the controller's
+        // index() query does — never a lazy per-row relation load either.
+        $days = AttendanceDay::query()->with('employee')->whereIn('id', $dayIds)->get();
+
+        DB::enableQueryLog();
+        $derived = app(AttendanceDerivationService::class)->deriveMany($days);
+        $queries = count(DB::getQueryLog());
+        DB::disableQueryLog();
+
+        $this->assertCount(5, $derived);
+        foreach ($dayIds as $id) {
+            $this->assertSame(AttendanceDerivationService::STATUS_ON_TIME, $derived[$id]['late']['status']);
+        }
+        $this->assertSame(1, $queries, 'Bulk derivation must issue exactly one EmployeeShiftAssignment query, never one per row.');
+    }
+
+    public function test_bulk_resolution_matches_single_row_resolution_across_a_shift_reassignment(): void
+    {
+        $company = $this->company();
+        $employee = app(EmployeeService::class)
+            ->create((string) $company->id, ['first_name' => 'E', 'last_name' => 'X']);
+
+        $morningShift = Shift::create([
+            'company_id' => $company->id, 'code' => 'morning-'.uniqid(), 'name' => 'Morning',
+            'start_time' => '09:00:00', 'end_time' => '17:00:00', 'break_minutes' => 30, 'late_grace_minutes' => 5,
+            'crosses_midnight' => false, 'is_active' => true,
+        ]);
+        $eveningShift = Shift::create([
+            'company_id' => $company->id, 'code' => 'evening-'.uniqid(), 'name' => 'Evening',
+            'start_time' => '14:00:00', 'end_time' => '22:00:00', 'break_minutes' => 30, 'late_grace_minutes' => 5,
+            'crosses_midnight' => false, 'is_active' => true,
+        ]);
+
+        $schedule = app(WorkScheduleService::class);
+        $schedule->assignShift($employee, $morningShift, '2026-01-01');
+        $schedule->assignShift($employee, $eveningShift, '2026-01-10'); // closes the morning assignment at this date
+
+        // Before the reassignment — must resolve against the morning shift.
+        $beforeDay = $this->dayFor($employee, '2026-01-05', AttendanceStatus::Present, '09:07:00', '17:00:00');
+        // After the reassignment — must resolve against the evening shift.
+        $afterDay = $this->dayFor($employee, '2026-01-15', AttendanceStatus::Present, '14:07:00', '22:00:00');
+
+        $service = app(AttendanceDerivationService::class);
+        $single = [
+            $beforeDay->id => $service->derive($employee, $beforeDay->work_date, $beforeDay),
+            $afterDay->id => $service->derive($employee, $afterDay->work_date, $afterDay),
+        ];
+
+        $days = AttendanceDay::query()->with('employee')->whereIn('id', [$beforeDay->id, $afterDay->id])->get();
+        $bulk = $service->deriveMany($days);
+
+        $this->assertSame($single[$beforeDay->id], $bulk[$beforeDay->id], 'Bulk and single-row resolution must agree for the pre-reassignment date.');
+        $this->assertSame($single[$afterDay->id], $bulk[$afterDay->id], 'Bulk and single-row resolution must agree for the post-reassignment date.');
+        $this->assertSame(AttendanceDerivationService::STATUS_ON_TIME, $bulk[$beforeDay->id]['late']['status']);
+        $this->assertSame(AttendanceDerivationService::STATUS_ON_TIME, $bulk[$afterDay->id]['late']['status']);
+    }
+
+    public function test_bulk_resolution_handles_multiple_employees_correctly(): void
+    {
+        $company = $this->company();
+        $employeeA = $this->employeeWithShift($company, '09:00:00', '17:00:00', graceMinutes: 5);
+        $employeeB = $this->employeeWithShift($company, '14:00:00', '22:00:00', graceMinutes: 5);
+
+        // A is late against the 09:00 shift; B is on time against the 14:00 shift.
+        $dayA = $this->dayFor($employeeA, '2026-01-05', AttendanceStatus::Present, '09:20:00', '17:00:00');
+        $dayB = $this->dayFor($employeeB, '2026-01-05', AttendanceStatus::Present, '14:02:00', '22:00:00');
+
+        $days = AttendanceDay::query()->with('employee')->whereIn('id', [$dayA->id, $dayB->id])->get();
+        $derived = app(AttendanceDerivationService::class)->deriveMany($days);
+
+        $this->assertSame(AttendanceDerivationService::LATE_LATE, $derived[$dayA->id]['late']['status']);
+        $this->assertSame(AttendanceDerivationService::STATUS_ON_TIME, $derived[$dayB->id]['late']['status']);
     }
 }

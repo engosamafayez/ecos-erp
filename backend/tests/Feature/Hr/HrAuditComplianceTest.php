@@ -309,6 +309,12 @@ class HrAuditComplianceTest extends TestCase
         $this->assertArrayHasKey('improvement_notes', $registry->fieldsFor('hr.manager_reviews'));
         $this->assertArrayHasKey('manager_comments', $registry->fieldsFor('hr.manager_reviews'));
         $this->assertArrayHasKey('description', $registry->fieldsFor('hr.employee_incidents'));
+
+        // FIN-01 consolidated remediation — classification consistency with
+        // the narrative fields already registered above.
+        $this->assertArrayHasKey('reason', $registry->fieldsFor('hr.attendance_corrections'));
+        $this->assertArrayHasKey('decision_note', $registry->fieldsFor('hr.attendance_corrections'));
+        $this->assertArrayHasKey('corrected_notes', $registry->fieldsFor('hr.attendance_corrections'));
     }
 
     public function test_ordinary_hr_fields_are_not_classified_as_sensitive(): void
@@ -325,6 +331,8 @@ class HrAuditComplianceTest extends TestCase
         $this->assertArrayNotHasKey('overall_rating', $registry->fieldsFor('hr.manager_reviews'));
         $this->assertArrayNotHasKey('category', $registry->fieldsFor('hr.employee_incidents'));
         $this->assertArrayNotHasKey('severity', $registry->fieldsFor('hr.employee_incidents'));
+        $this->assertArrayNotHasKey('status', $registry->fieldsFor('hr.attendance_corrections'));
+        $this->assertArrayNotHasKey('corrected_check_in', $registry->fieldsFor('hr.attendance_corrections'));
     }
 
     // ═══ 10. No payroll/commission/Finance mutation was introduced ═════════════
