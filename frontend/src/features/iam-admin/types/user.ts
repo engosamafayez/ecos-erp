@@ -239,3 +239,28 @@ export type EmployeeDirectoryResult = {
   available: boolean;
   data: EmployeeLookupEntry[];
 };
+
+/**
+ * CORE-02 Task 1 — Invitation Closure. Mirrors UserController::invitations()'s serialization.
+ * Never carries a token — the raw token is returned exactly once, directly from invite()/
+ * resendInvitation(), and is never persisted or re-derivable afterward.
+ */
+export type Invitation = {
+  id: string;
+  email: string;
+  status: 'pending' | 'accepted' | 'expired' | 'revoked';
+  expired: boolean;
+  expires_at: string | null;
+  accepted_at: string | null;
+  invited_by: number | null;
+  created_at: string | null;
+};
+
+export type InvitationIssueResult = {
+  invitation_token: string;
+  expires_in_hours: number;
+};
+
+export type InvitePayload = {
+  ttl_hours?: number;
+};

@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { FileBarChart, RefreshCw } from 'lucide-react';
+import { Download, FileBarChart, RefreshCw } from 'lucide-react';
 
 import { EmptyState, ErrorState, LoadingState } from '@/components/crud';
 import { Card, CardContent } from '@/components/ui/card';
@@ -49,6 +49,25 @@ function formatScalar(value: unknown, fmt: Formatters): string {
   return JSON.stringify(value);
 }
 
+/**
+ * Exports exactly the already-rendered result — same report authority, same applied
+ * filters, same company scope the user is already looking at on screen. No second fetch,
+ * no recomputation (§11: "on-screen report and exported report must use the same report
+ * authority, filters and company scope").
+ */
+function exportResultCsv(reportId: string, columns: string[], rows: Array<Record<string, unknown>>): void {
+  const csv = [columns, ...rows.map((row) => columns.map((col) => row[col] ?? ''))]
+    .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
+    .join('\n');
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  const a = Object.assign(document.createElement('a'), {
+    href: url,
+    download: `${reportId}-${new Date().toISOString().slice(0, 10)}.csv`,
+  });
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export function ReportDetailPage() {
   const { reportId } = useParams<{ reportId: string }>();
   const { t } = useTranslation('reporting');
@@ -58,7 +77,20 @@ export function ReportDetailPage() {
     useReportCatalogueEntry(reportId);
   const canRun = useCanRunReport(entry);
   const metricDictionary = useMetricDictionaryQuery();
-  const execution = useReportExecutionQuery(reportId, canRun);
+
+  // Optional, generic date-range filter (§9) — mirrors the shared ReportDateRange value
+  // object most first-tranche handlers already accept. A report whose own
+  // validateFilters() doesn't declare these fields simply drops them (Laravel's
+  // Validator::validate() only returns declared keys), so sending them is always safe,
+  // never a bypass of a report's own filter contract.
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const filters = useMemo(
+    () => ({ date_from: dateFrom || undefined, date_to: dateTo || undefined }),
+    [dateFrom, dateTo],
+  );
+
+  const execution = useReportExecutionQuery(reportId, canRun, filters);
 
   const metricName = useMemo(() => {
     const map = new Map<string, string>();
@@ -132,10 +164,41 @@ export function ReportDetailPage() {
             onClick: () => void execution.refetch(),
             disabled: !canRun || execution.isFetching,
           },
+          {
+            key: 'export',
+            label: t(($) => $.detail.export),
+            icon: Download,
+            onClick: () => exportResultCsv(entry.id, columns, result?.rows ?? []),
+            disabled: !result || result.rows.length === 0,
+          },
         ]}
       />
 
       <div className="flex flex-col gap-6 p-4 sm:p-6">
+        {canRun ? (
+          <div className="flex flex-wrap items-end gap-3 rounded-md border bg-muted/20 p-3">
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-medium">{t(($) => $.detail.dateFrom)}</span>
+              <input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-medium">{t(($) => $.detail.dateTo)}</span>
+              <input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
+              />
+            </div>
+            <p className="text-muted-foreground max-w-xs text-xs">{t(($) => $.detail.dateFilterHint)}</p>
+          </div>
+        ) : null}
+
         {!canRun || (execution.isError && isForbiddenError(execution.error)) ? (
           <ReportForbiddenState
             title={t(($) => $.detail.forbiddenTitle)}

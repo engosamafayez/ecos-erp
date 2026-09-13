@@ -28,6 +28,10 @@
     "forbiddenDescription": "This report requires the \"{{permission}}\" permission.",
     "emptyTitle": "No data for this report",
     "emptyDescription": "The report ran successfully but returned nothing to show.",
-    "period": "Period: {{from}} to {{to}}"
+    "period": "Period: {{from}} to {{to}}",
+    "export": "Export CSV",
+    "dateFrom": "Date from",
+    "dateTo": "Date to",
+    "dateFilterHint": "Applied only if this report supports a date range."
   }
 }

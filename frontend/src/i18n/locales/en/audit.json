@@ -1,0 +1,38 @@
+{
+  "title": "Audit Activity",
+  "subtitle": "Read-only record of who did what, and when, across your company",
+  "columns": {
+    "date": "Date",
+    "actor": "Actor",
+    "action": "Action",
+    "entity": "Entity"
+  },
+  "filters": {
+    "actor": "Actor",
+    "allActors": "All actors",
+    "action": "Action",
+    "actionPlaceholder": "e.g. user.activated",
+    "entityType": "Entity type",
+    "entityTypePlaceholder": "e.g. user",
+    "dateFrom": "Date from",
+    "dateTo": "Date to"
+  },
+  "detail": {
+    "title": "Activity Detail",
+    "occurredAt": "Occurred at",
+    "actor": "Actor",
+    "action": "Action",
+    "entityType": "Entity type",
+    "entityId": "Entity ID",
+    "company": "Company",
+    "oldValues": "Before",
+    "newValues": "After",
+    "metadata": "Metadata",
+    "none": "None recorded"
+  },
+  "systemActor": "System",
+  "empty": {
+    "title": "No activity found",
+    "description": "No audit events match the current filters."
+  }
+}

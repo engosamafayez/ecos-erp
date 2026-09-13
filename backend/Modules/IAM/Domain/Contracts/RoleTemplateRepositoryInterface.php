@@ -51,9 +51,19 @@ interface RoleTemplateRepositoryInterface
     /**
      * Create a custom (non-system) template.
      *
+     * CORE-02 Task 1 — every permission in `attributes['definition']['permissions']` is
+     * checked against the Permission Grant Ceiling UNLESS it is also named in
+     * $preauthorizedPermissions. That parameter exists solely for
+     * RoleAuthoringService::adoptIntoTemplate(): mirroring a role's OWN current
+     * `role_permissions` grants into a template is provably lossless (nothing new is granted,
+     * the role already carries this exact access), so those specific names are pre-cleared
+     * rather than exempted by a blanket bypass flag. Every other caller passes the default
+     * empty list and is checked in full.
+     *
      * @param  array<string,mixed>  $attributes
+     * @param  list<string>  $preauthorizedPermissions
      */
-    public function createCustom(array $attributes): RoleTemplate;
+    public function createCustom(array $attributes, array $preauthorizedPermissions = []): RoleTemplate;
 
     /**
      * Update a template's definition/metadata. Refuses system templates.

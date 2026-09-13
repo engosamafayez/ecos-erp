@@ -195,11 +195,21 @@ function OverviewTab({ brand, accountsCount, channelsCount, productsCount }: Ove
 
 export function BrandDetailDrawer({ brand, open, onOpenChange, onEdit }: BrandDetailDrawerProps) {
   const { t } = useTranslation('brands');
-  if (!brand) return null;
 
-  const accountsResult = useBusinessAccountsQuery({ brand_id: brand.id, per_page: 50 }, { enabled: open });
-  const channelsResult = useChannelsQuery({ brand_id: brand.id, per_page: 50 }, { enabled: open });
-  const productsResult = useProductsQuery({ brand_id: brand.id, per_page: 50 }, { enabled: open });
+  // These three query hooks must run on EVERY render, in the same order, regardless of
+  // whether `brand` is null — `activeBrand` in the parent starts null and flips to a real
+  // Brand the instant a row is opened for view or edit, and this component stays mounted the
+  // whole time (only its `open`/`brand` props change). Gating the hook calls themselves behind
+  // `if (!brand) return null` below made the number of hooks called differ between the
+  // "nothing selected" render and the "brand selected" render — a Rules-of-Hooks violation
+  // that crashed with React error #310 ("Rendered more hooks than during the previous
+  // render") the moment a brand was opened. `enabled` is what actually gates the network
+  // call; the hook call itself must never be conditional.
+  const accountsResult = useBusinessAccountsQuery({ brand_id: brand?.id ?? '', per_page: 50 }, { enabled: open && !!brand });
+  const channelsResult = useChannelsQuery({ brand_id: brand?.id ?? '', per_page: 50 }, { enabled: open && !!brand });
+  const productsResult = useProductsQuery({ brand_id: brand?.id ?? '', per_page: 50 }, { enabled: open && !!brand });
+
+  if (!brand) return null;
 
   const accounts = accountsResult.data?.items ?? [];
   const channels = channelsResult.data?.items ?? [];

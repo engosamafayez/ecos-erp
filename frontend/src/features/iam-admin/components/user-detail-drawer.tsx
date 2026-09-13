@@ -16,6 +16,7 @@ import type { LifecycleAction, UserDetail } from '@/features/iam-admin/types/use
 
 import { EmployeeLookupField } from './employee-lookup-field';
 import { LifecycleConfirmDialog } from './users-tab';
+import { UserInvitationPanel } from './user-invitation-panel';
 import { UserOrganizationPanel } from './user-organization-panel';
 import { UserRolesPanel } from './user-roles-panel';
 import { UserSecurityPanel } from './user-security-panel';
@@ -181,6 +182,9 @@ function UserDetailContent({ user }: { user: NonNullable<ReturnType<typeof useUs
           <TabsTrigger value="profile">{t(($) => $.users.detail.tabs.profile)}</TabsTrigger>
           <TabsTrigger value="roles">{t(($) => $.users.detail.tabs.roles)}</TabsTrigger>
           <TabsTrigger value="organization">{t(($) => $.users.detail.tabs.organization)}</TabsTrigger>
+          {user.lifecycle.is_pre_activation ? (
+            <TabsTrigger value="invitation">{t(($) => $.users.detail.tabs.invitation)}</TabsTrigger>
+          ) : null}
           <Can permission="iam.users.manage-sessions">
             <TabsTrigger value="security">{t(($) => $.users.detail.tabs.security)}</TabsTrigger>
           </Can>
@@ -243,6 +247,12 @@ function UserDetailContent({ user }: { user: NonNullable<ReturnType<typeof useUs
         <TabsContent value="organization" className="pt-4">
           <UserOrganizationPanel user={user} />
         </TabsContent>
+
+        {user.lifecycle.is_pre_activation ? (
+          <TabsContent value="invitation" className="pt-4">
+            <UserInvitationPanel user={user} />
+          </TabsContent>
+        ) : null}
 
         <Can permission="iam.users.manage-sessions">
           <TabsContent value="security" className="pt-4">

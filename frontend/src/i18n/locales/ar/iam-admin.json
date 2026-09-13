@@ -50,8 +50,31 @@
         "profile": "الملف الشخصي",
         "roles": "الأدوار",
         "organization": "التنظيم",
+        "invitation": "الدعوة",
         "security": "الأمان"
       }
+    },
+    "invitations": {
+      "subtitle": "إدارة دعوة هذا المستخدم لتفعيل حسابه.",
+      "invite": "إرسال دعوة",
+      "resend": "إعادة إرسال الدعوة",
+      "sending": "جارٍ الإرسال…",
+      "revoke": "إلغاء",
+      "empty": "لم تُصدر أي دعوة بعد.",
+      "genericError": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+      "status": {
+        "pending": "معلّقة",
+        "accepted": "مقبولة",
+        "expired": "منتهية",
+        "revoked": "ملغاة"
+      },
+      "expiresAt": "تنتهي في {{date}}",
+      "revokeConfirmTitle": "إلغاء هذه الدعوة؟",
+      "revokeConfirmDescription": "سيتوقف رابط الدعوة عن العمل فورًا. يمكنك إرسال دعوة جديدة لاحقًا.",
+      "linkTitle": "تم إنشاء رابط الدعوة",
+      "linkHint": "انسخ هذا الرابط الآن وشاركه مع المدعو — لن يظهر مرة أخرى.",
+      "copy": "نسخ",
+      "linkDone": "تم"
     },
     "lifecycle": {
       "activate": "تفعيل",

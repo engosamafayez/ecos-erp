@@ -224,12 +224,19 @@ export function CompanyDetailDrawer({
   onOpenChange,
   onEdit,
 }: CompanyDetailDrawerProps) {
-  if (!company) return null;
+  // These three query hooks must run on EVERY render, in the same order, regardless of
+  // whether `company` is null — the parent keeps this drawer mounted at all times and only
+  // flips `company` from null to a real Company the instant a row is opened for view or edit.
+  // Gating the hook calls themselves behind `if (!company) return null` made the number of
+  // hooks called differ between the "nothing selected" render and the "company selected"
+  // render — a Rules-of-Hooks violation that crashes with React error #310 the moment a
+  // company is opened. `enabled` is what actually gates the network call; the hook call
+  // itself must never be conditional.
+  const brandsResult     = useBrandsQuery({ company_id: company?.id ?? '', per_page: 50 }, { enabled: open && !!company });
+  const warehousesResult = useWarehousesQuery({ company_id: company?.id ?? '', per_page: 50 }, { enabled: open && !!company });
+  const teamsResult      = useTeamsQuery({ company_id: company?.id ?? '', per_page: 50 }, { enabled: open && !!company });
 
-  // Fire all relationship queries when the drawer is open
-  const brandsResult     = useBrandsQuery({ company_id: company.id, per_page: 50 }, { enabled: open });
-  const warehousesResult = useWarehousesQuery({ company_id: company.id, per_page: 50 }, { enabled: open });
-  const teamsResult      = useTeamsQuery({ company_id: company.id, per_page: 50 }, { enabled: open });
+  if (!company) return null;
 
   const brands     = brandsResult.data?.items ?? [];
   const warehouses = warehousesResult.data?.items ?? [];

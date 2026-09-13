@@ -345,6 +345,8 @@ return [
             'bae.attribution' => ['view', 'manage'],
             'pos.terminal' => ['view', 'operate'],
             'configuration.settings' => ['view', 'manage'],
+            // CORE-02 Task 2 — a tenant admin may review their own company's audit trail.
+            'system.audit' => ['view'],
         ],
 
         'warehouse-manager' => [
@@ -708,6 +710,8 @@ return [
             'logistics.distribution' => ['view'],
             'operations.preparation' => ['view'],
             'operations.fulfillment' => ['view'],
+            // CORE-02 Task 2 — the central Audit read/search surface this role exists to use.
+            'system.audit' => ['view'],
         ],
 
         // ── TASK-IAM-007: Finance Manager ────────────────────────────────────

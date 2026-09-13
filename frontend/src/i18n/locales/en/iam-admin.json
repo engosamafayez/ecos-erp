@@ -50,8 +50,31 @@
         "profile": "Profile",
         "roles": "Roles",
         "organization": "Organization",
+        "invitation": "Invitation",
         "security": "Security"
       }
+    },
+    "invitations": {
+      "subtitle": "Manage this user's invitation to activate their account.",
+      "invite": "Send invitation",
+      "resend": "Resend invitation",
+      "sending": "Sending…",
+      "revoke": "Revoke",
+      "empty": "No invitations issued yet.",
+      "genericError": "Something went wrong. Please try again.",
+      "status": {
+        "pending": "Pending",
+        "accepted": "Accepted",
+        "expired": "Expired",
+        "revoked": "Revoked"
+      },
+      "expiresAt": "Expires {{date}}",
+      "revokeConfirmTitle": "Revoke this invitation?",
+      "revokeConfirmDescription": "The invitation link will stop working immediately. You can send a new one afterward.",
+      "linkTitle": "Invitation link generated",
+      "linkHint": "Copy this now and share it with the invitee — it will not be shown again.",
+      "copy": "Copy",
+      "linkDone": "Done"
     },
     "lifecycle": {
       "activate": "Activate",
