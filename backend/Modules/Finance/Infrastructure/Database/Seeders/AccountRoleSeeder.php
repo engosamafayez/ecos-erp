@@ -81,6 +81,14 @@ class AccountRoleSeeder extends Seeder
             'driver_receivable' => ['1320', 'Employee Receivables'],
             'vat_input' => ['1530', 'VAT Receivable (Input)'],
             'ar_control' => ['1310', 'Trade Receivables — control, subledger receivables'],
+            // TASK-ECOS-V1.1-OPS-02-CLOSURE: the physical cash a driver hands back to
+            // Treasury at trip-settlement time is the SAME economic position 'cod_clearing'
+            // already models — cash a driver is physically holding, not yet banked — viewed
+            // from the relief side (Treasury receives it) rather than the recognition side
+            // (driver first collected it). Reuses 1130 Cash in Transit rather than minting a
+            // second account for the same underlying fact; roles are addressed independently
+            // of one another even when they share an account (see class docblock).
+            'driver_cash_clearing' => ['1130', 'Cash in Transit'],
 
             // ── Balance sheet — liabilities ──────────────────────────────────
             'ap_control' => ['2110', 'Trade Payables — control, subledger payables'],
