@@ -59,6 +59,7 @@ use Modules\Commerce\ProductMappings\Presentation\Http\Controllers\ProductMappin
 use Modules\Commerce\Shipping\Presentation\Http\Controllers\ShippingQuoteController;
 use Modules\Commerce\StockSync\Presentation\Http\Controllers\StockSyncController;
 use Modules\Commerce\Synchronization\Presentation\Http\Controllers\OrdersSyncControlController;
+use Modules\Commerce\Synchronization\Presentation\Http\Controllers\PluginAdapterController;
 use Modules\Commerce\Synchronization\Presentation\Http\Controllers\SynchronizationController;
 use Modules\Commerce\Synchronization\Presentation\Http\Controllers\WooCommerceWebhookController;
 use Modules\Core\DemandAnalysis\Presentation\Http\Controllers\DemandAnalysisController as ProductDemandAnalysisController;
@@ -2082,6 +2083,21 @@ Route::middleware(['throttle:60,1'])->group(function (): void {
     Route::post('webhooks/woocommerce/{channel}/orders', [WooCommerceWebhookController::class, 'handleOrder']);
     Route::post('webhooks/woocommerce/{channel}/products', [WooCommerceWebhookController::class, 'handleProduct']);
     Route::post('webhooks/woocommerce/{channel}/customers', [WooCommerceWebhookController::class, 'handleCustomer']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Plugin adapter — WordPress/WooCommerce plugin (public, channel-credential auth)
+|--------------------------------------------------------------------------
+| TASK-ECOS-V1.1-WOO-07-OFFICIAL-WOOCOMMERCE-WORDPRESS-ADAPTER. Same "no auth:sanctum actor"
+| shape as the webhook routes above (an external, non-ECOS-user caller authenticates itself via
+| PluginAdapterController's own Basic-Auth check against the channel's existing credential, not
+| via Sanctum) — kept in its own group for clarity since it is a distinct direction (plugin pulls
+| from ECOS) and a distinct auth scheme (Basic Auth, not HMAC) from the webhook routes above.
+*/
+Route::middleware(['throttle:60,1'])->prefix('plugin/channels/{channel}')->group(function (): void {
+    Route::get('status', [PluginAdapterController::class, 'status']);
+    Route::post('deactivated', [PluginAdapterController::class, 'deactivated']);
 });
 
 /*
