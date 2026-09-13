@@ -138,6 +138,7 @@ use Modules\Finance\Presentation\Http\Controllers\VatController as FinanceVatCon
 use Modules\Finance\Presentation\Http\Controllers\YearEndController as FinanceYearEndController;
 use Modules\Finance\Receivables\Presentation\Http\Controllers\CustomerOpeningBalanceController;
 use Modules\Hr\Attendance\Presentation\Http\Controllers\AttendanceController as HrAttendanceController;
+use Modules\Hr\Attendance\Presentation\Http\Controllers\AttendanceCorrectionController as HrAttendanceCorrectionController;
 use Modules\Hr\Attendance\Presentation\Http\Controllers\LeaveRequestController as HrLeaveController;
 use Modules\Hr\Attendance\Presentation\Http\Controllers\WorkforceAvailabilityController as HrAvailabilityController;
 use Modules\Hr\Attendance\Presentation\Http\Controllers\WorkScheduleController as HrScheduleController;
@@ -4454,6 +4455,7 @@ Route::middleware('auth:sanctum')->prefix('hr/attendance')->group(function (): v
         Route::get('/calendars', [HrScheduleController::class, 'calendars']);
         Route::get('/shifts', [HrScheduleController::class, 'shifts']);
         Route::get('/holidays', [HrScheduleController::class, 'holidays']);
+        Route::get('/corrections', [HrAttendanceCorrectionController::class, 'index']);
     });
     Route::middleware('permission:hr.attendance.register')->group(function (): void {
         Route::post('/register', [HrAttendanceController::class, 'register']);
@@ -4466,6 +4468,10 @@ Route::middleware('auth:sanctum')->prefix('hr/attendance')->group(function (): v
         Route::post('/holidays', [HrScheduleController::class, 'storeHoliday']);
         Route::put('/holidays/{id}', [HrScheduleController::class, 'updateHoliday']);
         Route::delete('/holidays/{id}', [HrScheduleController::class, 'destroyHoliday']);
+        Route::post('/days/{attendanceDayId}/corrections', [HrAttendanceCorrectionController::class, 'store']);
+        Route::patch('/corrections/{id}/approve', [HrAttendanceCorrectionController::class, 'approve']);
+        Route::patch('/corrections/{id}/reject', [HrAttendanceCorrectionController::class, 'reject']);
+        Route::patch('/corrections/{id}/cancel', [HrAttendanceCorrectionController::class, 'cancel']);
     });
 });
 

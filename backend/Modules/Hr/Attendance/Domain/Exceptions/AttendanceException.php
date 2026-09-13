@@ -38,4 +38,9 @@ final class AttendanceException extends RuntimeException
     {
         return new self('Attendance cannot be registered for a future date.');
     }
+
+    public static function correctionNotPending(string $from, string $to): self
+    {
+        return new self("An attendance correction cannot move from {$from} to {$to}.");
+    }
 }

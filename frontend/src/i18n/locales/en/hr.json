@@ -137,6 +137,32 @@
       "department": "Department",
       "recorded": "Recorded",
       "status": "Status"
+    },
+    "time": {
+      "onTime": "On time",
+      "late": "Late",
+      "early": "Early",
+      "notEvaluated": "Not evaluated"
+    },
+    "history": {
+      "title": "Attendance History",
+      "empty": "No attendance recorded for this range.",
+      "date": "Date",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "late": "Late",
+      "earlyLeave": "Early Leave",
+      "workedTime": "Worked Time",
+      "action": "Action",
+      "requestCorrection": "Request Correction",
+      "submitCorrection": "Submit"
+    },
+    "correction": {
+      "reason": "Reason",
+      "pendingTitle": "Pending Corrections",
+      "empty": "No pending correction requests.",
+      "approve": "Approve",
+      "reject": "Reject"
     }
   },
   "careers": {

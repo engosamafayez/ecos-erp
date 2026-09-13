@@ -10,6 +10,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Carbon;
 use Modules\Hr\Attendance\Domain\Enums\AttendanceStatus;
 use Modules\Hr\Attendance\Domain\Models\AttendanceDay;
+use Modules\Hr\Attendance\Domain\Services\AttendanceDerivationService;
 use Modules\Hr\Attendance\Domain\Services\AttendanceRegistrationService;
 use Modules\Hr\Workforce\Presentation\Http\Controllers\Concerns\ResolvesHrContext;
 
@@ -18,7 +19,10 @@ class AttendanceController extends Controller
 {
     use ResolvesHrContext;
 
-    public function __construct(private readonly AttendanceRegistrationService $attendance) {}
+    public function __construct(
+        private readonly AttendanceRegistrationService $attendance,
+        private readonly AttendanceDerivationService $derivation,
+    ) {}
 
     /** The register sheet for a date — everyone, with what has been recorded so far. */
     public function sheet(Request $request): JsonResponse
@@ -47,7 +51,7 @@ class AttendanceController extends Controller
         $to = $v['to'] ?? Carbon::now()->toDateString();
 
         $rows = AttendanceDay::query()
-            ->with('employee:id,first_name,last_name,employee_number')
+            ->with('employee:id,company_id,first_name,last_name,employee_number')
             ->where('company_id', $this->companyId($request))
             ->when(isset($v['employee_id']), fn ($q) => $q->where('employee_id', $v['employee_id']))
             ->whereBetween('work_date', [$from, $to])
@@ -101,7 +105,7 @@ class AttendanceController extends Controller
         ]);
 
         $result = $this->attendance->registerMany(
-            $this->companyId($request), $v['work_date'], $v['entries'], $this->actorId($request)
+            $this->companyId($request), $v['work_date'], $v['entries'], $this->actorId($request),
         );
 
         return response()->json(['data' => $result]);
@@ -110,6 +114,8 @@ class AttendanceController extends Controller
     /** @return array<string, mixed> */
     private function payload(AttendanceDay $day): array
     {
+        $derived = $day->employee === null ? null : $this->derivation->derive($day->employee, $day->work_date, $day);
+
         return [
             'id' => $day->id,
             'employee_id' => $day->employee_id,
@@ -124,6 +130,9 @@ class AttendanceController extends Controller
             'status_label' => $day->status->label(),
             'check_in' => $day->check_in,
             'check_out' => $day->check_out,
+            'late' => $derived['late'] ?? null,
+            'early_leave' => $derived['early_leave'] ?? null,
+            'worked_time' => $derived['worked_time'] ?? null,
             'source' => $day->source,
             'leave_request_id' => $day->leave_request_id,
             'notes' => $day->notes,

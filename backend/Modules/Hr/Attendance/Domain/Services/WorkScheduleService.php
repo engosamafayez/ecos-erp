@@ -91,6 +91,7 @@ final class WorkScheduleService
             'start_time' => $data['start_time'],
             'end_time' => $data['end_time'],
             'break_minutes' => (int) ($data['break_minutes'] ?? 0),
+            'late_grace_minutes' => (int) ($data['late_grace_minutes'] ?? 0),
             'crosses_midnight' => $data['crosses_midnight'] ?? false,
             'is_active' => $data['is_active'] ?? true,
         ]);
@@ -100,7 +101,7 @@ final class WorkScheduleService
     {
         $shift->update(array_intersect_key($data, array_flip([
             'work_calendar_id', 'code', 'name', 'start_time', 'end_time',
-            'break_minutes', 'crosses_midnight', 'is_active',
+            'break_minutes', 'late_grace_minutes', 'crosses_midnight', 'is_active',
         ])));
 
         return $shift->refresh();
@@ -133,6 +134,28 @@ final class WorkScheduleService
             ->where('employee_id', $employee->id)
             ->current()
             ->latest('effective_from')
+            ->first()?->shift;
+    }
+
+    /**
+     * The shift actually assigned and effective on a given attendance date —
+     * not "whichever shift is current right now". Late/Early-Leave must
+     * derive from the schedule that applied on that specific day, since a
+     * correction or a historical read may concern a date the employee has
+     * since moved off of.
+     */
+    public function effectiveShiftFor(Employee $employee, Carbon $date): ?Shift
+    {
+        $dateString = $date->toDateString();
+
+        return EmployeeShiftAssignment::query()
+            ->with('shift')
+            ->where('employee_id', $employee->id)
+            ->where('effective_from', '<=', $dateString)
+            ->where(function ($query) use ($dateString): void {
+                $query->whereNull('effective_to')->orWhere('effective_to', '>=', $dateString);
+            })
+            ->orderByDesc('effective_from')
             ->first()?->shift;
     }
 }

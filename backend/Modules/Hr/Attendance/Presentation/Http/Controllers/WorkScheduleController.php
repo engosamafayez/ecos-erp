@@ -85,6 +85,7 @@ class WorkScheduleController extends Controller
             'end_time' => ['required', 'date_format:H:i,H:i:s'],
             'work_calendar_id' => ['nullable', 'string'],
             'break_minutes' => ['nullable', 'integer', 'min:0', 'max:600'],
+            'late_grace_minutes' => ['nullable', 'integer', 'min:0', 'max:120'],
             'crosses_midnight' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
         ]);
@@ -101,6 +102,7 @@ class WorkScheduleController extends Controller
             'end_time' => ['sometimes', 'date_format:H:i,H:i:s'],
             'work_calendar_id' => ['nullable', 'string'],
             'break_minutes' => ['nullable', 'integer', 'min:0', 'max:600'],
+            'late_grace_minutes' => ['nullable', 'integer', 'min:0', 'max:120'],
             'crosses_midnight' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
         ]);

@@ -28,6 +28,8 @@ final class HrAuditService
 
     public const ENTITY_ATTENDANCE_DAY = 'hr_attendance_day';
 
+    public const ENTITY_ATTENDANCE_CORRECTION = 'hr_attendance_correction';
+
     public const ENTITY_LEAVE_REQUEST = 'hr_leave_request';
 
     public const ENTITY_GOAL = 'hr_goal';

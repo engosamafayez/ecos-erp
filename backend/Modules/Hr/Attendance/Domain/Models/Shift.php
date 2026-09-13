@@ -17,13 +17,14 @@ class Shift extends Model
 
     protected $fillable = [
         'company_id', 'work_calendar_id', 'code', 'name',
-        'start_time', 'end_time', 'break_minutes', 'crosses_midnight', 'is_active',
+        'start_time', 'end_time', 'break_minutes', 'late_grace_minutes', 'crosses_midnight', 'is_active',
     ];
 
     protected function casts(): array
     {
         return [
             'break_minutes' => 'integer',
+            'late_grace_minutes' => 'integer',
             'crosses_midnight' => 'boolean',
             'is_active' => 'boolean',
         ];

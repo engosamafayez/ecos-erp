@@ -177,6 +177,53 @@ export function useRegisterAttendance() {
   });
 }
 
+/** FIN-01 — the history view: recorded days plus their derived Late/Worked-Time/Early-Leave state. */
+export function useAttendanceDaysQuery(params: { employee_id?: string; from?: string; to?: string }) {
+  const companyId = useCompanyKey();
+  return useQuery({
+    queryKey: ['company', companyId, HR_KEY, 'attendance-days', params],
+    queryFn: () => hrService.attendanceDays(params),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useAttendanceCorrectionsQuery(params: { employee_id?: string; status?: string } = {}) {
+  const companyId = useCompanyKey();
+  return useQuery({
+    queryKey: ['company', companyId, HR_KEY, 'attendance-corrections', params],
+    queryFn: () => hrService.attendanceCorrections(params),
+  });
+}
+
+export function useRequestAttendanceCorrection() {
+  const companyId = useCompanyKey();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      attendanceDayId,
+      ...payload
+    }: {
+      attendanceDayId: string;
+      status?: string;
+      check_in?: string;
+      check_out?: string;
+      notes?: string;
+      reason: string;
+    }) => hrService.requestAttendanceCorrection(attendanceDayId, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['company', companyId, HR_KEY] }),
+  });
+}
+
+export function useDecideAttendanceCorrection() {
+  const companyId = useCompanyKey();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, decision, note }: { id: string; decision: 'approve' | 'reject' | 'cancel'; note?: string }) =>
+      hrService.decideAttendanceCorrection(id, decision, note),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['company', companyId, HR_KEY] }),
+  });
+}
+
 export function useAvailabilityQuery(params: { date?: string }) {
   const companyId = useCompanyKey();
   return useQuery({

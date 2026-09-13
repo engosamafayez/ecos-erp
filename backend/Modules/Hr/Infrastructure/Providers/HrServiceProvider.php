@@ -6,6 +6,8 @@ namespace Modules\Hr\Infrastructure\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Modules\Hr\Attendance\Domain\Services\AbsenceFactsProvider;
+use Modules\Hr\Attendance\Domain\Services\AttendanceCorrectionService;
+use Modules\Hr\Attendance\Domain\Services\AttendanceDerivationService;
 use Modules\Hr\Attendance\Domain\Services\AttendanceRegistrationService;
 use Modules\Hr\Attendance\Domain\Services\AttendanceSummaryProvider;
 use Modules\Hr\Attendance\Domain\Services\HolidayService;
@@ -100,6 +102,8 @@ final class HrServiceProvider extends ServiceProvider
         $this->app->singleton(HolidayService::class);
         $this->app->singleton(WorkScheduleService::class);
         $this->app->singleton(AttendanceRegistrationService::class);
+        $this->app->singleton(AttendanceDerivationService::class);
+        $this->app->singleton(AttendanceCorrectionService::class);
         $this->app->singleton(LeaveRequestService::class);
         $this->app->singleton(WorkforceAvailabilityService::class);
 

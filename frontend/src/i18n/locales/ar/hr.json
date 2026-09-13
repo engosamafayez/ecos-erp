@@ -141,6 +141,32 @@
       "department": "القسم",
       "recorded": "مُسجَّل",
       "status": "الحالة"
+    },
+    "time": {
+      "onTime": "في الموعد",
+      "late": "متأخر",
+      "early": "مبكر",
+      "notEvaluated": "غير مقيَّم"
+    },
+    "history": {
+      "title": "سجل الحضور",
+      "empty": "لا يوجد حضور مسجَّل لهذه الفترة.",
+      "date": "التاريخ",
+      "checkIn": "الحضور",
+      "checkOut": "الانصراف",
+      "late": "التأخير",
+      "earlyLeave": "الانصراف المبكر",
+      "workedTime": "وقت العمل",
+      "action": "الإجراء",
+      "requestCorrection": "طلب تصحيح",
+      "submitCorrection": "إرسال"
+    },
+    "correction": {
+      "reason": "السبب",
+      "pendingTitle": "طلبات التصحيح المعلقة",
+      "empty": "لا توجد طلبات تصحيح معلقة.",
+      "approve": "موافقة",
+      "reject": "رفض"
     }
   },
   "careers": {

@@ -244,6 +244,62 @@ export type AttendanceSheet = {
   employees: AttendanceSheetRow[];
 };
 
+/** FIN-01 — honest unavailable states throughout: never a guessed On Time/Late/0. */
+export type LateState = {
+  status: 'on_time' | 'late' | 'not_evaluated' | 'not_applicable';
+  minutes_late: number | null;
+  grace_minutes: number | null;
+};
+
+export type EarlyLeaveState = {
+  status: 'on_time' | 'early' | 'not_evaluated' | 'not_applicable';
+  minutes_early: number | null;
+};
+
+export type WorkedTimeState = {
+  status: 'available' | 'not_evaluated' | 'not_applicable';
+  gross_minutes: number | null;
+  net_minutes: number | null;
+  break_minutes_deducted: number | null;
+};
+
+export type AttendanceDayRecord = {
+  id: string;
+  employee_id: string;
+  employee: { id: string; name: string; employee_number: string } | null;
+  department_id: string | null;
+  work_date: string;
+  status: AttendanceStatus;
+  status_label: string;
+  check_in: string | null;
+  check_out: string | null;
+  late: LateState | null;
+  early_leave: EarlyLeaveState | null;
+  worked_time: WorkedTimeState | null;
+  source: string;
+  leave_request_id: string | null;
+  notes: string | null;
+};
+
+export type CorrectionStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
+
+export type AttendanceCorrection = {
+  id: string;
+  attendance_day_id: string;
+  work_date: string | null;
+  employee: { id: string; name: string; employee_number: string } | null;
+  original: { status: AttendanceStatus; check_in: string | null; check_out: string | null };
+  corrected: { status: AttendanceStatus; check_in: string | null; check_out: string | null; notes: string | null };
+  reason: string;
+  status: CorrectionStatus;
+  status_label: string;
+  requested_by: number;
+  decided_by: number | null;
+  decided_at: string | null;
+  decision_note: string | null;
+  created_at: string | null;
+};
+
 export type WorkforceAvailability = {
   date: string;
   headcount: number;
@@ -310,6 +366,7 @@ export type Shift = {
   start_time: string;
   end_time: string;
   break_minutes: number;
+  late_grace_minutes: number;
   crosses_midnight: boolean;
   is_active: boolean;
 };
