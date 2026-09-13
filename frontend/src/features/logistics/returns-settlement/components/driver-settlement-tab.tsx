@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, Users } from 'lucide-react';
 
-import { EmptyState, EntityTable, ErrorState } from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
+import { EmptyState, ErrorState } from '@/components/crud';
+import type { DataGridColumnDef } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Button } from '@/components/ui/button';
 import { useFormatter } from '@/hooks/use-formatter';
 import { ROUTES } from '@/router/routes';
@@ -44,11 +45,12 @@ export function DriverSettlementTab() {
     [navigate],
   );
 
-  const columns = useMemo<ColumnDef<DaySettlementDriverRow>[]>(
+  const columns = useMemo<DataGridColumnDef<DaySettlementDriverRow>[]>(
     () => [
       {
         key: 'driver',
-        header: t(($) => $.driverSettlement.columns.driver),
+        label: t(($) => $.driverSettlement.columns.driver),
+        cardRole: 'title',
         cell: (row) => (
           <div className="min-w-0">
             <span className="block truncate text-sm font-medium">
@@ -62,8 +64,8 @@ export function DriverSettlementTab() {
       },
       {
         key: 'cash_position',
-        header: t(($) => $.driverSettlement.columns.cashPosition),
-        align: 'right',
+        label: t(($) => $.driverSettlement.columns.cashPosition),
+        align: 'end',
         cell: (row) => (
           <div className="text-end">
             <div className="tabular-nums text-sm font-medium">{fmt.money(row.net_cash)}</div>
@@ -75,11 +77,23 @@ export function DriverSettlementTab() {
       },
       {
         key: 'status',
-        header: t(($) => $.driverSettlement.columns.status),
+        label: t(($) => $.driverSettlement.columns.status),
+        cardRole: 'status',
         cell: (row) => <DaySettlementStatusBadge status={row.settlement_status} />,
       },
+      {
+        key: 'rowActions',
+        label: '',
+        align: 'end',
+        alwaysVisible: true,
+        cell: (row) => (
+          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => openDetail(row)}>
+            {t(($) => $.driverSettlement.review)}
+          </Button>
+        ),
+      },
     ],
-    [t, fmt],
+    [t, fmt, openDetail],
   );
 
   return (
@@ -98,18 +112,13 @@ export function DriverSettlementTab() {
       </div>
 
       <div className="max-h-[420px] overflow-y-auto">
-        <EntityTable<DaySettlementDriverRow>
-          columns={columns}
+        <UniversalDataGrid<DaySettlementDriverRow>
           data={drivers}
-          getRowId={(row) => row.trip_id}
-          isLoading={isLoading}
-          isError={isError}
+          columns={columns}
+          rowId={(row) => row.trip_id}
+          loading={isLoading}
+          error={isError}
           skeletonRows={5}
-          rowActions={(row) => (
-            <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => openDetail(row)}>
-              {t(($) => $.driverSettlement.review)}
-            </Button>
-          )}
           emptyState={
             <EmptyState
               icon={Users}

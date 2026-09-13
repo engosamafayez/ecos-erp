@@ -1,3 +1,5 @@
+import type { StatusTone } from '@/components/crud';
+
 import type { TaskPriority, TaskStatus } from '../types';
 
 /**
@@ -18,19 +20,21 @@ export function allowedTaskStatusTransitions(current: TaskStatus): TaskStatus[] 
   return ALLOWED_TRANSITIONS[current];
 }
 
-/** Badge tone per status — a shared status-color convention, not a per-page choice. */
-export const TASK_STATUS_TONE: Record<TaskStatus, 'neutral' | 'info' | 'success' | 'muted'> = {
+/** Badge tone per status — a shared status-color convention, not a per-page choice.
+ *  Maps onto the canonical `StatusBadge`'s 5-value `StatusTone` escape hatch
+ *  (TASK-ECOS-V1.1-CORE-01-UI-06) rather than a hand-rolled color per badge. */
+export const TASK_STATUS_TONE: Record<TaskStatus, StatusTone> = {
   todo: 'neutral',
   in_progress: 'info',
   done: 'success',
-  cancelled: 'muted',
+  cancelled: 'neutral',
 };
 
-export const TASK_PRIORITY_TONE: Record<TaskPriority, 'muted' | 'neutral' | 'warning' | 'danger'> = {
-  low: 'muted',
-  normal: 'neutral',
+export const TASK_PRIORITY_TONE: Record<TaskPriority, StatusTone> = {
+  low: 'neutral',
+  normal: 'info',
   high: 'warning',
-  urgent: 'danger',
+  urgent: 'error',
 };
 
 export const TASK_PRIORITY_ORDER: TaskPriority[] = ['low', 'normal', 'high', 'urgent'];

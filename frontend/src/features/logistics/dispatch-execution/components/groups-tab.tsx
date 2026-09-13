@@ -2,8 +2,9 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Boxes } from 'lucide-react';
 
-import { EmptyState, EntityTable, ErrorState } from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
+import { EmptyState, ErrorState } from '@/components/crud';
+import type { DataGridColumnDef } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Badge } from '@/components/ui/badge';
 import { useOrganizationContext } from '@/features/organization/context/organization-context';
 import { useCurrentDistributionWindow } from '@/features/logistics/distribution-workspace/hooks/use-distribution-workspace';
@@ -37,32 +38,35 @@ export function GroupsTab() {
     [data],
   );
 
-  const columns: ColumnDef<SlotSummary>[] = [
+  const columns: DataGridColumnDef<SlotSummary>[] = [
     {
       key: 'code',
-      header: t($ => $.groups.columns.code),
+      label: t($ => $.groups.columns.code),
+      cardRole: 'title',
       cell: (g) => <span className="font-medium">{g.code}</span>,
     },
     {
       key: 'name',
-      header: t($ => $.groups.columns.name),
+      label: t($ => $.groups.columns.name),
+      cardRole: 'subtitle',
       cell: (g) => g.name ?? '—',
     },
     {
       key: 'zones',
-      header: t($ => $.groups.columns.zones),
-      align: 'right',
+      label: t($ => $.groups.columns.zones),
+      align: 'end',
       cell: (g) => g.zones_count,
     },
     {
       key: 'orders',
-      header: t($ => $.groups.columns.orders),
-      align: 'right',
+      label: t($ => $.groups.columns.orders),
+      align: 'end',
       cell: (g) => g.orders_count,
     },
     {
       key: 'status',
-      header: t($ => $.groups.columns.status),
+      label: t($ => $.groups.columns.status),
+      cardRole: 'status',
       cell: (g) => (
         <div className="flex flex-wrap items-center gap-1.5">
           <Badge variant="secondary" className="capitalize">
@@ -95,12 +99,12 @@ export function GroupsTab() {
       {noWindow ? (
         <EmptyState icon={Boxes} title={t($ => $.groups.noWindow)} />
       ) : (
-        <EntityTable<SlotSummary>
-          columns={columns}
+        <UniversalDataGrid<SlotSummary>
           data={groups}
-          getRowId={(g) => g.slot_id}
-          isLoading={isLoading}
-          isError={isError}
+          columns={columns}
+          rowId={(g) => g.slot_id}
+          loading={isLoading}
+          error={isError}
           skeletonRows={5}
           emptyState={<EmptyState icon={Boxes} title={t($ => $.groups.empty)} />}
           errorState={<ErrorState title={t($ => $.groups.loadError)} onRetry={() => refetch()} />}

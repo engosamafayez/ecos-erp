@@ -33,14 +33,15 @@ export function WorkspaceMetricCard({
   onClick,
   active = false,
   isLoading = false,
+  compact = false,
 }: Props) {
   if (isLoading) {
     return (
-      <div className="flex items-center gap-3 rounded-xl border bg-card p-4">
-        <Skeleton className="size-10 shrink-0 rounded-lg" />
+      <div className={cn('flex items-center rounded-xl border bg-card', compact ? 'gap-2.5 p-2.5' : 'gap-3 p-4')}>
+        <Skeleton className={cn('shrink-0 rounded-lg', compact ? 'size-8' : 'size-10')} />
         <div className="flex-1 space-y-2">
           <Skeleton className="h-3 w-20" />
-          <Skeleton className="h-6 w-14" />
+          <Skeleton className={compact ? 'h-5 w-12' : 'h-6 w-14'} />
         </div>
       </div>
     );
@@ -55,23 +56,28 @@ export function WorkspaceMetricCard({
       disabled={!isClickable}
       aria-pressed={isClickable ? active : undefined}
       className={cn(
-        'flex w-full items-center gap-3 rounded-xl border bg-card p-4 text-start transition-all',
+        'flex w-full items-center rounded-xl border bg-card text-start transition-all',
+        compact ? 'gap-2.5 p-2.5' : 'gap-3 p-4',
         isClickable && 'cursor-pointer hover:border-primary/40 hover:shadow-md',
         active && 'border-primary shadow-md ring-2 ring-primary/20',
         !isClickable && 'cursor-default',
       )}
     >
       <span
-        className={cn('flex size-10 shrink-0 items-center justify-center rounded-lg', colorClass)}
+        className={cn(
+          'flex shrink-0 items-center justify-center rounded-lg',
+          compact ? 'size-8' : 'size-10',
+          colorClass,
+        )}
         aria-hidden
       >
-        <Icon className="size-5" />
+        <Icon className={compact ? 'size-4' : 'size-5'} />
       </span>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-medium text-muted-foreground">{label}</p>
+        <p className={cn('truncate font-medium text-muted-foreground', compact ? 'text-[11px]' : 'text-xs')}>{label}</p>
         <div className="flex items-baseline gap-1.5">
-          <p className="text-xl font-bold tabular-nums">{value}</p>
+          <p className={cn('font-bold tabular-nums', compact ? 'text-lg' : 'text-xl')}>{value}</p>
           {trend ? <TrendBadge trend={trend} /> : null}
         </div>
       </div>

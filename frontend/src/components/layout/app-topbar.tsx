@@ -2,6 +2,7 @@ import { PanelLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { BrandLogo } from '@/components/common/brand-logo';
 
 import {
@@ -23,10 +24,19 @@ type AppTopbarProps = {
  *
  * Layout (left → right):
  *   BrandLogo | SidebarToggle(md-only) | GlobalSearch(flex-1, sm+)
- *   | SearchIcon(mobile) | Company(md+) | Warehouse(md+)
- *   | SmartCreate(md+) | Notifications | UserMenu
+ *   | SearchIcon(mobile) | Company(xl+) | Brand(xl+) | Warehouse(xl+)
+ *   | Separator(xl+) | SmartCreate(xl+) | Notifications | UserMenu
  *
  * Language + Theme are accessible via the UserMenu dropdown on all screen sizes.
+ *
+ * TASK-ECOS-V1.1-CORE-01-UI-02-FINAL-TABLET-CLOSURE-046-R1 — the Company +
+ * Brand + Warehouse switchers, the separator, and Smart Create moved from
+ * `md:` (768px) to `xl:` (1280px). Measured at 768px and 1024px: this group
+ * alone is ~600-660px wide (each switcher shows a full label; UserMenu also
+ * grows at `lg:`), which does not fit alongside a flex-1 search bar in either
+ * width — real, measured horizontal overflow (~250px at 768px, ~85px at
+ * 1024px), predating this fix (only ~7px of it was the new Separator).
+ * `xl:` is the first breakpoint with enough width for the whole cluster.
  */
 export function AppTopbar({ onOpenSidebar }: AppTopbarProps) {
   const { t } = useTranslation('common');
@@ -60,15 +70,22 @@ export function AppTopbar({ onOpenSidebar }: AppTopbarProps) {
           <GlobalSearch />
         </div>
 
-        {/* Company + Brand + Warehouse switchers — tablet+ */}
-        <div className="hidden md:flex items-center gap-1.5">
+        {/* Company + Brand + Warehouse switchers — xl+ only (§046-R1: not
+            enough width alongside search at md/lg, see file docblock) */}
+        <div className="hidden xl:flex items-center gap-1.5">
           <CompanySwitcher />
           <BrandSwitcher />
           <WarehouseSwitcher />
         </div>
 
-        {/* Smart Create — tablet+ */}
-        <div className="hidden md:block">
+        {/* §7 — a visual boundary between "context" (which company/brand/
+            warehouse) and "actions" (create, notifications, account) reads
+            as one grouped cluster otherwise, especially once the switchers
+            grow to 3 items. Canonical Separator, not a hardcoded border. */}
+        <Separator orientation="vertical" className="hidden h-5 xl:block" />
+
+        {/* Smart Create — xl+ (moved with the switcher group, §046-R1) */}
+        <div className="hidden xl:block">
           <SmartCreate />
         </div>
 

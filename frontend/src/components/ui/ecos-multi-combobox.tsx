@@ -3,6 +3,7 @@ import { Check, ChevronsUpDown, X } from 'lucide-react';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 
 import { Input } from '@/components/ui/input';
+import { useDialogAncestorPortal } from '@/components/ui/use-dialog-ancestor-portal';
 import { cn } from '@/lib/utils';
 
 export type EcosMultiComboboxOption = {
@@ -75,10 +76,10 @@ export function EcosMultiCombobox({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  // §4/§6 (TASK-ECOS-SYSTEM-WIDE-SEARCHABLE-SELECT-FOCUS-REMEDIATION-006) — see the
-  // dedicated comment inside `handleOpenChange` below for the full root cause;
-  // shared verbatim with EcosCombobox (see that file's own comment too).
-  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+  // TASK-ECOS-SYSTEM-WIDE-SEARCHABLE-SELECT-FOCUS-REMEDIATION-006 — shared
+  // with EcosCombobox; see use-dialog-ancestor-portal.ts for the root cause
+  // and fix (previously an independently-maintained copy here).
+  const { portalContainer, attachOnOpen } = useDialogAncestorPortal(triggerRef);
 
   const selectedOptions = value
     .map((v) => options.find((o) => o.value === v))
@@ -95,26 +96,7 @@ export function EcosMultiCombobox({
     if (next) {
       setQuery('');
       setActiveIndex(-1);
-
-      // ROOT CAUSE (§4/§6, remediation-006) — a Radix Dialog/Sheet's `Dialog.Content`
-      // wraps its children in `FocusScope trapped`. That trap's `focusin` listener
-      // (@radix-ui/react-focus-scope) checks plain DOM containment —
-      // `dialogContainer.contains(event.target)` — and redirects focus straight
-      // back inside the dialog whenever it is false. This Popover's content
-      // portals to `document.body` by default: a DOM SIBLING of the Dialog's own
-      // portalled content, never a descendant — so the search input could never
-      // hold focus while nested inside a Sheet/Dialog/Drawer. Fix: portal INTO
-      // the nearest ancestor dialog's own content node instead, so the trap's
-      // containment check is true and it stops fighting. Read here (inside this
-      // event handler — an approved place to read a ref's current value, never
-      // during render) rather than a `useMemo`: the trigger is always mounted
-      // regardless of `open`, and this runs before the deferred auto-focus
-      // below, so the Portal has already re-targeted its container by the time
-      // anything tries to focus into it.
-      const dialogAncestor = triggerRef.current?.closest<HTMLElement>('[role="dialog"]') ?? null;
-      setPortalContainer(dialogAncestor);
-
-      setTimeout(() => inputRef.current?.focus(), 10);
+      attachOnOpen(inputRef);
     }
   }
 

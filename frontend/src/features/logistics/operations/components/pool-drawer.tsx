@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AlertTriangle, Unlink } from 'lucide-react';
 
-import { PageDrawer } from '@/components/page/drawer/page-drawer';
+import { EntityDrawer } from '@/components/crud';
 import { useToast } from '@/components/ds/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -26,7 +26,7 @@ function MemberRow({ member }: { member: UnifiedMember }) {
     <div className="rounded-md border p-2.5">
       <button
         type="button"
-        className="flex w-full items-start justify-between gap-2 text-left"
+        className="flex w-full items-start justify-between gap-2 text-start"
         onClick={() => setExpanded((v) => !v)}
       >
         <div className="min-w-0 flex-1">
@@ -185,12 +185,11 @@ export function PoolDrawer({
   if (poolId === null) return null;
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={onOpenChange}
       title={health?.pool_name ?? 'Pool'}
       description="Membership joined to Fleet's and Drivers' current verdicts"
-      size="2xl"
     >
       {isLoading || !unified ? (
         <Skeleton className="h-96 w-full" />
@@ -238,6 +237,6 @@ export function PoolDrawer({
           )}
         </div>
       )}
-    </PageDrawer>
+    </EntityDrawer>
   );
 }

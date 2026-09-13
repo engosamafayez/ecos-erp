@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, Route as RouteIcon } from 'lucide-react';
 
-import { EmptyState, EntityTable, ErrorState, Pagination } from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
+import { EmptyState, ErrorState } from '@/components/crud';
+import type { DataGridColumnDef, GridPaginationConfig } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Button } from '@/components/ui/button';
 import { useFormatter } from '@/hooks/use-formatter';
 import { ROUTES } from '@/router/routes';
@@ -49,11 +50,12 @@ export function ReturningToWarehouseTab() {
   const trips = data?.data ?? [];
   const meta = data?.meta;
 
-  const columns = useMemo<ColumnDef<Trip>[]>(
+  const columns = useMemo<DataGridColumnDef<Trip>[]>(
     () => [
       {
         key: 'trip_number',
-        header: t(($) => $.returningToWarehouse.columns.trip),
+        label: t(($) => $.returningToWarehouse.columns.trip),
+        cardRole: 'title',
         cell: (trip) => (
           <div className="min-w-0">
             <span className="block truncate text-sm font-medium">{trip.trip_number}</span>
@@ -63,35 +65,45 @@ export function ReturningToWarehouseTab() {
       },
       {
         key: 'driver',
-        header: t(($) => $.returningToWarehouse.columns.driver),
+        label: t(($) => $.returningToWarehouse.columns.driver),
+        cardRole: 'subtitle',
         cell: (trip) =>
           trip.driver?.full_name ?? <span className="text-muted-foreground">&mdash;</span>,
       },
       {
         key: 'vehicle',
-        header: t(($) => $.returningToWarehouse.columns.vehicle),
+        label: t(($) => $.returningToWarehouse.columns.vehicle),
         cell: (trip) =>
           trip.vehicle?.plate_number ?? <span className="text-muted-foreground">&mdash;</span>,
       },
       {
         key: 'orders_count',
-        header: t(($) => $.returningToWarehouse.columns.orders),
-        align: 'right',
+        label: t(($) => $.returningToWarehouse.columns.orders),
+        align: 'end',
         cell: (trip) => <span className="tabular-nums">{trip.orders_count}</span>,
       },
       {
         key: 'trip_finished_at',
-        header: t(($) => $.returningToWarehouse.columns.finishedAt),
+        label: t(($) => $.returningToWarehouse.columns.finishedAt),
         cell: (trip) => (trip.trip_finished_at ? fmt.dateTime(trip.trip_finished_at) : '—'),
       },
       {
         key: 'status',
-        header: t(($) => $.returningToWarehouse.columns.status),
+        label: t(($) => $.returningToWarehouse.columns.status),
+        cardRole: 'status',
         cell: (trip) => <TripStatusBadge status={trip.status} />,
       },
     ],
     [t, fmt],
   );
+
+  const pagination: GridPaginationConfig | undefined =
+    meta && meta.total > 0
+      ? {
+          meta: { page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page },
+          onPageChange: setPage,
+        }
+      : undefined;
 
   return (
     <div className="flex flex-col gap-3">
@@ -108,12 +120,12 @@ export function ReturningToWarehouseTab() {
         </Button>
       </div>
 
-      <EntityTable<Trip>
-        columns={columns}
+      <UniversalDataGrid<Trip>
         data={trips}
-        getRowId={(trip) => trip.id}
-        isLoading={isLoading}
-        isError={isError}
+        columns={columns}
+        rowId={(trip) => trip.id}
+        loading={isLoading}
+        error={isError}
         skeletonRows={5}
         emptyState={
           <EmptyState
@@ -129,14 +141,8 @@ export function ReturningToWarehouseTab() {
             onRetry={() => void refetch()}
           />
         }
+        pagination={pagination}
       />
-
-      {meta && meta.total > 0 && (
-        <Pagination
-          meta={{ page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page }}
-          onPageChange={setPage}
-        />
-      )}
     </div>
   );
 }

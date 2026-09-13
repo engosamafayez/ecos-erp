@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { ArrowUpRight, MapPin, Route } from 'lucide-react';
 
-import { PageDrawer } from '@/components/page/drawer/page-drawer';
+import { EntityDrawer } from '@/components/crud';
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/router/routes';
 
@@ -41,11 +41,10 @@ export function ShippingOrderDetailDrawer({
   const navigate = useNavigate();
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={onOpenChange}
       title={order?.order_number ?? ''}
-      size="lg"
     >
       {order ? (
         <div className="flex flex-col gap-5 p-1">
@@ -150,6 +149,6 @@ export function ShippingOrderDetailDrawer({
           </section>
         </div>
       ) : null}
-    </PageDrawer>
+    </EntityDrawer>
   );
 }

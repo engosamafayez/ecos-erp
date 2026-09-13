@@ -5,13 +5,12 @@ import { useTranslation } from 'react-i18next';
 import {
   ActionMenu,
   ConfirmDialog,
-  EntityTable,
   EntityToolbar,
   PageHeader,
-  Pagination,
   StatusBadge,
 } from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
+import type { DataGridColumnDef, GridPaginationConfig } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -262,32 +261,35 @@ export function ChannelsPage() {
     });
   };
 
-  const columns: ColumnDef<Channel>[] = [
+  const columns: DataGridColumnDef<Channel>[] = [
     {
       key: 'name',
-      header: t($ => $.columns.name),
+      label: t($ => $.columns.name),
       sortable: true,
+      alwaysVisible: true,
+      cardRole: 'title',
       cell: (c) => <span className="font-medium">{c.name}</span>,
     },
     {
       key: 'brand',
-      header: t($ => $.columns.brand, { defaultValue: 'Brand' }),
+      label: t($ => $.columns.brand, { defaultValue: 'Brand' }),
+      cardRole: 'subtitle',
       cell: (c) => <span className="text-muted-foreground">{c.brand?.name ?? '—'}</span>,
     },
     {
       key: 'company',
-      header: t($ => $.columns.company),
+      label: t($ => $.columns.company),
       cell: (c) => <span className="text-muted-foreground">{c.brand?.company?.name ?? '—'}</span>,
     },
     {
       key: 'platform',
-      header: t($ => $.columns.platform),
+      label: t($ => $.columns.platform),
       sortable: true,
       cell: (c) => <PlatformBadge platform={c.platform} />,
     },
     {
       key: 'store_url',
-      header: t($ => $.columns.storeUrl),
+      label: t($ => $.columns.storeUrl),
       cell: (c) => (
         <a
           href={c.store_url}
@@ -301,18 +303,19 @@ export function ChannelsPage() {
     },
     {
       key: 'connection_status',
-      header: t($ => $.columns.connection),
+      label: t($ => $.columns.connection),
       cell: (c) => <ConnectionStatusBadge status={c.connection_status} />,
     },
     {
       key: 'is_active',
-      header: t($ => $.columns.status),
+      label: t($ => $.columns.status),
       sortable: true,
+      cardRole: 'status',
       cell: (c) => <StatusBadge status={c.is_active ? 'active' : 'inactive'} />,
     },
     {
       key: 'last_sync_at',
-      header: t($ => $.columns.lastSync),
+      label: t($ => $.columns.lastSync),
       sortable: true,
       cell: (c) => (
         <span className="text-muted-foreground">
@@ -320,9 +323,61 @@ export function ChannelsPage() {
         </span>
       ),
     },
+    {
+      key: 'actions',
+      label: '',
+      align: 'end',
+      alwaysVisible: true,
+      cell: (channel) => (
+        <ActionMenu
+          label={`Actions for ${channel.name}`}
+          items={[
+            {
+              key: 'import-products',
+              label: importingId === channel.id ? t($ => $.actions.importing) : t($ => $.actions.importProducts),
+              icon: Download,
+              onSelect: () => handleImportProducts(channel),
+            },
+            {
+              key: 'import-orders',
+              label: importingOrdersId === channel.id ? t($ => $.actions.importing) : t($ => $.actions.importOrders),
+              icon: Download,
+              onSelect: () => handleImportOrders(channel),
+            },
+            {
+              key: 'sync-stock',
+              label: syncingId === channel.id ? t($ => $.actions.syncing) : t($ => $.actions.syncStock),
+              icon: RefreshCw,
+              onSelect: () => handleSyncStock(channel),
+            },
+            {
+              key: 'test-connection',
+              label: testingId === channel.id ? t($ => $.actions.testing) : t($ => $.actions.testConnection),
+              icon: Wifi,
+              onSelect: () => handleTestConnection(channel),
+            },
+            { key: 'edit', label: tCommon($ => $.common.edit), icon: Pencil, onSelect: () => openEdit(channel) },
+            {
+              key: 'delete',
+              label: tCommon($ => $.common.delete),
+              icon: Trash2,
+              variant: 'destructive' as const,
+              onSelect: () => setDeleting(channel),
+            },
+          ]}
+        />
+      ),
+    },
   ];
 
   const focusedRowId = focusedRowIndex !== null ? (items[focusedRowIndex]?.id ?? null) : null;
+
+  const pagination: GridPaginationConfig | undefined = meta
+    ? {
+        meta: { page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page },
+        onPageChange: setPage,
+      }
+    : undefined;
 
   return (
     <div className="flex flex-col gap-6">
@@ -441,62 +496,17 @@ export function ChannelsPage() {
             </DropdownMenu>
           </EntityToolbar>
 
-          <EntityTable<Channel>
+          <UniversalDataGrid<Channel>
             columns={columns.filter((c) => !hiddenCols.has(c.key))}
             data={items}
-            getRowId={(c) => c.id}
-            isLoading={isLoading}
-            isError={isError}
+            rowId={(c) => c.id}
+            loading={isLoading}
+            error={isError}
             sort={sort}
             onSortChange={handleSort}
             focusedRowId={focusedRowId}
-            rowActions={(channel) => (
-              <ActionMenu
-                label={`Actions for ${channel.name}`}
-                items={[
-                  {
-                    key: 'import-products',
-                    label: importingId === channel.id ? t($ => $.actions.importing) : t($ => $.actions.importProducts),
-                    icon: Download,
-                    onSelect: () => handleImportProducts(channel),
-                  },
-                  {
-                    key: 'import-orders',
-                    label: importingOrdersId === channel.id ? t($ => $.actions.importing) : t($ => $.actions.importOrders),
-                    icon: Download,
-                    onSelect: () => handleImportOrders(channel),
-                  },
-                  {
-                    key: 'sync-stock',
-                    label: syncingId === channel.id ? t($ => $.actions.syncing) : t($ => $.actions.syncStock),
-                    icon: RefreshCw,
-                    onSelect: () => handleSyncStock(channel),
-                  },
-                  {
-                    key: 'test-connection',
-                    label: testingId === channel.id ? t($ => $.actions.testing) : t($ => $.actions.testConnection),
-                    icon: Wifi,
-                    onSelect: () => handleTestConnection(channel),
-                  },
-                  { key: 'edit', label: tCommon($ => $.common.edit), icon: Pencil, onSelect: () => openEdit(channel) },
-                  {
-                    key: 'delete',
-                    label: tCommon($ => $.common.delete),
-                    icon: Trash2,
-                    variant: 'destructive' as const,
-                    onSelect: () => setDeleting(channel),
-                  },
-                ]}
-              />
-            )}
+            pagination={pagination}
           />
-
-          {meta ? (
-            <Pagination
-              meta={{ page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page }}
-              onPageChange={setPage}
-            />
-          ) : null}
         </CardContent>
       </Card>
 

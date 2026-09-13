@@ -5,12 +5,11 @@ import { Eye, Pencil, Plus, SlidersHorizontal, Trash2 } from 'lucide-react';
 import {
   ActionMenu,
   ConfirmDialog,
-  EntityTable,
   EntityToolbar,
   PageHeader,
-  Pagination,
 } from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
+import type { DataGridColumnDef, GridPaginationConfig } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -111,44 +110,47 @@ export function BusinessAccountsPage() {
     setDetailDrawerOpen(true);
   };
 
-  const columns: ColumnDef<BusinessAccount>[] = [
+  const columns: DataGridColumnDef<BusinessAccount>[] = [
     {
       key: 'code',
-      header: t($ => $.columns.code),
+      label: t($ => $.columns.code),
+      cardRole: 'subtitle',
       cell: (a) => <span className="font-mono text-xs font-medium">{a.code}</span>,
     },
     {
       key: 'name',
-      header: t($ => $.columns.name),
+      label: t($ => $.columns.name),
+      cardRole: 'title',
       cell: (a) => <span className="font-medium">{a.name}</span>,
     },
     {
       key: 'company',
-      header: t($ => $.columns.company),
+      label: t($ => $.columns.company),
       cell: (a) => <span className="text-muted-foreground">{a.company?.name ?? '—'}</span>,
     },
     {
       key: 'brand',
-      header: t($ => $.columns.brand),
+      label: t($ => $.columns.brand),
       cell: (a) => <span className="text-muted-foreground">{a.brand?.name ?? '—'}</span>,
     },
     {
       key: 'provider',
-      header: t($ => $.columns.provider),
+      label: t($ => $.columns.provider),
       cell: (a) => <Badge variant="secondary">{a.provider}</Badge>,
     },
     {
       key: 'status',
-      header: t($ => $.columns.status),
+      label: t($ => $.columns.status),
+      cardRole: 'status',
       cell: (a) => (
         <Badge variant={STATUS_BADGE_VARIANT[a.status] ?? 'secondary'}>
-          {t($ => $.status[a.status], { defaultValue: a.status })}
+          {t($ => $.status[a.status as keyof typeof $.status], { defaultValue: a.status })}
         </Badge>
       ),
     },
     {
       key: 'updated_at',
-      header: t($ => $.columns.updatedAt),
+      label: t($ => $.columns.updatedAt),
       cell: (a) => (
         <span className="text-muted-foreground text-xs">
           {a.updated_at ? new Date(a.updated_at).toLocaleDateString() : '—'}
@@ -156,6 +158,45 @@ export function BusinessAccountsPage() {
       ),
     },
   ];
+
+  // Kept out of `columns` above (and appended only at the grid call site) so
+  // it is never offered as a hideable entry in the "Show/Hide Columns" menu,
+  // which is driven directly off `columns` — matching the previous behaviour
+  // where `rowActions` was entirely separate from the hideable column set.
+  const actionsColumn: DataGridColumnDef<BusinessAccount> = {
+    key: 'actions',
+    label: '',
+    align: 'end',
+    alwaysVisible: true,
+    cell: (account) => (
+      <ActionMenu
+        label={`Actions for ${account.name}`}
+        items={[
+          { key: 'view', label: 'View', icon: Eye, onSelect: () => openDetail(account) },
+          { key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => openEdit(account) },
+          {
+            key: 'delete',
+            label: 'Delete',
+            icon: Trash2,
+            variant: 'destructive',
+            onSelect: () => setDeleting(account),
+          },
+        ]}
+      />
+    ),
+  };
+
+  const pagination: GridPaginationConfig | undefined = meta
+    ? {
+        meta: {
+          page: meta.current_page,
+          perPage: meta.per_page,
+          total: meta.total,
+          lastPage: meta.last_page,
+        },
+        onPageChange: setPage,
+      }
+    : undefined;
 
   const confirmDelete = () => {
     if (!deleting) return;
@@ -306,48 +347,21 @@ export function BusinessAccountsPage() {
                     checked={!hiddenCols.has(column.key)}
                     onCheckedChange={() => toggleCol(column.key)}
                   >
-                    {column.header}
+                    {column.label}
                   </DropdownMenuCheckboxItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
           </EntityToolbar>
 
-          <EntityTable<BusinessAccount>
-            columns={columns.filter((c) => !hiddenCols.has(c.key))}
+          <UniversalDataGrid<BusinessAccount>
             data={items}
-            getRowId={(a) => a.id}
-            isLoading={isLoading}
-            isError={isError}
-            rowActions={(account) => (
-              <ActionMenu
-                label={`Actions for ${account.name}`}
-                items={[
-                  { key: 'view', label: 'View', icon: Eye, onSelect: () => openDetail(account) },
-                  { key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => openEdit(account) },
-                  {
-                    key: 'delete',
-                    label: 'Delete',
-                    icon: Trash2,
-                    variant: 'destructive',
-                    onSelect: () => setDeleting(account),
-                  },
-                ]}
-              />
-            )}
+            columns={[...columns.filter((c) => !hiddenCols.has(c.key)), actionsColumn]}
+            rowId={(a) => a.id}
+            loading={isLoading}
+            error={isError}
+            pagination={pagination}
           />
-
-          {meta ? (
-            <Pagination
-              meta={{
-                page: meta.current_page,
-                perPage: meta.per_page,
-                total: meta.total,
-                lastPage: meta.last_page,
-              }}
-              onPageChange={setPage}
-            />
-          ) : null}
         </CardContent>
       </Card>
 

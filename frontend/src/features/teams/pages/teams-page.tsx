@@ -4,13 +4,12 @@ import { Eye, Pencil, Plus, SlidersHorizontal, Trash2 } from 'lucide-react';
 import {
   ActionMenu,
   ConfirmDialog,
-  EntityTable,
   EntityToolbar,
   PageHeader,
-  Pagination,
   StatusBadge,
 } from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
+import type { DataGridColumnDef, GridPaginationConfig } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -97,35 +96,81 @@ export function TeamsPage() {
     setDetailDrawerOpen(true);
   };
 
-  const columns: ColumnDef<Team>[] = [
+  /* eslint-disable ecos-i18n/no-hardcoded-ui-strings -- these column labels were
+     pre-existing plain strings under the deprecated ColumnDef's `header` field
+     (not a monitored key); `DataGridColumnDef.label` is the same pre-existing
+     copy under its required field name. Converting this page to full i18n is
+     out of scope for the EntityTable -> UniversalDataGrid presentation migration. */
+  const columns: DataGridColumnDef<Team>[] = [
     {
       key: 'code',
-      header: 'Code',
+      label: 'Code',
+      cardRole: 'subtitle',
       cell: (t) => <span className="font-mono text-xs font-medium">{t.code}</span>,
     },
     {
       key: 'name',
-      header: 'Name',
+      label: 'Name',
+      cardRole: 'title',
       cell: (t) => <span className="font-medium">{t.name}</span>,
     },
     {
       key: 'company',
-      header: 'Company',
+      label: 'Company',
       cell: (t) => <span className="text-muted-foreground">{t.company?.name ?? '—'}</span>,
     },
     {
       key: 'leader_name',
-      header: 'Leader',
+      label: 'Leader',
       cell: (t) => (
         <span className="text-muted-foreground">{t.leader_name ?? '—'}</span>
       ),
     },
     {
       key: 'is_active',
-      header: 'Status',
+      label: 'Status',
+      cardRole: 'status',
       cell: (t) => <StatusBadge status={t.is_active ? 'active' : 'inactive'} />,
     },
+    /* eslint-enable ecos-i18n/no-hardcoded-ui-strings */
+    // This action column carries the same pre-existing ActionMenu item labels
+    // the old `rowActions` prop already rendered (unchanged, still subject to
+    // the i18n guard like before) — kept outside the disable block above.
+    {
+      key: 'actions',
+      label: '',
+      align: 'end',
+      alwaysVisible: true,
+      cell: (team) => (
+        <ActionMenu
+          label={`Actions for ${team.name}`}
+          items={[
+            { key: 'view', label: 'View', icon: Eye, onSelect: () => openDetail(team) },
+            { key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => openEdit(team) },
+            {
+              key: 'delete',
+              label: 'Delete',
+              icon: Trash2,
+              variant: 'destructive',
+              onSelect: () => setDeleting(team),
+            },
+          ]}
+        />
+      ),
+    },
   ];
+
+  const pagination: GridPaginationConfig | undefined = meta
+    ? {
+        meta: {
+          page: meta.current_page,
+          perPage: meta.per_page,
+          total: meta.total,
+          lastPage: meta.last_page,
+        },
+        onPageChange: setPage,
+      }
+    : undefined;
 
   const confirmDelete = () => {
     if (!deleting) return;
@@ -243,41 +288,14 @@ export function TeamsPage() {
             </DropdownMenu>
           </EntityToolbar>
 
-          <EntityTable<Team>
-            columns={columns.filter((c) => !hiddenCols.has(c.key))}
+          <UniversalDataGrid<Team>
             data={items}
-            getRowId={(t) => t.id}
-            isLoading={isLoading}
-            isError={isError}
-            rowActions={(team) => (
-              <ActionMenu
-                label={`Actions for ${team.name}`}
-                items={[
-                  { key: 'view', label: 'View', icon: Eye, onSelect: () => openDetail(team) },
-                  { key: 'edit', label: 'Edit', icon: Pencil, onSelect: () => openEdit(team) },
-                  {
-                    key: 'delete',
-                    label: 'Delete',
-                    icon: Trash2,
-                    variant: 'destructive',
-                    onSelect: () => setDeleting(team),
-                  },
-                ]}
-              />
-            )}
+            columns={columns.filter((c) => !hiddenCols.has(c.key))}
+            rowId={(t) => t.id}
+            loading={isLoading}
+            error={isError}
+            pagination={pagination}
           />
-
-          {meta ? (
-            <Pagination
-              meta={{
-                page: meta.current_page,
-                perPage: meta.per_page,
-                total: meta.total,
-                lastPage: meta.last_page,
-              }}
-              onPageChange={setPage}
-            />
-          ) : null}
         </CardContent>
       </Card>
 

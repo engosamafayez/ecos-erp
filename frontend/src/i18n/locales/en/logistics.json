@@ -1143,6 +1143,7 @@
       "file": "File",
       "fileHint": "PDF or image, up to 10 MB.",
       "upload": "Upload",
+      "download": "Download",
       "empty": {
         "title": "No documents",
         "hint": "Upload licences and identification documents."
@@ -2247,6 +2248,7 @@
       "file": "File",
       "fileHint": "PDF or image, up to 10 MB.",
       "upload": "Upload",
+      "download": "Download document",
       "emptyTitle": "No documents",
       "emptyDescription": "Upload licences, insurance and inspection documents.",
       "expired": "Expired",

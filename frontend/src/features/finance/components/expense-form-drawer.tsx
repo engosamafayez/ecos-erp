@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PageDrawer } from '@/components/page';
+import { EntityDrawer } from '@/components/crud';
 
 import { useAccounts } from '../hooks/use-finance-gl';
 import { useCreateExpense, useExpenseCategories } from '../hooks/use-finance-expense';
@@ -60,12 +60,11 @@ export function ExpenseFormDrawer({ open, onOpenChange }: Props) {
   };
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={(o) => (o ? onOpenChange(true) : close())}
       title={t(($) => $.expense.form.title)}
       description={t(($) => $.expense.form.subtitle)}
-      size="2xl"
       footer={
         <div className="flex w-full items-center justify-end gap-2">
           <Button variant="outline" onClick={close}>{t(($) => $.gl.actions.cancel)}</Button>
@@ -128,6 +127,6 @@ export function ExpenseFormDrawer({ open, onOpenChange }: Props) {
 
         {error && <p className="text-sm text-red-600">{error}</p>}
       </div>
-    </PageDrawer>
+    </EntityDrawer>
   );
 }

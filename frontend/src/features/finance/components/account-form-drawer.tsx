@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { PageDrawer } from '@/components/page';
+import { EntityDrawer } from '@/components/crud';
 
 import { useAccountOptions, useCreateAccount } from '../hooks/use-finance-gl';
 import type { AccountType } from '../types/finance-gl';
@@ -71,12 +71,11 @@ export function AccountFormDrawer({ open, onOpenChange }: Props) {
   };
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={(o) => (o ? onOpenChange(true) : close())}
       title={t(($) => $.gl.coa.form.title)}
       description={t(($) => $.gl.coa.form.subtitle)}
-      size="lg"
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={close}>{t(($) => $.gl.actions.cancel)}</Button>
@@ -135,7 +134,7 @@ export function AccountFormDrawer({ open, onOpenChange }: Props) {
         </div>
         {error && <p className="text-sm text-red-600">{error}</p>}
       </div>
-    </PageDrawer>
+    </EntityDrawer>
   );
 }
 

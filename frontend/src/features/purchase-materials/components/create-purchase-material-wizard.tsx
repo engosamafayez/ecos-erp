@@ -13,6 +13,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 import { CompanySelect } from '@/features/branches/components/company-select';
 import { warehousesService } from '@/features/warehouses/services/warehouses-service';
 import { productsService } from '@/features/products/services/products-service';
@@ -242,31 +244,32 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
                     <Loader2 className="size-3.5 animate-spin" /> {t($ => $.wizard.step1.loadingWarehouses)}
                   </div>
                 ) : (
-                  <select
-                    value={warehouseId}
-                    onChange={(e) => setWarehouseId(e.target.value)}
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  >
-                    <option value="">{t($ => $.wizard.step1.selectWarehouse)}</option>
-                    {warehouses.map((w) => (
-                      <option key={w.id} value={w.id}>{w.name}</option>
-                    ))}
-                  </select>
+                  <Select value={warehouseId || undefined} onValueChange={setWarehouseId}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder={t($ => $.wizard.step1.selectWarehouse)} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {warehouses.map((w) => (
+                        <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-medium">{t($ => $.wizard.step1.priority)}</label>
-                  <select
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value as PurchaseMaterialPriority)}
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  >
-                    {PRIORITY_OPTIONS.map((p) => (
-                      <option key={p.value} value={p.value}>{p.label}</option>
-                    ))}
-                  </select>
+                  <Select value={priority} onValueChange={(v) => setPriority(v as PurchaseMaterialPriority)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PRIORITY_OPTIONS.map((p) => (
+                        <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label className="text-sm font-medium">{t($ => $.wizard.step1.requiredBy)}</label>
@@ -276,12 +279,12 @@ export function CreatePurchaseMaterialWizard({ open, onOpenChange, recordType = 
 
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium">{t($ => $.wizard.step1.notes)}</label>
-                <textarea
+                <Textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   rows={3}
                   placeholder={t($ => $.wizard.step1.notesPlaceholder)}
-                  className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+                  className="resize-none"
                 />
               </div>
             </div>

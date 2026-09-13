@@ -9,7 +9,12 @@ type EmptyStateProps = {
 };
 
 /**
- * Reusable empty-state placeholder.
+ * Reusable empty-state placeholder — the request succeeded and there is
+ * genuinely no data yet. Never use this to render a *read failure*: that is
+ * ErrorState (TASK-ECOS-V1.1-CORE-01-UI-01-CANONICAL-FOUNDATION-045, ticket
+ * §6 — "read failure must never be rendered as an empty dataset"). For "a
+ * search/filter matched nothing" use NoResultsState instead; for "not
+ * authorized to view this" use PermissionState.
  */
 export function EmptyState({ icon: Icon = Inbox, title, description, action }: EmptyStateProps) {
   return (

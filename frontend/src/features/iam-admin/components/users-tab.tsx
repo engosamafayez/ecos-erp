@@ -6,14 +6,14 @@ import { useTranslation } from 'react-i18next';
 import {
   ConfirmDialog,
   EmptyState,
-  EntityTable,
   ErrorState,
-  Pagination,
   PageHeader,
   SearchInput,
 } from '@/components/crud';
-import type { ActionMenuItem, ColumnDef } from '@/components/crud/types';
+import type { ActionMenuItem } from '@/components/crud/types';
 import { ActionMenu } from '@/components/crud/action-menu';
+import type { DataGridColumnDef, GridPaginationConfig } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Can, usePermission } from '@/features/authorization';
 import { useUsersQuery, useUserTransition } from '@/features/iam-admin/hooks/use-users';
@@ -84,11 +84,13 @@ export function UsersTab() {
     restore: t(($) => $.users.lifecycle.restore),
   };
 
-  const columns = useMemo<ColumnDef<UserSummary>[]>(
+  const columns = useMemo<DataGridColumnDef<UserSummary>[]>(
     () => [
       {
         key: 'name',
-        header: t(($) => $.users.columns.identity),
+        label: t(($) => $.users.columns.identity),
+        alwaysVisible: true,
+        cardRole: 'title',
         cell: (row) => (
           <div className="flex flex-col">
             <span className="font-medium">{row.display_name}</span>
@@ -99,12 +101,13 @@ export function UsersTab() {
       },
       {
         key: 'employee_number',
-        header: t(($) => $.users.columns.employeeNumber),
+        label: t(($) => $.users.columns.employeeNumber),
+        cardRole: 'subtitle',
         cell: (row) => row.employee_number ?? '—',
       },
       {
         key: 'roles',
-        header: t(($) => $.users.columns.roles),
+        label: t(($) => $.users.columns.roles),
         cell: (row) =>
           row.roles.length === 0 ? (
             <span className="text-muted-foreground text-xs">{t(($) => $.users.roles.none)}</span>
@@ -123,17 +126,60 @@ export function UsersTab() {
       },
       {
         key: 'status',
-        header: t(($) => $.users.columns.status),
+        label: t(($) => $.users.columns.status),
+        cardRole: 'status',
         cell: (row) => <UserStatusBadge status={row.status} label={row.status_label} />,
       },
       {
         key: 'last_activity',
-        header: t(($) => $.users.columns.lastActivity),
+        label: t(($) => $.users.columns.lastActivity),
         cell: (row) => (row.last_activity_at ? new Date(row.last_activity_at).toLocaleString() : '—'),
       },
     ],
     [t],
   );
+
+  // Not memoized — mirrors how `rowActions` was previously passed to EntityTable as a fresh
+  // inline function on every render, so it always closes over the current `tCommon`, `can` and
+  // `ACTION_LABEL` (itself rebuilt every render from `t`). Folding it into the memoized `columns`
+  // above with a `[t]` dependency would let it go stale whenever only `can`/`tCommon` changed.
+  const actionsColumn: DataGridColumnDef<UserSummary> = {
+    key: 'actions',
+    label: '',
+    align: 'end',
+    alwaysVisible: true,
+    cell: (row) => {
+      const actions: ActionMenuItem[] = [
+        {
+          key: 'view',
+          label: tCommon(($) => $.actions.view),
+          onSelect: () => setSelectedUserId(row.id),
+        },
+        ...availableActions(row.lifecycle)
+          .filter((action) => can(`iam.users.${action}`))
+          .map<ActionMenuItem>((action) => ({
+            key: action,
+            label: ACTION_LABEL[action],
+            icon: ACTION_ICON[action],
+            variant: action === 'archive' ? 'destructive' : 'default',
+            onSelect: () => setPendingAction({ id: row.id, action }),
+          })),
+      ];
+      return <ActionMenu items={actions} />;
+    },
+  };
+
+  const pagination: GridPaginationConfig | undefined = meta
+    ? {
+        meta: {
+          page: meta.page,
+          perPage: meta.per_page,
+          total: meta.total,
+          lastPage: Math.max(1, Math.ceil(meta.total / meta.per_page)),
+        },
+        onPageChange: setPage,
+      }
+    : undefined;
 
   return (
     <div className="flex flex-col gap-4">
@@ -175,43 +221,18 @@ export function UsersTab() {
         </label>
       </div>
 
-      {/* §25: LOADING/EMPTY/ERROR/LOADED are distinguished by EntityTable itself; a failed
+      {/* §25: LOADING/EMPTY/ERROR/LOADED are distinguished by UniversalDataGrid itself; a failed
          read never renders an empty table as if the request had actually succeeded. */}
-      <EntityTable
-        columns={columns}
+      <UniversalDataGrid<UserSummary>
         data={users}
-        getRowId={(row) => String(row.id)}
-        isLoading={query.isLoading}
-        isError={query.isError}
+        columns={[...columns, actionsColumn]}
+        rowId={(row) => String(row.id)}
+        loading={query.isLoading}
+        error={query.isError}
         errorState={<ErrorState description={query.error instanceof Error ? query.error.message : undefined} />}
         emptyState={<EmptyState title={t(($) => $.users.empty.title)} description={t(($) => $.users.empty.description)} />}
-        rowActions={(row) => {
-          const actions: ActionMenuItem[] = [
-            {
-              key: 'view',
-              label: tCommon(($) => $.actions.view),
-              onSelect: () => setSelectedUserId(row.id),
-            },
-            ...availableActions(row.lifecycle)
-              .filter((action) => can(`iam.users.${action}`))
-              .map<ActionMenuItem>((action) => ({
-                key: action,
-                label: ACTION_LABEL[action],
-                icon: ACTION_ICON[action],
-                variant: action === 'archive' ? 'destructive' : 'default',
-                onSelect: () => setPendingAction({ id: row.id, action }),
-              })),
-          ];
-          return <ActionMenu items={actions} />;
-        }}
+        pagination={pagination}
       />
-
-      {meta ? (
-        <Pagination
-          meta={{ page: meta.page, perPage: meta.per_page, total: meta.total, lastPage: Math.max(1, Math.ceil(meta.total / meta.per_page)) }}
-          onPageChange={setPage}
-        />
-      ) : null}
 
       <UserCreateDrawer open={createOpen} onOpenChange={setCreateOpen} />
       <UserDetailDrawer

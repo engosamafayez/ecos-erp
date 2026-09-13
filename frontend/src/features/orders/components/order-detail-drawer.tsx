@@ -14,10 +14,12 @@ import {
   CheckCircle2,
   Clock,
   Copy,
+  Download,
   Edit,
   ExternalLink,
   FileCheck,
   Factory,
+  Filter,
   Flag,
   Globe,
   Hash,
@@ -36,7 +38,9 @@ import {
   PenLine,
   Percent,
   Phone,
+  Printer,
   RotateCcw,
+  Search,
   ShieldCheck,
   ShoppingBag,
   StickyNote,
@@ -46,7 +50,6 @@ import {
   UserCheck,
   UserPlus,
   Wallet,
-  X,
   XCircle,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -54,22 +57,16 @@ import { useFormatter } from '@/hooks/use-formatter';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
-import { ConfirmDialog } from '@/components/crud';
+import { ConfirmDialog, EntityDrawer } from '@/components/crud';
 import { Input } from '@/components/ui/input';
 import { MediaViewer } from '@/components/ui/media-viewer';
 import { Separator } from '@/components/ui/separator';
 import React from 'react';
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
-import { Tabs } from '@/components/ds/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/components/ds/use-toast';
 import { usePermission } from '@/features/authorization/use-authorization';
 import { BlockedCustomerBanner } from '@/features/orders/components/blocked-customer-banner';
+import { OrderConfirmCustomerDialog } from '@/features/orders/components/order-confirm-customer-dialog';
 import { OrderInventoryExecutionCell } from '@/features/orders/components/order-inventory-execution-cell';
 import { OrderPhoneCell } from '@/features/orders/components/order-phone-cell';
 import { PaymentProofSection } from '@/features/orders/components/payment-proof-section';
@@ -79,6 +76,7 @@ import { OrderNotesTab } from '@/features/orders/components/notes-tab';
 import type { Order, OrderActivity } from '@/features/orders/types/order';
 import {
   useBrandOrderPolicy,
+  useCustomerOrderStats,
   useOrderActivities,
   useOrderBlockOverride,
   useOrderQuery,
@@ -89,6 +87,7 @@ import {
 import { copyToClipboard } from '@/lib/clipboard';
 import { getMediaUrl } from '@/lib/media';
 import { cn } from '@/lib/utils';
+import { ROUTES } from '@/router/routes';
 
 // Typed translator — extracted from the hook so sub-components share the exact
 // same type as the t returned by useTranslation('orders').  Assigning a looser
@@ -404,6 +403,15 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
     ? stats.lifetime_value / stats.total_orders
     : null;
 
+  // Customer Intelligence badges/counts — same `useCustomerOrderStats` query and
+  // thresholds order-detail-page.tsx used (TASK-ECOS-V1.1-CORE-01-UI-04 §5 capability
+  // port: this drawer previously had no VIP/Returning/Rejected signal or completed/
+  // cancelled counts at all, only the narrower embedded `customer.stats` above).
+  const { data: orderStats } = useCustomerOrderStats(cust?.id ?? null);
+  const isVip        = (orderStats?.total ?? 0) >= 10;
+  const isReturning  = !isVip && (orderStats?.total ?? 0) >= 2;
+  const hasRejected  = (orderStats?.cancelled ?? 0) > 0 && (orderStats?.completed ?? 0) === 0;
+
   const hasLegacyBilling  = !!(order.billing_address_1 || order.billing_city || order.billing_first_name);
   const hasLegacyShipping = !!(order.shipping_address_1 || order.shipping_city);
   const hasLocation       = !!order.location;
@@ -418,7 +426,7 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
     order.city,
     order.delivery_zone,
     order.shipping_address,
-    order.building  ? `Bldg. ${order.building}` : null,
+    order.building ? `Bldg. ${order.building}` : (order.shipping_address_2 ? `Bldg. ${order.shipping_address_2}` : null),
     order.floor     ? `Floor ${order.floor}` : null,
     order.apartment ? `Apt. ${order.apartment}` : null,
     order.landmark  ? `Near: ${order.landmark}` : null,
@@ -442,16 +450,44 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
 
       {/* ── 1. Customer Information Card ── */}
       <div className="rounded-lg border overflow-hidden">
-        <div className="flex items-center gap-2 border-b bg-muted/40 px-3 py-2.5">
-          <User className="size-3.5 text-muted-foreground" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            {t($ => $.detail.customerInformation)}
-          </span>
+        <div className="flex items-center justify-between gap-2 border-b bg-muted/40 px-3 py-2.5">
+          <div className="flex items-center gap-2">
+            <User className="size-3.5 text-muted-foreground" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {t($ => $.detail.customerInformation)}
+            </span>
+          </div>
+          {cust ? (
+            <a
+              href={`/app/customers/${cust.id}`}
+              className="inline-flex shrink-0 items-center gap-1 text-xs text-primary hover:underline"
+            >
+              <ExternalLink className="size-3" />
+              {t($ => $.orderDetail.open)}
+            </a>
+          ) : null}
         </div>
         <div className="p-4">
           <DetailGrid cols={2}>
             <DetailRow label={t($ => $.drawer.customer.name)}>
-              <span className="font-medium">{cust?.name ?? '—'}</span>
+              <span className="flex flex-wrap items-center gap-1.5">
+                <span className="font-medium">{cust?.name ?? '—'}</span>
+                {isVip && (
+                  <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                    ⭐ {t($ => $.orderDetail.vip)}
+                  </span>
+                )}
+                {isReturning && (
+                  <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                    {t($ => $.orderDetail.returning, { defaultValue: 'Returning' })}
+                  </span>
+                )}
+                {hasRejected && (
+                  <span className="rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                    {t($ => $.orderDetail.rejectedBefore, { defaultValue: 'Rejected before' })}
+                  </span>
+                )}
+              </span>
             </DetailRow>
             <DetailRow label={t($ => $.drawer.customer.code)}>
               <span className="flex items-center gap-1 font-mono text-xs">
@@ -534,7 +570,24 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
               <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">{t($ => $.drawer.customer.firstOrder)}</p>
               <p className="text-sm">{stats.first_order_date ? formatDate(stats.first_order_date) : '—'}</p>
             </div>
+            {orderStats ? (
+              <>
+                <div className="p-3">
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">{t($ => $.orderDetail.statsDelivered, { defaultValue: 'Delivered' })}</p>
+                  <p className="text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">{orderStats.completed.toLocaleString()}</p>
+                </div>
+                <div className="p-3">
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground mb-0.5">{t($ => $.orderDetail.statsCancelled, { defaultValue: 'Cancelled' })}</p>
+                  <p className={cn('text-sm font-semibold tabular-nums', orderStats.cancelled > 0 && 'text-red-500 dark:text-red-400')}>{orderStats.cancelled.toLocaleString()}</p>
+                </div>
+              </>
+            ) : null}
           </div>
+          {orderStats?.preferredGovernorate ? (
+            <div className="border-t px-3 py-2 text-xs text-muted-foreground">
+              {t($ => $.orderDetail.preferredZone, { defaultValue: 'Preferred zone' })}: <span className="font-medium text-foreground">{orderStats.preferredGovernorate}</span>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -592,7 +645,7 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
               🏢 {t($ => $.drawer.customer.buildingDetails)}
             </p>
             <div className="flex flex-col gap-3">
-              <AddrField icon={<Building2 className="size-3.5" />} label={t($ => $.drawer.customer.building)}  value={order.building} />
+              <AddrField icon={<Building2 className="size-3.5" />} label={t($ => $.drawer.customer.building)}  value={order.building ?? order.shipping_address_2} />
               <AddrField icon={<Layers className="size-3.5" />}    label={t($ => $.drawer.customer.floor)}     value={order.floor} />
               <AddrField icon={<Home className="size-3.5" />}      label={t($ => $.drawer.customer.apartment)} value={order.apartment} />
               <AddrField icon={<Flag className="size-3.5" />}      label={t($ => $.drawer.customer.landmark)}  value={order.landmark} />
@@ -663,6 +716,16 @@ function CustomerTab({ order, t }: { order: Order; t: OrdersT }) {
                     {t($ => $.drawer.customer.copy)}
                   </Button>
                 </div>
+                <Button variant="outline" size="sm" className="h-7 w-full text-xs" asChild>
+                  <a
+                    href={`https://www.waze.com/ul?ll=${order.location.lat}%2C${order.location.lng}&navigate=yes`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Navigation className="mr-1 size-3" />
+                    {t($ => $.orderDetail.waze, { defaultValue: 'Waze' })}
+                  </a>
+                </Button>
               </div>
             ) : hasMapsData ? (
               <div className="flex flex-col gap-2">
@@ -799,7 +862,10 @@ function ProductsTab({ order, t }: { order: Order; t: OrdersT }) {
               )}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{line.product?.name ?? '—'}</p>
-                <p className="text-xs text-muted-foreground font-mono">{line.product?.sku}</p>
+                <p className="text-xs text-muted-foreground font-mono">
+                  {line.product?.sku}
+                  {line.product?.unit_name ? <span className="ms-1.5 font-sans">· {line.product.unit_name}</span> : null}
+                </p>
                 {/* F10 — per-line manufacturing_state (backend-tracked, e.g. MTO lines);
                     shown only when present so non-manufactured lines are unaffected. */}
                 {line.manufacturing_state ? (
@@ -821,6 +887,10 @@ function ProductsTab({ order, t }: { order: Order; t: OrdersT }) {
               </div>
             </div>
           ))}
+          <div className="flex items-center justify-between py-3">
+            <span className="text-sm font-semibold">{t($ => $.orderDetail.productsTotal)}</span>
+            <span className="text-sm font-semibold tabular-nums">{fmtCur(order.products_total, true)}</span>
+          </div>
         </div>
       )}
       {(order.fees ?? []).length > 0 ? (
@@ -1099,7 +1169,7 @@ function buildFullAddress(order: Order): string {
     order.city,
     order.delivery_zone,
     order.shipping_address,
-    order.building   ? `Bldg. ${order.building}` : null,
+    order.building ? `Bldg. ${order.building}` : (order.shipping_address_2 ? `Bldg. ${order.shipping_address_2}` : null),
     order.floor      ? `Floor ${order.floor}`    : null,
     order.apartment  ? `Apt. ${order.apartment}` : null,
     order.landmark,
@@ -1188,7 +1258,7 @@ function ShippingTab({ order, t }: { order: Order; t: OrdersT }) {
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5 mb-1">
               <Building2 className="size-3" />{t($ => $.drawer.shipping.buildingDetails)}
             </p>
-            <DetailRow label={t($ => $.drawer.shipping.building)}>{order.building}</DetailRow>
+            <DetailRow label={t($ => $.drawer.shipping.building)}>{order.building ?? order.shipping_address_2}</DetailRow>
             <DetailRow label={t($ => $.drawer.shipping.floor)}>{order.floor}</DetailRow>
             <DetailRow label={t($ => $.drawer.shipping.apartment)}>{order.apartment}</DetailRow>
             <DetailRow label={t($ => $.drawer.shipping.landmark)}>{order.landmark}</DetailRow>
@@ -1426,7 +1496,7 @@ function LocationTab({
   // from the order's own fields and never abbreviated to just a city or governorate.
   const addressLines = [
     order.shipping_address,
-    order.building  ? `Bldg. ${order.building}` : null,
+    order.building ? `Bldg. ${order.building}` : (order.shipping_address_2 ? `Bldg. ${order.shipping_address_2}` : null),
     order.floor     ? `Floor ${order.floor}` : null,
     order.apartment ? `Apt. ${order.apartment}` : null,
     [order.area, order.city, order.governorate].filter(Boolean).join(' · ') || null,
@@ -1933,7 +2003,14 @@ function InventoryTab({ order }: { order: Order }) {
         <SectionTitle>{t($ => $.drawer.inventory_tab.fulfillment)}</SectionTitle>
         <DetailGrid>
           <DetailRow label={t($ => $.drawer.inventory_tab.assignedWarehouse)}>
-            {warehouseName ?? <span className="text-muted-foreground text-sm">—</span>}
+            {warehouseName ? (
+              <span className="inline-flex items-center gap-1.5">
+                {warehouseName}
+                <a href={ROUTES.warehouses} className="text-muted-foreground hover:text-foreground">
+                  <ExternalLink className="size-3" />
+                </a>
+              </span>
+            ) : <span className="text-muted-foreground text-sm">—</span>}
           </DetailRow>
           <DetailRow label={t($ => $.drawer.inventory_tab.lineItems)}>
             {t($ => $.drawer.inventory_tab.itemCount, { count: lines.length })}
@@ -2421,9 +2498,61 @@ function ActorBlock({ ev }: { ev: OrderActivity }) {
 
 // ── Timeline Tab ─────────────────────────────────────────────────────────────
 
+// Filter/search/CSV/JSON-export — ported from order-detail-page.tsx's
+// EnterpriseAuditTimeline (TASK-ECOS-V1.1-CORE-01-UI-04 §5): this tab previously had
+// none of these, only the day-grouped/ActorBlock/EventDetails rendering kept below.
+function auditExportJSON(events: OrderActivity[], orderId: string) {
+  const blob = new Blob([JSON.stringify(events, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `order-${orderId.slice(0, 8)}-audit-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function auditExportCSV(events: OrderActivity[], orderId: string) {
+  const header = ['Date', 'Event Type', 'Action', 'Description', 'Actor', 'Actor Type', 'Source', 'Reason', 'Changed Fields', 'IP Address'];
+  const rows = events.map((e) => [
+    e.created_at,
+    e.event_type,
+    e.action_type ?? '',
+    e.description,
+    e.actor_name ?? '',
+    e.actor_type ?? '',
+    e.source ?? '',
+    e.reason ?? '',
+    (e.changed_fields ?? []).join('; '),
+    e.ip_address ?? '',
+  ]);
+  const csv = [header, ...rows]
+    .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','))
+    .join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `order-${orderId.slice(0, 8)}-audit-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function TimelineTab({ order }: { order: Order }) {
   const { t }                           = useTranslation('orders');
   const { data: activities, isLoading } = useOrderActivities(order.id);
+  const [filter, setFilter] = useState('all');
+  const [search, setSearch] = useState('');
+
+  const AUDIT_FILTERS: Array<{ key: string; label: string }> = [
+    { key: 'all',       label: t($ => $.orderDetail.filterAll) },
+    { key: 'workflow',  label: t($ => $.orderDetail.filterWorkflow) },
+    { key: 'payment',   label: t($ => $.orderDetail.filterPayment) },
+    { key: 'inventory', label: t($ => $.orderDetail.filterInventory) },
+    { key: 'shipping',  label: t($ => $.orderDetail.filterShipping) },
+    { key: 'customer',  label: t($ => $.orderDetail.filterCustomer) },
+    { key: 'system',    label: t($ => $.orderDetail.filterSystem) },
+    { key: 'note',      label: t($ => $.orderDetail.filterNotes) },
+  ];
 
   const DOT_CLS: Record<TColor, string> = {
     primary: 'border-primary bg-primary/10',
@@ -2463,11 +2592,70 @@ function TimelineTab({ order }: { order: Order }) {
     );
   }
 
-  const groups = groupByDay(events, t);
+  const filtered = events.filter((ev) => {
+    if (filter !== 'all' && ev.action_type !== filter) return false;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      return (
+        ev.description.toLowerCase().includes(q) ||
+        (ev.actor_name ?? '').toLowerCase().includes(q) ||
+        (ev.event_type ?? '').toLowerCase().includes(q) ||
+        (ev.reason ?? '').toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
+
+  const groups = groupByDay(filtered, t);
 
   return (
-    <div className="p-4 space-y-6">
-      {groups.map((group) => (
+    <div className="p-4 space-y-4">
+      {/* Filter chips */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        <Filter className="size-3.5 text-muted-foreground shrink-0" />
+        {AUDIT_FILTERS.map((f) => (
+          <button
+            key={f.key}
+            onClick={() => setFilter(f.key)}
+            className={cn(
+              'shrink-0 rounded-full px-3 py-0.5 text-xs font-medium transition-colors',
+              filter === f.key
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80',
+            )}
+          >
+            {f.label}
+          </button>
+        ))}
+        <div className="ms-auto flex shrink-0 items-center gap-1.5">
+          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => auditExportCSV(filtered, order.id)}>
+            <Download className="size-3" />
+            CSV
+          </Button>
+          <Button variant="ghost" size="sm" className="h-7 px-2 text-xs gap-1" onClick={() => auditExportJSON(filtered, order.id)}>
+            <Download className="size-3" />
+            JSON
+          </Button>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+        <Input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder={t($ => $.orderDetail.searchEvents)}
+          className="pl-8 h-8 text-sm"
+        />
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 py-12 text-center">
+          <Activity className="size-8 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">{t($ => $.orderDetail.noEventsFilter)}</p>
+        </div>
+      ) : groups.map((group) => (
         <div key={group.label}>
           {/* Day separator */}
           <div className="flex items-center gap-2 mb-3 sticky top-0 bg-background/90 backdrop-blur-sm py-1 z-10">
@@ -2550,6 +2738,19 @@ function WorkflowHistoryTab({ order }: { order: Order }) {
         </div>
       </div>
 
+      {/* Order created — the one "Key Dates" field with no domain-tab home of its own
+          (date_paid/inventory_reserved_at/inventory_shipped_at/requested_delivery_date
+          all moved to Payment/Inventory/Shipping; created_at didn't, so it lives here
+          next to the other lifecycle facts). */}
+      {order.created_at ? (
+        <div>
+          <SectionTitle>{t($ => $.orderDetail.wfDateCreated)}</SectionTitle>
+          <div className="rounded-md border px-4 py-3">
+            <p className="text-sm">{formatDateTime(order.created_at)}</p>
+          </div>
+        </div>
+      ) : null}
+
       {/* Previous status */}
       {typedOrder.previous_status ? (
         <div>
@@ -2601,6 +2802,7 @@ export function OrderDetailDrawer({
 }: OrderDetailDrawerProps) {
   const { t } = useTranslation('orders');
   const [activeTab, setActiveTab] = useState('summary');
+  const [confirmCustomerOpen, setConfirmCustomerOpen] = useState(false);
 
   // Fetch fresh detail data so canonical financial fields and full customer profile are always current.
   // Falls back to grid row data (order) until the request completes.
@@ -2633,82 +2835,126 @@ export function OrderDetailDrawer({
   // is no real detail data at all — a transient error after a successful first
   // load must not blank out data already on screen.
   const detailReadFailed = detailFailed && !detailOrder;
-
-  const tabs = [
-    { key: 'summary',   label: t($ => $.drawer.tabs.summary),   content: <SummaryTab order={displayOrder} t={t} /> },
-    { key: 'workflow',  label: t($ => $.drawer.tabs.workflow),   content: <WorkflowTab order={displayOrder} onClose={() => onOpenChange(false)} /> },
-    { key: 'history',   label: t($ => $.drawer.tabs.history),   content: <WorkflowHistoryTab order={displayOrder} /> },
-    { key: 'customer',  label: t($ => $.drawer.tabs.customer),   content: <CustomerTab order={displayOrder} t={t} /> },
-    { key: 'products',  label: t($ => $.drawer.tabs.products),   content: <ProductsTab order={displayOrder} t={t} />, badge: (displayOrder.lines ?? []).length },
-    { key: 'inventory', label: t($ => $.drawer.tabs.inventory),  content: <InventoryTab order={displayOrder} /> },
-    { key: 'timeline',  label: t($ => $.drawer.tabs.timeline),   content: <TimelineTab order={displayOrder} /> },
-    { key: 'payment',   label: t($ => $.drawer.tabs.payment),    content: <PaymentTab order={displayOrder} t={t} readFailed={detailReadFailed} onRetry={refetchOrder} paymentProofPolicy={orderPolicy?.payment_proof_policy} /> },
-    { key: 'shipping',  label: t($ => $.drawer.tabs.shipping),   content: <ShippingTab order={displayOrder} t={t} /> },
-    { key: 'notes',     label: t($ => $.drawer.tabs.notes),      content: <OrderNotesTab order={displayOrder} readFailed={detailReadFailed} onRetry={refetchOrder} /> },
-    { key: 'location',  label: t($ => $.drawer.tabs.location),   content: <LocationTab order={displayOrder} t={t} autoResolve={autoResolveLocation} /> },
-  ];
+  const productCount = (displayOrder.lines ?? []).length;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="flex flex-col gap-0 p-0 sm:w-[48vw] sm:min-w-[480px] sm:max-w-[820px]"
+    <>
+      <EntityDrawer
+        open={open}
+        onOpenChange={onOpenChange}
+        title={displayOrder.order_number}
+        description={`${displayOrder.customer?.name ?? '—'} · ${displayOrder.channel?.name ?? '—'}`}
+        className="sm:w-[48vw] sm:min-w-[480px] sm:max-w-[820px]"
       >
-        {/* ── Header ── */}
-        <SheetHeader className="border-b px-4 py-3">
-          <div className="flex items-center gap-3">
-            <div className="flex-1 min-w-0">
-              <SheetTitle className="flex items-center gap-2 font-mono text-base">
-                {displayOrder.order_number}
-                <OrderStatusBadge status={displayOrder.status} />
-              </SheetTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {displayOrder.customer?.name ?? '—'} · {displayOrder.channel?.name ?? '—'}
-              </p>
+        <div className="flex h-full flex-col gap-3">
+          {/* ── Status + primary actions ── */}
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <OrderStatusBadge status={displayOrder.status} />
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => window.print()}>
+                <Printer className="size-3.5" />
+                {t($ => $.orderDetail.print)}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setConfirmCustomerOpen(true)}>
+                <UserCheck className="size-3.5" />
+                {t($ => $.orderDetail.confirmCustomer)}
+              </Button>
+              {onEdit ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => { onEdit(displayOrder); onOpenChange(false); }}
+                >
+                  <Edit className="size-3.5" />
+                  {t($ => $.actions.edit)}
+                </Button>
+              ) : null}
             </div>
-            {onEdit ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => { onEdit(displayOrder); onOpenChange(false); }}
-              >
-                <Edit className="size-3.5" />
-                {t($ => $.actions.edit)}
-              </Button>
-            ) : null}
-            <SheetClose asChild>
-              <Button variant="ghost" size="icon" className="size-8 shrink-0">
-                <X className="size-4" />
-              </Button>
-            </SheetClose>
           </div>
-        </SheetHeader>
 
-        {/* TASK-...-BLOCKED-CUSTOMERS-009-R1 (§5) — same shared banner order-detail-
-            page.tsx uses, visible regardless of which tab is active (the block
-            context matters no matter what the operator is looking at). */}
-        {displayOrder.status === 'on_hold' && displayOrder.hold_reason_code === 'blocked_customer' ? (
-          <div className="border-b px-4 py-3">
+          {/* TASK-...-BLOCKED-CUSTOMERS-009-R1 (§5) — same shared banner order-detail-
+              page.tsx used, visible regardless of which tab is active (the block
+              context matters no matter what the operator is looking at). */}
+          {displayOrder.status === 'on_hold' && displayOrder.hold_reason_code === 'blocked_customer' ? (
             <BlockedCustomerBanner order={displayOrder} />
-          </div>
-        ) : null}
+          ) : null}
 
-        {/* Loading indicator — shown only on first fetch before detail data arrives */}
-        {isEnriching ? (
-          <div className="h-0.5 w-full animate-pulse bg-primary/40" />
-        ) : null}
+          {/* Loading indicator — shown only on first fetch before detail data arrives */}
+          {isEnriching ? (
+            <div className="-mt-3 h-0.5 w-full animate-pulse bg-primary/40" />
+          ) : null}
 
-        {/* ── Tabs + content ── */}
-        <div className="flex-1 overflow-y-auto">
-          <Tabs
-            tabs={tabs}
-            activeKey={activeTab}
-            onTabChange={setActiveTab}
-            className="h-full"
-            contentClassName="overflow-y-auto"
-          />
+          {/* ── Tabs + content ── */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-3">
+            <TabsList className="h-auto w-full shrink-0 flex-nowrap justify-start overflow-x-auto">
+              <TabsTrigger value="summary">{t($ => $.drawer.tabs.summary)}</TabsTrigger>
+              <TabsTrigger value="workflow">{t($ => $.drawer.tabs.workflow)}</TabsTrigger>
+              <TabsTrigger value="history">{t($ => $.drawer.tabs.history)}</TabsTrigger>
+              <TabsTrigger value="customer">{t($ => $.drawer.tabs.customer)}</TabsTrigger>
+              <TabsTrigger value="products" className="gap-1.5">
+                {t($ => $.drawer.tabs.products)}
+                <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary/15 px-1 text-[10px] font-semibold text-primary">
+                  {productCount}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger value="inventory">{t($ => $.drawer.tabs.inventory)}</TabsTrigger>
+              <TabsTrigger value="timeline">{t($ => $.drawer.tabs.timeline)}</TabsTrigger>
+              <TabsTrigger value="payment">{t($ => $.drawer.tabs.payment)}</TabsTrigger>
+              <TabsTrigger value="shipping">{t($ => $.drawer.tabs.shipping)}</TabsTrigger>
+              <TabsTrigger value="notes">{t($ => $.drawer.tabs.notes)}</TabsTrigger>
+              <TabsTrigger value="location">{t($ => $.drawer.tabs.location)}</TabsTrigger>
+            </TabsList>
+
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <TabsContent value="summary" className="mt-0">
+                <SummaryTab order={displayOrder} t={t} />
+              </TabsContent>
+              <TabsContent value="workflow" className="mt-0">
+                <WorkflowTab order={displayOrder} onClose={() => onOpenChange(false)} />
+              </TabsContent>
+              <TabsContent value="history" className="mt-0">
+                <WorkflowHistoryTab order={displayOrder} />
+              </TabsContent>
+              <TabsContent value="customer" className="mt-0">
+                <CustomerTab order={displayOrder} t={t} />
+              </TabsContent>
+              <TabsContent value="products" className="mt-0">
+                <ProductsTab order={displayOrder} t={t} />
+              </TabsContent>
+              <TabsContent value="inventory" className="mt-0">
+                <InventoryTab order={displayOrder} />
+              </TabsContent>
+              <TabsContent value="timeline" className="mt-0">
+                <TimelineTab order={displayOrder} />
+              </TabsContent>
+              <TabsContent value="payment" className="mt-0">
+                <PaymentTab
+                  order={displayOrder}
+                  t={t}
+                  readFailed={detailReadFailed}
+                  onRetry={refetchOrder}
+                  paymentProofPolicy={orderPolicy?.payment_proof_policy}
+                />
+              </TabsContent>
+              <TabsContent value="shipping" className="mt-0">
+                <ShippingTab order={displayOrder} t={t} />
+              </TabsContent>
+              <TabsContent value="notes" className="mt-0">
+                <OrderNotesTab order={displayOrder} readFailed={detailReadFailed} onRetry={refetchOrder} />
+              </TabsContent>
+              <TabsContent value="location" className="mt-0">
+                <LocationTab order={displayOrder} t={t} autoResolve={autoResolveLocation} />
+              </TabsContent>
+            </div>
+          </Tabs>
         </div>
-      </SheetContent>
-    </Sheet>
+      </EntityDrawer>
+
+      <OrderConfirmCustomerDialog
+        order={displayOrder}
+        open={confirmCustomerOpen}
+        onOpenChange={setConfirmCustomerOpen}
+      />
+    </>
   );
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { PageDrawer } from '@/components/page/drawer/page-drawer';
+import { EntityDrawer } from '@/components/crud';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,12 +61,11 @@ export function CarrierAccountFormDrawer({
   }
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={onOpenChange}
       title={t(($) => $.carriers.newTitle)}
       description={t(($) => $.carriers.newDescription)}
-      size="lg"
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={create.isPending}>
@@ -150,6 +149,6 @@ export function CarrierAccountFormDrawer({
           />
         </div>
       </div>
-    </PageDrawer>
+    </EntityDrawer>
   );
 }

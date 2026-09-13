@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ExternalLink, Info, Loader2, Package, Phone, ShoppingBag, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { PageDrawer } from '@/components/page/drawer/page-drawer';
+import { EntityDrawer } from '@/components/crud';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge }   from '@/components/ui/badge';
@@ -333,21 +333,21 @@ function ZoneTabs({
           value="orders"
           className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2.5 text-sm"
         >
-          <ShoppingBag className="h-3.5 w-3.5 mr-1.5" />
+          <ShoppingBag className="h-3.5 w-3.5 me-1.5" />
           Orders ({zone.orders_count})
         </TabsTrigger>
         <TabsTrigger
           value="products"
           className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2.5 text-sm"
         >
-          <Package className="h-3.5 w-3.5 mr-1.5" />
+          <Package className="h-3.5 w-3.5 me-1.5" />
           Products ({zone.distinct_products})
         </TabsTrigger>
         <TabsTrigger
           value="customers"
           className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2.5 text-sm"
         >
-          <Users className="h-3.5 w-3.5 mr-1.5" />
+          <Users className="h-3.5 w-3.5 me-1.5" />
           Customers ({zone.customers_count})
         </TabsTrigger>
       </TabsList>
@@ -396,12 +396,11 @@ export function ZoneDetailDrawer({
   const isWorkspace = mode === 'workspace';
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={onOpenChange}
       title={zone.name_ar}
       description={isWorkspace ? `${zone.code} · Planning Workspace` : (zone.name_en ?? zone.code)}
-      size={isWorkspace ? '2xl' : 'xl'}
       footer={
         isWorkspace ? (
           <>
@@ -417,7 +416,7 @@ export function ZoneDetailDrawer({
                   : 'bg-emerald-600 hover:bg-emerald-700 text-white'
               }
             >
-              {isMarkingPlanned && <Loader2 className="mr-2 size-4 animate-spin" />}
+              {isMarkingPlanned && <Loader2 className="me-2 size-4 animate-spin" />}
               {zone.planning_status === 'planned' ? 'Already Planned ✓' : 'Mark as Planned'}
             </Button>
           </>
@@ -496,6 +495,6 @@ export function ZoneDetailDrawer({
         {/* ── Tabs ── */}
         <ZoneTabs zone={zone} filters={filters} initialTab={initialTab} />
       </div>
-    </PageDrawer>
+    </EntityDrawer>
   );
 }

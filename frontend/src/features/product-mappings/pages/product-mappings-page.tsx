@@ -5,12 +5,11 @@ import { useTranslation } from 'react-i18next';
 import {
   ActionMenu,
   ConfirmDialog,
-  EntityTable,
   EntityToolbar,
   PageHeader,
-  Pagination,
 } from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
+import type { DataGridColumnDef, GridPaginationConfig } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ProductMappingFormDrawer } from '@/features/product-mappings/components/product-mapping-form-drawer';
@@ -83,10 +82,12 @@ export function ProductMappingsPage() {
     setDrawerOpen(true);
   };
 
-  const columns: ColumnDef<ProductMapping>[] = [
+  const columns: DataGridColumnDef<ProductMapping>[] = [
     {
       key: 'product',
-      header: t($ => $.columns.product),
+      label: t($ => $.columns.product),
+      alwaysVisible: true,
+      cardRole: 'title',
       cell: (m) => (
         <div className="flex flex-col">
           <span className="font-medium">{m.product?.name ?? '—'}</span>
@@ -96,7 +97,8 @@ export function ProductMappingsPage() {
     },
     {
       key: 'channel',
-      header: t($ => $.columns.channel),
+      label: t($ => $.columns.channel),
+      cardRole: 'subtitle',
       cell: (m) => (
         <div className="flex flex-col">
           <span>{m.channel?.name ?? '—'}</span>
@@ -106,13 +108,13 @@ export function ProductMappingsPage() {
     },
     {
       key: 'external_product_id',
-      header: t($ => $.columns.externalId),
+      label: t($ => $.columns.externalId),
       sortable: true,
       cell: (m) => <span className="font-mono text-sm">{m.external_product_id}</span>,
     },
     {
       key: 'external_sku',
-      header: t($ => $.columns.externalSku),
+      label: t($ => $.columns.externalSku),
       sortable: true,
       cell: (m) => (
         <span className="text-muted-foreground font-mono text-sm">{m.external_sku ?? '—'}</span>
@@ -120,13 +122,14 @@ export function ProductMappingsPage() {
     },
     {
       key: 'sync_status',
-      header: t($ => $.columns.syncStatus),
+      label: t($ => $.columns.syncStatus),
       sortable: true,
+      cardRole: 'status',
       cell: (m) => <SyncStatusBadge status={m.sync_status} />,
     },
     {
       key: 'last_sync_at',
-      header: t($ => $.columns.lastSyncedAt),
+      label: t($ => $.columns.lastSyncedAt),
       sortable: true,
       cell: (m) => (
         <span className="text-muted-foreground">
@@ -134,7 +137,40 @@ export function ProductMappingsPage() {
         </span>
       ),
     },
+    {
+      key: 'actions',
+      label: '',
+      align: 'end',
+      alwaysVisible: true,
+      cell: (mapping) => (
+        <ActionMenu
+          label={`Actions for ${mapping.product?.name ?? mapping.external_product_id}`}
+          items={[
+            {
+              key: 'edit',
+              label: tCommon($ => $.common.edit),
+              icon: Pencil,
+              onSelect: () => openEdit(mapping),
+            },
+            {
+              key: 'delete',
+              label: tCommon($ => $.common.delete),
+              icon: Trash2,
+              variant: 'destructive' as const,
+              onSelect: () => setDeleting(mapping),
+            },
+          ]}
+        />
+      ),
+    },
   ];
+
+  const pagination: GridPaginationConfig | undefined = meta
+    ? {
+        meta: { page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page },
+        onPageChange: setPage,
+      }
+    : undefined;
 
   return (
     <div className="flex flex-col gap-6">
@@ -188,47 +224,16 @@ export function ProductMappingsPage() {
             }
           />
 
-          <EntityTable<ProductMapping>
+          <UniversalDataGrid<ProductMapping>
             columns={columns}
             data={items}
-            getRowId={(m) => m.id}
-            isLoading={isLoading}
-            isError={isError}
+            rowId={(m) => m.id}
+            loading={isLoading}
+            error={isError}
             sort={sort}
             onSortChange={handleSort}
-            rowActions={(mapping) => (
-              <ActionMenu
-                label={`Actions for ${mapping.product?.name ?? mapping.external_product_id}`}
-                items={[
-                  {
-                    key: 'edit',
-                    label: tCommon($ => $.common.edit),
-                    icon: Pencil,
-                    onSelect: () => openEdit(mapping),
-                  },
-                  {
-                    key: 'delete',
-                    label: tCommon($ => $.common.delete),
-                    icon: Trash2,
-                    variant: 'destructive' as const,
-                    onSelect: () => setDeleting(mapping),
-                  },
-                ]}
-              />
-            )}
+            pagination={pagination}
           />
-
-          {meta ? (
-            <Pagination
-              meta={{
-                page: meta.current_page,
-                perPage: meta.per_page,
-                total: meta.total,
-                lastPage: meta.last_page,
-              }}
-              onPageChange={setPage}
-            />
-          ) : null}
         </CardContent>
       </Card>
 

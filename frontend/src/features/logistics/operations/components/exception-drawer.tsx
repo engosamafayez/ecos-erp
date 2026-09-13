@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ArrowUpCircle, Pin, Repeat2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { PageDrawer } from '@/components/page/drawer/page-drawer';
+import { EntityDrawer } from '@/components/crud';
 import { useToast } from '@/components/ds/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -306,12 +306,11 @@ export function ExceptionDrawer({
   const canResolveOutright = exception?.is_self_owned === true;
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={onOpenChange}
       title={exception?.title ?? t($ => $.operations.exceptionDrawer.title)}
       description={exception ? `${sourceLabel(exception.source)} · ${categoryLabel(exception.category)}` : ''}
-      size="2xl"
     >
       {isLoading || !exception ? (
         <Skeleton className="h-96 w-full" />
@@ -548,6 +547,6 @@ export function ExceptionDrawer({
           </Tabs>
         </div>
       )}
-    </PageDrawer>
+    </EntityDrawer>
   );
 }

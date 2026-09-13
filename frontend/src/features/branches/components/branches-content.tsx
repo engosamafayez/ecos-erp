@@ -5,12 +5,11 @@ import { useTranslation } from 'react-i18next';
 import {
   ActionMenu,
   ConfirmDialog,
-  EntityTable,
   EntityToolbar,
-  Pagination,
   StatusBadge,
 } from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
+import type { DataGridColumnDef, GridPaginationConfig } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CompanySelect } from '@/features/branches/components/company-select';
@@ -65,24 +64,25 @@ export function BranchesContent() {
     setPage(1);
   };
 
-  const columns: ColumnDef<Branch>[] = [
-    { key: 'company', header: t($ => $.columns.company), cell: (b) => b.company?.name ?? '—' },
+  const columns: DataGridColumnDef<Branch>[] = [
+    { key: 'company', label: t($ => $.columns.company), cell: (b) => b.company?.name ?? '—' },
     {
       key: 'code',
-      header: t($ => $.columns.code),
+      label: t($ => $.columns.code),
       sortable: true,
+      cardRole: 'subtitle',
       cell: (b) => <span className="font-medium">{b.code}</span>,
     },
-    { key: 'name', header: t($ => $.columns.name), sortable: true, cell: (b) => b.name },
+    { key: 'name', label: t($ => $.columns.name), sortable: true, cardRole: 'title', cell: (b) => b.name },
     {
       key: 'phone',
-      header: t($ => $.columns.phone),
+      label: t($ => $.columns.phone),
       cell: (b) => <span className="text-muted-foreground">{b.phone ?? '—'}</span>,
     },
-    { key: 'city', header: t($ => $.columns.city), sortable: true, cell: (b) => b.city ?? '—' },
+    { key: 'city', label: t($ => $.columns.city), sortable: true, cell: (b) => b.city ?? '—' },
     {
       key: 'is_head_office',
-      header: t($ => $.columns.headOffice),
+      label: t($ => $.columns.headOffice),
       sortable: true,
       cell: (b) =>
         b.is_head_office ? (
@@ -93,11 +93,42 @@ export function BranchesContent() {
     },
     {
       key: 'is_active',
-      header: t($ => $.columns.status),
+      label: t($ => $.columns.status),
       sortable: true,
+      cardRole: 'status',
       cell: (b) => <StatusBadge status={b.is_active ? 'active' : 'inactive'} />,
     },
+    {
+      key: 'actions',
+      label: '',
+      align: 'end',
+      alwaysVisible: true,
+      cell: (branch) => (
+        <ActionMenu
+          label={`Actions for ${branch.name}`}
+          items={[
+            {
+              key: 'edit',
+              label: tCommon($ => $.common.edit),
+              icon: Pencil,
+              onSelect: () => { setEditingBranch(branch); setDrawerOpen(true); },
+            },
+            {
+              key: 'delete',
+              label: tCommon($ => $.common.delete),
+              icon: Trash2,
+              variant: 'destructive',
+              onSelect: () => setDeletingBranch(branch),
+            },
+          ]}
+        />
+      ),
+    },
   ];
+
+  const pagination: GridPaginationConfig | undefined = meta
+    ? { meta: { page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page }, onPageChange: setPage }
+    : undefined;
 
   return (
     <>
@@ -141,42 +172,16 @@ export function BranchesContent() {
         </Button>
       </EntityToolbar>
 
-      <EntityTable<Branch>
-        columns={columns}
+      <UniversalDataGrid<Branch>
         data={items}
-        getRowId={(b) => b.id}
-        isLoading={isLoading}
-        isError={isError}
+        columns={columns}
+        rowId={(b) => b.id}
+        loading={isLoading}
+        error={isError}
         sort={sort}
         onSortChange={handleSort}
-        rowActions={(branch) => (
-          <ActionMenu
-            label={`Actions for ${branch.name}`}
-            items={[
-              {
-                key: 'edit',
-                label: tCommon($ => $.common.edit),
-                icon: Pencil,
-                onSelect: () => { setEditingBranch(branch); setDrawerOpen(true); },
-              },
-              {
-                key: 'delete',
-                label: tCommon($ => $.common.delete),
-                icon: Trash2,
-                variant: 'destructive',
-                onSelect: () => setDeletingBranch(branch),
-              },
-            ]}
-          />
-        )}
+        pagination={pagination}
       />
-
-      {meta ? (
-        <Pagination
-          meta={{ page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page }}
-          onPageChange={setPage}
-        />
-      ) : null}
 
       <BranchFormDrawer
         open={drawerOpen}

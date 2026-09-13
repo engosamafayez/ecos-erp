@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronLeft, ChevronRight, Loader2, Network } from 'lucide-react';
 import axios from 'axios';
 
-import { PageDrawer } from '@/components/page/drawer/page-drawer';
+import { EntityDrawer } from '@/components/crud';
 import { Button }   from '@/components/ui/button';
 import { Input }    from '@/components/ui/input';
 import { Label }    from '@/components/ui/label';
@@ -349,12 +349,11 @@ export function DistributionZoneDrawer({ open, onOpenChange, editZone }: Props) 
       : (nextCode ?? '—');
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={onOpenChange}
       title={title}
       description={description}
-      size="2xl"
       footer={
         <>
           {step === 1 ? (
@@ -557,6 +556,6 @@ export function DistributionZoneDrawer({ open, onOpenChange, editZone }: Props) 
           </div>
         )}
       </div>
-    </PageDrawer>
+    </EntityDrawer>
   );
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { PageDrawer } from '@/components/page/drawer/page-drawer';
+import { EntityDrawer } from '@/components/crud';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -152,14 +152,13 @@ export function TripFormDrawer({
   const isSaving = create.isPending || update.isPending;
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={onOpenChange}
       title={isCreate ? t(($) => $.trips.form.createTitle) : t(($) => $.trips.form.editTitle)}
       description={
         isCreate ? t(($) => $.trips.form.createDescription) : t(($) => $.trips.form.editDescription)
       }
-      size="lg"
       footer={
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isSaving}>
@@ -290,6 +289,6 @@ export function TripFormDrawer({
           {errors.notes && <p className="text-xs text-destructive">{errors.notes}</p>}
         </div>
       </div>
-    </PageDrawer>
+    </EntityDrawer>
   );
 }

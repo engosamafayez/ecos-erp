@@ -29,22 +29,16 @@ import {
   useColumnVisibility,
   useRowSelection,
 } from '@/components/data-grid';
-import { ActionMenu, Combobox } from '@/components/crud';
+import { ActionMenu, Combobox, ConfirmDialog, EmptyState, NoResultsState } from '@/components/crud';
 import type { ActionMenuItem } from '@/components/crud/types';
 import { MobileDataCard } from '@/components/mobile';
 import { useFormatter } from '@/hooks/use-formatter';
 import type { DataGridColumnDef } from '@/components/data-grid';
-import {
-  PageConfirmDialog,
-  PageNoResultsState,
-  QuickFilterChips,
-  WorkspacePage,
-} from '@/components/page';
+import { QuickFilterChips, WorkspacePage } from '@/components/page';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { WorkspaceHeader } from '@/components/workspace';
 import type { WorkspaceMetric } from '@/components/workspace';
-import { PageEmptyState } from '@/components/page';
 import { SupplierFormDrawer } from '@/features/suppliers/components/supplier-form-drawer';
 import { SupplierStatusBadge } from '@/features/suppliers/components/supplier-status-badge';
 import { Supplier360Drawer } from '@/features/suppliers/components/supplier-360-drawer';
@@ -618,13 +612,18 @@ export function SuppliersPage() {
         }
       >
         {items.length === 0 && hasActiveFilters && !isLoading ? (
-          <PageNoResultsState query={search} onClear={() => { setSearch(''); setStatusFilter('all'); setPage(1); }} />
+          <NoResultsState query={search} onClear={() => { setSearch(''); setStatusFilter('all'); setPage(1); }} />
         ) : items.length === 0 && !isLoading && !isError ? (
-          <PageEmptyState
+          <EmptyState
             icon={Building2}
             title={t($ => $.emptyState.title)}
             description={t($ => $.emptyState.description)}
-            action={{ label: t($ => $.actions.new), icon: Plus, onClick: () => setWizardOpen(true) }}
+            action={
+              <Button size="sm" onClick={() => setWizardOpen(true)}>
+                <Plus className="size-4" />
+                {t($ => $.actions.new)}
+              </Button>
+            }
           />
         ) : (
           <UniversalDataGrid
@@ -702,7 +701,7 @@ export function SuppliersPage() {
         onOpenChange={setManageCategoriesOpen}
       />
 
-      <PageConfirmDialog
+      <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => { if (!open) setDeleting(null); }}
         title={t($ => $.confirmDelete.title)}

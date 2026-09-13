@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
-import { StatusBadge } from '@/components/crud';
-import { PageDrawer } from '@/components/page';
+import { EntityDrawer, StatusBadge } from '@/components/crud';
 
 import type { Account } from '../types/finance-gl';
 
@@ -12,11 +11,10 @@ export function AccountDetailDrawer({ account, open, onOpenChange }: Props) {
   const { t } = useTranslation('finance');
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={onOpenChange}
       title={account ? `${account.code} · ${account.name}` : t(($) => $.gl.coa.detail.title)}
-      size="lg"
     >
       {account && (
         <dl className="space-y-3 text-sm">
@@ -43,7 +41,7 @@ export function AccountDetailDrawer({ account, open, onOpenChange }: Props) {
           </div>
         </dl>
       )}
-    </PageDrawer>
+    </EntityDrawer>
   );
 }
 

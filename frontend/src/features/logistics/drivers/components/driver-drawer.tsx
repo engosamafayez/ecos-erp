@@ -28,7 +28,7 @@ import {
   XCircle,
 } from 'lucide-react';
 
-import { PageDrawer } from '@/components/page/drawer/page-drawer';
+import { EntityDrawer } from '@/components/crud';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -587,13 +587,20 @@ function DocumentsTab({ driver }: { driver: Driver }) {
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-1">
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleDownload(doc)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  aria-label={t($ => $.drivers.documents.download)}
+                  onClick={() => handleDownload(doc)}
+                >
                   <Download className="size-3.5" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                  aria-label={t($ => $.common.delete)}
                   onClick={() => setDeleteTarget(doc)}
                 >
                   <Trash2 className="size-3.5" />
@@ -962,7 +969,7 @@ export function DriverDrawer({
 
   return (
     <>
-      <PageDrawer
+      <EntityDrawer
         open={open}
         onOpenChange={onOpenChange}
         title={isCreate ? t($ => $.drivers.page.newDriver) : (driver?.full_name ?? t($ => $.common.driver))}
@@ -971,7 +978,6 @@ export function DriverDrawer({
             ? t($ => $.drivers.drawer.descriptionNew)
             : t($ => $.drivers.drawer.descriptionEdit, { code: driver?.driver_code ?? '' })
         }
-        size="xl"
       >
         <div className="flex h-full flex-col">
           {!isCreate && driver && (
@@ -1143,7 +1149,7 @@ export function DriverDrawer({
             )
           )}
         </div>
-      </PageDrawer>
+      </EntityDrawer>
 
       <AlertDialog open={archiveConfirm} onOpenChange={setArchiveConfirm}>
         <AlertDialogContent>

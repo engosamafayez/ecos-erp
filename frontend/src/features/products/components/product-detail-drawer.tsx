@@ -8,23 +8,16 @@ import { useTranslation } from 'react-i18next';
 import {
   AlertCircle, AlertTriangle, ArrowUpRight, Calendar,
   CheckCircle2, ChefHat, Circle, Edit, Globe, Package,
-  Tag, Wifi, WifiOff, X,
+  Tag, Wifi, WifiOff,
 } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
-import { EntityForm } from '@/components/crud';
+import { EntityDrawer, EntityForm } from '@/components/crud';
 import { StatusBadge } from '@/components/crud/status-badge';
-import { Tabs } from '@/components/ds/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MobileDetailSection } from '@/components/mobile';
 import { useIsMobile } from '@/hooks/use-is-mobile';
 import { Input } from '@/components/ui/input';
@@ -1145,60 +1138,51 @@ export function ProductDetailDrawer({
     : (displayProduct?.name ?? '');
 
   return (
-    <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent
-        side="right"
-        className="flex flex-col gap-0 p-0"
-        style={isMobile ? undefined : { width: '48%', minWidth: 520, maxWidth: 900 }}
-      >
-        {/* Header */}
-        <SheetHeader className="border-b px-4 py-3">
+    <EntityDrawer
+      open={open}
+      onOpenChange={handleClose}
+      title={title}
+      description={mode === 'view' ? displayProduct?.sku : undefined}
+      className="sm:w-[48vw] sm:min-w-[520px] sm:max-w-[900px]"
+      footer={mode === 'edit' ? (
+        <>
+          <Button type="button" variant="outline" onClick={cancelEdit} disabled={isPending}>
+            {isNew ? t($ => $.detailDrawer.cancel) : t($ => $.detailDrawer.backToView)}
+          </Button>
+          <Button type="submit" form={FORM_ID} disabled={isPending}>
+            {isUploading ? t($ => $.detailDrawer.uploading) : isMutating ? t($ => $.detailDrawer.saving) : isNew ? t($ => $.detailDrawer.createProduct) : t($ => $.detailDrawer.saveChanges)}
+          </Button>
+        </>
+      ) : undefined}
+    >
+      {mode === 'view' && displayProduct ? (
+        <div className="flex h-full flex-col gap-3">
+          {/* Identity row — thumbnail, channels, Edit action (title/SKU already
+              live in EntityDrawer's own header per the canonical drawer pattern). */}
           <div className="flex items-center gap-3">
-            {mode === 'view' && displayProduct ? (
-              getMediaUrl(displayProduct.image_url) ? (
-                <img
-                  src={getMediaUrl(displayProduct.image_url)!}
-                  alt={displayProduct.name}
-                  className="size-10 shrink-0 rounded-md object-cover border"
-                />
-              ) : (
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-muted border">
-                  <span className="text-[10px] font-bold uppercase text-muted-foreground">
-                    {displayProduct.name.slice(0, 2)}
-                  </span>
-                </div>
-              )
-            ) : null}
-
+            {getMediaUrl(displayProduct.image_url) ? (
+              <img
+                src={getMediaUrl(displayProduct.image_url)!}
+                alt={displayProduct.name}
+                className="size-10 shrink-0 rounded-md object-cover border"
+              />
+            ) : (
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-muted border">
+                <span className="text-[10px] font-bold uppercase text-muted-foreground">
+                  {displayProduct.name.slice(0, 2)}
+                </span>
+              </div>
+            )}
             <div className="flex-1 min-w-0">
-              <SheetTitle className="truncate text-base">{title}</SheetTitle>
-              {mode === 'view' && displayProduct ? (
-                <div className="flex items-center gap-2 mt-0.5">
-                  <span className="font-mono text-xs text-muted-foreground">{displayProduct.sku}</span>
-                  <ChannelCell channels={displayProduct.channels} />
-                </div>
-              ) : null}
+              <ChannelCell channels={displayProduct.channels} />
             </div>
-
-            <div className="flex shrink-0 items-center gap-1.5">
-              {mode === 'view' && (
-                <Button size="sm" variant="outline" onClick={switchToEdit}>
-                  <Edit className="size-3.5" />
-                  {t($ => $.detailDrawer.editBtn)}
-                </Button>
-              )}
-              <SheetClose asChild>
-                <Button size="icon" variant="ghost" className="size-8">
-                  <X className="size-4" />
-                </Button>
-              </SheetClose>
-            </div>
+            <Button size="sm" variant="outline" className="shrink-0" onClick={switchToEdit}>
+              <Edit className="size-3.5" />
+              {t($ => $.detailDrawer.editBtn)}
+            </Button>
           </div>
-        </SheetHeader>
 
-        {/* Body */}
-        {mode === 'view' && displayProduct ? (
-          <div className="flex-1 overflow-hidden">
+          <div className="min-h-0 flex-1">
             {isMobile ? (
               // Mobile: every canonical section stacked and scrollable, instead of
               // an 8-tab switcher that hides 7/8 of the content behind a tap and
@@ -1215,41 +1199,37 @@ export function ProductDetailDrawer({
                 ))}
               </div>
             ) : (
-              <Tabs
-                tabs={tabs}
-                activeKey={activeTab}
-                onTabChange={setActiveTab}
-                className="h-full"
-                contentClassName="overflow-y-auto"
-              />
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="flex h-full flex-col gap-3">
+                <TabsList className="h-auto w-full shrink-0 flex-nowrap justify-start overflow-x-auto">
+                  {tabs.map((tab) => (
+                    <TabsTrigger key={tab.key} value={tab.key}>{tab.label}</TabsTrigger>
+                  ))}
+                </TabsList>
+                <div className="min-h-0 flex-1 overflow-y-auto">
+                  {tabs.map((tab) => (
+                    <TabsContent key={tab.key} value={tab.key} className="mt-0">
+                      {tab.content}
+                    </TabsContent>
+                  ))}
+                </div>
+              </Tabs>
             )}
           </div>
-        ) : (
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-4">
-              {serverError ? (
-                <Alert variant="destructive" className="mb-4">
-                  <AlertCircle className="size-4" />
-                  <AlertTitle>{t($ => $.detailDrawer.unableToSave)}</AlertTitle>
-                  <AlertDescription>{serverError}</AlertDescription>
-                </Alert>
-              ) : null}
-              <EntityForm form={form} id={FORM_ID} onSubmit={handleSubmit}>
-                <ProductFormFields isEdit={!isNew} existingProduct={product} onImageChange={setImageFile} />
-              </EntityForm>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 border-t bg-background p-4">
-              <Button type="button" variant="outline" onClick={cancelEdit} disabled={isPending}>
-                {isNew ? t($ => $.detailDrawer.cancel) : t($ => $.detailDrawer.backToView)}
-              </Button>
-              <Button type="submit" form={FORM_ID} disabled={isPending}>
-                {isUploading ? t($ => $.detailDrawer.uploading) : isMutating ? t($ => $.detailDrawer.saving) : isNew ? t($ => $.detailDrawer.createProduct) : t($ => $.detailDrawer.saveChanges)}
-              </Button>
-            </div>
-          </div>
-        )}
-      </SheetContent>
-    </Sheet>
+        </div>
+      ) : (
+        <>
+          {serverError ? (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="size-4" />
+              <AlertTitle>{t($ => $.detailDrawer.unableToSave)}</AlertTitle>
+              <AlertDescription>{serverError}</AlertDescription>
+            </Alert>
+          ) : null}
+          <EntityForm form={form} id={FORM_ID} onSubmit={handleSubmit}>
+            <ProductFormFields isEdit={!isNew} existingProduct={product} onImageChange={setImageFile} />
+          </EntityForm>
+        </>
+      )}
+    </EntityDrawer>
   );
 }

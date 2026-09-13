@@ -26,8 +26,7 @@ import {
   DollarSign,
 } from 'lucide-react';
 
-import { ErrorState, LoadingState } from '@/components/crud';
-import { PageDrawer } from '@/components/page';
+import { EntityDrawer, ErrorState, LoadingState } from '@/components/crud';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -1310,7 +1309,7 @@ function DocumentsTab({ supplierId }: { supplierId: string }) {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">{doc.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  <span className="rounded bg-muted px-1 py-0.5 mr-1.5">{docTypeLabels[doc.document_type] ?? doc.document_type}</span>
+                  <span className="rounded bg-muted px-1 py-0.5 me-1.5">{docTypeLabels[doc.document_type] ?? doc.document_type}</span>
                   {formatBytes(doc.file_size)} · {doc.created_at.slice(0, 10)}
                 </p>
               </div>
@@ -1362,7 +1361,7 @@ function TimelineTab({ supplierId }: { supplierId: string }) {
         <p className="text-center text-sm text-muted-foreground py-8">{t($ => $.drawer360.timeline.empty)}</p>
       ) : (
         <div className="relative">
-          <div className="absolute left-5 top-0 bottom-0 w-px bg-border" />
+          <div className="absolute start-5 top-0 bottom-0 w-px bg-border" />
           <div className="flex flex-col gap-0">
             {events.map((event, idx) => {
               const config = TIMELINE_EVENT_CONFIG[event.type] ?? {
@@ -1458,7 +1457,7 @@ export function Supplier360Drawer({ supplier, open, onOpenChange, onEdit, initia
   if (!supplier) return null;
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={onOpenChange}
       title={supplier.name}
@@ -1530,6 +1529,6 @@ export function Supplier360Drawer({ supplier, open, onOpenChange, onEdit, initia
         open={openingBalanceOpen}
         onOpenChange={setOpeningBalanceOpen}
       />
-    </PageDrawer>
+    </EntityDrawer>
   );
 }

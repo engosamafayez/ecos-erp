@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { ErrorState, LoadingState, PageHeader, StatusBadge } from '@/components/crud';
+import { ErrorState, LoadingState, PageHeader, StatusBadge, type StatusTone } from '@/components/crud';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -10,11 +10,11 @@ import {
 } from '@/features/hr/hooks/use-hr-enhancements';
 import type { OfferVersionEntry } from '@/features/hr/types/recruitment-enhancements';
 
-const STATUS_TONE: Record<string, string> = {
+const STATUS_TONE: Record<string, StatusTone> = {
   draft: 'neutral',
   sent: 'info',
   accepted: 'success',
-  declined: 'danger',
+  declined: 'error',
   expired: 'warning',
   withdrawn: 'neutral',
 };
@@ -67,11 +67,11 @@ export function OffersWorkspacePage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="text-muted-foreground border-b text-left text-xs uppercase">
-                    <th className="py-2 pr-4 font-medium">Number</th>
-                    <th className="py-2 pr-4 font-medium">Candidate</th>
-                    <th className="py-2 pr-4 font-medium">Salary</th>
-                    <th className="py-2 pr-4 font-medium">Status</th>
+                  <tr className="text-muted-foreground border-b text-start text-xs uppercase">
+                    <th className="py-2 pe-4 font-medium">Number</th>
+                    <th className="py-2 pe-4 font-medium">Candidate</th>
+                    <th className="py-2 pe-4 font-medium">Salary</th>
+                    <th className="py-2 pe-4 font-medium">Status</th>
                     <th className="py-2 font-medium">Expires</th>
                   </tr>
                 </thead>
@@ -91,20 +91,20 @@ export function OffersWorkspacePage() {
                         selectedId === offer.id ? 'bg-muted/60' : ''
                       }`}
                     >
-                      <td className="py-2 pr-4 font-mono text-xs">{offer.offer_number}</td>
-                      <td className="py-2 pr-4">{offer.candidate_name ?? '—'}</td>
-                      <td className="py-2 pr-4 tabular-nums">
+                      <td className="py-2 pe-4 font-mono text-xs">{offer.offer_number}</td>
+                      <td className="py-2 pe-4">{offer.candidate_name ?? '—'}</td>
+                      <td className="py-2 pe-4 tabular-nums">
                         {offer.basic_salary.toLocaleString()} {offer.currency}
                         {offer.current_version > 1 && (
-                          <span className="text-muted-foreground ml-1 text-xs">v{offer.current_version}</span>
+                          <span className="text-muted-foreground ms-1 text-xs">v{offer.current_version}</span>
                         )}
                       </td>
-                      <td className="py-2 pr-4">
-                        <StatusBadge status={STATUS_TONE[offer.status] ?? 'neutral'} label={offer.status_label} />
+                      <td className="py-2 pe-4">
+                        <StatusBadge tone={STATUS_TONE[offer.status] ?? 'neutral'} label={offer.status_label} />
                       </td>
                       <td className="py-2 text-xs">
                         {offer.expires_on ?? '—'}
-                        {offer.has_lapsed && <span className="text-destructive ml-1">lapsed</span>}
+                        {offer.has_lapsed && <span className="text-destructive ms-1">lapsed</span>}
                       </td>
                     </tr>
                   ))}

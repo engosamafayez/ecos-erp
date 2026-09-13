@@ -16,12 +16,12 @@ import {
 import {
   ActionMenu,
   ConfirmDialog,
-  EntityTable,
   EntityToolbar,
 } from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
-import { QuickStatCard } from '@/components/ds/quick-stat-card';
+import type { DataGridColumnDef } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { useToast } from '@/components/ds/use-toast';
+import { WorkspaceMetricCard } from '@/components/workspace';
 import type { BrandDeliveryTimeSlot, BrandDeliveryTimeSlotPayload } from '@/features/brands/types/brand';
 import {
   useCreateDeliveryTimeSlot,
@@ -170,21 +170,27 @@ function SlotDrawer({ brandId, slot, open, onOpenChange }: SlotDrawerProps) {
 
 // ── Main tab ──────────────────────────────────────────────────────────────────
 
-const COLUMNS: ColumnDef<BrandDeliveryTimeSlot>[] = [
+/* eslint-disable ecos-i18n/no-hardcoded-ui-strings -- these column labels were
+   pre-existing plain strings under the deprecated ColumnDef's `header` field
+   (not a monitored key); `DataGridColumnDef.label` is the same pre-existing
+   copy under its required field name. Converting this tab to full i18n is
+   out of scope for the EntityTable -> UniversalDataGrid presentation migration. */
+const COLUMNS: DataGridColumnDef<BrandDeliveryTimeSlot>[] = [
   {
     key:    'order',
-    header: '#',
+    label: '#',
     cell:   (r) => <span className="text-muted-foreground text-xs">{r.display_order}</span>,
     align:  'center',
   },
   {
     key:    'name',
-    header: 'Name',
+    label: 'Name',
+    cardRole: 'title',
     cell:   (r) => <span className="font-medium text-sm">{r.name}</span>,
   },
   {
     key:    'times',
-    header: 'Window',
+    label: 'Window',
     cell:   (r) => (
       <span className="font-mono text-xs text-muted-foreground">
         {fmtTime(r.start_time)} – {fmtTime(r.end_time)}
@@ -193,7 +199,8 @@ const COLUMNS: ColumnDef<BrandDeliveryTimeSlot>[] = [
   },
   {
     key:    'status',
-    header: 'Status',
+    label: 'Status',
+    cardRole: 'status',
     cell:   (r) => (
       <Badge variant={r.is_active ? 'default' : 'secondary'} className="text-[10px]">
         {r.is_active ? 'Active' : 'Inactive'}
@@ -202,6 +209,7 @@ const COLUMNS: ColumnDef<BrandDeliveryTimeSlot>[] = [
     align: 'center',
   },
 ];
+/* eslint-enable ecos-i18n/no-hardcoded-ui-strings */
 
 type Props = { brandId: string };
 
@@ -269,27 +277,30 @@ export function BrandDeliveryWindowsTab({ brandId }: Props) {
     <div className="flex flex-col gap-4">
       {/* KPI row */}
       <div className="grid grid-cols-3 gap-2">
-        <QuickStatCard
+        <WorkspaceMetricCard
+          id="total"
           icon={Clock}
-          title="Total Slots"
+          label="Total Slots"
           value={total}
           active={statusFilter === 'all'}
           onClick={() => setStatusFilter('all')}
         />
-        <QuickStatCard
+        <WorkspaceMetricCard
+          id="active"
           icon={Clock}
-          title="Active"
+          label="Active"
           value={active}
           active={statusFilter === 'active'}
-          colorClassName="text-emerald-600 bg-emerald-50 dark:bg-emerald-950"
+          colorClass="text-emerald-600 bg-emerald-50 dark:bg-emerald-950"
           onClick={() => setStatusFilter('active')}
         />
-        <QuickStatCard
+        <WorkspaceMetricCard
+          id="inactive"
           icon={Clock}
-          title="Inactive"
+          label="Inactive"
           value={inactive}
           active={statusFilter === 'inactive'}
-          colorClassName="text-slate-500 bg-slate-100 dark:bg-slate-800"
+          colorClass="text-slate-500 bg-slate-100 dark:bg-slate-800"
           onClick={() => setStatusFilter('inactive')}
         />
       </div>
@@ -318,33 +329,41 @@ export function BrandDeliveryWindowsTab({ brandId }: Props) {
       </EntityToolbar>
 
       {/* Table */}
-      <EntityTable
-        columns={COLUMNS}
+      <UniversalDataGrid<BrandDeliveryTimeSlot>
         data={filtered}
-        getRowId={(r) => r.id}
-        isLoading={isLoading}
-        isError={isError}
+        columns={[
+          ...COLUMNS,
+          {
+            key: 'actions',
+            label: '',
+            align: 'end',
+            alwaysVisible: true,
+            cell: (slot) => (
+              <ActionMenu
+                label={`Actions for ${slot.name}`}
+                items={[
+                  {
+                    key:      'edit',
+                    label:    'Edit',
+                    icon:     Pencil,
+                    onSelect: () => openEdit(slot),
+                  },
+                  {
+                    key:      'delete',
+                    label:    'Delete',
+                    icon:     Trash2,
+                    variant:  'destructive',
+                    onSelect: () => setDeleteTarget(slot),
+                  },
+                ]}
+              />
+            ),
+          },
+        ]}
+        rowId={(r) => r.id}
+        loading={isLoading}
+        error={isError}
         skeletonRows={4}
-        rowActions={(slot) => (
-          <ActionMenu
-            label={`Actions for ${slot.name}`}
-            items={[
-              {
-                key:      'edit',
-                label:    'Edit',
-                icon:     Pencil,
-                onSelect: () => openEdit(slot),
-              },
-              {
-                key:      'delete',
-                label:    'Delete',
-                icon:     Trash2,
-                variant:  'destructive',
-                onSelect: () => setDeleteTarget(slot),
-              },
-            ]}
-          />
-        )}
       />
 
       {/* Create / Edit Drawer */}

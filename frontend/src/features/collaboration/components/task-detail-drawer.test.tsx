@@ -164,8 +164,13 @@ function attachmentsRegion(): HTMLElement {
 function activityRegion(): HTMLElement {
   return document.querySelector('[data-tab-content="activity"]') as HTMLElement;
 }
-function sheetHeader(): HTMLElement {
-  return document.querySelector('[data-slot="sheet-header"]') as HTMLElement;
+/** The transition-buttons row now lives in the drawer body (moved out of the
+ *  Sheet-specific header when the shell migrated to the canonical
+ *  `EntityDrawer` — TASK-ECOS-V1.1-CORE-01-UI-06), tagged with a stable
+ *  test id rather than relying on which shell component renders the header. */
+function transitionButtons(): HTMLElement[] {
+  const container = document.querySelector('[data-testid="task-transitions"]');
+  return container ? within(container as HTMLElement).getAllByRole('button') : [];
 }
 
 const onViewSourceConversation = vi.fn();
@@ -279,7 +284,7 @@ describe('TaskDetailDrawer', () => {
       loadTask(makeTask({ status: 'todo', creator_user_id: 1, assignee_user_id: 2 }));
       renderDrawer('t1');
 
-      const buttons = within(sheetHeader()).getAllByRole('button');
+      const buttons = transitionButtons();
       expect(buttons).toHaveLength(2); // todo -> [in_progress, cancelled]
 
       fireEvent.click(buttons[0]);
@@ -292,14 +297,14 @@ describe('TaskDetailDrawer', () => {
       authState.userId = 1; // creator
       loadTask(makeTask({ status: 'todo', creator_user_id: 1, assignee_user_id: 2 }));
       renderDrawer('t1');
-      expect(within(sheetHeader()).getAllByRole('button')).toHaveLength(2);
+      expect(transitionButtons()).toHaveLength(2);
     });
 
     it('offers no transition buttons to a viewer who is neither creator nor assignee', () => {
       authState.userId = 999;
       loadTask(makeTask({ status: 'todo', creator_user_id: 1, assignee_user_id: 2 }));
       renderDrawer('t1');
-      expect(within(sheetHeader()).queryAllByRole('button')).toHaveLength(0);
+      expect(transitionButtons()).toHaveLength(0);
     });
 
     it('offers exactly the reopen transition (done -> in_progress) from a done task', () => {
@@ -307,7 +312,7 @@ describe('TaskDetailDrawer', () => {
       loadTask(makeTask({ status: 'done', creator_user_id: 1, assignee_user_id: 2 }));
       renderDrawer('t1');
 
-      const buttons = within(sheetHeader()).getAllByRole('button');
+      const buttons = transitionButtons();
       expect(buttons).toHaveLength(1);
       fireEvent.click(buttons[0]);
       expect(transitionMutate).toHaveBeenCalledWith('in_progress', expect.anything());
@@ -318,7 +323,7 @@ describe('TaskDetailDrawer', () => {
       loadTask(makeTask({ status: 'in_progress', creator_user_id: 1, assignee_user_id: 2 }));
       renderDrawer('t1');
 
-      const buttons = within(sheetHeader()).getAllByRole('button');
+      const buttons = transitionButtons();
       expect(buttons).toHaveLength(2); // in_progress -> [done, cancelled]
       fireEvent.click(buttons[0]);
       expect(transitionMutate).toHaveBeenNthCalledWith(1, 'done', expect.anything());
@@ -330,7 +335,7 @@ describe('TaskDetailDrawer', () => {
       authState.userId = 1; // creator
       loadTask(makeTask({ status: 'cancelled', creator_user_id: 1, assignee_user_id: 2 }));
       renderDrawer('t1');
-      expect(within(sheetHeader()).queryAllByRole('button')).toHaveLength(0);
+      expect(transitionButtons()).toHaveLength(0);
     });
   });
 

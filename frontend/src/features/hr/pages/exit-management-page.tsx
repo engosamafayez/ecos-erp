@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { ErrorState, LoadingState, PageHeader, StatusBadge } from '@/components/crud';
+import { ErrorState, LoadingState, PageHeader, StatusBadge, type StatusTone } from '@/components/crud';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -11,7 +11,7 @@ import {
 } from '@/features/hr/hooks/use-hr-enhancements';
 import type { ExitChecklistItem } from '@/features/hr/types/recruitment-enhancements';
 
-const ITEM_TONE: Record<string, string> = {
+const ITEM_TONE: Record<string, StatusTone> = {
   pending: 'warning',
   completed: 'success',
   waived: 'info',
@@ -181,7 +181,7 @@ function ChecklistRow({
         <div className="flex flex-wrap items-center gap-2">
           <span className={item.is_blocking ? 'font-medium' : ''}>{item.label}</span>
           {item.is_mandatory && <span className="text-muted-foreground text-[10px] uppercase">mandatory</span>}
-          <StatusBadge status={ITEM_TONE[item.status] ?? 'neutral'} label={item.status_label} />
+          <StatusBadge tone={ITEM_TONE[item.status] ?? 'neutral'} label={item.status_label} />
         </div>
         <span className="text-muted-foreground text-xs">
           {item.responsible_name ?? 'Unassigned'}

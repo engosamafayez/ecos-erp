@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { PageDrawer } from '@/components/page/drawer/page-drawer';
+import { EntityDrawer } from '@/components/crud';
 import { useToast } from '@/components/ds/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -77,12 +77,11 @@ export function QueueItemDrawer({
   const canReorder = item.status === 'waiting' || item.status === 'deferred';
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={onOpenChange}
       title={item.trip_number ?? t($ => $.dispatch.queue.itemFallbackTitle)}
       description={t($ => $.dispatch.queue.drawerDescription)}
-      size="lg"
     >
       <div className="space-y-5">
         <div className="grid grid-cols-2 gap-4">
@@ -209,6 +208,6 @@ export function QueueItemDrawer({
           </div>
         )}
       </div>
-    </PageDrawer>
+    </EntityDrawer>
   );
 }

@@ -26,9 +26,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
-import { Tabs } from '@/components/ds/tabs';
-import type { TabItem } from '@/components/ds/tabs';
+import { EntityDrawer, Pagination } from '@/components/crud';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   useRawMaterialCostHistory,
   useRawMaterialStockMovements,
@@ -38,7 +37,6 @@ import {
 import type { RawMaterial, PurchaseLayer, SupplierHistoryRow } from '@/features/raw-materials/types';
 import type { MaterialCostHistoryEntry } from '@/features/cost-management/types/pricing-review';
 import type { MovementType } from '@/features/stock-ledger/types/stock-movement';
-import { PagePagination } from '@/components/page/pagination/page-pagination';
 import { useCompany } from '@/features/organization/context/company-context';
 import { formatMoney } from '@/lib/format';
 import { AddStockWizard } from './add-stock-wizard';
@@ -765,11 +763,8 @@ function PriceHistoryTab({ materialId }: { materialId: string }) {
           </div>
 
           {pagination && pagination.last_page > 1 && (
-            <PagePagination
-              page={pagination.current_page}
-              perPage={pagination.per_page}
-              total={pagination.total}
-              lastPage={pagination.last_page}
+            <Pagination
+              meta={{ page: pagination.current_page, perPage: pagination.per_page, total: pagination.total, lastPage: pagination.last_page }}
               onPageChange={setPage}
             />
           )}
@@ -892,11 +887,8 @@ function StockHistoryTab({
           </div>
 
           {pagination && pagination.last_page > 1 && (
-            <PagePagination
-              page={pagination.current_page}
-              perPage={pagination.per_page}
-              total={pagination.total}
-              lastPage={pagination.last_page}
+            <Pagination
+              meta={{ page: pagination.current_page, perPage: pagination.per_page, total: pagination.total, lastPage: pagination.last_page }}
               onPageChange={setPage}
             />
           )}
@@ -1023,63 +1015,17 @@ export function RawMaterialDetailDrawer({
     setAddStockOpen(true);
   }
 
-  const tabs: TabItem[] = [
-    {
-      key:     'overview',
-      label:   t($ => $.detail.tabs.overview),
-      content: <OverviewTab material={material} latestCostEntry={latestCostEntry} />,
-    },
-    {
-      key:     'inventory',
-      label:   t($ => $.detail.tabs.inventory),
-      content: <InventoryTab material={material} />,
-    },
-    {
-      key:     'suppliers',
-      label:   t($ => $.detail.tabs.suppliers),
-      content: <SuppliersTab materialId={material.id} unit={material.unit?.name} />,
-    },
-    {
-      key:     'price-history',
-      label:   t($ => $.detail.tabs.priceHistory),
-      content: <PriceHistoryTab materialId={material.id} />,
-    },
-    {
-      key:     'stock-history',
-      label:   t($ => $.detail.tabs.stockHistory),
-      content: <StockHistoryTab material={material} onAddStock={openAddStock} />,
-    },
-    {
-      key:     'purchase-history',
-      label:   t($ => $.detail.tabs.purchaseHistory),
-      content: <PurchaseHistoryTab />,
-    },
-    {
-      key:     'manufacturing',
-      label:   t($ => $.detail.tabs.manufacturing),
-      content: <ManufacturingTab />,
-    },
-    {
-      key:     'analytics',
-      label:   t($ => $.detail.tabs.analytics),
-      content: <AnalyticsTab material={material} />,
-    },
-  ];
-
   return (
     <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent
-          side="right"
-          className="flex flex-col gap-0 overflow-hidden p-0 sm:w-[90vw] lg:w-[70vw]"
-          style={{ maxWidth: 1400 }}
-        >
-          <SheetTitle className="sr-only">
-            {t($ => $.detail.titleSr, { name: material.name })}
-          </SheetTitle>
-
-          {/* ── Drawer Header ── */}
-          <div className="flex items-start gap-4 border-b px-6 py-5 flex-none pr-14">
+      <EntityDrawer
+        open={open}
+        onOpenChange={onOpenChange}
+        title={material.name}
+        className="sm:w-[90vw] sm:max-w-[1400px] lg:w-[70vw]"
+      >
+        <div className="flex h-full flex-col gap-4">
+          {/* ── Identity row ── */}
+          <div className="flex items-start gap-4">
             {/* Thumbnail */}
             <div className="size-16 shrink-0 rounded-lg border overflow-hidden bg-muted flex items-center justify-center">
               {getMediaUrl(material.image_url) ? (
@@ -1151,24 +1097,53 @@ export function RawMaterialDetailDrawer({
           </div>
 
           {/* ── Smart Status Panel ── */}
-          <div className="border-b bg-muted/20 px-6 py-3 flex-none">
+          <div className="rounded-lg border bg-muted/20 px-4 py-3">
             <SmartStatusPanel material={material} latestCostEntry={latestCostEntry} />
           </div>
 
           {/* ── Tabs ── */}
-          <div className="flex-1 min-h-0 overflow-hidden">
-            <Tabs
-              tabs={tabs}
-              activeKey={activeTab}
-              onTabChange={setActiveTab}
-              className="h-full"
-              contentClassName="overflow-y-auto py-6 px-6 min-h-0"
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-0">
+            <TabsList className="w-full shrink-0 justify-start overflow-x-auto">
+              <TabsTrigger value="overview">{t($ => $.detail.tabs.overview)}</TabsTrigger>
+              <TabsTrigger value="inventory">{t($ => $.detail.tabs.inventory)}</TabsTrigger>
+              <TabsTrigger value="suppliers">{t($ => $.detail.tabs.suppliers)}</TabsTrigger>
+              <TabsTrigger value="price-history">{t($ => $.detail.tabs.priceHistory)}</TabsTrigger>
+              <TabsTrigger value="stock-history">{t($ => $.detail.tabs.stockHistory)}</TabsTrigger>
+              <TabsTrigger value="purchase-history">{t($ => $.detail.tabs.purchaseHistory)}</TabsTrigger>
+              <TabsTrigger value="manufacturing">{t($ => $.detail.tabs.manufacturing)}</TabsTrigger>
+              <TabsTrigger value="analytics">{t($ => $.detail.tabs.analytics)}</TabsTrigger>
+            </TabsList>
+            <div className="min-h-0 flex-1 overflow-y-auto py-4">
+              <TabsContent value="overview" className="mt-0">
+                <OverviewTab material={material} latestCostEntry={latestCostEntry} />
+              </TabsContent>
+              <TabsContent value="inventory" className="mt-0">
+                <InventoryTab material={material} />
+              </TabsContent>
+              <TabsContent value="suppliers" className="mt-0">
+                <SuppliersTab materialId={material.id} unit={material.unit?.name} />
+              </TabsContent>
+              <TabsContent value="price-history" className="mt-0">
+                <PriceHistoryTab materialId={material.id} />
+              </TabsContent>
+              <TabsContent value="stock-history" className="mt-0">
+                <StockHistoryTab material={material} onAddStock={openAddStock} />
+              </TabsContent>
+              <TabsContent value="purchase-history" className="mt-0">
+                <PurchaseHistoryTab />
+              </TabsContent>
+              <TabsContent value="manufacturing" className="mt-0">
+                <ManufacturingTab />
+              </TabsContent>
+              <TabsContent value="analytics" className="mt-0">
+                <AnalyticsTab material={material} />
+              </TabsContent>
+            </div>
+          </Tabs>
+        </div>
+      </EntityDrawer>
 
-      {/* Add Stock wizard — rendered outside Sheet to avoid stacking context issues */}
+      {/* Add Stock wizard — rendered outside the drawer to avoid stacking context issues */}
       <AddStockWizard
         material={material}
         open={addStockOpen}

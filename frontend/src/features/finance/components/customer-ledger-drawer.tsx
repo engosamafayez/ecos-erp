@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
-import { PageDrawer } from '@/components/page';
+import { EntityDrawer } from '@/components/crud';
 import { useFormatter } from '@/hooks/use-formatter';
 
 import { useCustomerLedger } from '../hooks/use-finance-ar';
@@ -20,12 +20,11 @@ export function CustomerLedgerDrawer({ customerId, open, onOpenChange }: Props) 
   const ledger = query.data;
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={onOpenChange}
       title={t(($) => $.ar.ledger.title)}
       description={customerId ?? undefined}
-      size="2xl"
     >
       {query.isLoading && <p className="text-sm text-muted-foreground">{t(($) => $.loading)}</p>}
       {query.isError && <p className="text-sm text-red-600">{t(($) => $.error)}</p>}
@@ -67,6 +66,6 @@ export function CustomerLedgerDrawer({ customerId, open, onOpenChange }: Props) 
           </div>
         </div>
       )}
-    </PageDrawer>
+    </EntityDrawer>
   );
 }

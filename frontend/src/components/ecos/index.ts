@@ -5,12 +5,11 @@
  * Organises: crud/ (generic CRUD kit) + ds/ (design system) + ecos/ (domain-shared).
  *
  * Import from here in feature modules:
- *   import { PhoneCell, SyncBadge, EntityTable, StatusBadge } from '@/components/ecos';
+ *   import { PhoneCell, SyncBadge, StatusBadge } from '@/components/ecos';
  */
 
 // ── Enterprise CRUD Kit ───────────────────────────────────────────────────────
 export { PageHeader }                from '@/components/crud/page-header';
-export { EntityTable }               from '@/components/crud/entity-table';
 export { EntityToolbar }             from '@/components/crud/entity-toolbar';
 export { SearchInput }               from '@/components/crud/search-input';
 export { FilterPanel }               from '@/components/crud/filter-panel';
@@ -26,8 +25,6 @@ export { EntityDrawer }              from '@/components/crud/entity-drawer';
 export { ActionMenu }                from '@/components/crud/action-menu';
 
 // ── Design System ─────────────────────────────────────────────────────────────
-export { QuickStatCard }             from '@/components/ds/quick-stat-card';
-export { Tabs, type TabItem }        from '@/components/ds/tabs';
 export { ToastProvider }             from '@/components/ds/toast-provider';
 export { useToast, useToastStore }   from '@/components/ds/use-toast';
 
