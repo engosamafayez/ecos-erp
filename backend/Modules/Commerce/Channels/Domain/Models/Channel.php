@@ -59,6 +59,7 @@ use Modules\Organization\BusinessAccounts\Domain\Models\BusinessAccount;
  * @property ChannelLifecycleState $lifecycle_state
  * @property string|null $customer_sync_policy
  * @property \Illuminate\Support\Carbon|null $shipping_mapping_reviewed_at
+ * @property int $product_mapping_coverage_threshold
  */
 class Channel extends Model
 {
@@ -179,6 +180,7 @@ class Channel extends Model
         'lifecycle_state',
         'customer_sync_policy',
         'shipping_mapping_reviewed_at',
+        'product_mapping_coverage_threshold',
     ];
 
     /**
@@ -204,6 +206,7 @@ class Channel extends Model
             'connection_status' => ConnectionStatus::class,
             'lifecycle_state' => ChannelLifecycleState::class,
             'shipping_mapping_reviewed_at' => 'datetime',
+            'product_mapping_coverage_threshold' => 'integer',
         ];
     }
 

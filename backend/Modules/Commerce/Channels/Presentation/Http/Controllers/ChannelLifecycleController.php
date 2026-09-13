@@ -8,7 +8,9 @@ use App\Http\Controllers\Controller;
 use App\Traits\HasApiResponse;
 use Illuminate\Http\JsonResponse;
 use Modules\Commerce\Channels\Application\Actions\AcknowledgeShippingMappingAction;
+use Modules\Commerce\Channels\Application\Actions\DisableChannelAction;
 use Modules\Commerce\Channels\Application\Actions\PauseChannelAction;
+use Modules\Commerce\Channels\Application\Actions\ReenableChannelAction;
 use Modules\Commerce\Channels\Application\Actions\ResumeChannelAction;
 use Modules\Commerce\Channels\Application\Actions\TransitionChannelToLiveAction;
 use Modules\Commerce\Channels\Domain\Contracts\ChannelRepositoryInterface;
@@ -35,6 +37,11 @@ final class ChannelLifecycleController extends Controller
         if ($model === null) {
             throw new ChannelNotFoundException($channel);
         }
+
+        // CTO source-review closure item A — reading readiness also keeps the persisted
+        // DRAFT/CONFIGURED/READY label coherent with current data; LIVE/PAUSED/DISABLED are
+        // never touched by this (see refreshPreLiveState()'s own docblock).
+        $model = $readiness->refreshPreLiveState($model);
 
         return $this->success([
             'channel' => new ChannelResource($model),
@@ -64,6 +71,20 @@ final class ChannelLifecycleController extends Controller
     }
 
     public function acknowledgeShippingMapping(string $channel, AcknowledgeShippingMappingAction $action): JsonResponse
+    {
+        $result = $action->execute($channel);
+
+        return $this->success(new ChannelResource($result->data()), $result->message());
+    }
+
+    public function disable(string $channel, DisableChannelAction $action): JsonResponse
+    {
+        $result = $action->execute($channel);
+
+        return $this->success(new ChannelResource($result->data()), $result->message());
+    }
+
+    public function reenable(string $channel, ReenableChannelAction $action): JsonResponse
     {
         $result = $action->execute($channel);
 

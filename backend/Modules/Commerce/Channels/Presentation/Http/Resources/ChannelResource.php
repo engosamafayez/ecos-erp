@@ -64,6 +64,7 @@ final class ChannelResource extends JsonResource
             'lifecycle_state_label' => $this->lifecycle_state->label(),
             'customer_sync_policy' => $this->customer_sync_policy,
             'shipping_mapping_reviewed_at' => $this->shipping_mapping_reviewed_at?->toIso8601String(),
+            'product_mapping_coverage_threshold' => $this->product_mapping_coverage_threshold,
             // TASK-...-024 W13 / TASK-...-025 P11 — the domain already computes a real 3-state
             // signal; it was simply never serialized. No new domain logic, pure wiring.
             'health_status' => $this->healthStatus()->value,

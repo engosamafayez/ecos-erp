@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Commerce\Channels\Domain\Services;
 
 use Modules\Admin\Configuration\Domain\Services\ConfigurationManager;
+use Modules\Commerce\Channels\Domain\Enums\ChannelLifecycleState;
 use Modules\Commerce\Channels\Domain\Enums\ConnectionStatus;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\Orders\Domain\Models\Order;
@@ -28,13 +29,8 @@ use Modules\Inventory\Products\Domain\Models\Product;
  */
 final class ChannelGoLiveReadinessService
 {
-    /**
-     * No threshold value is named by the architecture (it only says "an operator-set
-     * threshold"); this is a documented, overridable-later default rather than a fabricated
-     * blocker — see the class docblock's "never invent extra blockers" discipline. 80% mirrors
-     * the kind of coverage bar this codebase already uses for readiness-style gates elsewhere.
-     */
-    private const PRODUCT_MAPPING_COVERAGE_THRESHOLD = 0.8;
+    /** Pre-live states this service is the sole writer of — see refreshPreLiveState(). */
+    private const PRE_LIVE_STATES = [ChannelLifecycleState::Draft, ChannelLifecycleState::Configured, ChannelLifecycleState::Ready];
 
     /** Always required — Orders is core regardless of which optional sync types are enabled. */
     private const ORDER_WEBHOOK_COLUMNS = ['external_webhook_order_created_id', 'external_webhook_order_updated_id'];
@@ -72,6 +68,62 @@ final class ChannelGoLiveReadinessService
         }
 
         return ['ready' => $ready, 'gates' => $gates];
+    }
+
+    /**
+     * The canonical pre-live state for a channel RIGHT NOW, derived purely from its current
+     * data — never guessed, never left to a frontend to compute (CTO source-review closure
+     * item A / implementation ticket §2-§3):
+     *
+     *   DRAFT      — credentials/connection have not reached a valid configured state.
+     *   CONFIGURED — credentials are valid, but at least one other readiness gate is not.
+     *   READY      — every one of the seven gates passes.
+     *
+     * Does not read or write `lifecycle_state` itself — see refreshPreLiveState() for the
+     * persisting counterpart. Callers never derive LIVE/PAUSED/DISABLED from this; those three
+     * change only through their own explicit, audited actions.
+     */
+    public function derivePreLiveState(Channel $channel): ChannelLifecycleState
+    {
+        $assessment = $this->assess($channel);
+
+        if ($assessment['ready']) {
+            return ChannelLifecycleState::Ready;
+        }
+
+        $credentialsGate = null;
+        foreach ($assessment['gates'] as $gate) {
+            if ($gate['key'] === 'credentials_valid') {
+                $credentialsGate = $gate;
+
+                break;
+            }
+        }
+
+        return ($credentialsGate['ready'] ?? false) ? ChannelLifecycleState::Configured : ChannelLifecycleState::Draft;
+    }
+
+    /**
+     * Recomputes and PERSISTS the pre-live state for a channel currently in one of DRAFT/
+     * CONFIGURED/READY. A channel already LIVE, PAUSED, or DISABLED is returned untouched —
+     * those only ever change through their own explicit actions
+     * (TransitionChannelToLiveAction, Pause/ResumeChannelAction, Disable/ReenableChannelAction),
+     * never as a side effect of viewing or assessing readiness.
+     */
+    public function refreshPreLiveState(Channel $channel): Channel
+    {
+        if (! in_array($channel->lifecycle_state, self::PRE_LIVE_STATES, true)) {
+            return $channel;
+        }
+
+        $derived = $this->derivePreLiveState($channel);
+
+        if ($channel->lifecycle_state !== $derived) {
+            $channel->update(['lifecycle_state' => $derived->value]);
+            $channel->refresh();
+        }
+
+        return $channel;
     }
 
     /**
@@ -114,19 +166,23 @@ final class ChannelGoLiveReadinessService
             ->whereHas('product', fn ($q) => $q->where('brand_id', $channel->brand_id))
             ->count();
 
-        $ratio = $mapped / $totalProducts;
-        $ready = $ratio >= self::PRODUCT_MAPPING_COVERAGE_THRESHOLD;
+        // CTO source-review closure item C — operator-set per channel, not a hard-coded
+        // constant. `product_mapping_coverage_threshold` is a 0-100 percentage (validated at
+        // the request layer); 80 is only the column's backward-compatible default.
+        $thresholdPercent = $channel->product_mapping_coverage_threshold;
+        $coveragePercent = ($mapped / $totalProducts) * 100;
+        $ready = $coveragePercent >= $thresholdPercent;
 
         return [
             'key' => 'product_mapping_coverage',
             'label' => 'Product/price/stock mapping coverage',
             'ready' => $ready,
             'reason' => sprintf(
-                '%d of %d brand products (%.0f%%) are mapped to this channel; %.0f%% required.',
+                '%d of %d brand products (%.0f%%) are mapped to this channel; %d%% required.',
                 $mapped,
                 $totalProducts,
-                $ratio * 100,
-                self::PRODUCT_MAPPING_COVERAGE_THRESHOLD * 100,
+                $coveragePercent,
+                $thresholdPercent,
             ),
         ];
     }

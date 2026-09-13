@@ -51,13 +51,21 @@ final class TransitionChannelToLiveAction extends BaseAction
         }
 
         if ($channel->lifecycle_state === ChannelLifecycleState::Disabled) {
-            throw new RuntimeException('A disabled channel cannot go live directly.');
+            throw new RuntimeException('A disabled channel cannot go live directly. Re-enable it first (ReenableChannelAction).');
         }
 
         if ($channel->lifecycle_state === ChannelLifecycleState::Paused) {
             throw new RuntimeException('A paused channel must be resumed (ResumeChannelAction), not transitioned to live directly.');
         }
 
+        // CTO source-review closure item A/item 4 — always act on the FRESHEST truth: refresh
+        // DRAFT/CONFIGURED/READY to whatever the current data actually supports before deciding.
+        // A channel the caller believed was still DRAFT/CONFIGURED may already satisfy every
+        // gate; this is what lets that same call both refresh state to READY and go live in one
+        // step, per the implementation ticket's §4. If gates still fail, the channel is left at
+        // whatever DRAFT/CONFIGURED the fresh assessment actually supports, not silently at its
+        // old (possibly stale) state.
+        $channel = $this->readiness->refreshPreLiveState($channel);
         $assessment = $this->readiness->assess($channel);
 
         if (! $assessment['ready']) {

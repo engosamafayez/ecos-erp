@@ -842,6 +842,8 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     Route::post('channels/{channel}/pause', [ChannelLifecycleController::class, 'pause'])->middleware('permission:sales.channels.update');
     Route::post('channels/{channel}/resume', [ChannelLifecycleController::class, 'resume'])->middleware('permission:sales.channels.update');
     Route::post('channels/{channel}/shipping-mapping/acknowledge', [ChannelLifecycleController::class, 'acknowledgeShippingMapping'])->middleware('permission:sales.channels.update');
+    Route::post('channels/{channel}/disable', [ChannelLifecycleController::class, 'disable'])->middleware('permission:sales.channels.update');
+    Route::post('channels/{channel}/reenable', [ChannelLifecycleController::class, 'reenable'])->middleware('permission:sales.channels.update');
     Route::middleware(['throttle:10,1'])->group(function (): void {
         Route::post('channels/{channel}/import-products', [ProductImportController::class, 'importProducts'])->middleware('permission:sales.channels.sync');
         // TASK-...-025 (P5) — `import-orders` now also accepts {mode: historical, after, batch_id}

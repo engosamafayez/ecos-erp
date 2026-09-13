@@ -39,6 +39,8 @@ final class StoreChannelRequest extends FormRequest
             // TASK-...-WOO-04 §5 readiness gate: "customer sync policy chosen". Same value
             // vocabulary as WooCommerceOrderImporter/Syncer's customer_matching_policy.
             'customer_sync_policy' => ['nullable', 'string', Rule::in(['reuse_existing', 'always_create_new'])],
+            // TASK-...-WOO-04 CTO closure item C — operator-set per channel, 0-100 percentage.
+            'product_mapping_coverage_threshold' => ['nullable', 'integer', 'min:0', 'max:100'],
             'consumer_key' => ['nullable', 'string', 'max:500'],
             'consumer_secret' => ['nullable', 'string', 'max:500'],
         ];

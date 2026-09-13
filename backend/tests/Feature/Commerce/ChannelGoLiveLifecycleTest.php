@@ -6,17 +6,23 @@ namespace Tests\Feature\Commerce;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\Validator;
 use Modules\Commerce\Channels\Application\Actions\AcknowledgeShippingMappingAction;
+use Modules\Commerce\Channels\Application\Actions\DisableChannelAction;
 use Modules\Commerce\Channels\Application\Actions\PauseChannelAction;
+use Modules\Commerce\Channels\Application\Actions\ReenableChannelAction;
 use Modules\Commerce\Channels\Application\Actions\ResumeChannelAction;
 use Modules\Commerce\Channels\Application\Actions\TransitionChannelToLiveAction;
 use Modules\Commerce\Channels\Domain\Enums\ChannelLifecycleState;
 use Modules\Commerce\Channels\Domain\Enums\ConnectionStatus;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\Channels\Domain\Services\ChannelGoLiveReadinessService;
+use Modules\Commerce\Channels\Presentation\Http\Requests\UpdateChannelRequest;
+use Modules\Commerce\ProductMappings\Domain\Models\ProductMapping;
 use Modules\Commerce\Synchronization\Application\Jobs\CustomerSyncJob;
 use Modules\Commerce\Synchronization\Domain\Models\ChannelSyncAudit;
 use Modules\Crm\Customers\Domain\Models\Customer;
+use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\Organization\Brands\Domain\Models\Brand;
 use Modules\Organization\Companies\Domain\Models\Company;
 use RuntimeException;
@@ -147,7 +153,7 @@ final class ChannelGoLiveLifecycleTest extends TestCase
         );
     }
 
-    public function test_transition_to_live_is_rejected_and_channel_unchanged_when_a_gate_fails(): void
+    public function test_transition_to_live_is_rejected_and_state_refreshed_to_the_actual_truth_when_a_gate_fails(): void
     {
         $channel = $this->makeReadyChannel();
         $channel->update(['connection_status' => ConnectionStatus::Error->value]);
@@ -162,7 +168,10 @@ final class ChannelGoLiveLifecycleTest extends TestCase
         }
 
         $this->assertTrue($threw);
-        $this->assertSame(ChannelLifecycleState::Ready, $channel->fresh()->lifecycle_state);
+        // CTO closure item A/4 — the attempt refreshes state to the CURRENT truth rather than
+        // leaving the stale 'ready' label: credentials specifically are what's failing, so the
+        // fresh derivation is DRAFT, not CONFIGURED or the old (now-inaccurate) READY.
+        $this->assertSame(ChannelLifecycleState::Draft, $channel->fresh()->lifecycle_state);
     }
 
     public function test_a_disabled_channel_cannot_go_live_directly(): void
@@ -309,5 +318,176 @@ final class ChannelGoLiveLifecycleTest extends TestCase
 
         Bus::assertDispatchedTimes(CustomerSyncJob::class, 1);
         unset($brand);
+    }
+
+    // ═══ PRE-LIVE STATE PROGRESSION (CTO closure item A) ════════════════════
+
+    public function test_refresh_derives_draft_when_credentials_are_not_valid(): void
+    {
+        $channel = $this->makeReadyChannel();
+        $channel->update(['lifecycle_state' => ChannelLifecycleState::Draft->value, 'connection_status' => ConnectionStatus::Disconnected->value]);
+
+        $refreshed = app(ChannelGoLiveReadinessService::class)->refreshPreLiveState($channel->fresh());
+
+        $this->assertSame(ChannelLifecycleState::Draft, $refreshed->lifecycle_state);
+    }
+
+    public function test_refresh_derives_configured_when_credentials_valid_but_another_gate_fails(): void
+    {
+        $channel = $this->makeReadyChannel();
+        $channel->update(['lifecycle_state' => ChannelLifecycleState::Draft->value, 'shipping_mapping_reviewed_at' => null]);
+
+        $refreshed = app(ChannelGoLiveReadinessService::class)->refreshPreLiveState($channel->fresh());
+
+        $this->assertSame(ChannelLifecycleState::Configured, $refreshed->lifecycle_state);
+    }
+
+    public function test_refresh_derives_ready_when_every_gate_passes(): void
+    {
+        $channel = $this->makeReadyChannel();
+        $channel->update(['lifecycle_state' => ChannelLifecycleState::Draft->value]);
+
+        $refreshed = app(ChannelGoLiveReadinessService::class)->refreshPreLiveState($channel->fresh());
+
+        $this->assertSame(ChannelLifecycleState::Ready, $refreshed->lifecycle_state);
+    }
+
+    public function test_refresh_never_touches_live_paused_or_disabled_state(): void
+    {
+        $service = app(ChannelGoLiveReadinessService::class);
+
+        foreach ([ChannelLifecycleState::Live, ChannelLifecycleState::Paused, ChannelLifecycleState::Disabled] as $protected) {
+            $channel = $this->makeReadyChannel();
+            // Break every gate — if refresh touched a protected state it would visibly change.
+            $channel->update(['lifecycle_state' => $protected->value, 'connection_status' => ConnectionStatus::Error->value]);
+
+            $refreshed = $service->refreshPreLiveState($channel->fresh());
+
+            $this->assertSame($protected, $refreshed->lifecycle_state, "refreshPreLiveState must never touch {$protected->value}.");
+        }
+    }
+
+    public function test_go_live_call_on_a_draft_channel_refreshes_through_to_live_when_actually_ready(): void
+    {
+        $channel = $this->makeReadyChannel();
+        // Caller/UI still believes this is DRAFT (stale label) even though the data underneath
+        // already satisfies every gate.
+        $channel->update(['lifecycle_state' => ChannelLifecycleState::Draft->value]);
+
+        $result = app(TransitionChannelToLiveAction::class)->execute((string) $channel->id);
+
+        $this->assertTrue($result->isSuccess());
+        $this->assertSame(ChannelLifecycleState::Live, $result->data()->fresh()->lifecycle_state);
+    }
+
+    // ═══ DISABLED / RE-ENABLE (CTO closure item B) ══════════════════════════
+
+    public function test_disable_moves_any_non_disabled_state_to_disabled_and_is_idempotent(): void
+    {
+        $channel = $this->makeReadyChannel();
+        $channel->update(['lifecycle_state' => ChannelLifecycleState::Live->value]);
+
+        $first = app(DisableChannelAction::class)->execute((string) $channel->id);
+        $this->assertSame(ChannelLifecycleState::Disabled, $first->data()->fresh()->lifecycle_state);
+        $this->assertSame(
+            1,
+            ChannelSyncAudit::query()->where('channel_id', $channel->id)->where('action', 'channel.disabled')->count(),
+        );
+
+        // Idempotent replay: disabling an already-disabled channel is a successful no-op, no
+        // second audit entry.
+        $second = app(DisableChannelAction::class)->execute((string) $channel->id);
+        $this->assertTrue($second->isSuccess());
+        $this->assertSame('Channel is already disabled.', $second->message());
+        $this->assertSame(
+            1,
+            ChannelSyncAudit::query()->where('channel_id', $channel->id)->where('action', 'channel.disabled')->count(),
+        );
+    }
+
+    public function test_reenable_restores_the_derived_pre_live_state_never_live_directly(): void
+    {
+        $channel = $this->makeReadyChannel();
+        $channel->update(['lifecycle_state' => ChannelLifecycleState::Disabled->value]);
+
+        $result = app(ReenableChannelAction::class)->execute((string) $channel->id);
+
+        // Every gate on this fixture passes, so the derived state is READY — never LIVE, since
+        // that requires a separate, explicit TransitionChannelToLiveAction call.
+        $this->assertSame(ChannelLifecycleState::Ready, $result->data()->fresh()->lifecycle_state);
+        $this->assertNotSame(ChannelLifecycleState::Live, $result->data()->fresh()->lifecycle_state);
+    }
+
+    public function test_reenable_restores_draft_when_the_underlying_configuration_regressed_while_disabled(): void
+    {
+        $channel = $this->makeReadyChannel();
+        $channel->update(['lifecycle_state' => ChannelLifecycleState::Disabled->value, 'connection_status' => ConnectionStatus::Error->value]);
+
+        $result = app(ReenableChannelAction::class)->execute((string) $channel->id);
+
+        $this->assertSame(ChannelLifecycleState::Draft, $result->data()->fresh()->lifecycle_state);
+    }
+
+    public function test_reenable_is_rejected_for_a_channel_that_is_not_disabled(): void
+    {
+        $channel = $this->makeReadyChannel();
+        $channel->update(['lifecycle_state' => ChannelLifecycleState::Live->value]);
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('Only a disabled channel can be re-enabled.');
+
+        app(ReenableChannelAction::class)->execute((string) $channel->id);
+    }
+
+    public function test_reenabled_channel_still_requires_an_explicit_go_live_call_to_reach_live(): void
+    {
+        $channel = $this->makeReadyChannel();
+        $channel->update(['lifecycle_state' => ChannelLifecycleState::Disabled->value]);
+
+        app(ReenableChannelAction::class)->execute((string) $channel->id);
+        $this->assertNotSame(ChannelLifecycleState::Live, $channel->fresh()->lifecycle_state);
+
+        $result = app(TransitionChannelToLiveAction::class)->execute((string) $channel->id);
+
+        $this->assertSame(ChannelLifecycleState::Live, $result->data()->fresh()->lifecycle_state);
+    }
+
+    // ═══ OPERATOR-SET PRODUCT MAPPING THRESHOLD (CTO closure item C) ════════
+
+    public function test_new_channels_default_to_an_eighty_percent_threshold(): void
+    {
+        $company = Company::factory()->create();
+        $brand = Brand::factory()->create(['company_id' => $company->id]);
+        $channel = Channel::factory()->create(['brand_id' => $brand->id]);
+
+        $this->assertSame(80, $channel->fresh()->product_mapping_coverage_threshold);
+    }
+
+    public function test_readiness_gate_reads_the_per_channel_threshold_not_a_hardcoded_value(): void
+    {
+        $channel = $this->makeReadyChannel();
+        $product = Product::factory()->create(['brand_id' => $channel->brand_id]);
+        Product::factory()->create(['brand_id' => $channel->brand_id]);
+        // 1 of 2 brand products mapped = 50% coverage.
+        ProductMapping::factory()->create(['channel_id' => $channel->id, 'product_id' => $product->id]);
+
+        $channel->update(['product_mapping_coverage_threshold' => 80]);
+        $strict = app(ChannelGoLiveReadinessService::class)->assess($channel->fresh());
+        $strictGate = collect($strict['gates'])->firstWhere('key', 'product_mapping_coverage');
+        $this->assertFalse($strictGate['ready'], '50% coverage must not satisfy an 80% threshold.');
+
+        $channel->update(['product_mapping_coverage_threshold' => 40]);
+        $lenient = app(ChannelGoLiveReadinessService::class)->assess($channel->fresh());
+        $lenientGate = collect($lenient['gates'])->firstWhere('key', 'product_mapping_coverage');
+        $this->assertTrue($lenientGate['ready'], '50% coverage must satisfy a 40% threshold.');
+    }
+
+    public function test_update_channel_request_accepts_a_valid_threshold_and_rejects_an_out_of_range_one(): void
+    {
+        $rules = ['product_mapping_coverage_threshold' => (new UpdateChannelRequest)->rules()['product_mapping_coverage_threshold']];
+
+        $this->assertFalse(Validator::make(['product_mapping_coverage_threshold' => 95], $rules)->errors()->has('product_mapping_coverage_threshold'));
+        $this->assertTrue(Validator::make(['product_mapping_coverage_threshold' => 101], $rules)->errors()->has('product_mapping_coverage_threshold'));
+        $this->assertTrue(Validator::make(['product_mapping_coverage_threshold' => -1], $rules)->errors()->has('product_mapping_coverage_threshold'));
     }
 }
