@@ -7,6 +7,7 @@ namespace Modules\Commerce\Synchronization\Application\Services;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Modules\Commerce\Channels\Domain\Models\Channel;
+use Throwable;
 
 /**
  * TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R1/R2-R2 §7/§8/§20/§21 — THE ONE outbound Woo
@@ -43,7 +44,7 @@ use Modules\Commerce\Channels\Domain\Models\Channel;
 final class WooOutboundCommandDispatcher
 {
     /** Resources whose mutation is normal business synchronization, gated on canSyncNow(). */
-    private const BUSINESS_RESOURCES = ['products', 'orders'];
+    private const BUSINESS_RESOURCES = ['products', 'orders', 'customers'];
 
     /**
      * @param  array<string, mixed>  $fields
@@ -115,6 +116,62 @@ final class WooOutboundCommandDispatcher
             "/{$wooResource}",
             $fields,
         );
+    }
+
+    /**
+     * TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R1 §2/§3/§9 — Customer outbound create-or-update,
+     * routed through the SAME single transport authority every other Woo business mutation uses,
+     * so a paired (Connector) Channel never falls back to Woo REST Basic Auth (whose
+     * consumer_key/consumer_secret are legitimately null in Connector mode).
+     *
+     * Unlike products/orders — whose Woo id ECOS already stores (ProductMapping /
+     * external_order_id) — no persistent Woo customer id is stored anywhere in ECOS. The prior
+     * CustomerSyncJob always re-resolved the target Woo customer by email at sync time; that exact
+     * semantic is preserved here, per transport:
+     *
+     *   - Connector-mode (connector_token set): the command is sent to the paired plugin, which
+     *     resolves the Woo customer locally by this ECOS-authoritative email (Woo's own unique
+     *     key) and upserts it — ECOS never calls Woo's REST API for this Channel. Gated by
+     *     canSyncNow() exactly like products/orders, so a job queued before an explicit Connector
+     *     disconnect cannot mutate Woo afterward.
+     *   - Legacy direct-REST (no pairing): ECOS resolves by email over Woo's REST API (Basic Auth)
+     *     and then PUTs or POSTs — the original behavior, unchanged.
+     *
+     * ECOS remains the sole authority for the customer FIELDS and for the email keyed on; no CRM
+     * identity match, merge, or company/Brand decision is delegated to the transport or plugin.
+     *
+     * @param  array<string, mixed>  $fields
+     */
+    public function upsertCustomer(Channel $channel, string $email, array $fields): DispatchResult
+    {
+        $credential = $channel->credential;
+
+        if ($credential === null) {
+            return DispatchResult::failure('No credentials configured for this channel.');
+        }
+
+        if ($credential->connector_token !== null) {
+            $blocked = $this->rejectIfBusinessSyncIneligible($channel, 'customers');
+
+            if ($blocked !== null) {
+                return $blocked;
+            }
+
+            // woo_id is intentionally null — there is no ECOS-stored Woo customer id to send; the
+            // plugin resolves by the email carried in $fields and applies create-or-update.
+            return $this->sendCommandToPlugin($channel, $credential->connector_token, [
+                'resource' => 'customers',
+                'operation' => 'create',
+                'woo_id' => null,
+                'fields' => $fields,
+            ]);
+        }
+
+        $wooId = $this->resolveDirectWooCustomerIdByEmail($channel, $credential->consumer_key, $credential->consumer_secret, $email);
+
+        return $wooId !== null
+            ? $this->sendDirectToWoo($channel->store_url, $credential->consumer_key, $credential->consumer_secret, 'PUT', "/customers/{$wooId}", $fields)
+            : $this->sendDirectToWoo($channel->store_url, $credential->consumer_key, $credential->consumer_secret, 'POST', '/customers', $fields);
     }
 
     public function delete(Channel $channel, string $wooResource, string $wooId): DispatchResult
@@ -209,6 +266,36 @@ final class WooOutboundCommandDispatcher
         };
 
         return $this->toResult($response);
+    }
+
+    /**
+     * Legacy direct-REST path only — resolve an existing Woo customer id by email, mirroring the
+     * prior CustomerSyncJob semantics exactly: an empty email or any lookup failure returns null
+     * (the caller then POSTs a create), so a transient read error never blocks the sync. Connector
+     * mode never reaches here — the paired plugin performs its own local resolution instead.
+     */
+    private function resolveDirectWooCustomerIdByEmail(Channel $channel, ?string $consumerKey, ?string $consumerSecret, string $email): ?int
+    {
+        if ($email === '' || $consumerKey === null || $consumerSecret === null) {
+            return null;
+        }
+
+        try {
+            $response = Http::withBasicAuth($consumerKey, $consumerSecret)
+                ->timeout(10)
+                ->get(rtrim($channel->store_url, '/').'/wp-json/wc/v3/customers', ['email' => $email]);
+
+            if ($response->successful()) {
+                $customers = $response->json();
+
+                if (is_array($customers) && isset($customers[0]['id'])) {
+                    return (int) $customers[0]['id'];
+                }
+            }
+        } catch (Throwable) {
+        }
+
+        return null;
     }
 
     private function toResult(Response $response): DispatchResult
