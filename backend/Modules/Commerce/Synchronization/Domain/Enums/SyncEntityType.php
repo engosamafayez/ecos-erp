@@ -11,4 +11,8 @@ enum SyncEntityType: string
     case Order = 'order';
     case Customer = 'customer';
     case Price = 'price';
+    // TASK-...-WOO-05 — webhook REGISTRATION lifecycle (register/deregister/re-register),
+    // distinct from any of the above: it manages the channel's own webhook subscriptions,
+    // not a Product/Order/Customer/Price sync event.
+    case Webhook = 'webhook';
 }

@@ -8,10 +8,17 @@ use App\Core\Actions\BaseAction;
 use App\Core\Responses\OperationResult;
 use Modules\Commerce\Channels\Domain\Contracts\ChannelRepositoryInterface;
 use Modules\Commerce\Channels\Domain\Exceptions\ChannelNotFoundException;
+use Modules\Commerce\Synchronization\Application\Services\WebhookManagerService;
 
 final class DeleteChannelAction extends BaseAction
 {
-    public function __construct(private readonly ChannelRepositoryInterface $channels) {}
+    public function __construct(
+        private readonly ChannelRepositoryInterface $channels,
+        // TASK-...-WOO-05 (042A-R1 §6) — "Channel deletion/disconnect... DeleteChannelAction
+        // must deregister before removing the row" so Woo stops delivering to a channel that
+        // no longer exists to process them.
+        private readonly WebhookManagerService $webhookManager,
+    ) {}
 
     public function execute(mixed ...$arguments): OperationResult
     {
@@ -22,6 +29,7 @@ final class DeleteChannelAction extends BaseAction
             throw new ChannelNotFoundException($id);
         }
 
+        $this->webhookManager->deregisterAll($channel);
         $this->channels->delete($channel);
 
         return OperationResult::success(null, 'Channel deleted successfully.');

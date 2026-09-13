@@ -10,6 +10,7 @@ use Modules\Commerce\Channels\Domain\Contracts\ChannelRepositoryInterface;
 use Modules\Commerce\Channels\Domain\Enums\ChannelLifecycleState;
 use Modules\Commerce\Channels\Domain\Exceptions\ChannelNotFoundException;
 use Modules\Commerce\Synchronization\Application\Services\ChannelSyncAuditLogger;
+use Modules\Commerce\Synchronization\Application\Services\WebhookManagerService;
 
 /**
  * TASK-ECOS-V1.1-WOO-04-GO-LIVE-LIFECYCLE — CTO source-review closure item B.
@@ -19,12 +20,18 @@ use Modules\Commerce\Synchronization\Application\Services\ChannelSyncAuditLogger
  * was ever live. Channel::isLive() is already false for every one of those states except LIVE,
  * so disabling a pre-live channel needs no extra dispatch-safety work here — it was already
  * inert; this only records the deliberate administrative decision.
+ *
+ * TASK-...-WOO-05 (042A-R1 §6) — "Channel disable... call the already-implemented but
+ * uncalled deregisterAll()". Unlike PAUSED (a temporary hold that keeps registrations intact
+ * for when it resumes), an administrative DISABLE also tells Woo to stop sending webhooks at
+ * all, since re-enabling never implies the same webhooks should still be delivering.
  */
 final class DisableChannelAction extends BaseAction
 {
     public function __construct(
         private readonly ChannelRepositoryInterface $channels,
         private readonly ChannelSyncAuditLogger $auditLogger,
+        private readonly WebhookManagerService $webhookManager,
     ) {}
 
     public function execute(mixed ...$arguments): OperationResult
@@ -44,6 +51,9 @@ final class DisableChannelAction extends BaseAction
 
         $channel->update(['lifecycle_state' => ChannelLifecycleState::Disabled->value]);
         $channel->refresh();
+
+        $this->webhookManager->deregisterAll($channel);
+        $channel = $channel->fresh();
 
         $this->auditLogger->log($channel, 'channel.disabled', ['previous_state' => $previousState]);
 

@@ -38,13 +38,20 @@ final class ChannelLifecycleController extends Controller
             throw new ChannelNotFoundException($channel);
         }
 
-        // CTO source-review closure item A — reading readiness also keeps the persisted
-        // DRAFT/CONFIGURED/READY label coherent with current data; LIVE/PAUSED/DISABLED are
-        // never touched by this (see refreshPreLiveState()'s own docblock).
-        $model = $readiness->refreshPreLiveState($model);
+        // TASK-...-WOO-05 carry-forward correction: a GET must be side-effect free — it never
+        // persists a lifecycle transition merely because someone asked for readiness. This
+        // computes and returns the CURRENT derived pre-live state without writing it; the
+        // persisted `channel.lifecycle_state` (in the ChannelResource below) may legitimately
+        // differ from `derived_pre_live_state` until an explicit action (TransitionChannelToLiveAction,
+        // ReenableChannelAction) actually refreshes and persists it.
+        $derived = $readiness->isPreLiveState($model->lifecycle_state)
+            ? $readiness->derivePreLiveState($model)
+            : $model->lifecycle_state;
 
         return $this->success([
             'channel' => new ChannelResource($model),
+            'derived_pre_live_state' => $derived->value,
+            'derived_pre_live_state_label' => $derived->label(),
             ...$readiness->assess($model),
         ]);
     }

@@ -44,6 +44,18 @@ final class ChannelGoLiveReadinessService
     public function __construct(private readonly ConfigurationManager $config) {}
 
     /**
+     * Whether $state is one of the three pre-live states this service derives (DRAFT/
+     * CONFIGURED/READY) — as opposed to LIVE/PAUSED/DISABLED, which only ever change through
+     * their own explicit actions. Exposed so callers (e.g. the read-only readiness endpoint)
+     * can tell whether "derived state" is even a meaningful question for a given channel,
+     * without duplicating this list themselves.
+     */
+    public function isPreLiveState(ChannelLifecycleState $state): bool
+    {
+        return in_array($state, self::PRE_LIVE_STATES, true);
+    }
+
+    /**
      * @return array{ready: bool, gates: list<array{key: string, label: string, ready: bool, reason: string}>}
      */
     public function assess(Channel $channel): array
@@ -109,10 +121,15 @@ final class ChannelGoLiveReadinessService
      * those only ever change through their own explicit actions
      * (TransitionChannelToLiveAction, Pause/ResumeChannelAction, Disable/ReenableChannelAction),
      * never as a side effect of viewing or assessing readiness.
+     *
+     * TASK-...-WOO-05 carry-forward: this WRITES, so it must only ever be called from an
+     * explicit action path (TransitionChannelToLiveAction refreshing before deciding whether to
+     * go live), never from a plain read/GET — see ChannelLifecycleController::readiness(),
+     * which computes derivePreLiveState() directly instead, without persisting it.
      */
     public function refreshPreLiveState(Channel $channel): Channel
     {
-        if (! in_array($channel->lifecycle_state, self::PRE_LIVE_STATES, true)) {
+        if (! $this->isPreLiveState($channel->lifecycle_state)) {
             return $channel;
         }
 

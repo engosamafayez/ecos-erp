@@ -37,6 +37,24 @@ final class WooCommerceWebhookController extends Controller
         $topic = is_string($request->header('X-WC-Webhook-Topic')) ? $request->header('X-WC-Webhook-Topic') : 'order.webhook';
         $externalOrderId = (string) ($payload['id'] ?? '');
 
+        // TASK-...-WOO-05 (042A-R1 / implementation ticket §4) — Channel::isLive() is the
+        // established dispatch authority (WOO-04): a channel that is DRAFT/CONFIGURED/READY/
+        // PAUSED/DISABLED must not perform normal live synchronization side effects. Checked
+        // here (not only inside ProcessOrderWebhookJob's own defense-in-depth check) so a
+        // not-yet-live channel's webhooks are never even queued, not merely skipped later.
+        if (! $channel->isLive()) {
+            $logService->createSkippedLog(
+                $channel,
+                SyncEntityType::Order,
+                SyncDirection::Inbound,
+                'channel_not_live',
+                $externalOrderId !== '' ? $externalOrderId : null,
+                ['topic' => $topic, 'lifecycle_state' => $channel->lifecycle_state->value],
+            );
+
+            return $this->success(null, 'Channel is not live; webhook skipped.');
+        }
+
         // TASK-...-025 (W6/P1) — Orders Sync pause gate. Still 200s the webhook (Woo would
         // otherwise retry-storm a non-2xx response) and still records it in sync_logs, but never
         // reaches ProcessOrderWebhookJob: "no NEW Woo Orders enter ECOS" while paused. The
@@ -87,6 +105,20 @@ final class WooCommerceWebhookController extends Controller
         $topic = is_string($request->header('X-WC-Webhook-Topic')) ? $request->header('X-WC-Webhook-Topic') : 'product.webhook';
         $externalId = (string) ($payload['id'] ?? '');
 
+        // TASK-...-WOO-05 — see handleOrder()'s identical check for the full rationale.
+        if (! $channel->isLive()) {
+            $logService->createSkippedLog(
+                $channel,
+                SyncEntityType::Product,
+                SyncDirection::Inbound,
+                'channel_not_live',
+                $externalId !== '' ? $externalId : null,
+                ['topic' => $topic, 'lifecycle_state' => $channel->lifecycle_state->value],
+            );
+
+            return $this->success(null, 'Channel is not live; webhook skipped.');
+        }
+
         if ($externalId !== '' && $this->isDuplicate($channel->id, $externalId, $topic)) {
             $logService->createSkippedLog(
                 $channel,
@@ -119,6 +151,20 @@ final class WooCommerceWebhookController extends Controller
         $payload = $request->json()->all();
         $topic = is_string($request->header('X-WC-Webhook-Topic')) ? $request->header('X-WC-Webhook-Topic') : 'customer.webhook';
         $externalId = (string) ($payload['id'] ?? '');
+
+        // TASK-...-WOO-05 — see handleOrder()'s identical check for the full rationale.
+        if (! $channel->isLive()) {
+            $logService->createSkippedLog(
+                $channel,
+                SyncEntityType::Customer,
+                SyncDirection::Inbound,
+                'channel_not_live',
+                $externalId !== '' ? $externalId : null,
+                ['topic' => $topic, 'lifecycle_state' => $channel->lifecycle_state->value],
+            );
+
+            return $this->success(null, 'Channel is not live; webhook skipped.');
+        }
 
         if ($externalId !== '' && $this->isDuplicate($channel->id, $externalId, $topic)) {
             $logService->createSkippedLog(
