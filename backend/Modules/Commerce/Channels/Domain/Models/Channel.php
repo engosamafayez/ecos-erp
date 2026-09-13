@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\Commerce\Channels\Domain\Enums\ChannelHealthStatus;
+use Modules\Commerce\Channels\Domain\Enums\ChannelLifecycleState;
 use Modules\Commerce\Channels\Domain\Enums\ChannelPlatform;
 use Modules\Commerce\Channels\Domain\Enums\ConnectionStatus;
 use Modules\Commerce\Channels\Infrastructure\Database\Factories\ChannelFactory;
@@ -55,6 +56,9 @@ use Modules\Organization\BusinessAccounts\Domain\Models\BusinessAccount;
  * @property \Illuminate\Support\Carbon|null $last_error_at
  * @property string|null $last_error_message
  * @property ConnectionStatus $connection_status
+ * @property ChannelLifecycleState $lifecycle_state
+ * @property string|null $customer_sync_policy
+ * @property \Illuminate\Support\Carbon|null $shipping_mapping_reviewed_at
  */
 class Channel extends Model
 {
@@ -172,6 +176,9 @@ class Channel extends Model
         'last_error_at',
         'last_error_message',
         'connection_status',
+        'lifecycle_state',
+        'customer_sync_policy',
+        'shipping_mapping_reviewed_at',
     ];
 
     /**
@@ -195,7 +202,20 @@ class Channel extends Model
             'last_successful_sync_at' => 'datetime',
             'last_error_at' => 'datetime',
             'connection_status' => ConnectionStatus::class,
+            'lifecycle_state' => ChannelLifecycleState::class,
+            'shipping_mapping_reviewed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * The ONE canonical check for "is this channel actually live" (TASK-...-WOO-04, 042A-R1
+     * §5). Every outbound dispatch point and inbound webhook job gates on this — not on
+     * is_active/sync_* flags alone, and not by re-deriving the enum comparison inline at each
+     * call site. `lifecycle_state` only ever becomes Live via TransitionChannelToLiveAction.
+     */
+    public function isLive(): bool
+    {
+        return $this->lifecycle_state === ChannelLifecycleState::Live;
     }
 
     /**

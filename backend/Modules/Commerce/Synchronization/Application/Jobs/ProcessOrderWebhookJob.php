@@ -86,6 +86,22 @@ final class ProcessOrderWebhookJob implements ShouldQueue
     ): void {
         $externalId = (string) ($this->payload['id'] ?? '');
 
+        // TASK-...-WOO-04 (042A-R1 §5) — "inbound webhook processing remain[s] inert" until
+        // TransitionChannelToLiveAction runs, regardless of is_active/sync_* flags. Recorded as
+        // a skip (the existing convention for duplicate-webhook detection), not a failure.
+        if (! $this->channel->isLive()) {
+            $logService->createSkippedLog(
+                $this->channel,
+                SyncEntityType::Order,
+                SyncDirection::Inbound,
+                $this->webhookAction,
+                $externalId,
+                $this->payload,
+            );
+
+            return;
+        }
+
         $log = $logService->createLog(
             $this->channel,
             SyncEntityType::Order,

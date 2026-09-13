@@ -16,6 +16,9 @@ use Modules\Admin\Configuration\Presentation\Http\Controllers\MasterGeographyCon
 use Modules\Admin\Configuration\Presentation\Http\Controllers\MasterZoneController;
 use Modules\Admin\Configuration\Presentation\Http\Controllers\PreparationPolicyController;
 use Modules\Admin\Configuration\Presentation\Http\Controllers\WaveEngineConfigurationController;
+use Modules\Admin\GoLive\Presentation\Http\Controllers\GoLiveActivationController;
+use Modules\Admin\GoLive\Presentation\Http\Controllers\GoLiveResetController;
+use Modules\Admin\GoLive\Presentation\Http\Controllers\OpeningInventoryController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\ArtifactController as CbArtifactController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\DashboardController as CbDashboardController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\TaskController as CbTaskController;
@@ -44,12 +47,9 @@ use Modules\Collaboration\Presentation\Http\Controllers\TaskController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskFollowerController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskLabelController;
 use Modules\Collaboration\Presentation\Http\Controllers\TaskStatusController;
-use Modules\Admin\GoLive\Presentation\Http\Controllers\GoLiveActivationController;
-use Modules\Admin\GoLive\Presentation\Http\Controllers\GoLiveResetController;
-use Modules\Admin\GoLive\Presentation\Http\Controllers\OpeningInventoryController;
 use Modules\Commerce\Channels\Presentation\Http\Controllers\ChannelController;
+use Modules\Commerce\Channels\Presentation\Http\Controllers\ChannelLifecycleController;
 use Modules\Commerce\Connectors\Presentation\Http\Controllers\ConnectorController;
-use Modules\Finance\Receivables\Presentation\Http\Controllers\CustomerOpeningBalanceController;
 use Modules\Commerce\Fulfillments\Presentation\Http\Controllers\FulfillmentController;
 use Modules\Commerce\OrderImport\Presentation\Http\Controllers\OrderImportController;
 use Modules\Commerce\Orders\Presentation\Http\Controllers\OrderController;
@@ -58,8 +58,8 @@ use Modules\Commerce\ProductImport\Presentation\Http\Controllers\ProductImportCo
 use Modules\Commerce\ProductMappings\Presentation\Http\Controllers\ProductMappingController;
 use Modules\Commerce\Shipping\Presentation\Http\Controllers\ShippingQuoteController;
 use Modules\Commerce\StockSync\Presentation\Http\Controllers\StockSyncController;
-use Modules\Commerce\Synchronization\Presentation\Http\Controllers\SynchronizationController;
 use Modules\Commerce\Synchronization\Presentation\Http\Controllers\OrdersSyncControlController;
+use Modules\Commerce\Synchronization\Presentation\Http\Controllers\SynchronizationController;
 use Modules\Commerce\Synchronization\Presentation\Http\Controllers\WooCommerceWebhookController;
 use Modules\Core\DemandAnalysis\Presentation\Http\Controllers\DemandAnalysisController as ProductDemandAnalysisController;
 use Modules\Core\UserPreferences\Presentation\Http\Controllers\UserPreferenceController;
@@ -137,6 +137,7 @@ use Modules\Finance\Presentation\Http\Controllers\TaxController as FinanceTaxCon
 use Modules\Finance\Presentation\Http\Controllers\TrialBalanceController as FinanceTrialBalanceController;
 use Modules\Finance\Presentation\Http\Controllers\VatController as FinanceVatController;
 use Modules\Finance\Presentation\Http\Controllers\YearEndController as FinanceYearEndController;
+use Modules\Finance\Receivables\Presentation\Http\Controllers\CustomerOpeningBalanceController;
 use Modules\Hr\Attendance\Presentation\Http\Controllers\AttendanceController as HrAttendanceController;
 use Modules\Hr\Attendance\Presentation\Http\Controllers\LeaveRequestController as HrLeaveController;
 use Modules\Hr\Attendance\Presentation\Http\Controllers\WorkforceAvailabilityController as HrAvailabilityController;
@@ -834,6 +835,13 @@ Route::middleware(['auth:sanctum', 'throttle:120,1'])->group(function (): void {
     // Same permission verb as the rest of channel-settings writes.
     Route::post('channels/{channel}/orders-sync/state', [OrdersSyncControlController::class, 'setState'])->middleware('permission:sales.channels.update');
     Route::post('channels/{channel}/orders-sync/initial-import-policy', [OrdersSyncControlController::class, 'setInitialImportPolicy'])->middleware('permission:sales.channels.update');
+    // TASK-ECOS-V1.1-WOO-04-GO-LIVE-LIFECYCLE — readiness is a read (view verb); every
+    // transition is a channel-settings write (same update verb as the rest of this group).
+    Route::get('channels/{channel}/go-live/readiness', [ChannelLifecycleController::class, 'readiness'])->middleware('permission:sales.channels.view');
+    Route::post('channels/{channel}/go-live', [ChannelLifecycleController::class, 'goLive'])->middleware('permission:sales.channels.update');
+    Route::post('channels/{channel}/pause', [ChannelLifecycleController::class, 'pause'])->middleware('permission:sales.channels.update');
+    Route::post('channels/{channel}/resume', [ChannelLifecycleController::class, 'resume'])->middleware('permission:sales.channels.update');
+    Route::post('channels/{channel}/shipping-mapping/acknowledge', [ChannelLifecycleController::class, 'acknowledgeShippingMapping'])->middleware('permission:sales.channels.update');
     Route::middleware(['throttle:10,1'])->group(function (): void {
         Route::post('channels/{channel}/import-products', [ProductImportController::class, 'importProducts'])->middleware('permission:sales.channels.sync');
         // TASK-...-025 (P5) — `import-orders` now also accepts {mode: historical, after, batch_id}

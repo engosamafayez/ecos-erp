@@ -39,7 +39,9 @@ final class StockMovementObserver
             /** @var ProductMapping $mapping */
             $channel = $mapping->channel;
 
-            if ($channel === null || ! $channel->is_active || ! $channel->sync_stock) {
+            // TASK-...-WOO-04 — a channel not yet Live stays inert regardless of is_active/
+            // sync_* flags (042A-R1 §5); see Channel::isLive()'s own docblock.
+            if ($channel === null || ! $channel->is_active || ! $channel->sync_stock || ! $channel->isLive()) {
                 continue;
             }
 

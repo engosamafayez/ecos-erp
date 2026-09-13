@@ -36,6 +36,9 @@ final class StoreChannelRequest extends FormRequest
             'sync_prices' => ['boolean'],
             'sync_stock' => ['boolean'],
             'sync_customers' => ['boolean'],
+            // TASK-...-WOO-04 §5 readiness gate: "customer sync policy chosen". Same value
+            // vocabulary as WooCommerceOrderImporter/Syncer's customer_matching_policy.
+            'customer_sync_policy' => ['nullable', 'string', Rule::in(['reuse_existing', 'always_create_new'])],
             'consumer_key' => ['nullable', 'string', 'max:500'],
             'consumer_secret' => ['nullable', 'string', 'max:500'],
         ];

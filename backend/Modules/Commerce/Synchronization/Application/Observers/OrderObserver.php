@@ -27,7 +27,9 @@ final class OrderObserver
 
         // TASK-...-025 (W6) — Orders Sync pause gate. `is_active` is the channel-wide kill
         // switch; `sync_orders` is the Orders-specific pause this task adds. Both must hold.
-        if ($channel === null || ! $channel->is_active || ! $channel->sync_orders) {
+        // TASK-...-WOO-04 — a channel not yet Live stays inert regardless of either flag
+        // (042A-R1 §5); see Channel::isLive()'s own docblock.
+        if ($channel === null || ! $channel->is_active || ! $channel->sync_orders || ! $channel->isLive()) {
             return;
         }
 

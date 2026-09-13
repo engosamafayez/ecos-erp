@@ -25,6 +25,7 @@ final class ChannelDTO extends BaseDTO
         public readonly ?string $channel_type = null,
         public readonly ?string $channel_role = null,
         public readonly ?string $business_account_id = null,
+        public readonly ?string $customer_sync_policy = null,
     ) {}
 
     /**
@@ -50,6 +51,7 @@ final class ChannelDTO extends BaseDTO
             channel_type: $ns($data, 'channel_type'),
             channel_role: $ns($data, 'channel_role'),
             business_account_id: $ns($data, 'business_account_id'),
+            customer_sync_policy: $ns($data, 'customer_sync_policy'),
         );
     }
 
@@ -71,6 +73,7 @@ final class ChannelDTO extends BaseDTO
             'sync_prices' => $this->sync_prices,
             'sync_stock' => $this->sync_stock,
             'sync_customers' => $this->sync_customers,
+            'customer_sync_policy' => $this->customer_sync_policy,
             // Deliberately absent: `sync_orders` is NOT settable via the generic channel
             // update path (TASK-...-025 correction). It is exclusively owned by
             // SetOrdersSyncStateAction, whose whole point is that resuming from a pause

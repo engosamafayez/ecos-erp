@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Commerce\Synchronization\Application\Observers;
 
+use Modules\Commerce\Channels\Domain\Enums\ChannelLifecycleState;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\Synchronization\Application\Jobs\CustomerSyncJob;
 use Modules\Crm\Customers\Domain\Models\Customer as CrmCustomer;
@@ -52,6 +53,9 @@ final class CustomerObserver
             ->with('credential')
             ->where('is_active', true)
             ->where('sync_customers', true)
+            // TASK-...-WOO-04 — a channel not yet Live stays inert regardless of either flag
+            // above (042A-R1 §5); see Channel::isLive()'s own docblock.
+            ->where('lifecycle_state', ChannelLifecycleState::Live->value)
             ->get()
             ->each(function (Channel $channel) use ($salesCustomer): void {
                 CustomerSyncJob::dispatch($channel, $salesCustomer);

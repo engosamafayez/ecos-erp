@@ -56,6 +56,14 @@ final class ChannelResource extends JsonResource
             'orders_sync_activated_at' => $this->orders_sync_activated_at?->toIso8601String(),
             'connection_status' => $this->connection_status->value,
             'connection_status_label' => $this->connection_status->label(),
+            // TASK-ECOS-V1.1-WOO-04-GO-LIVE-LIFECYCLE. Pure wiring, same precedent as
+            // health_status just below: the domain already computes/stores the real signal,
+            // this only serializes it. Readiness gate detail lives at its own endpoint
+            // (GET channels/{channel}/go-live/readiness) rather than being duplicated here.
+            'lifecycle_state' => $this->lifecycle_state->value,
+            'lifecycle_state_label' => $this->lifecycle_state->label(),
+            'customer_sync_policy' => $this->customer_sync_policy,
+            'shipping_mapping_reviewed_at' => $this->shipping_mapping_reviewed_at?->toIso8601String(),
             // TASK-...-024 W13 / TASK-...-025 P11 — the domain already computes a real 3-state
             // signal; it was simply never serialized. No new domain logic, pure wiring.
             'health_status' => $this->healthStatus()->value,
