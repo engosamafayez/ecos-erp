@@ -9,7 +9,6 @@ import {
   Phone,
   Repeat,
   ShoppingBag,
-  X,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -17,18 +16,11 @@ import { useNavigate } from 'react-router-dom';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ConfirmDialog } from '@/components/crud';
+import { ConfirmDialog, EntityDrawer } from '@/components/crud';
 import { Input } from '@/components/ui/input';
 import { StatusBadge } from '@/components/crud/status-badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
-import { Tabs } from '@/components/ds/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from '@/components/ds/use-toast';
 import { copyToClipboard } from '@/lib/clipboard';
 import { MobileDetailSection } from '@/components/mobile';
@@ -774,121 +766,119 @@ export function CustomerDrawer({ customer, open, onOpenChange, onEdit, defaultTa
   ];
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="flex flex-col gap-0 p-0">
-        {/* ── Header ──────────────────────────────────────────────────────── */}
-        <SheetHeader className="border-b px-4 py-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0 flex-1">
-              <SheetTitle className="truncate text-base font-semibold leading-tight">
-                {customer.name}
-              </SheetTitle>
-
-              {/* Phone quick actions */}
-              {primaryPhone ? (
-                <div className="mt-1 flex items-center gap-1.5">
-                  <span className="font-mono text-xs text-muted-foreground">{primaryPhone}</span>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="size-5"
-                    asChild
-                    title={t($ => $.phone.call)}
-                  >
-                    <a href={`tel:${primaryPhone.replace(/\D/g, '')}`}>
-                      <Phone className="size-3" />
-                    </a>
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="size-5"
-                    asChild
-                    title={t($ => $.phone.whatsapp)}
-                  >
-                    <a
-                      href={`https://wa.me/${primaryPhone.replace(/\D/g, '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <MessageCircle className="size-3" />
-                    </a>
-                  </Button>
-                </div>
-              ) : null}
-
-              {/* Address line */}
-              {addressLine ? (
-                <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                  <MapPin className="size-3" />
-                  <span>{addressLine}</span>
-                </div>
-              ) : null}
-            </div>
-
-            <div className="flex shrink-0 items-center gap-1">
-              {/* TASK-ECOS-CUSTOMER-SUPPLIER-LEDGER-LINKS-CLOSURE-001 — links out to the
-                  existing canonical Finance AR statement/ledger for this customer; no
-                  second statement implementation lives here. Hidden (not merely
-                  disabled) unless the viewer holds the same finance.ar.view permission
-                  that gates the Accounts Receivable page itself. */}
-              {can('finance.ar.view') && (
+    <EntityDrawer open={open} onOpenChange={onOpenChange} title={customer.name}>
+      <div className="flex h-full flex-col gap-3">
+        {/* ── Identity row — phone quick actions, address, primary actions ── */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            {/* Phone quick actions */}
+            {primaryPhone ? (
+              <div className="flex items-center gap-1.5">
+                <span className="font-mono text-xs text-muted-foreground">{primaryPhone}</span>
                 <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-7 gap-1.5 text-xs"
-                  onClick={() => navigate(`${ROUTES.financeReceivables}?customer_id=${customer.id}`)}
+                  size="icon"
+                  variant="ghost"
+                  className="size-5"
+                  asChild
+                  title={t($ => $.phone.call)}
                 >
-                  <FileText className="size-3" />
-                  {t($ => $.actions.accountStatement)}
+                  <a href={`tel:${primaryPhone.replace(/\D/g, '')}`}>
+                    <Phone className="size-3" />
+                  </a>
                 </Button>
-              )}
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-5"
+                  asChild
+                  title={t($ => $.phone.whatsapp)}
+                >
+                  <a
+                    href={`https://wa.me/${primaryPhone.replace(/\D/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <MessageCircle className="size-3" />
+                  </a>
+                </Button>
+              </div>
+            ) : null}
+
+            {/* Address line */}
+            {addressLine ? (
+              <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                <MapPin className="size-3" />
+                <span>{addressLine}</span>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="flex shrink-0 items-center gap-1">
+            {/* TASK-ECOS-CUSTOMER-SUPPLIER-LEDGER-LINKS-CLOSURE-001 — links out to the
+                existing canonical Finance AR statement/ledger for this customer; no
+                second statement implementation lives here. Hidden (not merely
+                disabled) unless the viewer holds the same finance.ar.view permission
+                that gates the Accounts Receivable page itself. */}
+            {can('finance.ar.view') && (
               <Button
                 variant="outline"
                 size="sm"
                 className="h-7 gap-1.5 text-xs"
-                onClick={() => {
-                  onOpenChange(false);
-                  onEdit(customer);
-                }}
+                onClick={() => navigate(`${ROUTES.financeReceivables}?customer_id=${customer.id}`)}
               >
-                <Pencil className="size-3" />
-                {t($ => $.actions.edit)}
+                <FileText className="size-3" />
+                {t($ => $.actions.accountStatement)}
               </Button>
-              <SheetClose asChild>
-                <Button variant="ghost" size="icon" className="size-7">
-                  <X className="size-4" />
-                </Button>
-              </SheetClose>
-            </div>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 gap-1.5 text-xs"
+              onClick={() => {
+                onOpenChange(false);
+                onEdit(customer);
+              }}
+            >
+              <Pencil className="size-3" />
+              {t($ => $.actions.edit)}
+            </Button>
           </div>
-        </SheetHeader>
+        </div>
 
         {/* ── Body ────────────────────────────────────────────────────────── */}
-        {isMobile ? (
-          // Mobile: every canonical section stacked and scrollable instead of
-          // a 6-tab switcher (design report §9 — "organize into touch-friendly
-          // sections... do not blindly reproduce a desktop drawer layout
-          // vertically" — this reuses the exact same tab bodies/data, just
-          // presented as sections rather than hidden behind tab taps, matching
-          // the pattern already applied to Products' 8-tab detail).
-          <div className="flex-1 overflow-y-auto">
-            {tabs.map((tab) => (
-              <MobileDetailSection key={tab.key} title={tab.label}>
-                {tab.content}
-              </MobileDetailSection>
-            ))}
-          </div>
-        ) : (
-          <Tabs
-            tabs={tabs}
-            activeKey={activeTab}
-            onTabChange={setActiveTab}
-            className="flex-1 overflow-hidden"
-            contentClassName="overflow-y-auto"
-          />
-        )}
-      </SheetContent>
-    </Sheet>
+        <div className="min-h-0 flex-1">
+          {isMobile ? (
+            // Mobile: every canonical section stacked and scrollable instead of
+            // a 6-tab switcher (design report §9 — "organize into touch-friendly
+            // sections... do not blindly reproduce a desktop drawer layout
+            // vertically" — this reuses the exact same tab bodies/data, just
+            // presented as sections rather than hidden behind tab taps, matching
+            // the pattern already applied to Products' 8-tab detail).
+            <div className="h-full overflow-y-auto">
+              {tabs.map((tab) => (
+                <MobileDetailSection key={tab.key} title={tab.label}>
+                  {tab.content}
+                </MobileDetailSection>
+              ))}
+            </div>
+          ) : (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex h-full flex-col gap-3">
+              <TabsList className="h-auto w-full shrink-0 flex-nowrap justify-start overflow-x-auto">
+                {tabs.map((tab) => (
+                  <TabsTrigger key={tab.key} value={tab.key}>{tab.label}</TabsTrigger>
+                ))}
+              </TabsList>
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                {tabs.map((tab) => (
+                  <TabsContent key={tab.key} value={tab.key} className="mt-0">
+                    {tab.content}
+                  </TabsContent>
+                ))}
+              </div>
+            </Tabs>
+          )}
+        </div>
+      </div>
+    </EntityDrawer>
   );
 }

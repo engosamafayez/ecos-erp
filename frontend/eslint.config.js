@@ -121,9 +121,6 @@ export default defineConfig([
     // its entry.
     files: [
       'src/features/cost-management/components/product-cost-drawer.tsx',
-      'src/features/customers/components/customer-drawer.tsx',
-      'src/features/orders/components/order-detail-drawer.tsx',
-      'src/features/products/components/product-detail-drawer.tsx',
       'src/features/raw-materials/components/raw-material-detail-drawer.tsx',
       'src/features/recipes/components/recipe-detail-drawer.tsx',
       'src/features/crm/components/crm-customer-drawer.tsx',
