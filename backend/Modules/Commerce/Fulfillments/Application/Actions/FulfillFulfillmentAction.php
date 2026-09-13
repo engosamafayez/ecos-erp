@@ -6,22 +6,43 @@ namespace Modules\Commerce\Fulfillments\Application\Actions;
 
 use App\Core\Actions\BaseAction;
 use App\Core\Responses\OperationResult;
-use Illuminate\Support\Facades\DB;
 use Modules\Commerce\Fulfillments\Domain\Contracts\FulfillmentRepositoryInterface;
 use Modules\Commerce\Fulfillments\Domain\Enums\FulfillmentStatus;
 use Modules\Commerce\Fulfillments\Domain\Exceptions\FulfillmentNotFoundException;
 use Modules\Commerce\Fulfillments\Domain\Exceptions\FulfillmentNotFulfillableException;
-use Modules\Commerce\Fulfillments\Domain\Exceptions\InsufficientStockException;
-use Modules\Commerce\Fulfillments\Domain\Models\FulfillmentLine;
-use Modules\Inventory\StockLedger\Domain\Contracts\StockMovementRepositoryInterface;
-use Modules\Inventory\StockLedger\Domain\Enums\MovementType;
-use Modules\Purchasing\GoodsReceipts\Domain\Models\StockBalance;
 
+/**
+ * TASK-...-CONSOLIDATED-REMEDIATION-001 (fifth-track fulfillment-inventory-authority closure) —
+ * marks a commercial Fulfillment record as fulfilled. It performs NO physical stock mutation.
+ *
+ * WHY (source evidence): physical warehouse stock in ECOS is owned exclusively by InventoryItem
+ * and the canonical Inventory actions. A sales order's physical issue runs through
+ * ShipOrderInventoryAction → ShipStockAction, which decrements InventoryItem.on_hand_qty/
+ * reserved_qty, consumes FIFO layers (InventoryLayerConsumptionService), stamps COGS/margin on
+ * the order, and is guarded against double issue by Order.inventory_shipped_at
+ * (OrderAlreadyShippedException).
+ *
+ * This action previously deducted `StockBalance` (Purchasing\GoodsReceipts) and logged a
+ * StockMovement — a SEPARATE, competing physical ledger that InventoryItem, reservations, OPS
+ * reporting, and ProductCommerceAvailabilityService never read. `StockBalance` is written and read
+ * by nothing else in the system (its only other appearance is a test asserting it drives no Woo
+ * sync, and a provider comment calling it the "legacy, unreconciled StockBalance table"); it is
+ * never populated with positive stock, so this branch would in fact have thrown InsufficientStock
+ * for any real order. It therefore never performed a real physical issue against the authoritative
+ * ledger — it maintained a competing physical truth that could diverge from InventoryItem for the
+ * same order.
+ *
+ * The competing StockBalance mutation is retired. No canonical Inventory deduction is added in its
+ * place: doing so would make this standalone CRUD endpoint a SECOND physical-issue entrypoint
+ * parallel to canonical dispatch, and — with no cross-guard — a source of double-deduction against
+ * InventoryItem for an already-dispatched order. Physical issue stays solely with the canonical
+ * dispatch path; this action keeps only its commercial responsibility (recording the fulfillment).
+ * Re-fulfilment is still blocked by the Pending-status guard below.
+ */
 final class FulfillFulfillmentAction extends BaseAction
 {
     public function __construct(
         private readonly FulfillmentRepositoryInterface $fulfillments,
-        private readonly StockMovementRepositoryInterface $movements,
     ) {}
 
     public function execute(mixed ...$arguments): OperationResult
@@ -37,56 +58,11 @@ final class FulfillFulfillmentAction extends BaseAction
             throw new FulfillmentNotFulfillableException($fulfillment->status->value);
         }
 
-        DB::transaction(function () use ($fulfillment): void {
-            /** @var FulfillmentLine $line */
-            foreach ($fulfillment->lines as $line) {
-                $qty = (float) $line->quantity;
+        $fulfillment->update(['status' => FulfillmentStatus::Fulfilled->value]);
 
-                if ($qty <= 0) {
-                    continue;
-                }
-
-                $balance = StockBalance::query()
-                    ->where('warehouse_id', $fulfillment->warehouse_id)
-                    ->where('product_id', $line->product_id)
-                    ->lockForUpdate()
-                    ->first();
-
-                $balanceBefore = $balance instanceof StockBalance ? (float) $balance->quantity : 0.0;
-
-                if ($balanceBefore < $qty) {
-                    throw new InsufficientStockException((string) $line->product_id, $balanceBefore, $qty);
-                }
-
-                $balanceAfter = $balanceBefore - $qty;
-
-                if ($balance instanceof StockBalance) {
-                    $balance->update(['quantity' => $balanceAfter]);
-                } else {
-                    StockBalance::query()->create([
-                        'warehouse_id' => $fulfillment->warehouse_id,
-                        'product_id' => $line->product_id,
-                        'quantity' => $balanceAfter,
-                    ]);
-                }
-
-                $this->movements->record([
-                    'warehouse_id' => $fulfillment->warehouse_id,
-                    'product_id' => $line->product_id,
-                    'movement_type' => MovementType::SalesIssue->value,
-                    'quantity' => $qty,
-                    'balance_before' => $balanceBefore,
-                    'balance_after' => $balanceAfter,
-                    'reference_type' => 'fulfillment',
-                    'reference_id' => $fulfillment->id,
-                    'movement_date' => $fulfillment->fulfillment_date->toDateString(),
-                    'notes' => null,
-                ]);
-            }
-
-            $fulfillment->update(['status' => FulfillmentStatus::Fulfilled->value]);
-        });
-
-        return OperationResult::success($this->fulfillments->findById($id), 'Fulfillment completed. Stock deducted.');
+        return OperationResult::success(
+            $this->fulfillments->findById($id),
+            'Fulfillment completed. Physical stock is issued by the canonical dispatch flow (InventoryItem); this record is commercial only.',
+        );
     }
 }
