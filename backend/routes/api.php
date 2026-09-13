@@ -12,6 +12,8 @@ use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 use Modules\Admin\Configuration\Presentation\Http\Controllers\BrandConfigurationController;
 use Modules\Admin\Configuration\Presentation\Http\Controllers\CompanyConfigurationController;
+use Modules\Admin\Configuration\Presentation\Http\Controllers\DeliveryGeographyController;
+use Modules\Admin\Configuration\Presentation\Http\Controllers\DeliveryZoneController;
 use Modules\Admin\Configuration\Presentation\Http\Controllers\GoodsInwardModeController;
 use Modules\Admin\Configuration\Presentation\Http\Controllers\MasterGeographyController;
 use Modules\Admin\Configuration\Presentation\Http\Controllers\MasterZoneController;
@@ -187,6 +189,8 @@ use Modules\Inventory\WarehouseLiabilities\Presentation\Http\Controllers\Warehou
 use Modules\Inventory\WasteInvestigations\Presentation\Http\Controllers\WasteInvestigationController;
 use Modules\Logistics\Automation\Presentation\Http\Controllers\AutomationController;
 use Modules\Logistics\Carriers\Presentation\Http\Controllers\CarrierController;
+use Modules\Logistics\Carriers\Presentation\Http\Controllers\CarrierShipmentController;
+use Modules\Logistics\Carriers\Presentation\Http\Controllers\CarrierWebhookController;
 use Modules\Logistics\Delivery\Presentation\Http\Controllers\DeliveryAttemptController;
 use Modules\Logistics\Delivery\Presentation\Http\Controllers\DeliveryCodController;
 use Modules\Logistics\Delivery\Presentation\Http\Controllers\DeliveryController as DeliveryOsController;
@@ -1534,6 +1538,25 @@ Route::middleware('auth:sanctum')->prefix('configuration')->group(function (): v
 
     // Delivery Windows — REMOVED (moved to Brand OS: /brands/{brand}/delivery-time-slots)
 
+    // Delivery Geography / Zones (TASK-ECOS-V1.1-OPS-02-CLOSURE) — brand-scoped
+    // governorate/zone coverage config. Controllers already existed with zero
+    // routes registered anywhere; every method below is hardened to resolve the
+    // brand against the authenticated user's own company FIRST (a brand/geography
+    // UUID is not itself an ownership boundary), so this registration cannot be
+    // used to read or write another company's coverage config. Master Governorate/
+    // Master Zone are deliberately global, company-less reference data (see their
+    // own model docblocks) — there is no cross-company boundary to enforce on
+    // those two; only Brand -> DeliveryGeography -> DeliveryZone is tenant-owned.
+    Route::get('brands/{brandId}/geographies', [DeliveryGeographyController::class, 'index']);
+    Route::post('brands/{brandId}/geographies', [DeliveryGeographyController::class, 'store'])->middleware('permission:configuration.settings.manage');
+    Route::put('brands/{brandId}/geographies/{id}', [DeliveryGeographyController::class, 'update'])->middleware('permission:configuration.settings.manage');
+    Route::delete('brands/{brandId}/geographies/{id}', [DeliveryGeographyController::class, 'destroy'])->middleware('permission:configuration.settings.manage');
+
+    Route::get('brands/{brandId}/geographies/{geoId}/zones', [DeliveryZoneController::class, 'index']);
+    Route::post('brands/{brandId}/geographies/{geoId}/zones', [DeliveryZoneController::class, 'store'])->middleware('permission:configuration.settings.manage');
+    Route::put('brands/{brandId}/geographies/{geoId}/zones/{id}', [DeliveryZoneController::class, 'update'])->middleware('permission:configuration.settings.manage');
+    Route::delete('brands/{brandId}/geographies/{geoId}/zones/{id}', [DeliveryZoneController::class, 'destroy'])->middleware('permission:configuration.settings.manage');
+
     // Preparation Policies (Configuration OS facade over Preparation OS)
     Route::get('brands/{brandId}/preparation-policies', [PreparationPolicyController::class, 'index']);
     Route::post('brands/{brandId}/preparation-policies', [PreparationPolicyController::class, 'store'])->middleware('permission:configuration.settings.manage');
@@ -2181,26 +2204,34 @@ Route::middleware('auth:sanctum')->prefix('logistics/distribution')->group(funct
 // ── Shipping Orders — TASK-ECOS-OPERATIONS-SHIPPING-ORDERS-IMPLEMENTATION-002 ────
 // Office/operations monitoring page across Drivers/Trips/Orders. Read-only — no
 // mutation route lives here; Driver operational actions remain on the existing
-// canonical Driver runtime routes. Gated on the EXISTING `logistics.distribution.view`
-// permission rather than a new one: config/permissions.php is a SEED SOURCE
-// (Modules\IAM\Infrastructure\Database\Seeders\RbacSeeder reads it into the
-// role_permissions table — confirmed by reading the seeder directly) — a brand-new
-// permission string added there would be inert until that seeder runs, which this
-// task's freeze does not authorize (no migration/seed). `logistics.distribution.view`
-// is already granted, in the live database, to exactly the roles this page is for
-// (dispatcher, shipping-coordinator, fleet-manager, company-admin, system-auditor —
-// confirmed in config/permissions.php's role blocks). This task's own §36 asks for
-// "Operations/Distribution/Shipping view permission authority" specifically (not a
-// Sales one) and to "reuse the closest existing approved view authority" if no exact
-// dedicated permission exists — Architecture-001 §31 separately named dormant
-// `sales.orders.view` (Sales-namespaced, granted to sales/sales-manager/viewer, not
-// this page's operational audience) or a brand-new `operations.shipping_orders.view`
-// as its two options; `logistics.distribution.view` is neither, but matches both the
-// Distribution/Shipping naming §36 asks for AND the actual role set this page needs,
-// without requiring a new permission + seed run.
+// canonical Driver runtime routes.
+//
+// TASK-ECOS-V1.1-OPS-02-CLOSURE: this route was originally gated on
+// `logistics.distribution.view` (see prior revisions of this comment) on the
+// theory that it matched this page's intended role set. Reconciliation proved
+// that theory wrong: the sidebar entry for this exact page has ALWAYS been
+// gated on `logistics.shipping.view` (frontend/src/config/module-navigation.ts,
+// GATE['shipping-orders']), and the canonical `Moderation` role
+// (Modules\IAM\Domain\Catalog\BusinessRoleCatalog.php) GRANTS
+// `logistics.shipping.view` for exactly this page (§17.8: "Shipping Orders —
+// view / follow-up is REQUIRED") while EXPLICITLY DENYING
+// `logistics.distribution.view` (§17.8: "Do NOT grant Distribution planning or
+// Driver Assignment automatically") — so a Moderation user saw the nav link and
+// got a 403 from the API underneath it. The API is now aligned to the same
+// permission the page's own navigation has always required, not a new one.
+//
+// No role that already holds `logistics.distribution.view` loses real, reachable
+// access as a result: every other role in config/permissions.php that grants
+// `logistics.distribution.view` (company-admin, dispatcher, shipping-coordinator,
+// fleet-manager, system-auditor, branch-manager) also grants
+// `logistics.shipping.view` in the same block — with one exception,
+// `fulfillment-supervisor`, which holds `logistics.distribution.view` alone.
+// That role does not hold `logistics.shipping.view` either, so it has never seen
+// this page's nav entry — its only-theoretical direct-API reach is what changes
+// here, not anything an operator could actually click through today.
 Route::middleware('auth:sanctum')->prefix('operations/shipping-orders')->group(function (): void {
     Route::get('/', [ShippingOrderController::class, 'index'])
-        ->middleware('permission:logistics.distribution.view');
+        ->middleware('permission:logistics.shipping.view');
 });
 
 // ── Shipping Distribution Core — Windows / Zones / Virtual Capacity Slots ────
@@ -2854,7 +2885,22 @@ Route::middleware('auth:sanctum')->prefix('logistics/carriers')->group(function 
         Route::post('/accounts/{id}/test-connection', [CarrierController::class, 'testConnection']);
         Route::put('/accounts/{id}/status-mappings', [CarrierController::class, 'upsertStatusMapping']);
     });
+
+    // TASK-ECOS-V1.1-OPS-03-TASK1-BOSTA — external shipment execution. Company
+    // scope is enforced inside the controller (the authenticated user's own
+    // company_id), same pattern as the account routes above.
+    Route::middleware('permission:carrier.manage')->group(function (): void {
+        Route::post('/stops/{stopUuid}/shipment', [CarrierShipmentController::class, 'store']);
+        Route::get('/stops/{stopUuid}/shipment', [CarrierShipmentController::class, 'show']);
+    });
 });
+
+// Carrier webhook receiver — deliberately OUTSIDE auth:sanctum (the caller is
+// the carrier, not an ECOS user). The adapter's own signature verification
+// (fail-closed by default) is the only trust boundary; the account uuid in
+// the path keeps one carrier with several accounts unambiguous, matching
+// docs/logistics-v2/06-EXTERNAL-CARRIER-PLATFORM.md §6.5's exact route shape.
+Route::post('logistics/carriers/webhook/{carrier}/{accountUuid}', [CarrierWebhookController::class, 'handle']);
 
 // ── Logistics V2 — Operations (Phase 4) ───────────────────────────────────────
 // ADDITIVE: every Phase 0–3 route above is untouched.

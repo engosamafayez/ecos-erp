@@ -14,7 +14,7 @@ class CarrierException extends RuntimeException
         return new self(
             "No carrier adapter is registered under \"{$key}\". Register the adapter before "
             .'connecting an account — falling back to another carrier would send shipments to '
-            .'the wrong place.'
+            .'the wrong place.',
         );
     }
 
@@ -22,7 +22,7 @@ class CarrierException extends RuntimeException
     {
         return new self(
             "{$carrier} does not support {$capability}. "
-            .\Modules\Logistics\Carriers\Domain\ValueObjects\CarrierCapabilitySet::absenceMeaning($capability)
+            .\Modules\Logistics\Carriers\Domain\ValueObjects\CarrierCapabilitySet::absenceMeaning($capability),
         );
     }
 
@@ -37,7 +37,7 @@ class CarrierException extends RuntimeException
         return new self(
             "{$carrier} sent the status \"{$rawStatus}\", which has no ECOS mapping. It has been "
             .'recorded for review rather than guessed — a wrong status applied to a customer '
-            .'order is worse than a visible gap.'
+            .'order is worse than a visible gap.',
         );
     }
 
@@ -49,7 +49,21 @@ class CarrierException extends RuntimeException
     public static function credentialsMissing(): self
     {
         return new self(
-            'This account has no credentials. Store them through the Provider Platform first.'
+            'This account has no credentials. Store them through the Provider Platform first.',
+        );
+    }
+
+    /** A real HTTP call to the carrier failed — never silently coerced into a fake success. */
+    public static function requestFailed(string $carrier, string $reason): self
+    {
+        return new self("The request to {$carrier} failed: {$reason}");
+    }
+
+    /** The verified carrier contract does not cover this operation — refuse rather than guess. */
+    public static function unsupportedOperation(string $carrier, string $operation): self
+    {
+        return new self(
+            "{$carrier} has no verified API contract for \"{$operation}\" — not implemented rather than guessed.",
         );
     }
 }
