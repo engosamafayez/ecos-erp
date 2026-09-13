@@ -9,11 +9,11 @@ use Illuminate\Support\Facades\Http;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 
 /**
- * TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R1 §7/§8/§20/§21 — THE ONE outbound Woo mutation
- * path for a Channel. Every job that used to build its own `Http::withBasicAuth(...)->put(...)`
- * call against Woo's REST API (ProductSyncJob, PriceSyncJob, ProductAvailabilitySyncJob,
- * OrderStatusSyncJob) now goes through here, so a Channel can never have two independent
- * transports able to mutate the same Woo resource:
+ * TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R1/R2-R2 §7/§8/§20/§21 — THE ONE outbound Woo
+ * mutation path for a Channel. Every job that used to build its own
+ * `Http::withBasicAuth(...)->put(...)` call against Woo's REST API (ProductSyncJob,
+ * PriceSyncJob, ProductAvailabilitySyncJob, OrderStatusSyncJob) now goes through here, so a
+ * Channel can never have two independent transports able to mutate the same Woo resource:
  *
  *   - A Channel that has completed Connector pairing (channel.credential.connector_token is
  *     set) uses CONNECTOR transport exclusively: ECOS never touches Woo's REST API directly
@@ -23,15 +23,28 @@ use Modules\Commerce\Channels\Domain\Models\Channel;
  *     in-process instead of over HTTP, so no field-mapping/validation is reinvented here or in
  *     the plugin.
  *   - A Channel that has never been paired (legacy / no Connector plugin installed) keeps the
- *     original direct-REST transport, unchanged — this is the one channel state where that
- *     path may still run, and it is mutually exclusive with the Connector path above by
- *     construction (a Channel is in exactly one of the two states at any moment).
+ *     original direct-REST transport, unchanged, UNAFFECTED by connector health (there is no
+ *     Plugin whose absence could matter) — this is the one channel state where that path may
+ *     still run, and it is mutually exclusive with the Connector path above by construction.
+ *
+ * TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R2 §7/§8 — BUSINESS_SYNC vs CONNECTOR_MANAGEMENT.
+ * `products`/`orders` are business resources: a stale queued command (enqueued before an
+ * explicit disconnect, but only now executing) must not mutate Woo once the paired Connector
+ * is no longer eligible for normal sync — re-checked HERE, at the transport boundary, not only
+ * by whatever observer/job originally enqueued it, because eligibility can change in the
+ * interval between enqueue and execute. `webhooks` is connector-management traffic (pairing,
+ * repair, deregistration) and is deliberately NEVER gated this way — it must keep working
+ * precisely when the Connector is being paired, repaired, or torn down, which is exactly when
+ * canSyncNow() may be false.
  *
  * The Plugin decides nothing: `fields` is always the already-decided canonical payload this
  * class was going to send to Woo directly. It only transports and locally applies.
  */
 final class WooOutboundCommandDispatcher
 {
+    /** Resources whose mutation is normal business synchronization, gated on canSyncNow(). */
+    private const BUSINESS_RESOURCES = ['products', 'orders'];
+
     /**
      * @param  array<string, mixed>  $fields
      */
@@ -44,6 +57,12 @@ final class WooOutboundCommandDispatcher
         }
 
         if ($credential->connector_token !== null) {
+            $blocked = $this->rejectIfBusinessSyncIneligible($channel, $wooResource);
+
+            if ($blocked !== null) {
+                return $blocked;
+            }
+
             return $this->sendCommandToPlugin($channel, $credential->connector_token, [
                 'resource' => $wooResource,
                 'operation' => 'update',
@@ -74,6 +93,12 @@ final class WooOutboundCommandDispatcher
         }
 
         if ($credential->connector_token !== null) {
+            $blocked = $this->rejectIfBusinessSyncIneligible($channel, $wooResource);
+
+            if ($blocked !== null) {
+                return $blocked;
+            }
+
             return $this->sendCommandToPlugin($channel, $credential->connector_token, [
                 'resource' => $wooResource,
                 'operation' => 'create',
@@ -101,6 +126,12 @@ final class WooOutboundCommandDispatcher
         }
 
         if ($credential->connector_token !== null) {
+            $blocked = $this->rejectIfBusinessSyncIneligible($channel, $wooResource);
+
+            if ($blocked !== null) {
+                return $blocked;
+            }
+
             return $this->sendCommandToPlugin($channel, $credential->connector_token, [
                 'resource' => $wooResource,
                 'operation' => 'delete',
@@ -116,6 +147,27 @@ final class WooOutboundCommandDispatcher
             'DELETE',
             "/{$wooResource}/{$wooId}",
             [],
+        );
+    }
+
+    /**
+     * Fail-closed re-check at the transport boundary, applied only to business resources on an
+     * already-paired Channel. Returns null (proceed) when the resource is connector-management
+     * traffic or the Channel remains eligible; a failure DispatchResult otherwise, so a command
+     * enqueued while healthy but executing after an explicit disconnect never reaches Woo.
+     */
+    private function rejectIfBusinessSyncIneligible(Channel $channel, string $wooResource): ?DispatchResult
+    {
+        if (! in_array($wooResource, self::BUSINESS_RESOURCES, true)) {
+            return null;
+        }
+
+        if ($channel->canSyncNow()) {
+            return null;
+        }
+
+        return DispatchResult::failure(
+            'Channel is not currently eligible for normal business synchronization (not Live, or the paired Connector is degraded/disconnected).',
         );
     }
 

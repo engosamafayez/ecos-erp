@@ -7,10 +7,12 @@ namespace Tests\Feature\Commerce;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Modules\Commerce\Channels\Application\Actions\GeneratePairingCodeAction;
+use Modules\Commerce\Channels\Domain\Enums\ChannelLifecycleState;
 use Modules\Commerce\Channels\Domain\Enums\ConnectorHealth;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\Channels\Domain\Models\ChannelCredential;
 use Modules\Commerce\Synchronization\Application\Actions\ExchangePairingCodeAction;
+use Modules\Commerce\Synchronization\Application\Services\WooOutboundCommandDispatcher;
 use Modules\Commerce\Synchronization\Domain\Models\ChannelSyncAudit;
 use Modules\Organization\Brands\Domain\Models\Brand;
 use Modules\Organization\Companies\Domain\Models\Company;
@@ -265,5 +267,102 @@ final class WooCommerceConnectorPairingTest extends TestCase
             1,
             ChannelSyncAudit::query()->where('channel_id', $channel->id)->where('action', 'connector.deactivated')->count(),
         );
+    }
+
+    // ═══ Zero manual Woo REST key setup (R2-R2 confirmation) ══════════════════
+
+    public function test_pairing_succeeds_with_no_pre_existing_woo_rest_credential_at_all(): void
+    {
+        Http::fake(['*/wp-json/wc/v3/webhooks' => Http::response(['id' => 1], 200)]);
+
+        $company = Company::factory()->create();
+        $brand = Brand::factory()->create(['company_id' => $company->id]);
+        // No ChannelCredential row created at all — the merchant never obtains or pastes a Woo
+        // REST consumer_key/consumer_secret for an official Connector-mode pairing.
+        $channel = Channel::factory()->create(['brand_id' => $brand->id]);
+
+        $code = app(GeneratePairingCodeAction::class)->execute($channel->id)->data()['pairing_code'];
+        $result = app(ExchangePairingCodeAction::class)->execute($code);
+
+        $this->assertTrue($result->isSuccess());
+        $credential = $channel->fresh()->credential;
+        $this->assertNotNull($credential);
+        $this->assertNotEmpty($credential->connector_token);
+        $this->assertNull($credential->consumer_key);
+        $this->assertNull($credential->consumer_secret);
+    }
+
+    // ═══ Immediate post-pair health (R2-R2 §11) ═══════════════════════════════
+
+    public function test_successful_pairing_is_immediately_healthy_not_never_connected(): void
+    {
+        [$channel] = $this->pairedChannel();
+
+        $this->assertSame(ConnectorHealth::Healthy, $channel->fresh()->connectorHealth());
+    }
+
+    // ═══ Business-sync gate after disconnect (R2-R2 §7/§8) ════════════════════
+
+    private function liveDisconnectedChannel(): array
+    {
+        [$channel, $token] = $this->pairedChannel();
+        $channel->update(['lifecycle_state' => ChannelLifecycleState::Live->value, 'connector_disconnected_at' => now()]);
+
+        return [$channel->fresh(), $token];
+    }
+
+    public function test_business_command_is_blocked_for_a_disconnected_paired_channel(): void
+    {
+        Http::fake(); // any call here would be a defect
+
+        [$channel] = $this->liveDisconnectedChannel();
+
+        $result = app(WooOutboundCommandDispatcher::class)->put($channel, 'products', 'ext-1', ['stock_status' => 'instock']);
+
+        $this->assertFalse($result->ok, 'A stale queued business command must not reach Woo once the paired Connector is disconnected.');
+        Http::assertNothingSent();
+    }
+
+    public function test_business_command_succeeds_for_a_live_healthy_paired_channel(): void
+    {
+        Http::fake(['*/ecos-connector/v1/commands' => Http::response(['data' => ['id' => 1]], 200)]);
+
+        [$channel] = $this->pairedChannel();
+        $channel->update(['lifecycle_state' => ChannelLifecycleState::Live->value]);
+
+        $result = app(WooOutboundCommandDispatcher::class)->put($channel->fresh(), 'products', 'ext-1', ['stock_status' => 'instock']);
+
+        $this->assertTrue($result->ok);
+    }
+
+    public function test_connector_management_command_is_not_blocked_by_the_business_gate_while_disconnected(): void
+    {
+        Http::fake(['*/ecos-connector/v1/commands' => Http::response(['data' => ['id' => 5]], 200)]);
+
+        [$channel] = $this->liveDisconnectedChannel();
+
+        // A webhook (connector-management) command must still be able to run while
+        // disconnected — this is exactly the repair/deregistration path that needs to work
+        // during teardown or reconnection.
+        $result = app(WooOutboundCommandDispatcher::class)->delete($channel, 'webhooks', 'wh-1');
+
+        $this->assertTrue($result->ok);
+        Http::assertSent(fn ($request): bool => str_contains((string) $request->url(), '/ecos-connector/v1/commands'));
+    }
+
+    public function test_legacy_unpaired_channel_business_command_is_never_gated_by_connector_health(): void
+    {
+        Http::fake(['*/wp-json/wc/v3/products/*' => Http::response(['id' => 1], 200)]);
+
+        // A legacy channel: consumer_key/secret configured, never paired (no connector_token),
+        // not even Live — connector eligibility must simply not apply to it; only its own
+        // existing legacy contract does. This channel is intentionally NOT Live to prove the
+        // dispatcher itself never consults connector health for an unpaired channel (the
+        // isLive() gate for legacy channels is enforced elsewhere, e.g. the observers, not here).
+        $channel = $this->makeChannelWithCredential();
+
+        $result = app(WooOutboundCommandDispatcher::class)->put($channel, 'products', 'ext-1', ['stock_status' => 'instock']);
+
+        $this->assertTrue($result->ok);
     }
 }

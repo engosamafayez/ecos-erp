@@ -6,6 +6,7 @@ namespace Modules\Commerce\Synchronization\Application\Actions;
 
 use App\Core\Actions\BaseAction;
 use App\Core\Responses\OperationResult;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\Channels\Domain\Models\ChannelCredential;
@@ -61,28 +62,41 @@ final class ExchangePairingCodeAction extends BaseAction
         }
 
         $connectorToken = Str::random(64);
-        $credential = $channel->credential;
 
-        if ($credential === null) {
-            $credential = ChannelCredential::query()->create([
-                'channel_id' => $channel->id,
-                'connector_token' => $connectorToken,
+        // TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R2 §13 — atomic: the credential's
+        // connector_token and the Channel's own pairing-success record (heartbeat set, pairing
+        // code consumed) commit together or not at all. A mid-failure here leaves NEITHER set,
+        // so Channel::connectorHealth() correctly reads NeverConnected rather than a
+        // half-applied, falsely-Healthy state.
+        DB::transaction(function () use ($channel, $connectorToken): void {
+            $credential = $channel->credential;
+
+            if ($credential === null) {
+                ChannelCredential::query()->create([
+                    'channel_id' => $channel->id,
+                    'connector_token' => $connectorToken,
+                ]);
+            } else {
+                $credential->update(['connector_token' => $connectorToken]);
+            }
+
+            // Single-use: consumed regardless of what webhook registration below does, so a
+            // leaked/observed code cannot be replayed even if registration partially fails.
+            $channel->update([
+                'pairing_code_hash' => null,
+                'pairing_code_expires_at' => null,
+                'connector_last_heartbeat_at' => now(),
+                'connector_disconnected_at' => null,
             ]);
-        } else {
-            $credential->update(['connector_token' => $connectorToken]);
-        }
+        });
 
-        // Single-use: consumed regardless of outcome from here on, so a leaked/observed code
-        // cannot be replayed even if webhook registration below partially fails.
-        $channel->update([
-            'pairing_code_hash' => null,
-            'pairing_code_expires_at' => null,
-            'connector_last_heartbeat_at' => now(),
-            'connector_disconnected_at' => null,
-        ]);
-
-        // Idempotent — registerAll() already skips any topic that's already registered, so a
-        // re-pairing of an already-connected channel does not create duplicate Woo webhooks.
+        // Deliberately OUTSIDE the transaction above and never throws (registerAll()'s own
+        // register() swallows Throwable into a logged SyncLog failure) — a webhook-registration
+        // failure must not roll back the pairing that already, genuinely, succeeded. Whether
+        // registration itself succeeded is a separate, already-tracked fact surfaced through
+        // ChannelGoLiveReadinessService::webhooksRegistered() (the real persisted webhook-id
+        // columns), not through connectorHealth() — the two are deliberately independent
+        // signals, not conflated into either falsely reads Healthy or falsely blocks pairing.
         $this->webhookManager->registerAll($channel->refresh());
 
         $this->auditLogger->log($channel, 'connector.paired', []);

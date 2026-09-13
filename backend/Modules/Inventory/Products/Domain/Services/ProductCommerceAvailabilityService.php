@@ -10,24 +10,59 @@ use Modules\Inventory\Products\Domain\Models\Product;
 use Modules\Manufacturing\BillsOfMaterials\Domain\Services\ManufacturingAvailabilityService;
 
 /**
- * TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R1 — THE canonical "is this Product commercially
- * available" authority, living in Product's own domain (not Commerce, not a channel-sync
- * concern). Reconciles two pre-existing, narrower authorities rather than inventing a third:
+ * TASK-...-CONSOLIDATED-REMEDIATION-001-R2-R2 (CTO business-rule correction, superseding the
+ * R2-R1 precedence) — THE canonical "is this Product commercially available" authority, living
+ * in Product's own domain.
  *
- *   InventorySummaryService + ProductAvailability — physical on-hand/reserved stock + the
- *   allow_negative_stock policy. ProductAvailability's own docblock already declares itself
- *   canonical for "any product-facing surface — API, table, drawer, filter".
+ * FINAL BUSINESS RULE: warehouse physical stock = raw-material stock. A manufactured finished
+ * Product's OWN physical on_hand quantity is never trusted as an independent sellability
+ * signal — it can be stale/legacy and must never override an unavailable Recipe. For a
+ * manufactured Product, Recipe/Raw-Material executability (ManufacturingAvailabilityService,
+ * already the canonical authority for that question) is the SOLE answer:
  *
- *   ManufacturingAvailabilityService — recipe/BOM executability against raw-material stock.
- *   Already the exact fallback ReserveOrderInventoryAction consults when a finished good's own
- *   physical stock is insufficient.
+ *   Recipe exists, executable        -> AVAILABLE, regardless of the finished good's own
+ *                                        on_hand quantity (even if it happens to be positive
+ *                                        but stale, or exactly zero).
+ *   Recipe exists, NOT executable    -> NOT AVAILABLE, regardless of the finished good's own
+ *                                        on_hand quantity (even if some legacy/stale physical
+ *                                        quantity is still sitting in InventoryItem).
+ *   No active Recipe for this        -> Recipe-based reasoning does not apply to this specific
+ *   finished good ("recipe_missing")    Product at all; the only remaining canonical signal is
+ *                                        physical stock (InventorySummaryService +
+ *                                        ProductAvailability, exactly as for a non-manufactured
+ *                                        Product). This is a fallback for an inapplicable
+ *                                        Recipe check, not a "has stock" classification guess —
+ *                                        the branch is decided by product_type, an explicit,
+ *                                        pre-existing Product classification, before the Recipe
+ *                                        check ever runs.
  *
- * This applies the SAME precedence ReserveOrderInventoryAction's order-line reservation loop
- * already established — physical stock first (never gated by the recipe), executable recipe
- * as fallback for a made-to-order finished good, allow_negative_stock as the final fallback —
- * exposed here as a standalone, reusable, non-order-scoped fact instead of logic embedded
- * inline in one specific order action. Not a fourth formula: the same reconciliation,
- * generalized to answer "is Product X available right now" outside any specific order.
+ * Raw materials and packaging materials (product_type !== TYPE_FINISHED_GOOD) always use the
+ * physical-stock authority — ManufacturingAvailabilityService's own scope never applies to
+ * them (it returns 'recipe_missing' for exactly this reason), and there is no Recipe concept to
+ * consult.
+ *
+ * `can_manufacture` (a Product column) is deliberately NOT used as the classification signal
+ * here: ADR-027 §16 v1.5 (see ReserveOrderInventoryAction's own docblock) already, deliberately,
+ * removed that flag from gating whether Recipe-based fulfillment logic applies — reintroducing
+ * it here would reopen an already-ratified architecture decision this ticket does not ask to
+ * revisit, not merely reuse an existing signal.
+ *
+ * allow_negative_stock interaction: for the Recipe-authority branch, only each RAW MATERIAL
+ * component's own allow_negative_stock is consulted — inside ManufacturingAvailabilityService
+ * itself, which already implements this. The finished good's OWN allow_negative_stock flag is
+ * not an independent override for a manufactured Product (that would let exactly the kind of
+ * stale/legacy finished-product signal this rule forbids back in). It still applies normally
+ * for the physical-stock branch (non-manufactured products, and a finished good with no active
+ * Recipe at all) via ProductAvailability::project(), unchanged.
+ *
+ * OPEN ITEM (reported, not guessed): the current Product domain has no explicit classification
+ * separating "manufactured finished good with no Recipe configured yet" from "a finished good
+ * that is, by design, always direct-stock/resale and never intended to have a Recipe" —
+ * product_type alone cannot distinguish them (both are TYPE_FINISHED_GOOD), and the ticket that
+ * introduced this correction explicitly forbids inferring that distinction from Recipe-row
+ * presence/absence. For that one sub-case (TYPE_FINISHED_GOOD, no active Recipe), this falls
+ * back to the physical-stock authority as the only remaining canonical signal — a conservative
+ * default, not an invented formula, but named here for explicit confirmation.
  */
 final class ProductCommerceAvailabilityService
 {
@@ -38,31 +73,23 @@ final class ProductCommerceAvailabilityService
 
     public function isAvailable(Product $product): bool
     {
-        $summary = $this->inventorySummary->summarize($product->id, $product->company_id);
-        $physical = ProductAvailability::project($summary->available, (bool) $product->allow_negative_stock);
-
-        // Case 1 (ReserveOrderInventoryAction) — physical stock is available (or
-        // allow_negative_stock already makes $physical NegativeAllowed, never OutOfStock)
-        // and is NEVER gated by recipe executability.
-        if ($physical !== ProductAvailability::OutOfStock) {
-            return true;
-        }
-
-        // Case 2 — made-to-order: physical stock is short, but an executable recipe means
-        // more can be produced on demand. Scoped exactly as ManufacturingAvailabilityService
-        // itself is scoped: finished goods with an active recipe only. A non-finished-good
-        // product, or a finished good with no active recipe ('recipe_missing'), has no
-        // manufacturing path and falls through to the physical-stock answer above — which,
-        // having already failed, means genuinely not available (Case 3's allow_negative_stock
-        // was already accounted for in $physical).
         if ($product->product_type === Product::TYPE_FINISHED_GOOD) {
             $evaluation = $this->manufacturing->evaluate($product);
 
-            if ($evaluation['status'] === 'instock') {
-                return true;
+            if ($evaluation['status'] !== 'recipe_missing') {
+                // A Recipe exists for this Product — it is the SOLE authority from here.
+                // Physical finished-product on_hand is never consulted and can never override
+                // this answer in either direction.
+                return $evaluation['status'] === 'instock';
             }
+
+            // No active Recipe at all — Recipe-based reasoning is inapplicable to this
+            // specific Product; fall through to the physical-stock authority below.
         }
 
-        return false;
+        $summary = $this->inventorySummary->summarize($product->id, $product->company_id);
+        $physical = ProductAvailability::project($summary->available, (bool) $product->allow_negative_stock);
+
+        return $physical !== ProductAvailability::OutOfStock;
     }
 }
