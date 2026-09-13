@@ -9,7 +9,7 @@ import { WorkspaceBreadcrumbs } from '@/components/workspace/breadcrumbs/workspa
 import { WorkspaceHeader } from '@/components/workspace/header/workspace-header';
 import type { WorkspaceMetric } from '@/components/workspace/types';
 import { WorkspacePage } from '@/components/page/layout/workspace-page';
-import { PageDrawer } from '@/components/page/drawer/page-drawer';
+import { EntityDrawer } from '@/components/crud';
 import { SmartToolbar } from '@/components/data-grid/smart-toolbar';
 import type { DataGridColumnDef } from '@/components/data-grid/types';
 import { Badge } from '@/components/ui/badge';
@@ -829,18 +829,17 @@ export function DistributionWorkspacePage() {
         />
       ) : null}
 
-      <PageDrawer
+      <EntityDrawer
         open={exceptionsOpen}
         onOpenChange={setExceptionsOpen}
         title={t(($) => $.distributionWorkspace.phase1.exceptionsTitle)}
         description={t(($) => $.distributionWorkspace.phase1.exceptionsDescr)}
-        size="lg"
       >
         <DistributionExceptionsPanel
           windowId={currentWindow?.id}
           warehouseId={activeWarehouseId}
         />
-      </PageDrawer>
+      </EntityDrawer>
     </div>
   );
 }

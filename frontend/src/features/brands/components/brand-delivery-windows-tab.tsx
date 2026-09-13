@@ -20,8 +20,8 @@ import {
 } from '@/components/crud';
 import type { DataGridColumnDef } from '@/components/data-grid';
 import { UniversalDataGrid } from '@/components/data-grid';
-import { QuickStatCard } from '@/components/ds/quick-stat-card';
 import { useToast } from '@/components/ds/use-toast';
+import { WorkspaceMetricCard } from '@/components/workspace';
 import type { BrandDeliveryTimeSlot, BrandDeliveryTimeSlotPayload } from '@/features/brands/types/brand';
 import {
   useCreateDeliveryTimeSlot,
@@ -277,27 +277,30 @@ export function BrandDeliveryWindowsTab({ brandId }: Props) {
     <div className="flex flex-col gap-4">
       {/* KPI row */}
       <div className="grid grid-cols-3 gap-2">
-        <QuickStatCard
+        <WorkspaceMetricCard
+          id="total"
           icon={Clock}
-          title="Total Slots"
+          label="Total Slots"
           value={total}
           active={statusFilter === 'all'}
           onClick={() => setStatusFilter('all')}
         />
-        <QuickStatCard
+        <WorkspaceMetricCard
+          id="active"
           icon={Clock}
-          title="Active"
+          label="Active"
           value={active}
           active={statusFilter === 'active'}
-          colorClassName="text-emerald-600 bg-emerald-50 dark:bg-emerald-950"
+          colorClass="text-emerald-600 bg-emerald-50 dark:bg-emerald-950"
           onClick={() => setStatusFilter('active')}
         />
-        <QuickStatCard
+        <WorkspaceMetricCard
+          id="inactive"
           icon={Clock}
-          title="Inactive"
+          label="Inactive"
           value={inactive}
           active={statusFilter === 'inactive'}
-          colorClassName="text-slate-500 bg-slate-100 dark:bg-slate-800"
+          colorClass="text-slate-500 bg-slate-100 dark:bg-slate-800"
           onClick={() => setStatusFilter('inactive')}
         />
       </div>

@@ -64,16 +64,14 @@ export default defineConfig([
     // migrate them onto the canonical replacement instead (see
     // components/foundation/index.ts and the 045 report's compatibility
     // matrix). EntityTable (39 consumers at 045-time) was fully migrated and
-    // removed in TASK-ECOS-V1.1-CORE-01-UI-07. PageDrawer (35 consumers) is
-    // the one remaining large-adoption item deliberately NOT restricted here —
-    // see the 045 report's "Known Limitations" for why enforcing it is
-    // deferred to the slice that actually migrates it.
+    // removed in TASK-ECOS-V1.1-CORE-01-UI-07. QuickStatCard (migrated to
+    // WorkspaceMetricCard) and PageDrawer (35 consumers, migrated to
+    // EntityDrawer) were both fully migrated and removed in
+    // TASK-ECOS-V1.1-CORE-01-UI-08.
     files: ['src/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': ['error', {
         paths: [
-          { name: '@/components/ds/quick-stat-card', message: 'Deprecated: use `WorkspaceMetricCard` from `@/components/foundation` instead.' },
-          { name: '@/components/ds', importNames: ['QuickStatCard'], message: 'Deprecated: use `WorkspaceMetricCard` from `@/components/foundation` instead.' },
           { name: '@/components/page/pagination/page-pagination', message: 'Deprecated: use `Pagination` from `@/components/crud` instead.' },
           { name: '@/components/page', importNames: ['PagePagination'], message: 'Deprecated: use `Pagination` from `@/components/crud` instead.' },
           // Discovered during 045's implementation (not previously flagged by
@@ -93,19 +91,7 @@ export default defineConfig([
     // here — migrate the file off the deprecated import instead, then remove
     // its entry.
     files: [
-      'src/features/brands/components/brand-delivery-windows-tab.tsx',
-      'src/features/crm/pages/crm-executive-workspace-page.tsx',
-      'src/features/customers/pages/customers-page.tsx',
-      'src/features/engineering/pages/engineering-dashboard-page.tsx',
-      'src/features/products/components/product-quick-stats.tsx',
-      'src/features/raw-materials/components/raw-material-stats.tsx',
-      'src/features/recipes/pages/recipes-page.tsx',
       'src/features/operations/loading-os/components/loading-session-overview.tsx',
-      // Barrels whose entire job is re-exporting some of the paths above —
-      // linting their own re-export statements would be flagging the
-      // plumbing, not a new consumer adopting a deprecated pattern.
-      'src/components/ds/index.ts',
-      'src/components/ecos/index.ts',
     ],
     rules: {
       'no-restricted-imports': 'off',

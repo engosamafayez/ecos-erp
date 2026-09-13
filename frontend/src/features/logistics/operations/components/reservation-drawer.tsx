@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ArrowRightLeft } from 'lucide-react';
 
-import { PageDrawer } from '@/components/page/drawer/page-drawer';
+import { EntityDrawer } from '@/components/crud';
 import { useToast } from '@/components/ds/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
@@ -57,12 +57,11 @@ export function ReservationDrawer({
   if (reservationId === null) return null;
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={onOpenChange}
       title={reservation?.purpose ?? 'Reservation'}
       description="What was asked, and what Network answered"
-      size="2xl"
     >
       {!reservation ? (
         <Skeleton className="h-96 w-full" />
@@ -158,7 +157,7 @@ export function ReservationDrawer({
                       >
                         <span>
                           {candidate.window_start ?? '—'} – {candidate.window_end ?? '—'}
-                          <span className="ml-2 text-muted-foreground">
+                          <span className="ms-2 text-muted-foreground">
                             {candidate.utilisation !== null
                               ? `${Math.round(candidate.utilisation * 100)}% full`
                               : 'empty'}
@@ -190,7 +189,7 @@ export function ReservationDrawer({
                             )
                           }
                         >
-                          <ArrowRightLeft className="mr-1 size-3" />
+                          <ArrowRightLeft className="me-1 size-3" />
                           Move
                         </Button>
                       </li>
@@ -230,6 +229,6 @@ export function ReservationDrawer({
           </div>
         </div>
       )}
-    </PageDrawer>
+    </EntityDrawer>
   );
 }

@@ -1182,6 +1182,7 @@
         "code": "Code"
       },
       "add": "Add Alias",
+      "delete": "Delete Alias",
       "empty": "No aliases configured."
     },
     "save": "Save City",

@@ -17,7 +17,7 @@ import {
   XCircle,
 } from 'lucide-react';
 
-import { PageDrawer } from '@/components/page/drawer/page-drawer';
+import { EntityDrawer } from '@/components/crud';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -542,6 +542,7 @@ function ContractsTab({ company }: { company: ShippingCompany }) {
                     variant="ghost"
                     size="sm"
                     className="h-7 w-7 p-0"
+                    aria-label={t(($) => $.shippingCompanies.drawer.contracts.editTitle)}
                     onClick={() => openEditForm(contract)}
                   >
                     <Pencil className="size-3.5" />
@@ -550,6 +551,7 @@ function ContractsTab({ company }: { company: ShippingCompany }) {
                     variant="ghost"
                     size="sm"
                     className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                    aria-label={t(($) => $.shippingCompanies.drawer.contracts.deleteTitle)}
                     onClick={() => setDeleteTarget(contract)}
                   >
                     <Trash2 className="size-3.5" />
@@ -830,7 +832,7 @@ export function ShippingCompanyDrawer({
 
   return (
     <>
-      <PageDrawer
+      <EntityDrawer
         open={open}
         onOpenChange={onOpenChange}
         title={isCreate ? t(($) => $.shippingCompanies.drawer.newTitle) : (company?.name ?? t(($) => $.shippingCompanies.drawer.fallbackTitle))}
@@ -839,7 +841,6 @@ export function ShippingCompanyDrawer({
             ? t(($) => $.shippingCompanies.drawer.createDescription)
             : t(($) => $.shippingCompanies.drawer.editDescription, { code: company?.code ?? '' })
         }
-        size="xl"
       >
         <div className="flex h-full flex-col">
           {!isCreate && (
@@ -975,7 +976,7 @@ export function ShippingCompanyDrawer({
             </Tabs>
           )}
         </div>
-      </PageDrawer>
+      </EntityDrawer>
 
       <AlertDialog open={archiveConfirm} onOpenChange={setArchiveConfirm}>
         <AlertDialogContent>

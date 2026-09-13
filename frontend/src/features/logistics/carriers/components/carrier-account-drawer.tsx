@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2, PlugZap, XCircle } from 'lucide-react';
 
-import { PageDrawer } from '@/components/page/drawer/page-drawer';
+import { EntityDrawer } from '@/components/crud';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -80,12 +80,11 @@ export function CarrierAccountDrawer({
   }
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={onOpenChange}
       title={account ? `${account.code} — ${account.name}` : t(($) => $.carriers.title)}
       description={account?.adapter_key}
-      size="xl"
     >
       {isLoading && <Skeleton className="h-32 w-full" />}
 
@@ -284,6 +283,6 @@ export function CarrierAccountDrawer({
           </TabsContent>
         </Tabs>
       )}
-    </PageDrawer>
+    </EntityDrawer>
   );
 }

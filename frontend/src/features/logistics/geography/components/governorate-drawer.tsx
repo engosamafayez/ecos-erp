@@ -24,7 +24,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { PageDrawer } from '@/components/page/drawer/page-drawer';
+import { EntityDrawer } from '@/components/crud';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ds/use-toast';
 import type { Governorate } from '@/features/logistics/geography/types/geography';
@@ -557,12 +557,11 @@ export function GovernorateDrawer({ governorate, onClose }: Props) {
   };
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={Boolean(governorate)}
       onOpenChange={(o) => !o && onClose()}
       title={governorate ? `${governorate.name_en} — ${governorate.name_ar}` : ''}
       description={governorate ? t($ => $.govDrawer.drawerDesc, { count: governorate.cities_count ?? 0, price: money(governorate.default_shipping_price) }) : ''}
-      size="xl"
     >
       {governorate && (
         <Tabs defaultValue="overview">
@@ -602,6 +601,6 @@ export function GovernorateDrawer({ governorate, onClose }: Props) {
           </TabsContent>
         </Tabs>
       )}
-    </PageDrawer>
+    </EntityDrawer>
   );
 }

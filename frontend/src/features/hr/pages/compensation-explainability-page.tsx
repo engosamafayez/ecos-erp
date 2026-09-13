@@ -117,7 +117,7 @@ export function CompensationExplainabilityPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-mono text-xs">{adjustment.reference}</span>
                   <span className="font-medium">{adjustment.employee_name ?? adjustment.employee_number}</span>
-                  <StatusBadge status="warning" label={adjustment.component_label} />
+                  <StatusBadge tone="warning" label={adjustment.component_label} />
                 </div>
                 <span className="text-muted-foreground text-xs">{adjustment.reason}</span>
               </div>
@@ -126,7 +126,7 @@ export function CompensationExplainabilityPage() {
                 <span className="tabular-nums font-medium">
                   {adjustment.amount > 0 ? '+' : ''}
                   {adjustment.amount.toLocaleString()} {adjustment.currency}
-                  <span className="text-muted-foreground ml-1 text-xs">({adjustment.direction})</span>
+                  <span className="text-muted-foreground ms-1 text-xs">({adjustment.direction})</span>
                 </span>
                 <Button
                   size="sm"

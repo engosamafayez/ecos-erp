@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertTriangle, CheckCircle2, Pencil } from 'lucide-react';
 
-import { PageDrawer } from '@/components/page/drawer/page-drawer';
+import { EntityDrawer } from '@/components/crud';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -248,12 +248,11 @@ export function TripDrawer({
   const money = (value: number) => new Intl.NumberFormat(i18n.language).format(value);
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={onOpenChange}
       title={trip ? `${trip.trip_number} — ${trip.name}` : t(($) => $.trips.drawer.title)}
       description={trip ? statusLabel(trip.status) : undefined}
-      size="xl"
       footer={
         trip && trip.is_editable && can('logistics.distribution.update') ? (
           <div className="flex justify-end">
@@ -530,6 +529,6 @@ export function TripDrawer({
           </TabsContent>
         </Tabs>
       )}
-    </PageDrawer>
+    </EntityDrawer>
   );
 }

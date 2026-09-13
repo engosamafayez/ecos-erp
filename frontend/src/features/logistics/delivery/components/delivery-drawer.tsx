@@ -15,7 +15,7 @@ import {
   XCircle,
 } from 'lucide-react';
 
-import { PageDrawer } from '@/components/page/drawer/page-drawer';
+import { EntityDrawer } from '@/components/crud';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -756,10 +756,9 @@ export function DeliveryDrawer({
   const { data: delivery } = useDelivery(open ? deliveryId : null);
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={onOpenChange}
-      size="2xl"
       title={
         delivery
           ? t($ => $.delivery.drawer.titleWithOrder, { order: delivery.order_id })
@@ -803,6 +802,6 @@ export function DeliveryDrawer({
           </TabsContent>
         </Tabs>
       )}
-    </PageDrawer>
+    </EntityDrawer>
   );
 }

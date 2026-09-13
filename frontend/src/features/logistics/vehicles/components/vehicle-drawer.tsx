@@ -17,7 +17,7 @@ import {
   Wrench,
 } from 'lucide-react';
 
-import { PageDrawer } from '@/components/page/drawer/page-drawer';
+import { EntityDrawer } from '@/components/crud';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -624,13 +624,20 @@ function MaintenanceTab({ vehicle }: { vehicle: Vehicle }) {
                 </div>
                 {canManage && (
                   <div className="flex shrink-0 items-center gap-1">
-                    <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => openEdit(r)}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 w-7 p-0"
+                      aria-label={t($ => $.vehicles.maintenance.amendRecord)}
+                      onClick={() => openEdit(r)}
+                    >
                       <Pencil className="size-3.5" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
                       className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                      aria-label={t($ => $.vehicles.maintenance.deleteTitle)}
                       onClick={() => setDeleteTarget(r.id)}
                     >
                       <Trash2 className="size-3.5" />
@@ -835,13 +842,20 @@ function DocumentsTab({ vehicle }: { vehicle: Vehicle }) {
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-1">
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleDownload(doc)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  aria-label={t($ => $.vehicles.documents.download)}
+                  onClick={() => handleDownload(doc)}
+                >
                   <Download className="size-3.5" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                  aria-label={t($ => $.vehicles.documents.deleteTitle)}
                   onClick={() => setDeleteTarget(doc)}
                 >
                   <Trash2 className="size-3.5" />
@@ -1053,7 +1067,7 @@ export function VehicleDrawer({
 
   return (
     <>
-      <PageDrawer
+      <EntityDrawer
         open={open}
         onOpenChange={onOpenChange}
         title={isCreate ? t($ => $.vehicles.drawer.newTitle) : (vehicle?.label ?? t($ => $.vehicles.drawer.fallbackTitle))}
@@ -1062,7 +1076,6 @@ export function VehicleDrawer({
             ? t($ => $.vehicles.drawer.createDescription)
             : t($ => $.vehicles.drawer.editDescription, { code: vehicle?.vehicle_code ?? '' })
         }
-        size="xl"
       >
         <div className="flex h-full flex-col">
           {!isCreate && vehicle && (
@@ -1183,7 +1196,7 @@ export function VehicleDrawer({
             )
           )}
         </div>
-      </PageDrawer>
+      </EntityDrawer>
 
       <AlertDialog open={statusTarget !== null} onOpenChange={(o) => { if (!o) setStatusTarget(null); }}>
         <AlertDialogContent>

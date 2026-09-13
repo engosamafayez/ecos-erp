@@ -33,8 +33,8 @@ vi.mock('react-router-dom', () => ({
   useNavigate: () => navigate,
 }));
 
-vi.mock('@/components/page/drawer/page-drawer', () => ({
-  PageDrawer: ({ children, open }: { children: React.ReactNode; open: boolean }) =>
+vi.mock('@/components/crud/entity-drawer', () => ({
+  EntityDrawer: ({ children, open }: { children: React.ReactNode; open: boolean }) =>
     open ? <div data-testid="drawer">{children}</div> : null,
 }));
 

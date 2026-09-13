@@ -1,8 +1,8 @@
 import { DollarSign, Package, PackageMinus, PackagePlus, Warehouse } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { QuickStatCard } from '@/components/ds/quick-stat-card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { WorkspaceMetricCard } from '@/components/workspace';
 import { useCompany } from '@/features/organization/context/company-context';
 import { useRawMaterialStats } from '@/features/raw-materials/hooks/use-raw-materials';
 import { formatMoneyCompact } from '@/lib/format';
@@ -40,35 +40,40 @@ export function RawMaterialStats({ query = {} }: { query?: StatsQuery }) {
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-      <QuickStatCard
+      <WorkspaceMetricCard
+        id="total"
         icon={Package}
-        title={label}
+        label={label}
         value={data?.total_count ?? 0}
-        colorClassName="text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30"
+        colorClass="text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30"
       />
-      <QuickStatCard
+      <WorkspaceMetricCard
+        id="totalOnHand"
         icon={Warehouse}
-        title={t($ => $.stats.totalOnHand)}
+        label={t($ => $.stats.totalOnHand)}
         value={fmtQty(data?.total_on_hand ?? 0)}
-        colorClassName="text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30"
+        colorClass="text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30"
       />
-      <QuickStatCard
+      <WorkspaceMetricCard
+        id="totalReserved"
         icon={PackageMinus}
-        title={t($ => $.stats.totalReserved)}
+        label={t($ => $.stats.totalReserved)}
         value={fmtQty(data?.total_reserved ?? 0)}
-        colorClassName="text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-900/30"
+        colorClass="text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-900/30"
       />
-      <QuickStatCard
+      <WorkspaceMetricCard
+        id="totalAvailable"
         icon={PackagePlus}
-        title={t($ => $.stats.totalAvailable)}
+        label={t($ => $.stats.totalAvailable)}
         value={fmtQty(data?.total_available ?? 0)}
-        colorClassName="text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-900/30"
+        colorClass="text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-900/30"
       />
-      <QuickStatCard
+      <WorkspaceMetricCard
+        id="totalInventoryValue"
         icon={DollarSign}
-        title={t($ => $.stats.totalInventoryValue)}
+        label={t($ => $.stats.totalInventoryValue)}
         value={formatMoneyCompact(data?.total_inventory_value ?? 0, currency, locale)}
-        colorClassName="text-rose-600 bg-rose-100 dark:text-rose-400 dark:bg-rose-900/30"
+        colorClass="text-rose-600 bg-rose-100 dark:text-rose-400 dark:bg-rose-900/30"
       />
     </div>
   );

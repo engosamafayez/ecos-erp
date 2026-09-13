@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { PageDrawer } from '@/components/page';
+import { EntityDrawer } from '@/components/crud';
 import { usePermission } from '@/features/authorization';
 import { useFormatter } from '@/hooks/use-formatter';
 
@@ -86,11 +86,10 @@ export function ExpenseDetailDrawer({ expenseId, open, onOpenChange }: Props) {
   ) : undefined;
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={(o) => (o ? onOpenChange(true) : close())}
       title={expense ? expense.number : t(($) => $.expense.detail.title)}
-      size="lg"
       footer={footer}
     >
       {query.isLoading && <p className="text-sm text-muted-foreground">{t(($) => $.loading)}</p>}
@@ -118,7 +117,7 @@ export function ExpenseDetailDrawer({ expenseId, open, onOpenChange }: Props) {
           </Section>
         </div>
       )}
-    </PageDrawer>
+    </EntityDrawer>
   );
 }
 

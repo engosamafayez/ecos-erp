@@ -20,7 +20,7 @@ describe('canonical/deprecated UI foundation import boundary', () => {
 
   it('flags a new file importing a deprecated path', async () => {
     const messages = await lint(
-      `import { QuickStatCard } from '@/components/ds/quick-stat-card';\nexport const x = QuickStatCard;\n`,
+      `import { PagePagination } from '@/components/page/pagination/page-pagination';\nexport const x = PagePagination;\n`,
       'src/features/some-new-page-not-on-the-grandfather-list.tsx',
     );
     expect(messages.length).toBeGreaterThan(0);
@@ -28,7 +28,7 @@ describe('canonical/deprecated UI foundation import boundary', () => {
 
   it('flags a new file importing a deprecated named export via a barrel', async () => {
     const messages = await lint(
-      `import { QuickStatCard } from '@/components/ds';\nexport const x = QuickStatCard;\n`,
+      `import { PagePagination } from '@/components/page';\nexport const x = PagePagination;\n`,
       'src/features/some-new-page-not-on-the-grandfather-list.tsx',
     );
     expect(messages.length).toBeGreaterThan(0);
@@ -44,8 +44,8 @@ describe('canonical/deprecated UI foundation import boundary', () => {
 
   it('does not flag an explicitly grandfathered existing consumer', async () => {
     const messages = await lint(
-      `import { QuickStatCard } from '@/components/ds/quick-stat-card';\nexport const x = QuickStatCard;\n`,
-      'src/features/products/components/product-quick-stats.tsx',
+      `import { PagePagination } from '@/components/page/pagination/page-pagination';\nexport const x = PagePagination;\n`,
+      'src/features/operations/loading-os/components/loading-session-overview.tsx',
     );
     expect(messages).toHaveLength(0);
   });

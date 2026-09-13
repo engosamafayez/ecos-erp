@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import {
   EntityToolbar,
   PageHeader,
+  StatusBadge,
+  type StatusTone,
 } from '@/components/crud';
 import type { DataGridColumnDef, GridPaginationConfig } from '@/components/data-grid';
 import { UniversalDataGrid } from '@/components/data-grid';
@@ -27,17 +29,13 @@ const ENTITY_TYPES: (SyncEntityType | 'all')[] = ['all', 'product', 'inventory',
 const DIRECTIONS: (SyncDirection | 'all')[] = ['all', 'inbound', 'outbound'];
 const STATUSES: (SyncStatus | 'all')[] = ['all', 'pending', 'processing', 'success', 'failed', 'skipped'];
 
-function StatusBadge({ status }: { status: SyncStatus }) {
-  const { t } = useTranslation('sync-logs');
-  const variantMap: Record<SyncStatus, 'default' | 'secondary' | 'destructive' | 'outline'> = {
-    success: 'default',
-    failed: 'destructive',
-    processing: 'secondary',
-    pending: 'outline',
-    skipped: 'outline',
-  };
-  return <Badge variant={variantMap[status]}>{t($ => $.status[status])}</Badge>;
-}
+const SYNC_STATUS_TONE: Record<SyncStatus, StatusTone> = {
+  success: 'success',
+  failed: 'error',
+  processing: 'info',
+  pending: 'neutral',
+  skipped: 'neutral',
+};
 
 function DirectionBadge({ direction }: { direction: SyncDirection }) {
   const { t } = useTranslation('sync-logs');
@@ -132,7 +130,7 @@ export function SyncLogsPage() {
       key: 'status',
       label: t($ => $.columns.status),
       cardRole: 'status',
-      cell: (log) => <StatusBadge status={log.status} />,
+      cell: (log) => <StatusBadge tone={SYNC_STATUS_TONE[log.status]} label={t($ => $.status[log.status])} />,
     },
     {
       key: 'error_message',
