@@ -1,10 +1,12 @@
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CalendarDays, Check, Save } from 'lucide-react';
 
 import { ErrorState, LoadingState, PageHeader } from '@/components/crud';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Can } from '@/features/authorization/components/can';
 
 import type enHr from '@/i18n/locales/en/hr.json';
 
@@ -17,11 +19,15 @@ import type enHr from '@/i18n/locales/en/hr.json';
  */
 type HrLabel = ($: typeof enHr) => string;
 import {
+  useAttendanceCorrectionsQuery,
+  useAttendanceDaysQuery,
   useAttendanceSheetQuery,
+  useDecideAttendanceCorrection,
   useDepartmentsQuery,
   useRegisterAttendance,
+  useRequestAttendanceCorrection,
 } from '@/features/hr/hooks/use-hr';
-import type { AttendanceStatus } from '@/features/hr/types/hr';
+import type { AttendanceStatus, EarlyLeaveState, LateState, WorkedTimeState } from '@/features/hr/types/hr';
 
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -32,6 +38,55 @@ const STATUS_OPTIONS: Array<{ value: AttendanceStatus; labelKey: HrLabel }> = [
   { value: 'holiday', labelKey: ($) => $.attendance.status.holiday },
   { value: 'rest_day', labelKey: ($) => $.attendance.status.restDay },
 ];
+
+const formatMinutes = (minutes: number): string => {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+};
+
+/** Never a guessed On Time/Late/0 — an unavailable input renders as a dash and a reason, not a status. */
+function LateCell({ late }: { late: LateState | null }) {
+  const { t } = useTranslation('hr');
+  if (!late || late.status === 'not_applicable') return <span className="text-muted-foreground">—</span>;
+  if (late.status === 'not_evaluated') {
+    return <span className="text-muted-foreground text-xs">{t(($) => $.attendance.time.notEvaluated)}</span>;
+  }
+  return late.status === 'late' ? (
+    <span className="text-red-600">
+      {t(($) => $.attendance.time.late)} · {late.minutes_late}m
+    </span>
+  ) : (
+    <span className="text-emerald-600">{t(($) => $.attendance.time.onTime)}</span>
+  );
+}
+
+function EarlyLeaveCell({ earlyLeave }: { earlyLeave: EarlyLeaveState | null }) {
+  const { t } = useTranslation('hr');
+  if (!earlyLeave || earlyLeave.status === 'not_applicable') return <span className="text-muted-foreground">—</span>;
+  if (earlyLeave.status === 'not_evaluated') {
+    return <span className="text-muted-foreground text-xs">{t(($) => $.attendance.time.notEvaluated)}</span>;
+  }
+  return earlyLeave.status === 'early' ? (
+    <span className="text-amber-600">
+      {t(($) => $.attendance.time.early)} · {earlyLeave.minutes_early}m
+    </span>
+  ) : (
+    <span className="text-emerald-600">{t(($) => $.attendance.time.onTime)}</span>
+  );
+}
+
+function WorkedTimeCell({ worked }: { worked: WorkedTimeState | null }) {
+  const { t } = useTranslation('hr');
+  if (!worked || worked.status !== 'available' || worked.net_minutes === null) {
+    return (
+      <span className="text-muted-foreground text-xs">
+        {worked?.status === 'not_applicable' ? '—' : t(($) => $.attendance.time.notEvaluated)}
+      </span>
+    );
+  }
+  return <span>{formatMinutes(worked.net_minutes)}</span>;
+}
 
 /**
  * Attendance Workspace — manual registration, the way a supervisor works.
@@ -55,6 +110,35 @@ export function AttendanceWorkspacePage() {
   const { data: sheet, isLoading, isError, refetch } = useAttendanceSheetQuery(params);
   const { data: departments } = useDepartmentsQuery();
   const register = useRegisterAttendance();
+
+  // ── History + corrections (FIN-01) ─────────────────────────────────────────
+  const [historyFrom, setHistoryFrom] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 13);
+    return d.toISOString().slice(0, 10);
+  });
+  const [historyTo, setHistoryTo] = useState(today());
+  const historyParams = useMemo(() => ({ from: historyFrom, to: historyTo }), [historyFrom, historyTo]);
+
+  const { data: history, isLoading: historyLoading } = useAttendanceDaysQuery(historyParams);
+  const { data: corrections, isLoading: correctionsLoading } = useAttendanceCorrectionsQuery({ status: 'pending' });
+  const requestCorrection = useRequestAttendanceCorrection();
+  const decideCorrection = useDecideAttendanceCorrection();
+
+  const [correctingDayId, setCorrectingDayId] = useState<string | null>(null);
+  const [correctionDraft, setCorrectionDraft] = useState({ check_in: '', check_out: '', reason: '' });
+
+  const submitCorrection = async () => {
+    if (!correctingDayId) return;
+    await requestCorrection.mutateAsync({
+      attendanceDayId: correctingDayId,
+      check_in: correctionDraft.check_in || undefined,
+      check_out: correctionDraft.check_out || undefined,
+      reason: correctionDraft.reason,
+    });
+    setCorrectingDayId(null);
+    setCorrectionDraft({ check_in: '', check_out: '', reason: '' });
+  };
 
   // Seed the draft from what is already recorded; unrecorded rows take the
   // suggested status for the day (holiday, rest day, or present).
@@ -257,6 +341,194 @@ export function AttendanceWorkspacePage() {
           )}
         </CardContent>
       </Card>
+
+      <Card>
+        <CardContent className="flex flex-col gap-4 pt-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-semibold">{t(($) => $.attendance.history.title)}</h2>
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={historyFrom}
+                max={historyTo}
+                onChange={(e) => setHistoryFrom(e.target.value)}
+                className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
+              />
+              <span className="text-muted-foreground text-sm">–</span>
+              <input
+                type="date"
+                value={historyTo}
+                min={historyFrom}
+                max={today()}
+                onChange={(e) => setHistoryTo(e.target.value)}
+                className="border-input h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs"
+              />
+            </div>
+          </div>
+
+          {historyLoading ? (
+            <LoadingState />
+          ) : !history || history.items.length === 0 ? (
+            <p className="text-muted-foreground py-8 text-center text-sm">{t(($) => $.attendance.history.empty)}</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-muted-foreground border-b text-start text-xs uppercase">
+                  <tr>
+                    <th className="py-2 pe-4 font-medium">{t(($) => $.attendance.table.employee)}</th>
+                    <th className="py-2 pe-4 font-medium">{t(($) => $.attendance.history.date)}</th>
+                    <th className="py-2 pe-4 font-medium">{t(($) => $.attendance.table.status)}</th>
+                    <th className="py-2 pe-4 font-medium">{t(($) => $.attendance.history.checkIn)}</th>
+                    <th className="py-2 pe-4 font-medium">{t(($) => $.attendance.history.checkOut)}</th>
+                    <th className="py-2 pe-4 font-medium">{t(($) => $.attendance.history.late)}</th>
+                    <th className="py-2 pe-4 font-medium">{t(($) => $.attendance.history.earlyLeave)}</th>
+                    <th className="py-2 pe-4 font-medium">{t(($) => $.attendance.history.workedTime)}</th>
+                    <Can permission="hr.attendance.register">
+                      <th className="py-2 pe-4 font-medium">{t(($) => $.attendance.history.action)}</th>
+                    </Can>
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.items.map((row) => (
+                    <Fragment key={row.id}>
+                      <tr className="border-b last:border-0">
+                        <td className="py-2 pe-4 font-medium">{row.employee?.name ?? '—'}</td>
+                        <td className="text-muted-foreground py-2 pe-4">{row.work_date}</td>
+                        <td className="py-2 pe-4">{row.status_label}</td>
+                        <td className="py-2 pe-4 tabular-nums">{row.check_in ?? '—'}</td>
+                        <td className="py-2 pe-4 tabular-nums">{row.check_out ?? '—'}</td>
+                        <td className="py-2 pe-4">
+                          <LateCell late={row.late} />
+                        </td>
+                        <td className="py-2 pe-4">
+                          <EarlyLeaveCell earlyLeave={row.early_leave} />
+                        </td>
+                        <td className="py-2 pe-4">
+                          <WorkedTimeCell worked={row.worked_time} />
+                        </td>
+                        <Can permission="hr.attendance.register">
+                          <td className="py-2 pe-4">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                setCorrectingDayId(correctingDayId === row.id ? null : row.id)
+                              }
+                            >
+                              {t(($) => $.attendance.history.requestCorrection)}
+                            </Button>
+                          </td>
+                        </Can>
+                      </tr>
+                      {correctingDayId === row.id ? (
+                        <tr className="bg-muted/30 border-b last:border-0">
+                          <td colSpan={9} className="p-3">
+                            <div className="flex flex-wrap items-end gap-2">
+                              <label className="flex flex-col gap-1 text-xs">
+                                {t(($) => $.attendance.history.checkIn)}
+                                <Input
+                                  type="time"
+                                  step={1}
+                                  value={correctionDraft.check_in}
+                                  onChange={(e) =>
+                                    setCorrectionDraft((prev) => ({ ...prev, check_in: e.target.value }))
+                                  }
+                                  className="h-8 w-28"
+                                />
+                              </label>
+                              <label className="flex flex-col gap-1 text-xs">
+                                {t(($) => $.attendance.history.checkOut)}
+                                <Input
+                                  type="time"
+                                  step={1}
+                                  value={correctionDraft.check_out}
+                                  onChange={(e) =>
+                                    setCorrectionDraft((prev) => ({ ...prev, check_out: e.target.value }))
+                                  }
+                                  className="h-8 w-28"
+                                />
+                              </label>
+                              <label className="flex flex-1 flex-col gap-1 text-xs">
+                                {t(($) => $.attendance.correction.reason)}
+                                <Input
+                                  value={correctionDraft.reason}
+                                  onChange={(e) =>
+                                    setCorrectionDraft((prev) => ({ ...prev, reason: e.target.value }))
+                                  }
+                                  className="h-8"
+                                />
+                              </label>
+                              <Button
+                                size="sm"
+                                disabled={!correctionDraft.reason || requestCorrection.isPending}
+                                onClick={() => void submitCorrection()}
+                              >
+                                {t(($) => $.attendance.history.submitCorrection)}
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => setCorrectingDayId(null)}>
+                                {t(($) => $.common.cancel)}
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : null}
+                    </Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Can permission="hr.attendance.register">
+        <Card>
+          <CardContent className="flex flex-col gap-4 pt-6">
+            <h2 className="font-semibold">{t(($) => $.attendance.correction.pendingTitle)}</h2>
+            {correctionsLoading ? (
+              <LoadingState />
+            ) : !corrections || corrections.length === 0 ? (
+              <p className="text-muted-foreground py-6 text-center text-sm">{t(($) => $.attendance.correction.empty)}</p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {corrections.map((c) => (
+                  <li key={c.id} className="flex flex-col gap-2 rounded-md border px-3 py-2 text-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-medium">
+                        {c.employee?.name ?? '—'} · {c.work_date}
+                      </span>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          onClick={() => void decideCorrection.mutateAsync({ id: c.id, decision: 'approve' })}
+                        >
+                          {t(($) => $.attendance.correction.approve)}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => void decideCorrection.mutateAsync({ id: c.id, decision: 'reject' })}
+                        >
+                          {t(($) => $.attendance.correction.reject)}
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="text-muted-foreground flex flex-wrap gap-3 text-xs">
+                      <span>
+                        {t(($) => $.attendance.history.checkIn)}: {c.original.check_in ?? '—'} → {c.corrected.check_in ?? '—'}
+                      </span>
+                      <span>
+                        {t(($) => $.attendance.history.checkOut)}: {c.original.check_out ?? '—'} → {c.corrected.check_out ?? '—'}
+                      </span>
+                    </div>
+                    <span className="text-xs">{c.reason}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      </Can>
     </div>
   );
 }

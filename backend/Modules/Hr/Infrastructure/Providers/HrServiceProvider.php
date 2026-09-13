@@ -6,8 +6,14 @@ namespace Modules\Hr\Infrastructure\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Modules\Hr\Attendance\Domain\Services\AbsenceFactsProvider;
+use Modules\Hr\Attendance\Domain\Services\AttendanceCorrectionService;
+use Modules\Hr\Attendance\Domain\Services\AttendanceDerivationService;
 use Modules\Hr\Attendance\Domain\Services\AttendanceRegistrationService;
 use Modules\Hr\Attendance\Domain\Services\AttendanceSummaryProvider;
+use Modules\Hr\Attendance\Domain\Services\HolidayService;
+use Modules\Hr\Attendance\Domain\Services\LeaveRequestService;
+use Modules\Hr\Attendance\Domain\Services\WorkforceAvailabilityService;
+use Modules\Hr\Attendance\Domain\Services\WorkScheduleService;
 use Modules\Hr\Compensation\Application\Bridge\WorkforceKpiCatalog;
 use Modules\Hr\Compensation\Application\Bridge\WorkforceKpiSubscriber;
 use Modules\Hr\Compensation\Domain\Contracts\ProvidesAbsenceFacts;
@@ -21,6 +27,9 @@ use Modules\Hr\Compensation\Domain\Services\DeductionService;
 use Modules\Hr\Compensation\Domain\Services\KpiFactService;
 use Modules\Hr\Compensation\Domain\Services\PayrollRunService;
 use Modules\Hr\Compensation\Domain\Services\SalaryStructureService;
+use Modules\Hr\Executive\Domain\Services\HrAnalyticsService;
+use Modules\Hr\Executive\Domain\Services\HrExecutiveDashboardService;
+use Modules\Hr\Infrastructure\Services\HrAuditService;
 use Modules\Hr\Performance\Domain\Services\BonusRecommendationService;
 use Modules\Hr\Performance\Domain\Services\GoalService;
 use Modules\Hr\Performance\Domain\Services\IncidentService;
@@ -28,13 +37,6 @@ use Modules\Hr\Performance\Domain\Services\KpiEngine;
 use Modules\Hr\Performance\Domain\Services\ManagerReviewService;
 use Modules\Hr\Performance\Domain\Services\PerformanceDashboardService;
 use Modules\Hr\Performance\Domain\Services\PerformanceEvaluationService;
-use Modules\Hr\Attendance\Domain\Services\HolidayService;
-use Modules\Hr\Attendance\Domain\Services\LeaveRequestService;
-use Modules\Hr\Attendance\Domain\Services\WorkforceAvailabilityService;
-use Modules\Hr\Attendance\Domain\Services\WorkScheduleService;
-use Modules\Hr\Workforce\Domain\Contracts\ProvidesAttendanceSummary;
-use Modules\Hr\Executive\Domain\Services\HrAnalyticsService;
-use Modules\Hr\Executive\Domain\Services\HrExecutiveDashboardService;
 use Modules\Hr\Recruitment\Domain\Services\ApplicantScoringService;
 use Modules\Hr\Recruitment\Domain\Services\ApplicantService;
 use Modules\Hr\Recruitment\Domain\Services\EmployeeLifecycleService;
@@ -43,15 +45,21 @@ use Modules\Hr\Recruitment\Domain\Services\InterviewService;
 use Modules\Hr\Recruitment\Domain\Services\JobApplicationService;
 use Modules\Hr\Recruitment\Domain\Services\JobOpeningService;
 use Modules\Hr\Recruitment\Domain\Services\RecruitmentPipelineService;
+use Modules\Hr\Workforce\Domain\Contracts\ProvidesAttendanceSummary;
 use Modules\Hr\Workforce\Domain\Policies\EmployeePolicy;
 use Modules\Hr\Workforce\Domain\Services\DepartmentService;
+use Modules\Hr\Workforce\Domain\Services\DriverEmployeeResolver;
+use Modules\Hr\Workforce\Domain\Services\DriverPerformanceReadModel;
 use Modules\Hr\Workforce\Domain\Services\Employee360Service;
 use Modules\Hr\Workforce\Domain\Services\EmployeeDocumentService;
 use Modules\Hr\Workforce\Domain\Services\EmployeeService;
 use Modules\Hr\Workforce\Domain\Services\EmploymentContractService;
+use Modules\Hr\Workforce\Domain\Services\ManagerScopeService;
 use Modules\Hr\Workforce\Domain\Services\OrganizationChartService;
 use Modules\Hr\Workforce\Domain\Services\ReportingLineService;
 use Modules\Hr\Workforce\Domain\Services\WorkforceStructureService;
+use Modules\Hr\Workforce\Presentation\Console\Commands\DriverIdentityDiagnosticsCommand;
+use Modules\IAM\Domain\Contracts\SensitiveFieldRegistryInterface;
 
 /**
  * HR & Workforce OS — EPIC H1 + H2.
@@ -72,6 +80,10 @@ final class HrServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        // The audit seam — one wrapper over the platform's canonical Core Audit
+        // mechanism, shared by every H-epic below. See its own docblock.
+        $this->app->singleton(HrAuditService::class);
+
         // H1 — Workforce foundation.
         $this->app->singleton(DepartmentService::class);
         $this->app->singleton(WorkforceStructureService::class);
@@ -79,14 +91,19 @@ final class HrServiceProvider extends ServiceProvider
         $this->app->singleton(EmploymentContractService::class);
         $this->app->singleton(ReportingLineService::class);
         $this->app->singleton(OrganizationChartService::class);
+        $this->app->singleton(ManagerScopeService::class);
         $this->app->singleton(EmployeeDocumentService::class);
         $this->app->singleton(Employee360Service::class);
         $this->app->singleton(EmployeePolicy::class);
+        $this->app->singleton(DriverEmployeeResolver::class);
+        $this->app->singleton(DriverPerformanceReadModel::class);
 
         // H2 — Attendance and availability.
         $this->app->singleton(HolidayService::class);
         $this->app->singleton(WorkScheduleService::class);
         $this->app->singleton(AttendanceRegistrationService::class);
+        $this->app->singleton(AttendanceDerivationService::class);
+        $this->app->singleton(AttendanceCorrectionService::class);
         $this->app->singleton(LeaveRequestService::class);
         $this->app->singleton(WorkforceAvailabilityService::class);
 
@@ -142,6 +159,67 @@ final class HrServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(__DIR__.'/../../Recruitment/Infrastructure/Database/Migrations');
 
         $this->registerKpiSubscribers();
+        $this->registerSensitiveFields();
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                DriverIdentityDiagnosticsCommand::class,
+            ]);
+        }
+    }
+
+    /**
+     * Declare which Hr fields are sensitive to IAM's SensitiveFieldRegistry.
+     *
+     * FIN-01 scope only: Employee/Attendance/Leave/Performance fields genuinely
+     * called out by TASK-ECOS-V1.1-FIN-01-AUDIT-SENSITIVE-DATA-045B — not a
+     * blanket sweep of every HR field, and deliberately nothing under
+     * Compensation (SalaryStructure/Payslip/etc.), which is FIN-02's boundary.
+     *
+     * Registration alone does not hide anything yet: no JsonResource in the
+     * codebase currently consumes SensitiveFieldRegistry/VisibilityResolver to
+     * mask a response (verified platform-wide, not just in Hr). This call
+     * declares the classification the platform already has the machinery to
+     * enforce once a later slice wires a consumer — see the task report's
+     * "Sensitive Field Runtime Enforcement" finding.
+     */
+    private function registerSensitiveFields(): void
+    {
+        $registry = $this->app->make(SensitiveFieldRegistryInterface::class);
+
+        $registry->register('hr.employees', [
+            'national_id' => 'hr.employees.view_national_id',
+            'date_of_birth' => 'hr.employees.view_personal_details',
+            'personal_email' => 'hr.employees.view_personal_details',
+            'address' => 'hr.employees.view_personal_details',
+            'emergency_contact_name' => 'hr.employees.view_personal_details',
+            'emergency_contact_phone' => 'hr.employees.view_personal_details',
+        ]);
+
+        $registry->register('hr.leave_requests', [
+            'reason' => 'hr.leave.view_reason',
+            'decision_note' => 'hr.leave.view_decision_note',
+        ]);
+
+        $registry->register('hr.attendance_days', [
+            'notes' => 'hr.attendance.view_notes',
+        ]);
+
+        $registry->register('hr.manager_reviews', [
+            'strengths' => 'hr.performance.view_review_notes',
+            'improvement_notes' => 'hr.performance.view_review_notes',
+            'manager_comments' => 'hr.performance.view_review_notes',
+        ]);
+
+        $registry->register('hr.employee_incidents', [
+            'description' => 'hr.performance.view_incident_details',
+        ]);
+
+        $registry->register('hr.attendance_corrections', [
+            'reason' => 'hr.attendance.view_correction_notes',
+            'decision_note' => 'hr.attendance.view_correction_notes',
+            'corrected_notes' => 'hr.attendance.view_correction_notes',
+        ]);
     }
 
     /**

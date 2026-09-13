@@ -2,8 +2,9 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Route } from 'lucide-react';
 
-import { EmptyState, EntityTable, ErrorState } from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
+import { EmptyState, ErrorState } from '@/components/crud';
+import type { DataGridColumnDef } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Button } from '@/components/ui/button';
 import { TripStatusBadge } from '@/features/logistics/trips/components/trip-status-badge';
 import type { Trip } from '@/features/logistics/trips/types/trip';
@@ -40,26 +41,28 @@ export function ActiveExecutionSection({ tripsActive }: { tripsActive: KpiQueryS
   const { trips, isLoading, isError, refetch } = useOnTheRoadTrips();
   const rows = trips.slice(0, MAX_ROWS);
 
-  const columns: ColumnDef<Trip>[] = [
+  const columns: DataGridColumnDef<Trip>[] = [
     {
       key: 'trip_number',
-      header: t(($) => $.activeExecution.columns.trip),
+      label: t(($) => $.activeExecution.columns.trip),
+      cardRole: 'title',
       cell: (tr) => <span className="font-medium">{tr.trip_number}</span>,
     },
     {
       key: 'driver',
-      header: t(($) => $.activeExecution.columns.driver),
+      label: t(($) => $.activeExecution.columns.driver),
+      cardRole: 'subtitle',
       cell: (tr) => tr.driver?.full_name ?? t(($) => $.activeExecution.notAssigned),
     },
     {
       key: 'vehicle',
-      header: t(($) => $.activeExecution.columns.vehicle),
+      label: t(($) => $.activeExecution.columns.vehicle),
       cell: (tr) => tr.vehicle?.label ?? tr.vehicle?.plate_number ?? t(($) => $.activeExecution.notAssigned),
     },
     {
       key: 'stops',
-      header: t(($) => $.activeExecution.columns.stops),
-      align: 'right',
+      label: t(($) => $.activeExecution.columns.stops),
+      align: 'end',
       cell: (tr) =>
         typeof tr.stops_completed_count === 'number' && typeof tr.stops_count === 'number'
           ? `${tr.stops_completed_count} / ${tr.stops_count}`
@@ -67,7 +70,8 @@ export function ActiveExecutionSection({ tripsActive }: { tripsActive: KpiQueryS
     },
     {
       key: 'status',
-      header: t(($) => $.activeExecution.columns.status),
+      label: t(($) => $.activeExecution.columns.status),
+      cardRole: 'status',
       cell: (tr) => <TripStatusBadge status={tr.status} />,
     },
   ];
@@ -93,12 +97,12 @@ export function ActiveExecutionSection({ tripsActive }: { tripsActive: KpiQueryS
         </Button>
       </div>
 
-      <EntityTable<Trip>
-        columns={columns}
+      <UniversalDataGrid<Trip>
         data={rows}
-        getRowId={(tr) => tr.id}
-        isLoading={isLoading}
-        isError={isError}
+        columns={columns}
+        rowId={(tr) => tr.id}
+        loading={isLoading}
+        error={isError}
         skeletonRows={4}
         emptyState={<EmptyState icon={Route} title={t(($) => $.activeExecution.empty)} />}
         errorState={<ErrorState title={t(($) => $.activeExecution.loadError)} onRetry={() => refetch()} />}

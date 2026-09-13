@@ -28,7 +28,7 @@ export interface LoadingSession {
   products_count: number;
   total_units_to_load: number;
   total_units_loaded: number;
-  loading_pct: number;
+  loading_pct: number | null;
   created_at: string | null;
 }
 

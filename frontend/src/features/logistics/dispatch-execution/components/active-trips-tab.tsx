@@ -2,8 +2,9 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, ArrowUpRight, Truck } from 'lucide-react';
 
-import { EmptyState, EntityTable, ErrorState } from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
+import { EmptyState, ErrorState } from '@/components/crud';
+import type { DataGridColumnDef } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { TripStatusBadge } from '@/features/logistics/trips/components/trip-status-badge';
@@ -40,26 +41,28 @@ export function ActiveTripsTab() {
   const tripStats = useTripStats(activeCompanyId ?? undefined);
   const rows = trips.slice(0, MAX_ROWS);
 
-  const columns: ColumnDef<Trip>[] = [
+  const columns: DataGridColumnDef<Trip>[] = [
     {
       key: 'trip_number',
-      header: t($ => $.trips.columns.tripNumber),
+      label: t($ => $.trips.columns.tripNumber),
+      cardRole: 'title',
       cell: (tr) => <span className="font-medium">{tr.trip_number}</span>,
     },
     {
       key: 'driver',
-      header: t($ => $.trips.columns.driver),
+      label: t($ => $.trips.columns.driver),
+      cardRole: 'subtitle',
       cell: (tr) => tr.driver?.full_name ?? t($ => $.common.notAssigned),
     },
     {
       key: 'vehicle',
-      header: t($ => $.trips.columns.vehicle),
+      label: t($ => $.trips.columns.vehicle),
       cell: (tr) => tr.vehicle?.label ?? tr.vehicle?.plate_number ?? t($ => $.common.notAssigned),
     },
     {
       key: 'progress',
-      header: t($ => $.trips.columns.stops),
-      align: 'right',
+      label: t($ => $.trips.columns.stops),
+      align: 'end',
       cell: (tr) =>
         typeof tr.stops_completed_count === 'number' && typeof tr.stops_count === 'number'
           ? `${tr.stops_completed_count} / ${tr.stops_count}`
@@ -67,7 +70,8 @@ export function ActiveTripsTab() {
     },
     {
       key: 'status',
-      header: t($ => $.trips.columns.status),
+      label: t($ => $.trips.columns.status),
+      cardRole: 'status',
       cell: (tr) => (
         <div className="flex flex-wrap items-center gap-1.5">
           <TripStatusBadge status={tr.status} />
@@ -82,7 +86,7 @@ export function ActiveTripsTab() {
     },
     {
       key: 'actions',
-      header: '',
+      label: '',
       cell: (tr) => (
         <div className="flex justify-end gap-1">
           <Button
@@ -121,12 +125,12 @@ export function ActiveTripsTab() {
         <OpenWorkspaceLink to={ROUTES.logisticsTrips} label={t($ => $.trips.openWorkspace)} prominent />
       </div>
 
-      <EntityTable<Trip>
-        columns={columns}
+      <UniversalDataGrid<Trip>
         data={rows}
-        getRowId={(tr) => tr.id}
-        isLoading={isLoading}
-        isError={isError}
+        columns={columns}
+        rowId={(tr) => tr.id}
+        loading={isLoading}
+        error={isError}
         skeletonRows={5}
         emptyState={<EmptyState icon={Truck} title={t($ => $.trips.empty)} />}
         errorState={<ErrorState title={t($ => $.trips.loadError)} onRetry={() => refetch()} />}

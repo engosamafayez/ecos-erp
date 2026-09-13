@@ -6,6 +6,7 @@ namespace Modules\Hr\Workforce\Domain\Services;
 
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Modules\Hr\Infrastructure\Services\HrAuditService;
 use Modules\Hr\Workforce\Domain\Enums\EmployeeStatus;
 use Modules\Hr\Workforce\Domain\Exceptions\WorkforceException;
 use Modules\Hr\Workforce\Domain\Models\Employee;
@@ -22,6 +23,11 @@ use Modules\Hr\Workforce\Domain\Models\Position;
  */
 final class EmployeeService
 {
+    /** Free-text field kept out of the audit trail's old/new values (see HrAuditService::redact()). */
+    private const REDACTED_FIELDS = ['notes'];
+
+    public function __construct(private readonly HrAuditService $audit) {}
+
     public function create(string $companyId, array $data, ?int $actorId = null): Employee
     {
         return DB::transaction(function () use ($companyId, $data, $actorId): Employee {
@@ -32,7 +38,7 @@ final class EmployeeService
 
             $status = $this->resolveStatus($data['status'] ?? null) ?? EmployeeStatus::Active;
 
-            return Employee::create([
+            $employee = Employee::create([
                 'company_id' => $companyId,
                 'branch_id' => $data['branch_id'] ?? null,
                 'department_id' => $data['department_id'] ?? null,
@@ -61,10 +67,26 @@ final class EmployeeService
                 'notes' => $data['notes'] ?? null,
                 'created_by' => $actorId,
             ]);
+
+            $this->audit->log(
+                action: 'hr.employee.created',
+                entityType: HrAuditService::ENTITY_EMPLOYEE,
+                entityId: (string) $employee->id,
+                companyId: $companyId,
+                actorId: $actorId,
+                newValues: $this->audit->redact($employee->only([
+                    'branch_id', 'department_id', 'position_id', 'job_grade_id', 'employment_type_id', 'user_id',
+                    'employee_number', 'first_name', 'last_name', 'display_name', 'national_id', 'gender',
+                    'date_of_birth', 'work_email', 'personal_email', 'phone', 'mobile', 'address', 'city',
+                    'country', 'emergency_contact_name', 'emergency_contact_phone', 'hire_date', 'status', 'notes',
+                ]), self::REDACTED_FIELDS),
+            );
+
+            return $employee;
         });
     }
 
-    public function update(Employee $employee, array $data): Employee
+    public function update(Employee $employee, array $data, ?int $actorId = null): Employee
     {
         // Status changes go through changeStatus() so the machine is never bypassed.
         unset($data['status'], $data['company_id'], $data['employee_number']);
@@ -73,14 +95,29 @@ final class EmployeeService
             $this->assertPositionHasVacancy((string) $data['position_id']);
         }
 
-        $employee->update(array_intersect_key($data, array_flip([
+        $changed = array_intersect_key($data, array_flip([
             'branch_id', 'department_id', 'position_id', 'job_grade_id', 'employment_type_id', 'user_id',
             'first_name', 'last_name', 'display_name', 'national_id', 'gender', 'date_of_birth',
             'work_email', 'personal_email', 'phone', 'mobile', 'address', 'city', 'country',
             'emergency_contact_name', 'emergency_contact_phone', 'hire_date', 'photo_path', 'notes',
-        ])));
+        ]));
 
-        return $employee->refresh();
+        $before = $this->audit->redact($employee->only(array_keys($changed)), self::REDACTED_FIELDS);
+
+        $employee->update($changed);
+        $employee->refresh();
+
+        $this->audit->log(
+            action: 'hr.employee.updated',
+            entityType: HrAuditService::ENTITY_EMPLOYEE,
+            entityId: (string) $employee->id,
+            companyId: (string) $employee->company_id,
+            actorId: $actorId,
+            oldValues: $before,
+            newValues: $this->audit->redact($employee->only(array_keys($changed)), self::REDACTED_FIELDS),
+        );
+
+        return $employee;
     }
 
     /**
@@ -88,20 +125,32 @@ final class EmployeeService
      * ordinary update, but naming it makes the intent legible at the call site
      * and keeps the vacancy check in one place.
      */
-    public function transfer(Employee $employee, array $destination): Employee
+    public function transfer(Employee $employee, array $destination, ?int $actorId = null): Employee
     {
         if (! empty($destination['position_id']) && (string) $destination['position_id'] !== (string) $employee->position_id) {
             $this->assertPositionHasVacancy((string) $destination['position_id']);
         }
 
-        $employee->update(array_intersect_key($destination, array_flip([
-            'department_id', 'branch_id', 'position_id', 'job_grade_id',
-        ])));
+        $fields = ['department_id', 'branch_id', 'position_id', 'job_grade_id'];
+        $before = $employee->only($fields);
 
-        return $employee->refresh();
+        $employee->update(array_intersect_key($destination, array_flip($fields)));
+        $employee->refresh();
+
+        $this->audit->log(
+            action: 'hr.employee.transferred',
+            entityType: HrAuditService::ENTITY_EMPLOYEE,
+            entityId: (string) $employee->id,
+            companyId: (string) $employee->company_id,
+            actorId: $actorId,
+            oldValues: $before,
+            newValues: $employee->only($fields),
+        );
+
+        return $employee;
     }
 
-    public function changeStatus(Employee $employee, EmployeeStatus $target): Employee
+    public function changeStatus(Employee $employee, EmployeeStatus $target, ?int $actorId = null): Employee
     {
         $current = $employee->status;
 
@@ -114,12 +163,23 @@ final class EmployeeService
         }
 
         $employee->update(['status' => $target->value]);
+        $employee->refresh();
 
-        return $employee->refresh();
+        $this->audit->log(
+            action: 'hr.employee.status_changed',
+            entityType: HrAuditService::ENTITY_EMPLOYEE,
+            entityId: (string) $employee->id,
+            companyId: (string) $employee->company_id,
+            actorId: $actorId,
+            oldValues: ['status' => $current->value],
+            newValues: ['status' => $target->value],
+        );
+
+        return $employee;
     }
 
     /** End someone's employment. Terminal — a returning employee is rehired, not restored. */
-    public function terminate(Employee $employee, string $reason, ?string $date = null, bool $resigned = false): Employee
+    public function terminate(Employee $employee, string $reason, ?string $date = null, bool $resigned = false, ?int $actorId = null): Employee
     {
         if (! $employee->isEmployed()) {
             throw WorkforceException::alreadyTerminated();
@@ -131,13 +191,30 @@ final class EmployeeService
             throw WorkforceException::invalidStatusTransition($employee->status->value, $target->value);
         }
 
+        $previousStatus = $employee->status->value;
+
         $employee->update([
             'status' => $target->value,
             'termination_date' => $date ?? Carbon::now()->toDateString(),
             'termination_reason' => $reason,
         ]);
+        $employee->refresh();
 
-        return $employee->refresh();
+        $this->audit->log(
+            action: 'hr.employee.terminated',
+            entityType: HrAuditService::ENTITY_EMPLOYEE,
+            entityId: (string) $employee->id,
+            companyId: (string) $employee->company_id,
+            actorId: $actorId,
+            oldValues: ['status' => $previousStatus],
+            newValues: [
+                'status' => $employee->status->value,
+                'termination_date' => $employee->termination_date?->toDateString(),
+                'termination_reason' => $employee->termination_reason,
+            ],
+        );
+
+        return $employee;
     }
 
     /**

@@ -364,6 +364,8 @@
       "clearFilters": "Clear Filters"
     },
     "loading": "Loading purchases…",
+    "loadFailed": "Failed to load purchases.",
+    "retry": "Retry",
     "empty": {
       "noMatch": "No purchases match the current filters.",
       "none": "No purchases yet.",

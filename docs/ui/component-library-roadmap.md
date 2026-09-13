@@ -3,6 +3,17 @@
 **Source:** Frontend Component Audit — Foundation Sprint 01/02  
 **Method:** Full audit of `frontend/src/components/` and `frontend/src/features/*/components/`
 
+> **Superseded in part (2026-09-12, TASK-ECOS-V1.1-CORE-01-UI-01-CANONICAL-FOUNDATION-045):**
+> this document predates a second component generation (`components/data-grid`, `page`, `workspace`,
+> `entity`, `form` — all introduced 2026-06-29 onward) and does not mention it. The canonical
+> foundation decision — `components/crud/*` + `components/ui/*`, with `UniversalDataGrid` and
+> `WorkspaceHeader`/`WorkspaceBreadcrumbs`/`WorkspaceMetricCard` promoted in — plus the full
+> canonical/compatibility-only/deprecated status of every component in both generations, now lives in
+> `docs/ui/CANONICAL-FOUNDATION-CONTRACT.md` and the "Compatibility/Deprecation Matrix" section of
+> `TASK-ECOS-V1.1-CORE-01-UI-01-CANONICAL-FOUNDATION-045-REPORT.md`. Treat those as authoritative
+> over the per-component notes below where they conflict; this file is kept for its still-accurate
+> narrative of the original `crud/` kit.
+
 ---
 
 ## Current State

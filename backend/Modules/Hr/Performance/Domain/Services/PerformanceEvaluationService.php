@@ -6,6 +6,7 @@ namespace Modules\Hr\Performance\Domain\Services;
 
 use Illuminate\Support\Carbon;
 use Modules\Hr\Compensation\Domain\Enums\KpiMetric;
+use Modules\Hr\Infrastructure\Services\HrAuditService;
 use Modules\Hr\Performance\Domain\Enums\GoalSubject;
 use Modules\Hr\Performance\Domain\Enums\PerformanceStatus;
 use Modules\Hr\Performance\Domain\Models\Goal;
@@ -20,9 +21,12 @@ use Modules\Hr\Performance\Domain\Models\PerformanceSnapshot;
  */
 final class PerformanceEvaluationService
 {
+    private const AUDITED_FIELDS = ['target_value', 'actual_value', 'achievement_percent', 'status', 'fact_count'];
+
     public function __construct(
         private readonly KpiEngine $kpi,
         private readonly GoalService $goals,
+        private readonly HrAuditService $audit,
     ) {}
 
     /**
@@ -69,14 +73,17 @@ final class PerformanceEvaluationService
         $status = PerformanceStatus::fromAchievement($achievement);
         $metric = KpiMetric::tryFrom((string) $goal->metric_key);
 
+        $snapshotKeys = [
+            'company_id' => $goal->company_id,
+            'subject_type' => $goal->subject_type->value,
+            'subject_id' => $goal->subject_id,
+            'metric_key' => $goal->metric_key,
+            'period_month' => $goal->period_month,
+        ];
+        $before = PerformanceSnapshot::query()->where($snapshotKeys)->first()?->only(self::AUDITED_FIELDS) ?? [];
+
         $snapshot = PerformanceSnapshot::updateOrCreate(
-            [
-                'company_id' => $goal->company_id,
-                'subject_type' => $goal->subject_type->value,
-                'subject_id' => $goal->subject_id,
-                'metric_key' => $goal->metric_key,
-                'period_month' => $goal->period_month,
-            ],
+            $snapshotKeys,
             [
                 'goal_id' => $goal->id,
                 'target_value' => $goal->target_value,
@@ -100,7 +107,7 @@ final class PerformanceEvaluationService
                     'status' => $status->value,
                 ],
                 'computed_at' => Carbon::now(),
-            ]
+            ],
         );
 
         // Keep the goal's own status in step with what was measured.
@@ -111,6 +118,27 @@ final class PerformanceEvaluationService
                 default => 'active',
             },
         ]);
+
+        // Recorded only after both writes above have returned successfully — a
+        // failure between them leaves no audit row rather than a false "computed"
+        // entry, though (per this slice's Known Limitations) the two writes
+        // themselves are not wrapped in a shared transaction.
+        $this->audit->log(
+            action: 'hr.performance_snapshot.computed',
+            entityType: HrAuditService::ENTITY_PERFORMANCE_SNAPSHOT,
+            entityId: (string) $snapshot->id,
+            companyId: (string) $goal->company_id,
+            actorId: null,
+            oldValues: $before,
+            newValues: $snapshot->only(self::AUDITED_FIELDS),
+            metadata: [
+                'goal_id' => (string) $goal->id,
+                'subject_type' => $goal->subject_type->value,
+                'subject_id' => (string) $goal->subject_id,
+                'metric_key' => (string) $goal->metric_key,
+                'period_month' => (string) $goal->period_month,
+            ],
+        );
 
         return $snapshot;
     }

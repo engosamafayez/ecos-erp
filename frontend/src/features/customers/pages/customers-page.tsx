@@ -32,7 +32,7 @@ import {
   Pagination,
 } from '@/components/crud';
 import { Combobox } from '@/components/crud/combobox';
-import { QuickStatCard } from '@/components/ds/quick-stat-card';
+import { WorkspaceMetricCard } from '@/components/workspace';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -523,24 +523,27 @@ export function CustomersPage() {
 
       {/* ── Quick Stats ─────────────────────────────────────────────────── */}
       <div className="grid gap-3 sm:grid-cols-3">
-        <QuickStatCard
-          title={t($ => $.quickStats.total)}
+        <WorkspaceMetricCard
+          id="total"
+          label={t($ => $.quickStats.total)}
           value={counts.total ?? '—'}
           icon={Users}
           onClick={() => { setStatusFilter('all'); setSearch(''); }}
         />
-        <QuickStatCard
-          title={t($ => $.quickStats.active)}
+        <WorkspaceMetricCard
+          id="active"
+          label={t($ => $.quickStats.active)}
           value={counts.active ?? '—'}
           icon={Users}
-          colorClassName="text-emerald-600 bg-emerald-100"
+          colorClass="text-emerald-600 bg-emerald-100"
           onClick={() => { setStatusFilter('active'); setPage(1); }}
         />
-        <QuickStatCard
-          title={t($ => $.quickStats.inactive)}
+        <WorkspaceMetricCard
+          id="inactive"
+          label={t($ => $.quickStats.inactive)}
           value={counts.inactive ?? '—'}
           icon={Users}
-          colorClassName="text-amber-600 bg-amber-100"
+          colorClass="text-amber-600 bg-amber-100"
           onClick={() => { setStatusFilter('inactive'); setPage(1); }}
         />
       </div>

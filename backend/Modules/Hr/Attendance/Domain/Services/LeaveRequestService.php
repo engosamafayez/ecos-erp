@@ -12,6 +12,7 @@ use Modules\Hr\Attendance\Domain\Enums\LeaveStatus;
 use Modules\Hr\Attendance\Domain\Exceptions\AttendanceException;
 use Modules\Hr\Attendance\Domain\Models\AttendanceDay;
 use Modules\Hr\Attendance\Domain\Models\LeaveRequest;
+use Modules\Hr\Infrastructure\Services\HrAuditService;
 use Modules\Hr\Workforce\Domain\Models\Employee;
 
 /**
@@ -30,7 +31,13 @@ use Modules\Hr\Workforce\Domain\Models\Employee;
  */
 final class LeaveRequestService
 {
-    public function __construct(private readonly HolidayService $holidays) {}
+    /** Free-text fields kept out of the audit trail's old/new values (see HrAuditService::redact()). */
+    private const REDACTED_FIELDS = ['reason', 'decision_note'];
+
+    public function __construct(
+        private readonly HolidayService $holidays,
+        private readonly HrAuditService $audit,
+    ) {}
 
     public function submit(Employee $employee, array $data, ?int $actorId = null): LeaveRequest
     {
@@ -47,7 +54,7 @@ final class LeaveRequestService
             ? $data['payroll_flag']
             : (LeavePayrollFlag::tryFrom((string) ($data['payroll_flag'] ?? '')) ?? LeavePayrollFlag::DeductSalary);
 
-        return LeaveRequest::create([
+        $request = LeaveRequest::create([
             'company_id' => $employee->company_id,
             'employee_id' => $employee->id,
             'request_number' => $this->nextRequestNumber((string) $employee->company_id),
@@ -61,14 +68,29 @@ final class LeaveRequestService
             'status' => LeaveStatus::Pending->value,
             'requested_by' => $actorId,
         ]);
+
+        $this->audit->log(
+            action: 'hr.leave_request.submitted',
+            entityType: HrAuditService::ENTITY_LEAVE_REQUEST,
+            entityId: (string) $request->id,
+            companyId: (string) $employee->company_id,
+            actorId: $actorId,
+            newValues: $this->audit->redact($request->only([
+                'request_number', 'start_date', 'end_date', 'days_count', 'reason', 'payroll_flag', 'status',
+            ]), self::REDACTED_FIELDS),
+        );
+
+        return $request;
     }
 
     /** Approve, and write the covered days onto the attendance record. */
-    public function approve(LeaveRequest $request, ?Employee $decidedBy = null, ?string $note = null): LeaveRequest
+    public function approve(LeaveRequest $request, ?Employee $decidedBy = null, ?string $note = null, ?int $actorId = null): LeaveRequest
     {
         $this->assertTransition($request, LeaveStatus::Approved);
 
-        return DB::transaction(function () use ($request, $decidedBy, $note): LeaveRequest {
+        return DB::transaction(function () use ($request, $decidedBy, $note, $actorId): LeaveRequest {
+            $before = $request->only(['status', 'decision_note']);
+
             $request->update([
                 'status' => LeaveStatus::Approved->value,
                 'decided_by_employee_id' => $decidedBy?->id,
@@ -77,14 +99,37 @@ final class LeaveRequestService
             ]);
 
             $this->writeLeaveDays($request->refresh());
+            $request->refresh();
 
-            return $request->refresh();
+            // The individual AttendanceDay rows this approval wrote are already
+            // traceable via their leave_request_id FK — one audit entry here (with
+            // the affected count) avoids one row per calendar day for what is a
+            // single business decision.
+            $this->audit->log(
+                action: 'hr.leave_request.approved',
+                entityType: HrAuditService::ENTITY_LEAVE_REQUEST,
+                entityId: (string) $request->id,
+                companyId: (string) $request->company_id,
+                actorId: $actorId,
+                oldValues: $this->audit->redact($before, self::REDACTED_FIELDS),
+                newValues: $this->audit->redact($request->only(['status', 'decision_note']), self::REDACTED_FIELDS),
+                metadata: [
+                    'decided_by_employee_id' => $request->decided_by_employee_id,
+                    'attendance_days_affected' => $request->attendanceDays()->count(),
+                    'start_date' => $request->start_date?->toDateString(),
+                    'end_date' => $request->end_date?->toDateString(),
+                ],
+            );
+
+            return $request;
         });
     }
 
-    public function reject(LeaveRequest $request, ?Employee $decidedBy = null, ?string $note = null): LeaveRequest
+    public function reject(LeaveRequest $request, ?Employee $decidedBy = null, ?string $note = null, ?int $actorId = null): LeaveRequest
     {
         $this->assertTransition($request, LeaveStatus::Rejected);
+
+        $before = $request->only(['status', 'decision_note']);
 
         $request->update([
             'status' => LeaveStatus::Rejected->value,
@@ -92,24 +137,51 @@ final class LeaveRequestService
             'decided_at' => Carbon::now(),
             'decision_note' => $note,
         ]);
+        $request->refresh();
 
-        return $request->refresh();
+        $this->audit->log(
+            action: 'hr.leave_request.rejected',
+            entityType: HrAuditService::ENTITY_LEAVE_REQUEST,
+            entityId: (string) $request->id,
+            companyId: (string) $request->company_id,
+            actorId: $actorId,
+            oldValues: $this->audit->redact($before, self::REDACTED_FIELDS),
+            newValues: $this->audit->redact($request->only(['status', 'decision_note']), self::REDACTED_FIELDS),
+            metadata: ['decided_by_employee_id' => $request->decided_by_employee_id],
+        );
+
+        return $request;
     }
 
     /** Cancel — and take back exactly the attendance days this request wrote. */
-    public function cancel(LeaveRequest $request, ?string $note = null): LeaveRequest
+    public function cancel(LeaveRequest $request, ?string $note = null, ?int $actorId = null): LeaveRequest
     {
         $this->assertTransition($request, LeaveStatus::Cancelled);
 
-        return DB::transaction(function () use ($request, $note): LeaveRequest {
+        return DB::transaction(function () use ($request, $note, $actorId): LeaveRequest {
+            $before = $request->only(['status', 'decision_note']);
+            $affected = AttendanceDay::query()->where('leave_request_id', $request->id)->count();
+
             AttendanceDay::query()->where('leave_request_id', $request->id)->delete();
 
             $request->update([
                 'status' => LeaveStatus::Cancelled->value,
                 'decision_note' => $note ?? $request->decision_note,
             ]);
+            $request->refresh();
 
-            return $request->refresh();
+            $this->audit->log(
+                action: 'hr.leave_request.cancelled',
+                entityType: HrAuditService::ENTITY_LEAVE_REQUEST,
+                entityId: (string) $request->id,
+                companyId: (string) $request->company_id,
+                actorId: $actorId,
+                oldValues: $this->audit->redact($before, self::REDACTED_FIELDS),
+                newValues: $this->audit->redact($request->only(['status', 'decision_note']), self::REDACTED_FIELDS),
+                metadata: ['attendance_days_removed' => $affected],
+            );
+
+            return $request;
         });
     }
 
@@ -151,7 +223,7 @@ final class LeaveRequestService
                     'source' => 'manual',
                     'leave_request_id' => $request->id,
                     'notes' => 'Approved leave '.$request->request_number,
-                ]
+                ],
             );
 
             $cursor->addDay();

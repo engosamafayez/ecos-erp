@@ -13,16 +13,11 @@ import {
   XCircle,
 } from 'lucide-react';
 
-import { Combobox, ErrorState, LoadingState } from '@/components/crud';
+import { Combobox, EntityDrawer, ErrorState, LoadingState } from '@/components/crud';
 import { useSupplierOptions } from '@/features/purchase-orders/hooks/use-supplier-options';
 import { Button } from '@/components/ui/button';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getMediaUrl } from '@/lib/media';
 import { toast } from '@/components/ds/use-toast';
 
@@ -452,11 +447,11 @@ function SupplierSelectionLineRow({ line, materialId }: { line: PurchaseMaterial
         </div>
         <div>
           <label className="text-xs text-muted-foreground">{t($ => $.purchaseDrawer.supplierSelection.agreedPrice)}</label>
-          <input
+          <Input
             type="number"
             min="0"
             step="0.01"
-            className="no-spinner w-full mt-0.5 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="no-spinner mt-0.5"
             placeholder="0.00"
             value={agreedPrice}
             onChange={(e) => setAgreedPrice(e.target.value)}
@@ -464,11 +459,11 @@ function SupplierSelectionLineRow({ line, materialId }: { line: PurchaseMaterial
         </div>
         <div>
           <label className="text-xs text-muted-foreground">{t($ => $.purchaseDrawer.supplierSelection.agreedQty)}</label>
-          <input
+          <Input
             type="number"
             min="0"
             step="0.0001"
-            className="no-spinner w-full mt-0.5 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="no-spinner mt-0.5"
             placeholder={fmtNum(line.requested_qty, 4).replace(/\.?0+$/, '')}
             value={agreedQty}
             onChange={(e) => setAgreedQty(e.target.value)}
@@ -476,10 +471,10 @@ function SupplierSelectionLineRow({ line, materialId }: { line: PurchaseMaterial
         </div>
         <div>
           <label className="text-xs text-muted-foreground">{t($ => $.purchaseDrawer.supplierSelection.leadTimeDays)}</label>
-          <input
+          <Input
             type="number"
             min="0"
-            className="no-spinner w-full mt-0.5 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            className="no-spinner mt-0.5"
             placeholder="—"
             value={leadTime}
             onChange={(e) => setLeadTime(e.target.value)}
@@ -721,146 +716,126 @@ export function PurchaseMaterialDrawer({ id, open, onOpenChange }: Props) {
     cancelMutation.isPending;
 
   return (
-    <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent className="flex flex-col gap-0 p-0">
-        {/* Header */}
-        <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
-          <div className="flex items-center gap-3">
-            {material ? (
-              <>
-                <div className="flex-1 min-w-0">
-                  <SheetTitle className="text-base font-semibold">{material.request_number}</SheetTitle>
-                  <SheetDescription className="text-xs mt-0.5">
-                    {[material.warehouse?.name, material.company?.name].filter(Boolean).join(' · ')}
-                  </SheetDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  {material.is_unowned && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800">
-                      <UserCheck className="size-3" />
-                      {t($ => $.purchaseDrawer.overview.unowned)}
-                    </span>
-                  )}
-                  <PurchaseMaterialPriorityBadge priority={material.priority} />
-                  <PurchaseMaterialStatusBadge status={material.status} displayStatus={material.display_status} isOnHold={material.is_on_hold} />
-                </div>
-              </>
-            ) : (
-              <SheetTitle className="text-base font-semibold">{t($ => $.purchaseDrawer.title)}</SheetTitle>
+    <EntityDrawer
+      open={open}
+      onOpenChange={handleClose}
+      title={material?.request_number ?? t($ => $.purchaseDrawer.title)}
+      description={material ? [material.warehouse?.name, material.company?.name].filter(Boolean).join(' · ') : undefined}
+    >
+      {isLoading && <LoadingState label={t($ => $.purchaseDrawer.loading)} />}
+      {isError && <ErrorState description={t($ => $.purchaseDrawer.loadFailed)} />}
+
+      {material && (
+        <div className="flex h-full flex-col gap-3">
+          {/* Status/priority/unowned row */}
+          <div className="flex flex-wrap items-center gap-2">
+            {material.is_unowned && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800">
+                <UserCheck className="size-3" />
+                {t($ => $.purchaseDrawer.overview.unowned)}
+              </span>
             )}
+            <PurchaseMaterialPriorityBadge priority={material.priority} />
+            <PurchaseMaterialStatusBadge status={material.status} displayStatus={material.display_status} isOnHold={material.is_on_hold} />
           </div>
-        </SheetHeader>
 
-        {isLoading && <LoadingState label={t($ => $.purchaseDrawer.loading)} />}
-        {isError && <ErrorState description={t($ => $.purchaseDrawer.loadFailed)} />}
-
-        {material && (
-          <>
-            {/* Action bar — driven by the backend's own available_actions (TASK-...-011 §6): the
-                exact same list PurchaseMaterialStatus::availableActions() computes, so this bar
-                can never offer a button the server will then refuse. */}
-            {(() => {
-              const actions: PurchaseMaterialAction[] = material.available_actions;
-              const has = (a: PurchaseMaterialAction) => actions.includes(a);
-              if (actions.length === 0) return null;
-              return (
-                <div className="flex flex-wrap gap-2 px-6 py-3 border-b bg-muted/30 shrink-0">
-                  {has('submit') && (
-                    <Button size="sm" disabled={isBusy} onClick={() => void handleAction('submit')}>
-                      {submitMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
-                      <Send className="size-3.5 mr-1.5" />
-                      {t($ => $.purchaseDrawer.actions.submitForReview)}
-                    </Button>
-                  )}
-                  {has('approve') && (
-                    <Button size="sm" disabled={isBusy} onClick={() => void handleAction('approve')}>
-                      {approveMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
-                      <CheckCircle className="size-3.5 mr-1.5" />
-                      {t($ => $.purchaseDrawer.actions.approve)}
-                    </Button>
-                  )}
-                  {has('reject') && (
-                    <Button size="sm" variant="outline" disabled={isBusy} onClick={() => setShowRejectInput((v) => !v)}>
-                      <XCircle className="size-3.5 mr-1.5" />
-                      {t($ => $.purchaseDrawer.actions.reject)}
-                    </Button>
-                  )}
-                  {has('hold') && (
-                    <Button size="sm" variant="outline" disabled={isBusy} onClick={() => void handleAction('hold')}>
-                      {holdMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
-                      <PauseCircle className="size-3.5 mr-1.5" />
-                      {t($ => $.purchaseDrawer.actions.hold)}
-                    </Button>
-                  )}
-                  {has('resume') && (
-                    <Button size="sm" variant="outline" disabled={isBusy} onClick={() => void handleAction('resume')}>
-                      {resumeMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
-                      <PlayCircle className="size-3.5 mr-1.5" />
-                      {t($ => $.purchaseDrawer.actions.resume)}
-                    </Button>
-                  )}
-                  {has('cancel') && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-destructive hover:text-destructive"
-                      disabled={isBusy}
-                      onClick={() => void handleAction('cancel')}
-                    >
-                      {cancelMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
-                      {t($ => $.purchaseDrawer.actions.cancel)}
-                    </Button>
-                  )}
-                </div>
-              );
-            })()}
-
-            {/* Reject reason */}
-            {showRejectInput && (
-              <div className="flex gap-2 px-6 py-3 border-b bg-red-50/50 dark:bg-red-950/20 shrink-0">
-                <input
-                  className="flex-1 rounded-md border border-input bg-transparent px-3 py-1.5 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  placeholder={t($ => $.purchaseDrawer.actions.rejectReasonPlaceholder)}
-                  value={rejectReason}
-                  onChange={(e) => setRejectReason(e.target.value)}
-                />
-                <Button size="sm" variant="destructive" disabled={isBusy} onClick={() => void handleAction('reject')}>
-                  {rejectMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
-                  {t($ => $.purchaseDrawer.actions.confirmRejection)}
-                </Button>
+          {/* Action bar — driven by the backend's own available_actions (TASK-...-011 §6): the
+              exact same list PurchaseMaterialStatus::availableActions() computes, so this bar
+              can never offer a button the server will then refuse. */}
+          {(() => {
+            const actions: PurchaseMaterialAction[] = material.available_actions;
+            const has = (a: PurchaseMaterialAction) => actions.includes(a);
+            if (actions.length === 0) return null;
+            return (
+              <div className="flex flex-wrap gap-2 rounded-lg border bg-muted/30 px-3 py-2.5">
+                {has('submit') && (
+                  <Button size="sm" disabled={isBusy} onClick={() => void handleAction('submit')}>
+                    {submitMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
+                    <Send className="size-3.5 mr-1.5" />
+                    {t($ => $.purchaseDrawer.actions.submitForReview)}
+                  </Button>
+                )}
+                {has('approve') && (
+                  <Button size="sm" disabled={isBusy} onClick={() => void handleAction('approve')}>
+                    {approveMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
+                    <CheckCircle className="size-3.5 mr-1.5" />
+                    {t($ => $.purchaseDrawer.actions.approve)}
+                  </Button>
+                )}
+                {has('reject') && (
+                  <Button size="sm" variant="outline" disabled={isBusy} onClick={() => setShowRejectInput((v) => !v)}>
+                    <XCircle className="size-3.5 mr-1.5" />
+                    {t($ => $.purchaseDrawer.actions.reject)}
+                  </Button>
+                )}
+                {has('hold') && (
+                  <Button size="sm" variant="outline" disabled={isBusy} onClick={() => void handleAction('hold')}>
+                    {holdMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
+                    <PauseCircle className="size-3.5 mr-1.5" />
+                    {t($ => $.purchaseDrawer.actions.hold)}
+                  </Button>
+                )}
+                {has('resume') && (
+                  <Button size="sm" variant="outline" disabled={isBusy} onClick={() => void handleAction('resume')}>
+                    {resumeMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
+                    <PlayCircle className="size-3.5 mr-1.5" />
+                    {t($ => $.purchaseDrawer.actions.resume)}
+                  </Button>
+                )}
+                {has('cancel') && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive"
+                    disabled={isBusy}
+                    onClick={() => void handleAction('cancel')}
+                  >
+                    {cancelMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
+                    {t($ => $.purchaseDrawer.actions.cancel)}
+                  </Button>
+                )}
               </div>
-            )}
+            );
+          })()}
 
-            {/* Tab nav */}
-            <div className="flex border-b overflow-x-auto shrink-0 px-2">
+          {/* Reject reason */}
+          {showRejectInput && (
+            <div className="flex gap-2 rounded-lg border bg-red-50/50 dark:bg-red-950/20 p-3">
+              <Input
+                className="flex-1"
+                placeholder={t($ => $.purchaseDrawer.actions.rejectReasonPlaceholder)}
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+              />
+              <Button size="sm" variant="destructive" disabled={isBusy} onClick={() => void handleAction('reject')}>
+                {rejectMutation.isPending && <Loader2 className="size-3.5 animate-spin mr-1.5" />}
+                {t($ => $.purchaseDrawer.actions.confirmRejection)}
+              </Button>
+            </div>
+          )}
+
+          {/* Tabs */}
+          <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)} className="flex min-h-0 flex-1 flex-col gap-3">
+            <TabsList className="h-auto w-full shrink-0 flex-nowrap justify-start overflow-x-auto">
               {TABS.map(({ id: tid, label }) => (
-                <button
-                  key={tid}
-                  onClick={() => setTab(tid)}
-                  className={`px-3 py-2.5 text-xs whitespace-nowrap transition-colors border-b-2 -mb-px ${
-                    tab === tid
-                      ? 'border-primary text-primary font-medium'
-                      : 'border-transparent text-muted-foreground hover:text-foreground'
-                  }`}
-                >
+                <TabsTrigger key={tid} value={tid}>
                   {tid === 'items' ? tAny('purchaseDrawer.itemsTabLabel', { count: material.items_count }) : label}
-                </button>
+                </TabsTrigger>
               ))}
-            </div>
+            </TabsList>
 
-            {/* Tab content */}
-            <div className="flex-1 overflow-y-auto px-6 py-4">
-              {tab === 'overview' && <OverviewTab material={material} />}
-              {tab === 'items' && <RequestedItemsTab material={material} />}
-              {tab === 'demand' && <DemandAnalysisTab material={material} />}
-              {tab === 'supplier' && <SupplierSelectionTab material={material} />}
-              {tab === 'receiving' && <PurchaseMaterialReceivingTab material={material} />}
-              {tab === 'financial' && <FinancialSummaryTab material={material} />}
-              {tab === 'timeline' && <TimelineTab material={material} />}
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <TabsContent value="overview" className="mt-0"><OverviewTab material={material} /></TabsContent>
+              <TabsContent value="items" className="mt-0"><RequestedItemsTab material={material} /></TabsContent>
+              <TabsContent value="demand" className="mt-0"><DemandAnalysisTab material={material} /></TabsContent>
+              <TabsContent value="supplier" className="mt-0"><SupplierSelectionTab material={material} /></TabsContent>
+              <TabsContent value="receiving" className="mt-0"><PurchaseMaterialReceivingTab material={material} /></TabsContent>
+              <TabsContent value="financial" className="mt-0"><FinancialSummaryTab material={material} /></TabsContent>
+              <TabsContent value="timeline" className="mt-0"><TimelineTab material={material} /></TabsContent>
             </div>
-          </>
-        )}
-      </SheetContent>
-    </Sheet>
+          </Tabs>
+        </div>
+      )}
+    </EntityDrawer>
   );
 }

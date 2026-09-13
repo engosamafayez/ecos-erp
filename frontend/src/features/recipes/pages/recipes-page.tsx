@@ -29,7 +29,7 @@ import {
 import { ConfirmDialog, PageHeader, Pagination } from '@/components/crud';
 import { ActionMenu } from '@/components/crud/action-menu';
 import { EmptyState } from '@/components/crud/empty-state';
-import { QuickStatCard } from '@/components/ds/quick-stat-card';
+import { WorkspaceMetricCard } from '@/components/workspace';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -136,10 +136,10 @@ function RecipeStats({ query }: { query: SharedFilter }) {
 
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <QuickStatCard icon={BookOpen}   title={t($ => $.page.stats.total)}   value={total}                                      colorClassName="text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30" />
-      <QuickStatCard icon={BookMarked} title={t($ => $.page.stats.active)}  value={active}                                     colorClassName="text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30" />
-      <QuickStatCard icon={FileText}   title={t($ => $.page.stats.draft)}   value={draft}                                      colorClassName="text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-900/30" />
-      <QuickStatCard icon={DollarSign} title={t($ => $.page.stats.avgCost)} value={fmtAbbrev(avgCost, currency, locale)}       colorClassName="text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-900/30" />
+      <WorkspaceMetricCard id="total"   icon={BookOpen}   label={t($ => $.page.stats.total)}   value={total}                                colorClass="text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30" />
+      <WorkspaceMetricCard id="active"  icon={BookMarked} label={t($ => $.page.stats.active)}  value={active}                               colorClass="text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30" />
+      <WorkspaceMetricCard id="draft"   icon={FileText}   label={t($ => $.page.stats.draft)}   value={draft}                                colorClass="text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-900/30" />
+      <WorkspaceMetricCard id="avgCost" icon={DollarSign} label={t($ => $.page.stats.avgCost)} value={fmtAbbrev(avgCost, currency, locale)} colorClass="text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-900/30" />
     </div>
   );
 }

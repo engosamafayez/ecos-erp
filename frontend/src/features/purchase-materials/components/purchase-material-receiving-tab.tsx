@@ -5,6 +5,7 @@ import { Loader2, PackageCheck, Truck } from 'lucide-react';
 
 import { ConfirmDialog } from '@/components/crud';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { toast } from '@/components/ds/use-toast';
 import { getMediaUrl } from '@/lib/media';
 import { usePermission } from '@/features/authorization/use-authorization';
@@ -121,17 +122,13 @@ function ReceivingLineRow({ line, supplierLabel, value, onChange, disabled }: Li
           <label className="text-[10px] text-muted-foreground uppercase tracking-wide">
             {t($ => $.purchaseDrawer.receiving.qtyToReceive)}
           </label>
-          <input
+          <Input
             type="number"
             min="0"
             max={remaining}
             step="0.0001"
             disabled={disabled || remaining <= 0}
-            className={`no-spinner w-full mt-0.5 rounded-md border bg-transparent px-2 py-1.5 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 ${
-              invalid
-                ? 'border-destructive focus-visible:ring-destructive'
-                : 'border-input focus-visible:ring-ring'
-            }`}
+            className={`no-spinner mt-0.5 ${invalid ? 'border-destructive focus-visible:ring-destructive' : ''}`}
             placeholder="0"
             value={value}
             onChange={(e) => onChange(e.target.value)}

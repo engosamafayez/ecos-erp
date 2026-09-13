@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { RefreshCw, CheckCircle2, XCircle, Activity, Clock, ListChecks } from 'lucide-react';
 import { WorkspaceHeader } from '@/components/workspace/header/workspace-header';
-import { QuickStatCard } from '@/components/ds/quick-stat-card';
+import { WorkspaceMetricCard } from '@/components/workspace';
 import { useEngineeringDashboard } from '../hooks/use-engineering';
 import { QualityScoreGauge } from '../components/QualityScoreGauge';
 import { ScoreTrendChart } from '../components/ScoreTrendChart';
@@ -55,33 +55,37 @@ export function EngineeringDashboardPage() {
         <>
           {/* KPI cards */}
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <QuickStatCard
+            <WorkspaceMetricCard
+              id="qualityScore"
               icon={Activity}
-              title="Quality Score"
+              label="Quality Score"
               value={`${latest?.overall_score ?? 0}/100`}
-              colorClassName={
+              colorClass={
                 (latest?.overall_score ?? 0) >= 90 ? 'text-green-600' :
                 (latest?.overall_score ?? 0) >= 80 ? 'text-yellow-600' :
                 'text-red-600'
               }
             />
-            <QuickStatCard
+            <WorkspaceMetricCard
+              id="releaseStatus"
               icon={latest?.release_ready ? CheckCircle2 : XCircle}
-              title="Release Status"
+              label="Release Status"
               value={latest?.release_ready ? 'Ready' : 'Blocked'}
-              colorClassName={latest?.release_ready ? 'text-green-600' : 'text-red-600'}
+              colorClass={latest?.release_ready ? 'text-green-600' : 'text-red-600'}
             />
-            <QuickStatCard
+            <WorkspaceMetricCard
+              id="totalRuns"
               icon={ListChecks}
-              title="Total Runs"
+              label="Total Runs"
               value={data?.total_runs ?? 0}
-              colorClassName="text-blue-600"
+              colorClass="text-blue-600"
             />
-            <QuickStatCard
+            <WorkspaceMetricCard
+              id="lastRun"
               icon={Clock}
-              title="Last Run"
+              label="Last Run"
               value={latest ? formatRelativeTime(latest.certified_at) : '—'}
-              colorClassName="text-muted-foreground"
+              colorClass="text-muted-foreground"
             />
           </div>
 

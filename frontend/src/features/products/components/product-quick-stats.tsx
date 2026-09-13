@@ -1,7 +1,7 @@
 import { CheckCircle2, Clock, Package, ShieldAlert, WifiOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { QuickStatCard } from '@/components/ds/quick-stat-card';
+import { WorkspaceMetricCard } from '@/components/workspace';
 import type { ProductStatusFilter, ProductType } from '@/features/products/types/product';
 
 export type StatFilter =
@@ -58,16 +58,18 @@ export function ProductQuickStats({ stats, activeFilter, onFilterChange }: Produ
     /*
      * Single row on desktop (PART 1). 2 → 3 → 5 columns as width allows, so the
      * five cards share the width evenly at `lg` and never wrap to a second row
-     * or force horizontal scrolling. `compact` is the opt-in DS variant, so the
-     * six other QuickStatCard consumers are untouched.
+     * or force horizontal scrolling. `compact` is the opt-in WorkspaceMetricCard
+     * variant (ported from the retired QuickStatCard, UI-08), so other
+     * WorkspaceMetricCard consumers are untouched.
      */
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
-        <QuickStatCard
+        <WorkspaceMetricCard
+          id="total"
           compact
           icon={Package}
-          title={t($ => $.quickStats.totalProducts)}
+          label={t($ => $.quickStats.totalProducts)}
           value={stats.total}
-          colorClassName="text-primary bg-primary/10"
+          colorClass="text-primary bg-primary/10"
           active={activeFilter === null}
           onClick={() => onFilterChange(null)}
         />
@@ -77,40 +79,44 @@ export function ProductQuickStats({ stats, activeFilter, onFilterChange }: Produ
             it below), and this is CSS visibility only — the underlying `not_synced`
             data, the desktop indicator, and the filter itself are all unchanged. */}
         <div className="hidden md:block">
-          <QuickStatCard
+          <WorkspaceMetricCard
+            id="notSynced"
             compact
             icon={WifiOff}
-            title={t($ => $.quickStats.notSynced)}
+            label={t($ => $.quickStats.notSynced)}
             value={stats.notSynced}
-            colorClassName="text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30"
+            colorClass="text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30"
             active={isActive({ type: 'not_synced', value: true })}
             onClick={() => toggle({ type: 'not_synced', value: true })}
           />
         </div>
-        <QuickStatCard
+        <WorkspaceMetricCard
+          id="pendingReview"
           compact
           icon={Clock}
-          title={t($ => $.quickStats.pendingReview)}
+          label={t($ => $.quickStats.pendingReview)}
           value={stats.needsPricingReview}
-          colorClassName="text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-900/30"
+          colorClass="text-violet-600 bg-violet-100 dark:text-violet-400 dark:bg-violet-900/30"
           active={isActive({ type: 'needs_pricing_review', value: true })}
           onClick={() => toggle({ type: 'needs_pricing_review', value: true })}
         />
-        <QuickStatCard
+        <WorkspaceMetricCard
+          id="mfgInStock"
           compact
           icon={CheckCircle2}
-          title={t($ => $.quickStats.mfgInStock)}
+          label={t($ => $.quickStats.mfgInStock)}
           value={stats.mfgInStock}
-          colorClassName="text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30"
+          colorClass="text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/30"
           active={isActive({ type: 'mfg_instock', value: true })}
           onClick={() => toggle({ type: 'mfg_instock', value: true })}
         />
-        <QuickStatCard
+        <WorkspaceMetricCard
+          id="mfgOutOfStock"
           compact
           icon={ShieldAlert}
-          title={t($ => $.quickStats.mfgOutOfStock)}
+          label={t($ => $.quickStats.mfgOutOfStock)}
           value={stats.mfgOutOfStock}
-          colorClassName="text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30"
+          colorClass="text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30"
           active={isActive({ type: 'mfg_outofstock', value: true })}
           onClick={() => toggle({ type: 'mfg_outofstock', value: true })}
         />

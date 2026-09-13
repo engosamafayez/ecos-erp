@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
-import { PageDrawer } from '@/components/page/drawer/page-drawer';
+import { EntityDrawer } from '@/components/crud';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { UniversalDataGrid } from '@/components/data-grid/universal-data-grid';
@@ -114,12 +114,11 @@ export function GroupDetailDrawer({
   const groupOrders = orders.filter((o) => o.virtual_slot_id === group.slot_id);
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={onOpenChange}
       title={title}
       description={subtitle}
-      size="xl"
     >
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="flex-wrap">
@@ -267,6 +266,6 @@ export function GroupDetailDrawer({
           ) : null}
         </TabsContent>
       </Tabs>
-    </PageDrawer>
+    </EntityDrawer>
   );
 }

@@ -3,10 +3,13 @@ import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, Truck } from 'lucide-react';
 
-import { PageHeader } from '@/components/crud';
+import { WorkspaceHeader } from '@/components/workspace';
+import type { DataGridColumnDef, GridPaginationConfig } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/components/ds/use-toast';
 import { useWarehouseOptions } from '@/features/products/hooks/use-warehouse-options';
 import { CompanySelect } from '@/features/branches/components/company-select';
@@ -50,8 +53,6 @@ function SourceBadge({ source }: { source: PurchaseSourceType | null }) {
     </span>
   );
 }
-
-// ── Source selector dialog ────────────────────────────────────────────────────
 
 // TASK-PROC-PURCHASING-WORKFLOW-REALIGNMENT-001 §2/§3 — the "Select Purchase Source" dialog is
 // GONE. It offered three entry points (From Material Request / Direct Purchase / Reorder) that all
@@ -155,7 +156,7 @@ export function PurchasesPage() {
     ],
   );
 
-  const { data, isLoading, isFetching } = usePurchaseMaterialsQuery(params);
+  const { data, isLoading, isError, isFetching, refetch } = usePurchaseMaterialsQuery(params);
   const { data: stats } = usePurchaseMaterialStats({
     company_id: companyFilter || undefined,
     warehouse_id: warehouseFilter || undefined,
@@ -187,8 +188,7 @@ export function PurchasesPage() {
     setDrawerOpen(true);
   }
 
-  async function handleDelete(purchase: PurchaseMaterial, e: React.MouseEvent) {
-    e.stopPropagation();
+  async function handleDelete(purchase: PurchaseMaterial) {
     if (!window.confirm(tAny('purchasesPage.delete.confirm', { number: purchase.request_number }))) return;
     try {
       await deleteMutation.mutateAsync(purchase.id);
@@ -232,22 +232,151 @@ export function PurchasesPage() {
     },
   ];
 
+  const hasFilters = Boolean(
+    search || statusFilter !== 'all' || priorityFilter !== 'all' || warehouseFilter || companyFilter ||
+    unownedFilter || overdueFilter || requiredSoonFilter || dateFrom || dateTo,
+  );
+
+  // ── Canonical UniversalDataGrid columns — same fields/order the previous
+  // hand-rolled <table> rendered; sort/selection/column-visibility were never a
+  // capability of this page, so none is introduced here (presentation migration
+  // only, matching the same principle already applied to Orders/Products/
+  // Customers in UI-04 and to the list pages in UI-03).
+  const columns: DataGridColumnDef<PurchaseMaterial>[] = [
+    {
+      key: 'requestNo', label: t($ => $.purchasesPage.columns.requestNo), alwaysVisible: true, cardRole: 'title',
+      cell: (p) => <span className="font-mono font-medium text-xs">{p.request_number}</span>,
+    },
+    {
+      key: 'source', label: t($ => $.purchasesPage.columns.source), cardRole: 'subtitle',
+      cell: (p) => <SourceBadge source={p.source_type} />,
+    },
+    {
+      key: 'company', label: t($ => $.purchasesPage.columns.company),
+      cell: (p) => <span className="text-muted-foreground text-xs">{p.company?.name ?? '—'}</span>,
+    },
+    {
+      key: 'warehouse', label: t($ => $.purchasesPage.columns.warehouse),
+      cell: (p) => <span className="text-muted-foreground">{p.warehouse?.name ?? '—'}</span>,
+    },
+    {
+      key: 'orderedItems', label: t($ => $.purchasesPage.columns.orderedItems), align: 'center',
+      cell: (p) => (
+        <PurchaseMaterialOrderingPopover
+          variant="ordered"
+          count={p.ordered_items_count ?? 0}
+          items={p.ordered_items ?? []}
+          emptyLabel={t($ => $.purchasesPage.orderingPopover.emptyOrdered)}
+        />
+      ),
+    },
+    {
+      key: 'notYetOrdered', label: t($ => $.purchasesPage.columns.notYetOrdered), align: 'center',
+      cell: (p) => (
+        <PurchaseMaterialOrderingPopover
+          variant="not_yet_ordered"
+          count={p.not_yet_ordered_items_count ?? 0}
+          items={p.not_yet_ordered_items ?? []}
+          emptyLabel={t($ => $.purchasesPage.orderingPopover.emptyNotYetOrdered)}
+        />
+      ),
+    },
+    {
+      key: 'estValue', label: t($ => $.purchasesPage.columns.estValue), align: 'end',
+      cell: (p) => (
+        // §3 — an honest sum of lines with a real latest purchase price; "~"
+        // flags a partial sum, and a request with NO priced lines at all shows
+        // a truthful "unavailable" rather than an indistinguishable-from-real 0.
+        p.estimated_value > 0 ? (
+          <span className="font-mono text-xs tabular-nums">{p.estimated_value_has_gaps ? '~' : ''}{fmtCurrency(p.estimated_value)}</span>
+        ) : p.estimated_value_has_gaps ? (
+          <span className="text-muted-foreground italic text-xs">{t($ => $.purchasesPage.estValueUnavailable)}</span>
+        ) : <span className="text-muted-foreground text-xs">—</span>
+      ),
+    },
+    {
+      key: 'progress', label: t($ => $.purchasesPage.columns.progress),
+      cell: (p) => (
+        p.execution_percent !== undefined ? (
+          <div className="flex items-center gap-1.5 w-32">
+            <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+              <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.min(100, Math.max(0, p.execution_percent))}%` }} />
+            </div>
+            <span className="text-[10px] font-mono text-muted-foreground shrink-0">{Math.round(p.execution_percent)}%</span>
+          </div>
+        ) : <span className="text-muted-foreground text-xs">—</span>
+      ),
+    },
+    {
+      key: 'priority', label: t($ => $.purchasesPage.columns.priority),
+      cell: (p) => <PurchaseMaterialPriorityBadge priority={p.priority} />,
+    },
+    {
+      key: 'requiredBy', label: t($ => $.purchasesPage.columns.requiredBy),
+      cell: (p) => <span className="text-muted-foreground text-xs">{fmtDate(p.required_date)}</span>,
+    },
+    {
+      key: 'status', label: t($ => $.purchasesPage.columns.status), cardRole: 'status', alwaysVisible: true,
+      cell: (p) => <PurchaseMaterialActionMenu material={p} />,
+    },
+    {
+      key: 'lastUpdated', label: t($ => $.purchasesPage.columns.lastUpdated),
+      cell: (p) => <span className="text-muted-foreground text-xs">{fmtDate(p.updated_at)}</span>,
+    },
+    {
+      key: 'rowActions', label: '', align: 'end',
+      cell: (p) => (
+        p.status === 'draft' ? (
+          <button
+            type="button"
+            onClick={() => void handleDelete(p)}
+            className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+          >
+            {t($ => $.purchasesPage.delete.button)}
+          </button>
+        ) : null
+      ),
+    },
+  ];
+
+  const pagination: GridPaginationConfig | undefined = meta ? {
+    meta: {
+      page: meta.current_page,
+      perPage: meta.per_page,
+      total: meta.total,
+      lastPage: meta.last_page,
+    },
+    onPageChange: setPage,
+  } : undefined;
+
+  const emptyState = (
+    <div className="flex flex-col items-center gap-2 py-4 text-center">
+      <Truck className="h-8 w-8 text-muted-foreground/30" />
+      <p className="text-sm text-muted-foreground">
+        {hasFilters ? t($ => $.purchasesPage.empty.noMatch) : t($ => $.purchasesPage.empty.none)}
+      </p>
+      {!hasFilters && (
+        <p className="text-xs text-muted-foreground">{t($ => $.purchasesPage.empty.createHint)}</p>
+      )}
+    </div>
+  );
+
   return (
     <div className="flex flex-col h-full">
-      <PageHeader
+      <WorkspaceHeader
         title={t($ => $.purchasesPage.title)}
-        subtitle={t($ => $.purchasesPage.subtitle)}
-        actions={
-          <Button onClick={() => setWizardOpen(true)} className="gap-1.5">
-            <Plus className="h-4 w-4" />
-            {t($ => $.purchasesPage.newPurchase)}
-          </Button>
-        }
+        description={t($ => $.purchasesPage.subtitle)}
+        primaryAction={{
+          key: 'new-purchase',
+          label: t($ => $.purchasesPage.newPurchase),
+          icon: Plus,
+          onClick: () => setWizardOpen(true),
+        }}
       />
 
       <div className="flex-1 overflow-auto px-6 pb-6 flex flex-col gap-4">
         {/* ── KPI Cards ─────────────────────────────────────────────── */}
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 pt-4">
           <div>
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
               {t($ => $.purchasesPage.operations)}
@@ -322,28 +451,40 @@ export function PurchasesPage() {
               />
             </div>
 
-            <select
-              value={warehouseFilter}
-              onChange={(e) => { setWarehouseFilter(e.target.value); setPage(1); }}
-              className="h-8 w-44 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              <option value="">{t($ => $.purchasesPage.filters.allWarehouses)}</option>
-              {(warehouseOptions ?? []).map((w) => (
-                <option key={w.value} value={w.value}>{w.label}</option>
-              ))}
-            </select>
+            <div className="w-44">
+              <Select
+                value={warehouseFilter || 'all'}
+                onValueChange={(v) => { setWarehouseFilter(v === 'all' ? '' : v); setPage(1); }}
+              >
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue placeholder={t($ => $.purchasesPage.filters.allWarehouses)} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t($ => $.purchasesPage.filters.allWarehouses)}</SelectItem>
+                  {(warehouseOptions ?? []).map((w) => (
+                    <SelectItem key={w.value} value={w.value}>{w.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-            <select
-              value={priorityFilter}
-              onChange={(e) => { setPriorityFilter(e.target.value as PurchaseMaterialPriority | 'all'); setPage(1); }}
-              className="h-8 w-32 rounded-md border border-input bg-background px-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-            >
-              <option value="all">{t($ => $.purchasesPage.filters.allPriorities)}</option>
-              <option value="urgent">{t($ => $.purchasesPage.priority.urgent)}</option>
-              <option value="high">{t($ => $.purchasesPage.priority.high)}</option>
-              <option value="normal">{t($ => $.purchasesPage.priority.normal)}</option>
-              <option value="low">{t($ => $.purchasesPage.priority.low)}</option>
-            </select>
+            <div className="w-32">
+              <Select
+                value={priorityFilter}
+                onValueChange={(v) => { setPriorityFilter(v as PurchaseMaterialPriority | 'all'); setPage(1); }}
+              >
+                <SelectTrigger className="h-8 text-sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t($ => $.purchasesPage.filters.allPriorities)}</SelectItem>
+                  <SelectItem value="urgent">{t($ => $.purchasesPage.priority.urgent)}</SelectItem>
+                  <SelectItem value="high">{t($ => $.purchasesPage.priority.high)}</SelectItem>
+                  <SelectItem value="normal">{t($ => $.purchasesPage.priority.normal)}</SelectItem>
+                  <SelectItem value="low">{t($ => $.purchasesPage.priority.low)}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <span>{t($ => $.purchasesPage.filters.requiredBy)}</span>
@@ -352,7 +493,7 @@ export function PurchasesPage() {
               <Input type="date" className="h-8 w-36 text-sm" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} />
             </div>
 
-            {(search || statusFilter !== 'all' || priorityFilter !== 'all' || warehouseFilter || companyFilter || unownedFilter || overdueFilter || requiredSoonFilter || dateFrom || dateTo) && (
+            {hasFilters && (
               <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={resetFilters}>
                 {t($ => $.purchasesPage.filters.clearFilters)}
               </Button>
@@ -361,158 +502,31 @@ export function PurchasesPage() {
         </div>
 
         {/* ── Data Grid ─────────────────────────────────────────────── */}
-        <div className="rounded-lg border overflow-hidden">
-          <div className={`transition-opacity ${isFetching ? 'opacity-60' : 'opacity-100'}`}>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm whitespace-nowrap">
-                <thead className="bg-muted/40 border-b">
-                  <tr>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.requestNo)}</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.source)}</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.company)}</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.warehouse)}</th>
-                    <th className="px-3 py-3 text-center font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.orderedItems)}</th>
-                    <th className="px-3 py-3 text-center font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.notYetOrdered)}</th>
-                    <th className="px-3 py-3 text-end font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.estValue)}</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.progress)}</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.priority)}</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.requiredBy)}</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.status)}</th>
-                    <th className="px-3 py-3 text-start font-medium text-xs text-muted-foreground">{t($ => $.purchasesPage.columns.lastUpdated)}</th>
-                    <th className="px-3 py-3 w-10" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {isLoading ? (
-                    <tr>
-                      <td colSpan={13} className="px-4 py-12 text-center text-sm text-muted-foreground">
-                        {t($ => $.purchasesPage.loading)}
-                      </td>
-                    </tr>
-                  ) : items.length === 0 ? (
-                    <tr>
-                      <td colSpan={13} className="px-4 py-12 text-center">
-                        <Truck className="mx-auto mb-3 h-8 w-8 text-muted-foreground/30" />
-                        <p className="text-sm text-muted-foreground">
-                          {search || statusFilter !== 'all'
-                            ? t($ => $.purchasesPage.empty.noMatch)
-                            : t($ => $.purchasesPage.empty.none)}
-                        </p>
-                        {!search && statusFilter === 'all' && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {t($ => $.purchasesPage.empty.createHint)}
-                          </p>
-                        )}
-                      </td>
-                    </tr>
-                  ) : (
-                    items.map((purchase) => (
-                      <tr
-                        key={purchase.id}
-                        className="border-t hover:bg-muted/30 transition-colors cursor-pointer"
-                        onClick={() => openDrawer(purchase)}
-                      >
-                        <td className="px-3 py-2.5">
-                          <span className="font-mono font-medium text-xs">{purchase.request_number}</span>
-                        </td>
-                        <td className="px-3 py-2.5">
-                          <SourceBadge source={purchase.source_type} />
-                        </td>
-                        <td className="px-3 py-2.5 text-muted-foreground text-xs">
-                          {purchase.company?.name ?? '—'}
-                        </td>
-                        <td className="px-3 py-2.5 text-muted-foreground">
-                          {purchase.warehouse?.name ?? '—'}
-                        </td>
-                        <td className="px-3 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
-                          <PurchaseMaterialOrderingPopover
-                            variant="ordered"
-                            count={purchase.ordered_items_count ?? 0}
-                            items={purchase.ordered_items ?? []}
-                            emptyLabel={t($ => $.purchasesPage.orderingPopover.emptyOrdered)}
-                          />
-                        </td>
-                        <td className="px-3 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
-                          <PurchaseMaterialOrderingPopover
-                            variant="not_yet_ordered"
-                            count={purchase.not_yet_ordered_items_count ?? 0}
-                            items={purchase.not_yet_ordered_items ?? []}
-                            emptyLabel={t($ => $.purchasesPage.orderingPopover.emptyNotYetOrdered)}
-                          />
-                        </td>
-                        <td className="px-3 py-2.5 text-end font-mono text-xs tabular-nums">
-                          {/* §3 — an honest sum of lines with a real latest purchase price; "~"
-                              flags a partial sum, and a request with NO priced lines at all shows
-                              a truthful "unavailable" rather than an indistinguishable-from-real 0. */}
-                          {purchase.estimated_value > 0
-                            ? `${purchase.estimated_value_has_gaps ? '~' : ''}${fmtCurrency(purchase.estimated_value)}`
-                            : purchase.estimated_value_has_gaps
-                              ? <span className="text-muted-foreground italic">{t($ => $.purchasesPage.estValueUnavailable)}</span>
-                              : '—'}
-                        </td>
-                        <td className="px-3 py-2.5">
-                          {purchase.execution_percent !== undefined ? (
-                            <div className="flex items-center gap-1.5 w-32">
-                              <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
-                                <div
-                                  className="h-full rounded-full bg-emerald-500"
-                                  style={{ width: `${Math.min(100, Math.max(0, purchase.execution_percent))}%` }}
-                                />
-                              </div>
-                              <span className="text-[10px] font-mono text-muted-foreground shrink-0">
-                                {Math.round(purchase.execution_percent)}%
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground text-xs">—</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2.5">
-                          <PurchaseMaterialPriorityBadge priority={purchase.priority} />
-                        </td>
-                        <td className="px-3 py-2.5 text-muted-foreground text-xs">
-                          {fmtDate(purchase.required_date)}
-                        </td>
-                        <td className="px-3 py-2.5" onClick={(e) => e.stopPropagation()}>
-                          <PurchaseMaterialActionMenu material={purchase} />
-                        </td>
-                        <td className="px-3 py-2.5 text-muted-foreground text-xs">
-                          {fmtDate(purchase.updated_at)}
-                        </td>
-                        <td className="px-3 py-2.5 text-end">
-                          {purchase.status === 'draft' && (
-                            <button
-                              type="button"
-                              onClick={(e) => void handleDelete(purchase, e)}
-                              className="text-xs text-muted-foreground hover:text-destructive transition-colors"
-                            >
-                              {t($ => $.purchasesPage.delete.button)}
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+        <div className={`rounded-lg border overflow-hidden transition-opacity ${isFetching ? 'opacity-60' : 'opacity-100'}`}>
+          <UniversalDataGrid
+            data={items}
+            columns={columns}
+            rowId={(p) => p.id}
+            loading={isLoading}
+            error={isError}
+            onRowClick={openDrawer}
+            emptyState={emptyState}
+            errorState={
+              <div className="flex flex-col items-center gap-2 py-8 text-center">
+                <p className="text-sm text-muted-foreground">{t($ => $.purchasesPage.loadFailed)}</p>
+                <Button variant="outline" size="sm" onClick={() => void refetch()}>
+                  {t($ => $.purchasesPage.retry)}
+                </Button>
+              </div>
+            }
+            pagination={pagination}
+          />
         </div>
 
-        {/* Pagination */}
-        {meta && meta.last_page > 1 && (
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{tAny('purchasesPage.pagination.total', { count: meta.total })}</span>
-            <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                {t($ => $.purchasesPage.pagination.previous)}
-              </Button>
-              <span>{tAny('purchasesPage.pagination.page', { current: meta.current_page, last: meta.last_page })}</span>
-              <Button size="sm" variant="outline" disabled={page >= meta.last_page} onClick={() => setPage((p) => p + 1)}>
-                {t($ => $.purchasesPage.pagination.next)}
-              </Button>
-            </div>
-          </div>
+        {meta && (
+          <p className="text-xs text-muted-foreground text-end">
+            {tAny('purchasesPage.pagination.total', { count: meta.total })}
+          </p>
         )}
       </div>
 

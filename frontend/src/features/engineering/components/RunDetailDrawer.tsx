@@ -1,4 +1,4 @@
-import { PageFormDrawer } from '@/components/form/drawer/page-form-drawer';
+import { EntityDrawer } from '@/components/crud';
 import { useEngineeringRun } from '../hooks/use-engineering';
 import { CategoryStatusGrid } from './CategoryStatusGrid';
 import { SeverityBadge } from './SeverityBadge';
@@ -129,11 +129,10 @@ export function RunDetailDrawer({ runId, onClose }: RunDetailDrawerProps) {
   const { data: run, isLoading } = useEngineeringRun(runId);
 
   return (
-    <PageFormDrawer
+    <EntityDrawer
       open={!!runId}
       onOpenChange={(open) => { if (!open) onClose(); }}
       title="Certification Run Detail"
-      size="lg"
     >
       {isLoading ? (
         <div className="flex h-48 items-center justify-center">
@@ -142,6 +141,6 @@ export function RunDetailDrawer({ runId, onClose }: RunDetailDrawerProps) {
       ) : run ? (
         <RunDetailContent run={run} />
       ) : null}
-    </PageFormDrawer>
+    </EntityDrawer>
   );
 }

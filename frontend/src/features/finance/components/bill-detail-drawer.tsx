@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PageDrawer } from '@/components/page';
+import { EntityDrawer } from '@/components/crud';
 import { usePermission } from '@/features/authorization';
 import { useFormatter } from '@/hooks/use-formatter';
 
@@ -86,11 +86,10 @@ export function BillDetailDrawer({ billId, open, onOpenChange }: Props) {
   };
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={(o) => (o ? onOpenChange(true) : close())}
       title={bill ? bill.number : t(($) => $.ap.billDetail.title)}
-      size="lg"
     >
       {query.isLoading && <p className="text-sm text-muted-foreground">{t(($) => $.loading)}</p>}
       {query.isError && <p className="text-sm text-red-600">{t(($) => $.error)}</p>}
@@ -176,7 +175,7 @@ export function BillDetailDrawer({ billId, open, onOpenChange }: Props) {
           )}
         </div>
       )}
-    </PageDrawer>
+    </EntityDrawer>
   );
 }
 

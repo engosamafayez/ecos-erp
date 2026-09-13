@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Gauge, Loader2, Wallet, Wrench } from 'lucide-react';
 
-import { PageDrawer } from '@/components/page/drawer/page-drawer';
+import { EntityDrawer } from '@/components/crud';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -407,10 +407,9 @@ export function FleetUnitDrawer({
   const { data: unit } = useFleetUnit(open ? unitId : null);
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={onOpenChange}
-      size="2xl"
       title={
         unit
           ? t($ => $.fleet.drawer.titleWithPlate, {
@@ -446,6 +445,6 @@ export function FleetUnitDrawer({
           </TabsContent>
         </Tabs>
       )}
-    </PageDrawer>
+    </EntityDrawer>
   );
 }

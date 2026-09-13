@@ -76,6 +76,9 @@ return [
             'liabilities' => ['view', 'approve', 'reject'],
             'abc' => ['view', 'recalculate'],
             'price_review' => ['view', 'update', 'approve', 'publish'],
+            // TASK-ECOS-V1.1-OPS-01-IMPLEMENTATION-044A-R1: HTTP wiring for the
+            // pre-existing WarehouseTransfer/TransferStockAction authority.
+            'transfers' => ['view', 'create'],
         ],
 
         'purchasing' => [
@@ -291,6 +294,7 @@ return [
             'inventory.liabilities' => ['view', 'approve', 'reject'],
             'inventory.abc' => ['view', 'recalculate'],
             'inventory.price_review' => ['view', 'update', 'approve', 'publish'],
+            'inventory.transfers' => ['view', 'create'],
             'purchasing.suppliers' => ['view', 'create', 'update', 'delete'],
             'purchasing.supplier_categories' => ['view', 'manage'],
             'purchasing.purchase_orders' => ['view', 'create', 'update', 'delete'],
@@ -354,6 +358,7 @@ return [
             'inventory.waste' => ['view', 'resolve'],
             'inventory.liabilities' => ['view', 'approve', 'reject'],
             'inventory.abc' => ['view', 'recalculate'],
+            'inventory.transfers' => ['view', 'create'],
             'purchasing.goods_receipts' => ['view', 'create'],
             'purchasing.materials' => ['view', 'create', 'submit'],
             'operations.preparation' => ['view', 'create', 'update', 'delete'],
@@ -399,6 +404,7 @@ return [
             'inventory.recipes' => ['view'],
             'inventory.waste' => ['view'],
             'inventory.abc' => ['view'],
+            'inventory.transfers' => ['view', 'create'],
             'purchasing.goods_receipts' => ['view'],
         ],
 
@@ -416,6 +422,7 @@ return [
             'inventory.liabilities' => ['view'],
             'inventory.abc' => ['view'],
             'inventory.price_review' => ['view'],
+            'inventory.transfers' => ['view'],
             'purchasing.suppliers' => ['view'],
             'purchasing.purchase_orders' => ['view'],
             'purchasing.goods_receipts' => ['view'],
@@ -451,6 +458,7 @@ return [
             'inventory.stock' => ['view', 'receive', 'count'],
             'inventory.count' => ['view', 'create', 'update'],
             'inventory.waste' => ['view'],
+            'inventory.transfers' => ['view', 'create'],
             'purchasing.goods_receipts' => ['view', 'create'],
             'operations.preparation' => ['view', 'update'],
         ],
@@ -467,6 +475,7 @@ return [
             'inventory.abc' => ['view', 'recalculate'],
             'inventory.recipes' => ['view'],
             'inventory.price_review' => ['view', 'update', 'approve'],
+            'inventory.transfers' => ['view', 'create'],
         ],
 
         'purchasing-manager' => [

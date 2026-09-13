@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PageDrawer } from '@/components/page';
+import { EntityDrawer } from '@/components/crud';
 import { useFormatter } from '@/hooks/use-formatter';
 
 import { useExpenses } from '../hooks/use-finance-expense';
@@ -78,12 +78,11 @@ export function CostAllocationFormDrawer({ open, onOpenChange }: Props) {
   };
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={(o) => (o ? onOpenChange(true) : close())}
       title={t(($) => $.costAllocation.form.title)}
       description={t(($) => $.costAllocation.form.subtitle)}
-      size="2xl"
       footer={
         <div className="flex w-full items-center justify-between gap-4">
           <div className="text-sm tabular-nums">
@@ -187,6 +186,6 @@ export function CostAllocationFormDrawer({ open, onOpenChange }: Props) {
 
         {error && <p className="text-sm text-red-600">{error}</p>}
       </div>
-    </PageDrawer>
+    </EntityDrawer>
   );
 }

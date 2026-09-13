@@ -7,7 +7,7 @@ import { Badge }  from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input }  from '@/components/ui/input';
 import { Label }  from '@/components/ui/label';
-import { PageDrawer } from '@/components/page/drawer/page-drawer';
+import { EntityDrawer } from '@/components/crud';
 import {
   Select,
   SelectContent,
@@ -119,12 +119,11 @@ export function CityDrawer({ city, governorateId, defaultShippingPrice, onClose 
   const effectivePrice = price !== '' ? parseFloat(price) : defaultShippingPrice;
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={Boolean(city)}
       onOpenChange={(o) => !o && onClose()}
       title={city ? `${city.name_en} — ${city.name_ar}` : ''}
       description={t($ => $.cityDrawer.description)}
-      size="lg"
     >
       {city && (
         <div className="space-y-6">
@@ -262,6 +261,7 @@ export function CityDrawer({ city, governorateId, defaultShippingPrice, onClose 
                       size="sm"
                       variant="ghost"
                       className="h-7 w-7 p-0 text-red-500 hover:text-red-600 shrink-0"
+                      aria-label={t($ => $.cityDrawer.aliases.delete)}
                       onClick={() => handleDeleteAlias(alias.id)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -273,6 +273,6 @@ export function CityDrawer({ city, governorateId, defaultShippingPrice, onClose 
           </div>
         </div>
       )}
-    </PageDrawer>
+    </EntityDrawer>
   );
 }

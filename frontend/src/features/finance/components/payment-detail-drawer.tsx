@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { PageDrawer } from '@/components/page';
+import { EntityDrawer } from '@/components/crud';
 import { usePermission } from '@/features/authorization';
 import { useFormatter } from '@/hooks/use-formatter';
 
@@ -101,11 +101,10 @@ export function PaymentDetailDrawer({ paymentId, open, onOpenChange }: Props) {
   ) : undefined;
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={(o) => (o ? onOpenChange(true) : close())}
       title={payment ? payment.number : t(($) => $.ap.detail.title)}
-      size="lg"
       footer={footer}
     >
       {query.isLoading && <p className="text-sm text-muted-foreground">{t(($) => $.loading)}</p>}
@@ -211,7 +210,7 @@ export function PaymentDetailDrawer({ paymentId, open, onOpenChange }: Props) {
           )}
         </div>
       )}
-    </PageDrawer>
+    </EntityDrawer>
   );
 }
 

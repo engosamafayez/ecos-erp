@@ -19,12 +19,11 @@ import {
 import {
   ActionMenu,
   ConfirmDialog,
-  EntityTable,
   EntityToolbar,
   PageHeader,
-  Pagination,
 } from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
+import type { DataGridColumnDef, GridPaginationConfig } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -380,7 +379,7 @@ export function SupplierInvoicesPage() {
   const [selectedId, setSelectedId]   = useState<string | null>(() => searchParams.get('open'));
   const [editor, setEditor]           = useState<{ open: boolean; invoiceId: string | null }>({ open: false, invoiceId: null });
   const [deleting, setDeleting]       = useState<SupplierInvoice | null>(null);
-  const openEditor = (invoiceId: string | null) => setEditor({ open: true, invoiceId });
+  const openEditor = useCallback((invoiceId: string | null) => setEditor({ open: true, invoiceId }), []);
 
   useEffect(() => {
     if (!searchParams.get('open')) return;
@@ -422,10 +421,12 @@ export function SupplierInvoicesPage() {
     postMutation.mutate(id);
   }, [postMutation]);
 
-  const columns = useMemo<ColumnDef<SupplierInvoice>[]>(() => [
+  const columns = useMemo<DataGridColumnDef<SupplierInvoice>[]>(() => [
     {
       key: 'invoice_number',
-      header: t($ => $.page.columns.invoiceNo),
+      label: t($ => $.page.columns.invoiceNo),
+      alwaysVisible: true,
+      cardRole: 'title',
       cell: (inv) => (
         <div>
           <span className="font-mono text-sm font-medium">{inv.invoice_number}</span>
@@ -437,17 +438,18 @@ export function SupplierInvoicesPage() {
     },
     {
       key: 'supplier',
-      header: t($ => $.page.columns.supplier),
+      label: t($ => $.page.columns.supplier),
+      cardRole: 'subtitle',
       cell: (inv) => <span className="text-sm">{inv.supplier?.name ?? '—'}</span>,
     },
     {
       key: 'invoice_date',
-      header: t($ => $.page.columns.invoiceDate),
+      label: t($ => $.page.columns.invoiceDate),
       cell: (inv) => <span className="text-sm text-gray-600">{inv.invoice_date}</span>,
     },
     {
       key: 'due_date',
-      header: t($ => $.page.columns.dueDate),
+      label: t($ => $.page.columns.dueDate),
       cell: (inv) => (
         <span className={`text-sm ${
           inv.due_date && new Date(inv.due_date) < new Date() && inv.status !== 'posted'
@@ -460,14 +462,15 @@ export function SupplierInvoicesPage() {
     },
     {
       key: 'grand_total',
-      header: t($ => $.page.columns.grandTotal),
+      label: t($ => $.page.columns.grandTotal),
       cell: (inv) => (
         <span className="text-sm font-semibold">{fmt.money(inv.grand_total)}</span>
       ),
     },
     {
       key: 'status',
-      header: t($ => $.page.columns.status),
+      label: t($ => $.page.columns.status),
+      cardRole: 'status',
       cell: (inv) => (
         <div className="flex items-center gap-2">
           <SupplierInvoiceStatusBadge
@@ -492,7 +495,81 @@ export function SupplierInvoicesPage() {
         </div>
       ),
     },
-  ], [t, fmt, handlePost, postMutation.isPending]);
+    {
+      key: 'actions',
+      label: '',
+      align: 'end',
+      alwaysVisible: true,
+      cell: (inv) => (
+        <ActionMenu
+          label={t($ => $.page.actions.actionsFor, { invoiceNumber: inv.invoice_number })}
+          items={[
+            {
+              key: 'view',
+              label: t($ => $.page.actions.view) as string,
+              icon: FileText,
+              onSelect: () => setSelectedId(inv.id),
+            },
+            // TASK-...-020 §5 — every item below is gated on the server-computed
+            // `available_actions`, never a re-derived guess from the raw status string,
+            // so the table can never offer a transition the backend would reject.
+            ...(inv.available_actions.includes('edit') ? [
+              {
+                key: 'edit',
+                label: t($ => $.page.actions.edit) as string,
+                icon: Pencil,
+                onSelect: () => openEditor(inv.id),
+              },
+            ] : []),
+            ...(inv.available_actions.includes('validate') ? [
+              {
+                key: 'validate',
+                label: t($ => $.page.actions.validate) as string,
+                icon: CheckCircle2,
+                onSelect: () => validateMutation.mutate(inv.id),
+              },
+            ] : []),
+            ...(inv.available_actions.includes('post') ? [
+              {
+                key: 'post',
+                label: t($ => $.page.actions.post) as string,
+                icon: Zap,
+                onSelect: () => handlePost(inv.id),
+              },
+            ] : []),
+            ...(inv.available_actions.includes('cancel') ? [
+              {
+                key: 'cancel',
+                label: t($ => $.page.actions.cancel) as string,
+                icon: XCircle,
+                variant: 'destructive' as const,
+                onSelect: () => cancelMutation.mutate(inv.id),
+              },
+            ] : []),
+            ...(inv.available_actions.includes('delete') ? [
+              {
+                key: 'delete',
+                label: t($ => $.page.actions.delete) as string,
+                icon: Trash2,
+                variant: 'destructive' as const,
+                onSelect: () => setDeleting(inv),
+              },
+            ] : []),
+          ]}
+        />
+      ),
+    },
+  ], [
+    t, fmt, handlePost, postMutation.isPending,
+    openEditor, validateMutation, cancelMutation, setSelectedId, setDeleting,
+  ]);
+
+  const pagination: GridPaginationConfig | undefined = meta
+    ? {
+        meta: { page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page },
+        onPageChange: setPage,
+      }
+    : undefined;
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -567,80 +644,16 @@ export function SupplierInvoicesPage() {
               }
             />
 
-            <EntityTable<SupplierInvoice>
+            <UniversalDataGrid<SupplierInvoice>
               columns={columns}
               data={items}
-              getRowId={(inv) => inv.id}
-              isLoading={isLoading}
-              isError={isError}
+              rowId={(inv) => inv.id}
+              loading={isLoading}
+              error={isError}
               sort={sort}
               onSortChange={handleSort}
-              rowActions={(inv) => (
-                <ActionMenu
-                  label={t($ => $.page.actions.actionsFor, { invoiceNumber: inv.invoice_number })}
-                  items={[
-                    {
-                      key: 'view',
-                      label: t($ => $.page.actions.view) as string,
-                      icon: FileText,
-                      onSelect: () => setSelectedId(inv.id),
-                    },
-                    // TASK-...-020 §5 — every item below is gated on the server-computed
-                    // `available_actions`, never a re-derived guess from the raw status string,
-                    // so the table can never offer a transition the backend would reject.
-                    ...(inv.available_actions.includes('edit') ? [
-                      {
-                        key: 'edit',
-                        label: t($ => $.page.actions.edit) as string,
-                        icon: Pencil,
-                        onSelect: () => openEditor(inv.id),
-                      },
-                    ] : []),
-                    ...(inv.available_actions.includes('validate') ? [
-                      {
-                        key: 'validate',
-                        label: t($ => $.page.actions.validate) as string,
-                        icon: CheckCircle2,
-                        onSelect: () => validateMutation.mutate(inv.id),
-                      },
-                    ] : []),
-                    ...(inv.available_actions.includes('post') ? [
-                      {
-                        key: 'post',
-                        label: t($ => $.page.actions.post) as string,
-                        icon: Zap,
-                        onSelect: () => handlePost(inv.id),
-                      },
-                    ] : []),
-                    ...(inv.available_actions.includes('cancel') ? [
-                      {
-                        key: 'cancel',
-                        label: t($ => $.page.actions.cancel) as string,
-                        icon: XCircle,
-                        variant: 'destructive' as const,
-                        onSelect: () => cancelMutation.mutate(inv.id),
-                      },
-                    ] : []),
-                    ...(inv.available_actions.includes('delete') ? [
-                      {
-                        key: 'delete',
-                        label: t($ => $.page.actions.delete) as string,
-                        icon: Trash2,
-                        variant: 'destructive' as const,
-                        onSelect: () => setDeleting(inv),
-                      },
-                    ] : []),
-                  ]}
-                />
-              )}
+              pagination={pagination}
             />
-
-            {meta ? (
-              <Pagination
-                meta={{ page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page }}
-                onPageChange={setPage}
-              />
-            ) : null}
           </CardContent>
         </Card>
       </div>

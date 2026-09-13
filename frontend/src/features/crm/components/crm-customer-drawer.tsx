@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { EntityDrawer } from '@/components/crud/entity-drawer';
 import { StatusBadge } from '@/components/crud/status-badge';
 import type { StatusVariant } from '@/components/crud/types';
-import { Tabs, type TabItem } from '@/components/ds';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { usePermission } from '@/features/authorization';
@@ -45,6 +45,14 @@ import type {
  */
 
 type CrmLabel = ($: typeof enCrm) => string;
+
+type TabItem = {
+  key: string;
+  label: string;
+  content: React.ReactNode;
+  badge?: number;
+  disabled?: boolean;
+};
 
 const STATUS_VARIANT: Record<CrmCustomerStatus, StatusVariant> = {
   prospect: 'pending',
@@ -477,7 +485,25 @@ export function CrmCustomerDrawer({ customerId, open, onOpenChange, onEdit }: Pr
       {isLoading ? (
         <Empty message={t(($) => $.drawer.timeline.loading)} />
       ) : (
-        <Tabs tabs={tabs} activeKey={tab} onTabChange={setTab} />
+        <Tabs value={tab} onValueChange={setTab} className="gap-3">
+          <TabsList className="h-auto w-full flex-nowrap justify-start overflow-x-auto">
+            {tabs.map((item) => (
+              <TabsTrigger key={item.key} value={item.key} disabled={item.disabled} className="gap-1.5">
+                {item.label}
+                {item.badge !== undefined ? (
+                  <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary/15 px-1 text-[10px] font-semibold text-primary">
+                    {item.badge}
+                  </span>
+                ) : null}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {tabs.map((item) => (
+            <TabsContent key={item.key} value={item.key} className="mt-0">
+              {item.content}
+            </TabsContent>
+          ))}
+        </Tabs>
       )}
     </EntityDrawer>
   );

@@ -78,7 +78,7 @@ void i18n
     },
     ns: [...NAMESPACES],
     defaultNS: 'common',
-    fallbackLng: 'en',
+    fallbackLng: 'ar',
     supportedLngs: ['en', 'ar'],
     detection: {
       order: ['localStorage'],

@@ -1,19 +1,25 @@
 import { useState } from 'react';
 import { Check, Pencil, RefreshCw, Sparkles, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { generatePath, Link } from 'react-router-dom';
 
-import { PageHeader, StatusBadge } from '@/components/crud';
+import { EmptyState, ErrorState, LoadingState, PageHeader, StatusBadge } from '@/components/crud';
 import type { StatusVariant } from '@/components/crud/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   useDecideRecommendation,
+  useDriverRosterQuery,
   useEvaluatePerformance,
   useGenerateRecommendations,
   useGoalsQuery,
   useIncidentsQuery,
+  useMyTeamQuery,
   useRecommendationsQuery,
 } from '@/features/hr/hooks/use-compensation';
+import type { DriverIdentityStatus } from '@/features/hr/types/compensation';
+import { ROUTES } from '@/router/routes';
 
 const currentMonth = () => new Date().toISOString().slice(0, 7);
 
@@ -27,6 +33,13 @@ const STATUS_TONE: Record<string, StatusVariant> = {
   rejected: 'inactive',
 };
 
+const DRIVER_IDENTITY_TONE: Record<DriverIdentityStatus, StatusVariant> = {
+  matched: 'active',
+  unmatched: 'pending',
+  ambiguous: 'pending',
+  cross_company: 'inactive',
+};
+
 /**
  * Performance Workspace — goals, the KPI evaluation, and the bonus decisions.
  *
@@ -34,12 +47,15 @@ const STATUS_TONE: Record<string, StatusVariant> = {
  * number. Only that decision creates a bonus.
  */
 export function PerformanceWorkspacePage() {
+  const { t } = useTranslation('hr');
   const [month, setMonth] = useState(currentMonth());
   const [modifying, setModifying] = useState<{ id: string; amount: string } | null>(null);
 
   const { data: goals } = useGoalsQuery({ period_month: month });
   const { data: recommendations, isLoading } = useRecommendationsQuery(month);
   const { data: incidents } = useIncidentsQuery();
+  const { data: myTeam, isLoading: teamLoading, isError: teamError, refetch: refetchTeam } = useMyTeamQuery();
+  const { data: driverRoster, isLoading: driversLoading, isError: driversError, refetch: refetchDrivers } = useDriverRosterQuery();
 
   const evaluate = useEvaluatePerformance();
   const generate = useGenerateRecommendations();
@@ -61,8 +77,8 @@ export function PerformanceWorkspacePage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        title="Performance"
-        subtitle="Goals are measured from what the operational modules report — nobody enters their own score."
+        title={t(($) => $.performance.breadcrumb)}
+        subtitle={t(($) => $.performance.workspace.subtitle)}
         actions={
           <div className="flex items-center gap-2">
             <input
@@ -78,11 +94,11 @@ export function PerformanceWorkspacePage() {
               disabled={evaluate.isPending}
             >
               <RefreshCw className="size-4" />
-              {evaluate.isPending ? 'Evaluating…' : 'Evaluate'}
+              {evaluate.isPending ? t(($) => $.performance.workspace.evaluating) : t(($) => $.performance.workspace.evaluate)}
             </Button>
             <Button size="sm" onClick={() => void generate.mutateAsync(month)} disabled={generate.isPending}>
               <Sparkles className="size-4" />
-              Recommend Bonuses
+              {t(($) => $.performance.workspace.recommendBonuses)}
             </Button>
           </div>
         }
@@ -91,19 +107,19 @@ export function PerformanceWorkspacePage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Goals Set</div>
+            <div className="text-muted-foreground text-sm">{t(($) => $.performance.stats.goalsSet)}</div>
             <div className="text-2xl font-bold">{goals?.length ?? 0}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Awaiting Decision</div>
+            <div className="text-muted-foreground text-sm">{t(($) => $.performance.stats.awaitingDecision)}</div>
             <div className="text-2xl font-bold text-amber-600">{isLoading ? '—' : items.length}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Recommended Total</div>
+            <div className="text-muted-foreground text-sm">{t(($) => $.performance.stats.recommendedTotal)}</div>
             <div className="text-2xl font-bold">
               {items.reduce((sum, r) => sum + r.recommended_amount, 0).toFixed(2)}
             </div>
@@ -111,7 +127,7 @@ export function PerformanceWorkspacePage() {
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-muted-foreground text-sm">Incidents</div>
+            <div className="text-muted-foreground text-sm">{t(($) => $.performance.stats.incidents)}</div>
             <div className="text-2xl font-bold">{incidents?.length ?? 0}</div>
           </CardContent>
         </Card>
@@ -119,13 +135,81 @@ export function PerformanceWorkspacePage() {
 
       <Card>
         <CardContent className="flex flex-col gap-4 pt-6">
+          <h2 className="font-semibold">{t(($) => $.performance.myTeam.title)}</h2>
+          {teamLoading ? (
+            <LoadingState />
+          ) : teamError ? (
+            <ErrorState onRetry={() => void refetchTeam()} />
+          ) : !myTeam || myTeam.length === 0 ? (
+            <EmptyState
+              title={t(($) => $.performance.myTeam.emptyTitle)}
+              description={t(($) => $.performance.myTeam.emptyDescription)}
+            />
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {myTeam.map((member) => (
+                <Link
+                  key={member.id}
+                  to={generatePath(ROUTES.hrEmployeePerformance, { employeeId: member.id })}
+                  className="hover:bg-muted flex flex-col rounded-md border px-3 py-2 text-sm transition-colors"
+                >
+                  <span className="font-medium">{member.name}</span>
+                  <span className="text-muted-foreground text-xs">
+                    {member.employee_number} · {member.department?.name ?? t(($) => $.performance.myTeam.noDepartment)}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="flex flex-col gap-4 pt-6">
+          <h2 className="font-semibold">{t(($) => $.performance.drivers.title)}</h2>
+          {driversLoading ? (
+            <LoadingState />
+          ) : driversError ? (
+            <ErrorState onRetry={() => void refetchDrivers()} />
+          ) : !driverRoster || driverRoster.length === 0 ? (
+            <EmptyState
+              title={t(($) => $.performance.drivers.emptyTitle)}
+              description={t(($) => $.performance.drivers.emptyDescription)}
+            />
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {driverRoster.map((row) => (
+                <Link
+                  key={row.driver_id}
+                  to={generatePath(ROUTES.hrDriverPerformance, { driverId: row.driver_id })}
+                  className="hover:bg-muted flex flex-col gap-1 rounded-md border px-3 py-2 text-sm transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium">{row.driver_name}</span>
+                    <StatusBadge
+                      status={DRIVER_IDENTITY_TONE[row.identity.status]}
+                      label={t(($) => $.performance.drivers.identity[row.identity.status])}
+                    />
+                  </div>
+                  {row.identity.employee_name ? (
+                    <span className="text-muted-foreground text-xs">{row.identity.employee_name}</span>
+                  ) : null}
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="flex flex-col gap-4 pt-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-semibold">Bonus Recommendations</h2>
+            <h2 className="font-semibold">{t(($) => $.performance.recommendations.title)}</h2>
             {/* The bands are stated so the suggested number can be argued with. */}
             <div className="flex flex-wrap gap-2 text-xs">
               {bands.map((band) => (
                 <span key={band.key} className="bg-muted rounded px-2 py-0.5">
-                  {band.key} ≥ {band.min_achievement}% → {band.percent_of_basic}% of basic
+                  {band.key} ≥ {band.min_achievement}% → {band.percent_of_basic}{t(($) => $.performance.recommendations.percentOfBasic)}
                 </span>
               ))}
             </div>
@@ -133,19 +217,19 @@ export function PerformanceWorkspacePage() {
 
           {items.length === 0 ? (
             <p className="text-muted-foreground py-8 text-center text-sm">
-              No recommendations for {month}. Evaluate the month first, then generate.
+              {t(($) => $.performance.recommendations.emptyFor, { month })}
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="text-muted-foreground border-b text-left text-xs uppercase">
                   <tr>
-                    <th className="py-2 pr-4 font-medium">Employee</th>
-                    <th className="py-2 pr-4 text-right font-medium">Achievement</th>
-                    <th className="py-2 pr-4 font-medium">Band</th>
-                    <th className="py-2 pr-4 text-right font-medium">Recommended</th>
-                    <th className="py-2 pr-4 font-medium">Status</th>
-                    <th className="py-2 pr-4 font-medium">Decision</th>
+                    <th className="py-2 pr-4 font-medium">{t(($) => $.performance.recommendations.table.employee)}</th>
+                    <th className="py-2 pr-4 text-right font-medium">{t(($) => $.performance.recommendations.table.achievement)}</th>
+                    <th className="py-2 pr-4 font-medium">{t(($) => $.performance.recommendations.table.band)}</th>
+                    <th className="py-2 pr-4 text-right font-medium">{t(($) => $.performance.recommendations.table.recommended)}</th>
+                    <th className="py-2 pr-4 font-medium">{t(($) => $.performance.recommendations.table.status)}</th>
+                    <th className="py-2 pr-4 font-medium">{t(($) => $.performance.recommendations.table.decision)}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -173,10 +257,10 @@ export function PerformanceWorkspacePage() {
                               className="h-8 w-28"
                             />
                             <Button size="sm" onClick={() => void submitModify()}>
-                              Save
+                              {t(($) => $.performance.recommendations.save)}
                             </Button>
                             <Button size="sm" variant="outline" onClick={() => setModifying(null)}>
-                              Cancel
+                              {t(($) => $.performance.recommendations.cancel)}
                             </Button>
                           </div>
                         ) : (
@@ -187,7 +271,7 @@ export function PerformanceWorkspacePage() {
                               onClick={() => void decide.mutateAsync({ id: rec.id, decision: 'approve' })}
                             >
                               <Check className="size-3.5" />
-                              Approve
+                              {t(($) => $.performance.recommendations.approve)}
                             </Button>
                             <Button
                               size="sm"
@@ -197,7 +281,7 @@ export function PerformanceWorkspacePage() {
                               }
                             >
                               <Pencil className="size-3.5" />
-                              Modify
+                              {t(($) => $.performance.recommendations.modify)}
                             </Button>
                             <Button
                               size="sm"
@@ -205,7 +289,7 @@ export function PerformanceWorkspacePage() {
                               onClick={() => void decide.mutateAsync({ id: rec.id, decision: 'reject' })}
                             >
                               <X className="size-3.5" />
-                              Reject
+                              {t(($) => $.performance.recommendations.reject)}
                             </Button>
                           </div>
                         )}
@@ -222,9 +306,9 @@ export function PerformanceWorkspacePage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardContent className="flex flex-col gap-3 pt-6">
-            <h2 className="font-semibold">Goals for {month}</h2>
+            <h2 className="font-semibold">{t(($) => $.performance.goalsList.titleFor, { month })}</h2>
             {(goals ?? []).length === 0 ? (
-              <p className="text-muted-foreground text-sm">No goals set for this month.</p>
+              <p className="text-muted-foreground text-sm">{t(($) => $.performance.goalsList.empty)}</p>
             ) : (
               <ul className="flex flex-col gap-2">
                 {(goals ?? []).map((goal) => (
@@ -247,9 +331,9 @@ export function PerformanceWorkspacePage() {
 
         <Card>
           <CardContent className="flex flex-col gap-3 pt-6">
-            <h2 className="font-semibold">Recent Incidents</h2>
+            <h2 className="font-semibold">{t(($) => $.performance.incidentsList.title)}</h2>
             {(incidents ?? []).length === 0 ? (
-              <p className="text-muted-foreground text-sm">No incidents recorded.</p>
+              <p className="text-muted-foreground text-sm">{t(($) => $.performance.incidentsList.empty)}</p>
             ) : (
               <ul className="flex flex-col gap-2">
                 {(incidents ?? []).slice(0, 8).map((incident) => (
@@ -266,7 +350,7 @@ export function PerformanceWorkspacePage() {
                       </span>
                     </div>
                     {incident.deduction_id ? (
-                      <span className="text-xs text-red-600">deduction raised</span>
+                      <span className="text-xs text-red-600">{t(($) => $.performance.incidentsList.deductionRaised)}</span>
                     ) : null}
                   </li>
                 ))}

@@ -73,31 +73,6 @@ function resolveMethod(method: string | null, methodTitle: string | null, t: TFn
 }
 
 
-// ── OrderPaymentBadge (kept for backward compatibility) ───────────────────────
-
-type BadgeProps = {
-  method: string | null;
-  methodTitle: string | null;
-  datePaid: string | null;
-};
-
-export function OrderPaymentBadge({ method, methodTitle, datePaid }: BadgeProps) {
-  const { t } = useTranslation('orders');
-  const badge  = resolveMethod(method, methodTitle, t);
-  const isPaid = Boolean(datePaid);
-
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className={cn('inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold leading-none', badge.className)}>
-        {badge.label}
-      </span>
-      <span className={cn('text-[9px] font-medium leading-none', isPaid ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400')}>
-        {isPaid ? '✓ Paid' : '○ Unpaid'}
-      </span>
-    </div>
-  );
-}
-
 // ── OrderPaymentCell — method badge with inline edit (A3) ─────────────────────
 // (StoreManualOrderRequest / PatchOrderRequest — the same 5 values as
 // CANONICAL_METHODS above; kept as one shared constant, not two.)

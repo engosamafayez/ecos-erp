@@ -5,12 +5,11 @@ import { useTranslation } from 'react-i18next';
 import {
   ActionMenu,
   ConfirmDialog,
-  EntityTable,
   EntityToolbar,
-  Pagination,
   StatusBadge,
 } from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
+import type { DataGridColumnDef, GridPaginationConfig } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Button } from '@/components/ui/button';
 import { UnitFormDrawer } from '@/features/units/components/unit-form-drawer';
 import { useUnitsQuery, useDeleteUnit } from '@/features/units/hooks/use-units';
@@ -59,32 +58,64 @@ export function UnitsContent() {
     setPage(1);
   };
 
-  const columns: ColumnDef<Unit>[] = [
+  const columns: DataGridColumnDef<Unit>[] = [
     {
       key: 'code',
-      header: t($ => $.columns.code),
+      label: t($ => $.columns.code),
       sortable: true,
+      alwaysVisible: true,
+      cardRole: 'title',
       cell: (u) => <span className="font-medium">{u.code}</span>,
     },
-    { key: 'name', header: t($ => $.columns.name), sortable: true, cell: (u) => u.name },
+    { key: 'name', label: t($ => $.columns.name), sortable: true, cardRole: 'subtitle', cell: (u) => u.name },
     {
       key: 'symbol',
-      header: t($ => $.columns.symbol),
+      label: t($ => $.columns.symbol),
       sortable: true,
       cell: (u) => <span className="text-muted-foreground">{u.symbol ?? '—'}</span>,
     },
     {
       key: 'description',
-      header: t($ => $.columns.description),
+      label: t($ => $.columns.description),
       cell: (u) => <span className="text-muted-foreground">{u.description ?? '—'}</span>,
     },
     {
       key: 'is_active',
-      header: t($ => $.columns.status),
+      label: t($ => $.columns.status),
       sortable: true,
+      cardRole: 'status',
       cell: (u) => <StatusBadge status={u.is_active ? 'active' : 'inactive'} />,
     },
+    {
+      key: 'actions',
+      label: '',
+      align: 'end',
+      alwaysVisible: true,
+      cell: (unit) => (
+        <ActionMenu
+          label={t($ => $.actions.ariaLabel, { name: unit.name })}
+          items={[
+            { key: 'view', label: tCommon($ => $.actions.view), icon: Eye, onSelect: () => { setDrawerUnit(unit); setDrawerOpen(true); } },
+            { key: 'edit', label: tCommon($ => $.common.edit), icon: Pencil, onSelect: () => { setDrawerUnit(unit); setDrawerOpen(true); } },
+            {
+              key: 'delete',
+              label: tCommon($ => $.common.delete),
+              icon: Trash2,
+              variant: 'destructive',
+              onSelect: () => setDeleting(unit),
+            },
+          ]}
+        />
+      ),
+    },
   ];
+
+  const pagination: GridPaginationConfig | undefined = meta
+    ? {
+        meta: { page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page },
+        onPageChange: setPage,
+      }
+    : undefined;
 
   return (
     <>
@@ -101,38 +132,16 @@ export function UnitsContent() {
         </Button>
       </EntityToolbar>
 
-      <EntityTable<Unit>
-        columns={columns}
+      <UniversalDataGrid<Unit>
         data={items}
-        getRowId={(unit) => unit.id}
-        isLoading={isLoading}
-        isError={isError}
+        columns={columns}
+        rowId={(unit) => unit.id}
+        loading={isLoading}
+        error={isError}
         sort={sort}
         onSortChange={handleSort}
-        rowActions={(unit) => (
-          <ActionMenu
-            label={t($ => $.actions.ariaLabel, { name: unit.name })}
-            items={[
-              { key: 'view', label: tCommon($ => $.actions.view), icon: Eye, onSelect: () => { setDrawerUnit(unit); setDrawerOpen(true); } },
-              { key: 'edit', label: tCommon($ => $.common.edit), icon: Pencil, onSelect: () => { setDrawerUnit(unit); setDrawerOpen(true); } },
-              {
-                key: 'delete',
-                label: tCommon($ => $.common.delete),
-                icon: Trash2,
-                variant: 'destructive',
-                onSelect: () => setDeleting(unit),
-              },
-            ]}
-          />
-        )}
+        pagination={pagination}
       />
-
-      {meta ? (
-        <Pagination
-          meta={{ page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page }}
-          onPageChange={setPage}
-        />
-      ) : null}
 
       <UnitFormDrawer
         open={drawerOpen}

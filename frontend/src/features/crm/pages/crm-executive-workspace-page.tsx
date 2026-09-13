@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { SmartToolbar } from '@/components/data-grid/smart-toolbar';
 import type { DataGridColumnDef } from '@/components/data-grid/types';
 import { UniversalDataGrid } from '@/components/data-grid/universal-data-grid';
-import { QuickStatCard } from '@/components/ds';
 import { Badge } from '@/components/ui/badge';
+import { WorkspaceMetricCard } from '@/components/workspace';
 import { usePermission } from '@/features/authorization';
 import {
   useCrmExecutiveGrowth,
@@ -209,19 +209,22 @@ export function CrmExecutiveWorkspacePage() {
       />
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <QuickStatCard
+        <WorkspaceMetricCard
+          id="total"
           icon={Users}
-          title={t(($) => $.executive.kpi.total)}
+          label={t(($) => $.executive.kpi.total)}
           value={num(kpis.data?.total_customers)}
         />
-        <QuickStatCard
+        <WorkspaceMetricCard
+          id="active"
           icon={Users}
-          title={t(($) => $.executive.kpi.active)}
+          label={t(($) => $.executive.kpi.active)}
           value={num(kpis.data?.active_customers)}
         />
-        <QuickStatCard
+        <WorkspaceMetricCard
+          id="new"
           icon={newMetric && (newMetric.change ?? 0) < 0 ? TrendingDown : TrendingUp}
-          title={t(($) => $.executive.kpi.new)}
+          label={t(($) => $.executive.kpi.new)}
           value={num(newMetric?.value)}
         />
       </section>

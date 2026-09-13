@@ -24,9 +24,12 @@ final class LoadingSessionResource extends JsonResource
             'products_count' => $this->products_count,
             'total_units_to_load' => (float) $this->total_units_to_load,
             'total_units_loaded' => (float) $this->total_units_loaded,
+            // NULL means "not yet determinable" (nothing planned/allocated yet) —
+            // not the same as a counted 0%, which would misreport genuine loading
+            // work as if it hadn't started.
             'loading_pct' => $this->total_units_to_load > 0
                 ? round(($this->total_units_loaded / $this->total_units_to_load) * 100, 1)
-                : 0.0,
+                : null,
             'loading_started_at' => $this->loading_started_at?->toIso8601String(),
             'loading_completed_at' => $this->loading_completed_at?->toIso8601String(),
             'dispatched_at' => $this->dispatched_at?->toIso8601String(),

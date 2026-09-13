@@ -19,9 +19,8 @@ import { useRecipeCostHistoryQuery, useRecipeQuery } from '@/features/recipes/ho
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
-import { Tabs } from '@/components/ds/tabs';
-import type { TabItem } from '@/components/ds/tabs';
+import { EntityDrawer } from '@/components/crud';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCompany } from '@/features/organization/context/company-context';
 import { formatMoney } from '@/lib/format';
 import { calcRecipeCost } from '@/lib/recipe-cost-calculator';
@@ -520,130 +519,129 @@ export function RecipeDetailDrawer({
     }
   }
 
-  const tabs: TabItem[] = display
-    ? [
-        { key: 'overview',           label: t($ => $.drawer.tabs.overview),           content: <OverviewTab recipe={display} /> },
-        { key: 'materials',          label: t($ => $.drawer.tabs.materials),          content: <MaterialsTab recipe={display} />, badge: display.lines.length },
-        { key: 'cost-history',       label: t($ => $.drawer.tabs.costHistory),        content: <CostHistoryTab recipeId={display.id} /> },
-      ]
-    : [];
-
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="p-0 flex flex-col gap-0">
-        <SheetTitle className="sr-only">
-          {recipe ? t($ => $.drawer.title, { name: recipe.product?.name ?? recipe.bom_number }) : t($ => $.drawer.titleFallback)}
-        </SheetTitle>
-
-        {/* Summary Header */}
-        <div className="border-b px-5 pt-4 pb-3 shrink-0">
-          {/* Row 1: Identity + Actions */}
-          <div className="flex items-start justify-between gap-3 mb-2.5">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="size-11 rounded-lg border bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-                {getMediaUrl(header?.product?.image_url) ? (
-                  <img
-                    src={getMediaUrl(header!.product!.image_url)!}
-                    alt={header!.product!.name}
-                    className="size-full object-cover"
-                  />
-                ) : (
-                  <BookOpen className="size-4 text-muted-foreground" />
-                )}
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-                  {header?.is_active ? (
-                    <Badge className="text-[10px] px-1.5 py-0 h-4 leading-none bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800">
-                      {t($ => $.status.active)}
-                    </Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 leading-none text-muted-foreground">
-                      {t($ => $.status.draft)}
-                    </Badge>
-                  )}
-                  <span className="text-[10px] text-muted-foreground font-mono">{header?.bom_number}</span>
-                </div>
-                <p className="font-semibold text-sm leading-tight truncate">{display?.product?.name ?? '—'}</p>
-                {display?.product?.category && (
-                  <p className="text-xs text-muted-foreground truncate">{display.product.category.name}</p>
-                )}
-              </div>
+    <EntityDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title={recipe ? t($ => $.drawer.title, { name: recipe.product?.name ?? recipe.bom_number }) : t($ => $.drawer.titleFallback)}
+    >
+      <div className="flex h-full flex-col gap-3">
+        {/* Row 1: Identity + Actions */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="size-11 rounded-lg border bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+              {getMediaUrl(header?.product?.image_url) ? (
+                <img
+                  src={getMediaUrl(header!.product!.image_url)!}
+                  alt={header!.product!.name}
+                  className="size-full object-cover"
+                />
+              ) : (
+                <BookOpen className="size-4 text-muted-foreground" />
+              )}
             </div>
-
-            {recipe && (
-              <div className="flex items-center gap-1.5 shrink-0">
-                {isDetailFetching && (
-                  <Loader2 className="size-3.5 text-muted-foreground animate-spin" aria-hidden />
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+                {header?.is_active ? (
+                  <Badge className="text-[10px] px-1.5 py-0 h-4 leading-none bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800">
+                    {t($ => $.status.active)}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 leading-none text-muted-foreground">
+                    {t($ => $.status.draft)}
+                  </Badge>
                 )}
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 gap-1 px-2 text-xs"
-                  onClick={handleCreateFrom}
-                  aria-label={`Clone recipe ${header?.bom_number ?? ''}`}
-                >
-                  <Copy className="size-3" aria-hidden />
-                  {t($ => $.drawer.clone)}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="h-7 gap-1 px-2 text-xs"
-                  onClick={() => onEdit(recipe)}
-                  aria-label={`Edit recipe ${header?.bom_number ?? ''}`}
-                >
-                  <Pencil className="size-3" aria-hidden />
-                  {t($ => $.drawer.edit)}
-                </Button>
+                <span className="text-[10px] text-muted-foreground font-mono">{header?.bom_number}</span>
               </div>
-            )}
+              <p className="font-semibold text-sm leading-tight truncate">{display?.product?.name ?? '—'}</p>
+              {display?.product?.category && (
+                <p className="text-xs text-muted-foreground truncate">{display.product.category.name}</p>
+              )}
+            </div>
           </div>
 
-          {/* Row 2: Key Metrics */}
-          {display && (
-            <div className="flex items-center flex-wrap">
-              <MetricPill
-                dot={false}
-                label={t($ => $.drawer.metrics.cost)}
-                value={fmtCost(headerCost, currency, locale)}
-                warn={display.cost_pending}
-              />
-              {(display.total_waste_pct ?? 0) > 0 && (
-                <MetricPill
-                  label={t($ => $.drawer.metrics.waste)}
-                  value={`${(display.total_waste_pct ?? 0).toFixed(2)}%`}
-                />
+          {recipe && (
+            <div className="flex items-center gap-1.5 shrink-0">
+              {isDetailFetching && (
+                <Loader2 className="size-3.5 text-muted-foreground animate-spin" aria-hidden />
               )}
-              <MetricPill
-                label={t($ => $.drawer.metrics.materials)}
-                value={String(display.lines?.length ?? display.lines_count ?? 0)}
-              />
-              {display.product?.channels?.[0] && (
-                <MetricPill label={t($ => $.drawer.metrics.channel)} value={display.product.channels[0].name} />
-              )}
-              {display.product?.channels?.[0]?.company_name && (
-                <MetricPill label={t($ => $.drawer.metrics.company)} value={display.product.channels[0].company_name} />
-              )}
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 gap-1 px-2 text-xs"
+                onClick={handleCreateFrom}
+                aria-label={`Clone recipe ${header?.bom_number ?? ''}`}
+              >
+                <Copy className="size-3" aria-hidden />
+                {t($ => $.drawer.clone)}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 gap-1 px-2 text-xs"
+                onClick={() => onEdit(recipe)}
+                aria-label={`Edit recipe ${header?.bom_number ?? ''}`}
+              >
+                <Pencil className="size-3" aria-hidden />
+                {t($ => $.drawer.edit)}
+              </Button>
             </div>
           )}
         </div>
 
+        {/* Row 2: Key Metrics */}
+        {display && (
+          <div className="flex items-center flex-wrap">
+            <MetricPill
+              dot={false}
+              label={t($ => $.drawer.metrics.cost)}
+              value={fmtCost(headerCost, currency, locale)}
+              warn={display.cost_pending}
+            />
+            {(display.total_waste_pct ?? 0) > 0 && (
+              <MetricPill
+                label={t($ => $.drawer.metrics.waste)}
+                value={`${(display.total_waste_pct ?? 0).toFixed(2)}%`}
+              />
+            )}
+            <MetricPill
+              label={t($ => $.drawer.metrics.materials)}
+              value={String(display.lines?.length ?? display.lines_count ?? 0)}
+            />
+            {display.product?.channels?.[0] && (
+              <MetricPill label={t($ => $.drawer.metrics.channel)} value={display.product.channels[0].name} />
+            )}
+            {display.product?.channels?.[0]?.company_name && (
+              <MetricPill label={t($ => $.drawer.metrics.company)} value={display.product.channels[0].company_name} />
+            )}
+          </div>
+        )}
+
         {/* Tabs */}
-        {recipe ? (
-          <Tabs
-            tabs={tabs}
-            activeKey={activeTab}
-            onTabChange={setActiveTab}
-            className="flex-1 overflow-hidden"
-            contentClassName="overflow-y-auto h-full"
-          />
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
+        {recipe && display ? (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col gap-0">
+            <TabsList className="w-full shrink-0 justify-start overflow-x-auto">
+              <TabsTrigger value="overview">{t($ => $.drawer.tabs.overview)}</TabsTrigger>
+              <TabsTrigger value="materials" className="gap-1.5">
+                {t($ => $.drawer.tabs.materials)}
+                <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary/15 px-1 text-[10px] font-semibold text-primary">
+                  {display.lines.length}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger value="cost-history">{t($ => $.drawer.tabs.costHistory)}</TabsTrigger>
+            </TabsList>
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <TabsContent value="overview" className="mt-0"><OverviewTab recipe={display} /></TabsContent>
+              <TabsContent value="materials" className="mt-0"><MaterialsTab recipe={display} /></TabsContent>
+              <TabsContent value="cost-history" className="mt-0"><CostHistoryTab recipeId={display.id} /></TabsContent>
+            </div>
+          </Tabs>
+        ) : recipe ? null : (
+          <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
             {t($ => $.drawer.selectRecipe)}
           </div>
         )}
-      </SheetContent>
-    </Sheet>
+      </div>
+    </EntityDrawer>
   );
 }

@@ -1,9 +1,10 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { visibleModuleItems, type AppModule } from '@/config/module-navigation';
 import { useAuthorization, usePermission } from '@/features/authorization';
 import { usePriceReviewBadge } from '@/features/cost-management/hooks/use-pricing-reviews';
@@ -41,6 +42,7 @@ export function AppSidebar({
   const navLabel = useNavLabel();
   const { can } = usePermission();
   const { context } = useAuthorization();
+  const { pathname } = useLocation();
 
   /**
    * §17 — the sidebar renders only the entries this user's PERMISSIONS allow.
@@ -64,17 +66,78 @@ export function AppSidebar({
   const CollapseIcon = dir === 'rtl' ? ChevronRight : ChevronLeft;
 
   if (collapsed) {
+    // §5/§8 — a collapsed sidebar that hid every nav item behind a bare
+    // expand button was "visually narrower," not "usable": the user lost
+    // both wayfinding (which page they're on) and one-click access to any
+    // other page in the module until they expanded it again. Icon-only rows
+    // below restore both, at the same information density ModuleRail already
+    // uses one column over — same active-state treatment, same Tooltip
+    // primitive newly shared with it (see module-rail.tsx).
+    const tooltipSide = dir === 'rtl' ? 'left' : 'right';
     return (
-      <div className={cn('flex flex-col items-center bg-sidebar py-2 w-9', className)}>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-7"
-          onClick={onCollapse}
-          aria-label={t($ => $.nav.expandSidebar)}
+      <div className={cn('flex w-12 flex-col items-center gap-0.5 bg-sidebar py-2', className)}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8"
+              onClick={onCollapse}
+              aria-label={t($ => $.nav.expandSidebar)}
+            >
+              <ExpandIcon className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side={tooltipSide}>{t($ => $.nav.expandSidebar)}</TooltipContent>
+        </Tooltip>
+
+        <nav
+          aria-label={t($ => $.nav.moduleNav, {
+            module: navLabel.group(activeModule.id),
+          })}
+          className="mt-1 flex w-full flex-col items-center gap-0.5 overflow-y-auto"
         >
-          <ExpandIcon className="size-4" />
-        </Button>
+          {items
+            .filter((item) => !item.isSection)
+            .map((item) => {
+              const Icon = item.icon;
+              const label = navLabel.item(item.key);
+              // Computed manually, not via NavLink's `className={({isActive}) => ...}`
+              // render-prop: TooltipTrigger's `asChild` clones this element through
+              // Radix's Slot, which forwards/merges static prop VALUES — it can't
+              // invoke a function prop the way NavLink itself does internally, so a
+              // function className survives Slot-cloning only as its own
+              // `.toString()`. Matches the same pathname-prefix check
+              // mobile-bottom-nav.tsx already uses for the identical reason (its
+              // active state also has to be computed outside NavLink's own prop).
+              const isActive = pathname === item.path || pathname.startsWith(item.path + '/');
+              return (
+                <Tooltip key={item.key}>
+                  <TooltipTrigger asChild>
+                    <NavLink
+                      to={item.path}
+                      onClick={onNavigate}
+                      aria-label={label}
+                      className={cn(
+                        'relative flex size-9 shrink-0 items-center justify-center rounded-md transition-colors',
+                        isActive
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+                      )}
+                    >
+                      <Icon className="size-4 shrink-0" aria-hidden />
+                      {item.key === 'price-review' && (
+                        <span className="absolute end-1 top-1">
+                          <PriceReviewBadge />
+                        </span>
+                      )}
+                    </NavLink>
+                  </TooltipTrigger>
+                  <TooltipContent side={tooltipSide}>{label}</TooltipContent>
+                </Tooltip>
+              );
+            })}
+        </nav>
       </div>
     );
   }

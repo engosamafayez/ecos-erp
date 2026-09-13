@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { PageDrawer } from '@/components/page';
+import { EntityDrawer } from '@/components/crud';
 import { useFormatter } from '@/hooks/use-formatter';
 
 import { useAccounts, useCreateJournal } from '../hooks/use-finance-gl';
@@ -83,12 +83,11 @@ export function JournalFormDrawer({ open, onOpenChange }: Props) {
   const accountOptions = accounts.data ?? [];
 
   return (
-    <PageDrawer
+    <EntityDrawer
       open={open}
       onOpenChange={(o) => (o ? onOpenChange(true) : close())}
       title={t(($) => $.gl.journal.form.title)}
       description={t(($) => $.gl.journal.form.subtitle)}
-      size="2xl"
       footer={
         <div className="flex w-full items-center justify-between gap-4">
           <div className="text-sm tabular-nums">
@@ -169,6 +168,6 @@ export function JournalFormDrawer({ open, onOpenChange }: Props) {
 
         {error && <p className="text-sm text-red-600">{error}</p>}
       </div>
-    </PageDrawer>
+    </EntityDrawer>
   );
 }

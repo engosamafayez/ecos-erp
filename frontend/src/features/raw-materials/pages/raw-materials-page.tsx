@@ -177,7 +177,7 @@ function BulkActionBar({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export function RawMaterialsPage() {
+export function RawMaterialsPage({ defaultMaterialType }: { defaultMaterialType?: MaterialType } = {}) {
   const { t } = useTranslation('raw-materials');
 
   // ── Column preferences ────────────────────────────────────────────────────
@@ -190,7 +190,12 @@ export function RawMaterialsPage() {
   const [warehouseId,   setWarehouseId]   = useState('');
   const [availability,  setAvailability]  = useState('');
   const [allowNegative, setAllowNegative] = useState('');
-  const [materialType,  setMaterialType]  = useState<MaterialType | ''>('');
+  // Reused by PackagingMaterialsPage (features/inventory/pages) to open this
+  // same, already-generic table pre-filtered to packaging materials, rather
+  // than a second implementation of the same On Hand/Reserved/Available/Value
+  // reporting. The filter stays fully switchable — arriving here scoped to one
+  // type is a starting point, not a lock.
+  const [materialType,  setMaterialType]  = useState<MaterialType | ''>(defaultMaterialType ?? '');
   const [page,          setPage]          = useState(1);
   const [sortField,     setSortField]     = useState<SortField>('name');
   const [sortDir,       setSortDir]       = useState<SortDir>('asc');

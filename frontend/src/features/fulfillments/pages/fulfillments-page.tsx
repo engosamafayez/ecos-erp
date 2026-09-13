@@ -6,12 +6,11 @@ import { useTranslation } from 'react-i18next';
 import {
   ActionMenu,
   ConfirmDialog,
-  EntityTable,
   EntityToolbar,
   PageHeader,
-  Pagination,
 } from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
+import type { DataGridColumnDef, GridPaginationConfig } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { FulfillmentStatusBadge } from '@/features/fulfillments/components/fulfillment-status-badge';
@@ -74,54 +73,106 @@ export function FulfillmentsPage() {
     setPage(1);
   };
 
-  const columns: ColumnDef<Fulfillment>[] = [
+  const columns: DataGridColumnDef<Fulfillment>[] = [
     {
       key: 'fulfillment_number',
-      header: t($ => $.columns.number),
+      label: t($ => $.columns.number),
       sortable: true,
+      cardRole: 'title',
       cell: (f) => <span className="font-medium">{f.fulfillment_number}</span>,
     },
     {
       key: 'order',
-      header: t($ => $.columns.order),
+      label: t($ => $.columns.order),
       cell: (f) => (
         <span className="text-muted-foreground">{f.order?.order_number ?? '—'}</span>
       ),
     },
     {
       key: 'customer',
-      header: t($ => $.columns.customer),
+      label: t($ => $.columns.customer),
+      cardRole: 'subtitle',
       cell: (f) => (
         <span className="text-muted-foreground">{f.order?.customer?.name ?? '—'}</span>
       ),
     },
     {
       key: 'channel',
-      header: t($ => $.columns.channel, { defaultValue: 'Channel' }),
+      label: t($ => $.columns.channel, { defaultValue: 'Channel' }),
       cell: (f) => (
         <span className="text-muted-foreground">{f.order?.channel?.name ?? '—'}</span>
       ),
     },
     {
       key: 'warehouse',
-      header: t($ => $.columns.warehouse),
+      label: t($ => $.columns.warehouse),
       cell: (f) => (
         <span className="text-muted-foreground">{f.warehouse?.name ?? '—'}</span>
       ),
     },
     {
       key: 'fulfillment_date',
-      header: t($ => $.columns.fulfillmentDate),
+      label: t($ => $.columns.fulfillmentDate),
       sortable: true,
       cell: (f) => <span className="text-muted-foreground">{f.fulfillment_date}</span>,
     },
     {
       key: 'status',
-      header: t($ => $.columns.status),
+      label: t($ => $.columns.status),
       sortable: true,
+      cardRole: 'status',
       cell: (f) => <FulfillmentStatusBadge status={f.status} />,
     },
+    {
+      key: 'actions',
+      label: '',
+      align: 'end',
+      alwaysVisible: true,
+      cell: (f) => (
+        <ActionMenu
+          label={`Actions for ${f.fulfillment_number}`}
+          items={[
+            {
+              key: 'view',
+              label: tCommon($ => $.actions.view),
+              icon: Eye,
+              onSelect: () => navigate(`${ROUTES.fulfillments}/${f.id}`),
+            },
+            ...(f.status === 'pending'
+              ? [
+                  {
+                    key: 'fulfill',
+                    label: t($ => $.actions.fulfill),
+                    icon: CheckCircle,
+                    onSelect: () => setFulfilling(f),
+                  },
+                  {
+                    key: 'cancel',
+                    label: t($ => $.actions.cancel),
+                    icon: XCircle,
+                    onSelect: () => setCancelling(f),
+                  },
+                  {
+                    key: 'delete',
+                    label: tCommon($ => $.common.delete),
+                    icon: Trash2,
+                    variant: 'destructive' as const,
+                    onSelect: () => setDeleting(f),
+                  },
+                ]
+              : []),
+          ]}
+        />
+      ),
+    },
   ];
+
+  const pagination: GridPaginationConfig | undefined = meta
+    ? {
+        meta: { page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page },
+        onPageChange: setPage,
+      }
+    : undefined;
 
   return (
     <div className="flex flex-col gap-6">
@@ -163,58 +214,16 @@ export function FulfillmentsPage() {
             }
           />
 
-          <EntityTable<Fulfillment>
-            columns={columns}
+          <UniversalDataGrid<Fulfillment>
             data={items}
-            getRowId={(f) => f.id}
-            isLoading={isLoading}
-            isError={isError}
+            columns={columns}
+            rowId={(f) => f.id}
+            loading={isLoading}
+            error={isError}
             sort={sort}
             onSortChange={handleSort}
-            rowActions={(f) => (
-              <ActionMenu
-                label={`Actions for ${f.fulfillment_number}`}
-                items={[
-                  {
-                    key: 'view',
-                    label: tCommon($ => $.actions.view),
-                    icon: Eye,
-                    onSelect: () => navigate(`${ROUTES.fulfillments}/${f.id}`),
-                  },
-                  ...(f.status === 'pending'
-                    ? [
-                        {
-                          key: 'fulfill',
-                          label: t($ => $.actions.fulfill),
-                          icon: CheckCircle,
-                          onSelect: () => setFulfilling(f),
-                        },
-                        {
-                          key: 'cancel',
-                          label: t($ => $.actions.cancel),
-                          icon: XCircle,
-                          onSelect: () => setCancelling(f),
-                        },
-                        {
-                          key: 'delete',
-                          label: tCommon($ => $.common.delete),
-                          icon: Trash2,
-                          variant: 'destructive' as const,
-                          onSelect: () => setDeleting(f),
-                        },
-                      ]
-                    : []),
-                ]}
-              />
-            )}
+            pagination={pagination}
           />
-
-          {meta ? (
-            <Pagination
-              meta={{ page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page }}
-              onPageChange={setPage}
-            />
-          ) : null}
         </CardContent>
       </Card>
 

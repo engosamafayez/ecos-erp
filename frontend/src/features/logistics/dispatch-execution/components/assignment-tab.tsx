@@ -2,8 +2,9 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { UserCog } from 'lucide-react';
 
-import { EmptyState, EntityTable, ErrorState } from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
+import { EmptyState, ErrorState } from '@/components/crud';
+import type { DataGridColumnDef } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Badge } from '@/components/ui/badge';
 import { useOrganizationContext } from '@/features/organization/context/organization-context';
 import {
@@ -69,27 +70,28 @@ export function AssignmentTab() {
       .slice(0, MAX_ROWS);
   }, [windowQuery.data, transportQuery.data]);
 
-  const columns: ColumnDef<AssignmentRow>[] = [
+  const columns: DataGridColumnDef<AssignmentRow>[] = [
     {
       key: 'code',
-      header: t($ => $.groups.columns.code),
+      label: t($ => $.groups.columns.code),
+      cardRole: 'title',
       cell: ({ slot }) => <span className="font-medium">{slot.code}</span>,
     },
     {
       key: 'zones',
-      header: t($ => $.groups.columns.zones),
-      align: 'right',
+      label: t($ => $.groups.columns.zones),
+      align: 'end',
       cell: ({ slot }) => slot.zones_count,
     },
     {
       key: 'orders',
-      header: t($ => $.groups.columns.orders),
-      align: 'right',
+      label: t($ => $.groups.columns.orders),
+      align: 'end',
       cell: ({ slot }) => slot.orders_count,
     },
     {
       key: 'vehicle',
-      header: t($ => $.loadingGroups.columns.vehicle),
+      label: t($ => $.loadingGroups.columns.vehicle),
       cell: ({ trips }) => {
         const first = trips[0];
         if (!first?.vehicle) return <span className="text-muted-foreground">{t($ => $.common.notAssigned)}</span>;
@@ -103,7 +105,7 @@ export function AssignmentTab() {
     },
     {
       key: 'driver',
-      header: t($ => $.loadingGroups.columns.driver),
+      label: t($ => $.loadingGroups.columns.driver),
       cell: ({ trips }) => {
         const first = trips[0];
         if (!first?.driver) return <span className="text-muted-foreground">{t($ => $.common.notAssigned)}</span>;
@@ -112,7 +114,7 @@ export function AssignmentTab() {
     },
     {
       key: 'trip_status',
-      header: t($ => $.assignment.columns.tripStatus),
+      label: t($ => $.assignment.columns.tripStatus),
       cell: ({ trips }) =>
         trips.length === 0 ? (
           <span className="text-muted-foreground">{t($ => $.assignment.noTripYet)}</span>
@@ -122,7 +124,8 @@ export function AssignmentTab() {
     },
     {
       key: 'blocker',
-      header: t($ => $.assignment.columns.blocker),
+      label: t($ => $.assignment.columns.blocker),
+      cardRole: 'status',
       cell: ({ trips }) =>
         needsAssignment(trips) ? (
           <Badge variant="destructive">{t($ => $.assignment.needsAssignment)}</Badge>
@@ -147,12 +150,12 @@ export function AssignmentTab() {
       {noWindow ? (
         <EmptyState icon={UserCog} title={t($ => $.groups.noWindow)} />
       ) : (
-        <EntityTable<AssignmentRow>
-          columns={columns}
+        <UniversalDataGrid<AssignmentRow>
           data={rows}
-          getRowId={(r) => r.slot.slot_id}
-          isLoading={isLoading}
-          isError={isError}
+          columns={columns}
+          rowId={(r) => r.slot.slot_id}
+          loading={isLoading}
+          error={isError}
           skeletonRows={5}
           emptyState={<EmptyState icon={UserCog} title={t($ => $.groups.empty)} />}
           errorState={

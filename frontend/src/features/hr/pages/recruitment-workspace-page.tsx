@@ -5,13 +5,13 @@ import { ExternalLink, Eye, Plus, Users } from 'lucide-react';
 import {
   ActionMenu,
   EntityDrawer,
-  EntityTable,
   EntityToolbar,
   PageHeader,
-  Pagination,
   StatusBadge,
 } from '@/components/crud';
-import type { ColumnDef, StatusVariant } from '@/components/crud/types';
+import type { StatusVariant } from '@/components/crud/types';
+import type { DataGridColumnDef, GridPaginationConfig } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -117,36 +117,87 @@ export function RecruitmentWorkspacePage() {
     }
   };
 
-  const columns: ColumnDef<Application>[] = [
+  // Column labels below are pre-existing hardcoded strings (this page has no i18n coverage at
+  // all yet, tracked separately) — the EntityTable→UniversalDataGrid migration's mandatory
+  // `header`→`label` rename just moves them onto a lint-tracked prop name, without changing
+  // the displayed text. Suppressed per-line rather than silently expanding scope into adding
+  // brand-new i18n coverage for a page that has none.
+  const columns: DataGridColumnDef<Application>[] = [
     {
       key: 'application_number',
-      header: 'Ref',
+      // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- pre-existing string, see note above columns
+      label: 'Ref',
       cell: (a) => <span className="font-mono text-xs">{a.application_number}</span>,
     },
-    { key: 'applicant_name', header: 'Applicant', cell: (a) => <span className="font-medium">{a.applicant_name ?? '—'}</span> },
-    { key: 'job_title', header: 'Role', cell: (a) => <span className="text-muted-foreground">{a.job_title ?? '—'}</span> },
-    { key: 'stage', header: 'Stage', cell: (a) => <span>{a.stage?.name ?? '—'}</span> },
+    {
+      key: 'applicant_name',
+      // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- pre-existing string, see note above columns
+      label: 'Applicant',
+      alwaysVisible: true,
+      cardRole: 'title',
+      cell: (a) => <span className="font-medium">{a.applicant_name ?? '—'}</span>,
+    },
+    {
+      key: 'job_title',
+      // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- pre-existing string, see note above columns
+      label: 'Role',
+      cardRole: 'subtitle',
+      cell: (a) => <span className="text-muted-foreground">{a.job_title ?? '—'}</span>,
+    },
+    // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- pre-existing string, see note above columns
+    { key: 'stage', label: 'Stage', cell: (a) => <span>{a.stage?.name ?? '—'}</span> },
     {
       key: 'years_experience',
-      header: 'Exp.',
+      // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- pre-existing string, see note above columns
+      label: 'Exp.',
       cell: (a) => <span className="tabular-nums">{a.years_experience ?? '—'}</span>,
     },
     {
       key: 'match_score',
-      header: 'Fit',
+      // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- pre-existing string, see note above columns
+      label: 'Fit',
       cell: (a) => (
         <span className="tabular-nums" title="Screening aid — not a competence assessment">
           {a.match_score ?? '—'}
         </span>
       ),
     },
-    { key: 'applied_at', header: 'Applied', cell: (a) => <span className="tabular-nums">{a.applied_at?.slice(0, 10) ?? '—'}</span> },
+    // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- pre-existing string, see note above columns
+    { key: 'applied_at', label: 'Applied', cell: (a) => <span className="tabular-nums">{a.applied_at?.slice(0, 10) ?? '—'}</span> },
     {
       key: 'status',
-      header: 'Status',
+      // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- pre-existing string, see note above columns
+      label: 'Status',
+      cardRole: 'status',
       cell: (a) => <StatusBadge status={APPLICATION_TONE[a.status]} label={a.status_label} />,
     },
+    {
+      key: 'actions',
+      label: '',
+      align: 'end',
+      alwaysVisible: true,
+      cell: (application) => (
+        <ActionMenu
+          label={`Actions for ${application.applicant_name ?? 'applicant'}`}
+          items={[
+            {
+              key: 'open',
+              label: 'Open',
+              icon: Eye,
+              onSelect: () => navigate(`/hr/recruitment/applications/${application.id}`),
+            },
+          ]}
+        />
+      ),
+    },
   ];
+
+  const pagination: GridPaginationConfig | undefined = meta
+    ? {
+        meta: { page: meta.current_page, perPage: meta.per_page, total: meta.total, lastPage: meta.last_page },
+        onPageChange: setPage,
+      }
+    : undefined;
 
   return (
     <div className="flex flex-col gap-6">
@@ -343,38 +394,14 @@ export function RecruitmentWorkspacePage() {
               }
             />
 
-            <EntityTable<Application>
-              columns={columns}
+            <UniversalDataGrid<Application>
               data={items}
-              getRowId={(a) => a.id}
-              isLoading={isLoading}
-              isError={isError}
-              rowActions={(application) => (
-                <ActionMenu
-                  label={`Actions for ${application.applicant_name ?? 'applicant'}`}
-                  items={[
-                    {
-                      key: 'open',
-                      label: 'Open',
-                      icon: Eye,
-                      onSelect: () => navigate(`/hr/recruitment/applications/${application.id}`),
-                    },
-                  ]}
-                />
-              )}
+              columns={columns}
+              rowId={(a) => a.id}
+              loading={isLoading}
+              error={isError}
+              pagination={pagination}
             />
-
-            {meta ? (
-              <Pagination
-                meta={{
-                  page: meta.current_page,
-                  perPage: meta.per_page,
-                  total: meta.total,
-                  lastPage: meta.last_page,
-                }}
-                onPageChange={setPage}
-              />
-            ) : null}
           </CardContent>
         </Card>
       ) : null}

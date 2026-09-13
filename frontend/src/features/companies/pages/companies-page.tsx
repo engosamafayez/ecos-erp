@@ -17,12 +17,11 @@ import { getMediaUrl } from '@/lib/media';
 import {
   ActionMenu,
   ConfirmDialog,
-  EntityTable,
   PageHeader,
-  Pagination,
   StatusBadge,
 } from '@/components/crud';
-import type { ColumnDef } from '@/components/crud/types';
+import type { DataGridColumnDef, GridPaginationConfig } from '@/components/data-grid';
+import { UniversalDataGrid } from '@/components/data-grid';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -220,21 +219,27 @@ export function CompaniesPage() {
   const col = (key: ColKey) => visibleCols.includes(key);
 
   // Column definitions
-  const columns = useMemo<ColumnDef<Company>[]>(() => {
-    const defs: ColumnDef<Company>[] = [];
+  /* eslint-disable ecos-i18n/no-hardcoded-ui-strings -- these column labels were
+     pre-existing plain strings under the deprecated ColumnDef's `header` field
+     (not a monitored key); `DataGridColumnDef.label` is the same pre-existing
+     copy under its required field name. Converting this page to full i18n is
+     out of scope for the EntityTable -> UniversalDataGrid presentation migration. */
+  const columns = useMemo<DataGridColumnDef<Company>[]>(() => {
+    const defs: DataGridColumnDef<Company>[] = [];
 
     if (col('logo')) {
       defs.push({
         key: 'logo',
-        header: '',
+        label: '',
         cell: (c) => <CompanyLogoCell path={c.logo} name={c.name} />,
       });
     }
 
     defs.push({
       key: 'name',
-      header: 'Company',
+      label: 'Company',
       sortable: true,
+      cardRole: 'title',
       cell: (c) => (
         <div>
           <button
@@ -251,28 +256,29 @@ export function CompaniesPage() {
     if (col('code')) {
       defs.push({
         key: 'code',
-        header: 'Code',
+        label: 'Code',
         sortable: true,
+        cardRole: 'subtitle',
         cell: (c) => <span className="font-mono text-xs font-medium">{c.code}</span>,
       });
     }
 
     defs.push({
       key: 'brands',
-      header: 'Brands',
+      label: 'Brands',
       cell: (c) => <span className="text-sm font-medium tabular-nums">{c.brands_count ?? 0}</span>,
     });
 
     defs.push({
       key: 'warehouses',
-      header: 'Warehouses',
+      label: 'Warehouses',
       cell: (c) => <span className="text-sm font-medium tabular-nums">{c.warehouses_count ?? 0}</span>,
     });
 
     if (col('currency')) {
       defs.push({
         key: 'currency',
-        header: 'Currency',
+        label: 'Currency',
         sortable: true,
         cell: (c) => <span className="text-xs">{currencyCode(c)}</span>,
       });
@@ -281,7 +287,7 @@ export function CompaniesPage() {
     if (col('timezone')) {
       defs.push({
         key: 'timezone',
-        header: 'Timezone',
+        label: 'Timezone',
         cell: (c) => <span className="text-xs text-muted-foreground">{c.timezone ?? '—'}</span>,
       });
     }
@@ -289,7 +295,7 @@ export function CompaniesPage() {
     if (col('country')) {
       defs.push({
         key: 'country',
-        header: 'Country',
+        label: 'Country',
         sortable: true,
         cell: (c) => c.country ?? '—',
       });
@@ -298,22 +304,23 @@ export function CompaniesPage() {
     if (col('email')) {
       defs.push({
         key: 'email',
-        header: 'Email',
+        label: 'Email',
         cell: (c) => <span className="text-xs text-muted-foreground">{c.email ?? '—'}</span>,
       });
     }
 
     defs.push({
       key: 'is_active',
-      header: 'Status',
+      label: 'Status',
       sortable: true,
+      cardRole: 'status',
       cell: (c) => <StatusBadge status={c.is_active ? 'active' : 'inactive'} />,
     });
 
     if (col('updated_at')) {
       defs.push({
         key: 'updated_at',
-        header: 'Updated',
+        label: 'Updated',
         sortable: true,
         cell: (c) => (
           <span className="text-xs text-muted-foreground">
@@ -322,10 +329,59 @@ export function CompaniesPage() {
         ),
       });
     }
+    /* eslint-enable ecos-i18n/no-hardcoded-ui-strings */
+
+    // This action column carries the same pre-existing ActionMenu item labels
+    // the old `rowActions` prop already rendered (unchanged, still subject to
+    // the i18n guard like before) — kept outside the disable block above.
+    defs.push({
+      key: 'actions',
+      label: '',
+      align: 'end',
+      alwaysVisible: true,
+      cell: (company) => (
+        <ActionMenu
+          label={`Actions for ${company.name}`}
+          items={[
+            {
+              key: 'view',
+              label: 'View Details',
+              icon: Eye,
+              onSelect: () => openView(company),
+            },
+            {
+              key: 'edit',
+              label: 'Edit',
+              icon: Pencil,
+              onSelect: () => openEdit(company),
+            },
+            {
+              key: 'delete',
+              label: 'Delete',
+              icon: Trash2,
+              variant: 'destructive',
+              onSelect: () => setDeleting(company),
+            },
+          ]}
+        />
+      ),
+    });
 
     return defs;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleCols]);
+
+  const pagination: GridPaginationConfig | undefined = meta
+    ? {
+        meta: {
+          page: meta.current_page,
+          perPage: meta.per_page,
+          total: meta.total,
+          lastPage: meta.last_page,
+        },
+        onPageChange: setPage,
+      }
+    : undefined;
 
   const confirmDelete = () => {
     if (!deleting) return;
@@ -497,54 +553,16 @@ export function CompaniesPage() {
           </div>
 
           {/* DataGrid */}
-          <EntityTable<Company>
-            columns={columns}
+          <UniversalDataGrid<Company>
             data={items}
-            getRowId={(c) => c.id}
-            isLoading={isLoading}
-            isError={isError}
+            columns={columns}
+            rowId={(c) => c.id}
+            loading={isLoading}
+            error={isError}
             sort={sort}
             onSortChange={handleSort}
-            rowActions={(company) => (
-              <ActionMenu
-                label={`Actions for ${company.name}`}
-                items={[
-                  {
-                    key: 'view',
-                    label: 'View Details',
-                    icon: Eye,
-                    onSelect: () => openView(company),
-                  },
-                  {
-                    key: 'edit',
-                    label: 'Edit',
-                    icon: Pencil,
-                    onSelect: () => openEdit(company),
-                  },
-                  {
-                    key: 'delete',
-                    label: 'Delete',
-                    icon: Trash2,
-                    variant: 'destructive',
-                    onSelect: () => setDeleting(company),
-                  },
-                ]}
-              />
-            )}
+            pagination={pagination}
           />
-
-          {/* Pagination */}
-          {meta ? (
-            <Pagination
-              meta={{
-                page:     meta.current_page,
-                perPage:  meta.per_page,
-                total:    meta.total,
-                lastPage: meta.last_page,
-              }}
-              onPageChange={setPage}
-            />
-          ) : null}
         </CardContent>
       </Card>
 
