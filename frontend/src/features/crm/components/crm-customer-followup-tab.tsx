@@ -1,15 +1,20 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { Combobox } from '@/components/crud/combobox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { usePermission } from '@/features/authorization';
 import {
+  useAssignCrmCustomerOwner,
+  useBlockCrmCustomer,
   useCancelCrmTask,
   useCompleteCrmTask,
   useCreateCrmTask,
   useCrmCustomerTasksQuery,
+  useCrmSalesOwnerOptionsQuery,
+  useUnblockCrmCustomer,
 } from '@/features/crm/hooks/use-crm-customers';
 import type {
   CrmBlockedState,
@@ -152,6 +157,102 @@ type Props = {
 };
 
 /**
+ * CRM-01 Task 1 — canonical-surface parity: the sales-owner assignment the legacy
+ * `/customers` workspace offered, now on `/crm/customers` too (same
+ * AssignSalesOwnerAction underneath — see CRM-01 Task 1 report, "Customer UI").
+ */
+function OwnerAssignment({ customerId, ownerId }: { customerId: string; ownerId: string | null }) {
+  const { t } = useTranslation('crm');
+  const { can } = usePermission();
+  const { data: options } = useCrmSalesOwnerOptionsQuery();
+  const assign = useAssignCrmCustomerOwner(customerId);
+  const [value, setValue] = useState(ownerId ?? '');
+
+  if (!can('crm.customers.update')) return null;
+
+  const comboOptions = [
+    { value: '', label: t(($) => $.portfolio.owner.unassigned) },
+    ...(options ?? []).map((o) => ({ value: o.id, label: o.name ?? o.id })),
+  ];
+
+  return (
+    <div className="flex items-end gap-2">
+      <div className="flex flex-1 flex-col gap-1">
+        <label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+          {t(($) => $.followUp.owner)}
+        </label>
+        <Combobox options={comboOptions} value={value} onChange={setValue} />
+      </div>
+      <Button
+        size="sm"
+        disabled={assign.isPending || value === (ownerId ?? '')}
+        onClick={() => assign.mutate(value === '' ? null : value)}
+      >
+        {t(($) => $.followUp.assign)}
+      </Button>
+    </div>
+  );
+}
+
+/** Block/unblock — reuses BlockCustomerOrPhoneAction/UnblockCustomerAction via the canonical route. */
+function BlockControl({ customerId, blocked }: { customerId: string; blocked: CrmBlockedState }) {
+  const { t } = useTranslation('crm');
+  const { can } = usePermission();
+  const [reason, setReason] = useState('');
+  const block = useBlockCrmCustomer(customerId);
+  const unblock = useUnblockCrmCustomer(customerId);
+
+  if (blocked.is_blocked) {
+    if (!can('crm.customers.unblock') || !blocked.id) return null;
+
+    return (
+      <div className="flex flex-wrap items-end gap-2">
+        <Input
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder={t(($) => $.followUp.unblockReason)}
+          className="h-9 max-w-xs"
+        />
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={!reason.trim() || unblock.isPending}
+          onClick={() =>
+            unblock.mutate(
+              { blockId: blocked.id as string, reason: reason.trim() },
+              { onSuccess: () => setReason('') },
+            )
+          }
+        >
+          {t(($) => $.followUp.unblock)}
+        </Button>
+      </div>
+    );
+  }
+
+  if (!can('crm.customers.block')) return null;
+
+  return (
+    <div className="flex flex-wrap items-end gap-2">
+      <Input
+        value={reason}
+        onChange={(e) => setReason(e.target.value)}
+        placeholder={t(($) => $.followUp.blockReason)}
+        className="h-9 max-w-xs"
+      />
+      <Button
+        size="sm"
+        variant="destructive"
+        disabled={!reason.trim() || block.isPending}
+        onClick={() => block.mutate(reason.trim(), { onSuccess: () => setReason('') })}
+      >
+        {t(($) => $.followUp.block)}
+      </Button>
+    </div>
+  );
+}
+
+/**
  * The bounded CRM section of Customer 360 (TASK-ECOS-CRM-CUSTOMER-PORTFOLIO-
  * AND-FOLLOWUP-003 §15/§18) — a summary with an action entry point, not a
  * duplicate of the full Portfolio page. Also surfaces Gate B's finance/
@@ -171,15 +272,16 @@ export function CrmCustomerFollowUpTab({ customerId, crm, finance, blocked, enga
           {blocked.reason && <p className="text-muted-foreground">{blocked.reason}</p>}
         </div>
       )}
+      <BlockControl customerId={customerId} blocked={blocked} />
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <div className="rounded-md border p-3">
           <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
             {t(($) => $.followUp.owner)}
           </p>
-          <p className="mt-1 text-sm font-semibold">
-            {crm.owner.name ?? t(($) => $.portfolio.owner.unassigned)}
-          </p>
+          <div className="mt-1">
+            <OwnerAssignment customerId={customerId} ownerId={crm.owner.id} />
+          </div>
         </div>
         <div className="rounded-md border p-3">
           <p className="text-[11px] uppercase tracking-wide text-muted-foreground">

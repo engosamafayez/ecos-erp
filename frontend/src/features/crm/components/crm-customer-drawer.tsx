@@ -13,7 +13,9 @@ import { CrmCustomerFollowUpTab } from '@/features/crm/components/crm-customer-f
 import {
   useCrmCustomerActivitiesQuery,
   useCrmCustomerIntelligenceQuery,
+  useCrmCustomerOrdersQuery,
   useCrmCustomerProfileQuery,
+  useCrmCustomerTicketsQuery,
   useCrmCustomerTimelineQuery,
 } from '@/features/crm/hooks/use-crm-customers';
 import type enCrm from '@/i18n/locales/en/crm.json';
@@ -32,14 +34,17 @@ import type {
  * │ /profile call: those resources have POST endpoints but no list endpoint │
  * │ of their own, so profile is the only way to read them.                  │
  * │                                                                          │
- * │ Timeline and Activity have their own endpoints and are fetched lazily,  │
- * │ when their tab is first opened — otherwise opening the drawer would     │
- * │ fire every tab's request for tabs the user may never look at.           │
+ * │ Timeline, Activity, Orders and Support have their own endpoints and are │
+ * │ fetched lazily, when their tab is first opened — otherwise opening the  │
+ * │ drawer would fire every tab's request for tabs the user may never look  │
+ * │ at. Orders reads canonical Commerce Orders (CRM-01 Task 1); Support is  │
+ * │ a read-only reference into Crm\Service tickets — the ticket management  │
+ * │ surface itself remains a later CRM part, this only shows the existing   │
+ * │ customer_id linkage.                                                    │
  * │                                                                          │
- * │ Orders, Loyalty, Analytics and record Permissions are NOT tabs here.    │
- * │ Orders and record-permissions have no CRM endpoint at all; loyalty is   │
- * │ addressed by accountId with no customer-to-account lookup exposed; and  │
- * │ customer intelligence lives under its own namespace. Rendering empty    │
+ * │ Loyalty and record Permissions are still NOT tabs here — loyalty is     │
+ * │ addressed by accountId with no customer-to-account lookup exposed, and  │
+ * │ record-level permissions aren't modelled for customers. Rendering empty │
  * │ shells for them would imply the data exists and is merely absent.       │
  * └──────────────────────────────────────────────────────────────────────────┘
  */
@@ -68,11 +73,6 @@ const STATUS_VARIANT: Record<CrmCustomerStatus, StatusVariant> = {
  * code that will consume it.
  */
 const BACKEND_REQUIRED: { key: string; label: CrmLabel; detail: CrmLabel }[] = [
-  {
-    key: 'orders',
-    label: ($) => $.drawer.tabs.orders,
-    detail: ($) => $.backendRequired.orders,
-  },
   {
     key: 'loyalty',
     label: ($) => $.drawer.tabs.loyalty,
@@ -169,6 +169,14 @@ export function CrmCustomerDrawer({ customerId, open, onOpenChange, onEdit }: Pr
   const { data: intelligence, isLoading: intelligenceLoading } = useCrmCustomerIntelligenceQuery(
     customerId,
     open && tab === 'analytics',
+  );
+  const { data: orders, isLoading: ordersLoading } = useCrmCustomerOrdersQuery(
+    customerId,
+    open && tab === 'orders',
+  );
+  const { data: tickets, isLoading: ticketsLoading } = useCrmCustomerTicketsQuery(
+    customerId,
+    open && tab === 'support',
   );
 
   const identity = profile?.identity;
@@ -393,7 +401,94 @@ export function CrmCustomerDrawer({ customerId, open, onOpenChange, onEdit }: Pr
     {
       key: 'analytics',
       label: t(($) => $.analytics.tab),
-      content: <CrmCustomerAnalyticsTab data={intelligence} isLoading={intelligenceLoading} />,
+      content: (
+        <CrmCustomerAnalyticsTab
+          data={intelligence}
+          isLoading={intelligenceLoading}
+          totalOrderValue={metrics?.total_order_value ?? null}
+        />
+      ),
+    },
+    {
+      key: 'orders',
+      label: t(($) => $.drawer.tabs.orders),
+      badge: orders?.length || undefined,
+      content: ordersLoading ? (
+        <Empty message={t(($) => $.drawer.timeline.loading)} />
+      ) : !orders || orders.length === 0 ? (
+        <Empty message={t(($) => $.drawer.ordersTab.empty)} />
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                <th className="py-2 pe-3 font-medium">{t(($) => $.drawer.ordersTab.orderNumber)}</th>
+                <th className="py-2 pe-3 font-medium">{t(($) => $.drawer.ordersTab.date)}</th>
+                <th className="py-2 pe-3 font-medium">{t(($) => $.drawer.ordersTab.status)}</th>
+                <th className="py-2 pe-3 font-medium">{t(($) => $.drawer.ordersTab.brand)}</th>
+                <th className="py-2 pe-3 text-end font-medium">{t(($) => $.drawer.ordersTab.total)}</th>
+                <th className="py-2 font-medium">{t(($) => $.drawer.ordersTab.delivery)}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((o) => (
+                <tr key={o.id} className="border-b last:border-0">
+                  <td className="py-2 pe-3 font-medium">{o.order_number}</td>
+                  <td className="py-2 pe-3 text-muted-foreground">
+                    {o.order_date ? new Date(o.order_date).toLocaleDateString() : '—'}
+                  </td>
+                  <td className="py-2 pe-3">
+                    {o.status ? <Badge variant="outline">{o.status}</Badge> : '—'}
+                  </td>
+                  <td className="py-2 pe-3 text-muted-foreground">{o.brand ?? '—'}</td>
+                  <td className="py-2 pe-3 text-end tabular-nums">{num(o.total, 2)}</td>
+                  <td className="py-2 text-muted-foreground">
+                    {o.requested_delivery_date
+                      ? new Date(o.requested_delivery_date).toLocaleDateString()
+                      : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ),
+    },
+    {
+      key: 'support',
+      label: t(($) => $.drawer.tabs.support),
+      badge: tickets?.length || undefined,
+      content: ticketsLoading ? (
+        <Empty message={t(($) => $.drawer.timeline.loading)} />
+      ) : !tickets || tickets.length === 0 ? (
+        <Empty message={t(($) => $.drawer.support.empty)} />
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {tickets.map((tk) => (
+            <li key={tk.id} className="rounded-md border p-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm font-medium">{tk.ticket_number}</span>
+                {tk.status && (
+                  <Badge variant="outline" className="text-[10px]">
+                    {tk.status}
+                  </Badge>
+                )}
+                {tk.priority && (
+                  <Badge variant="secondary" className="text-[10px]">
+                    {tk.priority}
+                  </Badge>
+                )}
+              </div>
+              <p className="mt-0.5 text-sm">{tk.subject}</p>
+              {tk.created_at && (
+                <time className="text-[11px] text-muted-foreground">
+                  {new Date(tk.created_at).toLocaleString()}
+                </time>
+              )}
+            </li>
+          ))}
+        </ul>
+      ),
     },
     {
       key: 'crm',

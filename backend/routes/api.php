@@ -88,6 +88,7 @@ use Modules\Crm\Loyalty\Presentation\Http\Controllers\PointsController as CrmPoi
 use Modules\Crm\Loyalty\Presentation\Http\Controllers\RewardController as CrmRewardController;
 use Modules\Crm\Portfolio\Presentation\Http\Controllers\PortfolioController as CrmPortfolioController;
 use Modules\Crm\Sales\Presentation\Http\Controllers\LeadController as CrmLeadController;
+use Modules\Crm\Sales\Presentation\Http\Controllers\MyWorkController as CrmMyWorkController;
 use Modules\Crm\Sales\Presentation\Http\Controllers\OpportunityController as CrmOpportunityController;
 use Modules\Crm\Sales\Presentation\Http\Controllers\PipelineController as CrmPipelineController;
 use Modules\Crm\Sales\Presentation\Http\Controllers\QuoteController as CrmQuoteController;
@@ -4211,17 +4212,30 @@ Route::middleware('auth:sanctum')->prefix('crm/customers')->group(function (): v
     Route::post('/detect-duplicates', [CrmCustomerMergeController::class, 'detect'])->middleware('permission:crm.customers.view');
     Route::post('/merge', [CrmCustomerMergeController::class, 'merge'])->middleware('permission:crm.customers.merge');
 
+    // CRM-01 TASK 1 — canonical-surface parity for capabilities the legacy /customers
+    // workspace offered (see TASK-ECOS-V1.1-CRM-01-TASK1-*-REPORT.md §CUSTOMER UI).
+    // Registered before the `/{id}` routes below so they are never swallowed as an id.
+    Route::get('/sales-owners', [CrmCustomerController::class, 'salesOwnerOptions'])->middleware('permission:crm.customers.view');
+    Route::get('/export', [CrmCustomerController::class, 'export'])->middleware('permission:sales.customers.export');
+    Route::post('/block-phone', [CrmCustomerController::class, 'blockPhone'])->middleware('permission:crm.customers.block');
+
     // Master.
     Route::middleware('permission:crm.customers.view')->group(function (): void {
         Route::get('/', [CrmCustomerController::class, 'index']);
         Route::get('/{id}', [CrmCustomerController::class, 'show']);
         Route::get('/{id}/profile', [CrmCustomerController::class, 'profile']);
         Route::get('/{id}/duplicates', [CrmCustomerMergeController::class, 'duplicates']);
+        Route::get('/{id}/orders', [CrmCustomerController::class, 'orders']);
+        Route::get('/{id}/tickets', [CrmCustomerController::class, 'tickets']);
+        Route::get('/{id}/block-history', [CrmCustomerController::class, 'blockHistory']);
     });
     Route::post('/', [CrmCustomerController::class, 'store'])->middleware('permission:crm.customers.create');
     Route::patch('/{id}', [CrmCustomerController::class, 'update'])->middleware('permission:crm.customers.update');
     Route::patch('/{id}/status', [CrmCustomerController::class, 'setStatus'])->middleware('permission:crm.customers.update');
     Route::patch('/{id}/archive', [CrmCustomerController::class, 'archive'])->middleware('permission:crm.customers.archive');
+    Route::patch('/{id}/sales-owner', [CrmCustomerController::class, 'assignOwner'])->middleware('permission:crm.customers.update');
+    Route::post('/{id}/block', [CrmCustomerController::class, 'block'])->middleware('permission:crm.customers.block');
+    Route::post('/{id}/unblock', [CrmCustomerController::class, 'unblock'])->middleware('permission:crm.customers.unblock');
 
     // Sub-resources (edit authority).
     Route::middleware('permission:crm.customers.update')->group(function (): void {
@@ -4385,6 +4399,13 @@ Route::middleware('auth:sanctum')->prefix('crm/sales')->group(function (): void 
             Route::patch('/{id}/cancel', [CrmSalesActivityController::class, 'cancel']);
         });
     });
+});
+
+// CRM-01 Task 2 — "My Work": composed read-only from existing Lead/Opportunity/
+// Portfolio/InternalTask authorities. Same view any of those would already grant
+// this user for their own rows — see MyWorkController's own docblock.
+Route::middleware(['auth:sanctum', 'permission:crm.sales.view'])->group(function (): void {
+    Route::get('crm/my-work', [CrmMyWorkController::class, 'index']);
 });
 
 // Loyalty.

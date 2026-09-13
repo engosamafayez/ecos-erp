@@ -150,6 +150,8 @@ export type CrmDocument = {
 
 /** Read-only — the enforced authority lives on Sales\Customers (BlockedCustomerPolicy). */
 export type CrmBlockedState = {
+  /** The active block episode's id — null when not blocked. Needed to target unblock(). */
+  id: string | null;
   is_blocked: boolean;
   reason: string | null;
   blocked_at: string | null;
@@ -335,4 +337,45 @@ export type CrmCustomerIntelligence = {
   profile: CrmIntelligenceProfile | null;
   insights: CrmInsight[];
   recommendations: CrmRecommendation[];
+};
+
+// ── CRM-01 Task 1 — Customer 360 Orders + Support closure ─────────────────────
+
+export type CrmCustomerOrder = {
+  id: string;
+  order_number: string;
+  order_date: string | null;
+  status: string | null;
+  brand: string | null;
+  total: number;
+  deposit_amount: number;
+  remaining_balance: number;
+  requested_delivery_date: string | null;
+  shipping_address: string | null;
+  city: string | null;
+  governorate: string | null;
+};
+
+export type CrmCustomerTicket = {
+  id: string;
+  ticket_number: string;
+  subject: string;
+  status: string | null;
+  priority: string | null;
+  created_at: string | null;
+  resolved_at: string | null;
+  closed_at: string | null;
+};
+
+export type CrmSalesOwnerOption = { id: string; name: string | null };
+
+export type CrmBlockHistoryEntry = {
+  id: string;
+  block_reason: string;
+  blocked_by: string | null;
+  blocked_at: string | null;
+  unblock_reason: string | null;
+  unblocked_by: string | null;
+  unblocked_at: string | null;
+  is_active: boolean;
 };

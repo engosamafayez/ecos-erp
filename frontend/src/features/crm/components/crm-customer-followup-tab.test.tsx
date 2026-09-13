@@ -97,7 +97,7 @@ const BASE_PROPS = {
     recent_activity: null,
   },
   finance: { balance: 1250.5 },
-  blocked: { is_blocked: false, reason: null, blocked_at: null, blocked_by: null },
+  blocked: { id: null, is_blocked: false, reason: null, blocked_at: null, blocked_by: null },
   engagement: { conversations_count: 2, last_conversation_at: '2026-01-01T00:00:00Z' },
 };
 
@@ -119,7 +119,7 @@ describe('CrmCustomerFollowUpTab', () => {
     render(
       <CrmCustomerFollowUpTab
         {...BASE_PROPS}
-        blocked={{ is_blocked: true, reason: 'Repeated non-payment', blocked_at: '2026-01-01T00:00:00Z', blocked_by: '3' }}
+        blocked={{ id: 'block-1', is_blocked: true, reason: 'Repeated non-payment', blocked_at: '2026-01-01T00:00:00Z', blocked_by: '3' }}
       />,
     );
 

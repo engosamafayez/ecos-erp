@@ -20,15 +20,35 @@ class LeadController extends Controller
 
     public function __construct(private readonly LeadService $leads) {}
 
+    /**
+     * CRM-01 TASK 1 — Lead 360 list closure. Adds real server-side pagination/search/
+     * owner filtering (previously a hard limit(100), no search) since this task is the
+     * one building the Lead frontend against this contract — see CRM-01 Task 1 report,
+     * "Lead list search/pagination".
+     */
     public function index(Request $request): JsonResponse
     {
-        $rows = Lead::query()
+        $perPage = min(max((int) $request->integer('per_page', 25), 1), 100);
+        $term = trim((string) $request->query('q', ''));
+
+        $page = Lead::query()
             ->where('company_id', $this->companyId($request))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
-            ->latest('created_at')->limit(100)->get()
-            ->map(fn (Lead $l) => $this->payload($l));
+            ->when($request->filled('owner_id'), fn ($q) => $q->where('owner_id', $request->integer('owner_id')))
+            ->when($term !== '', function ($q) use ($term): void {
+                $like = '%'.$term.'%';
+                $q->where(fn ($w) => $w->where('name', 'like', $like)
+                    ->orWhere('phone', 'like', $like)
+                    ->orWhere('email', 'like', $like)
+                    ->orWhere('company_name', 'like', $like));
+            })
+            ->latest('created_at')
+            ->paginate($perPage);
 
-        return response()->json(['data' => $rows]);
+        return response()->json([
+            'data' => collect($page->items())->map(fn (Lead $l) => $this->payload($l)),
+            'meta' => ['page' => $page->currentPage(), 'per_page' => $page->perPage(), 'total' => $page->total(), 'last_page' => $page->lastPage()],
+        ]);
     }
 
     public function show(Request $request, string $id): JsonResponse

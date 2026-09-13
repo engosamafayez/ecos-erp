@@ -99,7 +99,7 @@ const ROW: CrmPortfolioRow = {
   sales_owner_id: null,
   sales_owner_name: null,
   is_unassigned: true,
-  blocked: { is_blocked: false, reason: null, blocked_at: null, blocked_by: null },
+  blocked: { id: null, is_blocked: false, reason: null, blocked_at: null, blocked_by: null },
   finance: { balance: 1250.5 },
   commerce: {
     orders_count: 4,

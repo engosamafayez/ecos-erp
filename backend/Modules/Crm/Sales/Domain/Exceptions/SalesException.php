@@ -29,4 +29,10 @@ class SalesException extends RuntimeException
     {
         return new self('Only a draft quote can be edited.');
     }
+
+    /** CRM-01 Task 2 — moveStage() company/pipeline-scoping closure. */
+    public static function stageNotInOpportunityPipeline(string $name): self
+    {
+        return new self("That stage does not belong to opportunity {$name}'s own pipeline.");
+    }
 }

@@ -1,10 +1,13 @@
 import { useMemo, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Download, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router-dom';
 
 import { UniversalDataGrid } from '@/components/data-grid/universal-data-grid';
 import { SmartToolbar } from '@/components/data-grid/smart-toolbar';
 import type { DataGridColumnDef } from '@/components/data-grid/types';
+import { Button } from '@/components/ui/button';
+import { crmCustomersService } from '@/features/crm/services/crm-customers-service';
 
 /** Presentation only — the figure itself is computed server-side and never re-derived. */
 function fmtMoney(n: number | null | undefined) {
@@ -84,12 +87,39 @@ export function CrmCustomersWorkspacePage() {
   const [type, setType] = useState<CrmCustomerType | 'all'>('all');
   const [page, setPage] = useState(1);
 
+  // CRM-01 Task 1 — `?open=<id>` preserves the legacy /customers/:id deep link
+  // (retired route, see router.ts) so an external bookmark still opens the
+  // right customer here instead of just landing on the bare list.
+  const [searchParams] = useSearchParams();
+
   // The drawer is the module's interaction surface: the grid selects, the
   // drawer does. Details and the create/edit form are separate panels so that
   // opening a form never discards the record you were reading.
-  const [detailsId, setDetailsId] = useState<string | null>(null);
+  const [detailsId, setDetailsId] = useState<string | null>(() => searchParams.get('open'));
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<CrmCustomer | undefined>(undefined);
+  const [isExporting, setIsExporting] = useState(false);
+
+  async function handleExport() {
+    setIsExporting(true);
+    try {
+      const blob = await crmCustomersService.exportCsv({
+        q: search || undefined,
+        status: status === 'all' ? undefined : status,
+        type: type === 'all' ? undefined : type,
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `customers-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } finally {
+      setIsExporting(false);
+    }
+  }
 
   function openCreate() {
     setEditing(undefined);
@@ -312,6 +342,18 @@ export function CrmCustomersWorkspacePage() {
                 </option>
               ))}
             </select>
+
+            {can('sales.customers.export') && (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isExporting}
+                onClick={() => void handleExport()}
+              >
+                <Download className="me-1.5 size-4" />
+                {t(($) => $.toolbar.export)}
+              </Button>
+            )}
           </div>
         }
       />

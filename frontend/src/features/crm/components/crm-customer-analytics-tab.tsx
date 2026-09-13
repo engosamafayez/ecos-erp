@@ -12,10 +12,21 @@ import type enCrm from '@/i18n/locales/en/crm.json';
  * derived in the client: a churn score recalculated in the browser would drift
  * from the one the rest of the platform reports.
  *
- * The orders section is a SUMMARY, not a list. The intelligence profile carries
- * order count, total spent, average value and first/last dates; there is no
- * customer-scoped orders endpoint, so a per-order list is not offered and the
- * section says why rather than appearing incomplete.
+ * The orders section is the intelligence engine's own SUMMARY aggregate (count,
+ * total spent, average, first/last dates); the individual order list lives in
+ * the drawer's own Orders tab (CRM-01 Task 1), reading canonical Commerce Orders.
+ *
+ * CRM-01 TASK 1 — LTV authority decision (see CRM-01 Task 1 report, "Customer
+ * metrics / LTV"): three pre-existing "lifetime value" sources were found
+ * (Sales\Customers\CustomerBrand.lifetime_value, this engine's own historical
+ * `lifetime_value` — fed only by a manual, currently-unpopulated purchase-fact
+ * pipeline — and Commerce's live CustomerOrderMetricsService.total_order_value).
+ * The "Lifetime value" stat below intentionally renders `totalOrderValue` (the
+ * live, canonical, direct-from-orders figure already shown as "Total Order
+ * Value" in Overview) instead of the engine's own `p.lifetime_value`, so this
+ * tab never shows a stale/zero figure next to the real one. `predicted_lifetime_value`
+ * is left untouched — it is a genuinely different, forward-looking forecast, not
+ * a competing "actual" value, so it keeps its own distinct label.
  */
 
 type CrmLabel = ($: typeof enCrm) => string;
@@ -73,9 +84,12 @@ function formatDate(value: string | null, language: string): string {
 export function CrmCustomerAnalyticsTab({
   data,
   isLoading,
+  totalOrderValue,
 }: {
   data: CrmCustomerIntelligence | undefined;
   isLoading: boolean;
+  /** Canonical, live figure from CustomerOrderMetricsService — see the file-level note. */
+  totalOrderValue: number | null;
 }) {
   const { t, i18n } = useTranslation('crm');
   const money = useMoney();
@@ -139,7 +153,7 @@ export function CrmCustomerAnalyticsTab({
 
       <Section title={t(($) => $.analytics.sections.stats)}>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Stat label={t(($) => $.analytics.stats.lifetimeValue)} value={money(p.lifetime_value)} />
+          <Stat label={t(($) => $.analytics.stats.lifetimeValue)} value={money(totalOrderValue)} />
           <Stat
             label={t(($) => $.analytics.stats.predictedValue)}
             value={money(p.predicted_lifetime_value)}

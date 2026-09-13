@@ -4,6 +4,123 @@
     "subtitle": "Every customer relationship in one workspace",
     "breadcrumbRoot": "CRM"
   },
+  "leads": {
+    "title": "Leads",
+    "subtitle": "Prospects the CRM owns, before or without a customer record",
+    "detailsTitle": "Lead",
+    "loading": "Loading…",
+    "convertedNotice": "This lead has been converted.",
+    "viewCustomer": "View customer",
+    "status": {
+      "new": "New",
+      "contacted": "Contacted",
+      "qualified": "Qualified",
+      "unqualified": "Unqualified",
+      "converted": "Converted"
+    },
+    "filters": {
+      "allStatuses": "All statuses"
+    },
+    "columns": {
+      "name": "Name",
+      "status": "Status",
+      "source": "Source",
+      "phone": "Phone",
+      "email": "Email",
+      "score": "Score"
+    },
+    "fields": {
+      "name": "Name",
+      "phone": "Phone",
+      "email": "Email",
+      "company": "Company",
+      "owner": "Owner",
+      "score": "Score",
+      "source": "Source"
+    },
+    "toolbar": {
+      "newLead": "New Lead",
+      "searchPlaceholder": "Search by name, phone, email or company"
+    },
+    "convert": {
+      "title": "Convert to customer + opportunity",
+      "opportunityName": "Opportunity name",
+      "amount": "Amount",
+      "action": "Convert"
+    },
+    "activity": {
+      "title": "Activities",
+      "none": "No activities yet",
+      "complete": "Complete",
+      "cancel": "Cancel",
+      "newTitle": "New activity",
+      "newDue": "Due",
+      "create": "Add"
+    },
+    "form": {
+      "createTitle": "New Lead",
+      "createdToast": "Lead created",
+      "create": "Create"
+    },
+    "empty": {
+      "title": "No leads yet",
+      "body": "Leads will appear here as they are created."
+    }
+  },
+  "pipeline": {
+    "title": "Pipeline",
+    "subtitle": "Opportunities by stage",
+    "selectPipeline": "Pipeline",
+    "status": {
+      "open": "Open",
+      "won": "Won",
+      "lost": "Lost"
+    },
+    "toolbar": {
+      "newOpportunity": "New Opportunity",
+      "searchPlaceholder": "Search by name"
+    },
+    "card": {
+      "viewLead": "View lead",
+      "viewCustomer": "View customer",
+      "owner": "Owner",
+      "moveTo": "Move to…"
+    },
+    "fields": {
+      "name": "Name",
+      "amount": "Amount",
+      "expectedCloseDate": "Expected close date"
+    },
+    "form": {
+      "createTitle": "New Opportunity",
+      "createdToast": "Opportunity created",
+      "create": "Create"
+    },
+    "empty": {
+      "noPipeline": "No pipeline is configured for this company yet.",
+      "title": "No opportunities yet",
+      "body": "Opportunities will appear here as they are created or converted from a lead."
+    }
+  },
+  "myWork": {
+    "title": "My Work",
+    "subtitle": "Your assigned leads, opportunities and follow-ups in one place",
+    "sections": {
+      "leads": "Leads needing action",
+      "opportunities": "My open opportunities",
+      "dueActivities": "Due & overdue follow-ups",
+      "customerFollowUps": "Customer follow-ups",
+      "internalTasks": "Your other tasks"
+    },
+    "empty": {
+      "leads": "No leads assigned to you right now.",
+      "opportunities": "No open opportunities assigned to you right now.",
+      "dueActivities": "Nothing due right now.",
+      "customerFollowUps": "No customer follow-ups due right now.",
+      "internalTasks": "No open tasks."
+    },
+    "internalTasksNote": "\"Your other tasks\" are general Collaboration tasks — they are not yet linked to a specific Lead, Opportunity or Customer."
+  },
   "toolbar": {
     "searchPlaceholder": "Search by name, code, phone or email",
     "newCustomer": "New Customer",
@@ -130,6 +247,7 @@
       "timeline": "Timeline",
       "activity": "Activity",
       "orders": "Orders",
+      "support": "Support",
       "loyalty": "Loyalty",
       "permissions": "Permissions",
       "products": "Products Purchased",
@@ -201,6 +319,26 @@
       "quantity": "Total Quantity",
       "orders": "Orders",
       "lastOrdered": "Last Ordered"
+    },
+    "ordersTab": {
+      "empty": "This customer has no orders yet.",
+      "orderNumber": "Order #",
+      "date": "Date",
+      "status": "Status",
+      "brand": "Brand",
+      "total": "Total",
+      "balance": "Remaining Balance",
+      "delivery": "Requested Delivery",
+      "address": "Delivery Address"
+    },
+    "support": {
+      "empty": "This customer has no support cases yet.",
+      "ticketNumber": "Case #",
+      "subject": "Subject",
+      "status": "Status",
+      "priority": "Priority",
+      "created": "Opened",
+      "resolved": "Resolved"
     }
   },
   "analytics": {
@@ -245,7 +383,7 @@
       "first": "First order",
       "last": "Last order",
       "never": "No orders recorded",
-      "note": "Summary figures come from the intelligence engine. A per-order list has no CRM endpoint."
+      "note": "Count, average and dates are the intelligence engine's own aggregate. See the Orders tab for the individual order list."
     },
     "insights": {
       "none": "No insights generated"
@@ -393,6 +531,11 @@
     "newTitle": "New follow-up",
     "newDue": "Due",
     "create": "Add",
-    "unknownPriority": "Historical value outside the current approved priority set"
+    "unknownPriority": "Historical value outside the current approved priority set",
+    "assign": "Assign",
+    "blockReason": "Reason for blocking",
+    "block": "Block",
+    "unblockReason": "Reason for unblocking",
+    "unblock": "Unblock"
   }
 }
