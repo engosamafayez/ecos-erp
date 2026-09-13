@@ -5,11 +5,10 @@ import { Download, Loader2, Paperclip, Plus, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
-import { EmptyState, LoadingState } from '@/components/crud';
+import { EmptyState, EntityDrawer, LoadingState } from '@/components/crud';
 import { toast } from '@/components/ds/use-toast';
 import { useAuthStore } from '@/features/auth/store/auth-store';
 
@@ -82,81 +81,81 @@ export function TaskDetailDrawer({ taskId, open, onOpenChange, onViewSourceConve
   }
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="flex flex-col gap-0 p-0 sm:!max-w-[560px]">
-        {isLoading || !task ? (
-          <div className="p-5">{isError ? <EmptyState title={t(($) => $.tasks.detail.loadFailed)} /> : <LoadingState />}</div>
-        ) : (
-          <>
-            <SheetHeader className="shrink-0 gap-2 border-b px-5 py-4">
-              <SheetTitle className="line-clamp-2 text-base leading-snug">{task.title}</SheetTitle>
-              <div className="flex flex-wrap items-center gap-2">
-                <TaskStatusBadge status={task.status} />
-                <TaskPriorityBadge priority={task.priority} />
-                {task.due_at ? (
-                  <span className="text-xs text-muted-foreground">
-                    {t(($) => $.tasks.dueAt, {
-                      date: new Date(task.due_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }),
-                    })}
-                  </span>
-                ) : null}
-              </div>
+    <EntityDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title={task?.title ?? t(($) => $.tasks.detail.title)}
+      className="sm:w-[45vw] sm:min-w-[480px] sm:max-w-[560px]"
+    >
+      {isLoading || !task ? (
+        isError ? <EmptyState title={t(($) => $.tasks.detail.loadFailed)} /> : <LoadingState />
+      ) : (
+        <div className="flex h-full flex-col gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <TaskStatusBadge status={task.status} />
+            <TaskPriorityBadge priority={task.priority} />
+            {task.due_at ? (
+              <span className="text-xs text-muted-foreground">
+                {t(($) => $.tasks.dueAt, {
+                  date: new Date(task.due_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' }),
+                })}
+              </span>
+            ) : null}
+          </div>
 
-              {isOwnerOrAssignee && nextStatuses.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {nextStatuses.map((target) => {
-                    const labelKey = TRANSITION_LABEL[task.status][target] ?? 'start';
-                    return (
-                      <Button key={target} size="sm" variant="outline" className="h-7 text-xs" disabled={transition.isPending} onClick={() => doTransition(target)}>
-                        {t(($) => $.tasks.detail.transitions[labelKey])}
-                      </Button>
-                    );
-                  })}
-                </div>
-              ) : null}
-            </SheetHeader>
+          {isOwnerOrAssignee && nextStatuses.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5" data-testid="task-transitions">
+              {nextStatuses.map((target) => {
+                const labelKey = TRANSITION_LABEL[task.status][target] ?? 'start';
+                return (
+                  <Button key={target} size="sm" variant="outline" className="h-7 text-xs" disabled={transition.isPending} onClick={() => doTransition(target)}>
+                    {t(($) => $.tasks.detail.transitions[labelKey])}
+                  </Button>
+                );
+              })}
+            </div>
+          ) : null}
 
-            <Tabs value={tab} onValueChange={setTab} className="flex min-h-0 flex-1 flex-col">
-              <TabsList className="h-10 w-full shrink-0 justify-start gap-0 rounded-none border-b bg-transparent px-5">
-                <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent px-3 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent">
-                  {t(($) => $.tasks.detail.title)}
-                </TabsTrigger>
-                <TabsTrigger value="checklist" className="rounded-none border-b-2 border-transparent px-3 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent">
-                  {t(($) => $.tasks.detail.checklists)}
-                </TabsTrigger>
-                <TabsTrigger value="comments" className="rounded-none border-b-2 border-transparent px-3 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent">
-                  {t(($) => $.tasks.detail.comments)}
-                </TabsTrigger>
-                <TabsTrigger value="attachments" className="rounded-none border-b-2 border-transparent px-3 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent">
-                  {t(($) => $.tasks.detail.attachments)}
-                </TabsTrigger>
-                <TabsTrigger value="activity" className="rounded-none border-b-2 border-transparent px-3 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent">
-                  {t(($) => $.tasks.detail.activity)}
-                </TabsTrigger>
-              </TabsList>
+          <Tabs value={tab} onValueChange={setTab} className="flex min-h-0 flex-1 flex-col gap-0">
+            <TabsList className="h-10 w-full shrink-0 justify-start gap-0 overflow-x-auto rounded-none border-b bg-transparent px-0">
+              <TabsTrigger value="overview" className="rounded-none border-b-2 border-transparent px-3 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent">
+                {t(($) => $.tasks.detail.title)}
+              </TabsTrigger>
+              <TabsTrigger value="checklist" className="rounded-none border-b-2 border-transparent px-3 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent">
+                {t(($) => $.tasks.detail.checklists)}
+              </TabsTrigger>
+              <TabsTrigger value="comments" className="rounded-none border-b-2 border-transparent px-3 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent">
+                {t(($) => $.tasks.detail.comments)}
+              </TabsTrigger>
+              <TabsTrigger value="attachments" className="rounded-none border-b-2 border-transparent px-3 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent">
+                {t(($) => $.tasks.detail.attachments)}
+              </TabsTrigger>
+              <TabsTrigger value="activity" className="rounded-none border-b-2 border-transparent px-3 text-xs data-[state=active]:border-primary data-[state=active]:bg-transparent">
+                {t(($) => $.tasks.detail.activity)}
+              </TabsTrigger>
+            </TabsList>
 
-              <ScrollArea className="flex-1">
-                <TabsContent value="overview" className="m-0 flex flex-col gap-4 p-5">
-                  <OverviewTab task={task} isCreator={!!isCreator} onReassign={(user) => reassign.mutate(user.id, { onError: () => toast.error(t(($) => $.errors.generic)) })} onViewSourceConversation={onViewSourceConversation} />
-                </TabsContent>
-                <TabsContent value="checklist" className="m-0 p-5">
-                  <TaskChecklistPanel taskId={task.id} />
-                </TabsContent>
-                <TabsContent value="comments" className="m-0 p-5">
-                  <CommentsTab taskId={task.id} />
-                </TabsContent>
-                <TabsContent value="attachments" className="m-0 p-5">
-                  <AttachmentsTab taskId={task.id} />
-                </TabsContent>
-                <TabsContent value="activity" className="m-0 p-5">
-                  <ActivityTab taskId={task.id} />
-                </TabsContent>
-              </ScrollArea>
-            </Tabs>
-          </>
-        )}
-      </SheetContent>
-    </Sheet>
+            <ScrollArea className="min-h-0 flex-1">
+              <TabsContent value="overview" className="m-0 flex flex-col gap-4 py-4">
+                <OverviewTab task={task} isCreator={!!isCreator} onReassign={(user) => reassign.mutate(user.id, { onError: () => toast.error(t(($) => $.errors.generic)) })} onViewSourceConversation={onViewSourceConversation} />
+              </TabsContent>
+              <TabsContent value="checklist" className="m-0 py-4">
+                <TaskChecklistPanel taskId={task.id} />
+              </TabsContent>
+              <TabsContent value="comments" className="m-0 py-4">
+                <CommentsTab taskId={task.id} />
+              </TabsContent>
+              <TabsContent value="attachments" className="m-0 py-4">
+                <AttachmentsTab taskId={task.id} />
+              </TabsContent>
+              <TabsContent value="activity" className="m-0 py-4">
+                <ActivityTab taskId={task.id} />
+              </TabsContent>
+            </ScrollArea>
+          </Tabs>
+        </div>
+      )}
+    </EntityDrawer>
   );
 }
 
