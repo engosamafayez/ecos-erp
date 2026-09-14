@@ -5181,3 +5181,34 @@ Route::middleware('auth:sanctum')->prefix('collaboration')->group(function (): v
     Route::get('search/tasks', [CollaborationSearchController::class, 'tasks'])
         ->middleware('throttle:30,1');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Customer Self-Service — Guest Secure Order Tracking (CRM-04 Task 1)
+|--------------------------------------------------------------------------
+| TASK-ECOS-V1.1-CRM-04-SECURE-SELF-SERVICE-BACKEND-IMPLEMENTATION-019. Deliberately NOT behind
+| auth:sanctum (a guest customer has no ECOS staff account) — every route below is either
+| public-but-enumeration-safe (request/verify) or guarded by ResolveCustomerTrackingToken, the
+| one canonical resolver for this surface. Never reuses internal cep/**, crm/**, or orders/**
+| staff routes/resources.
+*/
+Route::prefix('track')->group(function (): void {
+    Route::post('request', [Modules\Crm\SelfService\Presentation\Http\Controllers\CustomerTrackingController::class, 'request'])
+        ->middleware('throttle:customer-tracking-request');
+    Route::post('verify', [Modules\Crm\SelfService\Presentation\Http\Controllers\CustomerTrackingController::class, 'verify'])
+        ->middleware('throttle:customer-tracking-verify');
+
+    Route::middleware([
+        Modules\Crm\SelfService\Presentation\Http\Middleware\ResolveCustomerTrackingToken::class,
+        'throttle:customer-tracking-api',
+    ])->group(function (): void {
+        Route::get('order', [Modules\Crm\SelfService\Presentation\Http\Controllers\CustomerOrderController::class, 'show']);
+        Route::get('order/invoice', [Modules\Crm\SelfService\Presentation\Http\Controllers\CustomerInvoiceController::class, 'show']);
+        Route::get('order/invoice/pdf', [Modules\Crm\SelfService\Presentation\Http\Controllers\CustomerInvoiceController::class, 'pdf']);
+        Route::get('order/support', [Modules\Crm\SelfService\Presentation\Http\Controllers\CustomerSupportController::class, 'index']);
+        Route::post('order/support', [Modules\Crm\SelfService\Presentation\Http\Controllers\CustomerSupportController::class, 'store'])
+            ->middleware('throttle:customer-tracking-support');
+        Route::get('order/payment-method', [Modules\Crm\SelfService\Presentation\Http\Controllers\CustomerPaymentMethodController::class, 'options']);
+        Route::post('order/payment-method', [Modules\Crm\SelfService\Presentation\Http\Controllers\CustomerPaymentMethodController::class, 'update']);
+    });
+});
