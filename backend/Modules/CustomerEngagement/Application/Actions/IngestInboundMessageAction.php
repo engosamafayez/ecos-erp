@@ -28,7 +28,7 @@ class IngestInboundMessageAction
         $events = $provider->parseInboundWebhook($payload);
 
         if (! empty($events)) {
-            $this->ingestService->processBatch($config->channel, $events, $config->company_id);
+            $this->ingestService->processBatch($config, $events);
         }
     }
 }

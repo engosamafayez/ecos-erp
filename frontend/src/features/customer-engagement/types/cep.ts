@@ -8,7 +8,7 @@ export type ConversationStatus =
 export type ConversationPriority = 'low' | 'medium' | 'high' | 'urgent';
 
 export type CommunicationProvider =
-  | 'whatsapp' | 'messenger' | 'instagram' | 'email' | 'live_chat' | 'telegram' | 'sms';
+  | 'whatsapp' | 'messenger' | 'instagram' | 'email' | 'live_chat' | 'telegram' | 'sms' | 'voice';
 
 export type MessageDirection = 'inbound' | 'outbound';
 
@@ -43,6 +43,7 @@ export const PROVIDER_LABELS: Record<CommunicationProvider, string> = {
   live_chat: 'Live Chat',
   telegram:  'Telegram',
   sms:       'SMS',
+  voice:     'Voice',
 };
 
 export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
@@ -60,6 +61,7 @@ export const PROVIDER_COLORS: Record<CommunicationProvider, string> = {
   live_chat: 'bg-indigo-100 text-indigo-800',
   telegram:  'bg-sky-100 text-sky-800',
   sms:       'bg-yellow-100 text-yellow-800',
+  voice:     'bg-purple-100 text-purple-800',
 };
 
 export const STATUS_COLORS: Record<ConversationStatus, string> = {

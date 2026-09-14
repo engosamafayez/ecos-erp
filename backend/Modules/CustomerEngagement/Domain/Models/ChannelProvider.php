@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Modules\CustomerEngagement\Domain\Enums\ChannelProviderStatus;
+use Modules\CustomerEngagement\Infrastructure\Casts\TransitionalEncryptedArrayCast;
 
 class ChannelProvider extends Model
 {
@@ -21,8 +22,17 @@ class ChannelProvider extends Model
     {
         return [
             'status' => ChannelProviderStatus::class,
-            'credentials' => 'array',
+            // TASK-...-CRM-03-...-015 §3C — was a plain 'array' cast (plaintext JSON at rest)
+            // despite the original migration comment claiming encryption; see the CRM-03
+            // architecture report's gap #3. Transitional so pre-existing plaintext rows keep
+            // reading correctly (same discipline as ChannelCredential's own encrypted cast).
+            'credentials' => TransitionalEncryptedArrayCast::class,
             'last_verified_at' => 'datetime',
+            // Voice-specific, per-Brand/number config (persona, greeting, recording toggle —
+            // §18/§30 of the architecture report). Business hours deliberately do NOT live
+            // here — see SlaPolicy::business_hours, the one shared authority both SLA tracking
+            // and Voice's after-hours fallback read (§17: "do not duplicate schedules").
+            'voice_settings' => 'array',
         ];
     }
 

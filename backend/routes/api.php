@@ -2043,6 +2043,38 @@ Route::middleware(['auth:sanctum', 'permission:cep.inbox.manage'])->prefix('cep'
     Route::get('conversations/{conversation}/sla', [Modules\CustomerEngagement\Presentation\Http\Controllers\SlaController::class, 'violations']);
     Route::get('sla/compliance', [Modules\CustomerEngagement\Presentation\Http\Controllers\SlaController::class, 'complianceStats']);
     Route::post('sla/check-breaches', [Modules\CustomerEngagement\Presentation\Http\Controllers\SlaController::class, 'checkBreaches']);
+
+    // TASK-...-CRM-03-...-015 §3D — cross-channel customer timeline read model.
+    Route::get('customers/{customer}/timeline', [Modules\CustomerEngagement\Presentation\Http\Controllers\EngagementTimelineController::class, 'forCustomer']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Voice (CRM-03 Task 1) — backend/API foundation for Task 2's UX.
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth:sanctum'])->prefix('cep/voice')->group(function (): void {
+    Route::middleware('permission:cep.voice.use')->group(function (): void {
+        Route::get('calls', [Modules\CustomerEngagement\Voice\Presentation\Http\Controllers\VoiceController::class, 'index']);
+        Route::get('calls/{call}', [Modules\CustomerEngagement\Voice\Presentation\Http\Controllers\VoiceController::class, 'show']);
+        Route::get('channel-providers', [Modules\CustomerEngagement\Voice\Presentation\Http\Controllers\VoiceController::class, 'channelProviders']);
+        Route::post('channel-providers/{channelProvider}/calls', [Modules\CustomerEngagement\Voice\Presentation\Http\Controllers\VoiceController::class, 'initiateOutbound']);
+    });
+
+    Route::post('calls/{call}/transfer', [Modules\CustomerEngagement\Voice\Presentation\Http\Controllers\VoiceController::class, 'transfer'])
+        ->middleware('permission:cep.voice.transfer');
+
+    Route::middleware('permission:cep.voice.recordings.view')->group(function (): void {
+        Route::get('calls/{call}/transcript', [Modules\CustomerEngagement\Voice\Presentation\Http\Controllers\VoiceController::class, 'transcript']);
+        Route::get('calls/{call}/recording', [Modules\CustomerEngagement\Voice\Presentation\Http\Controllers\VoiceController::class, 'recording']);
+    });
+});
+
+// ─── Voice Webhooks (PUBLIC — telephony provider-to-ECOS, throttled) ─────────
+// Mirrors the existing omnichannel/webhook route exactly (no auth:sanctum — the caller is the
+// telephony provider, not an ECOS user; validateWebhook() inside the handler is the real gate).
+Route::middleware(['throttle:100,1'])->prefix('voice/webhook')->group(function (): void {
+    Route::post('{channelProviderId}', [Modules\CustomerEngagement\Voice\Presentation\Http\Controllers\VoiceWebhookController::class, 'receive']);
 });
 
 /*

@@ -13,6 +13,9 @@ enum CommunicationProvider: string
     case LiveChat = 'live_chat';
     case Telegram = 'telegram';
     case Sms = 'sms';
+    // TASK-...-CRM-03-...-015 — Voice is another channel value flowing through the exact same
+    // Conversation/routing/assignment/SLA/inbox machinery already proven for the other channels.
+    case Voice = 'voice';
 
     public function label(): string
     {
@@ -24,11 +27,12 @@ enum CommunicationProvider: string
             self::LiveChat => 'Live Chat',
             self::Telegram => 'Telegram',
             self::Sms => 'SMS',
+            self::Voice => 'Voice',
         };
     }
 
     public function isActive(): bool
     {
-        return in_array($this, [self::WhatsApp, self::Messenger, self::Instagram]);
+        return in_array($this, [self::WhatsApp, self::Messenger, self::Instagram, self::Voice]);
     }
 }

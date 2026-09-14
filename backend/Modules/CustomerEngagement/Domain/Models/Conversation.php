@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Modules\CustomerEngagement\Domain\Enums\CommunicationProvider;
 use Modules\CustomerEngagement\Domain\Enums\ConversationPriority;
 use Modules\CustomerEngagement\Domain\Enums\ConversationStatus;
+use Modules\CustomerEngagement\Voice\Domain\Models\Call;
 
 class Conversation extends Model
 {
@@ -68,6 +69,11 @@ class Conversation extends Model
     public function lead(): HasOne
     {
         return $this->hasOne(Lead::class);
+    }
+
+    public function calls(): HasMany
+    {
+        return $this->hasMany(Call::class)->orderBy('started_at');
     }
 
     public function isOpen(): bool

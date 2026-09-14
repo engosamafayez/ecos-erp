@@ -7,6 +7,7 @@ namespace Modules\AI\Infrastructure\Providers;
 use App\Core\AI\Contracts\AIProviderInterface;
 use App\Core\AI\Providers\DisabledAIProvider;
 use App\Core\AI\Providers\OpenAIProvider;
+use App\Core\Company\TenantOwnershipResolver;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Support\ServiceProvider;
 use Modules\AI\Application\Services\AIAssistantService;
@@ -67,6 +68,20 @@ final class AIServiceProvider extends ServiceProvider
                 $app->make(GetStockAvailabilityTool::class),
                 $app->make(GetCustomerBalanceTool::class),
             ]);
+        });
+
+        // TASK-...-CRM-03-...-015 §10 — AIToolInvoker's entry permission is now a constructor
+        // argument (previously hardcoded 'ai.assistant.use' inside invoke() itself); this
+        // explicit binding preserves CORE-03's exact prior behavior. Voice's own invoker
+        // (VoiceServiceProvider) passes 'cep.voice.use' instead — never this one (§35).
+        $this->app->bind(AIToolInvoker::class, function (Application $app): AIToolInvoker {
+            return new AIToolInvoker(
+                $app->make(AIToolRegistry::class),
+                $app->make(AuthorizationGatewayInterface::class),
+                $app->make(TenantOwnershipResolver::class),
+                $app->make(AIAuditService::class),
+                'ai.assistant.use',
+            );
         });
 
         $this->app->bind(AIAssistantService::class, function (Application $app): AIAssistantService {

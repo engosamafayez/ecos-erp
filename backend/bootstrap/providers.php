@@ -152,4 +152,8 @@ return [
     // Finance\Receivables and Inventory\Products (its tools' canonical sources), all
     // registered above, so it registers last.
     Modules\AI\Infrastructure\Providers\AIServiceProvider::class,
+    // CRM-03 Task 1 — Voice backend foundation. Depends on CustomerEngagement, IAM, AI
+    // (VoiceAIToolRegistry reuses several CORE-03 tool classes), Commerce\Orders and
+    // Crm\Service (CreateSupportTicketTool), all registered above, so it registers last.
+    Modules\CustomerEngagement\Voice\Infrastructure\Providers\VoiceServiceProvider::class,
 ];
