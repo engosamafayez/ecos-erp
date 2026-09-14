@@ -1,5 +1,7 @@
 export type ConnectionStatus = 'disconnected' | 'connected' | 'error';
 export type ChannelHealthStatus = 'healthy' | 'warning' | 'error';
+export type ChannelTransportMode = 'connector' | 'direct_rest';
+export type ConnectorHealthStatus = 'never_connected' | 'healthy' | 'degraded' | 'disconnected';
 
 export type ChannelPlatform =
   | 'woocommerce'
@@ -39,6 +41,10 @@ export type Channel = {
   orders_sync_activated_at: string | null;
   connection_status: ConnectionStatus;
   connection_status_label: string;
+  // TASK-...-CRM-02-PAIRING-UI-FINAL-CLOSURE-011 — Woo Connector pairing state, distinct from
+  // connection_status (last legacy REST test-connection result). See PairingCodeDialog.
+  transport_mode: ChannelTransportMode;
+  connector_health: ConnectorHealthStatus;
   health_status: ChannelHealthStatus;
   last_sync_at: string | null;
   last_webhook_received_at: string | null;
@@ -112,4 +118,11 @@ export type OrderImportResult = {
   skipped_orders: number;
   failed_lines: number;
   errors: string[];
+};
+
+/** Returned once by POST /channels/{id}/pairing-code (GeneratePairingCodeAction). The plaintext
+ *  code is never persisted or re-fetchable — only its hash lives server-side. */
+export type PairingCodeResult = {
+  pairing_code: string;
+  expires_at: string | null;
 };

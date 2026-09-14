@@ -99,6 +99,10 @@ export const ROUTES = {
   // PUBLIC — no session required. Rendered outside the application shell.
   careers: '/careers',
   careersJob: '/careers/:slug',
+  // CRM-04 Customer Self-Service — public guest order tracking (TASK-ECOS-V1.1-CRM-04-
+  // CUSTOMER-SELF-SERVICE-UX-AND-FINAL-CLOSURE-020). Same "no session, no shell" reasoning as
+  // careers above.
+  trackOrder: '/track',
   hrRecruitment: '/hr/recruitment',
   hrApplication: '/hr/recruitment/applications/:applicationId',
   // HR V1 enhancements (TASK-HR-V1-ENHANCEMENTS-001)
@@ -126,6 +130,9 @@ export const ROUTES = {
   // global delivery controls); reached from the bell popover's now quick-controls-only
   // panel. Same personal, ownership-scoped /me/ family as myPreferences above.
   notificationSettings: '/me/notifications',
+  // TASK-ECOS-V1.1-FINAL-AI-ASSISTANT-PERSONALIZED-COMPANION-046 §8 — same personal,
+  // ownership-scoped /me/ family as myPreferences/notificationSettings above.
+  assistantPreferences: '/me/assistant',
   // Claude Bridge
   claudeBridge:           '/claude-bridge',
   claudeBridgeTasks:      '/claude-bridge/tasks',

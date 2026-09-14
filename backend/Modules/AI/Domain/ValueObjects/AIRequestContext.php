@@ -20,6 +20,15 @@ namespace Modules\AI\Domain\ValueObjects;
  *
  * Built fresh on every request (§7) — never cached or reused across a company
  * or Brand switch.
+ *
+ * TASK-ECOS-V1.1-FINAL-AI-ASSISTANT-PERSONALIZED-COMPANION-046 §12 — the trailing
+ * five fields carry the user's own assistant personalization (name/persona/
+ * speaking style/language, plus whether they have any of it set at all). Additive
+ * and optional (all nullable, all defaulted) so every existing caller/test that
+ * constructs this object without them keeps compiling unchanged. Consumed ONLY by
+ * {@see \Modules\AI\Application\Services\SystemPolicyBuilder} to shape
+ * presentation/self-reference — never authorization, never tool availability
+ * (§12: "They MUST NOT override... IAM permissions... business rules").
  */
 final class AIRequestContext
 {
@@ -33,5 +42,9 @@ final class AIRequestContext
         public readonly ?string $page,
         public readonly ?string $entityType,
         public readonly ?string $entityId,
+        public readonly ?string $assistantName = null,
+        public readonly ?string $assistantPersona = null,
+        public readonly ?string $assistantSpeakingStyle = null,
+        public readonly ?string $assistantLanguage = null,
     ) {}
 }

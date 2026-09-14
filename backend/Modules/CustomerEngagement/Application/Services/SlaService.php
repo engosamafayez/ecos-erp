@@ -12,6 +12,10 @@ use Modules\CustomerEngagement\Domain\Models\SlaViolation;
 
 class SlaService
 {
+    public function __construct(
+        private readonly BusinessHoursService $businessHours,
+    ) {}
+
     public function startTracking(Conversation $conv): void
     {
         $policy = $this->resolvePolicy($conv);
@@ -21,12 +25,14 @@ class SlaService
 
         $startedAt = $conv->started_at ?? now();
 
+        // TASK-...-CRM-03-...-015 §3B — business_hours_only is now actually enforced: a due
+        // date is computed in business time when the policy asks for it, not calendar time.
         SlaViolation::create([
             'conversation_id' => $conv->id,
             'sla_policy_id' => $policy->id,
             'violation_type' => SlaViolationType::FirstResponse->value,
             'status' => 'pending',
-            'due_at' => $startedAt->addMinutes($policy->first_response_minutes),
+            'due_at' => $this->businessHours->addBusinessMinutes($policy, $startedAt->copy(), $policy->first_response_minutes),
         ]);
 
         SlaViolation::create([
@@ -34,7 +40,7 @@ class SlaService
             'sla_policy_id' => $policy->id,
             'violation_type' => SlaViolationType::Resolution->value,
             'status' => 'pending',
-            'due_at' => $startedAt->addMinutes($policy->resolution_minutes),
+            'due_at' => $this->businessHours->addBusinessMinutes($policy, $startedAt->copy(), $policy->resolution_minutes),
         ]);
     }
 

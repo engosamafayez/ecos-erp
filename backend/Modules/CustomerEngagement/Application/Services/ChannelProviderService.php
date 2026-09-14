@@ -57,6 +57,15 @@ class ChannelProviderService
         return ChannelProvider::query()
             ->when(! empty($filters['company_id']), fn ($q) => $q->where('company_id', $filters['company_id']))
             ->when(! empty($filters['channel']), fn ($q) => $q->where('channel', $filters['channel']))
+            // TASK-ECOS-V1.1-CRM-03-BRAND-VOICE-IDENTITY-FINAL-REMEDIATION-017 §3 — additive: a
+            // caller that supplies brand_id sees only that Brand's identities plus the
+            // documented brand_id=NULL company-wide shared fallback, never every other Brand's
+            // identities. Callers that never pass brand_id (every pre-existing caller — the
+            // WhatsApp/Messenger/Instagram admin listing in ChannelProviderController) are
+            // completely unaffected.
+            ->when(! empty($filters['brand_id']), fn ($q) => $q->where(
+                fn ($q2) => $q2->where('brand_id', $filters['brand_id'])->orWhereNull('brand_id'),
+            ))
             ->latest()
             ->paginate($perPage);
     }

@@ -21,7 +21,13 @@ class SlaPolicy extends Model
         return [
             'first_response_minutes' => 'integer',
             'resolution_minutes' => 'integer',
+            // TASK-...-CRM-03-...-015 §3B — business_hours_only was a stored, unenforced flag
+            // (architecture report gap #2); business_hours/timezone give it an actual schedule
+            // to check. This is the one shared authority — see BusinessHoursService — Voice's
+            // own after-hours fallback (§17) reads the SAME policy via the Call's Conversation,
+            // never a second schedule.
             'business_hours_only' => 'boolean',
+            'business_hours' => 'array',
             'is_default' => 'boolean',
             'config' => 'array',
         ];

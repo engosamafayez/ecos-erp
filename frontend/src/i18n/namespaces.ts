@@ -52,6 +52,8 @@ export const NAMESPACES = [
   'customer-engagement',
   'conversational-commerce',
   'pos',
+  // Public, unauthenticated guest order-tracking portal (CRM-04 Task 2).
+  'customer-portal',
 
   // ── Purchasing & Supply ───────────────────────────────────────────────────
   'suppliers',

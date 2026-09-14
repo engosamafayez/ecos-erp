@@ -7,6 +7,7 @@ namespace Modules\CustomerEngagement\Presentation\Http\Resources;
 use BackedEnum;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\CustomerEngagement\Voice\Presentation\Http\Resources\CallResource;
 
 class ConversationResource extends JsonResource
 {
@@ -52,6 +53,7 @@ class ConversationResource extends JsonResource
             'messages' => MessageResource::collection($this->whenLoaded('messages')),
             'sla_violations' => SlaViolationResource::collection($this->whenLoaded('slaViolations')),
             'lead' => new LeadResource($this->whenLoaded('lead')),
+            'calls' => CallResource::collection($this->whenLoaded('calls')),
         ];
     }
 }

@@ -7,6 +7,7 @@ namespace Modules\CustomerEngagement\Application\Services;
 use Illuminate\Support\Str;
 use Modules\CustomerEngagement\Domain\Enums\ConversationStatus;
 use Modules\CustomerEngagement\Domain\Enums\MessageDeliveryStatus;
+use Modules\CustomerEngagement\Domain\Models\ChannelProvider;
 use Modules\CustomerEngagement\Domain\Models\Conversation;
 use Modules\CustomerEngagement\Domain\Models\Message;
 
@@ -20,8 +21,14 @@ class WebhookIngestService
 
     /**
      * Process a batch of normalized events from a provider's webhook.
+     *
+     * TASK-...-CRM-03-...-015 §3A — takes the full resolved ChannelProvider config (not just
+     * channel/company strings) so Brand context threads onto every Conversation this creates.
+     * Brand comes ONLY from this canonical, already-authenticated config row — never inferred
+     * from message content, the customer record, or client input (architecture report, "Brand
+     * ownership" gap #1).
      */
-    public function processBatch(string $channel, array $normalizedEvents, string $companyId): void
+    public function processBatch(ChannelProvider $config, array $normalizedEvents): void
     {
         foreach ($normalizedEvents as $event) {
             if (! empty($event['__status_update__'])) {
@@ -29,25 +36,27 @@ class WebhookIngestService
 
                 continue;
             }
-            $this->processInboundMessage($channel, $event, $companyId);
+            $this->processInboundMessage($config, $event);
         }
     }
 
-    private function processInboundMessage(string $channel, array $event, string $companyId): void
+    private function processInboundMessage(ChannelProvider $config, array $event): void
     {
         $externalConvId = $event['conversation_id'];
 
         // Find or create conversation
         $conversation = Conversation::query()
-            ->where('provider', $channel)
+            ->where('provider', $config->channel)
             ->where('external_conversation_id', $externalConvId)
-            ->where('company_id', $companyId)
+            ->where('company_id', $config->company_id)
             ->first();
 
         if (! $conversation) {
             $conversation = $this->conversationService->create([
-                'company_id' => $companyId,
-                'provider' => $channel,
+                'company_id' => $config->company_id,
+                'brand_id' => $config->brand_id,
+                'channel_id' => $config->id,
+                'provider' => $config->channel,
                 'external_conversation_id' => $externalConvId,
                 'conversation_uuid' => Str::uuid()->toString(),
                 'customer_name' => $event['sender_name'],

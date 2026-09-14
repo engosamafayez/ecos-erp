@@ -251,7 +251,8 @@
       "loyalty": "Loyalty",
       "permissions": "Permissions",
       "products": "Products Purchased",
-      "crm": "CRM"
+      "crm": "CRM",
+      "calls": "Calls"
     },
     "overview": {
       "code": "Code",
@@ -330,6 +331,32 @@
       "balance": "Remaining Balance",
       "delivery": "Requested Delivery",
       "address": "Delivery Address"
+    },
+    "callsTab": {
+      "empty": "This customer has no Voice calls yet.",
+      "inbound": "Inbound",
+      "outbound": "Outbound",
+      "duration": "Duration",
+      "handledBy": {
+        "ai": "AI",
+        "human": "Human",
+        "both": "AI, then human"
+      },
+      "state": {
+        "initiated": "Initiated",
+        "ringing": "Ringing",
+        "connected": "Connected",
+        "ai_active": "AI handling",
+        "transferring": "Transferring…",
+        "human_active": "Human active",
+        "completed": "Completed",
+        "failed": "Failed",
+        "no_answer": "No answer",
+        "busy": "Busy",
+        "cancelled": "Cancelled"
+      },
+      "outcome": "Outcome",
+      "noOutcome": "—"
     },
     "support": {
       "empty": "This customer has no support cases yet.",

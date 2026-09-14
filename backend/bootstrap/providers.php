@@ -132,6 +132,10 @@ return [
     // owned by Commerce/Finance, referenced only).
     Modules\Crm\Sales\Infrastructure\Providers\SalesCrmServiceProvider::class,
     Modules\Crm\Loyalty\Infrastructure\Providers\LoyaltyServiceProvider::class,
+    // TASK-ECOS-V1.1-CRM-04-SECURE-SELF-SERVICE-BACKEND-IMPLEMENTATION-019 — guest secure
+    // order tracking/invoice/support/payment-method self-service (rate limiters only; the
+    // module's own controllers/services are resolved directly, no bindings needed).
+    Modules\Crm\SelfService\Infrastructure\Providers\SelfServiceServiceProvider::class,
     // CRM & Customer Service OS — EPIC C5. Customer Intelligence (deterministic,
     // explainable; purchase facts fed by reference from Commerce/Finance).
     Modules\Crm\Intelligence\Infrastructure\Providers\CustomerIntelligenceServiceProvider::class,
@@ -152,4 +156,8 @@ return [
     // Finance\Receivables and Inventory\Products (its tools' canonical sources), all
     // registered above, so it registers last.
     Modules\AI\Infrastructure\Providers\AIServiceProvider::class,
+    // CRM-03 Task 1 — Voice backend foundation. Depends on CustomerEngagement, IAM, AI
+    // (VoiceAIToolRegistry reuses several CORE-03 tool classes), Commerce\Orders and
+    // Crm\Service (CreateSupportTicketTool), all registered above, so it registers last.
+    Modules\CustomerEngagement\Voice\Infrastructure\Providers\VoiceServiceProvider::class,
 ];

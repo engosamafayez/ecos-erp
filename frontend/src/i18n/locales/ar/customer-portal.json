@@ -1,0 +1,175 @@
+{
+  "landing": {
+    "eyebrow": "تتبع الطلب",
+    "heading": "تتبع طلبك",
+    "intro": "أدخل رقم الطلب والبريد الإلكتروني المستخدم عند الطلب. سنرسل رمز تحقق لمرة واحدة إلى هذا البريد.",
+    "orderNumberLabel": "رقم الطلب",
+    "orderNumberPlaceholder": "مثال: ORD-A1B2C3D4",
+    "emailLabel": "البريد الإلكتروني",
+    "emailPlaceholder": "example@email.com",
+    "emailOnlyNotice": "التحقق حالياً عبر البريد الإلكتروني فقط.",
+    "submit": "إرسال رمز التحقق",
+    "submitting": "جارِ الإرسال…",
+    "confirmation": "إذا كانت البيانات التي أدخلتها مطابقة لطلب مؤهل، فسيتم إرسال رمز تحقق.",
+    "genericError": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+    "validation": {
+      "orderNumberRequired": "أدخل رقم الطلب.",
+      "emailInvalid": "أدخل بريدًا إلكترونيًا صحيحًا."
+    }
+  },
+  "verify": {
+    "heading": "أدخل رمز التحقق",
+    "intro": "أرسلنا رمزًا مكونًا من 6 أرقام إلى بريدك الإلكتروني. تنتهي صلاحيته خلال 10 دقائق.",
+    "codeLabel": "رمز التحقق",
+    "codePlaceholder": "رمز من 6 أرقام",
+    "submit": "تحقق",
+    "submitting": "جارِ التحقق…",
+    "expiryNotice": "تنتهي صلاحية الرموز بعد 10 دقائق.",
+    "attemptsNotice": "لأمانك، يُسمح بعدد محدود فقط من المحاولات.",
+    "invalidCode": "هذا الرمز غير صحيح أو منتهي الصلاحية.",
+    "tooManyAttempts": "محاولات كثيرة جدًا. يرجى طلب رمز جديد.",
+    "backToLanding": "استخدام طلب آخر",
+    "requestNewCode": "طلب رمز جديد"
+  },
+  "session": {
+    "endSession": "إنهاء الجلسة الآمنة",
+    "expired": "انتهت جلستك الآمنة. يرجى التحقق مرة أخرى للمتابعة.",
+    "unauthorized": "جلسة التتبع هذه غير صالحة أو منتهية الصلاحية أو تم إلغاؤها."
+  },
+  "order": {
+    "loading": "جارِ تحميل طلبك…",
+    "loadError": "تعذّر تحميل طلبك الآن. يرجى المحاولة مرة أخرى بعد قليل.",
+    "notFound": "الطلب غير موجود.",
+    "orderNumberLabel": "الطلب",
+    "orderDateLabel": "تاريخ الطلب",
+    "statusLabel": "الحالة",
+    "requestedDeliveryLabel": "تاريخ التوصيل المطلوب"
+  },
+  "delivery": {
+    "heading": "التوصيل",
+    "shippingCompanyLabel": "شركة الشحن",
+    "driverLabel": "السائق",
+    "noDriverYet": "لم يتم التعيين بعد",
+    "stopStatusLabel": "حالة التوصيل"
+  },
+  "items": {
+    "heading": "العناصر",
+    "product": "المنتج",
+    "sku": "رمز الصنف",
+    "quantity": "الكمية",
+    "unitPrice": "سعر الوحدة",
+    "lineTotal": "الإجمالي"
+  },
+  "financial": {
+    "heading": "ملخص الدفع",
+    "subtotal": "الإجمالي الفرعي",
+    "shipping": "الشحن",
+    "discount": "الخصم",
+    "tax": "الضريبة",
+    "grandTotal": "الإجمالي الكلي",
+    "paid": "المدفوع",
+    "outstanding": "المبلغ المستحق"
+  },
+  "payment": {
+    "heading": "الدفع",
+    "state": {
+      "unpaid": "غير مدفوع",
+      "partially_paid": "مدفوع جزئيًا",
+      "paid": "مدفوع بالكامل"
+    },
+    "proofState": {
+      "heading": "إثبات الدفع",
+      "uploaded": "تم الإرسال — بانتظار المراجعة",
+      "verified": "تم التحقق",
+      "rejected": "مرفوض — يرجى التواصل مع الدعم"
+    },
+    "changeMethod": "تغيير طريقة الدفع",
+    "changeMethodHeading": "تغيير طريقة الدفع",
+    "selectMethod": "اختر طريقة دفع",
+    "confirmChange": "تأكيد التغيير",
+    "changing": "جارِ التحديث…",
+    "changeSuccess": "تم تحديث طريقة الدفع الخاصة بك.",
+    "changeRejected": "تعذّر تطبيق طريقة الدفع هذه على طلبك.",
+    "notEligible": "لم يعد بالإمكان تغيير طريقة دفع هذا الطلب من هنا — يرجى التواصل مع الدعم.",
+    "methodLabels": {
+      "cod": "الدفع عند الاستلام",
+      "instapay": "إنستاباي",
+      "bank_transfer": "تحويل بنكي",
+      "mobile_wallet": "محفظة إلكترونية",
+      "credit_card": "بطاقة ائتمان"
+    }
+  },
+  "timeline": {
+    "heading": "الجدول الزمني للطلب",
+    "events": {
+      "order_created": "تم إنشاء الطلب",
+      "confirmed": "تم تأكيد الطلب",
+      "payment_confirmed": "تم تأكيد الدفع",
+      "payment_proof_submitted": "تم إرسال إثبات الدفع",
+      "preparation_completed": "اكتمل التحضير",
+      "out_for_delivery": "خرج للتوصيل",
+      "delivered": "تم التوصيل",
+      "cancelled": "تم الإلغاء",
+      "returned": "تم الإرجاع",
+      "on_hold": "قيد التعليق"
+    }
+  },
+  "invoice": {
+    "heading": "الفاتورة",
+    "loading": "جارِ تحميل الفاتورة…",
+    "notAvailable": "لا توجد فاتورة متاحة لهذا الطلب بعد.",
+    "number": "رقم الفاتورة",
+    "date": "تاريخ الفاتورة",
+    "dueDate": "تاريخ الاستحقاق",
+    "print": "طباعة الفاتورة",
+    "downloadPdf": "تنزيل PDF",
+    "downloadingPdf": "جارِ تجهيز ملف PDF…",
+    "pdfError": "تعذّر تنزيل ملف PDF الآن. يرجى المحاولة مرة أخرى."
+  },
+  "support": {
+    "heading": "الدعم",
+    "historyEmpty": "ليس لديك طلبات دعم لهذا الطلب حتى الآن.",
+    "newRequest": "طلب دعم جديد",
+    "categoryLabel": "ما هو موضوع طلبك؟",
+    "subjectLabel": "الموضوع",
+    "subjectPlaceholder": "لخّص طلبك باختصار",
+    "descriptionLabel": "التفاصيل (اختياري)",
+    "descriptionPlaceholder": "أضف أي تفاصيل تساعدنا في مساعدتك",
+    "submit": "إرسال الطلب",
+    "submitting": "جارِ الإرسال…",
+    "submitSuccess": "تم إرسال طلبك للمراجعة.",
+    "returnIntakeNotice": "هذا ينشئ طلبًا لمراجعة فريقنا — ولا يصدر استردادًا تلقائيًا أو يوافق على إرجاع تلقائيًا.",
+    "notAvailableReason": {
+      "not_yet_delivered": "هذا النوع من الطلبات متاح فقط بعد توصيل طلبك.",
+      "delivery_timestamp_unavailable": "هذا النوع من الطلبات غير متاح لهذا الطلب حاليًا — يرجى استخدام الدعم العام بدلاً من ذلك.",
+      "post_delivery_window_expired": "هذا النوع من الطلبات متاح فقط خلال 30 يومًا من التوصيل. يرجى استخدام الدعم العام بدلاً من ذلك."
+    },
+    "categories": {
+      "wrong_item": "استلام صنف خاطئ",
+      "damaged_item": "صنف تالف",
+      "missing_item": "صنف مفقود",
+      "delivery_complaint": "شكوى توصيل",
+      "payment_issue": "مشكلة في الدفع",
+      "invoice_issue": "مشكلة في الفاتورة",
+      "return_request": "طلب إرجاع",
+      "general_support": "دعم عام"
+    },
+    "statusLabels": {
+      "new": "جديد",
+      "open": "مفتوح",
+      "pending": "قيد الانتظار",
+      "resolved": "تم الحل",
+      "closed": "مغلق"
+    }
+  },
+  "errors": {
+    "network": "تعذّر الوصول إلى الخادم. يرجى التحقق من اتصالك والمحاولة مرة أخرى.",
+    "generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+  },
+  "common": {
+    "back": "رجوع",
+    "cancel": "إلغاء",
+    "retry": "إعادة المحاولة",
+    "close": "إغلاق"
+  }
+}

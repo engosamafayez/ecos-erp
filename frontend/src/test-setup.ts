@@ -34,3 +34,23 @@ window.getComputedStyle = (el, pseudo) => {
 // so any component that calls it (e.g. to keep a chat-style view scrolled to
 // its latest message) throws in tests otherwise.
 Element.prototype.scrollIntoView = function scrollIntoView() {};
+
+// jsdom does not implement the Web Speech API's speechSynthesis at all (used
+// by the AI assistant's optional voice feature — TASK-ECOS-V1.1-FINAL-AI-
+// ASSISTANT-PERSONALIZED-COMPANION-046). A minimal stub so components that
+// merely check for/read available voices don't throw in tests that don't
+// specifically exercise voice behavior; tests that DO exercise it mock
+// `isSpeechSynthesisSupported`/`isSpeechRecognitionSupported` directly instead
+// of relying on this stub's exact behavior.
+if (typeof window !== 'undefined' && !('speechSynthesis' in window)) {
+  Object.defineProperty(window, 'speechSynthesis', {
+    writable: true,
+    value: {
+      getVoices: () => [],
+      speak: () => {},
+      cancel: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    },
+  });
+}

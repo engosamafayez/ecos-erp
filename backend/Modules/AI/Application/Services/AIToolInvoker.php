@@ -22,16 +22,27 @@ use Throwable;
  * TenantOwnershipResolver) every non-AI controller in this codebase already uses,
  * never a parallel AI-specific authorization model.
  */
-final class AIToolInvoker
+class AIToolInvoker
 {
     /** Blanket guard against a grossly oversized argument; per-tool schemas narrow further. */
     private const MAX_INPUT_STRING_LENGTH = 500;
 
+    /**
+     * TASK-ECOS-V1.1-CRM-03-OMNICHANNEL-VOICE-BACKEND-IMPLEMENTATION-015 §10 — $entryPermission
+     * was a hardcoded 'ai.assistant.use' literal; CRM-03's architecture report explicitly
+     * forbids Voice reusing that permission as its own customer-call gate (§35), so this is now
+     * the smallest safe parameterization that lets both surfaces share this exact class rather
+     * than duplicating its 9-step choke point. CORE-03's own binding (AIServiceProvider) passes
+     * 'ai.assistant.use' explicitly — its behavior is unchanged. Not `final` for the same reason
+     * — {@see \Modules\CustomerEngagement\Voice\Application\Services\VoiceAIToolInvoker} exists
+     * purely to give Voice's invoker its own container-resolvable type, no override.
+     */
     public function __construct(
         private readonly AIToolRegistry $registry,
         private readonly AuthorizationGatewayInterface $authorization,
         private readonly TenantOwnershipResolver $tenant,
         private readonly AIAuditService $audit,
+        private readonly string $entryPermission,
     ) {}
 
     /**
@@ -43,8 +54,8 @@ final class AIToolInvoker
 
         // 2. Entry gate — required even here, in addition to the assistant API's own
         // check, so a future second caller of this invoker can never skip it.
-        if ($this->authorization->decision($user, 'ai.assistant.use')->isDenied()) {
-            $this->audit->toolDenied($context, $toolName, 'missing ai.assistant.use');
+        if ($this->authorization->decision($user, $this->entryPermission)->isDenied()) {
+            $this->audit->toolDenied($context, $toolName, "missing {$this->entryPermission}");
 
             return AIToolResult::denied('AI assistant access is not enabled for this account.');
         }

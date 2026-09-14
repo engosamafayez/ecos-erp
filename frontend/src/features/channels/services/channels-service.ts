@@ -6,6 +6,7 @@ import type {
   ChannelsResult,
   ImportResult,
   OrderImportResult,
+  PairingCodeResult,
 } from '@/features/channels/types/channel';
 import type { ApiResponse } from '@/types';
 
@@ -36,6 +37,11 @@ export const channelsService = {
 
   async testConnection(id: string): Promise<Channel> {
     const { data } = await api.post<ApiResponse<Channel>>(`/channels/${id}/test-connection`);
+    return data.data;
+  },
+
+  async generatePairingCode(id: string): Promise<PairingCodeResult> {
+    const { data } = await api.post<ApiResponse<PairingCodeResult>>(`/channels/${id}/pairing-code`);
     return data.data;
   },
 

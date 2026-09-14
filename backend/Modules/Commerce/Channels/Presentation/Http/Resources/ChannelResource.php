@@ -56,6 +56,17 @@ final class ChannelResource extends JsonResource
             'orders_sync_activated_at' => $this->orders_sync_activated_at?->toIso8601String(),
             'connection_status' => $this->connection_status->value,
             'connection_status_label' => $this->connection_status->label(),
+            // TASK-ECOS-V1.1-CRM-02-PAIRING-UI-FINAL-CLOSURE-011 — same precedent as
+            // health_status below: Channel::connectorHealth() and the credential's
+            // connector_token presence are already-computed domain signals, simply never
+            // serialized to the operator-facing Channel resource before now. The ECOS Pairing
+            // Code UI needs this to honestly show "already paired" instead of re-offering
+            // generation as the primary action (it is the one signal PluginAdapterController's
+            // own connector_token-authenticated status() already exposes to the plugin side —
+            // this only makes it reachable by the operator's own session). Never serializes
+            // connector_token itself.
+            'transport_mode' => $this->credential?->connector_token !== null ? 'connector' : 'direct_rest',
+            'connector_health' => $this->connectorHealth()->value,
             // TASK-ECOS-V1.1-WOO-04-GO-LIVE-LIFECYCLE. Pure wiring, same precedent as
             // health_status just below: the domain already computes/stores the real signal,
             // this only serializes it. Readiness gate detail lives at its own endpoint

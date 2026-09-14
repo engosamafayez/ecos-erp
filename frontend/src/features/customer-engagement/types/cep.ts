@@ -8,7 +8,7 @@ export type ConversationStatus =
 export type ConversationPriority = 'low' | 'medium' | 'high' | 'urgent';
 
 export type CommunicationProvider =
-  | 'whatsapp' | 'messenger' | 'instagram' | 'email' | 'live_chat' | 'telegram' | 'sms';
+  | 'whatsapp' | 'messenger' | 'instagram' | 'email' | 'live_chat' | 'telegram' | 'sms' | 'voice';
 
 export type MessageDirection = 'inbound' | 'outbound';
 
@@ -43,6 +43,7 @@ export const PROVIDER_LABELS: Record<CommunicationProvider, string> = {
   live_chat: 'Live Chat',
   telegram:  'Telegram',
   sms:       'SMS',
+  voice:     'Voice',
 };
 
 export const LEAD_STATUS_LABELS: Record<LeadStatus, string> = {
@@ -60,6 +61,7 @@ export const PROVIDER_COLORS: Record<CommunicationProvider, string> = {
   live_chat: 'bg-indigo-100 text-indigo-800',
   telegram:  'bg-sky-100 text-sky-800',
   sms:       'bg-yellow-100 text-yellow-800',
+  voice:     'bg-purple-100 text-purple-800',
 };
 
 export const STATUS_COLORS: Record<ConversationStatus, string> = {
@@ -194,6 +196,8 @@ export interface Conversation {
   messages?: Message[];
   sla_violations?: SlaViolation[];
   lead?: Lead | null;
+  /** Only present for provider="voice" conversations — a Call is never a fake Message. */
+  calls?: Call[];
 }
 
 export interface SlaPolicy {
@@ -230,6 +234,116 @@ export interface DashboardKpis {
     converted: number;
   };
 }
+
+// ─── Voice ────────────────────────────────────────────────────────────────────
+// TASK-ECOS-V1.1-CRM-03-VOICE-UX-AND-FINAL-SOURCE-CLOSURE-016 — Voice is a channel within this
+// same CustomerEngagement platform (a Call always belongs to a provider="voice" Conversation),
+// never a parallel Voice CRM. These types mirror the backend CallResource exactly.
+
+export type CallDirection = 'inbound' | 'outbound';
+
+export type CallCanonicalState =
+  | 'initiated' | 'ringing' | 'connected' | 'ai_active' | 'transferring'
+  | 'human_active' | 'completed' | 'failed' | 'no_answer' | 'busy' | 'cancelled';
+
+export type CallHandledBy = 'ai' | 'human' | 'both';
+
+export type CallerVerificationLevel = 'unverified' | 'order_corroborated';
+
+export type OutboundCallPurpose = 'transactional' | 'requested_callback' | 'support';
+
+export const CALL_TERMINAL_STATES: readonly CallCanonicalState[] =
+  ['completed', 'failed', 'no_answer', 'busy', 'cancelled'];
+
+export const CALL_STATE_COLORS: Record<CallCanonicalState, string> = {
+  initiated:    'bg-gray-100 text-gray-700',
+  ringing:      'bg-yellow-100 text-yellow-800',
+  connected:    'bg-blue-100 text-blue-800',
+  ai_active:    'bg-purple-100 text-purple-800',
+  transferring: 'bg-orange-100 text-orange-800',
+  human_active: 'bg-green-100 text-green-800',
+  completed:    'bg-gray-100 text-gray-600',
+  failed:       'bg-red-100 text-red-700',
+  no_answer:    'bg-red-100 text-red-700',
+  busy:         'bg-red-100 text-red-700',
+  cancelled:    'bg-gray-100 text-gray-600',
+};
+
+export interface Call {
+  id: string;
+  conversation_id: string;
+  company_id: string;
+  brand_id: string | null;
+  customer_id: string | null;
+  lead_id: string | null;
+  direction: CallDirection;
+  from_number: string | null;
+  to_number: string | null;
+  provider: string;
+  canonical_state: CallCanonicalState;
+  canonical_state_label: string;
+  started_at: string | null;
+  answered_at: string | null;
+  ended_at: string | null;
+  duration_seconds: number | null;
+  outcome: string | null;
+  handled_by: CallHandledBy | null;
+  transferred_at: string | null;
+  transfer_target_type: string | null;
+  verification_level: CallerVerificationLevel;
+  has_transcript: boolean;
+  has_recording: boolean;
+  created_at: string | null;
+}
+
+/** A Brand's Voice number — the identity the outbound-call UI lets the user call FROM. */
+export interface VoiceChannelProvider {
+  id: string;
+  company_id: string;
+  brand_id: string | null;
+  channel: string;
+  display_name: string;
+  phone_number: string | null;
+  status: string;
+}
+
+export interface HumanTransferResult {
+  result: 'bridged' | 'transfer_unavailable' | 'failed';
+  task_id: string | null;
+  failure_reason: string | null;
+  call: Call;
+}
+
+/** One item of the cross-channel customer timeline — a Message OR a Call, never flattened into each other. */
+export type EngagementTimelineItem =
+  | {
+      type: 'message';
+      conversation_id: string;
+      provider: CommunicationProvider;
+      occurred_at: string;
+      data: {
+        id: string;
+        direction: MessageDirection;
+        sender_type: 'customer' | 'agent' | 'system';
+        sender_name: string | null;
+        message_type: MessageType;
+        content: string | null;
+      };
+    }
+  | {
+      type: 'call';
+      conversation_id: string;
+      provider: CommunicationProvider;
+      occurred_at: string;
+      data: {
+        id: string;
+        direction: CallDirection;
+        canonical_state: CallCanonicalState;
+        duration_seconds: number | null;
+        handled_by: CallHandledBy | null;
+        outcome: string | null;
+      };
+    };
 
 // ─── API Wrappers ─────────────────────────────────────────────────────────────
 

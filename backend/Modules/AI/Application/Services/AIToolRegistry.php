@@ -14,8 +14,13 @@ use Modules\AI\Domain\Exceptions\UnknownAIToolException;
  * — never by scanning/auto-discovering classes or resolving a class name the
  * model supplied. A duplicate tool name is a construction-time bug, not a
  * runtime possibility.
+ *
+ * Not `final` as of TASK-ECOS-V1.1-CRM-03-OMNICHANNEL-VOICE-BACKEND-IMPLEMENTATION-015 —
+ * {@see \Modules\CustomerEngagement\Voice\Application\Services\VoiceAIToolRegistry} is a
+ * trivial, no-override subclass that exists purely to give Voice's deliberately smaller tool
+ * list its own container-resolvable type (architecture report, CORE-03 REUSE).
  */
-final class AIToolRegistry
+class AIToolRegistry
 {
     /** @var array<string, AIToolInterface> */
     private array $tools = [];

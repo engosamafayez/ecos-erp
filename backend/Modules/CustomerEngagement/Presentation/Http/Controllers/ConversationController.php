@@ -42,7 +42,9 @@ class ConversationController extends Controller
 
     public function show(Conversation $conversation): JsonResponse
     {
-        $conversation->load(['messages', 'slaViolations', 'lead']);
+        // TASK-...-016 §9/§10 — Voice appears inline in the existing conversation view (a Call
+        // belonging to this Conversation), never a parallel Voice-only surface.
+        $conversation->load(['messages', 'slaViolations', 'lead', 'calls']);
 
         return response()->json(['data' => new ConversationResource($conversation)]);
     }

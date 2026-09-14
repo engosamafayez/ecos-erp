@@ -23,6 +23,7 @@ use Modules\Admin\GoLive\Presentation\Http\Controllers\GoLiveActivationControlle
 use Modules\Admin\GoLive\Presentation\Http\Controllers\GoLiveResetController;
 use Modules\Admin\GoLive\Presentation\Http\Controllers\OpeningInventoryController;
 use Modules\AI\Presentation\Http\Controllers\AssistantController;
+use Modules\AI\Presentation\Http\Controllers\AssistantPreferenceController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\ArtifactController as CbArtifactController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\DashboardController as CbDashboardController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\TaskController as CbTaskController;
@@ -575,6 +576,21 @@ Route::middleware(['auth:sanctum', 'permission:system.audit.view'])->prefix('aud
 */
 Route::middleware(['auth:sanctum', 'throttle:ai-assistant'])->prefix('ai')->group(function (): void {
     Route::post('assistant/message', [AssistantController::class, 'message']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Resident AI Assistant — Personalization (TASK-ECOS-V1.1-FINAL-AI-ASSISTANT-
+| PERSONALIZED-COMPANION-046 §9)
+|
+| Plain auth:sanctum (not throttle:ai-assistant) — this is ordinary settings
+| CRUD through the existing UserPreferenceService, not a model-provider call,
+| so the LLM-specific rate limiter above does not apply here.
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->prefix('ai')->group(function (): void {
+    Route::get('assistant/preferences', [AssistantPreferenceController::class, 'show']);
+    Route::put('assistant/preferences', [AssistantPreferenceController::class, 'upsert']);
 });
 
 /*
@@ -2043,6 +2059,38 @@ Route::middleware(['auth:sanctum', 'permission:cep.inbox.manage'])->prefix('cep'
     Route::get('conversations/{conversation}/sla', [Modules\CustomerEngagement\Presentation\Http\Controllers\SlaController::class, 'violations']);
     Route::get('sla/compliance', [Modules\CustomerEngagement\Presentation\Http\Controllers\SlaController::class, 'complianceStats']);
     Route::post('sla/check-breaches', [Modules\CustomerEngagement\Presentation\Http\Controllers\SlaController::class, 'checkBreaches']);
+
+    // TASK-...-CRM-03-...-015 §3D — cross-channel customer timeline read model.
+    Route::get('customers/{customer}/timeline', [Modules\CustomerEngagement\Presentation\Http\Controllers\EngagementTimelineController::class, 'forCustomer']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Voice (CRM-03 Task 1) — backend/API foundation for Task 2's UX.
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth:sanctum'])->prefix('cep/voice')->group(function (): void {
+    Route::middleware('permission:cep.voice.use')->group(function (): void {
+        Route::get('calls', [Modules\CustomerEngagement\Voice\Presentation\Http\Controllers\VoiceController::class, 'index']);
+        Route::get('calls/{call}', [Modules\CustomerEngagement\Voice\Presentation\Http\Controllers\VoiceController::class, 'show']);
+        Route::get('channel-providers', [Modules\CustomerEngagement\Voice\Presentation\Http\Controllers\VoiceController::class, 'channelProviders']);
+        Route::post('channel-providers/{channelProvider}/calls', [Modules\CustomerEngagement\Voice\Presentation\Http\Controllers\VoiceController::class, 'initiateOutbound']);
+    });
+
+    Route::post('calls/{call}/transfer', [Modules\CustomerEngagement\Voice\Presentation\Http\Controllers\VoiceController::class, 'transfer'])
+        ->middleware('permission:cep.voice.transfer');
+
+    Route::middleware('permission:cep.voice.recordings.view')->group(function (): void {
+        Route::get('calls/{call}/transcript', [Modules\CustomerEngagement\Voice\Presentation\Http\Controllers\VoiceController::class, 'transcript']);
+        Route::get('calls/{call}/recording', [Modules\CustomerEngagement\Voice\Presentation\Http\Controllers\VoiceController::class, 'recording']);
+    });
+});
+
+// ─── Voice Webhooks (PUBLIC — telephony provider-to-ECOS, throttled) ─────────
+// Mirrors the existing omnichannel/webhook route exactly (no auth:sanctum — the caller is the
+// telephony provider, not an ECOS user; validateWebhook() inside the handler is the real gate).
+Route::middleware(['throttle:100,1'])->prefix('voice/webhook')->group(function (): void {
+    Route::post('{channelProviderId}', [Modules\CustomerEngagement\Voice\Presentation\Http\Controllers\VoiceWebhookController::class, 'receive']);
 });
 
 /*
@@ -5148,4 +5196,35 @@ Route::middleware('auth:sanctum')->prefix('collaboration')->group(function (): v
 
     Route::get('search/tasks', [CollaborationSearchController::class, 'tasks'])
         ->middleware('throttle:30,1');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Customer Self-Service — Guest Secure Order Tracking (CRM-04 Task 1)
+|--------------------------------------------------------------------------
+| TASK-ECOS-V1.1-CRM-04-SECURE-SELF-SERVICE-BACKEND-IMPLEMENTATION-019. Deliberately NOT behind
+| auth:sanctum (a guest customer has no ECOS staff account) — every route below is either
+| public-but-enumeration-safe (request/verify) or guarded by ResolveCustomerTrackingToken, the
+| one canonical resolver for this surface. Never reuses internal cep/**, crm/**, or orders/**
+| staff routes/resources.
+*/
+Route::prefix('track')->group(function (): void {
+    Route::post('request', [Modules\Crm\SelfService\Presentation\Http\Controllers\CustomerTrackingController::class, 'request'])
+        ->middleware('throttle:customer-tracking-request');
+    Route::post('verify', [Modules\Crm\SelfService\Presentation\Http\Controllers\CustomerTrackingController::class, 'verify'])
+        ->middleware('throttle:customer-tracking-verify');
+
+    Route::middleware([
+        Modules\Crm\SelfService\Presentation\Http\Middleware\ResolveCustomerTrackingToken::class,
+        'throttle:customer-tracking-api',
+    ])->group(function (): void {
+        Route::get('order', [Modules\Crm\SelfService\Presentation\Http\Controllers\CustomerOrderController::class, 'show']);
+        Route::get('order/invoice', [Modules\Crm\SelfService\Presentation\Http\Controllers\CustomerInvoiceController::class, 'show']);
+        Route::get('order/invoice/pdf', [Modules\Crm\SelfService\Presentation\Http\Controllers\CustomerInvoiceController::class, 'pdf']);
+        Route::get('order/support', [Modules\Crm\SelfService\Presentation\Http\Controllers\CustomerSupportController::class, 'index']);
+        Route::post('order/support', [Modules\Crm\SelfService\Presentation\Http\Controllers\CustomerSupportController::class, 'store'])
+            ->middleware('throttle:customer-tracking-support');
+        Route::get('order/payment-method', [Modules\Crm\SelfService\Presentation\Http\Controllers\CustomerPaymentMethodController::class, 'options']);
+        Route::post('order/payment-method', [Modules\Crm\SelfService\Presentation\Http\Controllers\CustomerPaymentMethodController::class, 'update']);
+    });
 });
