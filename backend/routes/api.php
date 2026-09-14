@@ -23,6 +23,7 @@ use Modules\Admin\GoLive\Presentation\Http\Controllers\GoLiveActivationControlle
 use Modules\Admin\GoLive\Presentation\Http\Controllers\GoLiveResetController;
 use Modules\Admin\GoLive\Presentation\Http\Controllers\OpeningInventoryController;
 use Modules\AI\Presentation\Http\Controllers\AssistantController;
+use Modules\AI\Presentation\Http\Controllers\AssistantPreferenceController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\ArtifactController as CbArtifactController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\DashboardController as CbDashboardController;
 use Modules\ClaudeBridge\Presentation\Http\Controllers\TaskController as CbTaskController;
@@ -575,6 +576,21 @@ Route::middleware(['auth:sanctum', 'permission:system.audit.view'])->prefix('aud
 */
 Route::middleware(['auth:sanctum', 'throttle:ai-assistant'])->prefix('ai')->group(function (): void {
     Route::post('assistant/message', [AssistantController::class, 'message']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Resident AI Assistant — Personalization (TASK-ECOS-V1.1-FINAL-AI-ASSISTANT-
+| PERSONALIZED-COMPANION-046 §9)
+|
+| Plain auth:sanctum (not throttle:ai-assistant) — this is ordinary settings
+| CRUD through the existing UserPreferenceService, not a model-provider call,
+| so the LLM-specific rate limiter above does not apply here.
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->prefix('ai')->group(function (): void {
+    Route::get('assistant/preferences', [AssistantPreferenceController::class, 'show']);
+    Route::put('assistant/preferences', [AssistantPreferenceController::class, 'upsert']);
 });
 
 /*

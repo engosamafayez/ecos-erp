@@ -154,6 +154,7 @@ import { ReportsPage } from '@/features/marketing/intelligence/pages/reports-pag
 import { MarketingSettingsPage } from '@/features/marketing/pages/marketing-settings-page';
 import { MyPreferencesPage } from '@/features/notifications/pages/my-preferences-page';
 import { NotificationSettingsPage } from '@/features/notifications/pages/notification-settings-page';
+import { AssistantPreferencesPage } from '@/features/ai-assistant/pages/assistant-preferences-page';
 import { AutomationWorkspacePage } from '@/features/marketing/automation/pages/automation-workspace-page';
 import { WorkflowBuilderPage } from '@/features/marketing/automation/pages/workflow-builder-page';
 import { AudienceSegmentsPage } from '@/features/marketing/automation/pages/audience-segments-page';
@@ -725,6 +726,9 @@ export const router = createBrowserRouter(
             // — same personal, gate-free registration as myPreferences directly above:
             // every authenticated user may reach their own notification settings.
             { path: ROUTES.notificationSettings, Component: NotificationSettingsPage },
+            // TASK-ECOS-V1.1-FINAL-AI-ASSISTANT-PERSONALIZED-COMPANION-046 §8 — same
+            // personal, gate-free registration as myPreferences/notificationSettings above.
+            { path: ROUTES.assistantPreferences, Component: AssistantPreferencesPage },
             { path: '*', Component: NotFoundPage },
           ],
         },

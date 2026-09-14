@@ -49,6 +49,13 @@ enum PreferenceCategory: string
     case Theme = 'theme';
     case Workspace = 'workspace';
 
+    // TASK-ECOS-V1.1-FINAL-AI-ASSISTANT-PERSONALIZED-COMPANION-046 §9 — written
+    // through the dedicated, validated Modules\AI\Presentation\Http\Controllers\
+    // AssistantPreferenceController (not the generic upsert() here directly),
+    // which is why its payload shape is documented in
+    // Modules\AI\Application\ValueObjects\AssistantPreferences rather than below.
+    case AiAssistant = 'ai_assistant';
+
     // ── Default payload shapes ────────────────────────────────────────────────
 
     /**
@@ -62,6 +69,11 @@ enum PreferenceCategory: string
         return match ($this) {
             self::Theme => self::defaultTheme(),
             self::Workspace => self::defaultWorkspace(),
+            // Factory-seeding convenience only (see UserPreferenceFactory) — the real runtime
+            // default authority is Modules\AI\Application\ValueObjects\AssistantPreferences;
+            // kept as a plain literal here rather than importing the AI module to avoid a
+            // Core → feature-module dependency for a test-data helper.
+            self::AiAssistant => self::defaultAiAssistant(),
             default => self::defaultTablePreferences(),
         };
     }
@@ -97,6 +109,21 @@ enum PreferenceCategory: string
             'default_company' => null,
             'default_branch' => null,
             'default_warehouse' => null,
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private static function defaultAiAssistant(): array
+    {
+        return [
+            'avatar_key' => 'ecos_blue_bot',
+            'name' => 'ECOS Assistant',
+            'persona' => 'neutral',
+            'speaking_style' => 'friendly',
+            'language' => 'bilingual',
+            'voice_enabled' => false,
+            'wake_by_name_enabled' => false,
+            'voice_choice' => null,
         ];
     }
 }

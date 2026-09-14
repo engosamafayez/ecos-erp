@@ -55,5 +55,76 @@
     "reporting1": "كام أوردر اتسلم النهارده؟",
     "logistics1": "إيه الرحلات اللي لسه مخرجتش؟",
     "procurement1": "إيه طلبات الشراء اللي مستنية موافقة؟"
+  },
+  "customize": {
+    "ariaLabel": "خصّص مساعدك",
+    "linkLabel": "تخصيص"
+  },
+  "voice": {
+    "status": {
+      "listening": "بنستمع…",
+      "processing": "بنعالج كلامك…",
+      "speaking": "بيتكلم…",
+      "wakeListening": "مستني تنادي على اسم مساعدك…"
+    },
+    "startListening": "ابدأ الإدخال الصوتي",
+    "stopListening": "إيقاف الإدخال الصوتي",
+    "stopSpeaking": "إيقاف",
+    "notSupported": "الإدخال الصوتي غير مدعوم في هذا المتصفح.",
+    "settings": {
+      "sectionTitle": "الصوت",
+      "voiceEnabledLabel": "الردود الصوتية",
+      "voiceEnabledDescription": "خلّي مساعدك يقول ردوده بصوت عالي، وفعّل الإدخال الصوتي.",
+      "wakeByNameLabel": "التنبيه بالاسم",
+      "wakeByNameDescription": "قول اسم مساعدك عشان يبدأ يسمعك من غير ما تلمس حاجة. يحتاج تفعيل الردود الصوتية أولاً.",
+      "wakeByNameUnsupported": "التنبيه بالاسم يحتاج الإدخال الصوتي، وهو مش متاح في هذا المتصفح.",
+      "voiceChoiceLabel": "الصوت",
+      "voiceChoiceDefault": "الافتراضي من المتصفح",
+      "microphonePrivacyNotice": "الإدخال الصوتي بيستخدم خاصية التعرف على الكلام المدمجة في متصفحك، واللي ممكن ترسل الصوت لسيرفرات شركة المتصفح عشان تحوّله لنص. مفيش حاجة بترسل لأي جهة تانية."
+    }
+  },
+  "personalize": {
+    "sectionTitle": "المساعد الذكي",
+    "sectionDescription": "خصّص شكل مساعدك في ECOS واسمه وأسلوب كلامه.",
+    "avatarLabel": "اختر شخصية المساعد",
+    "avatars": {
+      "ecos_blue_bot": "الروبوت الأزرق",
+      "ecos_purple_bot": "الروبوت البنفسجي",
+      "ecos_ember_companion": "إمبر",
+      "ecos_owl_companion": "هووت",
+      "ecos_rock_companion": "الصخرة",
+      "ecos_growth_companion": "البرعم",
+      "ecos_stack_companion": "الستاكر",
+      "ecos_screen_companion": "بيكسل"
+    },
+    "nameLabel": "اسم المساعد",
+    "namePlaceholder": "مثال: نور",
+    "personaLabel": "طريقة التقديم",
+    "persona": {
+      "male": "ذكر",
+      "female": "أنثى",
+      "neutral": "محايد"
+    },
+    "speakingStyleLabel": "أسلوب الكلام",
+    "speakingStyle": {
+      "egyptian_casual": "مصري بسيط",
+      "formal": "رسمي",
+      "concise": "مختصر",
+      "friendly": "ودود",
+      "technical": "تقني",
+      "detailed": "تفصيلي"
+    },
+    "languageLabel": "اللغة الأساسية",
+    "language": {
+      "ar": "العربية",
+      "en": "الإنجليزية",
+      "bilingual": "عربي + English"
+    },
+    "save": "حفظ التغييرات",
+    "saving": "جارِ الحفظ…",
+    "saveSuccess": "تم تحديث مساعدك.",
+    "saveError": "تعذر حفظ التفضيلات. حاول مرة أخرى.",
+    "loadError": "تعذر تحميل تفضيلات المساعد. حاول مرة أخرى.",
+    "previewGreeting": "أهلاً، أنا {{name}}!"
   }
 }

@@ -130,6 +130,9 @@ export const ROUTES = {
   // global delivery controls); reached from the bell popover's now quick-controls-only
   // panel. Same personal, ownership-scoped /me/ family as myPreferences above.
   notificationSettings: '/me/notifications',
+  // TASK-ECOS-V1.1-FINAL-AI-ASSISTANT-PERSONALIZED-COMPANION-046 §8 — same personal,
+  // ownership-scoped /me/ family as myPreferences/notificationSettings above.
+  assistantPreferences: '/me/assistant',
   // Claude Bridge
   claudeBridge:           '/claude-bridge',
   claudeBridgeTasks:      '/claude-bridge/tasks',

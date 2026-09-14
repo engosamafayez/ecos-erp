@@ -55,5 +55,76 @@
     "reporting1": "What were today's sales?",
     "logistics1": "Which trips haven't gone out yet?",
     "procurement1": "What purchase orders are pending?"
+  },
+  "customize": {
+    "ariaLabel": "Customize your assistant",
+    "linkLabel": "Customize"
+  },
+  "voice": {
+    "status": {
+      "listening": "Listening…",
+      "processing": "Processing your voice…",
+      "speaking": "Speaking…",
+      "wakeListening": "Waiting to hear your assistant's name…"
+    },
+    "startListening": "Start voice input",
+    "stopListening": "Stop voice input",
+    "stopSpeaking": "Stop",
+    "notSupported": "Voice input isn't supported in this browser.",
+    "settings": {
+      "sectionTitle": "Voice",
+      "voiceEnabledLabel": "Spoken responses",
+      "voiceEnabledDescription": "Let your assistant speak its replies aloud and enable voice input.",
+      "wakeByNameLabel": "Wake by name",
+      "wakeByNameDescription": "Say your assistant's name to start listening, without touching anything. Requires spoken responses to be on.",
+      "wakeByNameUnsupported": "Wake by name needs voice input, which this browser doesn't support.",
+      "voiceChoiceLabel": "Voice",
+      "voiceChoiceDefault": "Browser default",
+      "microphonePrivacyNotice": "Voice input uses your browser's built-in speech recognition, which may send audio to your browser vendor's servers to produce a transcript. Nothing is sent anywhere else."
+    }
+  },
+  "personalize": {
+    "sectionTitle": "AI Assistant",
+    "sectionDescription": "Personalize your ECOS assistant's look, name, and voice.",
+    "avatarLabel": "Choose an avatar",
+    "avatars": {
+      "ecos_blue_bot": "Blue Bot",
+      "ecos_purple_bot": "Purple Bot",
+      "ecos_ember_companion": "Ember",
+      "ecos_owl_companion": "Hoot",
+      "ecos_rock_companion": "Boulder",
+      "ecos_growth_companion": "Sprout",
+      "ecos_stack_companion": "Stacker",
+      "ecos_screen_companion": "Pixel"
+    },
+    "nameLabel": "Assistant name",
+    "namePlaceholder": "e.g. Nour",
+    "personaLabel": "Presentation",
+    "persona": {
+      "male": "Male",
+      "female": "Female",
+      "neutral": "Neutral"
+    },
+    "speakingStyleLabel": "Speaking style",
+    "speakingStyle": {
+      "egyptian_casual": "Casual Egyptian Arabic",
+      "formal": "Formal",
+      "concise": "Concise",
+      "friendly": "Friendly",
+      "technical": "Technical",
+      "detailed": "Detailed"
+    },
+    "languageLabel": "Primary language",
+    "language": {
+      "ar": "Arabic",
+      "en": "English",
+      "bilingual": "Arabic + English"
+    },
+    "save": "Save changes",
+    "saving": "Saving…",
+    "saveSuccess": "Your assistant has been updated.",
+    "saveError": "Couldn't save your preferences. Please try again.",
+    "loadError": "Couldn't load your assistant preferences. Please try again.",
+    "previewGreeting": "Hi, I'm {{name}}!"
   }
 }

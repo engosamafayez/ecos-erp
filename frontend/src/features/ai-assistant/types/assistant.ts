@@ -48,3 +48,49 @@ export type AssistantConversationTurn = {
   status?: AssistantResponseStatus;
   references?: AssistantEntityReference[];
 };
+
+/**
+ * TASK-ECOS-V1.1-FINAL-AI-ASSISTANT-PERSONALIZED-COMPANION-046 §6 — mirrors
+ * Modules\AI\Application\ValueObjects\AssistantPreferences and its own backing
+ * enums exactly (Modules\AI\Domain\Enums\Assistant{Avatar,Persona,
+ * SpeakingStyle,Language}). Stable machine keys only (§6A) — display labels are
+ * resolved separately through i18n, never persisted.
+ */
+export type AssistantAvatarKey =
+  | 'ecos_blue_bot'
+  | 'ecos_purple_bot'
+  | 'ecos_ember_companion'
+  | 'ecos_owl_companion'
+  | 'ecos_rock_companion'
+  | 'ecos_growth_companion'
+  | 'ecos_stack_companion'
+  | 'ecos_screen_companion';
+
+export type AssistantPersonaKey = 'male' | 'female' | 'neutral';
+
+export type AssistantSpeakingStyleKey =
+  | 'egyptian_casual'
+  | 'formal'
+  | 'concise'
+  | 'friendly'
+  | 'technical'
+  | 'detailed';
+
+export type AssistantLanguageKey = 'ar' | 'en' | 'bilingual';
+
+export type AssistantPreferences = {
+  avatar_key: AssistantAvatarKey;
+  name: string;
+  persona: AssistantPersonaKey;
+  speaking_style: AssistantSpeakingStyleKey;
+  language: AssistantLanguageKey;
+  /**
+   * CTO scope override (same task 046) — voice is a client-side I/O preference
+   * only; `voice_choice` is a best-effort device-local Web Speech voice name
+   * (see use-assistant-voice.ts's own docblock for why this can't be a closed
+   * enum, and why a value saved on one device may not exist on another).
+   */
+  voice_enabled: boolean;
+  wake_by_name_enabled: boolean;
+  voice_choice: string | null;
+};
