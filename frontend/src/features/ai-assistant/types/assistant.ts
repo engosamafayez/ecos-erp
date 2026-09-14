@@ -86,11 +86,20 @@ export type AssistantPreferences = {
   language: AssistantLanguageKey;
   /**
    * CTO scope override (same task 046) — voice is a client-side I/O preference
-   * only; `voice_choice` is a best-effort device-local Web Speech voice name
-   * (see use-assistant-voice.ts's own docblock for why this can't be a closed
-   * enum, and why a value saved on one device may not exist on another).
+   * only. FINAL CLOSURE §2 — voice input (microphone/STT) and spoken output
+   * (TTS) are INDEPENDENT: `voice_input_enabled` gates the mic button, Wake by
+   * Name, and Continuous Voice Conversation; `spoken_responses_enabled` gates
+   * TTS only. Wake by Name depends ONLY on `voice_input_enabled`, never on
+   * `spoken_responses_enabled` — enforced server-side in
+   * AssistantPreferences::fromPayload().
    */
-  voice_enabled: boolean;
+  voice_input_enabled: boolean;
+  spoken_responses_enabled: boolean;
   wake_by_name_enabled: boolean;
+  /**
+   * `voice_choice` is a best-effort device-local Web Speech voice name (see
+   * use-assistant-voice.ts's own docblock for why this can't be a closed enum,
+   * and why a value saved on one device may not exist on another).
+   */
   voice_choice: string | null;
 };

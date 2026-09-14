@@ -45,14 +45,19 @@ final class UpsertAssistantPreferencesRequest extends FormRequest
             'persona' => ['required', 'string', Rule::in(AssistantPersona::values())],
             'speaking_style' => ['required', 'string', Rule::in(AssistantSpeakingStyle::values())],
             'language' => ['required', 'string', Rule::in(AssistantLanguage::values())],
-            // CTO scope override (same task, ticket 046 — voice). No enum here: Web
-            // Speech voice names/URIs are assigned by the browser/OS, not ECOS, so
-            // there is no fixed, enumerable set to validate against server-side —
-            // only a bounded length. `voice_choice` is best-effort and re-validated
-            // for actual availability client-side on every device (see
-            // AssistantPreferences::fromPayload's own docblock).
-            'voice_enabled' => ['nullable', 'boolean'],
+            // CTO scope override (same task, ticket 046 — voice), FINAL CLOSURE §2 —
+            // voice input (mic/STT) and spoken output (TTS) are independent
+            // booleans; Wake by Name depends only on voice_input_enabled (enforced
+            // in AssistantPreferences::fromPayload(), not here — this request only
+            // validates shape, never cross-field policy).
+            'voice_input_enabled' => ['nullable', 'boolean'],
+            'spoken_responses_enabled' => ['nullable', 'boolean'],
             'wake_by_name_enabled' => ['nullable', 'boolean'],
+            // No enum here: Web Speech voice names/URIs are assigned by the
+            // browser/OS, not ECOS, so there is no fixed, enumerable set to
+            // validate against server-side — only a bounded length. `voice_choice`
+            // is best-effort and re-validated for actual availability client-side
+            // on every device (see AssistantPreferences::fromPayload's own docblock).
             'voice_choice' => ['nullable', 'string', 'max:100'],
         ];
     }

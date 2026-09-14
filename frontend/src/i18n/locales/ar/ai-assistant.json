@@ -65,19 +65,31 @@
       "listening": "بنستمع…",
       "processing": "بنعالج كلامك…",
       "speaking": "بيتكلم…",
-      "wakeListening": "مستني تنادي على اسم مساعدك…"
+      "wakeListening": "مستني تنادي على اسم مساعدك…",
+      "conversationListening": "بنستمع — محادثة صوتية…",
+      "conversationMuted": "المحادثة الصوتية متكتمة",
+      "conversationActive": "المحادثة الصوتية شغالة…"
     },
     "startListening": "ابدأ الإدخال الصوتي",
     "stopListening": "إيقاف الإدخال الصوتي",
     "stopSpeaking": "إيقاف",
     "notSupported": "الإدخال الصوتي غير مدعوم في هذا المتصفح.",
+    "conversation": {
+      "start": "ابدأ محادثة صوتية",
+      "mute": "كتم",
+      "unmute": "إلغاء الكتم",
+      "end": "إنهاء المحادثة الصوتية"
+    },
     "settings": {
       "sectionTitle": "الصوت",
-      "voiceEnabledLabel": "الردود الصوتية",
-      "voiceEnabledDescription": "خلّي مساعدك يقول ردوده بصوت عالي، وفعّل الإدخال الصوتي.",
+      "voiceInputLabel": "الإدخال الصوتي",
+      "voiceInputDescription": "خلّي مساعدك يسمعك من الميكروفون. بيفعّل زرار الميكروفون، والتنبيه بالاسم، والمحادثة الصوتية.",
+      "spokenResponsesLabel": "الردود الصوتية",
+      "spokenResponsesDescription": "خلّي مساعدك يقرأ ردوده بصوت عالي. شغالة لوحدها، سواء كتبت لمساعدك أو كلمته.",
       "wakeByNameLabel": "التنبيه بالاسم",
-      "wakeByNameDescription": "قول اسم مساعدك عشان يبدأ يسمعك من غير ما تلمس حاجة. يحتاج تفعيل الردود الصوتية أولاً.",
+      "wakeByNameDescription": "قول اسم مساعدك عشان يبدأ يسمعك من غير ما تلمس حاجة. يحتاج تفعيل الإدخال الصوتي أولاً.",
       "wakeByNameUnsupported": "التنبيه بالاسم يحتاج الإدخال الصوتي، وهو مش متاح في هذا المتصفح.",
+      "spokenResponsesUnsupported": "الردود الصوتية مش متاحة في هذا المتصفح.",
       "voiceChoiceLabel": "الصوت",
       "voiceChoiceDefault": "الافتراضي من المتصفح",
       "microphonePrivacyNotice": "الإدخال الصوتي بيستخدم خاصية التعرف على الكلام المدمجة في متصفحك، واللي ممكن ترسل الصوت لسيرفرات شركة المتصفح عشان تحوّله لنص. مفيش حاجة بترسل لأي جهة تانية."

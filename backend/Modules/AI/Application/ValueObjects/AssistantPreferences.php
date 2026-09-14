@@ -29,12 +29,20 @@ final class AssistantPreferences
         // CTO scope override (same task, ticket 046) — voice is a client-side I/O
         // preference only (which browser Web Speech APIs to use and how), never a
         // server-side AI-behaviour toggle: it never reaches AIRequestContext/
-        // SystemPolicyBuilder. `voiceChoice` is a BEST-EFFORT device-local voice
-        // name/URI (Web Speech voices differ per browser/OS) — the frontend falls
-        // back to a sensible default when the stored value isn't available on the
-        // current device; this is a disclosed, honest limitation, not a bug.
-        public readonly bool $voiceEnabled = false,
+        // SystemPolicyBuilder.
+        //
+        // FINAL CLOSURE §2 — voice input (microphone/STT — the prerequisite for
+        // the mic button, Wake by Name, and Continuous Voice Conversation) and
+        // spoken output (TTS) are INDEPENDENT preferences. Wake by Name depends
+        // ONLY on voice input, never on spoken output — see fromPayload()'s own
+        // enforcement of that below.
+        public readonly bool $voiceInputEnabled = false,
+        public readonly bool $spokenResponsesEnabled = false,
         public readonly bool $wakeByNameEnabled = false,
+        // `voiceChoice` is a BEST-EFFORT device-local voice name/URI (Web Speech
+        // voices differ per browser/OS) — the frontend falls back to a sensible
+        // default when the stored value isn't available on the current device;
+        // this is a disclosed, honest limitation, not a bug.
         public readonly ?string $voiceChoice = null,
     ) {}
 
@@ -75,21 +83,44 @@ final class AssistantPreferences
         $name = trim((string) ($payload['name'] ?? $defaults->name));
         $voiceChoice = $payload['voice_choice'] ?? null;
 
+        // FINAL CLOSURE §2/§9 backward compatibility (no migration): the
+        // pre-closure `voice_enabled` key was a single switch that gated
+        // microphone input AND spoken output together. A payload stored before
+        // this split still resolves to that same combined experience — each new
+        // key falls back to the legacy key ONLY when the new key itself is
+        // absent from the payload, so a caller that already writes the new keys
+        // (even both false) is never overridden by a stale legacy value.
+        $legacyVoiceEnabled = $payload['voice_enabled'] ?? null;
+        $voiceInputEnabled = array_key_exists('voice_input_enabled', $payload)
+            ? (bool) $payload['voice_input_enabled']
+            : (bool) ($legacyVoiceEnabled ?? $defaults->voiceInputEnabled);
+        $spokenResponsesEnabled = array_key_exists('spoken_responses_enabled', $payload)
+            ? (bool) $payload['spoken_responses_enabled']
+            : (bool) ($legacyVoiceEnabled ?? $defaults->spokenResponsesEnabled);
+
+        // Wake by Name depends ONLY on voice input — never on spoken output —
+        // and fails closed to false whenever voice input itself is off, even if
+        // a stale/tampered payload still carries wake_by_name_enabled: true.
+        $wakeByNameEnabled = $voiceInputEnabled
+            && (bool) ($payload['wake_by_name_enabled'] ?? $defaults->wakeByNameEnabled);
+
         return new self(
             avatarKey: AssistantAvatar::tryFrom($avatarKey) !== null ? $avatarKey : $defaults->avatarKey,
             name: $name !== '' ? $name : $defaults->name,
             persona: AssistantPersona::tryFrom($persona) !== null ? $persona : $defaults->persona,
             speakingStyle: AssistantSpeakingStyle::tryFrom($speakingStyle) !== null ? $speakingStyle : $defaults->speakingStyle,
             language: AssistantLanguage::tryFrom($language) !== null ? $language : $defaults->language,
-            voiceEnabled: (bool) ($payload['voice_enabled'] ?? $defaults->voiceEnabled),
-            wakeByNameEnabled: (bool) ($payload['wake_by_name_enabled'] ?? $defaults->wakeByNameEnabled),
+            voiceInputEnabled: $voiceInputEnabled,
+            spokenResponsesEnabled: $spokenResponsesEnabled,
+            wakeByNameEnabled: $wakeByNameEnabled,
             voiceChoice: is_string($voiceChoice) && $voiceChoice !== '' ? $voiceChoice : null,
         );
     }
 
     /**
      * @return array{avatar_key: string, name: string, persona: string, speaking_style: string,
-     *     language: string, voice_enabled: bool, wake_by_name_enabled: bool, voice_choice: ?string}
+     *     language: string, voice_input_enabled: bool, spoken_responses_enabled: bool,
+     *     wake_by_name_enabled: bool, voice_choice: ?string}
      */
     public function toArray(): array
     {
@@ -99,7 +130,8 @@ final class AssistantPreferences
             'persona' => $this->persona,
             'speaking_style' => $this->speakingStyle,
             'language' => $this->language,
-            'voice_enabled' => $this->voiceEnabled,
+            'voice_input_enabled' => $this->voiceInputEnabled,
+            'spoken_responses_enabled' => $this->spokenResponsesEnabled,
             'wake_by_name_enabled' => $this->wakeByNameEnabled,
             'voice_choice' => $this->voiceChoice,
         ];

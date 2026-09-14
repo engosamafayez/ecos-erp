@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Bot, Mic, MicOff, RotateCcw, Send, Settings } from 'lucide-react';
+import { Bot, Mic, MicOff, PhoneOff, RotateCcw, Send, Settings, Volume2, VolumeX } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -37,10 +37,18 @@ type Props = {
  * settings-gear "Customize" button next to the existing reset control.
  *
  * CTO voice scope override (same task) — a mic button appears in the composer
- * only when the user turned voice on AND the browser actually supports
+ * only when the user turned voice input on AND the browser actually supports
  * SpeechRecognition; a spoken response only ever plays the EXACT text already
  * rendered from the canonical AIAssistantResponse (§8 — same authority, same
  * content, just also read aloud).
+ *
+ * FINAL CLOSURE (same task 046) §1/§2 — voice input and spoken output are
+ * independent preferences (a user can talk to ECOS and get text-only replies,
+ * or type and still hear replies spoken). Adds Continuous Voice Conversation
+ * Mode controls (Start/Mute/Unmute/End) — a real looping voice exchange,
+ * distinct from the single-shot push-to-talk button above and from Wake by
+ * Name. Every transcript, spoken or typed, still flows through the one
+ * `submit()` → `sendMessage()` → canonical assistant path below.
  */
 export function AssistantDrawer({ open, onOpenChange, onCustomize }: Props) {
   const { t } = useTranslation('ai-assistant');
@@ -48,7 +56,8 @@ export function AssistantDrawer({ open, onOpenChange, onCustomize }: Props) {
   const preferencesQuery = useAssistantPreferencesQuery();
   const [draft, setDraft] = useState('');
   const scrollEndRef = useRef<HTMLDivElement>(null);
-  const lastSpokenTurnId = useRef<string | null>(null);
+  const lastProcessedTurnId = useRef<string | null>(null);
+  const lastHandledErrorRef = useRef<unknown>(null);
   const assistantName = preferencesQuery.data?.name;
 
   const submit = useCallback(
@@ -60,7 +69,8 @@ export function AssistantDrawer({ open, onOpenChange, onCustomize }: Props) {
   );
 
   const voice = useAssistantVoice({
-    voiceEnabled: preferencesQuery.data?.voice_enabled ?? false,
+    voiceInputEnabled: preferencesQuery.data?.voice_input_enabled ?? false,
+    spokenResponsesEnabled: preferencesQuery.data?.spoken_responses_enabled ?? false,
     wakeByNameEnabled: preferencesQuery.data?.wake_by_name_enabled ?? false,
     assistantName: assistantName ?? '',
     language: preferencesQuery.data?.language ?? 'bilingual',
@@ -72,18 +82,44 @@ export function AssistantDrawer({ open, onOpenChange, onCustomize }: Props) {
     scrollEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [conversation.length, isPending]);
 
-  // Speak the newest assistant turn exactly once, only when voice is on.
+  // FINAL CLOSURE §1/§2 — every new assistant turn (whatever its status) both
+  // (a) speaks it aloud, but ONLY when spoken responses are on — entirely
+  // independent of whether the turn arrived via voice or typing — and (b)
+  // resumes Continuous Voice Conversation listening for the next turn, either
+  // immediately (spoken responses off) or once playback finishes (on), so the
+  // mic never re-engages while the assistant's own voice is still playing.
   useEffect(() => {
-    if (!preferencesQuery.data?.voice_enabled) return;
     const lastTurn = conversation[conversation.length - 1];
-    if (!lastTurn || lastTurn.role !== 'assistant' || lastTurn.id === lastSpokenTurnId.current) return;
-    if (lastTurn.status !== 'ok' && lastTurn.status !== 'tool_limit_reached') return;
-    if (lastTurn.content.trim() === '') return;
+    if (!lastTurn || lastTurn.role !== 'assistant' || lastTurn.id === lastProcessedTurnId.current) return;
 
-    lastSpokenTurnId.current = lastTurn.id;
-    voice.speak(lastTurn.content);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- voice.speak is intentionally excluded: it's stable per its own useCallback deps and including the whole `voice` object would re-run this on every micState change.
-  }, [conversation, preferencesQuery.data?.voice_enabled]);
+    lastProcessedTurnId.current = lastTurn.id;
+    const resume = () => {
+      if (voice.isConversationActive) voice.resumeConversationListening();
+    };
+
+    const shouldSpeak =
+      preferencesQuery.data?.spoken_responses_enabled === true &&
+      (lastTurn.status === 'ok' || lastTurn.status === 'tool_limit_reached') &&
+      lastTurn.content.trim() !== '';
+
+    if (shouldSpeak) {
+      voice.speak(lastTurn.content, resume);
+    } else {
+      resume();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- voice.speak/voice.isConversationActive/voice.resumeConversationListening intentionally excluded: they're stable per their own useCallback deps (or, for isConversationActive, read fresh at call time) and including the whole `voice` object would re-run this on every micState change.
+  }, [conversation, preferencesQuery.data?.spoken_responses_enabled]);
+
+  // A transport error (network/rate-limit/etc.) never appends an assistant
+  // turn to `conversation` (see useAssistant()), so the effect above alone
+  // would leave an active voice conversation stuck in "processing" forever —
+  // resume listening here too once the failure is visible to the user.
+  useEffect(() => {
+    if (!error || error === lastHandledErrorRef.current) return;
+    lastHandledErrorRef.current = error;
+    if (voice.isConversationActive) voice.resumeConversationListening();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- same rationale as above.
+  }, [error]);
 
   const transportErrorText = (() => {
     if (!error) return null;
@@ -96,9 +132,12 @@ export function AssistantDrawer({ open, onOpenChange, onCustomize }: Props) {
 
   const voiceStatusText = (() => {
     if (voice.isSpeaking) return t($ => $.voice.status.speaking);
+    if (voice.isConversationActive && voice.isConversationMuted) return t($ => $.voice.status.conversationMuted);
+    if (voice.isConversationActive && voice.micState === 'listening') return t($ => $.voice.status.conversationListening);
     if (voice.micState === 'listening') return t($ => $.voice.status.listening);
     if (voice.micState === 'processing') return t($ => $.voice.status.processing);
     if (voice.micState === 'wake-listening') return t($ => $.voice.status.wakeListening);
+    if (voice.isConversationActive) return t($ => $.voice.status.conversationActive);
     return null;
   })();
 
@@ -147,14 +186,39 @@ export function AssistantDrawer({ open, onOpenChange, onCustomize }: Props) {
             className="flex items-center gap-2 border-b bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground"
           >
             <span
-              className={`size-1.5 rounded-full ${voice.isSpeaking || voice.micState === 'listening' ? 'animate-pulse bg-primary' : 'bg-muted-foreground'}`}
+              className={`size-1.5 shrink-0 rounded-full ${voice.isSpeaking || voice.micState === 'listening' ? 'animate-pulse bg-primary' : 'bg-muted-foreground'}`}
             />
-            {voiceStatusText}
-            {voice.isSpeaking ? (
-              <Button variant="ghost" size="sm" className="h-6 ms-auto px-2 text-xs" onClick={voice.stopSpeaking}>
-                {t($ => $.voice.stopSpeaking)}
-              </Button>
-            ) : null}
+            <span className="truncate">{voiceStatusText}</span>
+            <div className="ms-auto flex shrink-0 items-center gap-1">
+              {voice.isSpeaking ? (
+                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={voice.stopSpeaking}>
+                  {t($ => $.voice.stopSpeaking)}
+                </Button>
+              ) : null}
+              {voice.isConversationActive ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-6"
+                    onClick={() => (voice.isConversationMuted ? voice.unmuteConversation() : voice.muteConversation())}
+                    aria-label={voice.isConversationMuted ? t($ => $.voice.conversation.unmute) : t($ => $.voice.conversation.mute)}
+                    aria-pressed={voice.isConversationMuted}
+                  >
+                    {voice.isConversationMuted ? <VolumeX className="size-3.5" /> : <Volume2 className="size-3.5" />}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-6 text-destructive hover:text-destructive"
+                    onClick={voice.endConversation}
+                    aria-label={t($ => $.voice.conversation.end)}
+                  >
+                    <PhoneOff className="size-3.5" />
+                  </Button>
+                </>
+              ) : null}
+            </div>
           </div>
         ) : null}
 
@@ -201,7 +265,7 @@ export function AssistantDrawer({ open, onOpenChange, onCustomize }: Props) {
             rows={1}
             className="max-h-24 min-h-9 flex-1 resize-none rounded-md border bg-transparent px-3 py-2 text-sm shadow-xs"
           />
-          {preferencesQuery.data?.voice_enabled && voice.isSttSupported ? (
+          {preferencesQuery.data?.voice_input_enabled && voice.isSttSupported && !voice.isConversationActive ? (
             <Button
               type="button"
               variant={voice.micState === 'listening' ? 'default' : 'outline'}
@@ -212,6 +276,23 @@ export function AssistantDrawer({ open, onOpenChange, onCustomize }: Props) {
               aria-pressed={voice.micState === 'listening'}
             >
               {voice.micState === 'listening' ? <Mic className="size-4" /> : <MicOff className="size-4" />}
+            </Button>
+          ) : null}
+          {/* FINAL CLOSURE §1 — Continuous Voice Conversation Mode's own explicit
+              Start control; text input/send above remain available regardless
+              (the required always-on fallback). Ends via the status row's End
+              control once active, never this same button (avoids an accidental
+              double-tap immediately re-starting a just-ended conversation). */}
+          {preferencesQuery.data?.voice_input_enabled && voice.isSttSupported && !voice.isConversationActive ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="size-9 shrink-0"
+              onClick={voice.startConversation}
+              aria-label={t($ => $.voice.conversation.start)}
+            >
+              <Volume2 className="size-4" />
             </Button>
           ) : null}
           <Button

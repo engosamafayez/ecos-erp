@@ -67,14 +67,16 @@ class UpsertAssistantPreferencesRequestTest extends TestCase
         $this->assertContains('max:40', $rules['name']);
     }
 
-    // ── CTO scope override (same task 046) — voice fields ───────────────────────
+    // ── CTO scope override (same task 046) / FINAL CLOSURE §2 — voice fields ────
 
-    public function test_voice_enabled_and_wake_by_name_enabled_are_nullable_booleans(): void
+    public function test_voice_input_spoken_responses_and_wake_by_name_are_nullable_booleans(): void
     {
         $rules = $this->rules();
 
-        $this->assertContains('nullable', $rules['voice_enabled']);
-        $this->assertContains('boolean', $rules['voice_enabled']);
+        $this->assertContains('nullable', $rules['voice_input_enabled']);
+        $this->assertContains('boolean', $rules['voice_input_enabled']);
+        $this->assertContains('nullable', $rules['spoken_responses_enabled']);
+        $this->assertContains('boolean', $rules['spoken_responses_enabled']);
         $this->assertContains('nullable', $rules['wake_by_name_enabled']);
         $this->assertContains('boolean', $rules['wake_by_name_enabled']);
     }

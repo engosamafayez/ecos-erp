@@ -121,7 +121,8 @@ enum PreferenceCategory: string
             'persona' => 'neutral',
             'speaking_style' => 'friendly',
             'language' => 'bilingual',
-            'voice_enabled' => false,
+            'voice_input_enabled' => false,
+            'spoken_responses_enabled' => false,
             'wake_by_name_enabled' => false,
             'voice_choice' => null,
         ];

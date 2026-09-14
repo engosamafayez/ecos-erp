@@ -33,7 +33,8 @@ const BASE_PREFS: AssistantPreferences = {
   persona: 'neutral',
   speaking_style: 'friendly',
   language: 'bilingual',
-  voice_enabled: false,
+  voice_input_enabled: false,
+  spoken_responses_enabled: false,
   wake_by_name_enabled: false,
   voice_choice: null,
 };
@@ -102,17 +103,33 @@ describe('AssistantPreferencesPanel', () => {
     });
   });
 
-  it('turning voice off also turns Wake by Name off, since it depends on voice being enabled', async () => {
-    mockData = { ...BASE_PREFS, voice_enabled: true, wake_by_name_enabled: true };
+  it('turning voice input off also turns Wake by Name off, since it depends on voice input — but leaves spoken responses untouched', async () => {
+    mockData = { ...BASE_PREFS, voice_input_enabled: true, wake_by_name_enabled: true, spoken_responses_enabled: true };
     const user = userEvent.setup();
     render(<AssistantPreferencesPanel />);
 
-    await user.click(screen.getByLabelText('voice.settings.voiceEnabledLabel'));
+    await user.click(screen.getByLabelText('voice.settings.voiceInputLabel'));
     await user.click(screen.getByRole('button', { name: 'personalize.save' }));
 
     await waitFor(() => {
       expect(updateMutate).toHaveBeenCalledWith(
-        expect.objectContaining({ voice_enabled: false, wake_by_name_enabled: false }),
+        expect.objectContaining({ voice_input_enabled: false, wake_by_name_enabled: false, spoken_responses_enabled: true }),
+        expect.anything(),
+      );
+    });
+  });
+
+  it('turning spoken responses off does NOT disable voice input or Wake by Name (FINAL CLOSURE §2 — the three are independent)', async () => {
+    mockData = { ...BASE_PREFS, voice_input_enabled: true, wake_by_name_enabled: true, spoken_responses_enabled: true };
+    const user = userEvent.setup();
+    render(<AssistantPreferencesPanel />);
+
+    await user.click(screen.getByLabelText('voice.settings.spokenResponsesLabel'));
+    await user.click(screen.getByRole('button', { name: 'personalize.save' }));
+
+    await waitFor(() => {
+      expect(updateMutate).toHaveBeenCalledWith(
+        expect.objectContaining({ spoken_responses_enabled: false, voice_input_enabled: true, wake_by_name_enabled: true }),
         expect.anything(),
       );
     });

@@ -6,6 +6,11 @@
  * typed) despite being implemented natively by Chromium-based browsers as
  * `webkitSpeechRecognition` — this file declares only the subset this app
  * actually uses, not the full spec.
+ *
+ * FINAL CLOSURE §1 — these same ambient types now also back Continuous Voice
+ * Conversation Mode (see use-assistant-voice.ts), which reuses the identical
+ * SpeechRecognition surface as push-to-talk and Wake by Name rather than
+ * introducing any new speech interface.
  */
 
 interface SpeechRecognitionResultItem {

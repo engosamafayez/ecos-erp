@@ -6,13 +6,19 @@ import type { AssistantLanguageKey } from '@/features/ai-assistant/types/assista
 export type MicState = 'off' | 'wake-listening' | 'listening' | 'processing';
 
 type UseAssistantVoiceArgs = {
-  /** The user's own `voice_enabled` preference — gates TTS output only (STT push-to-talk always works when supported; the mic button itself is only rendered when this is on — see AssistantDrawer). */
-  voiceEnabled: boolean;
+  /**
+   * FINAL CLOSURE §2 — the user's own `voice_input_enabled` preference: the
+   * SOLE prerequisite for the push-to-talk mic button, Wake by Name, and
+   * Continuous Voice Conversation. Independent of `spokenResponsesEnabled`.
+   */
+  voiceInputEnabled: boolean;
+  /** Gates TTS output ONLY (renamed from the old combined `voiceEnabled` — see FINAL CLOSURE §2). Never gates voice input in any way. */
+  spokenResponsesEnabled: boolean;
   wakeByNameEnabled: boolean;
   assistantName: string;
   language: AssistantLanguageKey;
   voiceChoice: string | null;
-  /** Called with the final transcript of a push-to-talk (or wake-triggered) utterance. The caller sends it through the EXACT SAME sendMessage() path a typed message uses (§8 of the override) — this hook never talks to the assistant API itself. */
+  /** Called with the final transcript of a push-to-talk, wake-triggered, or conversation-mode utterance. The caller sends it through the EXACT SAME sendMessage() path a typed message uses (§8 of the override) — this hook never talks to the assistant API itself. */
   onTranscript: (transcript: string) => void;
 };
 
@@ -63,9 +69,24 @@ function recognitionLangFor(language: AssistantLanguageKey): string {
  *   the current device — a `voice_choice` saved on one device may not exist on
  *   another, in which case this hook falls back to the browser's own default
  *   voice for the resolved language rather than failing.
+ *
+ * FINAL CLOSURE (same task 046) §1/§2 — adds Continuous Voice Conversation
+ * Mode (`startConversation`/`muteConversation`/`unmuteConversation`/
+ * `endConversation`/`resumeConversationListening`), a real, user-started,
+ * looping listen→submit→process→respond→optional-speak→listen-again cycle,
+ * DISTINCT from both push-to-talk and Wake by Name — and splits the old single
+ * `voiceEnabled` switch into independent `voiceInputEnabled` (mic/STT/Wake by
+ * Name/conversation prerequisite) and `spokenResponsesEnabled` (TTS only)
+ * preferences, so e.g. voice input + Wake by Name can be on while spoken
+ * output stays off. `activeRecognitionRef` remains the ONE shared instance
+ * across push-to-talk, Wake by Name, and conversation mode — whichever mode
+ * starts next always tears down whatever came before it, so only one
+ * SpeechRecognition session (and therefore one live microphone stream) can
+ * ever exist at a time.
  */
 export function useAssistantVoice({
-  voiceEnabled,
+  voiceInputEnabled,
+  spokenResponsesEnabled,
   wakeByNameEnabled,
   assistantName,
   language,
@@ -74,6 +95,8 @@ export function useAssistantVoice({
 }: UseAssistantVoiceArgs) {
   const [micState, setMicState] = useState<MicState>('off');
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isConversationActive, setIsConversationActive] = useState(false);
+  const [isConversationMuted, setIsConversationMuted] = useState(false);
 
   const activeRecognitionRef = useRef<SpeechRecognition | null>(null);
   const wakeByNameEnabledRef = useRef(wakeByNameEnabled);
@@ -81,6 +104,15 @@ export function useAssistantVoice({
   const assistantNameRef = useRef(assistantName);
   /** Breaks the startPushToTalk <-> startWakeListening circular reference — always holds the latest startWakeListening, updated during render (never read during render itself, only from event handlers/effects below). */
   const startWakeListeningRef = useRef<() => void>(() => {});
+  /** Same purpose as startWakeListeningRef, for beginConversationListening's own self-reference from its onend/onerror handlers. */
+  const beginConversationListeningRef = useRef<() => void>(() => {});
+  /** Same purpose as startWakeListeningRef — lets beginConversationListening's onerror call the not-yet-declared endConversation without a "used before declared" lint violation. */
+  const endConversationRef = useRef<() => void>(() => {});
+  /** Mirrors isConversationActive/isConversationMuted for synchronous reads inside recognition event handlers and imperative action functions — set directly (not via effect) by the functions that own this state, since those are event-handler-time writes, not render-time ones. */
+  const conversationActiveRef = useRef(false);
+  const conversationMutedRef = useRef(false);
+  /** True from the moment a conversation-mode transcript is submitted until resumeConversationListening() is called — prevents beginConversationListening's own onend from auto-resuming while an assistant reply is still in flight (and possibly about to be spoken, which the mic must not pick back up as feedback). */
+  const awaitingConversationResponseRef = useRef(false);
 
   useEffect(() => {
     wakeByNameEnabledRef.current = wakeByNameEnabled;
@@ -110,7 +142,7 @@ export function useAssistantVoice({
 
   /** Starts a single-utterance push-to-talk session (§ "same canonical AI conversation" — the transcript is handed to onTranscript, never processed here). */
   const startPushToTalk = useCallback(() => {
-    if (!RecognitionCtor) return;
+    if (!RecognitionCtor || !voiceInputEnabled) return;
     teardownActiveRecognition();
 
     const recognition = new RecognitionCtor();
@@ -141,7 +173,7 @@ export function useAssistantVoice({
     activeRecognitionRef.current = recognition;
     setMicState('listening');
     recognition.start();
-  }, [RecognitionCtor, recognitionLang, teardownActiveRecognition]);
+  }, [RecognitionCtor, voiceInputEnabled, recognitionLang, teardownActiveRecognition]);
 
   const stopPushToTalk = useCallback(() => {
     teardownActiveRecognition();
@@ -150,7 +182,13 @@ export function useAssistantVoice({
 
   /** Continuous, opt-in listening for the user's own configured assistant name ONLY (never a business phrase) — a match ONLY flips to push-to-talk listening state. */
   const startWakeListening = useCallback(() => {
-    if (!RecognitionCtor || !wakeByNameEnabledRef.current || assistantNameRef.current.trim() === '') return;
+    if (
+      !RecognitionCtor ||
+      !voiceInputEnabled ||
+      !wakeByNameEnabledRef.current ||
+      assistantNameRef.current.trim() === ''
+    )
+      return;
     teardownActiveRecognition();
 
     const recognition = new RecognitionCtor();
@@ -189,7 +227,13 @@ export function useAssistantVoice({
     activeRecognitionRef.current = recognition;
     setMicState('wake-listening');
     recognition.start();
-  }, [RecognitionCtor, recognitionLang, teardownActiveRecognition, startPushToTalk]);
+  }, [
+    RecognitionCtor,
+    voiceInputEnabled,
+    recognitionLang,
+    teardownActiveRecognition,
+    startPushToTalk,
+  ]);
 
   // Always keep the ref pointed at the latest startWakeListening (see its
   // declaration comment above) — updated in an effect, never during render,
@@ -203,21 +247,22 @@ export function useAssistantVoice({
     setMicState('off');
   }, [teardownActiveRecognition]);
 
-  // Turning "Wake by Name" on/off starts/stops the continuous listener — a real
-  // browser-API side effect (starting/stopping a microphone stream), which is
-  // exactly what useEffect is for; the resulting setMicState calls reflect that
-  // external system's state, not state derivable from props during render.
+  // Turning "Wake by Name" on/off (or voice input itself off) starts/stops the
+  // continuous listener — a real browser-API side effect (starting/stopping a
+  // microphone stream), which is exactly what useEffect is for; the resulting
+  // setMicState calls reflect that external system's state, not state
+  // derivable from props during render.
   useEffect(() => {
-    if (wakeByNameEnabled && isSttSupported && assistantName.trim() !== '') {
+    if (wakeByNameEnabled && voiceInputEnabled && isSttSupported && assistantName.trim() !== '') {
       startWakeListening();
-    } else if (!wakeByNameEnabled) {
+    } else if (!wakeByNameEnabled || !voiceInputEnabled) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- stopping a real SpeechRecognition session and reflecting its resulting mic state; not derivable from props/state during render
       stopWakeListening();
     }
     // Intentionally NOT re-running on every assistantName keystroke while the
     // settings form is open — only on the enabled toggle and support/mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wakeByNameEnabled, isSttSupported]);
+  }, [wakeByNameEnabled, voiceInputEnabled, isSttSupported]);
 
   // §10 of the override — logout/session-expiry/unmount stops every listener
   // and releases the microphone/speech-synthesis resources.
@@ -228,9 +273,20 @@ export function useAssistantVoice({
     };
   }, [teardownActiveRecognition, isTtsSupported]);
 
+  /**
+   * `onEnd` fires once playback finishes (or immediately, synchronously via
+   * queueMicrotask, when spoken responses are off/unsupported/blank) so a
+   * caller sequencing Continuous Voice Conversation can always resume
+   * listening exactly once per turn, whether or not anything was actually
+   * spoken aloud — resuming the mic only AFTER speech ends (rather than
+   * immediately) avoids the mic picking up the assistant's own TTS playback.
+   */
   const speak = useCallback(
-    (text: string) => {
-      if (!isTtsSupported || !voiceEnabled || text.trim() === '') return;
+    (text: string, onEnd?: () => void) => {
+      if (!isTtsSupported || !spokenResponsesEnabled || text.trim() === '') {
+        if (onEnd) queueMicrotask(onEnd);
+        return;
+      }
 
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
@@ -244,17 +300,167 @@ export function useAssistantVoice({
       }
 
       utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
+      utterance.onend = () => {
+        setIsSpeaking(false);
+        onEnd?.();
+      };
+      utterance.onerror = () => {
+        setIsSpeaking(false);
+        onEnd?.();
+      };
       window.speechSynthesis.speak(utterance);
     },
-    [isTtsSupported, voiceEnabled, recognitionLang, voiceChoice],
+    [isTtsSupported, spokenResponsesEnabled, recognitionLang, voiceChoice],
   );
 
   const stopSpeaking = useCallback(() => {
     if (isTtsSupported) window.speechSynthesis.cancel();
     setIsSpeaking(false);
   }, [isTtsSupported]);
+
+  // ── FINAL CLOSURE §1 — Continuous Voice Conversation Mode ──────────────────
+  // A real, user-started, looping listen→submit→process→respond→optional-
+  // speak→listen-again cycle. Distinct from Wake by Name (which only ever
+  // triggers a SINGLE push-to-talk exchange before reverting to wake-
+  // listening — left completely unmodified above) and from ordinary push-to-
+  // talk (single exchange, no loop). Transcripts flow through the exact same
+  // onTranscript → sendMessage() → POST /api/ai/assistant/message path as
+  // every other voice/typed input — this hook never talks to the assistant
+  // API directly.
+
+  /**
+   * Starts ONE listening turn of an active conversation. Deliberately does
+   * NOT auto-loop on its own `onend` — unlike Wake by Name's continuous
+   * recognition, each turn is single-utterance (continuous=false) and the
+   * NEXT turn only begins when resumeConversationListening() is explicitly
+   * called (by AssistantDrawer, once the assistant's reply — and, if spoken
+   * responses are on, its TTS playback — has finished). This is what prevents
+   * the microphone from picking up the assistant's own voice as feedback.
+   */
+  const beginConversationListening = useCallback(() => {
+    if (
+      !RecognitionCtor ||
+      !voiceInputEnabled ||
+      !conversationActiveRef.current ||
+      conversationMutedRef.current
+    )
+      return;
+    teardownActiveRecognition();
+
+    const recognition = new RecognitionCtor();
+    recognition.lang = recognitionLang;
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = (event) => {
+      const lastResult = event.results[event.results.length - 1];
+      const transcript = lastResult.item(0).transcript.trim();
+      if (transcript !== '') {
+        awaitingConversationResponseRef.current = true;
+        setMicState('processing');
+        onTranscriptRef.current(transcript);
+      }
+    };
+    recognition.onerror = (event) => {
+      activeRecognitionRef.current = null;
+      if (!conversationActiveRef.current) return;
+      // A hard denial (e.g. 'not-allowed'/'service-not-allowed') must not
+      // spin-loop against a permanently blocked microphone — end the
+      // conversation cleanly, same as Wake by Name's own denial handling.
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        endConversationRef.current();
+        return;
+      }
+      // A transient error (e.g. no-speech/network/aborted) with nothing
+      // submitted: safe to listen again immediately, since there is no
+      // assistant reply pending that might be spoken and re-captured by the
+      // mic. 'no-speech' in particular fires routinely on ordinary pauses —
+      // retrying it is what makes the mode feel "continuous".
+      if (!awaitingConversationResponseRef.current && !conversationMutedRef.current) {
+        beginConversationListeningRef.current();
+      }
+    };
+    recognition.onend = () => {
+      activeRecognitionRef.current = null;
+      if (!conversationActiveRef.current) {
+        setMicState('off');
+        return;
+      }
+      if (!awaitingConversationResponseRef.current && !conversationMutedRef.current) {
+        beginConversationListeningRef.current();
+      }
+      // else: a reply is in flight (or the user just muted) — stay as-is
+      // until resumeConversationListening() (or unmuteConversation()) is
+      // called externally.
+    };
+
+    activeRecognitionRef.current = recognition;
+    setMicState('listening');
+    recognition.start();
+  }, [RecognitionCtor, voiceInputEnabled, recognitionLang, teardownActiveRecognition]);
+
+  useEffect(() => {
+    beginConversationListeningRef.current = beginConversationListening;
+  }, [beginConversationListening]);
+
+  /** §1 — the explicit "Start Voice Conversation" control. */
+  const startConversation = useCallback(() => {
+    if (!RecognitionCtor || !voiceInputEnabled) return;
+    conversationActiveRef.current = true;
+    conversationMutedRef.current = false;
+    awaitingConversationResponseRef.current = false;
+    setIsConversationActive(true);
+    setIsConversationMuted(false);
+    beginConversationListening();
+  }, [RecognitionCtor, voiceInputEnabled, beginConversationListening]);
+
+  /** To be called once the assistant's reply (and, if spoken aloud, its TTS playback) has finished — resumes listening for the next turn. A no-op when the conversation isn't active or is muted. */
+  const resumeConversationListening = useCallback(() => {
+    awaitingConversationResponseRef.current = false;
+    if (!conversationActiveRef.current || conversationMutedRef.current) return;
+    beginConversationListeningRef.current();
+  }, []);
+
+  /** §1 — "Mute": stops active listening WITHOUT ending the conversation (conversation state, e.g. isConversationActive, is preserved). */
+  const muteConversation = useCallback(() => {
+    if (!conversationActiveRef.current) return;
+    conversationMutedRef.current = true;
+    setIsConversationMuted(true);
+    teardownActiveRecognition();
+    setMicState('off');
+  }, [teardownActiveRecognition]);
+
+  /** §1 — "Unmute": resumes listening immediately unless a reply is still in flight (in which case resumeConversationListening() will pick it up once that reply lands). */
+  const unmuteConversation = useCallback(() => {
+    if (!conversationActiveRef.current) return;
+    conversationMutedRef.current = false;
+    setIsConversationMuted(false);
+    if (!awaitingConversationResponseRef.current) {
+      beginConversationListening();
+    }
+  }, [beginConversationListening]);
+
+  /** §1 — "End Voice Conversation": full teardown of recognition AND any pending/active speech, then resumes Wake by Name if that preference is still separately on. */
+  const endConversation = useCallback(() => {
+    conversationActiveRef.current = false;
+    conversationMutedRef.current = false;
+    awaitingConversationResponseRef.current = false;
+    setIsConversationActive(false);
+    setIsConversationMuted(false);
+    teardownActiveRecognition();
+    if (isTtsSupported) window.speechSynthesis.cancel();
+    setIsSpeaking(false);
+    if (wakeByNameEnabledRef.current && voiceInputEnabled) {
+      startWakeListeningRef.current();
+    } else {
+      setMicState('off');
+    }
+  }, [teardownActiveRecognition, isTtsSupported, voiceInputEnabled]);
+
+  useEffect(() => {
+    endConversationRef.current = endConversation;
+  }, [endConversation]);
 
   return {
     micState,
@@ -265,5 +471,12 @@ export function useAssistantVoice({
     stopPushToTalk,
     speak,
     stopSpeaking,
+    isConversationActive,
+    isConversationMuted,
+    startConversation,
+    muteConversation,
+    unmuteConversation,
+    endConversation,
+    resumeConversationListening,
   };
 }

@@ -49,7 +49,8 @@ class AssistantPreferencesTest extends TestCase
     {
         $defaults = AssistantPreferences::defaults('en');
 
-        $this->assertFalse($defaults->voiceEnabled);
+        $this->assertFalse($defaults->voiceInputEnabled);
+        $this->assertFalse($defaults->spokenResponsesEnabled);
         $this->assertFalse($defaults->wakeByNameEnabled);
         $this->assertNull($defaults->voiceChoice);
     }
@@ -95,7 +96,8 @@ class AssistantPreferencesTest extends TestCase
             'persona' => 'female',
             'speaking_style' => 'concise',
             'language' => 'ar',
-            'voice_enabled' => true,
+            'voice_input_enabled' => true,
+            'spoken_responses_enabled' => true,
             'wake_by_name_enabled' => true,
             'voice_choice' => 'Microsoft Hoda - Arabic (Egypt)',
         ], 'en');
@@ -114,11 +116,75 @@ class AssistantPreferencesTest extends TestCase
         $this->assertSame('Google US English', $set->voiceChoice);
     }
 
-    public function test_voice_and_wake_by_name_are_read_as_real_booleans_from_stored_payload(): void
+    public function test_voice_input_and_wake_by_name_are_read_as_real_booleans_from_stored_payload(): void
     {
-        $prefs = AssistantPreferences::fromPayload(['voice_enabled' => true, 'wake_by_name_enabled' => false], 'en');
+        $prefs = AssistantPreferences::fromPayload(['voice_input_enabled' => true, 'wake_by_name_enabled' => false], 'en');
 
-        $this->assertTrue($prefs->voiceEnabled);
+        $this->assertTrue($prefs->voiceInputEnabled);
         $this->assertFalse($prefs->wakeByNameEnabled);
+    }
+
+    // ── FINAL CLOSURE §2 — voice input, spoken output, and Wake by Name must be
+    // independently controllable; Wake by Name depends ONLY on voice input ──
+
+    public function test_spoken_responses_can_be_enabled_independently_of_voice_input(): void
+    {
+        $prefs = AssistantPreferences::fromPayload([
+            'voice_input_enabled' => false,
+            'spoken_responses_enabled' => true,
+        ], 'en');
+
+        $this->assertFalse($prefs->voiceInputEnabled);
+        $this->assertTrue($prefs->spokenResponsesEnabled);
+    }
+
+    public function test_wake_by_name_can_stay_enabled_while_spoken_responses_are_disabled(): void
+    {
+        $prefs = AssistantPreferences::fromPayload([
+            'voice_input_enabled' => true,
+            'spoken_responses_enabled' => false,
+            'wake_by_name_enabled' => true,
+        ], 'en');
+
+        $this->assertTrue($prefs->wakeByNameEnabled);
+        $this->assertFalse($prefs->spokenResponsesEnabled);
+    }
+
+    public function test_wake_by_name_fails_closed_to_false_when_voice_input_is_disabled(): void
+    {
+        $prefs = AssistantPreferences::fromPayload([
+            'voice_input_enabled' => false,
+            'wake_by_name_enabled' => true,
+        ], 'en');
+
+        $this->assertFalse($prefs->wakeByNameEnabled, 'Wake by Name must never be true when voice input is off, even from a stale/tampered payload.');
+    }
+
+    public function test_legacy_voice_enabled_payload_enables_both_new_fields_for_backward_compatibility(): void
+    {
+        $prefs = AssistantPreferences::fromPayload(['voice_enabled' => true], 'en');
+
+        $this->assertTrue($prefs->voiceInputEnabled);
+        $this->assertTrue($prefs->spokenResponsesEnabled);
+    }
+
+    public function test_legacy_voice_enabled_false_payload_leaves_both_new_fields_disabled(): void
+    {
+        $prefs = AssistantPreferences::fromPayload(['voice_enabled' => false], 'en');
+
+        $this->assertFalse($prefs->voiceInputEnabled);
+        $this->assertFalse($prefs->spokenResponsesEnabled);
+    }
+
+    public function test_new_keys_take_precedence_over_the_legacy_voice_enabled_key_when_both_are_present(): void
+    {
+        $prefs = AssistantPreferences::fromPayload([
+            'voice_enabled' => true,
+            'voice_input_enabled' => true,
+            'spoken_responses_enabled' => false,
+        ], 'en');
+
+        $this->assertTrue($prefs->voiceInputEnabled);
+        $this->assertFalse($prefs->spokenResponsesEnabled, 'An explicit spoken_responses_enabled: false must win over the legacy combined flag.');
     }
 }

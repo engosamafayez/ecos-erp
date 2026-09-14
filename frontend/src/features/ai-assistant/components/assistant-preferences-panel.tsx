@@ -202,24 +202,35 @@ export function AssistantPreferencesPanel({ hideHeader = false }: { hideHeader?:
         </div>
       </div>
 
-      {/* Voice — CTO scope override (same task 046) */}
+      {/* Voice — CTO scope override (same task 046). FINAL CLOSURE §2 — voice
+          input (mic/STT — the prerequisite for the mic button, Wake by name,
+          and Voice conversation) and spoken responses (TTS) are two
+          INDEPENDENT switches; turning one off never touches the other. Wake
+          by name depends ONLY on voice input. */}
       <div className="flex flex-col gap-4 rounded-lg border p-3">
         <h3 className="text-sm font-semibold">{t($ => $.voice.settings.sectionTitle)}</h3>
 
         <div className="flex items-center justify-between gap-4">
           <div className="min-w-0">
-            <Label htmlFor="voice-enabled">{t($ => $.voice.settings.voiceEnabledLabel)}</Label>
-            <p className="text-muted-foreground text-xs">{t($ => $.voice.settings.voiceEnabledDescription)}</p>
-            {!sttSupported && !ttsSupported ? (
+            <Label htmlFor="voice-input-enabled">{t($ => $.voice.settings.voiceInputLabel)}</Label>
+            <p className="text-muted-foreground text-xs">{t($ => $.voice.settings.voiceInputDescription)}</p>
+            {!sttSupported ? (
               <p className="text-muted-foreground mt-1 text-xs italic">{t($ => $.voice.notSupported)}</p>
             ) : null}
           </div>
           <Switch
-            id="voice-enabled"
-            checked={draft.voice_enabled}
-            disabled={!sttSupported && !ttsSupported}
+            id="voice-input-enabled"
+            checked={draft.voice_input_enabled}
+            disabled={!sttSupported}
             onCheckedChange={(checked) =>
-              setDraft({ ...draft, voice_enabled: checked, wake_by_name_enabled: checked ? draft.wake_by_name_enabled : false })
+              setDraft({
+                ...draft,
+                voice_input_enabled: checked,
+                // Wake by name can never be true without voice input — but
+                // turning voice input back on never re-enables wake by name
+                // on its own (the user opts back into that separately).
+                wake_by_name_enabled: checked ? draft.wake_by_name_enabled : false,
+              })
             }
           />
         </div>
@@ -235,8 +246,24 @@ export function AssistantPreferencesPanel({ hideHeader = false }: { hideHeader?:
           <Switch
             id="wake-by-name-enabled"
             checked={draft.wake_by_name_enabled}
-            disabled={!sttSupported || !draft.voice_enabled}
+            disabled={!sttSupported || !draft.voice_input_enabled}
             onCheckedChange={(checked) => setDraft({ ...draft, wake_by_name_enabled: checked })}
+          />
+        </div>
+
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <Label htmlFor="spoken-responses-enabled">{t($ => $.voice.settings.spokenResponsesLabel)}</Label>
+            <p className="text-muted-foreground text-xs">{t($ => $.voice.settings.spokenResponsesDescription)}</p>
+            {!ttsSupported ? (
+              <p className="text-muted-foreground mt-1 text-xs italic">{t($ => $.voice.settings.spokenResponsesUnsupported)}</p>
+            ) : null}
+          </div>
+          <Switch
+            id="spoken-responses-enabled"
+            checked={draft.spoken_responses_enabled}
+            disabled={!ttsSupported}
+            onCheckedChange={(checked) => setDraft({ ...draft, spoken_responses_enabled: checked })}
           />
         </div>
 
