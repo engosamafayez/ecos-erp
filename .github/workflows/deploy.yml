@@ -135,7 +135,8 @@ jobs:
     env:
       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
       DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
-      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      # The SSH key is installed for root on the Netcup server.
+      DEPLOY_USER: root
       DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
       COMPOSER_GITHUB_TOKEN: ${{ secrets.COMPOSER_GITHUB_TOKEN }}
 
