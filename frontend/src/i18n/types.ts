@@ -45,6 +45,7 @@ import type enConversationalCommerce from '@/i18n/locales/en/conversational-comm
 import type enCore from '@/i18n/locales/en/core.json';
 import type enCostManagement from '@/i18n/locales/en/cost-management.json';
 import type enCustomerEngagement from '@/i18n/locales/en/customer-engagement.json';
+import type enCustomerPortal from '@/i18n/locales/en/customer-portal.json';
 import type enCrm from '@/i18n/locales/en/crm.json';
 import type enCustomers from '@/i18n/locales/en/customers.json';
 import type enDashboard from '@/i18n/locales/en/dashboard.json';
@@ -118,6 +119,7 @@ declare module 'i18next' {
       core: typeof enCore;
       'cost-management': typeof enCostManagement;
       'customer-engagement': typeof enCustomerEngagement;
+      'customer-portal': typeof enCustomerPortal;
       crm: typeof enCrm;
       customers: typeof enCustomers;
       dashboard: typeof enDashboard;

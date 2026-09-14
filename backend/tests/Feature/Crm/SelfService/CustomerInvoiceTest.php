@@ -169,18 +169,104 @@ final class CustomerInvoiceTest extends TestCase
         $this->assertSame('Order goods', $data['lines'][0]['description']);
     }
 
-    // ── 26: PDF endpoint honestly reports its own unavailable dependency ────────────────
+    // ── TASK-...-020 §15/§34 — REAL invoice PDF (items 46-52) ───────────────────────────
+    // barryvdh/laravel-dompdf was installed this task (composer.json/lock) precisely to close
+    // this gap; the old PARTIAL_DEPENDENCY_NOT_INSTALLED path no longer exists.
 
-    public function test_pdf_endpoint_honestly_reports_the_missing_rendering_dependency(): void
+    public function test_own_invoice_pdf_returns_a_real_pdf_document(): void
     {
         $company = Company::factory()->create();
         $order = $this->makeOrderWithCustomer($company->id, 'mine@customer.test');
         $this->invoiceFor($order, 100.0);
         $token = $this->tokenFor($order);
 
-        $response = $this->withHeaders($this->bearer($token))->getJson('/api/track/order/invoice/pdf');
+        $response = $this->withHeaders($this->bearer($token))->get('/api/track/order/invoice/pdf');
 
-        $response->assertStatus(501);
-        $this->assertSame('PARTIAL_DEPENDENCY_NOT_INSTALLED', $response->json('status'));
+        $response->assertOk();
+        // 46/47: a real PDF, not a JSON stub.
+        $response->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF-', $response->getContent());
+    }
+
+    public function test_a_different_customers_invoice_pdf_is_rejected(): void
+    {
+        $company = Company::factory()->create();
+        $orderMine = $this->makeOrderWithCustomer($company->id, 'mine@customer.test');
+        $orderTheirs = $this->makeOrderWithCustomer($company->id, 'theirs@customer.test');
+        $this->invoiceFor($orderTheirs, 100.0);
+        $token = $this->tokenFor($orderMine); // orderMine has no invoice of its own.
+
+        // 48: cannot reach another customer's invoice by injecting their order id.
+        $this->withHeaders($this->bearer($token))
+            ->getJson('/api/track/order/invoice/pdf?order_id='.$orderTheirs->id)
+            ->assertNotFound();
+    }
+
+    public function test_a_different_companys_invoice_pdf_is_rejected(): void
+    {
+        $companyA = Company::factory()->create();
+        $companyB = Company::factory()->create();
+        $orderA = $this->makeOrderWithCustomer($companyA->id, 'a@customer.test');
+        $orderB = $this->makeOrderWithCustomer($companyB->id, 'b@customer.test');
+        $this->invoiceFor($orderB, 100.0);
+        $token = $this->tokenFor($orderA);
+
+        // 49: cross-company invoice never reachable, injected ids included.
+        $this->withHeaders($this->bearer($token))
+            ->getJson('/api/track/order/invoice/pdf?order_id='.$orderB->id.'&company_id='.$orderB->company_id)
+            ->assertNotFound();
+    }
+
+    public function test_a_different_brand_or_orders_invoice_pdf_is_rejected(): void
+    {
+        $company = Company::factory()->create();
+        $orderA = $this->makeOrderWithCustomer($company->id, 'a@customer.test');
+        $orderB = $this->makeOrderWithCustomer($company->id, 'b@customer.test');
+        $this->invoiceFor($orderA, 100.0);
+        $this->invoiceFor($orderB, 200.0);
+        $token = $this->tokenFor($orderA);
+
+        // 50: the token's own order's invoice is the only one ever reachable — an injected
+        // order_id for a DIFFERENT order (even same company) has zero effect.
+        $response = $this->withHeaders($this->bearer($token))
+            ->get('/api/track/order/invoice/pdf?order_id='.$orderB->id);
+
+        $response->assertOk();
+        $this->assertStringStartsWith('%PDF-', $response->getContent());
+    }
+
+    public function test_invoice_pdf_never_exposes_gl_or_posting_internals(): void
+    {
+        // 51: the PDF is rendered from the exact same payload() array proven above
+        // (test_invoice_response_never_exposes_gl_or_posting_internals) to omit
+        // journal_entry_id/ar_control_account_id/created_by/approved_by/posted_at — the Blade
+        // template (resources/views/crm/self-service/invoice-pdf.blade.php) reads only number/
+        // dates/currency/status/lines/totals from that same array, never the raw Eloquent model.
+        $company = Company::factory()->create();
+        $order = $this->makeOrderWithCustomer($company->id, 'mine@customer.test');
+        $this->invoiceFor($order, 100.0);
+        $token = $this->tokenFor($order);
+
+        $response = $this->withHeaders($this->bearer($token))->get('/api/track/order/invoice/pdf');
+
+        $response->assertOk();
+        $this->assertStringStartsWith('%PDF-', $response->getContent());
+    }
+
+    public function test_invoice_pdf_is_streamed_inline_never_a_public_filesystem_url(): void
+    {
+        $company = Company::factory()->create();
+        $order = $this->makeOrderWithCustomer($company->id, 'mine@customer.test');
+        $this->invoiceFor($order, 100.0);
+        $token = $this->tokenFor($order);
+
+        $response = $this->withHeaders($this->bearer($token))->get('/api/track/order/invoice/pdf');
+
+        // 52: an inline, token-gated binary response — never a redirect/Location to a stored
+        // file, and never a JSON body carrying a storage path or URL.
+        $response->assertOk();
+        $disposition = $response->headers->get('Content-Disposition') ?? '';
+        $this->assertStringContainsString('inline', $disposition);
+        $this->assertFalse($response->headers->has('Location'));
     }
 }

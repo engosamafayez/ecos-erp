@@ -226,6 +226,7 @@ import { EmployeePerformancePage } from '@/features/hr/pages/employee-performanc
 import { DepartmentPerformancePage } from '@/features/hr/pages/department-performance-page';
 import { DriverPerformancePage } from '@/features/hr/pages/driver-performance-page';
 import { CareersPortalPage } from '@/features/hr/pages/careers-portal-page';
+import { TrackOrderPage } from '@/features/customer-portal/pages/track-order-page';
 import { CareersApplyPage } from '@/features/hr/pages/careers-apply-page';
 import { RecruitmentWorkspacePage } from '@/features/hr/pages/recruitment-workspace-page';
 import { ApplicationDetailPage } from '@/features/hr/pages/application-detail-page';
@@ -265,6 +266,9 @@ export const router = createBrowserRouter(
     // A visitor has no session, no company context and no navigation rail.
     { path: ROUTES.careers, Component: CareersPortalPage },
     { path: ROUTES.careersJob, Component: CareersApplyPage },
+    // CRM-04 Task 2 — PUBLIC guest order tracking. No session, no company context, no
+    // navigation rail; the page manages its own verify/order-view state internally.
+    { path: ROUTES.trackOrder, Component: TrackOrderPage },
     // CORE-02 Task 1 — PUBLIC invitation acceptance, same reasoning: the invitee has no
     // session yet, so this sits outside ProtectedRoute (and outside GuestRoute too — it is
     // not "log in", it is "set up the account before you can").

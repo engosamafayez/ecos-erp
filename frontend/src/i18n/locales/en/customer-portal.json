@@ -1,0 +1,175 @@
+{
+  "landing": {
+    "eyebrow": "Order Tracking",
+    "heading": "Track your order",
+    "intro": "Enter your order number and the email address used to place it. We'll send a one-time verification code to that email.",
+    "orderNumberLabel": "Order number",
+    "orderNumberPlaceholder": "e.g. ORD-A1B2C3D4",
+    "emailLabel": "Email address",
+    "emailPlaceholder": "you@example.com",
+    "emailOnlyNotice": "Verification is currently by email only.",
+    "submit": "Send verification code",
+    "submitting": "Sending…",
+    "confirmation": "If the details you entered match an eligible order, a verification code has been sent.",
+    "genericError": "Something went wrong. Please try again.",
+    "validation": {
+      "orderNumberRequired": "Enter your order number.",
+      "emailInvalid": "Enter a valid email address."
+    }
+  },
+  "verify": {
+    "heading": "Enter verification code",
+    "intro": "We sent a 6-digit code to your email. It expires in 10 minutes.",
+    "codeLabel": "Verification code",
+    "codePlaceholder": "6-digit code",
+    "submit": "Verify",
+    "submitting": "Verifying…",
+    "expiryNotice": "Codes expire after 10 minutes.",
+    "attemptsNotice": "For your security, only a limited number of attempts are allowed.",
+    "invalidCode": "That code is invalid or has expired.",
+    "tooManyAttempts": "Too many attempts. Please request a new code.",
+    "backToLanding": "Use a different order",
+    "requestNewCode": "Request a new code"
+  },
+  "session": {
+    "endSession": "End secure session",
+    "expired": "Your secure session has ended. Please verify again to continue.",
+    "unauthorized": "This tracking session is invalid, expired, or has been revoked."
+  },
+  "order": {
+    "loading": "Loading your order…",
+    "loadError": "We couldn't load your order right now. Please try again shortly.",
+    "notFound": "Order not found.",
+    "orderNumberLabel": "Order",
+    "orderDateLabel": "Order date",
+    "statusLabel": "Status",
+    "requestedDeliveryLabel": "Requested delivery date"
+  },
+  "delivery": {
+    "heading": "Delivery",
+    "shippingCompanyLabel": "Shipping company",
+    "driverLabel": "Driver",
+    "noDriverYet": "Not assigned yet",
+    "stopStatusLabel": "Delivery status"
+  },
+  "items": {
+    "heading": "Items",
+    "product": "Product",
+    "sku": "SKU",
+    "quantity": "Qty",
+    "unitPrice": "Unit price",
+    "lineTotal": "Total"
+  },
+  "financial": {
+    "heading": "Payment summary",
+    "subtotal": "Subtotal",
+    "shipping": "Shipping",
+    "discount": "Discount",
+    "tax": "Tax",
+    "grandTotal": "Grand total",
+    "paid": "Paid",
+    "outstanding": "Outstanding"
+  },
+  "payment": {
+    "heading": "Payment",
+    "state": {
+      "unpaid": "Unpaid",
+      "partially_paid": "Partially paid",
+      "paid": "Paid in full"
+    },
+    "proofState": {
+      "heading": "Payment proof",
+      "uploaded": "Submitted — awaiting review",
+      "verified": "Verified",
+      "rejected": "Rejected — please contact support"
+    },
+    "changeMethod": "Change payment method",
+    "changeMethodHeading": "Change payment method",
+    "selectMethod": "Select a payment method",
+    "confirmChange": "Confirm change",
+    "changing": "Updating…",
+    "changeSuccess": "Your payment method has been updated.",
+    "changeRejected": "This payment method could not be applied to your order.",
+    "notEligible": "This order can no longer have its payment method changed here — please contact support.",
+    "methodLabels": {
+      "cod": "Cash on delivery",
+      "instapay": "InstaPay",
+      "bank_transfer": "Bank transfer",
+      "mobile_wallet": "Mobile wallet",
+      "credit_card": "Credit card"
+    }
+  },
+  "timeline": {
+    "heading": "Order timeline",
+    "events": {
+      "order_created": "Order placed",
+      "confirmed": "Order confirmed",
+      "payment_confirmed": "Payment confirmed",
+      "payment_proof_submitted": "Payment proof submitted",
+      "preparation_completed": "Preparation completed",
+      "out_for_delivery": "Out for delivery",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled",
+      "returned": "Returned",
+      "on_hold": "On hold"
+    }
+  },
+  "invoice": {
+    "heading": "Invoice",
+    "loading": "Loading invoice…",
+    "notAvailable": "No invoice is available for this order yet.",
+    "number": "Invoice number",
+    "date": "Invoice date",
+    "dueDate": "Due date",
+    "print": "Print invoice",
+    "downloadPdf": "Download PDF",
+    "downloadingPdf": "Preparing PDF…",
+    "pdfError": "The PDF could not be downloaded right now. Please try again."
+  },
+  "support": {
+    "heading": "Support",
+    "historyEmpty": "You have no support requests for this order yet.",
+    "newRequest": "New support request",
+    "categoryLabel": "What is this about?",
+    "subjectLabel": "Subject",
+    "subjectPlaceholder": "Briefly summarize your request",
+    "descriptionLabel": "Details (optional)",
+    "descriptionPlaceholder": "Add any details that will help us help you",
+    "submit": "Submit request",
+    "submitting": "Submitting…",
+    "submitSuccess": "Your request has been submitted for review.",
+    "returnIntakeNotice": "This creates a request for our team to review — it does not automatically issue a refund or approve a return.",
+    "notAvailableReason": {
+      "not_yet_delivered": "This type of request is only available after your order has been delivered.",
+      "delivery_timestamp_unavailable": "This type of request isn't available for this order right now — please use General Support instead.",
+      "post_delivery_window_expired": "This type of request is only available within 30 days of delivery. Please use General Support instead."
+    },
+    "categories": {
+      "wrong_item": "Wrong item received",
+      "damaged_item": "Damaged item",
+      "missing_item": "Missing item",
+      "delivery_complaint": "Delivery complaint",
+      "payment_issue": "Payment issue",
+      "invoice_issue": "Invoice issue",
+      "return_request": "Return request",
+      "general_support": "General support"
+    },
+    "statusLabels": {
+      "new": "New",
+      "open": "Open",
+      "pending": "Pending",
+      "resolved": "Resolved",
+      "closed": "Closed"
+    }
+  },
+  "errors": {
+    "network": "We couldn't reach the server. Please check your connection and try again.",
+    "generic": "Something went wrong. Please try again."
+  },
+  "common": {
+    "back": "Back",
+    "cancel": "Cancel",
+    "retry": "Try again",
+    "close": "Close"
+  }
+}

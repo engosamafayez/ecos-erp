@@ -99,6 +99,10 @@ export const ROUTES = {
   // PUBLIC — no session required. Rendered outside the application shell.
   careers: '/careers',
   careersJob: '/careers/:slug',
+  // CRM-04 Customer Self-Service — public guest order tracking (TASK-ECOS-V1.1-CRM-04-
+  // CUSTOMER-SELF-SERVICE-UX-AND-FINAL-CLOSURE-020). Same "no session, no shell" reasoning as
+  // careers above.
+  trackOrder: '/track',
   hrRecruitment: '/hr/recruitment',
   hrApplication: '/hr/recruitment/applications/:applicationId',
   // HR V1 enhancements (TASK-HR-V1-ENHANCEMENTS-001)

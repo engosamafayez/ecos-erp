@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace Modules\Crm\SelfService\Presentation\Http\Controllers;
 
 use App\Core\Audit\AuditService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Str;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Crm\SelfService\Domain\Models\CustomerTrackingToken;
 use Modules\Finance\Receivables\Domain\Models\CustomerInvoice;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * §11/§12 — a customer-scoped read wrapper over Finance's own canonical CustomerInvoice. No
@@ -19,10 +22,13 @@ use Modules\Finance\Receivables\Domain\Models\CustomerInvoice;
  * back to the Order it was raised for — reused exactly as-is, not duplicated.
  *
  * Never exposes journal_entry_id, ar_control_account_id, approved_by, or any other posting/GL
- * internal. §12 PDF: PARTIAL_DEPENDENCY_NOT_INSTALLED — no PDF-rendering package exists in this
- * repository's composer.lock and none was installed in this task (see the Task 1 report); the
- * view/print boundary below is real and complete, the PDF endpoint honestly reports its own
- * unavailability rather than pretending to render one.
+ * internal.
+ *
+ * TASK-ECOS-V1.1-CRM-04-CUSTOMER-SELF-SERVICE-UX-AND-FINAL-CLOSURE-020 §15 — pdf() now renders
+ * a REAL PDF via barryvdh/laravel-dompdf (installed this task; see composer.json/lock), from the
+ * exact same customer-safe payload() this class's own show() returns — never a second, richer
+ * projection. Same ownership/company/customer checks as show(); no public filesystem URL is ever
+ * returned, only a streamed application/pdf response gated by the same tracking token.
  */
 final class CustomerInvoiceController extends Controller
 {
@@ -49,21 +55,43 @@ final class CustomerInvoiceController extends Controller
         return response()->json(['data' => $this->payload($invoice->load('lines'))]);
     }
 
-    public function pdf(Request $request): JsonResponse
+    public function pdf(Request $request): Response|JsonResponse
     {
-        $invoice = $this->resolveOwnedInvoice($request);
+        $order = $this->resolveOwnedOrder($request);
+
+        if ($order === null) {
+            return response()->json(['message' => 'Invoice not found.'], 404);
+        }
+
+        $invoice = $this->invoiceForOrder($order)?->load('lines');
 
         if ($invoice === null) {
             return response()->json(['message' => 'Invoice not found.'], 404);
         }
 
-        return response()->json([
-            'message' => 'PDF download is not available yet in this environment (no PDF-rendering dependency is installed).',
-            'status' => 'PARTIAL_DEPENDENCY_NOT_INSTALLED',
-        ], 501);
+        /** @var CustomerTrackingToken $token */
+        $token = $request->attributes->get('customer_tracking_token');
+        $this->audit->record(
+            action: 'customer_self_service.invoice_pdf_viewed',
+            entityType: 'finance_customer_invoice',
+            entityId: $invoice->uuid,
+            companyId: $invoice->company_id,
+            metadata: ['customer_id' => $token->customer_id],
+        );
+
+        $lang = $request->query('lang') === 'ar' ? 'ar' : 'en';
+
+        return Pdf::loadView('crm.self-service.invoice-pdf', [
+            'data' => $this->payload($invoice),
+            'brandName' => $order->channel?->brand?->name,
+            'orderNumber' => $order->order_number,
+            'lang' => $lang,
+        ])
+            ->setPaper('a4')
+            ->stream('invoice-'.Str::slug($invoice->number).'.pdf');
     }
 
-    private function resolveOwnedInvoice(Request $request): ?CustomerInvoice
+    private function resolveOwnedOrder(Request $request): ?Order
     {
         /** @var CustomerTrackingToken $token */
         $token = $request->attributes->get('customer_tracking_token');
@@ -72,18 +100,30 @@ final class CustomerInvoiceController extends Controller
             return null;
         }
 
-        $order = Order::query()->find($token->order_id);
+        $order = Order::query()->with('channel.brand')->find($token->order_id);
 
         if ($order === null || $order->customer_id !== $token->customer_id || $order->company_id !== $token->company_id) {
             return null;
         }
 
+        return $order;
+    }
+
+    private function invoiceForOrder(Order $order): ?CustomerInvoice
+    {
         return CustomerInvoice::query()
-            ->where('company_id', $token->company_id)
-            ->where('customer_id', $token->customer_id)
+            ->where('company_id', $order->company_id)
+            ->where('customer_id', $order->customer_id)
             ->where('source_type', 'order')
             ->where('source_id', $order->id)
             ->first();
+    }
+
+    private function resolveOwnedInvoice(Request $request): ?CustomerInvoice
+    {
+        $order = $this->resolveOwnedOrder($request);
+
+        return $order === null ? null : $this->invoiceForOrder($order);
     }
 
     /** @return array<string, mixed> */
