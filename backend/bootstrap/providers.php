@@ -148,4 +148,8 @@ return [
     Modules\ClaudeBridge\Infrastructure\Providers\ClaudeBridgeServiceProvider::class,
     Modules\System\Engineering\Infrastructure\Providers\EngineeringServiceProvider::class,
     Modules\Reporting\Infrastructure\Providers\ReportingServiceProvider::class,
+    // CORE-03 — Resident AI. Depends on IAM, Reporting, Commerce\Orders, Crm\Customers,
+    // Finance\Receivables and Inventory\Products (its tools' canonical sources), all
+    // registered above, so it registers last.
+    Modules\AI\Infrastructure\Providers\AIServiceProvider::class,
 ];

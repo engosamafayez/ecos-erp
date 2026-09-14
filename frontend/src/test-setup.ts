@@ -28,3 +28,9 @@ window.getComputedStyle = (el, pseudo) => {
   const style = _getComputedStyle(el, pseudo);
   return style;
 };
+
+// jsdom does not implement scrollIntoView at all (not a partial stub — the
+// property is simply absent, even though the DOM lib types always declare it),
+// so any component that calls it (e.g. to keep a chat-style view scrolled to
+// its latest message) throws in tests otherwise.
+Element.prototype.scrollIntoView = function scrollIntoView() {};

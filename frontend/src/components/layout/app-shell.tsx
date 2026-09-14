@@ -14,6 +14,7 @@ import { ModuleRail } from '@/components/layout/module-rail';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { FloatingChatLauncher } from '@/features/collaboration/components/floating-chat-launcher';
+import { AssistantLauncher } from '@/features/ai-assistant/components/assistant-launcher';
 import { OrganizationProvider } from '@/features/organization/context/organization-context';
 import { CompanyProvider } from '@/features/organization/context/company-context';
 import { useActiveModule } from '@/hooks/use-active-module';
@@ -93,6 +94,10 @@ export function AppShell() {
 
         {/* Global Collaboration launcher — every page except Collaboration itself */}
         <FloatingChatLauncher />
+
+        {/* Global Resident AI launcher (CORE-03) — stacked above Collaboration's,
+            hidden entirely without ai.assistant.use */}
+        <AssistantLauncher />
       </div>
       </ContentWidthProvider>
       </CommandProvider>
