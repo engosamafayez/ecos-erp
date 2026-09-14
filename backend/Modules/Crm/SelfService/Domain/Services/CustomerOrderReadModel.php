@@ -31,6 +31,14 @@ final class CustomerOrderReadModel
     private const SUPPORT_WINDOW_DAYS = 30;
 
     /**
+     * TASK-ECOS-V1.1-CRM-04-BACKEND-SOURCE-CLOSURE-REMEDIATION-019R1 §2 — ONLY these categories
+     * are gated by the 30-day post-delivery window at all. General support and
+     * payment/invoice-related categories are never subject to it, in either direction: not
+     * blocked by an unproven delivery timestamp, and not opened early by one either.
+     */
+    public const POST_DELIVERY_CATEGORIES = ['wrong_item', 'damaged_item', 'missing_item', 'return_request'];
+
+    /**
      * @return array<string, mixed>|null null when the token's own order no longer resolves, or
      *                                   (defence in depth) its scope no longer matches the token.
      */
@@ -98,7 +106,15 @@ final class CustomerOrderReadModel
             'delivery' => $this->resolveDelivery($order),
             'timeline' => $this->resolveTimeline($order),
             'invoice_available' => true,
-            'support' => $this->resolveSupportAvailability($order),
+            'support' => [
+                // General/payment/invoice support is ALWAYS reachable — never gated by
+                // delivery timing at all (§2.A/§2.B).
+                'general_available' => true,
+                // Only the 4 POST_DELIVERY_CATEGORIES consult this; the customer-facing
+                // meaning is "may I submit a wrong/damaged/missing-item or return report
+                // right now" — see resolvePostDeliveryWindow()'s own docblock.
+                'post_delivery_window' => $this->resolvePostDeliveryWindow($order),
+            ],
             'payment_method_change_eligible' => $this->isPaymentMethodChangeEligible($order),
         ];
     }
@@ -213,18 +229,26 @@ final class CustomerOrderReadModel
     }
 
     /**
-     * §18 — public so CustomerSupportController can independently re-derive the SAME
-     * post-delivery availability fact before accepting an order-linked issue submission,
-     * rather than trusting whatever the last GET /track/order response happened to say.
+     * TASK-...-019R1 §2 — the 30-day post-delivery self-service window, for the 4
+     * POST_DELIVERY_CATEGORIES ONLY. Public so CustomerSupportController can independently
+     * re-derive the SAME fact before accepting an order-linked issue submission, rather than
+     * trusting whatever the last GET /track/order response happened to say.
+     *
+     * CORRECTED (019R1): the original Task-1 version returned available=true whenever the
+     * canonical delivery timestamp could not be proven — too permissive for a rule whose whole
+     * point is "prove delivery happened within the last 30 days". An unprovable timestamp (or
+     * an order that has not reached a delivered status at all) now yields available=false with
+     * a bounded reason — never a guess, and never Order.updated_at treated as delivery time.
+     * This method is consulted ONLY for the 4 post-delivery-specific categories; general/
+     * payment/invoice support never call it and are therefore never affected by this rule in
+     * either direction (§2.A/§2.B, closure gate items J/K).
      *
      * @return array{available: bool, reason: string}
      */
-    public function resolveSupportAvailability(Order $order): array
+    public function resolvePostDeliveryWindow(Order $order): array
     {
-        // Not yet delivered — the normal (non-post-delivery) support path always applies;
-        // this flag is specifically about the ORDER-LINKED POST-DELIVERY window (§18).
         if (! in_array($order->status, [OrderStatus::Delivered, OrderStatus::FinalCash], true)) {
-            return ['available' => true, 'reason' => 'not_yet_delivered'];
+            return ['available' => false, 'reason' => 'not_yet_delivered'];
         }
 
         $stop = null;
@@ -235,10 +259,12 @@ final class CustomerOrderReadModel
 
         $deliveredAt = $stop?->completed_at;
 
-        // §18 — if delivery cannot be canonically proven, do not guess a window; fall back to
-        // the normal support path being available rather than inventing eligibility either way.
+        // §2 — an order marked Delivered/FinalCash but with no provable canonical delivery
+        // timestamp (e.g. the DeliveryStop row itself is missing or was never completed
+        // through the normal flow) must fail CLOSED for this specific, timing-dependent rule —
+        // never fabricated from updated_at, never assumed within-window.
         if ($deliveredAt === null) {
-            return ['available' => true, 'reason' => 'delivery_timestamp_unavailable'];
+            return ['available' => false, 'reason' => 'delivery_timestamp_unavailable'];
         }
 
         $withinWindow = $deliveredAt->diffInDays(now()) <= self::SUPPORT_WINDOW_DAYS;

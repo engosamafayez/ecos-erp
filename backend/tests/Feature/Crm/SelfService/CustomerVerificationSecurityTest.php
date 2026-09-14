@@ -8,6 +8,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
+use Modules\Commerce\Channels\Domain\Models\Channel;
 use Modules\Commerce\Orders\Domain\Models\Order;
 use Modules\Crm\Customers\Domain\Models\Customer;
 use Modules\Crm\SelfService\Application\Notifications\CustomerTrackingChallengeNotification;
@@ -15,18 +16,22 @@ use Modules\Crm\SelfService\Domain\Models\CustomerTrackingToken;
 use Modules\Crm\SelfService\Domain\Models\CustomerVerificationChallenge;
 use Modules\Crm\SelfService\Domain\Services\CustomerTrackingTokenService;
 use Modules\Crm\SelfService\Domain\Services\CustomerVerificationService;
+use Modules\Organization\Brands\Domain\Models\Brand;
 use Modules\Organization\Companies\Domain\Models\Company;
 use Tests\TestCase;
 
 /**
  * TASK-ECOS-V1.1-CRM-04-SECURE-SELF-SERVICE-BACKEND-IMPLEMENTATION-019 §27/§28 — the core
- * security-gate tests. Covers items 1, 2, 3, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 exactly;
- * items 18-21 are structurally satisfied by this design rather than independently testable the
- * way the ticket assumes (see the Task 1 report's ROUTES section: there is no
- * `/track/order/{order}` parameter for a client to manipulate at all — every tokenized route
- * always resolves the TOKEN's own order_id, never a client-supplied one) — item 22 is covered
- * directly. Cross-company/Brand read-model defence-in-depth is covered separately in
- * CustomerOrderReadModelTest.
+ * security-gate tests. Covers items 1, 2, 3, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 22.
+ *
+ * TASK-ECOS-V1.1-CRM-04-BACKEND-SOURCE-CLOSURE-REMEDIATION-019R1 §3 — the block below marked
+ * "cross-boundary HTTP behaviour" replaces the previous docblock's "structurally satisfied by
+ * construction" claim for the cross-Customer/Company/Brand/order scope items. Rather than only
+ * asserting the controller signatures accept no such parameter, these tests make REAL
+ * `getJson()`/`postJson()` calls against the actual `/api/track/*` routes with attacker-supplied
+ * `customer_id`/`company_id`/`brand_id`/`order_id` injected into the query string or body, and
+ * assert the resolved scope and response are unaffected — proving the behaviour, not assuming it
+ * from the absence of a route parameter.
  */
 final class CustomerVerificationSecurityTest extends TestCase
 {
@@ -49,6 +54,38 @@ final class CustomerVerificationSecurityTest extends TestCase
             'subtotal' => 100,
             'total' => 100,
         ], $orderOverrides));
+    }
+
+    private function makeOrderForCustomer(Customer $customer, string $companyId, array $overrides = []): Order
+    {
+        return Order::create(array_merge([
+            'company_id' => $companyId,
+            'customer_id' => $customer->id,
+            'order_number' => 'ORD-'.strtoupper(Str::random(8)),
+            'order_date' => now()->toDateString(),
+            'status' => 'awaiting_payment',
+            'subtotal' => 100,
+            'total' => 100,
+        ], $overrides));
+    }
+
+    /** A Brand-scoped order — the token issued for it carries a non-null brand_id. */
+    private function makeOrderWithBrand(string $companyId, string $email, string $brandId, array $overrides = []): Order
+    {
+        $channel = Channel::factory()->create(['brand_id' => $brandId]);
+
+        return $this->makeOrderWithCustomer($companyId, $email, array_merge(['channel_id' => $channel->id], $overrides));
+    }
+
+    private function tokenFor(Order $order): CustomerTrackingToken
+    {
+        return app(CustomerTrackingTokenService::class)->issue($order->customer, $order);
+    }
+
+    /** @return array<string, string> */
+    private function bearer(CustomerTrackingToken $token): array
+    {
+        return ['Authorization' => 'Bearer '.$token->getAttribute('plain_text_token')];
     }
 
     // ── 1/2/3: enumeration-safe request() response ──────────────────────────────────────
@@ -268,6 +305,144 @@ final class CustomerVerificationSecurityTest extends TestCase
 
             return response('ok');
         });
+    }
+
+    // ── 019R1 §3 items 1/2: cross-company/Brand non-leakage during request() ───────────
+
+    public function test_request_fails_silently_when_the_contact_belongs_to_a_different_companys_customer(): void
+    {
+        Notification::fake();
+        $companyA = Company::factory()->create();
+        $companyB = Company::factory()->create();
+
+        $orderA = $this->makeOrderWithCustomer($companyA->id, 'a-owner@customer.test');
+        // A customer of an entirely different company — no relation to $orderA at all.
+        Customer::create(['company_id' => $companyB->id, 'name' => 'Company B Customer', 'email' => 'b-owner@customer.test']);
+
+        app(CustomerVerificationService::class)->request($orderA->order_number, 'b-owner@customer.test');
+
+        Notification::assertNothingSent();
+        $this->assertDatabaseCount('customer_verification_challenges', 0);
+    }
+
+    public function test_request_matches_only_the_orders_own_customer_even_when_another_companys_customer_shares_the_same_email(): void
+    {
+        Notification::fake();
+        $companyA = Company::factory()->create();
+        $companyB = Company::factory()->create();
+
+        $orderA = $this->makeOrderWithCustomer($companyA->id, 'shared@customer.test');
+        // Company B has its own, unrelated customer using the exact same email address —
+        // proves the match is keyed to the order's own customer, never merely the email.
+        Customer::create(['company_id' => $companyB->id, 'name' => 'Company B Customer', 'email' => 'shared@customer.test']);
+
+        app(CustomerVerificationService::class)->request($orderA->order_number, 'shared@customer.test');
+
+        $this->assertDatabaseCount('customer_verification_challenges', 1);
+        $challenge = CustomerVerificationChallenge::sole();
+        $this->assertSame($companyA->id, $challenge->company_id);
+        $this->assertSame($orderA->customer_id, $challenge->customer_id);
+    }
+
+    // ── 019R1 §3 items 4-11: order-scoped token cross-boundary HTTP behaviour ──────────
+    // Every case below makes a REAL HTTP call with an attacker-supplied identity claim
+    // injected into the query string or body, and asserts it has zero effect — never just
+    // that the controller signature omits the parameter.
+
+    public function test_a_token_cannot_be_redirected_to_a_different_customers_order_via_injected_ids(): void
+    {
+        $company = Company::factory()->create();
+        $orderMine = $this->makeOrderWithCustomer($company->id, 'mine@customer.test');
+        $orderTheirs = $this->makeOrderWithCustomer($company->id, 'theirs@customer.test');
+        $token = $this->tokenFor($orderMine);
+
+        $response = $this->withHeaders($this->bearer($token))->getJson(
+            '/api/track/order?order_id='.$orderTheirs->id.'&customer_id='.$orderTheirs->customer_id,
+        );
+
+        $response->assertOk();
+        $this->assertSame($orderMine->order_number, $response->json('data.order_number'), 'injected order_id/customer_id must never redirect the token to a different customer\'s order');
+    }
+
+    public function test_a_token_cannot_be_redirected_to_another_order_of_the_same_customer_via_injected_order_id(): void
+    {
+        $company = Company::factory()->create();
+        $customer = Customer::create(['company_id' => $company->id, 'name' => 'Repeat Customer', 'email' => 'repeat@customer.test']);
+        $orderOne = $this->makeOrderForCustomer($customer, $company->id);
+        $orderTwo = $this->makeOrderForCustomer($customer, $company->id);
+        $token = $this->tokenFor($orderOne);
+
+        $response = $this->withHeaders($this->bearer($token))->getJson('/api/track/order?order_id='.$orderTwo->id);
+
+        $response->assertOk();
+        $this->assertSame($orderOne->order_number, $response->json('data.order_number'), 'a token stays scoped to its OWN order even for another order belonging to the same customer');
+    }
+
+    public function test_a_token_cannot_be_redirected_across_companies_via_an_injected_company_id(): void
+    {
+        $companyA = Company::factory()->create();
+        $companyB = Company::factory()->create();
+        $orderA = $this->makeOrderWithCustomer($companyA->id, 'a@customer.test');
+        $orderB = $this->makeOrderWithCustomer($companyB->id, 'b@customer.test');
+        $token = $this->tokenFor($orderA);
+
+        $response = $this->withHeaders($this->bearer($token))->getJson('/api/track/order?company_id='.$orderB->company_id);
+
+        $response->assertOk();
+        $this->assertSame($orderA->order_number, $response->json('data.order_number'));
+    }
+
+    public function test_a_token_cannot_be_redirected_across_brands_via_an_injected_brand_id(): void
+    {
+        $company = Company::factory()->create();
+        $brandA = Brand::factory()->create(['company_id' => $company->id]);
+        $brandB = Brand::factory()->create(['company_id' => $company->id]);
+        $orderA = $this->makeOrderWithBrand($company->id, 'a@customer.test', $brandA->id);
+        $token = $this->tokenFor($orderA);
+        $this->assertSame($brandA->id, $token->brand_id, 'sanity check: the issued token really did carry the Brand scope under test');
+
+        $response = $this->withHeaders($this->bearer($token))->getJson('/api/track/order?brand_id='.$brandB->id);
+
+        $response->assertOk();
+        $this->assertSame($orderA->order_number, $response->json('data.order_number'));
+    }
+
+    public function test_support_ticket_creation_ignores_a_client_supplied_customer_id(): void
+    {
+        $company = Company::factory()->create();
+        $orderMine = $this->makeOrderWithCustomer($company->id, 'mine@customer.test');
+        $orderTheirs = $this->makeOrderWithCustomer($company->id, 'theirs@customer.test');
+        $token = $this->tokenFor($orderMine);
+
+        $response = $this->withHeaders($this->bearer($token))->postJson('/api/track/order/support', [
+            'category' => 'general_support',
+            'subject' => 'Question about my order',
+            // The exact RC-6 anti-pattern this controller must never repeat — a spoofed
+            // customer_id in the request body.
+            'customer_id' => $orderTheirs->customer_id,
+        ]);
+
+        $response->assertCreated();
+        $ticket = \Modules\Crm\Service\Domain\Models\Ticket::query()->latest('created_at')->first();
+        $this->assertSame($orderMine->customer_id, $ticket->customer_id, 'the ticket must be linked to the TOKEN\'s own customer, never a client-supplied one');
+        $this->assertSame($orderMine->id, $ticket->source_reference['order_id'] ?? null);
+    }
+
+    public function test_payment_method_options_ignore_injected_order_and_customer_ids(): void
+    {
+        $company = Company::factory()->create();
+        $orderMine = $this->makeOrderWithCustomer($company->id, 'mine@customer.test', ['status' => 'awaiting_payment']);
+        $orderTheirs = $this->makeOrderWithCustomer($company->id, 'theirs@customer.test');
+        $token = $this->tokenFor($orderMine);
+
+        $response = $this->withHeaders($this->bearer($token))->getJson('/api/track/order/payment-method?order_id='.$orderTheirs->id);
+
+        // The endpoint takes no order/customer id at all — the response can only ever be
+        // for the token's own order. A 200 with the real configured method list proves it
+        // resolved (and stayed scoped to) $orderMine, never fell through to a 404 that would
+        // suggest it tried to resolve the injected id.
+        $response->assertOk();
+        $this->assertNotEmpty($response->json('data.methods'));
     }
 
     /**

@@ -60,21 +60,24 @@ final class CustomerSupportController extends Controller
             return response()->json(['message' => 'Order not found.'], 404);
         }
 
-        // §18 — the 30-day order-linked window is independently re-derived here from the same
-        // canonical read model, never trusted from client input.
-        $availability = $this->readModel->resolveSupportAvailability($order);
-        if (! $availability['available']) {
-            return response()->json([
-                'message' => 'Order-linked support is no longer available for this order.',
-                'reason' => $availability['reason'],
-            ], 422);
-        }
-
         $data = $request->validate([
             'category' => ['required', 'string', Rule::in(array_keys(self::CATEGORY_MAP))],
             'subject' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
         ]);
+
+        // TASK-...-019R1 §2 — the 30-day post-delivery window gates ONLY the 4 post-delivery-
+        // specific categories; general_support/payment_issue/invoice_issue are never subject to
+        // it in either direction, so they are not even evaluated against it here.
+        if (in_array($data['category'], CustomerOrderReadModel::POST_DELIVERY_CATEGORIES, true)) {
+            $window = $this->readModel->resolvePostDeliveryWindow($order);
+            if (! $window['available']) {
+                return response()->json([
+                    'message' => 'This type of request is no longer available for this order.',
+                    'reason' => $window['reason'],
+                ], 422);
+            }
+        }
 
         $type = self::CATEGORY_MAP[$data['category']];
         $brandId = $order->channel?->brand_id;
