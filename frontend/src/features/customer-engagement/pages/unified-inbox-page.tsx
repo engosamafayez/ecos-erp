@@ -1,5 +1,6 @@
 ﻿import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import axios from 'axios';
 import { useConversations, useMessageThread, useSendMessage, useConversation, useResolveConversation, usePrivateNotes, useAddNote } from '../hooks/use-cep';
 import {
   useVoiceChannelProviders, useInitiateOutboundCall, useRequestHumanTransfer,
@@ -179,26 +180,44 @@ export function OutboundCallButton() {
   const { t } = useTranslation('customer-engagement');
   const { can } = usePermission();
   const { toast } = useToast();
-  const { activeCompanyId } = useOrganizationContext();
+  const { activeCompanyId, activeBrandId } = useOrganizationContext();
   const [open, setOpen] = useState(false);
   const [providerId, setProviderId] = useState('');
   const [toNumber, setToNumber] = useState('');
   const [purpose, setPurpose] = useState<OutboundCallPurpose>('support');
 
-  const { data: providers } = useVoiceChannelProviders(activeCompanyId ?? undefined);
-  const initiate = useInitiateOutboundCall(providerId);
+  const { data: result } = useVoiceChannelProviders(activeCompanyId ?? undefined, activeBrandId);
+  const providers = result?.data ?? [];
+  const brandContextRequired = !activeBrandId || result?.brand_context_required === true;
+
+  // TASK-...-017 §7 — a Brand switch must never let a Brand A selection survive into Brand B.
+  // Adjusted during render (React's documented pattern for "reset state when a prop changes",
+  // https://react.dev/learn/you-might-not-need-an-effect) rather than in a useEffect: an effect
+  // would commit one extra render under the stale selection first.
+  const [lastBrandId, setLastBrandId] = useState(activeBrandId);
+  if (lastBrandId !== activeBrandId) {
+    setLastBrandId(activeBrandId);
+    if (providerId) setProviderId('');
+  }
+
+  // §6 — exactly one valid identity for this Brand: use it directly, never asking the user to
+  // pick from a list of one. Derived at render time, never synced into state — the moment a
+  // second identity (or none) becomes current this simply stops applying.
+  const effectiveProviderId = providerId || (providers.length === 1 ? providers[0].id : '');
+  const initiate = useInitiateOutboundCall(effectiveProviderId);
 
   if (!can('cep.voice.use')) return null;
 
   async function handleSubmit() {
-    if (!providerId || !toNumber.trim()) return;
+    if (!effectiveProviderId || !toNumber.trim()) return;
     try {
-      await initiate.mutateAsync({ to_number: toNumber.trim(), purpose });
+      await initiate.mutateAsync({ to_number: toNumber.trim(), purpose, brand_id: activeBrandId ?? null });
       toast({ title: t(($) => $.voice.outboundDialog.success), type: 'success' });
       setOpen(false);
       setToNumber('');
-    } catch {
-      toast({ title: t(($) => $.voice.outboundDialog.failure), type: 'error' });
+    } catch (error) {
+      const backendMessage = axios.isAxiosError(error) ? (error.response?.data as { message?: string } | undefined)?.message : undefined;
+      toast({ title: backendMessage ?? t(($) => $.voice.outboundDialog.failure), type: 'error' });
     }
   }
 
@@ -217,7 +236,13 @@ export function OutboundCallButton() {
         <div className="space-y-3">
           <div className="space-y-1.5">
             <label className="text-xs font-medium">{t(($) => $.voice.outboundDialog.callingIdentity)}</label>
-            {providers && providers.length > 0 ? (
+            {brandContextRequired ? (
+              <p className="text-xs text-muted-foreground">{t(($) => $.voice.outboundDialog.brandContextRequired)}</p>
+            ) : providers.length === 0 ? (
+              <p className="text-xs text-muted-foreground">{t(($) => $.voice.outboundDialog.noProvidersForBrand)}</p>
+            ) : providers.length === 1 ? (
+              <p className="text-sm rounded-md border px-3 py-1.5">{providers[0].display_name} — {providers[0].phone_number}</p>
+            ) : (
               <Select value={providerId} onValueChange={setProviderId}>
                 <SelectTrigger className="text-sm">
                   <SelectValue placeholder={t(($) => $.voice.outboundDialog.callingIdentityPlaceholder)} />
@@ -230,8 +255,6 @@ export function OutboundCallButton() {
                   ))}
                 </SelectContent>
               </Select>
-            ) : (
-              <p className="text-xs text-muted-foreground">{t(($) => $.voice.outboundDialog.noProviders)}</p>
             )}
           </div>
           <div className="space-y-1.5">
@@ -259,7 +282,7 @@ export function OutboundCallButton() {
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>{t(($) => $.voice.outboundDialog.cancel)}</Button>
-          <Button onClick={handleSubmit} disabled={!providerId || !toNumber.trim() || initiate.isPending}>
+          <Button onClick={handleSubmit} disabled={!effectiveProviderId || !toNumber.trim() || initiate.isPending}>
             {initiate.isPending ? t(($) => $.voice.outboundDialog.submitting) : t(($) => $.voice.outboundDialog.submit)}
           </Button>
         </DialogFooter>

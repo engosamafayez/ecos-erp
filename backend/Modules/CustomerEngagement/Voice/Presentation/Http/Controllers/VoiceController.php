@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\CustomerEngagement\Voice\Presentation\Http\Controllers;
 
+use App\Core\Company\TenantOwnershipResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -16,11 +17,19 @@ use Modules\CustomerEngagement\Voice\Application\Services\VoiceCallService;
 use Modules\CustomerEngagement\Voice\Domain\Enums\OutboundCallPurpose;
 use Modules\CustomerEngagement\Voice\Domain\Models\Call;
 use Modules\CustomerEngagement\Voice\Presentation\Http\Resources\CallResource;
+use Modules\Organization\Brands\Domain\Models\Brand;
 
 /**
  * TASK-ECOS-V1.1-CRM-03-OMNICHANNEL-VOICE-BACKEND-IMPLEMENTATION-015 §25 — the smallest
  * permission-gated backend API Task 2 needs. Never exposes provider secrets or raw webhook
- * payloads (§25). No frontend is built in this task.
+ * payloads (§25).
+ *
+ * TASK-ECOS-V1.1-CRM-03-BRAND-VOICE-IDENTITY-FINAL-REMEDIATION-017 — company_id/brand_id are
+ * client-supplied HINTS, never trusted outright (the exact RC-6 anti-pattern
+ * TenantOwnershipResolver's own docblock names: "the create path took company_id from the
+ * client payload... a record written under one answer was invisible to the other"). Every
+ * value is independently re-validated against the authenticated actor's own tenant scope
+ * before it is used to filter or authorize anything.
  */
 class VoiceController extends Controller
 {
@@ -29,20 +38,45 @@ class VoiceController extends Controller
         private readonly ChannelProviderService $channelProviders,
         private readonly HumanTransferService $transfer,
         private readonly VoiceAuditService $audit,
+        private readonly TenantOwnershipResolver $tenant,
     ) {}
 
     /**
-     * Available Brand calling identities — used by the (Task 2) outbound-call UI to let the
-     * user pick which number/Brand identity to call from.
+     * Available Brand calling identities — used by the outbound-call UI to let the user pick
+     * which number/Brand identity to call from. §3/§5: Brand-scoped, never "every company
+     * number" — a caller with no resolvable Brand context gets an explicit
+     * brand_context_required signal, never a silent full-company fallback.
      */
     public function channelProviders(Request $request): JsonResponse
     {
+        $companyId = $request->string('company_id')->toString();
+
+        if (! $this->tenant->owns($companyId)) {
+            return response()->json(['message' => 'Company scope could not be verified.'], 403);
+        }
+
+        if (! $request->filled('brand_id')) {
+            return response()->json(['data' => [], 'brand_context_required' => true]);
+        }
+
+        $brandId = $request->string('brand_id')->toString();
+
+        if (! $this->brandBelongsToCompany($brandId, $companyId)) {
+            return response()->json(['message' => 'Brand scope could not be verified.'], 403);
+        }
+
         $providers = $this->channelProviders->paginate([
-            'company_id' => $request->string('company_id')->toString(),
+            'company_id' => $companyId,
             'channel' => 'voice',
+            'brand_id' => $brandId,
         ], (int) $request->get('per_page', 50));
 
         return response()->json(['data' => ChannelProviderResource::collection($providers)]);
+    }
+
+    private function brandBelongsToCompany(string $brandId, string $companyId): bool
+    {
+        return Brand::query()->where('id', $brandId)->where('company_id', $companyId)->exists();
     }
 
     public function index(Request $request): JsonResponse
@@ -70,13 +104,41 @@ class VoiceController extends Controller
         return response()->json(['data' => new CallResource($call)]);
     }
 
+    /**
+     * §4 — a stale/manipulated frontend must never be able to submit a Brand B (or Company B)
+     * identity while operating in Brand A / Company A context: every fact this depends on
+     * (company, Brand, active status, real Voice channel) is re-proven here from the resolved
+     * ChannelProvider row itself, never assumed from the fact that route-model-binding merely
+     * found *a* row with this id.
+     */
     public function initiateOutbound(Request $request, ChannelProvider $channelProvider): JsonResponse
     {
         $data = $request->validate([
             'to_number' => 'required|string|max:32',
             'purpose' => 'required|string',
             'customer_id' => 'nullable|uuid',
+            'brand_id' => 'nullable|uuid',
         ]);
+
+        if (! $this->tenant->owns($channelProvider->company_id)) {
+            return response()->json(['message' => 'This calling identity does not belong to your company.'], 403);
+        }
+
+        if ($channelProvider->channel !== 'voice') {
+            return response()->json(['message' => 'This calling identity is not a Voice number.'], 422);
+        }
+
+        if (! $channelProvider->isActive()) {
+            return response()->json(['message' => 'This calling identity is not active.'], 422);
+        }
+
+        // A Brand-scoped identity may only be used while operating in that exact Brand; a
+        // brand_id=NULL identity is the documented company-wide shared fallback (§3) and may be
+        // used regardless of (or without) a resolved Brand context.
+        if ($channelProvider->brand_id !== null
+            && (($data['brand_id'] ?? null) === null || $data['brand_id'] !== $channelProvider->brand_id)) {
+            return response()->json(['message' => 'This calling identity does not belong to the current Brand.'], 403);
+        }
 
         $purpose = OutboundCallPurpose::from($data['purpose']);
 

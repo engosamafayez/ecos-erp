@@ -20,14 +20,28 @@ const BASE = '/api/cep/voice';
 
 // ─── Channel providers (Brand calling identities) ──────────────────────────────
 
-export function useVoiceChannelProviders(companyId?: string) {
+export interface VoiceChannelProvidersResult {
+  data: VoiceChannelProvider[];
+  /** TASK-...-017 §3/§5 — true when no Brand context was supplied at all: the server
+   * deliberately returns an empty list rather than falling back to every company identity. */
+  brand_context_required?: boolean;
+}
+
+/**
+ * TASK-ECOS-V1.1-CRM-03-BRAND-VOICE-IDENTITY-FINAL-REMEDIATION-017 — brandId is REQUIRED to get
+ * a real identity list back; omitting it (unresolved Brand context) still calls the endpoint so
+ * the caller can distinguish "genuinely zero identities for this Brand" from "Brand context
+ * required" via the response's own brand_context_required flag, never a client-side guess.
+ */
+export function useVoiceChannelProviders(companyId?: string, brandId?: string | null) {
   return useQuery({
-    queryKey: ['voice-channel-providers', companyId],
+    queryKey: ['voice-channel-providers', companyId, brandId],
     queryFn: async () => {
-      const { data } = await axios.get<PaginatedCepResponse<VoiceChannelProvider>>(
-        `${BASE}/channel-providers`, { params: companyId ? { company_id: companyId } : undefined });
-      return data.data;
+      const { data } = await axios.get<VoiceChannelProvidersResult>(
+        `${BASE}/channel-providers`, { params: { company_id: companyId, brand_id: brandId ?? undefined } });
+      return data;
     },
+    enabled: !!companyId,
     staleTime: 60_000,
   });
 }
@@ -60,7 +74,7 @@ export function useVoiceCall(id: string | null | undefined, options?: { refetchI
 export function useInitiateOutboundCall(channelProviderId: string) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (payload: { to_number: string; purpose: OutboundCallPurpose; customer_id?: string | null }) => {
+    mutationFn: async (payload: { to_number: string; purpose: OutboundCallPurpose; customer_id?: string | null; brand_id?: string | null }) => {
       const { data } = await axios.post<{ data: Call }>(
         `${BASE}/channel-providers/${channelProviderId}/calls`, payload);
       return data.data;

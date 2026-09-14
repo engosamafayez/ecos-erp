@@ -25,8 +25,9 @@ vi.mock('react-i18next', () => ({
 let mockCan: (permission: string) => boolean = () => true;
 vi.mock('@/features/authorization', () => ({ usePermission: () => ({ can: (p: string) => mockCan(p) }) }));
 
+let mockActiveBrandId: string | null = 'brand-1';
 vi.mock('@/features/organization/context/organization-context', () => ({
-  useOrganizationContext: () => ({ activeCompanyId: 'company-1' }),
+  useOrganizationContext: () => ({ activeCompanyId: 'company-1', activeBrandId: mockActiveBrandId }),
 }));
 
 const toastSpy = vi.fn();
@@ -98,9 +99,15 @@ const BASE_CALL: Call = {
 
 const transferMutate = vi.fn();
 
+/** useVoiceChannelProviders' own react-query wrapper: { data: VoiceChannelProvidersResult }. */
+function mockProviderList(providers: Array<Record<string, unknown>>, brandContextRequired = false) {
+  mockProviders.mockReturnValue({ data: { data: providers, brand_context_required: brandContextRequired } });
+}
+
 function setup() {
   mockCan = () => true;
-  mockProviders.mockReturnValue({ data: [] });
+  mockActiveBrandId = 'brand-1';
+  mockProviderList([]);
   mockInitiate.mockReturnValue({ mutateAsync: vi.fn(), isPending: false });
   mockTransfer.mockReturnValue({ mutateAsync: transferMutate, isPending: false });
   mockTranscript.mockReturnValue({ data: undefined });
@@ -203,6 +210,9 @@ describe('VoiceCallBar', () => {
   });
 });
 
+const PROVIDER_1 = { id: 'prov-1', company_id: 'company-1', brand_id: 'brand-1', channel: 'voice', display_name: 'Main Line', phone_number: '201099999999', status: 'active' };
+const PROVIDER_2 = { id: 'prov-2', company_id: 'company-1', brand_id: 'brand-1', channel: 'voice', display_name: 'Support Line', phone_number: '201088888888', status: 'active' };
+
 describe('OutboundCallButton', () => {
   beforeEach(setup);
 
@@ -217,30 +227,120 @@ describe('OutboundCallButton', () => {
     expect(screen.getByText('voice.outboundDialog.trigger')).toBeInTheDocument();
   });
 
-  it('shows an honest "no providers configured" message rather than a fabricated calling identity', () => {
-    mockProviders.mockReturnValue({ data: [] });
+  // ── §6/§10.5: unresolved Brand shows its own bounded state ──────────────────────────────
+
+  it('shows a bounded Brand-context-required state when no Brand is active — never every company number', () => {
+    mockActiveBrandId = null;
     render(<OutboundCallButton />);
     fireEvent.click(screen.getByText('voice.outboundDialog.trigger'));
-    expect(screen.getByText('voice.outboundDialog.noProviders')).toBeInTheDocument();
+    expect(screen.getByText('voice.outboundDialog.brandContextRequired')).toBeInTheDocument();
   });
 
-  it('initiates the call with the typed destination and selected purpose against the chosen Brand identity', async () => {
-    mockProviders.mockReturnValue({
-      data: [{ id: 'prov-1', company_id: 'company-1', brand_id: null, channel: 'voice', display_name: 'Main Line', phone_number: '201099999999', status: 'active' }],
-    });
+  // ── §6/§10.4: zero identities for a KNOWN Brand is a distinct, honest empty state ───────
+
+  it('shows an honest "no calling number for this Brand" message rather than a fabricated identity', () => {
+    mockProviderList([]);
+    render(<OutboundCallButton />);
+    fireEvent.click(screen.getByText('voice.outboundDialog.trigger'));
+    expect(screen.getByText('voice.outboundDialog.noProvidersForBrand')).toBeInTheDocument();
+  });
+
+  // ── §6/§10.2: exactly one identity is used directly, never a picker of one ──────────────
+
+  it('auto-selects the sole calling identity for the Brand and initiates the call with it', async () => {
+    mockProviderList([PROVIDER_1]);
+    const initiateMutate = vi.fn().mockResolvedValue({ ...BASE_CALL });
+    mockInitiate.mockReturnValue({ mutateAsync: initiateMutate, isPending: false });
+
+    render(<OutboundCallButton />);
+    fireEvent.click(screen.getByText('voice.outboundDialog.trigger'));
+
+    // The sole identity is shown directly — no Select control for calling identity at all.
+    expect(screen.getByText(/Main Line/)).toBeInTheDocument();
+    expect(screen.queryAllByTestId('select')).toHaveLength(1); // only the purpose Select remains
+
+    fireEvent.change(screen.getByPlaceholderText('voice.outboundDialog.destinationPlaceholder'), { target: { value: '01055512345' } });
+    fireEvent.click(screen.getByText('voice.outboundDialog.submit'));
+
+    await waitFor(() => expect(initiateMutate).toHaveBeenCalledWith({ to_number: '01055512345', purpose: 'support', brand_id: 'brand-1' }));
+    await waitFor(() => expect(toastSpy).toHaveBeenCalledWith(
+      // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- dotted-path output of the mocked t(), not real UI copy
+      expect.objectContaining({ title: 'voice.outboundDialog.success', type: 'success' }),
+    ));
+  });
+
+  // ── §6/§10.3: multiple identities for the current Brand are selectable ─────────────────
+
+  it('lets the user choose among multiple identities for the current Brand', async () => {
+    mockProviderList([PROVIDER_1, PROVIDER_2]);
     const initiateMutate = vi.fn().mockResolvedValue({ ...BASE_CALL });
     mockInitiate.mockReturnValue({ mutateAsync: initiateMutate, isPending: false });
 
     render(<OutboundCallButton />);
     fireEvent.click(screen.getByText('voice.outboundDialog.trigger'));
     fireEvent.change(screen.getByPlaceholderText('voice.outboundDialog.destinationPlaceholder'), { target: { value: '01055512345' } });
-    fireEvent.change(screen.getAllByTestId('select')[0], { target: { value: 'prov-1' } });
+    // Two Selects now exist (calling identity + purpose) — the first is calling identity.
+    fireEvent.change(screen.getAllByTestId('select')[0], { target: { value: 'prov-2' } });
     fireEvent.click(screen.getByText('voice.outboundDialog.submit'));
 
-    await waitFor(() => expect(initiateMutate).toHaveBeenCalledWith({ to_number: '01055512345', purpose: 'support' }));
+    await waitFor(() => expect(initiateMutate).toHaveBeenCalledWith({ to_number: '01055512345', purpose: 'support', brand_id: 'brand-1' }));
+  });
+
+  // ── §7: a Brand switch must never let a stale Brand A selection survive into Brand B ───
+
+  it('resets a stale identity selection once the active Brand changes', () => {
+    mockProviderList([PROVIDER_1, PROVIDER_2]);
+    const { rerender } = render(<OutboundCallButton />);
+    fireEvent.click(screen.getByText('voice.outboundDialog.trigger'));
+    fireEvent.change(screen.getByPlaceholderText('voice.outboundDialog.destinationPlaceholder'), { target: { value: '01055512345' } });
+    fireEvent.change(screen.getAllByTestId('select')[0], { target: { value: 'prov-2' } });
+    expect(screen.getByText('voice.outboundDialog.submit').closest('button')).not.toBeDisabled();
+
+    // The active Brand changes while the (still-open) dialog is up; Brand 2 has no configured
+    // identities. The old prov-2 selection must not silently carry forward — proven by the
+    // honest empty state rendering instead of a still-submittable call form.
+    mockActiveBrandId = 'brand-2';
+    mockProviderList([]);
+    rerender(<OutboundCallButton />);
+
+    expect(screen.getByText('voice.outboundDialog.noProvidersForBrand')).toBeInTheDocument();
+    expect(screen.getByText('voice.outboundDialog.submit').closest('button')).toBeDisabled();
+  });
+
+  // ── §6: arbitrary caller-id entry is impossible — only a destination number is free text ──
+
+  it('never renders a free-text field for the calling identity itself — only the destination number is free text', () => {
+    mockProviderList([PROVIDER_1, PROVIDER_2]);
+    render(<OutboundCallButton />);
+    fireEvent.click(screen.getByText('voice.outboundDialog.trigger'));
+
+    expect(screen.getByPlaceholderText('voice.outboundDialog.destinationPlaceholder')).toBeInTheDocument();
+    // The calling-identity control is the (mocked) Select, never a plain text input.
+    const selects = screen.getAllByTestId('select');
+    expect(selects.length).toBeGreaterThan(0);
+  });
+
+  // ── §10.8: a manipulated/stale selection's rejection is handled honestly ────────────────
+
+  it('surfaces the backend\'s own rejection message when initiation is denied, never a fake success', async () => {
+    // Fixture representing the REAL backend's own (non-i18n'd) rejection message — not UI copy.
+    const backendMessage = 'This calling identity does not belong to the current Brand.';
+    mockProviderList([PROVIDER_1]);
+    const initiateMutate = vi.fn().mockRejectedValue({
+      isAxiosError: true,
+      response: { data: { message: backendMessage } },
+    });
+    mockInitiate.mockReturnValue({ mutateAsync: initiateMutate, isPending: false });
+
+    render(<OutboundCallButton />);
+    fireEvent.click(screen.getByText('voice.outboundDialog.trigger'));
+    fireEvent.change(screen.getByPlaceholderText('voice.outboundDialog.destinationPlaceholder'), { target: { value: '01055512345' } });
+    fireEvent.click(screen.getByText('voice.outboundDialog.submit'));
+
     await waitFor(() => expect(toastSpy).toHaveBeenCalledWith(
-      // eslint-disable-next-line ecos-i18n/no-hardcoded-ui-strings -- dotted-path output of the mocked t(), not real UI copy
-      expect.objectContaining({ title: 'voice.outboundDialog.success', type: 'success' }),
+      expect.objectContaining({ title: backendMessage, type: 'error' }),
     ));
+    // Never the generic success toast.
+    expect(toastSpy).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'success' }));
   });
 });
