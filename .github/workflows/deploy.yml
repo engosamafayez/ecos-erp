@@ -3,20 +3,16 @@ name: Deploy
 on:
   push:
     branches:
-      - main       # → Production
-      - develop    # → Staging  (TASK-DEVOPS-001)
-      - staging    # → Staging  (legacy branch, retained)
+      - main       # → NEXT
   workflow_dispatch:
     inputs:
       environment:
         description: 'Target environment'
         required: true
-        default: staging
+        default: next
         type: choice
         options:
-          - development
-          - staging
-          - production
+          - next
 
 # Serialize deployments per branch — never cancel an in-flight deploy.
 concurrency:
@@ -39,21 +35,14 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             ENV="${{ inputs.environment }}"
           elif [ "${{ github.ref_name }}" = "main" ]; then
-            ENV="production"
+            ENV="next"
           else
-            ENV="staging"
+            echo "::error::Only the main branch may deploy to NEXT."
+            exit 1
           fi
 
-          # ── Production originates from main, and only from main ────────────
-          # Branch pushes already satisfy this by construction. workflow_dispatch
-          # did not: the environment dropdown was selectable from any ref, so a
-          # manual run started on develop could target production. This closes
-          # that path — it is the single rule that keeps unreviewed code out of
-          # Production (TASK-DEVOPS-001 §5).
-          if [ "$ENV" = "production" ] && [ "${{ github.ref_name }}" != "main" ]; then
-            echo "::error::Production deployment must originate from 'main'." \
-                 "Refusing to deploy ref '${{ github.ref_name }}' to production." \
-                 "Merge into main via pull request, then deploy from there."
+          if [ "$ENV" != "next" ] || [ "${{ github.ref_name }}" != "main" ]; then
+            echo "::error::NEXT deployment must originate from 'main'."
             exit 1
           fi
 
@@ -251,11 +240,11 @@ jobs:
       # git reset --hard is safe here: the server never has uncommitted changes.
       - name: Update repository on server
         run: |
-          ssh $SSH_OPTS "$DEPLOY_USER@$DEPLOY_HOST" \
-            "cd '$DEPLOY_PATH' \
-             && git fetch --all --tags --prune \
-             && git checkout '${{ github.ref_name }}' \
-             && git reset --hard '${{ github.sha }}'"
+          # Upload the exact GitHub Actions checkout directly to the server.
+          # This avoids requiring the server to authenticate to GitHub.
+          tar --exclude='.git' -czf - . | \
+            ssh $SSH_OPTS "$DEPLOY_USER@$DEPLOY_HOST" \
+              "mkdir -p '$DEPLOY_PATH' && tar -xzf - -C '$DEPLOY_PATH'"
 
       - name: Run deploy.sh on server
         run: |
