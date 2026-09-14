@@ -977,10 +977,16 @@
     }
   },
   "profitability": {
-    "tab": { "company": "الشركة", "branch": "الفرع", "costCenter": "مركز التكلفة", "project": "المشروع", "customer": "العميل", "product": "المنتج", "channel": "القناة" },
+    "tab": { "company": "الشركة", "branch": "الفرع", "costCenter": "مركز التكلفة", "project": "المشروع", "brand": "العلامة التجارية", "customer": "العميل", "product": "المنتج", "channel": "القناة" },
     "filter": { "from": "من", "to": "إلى" },
-    "field": { "revenue": "الإيرادات", "expense": "المصروفات", "profit": "الربح", "marginPct": "الهامش", "estimatedProfit": "الربح المقدر" },
+    "field": { "revenue": "الإيرادات", "expense": "المصروفات", "profit": "الربح", "marginPct": "الهامش", "estimatedProfit": "الربح المقدر", "total": "الإجمالي" },
     "customer": { "attributionPrefix": "طريقة الإسناد:" },
+    "brand": {
+      "unresolved": "علامة تجارية غير معروفة",
+      "unallocatedRow": "غير موزع",
+      "unallocatedNote": "توجد هذه القيود في دفتر أستاذ الشركة لكنها غير مسندة إلى علامة تجارية.",
+      "totalRow": "الإجمالي (الشركة)"
+    },
     "unavailable": { "heading": "غير متاح بعد", "companyFallback": "ربحية الشركة (معروضة بدلاً من ذلك)" },
     "empty": "لا توجد بيانات ربحية لهذه الفترة.",
     "error": "تعذر تحميل بيانات الربحية."

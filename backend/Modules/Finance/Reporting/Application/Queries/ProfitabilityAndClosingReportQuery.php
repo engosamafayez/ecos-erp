@@ -23,11 +23,17 @@ use Modules\Reporting\Domain\ValueObjects\ReportResult;
  * Finance dashboards, not a single KPI.
  *
  * Read strategy: A — `ProfitabilityService::company()` (always) plus an optional
- * `dimension`-filtered breakdown (`byBranch`/`byCostCenter`/`byProject`/`byCustomer`, or
- * `byUntaggedDimension()` for `product`/`channel` — which, per direct source inspection,
- * genuinely still returns `available:false` today; this report surfaces that honestly
- * rather than omitting the option or fabricating a number, exactly as the catalogue's own
- * known dependency instructs) — plus `ClosingWorkspaceService::forPeriod()`.
+ * `dimension`-filtered breakdown (`byBranch`/`byCostCenter`/`byProject`/`byBrand`/
+ * `byCustomer`, or `byUntaggedDimension()` for `product`/`channel` — which, per direct
+ * source inspection, genuinely still returns `available:false` today; this report
+ * surfaces that honestly rather than omitting the option or fabricating a number,
+ * exactly as the catalogue's own known dependency instructs) — plus
+ * `ClosingWorkspaceService::forPeriod()`.
+ *
+ * `byBrand` (TASK-ECOS-V1.1-FIN-04-BRAND-PROFITABILITY-IMPLEMENTATION-007) is the one
+ * breakdown that is not a bare per-dimension list: it also carries an `unallocated`
+ * figure and a same-scope `total`, so `Σrows + unallocated == total` always — see that
+ * method's own docblock.
  *
  * `ClosingWorkspaceService::forPeriod()` takes a hydrated `FiscalPeriod`, not a scalar id —
  * resolved here explicitly (no `FiscalPeriod` global scope exists, confirmed by direct
@@ -53,7 +59,7 @@ final class ProfitabilityAndClosingReportQuery implements ReportHandlerInterface
         $validated = Validator::make($rawFilters, [
             'date_from' => ['nullable', 'date_format:Y-m-d'],
             'date_to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:date_from'],
-            'dimension' => ['nullable', Rule::in(['branch', 'cost_center', 'project', 'customer', 'product', 'channel'])],
+            'dimension' => ['nullable', Rule::in(['branch', 'cost_center', 'project', 'brand', 'customer', 'product', 'channel'])],
             'fiscal_period_id' => ['nullable', 'integer', 'min:1'],
         ])->validate();
 
@@ -76,6 +82,7 @@ final class ProfitabilityAndClosingReportQuery implements ReportHandlerInterface
             'branch' => $this->profitability->byBranch($context->companyId, $from, $to),
             'cost_center' => $this->profitability->byCostCenter($context->companyId, $from, $to),
             'project' => $this->profitability->byProject($context->companyId, $from, $to),
+            'brand' => $this->profitability->byBrand($context->companyId, $from, $to),
             'customer' => $this->profitability->byCustomer($context->companyId, $from, $to),
             'product', 'channel' => $this->profitability->byUntaggedDimension($context->companyId, $filters['dimension'], $from, $to),
             default => null,

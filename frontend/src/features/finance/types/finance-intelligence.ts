@@ -31,6 +31,7 @@ export type ProfitabilityDimension =
   | 'branch'
   | 'cost_center'
   | 'project'
+  | 'brand'
   | 'customer'
   | 'product'
   | 'channel';
@@ -68,6 +69,51 @@ export type ProfitabilityDimensionRow = {
 export type ProfitabilityByDimension = {
   dimension: 'branch' | 'cost_center' | 'project';
   rows: ProfitabilityDimensionRow[];
+};
+
+/**
+ * One row of the Brand breakdown (ProfitabilityService::byBrand()) — the
+ * approved FIN-04 convention where `profit_center_id` on a journal line IS a
+ * Brand's own id. `brand_name`/`brand_code` are null, and `resolved` is
+ * false, when the id does not resolve to a current Brand of this company
+ * (deleted, or from another company) — the amount is still real and still
+ * counted in `total`; render the row honestly as unresolved, never drop it.
+ */
+export type ProfitabilityBrandRow = {
+  brand_id: string;
+  brand_name: string | null;
+  brand_code: string | null;
+  resolved: boolean;
+  revenue: number;
+  expense: number;
+  profit: number;
+  margin_pct: number;
+};
+
+/** Shared shape of the `unallocated` and `total` figures on {@link ProfitabilityByBrand}. */
+export type ProfitabilityAmountSummary = {
+  revenue: number;
+  expense: number;
+  profit: number;
+  margin_pct: number;
+};
+
+/**
+ * GET .../profitability/brand — ProfitabilityService::byBrand(). Unlike the
+ * other dimension breakdowns, this one reconciles exactly:
+ * `sum(rows) + unallocated == total`, within the same revenue/expense
+ * category scope every profitability figure here uses (not the wider
+ * company() net-profit figure, which also includes other_revenue/expense).
+ * `unallocated` is the GL activity with no Brand dimension at all
+ * (`profit_center_id IS NULL`) — historical data before this task, and any
+ * non-Commerce posting that still doesn't carry one. It is a reporting
+ * classification only, never a synthetic Brand.
+ */
+export type ProfitabilityByBrand = {
+  dimension: 'brand';
+  rows: ProfitabilityBrandRow[];
+  unallocated: ProfitabilityAmountSummary;
+  total: ProfitabilityAmountSummary;
 };
 
 export type ProfitabilityCustomerRow = {
@@ -108,6 +154,7 @@ export type ProfitabilityUnavailable = {
 export type ProfitabilityResult =
   | ProfitabilityCompany
   | ProfitabilityByDimension
+  | ProfitabilityByBrand
   | ProfitabilityByCustomer
   | ProfitabilityUnavailable;
 

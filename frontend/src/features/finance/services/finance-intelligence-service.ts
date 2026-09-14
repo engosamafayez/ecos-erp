@@ -10,6 +10,7 @@ import type {
   CostTrend,
   CostTrendParams,
   FinanceIntelligenceWindowParams,
+  ProfitabilityByBrand,
   ProfitabilityByCustomer,
   ProfitabilityByDimension,
   ProfitabilityCompany,
@@ -48,6 +49,11 @@ export const financeIntelligenceService = {
 
     async project(params: FinanceIntelligenceWindowParams = {}): Promise<ProfitabilityByDimension> {
       const { data } = await api.get<ApiResponse<ProfitabilityByDimension>>(`${BASE}/profitability/project`, { params });
+      return data.data;
+    },
+
+    async brand(params: FinanceIntelligenceWindowParams = {}): Promise<ProfitabilityByBrand> {
+      const { data } = await api.get<ApiResponse<ProfitabilityByBrand>>(`${BASE}/profitability/brand`, { params });
       return data.data;
     },
 
